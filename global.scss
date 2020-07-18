@@ -1,0 +1,60 @@
+$font-stack: -apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
+  HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
+$page-background: #181818;
+$page-toolbar-background: #252525;
+$disabled-button-fill: #585858;
+
+html,
+body {
+  font-family: $font-stack;
+  background-color: $page-background;
+  overflow: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+:global {
+  /* =========================================================================
+ * Flexbox layout for the entire page
+/* ========================================================================= */
+  .emulator-page {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* =========================================================================
+ * ZX Spectrum Toolbar and buttons
+/* ========================================================================= */
+  .toolbar {
+    padding: 2px 4px;
+    background: $page-toolbar-background;
+    margin: 2px;
+    display: flex;
+    height: 26px;
+
+    & .emu-button {
+      padding: 4px 4px 2px 4px;
+      display: inline-block;
+      cursor: pointer;
+      border: 1px solid transparent;
+      margin: 0 2px;
+    }
+
+    & .disabled-button {
+      padding: 4px 4px 2px 4px;
+      display: inline-block;
+      cursor: default;
+      border: 1px solid transparent;
+      margin: 0 2px;
+      fill: $disabled-button-fill;
+    }
+
+    & .start-fill {
+      fill: green;
+    }
+  }
+}

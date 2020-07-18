@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "lib": ["es2015", "dom"],
+    "sourceMap": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "downlevelIteration": true,
+    "noImplicitAny": false,
+    "suppressImplicitAnyIndexErrors": false,
+    "experimentalDecorators": true
+  },
+  "exclude": [
+    "**/*.test.ts",
+    "**/test.config.ts",
+    "node_modules",
+    "**/build/*",
+    "**/*.d.ts"
+  ]
+}

@@ -1,0 +1,19 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
+    HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
+  overflow: hidden;
+  box-sizing: border-box;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: 0;
+
+  min-width: 100px;
+  min-height: 300px;
+}
