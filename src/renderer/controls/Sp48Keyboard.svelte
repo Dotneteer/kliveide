@@ -38,7 +38,6 @@
     if (spectrum.getKeyQueueLength() > 0) return;
     const ev = e.detail;
     const state = spectrum.getMachineState();
-    console.log(ev);
     switch (ev.keyCategory) {
       case "main":
         spectrum.queueKeyStroke(

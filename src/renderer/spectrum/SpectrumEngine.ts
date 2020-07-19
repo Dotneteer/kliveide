@@ -13,6 +13,13 @@ import {
 } from "../../native/machine-state";
 import { SpectrumKeyCode } from "../../native/SpectrumKeyCode";
 import { EmulatedKeyStroke } from "./spectrum-keys";
+import { MemoryHelper } from "../../native/memory-helpers";
+import { AudioRenderer } from "./AudioRenderer";
+
+/**
+ * Beeper samples in the memory
+ */
+const BEEPER_SAMPLE_BUFF = 0x0b_2200;
 
 /**
  * This class represents the engine of the ZX Spectrum,
@@ -38,6 +45,9 @@ export class SpectrumEngine {
 
   // --- Keyboard emulation
   private _keyStrokeQueue: EmulatedKeyStroke[] = [];
+
+  // --- Beeper emulation
+  private _beeperRenderer: AudioRenderer | null = null;
 
   /**
    * Initializes the engine with the specified ZX Spectrum instance
@@ -203,8 +213,8 @@ export class SpectrumEngine {
       startFrame,
       endFrame: startFrame + frames,
       primaryKey,
-      secondaryKey
-    })
+      secondaryKey,
+    });
   }
 
   /**
@@ -270,10 +280,7 @@ export class SpectrumEngine {
     // --- Prepare the machine to pause
     this.executionState = ExecutionState.Pausing;
     this._isFirstPause = this._isFirstStart;
-
-    // --- Cancel the current execution cycle
-    this._cancelled = true;
-    await this._completionTask;
+    this.cancelRun();
     this.executionState = ExecutionState.Paused;
   }
 
@@ -293,10 +300,21 @@ export class SpectrumEngine {
       default:
         // --- Initiate stop
         this.executionState = ExecutionState.Stopping;
-        this._cancelled = true;
-        await this._completionTask;
+        this.cancelRun();
         this.executionState = ExecutionState.Stopped;
         break;
+    }
+  }
+
+  /**
+   * Cancels the execution cycle
+   */
+  async cancelRun(): Promise<void> {
+    this._cancelled = true;
+    await this._completionTask;
+    if (this._beeperRenderer) {
+      this._beeperRenderer.closeAudio();
+      this._beeperRenderer = null;
     }
   }
 
@@ -315,6 +333,8 @@ export class SpectrumEngine {
     const nextFrameGap = (state.tactsInFrame / clockFreq) * 1000;
     let nextFrameTime = performance.now() + nextFrameGap;
 
+    //
+
     // --- Execute the cycle until completed
     while (true) {
       machine.spectrum.executeCycle(options);
@@ -322,7 +342,7 @@ export class SpectrumEngine {
       // --- Check for user cancellation
       if (this._cancelled) return;
 
-      const resultState = this._loadedState = machine.spectrum.getMachineState();
+      const resultState = (this._loadedState = machine.spectrum.getMachineState());
       const reason = resultState.executionCompletionReason;
       if (reason !== ExecutionCompletionReason.UlaFrameCompleted) {
         // --- No more frame to execute
@@ -331,6 +351,12 @@ export class SpectrumEngine {
           reason === ExecutionCompletionReason.TerminationPointReached
         ) {
           machine.executionState = ExecutionState.Paused;
+        }
+
+        // --- Stop audio
+        if (this._beeperRenderer) {
+          this._beeperRenderer.closeAudio();
+          this._beeperRenderer = null;
         }
         return;
       }
@@ -342,34 +368,36 @@ export class SpectrumEngine {
       // --- Initiate the refresh of the screen
       machine.spectrum.api.colorize();
       machine._screenRefreshed.fire();
-      // TODO: Manage audio
-      //   machine._vmBeeperSamplesEmitted.fire(
-      //     machine.spectrum.api
-      //   );
-      //   if (machine.spectrumVm.soundDevice) {
-      //     machine._vmSoundSamplesEmitted.fire(
-      //       machine.spectrumVm.soundDevice.audioSamples
-      //     );
-      //   }
+
+      // --- Obtain beeper samples
+      if (!this._beeperRenderer) {
+        this._beeperRenderer = new AudioRenderer(resultState.beeperSampleLength);
+      }
+      const mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
+      const beeperSamples = mh.readBytes(0, resultState.beeperSampleCount);
+      this._beeperRenderer.storeSamples(beeperSamples);
+      machine._beeperSamplesEmitted.fire(beeperSamples);
+
+      // --- Wait for the next screen frame
       const curTime = performance.now();
       const toWait = Math.floor(nextFrameTime - curTime);
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
+    }
 
-      /**
-       * Delay for the specified amount of milliseconds
-       * @param milliseconds Amount of milliseconds to delay
-       */
-      function delay(milliseconds: number): Promise<void> {
-        return new Promise<void>((resolve) => {
-          if (milliseconds < 0) {
-            milliseconds = 0;
-          }
-          setTimeout(() => {
-            resolve();
-          }, milliseconds);
-        });
-      }
+    /**
+     * Delay for the specified amount of milliseconds
+     * @param milliseconds Amount of milliseconds to delay
+     */
+    function delay(milliseconds: number): Promise<void> {
+      return new Promise<void>((resolve) => {
+        if (milliseconds < 0) {
+          milliseconds = 0;
+        }
+        setTimeout(() => {
+          resolve();
+        }, milliseconds);
+      });
     }
   }
 

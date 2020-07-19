@@ -8126,44 +8126,11 @@
       (call $checkForInterrupt (tee_local $currentUlaTact))
       call $executeCpuCycle
 
-      call $getPC
-      i32.const 0x12a9
-      i32.eq
-      if
-        i32.const 444444
-        call $trace
-        call $getAF
-        call $trace
-        call $getBC
-        call $trace
-        call $getDE
-        call $trace
-        call $getHL
-        call $trace
-      end
-
       ;; Execute an entire instruction
       loop $instructionLoop
         get_global $isInOpExecution
         if
           call $executeCpuCycle
-
-          call $getPC
-          i32.const 0x12a9
-          i32.eq
-          if
-            i32.const 444444
-            call $trace
-            call $getAF
-            call $trace
-            call $getBC
-            call $trace
-            call $getDE
-            call $trace
-            call $getHL
-            call $trace
-          end
-
           br $instructionLoop
         end
       end 
@@ -8189,7 +8156,7 @@
       ;; Test frame completion
       (i32.ge_u (get_local $currentUlaTact) (get_global $tactsInFrame))
       set_global $frameCompleted
-      (br_if $frameCycle (i32.eq (get_global $frameCompleted) (i32.const 0)))
+      (br_if $frameCycle (i32.eqz (get_global $frameCompleted)))
     end
 
     ;; The current screen rendering frame completed
@@ -9427,16 +9394,6 @@
 
   ;; Creates EAR bit samples until the current CPU tact
   (func $createEarBitSamples
-    ;; Process only if enough time spent from last sample
-    (i32.lt_s
-      (i32.mul
-        (i32.sub (get_global $tacts) (get_global $beeperNextSampleTact))
-        (i32.const 2)
-      )
-      (get_global $beeperSampleLength)
-    )
-    if return end
-
     loop $earBitLoop
       (i32.le_u (get_global $beeperNextSampleTact) (get_global $tacts))
       if

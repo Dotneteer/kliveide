@@ -19,7 +19,7 @@ Nonetheless, this project offers these benefits to you:
 ![Klive intro](./docs/intro/klive-intro.gif)
 
 I've been working for more than three years on [SpectNetIDE](https://github.com/Dotneteer/spectnetide), which is a Visual Studio 2019 extension that includes a ZX Spectrum emulator and development tools. Though I like this project and will still develop it, it requires more investment (utilizing my free time) than I'm happy to spend:
-- Visual Studio Extensibility is hard. Event if it's continuously getting easier, sometimes it still feels pain due to the lack of available samples and documentation.
+- Visual Studio Extensibility is hard. Even if it's continuously getting easier, sometimes it still feels pain due to the lack of available samples and documentation.
 - SpectNetIDE can be used only on Windows. No easy way to port it to Mac or Linux.
 
 Klive IDE targets Linux, Mac, and Windows. To use the IDE, you need these three pieces of software:
@@ -38,9 +38,9 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
 2. A series of POC-pieces to find out which VS Code extensibility tools suit the best for particular pieces of the IDE:
     - Z80 Disassembly
     - ZX Spectrum live memory map
-    - Z80/ZX BASIC source code/Z80 Disassembly debugging experience (breakpoints, stepping modes, watching register and symbol values, etc.)
-    - Z80 Assembly/ZX BASIC source code development experience
-    - Compilation (Z80 Assembler, ZX BASIC integration) &mdash; using/implementing an excellent Z80 Assembler
+    - Z80/Boriel's BASIC source code/Z80 Disassembly debugging experience (breakpoints, stepping modes, watching register and symbol values, etc.)
+    - Z80 Assembly/Boriel's BASIC source code development experience
+    - Compilation (Z80 Assembler, Boriel's BASIC integration) &mdash; using/implementing an excellent Z80 Assembler
     - Tape handling experience
 3. The first public version of the Klive IDE with these features:
     - Running and debugging ZX Spectrum 48 code with the three software components working in orchestration.

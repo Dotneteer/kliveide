@@ -25,6 +25,19 @@ export class MemoryHelper {
   }
 
   /**
+   * Reads a byte from the memory
+   * @param offs Offset value
+   */
+  readBytes(offs: number, length: number): number[] {
+    offs += this.ptr;
+    const result: number[] = [];
+    for (let i = 0; i < length; i++) {
+      result[i] = this._memory[offs + i];
+    }
+    return result;
+  }
+
+  /**
    * Writes a byte to the memory
    * @param offs Offset value
    */
