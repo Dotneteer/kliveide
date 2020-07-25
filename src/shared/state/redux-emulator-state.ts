@@ -9,6 +9,10 @@ export function emulatorSetZoomAction(zoom: number) {
   return createAction("EMULATOR_SET_ZOOM", { zoom });
 }
 
+export function emulatorSetExecStateAction(executionState: number) {
+  return createAction("EMULATOR_SET_EXEC_STATE", { executionState });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -25,6 +29,8 @@ export function emulatorStateReducer(
       return { ...state, width: payload.width, height: payload.height };
     case "EMULATOR_SET_ZOOM":
       return { ...state, zoom: payload.zoom };
-  }
+    case "EMULATOR_SET_EXEC_STATE":
+        return { ...state, executionState: payload.executionState };
+    }
   return state;
 }

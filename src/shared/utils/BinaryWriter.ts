@@ -21,6 +21,17 @@ export class BinaryWriter {
    * @param value Value to write
    */
   writeBytes(value: Uint8Array): void {
+    this._extend(value.length);
+    for (let i = 0; i < value.length; i++) {
+      this._buffer[this._position++] = value[i];
+    }
+  }
+
+  /**
+   * Writes an array of bytes to the stream
+   * @param value Value to write
+   */
+  writeBytesWithLength(value: Uint8Array): void {
     this._extend(value.length + 4);
     this.writeUint32(value.length);
     for (let i = 0; i < value.length; i++) {
@@ -35,7 +46,7 @@ export class BinaryWriter {
   writeUint16(value: number): void {
     this._extend(2);
     this._buffer[this._position++] = value;
-    this._buffer[this._position++] = (value >> 8);
+    this._buffer[this._position++] = value >> 8;
   }
 
   /**
@@ -45,9 +56,9 @@ export class BinaryWriter {
   writeUint32(value: number): void {
     this._extend(4);
     this._buffer[this._position++] = value;
-    this._buffer[this._position++] = (value >> 8);
-    this._buffer[this._position++] = (value >> 16);
-    this._buffer[this._position++] = (value >> 24);
+    this._buffer[this._position++] = value >> 8;
+    this._buffer[this._position++] = value >> 16;
+    this._buffer[this._position++] = value >> 24;
   }
 
   /**

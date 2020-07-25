@@ -5,4 +5,5 @@ export interface Payload {
   width?: number;
   height?: number;
   zoom?: number;
+  executionState?: number;
 }

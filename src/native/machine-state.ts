@@ -96,6 +96,19 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   beeperNextSampleTact: number;
   beeperLastEarBit: boolean;
   beeperSampleCount: number;
+  tapeMode: number;
+  tapeLoadBytesRoutine: number;
+  tapeLoadBytesResume: number;
+  tapeLoadBytesInvalidHeader: number;
+  tapeSaveBytesRoutine: number;
+  tapeBlocksToPlay: number;
+  tapeEof: boolean;
+  tapeBufferPtr: number;
+  tapeNextBlockPtr: number;
+  tapePlayPhase: number;
+  tapeStartFrame: number;
+  tapeStartTact: number;
+  tapeBitMask: number;
 }
 
 /**

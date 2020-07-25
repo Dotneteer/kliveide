@@ -69,7 +69,19 @@ export class BinaryReader {
    * Reads a byte array from the stream. The subsequent 4 bytes defines
    * the length of the array
    */
-  readBytes(): number[] {
+  readBytes(length: number): number[] {
+    const result: number[] = [];
+    for (let i = 0; i < length; i++) {
+      result[i] = this.readByte();
+    }
+    return result;
+  }
+
+  /**
+   * Reads a byte array from the stream. The subsequent 4 bytes defines
+   * the length of the array
+   */
+  readBytesWithLength(): number[] {
     const length = this.readUint32();
     const result: number[] = [];
     for (let i = 0; i < length; i++) {
@@ -101,7 +113,7 @@ export class BinaryReader {
    * Reads a 32-bit unsigned integer from the stream
    */
   readUint64(): number {
-    return ((this.readUint32()) << 32) | (this.readUint32());
+    return (this.readUint32() << 32) | this.readUint32();
   }
 
   /**
