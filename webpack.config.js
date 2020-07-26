@@ -75,6 +75,7 @@ mainConfig.plugins = [
     patterns: [
       { from: "./public/assets/*.png", to: "icons", flatten: true },
       { from: "./build/*.wasm", to: "wasm", flatten: true },
+      { from: "./public/assets/*.tzx", to: "tapes", flatten: true },
     ],
   }),
 ];

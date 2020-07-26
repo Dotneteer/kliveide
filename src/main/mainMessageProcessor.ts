@@ -1,4 +1,11 @@
-import { RendererMessage, DefaultResponse, ScreenSizeResponse } from "../shared/messaging/message-types";
+import * as fs from "fs";
+import * as path from "path";
+
+import {
+  RendererMessage,
+  DefaultResponse,
+  GetDefaultTapeSetResponse,
+} from "../shared/messaging/message-types";
 import { MainMessage } from "../shared/messaging/message-types";
 
 /**
@@ -7,12 +14,13 @@ import { MainMessage } from "../shared/messaging/message-types";
  */
 export function processRendererMessage(message: RendererMessage): MainMessage {
   switch (message.type) {
-    case "getScreenSize":
-      return <ScreenSizeResponse>{
-          type: "ackGetScreenSize",
-          width: 256,
-          height: 192
-      }
+    case "getDefaultTapeSet":
+      const fileName = path.join(__dirname, "./tapes/Pac-Man.tzx");
+      const contents = fs.readFileSync(fileName);
+      return <GetDefaultTapeSetResponse>{
+        type: "ackGetDefaultTapeSet",
+        bytes: new Uint8Array(contents),
+      };
     default:
       return <DefaultResponse>{ type: "ack" };
   }

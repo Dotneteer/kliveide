@@ -3,28 +3,30 @@ export interface MessageBase {
   correlationId?: number;
 }
 
-export interface QueryScreenSize extends MessageBase {
-  type: "getScreenSize";
+/**
+ * Gets the default tape set
+ */
+export interface GetDefaultTapeSet extends MessageBase {
+  type: "getDefaultTapeSet"
 }
 
 /**
  * The messages a renderer process can send to the main process
  */
-export type RendererMessage = QueryScreenSize;
+export type RendererMessage = GetDefaultTapeSet;
 
 export interface DefaultResponse extends MessageBase {
   type: "ack";
 }
 
-export interface ScreenSizeResponse extends MessageBase {
-  type: "ackGetScreenSize";
-  width: number;
-  height: number;
+export interface GetDefaultTapeSetResponse extends MessageBase {
+  type: "ackGetDefaultTapeSet",
+  bytes: Uint8Array
 }
 
 /**
  * The messages the main process can send as an ackonledgement
  */
-export type MainMessage = DefaultResponse | ScreenSizeResponse;
+export type MainMessage = DefaultResponse | GetDefaultTapeSetResponse;
 
 export type AnyMessage = RendererMessage | MainMessage;

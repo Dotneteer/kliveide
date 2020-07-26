@@ -41,4 +41,5 @@ export interface MachineApi extends CpuApi {
   setBeeperSampleRate(rate: number): void;
   colorize(): void;
   getCursorMode(): number;
+  initTape(blocks: number): void;
 }

@@ -65,7 +65,7 @@
     fill="lightgreen"
     title="Start"
     enable={executionState === 0 || executionState === 3 || executionState === 5}
-    on:clicked={() => spectrum.start()} />
+    on:clicked={async () => spectrum.start()} />
   <ToolbarIconButton
     iconName="pause"
     fill="lightblue"
@@ -93,7 +93,7 @@
     size="20"
     highlightSize="24"
     enable={executionState === 0 || executionState === 3 || executionState === 5} 
-    on:clicked={() => spectrum.startDebugging()} />
+    on:clicked={async () => spectrum.startDebugging()} />
   <ToolbarIconButton
     iconName="step-into"
     fill="lightblue"

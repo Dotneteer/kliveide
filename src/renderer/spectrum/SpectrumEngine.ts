@@ -16,7 +16,10 @@ import { EmulatedKeyStroke } from "./spectrum-keys";
 import { MemoryHelper } from "../../native/memory-helpers";
 import { AudioRenderer } from "./AudioRenderer";
 import { rendererProcessStore } from "../rendererProcessStore";
-import { emulatorSetExecStateAction } from "../../shared/state/redux-emulator-state"
+import { emulatorSetExecStateAction } from "../../shared/state/redux-emulator-state";
+import { getDefaultTapeSet } from "../../shared/messaging/message-senders";
+import { BinaryReader } from "../../shared/utils/BinaryReader";
+import { TzxReader } from "../../shared/tape/tzx-file";
 
 /**
  * Beeper samples in the memory
@@ -50,6 +53,9 @@ export class SpectrumEngine {
 
   // --- Beeper emulation
   private _beeperRenderer: AudioRenderer | null = null;
+
+  // --- Tape emulation
+  private _defaultTapeSet = new Uint8Array(0);
 
   /**
    * Initializes the engine with the specified ZX Spectrum instance
@@ -222,15 +228,15 @@ export class SpectrumEngine {
   /**
    * Starts the virtual machine and keeps it running
    */
-  start(): void {
-    this.run(new ExecuteCycleOptions());
+  async start(): Promise<void> {
+    await this.run(new ExecuteCycleOptions());
   }
 
   /**
    * Starts the virtual machine in debugging mode
    */
-  startDebugging(): void {
-    this.run(
+  async startDebugging(): Promise<void> {
+    await this.run(
       new ExecuteCycleOptions(
         EmulationMode.Debugger,
         DebugStepMode.StopAtBreakpoint
@@ -242,7 +248,7 @@ export class SpectrumEngine {
    * Starts the virtual machine with the specified exeution options
    * @param options Execution options
    */
-  run(options: ExecuteCycleOptions): void {
+  async run(options: ExecuteCycleOptions): Promise<void> {
     if (this.executionState === ExecutionState.Running) {
       return;
     }
@@ -253,11 +259,21 @@ export class SpectrumEngine {
       this.executionState === ExecutionState.Stopped;
     if (this._isFirstStart) {
       this.spectrum.reset();
+      this._defaultTapeSet = (await getDefaultTapeSet()).bytes;
+      const binaryReader = new BinaryReader(this._defaultTapeSet);
+      const tzxReader = new TzxReader(binaryReader);
+      if (tzxReader.readContents()) {
+        console.log("Default tape file read.");
+        const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
+        this.spectrum.api.initTape(blocks);
+      }
     }
 
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
-    rendererProcessStore.dispatch(emulatorSetExecStateAction(this.executionState)())
+    rendererProcessStore.dispatch(
+      emulatorSetExecStateAction(this.executionState)()
+    );
     this._cancelled = false;
     this._completionTask = this.executeCycle(this, options);
   }
@@ -282,11 +298,15 @@ export class SpectrumEngine {
 
     // --- Prepare the machine to pause
     this.executionState = ExecutionState.Pausing;
-    rendererProcessStore.dispatch(emulatorSetExecStateAction(this.executionState)())
+    rendererProcessStore.dispatch(
+      emulatorSetExecStateAction(this.executionState)()
+    );
     this._isFirstPause = this._isFirstStart;
     this.cancelRun();
     this.executionState = ExecutionState.Paused;
-    rendererProcessStore.dispatch(emulatorSetExecStateAction(this.executionState)())
+    rendererProcessStore.dispatch(
+      emulatorSetExecStateAction(this.executionState)()
+    );
   }
 
   async stop(): Promise<void> {
@@ -299,18 +319,26 @@ export class SpectrumEngine {
       case ExecutionState.Paused:
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
-        rendererProcessStore.dispatch(emulatorSetExecStateAction(this.executionState)())
+        rendererProcessStore.dispatch(
+          emulatorSetExecStateAction(this.executionState)()
+        );
         this.executionState = ExecutionState.Stopped;
-        rendererProcessStore.dispatch(emulatorSetExecStateAction(this.executionState)())
+        rendererProcessStore.dispatch(
+          emulatorSetExecStateAction(this.executionState)()
+        );
         break;
 
       default:
         // --- Initiate stop
         this.executionState = ExecutionState.Stopping;
-        rendererProcessStore.dispatch(emulatorSetExecStateAction(this.executionState)())
+        rendererProcessStore.dispatch(
+          emulatorSetExecStateAction(this.executionState)()
+        );
         this.cancelRun();
         this.executionState = ExecutionState.Stopped;
-        rendererProcessStore.dispatch(emulatorSetExecStateAction(this.executionState)())
+        rendererProcessStore.dispatch(
+          emulatorSetExecStateAction(this.executionState)()
+        );
         break;
     }
   }
@@ -380,7 +408,9 @@ export class SpectrumEngine {
 
       // --- Obtain beeper samples
       if (!this._beeperRenderer) {
-        this._beeperRenderer = new AudioRenderer(resultState.beeperSampleLength);
+        this._beeperRenderer = new AudioRenderer(
+          resultState.beeperSampleLength
+        );
       }
       const mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
       if (resultState.beeperSampleCount === 0) {

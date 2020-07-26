@@ -1,5 +1,5 @@
-import { BinaryReader } from "../../shared/utils/BinaryReader";
-import { BinaryWriter } from "../../shared/utils/BinaryWriter";
+import { BinaryReader } from "../utils/BinaryReader";
+import { BinaryWriter } from "../utils/BinaryWriter";
 import { MachineApi } from "../../native/api";
 import { MemoryHelper } from "../../native/memory-helpers";
 import { off } from "process";

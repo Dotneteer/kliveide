@@ -4,7 +4,7 @@ import * as path from "path";
 import * as expect from "expect";
 
 import { BinaryReader } from "../../src/shared/utils/BinaryReader";
-import { TapReader } from "../../src/main/tape/tap-file";
+import { TapReader } from "../../src/shared/tape/tap-file";
 
 describe("Tape - TAP Reader", () => {
   it("Can read TZX file", () => {
