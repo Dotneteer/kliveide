@@ -1,6 +1,6 @@
 // --- Audio constants
-export const FRAMES_BUFFERED = 100;
-export const FRAMES_DELAYED = 4;
+export const FRAMES_BUFFERED = 400;
+export const FRAMES_DELAYED = 10;
 export const AUDIO_BUFFER_SIZE = 4096;
 
 /**
@@ -12,8 +12,6 @@ export class AudioRenderer {
   private _waveBuffer = new Float32Array(0);
   private _writeIndex = 0;
   private _readIndex = 0;
-  private _written = 0;
-  private _read = 0;
 
   /**
    * Initializes the renderer
@@ -27,7 +25,7 @@ export class AudioRenderer {
    * Initializes the audio in the browser
    */
   initializeAudio() {
-    // --- Close the audio, if already initialzied
+    // --- Close the audio, if already initialized
     this.closeAudio();
 
     // --- Create and initialize the context and the buffers
@@ -53,7 +51,7 @@ export class AudioRenderer {
     highpass.frequency.value = 20;
     const lowpass = this._ctx.createBiquadFilter();
     lowpass.type = "lowpass";
-    lowpass.frequency.value = 8000;
+    lowpass.frequency.value = 18000;
     node.connect(highpass);
     highpass.connect(lowpass);
     lowpass.connect(this._ctx.destination);
@@ -69,7 +67,6 @@ export class AudioRenderer {
       if (this._writeIndex >= this._waveBuffer.length) {
         this._writeIndex = 0;
       }
-      this._written++;
     }
   }
 
@@ -81,13 +78,6 @@ export class AudioRenderer {
       this._ctx.close();
       this._ctx = undefined;
     }
-  }
-
-  /**
-   * Plays audio
-   */
-  playAudio() {
-      this.initializeAudio();
   }
 
   /**
@@ -105,7 +95,6 @@ export class AudioRenderer {
       if (renderer._readIndex >= renderer._waveBuffer.length) {
         renderer._readIndex = 0;
       }
-      this._read++;
     }
   }
 }

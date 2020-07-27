@@ -1,4 +1,4 @@
-import { UiBinaryReader } from "./UiBinaryReader";
+import { BinaryReader } from "../shared/utils/BinaryReader";
 import { OpIndexMode, OpPrefixMode, Z80StateFlags } from "../native/cpu-helpers";
 import { ExecutionCompletionReason } from "../native/machine-state";
 
@@ -140,7 +140,7 @@ export class Sp48PortState {
  * Reads the state of the CPU from the specified stream
  * @param r Binary stream reader
  */
-export function readZ80CpuState(r: UiBinaryReader): Z80CpuState {
+export function readZ80CpuState(r: BinaryReader): Z80CpuState {
   const s = new Z80CpuState();
   s.af = r.readUint16();
   s.bc = r.readUint16();
@@ -178,7 +178,7 @@ export function readZ80CpuState(r: UiBinaryReader): Z80CpuState {
  * Reads the configuration of the screen from the specified stream
  * @param r Binary stream reader
  */
-export function readScreenConfig(r: UiBinaryReader): ScreenConfig {
+export function readScreenConfig(r: BinaryReader): ScreenConfig {
   const s = new ScreenConfig();
   s.interruptTact = r.readUint32();
   s.verticalSyncLines = r.readUint32();
@@ -202,7 +202,7 @@ export function readScreenConfig(r: UiBinaryReader): ScreenConfig {
  * @param r Binary stream reader
  */
 export function readExecutionCycleState(
-  r: UiBinaryReader
+  r: BinaryReader
 ): ExecutionCycleState {
   const s = new ExecutionCycleState();
   s.lastExecutionStartFrameCount = r.readUint32();
@@ -220,7 +220,7 @@ export function readExecutionCycleState(
  * Reads the state of the interrupt device from the specified stream
  * @param r Binary stream reader
  */
-export function readInterruptState(r: UiBinaryReader): InterruptState {
+export function readInterruptState(r: BinaryReader): InterruptState {
   const s = new InterruptState();
   s.interruptRaised = r.readByte() !== 0;
   s.interruptRevoked = r.readByte() !== 0;
@@ -231,7 +231,7 @@ export function readInterruptState(r: UiBinaryReader): InterruptState {
  * Reads the state of the screen device from the specified stream
  * @param r Binary stream reader
  */
-export function readScreenState(r: UiBinaryReader): ScreenState {
+export function readScreenState(r: BinaryReader): ScreenState {
   const s = new ScreenState();
   s.screenBorderColor = r.readByte();
   s.screenFlashPhase = r.readByte() != 0;
@@ -240,7 +240,7 @@ export function readScreenState(r: UiBinaryReader): ScreenState {
   s.screenAttrByte1 = r.readByte();
   s.screenAttrByte2 = r.readByte();
   s.screenFlashToggleFrames = r.readUint16();
-  s.screenPixelBuffer = new Uint8Array(r.readBytes());
+  s.screenPixelBuffer = new Uint8Array(r.readBytesWithLength());
   return s;
 }
 
@@ -248,7 +248,7 @@ export function readScreenState(r: UiBinaryReader): ScreenState {
  * Reads the state of the ZX Spectrum 48 port device from the specified stream
  * @param r Binary stream reader
  */
-export function readSp48PortState(r: UiBinaryReader): Sp48PortState {
+export function readSp48PortState(r: BinaryReader): Sp48PortState {
   const s = new Sp48PortState();
   s.portBit3LastValue = r.readByte() !== 0;
   s.portBit4LastValue = r.readByte() !== 0;

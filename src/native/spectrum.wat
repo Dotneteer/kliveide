@@ -2,7 +2,7 @@
   (func $trace (import "imports" "trace") (param i32))
 
   ;; We keep 1024 KB of memory
-  (memory (export "memory") 24)
+  (memory (export "memory") 32)
 
   ;; ==========================================================================
   ;; CPU API
@@ -38,6 +38,7 @@
   (export "setBeeperSampleRate" (func $setBeeperSampleRate))
   (export "colorize" (func $colorize))
   (export "getCursorMode" (func $getCursorMode))
+  (export "initTape" (func $initTape))
 
   ;; ==========================================================================
   ;; Function signatures
@@ -87,7 +88,10 @@
   ;; 0x0B_2200 (0x2000 bytes): Beeper sample rendering buffer
   ;; 0x0B_4200 (0xA_0000 bytes): Buffer for pixel colorization
   ;; 0x15_4200 ZX Spectrum 48 palette
-  ;; 0x15_4300 Next free slot
+  ;; 0x15_4300 (0xA_0000 bytes): Tape block buffer
+  ;; 0x1F_4300 Next free slot
+
+
   ;; The offset of the first byte of the ZX Spectrum 48 memory
   ;; Block lenght: 0x1_0000
   (global $SP_MEM_OFFS i32 (i32.const 0))
@@ -7927,6 +7931,104 @@
 
 
   ;; ==========================================================================
+  ;; Tape device state
+
+  ;; Current tape mode
+  ;; 0: Passive
+  ;; 1: Load
+  ;; 2: Save
+  (global $tapeMode (mut i32) (i32.const 0x0000))
+
+  ;; The address of the Load Bytes routine in the ZX Spectrum 48 ROM
+  (global $tapeLoadBytesRoutine (mut i32) (i32.const 0x0000))
+
+  ;; The address of the Load Bytes Resume routine in the ZX Spectrum 48 ROM
+  (global $tapeLoadBytesResume (mut i32) (i32.const 0x0000))
+
+  ;; The address of the Load Bytes Invalid Header routine in the ZX Spectrum 48 ROM
+  (global $tapeLoadBytesInvalidHeader (mut i32) (i32.const 0x0000))
+
+  ;; The address of the Save Bytes routine in the ZX Spectrum 48 ROM
+  (global $tapeSaveBytesRoutine (mut i32) (i32.const 0x0000))
+
+  ;; The number of tape blocks to play
+  (global $tapeBlocksToPlay (mut i32) (i32.const 0x0000))
+
+  ;; Is the entire tape played back?
+  (global $tapeEof (mut i32) (i32.const 0x0000))
+
+  ;; The current byte in the tape data buffer
+  (global $tapeBufferPtr (mut i32) (i32.const 0x0000))
+
+  ;; The address of the next block to play
+  (global $tapeNextBlockPtr (mut i32) (i32.const 0x0000))
+
+  ;; The playing phase of the current block
+  ;; 0: none
+  ;; 1: Pilot signal
+  ;; 2: Sync signal
+  ;; 3: Data part
+  ;; 4: Terminating sync
+  ;; 5: Pause
+  ;; 6: Completed
+  (global $tapePlayPhase (mut i32) (i32.const 0x0000))
+
+  ;; The start tact of the current block
+  (global $tapeStartTact (mut i64) (i64.const 0x0000))
+
+  ;; End tact of the current pilot
+  (global $tapePilotEndPos (mut i64) (i64.const 0x0000))
+
+  ;; End tact of the current sync 1 pulse
+  (global $tapeSync1EndPos (mut i64) (i64.const 0x0000))
+
+  ;; End tact of the current sync 2 pulse
+  (global $tapeSync2EndPos (mut i64) (i64.const 0x0000))
+
+  ;; Start tact of the current bit
+  (global $tapeBitStartPos (mut i64) (i64.const 0x0000))
+
+  ;; Start tact of the current bit
+  (global $tapeBitPulseLen (mut i64) (i64.const 0x0000))
+
+  ;; End tact of the current sync 1 pulse
+  (global $tapeBitMask (mut i32) (i32.const 0x0000))
+
+  ;; Start tact of the current bit
+  (global $tapeTermEndPos (mut i64) (i64.const 0x0000))
+
+  ;; Start tact of the current bit
+  (global $tapePauseEndPos (mut i64) (i64.const 0x0000))
+
+  ;; ==========================================================================
+  ;; Tape constants
+
+  ;; Pilot pulse length
+  (global $PILOT_PULSE i64 (i64.const 2168))
+
+  ;; Pilot pulses in the header blcok
+  (global $HEADER_PILOT_COUNT i64 (i64.const 8063))
+
+  ;; Pilot pulses in the data block
+  (global $DATA_PILOT_COUNT i64 (i64.const 3223))
+
+  ;; Sync 1 pulse length
+  (global $SYNC_1_PULSE i64 (i64.const 667))
+
+  ;; Sync 2 pulse length
+  (global $SYNC_2_PULSE i64 (i64.const 735))
+
+  ;; Bit 0 pulse length
+  (global $BIT_0_PULSE i64 (i64.const 855))
+
+  ;; Bit 1 pulse length
+  (global $BIT_1_PULSE i64 (i64.const 1710))
+
+  ;; Terminating sync pulse length
+  (global $TERM_SYNC i64 (i64.const 947))
+
+
+  ;; ==========================================================================
   ;; Public functions to manage a ZX Spectrum machine
 
   ;; Transfer area for the ZX Spectrum execution cycle options
@@ -8037,7 +8139,16 @@
     i32.const 0 set_global $beeperGateValue
     i32.const 0 set_global $beeperNextSampleTact
     i32.const 0 set_global $beeperLastEarBit
-   )
+
+    ;; Reset tape state
+    i32.const 0 set_global $tapeMode
+    i32.const 0 set_global $tapeBlocksToPlay
+    i32.const 1 set_global $tapeEof
+    get_global $TAPE_DATA_BUFFER set_global $tapeBufferPtr
+    get_global $TAPE_DATA_BUFFER set_global $tapeNextBlockPtr
+    i32.const 0 set_global $tapePlayPhase
+    i64.const 0 set_global $tapeStartTact
+  )
 
   ;; Sets the ULA issue to use
   (func $setUlaIssue (param $ula i32)
@@ -8164,7 +8275,7 @@
     call $createEarBitSamples
 
     ;; Prepare for the next beeper sample rate
-    (i32.ge_u (get_global $beeperNextSampleTact) (get_global $tacts))
+    (i32.gt_u (get_global $beeperNextSampleTact) (get_global $tacts))
     if
       (i32.sub 
         (get_global $beeperNextSampleTact)
@@ -8484,6 +8595,20 @@
     (i32.store offset=217 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperNextSampleTact))
     (i32.store8 offset=221 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperLastEarBit))
     (i32.store offset=222 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperSampleCount))
+
+    ;; Tape device state
+    (i32.store8 offset=226 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeMode))
+    (i32.store16 offset=227 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeLoadBytesRoutine))
+    (i32.store16 offset=229 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeLoadBytesResume))
+    (i32.store16 offset=231 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeLoadBytesInvalidHeader))
+    (i32.store16 offset=233 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeSaveBytesRoutine))
+    (i32.store8 offset=235 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeBlocksToPlay))
+    (i32.store8 offset=236 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeEof))
+    (i32.store offset=237 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeBufferPtr))
+    (i32.store offset=241 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeNextBlockPtr))
+    (i32.store8 offset=245 (get_global $STATE_TRANSFER_BUFF) (get_global $tapePlayPhase))
+    (i64.store offset=246 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeStartTact))
+    (i32.store8 offset=254 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeBitMask))
   )
 
   ;; Copies a segment of memory
@@ -9195,15 +9320,314 @@
     i32.trunc_u/f32
     set_global $beeperLowerGate
     i32.const 100_000 set_global $beeperUpperGate
-    (i32.shr_u
-      (i32.add (get_global $beeperLowerGate) (get_global $beeperUpperGate))
-      (i32.const 1)
-    )
-    set_global $beeperGateValue
   )
 
+  ;; ==========================================================================
+  ;; Tape device routines
+
+  ;; The buffer for tape data
+  (global $TAPE_DATA_BUFFER i32 (i32.const 0x15_4300))
+
   ;; Checks if tape device hook should be applied
-  (func $checkTapeHooks)
+  (func $checkTapeHooks
+    ;; TODO: check if the ZX Spectrum 48 ROM is active; otherwise return
+
+    (i32.eqz (get_global $tapeMode))
+    if
+      ;; PASSIVE mode, check for load and save routines
+      (i32.eq (call $getPC) (get_global $tapeLoadBytesRoutine))
+      if
+        ;; Turn on LOAD mode
+        i32.const 666666
+        call $trace
+        i32.const 1 set_global $tapeMode
+        call $nextTapeBlock
+        return
+      end
+      (i32.eq (call $getPC) (get_global $tapeSaveBytesRoutine))
+      if
+        ;; Turn on SAVE mode
+        i32.const 2 set_global $tapeMode
+        return
+      end
+    end
+
+    (i32.eq (get_global $tapeMode) (i32.const 1))
+    if
+      ;; LOAD MODE. Tape EOF?
+      get_global $tapeEof
+      if 
+        ;; Set PASSIVE mode
+        i32.const 444444
+        call $trace
+        i32.const 0 set_global $tapeMode
+        return
+      end
+
+      ;; LOAD MODE. Tape Error?
+      (i32.eq (call $getPC) (i32.const 0x0008))
+      if
+        ;; Set PASSIVE mode
+        i32.const 333333
+        call $trace
+
+        i32.const 0 set_global $tapeMode
+        return
+      end
+    end
+
+    ;; SAVE Mode
+  )
+
+  ;; Initializes the tape device
+  (func $initTape (param $blocks i32)
+    get_local $blocks set_global $tapeBlocksToPlay
+
+    ;; Rewind to the first data block to play
+    get_global $TAPE_DATA_BUFFER set_global $tapeBufferPtr
+    i32.const 0 set_global $tapeEof
+  )
+
+  ;; Move to the next block to play
+  (func $nextTapeBlock
+    ;; Stop playing if no more blocks
+    get_global $tapeEof
+    if return end
+
+    ;; Is there any blocks left?
+    get_global $tapeBlocksToPlay
+    i32.eqz
+    if
+      ;; No, stop playing
+      i32.const 1 set_global $tapeEof
+      return
+    end
+
+    ;; Current block completed? If not, return
+    (i32.eq (get_global $tapePlayPhase) (i32.const 6))
+    if return end
+
+    ;; OK, move to the next block, get the length of the next block
+    (i32.load16_u (get_global $tapeBufferPtr)) ;; [ next block length ]
+
+    ;; Skip block length
+    (i32.add (get_global $tapeBufferPtr) (i32.const 2))
+    set_global $tapeBufferPtr
+
+    ;; Calculate the start of the next buffer
+    (i32.add (get_global $tapeBufferPtr))
+    set_global $tapeNextBlockPtr
+
+    ;; Decrement the number of remaining blocks
+    (i32.sub (get_global $tapeBlocksToPlay) (i32.const 1))
+    set_global $tapeBlocksToPlay
+
+    ;; Reset playing the current block
+    ;; Set PILOT phase
+    i32.const 1 set_global $tapePlayPhase
+
+    ;; Store start tact
+    (i64.add
+      (i64.mul
+        (i64.extend_u/i32 (get_global $frameCount))
+        (i64.extend_u/i32 (get_global $tactsInFrame))
+      )
+      (i64.extend_u/i32 (get_global $tacts))
+    )
+    set_global $tapeStartTact
+
+    ;; Calculate pilot signal end positions
+    get_global $DATA_PILOT_COUNT
+    get_global $HEADER_PILOT_COUNT
+    (i32.and 
+      (i32.load8_u (get_global $tapeBufferPtr))
+      (i32.const 0x80)
+    )
+    select ;; [ #of pilot pulses]
+    (i64.mul (get_global $PILOT_PULSE))
+    set_global $tapePilotEndPos
+
+    (i64.add (get_global $tapePilotEndPos) (get_global $SYNC_1_PULSE))
+    set_global $tapeSync1EndPos
+
+    (i64.add (get_global $tapeSync1EndPos) (get_global $SYNC_2_PULSE))
+    set_global $tapeSync2EndPos
+
+    ;; Set initial bit mask
+    i32.const 0x80 set_global $tapeBitMask
+  )
+
+  ;; Gets the current ear bit for the tape
+  (func $getTapeEarBit (result i32)
+    (local $pos i64)
+    (local $bitPos i64)
+    
+    ;; Calculate the current position
+    (i64.add
+      (i64.mul
+        (i64.extend_u/i32 (get_global $frameCount))
+        (i64.extend_u/i32 (get_global $tactsInFrame))
+      )
+      (i64.extend_u/i32 (get_global $tacts))
+    )
+    get_global $tapeStartTact
+    i64.sub
+    set_local $pos
+
+    ;; PILOT or SYNC phase?
+    (i32.le_u (get_global $tapePlayPhase) (i32.const 2))
+    if
+
+      ;; Generate appropriate pilot or sync EAR bit
+      (i64.le_u (get_local $pos) (get_global $tapePilotEndPos))
+      if
+        ;; Alternating pilot pulses
+        (i64.rem_u
+          (i64.div_u (get_local $pos) (get_global $PILOT_PULSE))
+          (i64.const 2)
+        )
+        i64.eqz ;; => Low/High EAR bit
+        return
+      end
+
+      ;; Test SYNC_1 position
+      (i64.le_u (get_local $pos) (get_global $tapeSync1EndPos))
+      if
+        ;; Turn to SYNC phase
+        i32.const 2 set_global $tapePlayPhase
+        i32.const 0 ;; => Low EAR bit
+        return
+      end
+
+      ;; Test SYNC_2 position
+      (i64.le_u (get_local $pos) (get_global $tapeSync2EndPos))
+      if
+        ;; Turn to SYNC phase
+        i32.const 2 set_global $tapePlayPhase
+        i32.const 1 ;; => High EAR bit
+        return
+      end
+
+      ;; Now, we're ready to change to Data phase
+      i32.const 3 set_global $tapePlayPhase
+      get_global $tapeSync2EndPos set_global $tapeBitStartPos
+
+      ;; Select the bit pulse length of the first bit of the data byte
+      get_global $BIT_1_PULSE
+      get_global $BIT_0_PULSE
+      (i32.and
+        (i32.load8_u (get_global $tapeBufferPtr))
+        (get_global $tapeBitMask)
+      )
+      select
+      set_global $tapeBitPulseLen
+    end
+
+    ;; Data phase?
+    (i32.eq (get_global $tapePlayPhase) (i32.const 3))
+    if
+      ;; Generate current bit pulse
+      (i64.sub (get_local $pos) (get_global $tapeBitStartPos))
+      set_local $bitPos
+
+      ;; First pulse?
+      (i64.lt_u (get_local $bitPos) (get_global $tapeBitPulseLen))
+      if
+        i32.const 0 ;; => Low EAR bit
+        return
+      end 
+      (i64.lt_u (get_local $bitPos) 
+        (i64.shl (get_global $tapeBitPulseLen) (i64.const 1))
+      )
+      if
+        i32.const 1 ;; => High EAR bit
+        return
+      end
+
+      ;; Move to the next bit
+      (i32.shr_u (get_global $tapeBitMask) (i32.const 1))
+      set_global $tapeBitMask
+      (i32.eqz (get_global $tapeBitMask))
+      if
+        ;; Move to the next byte
+        i32.const 0x80 set_global $tapeBitMask
+        (i32.add (get_global $tapeBufferPtr) (i32.const 1))
+        set_global $tapeBufferPtr
+      end
+
+      ;; Do we have more bits to play?
+      (i32.lt_u (get_global $tapeBufferPtr) (get_global $tapeNextBlockPtr))
+      if
+        ;; Prepare to the next bit
+        (i64.add
+          (get_global $tapeBitStartPos)
+          (i64.shl (get_global $tapeBitPulseLen) (i64.const 1))
+        )  
+        set_global $tapeBitStartPos
+
+        ;; Select the bit pulse length of the next bit
+        get_global $BIT_1_PULSE
+        get_global $BIT_0_PULSE
+        (i32.and
+          (i32.load8_u (get_global $tapeBufferPtr))
+          (get_global $tapeBitMask)
+        )
+        select
+        set_global $tapeBitPulseLen
+
+        ;; We're in the first pulse of the next bit
+        i32.const 0 ;; => Low EAR bit
+        return
+      end
+
+      ;; We've played all data bytes, let's send the terminating pulse
+      i32.const 4 set_global $tapePlayPhase
+
+      ;; Prepare to the terminating sync
+      (i64.add 
+        (i64.add
+          (get_global $tapeBitStartPos)
+          (i64.shl (get_global $tapeBitPulseLen) (i64.const 1))
+        )
+        (get_global $TERM_SYNC)
+      )
+      set_global $tapeTermEndPos
+    end
+
+    ;; Termination sync?
+    (i32.eq (get_global $tapePlayPhase) (i32.const 4))
+    if
+      (i64.lt_u (get_local $pos) (get_global $tapeTermEndPos))
+      if
+        i32.const 0 ;; => Low EAR bit
+        return
+      end
+
+      ;; We terminated the data, it's pause time
+      i32.const 5 set_global $tapePlayPhase
+      get_global $tapeTermEndPos
+      (i32.mul (get_global $baseClockFrequency) (get_global $clockMultiplier))
+      i64.extend_u/i32
+      i64.add
+      set_global $tapePauseEndPos
+      i32.const 1 ;; => High EAR bit
+      return
+    end
+
+    ;; We produce pause signs
+    (i64.gt_u (get_local $pos) (get_global $tapePauseEndPos))
+    if
+      call $nextTapeBlock
+      ;; TODO: sign load completion
+    end
+
+    ;; Return with a high bit
+    i32.const 1
+  )
+
+  ;; ==========================================================================
+  ;; Generic I/O device routines
+
 
   ;; Applies memory contention delay according to the current
   ;; screen rendering tact
@@ -9265,12 +9689,6 @@
     end
   )
 
-  ;; Tests if the machine is in tape load mode
-  (func $isInLoadMode (result i32)
-    ;; TODO implement this method
-    i32.const 0
-  )
-
   ;; Reads information from the 0xfe port
   (func $readPort$FE (param $addr i32) (result i32)
     (local $portValue i32)
@@ -9283,10 +9701,12 @@
     (call $getKeyLineStatus (i32.shr_u (get_local $addr) (i32.const 8)))
     set_local $portValue
 
-    call $isInLoadMode
+    ;; Check for LOAD mode
+    (i32.eq (get_global $tapeMode) (i32.const 1))
     if (result i32)
-      ;; TODO: Handle EAR bit from tape
-      get_local $portValue
+      (i32.and (get_local $portValue) (i32.const 0xbf))
+      (i32.shl (call $getTapeEarBit) (i32.const 6))
+      i32.or
     else
       ;; Handle analog EAR bit
       get_global $portBit4LastValue
@@ -9625,6 +10045,12 @@
 
     call $calcScreenAttributes
     call $initRenderingTactTable
+
+    ;; Tape device data
+    i32.const 0x056c set_global $tapeLoadBytesRoutine
+    i32.const 0x056b set_global $tapeLoadBytesInvalidHeader
+    i32.const 0x05e2 set_global $tapeLoadBytesResume
+    i32.const 0x04c2 set_global $tapeSaveBytesRoutine
 
     ;; Setup ROM
     (call $copyMemory 

@@ -21,5 +21,6 @@ export interface EmulatorPanelState {
   width?: number;
   height?: number;
   zoom?: number;
+  executionState?: number;
 }
 

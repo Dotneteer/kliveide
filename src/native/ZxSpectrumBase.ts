@@ -211,6 +211,21 @@ export abstract class ZxSpectrumBase {
     s.beeperLastEarBit = mh.readBool(221);
     s.beeperSampleCount = mh.readUint32(222);
 
+    // --- Get tape state
+    s.tapeMode = mh.readByte(226);
+    s.tapeLoadBytesRoutine = mh.readUint16(227);
+    s.tapeLoadBytesResume = mh.readUint16(229);
+    s.tapeLoadBytesInvalidHeader = mh.readUint16(231);
+    s.tapeSaveBytesRoutine = mh.readUint16(233);
+    s.tapeBlocksToPlay = mh.readByte(235);
+    s.tapeEof = mh.readBool(236);
+    s.tapeBufferPtr = mh.readUint32(237);
+    s.tapeNextBlockPtr = mh.readUint32(241);
+    s.tapePlayPhase = mh.readByte(245);
+    s.tapeStartFrame = mh.readUint32(246);
+    s.tapeStartTact = mh.readUint32(250);
+    s.tapeBitMask = mh.readByte(254);
+
     // --- Done.
     return s;
   }
