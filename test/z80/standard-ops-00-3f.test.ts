@@ -4,6 +4,7 @@ import * as fs from "fs";
 import { CpuApi } from "../../src/native/api";
 import { TestZ80Machine } from "../../src/native/TestZ80Machine";
 import { FlagsSetMask } from "../../src/native/cpu-helpers";
+import { RunMode } from "../../src/native/RunMode";
 
 const buffer = fs.readFileSync("./build/spectrum.wasm");
 let api: CpuApi;
@@ -233,11 +234,13 @@ describe("Standard ops 00-3f", () => {
 
   it("06: ld b,N", () => {
     let s = testMachine.initCode([0x06, 0x26]);
-    s = testMachine.run();
+    s.bc = 0x4444;
+    s = testMachine.run(s);
 
     testMachine.shouldKeepRegisters("B");
     testMachine.shouldKeepMemory();
     expect(s.b).toBe(0x26);
+    expect(s.bc).toBe(0x2644);
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(7);
   });
@@ -347,6 +350,7 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepMemory();
 
     expect(s.a).toBe(0x4c);
+    expect(s.wz).toBe(0x1001);
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(7);
   });
@@ -373,6 +377,19 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepRegisters("BC");
     testMachine.shouldKeepMemory();
     expect(s.bc).toBe(0x0000);
+    expect(s.pc).toBe(0x0001);
+    expect(s.tacts).toBe(6);
+  });
+
+  it("0b: dec bc #3", () => {
+    let s = testMachine.initCode([0x0b]);
+
+    s.bc = 0x0000;
+    s = testMachine.run(s);
+
+    testMachine.shouldKeepRegisters("BC");
+    testMachine.shouldKeepMemory();
+    expect(s.bc).toBe(0xffff);
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(6);
   });
@@ -513,11 +530,13 @@ describe("Standard ops 00-3f", () => {
 
   it("0e: ld c,N", () => {
     let s = testMachine.initCode([0x0e, 0x26]);
-    s = testMachine.run();
+    s.bc = 0x4444;
+    s = testMachine.run(s);
 
     testMachine.shouldKeepRegisters("C");
     testMachine.shouldKeepMemory();
     expect(s.c).toBe(0x26);
+    expect(s.bc).toBe(0x4426);
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(7);
   });
@@ -572,6 +591,7 @@ describe("Standard ops 00-3f", () => {
 
     expect(s.b).toBe(0x00);
     expect(s.pc).toBe(0x0002);
+    expect(s.wz).toBe(0xffff);
     expect(s.tacts).toBe(8);
   });
 
@@ -585,6 +605,21 @@ describe("Standard ops 00-3f", () => {
 
     expect(s.b).toBe(0x01);
     expect(s.pc).toBe(0x0004);
+    expect(s.wz).toBe(0x0004);
+    expect(s.tacts).toBe(13);
+  });
+
+  it("10: djnz #3", () => {
+    let s = testMachine.initCode([0x10, 0xf0], RunMode.OneInstruction);
+    s.b = 0x02;
+    s = testMachine.run(s);
+
+    testMachine.shouldKeepRegisters("B, F");
+    testMachine.shouldKeepMemory();
+
+    expect(s.b).toBe(0x01);
+    expect(s.pc).toBe(0xfff2);
+    expect(s.wz).toBe(0xfff2);
     expect(s.tacts).toBe(13);
   });
 
@@ -777,11 +812,13 @@ describe("Standard ops 00-3f", () => {
 
   it("16: ld d,N", () => {
     let s = testMachine.initCode([0x16, 0x26]);
-    s = testMachine.run();
+    s.de = 0x4444;
+    s = testMachine.run(s);
 
     testMachine.shouldKeepRegisters("D");
     testMachine.shouldKeepMemory();
     expect(s.d).toBe(0x26);
+    expect(s.de).toBe(0x2644);
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(7);
   });
@@ -828,7 +865,7 @@ describe("Standard ops 00-3f", () => {
     expect(s.tacts).toBe(4);
   });
 
-  it("18: jr e ", () => {
+  it("18: jr e #1", () => {
     let s = testMachine.initCode([0x18, 0x20]);
     s = testMachine.run(s);
 
@@ -836,6 +873,19 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepMemory();
 
     expect(s.pc).toBe(0x00022);
+    expect(s.wz).toBe(0x00022);
+    expect(s.tacts).toBe(12);
+  });
+
+  it("18: jr e #2", () => {
+    let s = testMachine.initCode([0x18, 0xf0], RunMode.OneInstruction);
+    s = testMachine.run(s);
+
+    testMachine.shouldKeepRegisters();
+    testMachine.shouldKeepMemory();
+
+    expect(s.pc).toBe(0xfff2);
+    expect(s.wz).toBe(0xfff2);
     expect(s.tacts).toBe(12);
   });
 
@@ -892,6 +942,7 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepMemory();
 
     expect(s.a).toBe(0x4c);
+    expect(s.wz).toBe(0x1001);
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(7);
   });
@@ -918,6 +969,19 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepRegisters("DE");
     testMachine.shouldKeepMemory();
     expect(s.de).toBe(0x0000);
+    expect(s.pc).toBe(0x0001);
+    expect(s.tacts).toBe(6);
+  });
+
+  it("1b: dec de #3", () => {
+    let s = testMachine.initCode([0x1b]);
+
+    s.de = 0x0000;
+    s = testMachine.run(s);
+
+    testMachine.shouldKeepRegisters("DE");
+    testMachine.shouldKeepMemory();
+    expect(s.de).toBe(0xffff);
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(6);
   });
@@ -1058,11 +1122,13 @@ describe("Standard ops 00-3f", () => {
 
   it("1e: ld e,N", () => {
     let s = testMachine.initCode([0x1e, 0x26]);
-    s = testMachine.run();
+    s.de = 0x4444;
+    s = testMachine.run(s);
 
     testMachine.shouldKeepRegisters("E");
     testMachine.shouldKeepMemory();
     expect(s.e).toBe(0x26);
+    expect(s.de).toBe(0x4426);
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(7);
   });
@@ -1153,6 +1219,7 @@ describe("Standard ops 00-3f", () => {
     expect(s.hl).toBe(0xa926);
     expect(m[0x1000]).toBe(0x26);
     expect(m[0x1001]).toBe(0xa9);
+    expect(s.wz).toBe(0x1001);
     expect(s.pc).toBe(0x0003);
     expect(s.tacts).toBe(16);
   });
@@ -1320,11 +1387,13 @@ describe("Standard ops 00-3f", () => {
 
   it("26: ld h,N", () => {
     let s = testMachine.initCode([0x26, 0x26]);
-    s = testMachine.run();
+    s.hl = 0x4444;
+    s = testMachine.run(s);
 
     testMachine.shouldKeepRegisters("H");
     testMachine.shouldKeepMemory();
     expect(s.h).toBe(0x26);
+    expect(s.hl).toBe(0x2644);
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(7);
   });
@@ -1433,6 +1502,7 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepRegisters("HL");
     testMachine.shouldKeepMemory();
     expect(s.hl).toBe(0x1234);
+    expect(s.wz).toBe(0x1001);
     expect(s.pc).toBe(0x0003);
     expect(s.tacts).toBe(16);
   });
@@ -1462,6 +1532,20 @@ describe("Standard ops 00-3f", () => {
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(6);
   });
+
+  it("2b: dec hl #3", () => {
+    let s = testMachine.initCode([0x2b]);
+
+    s.hl = 0x0000;
+    s = testMachine.run(s);
+
+    testMachine.shouldKeepRegisters("HL");
+    testMachine.shouldKeepMemory();
+    expect(s.hl).toBe(0xffff);
+    expect(s.pc).toBe(0x0001);
+    expect(s.tacts).toBe(6);
+  });
+
   it("2c: inc l #1", () => {
     let s = testMachine.initCode([0x2c]);
 
@@ -1598,11 +1682,13 @@ describe("Standard ops 00-3f", () => {
 
   it("2e: ld l,N", () => {
     let s = testMachine.initCode([0x2e, 0x26]);
-    s = testMachine.run();
+    s.hl = 0x4444;
+    s = testMachine.run(s);
 
     testMachine.shouldKeepRegisters("L");
     testMachine.shouldKeepMemory();
     expect(s.l).toBe(0x26);
+    expect(s.hl).toBe(0x4426);
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(7);
   });
@@ -1667,6 +1753,7 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepRegisters();
     testMachine.shouldKeepMemory("1000");
     expect(m[0x1000]).toBe(0x4c);
+    expect(s.wz).toBe(0x4c01);
     expect(s.pc).toBe(0x0003);
     expect(s.tacts).toBe(13);
   });
@@ -1826,6 +1913,7 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepMemory();
 
     expect(s.a).toBe(0x4c);
+    expect(s.wz).toBe(0x1001);
     expect(s.pc).toBe(0x0003);
     expect(s.tacts).toBe(13);
   });
@@ -1853,6 +1941,19 @@ describe("Standard ops 00-3f", () => {
     testMachine.shouldKeepRegisters("SP");
     testMachine.shouldKeepMemory();
     expect(s.sp).toBe(0x0000);
+    expect(s.pc).toBe(0x0001);
+    expect(s.tacts).toBe(6);
+  });
+
+  it("3b: dec sp #3", () => {
+    let s = testMachine.initCode([0x3b]);
+
+    s.sp = 0x0000;
+    s = testMachine.run(s);
+
+    testMachine.shouldKeepRegisters("SP");
+    testMachine.shouldKeepMemory();
+    expect(s.sp).toBe(0xffff);
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(6);
   });
@@ -1993,11 +2094,13 @@ describe("Standard ops 00-3f", () => {
 
   it("3e: ld a,N", () => {
     let s = testMachine.initCode([0x3e, 0x26]);
-    s = testMachine.run();
+    s.af = 0x44;
+    s = testMachine.run(s);
 
     testMachine.shouldKeepRegisters("A");
     testMachine.shouldKeepMemory();
     expect(s.a).toBe(0x26);
+    expect(s.af).toBe(0x2644);
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(7);
   });
