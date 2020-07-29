@@ -235,7 +235,7 @@ export class SpectrumEngine {
    * @param brpoint Breakpoint value
    */
   setBreakpoint(brpoint: number): void {
-    this.spectrum.api.setBreakPoint(brpoint);
+    this.spectrum.api.setBreakpoint(brpoint);
   }
 
   /**
@@ -314,10 +314,19 @@ export class SpectrumEngine {
       return;
     }
 
-    // --- Reset execution statistics
-    const mh = new MemoryHelper(this.spectrum.api, EXEC_STAT_TABLE);
-    for (let i = 0; i < 0x700; i++) {
-      mh.writeUint32(i * 4, 0);
+    // // --- Reset execution statistics
+    // const mh = new MemoryHelper(this.spectrum.api, EXEC_STAT_TABLE);
+    // for (let i = 0; i < 0x700; i++) {
+    //   mh.writeUint32(i * 4, 0);
+    // }
+
+    // --- Set breakpoints
+    const state = rendererProcessStore.getState().emulatorPanelState;
+    if (state.breakPoint) {
+      this.setBreakpoint(state.breakPoint);
+      console.log(`Breakpoint set: 0x${state.breakPoint.toString(16)}`);
+    } else {
+      console.log("No breakpoints.")
     }
 
     // --- Prepare the machine to run

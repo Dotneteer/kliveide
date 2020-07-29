@@ -6,4 +6,5 @@ export interface Payload {
   height?: number;
   zoom?: number;
   executionState?: number;
+  breakPoint?: number;
 }
