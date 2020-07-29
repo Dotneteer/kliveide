@@ -1996,6 +1996,26 @@ describe("Standard ops c0-ff", () => {
     expect(s.tacts).toBe(7);
   });
 
+  it("regression: fe: cp N", () => {
+    let s = testMachine.initCode([
+      0xfe,
+      0xf0, // CP #ff
+    ]);
+    s.af = 0x0002;
+    s = testMachine.run(s);
+    testMachine.shouldKeepRegisters("F");
+    testMachine.shouldKeepMemory("");
+    expect(s.f & FlagsSetMask.S).toBeFalsy();
+    expect(s.f & FlagsSetMask.Z).toBeFalsy();
+    expect(s.f & FlagsSetMask.H).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeTruthy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
+
+    expect(s.pc).toBe(0x0002);
+    expect(s.tacts).toBe(7);
+  });
+
   it("ff: rst 38", () => {
     let s = testMachine.initCode(
       [

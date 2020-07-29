@@ -22,5 +22,6 @@ export interface EmulatorPanelState {
   height?: number;
   zoom?: number;
   executionState?: number;
+  breakPoint?: number;
 }
 

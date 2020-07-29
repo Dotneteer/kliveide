@@ -10,10 +10,15 @@ export interface GetDefaultTapeSet extends MessageBase {
   type: "getDefaultTapeSet"
 }
 
+export interface SetZ80Memory extends MessageBase {
+  type: "setZ80Memory",
+  contents: string
+}
+
 /**
  * The messages a renderer process can send to the main process
  */
-export type RendererMessage = GetDefaultTapeSet;
+export type RendererMessage = GetDefaultTapeSet | SetZ80Memory;
 
 export interface DefaultResponse extends MessageBase {
   type: "ack";

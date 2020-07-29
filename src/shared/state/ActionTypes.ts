@@ -17,6 +17,7 @@ export interface ActionTypes {
   EMULATOR_SET_ZOOM: null;
   EMULATOR_SET_SIZE: null;
   EMULATOR_SET_EXEC_STATE: null;
+  EMULATOR_SET_BREAKPOINT: null;
 
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;

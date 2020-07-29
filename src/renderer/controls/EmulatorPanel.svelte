@@ -161,7 +161,8 @@
   on:keydown={e => handleKey(e, true)}
   on:keyup={e => handleKey(e, false)} />
 <div tabindex="-1" class="emulator-panel" bind:clientWidth bind:clientHeight>
-  <div class="emulator-screen" style={emulatorStyle}>
+  <div class="emulator-screen" style={emulatorStyle}
+    on:click={() => { console.log("Displayed."); spectrum.spectrum.api.colorize(); displayScreenData();}}>
     <canvas bind:this={screen} />
     <canvas bind:this={shadowScreen} style="display:none" />
   </div>
