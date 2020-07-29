@@ -1,6 +1,7 @@
 import * as Koa from "koa";
 import * as KoaRouter from "koa-router";
 import { mainProcessStore } from "../../src/main/mainProcessStore";
+import { z80MemoryContents } from "../../src/main/mainMessageProcessor";
 
 /**
  * Starts the koa server that listens in the background
@@ -21,6 +22,15 @@ export function startKoaServer() {
       ctx.body = "none";
     }
   });
+
+  router.get("dumpmem", "/dumpmem", (ctx) => {
+    ctx.body = z80MemoryContents;
+  });
+
+  router.get("br", "/br/:id", (ctx) => {
+    ctx.body = z80MemoryContents;
+  });
+
 
   app.use(router.routes()).use(router.allowedMethods());
   app.use(async (ctx) => (ctx.body = "Hello World"));

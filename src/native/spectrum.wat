@@ -1,5 +1,6 @@
 (module
   (func $trace (import "imports" "trace") (param i32))
+  (global $breakHere (mut i32) (i32.const 0x0000))
 
   ;; We keep 1024 KB of memory
   (memory (export "memory") 32)
@@ -39,6 +40,7 @@
   (export "colorize" (func $colorize))
   (export "getCursorMode" (func $getCursorMode))
   (export "initTape" (func $initTape))
+  (export "setBreakpoint" (func $setBreakpoint))
 
   ;; ==========================================================================
   ;; Function signatures
@@ -89,7 +91,8 @@
   ;; 0x0B_4200 (0xA_0000 bytes): Buffer for pixel colorization
   ;; 0x15_4200 ZX Spectrum 48 palette
   ;; 0x15_4300 (0xA_0000 bytes): Tape block buffer
-  ;; 0x1F_4300 Next free slot
+  ;; 0x1F_4300 Execution statistics tables
+  ;; 0x1F_5F00 Next free slot
 
 
   ;; The offset of the first byte of the ZX Spectrum 48 memory
@@ -1830,6 +1833,11 @@
 
   ;; Processes standard or indexed operations
   (func $processStandardOrIndexedOperations
+    ;; Diagnostics
+    call $standardStat
+    call $ixStat
+    call $iyStat
+
     get_global $INDEXED_JT
     get_global $STANDARD_JT
     get_global $indexMode
@@ -1879,6 +1887,7 @@
 
   ;; Processes extended operations
   (func $processExtendedOperations
+    call $extendedStat
     get_global $EXTENDED_JT
     get_global $opCode
     i32.add
@@ -4494,6 +4503,7 @@
   ;; in a,(N) (0xdb)
   (func $InAN
     (local $port i32)
+
     call $readCodeMemory
     (i32.shl (get_global $A) (i32.const 8))
     i32.add
@@ -7968,6 +7978,9 @@
   ;; End tact of the current sync 1 pulse
   (global $tapeBitMask (mut i32) (i32.const 0x0000))
 
+  ;; End tact of the current sync 1 pulse
+  (global $tapeFastLoad (mut i32) (i32.const 0x0001))
+
   ;; Start tact of the current bit
   (global $tapeTermEndPos (mut i64) (i64.const 0x0000))
 
@@ -8209,12 +8222,35 @@
 
       ;; Take care of raising the interrupt
       (call $checkForInterrupt (tee_local $currentUlaTact))
+
+      (get_global $breakHere)
+      if
+        (i32.eq (get_global $PC) (get_global $breakHere))
+        if
+          get_global $PC
+          call $trace
+          i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+          return
+        end
+      end
+
       call $executeCpuCycle
 
       ;; Execute an entire instruction
       loop $instructionLoop
         get_global $isInOpExecution
         if
+          (get_global $breakHere)
+          if
+            (i32.eq (get_global $PC) (get_global $breakHere))
+            if
+              get_global $PC
+              call $trace
+              i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+              return
+            end
+          end
+
           call $executeCpuCycle
           br $instructionLoop
         end
@@ -9312,10 +9348,16 @@
       (i32.eq (get_global $PC) (get_global $tapeLoadBytesRoutine))
       if
         ;; Turn on LOAD mode
-        i32.const 666666
-        call $trace
         i32.const 1 set_global $tapeMode
+
+        ;; Move to the next block
         call $nextTapeBlock
+
+        (i32.ne (get_global $tapeFastLoad) (i32.const 0))
+        if
+          call $fastLoad
+          i32.const 0 set_global $tapeMode
+        end
         return
       end
       (i32.eq (get_global $PC) (get_global $tapeSaveBytesRoutine))
@@ -9332,8 +9374,6 @@
       get_global $tapeEof
       if 
         ;; Set PASSIVE mode
-        i32.const 444444
-        call $trace
         i32.const 0 set_global $tapeMode
         return
       end
@@ -9342,9 +9382,6 @@
       (i32.eq (get_global $PC) (i32.const 0x0008))
       if
         ;; Set PASSIVE mode
-        i32.const 333333
-        call $trace
-
         i32.const 0 set_global $tapeMode
         return
       end
@@ -9364,9 +9401,12 @@
 
   ;; Move to the next block to play
   (func $nextTapeBlock
+    (local $tmp i32)
     ;; Stop playing if no more blocks
     get_global $tapeEof
-    if return end
+    if 
+      return
+    end
 
     ;; Is there any blocks left?
     get_global $tapeBlocksToPlay
@@ -9597,6 +9637,127 @@
 
     ;; Return with a high bit
     i32.const 1
+  )
+
+  ;; Fast loading the tape contents
+  (func $fastLoad
+    (local $isVerify i32)
+    (local $tmp i32)
+
+    ;; Stop playing if no more blocks
+    get_global $tapeEof
+    if return end
+
+    ;; Move AF' to AF
+    (i32.load16_u offset=8 (get_global $REG_AREA_INDEX))
+    call $setAF
+
+    ;; Check if it is a verify
+    (i32.eq
+      (i32.and (call $getAF) (i32.const 0xff01))
+      (i32.const 0xff00)
+    )
+    set_local $isVerify
+
+    ;; At this point IX contains the address to load the data, 
+    ;; DE shows the #of bytes to load. A contains 0x00 for header, 
+    ;; 0xFF for data block
+    (i32.ne 
+      (i32.load8_u (get_global $tapeBufferPtr))
+      (call $getA)
+    )
+    if
+      ;; This block has a different type we're expecting
+      (i32.xor (call $getA) (call $getL))
+      call $setA
+
+      ;; Reset Z and C
+      (i32.and (get_global $F) (i32.const 0xBE))
+      set_global $F
+      (call $setPC (get_global $tapeLoadBytesInvalidHeader))
+      call $nextTapeBlock
+      return
+    end
+
+    ;; It is time to load the block
+    get_global $A call $setH
+
+    ;; Skip the header byte
+    (i32.add (get_global $tapeBufferPtr) (i32.const 1))
+    set_global $tapeBufferPtr
+
+    loop $loadByte
+
+      (i32.gt_u (call $getDE) (i32.const 0))
+      if
+        (i32.load8_u (get_global $tapeBufferPtr))
+        call $setL
+        get_local $isVerify
+        if
+          ;; VERIFY operation
+          (i32.ne (i32.load8_u (call $getIX)) (call $getL))
+          if
+            ;; We read a different byte, it's an error
+            ;; Reset Z and C
+            (i32.and (get_global $F) (i32.const 0xBE))
+            set_global $F
+            (call $setPC (get_global $tapeLoadBytesInvalidHeader))
+            return
+          end
+        end
+
+        ;; Store the loaded byte
+        (i32.store8 (call $getIX) (call $getL))
+
+        ;; Calc the checksum
+        (i32.xor (call $getH) (call $getL))
+        call $setH
+        
+        ;; Increment the data pointers
+        (i32.add (get_global $tapeBufferPtr) (i32.const 1))
+        set_global $tapeBufferPtr
+        (i32.add (call $getIX) (i32.const 1))
+        call $setIX
+
+        ;; Decrement byte count
+        (i32.sub (call $getDE) (i32.const 1))
+        call $setDE
+        br $loadByte
+      end
+    end
+
+    ;; Check the end of the data stream
+    (i32.gt_u (get_global $tapeBufferPtr) (get_global $tapeNextBlockPtr))
+    if
+      ;; Read over the expected length
+      ;; Reset Carry to sign error
+      (i32.and (get_global $F) (i32.const 0xfe))
+      set_global $F
+    else
+      ;; Verify checksum
+      (i32.ne (i32.load8_u (get_global $tapeBufferPtr)) (call $getH))
+      if
+        ;; Wrong checksum
+        ;; Reset Carry to sign error
+        (i32.and (get_global $F) (i32.const 0xfe))
+        set_global $F
+      else
+        ;; Block read successfully, set Carry
+        (i32.or (get_global $F) (i32.const 0x01))
+        set_global $F
+      end
+    end
+
+    (call $setPC (get_global $tapeLoadBytesResume))
+
+    ;; Sign completion of this block
+    i32.const 5 set_global $tapePlayPhase
+
+    ;; Imitate, we're over the pause period
+    i64.const 0 set_global $tapePauseEndPos
+
+    ;; OK, move to the next block, get the length of the next block
+    get_global $tapeNextBlockPtr set_global $tapeBufferPtr
   )
 
   ;; ==========================================================================
@@ -10081,5 +10242,81 @@
         br $colorizeLoop
       end
     end
+  )
+
+  ;; ==========================================================================
+  ;; Diagnostic helpers
+
+  (global $STANDARD_STAT i32 (i32.const 0x1F_4300))
+  (global $EXTENDED_STAT i32 (i32.const 0x1F_4700))
+  (global $BIT_STAT i32 (i32.const 0x1F_4B00))
+  (global $IX_STAT i32 (i32.const 0x1F_4F00))
+  (global $IY_STAT i32 (i32.const 0x1F_5300))
+  (global $IX_BIT_STAT i32 (i32.const 0x1F_5700))
+  (global $IY_BIT_STAT i32 (i32.const 0x1F_5B00))
+
+  (func $standardStat
+    (local $addr i32)
+    (i32.ne (get_global $indexMode) (i32.const 0))
+    if return end
+    (i32.add 
+      (get_global $STANDARD_STAT)
+      (i32.mul (get_global $opCode) (i32.const 4))
+    )
+    tee_local $addr ;; [ addr ]
+    get_local $addr ;; [ addr, addr ]
+    i32.load        ;; [ addr, (addr) ]
+    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
+    i32.store
+  )
+
+  (func $ixStat
+    (local $addr i32)
+    (i32.ne (get_global $indexMode) (i32.const 1))
+    if return end
+    (i32.add 
+      (get_global $IX_STAT)
+      (i32.mul (get_global $opCode) (i32.const 4))
+    )
+    tee_local $addr ;; [ addr ]
+    get_local $addr ;; [ addr, addr ]
+    i32.load        ;; [ addr, (addr) ]
+    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
+    i32.store
+  )
+
+  (func $iyStat
+    (local $addr i32)
+    (i32.ne (get_global $indexMode) (i32.const 2))
+    if return end
+    (i32.add 
+      (get_global $IY_STAT)
+      (i32.mul (get_global $opCode) (i32.const 4))
+    )
+    tee_local $addr ;; [ addr ]
+    get_local $addr ;; [ addr, addr ]
+    i32.load        ;; [ addr, (addr) ]
+    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
+    i32.store
+  )
+
+  (func $extendedStat
+    (local $addr i32)
+    (i32.ne (get_global $prefixMode) (i32.const 1))
+    if return end
+    (i32.add 
+      (get_global $EXTENDED_STAT)
+      (i32.mul (get_global $opCode) (i32.const 4))
+    )
+    tee_local $addr ;; [ addr ]
+    get_local $addr ;; [ addr, addr ]
+    i32.load        ;; [ addr, (addr) ]
+    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
+    i32.store
+  )
+
+  ;; Sets the breakpoint to stop at
+  (func $setBreakpoint (param $brpoint i32)
+    get_local $brpoint set_global $breakHere
   )
 )

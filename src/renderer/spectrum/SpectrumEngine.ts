@@ -17,7 +17,7 @@ import { MemoryHelper } from "../../native/memory-helpers";
 import { AudioRenderer } from "./AudioRenderer";
 import { rendererProcessStore } from "../rendererProcessStore";
 import { emulatorSetExecStateAction } from "../../shared/state/redux-emulator-state";
-import { getDefaultTapeSet } from "../../shared/messaging/message-senders";
+import { getDefaultTapeSet, setZ80Memory } from "../../shared/messaging/message-senders";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
 
@@ -25,6 +25,11 @@ import { TzxReader } from "../../shared/tape/tzx-file";
  * Beeper samples in the memory
  */
 const BEEPER_SAMPLE_BUFF = 0x0b_2200;
+
+/**
+ * Beeper samples in the memory
+ */
+const EXEC_STAT_TABLE = 0x1f_4300;
 
 /**
  * This class represents the engine of the ZX Spectrum,
@@ -226,6 +231,62 @@ export class SpectrumEngine {
   }
 
   /**
+   * Sets the breakpoint to stop at
+   * @param brpoint Breakpoint value
+   */
+  setBreakpoint(brpoint: number): void {
+    this.spectrum.api.setBreakPoint(brpoint);
+  }
+
+  /**
+   * Dumps out the 64K memory visible be the CPU
+   */
+  dumpMemory(): string {
+    // --- Dump memory
+    const mh = new MemoryHelper(this.spectrum.api, 0);
+    let dump = "";
+    for (let i = 0; i < 0x10000; i += 0x10) {
+      dump += toHexa(i, 4) + " ";
+      for (let j = i; j <= i + 0x10; j++) {
+        dump += toHexa(mh.readByte(j), 2) + " ";
+      }
+      dump += "\r\n";
+    }
+
+    // --- Dump registers
+    dump += "\r\n";
+
+    const s = this.getMachineState();
+    dump += `AF:  ${toHexa(s.af, 4)}\r\n`;
+    dump += `BC:  ${toHexa(s.bc, 4)}\r\n`;
+    dump += `DE:  ${toHexa(s.de, 4)}\r\n`;
+    dump += `HL:  ${toHexa(s.hl, 4)}\r\n`;
+    dump += `AF': ${toHexa(s._af_, 4)}\r\n`;
+    dump += `BC': ${toHexa(s._bc_, 4)}\r\n`;
+    dump += `DE': ${toHexa(s._de_, 4)}\r\n`;
+    dump += `HL': ${toHexa(s._hl_, 4)}\r\n`;
+    dump += `PC:  ${toHexa(s.pc, 4)}\r\n`;
+    dump += `SP:  ${toHexa(s.sp, 4)}\r\n`;
+    dump += `IX:  ${toHexa(s.ix, 4)}\r\n`;
+    dump += `IY:  ${toHexa(s.iy, 4)}\r\n`;
+    dump += `WZ:  ${toHexa(s.wz, 4)}\r\n`;
+    dump += `I:  ${toHexa(s.i, 2)}\r\n`;
+    dump += `R:  ${toHexa(s.r, 2)}\r\n`;
+
+    // --- Dump Stack Top
+    dump += "\r\nStack:\r\n";
+    for (let i = 0; i < 8; i++) {
+      dump += `${i}:  (${toHexa(mh.readUint16(s.sp + 2 * i), 4)})\r\n`;
+    }
+
+    return dump;
+
+    function toHexa(input: number, digits: number): string {
+      return input.toString(16).toUpperCase().padStart(digits, "0");
+    }
+  }
+
+  /**
    * Starts the virtual machine and keeps it running
    */
   async start(): Promise<void> {
@@ -251,6 +312,12 @@ export class SpectrumEngine {
   async run(options: ExecuteCycleOptions): Promise<void> {
     if (this.executionState === ExecutionState.Running) {
       return;
+    }
+
+    // --- Reset execution statistics
+    const mh = new MemoryHelper(this.spectrum.api, EXEC_STAT_TABLE);
+    for (let i = 0; i < 0x700; i++) {
+      mh.writeUint32(i * 4, 0);
     }
 
     // --- Prepare the machine to run
@@ -307,6 +374,49 @@ export class SpectrumEngine {
     rendererProcessStore.dispatch(
       emulatorSetExecStateAction(this.executionState)()
     );
+    await setZ80Memory(this.dumpMemory());
+
+    // --- Diagnostics
+    // const mh = new MemoryHelper(this.spectrum.api, 0);
+    // let sum = 0;
+    // for (let i = 0; i < 0x200; i++) {
+    //   sum += mh.readByte(i + 0x64c0 + 0x200);
+    // }
+    // console.log(`PG_ATTRS: ${sum}`);
+    // sum = 0;
+    // for (let i = 0; i < 0x100; i++) {
+    //   sum += mh.readByte(i + 0x5800 + 0x200);
+    // }
+    // console.log(`SCR_ATTRS: ${sum}`);
+
+    // console.log("Standard Ops")
+    // for (let i = 0; i < 0x100; i++) {
+    //   const opCount = mh.readUint32(i * 4);
+    //   if (opCount === 0) {
+    //     console.log(`0x${i.toString(16)}: not used.`);
+    //   }
+    // }
+    // console.log("IX Ops")
+    // for (let i = 0; i < 0x100; i++) {
+    //   const opCount = mh.readUint32(i * 4 + 3*1024);
+    //   if (opCount !== 0) {
+    //     console.log(`0x${i.toString(16)}: used.`);
+    //   }
+    // }
+    // console.log("IY Ops")
+    // for (let i = 0; i < 0x100; i++) {
+    //   const opCount = mh.readUint32(i * 4 + 4*1024);
+    //   if (opCount !== 0) {
+    //     console.log(`0x${i.toString(16)}: used.`);
+    //   }
+    // }
+    // console.log("Extended Ops")
+    // for (let i = 0; i < 0x100; i++) {
+    //   const opCount = mh.readUint32(i * 4 + 1*1024);
+    //   if (opCount !== 0) {
+    //     console.log(`0x${i.toString(16)}: used.`);
+    //   }
+    // }
   }
 
   async stop(): Promise<void> {
@@ -388,6 +498,7 @@ export class SpectrumEngine {
           reason === ExecutionCompletionReason.TerminationPointReached
         ) {
           machine.executionState = ExecutionState.Paused;
+          await setZ80Memory(this.dumpMemory());
         }
 
         // --- Stop audio

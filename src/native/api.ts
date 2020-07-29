@@ -42,4 +42,5 @@ export interface MachineApi extends CpuApi {
   colorize(): void;
   getCursorMode(): number;
   initTape(blocks: number): void;
+  setBreakPoint(brpoint: number): void;
 }
