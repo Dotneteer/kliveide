@@ -14,7 +14,6 @@
   "bugs": "https://github.com/Dotneteer/kliveide/issues",
   "homepage": "https://github.com/Dotneteer/kliveide",
   "scripts": {
-    "postinstall": "mkdir build",
     "start": "electron ./dist/main.bundle.js",
     "build": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --progress --colors",
     "dev": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --colors",
@@ -39,7 +38,14 @@
       "target": "nsis",
       "asar": false
     },
-    "buildVersion": "0.0.1"
+    "buildVersion": "0.0.1",
+    "fileAssociations": [
+      {
+        "ext": "klive",
+        "name": "Klive Startup File",
+        "role": "Editor"
+      }
+    ]
   },
   "dependencies": {
     "@types/electron-localshortcut": "^3.1.0",

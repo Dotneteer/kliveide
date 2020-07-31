@@ -16,9 +16,12 @@
     "bootstrap": "npm install && lerna bootstrap",
     "build": "lerna run build",
     "dev": "cd packages/kliveide-emu && npm run dev",
-    "start:emu": "cd packages/kliveide-emu && npm start"
+    "start:emu": "cd packages/kliveide-emu && npm start",
+    "build:win": "cd packages/kliveide-emu && electron-builder build --win --x64",
+    "build:mac": "cd packages/kliveide-emu && electron-builder build --mac --x64"
   },
   "devDependencies": {
+    "electron-builder": "^22.8.0",
     "lerna": "^3.22.1",
     "mocha": "^8.0.1",
     "ts-mocha": "^7.0.0",

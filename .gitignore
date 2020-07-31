@@ -1,4 +1,7 @@
 node_modules
-build
+**/build/**/*.*
+!**/build/**/.gitkeep
 dist
 out
+
+*.vsix

@@ -11,6 +11,12 @@ export function startKoaServer() {
   const app = new Koa();
   const router = new KoaRouter();
 
+  router.get("hello", "/hello", (ctx) => {
+    ctx.body = "KliveEmu";
+    ctx.status = 200
+  });
+
+
   router.get("settape", "/settape", (ctx) => {
     ctx.body = "Tape set.";
   });

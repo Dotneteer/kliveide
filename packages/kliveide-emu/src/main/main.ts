@@ -1,6 +1,6 @@
 import { app } from "electron";
 import { AppWindow } from "./AppWindow";
-import { startKoaServer } from "../../src/ui/koa-server";
+import { startKoaServer } from "../remote-api/koa-server";
 
 // --- Global reference to the mainwindow
 let mainWindow: AppWindow;
@@ -18,8 +18,8 @@ function setupAppWindow(): void {
 // --- initialization and is ready to create browser windows.
 // --- Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
-  await setupAppWindow();
   startKoaServer();
+  await setupAppWindow();
 });
 
 // --- Quit when all windows are closed.
