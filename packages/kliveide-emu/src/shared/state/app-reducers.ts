@@ -1,8 +1,8 @@
 import { focusStateReducer } from "./redux-app-focus";
 import { windowStateReducer } from "./redux-window-state";
 import { AppWindow } from "../../main/AppWindow";
-import { keyboardStateReducer } from "./redux-keyboard-state";
 import { emulatorStateReducer } from "./redux-emulator-state";
+import { emulatorCommandStateReducer } from "./redux-emulator-command-state";
 
 /**
  * The set of reducers we use within this application
@@ -10,8 +10,8 @@ import { emulatorStateReducer } from "./redux-emulator-state";
 export const appReducers = {
   appHasFocus: focusStateReducer,
   windowState: windowStateReducer,
-  keyboardPanelState: keyboardStateReducer,
-  emulatorPanelState: emulatorStateReducer
+  emulatorPanelState: emulatorStateReducer,
+  emulatorCommand: emulatorCommandStateReducer
 };
 
 /**

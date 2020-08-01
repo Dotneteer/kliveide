@@ -7,6 +7,7 @@ import {
   GetDefaultTapeSetResponse,
 } from "../shared/messaging/message-types";
 import { MainMessage } from "../shared/messaging/message-types";
+import { mainProcessStore } from "./mainProcessStore";
 
 export let z80MemoryContents: string = "none";
 
@@ -17,17 +18,16 @@ export let z80MemoryContents: string = "none";
 export function processRendererMessage(message: RendererMessage): MainMessage {
   switch (message.type) {
     case "getDefaultTapeSet":
-      const fileName = path.join(__dirname, "./tapes/Pac-Man.tzx");
-      const contents = fs.readFileSync(fileName);
+      const state = mainProcessStore.getState();
       return <GetDefaultTapeSetResponse>{
         type: "ackGetDefaultTapeSet",
-        bytes: new Uint8Array(contents),
+        bytes: state.emulatorPanelState?.tapeContents || new Uint8Array(0),
       };
     case "setZ80Memory":
       z80MemoryContents = message.contents;
       return <DefaultResponse>{
-        type: "ack"
-      }
+        type: "ack",
+      };
     default:
       return <DefaultResponse>{ type: "ack" };
   }

@@ -13,9 +13,46 @@ export function emulatorSetExecStateAction(executionState: number) {
   return createAction("EMULATOR_SET_EXEC_STATE", { executionState });
 }
 
-export function emulatorSetBreakpointAction(breakPoint: number) {
-  return createAction("EMULATOR_SET_BREAKPOINT", { breakPoint });
+export function emulatorSetTapeContenstAction(tapeContents: Uint8Array) {
+  return createAction("EMULATOR_SET_TAPE_CONTENTS", { tapeContents });
 }
+
+export const emulatorShowKeyboardAction = createAction(
+  "EMULATOR_SHOW_KEYBOARD"
+);
+export const emulatorHideKeyboardAction = createAction(
+  "EMULATOR_HIDE_KEYBOARD"
+);
+export const emulatorToggleKeyboardAction = createAction(
+  "EMULATOR_TOGGLE_KEYBOARD"
+);
+export const emulatorShowShadowScreenAction = createAction(
+  "EMULATOR_SHOW_SHADOW_SCREEN"
+);
+export const emulatorHideShadowScreenAction = createAction(
+  "EMULATOR_HIDE_SHADOW_SCREEN"
+);
+export const emulatorToggleShadowScreenAction = createAction(
+  "EMULATOR_TOGGLE_SHADOW_SCREEN"
+);
+export const emulatorShowBeamPositionAction = createAction(
+  "EMULATOR_SHOW_BEAM_POSITION"
+);
+export const emulatorHideBeamPositionAction = createAction(
+  "EMULATOR_HIDE_BEAM_POSITION"
+);
+export const emulatorToggleBeamPositionAction = createAction(
+  "EMULATOR_TOGGLE_BEAM_POSITION"
+);
+export const emulatorEnableFastLoadAction = createAction(
+  "EMULATOR_ENABLE_FAST_LOAD"
+);
+export const emulatorDisableFastLoadAction = createAction(
+  "EMULATOR_DISABLE_FAST_LOAD"
+);
+export const emulatorToggleFastLoadAction = createAction(
+  "EMULATOR_TOGGLE_FAST_LOAD"
+);
 
 /**
  * This reducer manages keyboard panel state changes
@@ -35,8 +72,47 @@ export function emulatorStateReducer(
       return { ...state, zoom: payload.zoom };
     case "EMULATOR_SET_EXEC_STATE":
       return { ...state, executionState: payload.executionState };
-    case "EMULATOR_SET_BREAKPOINT":
-      return { ...state, breakPoint: payload.breakPoint };
+    case "EMULATOR_SET_TAPE_CONTENTS":
+      return { ...state, tapeContents: payload.tapeContents };
+    case "EMULATOR_SHOW_KEYBOARD":
+      return { ...state, keyboardPanel: true };
+    case "EMULATOR_HIDE_KEYBOARD":
+      return { ...state, keyboardPanel: false };
+    case "EMULATOR_TOGGLE_KEYBOARD":
+      return {
+        ...state,
+        keyboardPanel:
+          state.keyboardPanel === undefined ? true : !state.keyboardPanel,
+      };
+    case "EMULATOR_SHOW_SHADOW_SCREEN":
+      return { ...state, shadowScreen: true };
+    case "EMULATOR_HIDE_SHADOW_SCREEN":
+      return { ...state, shadowScreen: false };
+    case "EMULATOR_TOGGLE_SHADOW_SCREEN":
+      return {
+        ...state,
+        shadowScreen:
+          state.shadowScreen === undefined ? true : !state.shadowScreen,
+      };
+    case "EMULATOR_SHOW_BEAM_POSITION":
+      return { ...state, beamPosition: true };
+    case "EMULATOR_HIDE_BEAM_POSITION":
+      return { ...state, beamPosition: false };
+    case "EMULATOR_TOGGLE_BEAM_POSITION":
+      return {
+        ...state,
+        beamPosition:
+          state.beamPosition === undefined ? true : !state.beamPosition,
+      };
+    case "EMULATOR_ENABLE_FAST_LOAD":
+      return { ...state, fastLoad: true };
+    case "EMULATOR_DISABLE_FAST_LOAD":
+      return { ...state, fastLoad: false };
+    case "EMULATOR_TOGGLE_FAST_LOAD":
+      return {
+        ...state,
+        fastLoad: state.fastLoad === undefined ? true : !state.fastLoad,
+      };
   }
   return state;
 }

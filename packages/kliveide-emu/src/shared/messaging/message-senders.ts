@@ -1,8 +1,12 @@
-import { GetDefaultTapeSetResponse, SetZ80Memory, DefaultResponse } from "./message-types";
+import {
+  GetDefaultTapeSetResponse,
+  SetZ80Memory,
+  DefaultResponse,
+} from "./message-types";
 import { sendMessageToMain } from "./messaging-core";
 
 /**
- * Get the screen size
+ * Gets the default tape set
  */
 export function getDefaultTapeSet(): Promise<GetDefaultTapeSetResponse> {
   return sendMessageToMain<GetDefaultTapeSetResponse>({
@@ -13,6 +17,6 @@ export function getDefaultTapeSet(): Promise<GetDefaultTapeSetResponse> {
 export function setZ80Memory(contents: string): Promise<DefaultResponse> {
   return sendMessageToMain<DefaultResponse>({
     type: "setZ80Memory",
-    contents
+    contents,
   });
 }

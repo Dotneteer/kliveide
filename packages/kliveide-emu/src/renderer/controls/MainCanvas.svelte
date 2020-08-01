@@ -7,12 +7,14 @@
 
   let keyboardVisible = false;
   let delayIsOver = true;
-  const stateAware = createRendererProcessStateAware("keyboardPanelState");
+  const stateAware = createRendererProcessStateAware("emulatorPanelState");
   stateAware.onStateChanged.on(async state => {
-    delayIsOver = false;
-    keyboardVisible = state.visible;
-    await new Promise(r => setTimeout(r, 10));
-    delayIsOver = true;
+    if (keyboardVisible !== state.keyboardPanel) {
+      delayIsOver = false;
+      keyboardVisible = state.keyboardPanel;
+      await new Promise(r => setTimeout(r, 10));
+      delayIsOver = true;
+    }
   });
 
   let keyboardHeight;

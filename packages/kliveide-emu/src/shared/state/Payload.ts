@@ -6,5 +6,9 @@ export interface Payload {
   height?: number;
   zoom?: number;
   executionState?: number;
-  breakPoint?: number;
+  tapeContents?: Uint8Array;
+  shadowScreen?: boolean;
+  beamPosition?: boolean;
+  fastLoad?: boolean;
+  command?: string;
 }

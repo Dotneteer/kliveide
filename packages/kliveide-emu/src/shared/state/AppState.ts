@@ -2,16 +2,20 @@
  * Represents the state of the application
  */
 export interface AppState {
+  /**
+   * Signs if the application has the focus
+   */
   appHasFocus?: boolean;
-  keyboardPanelState?: KeyboardPanelState;
-  emulatorPanelState?: EmulatorPanelState;
-}
 
-/**
- * Represents the state of the keyboard panel
- */
-export interface KeyboardPanelState {
-  visible?: boolean;
+  /**
+   * Emulator panel state
+   */
+  emulatorPanelState?: EmulatorPanelState;
+
+  /**
+   * Emulator command to execute
+   */
+  emulatorCommand: string;
 }
 
 /**
@@ -22,6 +26,10 @@ export interface EmulatorPanelState {
   height?: number;
   zoom?: number;
   executionState?: number;
-  breakPoint?: number;
+  tapeContents?: Uint8Array;
+  keyboardPanel?: boolean;
+  shadowScreen?: boolean;
+  beamPosition?: boolean;
+  fastLoad?: boolean;
 }
 

@@ -11,7 +11,13 @@ import { StateAwareObject } from "../shared/state/StateAwareObject";
 // --- Set up the store
 const defaultState: AppState = {
   appHasFocus: true,
-  keyboardPanelState: { visible: false },
+  emulatorPanelState: {
+    keyboardPanel: false,
+    beamPosition: false,
+    shadowScreen: false,
+    fastLoad: false    
+  },
+  emulatorCommand: ""
 };
 
 const spectNetApp = combineReducers(appReducers);

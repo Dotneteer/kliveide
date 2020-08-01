@@ -26,5 +26,8 @@
     "mocha": "^8.0.1",
     "ts-mocha": "^7.0.0",
     "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0"
   }
 }

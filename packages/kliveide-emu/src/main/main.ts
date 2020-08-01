@@ -1,6 +1,6 @@
 import { app } from "electron";
 import { AppWindow } from "./AppWindow";
-import { startKoaServer } from "../remote-api/koa-server";
+import { startApiServer } from "../remote-api/api-server";
 
 // --- Global reference to the mainwindow
 let mainWindow: AppWindow;
@@ -17,9 +17,9 @@ function setupAppWindow(): void {
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.
 // --- Some APIs can only be used after this event occurs.
-app.on("ready", async () => {
-  startKoaServer();
-  await setupAppWindow();
+app.on("ready", () => {
+  setupAppWindow();
+  startApiServer();
 });
 
 // --- Quit when all windows are closed.
@@ -36,5 +36,6 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (mainWindow === null) {
     setupAppWindow();
+    startApiServer();
   }
 });

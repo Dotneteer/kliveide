@@ -40,6 +40,7 @@
   (export "colorize" (func $colorize))
   (export "getCursorMode" (func $getCursorMode))
   (export "initTape" (func $initTape))
+  (export "setFastLoad" (func $setFastLoad))
   (export "setBreakpoint" (func $setBreakpoint))
 
   ;; ==========================================================================
@@ -9331,6 +9332,11 @@
 
   ;; The buffer for tape data
   (global $TAPE_DATA_BUFFER i32 (i32.const 0x15_4300))
+
+  ;; Sets the value of the fast load flag
+  (func $setFastLoad (param $mode i32)
+    get_local $mode set_global $tapeFastLoad
+  )
 
   ;; Checks if tape device hook should be applied
   (func $checkTapeHooks

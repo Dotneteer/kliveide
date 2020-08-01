@@ -9,29 +9,85 @@
   import { themeStore } from "../stores/theme-store";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
   import {
-    keyboardShowAction,
-    keyboardHideAction
-  } from "../../shared/state/redux-keyboard-state";
+    emulatorToggleKeyboardAction,
+    emulatorToggleShadowScreenAction,
+    emulatorToggleBeamPositionAction,
+    emulatorToggleFastLoadAction
+  } from "../../shared/state/redux-emulator-state";
+  import { emulatorSetCommandAction } from "../../shared/state/redux-emulator-command-state";
   import { getSpectrumEngine } from "../spectrum-loader";
 
   // --- We change Titlebar colors as the app focus changes
   let backgroundColor;
   let keyboardDisplayed;
+  let shadowScreenEnabled;
+  let beamPositionEnabled;
+  let fastLoadEnabled;
   calculateColors(true); // --- Default: the app has the focus
 
   let spectrum;
   let executionState = 0;
+  let processingChange = false;
+  let lastCommand = "";
 
   // --- Respond to the event when app focus changes
   const stateAware = createRendererProcessStateAware();
-  stateAware.onStateChanged.on(state => {
-    keyboardDisplayed = state.keyboardPanelState.visible;
+  stateAware.onStateChanged.on(async state => {
+    if (processingChange) return;
+    processingChange = true;
+
+    // --- Change the UI according to state change
+    const emuUi = state.emulatorPanelState;
+    if (emuUi) {
+      keyboardDisplayed = emuUi.keyboardPanel;
+      shadowScreenEnabled = emuUi.shadowScreen;
+      beamPositionEnabled = emuUi.beamPosition;
+      fastLoadEnabled = emuUi.fastLoad;
+    }
     calculateColors(state.appHasFocus);
+
+    // --- New command issued?
+    if (lastCommand !== state.emulatorCommand) {
+      lastCommand = state.emulatorCommand;
+
+      console.log(`New command: ${lastCommand}`);
+
+      switch (lastCommand) {
+        case "start":
+          await spectrum.start();
+          break;
+        case "pause":
+          await spectrum.pause();
+          break;
+        case "stop":
+          await spectrum.stop();
+          break;
+        case "restart":
+          await spectrum.restart();
+          break;
+        case "start-debug":
+          await spectrum.startDebug();
+          break;
+        case "step-into":
+          await spectrum.stepInto();
+          break;
+        case "step-over":
+          await spectrum.stepOver();
+          break;
+        case "step-out":
+          await spectrum.stepOut();
+          break;
+      }
+      stateAware.dispatch(emulatorSetCommandAction("")());
+    }
+    processingChange = false;
   });
 
   onMount(async () => {
     spectrum = await getSpectrumEngine();
-    spectrum.executionStateChanged.on(({ newState }) => executionState = newState);
+    spectrum.executionStateChanged.on(
+      ({ newState }) => (executionState = newState)
+    );
   });
 
   // --- Calculate colors according to focus state
@@ -65,26 +121,27 @@
     fill="lightgreen"
     title="Start"
     enable={executionState === 0 || executionState === 3 || executionState === 5}
-    on:clicked={async () => spectrum.start()} />
+    on:clicked={async () => await spectrum.start()} />
   <ToolbarIconButton
     iconName="pause"
     fill="lightblue"
     title="Stop"
     enable={executionState === 1}
-    on:clicked={async () => spectrum.pause()} />
+    on:clicked={async () => await spectrum.pause()} />
   <ToolbarIconButton
     iconName="stop"
     fill="orangered"
     title="Pause"
-    enable={executionState === 1 || executionState === 3} 
-    on:clicked={async() => spectrum.stop() }/>
+    enable={executionState === 1 || executionState === 3}
+    on:clicked={async () => await spectrum.stop()} />
   <ToolbarIconButton
     iconName="restart"
     fill="lightgreen"
     title="Reset"
     size="22"
     highlightSize="26"
-    enable={executionState === 1 || executionState === 3} />
+    enable={executionState === 1 || executionState === 3}
+    on:clicked={async () => await spectrum.restart()} />
   <ToolbarSeparator />
   <ToolbarIconButton
     iconName="debug"
@@ -92,8 +149,8 @@
     title="Debug"
     size="20"
     highlightSize="24"
-    enable={executionState === 0 || executionState === 3 || executionState === 5} 
-    on:clicked={async () => spectrum.startDebugging()} />
+    enable={executionState === 0 || executionState === 3 || executionState === 5}
+    on:clicked={async () => await spectrum.startDebugging()} />
   <ToolbarIconButton
     iconName="step-into"
     fill="lightblue"
@@ -116,15 +173,31 @@
     highlightSize="32"
     selected={keyboardDisplayed}
     on:clicked={() => {
-      stateAware.dispatch(keyboardDisplayed ? keyboardHideAction() : keyboardShowAction());
+      stateAware.dispatch(emulatorToggleKeyboardAction());
     }} />
   <ToolbarSeparator />
   <ToolbarIconButton
     iconName="shadow-screen"
     fill="#ff80ff"
-    title="Toggle shadow screen" />
+    title="Toggle shadow screen"
+    selected={shadowScreenEnabled}
+    on:clicked={() => {
+      stateAware.dispatch(emulatorToggleShadowScreenAction());
+    }} />
   <ToolbarIconButton
     iconName="beam-position"
     fill="#ff80ff"
-    title="Show ULA position" />
+    title="Show ULA position"
+    selected={beamPositionEnabled}
+    on:clicked={() => {
+      stateAware.dispatch(emulatorToggleBeamPositionAction());
+    }} />
+  <ToolbarSeparator />
+  <ToolbarIconButton
+    iconName="rocket"
+    title="Fast LOAD mode"
+    selected={fastLoadEnabled}
+    on:clicked={() => {
+      stateAware.dispatch(emulatorToggleFastLoadAction());
+    }} />
 </div>
