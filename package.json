@@ -1,79 +1,33 @@
 {
-  "name": "spectrum-emu-electron",
+  "name": "@dotneteer/kliveide",
   "version": "0.0.1",
-  "description": "ZX Spectrum Emulator",
-  "main": "./dist/main.bundle.js",
+  "description": "Full-fledged ZX Spectrum IDE with VS Code integration",
   "author": "Istvan Novak",
   "license": "MIT",
-  "repository": "https://github.com/Dotneteer/wa-spectrum-engine",
+  "repository": "https://github.com/Dotneteer/kliveide",
   "keywords": [
     "ZX Spectrum",
     "Z80",
     "emulator"
   ],
-  "bugs": "https://github.com/Dotneteer/wa-spectrum-engine/issues",
-  "homepage": "https://github.com/Dotneteer/wa-spectrum-engine",
+  "bugs": "https://github.com/Dotneteer/kliveide/issues",
+  "homepage": "https://github.com/Dotneteer/kliveide",
   "scripts": {
-    "start": "electron ./dist/main.bundle.js",
-    "build": "npm run spbuild & npm run tscbuild",
-    "dev": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --colors",
-    "tscbuild": "tsc",
-    "spbuild": "wat2wasm src/native/spectrum.wat -o build/spectrum.wasm",
-    "test": "ts-mocha -p ./test/tsconfig.json ./test/**/*.test.ts",
-    "build:win": "electron-builder build --win --x64",
-    "build:mac": "electron-builder build --mac --x64"
-  },
-  "build": {
-    "appId": "dotneteer.spectnetide.electron",
-    "productName": "Klive",
-    "directories": {
-      "buildResources": "buildResources",
-      "app": "./dist/",
-      "output": "./out/"
-    },
-    "mac": {
-      "target": "pkg"
-    },
-    "win": {
-      "target": "nsis",
-      "asar": false
-    },
-    "buildVersion": "0.0.1"
-  },
-  "dependencies": {
-    "@types/electron-localshortcut": "^3.1.0",
-    "chokidar": "^3.4.0",
-    "electron-localshortcut": "^3.2.1",
-    "electron-window-state": "^5.0.3",
-    "koa": "^2.13.0",
-    "koa-router": "^9.0.1",
-    "redux": "^4.0.5"
+    "bootstrap": "npm install && lerna bootstrap",
+    "build": "lerna run build",
+    "dev": "cd packages/kliveide-emu && npm run dev",
+    "start:emu": "cd packages/kliveide-emu && npm start",
+    "build:win": "cd packages/kliveide-emu && electron-builder build --win --x64",
+    "build:mac": "cd packages/kliveide-emu && electron-builder build --mac --x64"
   },
   "devDependencies": {
-    "@types/expect": "^24.3.0",
-    "@types/koa": "^2.11.3",
-    "@types/koa-router": "^7.4.1",
-    "@types/mocha": "^7.0.2",
-    "@types/node": "^12.12.21",
-    "copy-pkg-json-webpack-plugin": "0.0.39",
-    "copy-webpack-plugin": "^6.0.2",
-    "cross-env": "^7.0.2",
-    "css-loader": "^3.6.0",
-    "electron": "^9.0.4",
-    "electron-builder": "^22.7.0",
-    "expect": "^25.1.0",
-    "html-webpack-plugin": "^4.3.0",
-    "lodash": "^4.17.19",
-    "mocha": "^7.1.1",
-    "rimraf": "^3.0.2",
-    "style-loader": "^1.2.1",
-    "svelte": "^3.23.2",
-    "svelte-loader": "^2.13.6",
-    "ts-loader": "^7.0.5",
-    "ts-mocha": "^6.0.0",
-    "typescript": "^3.8.3",
-    "wat2wasm": "^1.0.2",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.12"
+    "electron-builder": "^22.8.0",
+    "lerna": "^3.22.1",
+    "mocha": "^8.0.1",
+    "ts-mocha": "^7.0.0",
+    "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0"
   }
 }

@@ -1,0 +1,67 @@
+{
+  "name": "@dotneteer/kliveide-vsext",
+  "displayName": "Klive IDE",
+  "description": "Full-fledged ZX Spectrum IDE for VS Code",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.46.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:kliveide.startEmu"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "Klive IDE",
+      "properties": {
+        "kliveIde.emulatorExecutablePath": {
+          "type": "string",
+          "default": "",
+          "description": "The full path to the Klive Emulator executable"
+        },
+        "kliveIde.emulatorPort": {
+          "type": "number",
+          "default": 3000,
+          "description": "The http port to access the Klive Emulator API"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "kliveide.startEmu",
+        "title": "Start Klive Emulator"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "webpack --mode production",
+		"webpack": "webpack --mode development",
+		"webpack-dev": "webpack --mode development --watch",
+		"test-compile": "tsc -p ./",
+		"lint": "eslint . --ext .ts,.tsx"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^13.11.0",
+    "@types/node-fetch": "^2.5.7",
+    "@types/vscode": "^1.46.0",
+    "@typescript-eslint/eslint-plugin": "^2.30.0",
+    "@typescript-eslint/parser": "^2.30.0",
+    "eslint": "^6.8.0",
+    "glob": "^7.1.6",
+    "mocha": "^7.1.2",
+    "ts-loader": "^8.0.1",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.8.3",
+    "vscode-test": "^1.3.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  }
+}
