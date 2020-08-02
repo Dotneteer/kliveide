@@ -18,6 +18,8 @@ import {
   emulatorEnableFastLoadAction,
   emulatorDisableFastLoadAction,
   emulatorToggleFastLoadAction,
+  emulatorMuteAction,
+  emulatorUnmuteAction,
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { register } from "electron-localshortcut";
@@ -50,9 +52,9 @@ export function startApiServer() {
     const emuState = mainProcessStore.getState().emulatorPanelState;
     res.json({
       startCount: emuState.startCount,
-      frameCount: emuState.frameCount
+      frameCount: emuState.frameCount,
     });
-  })
+  });
 
   /**
    * Starts the ZX Spectrum virtual machine
@@ -228,6 +230,22 @@ export function startApiServer() {
   });
 
   /**
+   * Instructs the emulator UI to mute sound
+   */
+  app.post("/mute", (_req, res) => {
+    mainProcessStore.dispatch(emulatorMuteAction());
+    res.sendStatus(204);
+  });
+
+  /**
+   * Instructs the emulator UI to mute sound
+   */
+  app.post("/unmute", (_req, res) => {
+    mainProcessStore.dispatch(emulatorUnmuteAction());
+    res.sendStatus(204);
+  });
+
+  /**
    * Instructs the emulator UI to get the state of the ui
    * Response:
    *  Status: 200
@@ -247,23 +265,25 @@ export function startApiServer() {
    */
   app.get("/z80-regs", (_req, res) => {
     const s = mainProcessStore.getState().vmInfo;
-    const regs = s?.registers ? s.registers : <RegisterData>{
-      af: 0xffff,
-      bc: 0xffff,
-      de: 0xffff,
-      hl: 0xffff,
-      af_: 0xffff,
-      bc_: 0xffff,
-      de_: 0xffff,
-      hl_: 0xffff,
-      pc: 0xffff,
-      sp: 0xffff,
-      ix: 0xffff,
-      iy: 0xffff,
-      i: 0xff,
-      r: 0xff,
-      wz: 0xffff
-    }
+    const regs = s?.registers
+      ? s.registers
+      : <RegisterData>{
+          af: 0xffff,
+          bc: 0xffff,
+          de: 0xffff,
+          hl: 0xffff,
+          af_: 0xffff,
+          bc_: 0xffff,
+          de_: 0xffff,
+          hl_: 0xffff,
+          pc: 0xffff,
+          sp: 0xffff,
+          ix: 0xffff,
+          iy: 0xffff,
+          i: 0xff,
+          r: 0xff,
+          wz: 0xffff,
+        };
     res.json(regs);
   });
 
