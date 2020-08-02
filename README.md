@@ -13,7 +13,7 @@ You may ask why we need another ZX Spectrum Emulator and IDE, as we have dozens 
 
 Cesar and Mike both did and still do a great job with their projects. There is a high likelihood that Klive will never catch up with their excellent emulators, at least not with their features.
 
-Nonetheless, this project offers these benefits to you:
+ Nonetheless, this project offers these benefits to you:
 1. **Features are mostly based on community expectations and feedback.** Of course, it does not mean that contributors will implement everything the community asks for, but we try to be driven by user (developer) voices.
 2. **Open source code.** The source code is not only available for everyone but is well documented so that you can learn from it. It is an expectation from a contributor to provide decent documentation for any new feature or fix.
 3. **Open for extensibility.** The design strives to allow you to add your custom pieces to the IDE.
