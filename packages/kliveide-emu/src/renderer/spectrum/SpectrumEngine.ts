@@ -499,13 +499,16 @@ export class SpectrumEngine {
       machine._screenRefreshed.fire();
 
       // --- Obtain beeper samples
+      const emuState = rendererProcessStore.getState().emulatorPanelState
       if (!this._beeperRenderer) {
         this._beeperRenderer = new AudioRenderer(
           resultState.beeperSampleLength
         );
       }
       const mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
-      const beeperSamples = mh.readBytes(0, resultState.beeperSampleCount);
+      const beeperSamples = emuState.muted
+        ? new Array(resultState.beeperSampleCount).fill(0)
+        : mh.readBytes(0, resultState.beeperSampleCount);
       this._beeperRenderer.storeSamples(beeperSamples);
       machine._beeperSamplesEmitted.fire(beeperSamples);
 

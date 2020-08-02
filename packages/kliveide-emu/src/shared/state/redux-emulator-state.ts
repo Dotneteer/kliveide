@@ -53,6 +53,8 @@ export const emulatorDisableFastLoadAction = createAction(
 export const emulatorToggleFastLoadAction = createAction(
   "EMULATOR_TOGGLE_FAST_LOAD"
 );
+export const emulatorMuteAction = createAction("EMULATOR_MUTE");
+export const emulatorUnmuteAction = createAction("EMULATOR_UNMUTE");
 
 export function emulatorSetFrameIdAction(
   startCount: number,
@@ -126,6 +128,10 @@ export function emulatorStateReducer(
         startCount: payload.startCount,
         frameCount: payload.frameCount,
       };
+    case "EMULATOR_MUTE":
+      return { ...state, muted: true };
+    case "EMULATOR_UNMUTE":
+      return { ...state, muted: false };
   }
   return state;
 }

@@ -40,6 +40,7 @@ export interface EmulatorPanelState {
   fastLoad?: boolean;
   startCount?: number;
   frameCount?: number;
+  muted?: boolean;
 }
 
 /**

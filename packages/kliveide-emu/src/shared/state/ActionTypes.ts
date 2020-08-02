@@ -27,6 +27,8 @@ export interface ActionTypes {
   EMULATOR_DISABLE_FAST_LOAD: null;
   EMULATOR_TOGGLE_FAST_LOAD: null;
   EMULATOR_SET_FRAME_ID: null;
+  EMULATOR_MUTE: null;
+  EMULATOR_UNMUTE: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
