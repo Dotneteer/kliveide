@@ -1,21 +1,15 @@
 import * as vscode from "vscode";
-import fetch from "node-fetch";
 import { spawn } from "child_process";
-import { KLIVEIDE, EMU_PORT, EMU_EXEC_PATH } from "../config/sections";
+import { KLIVEIDE, EMU_EXEC_PATH } from "../config/sections";
+import { communicatorInstance } from "./communicator";
+
 
 /**
  * This code starts the Klive Emulator if it is not already started yet
  */
-export async function startEmulator(
-  context: vscode.ExtensionContext
-): Promise<void> {
-  const config = vscode.workspace.getConfiguration(KLIVEIDE);
+export async function startEmulator(): Promise<void> {
   try {
-    const port = config.get(EMU_PORT);
-    const response = await fetch(`http://localhost:${port}/hello`, {
-      timeout: 1000,
-    });
-    if (response.ok && (await response.text()) === "KliveEmu") {
+    if ((await communicatorInstance.hello()) === "KliveEmu") {
       // --- The emulator is already running
       return;
     }
@@ -28,11 +22,12 @@ export async function startEmulator(
   var spawn_env = JSON.parse(JSON.stringify(process.env));
   delete spawn_env.ATOM_SHELL_INTERNAL_RUN_AS_NODE;
   delete spawn_env.ELECTRON_RUN_AS_NODE;
+  const config = vscode.workspace.getConfiguration(KLIVEIDE);
   const exePath = config.get(EMU_EXEC_PATH) as string;
   try {
     const proc = spawn(exePath, [], {
       env: spawn_env,
-      detached: true
+      detached: true,
     });
 
     vscode.window.showInformationMessage("Klive Emulator successfuly started.");

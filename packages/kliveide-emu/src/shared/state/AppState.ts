@@ -1,3 +1,5 @@
+import { RegisterData } from "../spectrum/api-data";
+
 /**
  * Represents the state of the application
  */
@@ -16,6 +18,11 @@ export interface AppState {
    * Emulator command to execute
    */
   emulatorCommand: string;
+
+  /**
+   * Data about the running virtual machine
+   */
+  vmInfo?: VmInfo;
 }
 
 /**
@@ -31,5 +38,14 @@ export interface EmulatorPanelState {
   shadowScreen?: boolean;
   beamPosition?: boolean;
   fastLoad?: boolean;
+  startCount?: number;
+  frameCount?: number;
+}
+
+/**
+ * Represents the data about the running virtual machine
+ */
+export interface VmInfo {
+  registers?: RegisterData
 }
 

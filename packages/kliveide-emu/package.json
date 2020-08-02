@@ -1,5 +1,5 @@
 {
-  "name": "@dotneteer/kliveide-emu",
+  "name": "kliveide-emu",
   "version": "0.0.1",
   "description": "ZX Spectrum Emulator",
   "main": "./dist/main.bundle.js",
@@ -24,7 +24,7 @@
     "build:mac": "electron-builder build --mac --x64"
   },
   "build": {
-    "appId": "dotneteer.spectnetide.electron",
+    "appId": "dotneteer.klive",
     "productName": "Klive",
     "directories": {
       "buildResources": "buildResources",

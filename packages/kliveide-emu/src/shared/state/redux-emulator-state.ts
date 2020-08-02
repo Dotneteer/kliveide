@@ -54,6 +54,13 @@ export const emulatorToggleFastLoadAction = createAction(
   "EMULATOR_TOGGLE_FAST_LOAD"
 );
 
+export function emulatorSetFrameIdAction(
+  startCount: number,
+  frameCount: number
+) {
+  return createAction("EMULATOR_SET_FRAME_ID", { startCount, frameCount });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -112,6 +119,12 @@ export function emulatorStateReducer(
       return {
         ...state,
         fastLoad: state.fastLoad === undefined ? true : !state.fastLoad,
+      };
+    case "EMULATOR_SET_FRAME_ID":
+      return {
+        ...state,
+        startCount: payload.startCount,
+        frameCount: payload.frameCount,
       };
   }
   return state;
