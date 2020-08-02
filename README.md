@@ -4,7 +4,7 @@ This project aims to build a full-fledged ZX Spectrum IDE that you can easily us
 
 **The first public release (v0.1.0) is released on August 2, 2020**
 
-
+[You can immediately try it](#try-release).
 
 You may ask why we need another ZX Spectrum Emulator and IDE, as we have dozens of them. More or less, you are right. Nonetheless, we have only a few with ZX Spectrum Next emulators that support the developer community:
 
@@ -52,4 +52,37 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
 4. A Klive IDE version that provides feature-parity with SpectNetIDE
 5. Moving toward ZX Spectrum Next
 
-## Installing and Runnig 
+<a name="try-release"></a>
+## Installing and Running Release v0.1.0
+
+> **Note**: This release runs only on Windows. Not as if the source code were Windows-specific, it supposed to support Linux, Mac, and Windows. I do not have a Mac to build this product, as I miss some crucial experiences with Linux. **I'm looking for contributors who could help me with building for the other platforms.**
+
+To install the early preview release, follow these steps:
+
+1. **Make sure that Visual Studio Code is installed on your computer.** If not, or it is older than v1.46.0, visit https://code.visualstudio.com/download for the newest version.
+2. Download the `KliveSetup-0.1.0.exe`, and `kliveide-vsext-0.1.0.vsix` files from [Release v0.1.0](https://github.com/Dotneteer/kliveide/releases/tag/v0.1.0).
+3. Install the standalone **Klive Emulator** by running `KliveSetup-0.1.0.exe`. Windows may display a security message about risks&mdash;ignore that and install the app.
+4. In the Windows search box, type `Klive`, and right-click the **Klive** app within the results. From the context menu, select "Open File Location".
+5. Right-click the **Klive** shortcut, and open its properties. Copy the target file information (the entire path) from the dialog. On my machine, it looks like this: `C:\Users\dotne\AppData\Local\Programs\@dotneteerkliveide-emu\Klive.exe`. **On your machine, it will be different**. Save this information, as you need to use it soon.
+6. Open Visual Studio Code, and open any folder as a project. It does not matter which one you open, but you need an open folder for the demo.
+7. Select the Extensions tab in the activity bar (the leftmost vertical panel in VS Code) . Above the list of the extensions, in the EXTENSIONS header, click the menu, and select **Install from VSIX...**. When the dialog opens, select and install the `kliveide-vsext-0.1.0.vsix` file, and then reload VS Code.
+8. Click the settings icon in VS Code's activity bar, and select the **Settings** menu command. You must set the **Emulator Executable Path** value to the one you saved in Step 5. Please, change all backslash characters to slashes, and do not forget to include the executable name. Make sure that the **Emulator Port** value is set to 3000, as this proof-of-concept works only with this port.
+9. In VS Code, press Ctrl+Shift+P, or F1 (or if those do not work on your machine, use the **View|Command Palette...** menu). In the command box, type "Start Klive", and then run the **Start Klive Emulator** command.
+
+![Klive settings](./docs/intro/klive-settings.png)
+
+10. In a few seconds, it will pop up the Klive Emulator app. If not, check again that you set the right path in Step 8.
+11. In the activity bar, select the Debug tab. At the bottom, it will display the **Z80 REGISTERS** view.
+
+![Registers before](./docs/intro/registers-before.png)
+
+12. In the Klive Emulator, start the ZX Spectrum virtual machine (click Start on the toolbar). You can see that the register values are continuously updated.
+13. Type the **LOAD ""** command in the emulator, and press (click) Enter. (You can display the keyboard with the corresponding button on the toolbar.) 
+
+![Loading game](./docs/intro/loading-game.png)
+
+14. The emulator starts loading the Pac-Man game (it does not provide sound during the load, but this missing feature will be added soon.) You can check that VS Code refreshes the register values.
+
+![Registers after](./docs/intro/registers-after.png)
+
+15. Play with the virtual emulator :-)
