@@ -1,6 +1,6 @@
 {
-  "name": "@dotneteer/kliveide",
-  "version": "0.0.1",
+  "name": "kliveide",
+  "version": "0.1.0",
   "description": "Full-fledged ZX Spectrum IDE with VS Code integration",
   "author": "Istvan Novak",
   "license": "MIT",
