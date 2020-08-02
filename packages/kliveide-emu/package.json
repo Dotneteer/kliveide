@@ -1,11 +1,14 @@
 {
-  "name": "@dotneteer/kliveide-emu",
-  "version": "0.0.1",
+  "name": "kliveide-emu",
+  "version": "0.1.0",
   "description": "ZX Spectrum Emulator",
   "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
   "license": "MIT",
-  "repository": "https://github.com/Dotneteer/kliveide",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dotneteer/kliveide.git"
+  },
   "keywords": [
     "ZX Spectrum",
     "Z80",
@@ -24,7 +27,7 @@
     "build:mac": "electron-builder build --mac --x64"
   },
   "build": {
-    "appId": "dotneteer.spectnetide.electron",
+    "appId": "dotneteer.klive",
     "productName": "Klive",
     "directories": {
       "buildResources": "buildResources",

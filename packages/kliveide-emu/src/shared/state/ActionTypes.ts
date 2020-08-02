@@ -26,9 +26,13 @@ export interface ActionTypes {
   EMULATOR_ENABLE_FAST_LOAD: null;
   EMULATOR_DISABLE_FAST_LOAD: null;
   EMULATOR_TOGGLE_FAST_LOAD: null;
+  EMULATOR_SET_FRAME_ID: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
+
+  // --- VM information actions
+  VM_SET_REGISTERS: null;
 
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;

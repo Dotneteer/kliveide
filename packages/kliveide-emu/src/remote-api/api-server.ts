@@ -1,6 +1,8 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as fs from "fs";
+import * as ipc from "node-ipc";
+
 import { mainProcessStore } from "../main/mainProcessStore";
 import {
   emulatorSetTapeContenstAction,
@@ -18,6 +20,12 @@ import {
   emulatorToggleFastLoadAction,
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
+import { register } from "electron-localshortcut";
+import { RegisterData } from "../shared/spectrum/api-data";
+
+const NOTIFICATION_SERVER = "vsKliveExtension";
+let configured = false;
+let connected = false;
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -34,6 +42,17 @@ export function startApiServer() {
   app.get("/hello", (_req, res) => {
     res.send("KliveEmu");
   });
+
+  /**
+   * Gets frame information
+   */
+  app.get("/frame-info", (_req, res) => {
+    const emuState = mainProcessStore.getState().emulatorPanelState;
+    res.json({
+      startCount: emuState.startCount,
+      frameCount: emuState.frameCount
+    });
+  })
 
   /**
    * Starts the ZX Spectrum virtual machine
@@ -225,16 +244,27 @@ export function startApiServer() {
 
   /**
    * Gets the current values of Z80 registers
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    af: u16
-   *    ...
-   *    wz: u16
    */
-  app.get("/z80-regs", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
+  app.get("/z80-regs", (_req, res) => {
+    const s = mainProcessStore.getState().vmInfo;
+    const regs = s?.registers ? s.registers : <RegisterData>{
+      af: 0xffff,
+      bc: 0xffff,
+      de: 0xffff,
+      hl: 0xffff,
+      af_: 0xffff,
+      bc_: 0xffff,
+      de_: 0xffff,
+      hl_: 0xffff,
+      pc: 0xffff,
+      sp: 0xffff,
+      ix: 0xffff,
+      iy: 0xffff,
+      i: 0xff,
+      r: 0xff,
+      wz: 0xffff
+    }
+    res.json(regs);
   });
 
   /**

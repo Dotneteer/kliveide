@@ -1,6 +1,10 @@
-.vscode
-node_modules
+.vscode/**
+.vscode-test/**
+out/test/**
+out/**/*.map
 src/**
-package-json.lock
+test/**
+.gitignore
 tsconfig.json
+tslint.json
 webpack.config.js

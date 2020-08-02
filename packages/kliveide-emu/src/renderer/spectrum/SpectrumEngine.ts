@@ -12,6 +12,7 @@ import {
   SpectrumMachineState,
   EmulationMode,
   DebugStepMode,
+  SpectrumMachineStateBase,
 } from "../../native/machine-state";
 import { SpectrumKeyCode } from "../../native/SpectrumKeyCode";
 import { EmulatedKeyStroke } from "./spectrum-keys";
@@ -21,13 +22,12 @@ import { rendererProcessStore } from "../rendererProcessStore";
 import {
   emulatorSetExecStateAction,
   emulatorSetTapeContenstAction,
+  emulatorSetFrameIdAction,
 } from "../../shared/state/redux-emulator-state";
-import {
-  getDefaultTapeSet,
-  setZ80Memory,
-} from "../../shared/messaging/message-senders";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
+import { RegisterData } from "../../shared/spectrum/api-data";
+import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 
 /**
  * Beeper samples in the memory
@@ -70,6 +70,9 @@ export class SpectrumEngine {
   // --- Tape emulation
   private _tapeSetInitialized = false;
   private _defaultTapeSet = new Uint8Array(0);
+
+  // --- FrameID information
+  private _startCount = 0;
 
   /**
    * Initializes the engine with the specified ZX Spectrum instance
@@ -267,6 +270,8 @@ export class SpectrumEngine {
       return;
     }
 
+    this._startCount++;
+
     // --- Prepare the machine to run
     this._isFirstStart =
       this.executionState === ExecutionState.None ||
@@ -389,7 +394,7 @@ export class SpectrumEngine {
    * Restarts the virtual machine
    */
   async restart(): Promise<void> {
-    await this.stop()
+    await this.stop();
     this.start();
   }
 
@@ -398,37 +403,28 @@ export class SpectrumEngine {
    */
   async stepInto(): Promise<void> {
     await this.run(
-      new ExecuteCycleOptions(
-        EmulationMode.Debugger,
-        DebugStepMode.StepInto
-      )
+      new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepInto)
     );
   }
-  
+
   /**
    * Starts the virtual machine in step-over mode
    */
   async stepOver(): Promise<void> {
     await this.run(
-      new ExecuteCycleOptions(
-        EmulationMode.Debugger,
-        DebugStepMode.StepOver
-      )
+      new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOver)
     );
   }
-  
+
   /**
    * Starts the virtual machine in step-out mode
    */
   async stepOut(): Promise<void> {
     await this.run(
-      new ExecuteCycleOptions(
-        EmulationMode.Debugger,
-        DebugStepMode.StepOut
-      )
+      new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOut)
     );
   }
-  
+
   /**
    * Cancels the execution cycle
    */
@@ -467,6 +463,16 @@ export class SpectrumEngine {
 
       const resultState = (this._loadedState = machine.spectrum.getMachineState());
       const reason = resultState.executionCompletionReason;
+
+      // --- Set data frequently queried
+      rendererProcessStore.dispatch(
+        emulatorSetFrameIdAction(this._startCount, resultState.frameCount)()
+      );
+      rendererProcessStore.dispatch(
+        vmSetRegistersAction(this.getRegisterData(resultState))()
+      );
+
+      // --- Branch according the completion reason
       if (reason !== ExecutionCompletionReason.UlaFrameCompleted) {
         // --- No more frame to execute
         if (
@@ -499,9 +505,6 @@ export class SpectrumEngine {
         );
       }
       const mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
-      if (resultState.beeperSampleCount === 0) {
-        console.log("0 beeper samples detected!");
-      }
       const beeperSamples = mh.readBytes(0, resultState.beeperSampleCount);
       this._beeperRenderer.storeSamples(beeperSamples);
       machine._beeperSamplesEmitted.fire(beeperSamples);
@@ -568,5 +571,28 @@ export class SpectrumEngine {
    */
   getKeyQueueLength(): number {
     return this._keyStrokeQueue.length;
+  }
+
+  /**
+   * Gets the current Z80 register values
+   */
+  getRegisterData(s: SpectrumMachineStateBase): RegisterData {
+    return {
+      af: s.af,
+      bc: s.bc,
+      de: s.de,
+      hl: s.hl,
+      af_: s._af_,
+      bc_: s._bc_,
+      de_: s._de_,
+      hl_: s._hl_,
+      pc: s.pc,
+      sp: s.sp,
+      ix: s.ix,
+      iy: s.iy,
+      i: s.i,
+      r: s.r,
+      wz: s.wz,
+    };
   }
 }
