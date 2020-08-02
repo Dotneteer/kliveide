@@ -12,7 +12,9 @@
     emulatorToggleKeyboardAction,
     emulatorToggleShadowScreenAction,
     emulatorToggleBeamPositionAction,
-    emulatorToggleFastLoadAction
+    emulatorToggleFastLoadAction,
+    emulatorMuteAction,
+    emulatorUnmuteAction
   } from "../../shared/state/redux-emulator-state";
   import { emulatorSetCommandAction } from "../../shared/state/redux-emulator-command-state";
   import { getSpectrumEngine } from "../spectrum-loader";
@@ -23,6 +25,7 @@
   let shadowScreenEnabled;
   let beamPositionEnabled;
   let fastLoadEnabled;
+  let muted;
   calculateColors(true); // --- Default: the app has the focus
 
   let spectrum;
@@ -43,6 +46,7 @@
       shadowScreenEnabled = emuUi.shadowScreen;
       beamPositionEnabled = emuUi.beamPosition;
       fastLoadEnabled = emuUi.fastLoad;
+      muted = emuUi.muted;
     }
     calculateColors(state.appHasFocus);
 
@@ -200,4 +204,19 @@
     on:clicked={() => {
       stateAware.dispatch(emulatorToggleFastLoadAction());
     }} />
+  {#if muted}
+    <ToolbarIconButton
+      iconName="unmute"
+      title="Unmute sound"
+      on:clicked={() => {
+        stateAware.dispatch(emulatorUnmuteAction());
+      }} />
+  {:else}
+    <ToolbarIconButton
+      iconName="mute"
+      title="Mute sound"
+      on:clicked={() => {
+        stateAware.dispatch(emulatorMuteAction());
+      }} />
+  {/if}
 </div>

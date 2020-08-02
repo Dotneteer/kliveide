@@ -9830,7 +9830,7 @@
     (local $bit4Sensed i32)
     (local $chargeTime i32)
     (local $bit6Value i32)
-    (local $tmp i32)
+    (local $earBit i32)
 
     ;; Scan keyboard line status
     (call $getKeyLineStatus (i32.shr_u (get_local $addr) (i32.const 8)))
@@ -9840,7 +9840,10 @@
     (i32.eq (get_global $tapeMode) (i32.const 1))
     if (result i32)
       (i32.and (get_local $portValue) (i32.const 0xbf))
-      (i32.shl (call $getTapeEarBit) (i32.const 6))
+      call $getTapeEarBit tee_local $earBit
+      (i32.shl (i32.const 4))
+      call $processEarBit
+      (i32.shl (get_local $earBit) (i32.const 6))
       i32.or
     else
       ;; Handle analog EAR bit
@@ -9912,8 +9915,7 @@
 
     ;; Let the beeper device process the EAR bit
     (i32.and (get_local $v) (i32.const 0x10))
-    set_local $bit4
-    (call $processEarBit (get_local $bit4))
+    (call $processEarBit (tee_local $bit4))
 
     ;; Set the last value of bit3
     (i32.and (get_local $v) (i32.const 0x08))

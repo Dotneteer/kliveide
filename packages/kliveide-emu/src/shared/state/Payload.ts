@@ -15,5 +15,6 @@ export interface Payload {
   command?: string;
   startCount?: number;
   frameCount?: number;
+  muted?: boolean;
   registers?: RegisterData
 }
