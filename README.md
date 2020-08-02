@@ -2,6 +2,10 @@
 
 This project aims to build a full-fledged ZX Spectrum IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+), Klive IDE intends to be an attractive development platform for [ZX Spectrum Next](https://www.specnext.com/).
 
+**The first public release (v0.1.0) is released on August 2, 2020**
+
+
+
 You may ask why we need another ZX Spectrum Emulator and IDE, as we have dozens of them. More or less, you are right. Nonetheless, we have only a few with ZX Spectrum Next emulators that support the developer community:
 
 - [ZEsarUX](https://github.com/chernandezba/zesarux) by _Cesar Hernandez Bano_
@@ -47,3 +51,5 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
     - Z80 Assembly integration (syntax highlighting and compilation)
 4. A Klive IDE version that provides feature-parity with SpectNetIDE
 5. Moving toward ZX Spectrum Next
+
+## Installing and Runnig 
