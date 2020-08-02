@@ -23,12 +23,13 @@
     "tscbuild": "tsc",
     "spbuild": "wat2wasm ./src/native/spectrum.wat -o ./build/spectrum.wasm",
     "test": "ts-mocha -p ./test/tsconfig.json ./test/**/*.test.ts",
-    "build:win": "electron-builder build --win --x64",
-    "build:mac": "electron-builder build --mac --x64"
+    "build:win": "npm run build && electron-builder build --win --x64",
+    "build:mac": "npm run build && electron-builder build --mac --x64"
   },
   "build": {
     "appId": "dotneteer.klive",
     "productName": "Klive",
+    "artifactName": "${productName}Setup-${version}.${ext}",
     "directories": {
       "buildResources": "buildResources",
       "app": "./dist/",
@@ -41,7 +42,6 @@
       "target": "nsis",
       "asar": false
     },
-    "buildVersion": "0.1.0",
     "fileAssociations": [
       {
         "ext": "klive",
