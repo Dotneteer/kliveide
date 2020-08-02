@@ -12,6 +12,8 @@
     "type": "git",
     "url": "https://github.com/Dotneteer/kliveide.git"
   },
+  "bugs": "https://github.com/Dotneteer/kliveide/issues",
+  "homepage": "https://github.com/Dotneteer/kliveide",
   "categories": [
     "Other"
   ],

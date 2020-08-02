@@ -45,7 +45,7 @@ export async function startNotifier(): Promise<void> {
     } catch (err) {
       // --- This exception is intentionally ignored
     }
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 400));
   }
 }
 
