@@ -2,7 +2,11 @@ import * as vscode from "vscode";
 import { startEmulator } from "./emulator/start-emu";
 import { Z80RegistersProvider } from "./views/z80-registers";
 import { setZ80RegisterProvider } from "./providers";
-import { startNotifier, onFrameInfoChanged } from "./emulator/notifier";
+import {
+  startNotifier,
+  onFrameInfoChanged,
+  onexecutionChanged as onExecutionStateChanged,
+} from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -25,10 +29,15 @@ export function activate(context: vscode.ExtensionContext) {
       z80RegistersProvider.refresh(regData);
     } catch (err) {
       // --- This exception in intentionally ignored
-      console.log(err);
     }
   });
-  
+
+  onExecutionStateChanged(async (state) => {
+    // TODO: Respond to execution state changes
+    const regData = await communicatorInstance.getRegisters();
+    z80RegistersProvider.refresh(regData);
+  });
+
   startNotifier();
 }
 

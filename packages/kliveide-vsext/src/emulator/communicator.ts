@@ -93,6 +93,7 @@ class Communicator {
 export interface FrameInfo {
   startCount?: number;
   frameCount?: number;
+  executionState?: number;
 }
 
 /**
