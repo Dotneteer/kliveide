@@ -2,9 +2,11 @@
 
 This project aims to build a full-fledged ZX Spectrum IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+), Klive IDE intends to be an attractive development platform for [ZX Spectrum Next](https://www.specnext.com/).
 
-**The first public release (v0.1.0) is released on August 2, 2020**
+**The first public release (v0.1.0) is released on August 2, 2020**. [You can immediately try it](#try-release).
 
-[You can immediately try it](#try-release).
+[You can build the latest commit](#build-it).
+
+## Approach
 
 You may ask why we need another ZX Spectrum Emulator and IDE, as we have dozens of them. More or less, you are right. Nonetheless, we have only a few with ZX Spectrum Next emulators that support the developer community:
 
@@ -35,10 +37,10 @@ Klive IDE targets Linux, Mac, and Windows. To use the IDE, you need these three 
 
 The project is in its initial phase when we uses proof-of-concept modells to create the initial version. As of know, this is the roadmap &mdash; without any deadlines yet:
 
-1. The initial POC of the Klive emulator. Main things to gather experience:
-    - Using web technologies to create a decent UI with a powerful emulator that provides space for excessive hardware emulation (ZX Spectrum Next)
-    - Ability to measure how WebAssembly plays its role on this area. (_Note_: So far measures show that the native WA implementation is about three times faster than the tuned JavaScript implementation.)
-    - An easy to use API to support integration with external apps, main focus on VS Code.
+1. (**Mission accomplished**) The initial POC of the Klive emulator. Main things to gather experience:
+    - Using web technologies to create a decent UI with a powerful emulator that provides space for excessive hardware emulation (ZX Spectrum Next) (&check;)
+    - Ability to measure how WebAssembly plays its role on this area. (_Note_: So far measures show that the native WA implementation is about three times faster than the tuned JavaScript implementation.) (&check;)
+    - An easy to use API to support integration with external apps, main focus on VS Code. (&check;)
 2. A series of POC-pieces to find out which VS Code extensibility tools suit the best for particular pieces of the IDE:
     - Z80 Disassembly
     - ZX Spectrum live memory map
@@ -53,6 +55,7 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
 5. Moving toward ZX Spectrum Next
 
 <a name="try-release"></a>
+
 ## Installing and Running Release v0.1.0
 
 > **Note**: This release runs only on Windows. Not as if the source code were Windows-specific, it supposed to support Linux, Mac, and Windows. I do not have a Mac to build this product, as I miss some crucial experiences with Linux. **I'm looking for contributors who could help me with building for the other platforms.**
@@ -86,3 +89,40 @@ To install the early preview release, follow these steps:
 ![Registers after](./docs/intro/registers-after.png)
 
 15. Play with the virtual emulator :-)
+
+<a name="build-it"></a>
+
+## Building Klive IDE
+
+This repository is a monorepo with two packages and uses [Lerna](https://github.com/lerna/lerna) for managing them. In the future, the repo may have additional packages.
+
+Prepare the code for build and run:
+
+1. Fork this repository, and clone it.
+2. Run `npm run bootstrap` to install and setup the packages.
+3. Open the project folder in VS Code (or in your preferred coding tool). Take care that the current working directory (as always) should be the project folder.
+
+Follow these steps to build and run the Klive Emulator in development mode:
+
+1. Start a new command-line program (a terminal window in VS Code), and execute the `npm run dev`. It will build the Klive Emulator and starts the Webpack development server that continuously watches for code changes. The server runs until you terminate this process. To run Klive Emulator, keep this process alive.
+2. Start *another* command-line prompt (terminal window), and run the emulator with `npm start`.
+3. When you have completed playing with it, close the emulator, and then terminate the open command-line prompts.
+
+> Note: Wait while the `npm run dev` command completes the build; otherwise, the `npm start` command will fail.
+
+These steps help to build and install Klive Emulator:
+
+1. On Windows, execute the `npm run build:win` command. On Mac, run `npm run build:mac` In a few minutes, these commands prepare the Klive setup kit.
+2. Open the `packages/kliveide-emu/out` folder in your preferred file manager tool. In VS Code, you can right-click this folder in the Explorer pane and select the **Reveal in File Explorer** command.
+3. Start the `KliveSetup-<version>.exe` app within this folder. It runs the setup kit and then starts Klive Emulator.
+
+With a few additional steps, you can try the Klive VS Code extension:
+
+1. If you use the development mode, start a second Visual Studio Code, and open the `packages/kliveide-vsext` folder within the project folder. If you do not, complete the build steps of Klive Emulator, and **take care that the emulator runs** while playing with the VS Code extension.
+2. Press Ctrl+F5 (**Run|Run Without Debugging** command). In a few seconds, VS Code builds the extension and starts a new VS Code instance (Extension Development Host).
+3. Select the Debug tab in VS Code's activity bar. This action displays the **Z80 REGISTERS** view at the bottom. *Unless you visit this tab, VS Code does not load the Klive IDE extension.
+4. Alternatively, you can run the **Start Klive Emulator** command with F1 or Ctrl+Shift+P (or **View|Command Palette**).
+5. Play with the emulator. As you run it, you can observe that Z80 register's values are periodically refreshed (see the value of R register).
+
+
+
