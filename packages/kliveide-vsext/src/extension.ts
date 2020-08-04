@@ -2,15 +2,20 @@ import * as vscode from "vscode";
 import { startEmulator } from "./emulator/start-emu";
 import { Z80RegistersProvider } from "./views/z80-registers";
 import { setZ80RegisterProvider } from "./providers";
-import { startNotifier, onFrameInfoChanged } from "./emulator/notifier";
+import {
+  startNotifier,
+  onFrameInfoChanged,
+  onExecutionStateChanged,
+} from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
+import { createVmStateStatusBarItem } from "./views/statusbar";
 
 export function activate(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
+  let startEmuCmd = vscode.commands.registerCommand(
     "kliveide.startEmu",
     async (ctx) => await startEmulator()
   );
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(startEmuCmd);
 
   const z80RegistersProvider = new Z80RegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);
@@ -25,10 +30,18 @@ export function activate(context: vscode.ExtensionContext) {
       z80RegistersProvider.refresh(regData);
     } catch (err) {
       // --- This exception in intentionally ignored
-      console.log(err);
     }
   });
-  
+
+  onExecutionStateChanged(async (state) => {
+    const regData = await communicatorInstance.getRegisters();
+    z80RegistersProvider.refresh(regData);
+  });
+
+  const vmStateItem = createVmStateStatusBarItem();
+  vmStateItem.command = "kliveide.startEmu";
+  context.subscriptions.push(vmStateItem);
+
   startNotifier();
 }
 

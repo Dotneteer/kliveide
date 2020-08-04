@@ -115,6 +115,10 @@ export class SpectrumEngine {
     this._executionStateChanged.fire(
       new ExecutionStateChangedArgs(oldState, newState)
     );
+    rendererProcessStore.dispatch(
+      emulatorSetExecStateAction(this._vmState)()
+    );
+
   }
 
   /**
@@ -315,9 +319,6 @@ export class SpectrumEngine {
 
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
-    rendererProcessStore.dispatch(
-      emulatorSetExecStateAction(this.executionState)()
-    );
     this._cancelled = false;
     this._completionTask = this.executeCycle(this, options);
   }
@@ -342,15 +343,9 @@ export class SpectrumEngine {
 
     // --- Prepare the machine to pause
     this.executionState = ExecutionState.Pausing;
-    rendererProcessStore.dispatch(
-      emulatorSetExecStateAction(this.executionState)()
-    );
     this._isFirstPause = this._isFirstStart;
     this.cancelRun();
     this.executionState = ExecutionState.Paused;
-    rendererProcessStore.dispatch(
-      emulatorSetExecStateAction(this.executionState)()
-    );
   }
 
   /**
@@ -366,26 +361,14 @@ export class SpectrumEngine {
       case ExecutionState.Paused:
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
-        rendererProcessStore.dispatch(
-          emulatorSetExecStateAction(this.executionState)()
-        );
         this.executionState = ExecutionState.Stopped;
-        rendererProcessStore.dispatch(
-          emulatorSetExecStateAction(this.executionState)()
-        );
         break;
 
       default:
         // --- Initiate stop
         this.executionState = ExecutionState.Stopping;
-        rendererProcessStore.dispatch(
-          emulatorSetExecStateAction(this.executionState)()
-        );
         this.cancelRun();
         this.executionState = ExecutionState.Stopped;
-        rendererProcessStore.dispatch(
-          emulatorSetExecStateAction(this.executionState)()
-        );
         break;
     }
   }

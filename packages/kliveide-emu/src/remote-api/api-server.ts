@@ -22,7 +22,6 @@ import {
   emulatorUnmuteAction,
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
-import { register } from "electron-localshortcut";
 import { RegisterData } from "../shared/spectrum/api-data";
 
 const NOTIFICATION_SERVER = "vsKliveExtension";
@@ -53,6 +52,7 @@ export function startApiServer() {
     res.json({
       startCount: emuState.startCount,
       frameCount: emuState.frameCount,
+      executionState: emuState.executionState
     });
   });
 
@@ -246,21 +246,6 @@ export function startApiServer() {
   });
 
   /**
-   * Instructs the emulator UI to get the state of the ui
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    keyboard: boolean
-   *    shadowScreen: boolean
-   *    beamPosition: boolean
-   *    fastLoad: boolean
-   */
-  app.get("/ui-state", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
-  });
-
-  /**
    * Gets the current values of Z80 registers
    */
   app.get("/z80-regs", (_req, res) => {
@@ -305,18 +290,6 @@ export function startApiServer() {
    *    contDelay: u32
    */
   app.get("/spectrum-diag", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
-  });
-
-  /**
-   * Gets current state of the ZX Spectrum virtual machine
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    state: string
-   */
-  app.get("/vm-state", (req, res) => {
     // TODO: Implement this method
     res.sendStatus(200);
   });
