@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { spawn } from "child_process";
 import { KLIVEIDE, EMU_EXEC_PATH } from "../config/sections";
-import { communicatorInstance } from "./communicator";
+import { communicatorInstance } from "../emulator/communicator";
 
 
 /**
