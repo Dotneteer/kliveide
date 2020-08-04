@@ -21,6 +21,7 @@
   "icon": "resources/icon.png",
   "activationEvents": [
     "onCommand:kliveide.startEmu",
+    "onCommand:kliveide.createProject",
     "onView:z80Registers"
   ],
   "contributes": {
@@ -43,6 +44,10 @@
       {
         "command": "kliveide.startEmu",
         "title": "Start Klive Emulator"
+      },
+      {
+        "command": "kliveide.createProject",
+        "title": "Create Klive Project"
       }
     ],
     "views": {
@@ -56,7 +61,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "npm run compile",
+    "build": "npm run compile && node ./scripts/copyFiles.js",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "webpack": "webpack --mode development",
