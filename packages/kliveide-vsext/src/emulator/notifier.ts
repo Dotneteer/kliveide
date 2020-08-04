@@ -4,18 +4,19 @@ import { communicatorInstance, FrameInfo } from "./communicator";
 // --- Communicator internal state
 let started = false;
 let cancelled = false;
+let connected = true;
 
 // --- The last frame information received
-let lastFrameInfo: FrameInfo = {
-  startCount: -1,
-  frameCount: -1,
-};
+let lastFrameInfo: FrameInfo;
 
 let frameInfoChanged: vscode.EventEmitter<FrameInfo> = new vscode.EventEmitter<
   FrameInfo
 >();
 let executionStateChanged: vscode.EventEmitter<string> = new vscode.EventEmitter<
   string
+>();
+let connectionStateChanged: vscode.EventEmitter<boolean> = new vscode.EventEmitter<
+  boolean
 >();
 
 /**
@@ -27,8 +28,14 @@ export const onFrameInfoChanged: vscode.Event<FrameInfo> =
 /**
  * Fires when execution state has been changed
  */
-export const onexecutionChanged: vscode.Event<string> =
+export const onExecutionStateChanged: vscode.Event<string> =
   executionStateChanged.event;
+
+/**
+ * Fires when connection state has been changed
+ */
+export const onConnectionStateChanged: vscode.Event<boolean> =
+  connectionStateChanged.event;
 
 /**
  * Starts the notification watcher task
@@ -38,11 +45,23 @@ export async function startNotifier(): Promise<void> {
     return;
   }
   cancelled = false;
+  onConnectionStateChanged((state) => {
+    if (!state) {
+      resetLastFrameInfo();
+    }
+  });
 
-  console.log("Notifier started");
   while (!cancelled) {
     try {
       const frameInfo = await communicatorInstance.frameInfo();
+
+      // --- Sense connection restore
+      if (!connected) {
+        connected = true;
+        connectionStateChanged.fire(connected);
+      }
+
+      // --- Handle changes in frame ID
       if (
         frameInfo.frameCount !== lastFrameInfo.frameCount ||
         frameInfo.startCount !== lastFrameInfo.startCount
@@ -52,6 +71,7 @@ export async function startNotifier(): Promise<void> {
         frameInfoChanged.fire(lastFrameInfo);
       }
 
+      // --- Handle changes in execution state
       if (frameInfo.executionState !== lastFrameInfo.executionState) {
         lastFrameInfo.executionState = frameInfo.executionState;
         let execState = "none";
@@ -75,7 +95,14 @@ export async function startNotifier(): Promise<void> {
         executionStateChanged.fire(execState);
       }
     } catch (err) {
-      // --- This exception is intentionally ignored
+      // --- Handle changes in connection state
+      if (
+        (err as Error).toString().indexOf("network timeout") >= 0 &&
+        connected
+      ) {
+        connected = false;
+        connectionStateChanged.fire(connected);
+      }
     }
     await new Promise((r) => setTimeout(r, 400));
   }
@@ -88,3 +115,17 @@ export function stopNotifier(): void {
   cancelled = true;
   started = false;
 }
+
+/**
+ * Resets last frame information to fire events after
+ * reconnection
+ */
+function resetLastFrameInfo(): void {
+  lastFrameInfo = {
+    startCount: -1,
+    frameCount: -1,
+    executionState: 0,
+  };
+}
+
+resetLastFrameInfo();

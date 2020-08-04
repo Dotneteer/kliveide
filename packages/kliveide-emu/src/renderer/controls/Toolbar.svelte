@@ -7,7 +7,10 @@
   import ToolbarSeparator from "./ToolbarSeparator.svelte";
 
   import { themeStore } from "../stores/theme-store";
-  import { createRendererProcessStateAware } from "../rendererProcessStore";
+  import {
+    rendererProcessStore,
+    createRendererProcessStateAware
+  } from "../rendererProcessStore";
   import {
     emulatorToggleKeyboardAction,
     emulatorToggleShadowScreenAction,
@@ -89,9 +92,9 @@
 
   onMount(async () => {
     spectrum = await getSpectrumEngine();
-    spectrum.executionStateChanged.on(
-      ({ newState }) => (executionState = newState)
-    );
+    spectrum.executionStateChanged.on(({ newState }) => {
+      executionState = newState;
+    });
   });
 
   // --- Calculate colors according to focus state
@@ -154,7 +157,7 @@
     size="20"
     highlightSize="24"
     enable={executionState === 0 || executionState === 3 || executionState === 5}
-    on:clicked={async () => await spectrum.startDebugging()} />
+    on:clicked={async () => await spectrum.startDebug()} />
   <ToolbarIconButton
     iconName="step-into"
     fill="lightblue"

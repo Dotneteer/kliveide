@@ -15,7 +15,8 @@ const defaultState: AppState = {
     keyboardPanel: false,
     beamPosition: false,
     shadowScreen: false,
-    fastLoad: false    
+    fastLoad: false ,
+    executionState: 0   
   },
   emulatorCommand: ""
 };

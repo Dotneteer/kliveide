@@ -5,16 +5,17 @@ import { setZ80RegisterProvider } from "./providers";
 import {
   startNotifier,
   onFrameInfoChanged,
-  onexecutionChanged as onExecutionStateChanged,
+  onExecutionStateChanged,
 } from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
+import { createVmStateStatusBarItem } from "./views/statusbar";
 
 export function activate(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
+  let startEmuCmd = vscode.commands.registerCommand(
     "kliveide.startEmu",
     async (ctx) => await startEmulator()
   );
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(startEmuCmd);
 
   const z80RegistersProvider = new Z80RegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);
@@ -33,10 +34,13 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   onExecutionStateChanged(async (state) => {
-    // TODO: Respond to execution state changes
     const regData = await communicatorInstance.getRegisters();
     z80RegistersProvider.refresh(regData);
   });
+
+  const vmStateItem = createVmStateStatusBarItem();
+  vmStateItem.command = "kliveide.startEmu";
+  context.subscriptions.push(vmStateItem);
 
   startNotifier();
 }

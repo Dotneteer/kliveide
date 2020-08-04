@@ -64,6 +64,7 @@ class Communicator {
     requestInit?: RequestInit
   ): Promise<string> {
     const response = await this.get(command, requestInit);
+    console.log(`response: ${JSON.stringify(response)}`);
     if (response.ok) {
       return response.text();
     }
