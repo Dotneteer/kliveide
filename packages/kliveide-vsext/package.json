@@ -18,11 +18,12 @@
     "Other"
   ],
   "main": "./out/extension.js",
-  "icon": "resources/icon.png",
+  "icon": "assets/icon.png",
   "activationEvents": [
     "onCommand:kliveide.startEmu",
     "onCommand:kliveide.createProject",
-    "onView:z80Registers"
+    "onView:z80Registers",
+    "onCustomEditor:kliveide.disassemblyEditor"
   ],
   "contributes": {
     "configuration": {
@@ -57,7 +58,18 @@
           "name": "Z80 Registers"
         }
       ]
-    }
+    },
+    "customEditors": [
+      {
+        "viewType": "kliveide.disassemblyEditor",
+        "displayName": "Klive Disassembly Editor",
+        "selector": [
+          {
+            "filenamePattern": "disassembly.spview"
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run build",

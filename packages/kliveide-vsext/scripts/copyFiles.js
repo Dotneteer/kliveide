@@ -1,9 +1,14 @@
 const path = require("path");
 const fs = require("fs");
 
-const templateDir = path.join(__dirname, "../templates");
-const outDir = path.join(__dirname, "../out/templates");
-copyDir(templateDir, outDir);
+copyDir(
+  path.join(__dirname, "../templates"),
+  path.join(__dirname, "../out/templates")
+);
+copyDir(
+  path.join(__dirname, "../assets"),
+  path.join(__dirname, "../out/assets")
+);
 
 function copyDir(src, dest) {
   mkdir(dest);
