@@ -114,7 +114,7 @@ export class AppWindow {
     } else if (__WIN32__) {
       windowOptions.frame = true;
     } else if (__LINUX__) {
-      windowOptions.icon = path.join(__dirname, "static", "icon-logo.png");
+      windowOptions.icon = path.join(__dirname, "icons/spectnet-logo.png");
     }
 
     this._window = new BrowserWindow(windowOptions);

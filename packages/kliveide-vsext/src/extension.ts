@@ -11,6 +11,7 @@ import {
 import { communicatorInstance } from "./emulator/communicator";
 import { createVmStateStatusBarItem } from "./views/statusbar";
 import { createKliveProject } from "./commands/create-klive-project";
+import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
 
 export function activate(context: vscode.ExtensionContext) {
   let startEmuCmd = vscode.commands.registerCommand(
@@ -49,6 +50,9 @@ export function activate(context: vscode.ExtensionContext) {
   const vmStateItem = createVmStateStatusBarItem();
   vmStateItem.command = "kliveide.startEmu";
   context.subscriptions.push(vmStateItem);
+
+  // --- Register custom editors
+	context.subscriptions.push(DisassemblyEditorProvider.register(context));
 
   // --- Start the notification mechanism
   startNotifier();
