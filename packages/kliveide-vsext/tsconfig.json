@@ -3,7 +3,7 @@
     "module": "commonjs",
     "target": "es2019",
     "outDir": "out",
-    "lib": ["ES2019"],
+    "lib": ["ES2019", "DOM"],
     "sourceMap": true,
     "rootDir": "src",
     "strict": true
@@ -11,6 +11,6 @@
   "include": [
     "src/**/*.ts",
     "./node_modules/vscode/vscode.d.ts",
-    "./node_modules/vscode/lib/*"
+    "./node_modules/vscode/lib/*", "src/custom-editors/disassembly/disassembly.js"
   ]
 }

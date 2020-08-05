@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { EditorProviderBase, ReplacementTuple } from "./editor-base";
+import { EditorProviderBase, ReplacementTuple } from "../editor-base";
 
 export class DisassemblyEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.disassemblyEditor";
@@ -32,7 +32,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   getContentReplacements(): ReplacementTuple[] {
     return [
       ["stylefile", this.getAssetsFileResource("style.css")],
-      ["jsfile", this.getAssetsFileResource("disassembly.js")],
+      ["jsfile", this.getAssetsFileResource("disass.bundle.js")],
     ];
   }
 

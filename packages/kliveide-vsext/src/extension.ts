@@ -11,7 +11,7 @@ import {
 import { communicatorInstance } from "./emulator/communicator";
 import { createVmStateStatusBarItem } from "./views/statusbar";
 import { createKliveProject } from "./commands/create-klive-project";
-import { DisassemblyEditorProvider } from "./custom-editors/disass-editor";
+import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
 
 export function activate(context: vscode.ExtensionContext) {
   let startEmuCmd = vscode.commands.registerCommand(
