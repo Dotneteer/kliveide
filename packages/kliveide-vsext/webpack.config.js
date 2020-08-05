@@ -31,7 +31,7 @@ function createConfig(source, dest) {
           use: {
             loader: "svelte-loader",
             options: {
-              emitCss: false,
+              emitCss: true,
               hotReload: true,
             },
           },
