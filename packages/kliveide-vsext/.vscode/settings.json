@@ -1,6 +1,6 @@
 {
   "mochaExplorer.mochaPath": "node_modules/mocha",
-  "mochaExplorer.files": "./packages/**/test/**/*.test.ts",
+  "mochaExplorer.files": "./test/**/*.test.ts",
   "mochaExplorer.require": "ts-node/register",
   "files.exclude": {
     "out": false // set this to true to hide the "out" folder with the compiled JS files

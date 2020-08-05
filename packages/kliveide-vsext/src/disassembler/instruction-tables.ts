@@ -89,22 +89,22 @@ export class InstructionTable {
 /**
  * 16-bit register pairs for the ^Q pragma
  */
-export const s_Q16Regs: string[] = ["bc", "de", "hl", "sp"];
+export const q16Regs: string[] = ["bc", "de", "hl", "sp"];
 
 /**
  * 16-bit register pairs for the ^R pragma
  */
-export const s_R16Regs: string[] = ["bc", "de", "hl", "af"];
+export const r16Regs: string[] = ["bc", "de", "hl", "af"];
 
 /**
  * 8-bit register pairs for the ^q pragma
  */
-export const s_Q8Regs: string[] = ["b", "c", "d", "e", "h", "l", "(hl)", "a"];
+export const q8Regs: string[] = ["b", "c", "d", "e", "h", "l", "(hl)", "a"];
 
 /**
  * Disassembly keywords that cannot be used as label names or other symbols
  */
-export const s_DisAsmKeywords: string[] = [
+export const disasmKeywords: string[] = [
   "A",
   "B",
   "C",
@@ -200,7 +200,7 @@ export const s_DisAsmKeywords: string[] = [
 /**
  * Standard Z80 instructions
  */
-export const s_StandardInstructions = new InstructionTable([
+export const standardInstructions = new InstructionTable([
   new OperationMap(0x00, undefined, "nop"),
   new OperationMap(0x01, 0xcf, "ld ^Q,^W"),
   new OperationMap(0x02, 0xef, "ld (^Q),a"),
@@ -292,7 +292,7 @@ export const s_StandardInstructions = new InstructionTable([
 /**
  * Extended Z80 instructions
  */
-export const s_ExtendedInstructions = new InstructionTable([
+export const extendedInstructions = new InstructionTable([
   new OperationMap(0x00, 0xe0, null),
   new OperationMap(0x20, undefined, null),
   new OperationMap(0x21, undefined, null),
@@ -398,7 +398,7 @@ export const s_ExtendedInstructions = new InstructionTable([
 /**
  * Z80 bit instructions
  */
-export const s_BitInstructions = new InstructionTable([
+export const bitInstructions = new InstructionTable([
   new OperationMap(0x00, 0xf8, "rlc ^s"),
   new OperationMap(0x08, 0xf8, "rrc ^s"),
   new OperationMap(0x10, 0xf8, "rl ^s"),
@@ -415,7 +415,7 @@ export const s_BitInstructions = new InstructionTable([
 /**
  * Z80 indexed instructions
  */
-export const s_IndexedInstructions = new InstructionTable([
+export const indexedInstructions = new InstructionTable([
   new OperationMap(0x09, 0xcf, "add ^X,^Q"),
   new OperationMap(0x21, undefined, "ld ^X,^W"),
   new OperationMap(0x22, undefined, "ld (^W),^X"),
@@ -484,7 +484,7 @@ export const s_IndexedInstructions = new InstructionTable([
 /**
  * Z80 indexed bit instructions
  */
-export const s_IndexedBitInstructions = new InstructionTable([
+export const indexedBitInstructions = new InstructionTable([
   new OperationMap(0x00, 0xf8, "rlc (^X^D),^s"),
   new OperationMap(0x06, undefined, "rlc (^X^D)"),
   new OperationMap(0x08, 0xf8, "rrc (^X^D),^s"),
@@ -525,7 +525,7 @@ export const s_IndexedBitInstructions = new InstructionTable([
 /**
  * RST 28 calculations
  */
-export const s_CalcOps = new Map<number, string>([
+export const calcOps = new Map<number, string>([
   [0x00, "jump-true"],
   [0x01, "exchange"],
   [0x02, "delete"],
