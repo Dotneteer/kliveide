@@ -82,7 +82,9 @@
     "lint": "eslint . --ext .ts,.tsx"
   },
   "devDependencies": {
+    "@types/expect": "^24.3.0",
     "@types/glob": "^7.1.1",
+    "@types/lodash": "^4.14.158",
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.11.0",
     "@types/node-fetch": "^2.5.7",
@@ -92,8 +94,10 @@
     "@typescript-eslint/parser": "^2.30.0",
     "css-loader": "^4.2.0",
     "eslint": "^6.8.0",
+    "expect": "^26.2.0",
     "file-loader": "^6.0.0",
     "glob": "^7.1.6",
+    "lodash": "^4.17.19",
     "mocha": "^7.1.2",
     "style-loader": "^1.2.1",
     "svelte": "^3.24.0",
