@@ -18,10 +18,12 @@
     "Other"
   ],
   "main": "./out/extension.js",
-  "icon": "resources/icon.png",
+  "icon": "assets/icon.png",
   "activationEvents": [
     "onCommand:kliveide.startEmu",
-    "onView:z80Registers"
+    "onCommand:kliveide.createProject",
+    "onView:z80Registers",
+    "onCustomEditor:kliveide.disassemblyEditor"
   ],
   "contributes": {
     "configuration": {
@@ -43,6 +45,10 @@
       {
         "command": "kliveide.startEmu",
         "title": "Start Klive Emulator"
+      },
+      {
+        "command": "kliveide.createProject",
+        "title": "Create Klive Project"
       }
     ],
     "views": {
@@ -52,11 +58,22 @@
           "name": "Z80 Registers"
         }
       ]
-    }
+    },
+    "customEditors": [
+      {
+        "viewType": "kliveide.disassemblyEditor",
+        "displayName": "Klive Disassembly Editor",
+        "selector": [
+          {
+            "filenamePattern": "disassembly.spview"
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "npm run compile",
+    "build": "npm run compile && npm run webpack && node ./scripts/copyFiles.js",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "webpack": "webpack --mode development",
@@ -73,9 +90,14 @@
     "@types/vscode": "^1.46.0",
     "@typescript-eslint/eslint-plugin": "^2.30.0",
     "@typescript-eslint/parser": "^2.30.0",
+    "css-loader": "^4.2.0",
     "eslint": "^6.8.0",
+    "file-loader": "^6.0.0",
     "glob": "^7.1.6",
     "mocha": "^7.1.2",
+    "style-loader": "^1.2.1",
+    "svelte": "^3.24.0",
+    "svelte-loader": "^2.13.6",
     "ts-loader": "^8.0.1",
     "ts-node": "^8.10.2",
     "typescript": "^3.8.3",
