@@ -4,6 +4,7 @@ import { AppWindow } from "../../main/AppWindow";
 import { emulatorStateReducer } from "./redux-emulator-state";
 import { emulatorCommandStateReducer } from "./redux-emulator-command-state";
 import { vmInfoStateReducer } from "./redux-vminfo-state";
+import { memoryCommandStateReducer } from "./redux-memory-command-state";
 
 /**
  * The set of reducers we use within this application
@@ -13,6 +14,7 @@ export const appReducers = {
   windowState: windowStateReducer,
   emulatorPanelState: emulatorStateReducer,
   emulatorCommand: emulatorCommandStateReducer,
+  memoryCommand: memoryCommandStateReducer,
   vmInfo: vmInfoStateReducer
 };
 

@@ -1,6 +1,9 @@
 import { SpectrumEngine } from "./spectrum/SpectrumEngine";
-import { MachineApi } from "../../src/native/api";
-import { ZxSpectrum48 } from "../../src/native/ZxSpectrum48";
+import { MachineApi } from "../native/api";
+import { ZxSpectrum48 } from "../native/ZxSpectrum48";
+import { createRendererProcessStateAware } from "./rendererProcessStore";
+import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
+import { MemoryCommand } from "../shared/state/AppState";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -11,6 +14,21 @@ let _spectrumEngine: SpectrumEngine | null = null;
  * Async loader
  */
 let _loader: Promise<void> | null = null;
+
+/**
+ * Last emulator command requested
+ */
+let lastEmulatorCommand = "";
+
+/**
+ * Last memory command requested
+ */
+let lastMemoryCommand: MemoryCommand | null = null;
+
+/**
+ * Indicates that the engine is processing a state change
+ */
+let processingChange = false;
 
 /**
  * Get the initialized ZX Spectrum engine
@@ -39,10 +57,51 @@ export async function loadSpectrumEngine(): Promise<void> {
       importObject
     );
     const waInst = results.instance;
-    const spectrum = new ZxSpectrum48(waInst.exports as unknown as MachineApi);
+    const spectrum = new ZxSpectrum48(
+      (waInst.exports as unknown) as MachineApi
+    );
     spectrum.setUlaIssue(3);
     spectrum.turnOnMachine();
     _spectrumEngine = new SpectrumEngine(spectrum);
+    const stateAware = createRendererProcessStateAware();
+    stateAware.onStateChanged.on(async (state) => {
+      if (processingChange) return;
+      processingChange = true;
+
+      // --- Process server-api execution state commands
+      if (lastEmulatorCommand !== state.emulatorCommand) {
+        lastEmulatorCommand = state.emulatorCommand;
+
+        switch (lastEmulatorCommand) {
+          case "start":
+            await _spectrumEngine.start();
+            break;
+          case "pause":
+            await _spectrumEngine.pause();
+            break;
+          case "stop":
+            await _spectrumEngine.stop();
+            break;
+          case "restart":
+            await _spectrumEngine.restart();
+            break;
+          case "start-debug":
+            await _spectrumEngine.startDebug();
+            break;
+          case "step-into":
+            await _spectrumEngine.stepInto();
+            break;
+          case "step-over":
+            await _spectrumEngine.stepOver();
+            break;
+          case "step-out":
+            await _spectrumEngine.stepOut();
+            break;
+        }
+        stateAware.dispatch(emulatorSetCommandAction("")());
+      }
+      processingChange = false;
+    });
   } catch (err) {
     console.log(err);
   }

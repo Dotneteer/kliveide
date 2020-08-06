@@ -2,9 +2,12 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { getNonce } from "./utils";
+import { onExecutionStateChanged } from "../emulator/notifier";
+import { RendererMessage } from "./messaging/message-types";
+import { MessageProcessor } from "../emulator/message-processor";
 
 /**
- * Base class for all custom editors
+ *  * Base class for all custom editors
  */
 export abstract class EditorProviderBase
   implements vscode.CustomTextEditorProvider {
@@ -38,20 +41,6 @@ export abstract class EditorProviderBase
   }
 
   /**
-   * Resolve a custom editor for a given text resource.
-   *
-   * @param document Document for the resource to resolve.
-   * @param webviewPanel The webview panel used to display the editor UI for this resource.
-   * @param token A cancellation token that indicates the result is no longer needed.
-   * @return Thenable indicating that the custom editor has been resolved.
-   */
-  abstract async resolveCustomTextEditor(
-    document: vscode.TextDocument,
-    webviewPanel: vscode.WebviewPanel,
-    _token: vscode.CancellationToken
-  ): Promise<void>;
-
-  /**
    * Instantiates the editor provider
    * @param context Extension context
    */
@@ -59,6 +48,76 @@ export abstract class EditorProviderBase
     this.outPath = this.getExtensionPath("out");
     this.assetsPath = this.getExtensionPath("out/assets");
   }
+
+  /**
+   * Resolve a custom editor for a given text resource.
+   *
+   * @param document Document for the resource to resolve.
+   * @param webviewPanel The webview panel used to display the editor UI for this resource.
+   * @param token A cancellation token that indicates the result is no longer needed.
+   * @return Thenable indicating that the custom editor has been resolved.
+   */
+  async resolveCustomTextEditor(
+    document: vscode.TextDocument,
+    webviewPanel: vscode.WebviewPanel,
+    _token: vscode.CancellationToken
+  ): Promise<void> {
+    // --- Setup initial content for the webview
+    webviewPanel.webview.options = {
+      enableScripts: true,
+    };
+    webviewPanel.webview.html = this.getHtmlContents(webviewPanel.webview);
+
+    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
+      (e) => {
+        if (e.document.uri.toString() === document.uri.toString()) {
+          updateWebview();
+        }
+      }
+    );
+
+    const execStateDisposable = onExecutionStateChanged((state: string) => {
+      webviewPanel.webview.postMessage({
+        viewNotification: "execState",
+        state,
+      });
+    });
+
+    // Make sure we get rid of the listener when our editor is closed.
+    webviewPanel.onDidDispose(() => {
+      changeDocumentSubscription.dispose();
+      execStateDisposable.dispose();
+    });
+
+    // Receive message from the webview
+    webviewPanel.webview.onDidReceiveMessage(
+      (e: ViewNotification | RendererMessage) => {
+        if ((e as ViewNotification).viewNotification !== undefined) {
+          this.processViewNotification(e as ViewNotification);
+        } else {
+          new MessageProcessor(webviewPanel.webview).processMessage(e as RendererMessage);
+        }
+      }
+    );
+
+    updateWebview();
+
+    /**
+     * Updates the web view
+     */
+    function updateWebview() {
+      webviewPanel.webview.postMessage({
+        viewNotification: "update",
+        text: document.getText(),
+      });
+    }
+  }
+
+  /**
+   * Process view notifications
+   * @param notification Notification to process
+   */
+  processViewNotification(notification: ViewNotification): void {}
 
   /**
    * Gets the HTML contents belonging to this editor
@@ -144,3 +203,10 @@ export abstract class EditorProviderBase
  * This type defines a replacement tuple
  */
 export type ReplacementTuple = [string, string | vscode.Uri];
+
+/**
+ * Reprensents notifications sent from the web view to its UI
+ */
+export interface ViewNotification {
+  readonly viewNotification: string;
+}

@@ -37,6 +37,15 @@ class Communicator {
   }
 
   /**
+   * Gets the contents of the specified memory segment
+   * @param from Firts memory address
+   * @param to Last memory address
+   */
+  async getMemory(from: number, to: number): Promise<string> {
+    return this.getText(`/mem/${from}/${to}`);
+  }
+
+  /**
    * Invokes a GET command for a generic response
    * @param command Command string
    * @param requestInit Optional request initialization
@@ -64,7 +73,6 @@ class Communicator {
     requestInit?: RequestInit
   ): Promise<string> {
     const response = await this.get(command, requestInit);
-    console.log(`response: ${JSON.stringify(response)}`);
     if (response.ok) {
       return response.text();
     }

@@ -23,10 +23,7 @@ import {
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { RegisterData } from "../shared/spectrum/api-data";
-
-const NOTIFICATION_SERVER = "vsKliveExtension";
-let configured = false;
-let connected = false;
+import { RSA_NO_PADDING } from "constants";
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -52,7 +49,7 @@ export function startApiServer() {
     res.json({
       startCount: emuState.startCount,
       frameCount: emuState.frameCount,
-      executionState: emuState.executionState
+      executionState: emuState.executionState,
     });
   });
 
@@ -332,14 +329,23 @@ export function startApiServer() {
 
   /**
    * Gets the contents of the specified memory range
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    contents: string (base64)
    */
   app.get("/mem/:from/:to", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
+    let fromVal = parseInt(req.params.from);
+    let toVal = parseInt(req.params.to);
+    if (fromVal > toVal) {
+      let tmp = fromVal;
+      fromVal = toVal;
+      toVal = tmp;
+    }
+    const s = mainProcessStore.getState();
+    const m = s.emulatorPanelState?.memoryContents;
+    if (!m || isNaN(fromVal) || isNaN(toVal)) {
+      res.send("");
+    } else {
+      const memBuff = m.slice(fromVal, toVal + 1);
+      res.send(Buffer.from(memBuff).toString("base64"));
+    }
   });
 
   app.listen(3000, () => console.log("Server started..."));

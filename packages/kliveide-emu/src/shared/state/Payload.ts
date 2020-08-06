@@ -16,5 +16,8 @@ export interface Payload {
   startCount?: number;
   frameCount?: number;
   muted?: boolean;
-  registers?: RegisterData
+  registers?: RegisterData;
+  from?: number;
+  to?: number;
+  memoryContents?: Uint8Array;
 }

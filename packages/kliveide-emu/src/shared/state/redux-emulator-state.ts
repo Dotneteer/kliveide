@@ -63,6 +63,10 @@ export function emulatorSetFrameIdAction(
   return createAction("EMULATOR_SET_FRAME_ID", { startCount, frameCount });
 }
 
+export function emulatorSetMemoryContentsAction(memoryContents: Uint8Array) {
+  return createAction("EMULATOR_SET_MEMORY_CONTENTS", { memoryContents });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -132,6 +136,8 @@ export function emulatorStateReducer(
       return { ...state, muted: true };
     case "EMULATOR_UNMUTE":
       return { ...state, muted: false };
+    case "EMULATOR_SET_MEMORY_CONTENTS":
+      return { ...state, memoryContents: payload.memoryContents };
   }
   return state;
 }
