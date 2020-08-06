@@ -24,7 +24,8 @@
     "spbuild": "wat2wasm ./src/native/spectrum.wat -o ./build/spectrum.wasm",
     "test": "ts-mocha -p ./test/tsconfig.json ./test/**/*.test.ts",
     "build:win": "npm run build && electron-builder build --win --x64",
-    "build:mac": "npm run build && electron-builder build --mac --x64"
+    "build:mac": "npm run build && electron-builder build --mac --x64",
+    "build:linux": "npm run build && electron-builder build --linux --x64"
   },
   "build": {
     "appId": "dotneteer.klive",
