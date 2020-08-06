@@ -112,7 +112,7 @@ Follow these steps to build and run the Klive Emulator in development mode:
 
 These steps help to build and install Klive Emulator:
 
-1. On Windows, execute the `npm run build:win` command. On Mac, run `npm run build:mac` In a few minutes, these commands prepare the Klive setup kit.
+1. On Windows, execute the `npm run build:win` command. On Mac, run `npm run build:mac`; or `npm run build:linux` on Linux. In a few minutes, these commands prepare the Klive setup kit.
 2. Open the `packages/kliveide-emu/out` folder in your preferred file manager tool. In VS Code, you can right-click this folder in the Explorer pane and select the **Reveal in File Explorer** command.
 3. Start the `KliveSetup-<version>.exe` app within this folder. It runs the setup kit and then starts Klive Emulator.
 
