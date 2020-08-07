@@ -1,4 +1,6 @@
-import App from "./App.svelte";
-const app = new App({ target: document.body });
+import DisassemblyView from "./DisassemblyView.svelte";
+import "../../../assets/global.css";
+
+const app = new DisassemblyView({ target: document.body });
 
 export default app;

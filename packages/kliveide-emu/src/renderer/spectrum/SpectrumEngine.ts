@@ -23,6 +23,7 @@ import {
   emulatorSetExecStateAction,
   emulatorSetTapeContenstAction,
   emulatorSetFrameIdAction,
+  emulatorSetMemoryContentsAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -80,6 +81,11 @@ export class SpectrumEngine {
    */
   constructor(public spectrum: ZxSpectrumBase) {
     this._loadedState = spectrum.getMachineState();
+    let mh = new MemoryHelper(this.spectrum.api, 0);
+    const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+    rendererProcessStore.dispatch(
+      emulatorSetMemoryContentsAction(memContents)()
+    );
   }
 
   /**
@@ -115,10 +121,7 @@ export class SpectrumEngine {
     this._executionStateChanged.fire(
       new ExecutionStateChangedArgs(oldState, newState)
     );
-    rendererProcessStore.dispatch(
-      emulatorSetExecStateAction(this._vmState)()
-    );
-
+    rendererProcessStore.dispatch(emulatorSetExecStateAction(this._vmState)());
   }
 
   /**
@@ -454,7 +457,12 @@ export class SpectrumEngine {
       rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
       );
-
+      let mh = new MemoryHelper(this.spectrum.api, 0);
+      const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+      rendererProcessStore.dispatch(
+        emulatorSetMemoryContentsAction(memContents)()
+      );
+  
       // --- Branch according the completion reason
       if (reason !== ExecutionCompletionReason.UlaFrameCompleted) {
         // --- No more frame to execute
@@ -482,13 +490,13 @@ export class SpectrumEngine {
       machine._screenRefreshed.fire();
 
       // --- Obtain beeper samples
-      const emuState = rendererProcessStore.getState().emulatorPanelState
+      const emuState = rendererProcessStore.getState().emulatorPanelState;
       if (!this._beeperRenderer) {
         this._beeperRenderer = new AudioRenderer(
           resultState.beeperSampleLength
         );
       }
-      const mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
+      mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
       const beeperSamples = emuState.muted
         ? new Array(resultState.beeperSampleCount).fill(0)
         : mh.readBytes(0, resultState.beeperSampleCount);
@@ -580,5 +588,16 @@ export class SpectrumEngine {
       r: s.r,
       wz: s.wz,
     };
+  }
+
+  /**
+   * Stores the current contents of the memory in the emulator state
+   */
+  storeMemoryContents(): void {
+    const mh = new MemoryHelper(this.spectrum.api, 0);
+    const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+    rendererProcessStore.dispatch(
+      emulatorSetMemoryContentsAction(memContents)()
+    );
   }
 }

@@ -17,7 +17,12 @@ export interface AppState {
   /**
    * Emulator command to execute
    */
-  emulatorCommand: string;
+  emulatorCommand?: string;
+
+  /**
+   * Memory commmand to execute
+   */
+  memoryCommand?: MemoryCommand;
 
   /**
    * Data about the running virtual machine
@@ -41,6 +46,7 @@ export interface EmulatorPanelState {
   startCount?: number;
   frameCount?: number;
   muted?: boolean;
+  memoryContents?: Uint8Array;
 }
 
 /**
@@ -50,3 +56,10 @@ export interface VmInfo {
   registers?: RegisterData
 }
 
+/**
+ * Represents a memory command
+ */
+export interface MemoryCommand {
+  from: number;
+  to: number;
+}

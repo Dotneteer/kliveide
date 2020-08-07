@@ -33,15 +33,10 @@
 
   let spectrum;
   let executionState = 0;
-  let processingChange = false;
-  let lastCommand = "";
 
   // --- Respond to the event when app focus changes
   const stateAware = createRendererProcessStateAware();
   stateAware.onStateChanged.on(async state => {
-    if (processingChange) return;
-    processingChange = true;
-
     // --- Change the UI according to state change
     const emuUi = state.emulatorPanelState;
     if (emuUi) {
@@ -52,42 +47,6 @@
       muted = emuUi.muted;
     }
     calculateColors(state.appHasFocus);
-
-    // --- New command issued?
-    if (lastCommand !== state.emulatorCommand) {
-      lastCommand = state.emulatorCommand;
-
-      console.log(`New command: ${lastCommand}`);
-
-      switch (lastCommand) {
-        case "start":
-          await spectrum.start();
-          break;
-        case "pause":
-          await spectrum.pause();
-          break;
-        case "stop":
-          await spectrum.stop();
-          break;
-        case "restart":
-          await spectrum.restart();
-          break;
-        case "start-debug":
-          await spectrum.startDebug();
-          break;
-        case "step-into":
-          await spectrum.stepInto();
-          break;
-        case "step-over":
-          await spectrum.stepOver();
-          break;
-        case "step-out":
-          await spectrum.stepOut();
-          break;
-      }
-      stateAware.dispatch(emulatorSetCommandAction("")());
-    }
-    processingChange = false;
   });
 
   onMount(async () => {

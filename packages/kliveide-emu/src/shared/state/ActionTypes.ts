@@ -29,9 +29,13 @@ export interface ActionTypes {
   EMULATOR_SET_FRAME_ID: null;
   EMULATOR_MUTE: null;
   EMULATOR_UNMUTE: null;
+  EMULATOR_SET_MEMORY_CONTENTS: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
+
+  // --- Memory command action
+  MEMORY_COMMAND: null;
 
   // --- VM information actions
   VM_SET_REGISTERS: null;

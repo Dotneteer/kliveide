@@ -25,7 +25,6 @@
   onMount(async () => {
     spectrum = await getSpectrumEngine();
     spectrum.screenRefreshed.on(onScreenRefreshed);
-    spectrum.beeperSamplesEmitted.on(onBeeperSamples);
     width = spectrum.screenWidth;
     height = spectrum.screenHeight;
     calculateDimensions(clientWidth, clientHeight, width, height);
@@ -121,18 +120,6 @@
         spectrum.setKeyStatus(mapping.zxSecondary, status);
       }
     }
-  }
-
-  function onBeeperSamples(samples) {
-    // let sum = 0;
-    // let output = "";
-    // for (let i = 0; i < samples.length; i++) {
-    //   sum += samples[i];
-    //   output += samples[i] === 0 ? "0" : "1"
-    // }
-    // if (sum > 0) {
-    //   console.log(`Beeper samples: ${sum}, ${output}`);
-    // }
   }
 </script>
 

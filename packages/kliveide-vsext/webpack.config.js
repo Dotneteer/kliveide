@@ -22,7 +22,7 @@ function createConfig(source, dest) {
         "@": srcPaths("src"),
       },
       extensions: [".mjs", ".js", ".json", ".ts"],
-      mainFields: ["svelte", "browser", "module", "main", "disasembly"],
+      mainFields: ["svelte", "browser", "module", "main"],
     },
     module: {
       rules: [
