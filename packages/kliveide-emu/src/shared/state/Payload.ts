@@ -20,4 +20,5 @@ export interface Payload {
   from?: number;
   to?: number;
   memoryContents?: Uint8Array;
+  breakpoints?: number[];
 }

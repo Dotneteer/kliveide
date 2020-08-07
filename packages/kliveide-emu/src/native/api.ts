@@ -43,5 +43,8 @@ export interface MachineApi extends CpuApi {
   getCursorMode(): number;
   initTape(blocks: number): void;
   setFastLoad(value: boolean): void;
+  eraseBreakpoints(): void;
   setBreakpoint(brpoint: number): void;
+  removeBreakpoint(brpoint: number): void;
+  testBreakpoint(brpoint: number): boolean;
 }

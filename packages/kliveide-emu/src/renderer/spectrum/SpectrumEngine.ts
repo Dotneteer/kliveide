@@ -36,11 +36,6 @@ import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 const BEEPER_SAMPLE_BUFF = 0x0b_2200;
 
 /**
- * Beeper samples in the memory
- */
-const EXEC_STAT_TABLE = 0x1f_4300;
-
-/**
  * This class represents the engine of the ZX Spectrum,
  * which runs within the main process.
  */
@@ -289,7 +284,8 @@ export class SpectrumEngine {
       this.spectrum.reset();
 
       // --- Get the current emulator state
-      const emuState = rendererProcessStore.getState().emulatorPanelState;
+      const state = rendererProcessStore.getState();
+      const emuState = state.emulatorPanelState;
 
       // --- Set tape contents
       if (!this._tapeSetInitialized) {
@@ -311,13 +307,18 @@ export class SpectrumEngine {
       const binaryReader = new BinaryReader(this._defaultTapeSet);
       const tzxReader = new TzxReader(binaryReader);
       if (tzxReader.readContents()) {
-        console.log("Default tape file read.");
         const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
         this.spectrum.api.initTape(blocks);
       }
 
       // --- Set fast LOAD mode
       this.spectrum.api.setFastLoad(emuState.fastLoad);
+
+      // --- Set breakpoints
+      this.spectrum.api.eraseBreakpoints();
+      for (const brpoint of Array.from(state.breakpoints)) {
+        this.spectrum.api.setBreakpoint(brpoint);
+      }
     }
 
     // --- Execute a single cycle

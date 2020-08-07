@@ -3,7 +3,6 @@ import { MachineApi } from "../native/api";
 import { ZxSpectrum48 } from "../native/ZxSpectrum48";
 import { createRendererProcessStateAware } from "./rendererProcessStore";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
-import { MemoryCommand } from "../shared/state/AppState";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -19,11 +18,6 @@ let _loader: Promise<void> | null = null;
  * Last emulator command requested
  */
 let lastEmulatorCommand = "";
-
-/**
- * Last memory command requested
- */
-let lastMemoryCommand: MemoryCommand | null = null;
 
 /**
  * Indicates that the engine is processing a state change
