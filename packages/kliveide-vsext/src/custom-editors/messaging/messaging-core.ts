@@ -3,6 +3,7 @@ import {
   MainMessage,
   GetMemoryContentsResponse,
   MessageBase,
+  GetExecutionStateResponse,
 } from "./message-types";
 
 /**
@@ -88,4 +89,13 @@ export async function getMemoryContents(
     from,
     to,
   });
+}
+
+/**
+ * Gets the contents of the Z80 memory
+ * @param from Start memory address
+ * @param to End memory address
+ */
+export async function getExecutionState(): Promise<GetExecutionStateResponse> {
+  return sendMessageToMain({ type: "getExecutionState" });
 }

@@ -4,8 +4,11 @@ import {
   GetMemoryContentsResponse,
   MainMessage,
   DefaultResponse,
+  GetExecutionStateResponse,
 } from "../custom-editors/messaging/message-types";
 import { communicatorInstance } from "./communicator";
+import { getLastConnectedState, getLastExecutionState } from "./notifier";
+import { exec } from "child_process";
 
 /**
  * This class processes messages on thw WevView side
@@ -19,7 +22,7 @@ export class MessageProcessor {
    */
   async processMessage(message: RendererMessage): Promise<void> {
     let response: MainMessage = <DefaultResponse>{
-        type: "ack",
+      type: "ack",
     };
     switch (message.type) {
       case "getMemoryContents":
@@ -29,7 +32,16 @@ export class MessageProcessor {
         );
         response = <GetMemoryContentsResponse>{
           type: "ackGetMemoryContents",
-          bytes: memContents
+          bytes: memContents,
+        };
+        break;
+
+      case "getExecutionState":
+        const connected = getLastConnectedState();
+        const execState = getLastExecutionState();
+        response = <GetExecutionStateResponse>{
+          type: "ackGetExecutionState",
+          state: connected ? execState : "disconnected",
         };
         break;
     }

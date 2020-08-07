@@ -21,7 +21,7 @@
 
 <style>
   .item {
-    padding: 0px 8px;
+    padding: 1px 8px;
     display: flex;
     flex-direction: row;
     font-family: Consolas, "Courier New", monospace;
@@ -32,22 +32,23 @@
   }
 
   .opCodes {
-    color: #00afff;
+    color: var(--vscode-terminal-ansiBlue);
     overflow-x: hidden;
   }
 
   .label {
-    color: #f89406;
+    color: var(--vscode-terminal-ansiBrightMagenta);
     overflow-x: hidden;
   }
 
   .instruction {
-    color: #00afff;
+    color: var(--vscode-terminal-ansiBrightCyan);
     overflow-x: hidden;
   }
 
   .item:hover {
-    background: var(--vscode-list-hoverBackground);
+    padding: 0px 7px;
+    border: 1px solid var(--vscode-list-hoverBackground);
   }
 </style>
 

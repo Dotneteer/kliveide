@@ -2,9 +2,15 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { getNonce } from "./utils";
-import { onExecutionStateChanged } from "../emulator/notifier";
+import {
+  onExecutionStateChanged,
+  onConnectionStateChanged,
+  getLastConnectedState,
+  getLastExecutionState,
+} from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
+import { getExecutionState } from "./messaging/messaging-core";
 
 /**
  *  * Base class for all custom editors
@@ -83,10 +89,20 @@ export abstract class EditorProviderBase
       });
     });
 
+    const conncetionStateDisposable = onConnectionStateChanged(
+      (state: boolean) => {
+        webviewPanel.webview.postMessage({
+          viewNotification: "connectionState",
+          state,
+        });
+      }
+    );
+
     // Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       changeDocumentSubscription.dispose();
       execStateDisposable.dispose();
+      conncetionStateDisposable.dispose();
     });
 
     // Receive message from the webview
@@ -95,12 +111,26 @@ export abstract class EditorProviderBase
         if ((e as ViewNotification).viewNotification !== undefined) {
           this.processViewNotification(e as ViewNotification);
         } else {
-          new MessageProcessor(webviewPanel.webview).processMessage(e as RendererMessage);
+          new MessageProcessor(webviewPanel.webview).processMessage(
+            e as RendererMessage
+          );
         }
       }
     );
 
     updateWebview();
+
+    // --- Get the initial state
+    if (!getLastConnectedState()) {
+      webviewPanel.webview.postMessage({
+        viewNotification: "connectionState",
+        state: false,
+      });
+    }
+    webviewPanel.webview.postMessage({
+      viewNotification: "execState",
+      state: getLastExecutionState(),
+    });
 
     /**
      * Updates the web view

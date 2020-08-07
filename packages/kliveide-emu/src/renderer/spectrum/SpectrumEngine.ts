@@ -81,6 +81,11 @@ export class SpectrumEngine {
    */
   constructor(public spectrum: ZxSpectrumBase) {
     this._loadedState = spectrum.getMachineState();
+    let mh = new MemoryHelper(this.spectrum.api, 0);
+    const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+    rendererProcessStore.dispatch(
+      emulatorSetMemoryContentsAction(memContents)()
+    );
   }
 
   /**

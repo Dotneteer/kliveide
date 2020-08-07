@@ -74,25 +74,9 @@ export async function startNotifier(): Promise<void> {
       // --- Handle changes in execution state
       if (frameInfo.executionState !== lastFrameInfo.executionState) {
         lastFrameInfo.executionState = frameInfo.executionState;
-        let execState = "none";
-        switch (frameInfo.executionState) {
-          case 1:
-            execState = "running";
-            break;
-          case 2:
-            execState = "pausing";
-            break;
-          case 3:
-            execState = "paused";
-            break;
-          case 4:
-            execState = "stopping";
-            break;
-          case 5:
-            execState = "stopped";
-            break;
-        }
-        executionStateChanged.fire(execState);
+        executionStateChanged.fire(
+          getExecutionStateName(lastFrameInfo.executionState)
+        );
       }
     } catch (err) {
       // --- Handle changes in connection state
@@ -117,6 +101,20 @@ export function stopNotifier(): void {
 }
 
 /**
+ * Gets the last connection state
+ */
+export function getLastConnectedState(): boolean {
+  return connected;
+}
+
+/**
+ * Gets the last connection state
+ */
+export function getLastExecutionState(): string {
+  return getExecutionStateName(lastFrameInfo?.executionState);
+}
+
+/**
  * Resets last frame information to fire events after
  * reconnection
  */
@@ -126,6 +124,32 @@ function resetLastFrameInfo(): void {
     frameCount: -1,
     executionState: 0,
   };
+}
+
+/**
+ * Gets the name of the execution state
+ * @param id Execution state ID
+ */
+function getExecutionStateName(id?: number): string {
+  let execState = "none";
+  switch (id) {
+    case 1:
+      execState = "running";
+      break;
+    case 2:
+      execState = "pausing";
+      break;
+    case 3:
+      execState = "paused";
+      break;
+    case 4:
+      execState = "stopping";
+      break;
+    case 5:
+      execState = "stopped";
+      break;
+  }
+  return execState;
 }
 
 resetLastFrameInfo();
