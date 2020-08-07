@@ -1,15 +1,4 @@
 /**
- * Converts the input value to a 4-digit hexadecimal string
- * @param value Value to convert
- */
-export function intToX4(value: number): string {
-  const hnum = value.toString(16).toUpperCase();
-  if (hnum.length >= 4) {
-    return hnum;
-  }
-  return "0000".substring(0, 4 - hnum.length) + hnum;
-}
-/**
  * This class represents the output of a single disassembly item
  */
 export class DisassemblyItem {
@@ -94,18 +83,6 @@ export class DisassemblyItem {
       this.hasLabel ? "L" + intToX4(this.address) : ""
     }${this.instruction}`;
   }
-}
-
-/**
- * Converts the input value to a 2-digit hexadecimal string
- * @param value Value to convert
- */
-export function intToX2(value: number): string {
-  const hnum = value.toString(16).toUpperCase();
-  if (hnum.length >= 2) {
-    return hnum;
-  }
-  return "0" + hnum;
 }
 
 /**
@@ -566,4 +543,28 @@ export function toSbyte(x: number) {
 export function toSshort(x: number) {
   x &= 0xffff;
   return x >= 32768 ? x - 65536 : x;
+}
+
+/**
+ * Converts the input value to a 2-digit hexadecimal string
+ * @param value Value to convert
+ */
+export function intToX2(value: number): string {
+  const hnum = value.toString(16).toUpperCase();
+  if (hnum.length >= 2) {
+    return hnum;
+  }
+  return "0" + hnum;
+}
+
+/**
+ * Converts the input value to a 4-digit hexadecimal string
+ * @param value Value to convert
+ */
+export function intToX4(value: number): string {
+  const hnum = value.toString(16).toUpperCase();
+  if (hnum.length >= 4) {
+    return hnum;
+  }
+  return "0000".substring(0, 4 - hnum.length) + hnum;
 }

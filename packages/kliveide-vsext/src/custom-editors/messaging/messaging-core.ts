@@ -1,4 +1,9 @@
-import { RendererMessage, MainMessage } from "./message-types";
+import {
+  RendererMessage,
+  MainMessage,
+  GetMemoryContentsResponse,
+  MessageBase,
+} from "./message-types";
 
 /**
  * This interface represents the operations we can access
@@ -31,7 +36,9 @@ let messageSeqNo = 1;
 /**
  * Message resolvers
  */
-const messageResolvers = new Map<number, (msg?: any | PromiseLike<any>) => void
+const messageResolvers = new Map<
+  number,
+  (msg?: any | PromiseLike<any>) => void
 >();
 
 /**
@@ -54,15 +61,31 @@ window.addEventListener("message", (ev) => {
  * Sends an async message to the main process
  * @param message Message to send
  */
-export async function sendMessageToMain<TMessage extends MainMessage>(
+export async function sendMessageToMain<T extends MessageBase>(
   message: RendererMessage
-): Promise<TMessage> {
+): Promise<T> {
   message.correlationId = messageSeqNo++;
-  const promise = new Promise<TMessage>((resolve) => {
+  const promise = new Promise<T>((resolve) => {
     if (message.correlationId) {
       messageResolvers.set(message.correlationId, resolve);
     }
   });
   vscode.postMessage(message);
   return promise;
+}
+
+/**
+ * Gets the contents of the Z80 memory
+ * @param from Start memory address
+ * @param to End memory address
+ */
+export async function getMemoryContents(
+  from: number,
+  to: number
+): Promise<GetMemoryContentsResponse> {
+  return sendMessageToMain({
+    type: "getMemoryContents",
+    from,
+    to,
+  });
 }

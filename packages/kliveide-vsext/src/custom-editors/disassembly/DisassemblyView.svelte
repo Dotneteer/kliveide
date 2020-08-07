@@ -1,8 +1,7 @@
 <script>
   import { onMount } from "svelte";
-  import VirtualizedList from "../controls/VirtualizedList.svelte";
-  import { DisassemblyItemList } from "./disassembly-items";
-  import { sendMessageToMain } from "../messaging/messaging-core";
+  import VirtualList from "../controls/VirtualList.svelte";
+  import { disassembly } from "./DisassemblyView";
 
   let name = "Klive IDE";
 
@@ -14,22 +13,10 @@
     });
   });
 
-  let items = new DisassemblyItemList();
-  let indexData;
+  let items = [];
 
-  function addItems() {
-    const newItems = new DisassemblyItemList(items.items);
-    newItems.addItems(10);
-    items = newItems;
-  }
-
-  async function getMemory() {
-    const response = await sendMessageToMain({
-      type: "getMemoryContents",
-      from: 0,
-      to: 9,
-    });
-    return new Uint8Array(Buffer.from(response.bytes, "base64"));
+  async function getDisassembly() {
+    return await disassembly(0, 0x3fff);
   }
 </script>
 
@@ -53,18 +40,15 @@
 <div class="component">
   <h1
     on:click={async () => {
-      const mem = await getMemory();
-      console.log(mem.length);
+      const disass = await getDisassembly();
+      items = disass.outputItems;
+      console.log(disass.outputItems.length);
     }}>
     {name.toUpperCase()}: Disassembly View
   </h1>
-  <VirtualizedList
-    {items}
-    itemHeight="20"
-    itemScroll={true}
-    let:item={itemData}
-    let:index={indexData}
-    on:item-selected={() => addItems()}>
-    <div class="item">{indexData}: {itemData.caption}</div>
-  </VirtualizedList>
+  <VirtualList {items} let:item>
+    <div class="item">
+      {item.address}|{item.opCodes}|{item.hasLable}|{item.instruction}
+    </div>
+  </VirtualList>
 </div>
