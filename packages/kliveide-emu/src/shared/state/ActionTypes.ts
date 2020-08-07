@@ -34,8 +34,10 @@ export interface ActionTypes {
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
 
-  // --- Memory command action
-  MEMORY_COMMAND: null;
+  // --- Breakpoint command action
+  BREAKPOINT_SET: null;
+  BREAKPOINT_REMOVE: null;
+  BREAKPOINT_ERASE_ALL: null;
 
   // --- VM information actions
   VM_SET_REGISTERS: null;

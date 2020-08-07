@@ -1,6 +1,5 @@
 (module
   (func $trace (import "imports" "trace") (param i32))
-  (global $breakHere (mut i32) (i32.const 0x0000))
 
   ;; We keep 1024 KB of memory
   (memory (export "memory") 32)
@@ -41,7 +40,10 @@
   (export "getCursorMode" (func $getCursorMode))
   (export "initTape" (func $initTape))
   (export "setFastLoad" (func $setFastLoad))
+  (export "eraseBreakpoints" (func $eraseBreakPoints))
   (export "setBreakpoint" (func $setBreakpoint))
+  (export "removeBreakpoint" (func $removeBreakpoint))
+  (export "testBreakpoint" (func $testBreakpoint))
 
   ;; ==========================================================================
   ;; Function signatures
@@ -92,9 +94,8 @@
   ;; 0x0B_4200 (0xA_0000 bytes): Buffer for pixel colorization
   ;; 0x15_4200 ZX Spectrum 48 palette
   ;; 0x15_4300 (0xA_0000 bytes): Tape block buffer
-  ;; 0x1F_4300 Execution statistics tables
-  ;; 0x1F_5F00 Next free slot
-
+  ;; 0x1F_4300 Breakpoints map
+  ;; 0x1F_6300 Next free slot
 
   ;; The offset of the first byte of the ZX Spectrum 48 memory
   ;; Block lenght: 0x1_0000
@@ -1833,10 +1834,6 @@
   ;; Processes standard or indexed operations
   (func $processStandardOrIndexedOperations
     ;; Diagnostics
-    call $standardStat
-    call $ixStat
-    call $iyStat
-
     get_global $INDEXED_JT
     get_global $STANDARD_JT
     get_global $indexMode
@@ -1886,7 +1883,6 @@
 
   ;; Processes extended operations
   (func $processExtendedOperations
-    call $extendedStat
     get_global $EXTENDED_JT
     get_global $opCode
     i32.add
@@ -8222,41 +8218,31 @@
       ;; Take care of raising the interrupt
       (call $checkForInterrupt (tee_local $currentUlaTact))
 
-      (get_global $breakHere)
+      ;; Check breakpoints
+      (i32.eq (get_global $debugStepMode) (i32.const 1))
       if
-        (i32.eq (get_global $PC) (get_global $breakHere))
+        ;; Stop at breakpoints mode
+        (call $testBreakpoint (get_global $PC))
         if
           i32.const 2 set_global $executionCompletionReason ;; Reason: Break
           return
         end
-      end
-
-      call $executeCpuCycle
+      end 
 
       ;; Execute an entire instruction
+      call $executeCpuCycle
       loop $instructionLoop
         get_global $isInOpExecution
         if
-          (get_global $breakHere)
-          if
-            (i32.eq (get_global $PC) (get_global $breakHere))
-            if
-              i32.const 2 set_global $executionCompletionReason ;; Reason: Break
-              return
-            end
-          end
-
           call $executeCpuCycle
           br $instructionLoop
         end
       end 
 
-      ;; TODO: Check various terminations
-
       ;; Render the screen
       (call $renderScreen (get_local $currentUlaTact))
 
-      ;; Exit if if halted and execution mode is UntilHalted
+      ;; Exit if halted and execution mode is UntilHalted
       (i32.eq (get_global $emulationMode) (i32.const 1))
       if
         (i32.and (get_global $stateFlags) (i32.const 0x08)) ;; HLT signal set?
@@ -9763,7 +9749,6 @@
   ;; ==========================================================================
   ;; Generic I/O device routines
 
-
   ;; Applies memory contention delay according to the current
   ;; screen rendering tact
   (func $applyContentionDelay
@@ -10247,78 +10232,80 @@
   )
 
   ;; ==========================================================================
-  ;; Diagnostic helpers
+  ;; Breakpoint management
 
-  (global $STANDARD_STAT i32 (i32.const 0x1F_4300))
-  (global $EXTENDED_STAT i32 (i32.const 0x1F_4700))
-  (global $BIT_STAT i32 (i32.const 0x1F_4B00))
-  (global $IX_STAT i32 (i32.const 0x1F_4F00))
-  (global $IY_STAT i32 (i32.const 0x1F_5300))
-  (global $IX_BIT_STAT i32 (i32.const 0x1F_5700))
-  (global $IY_BIT_STAT i32 (i32.const 0x1F_5B00))
+  (global $BREAKPOINT_MAP i32 (i32.const 0x1F_4300))
 
-  (func $standardStat
+  ;; Erases all breakpoints
+  (func $eraseBreakPoints
+    (local $counter i32)
     (local $addr i32)
-    (i32.ne (get_global $indexMode) (i32.const 0))
-    if return end
-    (i32.add 
-      (get_global $STANDARD_STAT)
-      (i32.mul (get_global $opCode) (i32.const 4))
-    )
-    tee_local $addr ;; [ addr ]
-    get_local $addr ;; [ addr, addr ]
-    i32.load        ;; [ addr, (addr) ]
-    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
-    i32.store
+    i32.const 0x2000 set_local $counter
+    get_global $BREAKPOINT_MAP set_local $addr
+    loop $eraseLoop
+      get_local $counter
+      if
+        (i32.store8 (get_local $addr) (i32.const 0))
+        (i32.add (get_local $addr) (i32.const 1))
+        set_local $addr
+        (i32.sub (get_local $counter) (i32.const 1))
+        set_local $counter
+        br $eraseLoop
+      end
+    end
   )
 
-  (func $ixStat
-    (local $addr i32)
-    (i32.ne (get_global $indexMode) (i32.const 1))
-    if return end
-    (i32.add 
-      (get_global $IX_STAT)
-      (i32.mul (get_global $opCode) (i32.const 4))
-    )
-    tee_local $addr ;; [ addr ]
-    get_local $addr ;; [ addr, addr ]
-    i32.load        ;; [ addr, (addr) ]
-    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
-    i32.store
-  )
-
-  (func $iyStat
-    (local $addr i32)
-    (i32.ne (get_global $indexMode) (i32.const 2))
-    if return end
-    (i32.add 
-      (get_global $IY_STAT)
-      (i32.mul (get_global $opCode) (i32.const 4))
-    )
-    tee_local $addr ;; [ addr ]
-    get_local $addr ;; [ addr, addr ]
-    i32.load        ;; [ addr, (addr) ]
-    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
-    i32.store
-  )
-
-  (func $extendedStat
-    (local $addr i32)
-    (i32.ne (get_global $prefixMode) (i32.const 1))
-    if return end
-    (i32.add 
-      (get_global $EXTENDED_STAT)
-      (i32.mul (get_global $opCode) (i32.const 4))
-    )
-    tee_local $addr ;; [ addr ]
-    get_local $addr ;; [ addr, addr ]
-    i32.load        ;; [ addr, (addr) ]
-    (i32.add (i32.const 1)) ;; [ addr, (addr)+1 ]
-    i32.store
-  )
-
-  ;; Sets the breakpoint to stop at
+  ;; Sets the specified breakpoint
   (func $setBreakpoint (param $brpoint i32)
-    get_local $brpoint set_global $breakHere
+    (local $addr i32)
+    get_global $BREAKPOINT_MAP
+    (i32.shr_u (get_local $brpoint) (i32.const 3))
+    i32.add
+    tee_local $addr
+    get_local $addr
+    i32.load8_u ;; [ addr, brpoint byte ]
+
+    (i32.shl
+      (i32.const 0x01)
+      (i32.and (get_local $brpoint) (i32.const 0x07))
+    ) ;; Mask to set
+    i32.or ;; [ addr, new brpoint]
+    i32.store8
+  )
+
+  ;; Erases the specified breakpoint
+  (func $removeBreakpoint (param $brpoint i32)
+    (local $addr i32)
+    get_global $BREAKPOINT_MAP
+    (i32.shr_u (get_local $brpoint) (i32.const 3))
+    i32.add
+    tee_local $addr
+    get_local $addr
+    i32.load8_u ;; [ addr, brpoint byte ]
+
+    (i32.xor
+      (i32.shl
+        (i32.const 0x01)
+        (i32.and (get_local $brpoint) (i32.const 0x07))
+      )
+      (i32.const 0xff)
+    )
+    ;; Mask to reset
+    i32.and ;; [ addr, new brpoint]
+    i32.store8
+  )
+
+  ;; Tests the specified breakpoint
+  (func $testBreakpoint (param $brpoint i32) (result i32)
+    get_global $BREAKPOINT_MAP
+    (i32.shr_u (get_local $brpoint) (i32.const 3))
+    i32.add
+    i32.load8_u ;; [ brpoint byte ]
+
+    (i32.shl
+      (i32.const 0x01)
+      (i32.and (get_local $brpoint) (i32.const 0x07))
+    ) ;; Mask to test
+    i32.and
   )
 )

@@ -15,19 +15,19 @@ export interface AppState {
   emulatorPanelState?: EmulatorPanelState;
 
   /**
+   * Data about the running virtual machine
+   */
+  vmInfo?: VmInfo;
+
+  /**
    * Emulator command to execute
    */
   emulatorCommand?: string;
 
   /**
-   * Memory commmand to execute
+   * Breakpoint command to execute
    */
-  memoryCommand?: MemoryCommand;
-
-  /**
-   * Data about the running virtual machine
-   */
-  vmInfo?: VmInfo;
+  breakpoints?: Set<number>;
 }
 
 /**
@@ -54,12 +54,4 @@ export interface EmulatorPanelState {
  */
 export interface VmInfo {
   registers?: RegisterData
-}
-
-/**
- * Represents a memory command
- */
-export interface MemoryCommand {
-  from: number;
-  to: number;
 }

@@ -1,7 +1,6 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as fs from "fs";
-import * as ipc from "node-ipc";
 
 import { mainProcessStore } from "../main/mainProcessStore";
 import {
@@ -23,8 +22,9 @@ import {
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { RegisterData } from "../shared/spectrum/api-data";
-import { RSA_NO_PADDING } from "constants";
-
+import { breakpointSetAction } from "../shared/state/redux-breakpoint-state";
+import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
+import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state";
 /**
  * Starts the web server that provides an API to manage the Klive emulator
  */
@@ -270,64 +270,6 @@ export function startApiServer() {
   });
 
   /**
-   * Gets diagnostics information about the ZX Spectrum machine
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    frameCount: u32
-   *    frameTact: u32
-   *    tactsInFrame: u32
-   *    im: u8
-   *    iff1: boolean
-   *    iff2: boolean
-   *    halted: boolean
-   *    delay: u32
-   *    beamTact: u32
-   *    pixelOp: string
-   *    contDelay: u32
-   */
-  app.get("/spectrum-diag", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
-  });
-
-  /**
-   * Gets the contents of the specified 16K ROM page
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    contents: string (base64)
-   */
-  app.get("/rom/:id", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
-  });
-
-  /**
-   * Gets the contents of the specified 16K RAM page
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    contents: string (base64)
-   */
-  app.get("/bank/:id", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
-  });
-
-  /**
-   * Gets the contents of the specified 8K RAM page
-   * Response:
-   *  Status: 200
-   *  Body:
-   *    contents: string (base64)
-   */
-  app.get("/bank8/:id", (req, res) => {
-    // TODO: Implement this method
-    res.sendStatus(200);
-  });
-
-  /**
    * Gets the contents of the specified memory range
    */
   app.get("/mem/:from/:to", (req, res) => {
@@ -346,6 +288,41 @@ export function startApiServer() {
       const memBuff = m.slice(fromVal, toVal + 1);
       res.send(Buffer.from(memBuff).toString("base64"));
     }
+  });
+
+  /**
+   * Gets the list of breakpoints
+   */
+  app.get("/breakpoints", (req, res) => {
+    const state = mainProcessStore.getState();
+    res.json({ breakpoints: Array.from(state.breakpoints)});
+  });
+
+  /**
+   * Set breakpoints
+   */
+  app.post("/set-breakpoints", (req, res) => {
+    const breakpoints = req.body?.breakpoints as number[];
+    console.log(JSON.stringify(breakpoints));
+    mainProcessStore.dispatch(breakpointSetAction(breakpoints)());
+    res.sendStatus(204);
+  });
+
+  /**
+   * Delete breakpoints
+   */
+  app.delete("/delete-breakpoints", (req, res) => {
+    const breakpoints = req.body?.breakpoints as number[];
+    mainProcessStore.dispatch(breakpointRemoveAction(breakpoints)());
+    res.sendStatus(204);
+  });
+
+  /**
+   * Clear all breakpoints
+   */
+  app.delete("/clear-all-breakpoints", (req, res) => {
+    mainProcessStore.dispatch(breakpointEraseAllAction());
+    res.sendStatus(204);
   });
 
   app.listen(3000, () => console.log("Server started..."));

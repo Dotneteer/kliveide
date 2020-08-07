@@ -185,27 +185,32 @@ export enum EmulationMode {
  */
 export enum DebugStepMode {
   /**
+   * Do not use debugger
+   */
+  None = 0,
+  
+  /**
    * Execution stops at the next breakpoint
    */
-  StopAtBreakpoint,
+  StopAtBreakpoint = 1,
 
   /**
    * Execution stops after the next instruction
    */
-  StepInto,
+  StepInto = 2,
 
   /**
    * Execution stops after the next instruction. If that should
    * be a subroutine call, the execution stops after returning
    * from the subroutine.
    */
-  StepOver,
+  StepOver = 3,
 
   /**
    * Execution stops after the first RET (unconditional or conditional)
    * returns from the latest subroutine call.
    */
-  StepOut,
+  StepOut = 4,
 }
 
 /**
@@ -214,7 +219,7 @@ export enum DebugStepMode {
 export class ExecuteCycleOptions {
   constructor(
     public emulationMode: EmulationMode = EmulationMode.UntilUlaFrameEnds,
-    public debugStepMode: DebugStepMode = DebugStepMode.StopAtBreakpoint,
+    public debugStepMode: DebugStepMode = DebugStepMode.None,
     public fastTapeMode: boolean = false,
     public terminationRom: number = -1,
     public terminationPoint: number = -1,

@@ -34,10 +34,6 @@ import {
   MAIN_MESSAGING_CHANNEL,
 } from "../../src/shared/utils/channel-ids";
 import { processRendererMessage } from "./mainMessageProcessor";
-import { ZxSpectrumBase } from "../../src/native/ZxSpectrumBase";
-import { ZxSpectrum48 } from "../../src/native/ZxSpectrum48";
-import { MachineApi } from "../../src/native/api";
-import { SpectrumEngine } from "../renderer/spectrum/SpectrumEngine";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
