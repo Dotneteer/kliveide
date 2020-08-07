@@ -1,7 +1,8 @@
 <script>
   import { onMount } from "svelte";
-  import VirtualList from "../controls/VirtualList.svelte";
   import { disassembly } from "./DisassemblyView";
+  import VirtualList from "../controls/VirtualList.svelte";
+  import DisassemblyEntry from "./DisassemblyEntry.svelte";
 
   let name = "Klive IDE";
 
@@ -31,10 +32,6 @@
     position: relative;
     user-select: none;
   }
-
-  .item {
-    height: 20px;
-  }
 </style>
 
 <div class="component">
@@ -47,8 +44,6 @@
     {name.toUpperCase()}: Disassembly View
   </h1>
   <VirtualList {items} let:item>
-    <div class="item">
-      {item.address}|{item.opCodes}|{item.hasLable}|{item.instruction}
-    </div>
+    <DisassemblyEntry {item} />
   </VirtualList>
 </div>
