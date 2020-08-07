@@ -65,7 +65,7 @@
         "displayName": "Klive Disassembly Editor",
         "selector": [
           {
-            "filenamePattern": "disassembly.spview"
+            "filenamePattern": "view.disassembly"
           }
         ]
       }
