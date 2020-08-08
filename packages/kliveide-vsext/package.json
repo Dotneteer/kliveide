@@ -41,6 +41,14 @@
         }
       }
     },
+    "keybindings": [
+      {
+        "command": "kliveide.startEmu",
+        "key": "ctrl+g",
+        "mac": "cmd+g",
+        "when": "resourceFilename == view.disassembly"
+      }
+    ],
     "commands": [
       {
         "command": "kliveide.startEmu",
@@ -49,6 +57,10 @@
       {
         "command": "kliveide.createProject",
         "title": "Create Klive Project"
+      },
+      {
+        "command": "kliveide.goToAddress",
+        "title": "Go To Address"
       }
     ],
     "views": {

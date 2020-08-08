@@ -6,6 +6,7 @@
   export let height = "100%";
   export let itemHeight = undefined;
   export let tabOrder = 0;
+  export let api = {};
 
   let foo;
 
@@ -58,7 +59,7 @@
     end = i;
 
     const remaining = items.length - end;
-    average_height = (top + content_height) / end;
+    api.calculatedHeight = average_height = (top + content_height) / end;
 
     bottom = remaining * average_height;
     height_map.length = items.length;
@@ -131,6 +132,11 @@
   onMount(() => {
     rows = contents.getElementsByTagName("svelte-virtual-list-row");
     mounted = true;
+    api.scrollToItem = (item) => {
+      if (viewport && api.calculatedHeight && item >= 0) {
+        viewport.scrollTo(0, item * api.calculatedHeight);
+      }
+    };
   });
 </script>
 
@@ -153,7 +159,8 @@
   }
 </style>
 
-<svelte-virtual-list-viewport tabindex={tabOrder}
+<svelte-virtual-list-viewport
+  tabindex={tabOrder}
   bind:this={viewport}
   bind:offsetHeight={viewport_height}
   on:scroll={handle_scroll}

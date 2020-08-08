@@ -1,11 +1,15 @@
 import * as vscode from "vscode";
-import { EditorProviderBase, ReplacementTuple } from "../editor-base";
+import {
+  EditorProviderBase,
+  ReplacementTuple,
+  ViewCommand,
+} from "../editor-base";
 import {
   onBreakpointsChanged,
   getLastBreakpoints,
   onFrameInfoChanged,
 } from "../../emulator/notifier";
-import { FrameInfo } from "../../emulator/communicator";
+import { FrameInfo, communicatorInstance } from "../../emulator/communicator";
 
 export class DisassemblyEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.disassemblyEditor";
@@ -89,5 +93,20 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       viewNotification: "breakpoints",
       breakpoints: getLastBreakpoints(),
     });
+  }
+
+  /**
+   * Process view command
+   * @param viewCommand Command notification to process
+   */
+  processViewCommand(viewCommand: ViewCommand): void {
+    switch (viewCommand.command) {
+      case "setBreakpoint":
+        communicatorInstance.setBreakpoint((viewCommand as any).address);
+        break;
+      case "removeBreakpoint":
+        communicatorInstance.removeBreakpoint((viewCommand as any).address);
+        break;
+    }
   }
 }

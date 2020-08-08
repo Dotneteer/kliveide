@@ -3,6 +3,7 @@
   import { disassembly } from "./DisassemblyView";
   import VirtualList from "../controls/VirtualList.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
+  import { identity } from "svelte/internal";
 
   let name = "Klive IDE";
 
@@ -12,6 +13,10 @@
   let items = [];
   let breakpoints;
   let currentPc;
+
+  let virtualList;
+  let itemHeight;
+  let api;
 
   onMount(async () => {
     window.addEventListener("message", (ev) => {
@@ -42,9 +47,7 @@
 
   $: {
     if (!refreshed && connected) {
-      console.log(`Not refreshed: ${execState}`);
       if (execState !== "none") {
-        console.log("Time to refresh");
         refreshDisassembly();
       }
     }
@@ -54,7 +57,6 @@
     const disass = await disassembly(0, 0x3fff);
     items = disass.outputItems;
     refreshed = true;
-    console.log(`Refreshed: ${items.length}`);
   }
 </script>
 
@@ -98,8 +100,12 @@
       </p>
     </div>
   {:else}
-    <VirtualList {items} let:item>
+    <VirtualList {items} let:item bind:api>
       <DisassemblyEntry
+        on:clicked={() => {
+          const found = items.findIndex((it) => it.address === 4777);
+          api.scrollToItem(found);
+        }}
         {item}
         hasBreakpoint={breakpoints.has(item.address)}
         isCurrentBreakpoint={currentPc === item.address} />

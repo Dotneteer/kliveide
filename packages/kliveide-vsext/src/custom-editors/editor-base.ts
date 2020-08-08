@@ -10,7 +10,13 @@ import {
 } from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
-import { getExecutionState } from "./messaging/messaging-core";
+
+const editorInstances: EditorProviderBase[] = [];
+let activeEditor: EditorProviderBase | null = null;
+
+export function getRegisteredEditors(): EditorProviderBase[] {
+  return editorInstances;
+}
 
 /**
  *  * Base class for all custom editors
@@ -68,11 +74,20 @@ export abstract class EditorProviderBase
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
+    // --- Store the instance
+    editorInstances.push(this);
+
     // --- Setup initial content for the webview
     webviewPanel.webview.options = {
       enableScripts: true,
     };
     webviewPanel.webview.html = this.getHtmlContents(webviewPanel.webview);
+
+    const stateChangeDisposable = webviewPanel.onDidChangeViewState((ev) => {
+      if (ev.webviewPanel.active) {
+        activeEditor = this;
+      }
+    });
 
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
       (e) => {
@@ -100,6 +115,11 @@ export abstract class EditorProviderBase
 
     // Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
+      const index = editorInstances.indexOf(this);
+      if (index >= 0) {
+        editorInstances.splice(index, 1);
+      }
+      stateChangeDisposable.dispose();
       changeDocumentSubscription.dispose();
       execStateDisposable.dispose();
       connectionStateDisposable.dispose();
@@ -107,9 +127,10 @@ export abstract class EditorProviderBase
 
     // Receive message from the webview
     webviewPanel.webview.onDidReceiveMessage(
-      (e: ViewNotification | RendererMessage) => {
-        if ((e as ViewNotification).viewNotification !== undefined) {
-          this.processViewNotification(e as ViewNotification);
+      (e: ViewCommand | RendererMessage) => {
+        console.log(JSON.stringify(e));
+        if ((e as ViewCommand).command !== undefined) {
+          this.processViewCommand(e as ViewCommand);
         } else {
           new MessageProcessor(webviewPanel.webview).processMessage(
             e as RendererMessage
@@ -144,10 +165,10 @@ export abstract class EditorProviderBase
   }
 
   /**
-   * Process view notifications
-   * @param notification Notification to process
+   * Process view command
+   * @param viewCommand Command notification to process
    */
-  processViewNotification(notification: ViewNotification): void {}
+  processViewCommand(viewCommand: ViewCommand): void {}
 
   /**
    * Gets the HTML contents belonging to this editor
@@ -237,6 +258,6 @@ export type ReplacementTuple = [string, string | vscode.Uri];
 /**
  * Reprensents notifications sent from the web view to its UI
  */
-export interface ViewNotification {
-  readonly viewNotification: string;
+export interface ViewCommand {
+  readonly command: string;
 }

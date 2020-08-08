@@ -307,7 +307,6 @@ export function startApiServer() {
    */
   app.post("/set-breakpoints", (req, res) => {
     const breakpoints = req.body?.breakpoints as number[];
-    console.log(JSON.stringify(breakpoints));
     mainProcessStore.dispatch(breakpointSetAction(breakpoints)());
     res.sendStatus(204);
   });

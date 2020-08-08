@@ -1,8 +1,9 @@
 <script>
-  import { afterUpdate, tick } from "svelte";
+  import { afterUpdate, tick, createEventDispatcher } from "svelte";
   import BreakpointPlaceholder from "./BreakPointPlaceholder.svelte";
   import BreakPointPlaceholder from "./BreakPointPlaceholder.svelte";
   import { intToX4 } from "../../disassembler/disassembly-helper";
+import { create } from "domain";
 
   export let item;
   export let hasBreakpoint = true;
@@ -12,6 +13,8 @@
   let opCodesWidth = 0;
   let labelWidth = 0;
   let instructionWidth = 0;
+
+  const dispatch = createEventDispatcher();
 
   $: {
     const charWidth = referenceWidth / 5;
@@ -56,8 +59,8 @@
   }
 </style>
 
-<div class="item">
-  <BreakPointPlaceholder {hasBreakpoint} {isCurrentBreakpoint} />
+<div class="item" on:click={() => dispatch("clicked")}>
+  <BreakPointPlaceholder address={item.address} {hasBreakpoint} {isCurrentBreakpoint} />
   <span class="address" bind:clientWidth={referenceWidth}>
     {intToX4(item.address)}&nbsp;
   </span>
