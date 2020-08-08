@@ -12,7 +12,9 @@ export const darkTheme: ITheme = {
     "--toolbar-button-fill": "white",
     "--toolbar-button-disabled-fill": "#585858",
     "--toolbar-separator": "2px solid #686868",
+
     "--statusbar-background-color": "#007acc",
+    "--statusbar-foreground-color": "white",
 
     "--emulator-background-color": "#808080",
     "--keyboard-background-color": "#202020",

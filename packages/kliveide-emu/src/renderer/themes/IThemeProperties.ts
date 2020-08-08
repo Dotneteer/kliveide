@@ -14,6 +14,7 @@ export interface IThemeProperties {
   "--toolbar-separator": string;
   
   "--statusbar-background-color": string;
+  "--statusbar-foreground-color": string;
 
   "--emulator-background-color": string;
 

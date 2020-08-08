@@ -18,6 +18,7 @@
     "dev": "cd packages/kliveide-emu && npm run dev",
     "spbuild": "cd packages/kliveide-emu && npm run spbuild",
     "start": "cd packages/kliveide-emu && npm start",
+    "bump": "lerna version --no-push --no-git-tag-version",
     "build:win": "cd packages/kliveide-emu && electron-builder build --win --x64",
     "build:mac": "cd packages/kliveide-emu && electron-builder build --mac --x64",
     "build:linux": "cd packages/kliveide-emu && electron-builder build --linux --x64"
