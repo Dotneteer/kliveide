@@ -70,6 +70,15 @@ export class SpectrumEngine {
   // --- FrameID information
   private _startCount = 0;
 
+  // --- Time monitoring
+  private _sumFrameTime = 0.0;
+  private _lastFrameTime = 0.0;
+  private _avgFrameTime = 0.0;
+  private _sumEngineTime = 0.0;
+  private _lastEngineTime = 0.0;
+  private _avgEngineTime = 0.0;
+  private _renderedFrames = 0;
+
   /**
    * Initializes the engine with the specified ZX Spectrum instance
    * @param spectrum Spectrum VM to use
@@ -319,6 +328,14 @@ export class SpectrumEngine {
       for (const brpoint of Array.from(state.breakpoints)) {
         this.spectrum.api.setBreakpoint(brpoint);
       }
+
+      // --- Reset time information
+      this._lastFrameTime = 0.0;
+      this._avgFrameTime = 0.0;
+      this._sumEngineTime = 0.0;
+      this._lastEngineTime = 0.0;
+      this._avgEngineTime = 0.0;
+      this._renderedFrames = 0;
     }
 
     // --- Execute a single cycle
@@ -439,11 +456,16 @@ export class SpectrumEngine {
     const nextFrameGap = (state.tactsInFrame / clockFreq) * 1000;
     let nextFrameTime = performance.now() + nextFrameGap;
 
-    //
-
     // --- Execute the cycle until completed
     while (true) {
+      const frameStartTime = performance.now();
       machine.spectrum.executeCycle(options);
+
+      // --- Engine time information
+      this._renderedFrames++;
+      this._lastEngineTime = performance.now() - frameStartTime;
+      this._sumEngineTime += this._lastEngineTime;
+      this._avgEngineTime = this._sumEngineTime / this._renderedFrames;
 
       // --- Check for user cancellation
       if (this._cancelled) return;
@@ -463,7 +485,7 @@ export class SpectrumEngine {
       rendererProcessStore.dispatch(
         emulatorSetMemoryContentsAction(memContents)()
       );
-  
+
       // --- Branch according the completion reason
       if (reason !== ExecutionCompletionReason.UlaFrameCompleted) {
         // --- No more frame to execute
@@ -504,8 +526,14 @@ export class SpectrumEngine {
       this._beeperRenderer.storeSamples(beeperSamples);
       machine._beeperSamplesEmitted.fire(beeperSamples);
 
-      // --- Wait for the next screen frame
+      // --- Frame time information
       const curTime = performance.now();
+      this._lastFrameTime = performance.now() - frameStartTime;
+      this._sumFrameTime += this._lastFrameTime;
+      this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
+
+      // --- Wait for the next screen frame
+
       const toWait = Math.floor(nextFrameTime - curTime);
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
@@ -588,6 +616,25 @@ export class SpectrumEngine {
       i: s.i,
       r: s.r,
       wz: s.wz,
+    };
+  }
+
+  /**
+   * Gets information about frame times
+   */
+  getFrameTimes(): {
+    lastEngineTime: number;
+    avgEngineTime: number;
+    lastFrameTime: number;
+    avgFrameTime: number;
+    renderedFrames: number;
+  } {
+    return {
+      lastEngineTime: this._lastEngineTime,
+      avgEngineTime: this._avgEngineTime,
+      lastFrameTime: this._lastFrameTime,
+      avgFrameTime: this._avgFrameTime,
+      renderedFrames: this._renderedFrames,
     };
   }
 
