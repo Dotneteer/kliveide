@@ -1,10 +1,12 @@
 <script>
+  import { getVersion } from "../../version";
   import { onMount } from "svelte";
   import SvgIcon from "./SvgIcon.svelte";
   import { themeStore } from "../stores/theme-store";
   import { getSpectrumEngine } from "../spectrum-loader";
 
   const fillValue = themeStore.getProperty("--statusbar-foreground-color");
+  const version = getVersion();
 
   let spectrum;
   onMount(async () => {
@@ -69,9 +71,15 @@
     flex-shrink: 0;
     flex-grow: 0;
     margin: 0 4px;
-    align-content: start;
+    align-content: flex-start;
     align-items: center;
     justify-items: start;
+  }
+
+  .placeholder {
+    width: 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
   }
 </style>
 
@@ -87,5 +95,9 @@
     {#if spectrum}
       <span class="label">{avgFrameTimeStr} / {lastFrameTimeStr}</span>
     {/if}
+  </div>
+  <div class="placeholder"></div>
+  <div class="section">
+    <span class="label">Klive v{version}</span>
   </div>
 </div>
