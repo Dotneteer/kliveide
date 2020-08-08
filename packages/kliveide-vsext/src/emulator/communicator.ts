@@ -103,6 +103,8 @@ export interface FrameInfo {
   startCount?: number;
   frameCount?: number;
   executionState?: number;
+  breakpoints?: number[];
+  pc?: number;
 }
 
 /**

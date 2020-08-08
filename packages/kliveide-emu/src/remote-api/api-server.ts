@@ -45,11 +45,15 @@ export function startApiServer() {
    * Gets frame information
    */
   app.get("/frame-info", (_req, res) => {
-    const emuState = mainProcessStore.getState().emulatorPanelState;
+    const state = mainProcessStore.getState();
+    const emuState = state.emulatorPanelState;
+    const vmInfo = state.vmInfo;
     res.json({
       startCount: emuState.startCount,
       frameCount: emuState.frameCount,
       executionState: emuState.executionState,
+      breakpoints: Array.from(state.breakpoints),
+      pc: vmInfo.registers?.pc ?? -1
     });
   });
 
@@ -311,7 +315,7 @@ export function startApiServer() {
   /**
    * Delete breakpoints
    */
-  app.delete("/delete-breakpoints", (req, res) => {
+  app.post("/delete-breakpoints", (req, res) => {
     const breakpoints = req.body?.breakpoints as number[];
     mainProcessStore.dispatch(breakpointRemoveAction(breakpoints)());
     res.sendStatus(204);

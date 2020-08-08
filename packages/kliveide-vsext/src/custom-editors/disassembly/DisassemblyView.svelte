@@ -10,11 +10,12 @@
   let connected = true;
   let execState;
   let items = [];
+  let breakpoints;
+  let currentPc;
 
   onMount(async () => {
     window.addEventListener("message", (ev) => {
       if (ev.data.viewNotification) {
-        console.log(JSON.stringify(ev.data));
         switch (ev.data.viewNotification) {
           case "connectionState":
             connected = ev.data.state;
@@ -28,8 +29,13 @@
             }
             execState = ev.data.execState;
             break;
+          case "breakpoints":
+            breakpoints = new Set(ev.data.breakpoints);
+            break;
+          case "pc":
+            currentPc = ev.data.pc;
+            break;
         }
-        console.log(`Refreshed? ${refreshed}`);
       }
     });
   });
@@ -73,7 +79,7 @@
     padding: 0px 2px;
     line-height: 1em;
   }
-  
+
   .title {
     color: var(--vscode-terminal-ansiRed);
     padding: 0px 2px;
@@ -84,12 +90,19 @@
 <div class="component">
   {#if !connected}
     <div class="disconnected">
-      <p class="title"><strong>Disconnected from Klive Emulator.</strong></p>
-      <p class="message">You can click the Klive icon in the status bar to start Klive Emulator.</p>
+      <p class="title">
+        <strong>Disconnected from Klive Emulator.</strong>
+      </p>
+      <p class="message">
+        You can click the Klive icon in the status bar to start Klive Emulator.
+      </p>
     </div>
   {:else}
     <VirtualList {items} let:item>
-      <DisassemblyEntry {item} />
+      <DisassemblyEntry
+        {item}
+        hasBreakpoint={breakpoints.has(item.address)}
+        isCurrentBreakpoint={currentPc === item.address} />
     </VirtualList>
   {/if}
 </div>

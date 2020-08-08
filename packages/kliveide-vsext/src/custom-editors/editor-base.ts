@@ -89,7 +89,7 @@ export abstract class EditorProviderBase
       });
     });
 
-    const conncetionStateDisposable = onConnectionStateChanged(
+    const connectionStateDisposable = onConnectionStateChanged(
       (state: boolean) => {
         webviewPanel.webview.postMessage({
           viewNotification: "connectionState",
@@ -102,7 +102,7 @@ export abstract class EditorProviderBase
     webviewPanel.onDidDispose(() => {
       changeDocumentSubscription.dispose();
       execStateDisposable.dispose();
-      conncetionStateDisposable.dispose();
+      connectionStateDisposable.dispose();
     });
 
     // Receive message from the webview
