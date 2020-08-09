@@ -84,20 +84,22 @@ export async function startNotifier(): Promise<void> {
         frameInfo.startCount !== lastFrameInfo.startCount ||
         frameInfo.pc !== lastFrameInfo.pc
       ) {
-        lastFrameInfo.startCount = frameInfo.startCount;
-        lastFrameInfo.frameCount = frameInfo.frameCount;
-        lastFrameInfo.pc = frameInfo.pc;
-        frameInfoChanged.fire(lastFrameInfo);
+        frameInfoChanged.fire(frameInfo);
       }
 
       // --- Handle changes in execution state
-      if (frameInfo.executionState !== lastFrameInfo.executionState) {
-        lastFrameInfo.executionState = frameInfo.executionState;
+      if (
+        frameInfo.executionState !== lastFrameInfo.executionState ||
+        frameInfo.startCount !== lastFrameInfo.startCount
+      ) {
         executionStateChanged.fire({
-          state: getExecutionStateName(lastFrameInfo.executionState),
-          pc: lastFrameInfo.pc,
+          state: getExecutionStateName(frameInfo.executionState),
+          pc: frameInfo.pc,
         });
       }
+
+      // --- Remember the last frame information
+      lastFrameInfo = frameInfo;
 
       // --- Handle changes in breakpoint state
       if (!frameInfo.breakpoints) {
@@ -125,7 +127,7 @@ export async function startNotifier(): Promise<void> {
         connectionStateChanged.fire(connected);
       }
     }
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 100));
   }
 }
 

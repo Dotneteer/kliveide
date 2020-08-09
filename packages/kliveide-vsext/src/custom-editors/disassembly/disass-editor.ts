@@ -100,7 +100,6 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
-        console.log("Refresh asked.")
         this.sendExecutionStateToView();
         this.sendBreakpointsToView();
         break;

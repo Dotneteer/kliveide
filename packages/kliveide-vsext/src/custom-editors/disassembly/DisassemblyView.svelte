@@ -11,6 +11,7 @@
   let refreshed = false;
   let disassembling = false;
   let needScroll = null;
+  let needToScrollAfterDisassembly = null;
   let execState;
   let items = [];
   let breakpoints;
@@ -40,6 +41,10 @@
             }
             switch (ev.data.state) {
               case "paused":
+                if (oldState === "none" || !oldState) {
+                  needToScrollAfterDisassembly = ev.data.pc;
+                  break;
+                }
               case "stopped":
                 needScroll = ev.data.pc;
                 break;
@@ -70,16 +75,17 @@
     vscodeApi.postMessage({ command: "refresh" });
   });
 
-  afterUpdate(() => {
-    if (needScroll !== null && !disassembling) {
-      scrollToAddress(needScroll);
-      needScroll = null;
-    }
-  });
-
   $: {
     if (!refreshed && connected) {
       refreshDisassembly();
+    }
+  }
+
+  $: {
+    if (needScroll !== null && !disassembling) {
+      console.log(`Start scroll to ${needScroll}`);
+      scrollToAddress(needScroll);
+      needScroll = null;
     }
   }
 
@@ -94,19 +100,21 @@
       const disass = await disassembly(0, 0xffff);
       items = disass.outputItems;
       refreshed = true;
-      await tick();
-      if (currentPc !== undefined && currentPc >= 0) {
-        needScroll = currentPc;
-      }
     } finally {
       disassembling = false;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+    if (needToScrollAfterDisassembly !== null) {
+      scrollToAddress(needToScrollAfterDisassembly);
+      needToScrollAfterDisassembly = null;
     }
   }
 
   // --- Scroll to the specified address
   function scrollToAddress(address) {
     if (api) {
-      const found = items.findIndex((it) => it.address >= address);
+      let found = items.findIndex((it) => it.address >= address);
+      found = Math.max(0, found - 3);
       api.scrollToItem(found);
     }
   }
@@ -152,7 +160,7 @@
       </p>
     </div>
   {:else}
-    <VirtualList {items} let:item bind:api>
+    <VirtualList {items} itemHeight={20} let:item bind:api>
       <DisassemblyEntry
         {item}
         hasBreakpoint={breakpoints.has(item.address)}

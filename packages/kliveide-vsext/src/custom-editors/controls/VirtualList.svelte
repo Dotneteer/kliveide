@@ -68,6 +68,8 @@
   async function handle_scroll() {
     const { scrollTop } = viewport;
 
+    console.log(`In handle_scroll ${scrollTop}`);
+
     const old_start = start;
 
     for (let v = 0; v < rows.length; v += 1) {
@@ -132,11 +134,13 @@
   onMount(() => {
     rows = contents.getElementsByTagName("svelte-virtual-list-row");
     mounted = true;
-    api.scrollToItem = (item) => {
-      if (viewport && api.calculatedHeight && item >= 0) {
-        viewport.scrollTo(0, item * api.calculatedHeight);
+    api.scrollToItem = async (item) => {
+      await tick();
+      if (viewport && itemHeight && item >= 0) {
+        viewport.scrollTo(0, item * itemHeight);
       }
     };
+    api.calculatedHeight = itemHeight;
   });
 </script>
 
