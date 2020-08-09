@@ -1,14 +1,16 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, tick, afterUpdate } from "svelte";
   import { disassembly } from "./DisassemblyView";
   import VirtualList from "../controls/VirtualList.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
-  import { identity } from "svelte/internal";
+  import { vscodeApi } from "../messaging/messaging-core";
 
   let name = "Klive IDE";
 
-  let refreshed = false;
   let connected = true;
+  let refreshed = false;
+  let disassembling = false;
+  let needScroll = null;
   let execState;
   let items = [];
   let breakpoints;
@@ -19,22 +21,43 @@
   let api;
 
   onMount(async () => {
+    // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", (ev) => {
       if (ev.data.viewNotification) {
         switch (ev.data.viewNotification) {
           case "connectionState":
+            // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
               refreshed = false;
             }
             break;
           case "execState":
+            // --- Respond to vm execution state changes
+            const oldState = execState;
             if (!execState) {
               refreshed = false;
             }
-            execState = ev.data.execState;
+            switch (ev.data.state) {
+              case "paused":
+              case "stopped":
+                needScroll = ev.data.pc;
+                break;
+              case "running":
+                if (oldState === "stopped" || oldState === "none") {
+                  needScroll = 0;
+                }
+                break;
+              case "none":
+                needScroll = 0;
+                currentPc = -1;
+                break;
+            }
+            execState = ev.data.state;
+            currentPc = ev.data.pc;
             break;
           case "breakpoints":
+            // --- Receive breakpoints set in the emulator
             breakpoints = new Set(ev.data.breakpoints);
             break;
           case "pc":
@@ -43,20 +66,49 @@
         }
       }
     });
+
+    vscodeApi.postMessage({ command: "refresh" });
+  });
+
+  afterUpdate(() => {
+    if (needScroll !== null && !disassembling) {
+      scrollToAddress(needScroll);
+      needScroll = null;
+    }
   });
 
   $: {
     if (!refreshed && connected) {
-      if (execState !== "none") {
-        refreshDisassembly();
-      }
+      refreshDisassembly();
     }
   }
 
+  // --- Initiate refreshing the disassembly view
+  // --- Take care not to start disassembling multiple times
   async function refreshDisassembly() {
-    const disass = await disassembly(0, 0x3fff);
-    items = disass.outputItems;
-    refreshed = true;
+    if (disassembling) {
+      return;
+    }
+    disassembling = true;
+    try {
+      const disass = await disassembly(0, 0xffff);
+      items = disass.outputItems;
+      refreshed = true;
+      await tick();
+      if (currentPc !== undefined && currentPc >= 0) {
+        needScroll = currentPc;
+      }
+    } finally {
+      disassembling = false;
+    }
+  }
+
+  // --- Scroll to the specified address
+  function scrollToAddress(address) {
+    if (api) {
+      const found = items.findIndex((it) => it.address >= address);
+      api.scrollToItem(found);
+    }
   }
 </script>
 
@@ -102,13 +154,10 @@
   {:else}
     <VirtualList {items} let:item bind:api>
       <DisassemblyEntry
-        on:clicked={() => {
-          const found = items.findIndex((it) => it.address === 4777);
-          api.scrollToItem(found);
-        }}
         {item}
         hasBreakpoint={breakpoints.has(item.address)}
-        isCurrentBreakpoint={currentPc === item.address} />
+        isCurrentBreakpoint={currentPc === item.address}
+        {execState} />
     </VirtualList>
   {/if}
 </div>

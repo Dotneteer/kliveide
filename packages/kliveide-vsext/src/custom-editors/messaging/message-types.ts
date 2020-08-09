@@ -13,6 +13,7 @@ export type RendererMessage = GetMemoryContents | GetExecutionState;
  */
 export type MainMessage =
   | DefaultResponse
+  | ErrorResponse
   | GetMemoryContentsResponse
   | GetExecutionStateResponse;
 
@@ -61,4 +62,12 @@ export interface GetExecutionStateResponse extends MessageBase {
  */
 export interface DefaultResponse extends MessageBase {
   type: "ack";
+}
+
+/**
+ * Error response for actions
+ */
+export interface ErrorResponse extends MessageBase {
+  type: "error";
+  errorMessage: string;
 }
