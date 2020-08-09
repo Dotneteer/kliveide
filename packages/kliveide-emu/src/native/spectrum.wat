@@ -8239,6 +8239,13 @@
         end
       end 
 
+      ;; Check step-into mode
+      (i32.eq (get_global $debugStepMode) (i32.const 2))
+      if
+        i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+        return
+      end
+
       ;; Render the screen
       (call $renderScreen (get_local $currentUlaTact))
 
