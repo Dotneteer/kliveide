@@ -44,7 +44,7 @@ let windowStateKeeper: any | null = null;
  * Minimum application window dimesnions
  */
 const MIN_WIDTH = 960;
-const MIN_HEIGHT = 660;
+const MIN_HEIGHT = 676;
 
 /**
  * This class encapsulates the functionality of the application's window
@@ -106,7 +106,7 @@ export class AppWindow {
 
     // --- Additional options depending on the host platform
     if (__DARWIN__) {
-      windowOptions.titleBarStyle = "hidden";
+      windowOptions.frame = true;
     } else if (__WIN32__) {
       windowOptions.frame = true;
     } else if (__LINUX__) {
