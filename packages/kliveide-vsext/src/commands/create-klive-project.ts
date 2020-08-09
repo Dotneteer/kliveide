@@ -64,7 +64,7 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
     copyFile(path.join(templateFolder, PACMAN_TAPE), pacManFile);
   }
 
-  vscode.window.showInformationMessage(templateFolder);
+  vscode.window.showInformationMessage("Klive project created.");
 }
 
 export function copyFile(src: string, dest: string): void {
