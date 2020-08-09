@@ -68,8 +68,6 @@
   async function handle_scroll() {
     const { scrollTop } = viewport;
 
-    console.log(`In handle_scroll ${scrollTop}`);
-
     const old_start = start;
 
     for (let v = 0; v < rows.length; v += 1) {
