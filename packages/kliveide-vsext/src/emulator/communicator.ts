@@ -145,6 +145,14 @@ export interface FrameInfo {
 }
 
 /**
+ * Represents the information about execution state change
+ */
+export interface ExecutionState {
+  state: string,
+  pc?: number
+}
+
+/**
  * Represents Z80 Registers data
  */
 export interface RegisterData {

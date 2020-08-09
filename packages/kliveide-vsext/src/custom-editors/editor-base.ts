@@ -10,6 +10,7 @@ import {
 } from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
+import { ExecutionState } from "../emulator/communicator";
 
 const editorInstances: EditorProviderBase[] = [];
 let activeEditor: EditorProviderBase | null = null;
@@ -23,6 +24,9 @@ export function getRegisteredEditors(): EditorProviderBase[] {
  */
 export abstract class EditorProviderBase
   implements vscode.CustomTextEditorProvider {
+
+  private _webviewPanel: vscode.WebviewPanel | null = null;
+
   /**
    * The path of the "assets" folder within the extension
    */
@@ -62,6 +66,13 @@ export abstract class EditorProviderBase
   }
 
   /**
+   * Retrieves the webview panel of this editor
+   */
+  get webviewPanel(): vscode.WebviewPanel | null {
+    return this._webviewPanel;
+  }
+
+  /**
    * Resolve a custom editor for a given text resource.
    *
    * @param document Document for the resource to resolve.
@@ -75,6 +86,7 @@ export abstract class EditorProviderBase
     _token: vscode.CancellationToken
   ): Promise<void> {
     // --- Store the instance
+    this._webviewPanel = webviewPanel;
     editorInstances.push(this);
 
     // --- Setup initial content for the webview
@@ -97,10 +109,11 @@ export abstract class EditorProviderBase
       }
     );
 
-    const execStateDisposable = onExecutionStateChanged((state: string) => {
+    const execStateDisposable = onExecutionStateChanged((execState: ExecutionState) => {
       webviewPanel.webview.postMessage({
         viewNotification: "execState",
-        state,
+        state: execState.state,
+        pc: execState.pc
       });
     });
 
@@ -128,7 +141,6 @@ export abstract class EditorProviderBase
     // Receive message from the webview
     webviewPanel.webview.onDidReceiveMessage(
       (e: ViewCommand | RendererMessage) => {
-        console.log(JSON.stringify(e));
         if ((e as ViewCommand).command !== undefined) {
           this.processViewCommand(e as ViewCommand);
         } else {
@@ -142,16 +154,7 @@ export abstract class EditorProviderBase
     updateWebview();
 
     // --- Get the initial state
-    if (!getLastConnectedState()) {
-      webviewPanel.webview.postMessage({
-        viewNotification: "connectionState",
-        state: false,
-      });
-    }
-    webviewPanel.webview.postMessage({
-      viewNotification: "execState",
-      state: getLastExecutionState(),
-    });
+    this.sendExecutionStateToView();
 
     /**
      * Updates the web view
@@ -247,6 +250,27 @@ export abstract class EditorProviderBase
    */
   protected getAssetsFileName(filename: string): string {
     return path.join(this.assetsPath, filename);
+  }
+
+  /**
+   * Sends the current execution state to view
+   */
+  protected sendExecutionStateToView(): void {
+    if (!this._webviewPanel) {
+      return;
+    }
+    if (!getLastConnectedState()) {
+      this._webviewPanel.webview.postMessage({
+        viewNotification: "connectionState",
+        state: false,
+      });
+    }
+    const execState = getLastExecutionState();
+    this._webviewPanel.webview.postMessage({
+      viewNotification: "execState",
+      state: execState.state,
+      pc: execState.pc
+    });
   }
 }
 

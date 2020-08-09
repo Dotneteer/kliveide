@@ -5,6 +5,7 @@ import {
   MainMessage,
   DefaultResponse,
   GetExecutionStateResponse,
+  ErrorResponse,
 } from "../custom-editors/messaging/message-types";
 import { communicatorInstance } from "./communicator";
 import { getLastConnectedState, getLastExecutionState } from "./notifier";
@@ -24,26 +25,33 @@ export class MessageProcessor {
     let response: MainMessage = <DefaultResponse>{
       type: "ack",
     };
-    switch (message.type) {
-      case "getMemoryContents":
-        const memContents = await communicatorInstance.getMemory(
-          message.from,
-          message.to
-        );
-        response = <GetMemoryContentsResponse>{
-          type: "ackGetMemoryContents",
-          bytes: memContents,
-        };
-        break;
+    try {
+      switch (message.type) {
+        case "getMemoryContents":
+          const memContents = await communicatorInstance.getMemory(
+            message.from,
+            message.to
+          );
+          response = <GetMemoryContentsResponse>{
+            type: "ackGetMemoryContents",
+            bytes: memContents,
+          };
+          break;
 
-      case "getExecutionState":
-        const connected = getLastConnectedState();
-        const execState = getLastExecutionState();
-        response = <GetExecutionStateResponse>{
-          type: "ackGetExecutionState",
-          state: connected ? execState : "disconnected",
-        };
-        break;
+        case "getExecutionState":
+          const connected = getLastConnectedState();
+          const execState = getLastExecutionState();
+          response = <GetExecutionStateResponse>{
+            type: "ackGetExecutionState",
+            state: connected ? execState.state : "disconnected",
+          };
+          break;
+      }
+    } catch (err) {
+      response = <ErrorResponse>{
+        type: "error",
+        errorMessage: err.toString()
+      };
     }
     response.correlationId = message.correlationId;
     this.webView.postMessage(response);

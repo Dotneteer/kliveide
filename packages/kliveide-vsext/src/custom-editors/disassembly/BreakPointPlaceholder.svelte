@@ -5,6 +5,7 @@
   export let hasBreakpoint;
   export let isCurrentBreakpoint;
   export let size = 16;
+  export let execState;
 
   // --- Notify the webview about a breakpoint toggle
   function sendClickEvent(address) {
@@ -39,8 +40,13 @@
   .breakpoint {
     fill: var(--vscode-terminal-ansiRed);
   }
+
   .current {
     fill: var(--vscode-terminal-ansiYellow);
+  }
+
+  .stopped {
+    fill: var(--vscode-terminal-ansiRed);
   }
 </style>
 
@@ -69,7 +75,7 @@
   {/if}
   {#if isCurrentBreakpoint}
     <svg
-      class="current"
+      class="current" class:stopped={execState === "stopped"}
       style="margin-left:-{size}px"
       width="16"
       height="16"

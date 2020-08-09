@@ -89,10 +89,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     });
 
     // --- Send the current breakpoints to the view
-    webviewPanel.webview.postMessage({
-      viewNotification: "breakpoints",
-      breakpoints: getLastBreakpoints(),
-    });
+    this.sendBreakpointsToView();
   }
 
   /**
@@ -101,6 +98,12 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    */
   processViewCommand(viewCommand: ViewCommand): void {
     switch (viewCommand.command) {
+      case "refresh":
+        // --- Send breakpoint info to the view
+        console.log("Refresh asked.")
+        this.sendExecutionStateToView();
+        this.sendBreakpointsToView();
+        break;
       case "setBreakpoint":
         communicatorInstance.setBreakpoint((viewCommand as any).address);
         break;
@@ -108,5 +111,19 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
         communicatorInstance.removeBreakpoint((viewCommand as any).address);
         break;
     }
+  }
+
+  /**
+   * Sends the current breakpoints to the webview
+   */
+  protected sendBreakpointsToView(): void {
+    if (!this.webviewPanel) {
+      return;
+    }
+
+    this.webviewPanel.webview.postMessage({
+      viewNotification: "breakpoints",
+      breakpoints: getLastBreakpoints(),
+    });
   }
 }

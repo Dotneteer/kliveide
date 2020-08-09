@@ -3,11 +3,11 @@
   import BreakpointPlaceholder from "./BreakPointPlaceholder.svelte";
   import BreakPointPlaceholder from "./BreakPointPlaceholder.svelte";
   import { intToX4 } from "../../disassembler/disassembly-helper";
-import { create } from "domain";
 
   export let item;
   export let hasBreakpoint = true;
   export let isCurrentBreakpoint = true;
+  export let execState;
 
   let referenceWidth = 0;
   let opCodesWidth = 0;
@@ -59,8 +59,12 @@ import { create } from "domain";
   }
 </style>
 
-<div class="item" on:click={() => dispatch("clicked")}>
-  <BreakPointPlaceholder address={item.address} {hasBreakpoint} {isCurrentBreakpoint} />
+<div class="item" on:click={() => dispatch('clicked')}>
+  <BreakPointPlaceholder
+    address={item.address}
+    {hasBreakpoint}
+    {isCurrentBreakpoint}
+    {execState} />
   <span class="address" bind:clientWidth={referenceWidth}>
     {intToX4(item.address)}&nbsp;
   </span>
@@ -68,5 +72,7 @@ import { create } from "domain";
   <span class="label" style="width:{labelWidth}px">
     {item.hasLabel ? 'L' + intToX4(item.address) : ''}
   </span>
-  <span class="instruction" style="width:{instructionWidth}px">{item.instruction}</span>
+  <span class="instruction" style="width:{instructionWidth}px">
+    {item.instruction}
+  </span>
 </div>

@@ -47,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // --- Notify entities about virtual machine execution state changes
-  onExecutionStateChanged(async (state) => {
+  onExecutionStateChanged(async () => {
     const regData = await communicatorInstance.getRegisters();
     z80RegistersProvider.refresh(regData);
   });
