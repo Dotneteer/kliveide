@@ -46,6 +46,22 @@ class Communicator {
   }
 
   /**
+   * Sets the specified breakpoint
+   * @param address Breakpoint address
+   */
+  async setBreakpoint(address: number): Promise<void> {
+    await this.post("/set-breakpoints", { breakpoints: [ address ]});
+  }
+
+  /**
+   * Sets the specified breakpoint
+   * @param address Breakpoint address
+   */
+  async removeBreakpoint(address: number): Promise<void> {
+    await this.post("/delete-breakpoints", { breakpoints: [ address ]});
+  }
+
+  /**
    * Invokes a GET command for a generic response
    * @param command Command string
    * @param requestInit Optional request initialization
@@ -94,6 +110,27 @@ class Communicator {
     }
     throw new Error(`Unexpected response for ${command}: ${response.status}`);
   }
+
+    /**
+   * Invokes a GET command for a generic response
+   * @param command Command string
+   * @param requestInit Optional request initialization
+   */
+  private async post(
+    command: string,
+    body: object,
+    requestInit?: RequestInit
+  ): Promise<Response> {
+    if (!requestInit) {
+      requestInit = {
+        method: "POST",
+        timeout: 1000,
+        headers: { "Content-Type": "application/json"},
+        body: JSON.stringify(body)
+      };
+    }
+    return await fetch(`${this.url()}${command}`, requestInit);
+  }
 }
 
 /**
@@ -103,6 +140,8 @@ export interface FrameInfo {
   startCount?: number;
   frameCount?: number;
   executionState?: number;
+  breakpoints?: number[];
+  pc?: number;
 }
 
 /**

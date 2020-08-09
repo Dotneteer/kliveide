@@ -27,7 +27,7 @@ declare function acquireVsCodeApi(): IVsCodeApi;
 /**
  * The vscode instance we use
  */
-const vscode = acquireVsCodeApi();
+export const vscodeApi = acquireVsCodeApi();
 
 /**
  * ID of the last message
@@ -71,7 +71,7 @@ export async function sendMessageToMain<T extends MessageBase>(
       messageResolvers.set(message.correlationId, resolve);
     }
   });
-  vscode.postMessage(message);
+  vscodeApi.postMessage(message);
   return promise;
 }
 

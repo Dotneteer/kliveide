@@ -9,6 +9,9 @@ let connected = true;
 // --- The last frame information received
 let lastFrameInfo: FrameInfo;
 
+// --- The last set of breakpoints received
+let lastBreakpoints: number[] = [];
+
 let frameInfoChanged: vscode.EventEmitter<FrameInfo> = new vscode.EventEmitter<
   FrameInfo
 >();
@@ -17,6 +20,10 @@ let executionStateChanged: vscode.EventEmitter<string> = new vscode.EventEmitter
 >();
 let connectionStateChanged: vscode.EventEmitter<boolean> = new vscode.EventEmitter<
   boolean
+>();
+
+let breakpointsChanged: vscode.EventEmitter<number[]> = new vscode.EventEmitter<
+  number[]
 >();
 
 /**
@@ -36,6 +43,12 @@ export const onExecutionStateChanged: vscode.Event<string> =
  */
 export const onConnectionStateChanged: vscode.Event<boolean> =
   connectionStateChanged.event;
+
+  /**
+ * Fires when breakpoints has been changed
+ */
+export const onBreakpointsChanged: vscode.Event<number[]> =
+breakpointsChanged.event;
 
 /**
  * Starts the notification watcher task
@@ -64,10 +77,12 @@ export async function startNotifier(): Promise<void> {
       // --- Handle changes in frame ID
       if (
         frameInfo.frameCount !== lastFrameInfo.frameCount ||
-        frameInfo.startCount !== lastFrameInfo.startCount
+        frameInfo.startCount !== lastFrameInfo.startCount ||
+        frameInfo.pc !== lastFrameInfo.pc
       ) {
         lastFrameInfo.startCount = frameInfo.startCount;
         lastFrameInfo.frameCount = frameInfo.frameCount;
+        lastFrameInfo.pc = frameInfo.pc;
         frameInfoChanged.fire(lastFrameInfo);
       }
 
@@ -77,6 +92,21 @@ export async function startNotifier(): Promise<void> {
         executionStateChanged.fire(
           getExecutionStateName(lastFrameInfo.executionState)
         );
+      }
+
+      // --- Handle changes in breakpoint state
+      if (!frameInfo.breakpoints) {
+        frameInfo.breakpoints = [];
+      }
+      if (lastBreakpoints !== frameInfo.breakpoints) {
+        
+        // --- Compare breakpoints
+        let differs = lastBreakpoints.length !== frameInfo.breakpoints.length;
+        if (differs || frameInfo.breakpoints.some(item => !lastBreakpoints.includes(item))) {
+          // --- Breakpoints changed
+          breakpointsChanged.fire(frameInfo.breakpoints);
+        }
+        lastBreakpoints = frameInfo.breakpoints;
       }
     } catch (err) {
       // --- Handle changes in connection state
@@ -112,6 +142,13 @@ export function getLastConnectedState(): boolean {
  */
 export function getLastExecutionState(): string {
   return getExecutionStateName(lastFrameInfo?.executionState);
+}
+
+/**
+ * Gets the latest set of breakpoints
+ */
+export function getLastBreakpoints(): number[] {
+  return lastBreakpoints;
 }
 
 /**
