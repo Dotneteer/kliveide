@@ -10,13 +10,23 @@ import {
 } from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
-import { getExecutionState } from "./messaging/messaging-core";
+import { ExecutionState } from "../emulator/communicator";
+
+const editorInstances: EditorProviderBase[] = [];
+let activeEditor: EditorProviderBase | null = null;
+
+export function getRegisteredEditors(): EditorProviderBase[] {
+  return editorInstances;
+}
 
 /**
  *  * Base class for all custom editors
  */
 export abstract class EditorProviderBase
   implements vscode.CustomTextEditorProvider {
+
+  private _webviewPanel: vscode.WebviewPanel | null = null;
+
   /**
    * The path of the "assets" folder within the extension
    */
@@ -56,6 +66,13 @@ export abstract class EditorProviderBase
   }
 
   /**
+   * Retrieves the webview panel of this editor
+   */
+  get webviewPanel(): vscode.WebviewPanel | null {
+    return this._webviewPanel;
+  }
+
+  /**
    * Resolve a custom editor for a given text resource.
    *
    * @param document Document for the resource to resolve.
@@ -68,11 +85,21 @@ export abstract class EditorProviderBase
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
+    // --- Store the instance
+    this._webviewPanel = webviewPanel;
+    editorInstances.push(this);
+
     // --- Setup initial content for the webview
     webviewPanel.webview.options = {
       enableScripts: true,
     };
     webviewPanel.webview.html = this.getHtmlContents(webviewPanel.webview);
+
+    const stateChangeDisposable = webviewPanel.onDidChangeViewState((ev) => {
+      if (ev.webviewPanel.active) {
+        activeEditor = this;
+      }
+    });
 
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
       (e) => {
@@ -82,14 +109,15 @@ export abstract class EditorProviderBase
       }
     );
 
-    const execStateDisposable = onExecutionStateChanged((state: string) => {
+    const execStateDisposable = onExecutionStateChanged((execState: ExecutionState) => {
       webviewPanel.webview.postMessage({
         viewNotification: "execState",
-        state,
+        state: execState.state,
+        pc: execState.pc
       });
     });
 
-    const conncetionStateDisposable = onConnectionStateChanged(
+    const connectionStateDisposable = onConnectionStateChanged(
       (state: boolean) => {
         webviewPanel.webview.postMessage({
           viewNotification: "connectionState",
@@ -100,16 +128,21 @@ export abstract class EditorProviderBase
 
     // Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
+      const index = editorInstances.indexOf(this);
+      if (index >= 0) {
+        editorInstances.splice(index, 1);
+      }
+      stateChangeDisposable.dispose();
       changeDocumentSubscription.dispose();
       execStateDisposable.dispose();
-      conncetionStateDisposable.dispose();
+      connectionStateDisposable.dispose();
     });
 
     // Receive message from the webview
     webviewPanel.webview.onDidReceiveMessage(
-      (e: ViewNotification | RendererMessage) => {
-        if ((e as ViewNotification).viewNotification !== undefined) {
-          this.processViewNotification(e as ViewNotification);
+      (e: ViewCommand | RendererMessage) => {
+        if ((e as ViewCommand).command !== undefined) {
+          this.processViewCommand(e as ViewCommand);
         } else {
           new MessageProcessor(webviewPanel.webview).processMessage(
             e as RendererMessage
@@ -121,16 +154,7 @@ export abstract class EditorProviderBase
     updateWebview();
 
     // --- Get the initial state
-    if (!getLastConnectedState()) {
-      webviewPanel.webview.postMessage({
-        viewNotification: "connectionState",
-        state: false,
-      });
-    }
-    webviewPanel.webview.postMessage({
-      viewNotification: "execState",
-      state: getLastExecutionState(),
-    });
+    this.sendExecutionStateToView();
 
     /**
      * Updates the web view
@@ -144,10 +168,10 @@ export abstract class EditorProviderBase
   }
 
   /**
-   * Process view notifications
-   * @param notification Notification to process
+   * Process view command
+   * @param viewCommand Command notification to process
    */
-  processViewNotification(notification: ViewNotification): void {}
+  processViewCommand(viewCommand: ViewCommand): void {}
 
   /**
    * Gets the HTML contents belonging to this editor
@@ -227,6 +251,27 @@ export abstract class EditorProviderBase
   protected getAssetsFileName(filename: string): string {
     return path.join(this.assetsPath, filename);
   }
+
+  /**
+   * Sends the current execution state to view
+   */
+  protected sendExecutionStateToView(): void {
+    if (!this._webviewPanel) {
+      return;
+    }
+    if (!getLastConnectedState()) {
+      this._webviewPanel.webview.postMessage({
+        viewNotification: "connectionState",
+        state: false,
+      });
+    }
+    const execState = getLastExecutionState();
+    this._webviewPanel.webview.postMessage({
+      viewNotification: "execState",
+      state: execState.state,
+      pc: execState.pc
+    });
+  }
 }
 
 /**
@@ -237,6 +282,6 @@ export type ReplacementTuple = [string, string | vscode.Uri];
 /**
  * Reprensents notifications sent from the web view to its UI
  */
-export interface ViewNotification {
-  readonly viewNotification: string;
+export interface ViewCommand {
+  readonly command: string;
 }

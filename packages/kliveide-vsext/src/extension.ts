@@ -12,6 +12,7 @@ import { communicatorInstance } from "./emulator/communicator";
 import { createVmStateStatusBarItem } from "./views/statusbar";
 import { createKliveProject } from "./commands/create-klive-project";
 import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
+import { goToAddress } from "./commands/goto-address";
 
 export function activate(context: vscode.ExtensionContext) {
   let startEmuCmd = vscode.commands.registerCommand(
@@ -25,6 +26,11 @@ export function activate(context: vscode.ExtensionContext) {
     () => createKliveProject(context)
   );
   context.subscriptions.push(createProjectCmd);
+  let goToAddressCmd = vscode.commands.registerCommand(
+    "kliveide.goToAddress",
+    () => goToAddress(context)
+  );
+  context.subscriptions.push(goToAddressCmd);
 
   const z80RegistersProvider = new Z80RegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);
@@ -41,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   // --- Notify entities about virtual machine execution state changes
-  onExecutionStateChanged(async (state) => {
+  onExecutionStateChanged(async () => {
     const regData = await communicatorInstance.getRegisters();
     z80RegistersProvider.refresh(regData);
   });

@@ -27,7 +27,7 @@ declare function acquireVsCodeApi(): IVsCodeApi;
 /**
  * The vscode instance we use
  */
-const vscode = acquireVsCodeApi();
+export const vscodeApi = acquireVsCodeApi();
 
 /**
  * ID of the last message
@@ -41,6 +41,10 @@ const messageResolvers = new Map<
   number,
   (msg?: any | PromiseLike<any>) => void
 >();
+const messageRejecters = new Map<
+  number,
+  (msg?: any | PromiseLike<any>) => void
+>();
 
 /**
  * Process the results coming from the main process
@@ -49,11 +53,18 @@ window.addEventListener("message", (ev) => {
   const response = ev.data as MainMessage;
   if (response.correlationId) {
     const resolver = messageResolvers.get(response.correlationId);
+    messageResolvers.delete(response.correlationId);
+    const rejecter = messageRejecters.get(response.correlationId);
+    messageRejecters.delete(response.correlationId);
 
     // --- Resolve the message
-    if (resolver) {
+    if (response.type === "error") {
+      console.log("Messaging error thrown");
+      if (rejecter) {
+        rejecter(response.errorMessage);
+      }
+    } else if (resolver) {
       resolver(response);
-      messageResolvers.delete(response.correlationId);
     }
   }
 });
@@ -66,12 +77,13 @@ export async function sendMessageToMain<T extends MessageBase>(
   message: RendererMessage
 ): Promise<T> {
   message.correlationId = messageSeqNo++;
-  const promise = new Promise<T>((resolve) => {
+  const promise = new Promise<T>((resolve, reject) => {
     if (message.correlationId) {
       messageResolvers.set(message.correlationId, resolve);
+      messageRejecters.set(message.correlationId, reject);
     }
   });
-  vscode.postMessage(message);
+  vscodeApi.postMessage(message);
   return promise;
 }
 

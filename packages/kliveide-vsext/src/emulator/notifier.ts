@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { communicatorInstance, FrameInfo } from "./communicator";
+import {
+  communicatorInstance,
+  FrameInfo,
+  ExecutionState,
+} from "./communicator";
 
 // --- Communicator internal state
 let started = false;
@@ -9,14 +13,21 @@ let connected = true;
 // --- The last frame information received
 let lastFrameInfo: FrameInfo;
 
+// --- The last set of breakpoints received
+let lastBreakpoints: number[] = [];
+
 let frameInfoChanged: vscode.EventEmitter<FrameInfo> = new vscode.EventEmitter<
   FrameInfo
 >();
-let executionStateChanged: vscode.EventEmitter<string> = new vscode.EventEmitter<
-  string
+let executionStateChanged: vscode.EventEmitter<ExecutionState> = new vscode.EventEmitter<
+  ExecutionState
 >();
 let connectionStateChanged: vscode.EventEmitter<boolean> = new vscode.EventEmitter<
   boolean
+>();
+
+let breakpointsChanged: vscode.EventEmitter<number[]> = new vscode.EventEmitter<
+  number[]
 >();
 
 /**
@@ -28,7 +39,7 @@ export const onFrameInfoChanged: vscode.Event<FrameInfo> =
 /**
  * Fires when execution state has been changed
  */
-export const onExecutionStateChanged: vscode.Event<string> =
+export const onExecutionStateChanged: vscode.Event<ExecutionState> =
   executionStateChanged.event;
 
 /**
@@ -36,6 +47,12 @@ export const onExecutionStateChanged: vscode.Event<string> =
  */
 export const onConnectionStateChanged: vscode.Event<boolean> =
   connectionStateChanged.event;
+
+/**
+ * Fires when breakpoints has been changed
+ */
+export const onBreakpointsChanged: vscode.Event<number[]> =
+  breakpointsChanged.event;
 
 /**
  * Starts the notification watcher task
@@ -64,19 +81,41 @@ export async function startNotifier(): Promise<void> {
       // --- Handle changes in frame ID
       if (
         frameInfo.frameCount !== lastFrameInfo.frameCount ||
-        frameInfo.startCount !== lastFrameInfo.startCount
+        frameInfo.startCount !== lastFrameInfo.startCount ||
+        frameInfo.pc !== lastFrameInfo.pc
       ) {
-        lastFrameInfo.startCount = frameInfo.startCount;
-        lastFrameInfo.frameCount = frameInfo.frameCount;
-        frameInfoChanged.fire(lastFrameInfo);
+        frameInfoChanged.fire(frameInfo);
       }
 
       // --- Handle changes in execution state
-      if (frameInfo.executionState !== lastFrameInfo.executionState) {
-        lastFrameInfo.executionState = frameInfo.executionState;
-        executionStateChanged.fire(
-          getExecutionStateName(lastFrameInfo.executionState)
-        );
+      if (
+        frameInfo.executionState !== lastFrameInfo.executionState ||
+        frameInfo.startCount !== lastFrameInfo.startCount
+      ) {
+        executionStateChanged.fire({
+          state: getExecutionStateName(frameInfo.executionState),
+          pc: frameInfo.pc,
+        });
+      }
+
+      // --- Remember the last frame information
+      lastFrameInfo = frameInfo;
+
+      // --- Handle changes in breakpoint state
+      if (!frameInfo.breakpoints) {
+        frameInfo.breakpoints = [];
+      }
+      if (lastBreakpoints !== frameInfo.breakpoints) {
+        // --- Compare breakpoints
+        let differs = lastBreakpoints.length !== frameInfo.breakpoints.length;
+        if (
+          differs ||
+          frameInfo.breakpoints.some((item) => !lastBreakpoints.includes(item))
+        ) {
+          // --- Breakpoints changed
+          breakpointsChanged.fire(frameInfo.breakpoints);
+        }
+        lastBreakpoints = frameInfo.breakpoints;
       }
     } catch (err) {
       // --- Handle changes in connection state
@@ -88,7 +127,7 @@ export async function startNotifier(): Promise<void> {
         connectionStateChanged.fire(connected);
       }
     }
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 100));
   }
 }
 
@@ -110,8 +149,18 @@ export function getLastConnectedState(): boolean {
 /**
  * Gets the last connection state
  */
-export function getLastExecutionState(): string {
-  return getExecutionStateName(lastFrameInfo?.executionState);
+export function getLastExecutionState(): ExecutionState {
+  return {
+    state: getExecutionStateName(lastFrameInfo?.executionState),
+    pc: lastFrameInfo.pc,
+  };
+}
+
+/**
+ * Gets the latest set of breakpoints
+ */
+export function getLastBreakpoints(): number[] {
+  return lastBreakpoints;
 }
 
 /**

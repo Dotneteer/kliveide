@@ -2,7 +2,7 @@
   "name": "kliveide-vsext",
   "displayName": "Klive IDE",
   "description": "Full-fledged ZX Spectrum IDE for VS Code",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "engines": {
     "vscode": "^1.46.0"
@@ -41,6 +41,14 @@
         }
       }
     },
+    "keybindings": [
+      {
+        "command": "kliveide.startEmu",
+        "key": "ctrl+g",
+        "mac": "cmd+g",
+        "when": "resourceFilename == view.disassembly"
+      }
+    ],
     "commands": [
       {
         "command": "kliveide.startEmu",
@@ -49,6 +57,10 @@
       {
         "command": "kliveide.createProject",
         "title": "Create Klive Project"
+      },
+      {
+        "command": "kliveide.goToAddress",
+        "title": "Go To Address"
       }
     ],
     "views": {

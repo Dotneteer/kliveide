@@ -1,54 +1,122 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, tick, afterUpdate } from "svelte";
   import { disassembly } from "./DisassemblyView";
   import VirtualList from "../controls/VirtualList.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
+  import { vscodeApi } from "../messaging/messaging-core";
 
   let name = "Klive IDE";
 
-  let refreshed = false;
   let connected = true;
+  let refreshed = false;
+  let disassembling = false;
+  let needScroll = null;
+  let needToScrollAfterDisassembly = null;
   let execState;
   let items = [];
+  let breakpoints;
+  let currentPc;
+
+  let virtualList;
+  let itemHeight;
+  let api;
 
   onMount(async () => {
+    // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", (ev) => {
       if (ev.data.viewNotification) {
-        console.log(JSON.stringify(ev.data));
         switch (ev.data.viewNotification) {
           case "connectionState":
+            // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
               refreshed = false;
             }
             break;
           case "execState":
+            // --- Respond to vm execution state changes
+            const oldState = execState;
             if (!execState) {
               refreshed = false;
             }
-            execState = ev.data.execState;
+            switch (ev.data.state) {
+              case "paused":
+                if (oldState === "none" || !oldState) {
+                  needToScrollAfterDisassembly = ev.data.pc;
+                  break;
+                }
+              case "stopped":
+                needScroll = ev.data.pc;
+                break;
+              case "running":
+                if (oldState === "stopped" || oldState === "none") {
+                  needScroll = 0;
+                }
+                break;
+              case "none":
+                needScroll = 0;
+                currentPc = -1;
+                break;
+            }
+            execState = ev.data.state;
+            currentPc = ev.data.pc;
+            break;
+          case "breakpoints":
+            // --- Receive breakpoints set in the emulator
+            breakpoints = new Set(ev.data.breakpoints);
+            break;
+          case "pc":
+            currentPc = ev.data.pc;
             break;
         }
-        console.log(`Refreshed? ${refreshed}`);
       }
     });
+
+    vscodeApi.postMessage({ command: "refresh" });
   });
 
   $: {
     if (!refreshed && connected) {
-      console.log(`Not refreshed: ${execState}`);
-      if (execState !== "none") {
-        console.log("Time to refresh");
-        refreshDisassembly();
-      }
+      refreshDisassembly();
     }
   }
 
+  $: {
+    if (needScroll !== null && !disassembling) {
+      console.log(`Start scroll to ${needScroll}`);
+      scrollToAddress(needScroll);
+      needScroll = null;
+    }
+  }
+
+  // --- Initiate refreshing the disassembly view
+  // --- Take care not to start disassembling multiple times
   async function refreshDisassembly() {
-    const disass = await disassembly(0, 0x3fff);
-    items = disass.outputItems;
-    refreshed = true;
-    console.log(`Refreshed: ${items.length}`);
+    if (disassembling) {
+      return;
+    }
+    disassembling = true;
+    try {
+      const disass = await disassembly(0, 0xffff);
+      items = disass.outputItems;
+      refreshed = true;
+    } finally {
+      disassembling = false;
+    }
+    await new Promise((r) => setTimeout(r, 100));
+    if (needToScrollAfterDisassembly !== null) {
+      scrollToAddress(needToScrollAfterDisassembly);
+      needToScrollAfterDisassembly = null;
+    }
+  }
+
+  // --- Scroll to the specified address
+  function scrollToAddress(address) {
+    if (api) {
+      let found = items.findIndex((it) => it.address >= address);
+      found = Math.max(0, found - 3);
+      api.scrollToItem(found);
+    }
   }
 </script>
 
@@ -73,7 +141,7 @@
     padding: 0px 2px;
     line-height: 1em;
   }
-  
+
   .title {
     color: var(--vscode-terminal-ansiRed);
     padding: 0px 2px;
@@ -84,12 +152,20 @@
 <div class="component">
   {#if !connected}
     <div class="disconnected">
-      <p class="title"><strong>Disconnected from Klive Emulator.</strong></p>
-      <p class="message">You can click the Klive icon in the status bar to start Klive Emulator.</p>
+      <p class="title">
+        <strong>Disconnected from Klive Emulator.</strong>
+      </p>
+      <p class="message">
+        You can click the Klive icon in the status bar to start Klive Emulator.
+      </p>
     </div>
   {:else}
-    <VirtualList {items} let:item>
-      <DisassemblyEntry {item} />
+    <VirtualList {items} itemHeight={20} let:item bind:api>
+      <DisassemblyEntry
+        {item}
+        hasBreakpoint={breakpoints.has(item.address)}
+        isCurrentBreakpoint={currentPc === item.address}
+        {execState} />
     </VirtualList>
   {/if}
 </div>

@@ -18,8 +18,8 @@ export function createVmStateStatusBarItem(): vscode.StatusBarItem {
   vmStateItem.text = getStateMessage("none");
   vmStateItem.show();
 
-  onExecutionStateChanged((state) => {
-    vmStateItem.text = getStateMessage(state);
+  onExecutionStateChanged((execState) => {
+    vmStateItem.text = getStateMessage(execState.state);
   });
 
   onConnectionStateChanged((state) => {

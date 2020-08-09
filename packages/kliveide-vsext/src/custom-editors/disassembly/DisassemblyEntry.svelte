@@ -1,15 +1,20 @@
 <script>
-  import { afterUpdate, tick } from "svelte";
+  import { afterUpdate, tick, createEventDispatcher } from "svelte";
   import BreakpointPlaceholder from "./BreakPointPlaceholder.svelte";
   import BreakPointPlaceholder from "./BreakPointPlaceholder.svelte";
   import { intToX4 } from "../../disassembler/disassembly-helper";
 
   export let item;
+  export let hasBreakpoint = true;
+  export let isCurrentBreakpoint = true;
+  export let execState;
 
   let referenceWidth = 0;
   let opCodesWidth = 0;
   let labelWidth = 0;
   let instructionWidth = 0;
+
+  const dispatch = createEventDispatcher();
 
   $: {
     const charWidth = referenceWidth / 5;
@@ -25,7 +30,9 @@
     display: flex;
     flex-direction: row;
     font-family: Consolas, "Courier New", monospace;
+    font-size: 1.1em;
     overflow-x: hidden;
+    align-items: center;
   }
   .address {
     color: var(--vscode-editorLineNumber-foreground);
@@ -52,8 +59,12 @@
   }
 </style>
 
-<div class="item">
-  <BreakPointPlaceholder />
+<div class="item" on:click={() => dispatch('clicked')}>
+  <BreakPointPlaceholder
+    address={item.address}
+    {hasBreakpoint}
+    {isCurrentBreakpoint}
+    {execState} />
   <span class="address" bind:clientWidth={referenceWidth}>
     {intToX4(item.address)}&nbsp;
   </span>
@@ -61,5 +72,7 @@
   <span class="label" style="width:{labelWidth}px">
     {item.hasLabel ? 'L' + intToX4(item.address) : ''}
   </span>
-  <span class="instruction" style="width:{instructionWidth}px">{item.instruction}</span>
+  <span class="instruction" style="width:{instructionWidth}px">
+    {item.instruction}
+  </span>
 </div>
