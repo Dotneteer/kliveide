@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Tape Explorer Commands | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Tape Explorer Commands" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="You can issue these commands in the Tape File Explorer tool window when you display a data block:" />
+<meta property="og:description" content="You can issue these commands in the Tape File Explorer tool window when you display a data block:" />
+<link rel="canonical" href="http://localhost:4000/kliveide/documents/tape-explorer-commands" />
+<meta property="og:url" content="http://localhost:4000/kliveide/documents/tape-explorer-commands" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-03T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"Tape Explorer Commands","dateModified":"2019-01-03T00:00:00+01:00","datePublished":"2019-01-03T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/tape-explorer-commands","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/tape-explorer-commands"},"description":"You can issue these commands in the Tape File Explorer tool window when you display a data block:","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" active  item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class="item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Z80 Assembler</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                    <a id="main-features" class="" href="/kliveide/documents/main-features#article">Main Features</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="how-assembler-works" class="" href="/kliveide/documents/how-assembler-works#article">How the assembler works</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="language-structure" class="" href="/kliveide/documents/language-structure#article">Language structure</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="labels" class="" href="/kliveide/documents/labels-and-symbols#article">Labels and Symbols</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="expressions" class="" href="/kliveide/documents/expressions#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="instructions" class="" href="/kliveide/documents/z80-instructions#article">Z80 Instructions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="pragmas" class="" href="/kliveide/documents/pragmas#article">Pragmas</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="statements" class="" href="/kliveide/documents/statements#article">Statements</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="macros" class="" href="/kliveide/documents/macros#article">Macros</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="directives" class="" href="/kliveide/documents/directives#article">Directives</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="modules" class="" href="/kliveide/documents/modules#article">Modules</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="structs" class="" href="/kliveide/documents/structs#article">Structures</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="assembler-output" class="" href="/kliveide/documents/assembler-output#article">Assembler Output</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Tool Commands</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="tool-overview" class="" href="/kliveide/documents/tool-overview#article">Overview</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="memory-commands" class="" href="/kliveide/documents/common-commands#article">Common Commands</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="memory-section-commands" class="" href="/kliveide/documents/memory-section-commands#article">Disassembly: Memory Sections</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="annotation-commands" class="" href="/kliveide/documents/annotation-commands#article">Disassembly: Annotations</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="breakpoint-commands" class="" href="/kliveide/documents/breakpoint-commands#article">Disassembly: Breakpoints</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="miscellaneous-commands" class="" href="/kliveide/documents/miscellaneous-commands#article">Disassembly: Miscellaneous</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="watch-commands" class=" active " href="/kliveide/documents/tape-explorer-commands#article">Tape Explorer Commands</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="watch-commands" class="" href="/kliveide/documents/watch-commands#article">Watch Commands</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="watch-expressions" class="" href="/kliveide/documents/watch-expressions#article">Watch Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="watch-samples" class="" href="/kliveide/documents/watch-samples#article">Watch Samples</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Scripting</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-overview" class="" href="/kliveide/documents/scripting-overview#article">Overview</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-object-model" class="" href="/kliveide/documents/scripting-object-model#article">Scripting Object Model</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-vms" class="" href="/kliveide/documents/scripting-vms#article">Managing Virtual machines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-z80" class="" href="/kliveide/documents/scripting-z80#article">Scripting the Z80 CPU</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-screen" class="" href="/kliveide/documents/scripting-screen#article">Scripting the Screen</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-memory" class="" href="/kliveide/documents/scripting-memory#article">Scripting the Memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-audio" class="" href="/kliveide/documents/scripting-audio#article">Scripting the Audio</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Unit Testing</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-basics" class="" href="/kliveide/documents/unit-testing-basics#article">Syntax Basics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-expressions" class="" href="/kliveide/documents/unit-testing-expressions#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-details" class="" href="/kliveide/documents/unit-testing-details#article">Detailed Syntax</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-process" class="" href="/kliveide/documents/unit-testing-process#article">The Testing Process</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Tool Commands &raquo; Tape Explorer Commands</h1>
+            </div>
+            <div class="main-content-area">
+              <p>You can issue these commands in the <strong>Tape File Explorer</strong> tool window when you display a data block:</p>
+
+<h2 id="go-to-address-command">Go To Address Command</h2>
+
+<p><strong><em><code class="highlighter-rouge">hhhh</code></em></strong></p>
+
+<p>Scrolls the memory view to the address specified in <strong><em>hhhh</em></strong> (1-4 hexadecimal digits).</p>
+
+<h2 id="disassembly-command">Disassembly Command</h2>
+
+<p><strong><code class="highlighter-rouge">#</code></strong> <em><code class="highlighter-rouge">hhhh</code></em></p>
+
+<p>Opens the disassembly pane at displays the Z80 disassembly of the data block starting at address in <strong><em>hhhh</em></strong> (1-4 hexadecimal digits). Do not forget that the first byte is the data block header (<code class="highlighter-rouge">$ff</code>), so to disassembly from the beginning of the block, use <code class="highlighter-rouge">#1</code>.</p>
+
+<h2 id="close-disassembly-pane-command">Close Disassembly Pane Command</h2>
+
+<p><strong><code class="highlighter-rouge">q</code></strong></p>
+
+<p>Closes the disassembly pane. You can reopen it agin with the <strong>Disassembly</strong> command.</p>
+
+<h2 id="export-disassembly-command">Export Disassembly Command</h2>
+
+<p><strong><code class="highlighter-rouge">x</code></strong> <em><code class="highlighter-rouge">hhhh</code></em> <em><code class="highlighter-rouge">hhhh</code></em></p>
+
+<p>This command exports the Z80 disassembly of the tape data block from the start address (inclusive), to the end address (inclusive) to export. When you run the command, it shows up a dialog to set a few options:</p>
+
+<p><img src="/kliveide/assets/images/commands/export-disassembly-dialog.png" alt="Predefined symbols" /></p>
+
+<h2 id="use-sinclair-basic-output">Use Sinclair BASIC output</h2>
+
+<p><strong><code class="highlighter-rouge">s</code></strong></p>
+
+<p>Sets the BASIC listing display mode to <em>Sinclair</em>. In this mode, control characters (e.g., <strong>INK</strong>, <strong>PAPER</strong>, <strong>BRIGHT</strong>, etc.) are shown with their hexadecimal code between <code class="highlighter-rouge">°</code> characters:</p>
+
+<p><img src="/kliveide/assets/images/commands/sinclair-basic-mode.png" alt="Sinclair mode" /></p>
+
+<h2 id="use-zx-basic-output">Use ZX BASIC output</h2>
+
+<p><strong><code class="highlighter-rouge">z</code></strong></p>
+
+<p>Sets the BASIC listing display mode to <em>ZXB</em>. In this mode, control characters (e.g., <strong>INK</strong>, <strong>PAPER</strong>, <strong>BRIGHT</strong>, etc.) are shown with their ZX BASIC escape sequences; inline control characters (out of string values wrapped in doupbe quotes) are omitted:</p>
+
+<p><img src="/kliveide/assets/images/commands/zx-basic-mode.png" alt="Sinclair mode" /></p>
+
+<h2 id="export-basic-program">Export BASIC Program</h2>
+
+<p><strong><code class="highlighter-rouge">p</code></strong></p>
+
+<p>This command exports the BASIC listing of the tape data block, provided, it is a program data block:</p>
+
+<p><img src="/kliveide/assets/images/commands/export-basic-listing-dialog.png" alt="Predefined symbols" /></p>
+
+<p>By setting the <strong>Mimic ZX BASIC</strong> checkbox, the output will use ZX BASIC escape sequences for control characters.</p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/documents/miscellaneous-commands#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/documents/watch-commands#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>

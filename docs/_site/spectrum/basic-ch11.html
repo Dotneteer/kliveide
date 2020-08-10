@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Random numbers | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Random numbers" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="CHAPTER 11: Random numbers" />
+<meta property="og:description" content="CHAPTER 11: Random numbers" />
+<link rel="canonical" href="http://localhost:4000/kliveide/spectrum/basic-ch11" />
+<meta property="og:url" content="http://localhost:4000/kliveide/spectrum/basic-ch11" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"Random numbers","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch11","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch11"},"description":"CHAPTER 11: Random numbers","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class=" active item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Spectrum48 BASIC</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-toc" class="" href="/kliveide/spectrum/basic-toc#article">Table of Contents</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch1" class="" href="/kliveide/spectrum/basic-ch1#article">Introduction</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch2" class="" href="/kliveide/spectrum/basic-ch2#article">Basic programming concepts</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch3" class="" href="/kliveide/spectrum/basic-ch3#article">Decisions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch4" class="" href="/kliveide/spectrum/basic-ch4#article">Looping</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch5" class="" href="/kliveide/spectrum/basic-ch5#article">Subroutines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch6" class="" href="/kliveide/spectrum/basic-ch6#article">READ, DATA, RESTORE</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch7" class="" href="/kliveide/spectrum/basic-ch7#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch8" class="" href="/kliveide/spectrum/basic-ch8#article">Strings</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch9" class="" href="/kliveide/spectrum/basic-ch9#article">Functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch10" class="" href="/kliveide/spectrum/basic-ch10#article">Mathematical functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch11" class=" active " href="/kliveide/spectrum/basic-ch11#article">Random numbers</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch12" class="" href="/kliveide/spectrum/basic-ch12#article">Arrays</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch13" class="" href="/kliveide/spectrum/basic-ch13#article">Conditions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch14" class="" href="/kliveide/spectrum/basic-ch14#article">The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch15" class="" href="/kliveide/spectrum/basic-ch15#article">More about PRINT and INPUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch16" class="" href="/kliveide/spectrum/basic-ch16#article">Colours</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch17" class="" href="/kliveide/spectrum/basic-ch17#article">Graphics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch18" class="" href="/kliveide/spectrum/basic-ch18#article">Motion</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch19" class="" href="/kliveide/spectrum/basic-ch19#article">BEEP</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch20" class="" href="/kliveide/spectrum/basic-ch20#article">Tape Storage</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch21" class="" href="/kliveide/spectrum/basic-ch21#article">The ZX Printer</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch22" class="" href="/kliveide/spectrum/basic-ch22#article">Other Equipment</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch23" class="" href="/kliveide/spectrum/basic-ch23#article">IN and OUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch24" class="" href="/kliveide/spectrum/basic-ch24#article">The memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch25" class="" href="/kliveide/spectrum/basic-ch25#article">The system variables</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch26" class="" href="/kliveide/spectrum/basic-ch26#article">Using machine code</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appa" class="" href="/kliveide/spectrum/basic-appa#article">Appendix A: The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc1" class="" href="/kliveide/spectrum/basic-appc1#article">Appendix C1: A description of the ZX Spectrum for reference</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appb" class="" href="/kliveide/spectrum/basic-appb#article">Appendix B: Reports</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appd" class="" href="/kliveide/spectrum/basic-appd#article">Appendix D: Example programs</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc2" class="" href="/kliveide/spectrum/basic-appc2#article">Appendix C2: The BASIC</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appe" class="" href="/kliveide/spectrum/basic-appe#article">Appendix E: Binary and hexadecimal</a>
+                      
+                      
+                      
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Pac-Man Discovery</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="introduction" class="" href="/kliveide/pacman/introduction#article">Decrypting the loader</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Spectrum48 BASIC &raquo; Random numbers</h1>
+            </div>
+            <div class="main-content-area">
+              <h1 id="chapter-11-random-numbers">CHAPTER 11: Random numbers</h1>
+
+<h2 id="summary">Summary</h2>
+
+<ul>
+  <li><strong>RANDOMIZE</strong></li>
+  <li><strong>RND</strong></li>
+</ul>
+
+<p>This chapter deals with the function <strong>RND</strong> and the keyword <strong>RANDOMIZE</strong>. They are both used in connection with random numbers, so you must be careful not to get them mixed up. They are both on the same key (T); <strong>RANDOMIZE</strong> has had to be abbreviated to RAND.</p>
+
+<p>In some ways <strong>RND</strong> is like a function: it does calculations and produces a result. It is unusual in that it does not need an argument.</p>
+
+<p>Each time you use it, its result is a new random number between 0 and 1. (Sometimes it can take the value 0, but never 1.)</p>
+
+<p>Try</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PRINT RND
+20 GO TO 10
+</code></pre></div></div>
+
+<p>to see how the answer varies. Can you detect any pattern7 You shouldn’t be able to; ‘random’ means that there is no pattern.</p>
+
+<p>Actually, <strong>RND</strong> is not truly random, because it follows a fixed sequence of 65536 numbers. However, these are so thoroughly jumbled up that there are at least no obvious patterns and we say that <strong>RND</strong> is <em>pseudo-random</em>.</p>
+
+<p><strong>RND</strong> gives a random number between 0 and 1, but you can easily get random numbers in other ranges. For instance, 5<strong><em>RND** is between 0 and 5, and 1.3+0.7</em> **RND</strong> is between 1.3 and 2. To get whole numbers, use <strong>INT</strong> (remembering that <strong>INT</strong> always rounds down) as in 1 +<strong>INT</strong> (RND*6), which we shall use in a program to simulate dice. RND*6 is in the range 0 to 6, but since it never actually reaches 6, <strong>INT</strong> (<strong>RND</strong> *6) is 0,1,2,3,4 or 5.</p>
+
+<p>Here is the program:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM dice throwing program
+20 CLS
+30 FOR n=1 TO 2
+40 PRINT 1+1NT (RND\*6);" ";
+50 NEXT n
+60 INPUT a$: GO TO 20**
+</code></pre></div></div>
+
+<p>Press ENTER each time you want to throw the dice.</p>
+
+<p>The <strong>RANDOMIZE</strong> statement is used to make <strong>RND</strong> start off at a definite place in its sequence of numbers, as you can see with this program:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 RANDOMIZE 1
+20 FOR n=1 TO 5: PRINT RND ,: NEXT n
+30 PRINT: GO TO 10
+</code></pre></div></div>
+
+<p>After each execution of <strong>RANDOMIZE 1</strong>, the <strong>RND</strong> sequence starts off again with 0.0022735596. You can use other numbers between 1 and 65535 in the <strong>RANDOMIZE</strong> statement to start the <strong>RND</strong> sequence off at different places.</p>
+
+<p>If you had a program with <strong>RND</strong> in it and it also had some mistakes that you had not found, then it would help to use <strong>RANDOMIZE</strong> like this so that the program behaved the same way each time you ran it.</p>
+
+<p><strong>RANDOMIZE</strong> on its own (and <strong>RANDOMIZE 0</strong> has the same effect) is different, because it really does randomize <strong>RND</strong> - you can see this in the next program.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 RANDOMIZE
+20 PRINT RND: GO TO 10
+</code></pre></div></div>
+
+<p>The sequence you get here is not very random, because <strong>RANDOMIZE</strong> uses the time since the computer was switched on. Since this has gone up by the same amount
+each time <strong>RANDOMIZE</strong> is executed, the next RND does more or less the same. You would get better randomness by replacing <strong>GO TO 10</strong> by <strong>GO TO 20</strong>.</p>
+
+<p>Note: Most dialects of BASIC use <strong>RND</strong> and <strong>RANDOMIZE</strong> to produce random numbers, but not all use them in the same way.</p>
+
+<p>Here is a program to toss coins and count the numbers of heads and tails.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET heads=0: LET tails=0
+20 LET coin=lNT (RND\*2)
+30 IF coin=3 THEN LET heads=heads+1
+40 IF coin=1 THEN LET tails=tails+1
+50 PRINT heads;",";tails,
+60 IF tails\&lt;\&gt;6 THEN PRINT heads/tails;
+70 PRINT: GO TO 20
+</code></pre></div></div>
+
+<p>The ratio of heads to tails should become approximately 1 if you go on long enough, because in the long run you expect approximately equal numbers of heads
+and tails.</p>
+
+<h2 id="exercises">Exercises</h2>
+
+<ol>
+  <li>Test this rule:</li>
+</ol>
+
+<p>Suppose you choose a number between 1 and 872 and type</p>
+
+<p><strong>RANDOMIZE</strong> your number</p>
+
+<p>Then the next value of <strong>RND</strong> will be</p>
+
+<p><strong>(75*(your number+1) -1) /65536</strong></p>
+
+<ol>
+  <li>(For mathematicians only.)</li>
+</ol>
+
+<p>Let <em>p</em> be a (large) prime, and let <em>a</em> be a primitive root modulo <em>p</em>.</p>
+
+<p>Then if <em>bi</em> is the residue of <em>ai</em> modulo <em>p</em> (l &lt;=<em>bi</em> &lt;=<em>p</em>-l ), the sequence</p>
+
+<p><img src="/kliveide/assets/images/basic/chap11diag1.gif" alt="bi-1/p-1" /></p>
+
+<p>is a cyclical sequence of <em>p</em>-1 distinct numbers in the range 0 to 1 (excluding 1). By choosing <em>a</em> suitably, these can be made to look fairly random.</p>
+
+<p>65537 is a Fermat prime, 2l6+1. Because the multiplicative group of non-zero residues modulo 65537 has a power of 2 as its order, a residue is a primitive
+root if and only if it is not a quadratic residue. Use Gauss’ law of quadratic reciprocity to show that 75 is a primitive root modulo 65537.</p>
+
+<p>The ZX Spectrum uses <em>p</em>=65537 and <em>a</em>=75, and stores some <em>bi</em>-l in memory. <strong>RND</strong> entails replacing <em>bi</em>-1 in memory by <em>bi+</em>1 -1, and yielding the result
+(<em>bi+</em>1-l) (<em>p</em>-l). <strong>RANDOMIZE</strong> n (with 1&lt;=n&lt;=65535) makes <em>bi</em> equal to n+1. <strong>RND</strong> is approximately uniformly distributed over the range 0 to 1.</p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/spectrum/basic-ch10#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/spectrum/basic-ch12#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>

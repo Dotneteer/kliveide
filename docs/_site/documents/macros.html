@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Macros | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Macros" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The SpectNetIDE assembler provides you a powerful way to declare macros, and apply them in the code. While in most programming languages and assemblers the macros are preprocessor constructs and use simple text replacement, the SpectNetIDE implementation is different." />
+<meta property="og:description" content="The SpectNetIDE assembler provides you a powerful way to declare macros, and apply them in the code. While in most programming languages and assemblers the macros are preprocessor constructs and use simple text replacement, the SpectNetIDE implementation is different." />
+<link rel="canonical" href="http://localhost:4000/kliveide/documents/macros" />
+<meta property="og:url" content="http://localhost:4000/kliveide/documents/macros" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"Macros","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/macros","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/macros"},"description":"The SpectNetIDE assembler provides you a powerful way to declare macros, and apply them in the code. While in most programming languages and assemblers the macros are preprocessor constructs and use simple text replacement, the SpectNetIDE implementation is different.","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" active  item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class="item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Z80 Assembler</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                    <a id="main-features" class="" href="/kliveide/documents/main-features#article">Main Features</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="how-assembler-works" class="" href="/kliveide/documents/how-assembler-works#article">How the assembler works</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="language-structure" class="" href="/kliveide/documents/language-structure#article">Language structure</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="labels" class="" href="/kliveide/documents/labels-and-symbols#article">Labels and Symbols</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="expressions" class="" href="/kliveide/documents/expressions#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="instructions" class="" href="/kliveide/documents/z80-instructions#article">Z80 Instructions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="pragmas" class="" href="/kliveide/documents/pragmas#article">Pragmas</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="statements" class="" href="/kliveide/documents/statements#article">Statements</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="macros" class=" active " href="/kliveide/documents/macros#article">Macros</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="directives" class="" href="/kliveide/documents/directives#article">Directives</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="modules" class="" href="/kliveide/documents/modules#article">Modules</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="structs" class="" href="/kliveide/documents/structs#article">Structures</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="assembler-output" class="" href="/kliveide/documents/assembler-output#article">Assembler Output</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Tool Commands</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="tool-overview" class="" href="/kliveide/documents/tool-overview#article">Overview</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="memory-commands" class="" href="/kliveide/documents/common-commands#article">Common Commands</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="memory-section-commands" class="" href="/kliveide/documents/memory-section-commands#article">Disassembly: Memory Sections</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="annotation-commands" class="" href="/kliveide/documents/annotation-commands#article">Disassembly: Annotations</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="breakpoint-commands" class="" href="/kliveide/documents/breakpoint-commands#article">Disassembly: Breakpoints</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="miscellaneous-commands" class="" href="/kliveide/documents/miscellaneous-commands#article">Disassembly: Miscellaneous</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="watch-commands" class="" href="/kliveide/documents/tape-explorer-commands#article">Tape Explorer Commands</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="watch-commands" class="" href="/kliveide/documents/watch-commands#article">Watch Commands</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="watch-expressions" class="" href="/kliveide/documents/watch-expressions#article">Watch Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="watch-samples" class="" href="/kliveide/documents/watch-samples#article">Watch Samples</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Scripting</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-overview" class="" href="/kliveide/documents/scripting-overview#article">Overview</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-object-model" class="" href="/kliveide/documents/scripting-object-model#article">Scripting Object Model</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-vms" class="" href="/kliveide/documents/scripting-vms#article">Managing Virtual machines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-z80" class="" href="/kliveide/documents/scripting-z80#article">Scripting the Z80 CPU</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-screen" class="" href="/kliveide/documents/scripting-screen#article">Scripting the Screen</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-memory" class="" href="/kliveide/documents/scripting-memory#article">Scripting the Memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="scripting-audio" class="" href="/kliveide/documents/scripting-audio#article">Scripting the Audio</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Unit Testing</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-basics" class="" href="/kliveide/documents/unit-testing-basics#article">Syntax Basics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-expressions" class="" href="/kliveide/documents/unit-testing-expressions#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-details" class="" href="/kliveide/documents/unit-testing-details#article">Detailed Syntax</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="unit-testing-process" class="" href="/kliveide/documents/unit-testing-process#article">The Testing Process</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Z80 Assembler &raquo; Macros</h1>
+            </div>
+            <div class="main-content-area">
+              <p>The <strong>SpectNetIDE</strong> assembler provides you a powerful way to declare macros, and apply them in the code.
+While in most programming languages and assemblers the macros are preprocessor constructs and use simple
+text replacement, the <strong>SpectNetIDE</strong> implementation is different.</p>
+
+<blockquote>
+  <p>Unlike in C, C++ (and some Z80 Assemblers), <strong>SpectNetIDE</strong> macros emit only code (through instructions
+and pragmas), they cannot be used as user-defined functions. When you pass parameters to macros, any expression in the parameters is evaluated instantly, so you cannot
+use unknown symbols or variables — ones that will get their values only somewhere later in the code.</p>
+</blockquote>
+
+<h2 id="getting-started-with-macros">Getting Started with Macros</h2>
+
+<p>The best way to show you what macros can do is real code. Let’s start with a simple parameterless macro:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Delay: 
+    .macro()    
+    DelayLoop:
+        djnz DelayLoop
+    .endm
+</code></pre></div></div>
+
+<p>You can easily use this macro in your code:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld b,#24
+Delay()
+; ...and later
+ld b,#44
+Delay()
+</code></pre></div></div>
+
+<p>The assembler will emit the code like this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld b,#24
+DelayLoop_1: djnz DelayLoop_1
+; ...and later
+ld b,#44
+DelayLoop_2: djnz DelayLoop_2
+</code></pre></div></div>
+
+<p>As you expect, it takes care that the <code class="highlighter-rouge">DelayLoop</code> label remains local within the scope of the macro; otherwise
+it would lead to a duplicated label name.</p>
+
+<p>This macro is named <code class="highlighter-rouge">Delay</code>, and it uses the value of the <strong>B</strong> register to create a <code class="highlighter-rouge">djnz</code> loop. 
+You can easily apply this macro</p>
+
+<p>Now, let’s enhance this macro with an argument:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Delay: 
+    .macro(wait)    
+        ld b,{{wait}}
+    DelayLoop:
+        djnz DelayLoop
+    .endm
+</code></pre></div></div>
+
+<p>As the body of the macro suggests, `` is a placeholder for the <code class="highlighter-rouge">wait</code> argument. While other assemblers do not
+use a separate markup for a placeholder — they’d just use <code class="highlighter-rouge">wait</code> — <strong>SpectNetIde</strong> applies this markup for 
+two reasons: first, it is visually better and more eye-catching; second, it allows the compiler to provide better
+performance.</p>
+
+<p>You can use this macro passing an argument value for <code class="highlighter-rouge">wait</code>:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Delay(#24)
+Delay(d)
+</code></pre></div></div>
+
+<p>As you expect, the compiler now emits this code:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld b,#24
+DelayLoop_1: djnz DelayLoop_1
+; ...and later
+ld b,d
+DelayLoop_2: djnz DelayLoop_2
+</code></pre></div></div>
+
+<p>Macros allow you to pass anything that could be an operand in a Z80 instruction, so this is entirelly valid:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Delay((ix+23))
+</code></pre></div></div>
+
+<p>As you can imagine, this macro invocation results as if you wrote this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld b,(ix+23)
+DelayLoop: djnz DelayLoop
+</code></pre></div></div>
+
+<p><strong>SpectNetIDE</strong> macros do not stop here. You can define macros that recveive an entire Z80 instruction
+as an argument:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RepeatLight: 
+    .macro(count, body)    
+        ld b,{{count}}
+    DelayLoop:
+        {{body}}
+        djnz DelayLoop
+    .endm
+</code></pre></div></div>
+
+<p>This macro is to repeat the <code class="highlighter-rouge">body</code> in <code class="highlighter-rouge">count</code> number of times. This is how you can invoke it:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RepeatLight(4, "add a,c")
+</code></pre></div></div>
+
+<p>Observe, the second argument of the macro is a string that names the <code class="highlighter-rouge">add a,c</code> operation. The result of this
+macro is this set of instructions:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld b,4
+DelayLoop_1: 
+  add a,c
+djnz DelayLoop_1
+</code></pre></div></div>
+
+<p>Instead of a run time loop, you can apply a compile time loop within the macro:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RepeatLight: 
+    .macro(count, body)
+      .loop {{count}}
+          {{body}}
+      .endl
+    .endm
+</code></pre></div></div>
+
+<p>The <code class="highlighter-rouge">RepeatLight(3, "add a,c")</code> line invokes the macro and the macro’s body translates to this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.loop 3
+    add a,c
+.endl
+</code></pre></div></div>
+
+<p>As you already learned, the compiler handles this as if you wrote:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>add a,c
+add a,c
+add a,c
+</code></pre></div></div>
+
+<p><strong>SpectNetIDE</strong> allows you to pass a set of lines as a macro argument. You can invoke <code class="highlighter-rouge">RepeatLight</code> like this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RepeatLigth(3, "add a,c" &amp; "add a,10")
+</code></pre></div></div>
+
+<p>Or, you can make it with variables:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FirstOp = "add a,c"
+SecondOp = "add a,10"
+RepeatLight(3, FirstOp &amp; SecondOp)
+</code></pre></div></div>
+
+<blockquote>
+  <p>The <code class="highlighter-rouge">&amp;</code> operator between the two string value concatenates them with a next line character set (#0A and #0D). If
+you’d apply the <code class="highlighter-rouge">+</code> operator, the above code would fail: the assembler accepts only a single instruction in a
+text line, and would reject multiple instructions.</p>
+</blockquote>
+
+<p>In the context of macros, you can use several special functions, such as <code class="highlighter-rouge">lreg()</code> and <code class="highlighter-rouge">hreg()</code>. These work during
+parse time, and retrieve the lower register, and higher register of an 16-bit register pair:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LdHl: 
+    .macro(reg16)
+        ld h,hreg({{reg16}})
+        ld l,lreg({{reg16}})
+    .endm
+</code></pre></div></div>
+
+<p>Here, you can apply the <code class="highlighter-rouge">LdHl</code> macro like this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LdHl(de)
+LdHl(bc)
+</code></pre></div></div>
+
+<p>The compiler translates these macro invocations into these Z80 instructions:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld h,d
+ld l,e
+ld h,b
+ld l,c
+</code></pre></div></div>
+
+<p>When you invoke a macro, you can pass less parameters than the macro declares. Within the macro body,
+you can use the <code class="highlighter-rouge">def()</code> function to check whether the specified parameter has been passed:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Push:
+    .macro(r1, r2, r3, r4)
+      .if def({{r1}})
+        push {{r1}}
+      .endif
+      .if def({{r2}})
+        push {{r2}}
+      .endif
+      .if def({{r3}})
+        push {{r3}}
+      .endif
+      .if def({{r4}})
+        push {{r4}}
+      .endif
+    .endm
+</code></pre></div></div>
+
+<p>The <code class="highlighter-rouge">Push</code> macro in this code snippet allows you to create a <code class="highlighter-rouge">push</code> instruction for up to 4 register pairs.
+Look at these usages:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Push(af)
+; ... and later
+Push(bc, de, ix)
+</code></pre></div></div>
+
+<p>This is what the compiler generates:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>push af
+; ... and later
+push bc
+push de
+push ix
+</code></pre></div></div>
+
+<p>You can opt to not pass a macro parameter for a specific argument. Look at this macro declaration:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LdBcDeHl:
+    .macro(bcVal, deVal, hlVal)
+      .if def({{bcVal}})
+        ld bc,{{bcVal}}
+      .endif
+      .if def({{deVal}})
+        ld de,{{deVal}}
+      .endif
+      .if def({{hlVal}})
+        ld hl,{{hlVal}}
+      .endif
+    .endm
+</code></pre></div></div>
+
+<p>You can invoke this macro in these ways, leaving a parameter empty to sign that you do not intend to use it:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LdBcDeHl(,#1000,#2000)
+; ... and later
+LdBcDeHl(#3000,,#4000)
+</code></pre></div></div>
+
+<p>The compiler understands your intention and generates this output:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld de,#1000
+ld hl,#2000
+; ... and later
+ld bc,#3000
+ld hl,#4000
+</code></pre></div></div>
+
+<p>It’s time to deep into the nitty-gritty details of creating and using macros in <strong>SpectNetIDE</strong>.</p>
+
+<h2 id="macro-declaration">Macro Declaration</h2>
+
+<p>Macros must have a name. Each macro is named according to the label preceding its declaration either in the same
+line as the <code class="highlighter-rouge">.macro</code> token, or before it as a hanging label. Macros can have zero, one, or more named arguments
+separated with a comma. The macro declaration is closed with the <code class="highlighter-rouge">.endm</code> token:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MacroWithHangingLabel:
+    .macro(myParam, otherParam)
+    ; Macro body
+    .endm
+
+MyMacro: macro()
+    ; Macro body
+    .endm
+</code></pre></div></div>
+
+<p>Even if a macro does not have arguments, its declaration must contain the parentheses.</p>
+
+<p>The macro body can contain Z80 instructions, pragmas, or statements. The only exception are the <strong>ENT</strong> and <strong>XENT</strong>
+pragmas.</p>
+
+<p>As you already experienced, the assembler supports syntax variants for the macro-related keywords. The compiler
+accepts these tokens: <code class="highlighter-rouge">.macro</code>, <code class="highlighter-rouge">macro</code>, <code class="highlighter-rouge">.MACRO</code>, <code class="highlighter-rouge">MACRO</code>, <code class="highlighter-rouge">.endm</code>, <code class="highlighter-rouge">endm</code>, <code class="highlighter-rouge">.ENDM</code>, <code class="highlighter-rouge">ENDM</code>, <code class="highlighter-rouge">.mend</code>, 
+<code class="highlighter-rouge">mend</code>, <code class="highlighter-rouge">.MEND</code>, and <code class="highlighter-rouge">MEND</code>.</p>
+
+<p>Within the macro’s body, you can refer to the arguments of the macros wrapping them into double curly braces:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Mul10:
+    .macro(reg8)
+    push af
+    ld a,{{reg8}}
+    add a,a
+    push bc
+    ld b,a
+    add a,a
+    add a,a
+    add a,b
+    pop bc
+    ld {{reg8}},a
+    .endm
+</code></pre></div></div>
+
+<p>Arguments are identifiers, thus the corresponding naming rules are applied to them. You cannot use a reserved word
+(for example a mnemonic like <code class="highlighter-rouge">ldir</code> or a register name like <code class="highlighter-rouge">hl</code>) as a macro argument.</p>
+
+<h2 id="macro-parameters">Macro Parameters</h2>
+
+<p>You can invoke a macro with as many parameters as many argument its declaration has, or even with less parameters.
+If the macro invocation has more parameters than arguments, the compiler raises an error.</p>
+
+<p>Let’s assume, you’ve created this macro declaration:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyMacro: .macro(arg1, arg2, arg2)
+; Macro body
+.endm
+</code></pre></div></div>
+
+<p>All of these usages are valid:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyMacro()
+MyMacro(a)
+MyMacro(a, b)
+MyMacro(a, b, c)
+</code></pre></div></div>
+
+<p>Nonetheless, these usage is invalid since it passes more than three parameters:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyMacro(a, b, c, d) ; ERROR: To many parameters
+</code></pre></div></div>
+
+<p>Sometimes it is convenient to omit not the last parameters but one in the beginning or the middle of the
+parameter list. You can do that: an empy comma separator signs that the preceeding parameter is empty. Using this
+notation, all these invocations of <code class="highlighter-rouge">MyMacro</code> is valid:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyMacro(,b)
+MyMacro(a,,c)
+MyMacro(,,)
+</code></pre></div></div>
+
+<p>Within the macro declaration, you can use the <code class="highlighter-rouge">def()</code> function to check if a particular argument has a value.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LdBcDeHl:
+    .macro(bcVal, deVal, hlVal)
+      .if def({{bcVal}})
+        ld bc,{{bcVal}}
+      .endif
+      .if def({{deVal}})
+        ld de,{{deVal}}
+      .endif
+      .if def({{hlVal}})
+        ld hl,{{hlVal}}
+      .endif
+    .endm
+</code></pre></div></div>
+
+<p>The <code class="highlighter-rouge">def()</code> function accepts only a macro argument reference (the name of the argument wrapped in double curlay braces).
+This function evaluates to true only when the macro argument is not empty.</p>
+
+<p>You can use the logical NOT operator (<code class="highlighter-rouge">!</code>) combined to <code class="highlighter-rouge">def()</code> to check if an argument is empty.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyMacro: .macro(arg)
+  .if !def({{arg}})
+    ; generate something for empty arg
+  .endif
+.endm
+</code></pre></div></div>
+
+<h2 id="passing-parameters-to-macros">Passing Parameters to Macros</h2>
+
+<p>You can pass <em>anything</em> as a macro parameter that is a <em>valid operand</em> of a Z80 instruction. This means the
+following options:</p>
+<ul>
+  <li>Names of 8-bit registers and 16-bit register pairs (e.g. <code class="highlighter-rouge">a</code>, <code class="highlighter-rouge">b</code>, <code class="highlighter-rouge">ixl</code>, <code class="highlighter-rouge">hl</code> <code class="highlighter-rouge">sp</code>, <code class="highlighter-rouge">af</code>, etc.)</li>
+  <li>Names of conditions (e.g. <code class="highlighter-rouge">z</code>, <code class="highlighter-rouge">nz</code>, <code class="highlighter-rouge">pe</code>, <code class="highlighter-rouge">m</code>, etc.)</li>
+  <li>Memory address indirection (e.g. <code class="highlighter-rouge">(#4000)</code>, <code class="highlighter-rouge">(#4000+#20)</code>)</li>
+  <li>Register pair indirection (e.g. <code class="highlighter-rouge">(bc)</code>, <code class="highlighter-rouge">(de)</code>, <code class="highlighter-rouge">(hl)</code>, etc.)</li>
+  <li>Indexed indirection (e.g. <code class="highlighter-rouge">(ix+#20)</code>, <code class="highlighter-rouge">(iy-12)</code>, etc.)</li>
+  <li>C-port (<code class="highlighter-rouge">(c)</code>)</li>
+  <li>Expression (e.g. <code class="highlighter-rouge">(MyId &lt;&lt; 1) + 23</code>, <code class="highlighter-rouge">#4000</code>, <code class="highlighter-rouge">12*sin(pi()/4)</code>, <code class="highlighter-rouge">"ld " + "a,b"</code>, etc.)</li>
+</ul>
+
+<p>You should be careful when you use parentheses in expressions. Let’s assume, you declare this macro:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetHlValue:
+    .macro(value)
+        ld hl,{{value}}
+    .endm
+</code></pre></div></div>
+
+<p>When you use it, the first invocation uses an expression, the second has a memory address indirection:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetHlValue(#4000+#20)
+SetHlValue((#4000+#20))
+</code></pre></div></div>
+
+<p>The compiler translates them to these instructions:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld hl,#4020
+ld hl,(#4020)
+</code></pre></div></div>
+
+<p>To avoid such issues, you can use the square brackets to group parts of expressions. When you invoke the
+<code class="highlighter-rouge">SetHlValue</code> macro with this way, both usage with generate a <code class="highlighter-rouge">ld hl,#4020</code> statement:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetHlValue(#4000+#20)
+SetHlValue([#4000+#20])
+</code></pre></div></div>
+
+<p><em>When you pass parameters to macros, any expression in the parameters is evaluated instantly, so you cannot
+use unknown symbols or variables — ones that will get their values only somewhere later in the code.</em></p>
+
+<p>The compiler replaces the macro argument references to their current values passed in parameters. 
+Whenever you use an expression, its value is converted into a string and put into the place of the 
+macro argument.</p>
+
+<h2 id="passing-instructions-in-a-macro-parameter">Passing Instructions in a Macro Parameter</h2>
+
+<p>Within a macro declaration, you can use macro argument reference in stead of an entire Z80 instruction.
+Take a look at this macro:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ShortDi:
+    .macro(body)
+        di
+        {{body}}
+        ei
+    .endm
+</code></pre></div></div>
+
+<p>Here, the <code class="highlighter-rouge">body</code> argument is expected to get something that the compiler can understand as an entire
+instruction. When you invoke the macro, you need to pass a string expression so that the compiler can
+replace the `` reference. Here is an example:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ShortDi("in a,(#fe)")
+</code></pre></div></div>
+
+<p>As you expect, the compiler generates this output:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>di
+in a,(#fe)
+ei
+</code></pre></div></div>
+
+<p>You are not obliged to use Z80 instructions, the compiler accepts pragmas, too:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ShortDi(".db #00")
+</code></pre></div></div>
+
+<p>Well, the output is not pretty useful, nonetheless, the compiler generates this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>di
+.db #00
+ei
+</code></pre></div></div>
+
+<h2 id="passing-multiple-lines-in-a-macro-parameter">Passing Multiple Lines in a Macro Parameter</h2>
+
+<p>If you can pass multiple lines in a macro parameter where the corresponding 
+argument reference is used in stead of an entire instruction line, the compiler
+will apply all those lines. To do that, the individual lines should be separated
+by new line characters (<code class="highlighter-rouge">\r\n</code>). The <code class="highlighter-rouge">&amp;</code> operator, when applied for two strings,
+does this step for you, as it concatenates the two strings with <code class="highlighter-rouge">\r\n</code> between 
+them. Let’s assume, you invoke the <code class="highlighter-rouge">ShortDi</code> macro with this code:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ShortDi("ld a,#7f" &amp; "in a,(#fe)")
+</code></pre></div></div>
+
+<p>Now, the compiler will generate this output:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>di
+ld a,#7f
+in a,(#fe)
+ei
+</code></pre></div></div>
+
+<p>Because you can pass expressions as macro parameters, you can invoke the macro
+in this way, too:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FirstOp = "ld a,#7f"
+SecondOp = "in a,(#fe)"
+ShortDi(FirstOp &amp; SecondOp)
+</code></pre></div></div>
+
+<p>You can pass not only instructions and pragmas to macros, but also statements:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LoopOp = ".loop 3" &amp; "nop" &amp; ".endl"
+ShortDi(LoopOp)
+</code></pre></div></div>
+
+<p>The compiler will emit this code:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>di
+nop
+nop
+nop
+ei
+</code></pre></div></div>
+
+<h2 id="labels-symbols-and-variables-in-macros">Labels, Symbols, and Variables in Macros</h2>
+
+<p>Macros have a local scope for all labels, symbols, and variables created within their body, including the label
+attached to the <code class="highlighter-rouge">.endm</code> statement. The name of the macro is a label that also represents the start of the macro.</p>
+
+<p>Take a look at this macro definition:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>GetBoundaries:
+    .macro(instr)
+        {{instr}}
+        ld de,EndLabel
+        ld hl,GetBoundaries
+EndLabel:
+    .endm
+</code></pre></div></div>
+
+<p>Here, the <code class="highlighter-rouge">ld hl,GetBoundaries</code> instruction fills <strong>HL</strong> with the start address of the macro, while the
+<code class="highlighter-rouge">ld de,EndLabel</code> instruction puts the address of the next instruction following the macro int <strong>DE</strong></p>
+
+<p>Let’s assume, you use the macro this way:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
+GetBoundaries("nop")
+GetBoundaries("ld ix,#ABCD")
+</code></pre></div></div>
+
+<p>The compiler will create this output:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#8000 GetBoundaries_1 nop
+#8001                 ld de,#8007 ; EndLabel_1
+#8004                 ld hl,#8000 ; GetBoundaries_1
+#8007 EndLabel_1
+      GetBoundaries_2 ld ix,#ABCD
+#800B                 ld de,#8011 ; Endlabel_2
+#800E                 ld hl,#8007 ; GetBoundaries_2
+#8011 EndLabel_2
+</code></pre></div></div>
+
+<p>Symbols and variables within the context work exactly as they do with loops. Do not forget: Symbols
+are constant values, while variables may change!</p>
+
+<h2 id="invoking-macros-from-macros">Invoking Macros from Macros</h2>
+
+<p><strong>SpectNetIde</strong> allows you to invoke a macro from another macro, too. Here is a short sample:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Delay:
+    .macro(wait)
+        ld b,{{wait}}
+        WaitLoop: djnz WaitLoop
+    .endm
+
+BorderPulse:
+    .macro(col1, wait1, col2, wait2)
+        ld a,{{col1}}
+        out (#fe),a
+        Delay({{wait1}})
+        ld a,{{col2}}
+        out (#fe),a
+        Delay({{wait2}})
+    .endm
+</code></pre></div></div>
+
+<p>Here, the <code class="highlighter-rouge">BorderPulse</code> macro uses <code class="highlighter-rouge">Delay</code> as a helper macro. The <code class="highlighter-rouge">BorderPulse(2, 10, 3, 20)</code> invocation
+produces this output:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,2
+out (#fe),a
+ld b,10
+WaitLoop_1: djnz WaitLoop_1
+ld a,3
+out (#fe),a
+ld b,20
+WaitLoop_2: djnz WaitLoop_2
+</code></pre></div></div>
+
+<h2 id="macro-related-parse-time-functions">Macro-Related Parse-Time Functions</h2>
+
+<p>The <strong>SpectNetIde</strong> Assembler allows using several parse-time functions with macro arguments the
+similar way as you can use the <code class="highlighter-rouge">def()</code> function to check whether a macro argument has been passed
+to the macro invocation.</p>
+
+<p>These functions check if the argument is an operand the name of the function suggest. Each
+of them returns true, provided the function recognizes the operand; otherwise, false.</p>
+
+<p>The assembler support these functions:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="highlighter-rouge">isreg8std()</code></td>
+      <td>The operand is an 8-bit register, one of these: <code class="highlighter-rouge">a</code>, <code class="highlighter-rouge">b</code>, <code class="highlighter-rouge">c</code>, <code class="highlighter-rouge">d</code>, <code class="highlighter-rouge">e</code>, <code class="highlighter-rouge">h</code>, <code class="highlighter-rouge">l</code>, <code class="highlighter-rouge">i</code>, <code class="highlighter-rouge">r</code>, <code class="highlighter-rouge">xh</code> (<code class="highlighter-rouge">ixh</code>), <code class="highlighter-rouge">xl</code> (<code class="highlighter-rouge">ixl</code>), <code class="highlighter-rouge">yh</code> (<code class="highlighter-rouge">iyh</code>), or <code class="highlighter-rouge">yl</code> (<code class="highlighter-rouge">iyl</code>)</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isreg8std()</code></td>
+      <td>The operand is a standard 8-bit register, one of these: <code class="highlighter-rouge">a</code>, <code class="highlighter-rouge">b</code>, <code class="highlighter-rouge">c</code>, <code class="highlighter-rouge">d</code>, <code class="highlighter-rouge">e</code>, <code class="highlighter-rouge">h</code>, or <code class="highlighter-rouge">l</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isreg8spec()</code></td>
+      <td>The operand is a special 8-bit register, <code class="highlighter-rouge">i</code>, or <code class="highlighter-rouge">r</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isreg8idx()</code></td>
+      <td>One of these 8-bit index registers: <code class="highlighter-rouge">xh</code> (<code class="highlighter-rouge">ixh</code>), <code class="highlighter-rouge">xl</code> (<code class="highlighter-rouge">ixl</code>), <code class="highlighter-rouge">yh</code> (<code class="highlighter-rouge">iyh</code>), or <code class="highlighter-rouge">yl</code> (<code class="highlighter-rouge">iyl</code>)</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isreg16()</code></td>
+      <td>Any of these 16-bit registers: <code class="highlighter-rouge">af</code>, <code class="highlighter-rouge">bc</code>, <code class="highlighter-rouge">de</code>, <code class="highlighter-rouge">hl</code>, <code class="highlighter-rouge">sp</code>, <code class="highlighter-rouge">ix</code> or <code class="highlighter-rouge">iy</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isreg16std()</code></td>
+      <td>Any of the standard 16-bit registers: <code class="highlighter-rouge">bc</code>, <code class="highlighter-rouge">de</code>, <code class="highlighter-rouge">hl</code>, or <code class="highlighter-rouge">sp</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isreg16idx()</code></td>
+      <td>Any of the <code class="highlighter-rouge">ix</code> or <code class="highlighter-rouge">iy</code> registers</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isregindirect()</code></td>
+      <td>The operand is one of these: <code class="highlighter-rouge">(bc)</code>, <code class="highlighter-rouge">(de)</code>, <code class="highlighter-rouge">(hl)</code>, or <code class="highlighter-rouge">(sp)</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isindexedaddr()</code></td>
+      <td>The operand is an indexed address like <code class="highlighter-rouge">(ix)</code>, <code class="highlighter-rouge">(iy)</code>, <code class="highlighter-rouge">(ix+#12)</code>, <code class="highlighter-rouge">(iy-#23)</code>, and so on</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">iscport()</code></td>
+      <td>The operand is <code class="highlighter-rouge">(c)</code> (e.g. in the <code class="highlighter-rouge">out (c),a</code> instruction)</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">iscondition()</code></td>
+      <td>The operand is one of these conditions: <code class="highlighter-rouge">z</code>, <code class="highlighter-rouge">nz</code>, <code class="highlighter-rouge">c</code>, <code class="highlighter-rouge">nc</code>, <code class="highlighter-rouge">po</code>, <code class="highlighter-rouge">pe</code>, <code class="highlighter-rouge">p</code>, or <code class="highlighter-rouge">m</code></td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isexpr()</code></td>
+      <td>The operand is an expression, for example: <code class="highlighter-rouge">1 + 2</code>, <code class="highlighter-rouge">#1000</code>, <code class="highlighter-rouge">myvalue + 23</code>, etc.</td>
+    </tr>
+    <tr>
+      <td><code class="highlighter-rouge">isreg</code><em><code class="highlighter-rouge">&lt;reg&gt;</code></em><code class="highlighter-rouge">()</code></td>
+      <td>The operand is the register as given in <em><code class="highlighter-rouge">&lt;reg&gt;</code></em>. You can use these names: <code class="highlighter-rouge">a</code>, <code class="highlighter-rouge">af</code>, <code class="highlighter-rouge">b</code>, <code class="highlighter-rouge">c</code>, <code class="highlighter-rouge">bc</code>, <code class="highlighter-rouge">d</code>, <code class="highlighter-rouge">e</code>, <code class="highlighter-rouge">de</code>, <code class="highlighter-rouge">h</code>, <code class="highlighter-rouge">l</code>, <code class="highlighter-rouge">hl</code>, <code class="highlighter-rouge">i</code>, <code class="highlighter-rouge">r</code>, <code class="highlighter-rouge">xh</code>, <code class="highlighter-rouge">xl</code>, <code class="highlighter-rouge">ix</code>, <code class="highlighter-rouge">yh</code>, <code class="highlighter-rouge">yl</code>, <code class="highlighter-rouge">iy</code>, and <code class="highlighter-rouge">sp</code>. For example, <code class="highlighter-rouge">isrega()</code> tests if the specified register is <strong>A</strong>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p>When you pass <code class="highlighter-rouge">'c'</code> as a macro argument, both the <code class="highlighter-rouge">isreg8()</code> and <code class="highlighter-rouge">iscondition()</code> parse-time functions accept it,
+as the <code class="highlighter-rouge">'c'</code> token can be either an 8-bit register or a condition (carry flag is set).</p>
+</blockquote>
+
+<p>Here is a short sample:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyRegMacro: .macro(arg)
+    .if isreg8({{arg}})
+        ld a,{{arg}}
+    .else
+        .error "Only 8-bit registers are allowed"
+    .endif
+.endm
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">MyRegMacro</code> allows using only an 8-bit register as its argument. If you provide another type of
+parameter, the macro raises an error.</p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/documents/statements#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/documents/directives#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>

@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>The system variables | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="The system variables" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="CHAPTER 25: The system variables" />
+<meta property="og:description" content="CHAPTER 25: The system variables" />
+<link rel="canonical" href="http://localhost:4000/kliveide/spectrum/basic-ch25" />
+<meta property="og:url" content="http://localhost:4000/kliveide/spectrum/basic-ch25" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"The system variables","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch25","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch25"},"description":"CHAPTER 25: The system variables","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class=" active item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Spectrum48 BASIC</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-toc" class="" href="/kliveide/spectrum/basic-toc#article">Table of Contents</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch1" class="" href="/kliveide/spectrum/basic-ch1#article">Introduction</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch2" class="" href="/kliveide/spectrum/basic-ch2#article">Basic programming concepts</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch3" class="" href="/kliveide/spectrum/basic-ch3#article">Decisions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch4" class="" href="/kliveide/spectrum/basic-ch4#article">Looping</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch5" class="" href="/kliveide/spectrum/basic-ch5#article">Subroutines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch6" class="" href="/kliveide/spectrum/basic-ch6#article">READ, DATA, RESTORE</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch7" class="" href="/kliveide/spectrum/basic-ch7#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch8" class="" href="/kliveide/spectrum/basic-ch8#article">Strings</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch9" class="" href="/kliveide/spectrum/basic-ch9#article">Functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch10" class="" href="/kliveide/spectrum/basic-ch10#article">Mathematical functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch11" class="" href="/kliveide/spectrum/basic-ch11#article">Random numbers</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch12" class="" href="/kliveide/spectrum/basic-ch12#article">Arrays</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch13" class="" href="/kliveide/spectrum/basic-ch13#article">Conditions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch14" class="" href="/kliveide/spectrum/basic-ch14#article">The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch15" class="" href="/kliveide/spectrum/basic-ch15#article">More about PRINT and INPUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch16" class="" href="/kliveide/spectrum/basic-ch16#article">Colours</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch17" class="" href="/kliveide/spectrum/basic-ch17#article">Graphics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch18" class="" href="/kliveide/spectrum/basic-ch18#article">Motion</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch19" class="" href="/kliveide/spectrum/basic-ch19#article">BEEP</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch20" class="" href="/kliveide/spectrum/basic-ch20#article">Tape Storage</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch21" class="" href="/kliveide/spectrum/basic-ch21#article">The ZX Printer</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch22" class="" href="/kliveide/spectrum/basic-ch22#article">Other Equipment</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch23" class="" href="/kliveide/spectrum/basic-ch23#article">IN and OUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch24" class="" href="/kliveide/spectrum/basic-ch24#article">The memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch25" class=" active " href="/kliveide/spectrum/basic-ch25#article">The system variables</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch26" class="" href="/kliveide/spectrum/basic-ch26#article">Using machine code</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appa" class="" href="/kliveide/spectrum/basic-appa#article">Appendix A: The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc1" class="" href="/kliveide/spectrum/basic-appc1#article">Appendix C1: A description of the ZX Spectrum for reference</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appb" class="" href="/kliveide/spectrum/basic-appb#article">Appendix B: Reports</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appd" class="" href="/kliveide/spectrum/basic-appd#article">Appendix D: Example programs</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc2" class="" href="/kliveide/spectrum/basic-appc2#article">Appendix C2: The BASIC</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appe" class="" href="/kliveide/spectrum/basic-appe#article">Appendix E: Binary and hexadecimal</a>
+                      
+                      
+                      
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Pac-Man Discovery</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="introduction" class="" href="/kliveide/pacman/introduction#article">Decrypting the loader</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Spectrum48 BASIC &raquo; The system variables</h1>
+            </div>
+            <div class="main-content-area">
+              <h1 id="chapter-25-the-system-variables">CHAPTER 25: The system variables</h1>
+
+<p>The bytes in memory from 23552 to 23733 are set aside for specific uses by the system. You can peek them to find out various things about the system, and some
+of them can be usefully poked. They are listed here with their uses.</p>
+
+<p>These are called system variables, and have names, but do not confuse them with the variables used by the BASIC. The computer will not recognize the names as
+referring to system variables, and they are given solely as mnemonics for we humans. The abbreviations in column 1 have the following meanings:</p>
+
+<p><strong>X</strong> The variables should not be poked because the system might crash.</p>
+
+<p><strong>N</strong> Poking the variable will have no lasting effect</p>
+
+<p>The number in column 1 is the number of bytes in the variable. For two bytes, the first one is the less significant byte the reverse of what you might expect.
+So to poke a value <strong>v</strong> to a two byte variable at address <strong>n</strong>, use <strong>POKE n,v-256*1NT (v/256)</strong></p>
+
+<p><strong>POKE n+1,lNT (v/256)</strong></p>
+
+<p>and to peek its value, use the expression</p>
+
+<p><strong>PEEK n+256*PEEK (n+1)</strong></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Notes</th>
+      <th>Address</th>
+      <th>Name</th>
+      <th>Contents</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>N8</td>
+      <td>23552</td>
+      <td>KSTATE</td>
+      <td>Used in reading the keyboard.</td>
+    </tr>
+    <tr>
+      <td>Nl</td>
+      <td>23560</td>
+      <td>LAST K</td>
+      <td>Stores newly pressed key.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23561</td>
+      <td>REPDEL</td>
+      <td>Time (in 50ths of a second in 60ths of a second in N. America) that a key must be held down before it repeats. This starts off at 35, but you can POKE in other values.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23562</td>
+      <td>REPPER</td>
+      <td>Delay (in 50ths of a second in 60ths of a second in N. America) between successive repeats of a key held down: initially 5.</td>
+    </tr>
+    <tr>
+      <td>N2</td>
+      <td>23563</td>
+      <td>DEFADD</td>
+      <td>Address of arguments of user defined function if one is being evaluated; otherwise 0.</td>
+    </tr>
+    <tr>
+      <td>Nl</td>
+      <td>23565</td>
+      <td>K DATA</td>
+      <td>Stores 2nd byte of colour controls entered from keyboard .</td>
+    </tr>
+    <tr>
+      <td>N2</td>
+      <td>23566</td>
+      <td>TVDATA</td>
+      <td>Stores bytes of coiour, AT and TAB controls going to television.</td>
+    </tr>
+    <tr>
+      <td>X38</td>
+      <td>23568</td>
+      <td>STRMS</td>
+      <td>Addresses of channels attached to streams.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23606</td>
+      <td>CHARS</td>
+      <td>256 less than address of character set (which starts with space and carries on to the copyright symbol). Normally in ROM, but you can set up your own in RAM and make CHARS point to it.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23608</td>
+      <td>RASP</td>
+      <td>Length of warning buzz.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23609</td>
+      <td>PIP</td>
+      <td>Length of keyboard click.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23610</td>
+      <td>ERR NR</td>
+      <td>1 less than the report code. Starts off at 255 (for 1) so PEEK 23610 gives 255.</td>
+    </tr>
+    <tr>
+      <td>X1</td>
+      <td>23611</td>
+      <td>FLAGS</td>
+      <td>Various flags to control the BASIC system.</td>
+    </tr>
+    <tr>
+      <td>X1</td>
+      <td>23612</td>
+      <td>TV FLAG</td>
+      <td>Flags associated with the television.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23613</td>
+      <td>ERR SP</td>
+      <td>Address of item on machine stack to be used as error return.</td>
+    </tr>
+    <tr>
+      <td>N2</td>
+      <td>23615</td>
+      <td>LIST SP</td>
+      <td>Address of return address from automatic listing.</td>
+    </tr>
+    <tr>
+      <td>N1</td>
+      <td>23617</td>
+      <td>MODE</td>
+      <td>Specifies K, L, C. E or G cursor.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23618</td>
+      <td>NEWPPC</td>
+      <td>Line to be jumped to.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23620</td>
+      <td>NSPPC</td>
+      <td>Statement number in line to be jumped to. Poking first NEWPPC and then NSPPC forces a jump to a specified statement in a line.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23621</td>
+      <td>PPC</td>
+      <td>Line number of statement currently being executed.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23623</td>
+      <td>SUBPPC</td>
+      <td>Number within line of statement being executed.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23624</td>
+      <td>BORDCR</td>
+      <td>Border colour * 8; also contains the attributes normally used for the lower half of the screen.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23625</td>
+      <td>E PPC</td>
+      <td>Number of current line (with program cursor).</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23627</td>
+      <td>VARS</td>
+      <td>Address of variables.</td>
+    </tr>
+    <tr>
+      <td>N2</td>
+      <td>23629</td>
+      <td>DEST</td>
+      <td>Address of variable in assignment.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23631</td>
+      <td>CHANS</td>
+      <td>Address of channel data.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23633</td>
+      <td>CURCHL</td>
+      <td>Address of information currently being used for input and output.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23635</td>
+      <td>PROG</td>
+      <td>Address of BASIC program.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23637</td>
+      <td>NXTLIN</td>
+      <td>Address of next line in program.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23639</td>
+      <td>DATADD</td>
+      <td>Address of terminator of last DATA item.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23641</td>
+      <td>E LINE</td>
+      <td>Address of command being typed in.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23643</td>
+      <td>K CUR</td>
+      <td>Address of cursor.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23645</td>
+      <td>CH ADD</td>
+      <td>Address of the next character to be interpreted: the character after the argument of PEEK, or the NEWLINE at the end of a POKE statement.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23647</td>
+      <td>X PTR</td>
+      <td>Address of the character after the ? marker.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23649</td>
+      <td>WORKSP</td>
+      <td>Address of temporary work space.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23651</td>
+      <td>STKBOT</td>
+      <td>Address of bottom of calculator stack.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23653</td>
+      <td>STKEND</td>
+      <td>Address of start of spare space.</td>
+    </tr>
+    <tr>
+      <td>N1</td>
+      <td>23655</td>
+      <td>BREG</td>
+      <td>Calculator’s b register.</td>
+    </tr>
+    <tr>
+      <td>N2</td>
+      <td>23656</td>
+      <td>MEM</td>
+      <td>Address of area used for calculator’s memory. (Usually MEMBOT, but not always.)</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23658</td>
+      <td>FLAGS2</td>
+      <td>More flags.</td>
+    </tr>
+    <tr>
+      <td>X1</td>
+      <td>23659</td>
+      <td>DF SZ</td>
+      <td>The number of lines (including one blank line) in the lower part of the screen.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23660</td>
+      <td>S TOP</td>
+      <td>The number of the top program line in automatic listings.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23662</td>
+      <td>OLDPPC</td>
+      <td>Line number to which CONTINUE jumps.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23664</td>
+      <td>OSPCC</td>
+      <td>Number within line of statement to which CONTINUE jumps.</td>
+    </tr>
+    <tr>
+      <td>N1</td>
+      <td>23665</td>
+      <td>FLAGX</td>
+      <td>Various flags.</td>
+    </tr>
+    <tr>
+      <td>N2</td>
+      <td>23666</td>
+      <td>STRLEN</td>
+      <td>Length of string type destination in assignment.</td>
+    </tr>
+    <tr>
+      <td>N2</td>
+      <td>23668</td>
+      <td>T ADDR</td>
+      <td>Address of next item in syntax table (very unlikely to be useful).</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23670</td>
+      <td>SEED</td>
+      <td>The seed for RND. This is the variable that is set by RANDOMIZE.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>23672</td>
+      <td>FRAMES</td>
+      <td>3 byte (least significant first), frame counter. Incremented every 20ms. See Chapter 18.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23675</td>
+      <td>UDG</td>
+      <td>Address of 1st user defined graphic You can change this for instance to save space by having fewer user defined graphics.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23677</td>
+      <td>COORDS</td>
+      <td>x-coordinate of last point plotted.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23678</td>
+      <td> </td>
+      <td>y-coordinate of last point plotted.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23679</td>
+      <td>P POSN</td>
+      <td>33 column number of printer position</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23680</td>
+      <td>PR CC</td>
+      <td>Full address of next position for LPRINT to print at (in ZX printer buffer). Legal values 5B00 - 5B1F. [Not used in 128K mode or when certain peripherals are attached]</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23682</td>
+      <td>ECHO E</td>
+      <td>33 column number and 24 line number (in lower half) of end of input buffer.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23684</td>
+      <td>DF CC</td>
+      <td>Address in display file of PRINT position.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23686</td>
+      <td>DFCCL</td>
+      <td>Like DF CC for lower part of screen.</td>
+    </tr>
+    <tr>
+      <td>X1</td>
+      <td>23688</td>
+      <td>S POSN</td>
+      <td>33 column number for PRINT position</td>
+    </tr>
+    <tr>
+      <td>X1</td>
+      <td>23689</td>
+      <td> </td>
+      <td>24 line number for PRINT position.</td>
+    </tr>
+    <tr>
+      <td>X2</td>
+      <td>23690</td>
+      <td>SPOSNL</td>
+      <td>Like S POSN for lower part</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23692</td>
+      <td>SCR CT</td>
+      <td>Counts scrolls: it is always 1 more than the number of scrolls that will be done before stopping with scroll? If you keep poking this with a number bigger than 1 (say 255), the screen will scroll on and on without asking you.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23693</td>
+      <td>ATTR P</td>
+      <td>Permanent current colours, etc (as set up by colour statements).</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23694</td>
+      <td>MASK P</td>
+      <td>Used for transparent colours, etc. Any bit that is 1 shows that the corresponding attribute bit is taken not from ATTR P, but from what is already on the screen.</td>
+    </tr>
+    <tr>
+      <td>N1</td>
+      <td>23695</td>
+      <td>ATTR T</td>
+      <td>Temporary current colours, etc (as set up by colour items).</td>
+    </tr>
+    <tr>
+      <td>N1</td>
+      <td>23696</td>
+      <td>MASK T</td>
+      <td>Like MASK P, but temporary.</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>23697</td>
+      <td>P FLAG</td>
+      <td>More flags.</td>
+    </tr>
+    <tr>
+      <td>N30</td>
+      <td>23698</td>
+      <td>MEMBOT</td>
+      <td>Calculator’s memory area; used to store numbers that cannot conveniently be put on the calculator stack.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23728</td>
+      <td>NMIADD</td>
+      <td>This is the address of a user supplied NMI address which is read by the standard ROM when a peripheral activates the NMI.Probably intentionally disabled so that the effect is to perform a reset if both locations hold zero, but do nothing if the locations hold a non-zero value. Interface 1’s with serial number greater than 87315 will initialize these locations to 0 and 80 to allow the RS232 “T” channel to use a variable line width. 23728 is the current print position and 23729 the width - default 80.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23730</td>
+      <td>RAMTOP</td>
+      <td>Address of last byte of BASIC system area.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>23732</td>
+      <td>P RAMT</td>
+      <td>Address of last byte of physical RAM.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This program tells you the first 22 bytes of the variables area:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 21
+20 PRINT PEEK (PEEK 23627+256\*PEEK 23628+n)
+30 NEXT n
+</code></pre></div></div>
+<p>Try to match up the control variable n with the descriptions above. Now change line 20 to</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 PRINT PEEK (23755+n)
+</code></pre></div></div>
+
+<p>This tells you the first 22 bytes of the program area. Match these up with the program itself.</p>
+
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/spectrum/basic-ch24#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/spectrum/basic-ch26#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>

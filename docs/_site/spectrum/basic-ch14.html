@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>The character set | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="The character set" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="CHAPTER 14: The Character Set" />
+<meta property="og:description" content="CHAPTER 14: The Character Set" />
+<link rel="canonical" href="http://localhost:4000/kliveide/spectrum/basic-ch14" />
+<meta property="og:url" content="http://localhost:4000/kliveide/spectrum/basic-ch14" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"The character set","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch14","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch14"},"description":"CHAPTER 14: The Character Set","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class=" active item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Spectrum48 BASIC</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-toc" class="" href="/kliveide/spectrum/basic-toc#article">Table of Contents</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch1" class="" href="/kliveide/spectrum/basic-ch1#article">Introduction</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch2" class="" href="/kliveide/spectrum/basic-ch2#article">Basic programming concepts</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch3" class="" href="/kliveide/spectrum/basic-ch3#article">Decisions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch4" class="" href="/kliveide/spectrum/basic-ch4#article">Looping</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch5" class="" href="/kliveide/spectrum/basic-ch5#article">Subroutines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch6" class="" href="/kliveide/spectrum/basic-ch6#article">READ, DATA, RESTORE</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch7" class="" href="/kliveide/spectrum/basic-ch7#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch8" class="" href="/kliveide/spectrum/basic-ch8#article">Strings</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch9" class="" href="/kliveide/spectrum/basic-ch9#article">Functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch10" class="" href="/kliveide/spectrum/basic-ch10#article">Mathematical functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch11" class="" href="/kliveide/spectrum/basic-ch11#article">Random numbers</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch12" class="" href="/kliveide/spectrum/basic-ch12#article">Arrays</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch13" class="" href="/kliveide/spectrum/basic-ch13#article">Conditions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch14" class=" active " href="/kliveide/spectrum/basic-ch14#article">The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch15" class="" href="/kliveide/spectrum/basic-ch15#article">More about PRINT and INPUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch16" class="" href="/kliveide/spectrum/basic-ch16#article">Colours</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch17" class="" href="/kliveide/spectrum/basic-ch17#article">Graphics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch18" class="" href="/kliveide/spectrum/basic-ch18#article">Motion</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch19" class="" href="/kliveide/spectrum/basic-ch19#article">BEEP</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch20" class="" href="/kliveide/spectrum/basic-ch20#article">Tape Storage</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch21" class="" href="/kliveide/spectrum/basic-ch21#article">The ZX Printer</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch22" class="" href="/kliveide/spectrum/basic-ch22#article">Other Equipment</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch23" class="" href="/kliveide/spectrum/basic-ch23#article">IN and OUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch24" class="" href="/kliveide/spectrum/basic-ch24#article">The memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch25" class="" href="/kliveide/spectrum/basic-ch25#article">The system variables</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch26" class="" href="/kliveide/spectrum/basic-ch26#article">Using machine code</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appa" class="" href="/kliveide/spectrum/basic-appa#article">Appendix A: The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc1" class="" href="/kliveide/spectrum/basic-appc1#article">Appendix C1: A description of the ZX Spectrum for reference</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appb" class="" href="/kliveide/spectrum/basic-appb#article">Appendix B: Reports</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appd" class="" href="/kliveide/spectrum/basic-appd#article">Appendix D: Example programs</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc2" class="" href="/kliveide/spectrum/basic-appc2#article">Appendix C2: The BASIC</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appe" class="" href="/kliveide/spectrum/basic-appe#article">Appendix E: Binary and hexadecimal</a>
+                      
+                      
+                      
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Pac-Man Discovery</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="introduction" class="" href="/kliveide/pacman/introduction#article">Decrypting the loader</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Spectrum48 BASIC &raquo; The character set</h1>
+            </div>
+            <div class="main-content-area">
+              <h1 id="chapter-14-the-character-set">CHAPTER 14: The Character Set</h1>
+
+<h2 id="summary">Summary</h2>
+
+<ul>
+  <li><strong>CODE</strong>, <strong>CHR$</strong></li>
+  <li><strong>POKE</strong>, <strong>PEEK</strong></li>
+  <li><strong>USR</strong></li>
+  <li><strong>BIN</strong></li>
+</ul>
+
+<p>The letters, digits, punctuation marks and so on that can appear in strings are called characters, and they make up the alphabet, or <em>character set</em>, that the
+ZX Spectrum uses. Most of these characters are single <em>symbols</em>, but there are some more, called <em>tokens</em>, that represent whole words, such as <strong>PRINT</strong>, <strong>STOP</strong>, <strong>&lt;&gt;</strong> and so on.</p>
+
+<p>There are 256 characters, and each one has a code between 0 and 255. There is a complete list of them in Appendix A. To convert between codes and characters,
+there are two functions, <strong>CODE</strong> and <strong>CHR$</strong>.</p>
+
+<p><strong>CODE</strong> is applied to a string, and gives the code of the first character in the string (or 0 if the string is empty).</p>
+
+<p><strong>CHR$</strong> is applied to a number, and gives the single character string whosecode is that number.</p>
+
+<p>This program prints out the entire character set:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR a=32 TO 255: PRINT CHRS a;: NEXT a
+</code></pre></div></div>
+
+<p>At the top you can see a space, 15 symbols and punctuation marks, the ten digits, seven more symbols, the capital letters, six more symbols, the lower
+case letters and five more symbols. These are all (except £ and ©) taken from a widely-used set of characters known as ASCII (standing for American Standard
+Codes for Information Interchange); ASCII also assigns numeric codes to these characters, and these are the codes that the ZX Spectrum uses.</p>
+
+<p>The rest of the characters are not part of ASCII, and are peculiar to the ZX Spectrum. First amongst them are a space and 15 patterns of black and white
+blobs. These are called the <em>graphics</em> symbols and can be used for drawing pictures. You can enter these from the keyboard, using what is called graphics
+mode. If you press <strong>GRAPHICS</strong> (CAPS SHIFT with 9) then the cursor will change to <strong>G</strong>. Now the keys for the digits 1 to 8 will give the graphics symbols: on
+their own they give the symbols drawn on the keys; and with either shift pressed they give the same symbol but inverted, i.e. black becomes white, and vice
+versa.</p>
+
+<p>Regardless of shifts, digit 9 takes you back to normal (<strong>L</strong>) mode and digit 0 is DELETE.</p>
+
+<p>Here are the sixteen graphics symbols:</p>
+
+<p><img src="/kliveide/assets/images/basic/image5.gif" alt="Image5" /></p>
+
+<p>After the graphics symbols, you will see what appears to be another copy of the alphabet from A to U. These are characters that you can redefine yourself.
+although when the machine is first switched on they are set as letters - they are called <em>user-defined</em> graphics. You can type these in from the keyboard by
+going into graphics mode, and then using the letters keys from A to U.</p>
+
+<p>To define a new character for yourself, follow this recipe - it defines a character to show π.</p>
+
+<p><em>(i)</em>: Work out what the character looks like. Each character has an 8x8 square of dots, each of which can show either the paper colour or the ink colour (see the
+introductory booklet). You’d draw a diagram something like this, with black squares for the ink colour:</p>
+
+<p><img src="/kliveide/assets/images/basic/image6.gif" alt="Image6" /></p>
+
+<p>We’ve left a 1 square margin round the edge because the other letters all have one (except for lower case letters with tails, where the tail goes right down to
+the bottom).</p>
+
+<p><em>(ii)</em>: Work out which user-defined graphic is to show n- let’s say the one corresponding to P, so that if you press P in graphics mode you get π.</p>
+
+<p><em>(iii)</em> Store the new pattern. Each user-defined graphic has its pattern stored as eight numbers, one for each row. You can write each of these numbers as <strong>BIN</strong>
+followed by eight 0’s or 1 ‘s - 0 for paper, 1 for ink - so that the eight numbers for our π character are</p>
+
+<p><strong>BIN 00000000</strong> <br />
+<strong>BIN 00000000</strong> <br />
+<strong>BIN 00000010</strong> <br />
+<strong>BIN 00111100</strong> <br />
+<strong>BIN 01010100</strong> <br />
+<strong>BIN 00010100</strong> <br />
+<strong>BIN 00010100</strong> <br />
+<strong>BIN 00000000</strong> <br /></p>
+
+<p>(If you know about binary numbers, then it should help you to know that BIN is used to write a number in binary instead of the usual decimal.)</p>
+
+<p>These eight numbers are stored in memory, in eight places, each of which has an address. The address of the first byte, or group of eight digits, is <strong>USR</strong> “P” (P because that is what we chose in (ii)), that of the second is <strong>USR</strong> “P”+1, and so on up to the eighth, which has address <strong>USR</strong> “P”+7.</p>
+
+<p><strong>USR</strong> here is a function to convert a string argument into the address of the first byte in memory for the corresponding user-defined graphic. The string
+argument must be a single character which can be either the user-defined graphic itself or the corresponding letter (in upper or lower case). There is another
+use for <strong>USR</strong>, when its argument is a number, which will be dealt with.</p>
+
+<p>Even if you don’t understand this, the following program will do it for you:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 7
+20 INPUT row: POKE USR "P"+n,row
+30 NEXT n
+</code></pre></div></div>
+
+<p>It will stop for <strong>INPUT</strong> data eight times to ailow you to type in the eight BIN numbers above - type them in the right order, starting with the top row.</p>
+
+<p>The <strong>POKE</strong> statement stores a number directly in memory location, bypassing the mechanisms normally used by the BASIC. The opposite of <strong>POKE</strong> is <strong>PEEK</strong>, and this allows us to look at the contents of a memory location although it does not actually alter the contents of that location. They will be dealt with properly in Chapter 24.</p>
+
+<p>After the user-defined graphics come the tokens.</p>
+
+<p>You will have noticed that we have not printed out the first 32 characters, with codes 0 to 31. These are <em>control</em> characters. They don’t produce anything
+printable, but have some less tangible effect on the television, or they are used for controlling something other than the television, and the television
+prints ? to show that it doesn’t understand them. They are described more fully in Appendix A.</p>
+
+<p>Three that the television uses are those with codes 6, 8 and 13; on the whole, <strong>CHR$</strong> 8 is the only one you are likely to find useful.</p>
+
+<p><strong>CHR$</strong> 6 prints spaces in exactly the same way as a cornma does in a <strong>PRINT</strong> statement for instance</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT 1; **CHR$** 6;2
+</code></pre></div></div>
+
+<p>does the same as</p>
+
+<p><code class="highlighter-rouge">PRINT 1,2</code></p>
+
+<p>Obviously this is not a very clear way of using it. A more subtle way is to say</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LET a$="1"+CHR$ 6+"2"
+PRINT a$
+</code></pre></div></div>
+<p><strong>CHR$</strong> 8 is ‘backspace’: it moves the print position back one place - try</p>
+
+<p><code class="highlighter-rouge">PRINT "1234"; CHR$ 8;"5"</code></p>
+
+<p>which prints up 1235</p>
+
+<p><strong>CHR$</strong> 13 is ‘newline’: it moves the print position on to the beginning of the next line.</p>
+
+<p>The television also uses those with codes 16 to 23; these are explained in Chapters 15 and 16. All the control characters are listed in Appendix A.</p>
+
+<p>Using the codes for the characters we can extend the concept of ‘alphabetical ordering’ to cover strings containing any characters, not just letters. If
+instead of thinking in terms of the usual alphabet of 26 letters we use the extended alphabet of 256 characters, in the same order as their codes, then the
+principle is exactly the same. For instance, these strings are in their ZX Spectrum alphabetical order. (Notice the rather odd feature that lower case
+letters come after all the capitals: so “a” comes after “Z”; also, spaces matter.)</p>
+
+<p><strong>CHR$ 3+”ZOOLOGICAL GARDENS”</strong></p>
+
+<p><strong>CHR$ 8+”AARDVARK HUNTING”</strong></p>
+
+<p><strong>“AAAARGH!”</strong></p>
+
+<p><strong>“(Parenthetical remark)”</strong></p>
+
+<p><strong>“100”</strong></p>
+
+<p><strong>“129.95 inc. VAT”</strong></p>
+
+<p><strong>“AASVOGEL”</strong></p>
+
+<p><strong>“Aardvark”</strong></p>
+
+<p><strong>“PRINT”</strong></p>
+
+<p><strong>“Zoo”</strong></p>
+
+<p><strong>“[interpolationl”</strong></p>
+
+<p><strong>“aardvark”</strong></p>
+
+<p><strong>“aasvogel”</strong></p>
+
+<p><strong>“zoo”</strong></p>
+
+<p><strong>“zoology</strong></p>
+
+<p>Here is the rule for finding out which order two strings come in. First, compare the first characters. If they are different, then one of them has its code less
+than the other, and the string it came from is the earlier (lesser) of the two strings. If they are the same, then go on to compare the next characters. If in
+this process one of the strings runs out before the other, then that string is the earlier, otherwise they must be equal.</p>
+
+<p>The relations =, &lt;, &gt;, &lt;=, &gt;= and &lt;&gt; are used for strings as well as for numbers: &lt; means ‘comes before’ and &gt; means ‘comes after’, so that</p>
+
+<p><strong>“AA man”&lt;”AARDVARK”</strong></p>
+
+<p><strong>“AARDVARK”&gt;”AA man”</strong></p>
+
+<p>are both true.</p>
+
+<p>&lt;= and &gt;= work the same way as they do for numbers, so that</p>
+
+<p><strong>“The same string”&lt;=”The same string”</strong></p>
+
+<p>is true, but</p>
+
+<p><strong>“The same string”&lt;”The same string”</strong></p>
+
+<p>is false.</p>
+
+<p>Experiment on all this using the program here, which inputs two strings and puts them in order.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT "Type in two strings:", a$, b$
+20 IF a$&gt;b$ THEN LET c$=a$: LET a$=b$: LET b$=c$
+30 PRINT a$;" ";
+40 IF a$\&lt;b$ THEN PRINT "\&lt;";: GO TO 60
+50 PRINT "="
+60 PRINT " ";b$
+70 GO TO 10
+</code></pre></div></div>
+
+<p>Note how we have to introduce c$ in line 20 when we swap over a$ and b$,</p>
+
+<p><strong>LET a$=b$: LET b$=a$</strong></p>
+
+<p>would not have the desired effect.</p>
+
+<p>This program sets up user-defined graphics to show chess pieces:</p>
+
+<p><strong>P</strong> for pawn</p>
+
+<p><strong>R</strong> for rook</p>
+
+<p><strong>N</strong> for knight</p>
+
+<p><strong>B</strong> for bishop</p>
+
+<p><strong>K</strong> for king</p>
+
+<p><strong>Q</strong> for queen</p>
+
+<p>Chess pieces:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 LET b=BIN 01111100: LET c=BIN 00111000: LET d=BIN 00010000
+10 FOR n=1 TO 6: READ p$: REM 6 pieces
+20 FOR f=0 TO 7: REM read piece into 8 bytes
+30 READ a: POKE USR p$+f,a
+40 NEXT f
+50 NEXT n
+100 REM bishop
+110 DATA "b",0,d, BIN 00101000,BIN 01000100
+120 DATA BIN 01101100,c,b,0
+130 REM king
+140 DATA "k",0,d,c,d
+150 DATA c, BIN 01000100,c,0
+160 REM rook
+170 DATA "r",0, BIN 01010100,b,c
+180 DATA c,b,b,0
+190 REM queen
+200 DATA "q",0, BIN 01010100, BIN 00101000,d
+210 DATA BIN 01101100,b,b,0
+220 REM pawn
+230 DATA "p",0,0,d,c
+240 DATA c,d,b,0
+250 REM knight
+260 DATA "n",0,d,c, BIN 01111000
+270 DATA BIN 00011000,c,b,0
+</code></pre></div></div>
+
+<p>Note that 0 can be used instead of BIN 00000000.</p>
+
+<p>When you have run the program, look at the pieces by going into graphics mode.</p>
+
+<h2 id="exercises">Exercises</h2>
+
+<ol>
+  <li>
+    <p>Imagine the space for one symbol divided up into four quarters like a Battenburg cake. Then if each quarter can be either black or white, there are
+2x2x2x2=16 possibilities. Find them all in the character set.</p>
+  </li>
+  <li>
+    <p>Run this program:</p>
+  </li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT a
+20 PRINT CHR$ a;
+30 GO TO 10
+</code></pre></div></div>
+
+<p>If you experiment with it, you’ll find that CHR$ a is rounded to the nearest whole number; and if a is not in the range 0 to 255 then the program stops with
+error report <strong>B integer out of range</strong>.</p>
+
+<ol>
+  <li>Which of these two is the lesser?</li>
+</ol>
+
+<p><strong>“EVIL”</strong></p>
+
+<p><strong>“evil”</strong></p>
+
+<ol>
+  <li>Work out how to modify the program to set up user-defined graphics so that it uses <strong>READ</strong> and <strong>DATA</strong> statements instead of the <strong>INPUT</strong> statement.</li>
+</ol>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/spectrum/basic-ch13#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/spectrum/basic-ch15#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>
