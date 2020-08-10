@@ -22,7 +22,7 @@ Cesar and Mike both did and still do a great job with their projects. There is a
 
 ## The IDE Concept
 
-![Klive intro](./docs/intro/klive-intro.gif)
+![Klive intro](./intro/klive-intro.gif)
 
 I've been working for more than three years on [SpectNetIDE](https://github.com/Dotneteer/spectnetide), which is a Visual Studio 2019 extension that includes a ZX Spectrum emulator and development tools. Though I like this project and will still develop it, it requires more investment (utilizing my free time) than I'm happy to spend:
 - Visual Studio Extensibility is hard. Even if it's continuously getting easier, sometimes it still feels pain due to the lack of available samples and documentation.
@@ -72,29 +72,29 @@ To install the early preview release, follow these steps:
 8. Click the settings icon in VS Code's activity bar, and select the **Settings** menu command. You must set the **Emulator Executable Path** value to the one you saved in Step 5. Please, change all backslash characters to slashes, and do not forget to include the executable name. Make sure that the **Emulator Port** value is set to 3000, as this proof-of-concept works only with this port.
 9. In VS Code, press Ctrl+Shift+P, or F1 (or if those do not work on your machine, use the **View|Command Palette...** menu). In the command box, type "Start Klive", and then run the **Create Klive Project** command.
 
-![Klive project](./docs/intro/klive-project.png)
+![Klive project](./intro/klive-project.png)
 
 10. Now, click the `.spectrum/view.disassebly file`. (Note: VS Code may offer you to download extensions for `.disassembly` files. Yo do not need them.) In a few seconds, you'll see this:
 
-![Disassembly disconnected](./docs/intro/disassembly-disconnected.png)
+![Disassembly disconnected](./intro/disassembly-disconnected.png)
 
 In the status bar, you can see a section that shows the disconnected state of the Klive Emulator:
 
-![Disassembly disconnected](./docs/intro/klive-disconnected.png)
+![Disassembly disconnected](./intro/klive-disconnected.png)
 
 In the status bar, click **Klive**. It starts the Klive Emulator, and refreshes the `view.disassembly` file's area:
 
-![Disassembly init](./docs/intro/disassembly-init.png)
+![Disassembly init](./intro/disassembly-init.png)
 
 > Note: There's still a bug that may cause the `view.disassembly` pane remain empty after the emulator started. Close `view.disassembly`, then open it again by clicking on the filename in the Explorer.
 
 11. Start the ZX Spectrum in the emulator. Wait for the Sinclair copyright message, then pause the machine. The disassembly will show the current execution point:
 
-![Disassembly pause 1](./docs/intro/pause-1.png)
+![Disassembly pause 1](./intro/pause-1.png)
 
 12. Click the step-into icon in the emulator. It will move to the next Z80 instruction to execute. As the Z80 is just about to respond to the interrupt request, the execution will continue at the $0038 address:
 
-![Disassembly pause 2](./docs/intro/pause-2.png)
+![Disassembly pause 2](./intro/pause-2.png)
 
 > Note: There's still a bug that may need you to scroll down to the $0038 address.
 
