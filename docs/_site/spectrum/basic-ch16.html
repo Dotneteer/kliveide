@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Colours | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Colours" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="CHAPTER 16: Colours Summary" />
+<meta property="og:description" content="CHAPTER 16: Colours Summary" />
+<link rel="canonical" href="http://localhost:4000/kliveide/spectrum/basic-ch16" />
+<meta property="og:url" content="http://localhost:4000/kliveide/spectrum/basic-ch16" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"Colours","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch16","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch16"},"description":"CHAPTER 16: Colours Summary","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class=" active item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Spectrum48 BASIC</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-toc" class="" href="/kliveide/spectrum/basic-toc#article">Table of Contents</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch1" class="" href="/kliveide/spectrum/basic-ch1#article">Introduction</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch2" class="" href="/kliveide/spectrum/basic-ch2#article">Basic programming concepts</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch3" class="" href="/kliveide/spectrum/basic-ch3#article">Decisions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch4" class="" href="/kliveide/spectrum/basic-ch4#article">Looping</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch5" class="" href="/kliveide/spectrum/basic-ch5#article">Subroutines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch6" class="" href="/kliveide/spectrum/basic-ch6#article">READ, DATA, RESTORE</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch7" class="" href="/kliveide/spectrum/basic-ch7#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch8" class="" href="/kliveide/spectrum/basic-ch8#article">Strings</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch9" class="" href="/kliveide/spectrum/basic-ch9#article">Functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch10" class="" href="/kliveide/spectrum/basic-ch10#article">Mathematical functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch11" class="" href="/kliveide/spectrum/basic-ch11#article">Random numbers</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch12" class="" href="/kliveide/spectrum/basic-ch12#article">Arrays</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch13" class="" href="/kliveide/spectrum/basic-ch13#article">Conditions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch14" class="" href="/kliveide/spectrum/basic-ch14#article">The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch15" class="" href="/kliveide/spectrum/basic-ch15#article">More about PRINT and INPUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch16" class=" active " href="/kliveide/spectrum/basic-ch16#article">Colours</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch17" class="" href="/kliveide/spectrum/basic-ch17#article">Graphics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch18" class="" href="/kliveide/spectrum/basic-ch18#article">Motion</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch19" class="" href="/kliveide/spectrum/basic-ch19#article">BEEP</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch20" class="" href="/kliveide/spectrum/basic-ch20#article">Tape Storage</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch21" class="" href="/kliveide/spectrum/basic-ch21#article">The ZX Printer</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch22" class="" href="/kliveide/spectrum/basic-ch22#article">Other Equipment</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch23" class="" href="/kliveide/spectrum/basic-ch23#article">IN and OUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch24" class="" href="/kliveide/spectrum/basic-ch24#article">The memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch25" class="" href="/kliveide/spectrum/basic-ch25#article">The system variables</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch26" class="" href="/kliveide/spectrum/basic-ch26#article">Using machine code</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appa" class="" href="/kliveide/spectrum/basic-appa#article">Appendix A: The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc1" class="" href="/kliveide/spectrum/basic-appc1#article">Appendix C1: A description of the ZX Spectrum for reference</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appb" class="" href="/kliveide/spectrum/basic-appb#article">Appendix B: Reports</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appd" class="" href="/kliveide/spectrum/basic-appd#article">Appendix D: Example programs</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc2" class="" href="/kliveide/spectrum/basic-appc2#article">Appendix C2: The BASIC</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appe" class="" href="/kliveide/spectrum/basic-appe#article">Appendix E: Binary and hexadecimal</a>
+                      
+                      
+                      
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Pac-Man Discovery</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="introduction" class="" href="/kliveide/pacman/introduction#article">Decrypting the loader</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Spectrum48 BASIC &raquo; Colours</h1>
+            </div>
+            <div class="main-content-area">
+              <h1 id="chapter-16-colours">CHAPTER 16: Colours</h1>
+
+<h2 id="summary">Summary</h2>
+
+<ul>
+  <li><strong>INK</strong>, <strong>PAPER</strong>, <strong>FLASH</strong>, <strong>BRIGHT</strong>, <strong>INVERSE</strong>, <strong>OVER</strong></li>
+  <li><strong>BORDER</strong></li>
+</ul>
+
+<p>Run this program:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR m=4 TO 1: BRIGHT m
+20 FOR n=1 TO 14
+30 FOR c=4 TO 7
+40 PAPER c: PRINT " ";: REM 4 coloured spaces
+50 NEXT c: NEXT n: NEXT m
+60 FOR m=0 TO 1: BRIGHT m: PAPER 7
+70 FOR c=0 TO 3
+80 INK c: PRINT c;" ";
+90 NEXT c: PAPER 0
+100 FOR c=4 T0 7
+110 INK c: PRINT c;" ";
+120 NEXT c: NEXT m
+130 PAPER 7: INK 0: BRIGHT 0
+</code></pre></div></div>
+
+<p>This shows the eight colours (including white and black) and the two levels of
+brightness that the ZX Spectrum can produce on a colour television. (If your
+television is black and white, then you will just see various shades of grey.)
+Here is a list of them for reference; they are also written over the appropriate
+number keys.</p>
+
+<p>0 - black</p>
+
+<p>1 - blue</p>
+
+<p>2 - red</p>
+
+<p>3 - purple, or magenta</p>
+
+<p>4 - green</p>
+
+<p>5 - pale blue, technically called cyan</p>
+
+<p>6 - yellow</p>
+
+<p>7 - white</p>
+
+<p>On a black and white television, these numbers are in order of brightness.</p>
+
+<p>To use these colours properly, you need to understand a bit about how the picture is arranged.</p>
+
+<p>The picture is divided up into 768 (24 lines of 32) positions where characters can be printed, and each character is printed as an 8x8 square of dots like that
+below for a. This should remind you of the user-defined graphics in Chapter 14, where we had 0s for the white dots and 1s for the black dots.</p>
+
+<p><img src="/kliveide/assets/images/basic/image7.gif" alt="Image7" /></p>
+
+<p>The character position also has associated with it two colours: the ink, or foreground colour, which is the colour for the black dots in our square, and the
+paper, or background colour, which is used for the white dots. To start off with, every position has black ink and white paper so writing appears as black
+on white.</p>
+
+<p>The character position also has a brightness (normal or extra bright) and something to say whether it flashes or not - flashing is done by swapping the
+ink and paper colours. This can all be coded into numbers, so a character position then has</p>
+
+<p><em>(i)</em>: an 8x8 square of 0s and 1 s to define the shape of the character, with 0 for
+paper and 1 for ink,</p>
+
+<p><em>(ii)</em>: ink and paper colours, each coded into a number between 0 and 7,</p>
+
+<p><em>(iii)</em>: a brightness - 0 for normal, 1 for extra bright and</p>
+
+<p><em>(iv)</em>: a flash number - 0 for steady, 1 for flashing.</p>
+
+<p>Note that since the ink and paper colours cover a whole character position, you cannot possibly have more than two colours in a given block of 64 dots. The same
+goes for the brightness and flash number: they refer to the whole character position, not individual dots. The colours, brightness and flash number at a
+given position are called attributes.</p>
+
+<p>When you print something on the screen, you change the dot pattern at that position; it is less obvious, but still true, that you also change the
+attributes at that position. To start off with you do not notice this because everything is printed with black ink on white paper (and normal brightness and
+no flashing), but you can vary this with the <strong>INK</strong>, <strong>PAPER</strong>, <strong>BRIGHT</strong> and <strong>FLASH</strong> statements. Try <strong>PAPER 5</strong> and then print a few things: they will all appear on cyan paper, because as they are printed the paper colours at the positions they occupy are set to cyan (which has code 5).</p>
+
+<p>The others work the same way, so after <strong>PAPER</strong> number between 0 and 7 <strong>INK</strong> number between 0 and 7 <strong>BRIGHT</strong> 0 or 1. Think of 0 as off and 1 as on. <strong>FLASH</strong> 0 or 1 any printing will set the corresponding attribute at all the character positions it uses. Try some of these out. You should now be able to see how the program at the beginning worked (remember that a space is a character that has <strong>INK</strong> and <strong>PAPER</strong> the same colour).</p>
+
+<p>There are some more numbers you can use in these statements that have less direct effects. 8 can be used in all four statements, and means ‘transparent’ in the sense that the old attribute shows through. Suppose, for instance, that you do <strong>PAPER 8</strong>.</p>
+
+<p>No character position will ever have its paper colour set to 8 because there is no such colour; what happens is that when a position is printed on, its paper
+colour is left the same as it was before. <strong>INK 8</strong>, <strong>BRIGHT 8</strong> and <strong>FLASH 8</strong> work the same way for the other attributes.</p>
+
+<p>9 can be used only with <strong>PAPER</strong> and <strong>INK</strong>, and means ‘contrast’. The colour (ink or paper) that you use it with is made to contrast with the other by being made white if the other is a dark colour (black, blue, red or magenta), and black if the other is a light colour (green, cyan, yellow or white).</p>
+
+<p>Try this by doing</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INK 9: FOR c=0 TO 7: PAPER c: PRINT c: NEXT c
+</code></pre></div></div>
+
+<p>A more impressive display of its power is to run the program at the beginning to make coloured stripes, and then doing</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INK 9: PAPER 8: PRINT AT 0,8;: FOR n=l TO 1080: PRINT n;: NEXT n
+</code></pre></div></div>
+
+<p>The ink colour here is always made to contrast with the old paper colour at each position.</p>
+
+<p>Colour television relies on the rather curious fact that the human eye can only really see three colours - the primary colours, blue, red and green. The other
+colours are mixtures of these. For instance, magenta is made by mixing blue with red - which is why its code, 3, is the sum of the codes for blue and red.</p>
+
+<p>To see how all eight colours fit together, imagine three rectangular spotlights, coloured blue, red and green, shining at not quite the same place on a piece of
+white paper in the dark. Where they overlap you will see mixtures of colours, as shown by this program (note that ink spaces are obtained by using either SHIFT
+with 8 when in G mode):</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 BORDER 0: PAPER 0: INK 7: CLS
+20 FOR a=1 TO 6
+30 PRINT TAB 6; INK 1; "": REM 18 ink squares
+40 NEXT a
+50 LET dataline=20
+60 GO SUB 1000
+70 LET dataline=210
+80 GO SUB 1000
+90 STOP
+200 DATA 2,3,7,5,4
+210 DATA 2,2,6,4,4
+1000 FOR a=1 TO 6
+1010 RESTORE dataline
+1020 FOR b=1 TO 5
+1030 READ c: PRINT INK c;"";: REM 6 ink squares
+1040 NEXT b: PRINT: NEXT a
+1050 RETURN
+</code></pre></div></div>
+
+<p>There is a function called <strong>ATTR</strong> that finds out what the attributes are at a given position on the screen. It is a fairly complicated function, so it has
+been relegated to the end of this chapter.</p>
+
+<p>There are two more statements, <strong>INVERSE</strong> and <strong>OVER</strong>, which control not the attributes, but the dot pattern that is printed on the screen. They use the
+numbers 0 for off and 1 for on in the same way as <strong>FLASH</strong> and <strong>BRIGHT</strong> do, but those are the only possibilities. If you do <strong>INVERSE</strong> 1, then the dot patterns printed will be the inverse of their usual form: paper dots will be replaced by ink dots
+and vice versa. Thus a would be printed as</p>
+
+<p><img src="/kliveide/assets/images/basic/image8.gif" alt="Image8" /></p>
+
+<p>If (as at switch-on) we have black ink and white paper, then this a will appear as white on black - but we still have black ink and white paper at that
+character position. It is the dots that have changed.</p>
+
+<p>The statement <strong>OVER 1</strong> sets into action a particular sort of overprinting. Normally when something is written into a character position it completely obliterates what was there before; but now the new character will simply be added in on top of the old one (but see Exercise 1). This can be particularly useful for writing composite characters, like letters with accents on them, as in this program to print out German letters - an ‘o’ with an umlaut above it. (Do <strong>NEW</strong> first.)</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 OVER 1
+20 FOR n=1 TO 32
+30 PRINT "o"; CHRS 8;"""";
+40 NEXT n
+</code></pre></div></div>
+
+<p>(notice the control character CHRS 8 which backs up one space.)</p>
+
+<p>There is another way of using <strong>INK</strong>, <strong>PAPER</strong> and so on which you will probably find more useful than having them as statements. You can put them as items in a <strong>PRINT</strong> statement (followed by ;), and they then do exactly the same as they would have done if they had been used as statements on their own, except that their effect is only temporary: it lasts as far as the end of the PRINT statement that contains them. Thus if you type <strong>PRINT PAPER 6;”x”;: PRINT “y”</strong> then only the x will be on yellow.</p>
+
+<p><strong>INK</strong> and the rest when used as statements do not affect the colours of the lower part of the screen, where commands and <strong>INPUT</strong> data are typed in. The lower part of the screen uses the colour of the border for its paper colour and code 9 for contrast for its <strong>INK</strong> colour, has flashing off, and everything at normal
+brightness. You can change the border colour to any of the eight normal colours (not 8 or 9) using statement <strong>BORDER</strong> colour.</p>
+
+<p>When you type in <strong>INPUT</strong> data, it follows this rule of using contrasting ink on border coloured paper; but you can change the colour of the captions written by
+the computer by using <strong>INK</strong> and <strong>PAPER</strong> (and so on) items in the <strong>INPUT</strong> statement, just as you would in a <strong>PRINT</strong> statement. Their effect lasts either to the end of the statement, or until some <strong>INPUT</strong> data is typed in, whichever comes first. Try</p>
+
+<p><strong>INPUT FLASH 1; INK 1;”What is your number?”;n</strong></p>
+
+<p>There is one more way of changing the colours by using control characters -
+rather like the control characters for <strong>AT</strong> and <strong>TAB</strong> in Chapter 15.</p>
+
+<p><strong>CHR$ 16</strong> corresponds to <strong>INK</strong></p>
+
+<p><strong>CHR$ 17</strong> corresponds to <strong>PAPER</strong></p>
+
+<p><strong>CHR$ 18</strong> corresponds to <strong>FLASH</strong></p>
+
+<p><strong>CHR$ 19</strong> corresponds to <strong>BRIGHT</strong></p>
+
+<p><strong>CHR$ 20</strong> corresponds to <strong>INVERSE</strong></p>
+
+<p><strong>CHR$ 21</strong> corresponds to <strong>OVER</strong></p>
+
+<p>These are each followed by one character that shows a colour by its code: so (for instance)</p>
+
+<p><strong>PRINT CHR$ 16+CHR$ 9; . . .</strong></p>
+
+<p>has the same effect as</p>
+
+<p><strong>PRINT INK 9; . . .</strong></p>
+
+<p>On the whole, you would not bother to use these control characters because you might just as well use the colour items. However, one very useful thing you can
+do with them is put them in programs: this results in different parts being listed in different colours, to set them apart from each other or even just to
+look pretty. You must put them in after the line number, or they will just get lost.</p>
+
+<p>To get these into the program, you have to enter them from the keyboard, mostly using extended mode with the digits.</p>
+
+<p>The digits 0 to 7 set the corresponding colour- ink if <strong>CAPS SHIFT</strong> is also pressed, paper if it is not. More precisely, if you are in E mode and you press
+a digit (let us say 6 for yellow; at any rate it has to be between 0 and 7 - not 8 or 9) then two characters are inserted: first CHRS 17 for <strong>PAPER</strong>, and <strong>CHR$</strong> 6 meaning ‘set it to yellow’. If you had been pressing <strong>CAPS SHIFT</strong> when you pressed the digit, you would have got CHRS 16 meaning ‘set ink colour’ instead of CHRS 17.</p>
+
+<p>Since these are two characters you can get some odd effects when you rub them out - you must press DELETE twice, and after the first time you will often get a
+question mark or even odder things appearing. Do not worry; just press DELETE again.</p>
+
+<p><strong>⇦</strong> and <strong>⇨</strong> can also behave strangely while the cursor is moving past the control characters.</p>
+
+<p>Still in extended mode,</p>
+
+<p>8 gives <strong>CHR$</strong> 19 and <strong>CHR$</strong> 0 for normal brightness</p>
+
+<p>9 gives <strong>CHR$</strong> 19 and <strong>CHR$</strong> 1 for extra brightness</p>
+
+<p><strong>CAPS SHIFT</strong> with 8 gives <strong>CHR$</strong> 18 and <strong>CHR$</strong> 0 for no flashing</p>
+
+<p><strong>CAPS SHIFT</strong> with 9 gives <strong>CHR$</strong> 18 and <strong>CHR$</strong> 1 for flashing</p>
+
+<p>There are a couple more in ordinary (L) mode:</p>
+
+<p><strong>CAPS SHIFT</strong> with 3 gives CHRS 20 and <strong>CHR$</strong> 0 for normal characters</p>
+
+<p><strong>CAPS SHIFT</strong> with 4 gives <strong>CHR$</strong> 20 and CHRS 1 for inverse characters</p>
+
+<p>To summarize. here is a complete description of the top row on the keyboard:</p>
+
+<p><img src="/kliveide/assets/images/basic/image9.gif" alt="Image9" /></p>
+
+<p>The <strong>ATTR</strong> function has the form</p>
+
+<p><strong>ATTR</strong> (line column)</p>
+
+<p>Its two arguments are the line and column numbers that you would use in an <strong>AT</strong> item, and its result is a number that shows the colours and so on at the
+corresponding character position on the television screen You can use this as freely in expressions as you can any other function.</p>
+
+<p>The number that is the result is the sum of four other numbers as follows:</p>
+
+<p>128 If the character position is flashing, 0 if it is steady</p>
+
+<p>64 if the character position is bright, 0 if it is normal</p>
+
+<p>8* the code for the paper colour</p>
+
+<p>the code for the ink colour</p>
+
+<p>For instance, if the character position is flashing and normal with yellow paper and blue ink then the four numbers that we have to add together are 128, 0,
+8*6=48 and 1, making 177 altogether. Test this with</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT AT 0,0; FLASH 1; PAPER 6; INK 1;" "; ATTR (0,0**
+</code></pre></div></div>
+
+<h2 id="exercises">Exercises</h2>
+
+<ol>
+  <li>Try</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT "B"; CHR$ 8; OVER 1;"/";
+</code></pre></div></div>
+
+<p>Where the / has cut through the B, it has left a white dot This is the way overprinting works on the ZX Spectrum: two papers or two inks give a paper, one
+of each gives an ink. This has the interesting property that if you overprint with the same thing twice you get back what you started off with. If you now
+type</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT CHR$ 8; OVER 1;"r'
+</code></pre></div></div>
+
+<p>why do vou recover an unblemished B?</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PAPER 0: INK 0
+</code></pre></div></div>
+
+<p>- isn’t it just as well that these don’t affect the lower part of the screen?
+Now type</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BORDER 0
+</code></pre></div></div>
+
+<p>and see how well the computer looks after you!</p>
+
+<ol>
+  <li>Run this program:</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 POKE 22527+RND\*704, RND\*127
+20 GO TO 10
+</code></pre></div></div>
+
+<p>Never mind how this works; it is changing the colours of squares on the television screen and the <strong>RND</strong>s should ensure that this happens randomly. The
+diagonal stripes that you eventually see are a manifestation of the hidden pattern in <strong>RND</strong> - the pattern that makes it pseudorandom instead of truly random.</p>
+
+<ol>
+  <li>Type or <strong>LOAD</strong> in the chess piece characters in Chapter 14, and then type in this program which draws a diagram of a chess position using them.</li>
+</ol>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM draw blank board
+10 LET bb=1: LET bw=2: REM red and blue for board
+15 PAPER bw: INK bb: CLS
+20 PLOT 79,128: REM border
+30 DRAW 65,0: DRAW 0,-65
+40 DRAW -65,0: DRAW 0,65
+50 PAPER bb
+60 REM board
+70 FOR n=0 TO 3: FOR m=0 TO 3
+80 PRINT AT 6+2\*n, 11+2\*m;" "
+90 PRINT AT 7+2\*n, 10+2\*m;" "
+100 NEXT m: NEXT n
+110 PAPER 8
+120 LET pw=6: LET pb=5: REM colours of white and black pieces
+200 DIM b$ (8,8): REM positions of pieces
+205 REM set up initial positions
+210 LET b$(1)="rnbqkbnr"
+220 LET bS(2)="pppppppp"
+230 LET b$(7)= PPPPPPPP
+240 LET b$(8)="RNBQKBNR"
+300 REM display board
+310 FOR n=1 TO 8: FOR m=1 TO 8
+320 LET bc=CODE b$(n,m): INK pw
+325 IF bc=CODE" " THEN GO TO 350: REM space
+330 IF bc\&gt;CODE "Z" THEN INK pb: LET bc=bc-32: REM lower case for black
+340 LET bc=bc+79: REM convert to graphics
+350 PRINT AT 5+n, 9+m; CHR$ bc
+360 NEXT m: NEXT n
+400 PAPER 7: INK 0
+</code></pre></div></div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/spectrum/basic-ch15#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/spectrum/basic-ch17#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>

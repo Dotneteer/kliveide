@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>The ZX Printer | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="The ZX Printer" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="CHAPTER 21: The ZX printer" />
+<meta property="og:description" content="CHAPTER 21: The ZX printer" />
+<link rel="canonical" href="http://localhost:4000/kliveide/spectrum/basic-ch21" />
+<meta property="og:url" content="http://localhost:4000/kliveide/spectrum/basic-ch21" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"The ZX Printer","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch21","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch21"},"description":"CHAPTER 21: The ZX printer","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class=" active item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Spectrum48 BASIC</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-toc" class="" href="/kliveide/spectrum/basic-toc#article">Table of Contents</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch1" class="" href="/kliveide/spectrum/basic-ch1#article">Introduction</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch2" class="" href="/kliveide/spectrum/basic-ch2#article">Basic programming concepts</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch3" class="" href="/kliveide/spectrum/basic-ch3#article">Decisions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch4" class="" href="/kliveide/spectrum/basic-ch4#article">Looping</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch5" class="" href="/kliveide/spectrum/basic-ch5#article">Subroutines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch6" class="" href="/kliveide/spectrum/basic-ch6#article">READ, DATA, RESTORE</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch7" class="" href="/kliveide/spectrum/basic-ch7#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch8" class="" href="/kliveide/spectrum/basic-ch8#article">Strings</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch9" class="" href="/kliveide/spectrum/basic-ch9#article">Functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch10" class="" href="/kliveide/spectrum/basic-ch10#article">Mathematical functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch11" class="" href="/kliveide/spectrum/basic-ch11#article">Random numbers</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch12" class="" href="/kliveide/spectrum/basic-ch12#article">Arrays</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch13" class="" href="/kliveide/spectrum/basic-ch13#article">Conditions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch14" class="" href="/kliveide/spectrum/basic-ch14#article">The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch15" class="" href="/kliveide/spectrum/basic-ch15#article">More about PRINT and INPUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch16" class="" href="/kliveide/spectrum/basic-ch16#article">Colours</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch17" class="" href="/kliveide/spectrum/basic-ch17#article">Graphics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch18" class="" href="/kliveide/spectrum/basic-ch18#article">Motion</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch19" class="" href="/kliveide/spectrum/basic-ch19#article">BEEP</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch20" class="" href="/kliveide/spectrum/basic-ch20#article">Tape Storage</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch21" class=" active " href="/kliveide/spectrum/basic-ch21#article">The ZX Printer</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch22" class="" href="/kliveide/spectrum/basic-ch22#article">Other Equipment</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch23" class="" href="/kliveide/spectrum/basic-ch23#article">IN and OUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch24" class="" href="/kliveide/spectrum/basic-ch24#article">The memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch25" class="" href="/kliveide/spectrum/basic-ch25#article">The system variables</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch26" class="" href="/kliveide/spectrum/basic-ch26#article">Using machine code</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appa" class="" href="/kliveide/spectrum/basic-appa#article">Appendix A: The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc1" class="" href="/kliveide/spectrum/basic-appc1#article">Appendix C1: A description of the ZX Spectrum for reference</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appb" class="" href="/kliveide/spectrum/basic-appb#article">Appendix B: Reports</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appd" class="" href="/kliveide/spectrum/basic-appd#article">Appendix D: Example programs</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc2" class="" href="/kliveide/spectrum/basic-appc2#article">Appendix C2: The BASIC</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appe" class="" href="/kliveide/spectrum/basic-appe#article">Appendix E: Binary and hexadecimal</a>
+                      
+                      
+                      
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Pac-Man Discovery</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="introduction" class="" href="/kliveide/pacman/introduction#article">Decrypting the loader</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Spectrum48 BASIC &raquo; The ZX Printer</h1>
+            </div>
+            <div class="main-content-area">
+              <h1 id="chapter-21-the-zx-printer">CHAPTER 21: The ZX printer</h1>
+
+<h2 id="summary">Summary</h2>
+
+<ul>
+  <li><strong>LPRINT</strong>, <strong>LLIST</strong>, <strong>COPY</strong></li>
+</ul>
+
+<p>Note: None of these statements is standard BASIC, although <strong>LPRINT</strong> is used by some other computers.</p>
+
+<p>If you have a ZX printer, you will have some operating instructions with it. This chapter covers the BASIC statements needed to make it work.</p>
+
+<p>The first two, <strong>LPRINT</strong> and <strong>LLIST</strong>, are just like <strong>PRINT</strong> and <strong>LIST</strong>, except that they use the printer instead of the television. (The L is an historical accident. When BASIC was invented it usually used an electric typewriter instead of a television, so <strong>PRINT</strong> really did mean print. If you wanted masses of output you would use a very fast line printer attached to the computer, and an <strong>LPRINT</strong> statement meaning ‘Line printer <strong>PRINT</strong>’.)</p>
+
+<p>Try this program for example.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LPRINT "This program".'
+20 LLIST
+30 LPRINT '"prints out the character set."'
+40 FOR n=32 TO 255
+50 LPRINT CHR$ n;
+60 NEXT n
+</code></pre></div></div>
+
+<p>The third statement, <strong>COPY</strong>, prints out a copy of the television screen. For instance, type <strong>LIST</strong> to get a listing on the screen of the program above, and
+type</p>
+
+<p><strong>COPY</strong></p>
+
+<p>Note that <strong>COPY</strong> doesn’t work with one of the listings that the computer puts up automatically, because that is cleared whenever a command is obeyed. You must
+either use <strong>LIST</strong> first, or use <strong>LLIST</strong> and forget about <strong>COPY</strong>.</p>
+
+<p>You can always stop the printer when it is running by pressing the <strong>BREAK</strong> key (<strong>CAPS SHIFT</strong> and <strong>SPACE</strong>).</p>
+
+<p>If you execute these statements without the printer attached, it should lose all the output and carry on with the next statement.</p>
+
+<p>Try this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=31 TO 3 STEP-1
+20 PRINT AT 31-n,n; CHRS (**CODE** "3"+n);
+30 NEXT n
+</code></pre></div></div>
+
+<p>You will see a pattern of characters working down diagonally from the top right-hand corner until it reaches the bottom of the screen, when the program
+asks if you want to scroll.</p>
+
+<p>Now change <strong>AT</strong> 31-n,n in line 20 to <strong>TAB</strong> n. The program will have exactly the same effect as before.</p>
+
+<p>Now change <strong>PRINT</strong> in line 20 to <strong>LPRINT</strong>. This time there will be no scroll?, which should not occur with the printer, and the pattern will carry straight on with the letters F to O.</p>
+
+<p>Now change <strong>TAB</strong> n to <strong>AT</strong> 31-n,n still using <strong>LPRINT</strong>. This time you will get just a single line of symbols. The reason for the difference is that the output from <strong>PRINT</strong> is not printed straight away, but arranges in a buffer store a picture one line long of what the computer will send to the printer when it gets round to it. The printing takes place</p>
+
+<p><em>(i)</em> when the buffer is full,<br />
+<em>(ii)</em> after an <strong>LPRINT</strong> statement that does not end in a comma or semicolon,<br />
+<em>(iii)</em> when a comma, apostrophe or <strong>TAB</strong> item requires a new line, or<br />
+<em>(iv)</em> at the end of a program, if there is anything left unprinted.</p>
+
+<p>(iii) explains why our program with <strong>TAB</strong> works the way it does. As for <strong>AT</strong>, the
+line number is ignored and the <strong>LPRINT</strong> position (like the <strong>PRINT</strong> position, but for
+the printer instead of the television) is changed to the column number. An <strong>AT</strong>
+item can never cause a line to be sent to the printer.</p>
+
+<h2 id="exercise">Exercise</h2>
+
+<p>1 . Make a printed graph of <strong>SIN</strong> by running the program in Chapter 17 and then using <strong>COPY</strong>.</p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/spectrum/basic-ch20#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/spectrum/basic-ch22#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>

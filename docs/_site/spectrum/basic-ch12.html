@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/kliveide/assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
+
+    <!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Arrays | Klive IDE</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Arrays" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="CHAPTER 12: Arrays" />
+<meta property="og:description" content="CHAPTER 12: Arrays" />
+<link rel="canonical" href="http://localhost:4000/kliveide/spectrum/basic-ch12" />
+<meta property="og:url" content="http://localhost:4000/kliveide/spectrum/basic-ch12" />
+<meta property="og:site_name" content="Klive IDE" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
+<script type="application/ld+json">
+{"@type":"BlogPosting","headline":"Arrays","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch12","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch12"},"description":"CHAPTER 12: Arrays","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+  </head>
+
+  <body>
+
+    <!-- Header -->
+    <div class="ui vertical stripe segment with-header-back">
+      <div class="ui container high">
+        <h1 class="ui header">Klive IDE</h1>
+        <h3 class="ui header">Full-fledged ZX Spectrum IDE with Electron, VS Code</h2>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="ui vertical stripe segment with-menu-back">
+      <div class="ui container">
+        <div class="ui menu with-menu-back">
+          <a class="item" href="/kliveide/">Home</a>
+          <a class=" item" href="/kliveide/getting-started/install-kliveide.html">Getting Started</a>
+          <a class=" item" href="/kliveide/documents/main-features.html">Documents</a>
+          <a class=" active item" href="/kliveide/spectrum/basic-toc.html">ZX Spectrum</a>
+          <a class="item" target="_blank" href="https://github.com/Dotneteer/kliveide">GitHub</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="ui vertical stripe segment with-content-back">
+      <div class="ui container">
+        <div class="ui grid">
+          <div class="three wide computer sixteen wide mobile column">
+            <div class="document-list">
+              
+              
+              
+              
+              
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  expanded " onclick="handleClick(this)">
+                    <span class="category-name">Spectrum48 BASIC</span>
+                    <div class="extender  expanded ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  displayed ">
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-toc" class="" href="/kliveide/spectrum/basic-toc#article">Table of Contents</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch1" class="" href="/kliveide/spectrum/basic-ch1#article">Introduction</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch2" class="" href="/kliveide/spectrum/basic-ch2#article">Basic programming concepts</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch3" class="" href="/kliveide/spectrum/basic-ch3#article">Decisions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch4" class="" href="/kliveide/spectrum/basic-ch4#article">Looping</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch5" class="" href="/kliveide/spectrum/basic-ch5#article">Subroutines</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch6" class="" href="/kliveide/spectrum/basic-ch6#article">READ, DATA, RESTORE</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch7" class="" href="/kliveide/spectrum/basic-ch7#article">Expressions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch8" class="" href="/kliveide/spectrum/basic-ch8#article">Strings</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch9" class="" href="/kliveide/spectrum/basic-ch9#article">Functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch10" class="" href="/kliveide/spectrum/basic-ch10#article">Mathematical functions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="basic-ch11" class="" href="/kliveide/spectrum/basic-ch11#article">Random numbers</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch12" class=" active " href="/kliveide/spectrum/basic-ch12#article">Arrays</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch13" class="" href="/kliveide/spectrum/basic-ch13#article">Conditions</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch14" class="" href="/kliveide/spectrum/basic-ch14#article">The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch15" class="" href="/kliveide/spectrum/basic-ch15#article">More about PRINT and INPUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch16" class="" href="/kliveide/spectrum/basic-ch16#article">Colours</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch17" class="" href="/kliveide/spectrum/basic-ch17#article">Graphics</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch18" class="" href="/kliveide/spectrum/basic-ch18#article">Motion</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch19" class="" href="/kliveide/spectrum/basic-ch19#article">BEEP</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch20" class="" href="/kliveide/spectrum/basic-ch20#article">Tape Storage</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch21" class="" href="/kliveide/spectrum/basic-ch21#article">The ZX Printer</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch22" class="" href="/kliveide/spectrum/basic-ch22#article">Other Equipment</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch23" class="" href="/kliveide/spectrum/basic-ch23#article">IN and OUT</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch24" class="" href="/kliveide/spectrum/basic-ch24#article">The memory</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch25" class="" href="/kliveide/spectrum/basic-ch25#article">The system variables</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-ch26" class="" href="/kliveide/spectrum/basic-ch26#article">Using machine code</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appa" class="" href="/kliveide/spectrum/basic-appa#article">Appendix A: The character set</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc1" class="" href="/kliveide/spectrum/basic-appc1#article">Appendix C1: A description of the ZX Spectrum for reference</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appb" class="" href="/kliveide/spectrum/basic-appb#article">Appendix B: Reports</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appd" class="" href="/kliveide/spectrum/basic-appd#article">Appendix D: Example programs</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appc2" class="" href="/kliveide/spectrum/basic-appc2#article">Appendix C2: The BASIC</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                    <a id="basic-appe" class="" href="/kliveide/spectrum/basic-appe#article">Appendix E: Binary and hexadecimal</a>
+                      
+                      
+                      
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                  <div class="document-category  collapsed " onclick="handleClick(this)">
+                    <span class="category-name">Pac-Man Discovery</span>
+                    <div class="extender  collapsed ">
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" >
+                        <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="article-names  hidden ">
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                    <a id="introduction" class="" href="/kliveide/pacman/introduction#article">Decrypting the loader</a>
+                      
+                      
+                      
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                    
+                  
+                  </div>
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+                  
+                  
+                  
+                  
+                
+            </div>
+          </div>
+          <div class="thirteen wide computer sixteen wide mobile column with-main-back">
+            <div id="#article" class="main-title-area">
+              <h1>Spectrum48 BASIC &raquo; Arrays</h1>
+            </div>
+            <div class="main-content-area">
+              <h1 id="chapter-12-arrays">CHAPTER 12: Arrays</h1>
+
+<h2 id="summary">Summary</h2>
+
+<ul>
+  <li><strong>Arrays</strong> (the way the ZX Spectrum handles string arrays is slightly non-standard).</li>
+  <li><strong>DIM</strong> . . .</li>
+</ul>
+
+<p>Suppose you have a list of numbers, for instance the marks of ten people in a class. To store them in the computer you could set up a single variable for each
+person. but you would find them very awkward. You might decide to call the variable Bloggs 1, Bloggs 2, and so on up to Bloggs 10, but the program to set
+up these ten numbers would be rather long and boring to type in.</p>
+
+<p>How much nicer it would be if you could type this:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM this program will not work
+10 FOR n=1 TO 10
+20 READ Bloggs n
+30 NEXT n
+40 DATA 10,2,5,19,16,3,11,1,0,6
+</code></pre></div></div>
+
+<p>Well you can’t.</p>
+
+<p>However, there is a mechanism by which you can apply this idea, and it uses <em>arrays</em>. An array is a set of variables, its elements, all with the same name,
+and distinguished only by a number (the subscript) written in brackets after the name. In our example the name could be <em>b</em> (like control variables of <strong>FOR</strong> - <strong>NEXT</strong> loops, the name of an array must be a single letter), and the ten variables would then be <em>b</em>(l), <em>b</em>(2), and so on up to <em>b</em>(l0).</p>
+
+<p>The elements of an array are called <em>subscripted</em> variables, as opposed to the simple variables that you are already familiar with.</p>
+
+<p>Before you can use an array, you must reserve some space for it inside the computer, and you do this using a <strong>DIM</strong> (for dimension) statement.</p>
+
+<p><strong>DIM b(10)</strong></p>
+
+<p>sets up an array called <em>b</em> with dimension 10 (i.e. there are 10 subscripted variables <em>b</em>(1),…,<em>b</em>(10)) and initializes the 10 values to 0. It also
+deletes any array called b that existed previously. (But not a simple variable. An array and a simple numerical variable with the same name can coexist, and
+there shouldn’t be any confusion between them because the array variable always has a subscript).</p>
+
+<p>The subscript can be an arbitrary numerical expression, so now you can write</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=1 TO 10
+20 READ b(n)
+30 NEXT n
+40 DATA 10,2,5,19,16,3,11,1,0,6
+</code></pre></div></div>
+
+<p>You can also set up arrays with more than one dimension. In a two dimensional array you need two numbers to specify one of the elements — rather like the line and column numbers to specify a character position on the television screen — so it has the form of a table. Alternatively, if you imagine the line and column numbers (two dimensions) as referring to a printed page, you could have an extra dimension for the page numbers. Of course, we are talking about numeric arrays; so the elements would not be printed characters as in a book, but numbers. Think of the elements of a three-dimensional array <em>v</em> as being specified by <em>v</em> (page number, line number, column number).</p>
+
+<p>For example, to set up a two-dimensional array c with dimensions 3 and 6, you use a <strong>DIM</strong> statement</p>
+
+<p><strong>DIM c(3,6)</strong></p>
+
+<p>This then gives you 3*6=18 subscripted variables</p>
+
+<p><strong>c(1 ,1),c(1 ,2), . . .,c(1,6)</strong></p>
+
+<p><strong>c(2, 1 ),c(2,2), . . .,c(2,6)</strong></p>
+
+<p><strong>c(3, 1 ),c(3,2), . . .,c(3,6)</strong></p>
+
+<p>The same principle works for any number of dimensions.</p>
+
+<p>Although you can have a number and an array with the same name, you cannot have two arrays with the same name, even if they have different numbers of
+dimensions.</p>
+
+<p>There are also string arrays. The strings in an array differ from simple strings in that they are of fixed length and assignment to them is always Procrustean -
+chopped off or padded with spaces. Another way of thinking of them is as arrays (with one extra dimension) of single characters. The name of a string array is a
+single letter followed by $, and a string array and a simple string variable cannot have the same name (unlike the case for numbers).</p>
+
+<p>Suppose then, that you want an array a$ of five strings. You must decide how long these strings are to be - let us suppose that 10 characters each is long
+enough. You then say</p>
+
+<p><strong>DIM a$(5,10)</strong> (type this in)</p>
+
+<p>This sets up a 5*10 array of characters, but you can also think of each row as
+being a string:</p>
+
+<p><strong>a$(1)=a$(1,1) a$(1,2) . . . a$(1,10)</strong></p>
+
+<p><strong>a$(2)=a$(2,1) a$(2,2) . . . a$(2,10)</strong></p>
+
+<p><strong>: : : :</strong></p>
+
+<p><strong>a$(5)=a$(5,1) a$(5,2) . . . a$(5,10)</strong></p>
+
+<p>If you give the same number of subscripts (two in this case) as there were dimensions in the <strong>DIM</strong> statement, then you get a single character; but if you
+miss the last one out, then you get a fixed length string. So, for instance, A$(2,7) is the 7th character in the string A$(2); using the slicing notation,
+we could also write this as A$(2)(7). Now type</p>
+
+<p><strong>LET a$(2)=”1234567890”</strong></p>
+
+<p>and</p>
+
+<p><strong>PRINT a$(2),a$(2,7)</strong></p>
+
+<p>For the last subscript (the one you can miss out), you can also have a slicer, so that for instance</p>
+
+<p><strong>a$(2,4 TO 8)=a$(2)(4 TO 8)=”45678”</strong></p>
+
+<p>Remember:</p>
+
+<p>In a string array, all the strings have the same, fixed length. The <strong>DIM</strong> statement has an extra number (the last one) to specify this length. When you
+write down a subscripted variable for a string array, you can put in an extra number, or a slicer, to correspond with the extra number in the <strong>DIM</strong> statement. You can have string arrays with no dimensions. Type</p>
+
+<p><strong>DIM a$(10)</strong></p>
+
+<p>and you will find that a$ behaves just like a string variable, except that it always has length 10, and assignment to it is always procrustean.</p>
+
+<h2 id="exercises">Exercises</h2>
+
+<ol>
+  <li>Use <strong>READ</strong> and <strong>DATA</strong> statements to set up an array m$ of twelve strings in which m$(n) is the name of the nth month. (Hint: the <strong>DIM</strong> statement will be <strong>DIM</strong> m$(12,9). Test it by printing out all the mS(n) (use a loop).</li>
+</ol>
+
+<p>Type</p>
+
+<p><strong>PRINT “now is the month of “;m$(5);”ing”;” when merry lads are playing”</strong></p>
+
+<p>What can you do about all those spaces?</p>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer  -->
+    <div class="ui vertical stripe segment with-header-back">
+        <footer class="ui container">
+          <p>&copy; Istvan Novak, 2020</p>
+        </footer>
+      </div>
+  
+    <!-- Floating return to top button -->
+    <a href="javascript:" id="return-to-top">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    <!-- Floating go to previous button -->
+    <a href="/kliveide/spectrum/basic-ch11#article" id="go-to-prev">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(-90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+    
+    <!-- Floating go to next button -->
+    <a href="/kliveide/spectrum/basic-ch13#article" id="go-to-next">
+      <span>
+        <svg width="32" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 16" transform="rotate(90)">
+          <path d="M10 10l-1.5 1.5L5 7.75 1.5 11.5 0 10l5-5z"/>
+        </svg>
+      </span>
+    </a>
+    
+
+    <script>
+      window.addEventListener("scroll", function(){
+        var scrolled = window.pageYOffset > 50;
+        document.getElementById("return-to-top").style.display = scrolled ? "block" : "none";
+        var prevEl = document.getElementById("go-to-prev");
+        if (prevEl) prevEl.style.display = scrolled ? "block" : "none";
+        var nextEl = document.getElementById("go-to-next");
+        if (nextEl) nextEl.style.display = scrolled ? "block" : "none";
+      });
+      var intervalId = 0;
+      var $scrollButton = document.querySelector('#return-to-top');
+      function scrollStep() {
+        if (window.pageYOffset === 0) {
+          clearInterval(intervalId);
+        }
+        window.scroll(0, window.pageYOffset - 50);
+      }
+      function scrollToTop() {
+        intervalId = setInterval(scrollStep, 6.66);
+      }
+      $scrollButton.addEventListener('click', scrollToTop);
+
+      function handleClick(arg) {
+        var nextEl = arg.nextElementSibling;
+        var extEl = arg.children[1];
+        if (arg.classList.contains("expanded")) {
+          arg.classList.remove("expanded");
+          arg.classList.add("collapsed");
+          extEl.classList.remove("expanded");
+          extEl.classList.add("collapsed");
+          nextEl.classList.remove("displayed")
+          nextEl.classList.add("hidden")
+        } else {
+          arg.classList.remove("collapsed");
+          arg.classList.add("expanded");
+          extEl.classList.remove("collapsed");
+          extEl.classList.add("expanded");
+          nextEl.classList.remove("hidden")
+          nextEl.classList.add("displayed")
+        }
+      }
+    </script>
+
+    
+  </body>
+</html>
