@@ -186,22 +186,6 @@ export class AppWindow {
    * Loads the contenst of the main window
    */
   load(): void {
-    let watcher: any;
-    if (__DEV__) {
-      // --- Indev mode, setup hot reload
-      const fileToWatch = path.join(__dirname, "./renderer.bundle.js");
-      watcher = require("chokidar").watch(fileToWatch, { ignoreInitial: true });
-      watcher.on("change", () => this._window.reload());
-    }
-
-    this._window.on("closed", () => {
-      // --- Release resources
-      this._window = null;
-      if (watcher) {
-        watcher.close();
-      }
-    });
-
     // --- Load the main file
     this._window.loadFile(path.join(__dirname, "index.html"));
   }
