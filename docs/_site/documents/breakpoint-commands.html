@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Disassembly: Breakpoints | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Disassembly: Breakpoints" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="With these commands, you can set up breakpoint according to their addresses. These breakpoints are not persisted, they are removed when you close the solution." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-02T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Disassembly: Breakpoints","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/breakpoint-commands","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/breakpoint-commands"},"description":"With these commands, you can set up breakpoint according to their addresses. These breakpoints are not persisted, they are removed when you close the solution.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/breakpoint-commands","headline":"Disassembly: Breakpoints","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/breakpoint-commands"},"description":"With these commands, you can set up breakpoint according to their addresses. These breakpoints are not persisted, they are removed when you close the solution.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -888,23 +888,23 @@ they are removed when you close the solution.</p>
   </thead>
   <tbody>
     <tr>
-      <td><strong><code class="highlighter-rouge">SB</code></strong> <em><code class="highlighter-rouge">literal</code></em> [ <strong><code class="highlighter-rouge">H</code></strong> <em><code class="highlighter-rouge">hit-condition</code></em>] [ <strong><code class="highlighter-rouge">C</code></strong> <em><code class="highlighter-rouge">filter-condition</code></em>]</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">SB</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em> [ <strong><code class="language-plaintext highlighter-rouge">H</code></strong> <em><code class="language-plaintext highlighter-rouge">hit-condition</code></em>] [ <strong><code class="language-plaintext highlighter-rouge">C</code></strong> <em><code class="language-plaintext highlighter-rouge">filter-condition</code></em>]</td>
       <td>Sets a breakpoint at the specified address with the optional <em>hit condition</em> and/or <em>filter condition</em>.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">TB</code></strong> <em><code class="highlighter-rouge">literal</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">TB</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></td>
       <td>Toggles a breakpoint at the specified address.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">RB</code></strong> <em><code class="highlighter-rouge">literal</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">RB</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></td>
       <td>Removes the breakpoint from the specified address.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">UB</code></strong> <em><code class="highlighter-rouge">literal</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">UB</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></td>
       <td>Retrieves the breakpoint at the specified address so that you can update it.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">EB</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">EB</code></strong></td>
       <td>Erases all breakpoints.</td>
     </tr>
   </tbody>
@@ -912,10 +912,10 @@ they are removed when you close the solution.</p>
 
 <h3 id="hit-condition">Hit Condition</h3>
 
-<p>The <strong><code class="highlighter-rouge">SB</code></strong> command allows you to specify a hit condition to define when the program should stop at the specified breakpoint.
+<p>The <strong><code class="language-plaintext highlighter-rouge">SB</code></strong> command allows you to specify a hit condition to define when the program should stop at the specified breakpoint.
 The debugger counts how many times the program code reaches the breakpoint and stops when the hit condition meets:</p>
 
-<p><strong><code class="highlighter-rouge">H</code></strong> <em><code class="highlighter-rouge">condition-type</code></em> <em><code class="highlighter-rouge">condition-value</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">H</code></strong> <em><code class="language-plaintext highlighter-rouge">condition-type</code></em> <em><code class="language-plaintext highlighter-rouge">condition-value</code></em></p>
 
 <p>The <em>condition-value</em> is an integer number. You can apply one of these <em>condition-type</em> tokens:</p>
 
@@ -928,47 +928,47 @@ The debugger counts how many times the program code reaches the breakpoint and s
   </thead>
   <tbody>
     <tr>
-      <td><strong><code class="highlighter-rouge">&lt;</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">&lt;</code></strong></td>
       <td>Execution stops when the current hit counter is less than <em>condition-value</em></td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">&lt;=</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">&lt;=</code></strong></td>
       <td>Execution stops when the current hit counter is less than or equal to <em>condition-value</em></td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">=</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">=</code></strong></td>
       <td>Execution stops when the current hit counter is equal to <em>condition-value</em></td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">&gt;</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">&gt;</code></strong></td>
       <td>Execution stops when the current hit counter is greater than <em>condition-value</em></td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">&gt;=</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">&gt;=</code></strong></td>
       <td>Execution stops when the current hit counter is greater than or equal to <em>condition-value</em></td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">*</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">*</code></strong></td>
       <td>Execution stops when the current hit counter is a multiple of <em>condition-value</em></td>
     </tr>
   </tbody>
 </table>
 
-<p>The following example defines a hit condition that stops at the <code class="highlighter-rouge">$8010</code> address when the 
+<p>The following example defines a hit condition that stops at the <code class="language-plaintext highlighter-rouge">$8010</code> address when the 
 hit counter s greater than 10:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 8010 H&gt;10
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 8010 H&gt;10
 </code></pre></div></div>
 
-<p>These command sets a breakpoint at <code class="highlighter-rouge">$6100</code> to stop at every fifth hit:</p>
+<p>These command sets a breakpoint at <code class="language-plaintext highlighter-rouge">$6100</code> to stop at every fifth hit:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6000 H*5*
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6000 H*5*
 </code></pre></div></div>
 
 <h3 id="filter-condition">Filter Condition</h3>
 
 <p>You can apply not only hit conditions, but also <em>filter conditions</em> to a breakpoint. When
-the execution reaches the breakpoint, the debugger evaluates the expression. If it is a <code class="highlighter-rouge">true</code>
+the execution reaches the breakpoint, the debugger evaluates the expression. If it is a <code class="language-plaintext highlighter-rouge">true</code>
 value (non-zero integer), the execution flow pauses; otherwise it goes on without stoping.</p>
 
 <p>You can use the same syntax for defining a filter condition as for watch items in the 
@@ -979,26 +979,26 @@ value (non-zero integer), the execution flow pauses; otherwise it goes on withou
 were no filter condition.</p>
 </blockquote>
 
-<p>Let’s see a few examples. The following command defines a breakpoint at <code class="highlighter-rouge">$6800</code> that stops when
-the contents of the <strong>HL</strong> register is <code class="highlighter-rouge">$4020</code>:</p>
+<p>Let’s see a few examples. The following command defines a breakpoint at <code class="language-plaintext highlighter-rouge">$6800</code> that stops when
+the contents of the <strong>HL</strong> register is <code class="language-plaintext highlighter-rouge">$4020</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6800 C HL==#4020
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6800 C HL==#4020
 </code></pre></div></div>
 
-<p>This condition breakpoint tests if the value of the memory address <code class="highlighter-rouge">$4100</code> equals to <code class="highlighter-rouge">$FF</code>:</p>
+<p>This condition breakpoint tests if the value of the memory address <code class="language-plaintext highlighter-rouge">$4100</code> equals to <code class="language-plaintext highlighter-rouge">$FF</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 7A00 C [#4100]==#FF
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 7A00 C [#4100]==#FF
 </code></pre></div></div>
 
-<p>You can use the condition to check if there’s a <code class="highlighter-rouge">$20</code> value at the <strong>IX+12</strong> address:</p>
+<p>You can use the condition to check if there’s a <code class="language-plaintext highlighter-rouge">$20</code> value at the <strong>IX+12</strong> address:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6500 C [IX+12]==#20
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6500 C [IX+12]==#20
 </code></pre></div></div>
 
 <p>The following condition results in a “Divide by zero” error, so it stops every time the execution
-flow reaches the <code class="highlighter-rouge">$6200</code> address:</p>
+flow reaches the <code class="language-plaintext highlighter-rouge">$6200</code> address:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6200 C HL/0==2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6200 C HL/0==2
 </code></pre></div></div>
 
 <h3 id="combining-hit-conditions-and-filter-conditions">Combining Hit Conditions and Filter Conditions</h3>
@@ -1006,12 +1006,12 @@ flow reaches the <code class="highlighter-rouge">$6200</code> address:</p>
 <p>You can apply both hit and filter conditions for the same breakpoint. You have to define the hit
 condition first, filter condition next:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6400 H&gt;5 C B&lt;=10
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6400 H&gt;5 C B&lt;=10
 </code></pre></div></div>
 
 <p>If you exchange the condition order, the command prompt will indicate syntax error:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6400 C B&lt;=10 H&gt;5
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SB 6400 C B&lt;=10 H&gt;5
 </code></pre></div></div>
 
 <p>When you apply both conditions, they must be both satisfied to pause at that particular breakpoint.</p>

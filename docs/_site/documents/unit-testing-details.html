@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Detailed Syntax | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Detailed Syntax" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="In the following section, I will use a kind of abstract syntax notation to describe the grammar of the SpectNetIde test language. Bold characters mark terminal symbols (keywords and other tokens), while italic strings ara non-terminal symbols. The ? after a symbol means that it’s optional. A * means zero, one, or more occurrence. + means one or more occurrence. The | character separates options, exactly one of them can be used. The language uses parantheses to specify groups of tokens." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-05T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Detailed Syntax","dateModified":"2019-01-05T00:00:00+01:00","datePublished":"2019-01-05T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/unit-testing-details","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/unit-testing-details"},"description":"In the following section, I will use a kind of abstract syntax notation to describe the grammar of the SpectNetIde test language. Bold characters mark terminal symbols (keywords and other tokens), while italic strings ara non-terminal symbols. The ? after a symbol means that it’s optional. A * means zero, one, or more occurrence. + means one or more occurrence. The | character separates options, exactly one of them can be used. The language uses parantheses to specify groups of tokens.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/unit-testing-details","headline":"Detailed Syntax","dateModified":"2019-01-05T00:00:00+01:00","datePublished":"2019-01-05T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/unit-testing-details"},"description":"In the following section, I will use a kind of abstract syntax notation to describe the grammar of the SpectNetIde test language. Bold characters mark terminal symbols (keywords and other tokens), while italic strings ara non-terminal symbols. The ? after a symbol means that it’s optional. A * means zero, one, or more occurrence. + means one or more occurrence. The | character separates options, exactly one of them can be used. The language uses parantheses to specify groups of tokens.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -878,26 +878,26 @@
             <div class="main-content-area">
               <p>In the following section, I will use a kind of abstract syntax notation to describe the grammar of the 
 SpectNetIde test language. Bold characters mark terminal symbols (keywords and other tokens), while 
-italic strings ara non-terminal symbols. The <code class="highlighter-rouge">?</code> after a symbol means that it’s optional. A <code class="highlighter-rouge">*</code> 
-means zero, one, or more occurrence. <code class="highlighter-rouge">+</code> means one or more occurrence. The <code class="highlighter-rouge">|</code> character separates options, exactly one of them can be used.
+italic strings ara non-terminal symbols. The <code class="language-plaintext highlighter-rouge">?</code> after a symbol means that it’s optional. A <code class="language-plaintext highlighter-rouge">*</code> 
+means zero, one, or more occurrence. <code class="language-plaintext highlighter-rouge">+</code> means one or more occurrence. The <code class="language-plaintext highlighter-rouge">|</code> character separates options, exactly one of them can be used.
 The language uses parantheses to specify groups of tokens.</p>
 
 <h2 id="compilation-units">Compilation Units</h2>
 
 <p>Each file is a compilation unit that contains zero, one, or more test sets:</p>
 
-<p><em><code class="highlighter-rouge">compileUnit:</code></em> <em><code class="highlighter-rouge">testSet*</code></em></p>
+<p><em><code class="language-plaintext highlighter-rouge">compileUnit:</code></em> <em><code class="language-plaintext highlighter-rouge">testSet*</code></em></p>
 
 <h2 id="test-sets">Test Sets</h2>
 
-<p><em><code class="highlighter-rouge">testSet:</code>** 
-    <strong>testset</strong> *<code class="highlighter-rouge">identifier</code></em> <strong>{</strong><br />
-    <em><strong>sp48mode</strong> *<code class="highlighter-rouge">?</code></em><br />
-    <em><code class="highlighter-rouge">sourceContext</code></em><br />
-    <em><code class="highlighter-rouge">callstub?</code></em><br />
-    <em><code class="highlighter-rouge">dataBlock?</code></em><br />
-    <em><code class="highlighter-rouge">initSettings?</code></em><br />
-    <em><code class="highlighter-rouge">testBlock*</code></em><br />
+<p><em><code class="language-plaintext highlighter-rouge">testSet:</code>** 
+    <strong>testset</strong> *<code class="language-plaintext highlighter-rouge">identifier</code></em> <strong>{</strong><br />
+    <em><strong>sp48mode</strong> *<code class="language-plaintext highlighter-rouge">?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">sourceContext</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">callstub?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">dataBlock?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">initSettings?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">testBlock*</code></em><br />
     <strong>}</strong></p>
 
 <h3 id="using-sp48mode">Using sp48mode</h3>
@@ -905,7 +905,7 @@ The language uses parantheses to specify groups of tokens.</p>
 <p>When you work with Spectrum 128K, Spectrum ++, or Spectrum Next, you can specify that you intend to
 start the Spectrum virtual machine in Spectrum 48K mode:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
 {
     sp48mode;
     source "../Z80CodeFiles/CodeSamples.z80asm";
@@ -913,18 +913,18 @@ start the Spectrum virtual machine in Spectrum 48K mode:</p>
 }
 </code></pre></div></div>
 
-<p>In this mode, you can be sure that the Spectrum 48K ROM is paged into the <code class="highlighter-rouge">#0000</code>-<code class="highlighter-rouge">#3FFF</code> address range,
+<p>In this mode, you can be sure that the Spectrum 48K ROM is paged into the <code class="language-plaintext highlighter-rouge">#0000</code>-<code class="language-plaintext highlighter-rouge">#3FFF</code> address range,
 and memory paging is forbidden —, and thus, the test behaves exactly as if it were run on a Spectrum 48K model.</p>
 
 <h3 id="the-source-context">The Source Context</h3>
 
-<p><em><code class="highlighter-rouge">sourceContext:</code></em>	 <strong>source</strong> <em><code class="highlighter-rouge">string</code></em> <em><code class="highlighter-rouge">(</code></em> <strong>symbols</strong> <em><code class="highlighter-rouge">identifier+)?</code></em> <strong>;</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">sourceContext:</code></em>	 <strong>source</strong> <em><code class="language-plaintext highlighter-rouge">string</code></em> <em><code class="language-plaintext highlighter-rouge">(</code></em> <strong>symbols</strong> <em><code class="language-plaintext highlighter-rouge">identifier+)?</code></em> <strong>;</strong></p>
 
 <p>Each test set is named with a unique identifier. The only mandatory element of a <strong>testset</strong> declaration is 
 the source context that names the source file used within the test set. You can add optional conditional symbols
 that to compile the source code. Here are a few samples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset MyFirstSet
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset MyFirstSet
 {
     source "../Z80CodeFiles/CodeSamples.z80asm";
 }
@@ -935,16 +935,16 @@ testset MySecondSet
 }
 </code></pre></div></div>
 
-<p>Both test sets use the <code class="highlighter-rouge">../Z80CodeFiles/CodeSamples.z80asm</code> source code file (path relative to the test file).
-Nonetheless, <code class="highlighter-rouge">MySecondSet</code> passes the <code class="highlighter-rouge">DEBUG</code> and <code class="highlighter-rouge">SP128</code> pre-defined symbols to the Z80 Assembler.</p>
+<p>Both test sets use the <code class="language-plaintext highlighter-rouge">../Z80CodeFiles/CodeSamples.z80asm</code> source code file (path relative to the test file).
+Nonetheless, <code class="language-plaintext highlighter-rouge">MySecondSet</code> passes the <code class="language-plaintext highlighter-rouge">DEBUG</code> and <code class="language-plaintext highlighter-rouge">SP128</code> pre-defined symbols to the Z80 Assembler.</p>
 
-<p>The test engine recognizes the symbols you declare in the source context. For example, if you has a <code class="highlighter-rouge">MyRoutine</code> 
+<p>The test engine recognizes the symbols you declare in the source context. For example, if you has a <code class="language-plaintext highlighter-rouge">MyRoutine</code> 
 symbol in the source code, you can use it within the test file. The compiler will understand it, and replaces the
 symbol with its value.</p>
 
 <h3 id="the-callstub-option">The Callstub Option</h3>
 
-<p><em><code class="highlighter-rouge">callstub:</code></em>	<strong>callstub</strong> <em><code class="highlighter-rouge">expr</code></em> <strong>;</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">callstub:</code></em>	<strong>callstub</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> <strong>;</strong></p>
 
 <p>This option defines the address to use for a three-byte call stub when running unit tests. You will learn about 
 this option later when I treat the semantics of test execution.</p>
@@ -954,30 +954,30 @@ this option later when I treat the semantics of test execution.</p>
 <p>A test set’s data block is to define values and byte array patterns that represent a block of the memory. Data block 
 entries have unique identifiers you can use in the tests to reference them.</p>
 
-<p><em><code class="highlighter-rouge">dataBlock:</code></em>	<strong>data</strong> <strong>{</strong> <em><code class="highlighter-rouge">dataBlockBody*</code></em> <strong>}</strong> <strong>;</strong><em><code class="highlighter-rouge">?</code></em><br />
-<em><code class="highlighter-rouge">dataBlockBody:</code></em> <em><code class="highlighter-rouge">valueDef</code></em> | <em><code class="highlighter-rouge">memPattern</code></em> 
-<em><code class="highlighter-rouge">valueDef:</code></em>	<em><code class="highlighter-rouge">identifier</code></em> <strong>:</strong> <em><code class="highlighter-rouge">expr</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">memPattern:</code></em> <em><code class="highlighter-rouge">identifier</code></em> <strong>{</strong> <em><code class="highlighter-rouge">memPatternBody+</code></em> <strong>}</strong> | <em><code class="highlighter-rouge">identifier</code></em> <strong>:</strong> <em><code class="highlighter-rouge">text</code></em><br />
-<em><code class="highlighter-rouge">memPatternBody:</code></em> <em><code class="highlighter-rouge">(byteSet</code></em> | <em><code class="highlighter-rouge">wordSet</code></em> | <em><code class="highlighter-rouge">text)</code></em><br />
-<em><code class="highlighter-rouge">byteSet:</code></em> ( <strong>byte</strong><em><code class="highlighter-rouge">?</code></em>) <em><code class="highlighter-rouge">expr</code></em> ( <strong>,</strong> <em><code class="highlighter-rouge">expr</code></em>)<em><code class="highlighter-rouge">*</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">wordSet:</code></em> ( <strong>word</strong><em><code class="highlighter-rouge">?</code></em>) <em><code class="highlighter-rouge">expr</code></em> ( <strong>,</strong> <em><code class="highlighter-rouge">expr</code></em>)<em><code class="highlighter-rouge">*</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">text:</code></em> ( <strong>text</strong> *<code class="highlighter-rouge">?*</code> ) *<code class="highlighter-rouge">string*</code> <strong>;</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">dataBlock:</code></em>	<strong>data</strong> <strong>{</strong> <em><code class="language-plaintext highlighter-rouge">dataBlockBody*</code></em> <strong>}</strong> <strong>;</strong><em><code class="language-plaintext highlighter-rouge">?</code></em><br />
+<em><code class="language-plaintext highlighter-rouge">dataBlockBody:</code></em> <em><code class="language-plaintext highlighter-rouge">valueDef</code></em> | <em><code class="language-plaintext highlighter-rouge">memPattern</code></em> 
+<em><code class="language-plaintext highlighter-rouge">valueDef:</code></em>	<em><code class="language-plaintext highlighter-rouge">identifier</code></em> <strong>:</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">memPattern:</code></em> <em><code class="language-plaintext highlighter-rouge">identifier</code></em> <strong>{</strong> <em><code class="language-plaintext highlighter-rouge">memPatternBody+</code></em> <strong>}</strong> | <em><code class="language-plaintext highlighter-rouge">identifier</code></em> <strong>:</strong> <em><code class="language-plaintext highlighter-rouge">text</code></em><br />
+<em><code class="language-plaintext highlighter-rouge">memPatternBody:</code></em> <em><code class="language-plaintext highlighter-rouge">(byteSet</code></em> | <em><code class="language-plaintext highlighter-rouge">wordSet</code></em> | <em><code class="language-plaintext highlighter-rouge">text)</code></em><br />
+<em><code class="language-plaintext highlighter-rouge">byteSet:</code></em> ( <strong>byte</strong><em><code class="language-plaintext highlighter-rouge">?</code></em>) <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>,</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>)<em><code class="language-plaintext highlighter-rouge">*</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">wordSet:</code></em> ( <strong>word</strong><em><code class="language-plaintext highlighter-rouge">?</code></em>) <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>,</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>)<em><code class="language-plaintext highlighter-rouge">*</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">text:</code></em> ( <strong>text</strong> *<code class="language-plaintext highlighter-rouge">?*</code> ) *<code class="language-plaintext highlighter-rouge">string*</code> <strong>;</strong></p>
 
 <p>As the abstract syntax notation shows, it’s pretty easy to define values:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>data
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>data
 {
      four: 1 + 3;
      helloWorld: "hello";
 }
 </code></pre></div></div>
 
-<p>Here, the <code class="highlighter-rouge">four</code> identifier represents the constant 4; <code class="highlighter-rouge">helloWorld</code> represents an array of 5 bytes, each 
+<p>Here, the <code class="language-plaintext highlighter-rouge">four</code> identifier represents the constant 4; <code class="language-plaintext highlighter-rouge">helloWorld</code> represents an array of 5 bytes, each 
 byte stands for the corresponding character.</p>
 
-<p>You can define more complex byte arrays with the <code class="highlighter-rouge">byte</code>, <code class="highlighter-rouge">word</code>, and optional <code class="highlighter-rouge">text</code> keywords:</p>
+<p>You can define more complex byte arrays with the <code class="language-plaintext highlighter-rouge">byte</code>, <code class="language-plaintext highlighter-rouge">word</code>, and optional <code class="language-plaintext highlighter-rouge">text</code> keywords:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>data
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>data
 {
     myMemBlock
     {
@@ -988,7 +988,7 @@ byte stands for the corresponding character.</p>
 }
 </code></pre></div></div>
 
-<p>Here, <code class="highlighter-rouge">myMemblock</code> is a 10 bytes long array with these values:
+<p>Here, <code class="language-plaintext highlighter-rouge">myMemblock</code> is a 10 bytes long array with these values:
 #12, #34, #36, #38, #AC, #23, #00, #30, #31, #32.</p>
 
 <blockquote>
@@ -1000,25 +1000,25 @@ byte stands for the corresponding character.</p>
 <p>Before running tests, you can initialize a test set by assigning values to Z80 registers, 
 setting or reseting flags, copying values into the memory.</p>
 
-<p><em><code class="highlighter-rouge">initSettings:</code></em>	<strong>init</strong> <strong>{</strong> <em><code class="highlighter-rouge">assignment+</code></em> <strong>}</strong><br />
-<em><code class="highlighter-rouge">assignment:</code></em> ( <em><code class="highlighter-rouge">regAssignment</code></em> | <em><code class="highlighter-rouge">flagStatus</code></em> | <em><code class="highlighter-rouge">memAssignment</code></em> ) <strong>;</strong><br />
-<em><code class="highlighter-rouge">regAssignment:</code></em>  <em><code class="highlighter-rouge">registerSpec</code></em> <strong>:</strong> <em><code class="highlighter-rouge">expr</code></em><br />
-<em><code class="highlighter-rouge">registerSpec:</code></em> <strong>a</strong> | <strong>A</strong> | <strong>b</strong> | <strong>B</strong> | <strong>c</strong> | <strong>C</strong> | <strong>d</strong> | <strong>D</strong><br />
+<p><em><code class="language-plaintext highlighter-rouge">initSettings:</code></em>	<strong>init</strong> <strong>{</strong> <em><code class="language-plaintext highlighter-rouge">assignment+</code></em> <strong>}</strong><br />
+<em><code class="language-plaintext highlighter-rouge">assignment:</code></em> ( <em><code class="language-plaintext highlighter-rouge">regAssignment</code></em> | <em><code class="language-plaintext highlighter-rouge">flagStatus</code></em> | <em><code class="language-plaintext highlighter-rouge">memAssignment</code></em> ) <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">regAssignment:</code></em>  <em><code class="language-plaintext highlighter-rouge">registerSpec</code></em> <strong>:</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em><br />
+<em><code class="language-plaintext highlighter-rouge">registerSpec:</code></em> <strong>a</strong> | <strong>A</strong> | <strong>b</strong> | <strong>B</strong> | <strong>c</strong> | <strong>C</strong> | <strong>d</strong> | <strong>D</strong><br />
     | <strong>e</strong> | <strong>E</strong>	| <strong>h</strong> | <strong>H</strong> | <strong>l</strong> | <strong>L</strong> | <strong>xl</strong> | <strong>XL</strong><br />
     | <strong>xh</strong> | <strong>XH</strong> |	<strong>yl</strong> | <strong>YL</strong> | <strong>yh</strong> | <strong>YH</strong> |	<strong>ixl</strong>| <strong>IXL</strong> | <strong>IXl</strong><br />
     | <strong>ixh</strong>| <strong>IXH</strong> | <strong>IXh</strong> | <strong>iyl</strong> | <strong>IYL</strong> | <strong>IYl</strong> | <strong>iyh</strong> | <strong>IYH</strong> | <strong>IYh</strong><br />
     | <strong>i</strong> | <strong>I</strong> | <strong>r</strong> | <strong>R</strong> | <strong>bc</strong> | <strong>BC</strong> |	<strong>de</strong> | <strong>DE</strong><br />
     | <strong>hl</strong> | <strong>HL</strong> | <strong>sp</strong> | <strong>SP</strong> | <strong>ix</strong> | <strong>IX</strong> | <strong>iy</strong> | <strong>IY</strong><br />
     | <strong>af’</strong> | <strong>AF’</strong> | <strong>bc’</strong> | <strong>BC’</strong>	| <strong>de’</strong> | <strong>DE’</strong> | <strong>hl’</strong> | <strong>HL’</strong><br />
-<em><code class="highlighter-rouge">flagStatus:</code></em> <strong>.z</strong> | <strong>.Z</strong> | <strong>.nz</strong> | <strong>.NZ</strong> |	<strong>.c</strong> | <strong>.C</strong> | <strong>.nc</strong> | <strong>.NC</strong><br />
+<em><code class="language-plaintext highlighter-rouge">flagStatus:</code></em> <strong>.z</strong> | <strong>.Z</strong> | <strong>.nz</strong> | <strong>.NZ</strong> |	<strong>.c</strong> | <strong>.C</strong> | <strong>.nc</strong> | <strong>.NC</strong><br />
     | <strong>.pe</strong> | <strong>.PE</strong> | <strong>.po</strong> | <strong>.PO</strong>	| <strong>.p</strong> | <strong>.P</strong> | <strong>.m</strong> | <strong>.M</strong><br />
     | <strong>.n</strong>| <strong>.N</strong> | <strong>.a</strong> | <strong>.A</strong> | <strong>.h</strong> | <strong>.H</strong> | <strong>.nh</strong> | <strong>.NH</strong><br />
     | <strong>.3</strong> | <strong>.n3</strong> | <strong>.N3</strong> | <strong>.5</strong> | <strong>.n5</strong>| <strong>.N5</strong><br />
-<em><code class="highlighter-rouge">memAssignment:</code></em>	 <strong>[</strong> <em><code class="highlighter-rouge">expr</code></em> <strong>]</strong> <strong>:</strong> <em><code class="highlighter-rouge">expr</code></em> ( <strong>:</strong> <em><code class="highlighter-rouge">expr</code></em>)<em><code class="highlighter-rouge">?</code></em></p>
+<em><code class="language-plaintext highlighter-rouge">memAssignment:</code></em>	 <strong>[</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> <strong>]</strong> <strong>:</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>:</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>)<em><code class="language-plaintext highlighter-rouge">?</code></em></p>
 
 <p>Here is a short sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>init
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>init
 {
     bc: 0;
     hl: CustomBuffer;
@@ -1028,13 +1028,13 @@ setting or reseting flags, copying values into the memory.</p>
 }
 </code></pre></div></div>
 
-<p>This <code class="highlighter-rouge">init</code> declaration sets the valuu of the <strong>BC</strong> and <strong>HL</strong> register pairs to <code class="highlighter-rouge">0</code>, and <code class="highlighter-rouge">CustomBuffer</code>, respectively.
-The Zero flag is set, while Carry is reset. The declaration copies the contents of the <code class="highlighter-rouge">myLogoArray</code> to the <code class="highlighter-rouge">#4000</code> address.</p>
+<p>This <code class="language-plaintext highlighter-rouge">init</code> declaration sets the valuu of the <strong>BC</strong> and <strong>HL</strong> register pairs to <code class="language-plaintext highlighter-rouge">0</code>, and <code class="language-plaintext highlighter-rouge">CustomBuffer</code>, respectively.
+The Zero flag is set, while Carry is reset. The declaration copies the contents of the <code class="language-plaintext highlighter-rouge">myLogoArray</code> to the <code class="language-plaintext highlighter-rouge">#4000</code> address.</p>
 
-<p>With an alternative <code class="highlighter-rouge">memAssignment</code> syntax, you can declare the length of a byte array before copying it into the memory.
-For example, the following code snippet copies only the first 32 bytes to the <code class="highlighter-rouge">#4000</code> address:</p>
+<p>With an alternative <code class="language-plaintext highlighter-rouge">memAssignment</code> syntax, you can declare the length of a byte array before copying it into the memory.
+For example, the following code snippet copies only the first 32 bytes to the <code class="language-plaintext highlighter-rouge">#4000</code> address:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>init
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>init
 {
     [#4000]: myLogoArray:32;
 }
@@ -1044,28 +1044,28 @@ For example, the following code snippet copies only the first 32 bytes to the <c
 
 <p>You can declare default and parameterized test cases within test blocks:</p>
 
-<p><em><code class="highlighter-rouge">testBlock:</code></em>	<strong>test</strong> <em><code class="highlighter-rouge">identifier</code></em> <strong>{</strong><br />
-    ( <strong>category</strong> <em><code class="highlighter-rouge">identifier</code></em> <strong>;</strong>) <em><code class="highlighter-rouge">?</code></em><br />
-    <em><code class="highlighter-rouge">testOptions?</code></em><br />
-    <em><code class="highlighter-rouge">setupCode?</code></em><br />
-    <em><code class="highlighter-rouge">testParams?</code></em><br />
-    <em><code class="highlighter-rouge">testCase*</code></em><br />
-    <em><code class="highlighter-rouge">arrange?*</code></em><br />
-    <em><code class="highlighter-rouge">act</code></em><br />
-    <em><code class="highlighter-rouge">assert?</code></em><br />
-    <em><code class="highlighter-rouge">cleanupCode?</code></em><br />
+<p><em><code class="language-plaintext highlighter-rouge">testBlock:</code></em>	<strong>test</strong> <em><code class="language-plaintext highlighter-rouge">identifier</code></em> <strong>{</strong><br />
+    ( <strong>category</strong> <em><code class="language-plaintext highlighter-rouge">identifier</code></em> <strong>;</strong>) <em><code class="language-plaintext highlighter-rouge">?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">testOptions?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">setupCode?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">testParams?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">testCase*</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">arrange?*</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">act</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">assert?</code></em><br />
+    <em><code class="language-plaintext highlighter-rouge">cleanupCode?</code></em><br />
     <strong>}</strong></p>
 
 <p>Each test must have a uniuque indentifier, and may declare a category, which is reserved for future extension. Of course,
-multiple tests may have the same category. The only required part of a test is the <code class="highlighter-rouge">act</code> declaration that describes what code
+multiple tests may have the same category. The only required part of a test is the <code class="language-plaintext highlighter-rouge">act</code> declaration that describes what code
 to run within the test.</p>
 
 <h3 id="test-options">Test Options</h3>
 
 <p>Tests may have options the engine uses when running them:</p>
 
-<p><em><code class="highlighter-rouge">testOptions:</code></em> <strong>with</strong> <em><code class="highlighter-rouge">testOption</code></em> ( <strong>,</strong> <em><code class="highlighter-rouge">testOption</code></em>)<em><code class="highlighter-rouge">*</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">testOption:</code></em> <strong>timeout</strong> <em><code class="highlighter-rouge">expr</code></em> | <strong>di</strong> | <strong>ei</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">testOptions:</code></em> <strong>with</strong> <em><code class="language-plaintext highlighter-rouge">testOption</code></em> ( <strong>,</strong> <em><code class="language-plaintext highlighter-rouge">testOption</code></em>)<em><code class="language-plaintext highlighter-rouge">*</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">testOption:</code></em> <strong>timeout</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> | <strong>di</strong> | <strong>ei</strong></p>
 
 <p>The timeout option sets the timeout value for the specified test. When it expires, the engine aborts the test, and thus 
 you can even create code with infinite loops, it does not freezes the test engine.</p>
@@ -1074,8 +1074,8 @@ you can even create code with infinite loops, it does not freezes the test engin
   <p>The default timeout value in 100 milliseconds.</p>
 </blockquote>
 
-<p>With the <code class="highlighter-rouge">ei</code> and <code class="highlighter-rouge">di</code> options you can enable or disable interrupts explicitly before running any code. These 
-options are just helpers. For tighter control, use the <code class="highlighter-rouge">EI</code> and <code class="highlighter-rouge">DI</code> Z80 instructions explicitly in your code.</p>
+<p>With the <code class="language-plaintext highlighter-rouge">ei</code> and <code class="language-plaintext highlighter-rouge">di</code> options you can enable or disable interrupts explicitly before running any code. These 
+options are just helpers. For tighter control, use the <code class="language-plaintext highlighter-rouge">EI</code> and <code class="language-plaintext highlighter-rouge">DI</code> Z80 instructions explicitly in your code.</p>
 
 <blockquote>
   <p>By default, interrupts are enabled.</p>
@@ -1083,7 +1083,7 @@ options are just helpers. For tighter control, use the <code class="highlighter-
 
 <p>The following options run a test case with 40 milliseconds of timeout and disable the interrupt before starting the code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>with timeout 40, di;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>with timeout 40, di;
 </code></pre></div></div>
 
 <h3 id="running-code-in-tests">Running Code in Tests</h3>
@@ -1091,20 +1091,20 @@ options are just helpers. For tighter control, use the <code class="highlighter-
 <p>You can declare three kinds of code to run in a single test. Setup code runs once before each test cases, Cleanup code once 
 after all cases completed (either successfully or failed). The Act code runs for every test cases.</p>
 
-<p><em><code class="highlighter-rouge">setupCode:</code></em> <strong>setup</strong> <em><code class="highlighter-rouge">invokeCode</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">act:</code></em> <strong>act</strong> <em><code class="highlighter-rouge">invokeCode</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">cleanupCode:</code></em> <strong>cleanup</strong> <em><code class="highlighter-rouge">invokeCode</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">invokeCode:</code></em> <strong>call</strong> <em><code class="highlighter-rouge">expr</code></em> | <strong>start</strong> <em><code class="highlighter-rouge">expr</code></em> ( <strong>stop</strong> <em><code class="highlighter-rouge">expr</code></em> | <strong>halt</strong> )</p>
+<p><em><code class="language-plaintext highlighter-rouge">setupCode:</code></em> <strong>setup</strong> <em><code class="language-plaintext highlighter-rouge">invokeCode</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">act:</code></em> <strong>act</strong> <em><code class="language-plaintext highlighter-rouge">invokeCode</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">cleanupCode:</code></em> <strong>cleanup</strong> <em><code class="language-plaintext highlighter-rouge">invokeCode</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">invokeCode:</code></em> <strong>call</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> | <strong>start</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>stop</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> | <strong>halt</strong> )</p>
 
 <p>You have three ways to invoke code:</p>
 <ul>
-  <li><strong><code class="highlighter-rouge">call</code></strong> uses the Z80 <code class="highlighter-rouge">CALL</code> instruction to call the code with the specified address. Your code should have 
-a <code class="highlighter-rouge">RET</code> instruction. When the code successfully executes the <code class="highlighter-rouge">RET</code> statement, the engine completes the test code.</li>
-  <li>With the <strong><code class="highlighter-rouge">start</code></strong> and <strong><code class="highlighter-rouge">stop</code></strong> combination, you can explicitly specify a start and a stop address. The engine jumps
+  <li><strong><code class="language-plaintext highlighter-rouge">call</code></strong> uses the Z80 <code class="language-plaintext highlighter-rouge">CALL</code> instruction to call the code with the specified address. Your code should have 
+a <code class="language-plaintext highlighter-rouge">RET</code> instruction. When the code successfully executes the <code class="language-plaintext highlighter-rouge">RET</code> statement, the engine completes the test code.</li>
+  <li>With the <strong><code class="language-plaintext highlighter-rouge">start</code></strong> and <strong><code class="language-plaintext highlighter-rouge">stop</code></strong> combination, you can explicitly specify a start and a stop address. The engine jumps
 to the start address, and completes the test code as soon as it reaches the stop address. It does not executes the instruction
 at the stop address.</li>
-  <li>With the <strong><code class="highlighter-rouge">start</code></strong> and <strong><code class="highlighter-rouge">halt</code></strong> combination the test engine starts the code at the specified address, and completes it
-when it reaches a <code class="highlighter-rouge">HALT</code> statement.</li>
+  <li>With the <strong><code class="language-plaintext highlighter-rouge">start</code></strong> and <strong><code class="language-plaintext highlighter-rouge">halt</code></strong> combination the test engine starts the code at the specified address, and completes it
+when it reaches a <code class="language-plaintext highlighter-rouge">HALT</code> statement.</li>
 </ul>
 
 <h3 id="test-parameters-and-test-cases">Test Parameters and Test Cases</h3>
@@ -1112,10 +1112,10 @@ when it reaches a <code class="highlighter-rouge">HALT</code> statement.</li>
 <p>You can define parameterized test cases. You name test parameters, and test cases declare values to substitute a
 particular parameter:</p>
 
-<p><em><code class="highlighter-rouge">testParams:</code></em> <strong>params</strong> <em><code class="highlighter-rouge">identifier</code></em> ( <strong>,</strong> <em><code class="highlighter-rouge">identifier</code></em>) <em><code class="highlighter-rouge">*</code></em> <strong>;</strong><br />
-<em><code class="highlighter-rouge">testCase:</code></em> <strong>case</strong> <em><code class="highlighter-rouge">expr</code></em> ( <strong>,</strong> <em><code class="highlighter-rouge">expr</code></em>) <em><code class="highlighter-rouge">*</code></em> <strong>;</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">testParams:</code></em> <strong>params</strong> <em><code class="language-plaintext highlighter-rouge">identifier</code></em> ( <strong>,</strong> <em><code class="language-plaintext highlighter-rouge">identifier</code></em>) <em><code class="language-plaintext highlighter-rouge">*</code></em> <strong>;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">testCase:</code></em> <strong>case</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>,</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>) <em><code class="language-plaintext highlighter-rouge">*</code></em> <strong>;</strong></p>
 
-<p>Of course, the number of parameters and expressions after the <code class="highlighter-rouge">case</code> keyword must match for each test cases.</p>
+<p>Of course, the number of parameters and expressions after the <code class="language-plaintext highlighter-rouge">case</code> keyword must match for each test cases.</p>
 
 <blockquote>
   <p>Soon, you will see a complete sample that demonstrates these concepts.</p>
@@ -1123,38 +1123,38 @@ particular parameter:</p>
 
 <h3 id="arrange-declarations">Arrange Declarations</h3>
 
-<p>Each test block has an <code class="highlighter-rouge">arrange</code> declaration that runs before the engine invokes the <code class="highlighter-rouge">act</code> code of a test case.
-It has the same assignment syntax, as the <code class="highlighter-rouge">init</code> construct of a test set:</p>
+<p>Each test block has an <code class="language-plaintext highlighter-rouge">arrange</code> declaration that runs before the engine invokes the <code class="language-plaintext highlighter-rouge">act</code> code of a test case.
+It has the same assignment syntax, as the <code class="language-plaintext highlighter-rouge">init</code> construct of a test set:</p>
 
-<p><em><code class="highlighter-rouge">arrange:</code></em> <strong>arrange</strong> <strong>{</strong> <em><code class="highlighter-rouge">assignment+</code></em> <strong>}</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">arrange:</code></em> <strong>arrange</strong> <strong>{</strong> <em><code class="language-plaintext highlighter-rouge">assignment+</code></em> <strong>}</strong></p>
 
 <h3 id="assertions">Assertions</h3>
 
 <p>After the test code ran, you can run assertions. Assertions are a list of Boolean expressions, and the test engine 
 evaluates them in their declaration order. All of them should be true to make the test case successful:</p>
 
-<p><em><code class="highlighter-rouge">assert:</code></em> <strong>assert</strong> <strong>{</strong> ( <em><code class="highlighter-rouge">expr</code></em> <strong>;</strong>)*<code class="highlighter-rouge">+*</code> <strong>}</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">assert:</code></em> <strong>assert</strong> <strong>{</strong> ( <em><code class="language-plaintext highlighter-rouge">expr</code></em> <strong>;</strong>)*<code class="language-plaintext highlighter-rouge">+*</code> <strong>}</strong></p>
 
 <p>You can use special assertion expressions:</p>
 
-<p><em><code class="highlighter-rouge">addrSpec:</code></em> <strong>[</strong> <em><code class="highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="highlighter-rouge">expr</code></em>) <em><code class="highlighter-rouge">?</code></em> <strong>]</strong><br />
-<em><code class="highlighter-rouge">reachSpec:</code></em> <strong>&lt;.</strong> <em><code class="highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="highlighter-rouge">expr</code></em>) <em><code class="highlighter-rouge">?</code></em> <strong>.&gt;</strong><br />
-<em><code class="highlighter-rouge">memReadSpec:</code></em> <strong>&lt;|</strong> <em><code class="highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="highlighter-rouge">expr</code></em>) <em><code class="highlighter-rouge">?</code></em> <strong>|&gt;</strong><br />
-<em><code class="highlighter-rouge">memWriteSpec:</code></em> <strong>&lt;||</strong> <em><code class="highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="highlighter-rouge">expr</code></em>) <em><code class="highlighter-rouge">?</code></em> <strong>||&gt;</strong></p>
+<p><em><code class="language-plaintext highlighter-rouge">addrSpec:</code></em> <strong>[</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>) <em><code class="language-plaintext highlighter-rouge">?</code></em> <strong>]</strong><br />
+<em><code class="language-plaintext highlighter-rouge">reachSpec:</code></em> <strong>&lt;.</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>) <em><code class="language-plaintext highlighter-rouge">?</code></em> <strong>.&gt;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">memReadSpec:</code></em> <strong>&lt;|</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>) <em><code class="language-plaintext highlighter-rouge">?</code></em> <strong>|&gt;</strong><br />
+<em><code class="language-plaintext highlighter-rouge">memWriteSpec:</code></em> <strong>&lt;||</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em> ( <strong>..</strong> <em><code class="language-plaintext highlighter-rouge">expr</code></em>) <em><code class="language-plaintext highlighter-rouge">?</code></em> <strong>||&gt;</strong></p>
 
 <p>These assertions retrieves a byte array. This may contain only a single byte (only one address specified)
 or a sequence of bytes (both a start address and an inclusive end address is specified).</p>
 
-<p>An <code class="highlighter-rouge">addrSpec</code> retrives the contenst of memory specified by the address range. Each byte in the array is the
+<p>An <code class="language-plaintext highlighter-rouge">addrSpec</code> retrives the contenst of memory specified by the address range. Each byte in the array is the
 copy of the corresponding memory address.</p>
 
-<p>In the <code class="highlighter-rouge">reachSpec</code> byte array each byte indicates if the test’s control flow reached that address 
+<p>In the <code class="language-plaintext highlighter-rouge">reachSpec</code> byte array each byte indicates if the test’s control flow reached that address 
 (the instruction at that address was executed) with a Boolean value. Similarly, the arrays retrieved by 
-<code class="highlighter-rouge">memReadSpec</code> and <code class="highlighter-rouge">memWriteSpec</code> indicate if the specified memory address was read, or written, respectively.</p>
+<code class="language-plaintext highlighter-rouge">memReadSpec</code> and <code class="language-plaintext highlighter-rouge">memWriteSpec</code> indicate if the specified memory address was read, or written, respectively.</p>
 
 <p>Let’s see an example of using these assertions:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
 {
     source "../Z80CodeFiles/CodeSamples.z80asm";
     data
@@ -1192,13 +1192,13 @@ copy of the corresponding memory address.</p>
 }
 </code></pre></div></div>
 
-<p>Here, the <code class="highlighter-rouge">IncLoop</code> method accepts a bufferr address in <strong>HL</strong> and 
-a byte count in <strong>B</strong>. <code class="highlighter-rouge">IncLoop</code> increments each byte by 1 within the
+<p>Here, the <code class="language-plaintext highlighter-rouge">IncLoop</code> method accepts a bufferr address in <strong>HL</strong> and 
+a byte count in <strong>B</strong>. <code class="language-plaintext highlighter-rouge">IncLoop</code> increments each byte by 1 within the
 buffer. As you can see, the assert section checks these conditions:</p>
 <ul>
-  <li>The contents of the conversion buffer is the one specified in <code class="highlighter-rouge">result</code>.</li>
-  <li>The code executions reaches the <code class="highlighter-rouge">IncLoop</code> address.</li>
-  <li>The contents of the buffer (5 bytes starting from <code class="highlighter-rouge">ConversionBuffer</code>) is read.</li>
+  <li>The contents of the conversion buffer is the one specified in <code class="language-plaintext highlighter-rouge">result</code>.</li>
+  <li>The code executions reaches the <code class="language-plaintext highlighter-rouge">IncLoop</code> address.</li>
+  <li>The contents of the buffer (5 bytes starting from <code class="language-plaintext highlighter-rouge">ConversionBuffer</code>) is read.</li>
   <li>The contents of the buffer is written.</li>
 </ul>
 
@@ -1206,7 +1206,7 @@ buffer. As you can see, the assert section checks these conditions:</p>
 
 <p>Here is a short sample that demonstrates the concepts you learned:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
 {
     source "../Z80CodeFiles/CodeSamples.z80asm";
 
@@ -1251,7 +1251,7 @@ buffer. As you can see, the assert section checks these conditions:</p>
 
 <p>The code file behind this test is the following:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Start:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Start:
 	.org #8000
 
 ; You can invoke this test with 'call AddAAndB'
@@ -1266,19 +1266,19 @@ StopPoint:
     nop
 </code></pre></div></div>
 
-<p>The first test, <code class="highlighter-rouge">AddAAndBCallWorksAsExpected</code>, has three test cases with parameters <code class="highlighter-rouge">parA</code>, <code class="highlighter-rouge">parB</code>, 
-and <code class="highlighter-rouge">parExpected</code>, respectively. The engine executes each test case with these steps:</p>
+<p>The first test, <code class="language-plaintext highlighter-rouge">AddAAndBCallWorksAsExpected</code>, has three test cases with parameters <code class="language-plaintext highlighter-rouge">parA</code>, <code class="language-plaintext highlighter-rouge">parB</code>, 
+and <code class="language-plaintext highlighter-rouge">parExpected</code>, respectively. The engine executes each test case with these steps:</p>
 <ul>
-  <li>Sets the <strong>A</strong> and <strong>B</strong> CPU registers with the current value of <code class="highlighter-rouge">parA</code> and <code class="highlighter-rouge">parB</code>. For the first case, 
+  <li>Sets the <strong>A</strong> and <strong>B</strong> CPU registers with the current value of <code class="language-plaintext highlighter-rouge">parA</code> and <code class="language-plaintext highlighter-rouge">parB</code>. For the first case, 
 these are 1, and 2. The second case runs with 2, and 3.</li>
-  <li>Calls the <code class="highlighter-rouge">AddAAndB</code> subroutine, that executes the <code class="highlighter-rouge">add a,b</code> instruction, and then completes the 
-call with <code class="highlighter-rouge">RET</code></li>
-  <li>Checks if the content of <strong>A</strong> equals with the expected result, as declared in <code class="highlighter-rouge">parExpected</code>.</li>
+  <li>Calls the <code class="language-plaintext highlighter-rouge">AddAAndB</code> subroutine, that executes the <code class="language-plaintext highlighter-rouge">add a,b</code> instruction, and then completes the 
+call with <code class="language-plaintext highlighter-rouge">RET</code></li>
+  <li>Checks if the content of <strong>A</strong> equals with the expected result, as declared in <code class="language-plaintext highlighter-rouge">parExpected</code>.</li>
 </ul>
 
-<p>The second test has only a default case. It sets up <strong>A</strong> and <strong>B</strong> explicitly in the <code class="highlighter-rouge">arrange</code> section 
-and checks the result in <code class="highlighter-rouge">assert</code>. You can observe that it does not call into the code, instead, it the test 
-jumps to the <code class="highlighter-rouge">AddAAndBWithStop</code> address, and completes when it reaches <code class="highlighter-rouge">StopPoint</code>.</p>
+<p>The second test has only a default case. It sets up <strong>A</strong> and <strong>B</strong> explicitly in the <code class="language-plaintext highlighter-rouge">arrange</code> section 
+and checks the result in <code class="language-plaintext highlighter-rouge">assert</code>. You can observe that it does not call into the code, instead, it the test 
+jumps to the <code class="language-plaintext highlighter-rouge">AddAAndBWithStop</code> address, and completes when it reaches <code class="language-plaintext highlighter-rouge">StopPoint</code>.</p>
 
             </div>
           </div>

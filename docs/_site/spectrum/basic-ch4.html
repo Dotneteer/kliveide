@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Looping | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Looping" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 4: Looping" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Looping","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch4","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch4"},"description":"CHAPTER 4: Looping","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch4","headline":"Looping","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch4"},"description":"CHAPTER 4: Looping","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -587,7 +587,7 @@
 
 <p>Suppose you want to input five numbers and add them together. One way (don’t type this in unless you are feeling dutiful) is to write</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET total=0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET total=0
 20 INPUT a
 30 LET total=total+a
 40 INPUT a
@@ -606,7 +606,7 @@ numbers would be, and to add a hundred would be just impossible.</p>
 
 <p>Much better is to set up a variable to count up to 5 and then stop the program, like this (which you should type in):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET total=0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET total=0
 20 LET count=1
 30 INPUT a
 40 REM count=number of times that a has been input so far
@@ -620,7 +620,7 @@ numbers would be, and to add a hundred would be just impossible.</p>
 
 <p>This sort of counting is so useful that there are two special commands to make it easier: the <strong>FOR</strong> command and the <strong>NEXT</strong> command. They are always used together. Using these, the program you have just typed in does exactly the same as</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET total=0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET total=0
 20 FOR c=1 TO5
 30 INPUT a
 40 REM c=number of times that a has been input so far
@@ -640,7 +640,7 @@ executed. Then, when c has finished its five values, line 80 is executed.</p>
 the <strong>FOR</strong> command. The most general form for a <strong>FOR</strong> command is <strong>FOR</strong> control variable = initial value <strong>TO</strong> limit <strong>STEP</strong> step where the control variable is a single letter, and the initial value, limit and step are all things that the computer can calculate as numbers — like the actual
 numbers themselves, or sums, or the names of numeric variables. So, if you replace line 20 in the program by</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 FOR c=1 TO 5 STEP 3/2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 FOR c=1 TO 5 STEP 3/2
 </code></pre></div></div>
 
 <p>then c will run through the values 1, 2.5 and 4. Notice that you don’t have to restrict yourself to whole numbers, and also that the control value does not
@@ -648,7 +648,7 @@ have to hit the limit exactly - it carries on looping as long as it is less than
 
 <p>Try this program, to print out the numbers from 1 to 10 in reverse order.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=10 TO 1 STEP -1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=10 TO 1 STEP -1
 20 PRINT n
 30 NEXT n
 </code></pre></div></div>
@@ -660,7 +660,7 @@ as the control variable is greater than or equal to the limit.</p>
 <p>You must be careful if you are running two <strong>FOR</strong> - <strong>NEXT</strong> loops together, one inside the other. Try this program, which prints out the numbers for a complete 
 set of six spot dominoes.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR m=0 TO 6 }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR m=0 TO 6 }
 20 FOR n=0 TO m } }
 30 PRINT m;":";n;" "; } n-loop } m-loop
 40 NEXT n } }
@@ -670,7 +670,7 @@ set of six spot dominoes.</p>
 
 <p>You can see that the n-loop is entirely inside the m-loop - they are properly nested. What must be avoided is having two <strong>FOR</strong> - <strong>NEXT</strong> loops that overlap without either being entirely inside the other, like this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM this program is wrong
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM this program is wrong
 10 FOR m=0 TO 6 }
 20 FOR n=0 TO m } m-loop }
 30 PRINT m;":";n;" "; } }
@@ -685,13 +685,13 @@ set of six spot dominoes.</p>
 
 <p>There is nothing whatever to stop you using <strong>FOR</strong> and <strong>NEXT</strong> in a direct command. For example, try:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FOR m=0 TO 10: PRINT m: NEXT m
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FOR m=0 TO 10: PRINT m: NEXT m
 </code></pre></div></div>
 
 <p>You can sometimes use this as a (somewhat artificial) way of getting round the restriction that you cannot <strong>GO TO</strong> anywhere inside a command - because a command
 has no line nurrber. For instance,</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FOR m=0 TO 1 STEP 0: INPUT a: PRINT a: NEXT m
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FOR m=0 TO 1 STEP 0: INPUT a: PRINT a: NEXT m
 </code></pre></div></div>
 
 <p>The step of zero here makes the command repeat itself forever.</p>
@@ -710,7 +710,7 @@ corresponding <strong>FOR</strong> statement. Persuade yourself that when the <s
   </li>
 </ol>
 
-<p><code class="highlighter-rouge">PRINT c</code></p>
+<p><code class="language-plaintext highlighter-rouge">PRINT c</code></p>
 
 <p>Why is the answer 6, and not 5?</p>
 
@@ -734,7 +734,7 @@ stop with the report <strong>D BREAK- CONT repeats</strong>. If you press any ot
   </li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>NEXT n
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>NEXT n
 </code></pre></div></div>
 
 <p>the program will go once round the loop, printing out the next number.</p>

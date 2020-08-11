@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Tape Explorer Commands | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Tape Explorer Commands" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="You can issue these commands in the Tape File Explorer tool window when you display a data block:" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-03T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Tape Explorer Commands","dateModified":"2019-01-03T00:00:00+01:00","datePublished":"2019-01-03T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/tape-explorer-commands","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/tape-explorer-commands"},"description":"You can issue these commands in the Tape File Explorer tool window when you display a data block:","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/tape-explorer-commands","headline":"Tape Explorer Commands","dateModified":"2019-01-03T00:00:00+01:00","datePublished":"2019-01-03T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/tape-explorer-commands"},"description":"You can issue these commands in the Tape File Explorer tool window when you display a data block:","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -880,25 +880,25 @@
 
 <h2 id="go-to-address-command">Go To Address Command</h2>
 
-<p><strong><em><code class="highlighter-rouge">hhhh</code></em></strong></p>
+<p><strong><em><code class="language-plaintext highlighter-rouge">hhhh</code></em></strong></p>
 
 <p>Scrolls the memory view to the address specified in <strong><em>hhhh</em></strong> (1-4 hexadecimal digits).</p>
 
 <h2 id="disassembly-command">Disassembly Command</h2>
 
-<p><strong><code class="highlighter-rouge">#</code></strong> <em><code class="highlighter-rouge">hhhh</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">#</code></strong> <em><code class="language-plaintext highlighter-rouge">hhhh</code></em></p>
 
-<p>Opens the disassembly pane at displays the Z80 disassembly of the data block starting at address in <strong><em>hhhh</em></strong> (1-4 hexadecimal digits). Do not forget that the first byte is the data block header (<code class="highlighter-rouge">$ff</code>), so to disassembly from the beginning of the block, use <code class="highlighter-rouge">#1</code>.</p>
+<p>Opens the disassembly pane at displays the Z80 disassembly of the data block starting at address in <strong><em>hhhh</em></strong> (1-4 hexadecimal digits). Do not forget that the first byte is the data block header (<code class="language-plaintext highlighter-rouge">$ff</code>), so to disassembly from the beginning of the block, use <code class="language-plaintext highlighter-rouge">#1</code>.</p>
 
 <h2 id="close-disassembly-pane-command">Close Disassembly Pane Command</h2>
 
-<p><strong><code class="highlighter-rouge">q</code></strong></p>
+<p><strong><code class="language-plaintext highlighter-rouge">q</code></strong></p>
 
 <p>Closes the disassembly pane. You can reopen it agin with the <strong>Disassembly</strong> command.</p>
 
 <h2 id="export-disassembly-command">Export Disassembly Command</h2>
 
-<p><strong><code class="highlighter-rouge">x</code></strong> <em><code class="highlighter-rouge">hhhh</code></em> <em><code class="highlighter-rouge">hhhh</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">x</code></strong> <em><code class="language-plaintext highlighter-rouge">hhhh</code></em> <em><code class="language-plaintext highlighter-rouge">hhhh</code></em></p>
 
 <p>This command exports the Z80 disassembly of the tape data block from the start address (inclusive), to the end address (inclusive) to export. When you run the command, it shows up a dialog to set a few options:</p>
 
@@ -906,15 +906,15 @@
 
 <h2 id="use-sinclair-basic-output">Use Sinclair BASIC output</h2>
 
-<p><strong><code class="highlighter-rouge">s</code></strong></p>
+<p><strong><code class="language-plaintext highlighter-rouge">s</code></strong></p>
 
-<p>Sets the BASIC listing display mode to <em>Sinclair</em>. In this mode, control characters (e.g., <strong>INK</strong>, <strong>PAPER</strong>, <strong>BRIGHT</strong>, etc.) are shown with their hexadecimal code between <code class="highlighter-rouge">°</code> characters:</p>
+<p>Sets the BASIC listing display mode to <em>Sinclair</em>. In this mode, control characters (e.g., <strong>INK</strong>, <strong>PAPER</strong>, <strong>BRIGHT</strong>, etc.) are shown with their hexadecimal code between <code class="language-plaintext highlighter-rouge">°</code> characters:</p>
 
 <p><img src="/kliveide/assets/images/commands/sinclair-basic-mode.png" alt="Sinclair mode" /></p>
 
 <h2 id="use-zx-basic-output">Use ZX BASIC output</h2>
 
-<p><strong><code class="highlighter-rouge">z</code></strong></p>
+<p><strong><code class="language-plaintext highlighter-rouge">z</code></strong></p>
 
 <p>Sets the BASIC listing display mode to <em>ZXB</em>. In this mode, control characters (e.g., <strong>INK</strong>, <strong>PAPER</strong>, <strong>BRIGHT</strong>, etc.) are shown with their ZX BASIC escape sequences; inline control characters (out of string values wrapped in doupbe quotes) are omitted:</p>
 
@@ -922,7 +922,7 @@
 
 <h2 id="export-basic-program">Export BASIC Program</h2>
 
-<p><strong><code class="highlighter-rouge">p</code></strong></p>
+<p><strong><code class="language-plaintext highlighter-rouge">p</code></strong></p>
 
 <p>This command exports the BASIC listing of the tape data block, provided, it is a program data block:</p>
 

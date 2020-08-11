@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>The character set | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="The character set" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 14: The Character Set" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"The character set","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch14","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch14"},"description":"CHAPTER 14: The Character Set","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch14","headline":"The character set","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch14"},"description":"CHAPTER 14: The Character Set","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -599,7 +599,7 @@ there are two functions, <strong>CODE</strong> and <strong>CHR$</strong>.</p>
 
 <p>This program prints out the entire character set:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR a=32 TO 255: PRINT CHRS a;: NEXT a
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR a=32 TO 255: PRINT CHRS a;: NEXT a
 </code></pre></div></div>
 
 <p>At the top you can see a space, 15 symbols and punctuation marks, the ten digits, seven more symbols, the capital letters, six more symbols, the lower
@@ -656,7 +656,7 @@ use for <strong>USR</strong>, when its argument is a number, which will be dealt
 
 <p>Even if you don’t understand this, the following program will do it for you:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 7
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 7
 20 INPUT row: POKE USR "P"+n,row
 30 NEXT n
 </code></pre></div></div>
@@ -675,21 +675,21 @@ prints ? to show that it doesn’t understand them. They are described more full
 
 <p><strong>CHR$</strong> 6 prints spaces in exactly the same way as a cornma does in a <strong>PRINT</strong> statement for instance</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT 1; **CHR$** 6;2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT 1; **CHR$** 6;2
 </code></pre></div></div>
 
 <p>does the same as</p>
 
-<p><code class="highlighter-rouge">PRINT 1,2</code></p>
+<p><code class="language-plaintext highlighter-rouge">PRINT 1,2</code></p>
 
 <p>Obviously this is not a very clear way of using it. A more subtle way is to say</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LET a$="1"+CHR$ 6+"2"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LET a$="1"+CHR$ 6+"2"
 PRINT a$
 </code></pre></div></div>
 <p><strong>CHR$</strong> 8 is ‘backspace’: it moves the print position back one place - try</p>
 
-<p><code class="highlighter-rouge">PRINT "1234"; CHR$ 8;"5"</code></p>
+<p><code class="language-plaintext highlighter-rouge">PRINT "1234"; CHR$ 8;"5"</code></p>
 
 <p>which prints up 1235</p>
 
@@ -756,7 +756,7 @@ this process one of the strings runs out before the other, then that string is t
 
 <p>Experiment on all this using the program here, which inputs two strings and puts them in order.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT "Type in two strings:", a$, b$
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT "Type in two strings:", a$, b$
 20 IF a$&gt;b$ THEN LET c$=a$: LET a$=b$: LET b$=c$
 30 PRINT a$;" ";
 40 IF a$\&lt;b$ THEN PRINT "\&lt;";: GO TO 60
@@ -787,7 +787,7 @@ this process one of the strings runs out before the other, then that string is t
 
 <p>Chess pieces:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 LET b=BIN 01111100: LET c=BIN 00111000: LET d=BIN 00010000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 LET b=BIN 01111100: LET c=BIN 00111000: LET d=BIN 00010000
 10 FOR n=1 TO 6: READ p$: REM 6 pieces
 20 FOR f=0 TO 7: REM read piece into 8 bytes
 30 READ a: POKE USR p$+f,a
@@ -829,7 +829,7 @@ this process one of the strings runs out before the other, then that string is t
   </li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT a
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT a
 20 PRINT CHR$ a;
 30 GO TO 10
 </code></pre></div></div>

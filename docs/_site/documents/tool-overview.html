@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Overview | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Overview" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="SpectNetIDE has several tool windows that provide a prompt to enter commands. Such windows are ZX Spectrum Memory, Z80 Disassembly, and Watch Memory. Though each of them has different command sets that slightly overlap, they share a common syntax. Here, you can find an overview of that syntax." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-02T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Overview","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/tool-overview","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/tool-overview"},"description":"SpectNetIDE has several tool windows that provide a prompt to enter commands. Such windows are ZX Spectrum Memory, Z80 Disassembly, and Watch Memory. Though each of them has different command sets that slightly overlap, they share a common syntax. Here, you can find an overview of that syntax.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/tool-overview","headline":"Overview","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/tool-overview"},"description":"SpectNetIDE has several tool windows that provide a prompt to enter commands. Such windows are ZX Spectrum Memory, Z80 Disassembly, and Watch Memory. Though each of them has different command sets that slightly overlap, they share a common syntax. Here, you can find an overview of that syntax.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -884,15 +884,15 @@ Here, you can find an overview of that syntax.</p>
 
 <p>Each <em>command</em> has a name, and zero, one or more <em>arguments</em>. Command names are one or two characters, you can use both lowercase and uppercase letters. Commands may use literals, which can be hexadecimal numbers, decimal numbers or identifiers.</p>
 
-<p><em>Hexadecimal numbers</em> must use the 0 to 9 digits, or letters from <code class="highlighter-rouge">A</code> to <code class="highlighter-rouge">F</code> or <code class="highlighter-rouge">a</code> to <code class="highlighter-rouge">f</code>. If a hexadecimal number would start with a letter, you should add a <code class="highlighter-rouge">0</code> prefix so that the parser consider it as a number and not as an identifier.</p>
+<p><em>Hexadecimal numbers</em> must use the 0 to 9 digits, or letters from <code class="language-plaintext highlighter-rouge">A</code> to <code class="language-plaintext highlighter-rouge">F</code> or <code class="language-plaintext highlighter-rouge">a</code> to <code class="language-plaintext highlighter-rouge">f</code>. If a hexadecimal number would start with a letter, you should add a <code class="language-plaintext highlighter-rouge">0</code> prefix so that the parser consider it as a number and not as an identifier.</p>
 
-<p>Decimal numbers should start with a colon (<code class="highlighter-rouge">:</code>) and followed by digits.</p>
+<p>Decimal numbers should start with a colon (<code class="language-plaintext highlighter-rouge">:</code>) and followed by digits.</p>
 
-<p>Identifiers should start with one a letter or an underscore (<code class="highlighter-rouge">_</code>) and may continue with digits, letters, or underscore characters.</p>
+<p>Identifiers should start with one a letter or an underscore (<code class="language-plaintext highlighter-rouge">_</code>) and may continue with digits, letters, or underscore characters.</p>
 
 <p>Here are a few examples of literals:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1234      (hexadecimal number!)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1234      (hexadecimal number!)
 0FA12     (hexadecimal number)
 FA12      (identifier: it starts with a letter!)
 :123      (decimal number)

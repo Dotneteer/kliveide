@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Main Features | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Main Features" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The original goal of the SpectNetIde assembler was to have a simple tool that allows you to compile Z80 assembly code and inject it into the ZX Spectrum virtual machine. As the community has started using it, I’ve been receiving feature requests to add some useful capability to the Assembler." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Main Features","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/main-features","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/main-features"},"description":"The original goal of the SpectNetIde assembler was to have a simple tool that allows you to compile Z80 assembly code and inject it into the ZX Spectrum virtual machine. As the community has started using it, I’ve been receiving feature requests to add some useful capability to the Assembler.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/main-features","headline":"Main Features","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/main-features"},"description":"The original goal of the SpectNetIde assembler was to have a simple tool that allows you to compile Z80 assembly code and inject it into the ZX Spectrum virtual machine. As the community has started using it, I’ve been receiving feature requests to add some useful capability to the Assembler.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -884,12 +884,12 @@ using it, I’ve been receiving feature requests to add some useful capability t
 
 <ul>
   <li><strong>Full Z80 instruction set</strong>, including the initially undocumented Z80 registers and instructions
-(such as the 8-bit halves of <code class="highlighter-rouge">ix</code> and <code class="highlighter-rouge">iy</code>, namely <code class="highlighter-rouge">ixl</code>, <code class="highlighter-rouge">ixh</code>, <code class="highlighter-rouge">iyl</code>, <code class="highlighter-rouge">iyh</code>).</li>
+(such as the 8-bit halves of <code class="language-plaintext highlighter-rouge">ix</code> and <code class="language-plaintext highlighter-rouge">iy</code>, namely <code class="language-plaintext highlighter-rouge">ixl</code>, <code class="language-plaintext highlighter-rouge">ixh</code>, <code class="language-plaintext highlighter-rouge">iyl</code>, <code class="language-plaintext highlighter-rouge">iyh</code>).</li>
   <li><strong>ZX Spectrum Next extended Z80 instruction set</strong></li>
   <li><strong>Alternate syntax versions</strong>. All directives, pragmas, and statements have multiple versions so that 
-you can use your preferred notation. For example, you can use <code class="highlighter-rouge">.loop</code>, <code class="highlighter-rouge">loop</code>, <code class="highlighter-rouge">.LOOP</code> or <code class="highlighter-rouge">LOOP</code> to 
-declare a loop. All of the <code class="highlighter-rouge">.defb</code>, <code class="highlighter-rouge">DEFB</code>, <code class="highlighter-rouge">.db</code>, <code class="highlighter-rouge">DB</code> (and a few other) tokens can be used for defining
-byte data. The <code class="highlighter-rouge">.endw</code> and <code class="highlighter-rouge">WEND</code> tokens can close a WHILE-loop.</li>
+you can use your preferred notation. For example, you can use <code class="language-plaintext highlighter-rouge">.loop</code>, <code class="language-plaintext highlighter-rouge">loop</code>, <code class="language-plaintext highlighter-rouge">.LOOP</code> or <code class="language-plaintext highlighter-rouge">LOOP</code> to 
+declare a loop. All of the <code class="language-plaintext highlighter-rouge">.defb</code>, <code class="language-plaintext highlighter-rouge">DEFB</code>, <code class="language-plaintext highlighter-rouge">.db</code>, <code class="language-plaintext highlighter-rouge">DB</code> (and a few other) tokens can be used for defining
+byte data. The <code class="language-plaintext highlighter-rouge">.endw</code> and <code class="language-plaintext highlighter-rouge">WEND</code> tokens can close a WHILE-loop.</li>
   <li><strong>Z80 Preprocessor</strong>. With preprocessor directives, you can carry out conditional compilation and include
 other source files. You can inject symbols for debug time and run time compilations separately. <em>In <strong>SpectNetIde</strong>
 you can use powerful macros, too, notheless, they are not preprocessor constructs (see below)</em>.</li>
@@ -897,13 +897,13 @@ you can use powerful macros, too, notheless, they are not preprocessor construct
 source code lines per second.</li>
   <li><strong>Rich expressions</strong>. The compiler can handle most arithmetic and logic operators we have in C, C++, C#
 Java, and JavaScript. You can use integer, float, and string expressions. The language support more than 40
-functions that you can use in the expressions (e.g: <code class="highlighter-rouge">Amp * sin($cnt * Pi() / 16))</code>)</li>
+functions that you can use in the expressions (e.g: <code class="language-plaintext highlighter-rouge">Amp * sin($cnt * Pi() / 16))</code>)</li>
   <li><strong>Rich literal formats</strong>. Decimal, float, hexadecimal, binary, and string literals are at your displosal.
-You can use multiple variants for hexadecimal numbers (<code class="highlighter-rouge">$12ae</code>, #12AE, 0x12AE, 12AEh), and binary numbers
+You can use multiple variants for hexadecimal numbers (<code class="language-plaintext highlighter-rouge">$12ae</code>, #12AE, 0x12AE, 12AEh), and binary numbers
 (0b00111100, %00111100, %0011_1100). In strings, you can use ZX Spectrum specific escape codes, for example,
-<code class="highlighter-rouge">\i</code> for INK, <code class="highlighter-rouge">\P</code> for the pound sign, and many others.</li>
-  <li><strong>Assembler control flow statements</strong>. You can use loops (<code class="highlighter-rouge">loop</code>, <code class="highlighter-rouge">repeat</code>..<code class="highlighter-rouge">until</code>, <code class="highlighter-rouge">while</code>..<code class="highlighter-rouge">wend</code>,
-<code class="highlighter-rouge">for</code>..<code class="highlighter-rouge">next</code>) and conditional statements (<code class="highlighter-rouge">if</code>) to create an assembler control flow. These constructs 
+<code class="language-plaintext highlighter-rouge">\i</code> for INK, <code class="language-plaintext highlighter-rouge">\P</code> for the pound sign, and many others.</li>
+  <li><strong>Assembler control flow statements</strong>. You can use loops (<code class="language-plaintext highlighter-rouge">loop</code>, <code class="language-plaintext highlighter-rouge">repeat</code>..<code class="language-plaintext highlighter-rouge">until</code>, <code class="language-plaintext highlighter-rouge">while</code>..<code class="language-plaintext highlighter-rouge">wend</code>,
+<code class="language-plaintext highlighter-rouge">for</code>..<code class="language-plaintext highlighter-rouge">next</code>) and conditional statements (<code class="language-plaintext highlighter-rouge">if</code>) to create an assembler control flow. These constructs 
 can be nested and provide local scope for labels, symbols, and variables.</li>
   <li><strong>Powerful dynamic Macros</strong>. You can create macros with arguments. In the macro bodies, the current values 
 of arguments can replace entire instructions, operands, or parts of expressions. Moreover, through arguments,

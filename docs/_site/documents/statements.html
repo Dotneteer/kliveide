@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Statements | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Statements" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Statements are SpectNetIDE specific control flow constructs — thanks again for the inspiration by Simon Brattel — that instruct the compiler about loop-like and conditional compilation." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Statements","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/statements","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/statements"},"description":"Statements are SpectNetIDE specific control flow constructs — thanks again for the inspiration by Simon Brattel — that instruct the compiler about loop-like and conditional compilation.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/statements","headline":"Statements","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/statements"},"description":"Statements are SpectNetIDE specific control flow constructs — thanks again for the inspiration by Simon Brattel — that instruct the compiler about loop-like and conditional compilation.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -887,20 +887,20 @@ assembly code.</p>
 </blockquote>
 
 <p>Each statement can be written with a leading dot, or without it, and the compiler accepts both lowercase 
-and uppercase versions. For example all of these version are valid: <code class="highlighter-rouge">.if</code>, <code class="highlighter-rouge">if</code>, <code class="highlighter-rouge">.IF</code>, and <code class="highlighter-rouge">IF</code>.</p>
+and uppercase versions. For example all of these version are valid: <code class="language-plaintext highlighter-rouge">.if</code>, <code class="language-plaintext highlighter-rouge">if</code>, <code class="language-plaintext highlighter-rouge">.IF</code>, and <code class="language-plaintext highlighter-rouge">IF</code>.</p>
 
 <h2 id="the-loop-block">The LOOP Block</h2>
 
 <p>With LOOP block, you can organize a cycle to emit code. Here is a sample that tells the gist:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.loop 6
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.loop 6
   add hl,hl 
 .endl
 </code></pre></div></div>
 
 <p>This is a shorter way to multiply <strong>HL</strong> with 64. It is equivalent with the following code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  add hl,hl
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  add hl,hl
   add hl,hl
   add hl,hl
   add hl,hl
@@ -908,17 +908,17 @@ and uppercase versions. For example all of these version are valid: <code class=
   add hl,hl
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">.loop</code> statement accepts an expression. The compiler repeats the instructions within the 
-loop’s body according to the value of the expression. The <code class="highlighter-rouge">.endl</code> statement marks the end of the loop.</p>
+<p>The <code class="language-plaintext highlighter-rouge">.loop</code> statement accepts an expression. The compiler repeats the instructions within the 
+loop’s body according to the value of the expression. The <code class="language-plaintext highlighter-rouge">.endl</code> statement marks the end of the loop.</p>
 
 <blockquote>
-  <p>You can use many flavors for the <code class="highlighter-rouge">.endl</code> block closing statement. <code class="highlighter-rouge">.endl</code>, <code class="highlighter-rouge">endl</code>, <code class="highlighter-rouge">.lend</code>, <code class="highlighter-rouge">lend</code>
+  <p>You can use many flavors for the <code class="language-plaintext highlighter-rouge">.endl</code> block closing statement. <code class="language-plaintext highlighter-rouge">.endl</code>, <code class="language-plaintext highlighter-rouge">endl</code>, <code class="language-plaintext highlighter-rouge">.lend</code>, <code class="language-plaintext highlighter-rouge">lend</code>
 are all accepted — with fully uppercase letters, too.</p>
 </blockquote>
 
 <p>Look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter .equ 2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter .equ 2
 ; do something (code omitted)
 .loop counter + 1
   .db #80, #00
@@ -927,21 +927,21 @@ are all accepted — with fully uppercase letters, too.</p>
 
 <p>This is as if you wrote this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .db #80, #00
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .db #80, #00
   .db #80, #00
   .db #80, #00
 </code></pre></div></div>
 
 <h2 id="the-loop-scope">The LOOP Scope</h2>
 
-<p>The <code class="highlighter-rouge">.loop</code> statement declares a scope for all labels, symbols, and variables declared in the loop’s
+<p>The <code class="language-plaintext highlighter-rouge">.loop</code> statement declares a scope for all labels, symbols, and variables declared in the loop’s
 body. Every iteration has its separate local scope. When the assembler resolves symbols, it starts 
 from the scope of the loop, and tries to resolve the value of a symbol. If it fails, steps out to 
 the outer scope, and goes on with the resolution.</p>
 
 <p>Check this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>value .equ 2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>value .equ 2
 ; do something (code omitted)
 .loop 2
     value .equ 5
@@ -951,16 +951,16 @@ the outer scope, and goes on with the resolution.</p>
 
 <p>The compiler takes it into account as if you wrote this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    ld a,5
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    ld a,5
     ld a,5
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">value</code> symbol declared within the loop, overrides <code class="highlighter-rouge">value</code> in the outer scope, and
+<p>The <code class="language-plaintext highlighter-rouge">value</code> symbol declared within the loop, overrides <code class="language-plaintext highlighter-rouge">value</code> in the outer scope, and
 thus 5 is used instead of 5.</p>
 
 <p>Nonetheless, you when you utilize a different construct, it seems a bit strange at first:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>value .equ 2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>value .equ 2
 ; do something (code omitted)
 .loop 2
     ld a,value
@@ -971,24 +971,24 @@ thus 5 is used instead of 5.</p>
 
 <p>The strangeness is that the compiler creates this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    ld a,2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    ld a,2
     ld b,5
     ld a,2
     ld b,5
 </code></pre></div></div>
 
-<p>When the assembler resolves <code class="highlighter-rouge">value</code> in the <code class="highlighter-rouge">ld a,value</code> instruction, if finds <code class="highlighter-rouge">value</code> 
-in the outer scope only, as it is not declared yet within the loop’s scope. In the <code class="highlighter-rouge">ld b,value</code>
-instruction <code class="highlighter-rouge">value</code> gets resolved from the inner scope, so it takes 5.</p>
+<p>When the assembler resolves <code class="language-plaintext highlighter-rouge">value</code> in the <code class="language-plaintext highlighter-rouge">ld a,value</code> instruction, if finds <code class="language-plaintext highlighter-rouge">value</code> 
+in the outer scope only, as it is not declared yet within the loop’s scope. In the <code class="language-plaintext highlighter-rouge">ld b,value</code>
+instruction <code class="language-plaintext highlighter-rouge">value</code> gets resolved from the inner scope, so it takes 5.</p>
 
 <h2 id="variables-and-scopes">Variables and Scopes</h2>
 
-<p>Unlike symbols that work as constant values, variables (declared with the <code class="highlighter-rouge">.var</code> pragma, or its syntactical 
-equivalents, the <code class="highlighter-rouge">=</code> or <code class="highlighter-rouge">:=</code> tokens) can change their values.</p>
+<p>Unlike symbols that work as constant values, variables (declared with the <code class="language-plaintext highlighter-rouge">.var</code> pragma, or its syntactical 
+equivalents, the <code class="language-plaintext highlighter-rouge">=</code> or <code class="language-plaintext highlighter-rouge">:=</code> tokens) can change their values.</p>
 
 <p>Take a look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 4
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 4
 .loop 3
     innercounter = 4
     ld a,counter + innercounter
@@ -996,18 +996,18 @@ equivalents, the <code class="highlighter-rouge">=</code> or <code class="highli
 .endl
 </code></pre></div></div>
 
-<p>Here, the <code class="highlighter-rouge">counter</code> variable is defined in the global scope (out of the loop’s scope), while <code class="highlighter-rouge">innercounter</code> in
-the local scope of the loop. When evaluating the <code class="highlighter-rouge">counter = counter + 1</code> statement, the compiler finds <code class="highlighter-rouge">counter</code> in
+<p>Here, the <code class="language-plaintext highlighter-rouge">counter</code> variable is defined in the global scope (out of the loop’s scope), while <code class="language-plaintext highlighter-rouge">innercounter</code> in
+the local scope of the loop. When evaluating the <code class="language-plaintext highlighter-rouge">counter = counter + 1</code> statement, the compiler finds <code class="language-plaintext highlighter-rouge">counter</code> in
 the outer scope, so it uses that variable to increment its value. This code emits machine code for this source:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,#08
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,#08
 ld a,#09
 ld a,#0A
 </code></pre></div></div>
 
 <p>Now, add a single line to the loop’s code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 4
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 4
 .loop 3
     innercounter = 4
     ld a,counter + innercounter
@@ -1016,9 +1016,9 @@ ld a,#0A
 ld b,innercounter
 </code></pre></div></div>
 
-<p>The compiler will not compile this code, as it cannot find the value for <code class="highlighter-rouge">innercounter</code> in the <code class="highlighter-rouge">ld b,innercount</code> 
-instruction. Because <code class="highlighter-rouge">innercounter</code> is defined in the local scope of the loop, this scope is immediately disposed as
-the loop is completed. When the compiler processes the <code class="highlighter-rouge">ld b,innercounter</code> instruction, the local scope is not 
+<p>The compiler will not compile this code, as it cannot find the value for <code class="language-plaintext highlighter-rouge">innercounter</code> in the <code class="language-plaintext highlighter-rouge">ld b,innercount</code> 
+instruction. Because <code class="language-plaintext highlighter-rouge">innercounter</code> is defined in the local scope of the loop, this scope is immediately disposed as
+the loop is completed. When the compiler processes the <code class="language-plaintext highlighter-rouge">ld b,innercounter</code> instruction, the local scope is not 
 available.</p>
 
 <h2 id="labels-and-scopes">Labels and Scopes</h2>
@@ -1027,7 +1027,7 @@ available.</p>
 the local scope of the loop. The following code helps you understand which labels are the part of the global scope, and
 which are created in the loop’s scope:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
 MyLoop: .loop 2
     ld bc,MyLoop
 Inner: 
@@ -1038,13 +1038,13 @@ MyEnd: .endl
 Outer: nop
 </code></pre></div></div>
 
-<p>The label of the <code class="highlighter-rouge">.loop</code> statement is part of the outer (global) scope, just like the label that <em>follows</em> the 
-<code class="highlighter-rouge">.endl</code> statement. However, all labels declared within the loop’s body, including the label of the <code class="highlighter-rouge">.endl</code>
+<p>The label of the <code class="language-plaintext highlighter-rouge">.loop</code> statement is part of the outer (global) scope, just like the label that <em>follows</em> the 
+<code class="language-plaintext highlighter-rouge">.endl</code> statement. However, all labels declared within the loop’s body, including the label of the <code class="language-plaintext highlighter-rouge">.endl</code>
 statement belongs to the local scope of the loop.</p>
 
 <p>Thus, the compiler translates the code above into this one:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>         (#8000): ld bc,#8000 (MyLoop)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>         (#8000): ld bc,#8000 (MyLoop)
 Inner_1  (#8003): ld de,#800D (MyEnd_1)
          (#8006): ld hl,#8003 (Inner_1)
          (#8009): ld ix,#801A (Outer)
@@ -1056,15 +1056,15 @@ MyEnd_2
 Outer    (#801A): nop
 </code></pre></div></div>
 
-<p>Here, <code class="highlighter-rouge">Inner_1</code>, <code class="highlighter-rouge">Inner_2</code>, <code class="highlighter-rouge">MyEnd_1</code>, and <code class="highlighter-rouge">MyEnd_2</code> represents the labels created in the local scope of the
-loop. The <code class="highlighter-rouge">_1</code> and <code class="highlighter-rouge">_2</code> suffixes indicate that each loop iteration has a separate local scope. As you can see,
-the last iteration of <code class="highlighter-rouge">MyLabel</code> points to the first outer address (<code class="highlighter-rouge">Outer</code> label).</p>
+<p>Here, <code class="language-plaintext highlighter-rouge">Inner_1</code>, <code class="language-plaintext highlighter-rouge">Inner_2</code>, <code class="language-plaintext highlighter-rouge">MyEnd_1</code>, and <code class="language-plaintext highlighter-rouge">MyEnd_2</code> represents the labels created in the local scope of the
+loop. The <code class="language-plaintext highlighter-rouge">_1</code> and <code class="language-plaintext highlighter-rouge">_2</code> suffixes indicate that each loop iteration has a separate local scope. As you can see,
+the last iteration of <code class="language-plaintext highlighter-rouge">MyLabel</code> points to the first outer address (<code class="language-plaintext highlighter-rouge">Outer</code> label).</p>
 
 <h2 id="nesting-loops">Nesting LOOPs</h2>
 
 <p>Of course, you can nest loops, such as in this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.loop 3
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.loop 3
   nop
   .loop 2
     ld a,b
@@ -1075,7 +1075,7 @@ the last iteration of <code class="highlighter-rouge">MyLabel</code> points to t
 
 <p>This code snippet translates to this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nop
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nop
 ld a,b
 ld a,b
 inc b
@@ -1093,10 +1093,10 @@ inc b
 
 <h2 id="the-cnt-value">The $CNT value</h2>
 
-<p>It is very useful to use the <code class="highlighter-rouge">$cnt</code> value that represents the current loop counter. It starts from 
+<p>It is very useful to use the <code class="language-plaintext highlighter-rouge">$cnt</code> value that represents the current loop counter. It starts from 
 1 and increments to the maximum number of loops. This sample demonstrates how you can use it:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.loop 2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.loop 2
   outerCount = $cnt
   .loop 3
      .db #10 * outerCount + $cnt
@@ -1106,7 +1106,7 @@ inc b
 
 <p>This code translates to this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #11
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #11
 .db #12
 .db #13
 .db #21
@@ -1114,20 +1114,20 @@ inc b
 .db #23
 </code></pre></div></div>
 
-<p>You can observe that each loop has its spearate <code class="highlighter-rouge">$cnt</code> value.</p>
+<p>You can observe that each loop has its spearate <code class="language-plaintext highlighter-rouge">$cnt</code> value.</p>
 
 <blockquote>
-  <p>The <code class="highlighter-rouge">$ctn</code> value has several syntax versions that the compiler accepts: <code class="highlighter-rouge">$CNT</code>, 
-<code class="highlighter-rouge">.cnt</code>, and <code class="highlighter-rouge">.CNT</code>.</p>
+  <p>The <code class="language-plaintext highlighter-rouge">$ctn</code> value has several syntax versions that the compiler accepts: <code class="language-plaintext highlighter-rouge">$CNT</code>, 
+<code class="language-plaintext highlighter-rouge">.cnt</code>, and <code class="language-plaintext highlighter-rouge">.CNT</code>.</p>
 </blockquote>
 
 <h2 id="the-procendp-block">The PROC..ENDP Block</h2>
 
-<p>In the previous section you could understand how labels and scopes work for the <code class="highlighter-rouge">.loop</code> statement.
-You can utilize this scoping mechanism with the help of the <code class="highlighter-rouge">.proc</code>..<code class="highlighter-rouge">.endp</code> statement.
+<p>In the previous section you could understand how labels and scopes work for the <code class="language-plaintext highlighter-rouge">.loop</code> statement.
+You can utilize this scoping mechanism with the help of the <code class="language-plaintext highlighter-rouge">.proc</code>..<code class="language-plaintext highlighter-rouge">.endp</code> statement.
 This sample code demonstrates the concepts (just as you learned earlier):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
 MyLabel:
   ld de,Outer
   ld hl,Mylabel
@@ -1147,14 +1147,14 @@ MyEnd:
 Outer: nop
 </code></pre></div></div>
 
-<p>The first <code class="highlighter-rouge">MyLabel</code> label belongs to the global scope, while the second (within <code class="highlighter-rouge">MyProc</code>)
-to the local scope of the procedure wrapped between <code class="highlighter-rouge">.proc</code> and <code class="highlighter-rouge">endp</code>. <code class="highlighter-rouge">MyProc</code> belongs to the
-global scope too, however, <code class="highlighter-rouge">MyEnd</code> is the part of the <code class="highlighter-rouge">MyProc</code> scope, so it is visible only from
+<p>The first <code class="language-plaintext highlighter-rouge">MyLabel</code> label belongs to the global scope, while the second (within <code class="language-plaintext highlighter-rouge">MyProc</code>)
+to the local scope of the procedure wrapped between <code class="language-plaintext highlighter-rouge">.proc</code> and <code class="language-plaintext highlighter-rouge">endp</code>. <code class="language-plaintext highlighter-rouge">MyProc</code> belongs to the
+global scope too, however, <code class="language-plaintext highlighter-rouge">MyEnd</code> is the part of the <code class="language-plaintext highlighter-rouge">MyProc</code> scope, so it is visible only from
 within the procedure.</p>
 
 <p>The assembler emits this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyLabel  (#8000): ld de,#8018 (Outer)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyLabel  (#8000): ld de,#8018 (Outer)
          (#8003): ld hl,#8000 (MyLabel)
          (#8006): call #800A (MyProc)
          (#8009): halt
@@ -1167,39 +1167,39 @@ MyEnd
 Outer    (#8018): nop
 </code></pre></div></div>
 
-<p>You can nest <code class="highlighter-rouge">PROC</code> bloks just as <code class="highlighter-rouge">LOOP</code> blocks. Each <code class="highlighter-rouge">PROC</code> block has its private scope.
-When the compiler sees a <code class="highlighter-rouge">PROC</code> block, it works just as if you wrote <code class="highlighter-rouge">.loop 1</code>.</p>
+<p>You can nest <code class="language-plaintext highlighter-rouge">PROC</code> bloks just as <code class="language-plaintext highlighter-rouge">LOOP</code> blocks. Each <code class="language-plaintext highlighter-rouge">PROC</code> block has its private scope.
+When the compiler sees a <code class="language-plaintext highlighter-rouge">PROC</code> block, it works just as if you wrote <code class="language-plaintext highlighter-rouge">.loop 1</code>.</p>
 
 <blockquote>
-  <p>NOTE: <code class="highlighter-rouge">PROC</code> is different than a loop. You cannot use the <code class="highlighter-rouge">$cnt</code> value. Similarly, the <code class="highlighter-rouge">break</code> 
-and <code class="highlighter-rouge">continue</code> instructions are unavailable within a <code class="highlighter-rouge">PROC</code> block.</p>
+  <p>NOTE: <code class="language-plaintext highlighter-rouge">PROC</code> is different than a loop. You cannot use the <code class="language-plaintext highlighter-rouge">$cnt</code> value. Similarly, the <code class="language-plaintext highlighter-rouge">break</code> 
+and <code class="language-plaintext highlighter-rouge">continue</code> instructions are unavailable within a <code class="language-plaintext highlighter-rouge">PROC</code> block.</p>
 </blockquote>
 
 <blockquote>
-  <p>The assembler accepts these aliases for <code class="highlighter-rouge">PROC</code> and <code class="highlighter-rouge">ENDP</code>: <code class="highlighter-rouge">.proc</code>, <code class="highlighter-rouge">proc</code>, <code class="highlighter-rouge">.PROC</code>
-, <code class="highlighter-rouge">PROC</code>, <code class="highlighter-rouge">.endp</code>, <code class="highlighter-rouge">.ENDP</code>, <code class="highlighter-rouge">endp</code>, <code class="highlighter-rouge">ENDP</code>, <code class="highlighter-rouge">.pend</code>, <code class="highlighter-rouge">.PEND</code>, <code class="highlighter-rouge">pend</code>, <code class="highlighter-rouge">PEND</code>.</p>
+  <p>The assembler accepts these aliases for <code class="language-plaintext highlighter-rouge">PROC</code> and <code class="language-plaintext highlighter-rouge">ENDP</code>: <code class="language-plaintext highlighter-rouge">.proc</code>, <code class="language-plaintext highlighter-rouge">proc</code>, <code class="language-plaintext highlighter-rouge">.PROC</code>
+, <code class="language-plaintext highlighter-rouge">PROC</code>, <code class="language-plaintext highlighter-rouge">.endp</code>, <code class="language-plaintext highlighter-rouge">.ENDP</code>, <code class="language-plaintext highlighter-rouge">endp</code>, <code class="language-plaintext highlighter-rouge">ENDP</code>, <code class="language-plaintext highlighter-rouge">.pend</code>, <code class="language-plaintext highlighter-rouge">.PEND</code>, <code class="language-plaintext highlighter-rouge">pend</code>, <code class="language-plaintext highlighter-rouge">PEND</code>.</p>
 </blockquote>
 
 <h2 id="the-repeatuntil-block">The REPEAT..UNTIL Block</h2>
 
-<p>While the <code class="highlighter-rouge">.loop</code> statement works with an expression that specified the loop counter,
-the <code class="highlighter-rouge">.repeat</code>..<code class="highlighter-rouge">.until</code> block uses an exit condition to create more flexible loops.
+<p>While the <code class="language-plaintext highlighter-rouge">.loop</code> statement works with an expression that specified the loop counter,
+the <code class="language-plaintext highlighter-rouge">.repeat</code>..<code class="language-plaintext highlighter-rouge">.until</code> block uses an exit condition to create more flexible loops.
 Here is a sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 0
 .repeat 
     .db counter
     counter = counter + 3
 .until counter % 7 == 0
 </code></pre></div></div>
 
-<p>Observe, the <code class="highlighter-rouge">counter % 7 == 0</code> condition specifies when <em>to exit</em> the loop. Because the
-exit condition is examined only at the end of the loop, the <code class="highlighter-rouge">.repeat</code> blocks executes 
+<p>Observe, the <code class="language-plaintext highlighter-rouge">counter % 7 == 0</code> condition specifies when <em>to exit</em> the loop. Because the
+exit condition is examined only at the end of the loop, the <code class="language-plaintext highlighter-rouge">.repeat</code> blocks executes 
 at least once.</p>
 
 <p>The sample above translates to this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db 0
 .db 3
 .db 6
 .db 9
@@ -1208,13 +1208,13 @@ at least once.</p>
 .db 18
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">.repeat</code> block uses the same approach to handle its local scope, symbols, labels, and
-variables as the <code class="highlighter-rouge">.loop</code> block. The block also provides the <code class="highlighter-rouge">$cnt</code> loop counter that starts 
+<p>The <code class="language-plaintext highlighter-rouge">.repeat</code> block uses the same approach to handle its local scope, symbols, labels, and
+variables as the <code class="language-plaintext highlighter-rouge">.loop</code> block. The block also provides the <code class="language-plaintext highlighter-rouge">$cnt</code> loop counter that starts 
 from 1 and increments in every loop cycle.</p>
 
-<p>This sample demontrates the <code class="highlighter-rouge">.repeat</code> block in action:</p>
+<p>This sample demontrates the <code class="language-plaintext highlighter-rouge">.repeat</code> block in action:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
 counter = 0
 .repeat 
     .db low(EndLabel), high(Endlabel), $cnt
@@ -1224,7 +1224,7 @@ EndLabel: .until counter % 7 == 0
 
 <p>The compiler translates the code to this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #03, #80, #01
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #03, #80, #01
 .db #06, #80, #02
 .db #09, #80, #03
 .db #0C, #80, #04
@@ -1235,10 +1235,10 @@ EndLabel: .until counter % 7 == 0
 
 <h2 id="the-whileendw-block">The WHILE..ENDW Block</h2>
 
-<p>With <code class="highlighter-rouge">.while</code> loop, you can create another kind of block, which uses entry condition. For example,
+<p>With <code class="language-plaintext highlighter-rouge">.while</code> loop, you can create another kind of block, which uses entry condition. For example,
 the following code snippet generates instructions to create the sum of numbers from 1 to 9:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 1
     ld a,0
 .while counter &lt; 10
     add a,counter
@@ -1246,13 +1246,13 @@ the following code snippet generates instructions to create the sum of numbers f
 .endw
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">.while</code>..<code class="highlighter-rouge">.endw</code> block uses an entry condition declared in the <code class="highlighter-rouge">.while</code> statement. Provided, this
+<p>The <code class="language-plaintext highlighter-rouge">.while</code>..<code class="language-plaintext highlighter-rouge">.endw</code> block uses an entry condition declared in the <code class="language-plaintext highlighter-rouge">.while</code> statement. Provided, this
 condition is true, the compiler enters into the body of the loop, and compiles all instructions and statements
-until it reaches the <code class="highlighter-rouge">.endw</code> statement. Observe, it may happen that the body of the loop is never reached.</p>
+until it reaches the <code class="language-plaintext highlighter-rouge">.endw</code> statement. Observe, it may happen that the body of the loop is never reached.</p>
 
 <p>The compiler translates the code snippet above to the following:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,0
 add a,1
 add a,2
 add a,3
@@ -1264,13 +1264,13 @@ add a,8
 add a,9
 </code></pre></div></div>
 
-<p>Just like the <code class="highlighter-rouge">.loop</code> and the <code class="highlighter-rouge">.repeat</code> blocks, <code class="highlighter-rouge">.while</code> uses the same approach to handle its local scope, 
-symbols, labels, and variables. This block also provides the <code class="highlighter-rouge">$cnt</code> loop counter that starts  from 1 and increments 
+<p>Just like the <code class="language-plaintext highlighter-rouge">.loop</code> and the <code class="language-plaintext highlighter-rouge">.repeat</code> blocks, <code class="language-plaintext highlighter-rouge">.while</code> uses the same approach to handle its local scope, 
+symbols, labels, and variables. This block also provides the <code class="language-plaintext highlighter-rouge">$cnt</code> loop counter that starts  from 1 and increments 
 in every loop cycle.</p>
 
-<p>This code demonstrates the <code class="highlighter-rouge">.while</code> block with labels and using <code class="highlighter-rouge">$cnt</code> value:</p>
+<p>This code demonstrates the <code class="language-plaintext highlighter-rouge">.while</code> block with labels and using <code class="language-plaintext highlighter-rouge">$cnt</code> value:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>counter = 0
 .while counter &lt; 21 
     .db low(EndLabel), high(Endlabel), $cnt
     counter = counter + 3
@@ -1279,7 +1279,7 @@ EndLabel: .endw
 
 <p>The compiler translates the code to this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #03, #80, #01
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #03, #80, #01
 .db #06, #80, #02
 .db #09, #80, #03
 .db #0C, #80, #04
@@ -1289,38 +1289,38 @@ EndLabel: .endw
 </code></pre></div></div>
 
 <blockquote>
-  <p>You can use many flavors for the <code class="highlighter-rouge">.endw</code> block closing statement. <code class="highlighter-rouge">.endw</code>, <code class="highlighter-rouge">endw</code>, <code class="highlighter-rouge">.wend</code>, <code class="highlighter-rouge">wend</code>
+  <p>You can use many flavors for the <code class="language-plaintext highlighter-rouge">.endw</code> block closing statement. <code class="language-plaintext highlighter-rouge">.endw</code>, <code class="language-plaintext highlighter-rouge">endw</code>, <code class="language-plaintext highlighter-rouge">.wend</code>, <code class="language-plaintext highlighter-rouge">wend</code>
 are all accepted — with fully uppercase letters, too.</p>
 </blockquote>
 
 <h2 id="the-fornext-loop">The FOR..NEXT Loop</h2>
 
-<p>Tou can use the traditional <code class="highlighter-rouge">.for</code>..<code class="highlighter-rouge">.next</code> loop to create a loop:</p>
+<p>Tou can use the traditional <code class="language-plaintext highlighter-rouge">.for</code>..<code class="language-plaintext highlighter-rouge">.next</code> loop to create a loop:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 2 .to 5
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 2 .to 5
   .db 1 &lt;&lt; int(myVar)
 .next
 </code></pre></div></div>
 
-<p>This loop uses the <code class="highlighter-rouge">myVar</code> variable as its <em>iteration variable</em>, which iterates from 1 to 4. As you expect, 
+<p>This loop uses the <code class="language-plaintext highlighter-rouge">myVar</code> variable as its <em>iteration variable</em>, which iterates from 1 to 4. As you expect, 
 the compiler translates the for-loop into this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #04
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #04
 .db #08
 .db #10
 .db #20
 </code></pre></div></div>
 
-<p>You can specify a <code class="highlighter-rouge">.step</code> close to change the loop increment value:</p>
+<p>You can specify a <code class="language-plaintext highlighter-rouge">.step</code> close to change the loop increment value:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 1 .to 7 .step 2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 1 .to 7 .step 2
   .db 1 &lt;&lt; int(myVar)
 .next
 </code></pre></div></div>
 
 <p>Now, the code translates to this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #02
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #02
 .db #08
 .db #20
 .db #80
@@ -1328,22 +1328,22 @@ the compiler translates the for-loop into this:</p>
 
 <p>You can create a loop with decrementing iteration variable value:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 7 .to 1 .step -2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 7 .to 1 .step -2
   .db 1 &lt;&lt; int(myVar)
 .next
 </code></pre></div></div>
 
 <p>As you expect, now you get this translation:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #80
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #80
 .db #20
 .db #08
 .db #02
 </code></pre></div></div>
 
 <blockquote>
-  <p>Just as with the other statements, you can use the <code class="highlighter-rouge">.for</code>, <code class="highlighter-rouge">.to</code>, and <code class="highlighter-rouge">.step</code> keywords without the <code class="highlighter-rouge">.</code>
-prefix, so <code class="highlighter-rouge">for</code>, <code class="highlighter-rouge">to</code>, and <code class="highlighter-rouge">step</code> are also valid.</p>
+  <p>Just as with the other statements, you can use the <code class="language-plaintext highlighter-rouge">.for</code>, <code class="language-plaintext highlighter-rouge">.to</code>, and <code class="language-plaintext highlighter-rouge">.step</code> keywords without the <code class="language-plaintext highlighter-rouge">.</code>
+prefix, so <code class="language-plaintext highlighter-rouge">for</code>, <code class="language-plaintext highlighter-rouge">to</code>, and <code class="language-plaintext highlighter-rouge">step</code> are also valid.</p>
 </blockquote>
 
 <p>The for-loop can do the same stunts as the other kind of loops; it handles labels, symbols, and variables exactly 
@@ -1353,7 +1353,7 @@ variable.</p>
 
 <p>So both cases in this code raise an error:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>myVar = 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>myVar = 0
 .for myVar = 1 .to 4 ; ERROR: Variable myVar is already declared
   ; ...
 .next
@@ -1366,17 +1366,17 @@ variable.</p>
 </code></pre></div></div>
 
 <blockquote>
-  <p>As <code class="highlighter-rouge">i</code> is a reserved token (it represents the <code class="highlighter-rouge">I</code> register), you cannot use <code class="highlighter-rouge">i</code> as a variable name. Nonetheless,
-<code class="highlighter-rouge">_i</code> is a valid variable name.</p>
+  <p>As <code class="language-plaintext highlighter-rouge">i</code> is a reserved token (it represents the <code class="language-plaintext highlighter-rouge">I</code> register), you cannot use <code class="language-plaintext highlighter-rouge">i</code> as a variable name. Nonetheless,
+<code class="language-plaintext highlighter-rouge">_i</code> is a valid variable name.</p>
 </blockquote>
 
-<p>The for-loop works with both integer and float variables. If any of the initial value, the last value (the one after <code class="highlighter-rouge">.to</code>), 
-or the increment value (the one after <code class="highlighter-rouge">.step</code>) is a float value, the for-loop uses float operations; otherwise it uses
+<p>The for-loop works with both integer and float variables. If any of the initial value, the last value (the one after <code class="language-plaintext highlighter-rouge">.to</code>), 
+or the increment value (the one after <code class="language-plaintext highlighter-rouge">.step</code>) is a float value, the for-loop uses float operations; otherwise it uses
 integer operations.</p>
 
 <p>This code snippet demonstrates the difference:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 1 .to 4 .step 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 1 .to 4 .step 1
   .db 1 &lt;&lt; myVar
 .next
 
@@ -1385,15 +1385,15 @@ integer operations.</p>
 .next
 </code></pre></div></div>
 
-<p>Nonetheless, you can solve this issue with applying the <code class="highlighter-rouge">int()</code> function:</p>
+<p>Nonetheless, you can solve this issue with applying the <code class="language-plaintext highlighter-rouge">int()</code> function:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 1 .to 4 .step 1.4
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.for myVar = 1 .to 4 .step 1.4
   .db 1 &lt;&lt; int(myVar) ; Now, it's OK.
 .next
 </code></pre></div></div>
 
 <blockquote>
-  <p>You can still use the <code class="highlighter-rouge">$cnt</code> value in for loops. Just like with other loop, it indicates the count of
+  <p>You can still use the <code class="language-plaintext highlighter-rouge">$cnt</code> value in for loops. Just like with other loop, it indicates the count of
 cycles strating from one and incremented by one in each iteration.</p>
 </blockquote>
 
@@ -1402,7 +1402,7 @@ cycles strating from one and incremented by one in each iteration.</p>
 <p>It’s pretty easy to create an infinite (or at least a very long) loop. For example, these loops are
 obviously infinite ones:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.repeat
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.repeat
 .until false
 
 .while true
@@ -1413,26 +1413,26 @@ obviously infinite ones:</p>
 
 <h2 id="the-ifelifelseendif-statement">The IF..ELIF..ELSE..ENDIF Statement</h2>
 
-<p>You can use the <code class="highlighter-rouge">.if</code> statement to create branches with conditions. For example, this code emits <code class="highlighter-rouge">inc b</code>
-or <code class="highlighter-rouge">inc c</code> statement depending on whether the value of <code class="highlighter-rouge">branch</code> is even or odd:</p>
+<p>You can use the <code class="language-plaintext highlighter-rouge">.if</code> statement to create branches with conditions. For example, this code emits <code class="language-plaintext highlighter-rouge">inc b</code>
+or <code class="language-plaintext highlighter-rouge">inc c</code> statement depending on whether the value of <code class="language-plaintext highlighter-rouge">branch</code> is even or odd:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch % 2 == 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch % 2 == 0
   inc b
 .else
   inc c
 .endif
 </code></pre></div></div>
 
-<p>You do not have to specify an <code class="highlighter-rouge">.else</code> branch, so this statement is entirely valid:</p>
+<p>You do not have to specify an <code class="language-plaintext highlighter-rouge">.else</code> branch, so this statement is entirely valid:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch % 2 == 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch % 2 == 0
   inc b
 .endif
 </code></pre></div></div>
 
-<p>You can nest if statements like this to manage four different code branches according to the value of <code class="highlighter-rouge">branch</code>:</p>
+<p>You can nest if statements like this to manage four different code branches according to the value of <code class="language-plaintext highlighter-rouge">branch</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch == 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch == 1
   inc b
 .else
   .if branch == 2
@@ -1447,9 +1447,9 @@ or <code class="highlighter-rouge">inc c</code> statement depending on whether t
 .endif
 </code></pre></div></div>
 
-<p>Nonetheless, you can use the <code class="highlighter-rouge">.elif</code> statement to create the code snippet above in clearer way:</p>
+<p>Nonetheless, you can use the <code class="language-plaintext highlighter-rouge">.elif</code> statement to create the code snippet above in clearer way:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch == 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch == 1
   inc b
 .elif branch == 2
   inc c
@@ -1462,12 +1462,12 @@ or <code class="highlighter-rouge">inc c</code> statement depending on whether t
 
 <h2 id="if-and-scopes">IF and Scopes</h2>
 
-<p>Unlike the loop statements, <code class="highlighter-rouge">.if</code> does not provide its local scope. Whenever you create a symbol, a label or
+<p>Unlike the loop statements, <code class="language-plaintext highlighter-rouge">.if</code> does not provide its local scope. Whenever you create a symbol, a label or
 a variable, those get into the current scope. This code defines a label with the same name in each branches. Because
-the compiler evaluates the <code class="highlighter-rouge">.if</code> branches from top to down, it either compiles one of the <code class="highlighter-rouge">.elif</code> branches —
-the first with a matching condition — or the else branch. Thus, this code does not define <code class="highlighter-rouge">MyLabel</code> twice:</p>
+the compiler evaluates the <code class="language-plaintext highlighter-rouge">.if</code> branches from top to down, it either compiles one of the <code class="language-plaintext highlighter-rouge">.elif</code> branches —
+the first with a matching condition — or the else branch. Thus, this code does not define <code class="language-plaintext highlighter-rouge">MyLabel</code> twice:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>branch = 4 ; Try to set up a different value
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>branch = 4 ; Try to set up a different value
 ; Do something (omitted from code)
     ld hl,MyLabel
 .if branch == 1
@@ -1485,10 +1485,10 @@ the first with a matching condition — or the else branch. Thus, this code does
 .endif
 </code></pre></div></div>
 
-<p>Generally, you can decorate any statement with labels. The <code class="highlighter-rouge">.elif</code> and <code class="highlighter-rouge">.else</code> statements are exception. If you
+<p>Generally, you can decorate any statement with labels. The <code class="language-plaintext highlighter-rouge">.elif</code> and <code class="language-plaintext highlighter-rouge">.else</code> statements are exception. If you
 do so, the compiler raises an error:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch == 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.if branch == 1
   inc b
   MyLabel ld a,20
 .elif branch &gt; 2
@@ -1505,11 +1505,11 @@ Another .else          ; ERROR: ELSE section cannot have a label
 
 <h2 id="if-nesting">IF Nesting</h2>
 
-<p>When you nest <code class="highlighter-rouge">.if</code> statements, take care that each of them has a corresponding <code class="highlighter-rouge">.endif</code>. Whenever
-the compiler finds an <code class="highlighter-rouge">.endif</code>, is associates it with the closest <code class="highlighter-rouge">.if</code> statement before <code class="highlighter-rouge">.endif</code>.
+<p>When you nest <code class="language-plaintext highlighter-rouge">.if</code> statements, take care that each of them has a corresponding <code class="language-plaintext highlighter-rouge">.endif</code>. Whenever
+the compiler finds an <code class="language-plaintext highlighter-rouge">.endif</code>, is associates it with the closest <code class="language-plaintext highlighter-rouge">.if</code> statement before <code class="language-plaintext highlighter-rouge">.endif</code>.
 I suggest you use indentation to make the structure more straightforward, as the following code snippet shows:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>row = 2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>row = 2
 col = 2
 ; Change row and col (omitted from code)
 .if row == 0
@@ -1549,11 +1549,11 @@ col = 2
 
 <h2 id="the-ifusedifnused-statements">The IFUSED/IFNUSED Statements</h2>
 
-<p><strong>SpectNetIDE</strong> offers a similar construct to IF..ELIF..ELSE..ENDIF, using the IFUSED or IFNUSED statement instead of IF. These new statements are specialized forms of IF. You can use these statements to emit code depending on whether a symbol (label, <code class="highlighter-rouge">.EQU</code>, <code class="highlighter-rouge">.VAR</code>, structure, or structure field) exists and has already been used by the code preceding the IFUSED/IFNUSED statement.</p>
+<p><strong>SpectNetIDE</strong> offers a similar construct to IF..ELIF..ELSE..ENDIF, using the IFUSED or IFNUSED statement instead of IF. These new statements are specialized forms of IF. You can use these statements to emit code depending on whether a symbol (label, <code class="language-plaintext highlighter-rouge">.EQU</code>, <code class="language-plaintext highlighter-rouge">.VAR</code>, structure, or structure field) exists and has already been used by the code preceding the IFUSED/IFNUSED statement.</p>
 
 <p>Here are a few examples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyProc:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyProc:
   ld hl,#5800
   ld (hl),a
   ret
@@ -1569,11 +1569,11 @@ Main:
   ld hl,MyMsg
 </code></pre></div></div>
 
-<p>Here, the <code class="highlighter-rouge">.ifused</code> statement will set the string the <code class="highlighter-rouge">MyMsg</code> label point to according to whether the <code class="highlighter-rouge">MyProc</code> label is used, or not. As in this case <code class="highlighter-rouge">MyProc</code> is defined but not invoked before the <code class="highlighter-rouge">.ifused</code> statement, <strong>HL</strong> will point to the “MyProc is not used” message.</p>
+<p>Here, the <code class="language-plaintext highlighter-rouge">.ifused</code> statement will set the string the <code class="language-plaintext highlighter-rouge">MyMsg</code> label point to according to whether the <code class="language-plaintext highlighter-rouge">MyProc</code> label is used, or not. As in this case <code class="language-plaintext highlighter-rouge">MyProc</code> is defined but not invoked before the <code class="language-plaintext highlighter-rouge">.ifused</code> statement, <strong>HL</strong> will point to the “MyProc is not used” message.</p>
 
-<p>Should you call <code class="highlighter-rouge">MyProc</code> before <code class="highlighter-rouge">.ifused</code>, <strong>HL</strong> would point to the other message, “MyProc is used”:</p>
+<p>Should you call <code class="language-plaintext highlighter-rouge">MyProc</code> before <code class="language-plaintext highlighter-rouge">.ifused</code>, <strong>HL</strong> would point to the other message, “MyProc is used”:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyProc:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyProc:
   ld hl,#5800
   ld (hl),a
   ret
@@ -1591,13 +1591,13 @@ Main:
   ld hl,MyMsg
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">.ifnused</code> statement is the complement of <code class="highlighter-rouge">.ifused</code>. It is evaluated to a true condition value only if the symbol following <code class="highlighter-rouge">.ifnused</code> is not defined, or, if defined, is not used.</p>
+<p>The <code class="language-plaintext highlighter-rouge">.ifnused</code> statement is the complement of <code class="language-plaintext highlighter-rouge">.ifused</code>. It is evaluated to a true condition value only if the symbol following <code class="language-plaintext highlighter-rouge">.ifnused</code> is not defined, or, if defined, is not used.</p>
 
 <h3 id="ifusedifnused-syntax">IFUSED/IFNUSED Syntax</h3>
 
-<p>You need to specify a symbol after the <code class="highlighter-rouge">.ifused</code>  or <code class="highlighter-rouge">.ifnused</code> keywords. These symbols must follow the syntax of identifiers. They can be compound names used for modules and structures. So, all of these symbol names are correct:</p>
+<p>You need to specify a symbol after the <code class="language-plaintext highlighter-rouge">.ifused</code>  or <code class="language-plaintext highlighter-rouge">.ifnused</code> keywords. These symbols must follow the syntax of identifiers. They can be compound names used for modules and structures. So, all of these symbol names are correct:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyLabel
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyLabel
 MyStruct
 MyStruct.FieldX
 MyModule.Main
@@ -1605,21 +1605,21 @@ MyModule.Main
 </code></pre></div></div>
 
 <blockquote>
-  <p><strong>Note</strong>: You can use these aliases for <code class="highlighter-rouge">.ifused</code>: <code class="highlighter-rouge">.IFUSED</code>, <code class="highlighter-rouge">ifused</code>, <code class="highlighter-rouge">IFUSED</code>. Similarly, <code class="highlighter-rouge">.ifnused</code> accept alternative tokens: <code class="highlighter-rouge">.IFNUSED</code>, <code class="highlighter-rouge">ifnused</code>, <code class="highlighter-rouge">IFNUSED</code>.</p>
+  <p><strong>Note</strong>: You can use these aliases for <code class="language-plaintext highlighter-rouge">.ifused</code>: <code class="language-plaintext highlighter-rouge">.IFUSED</code>, <code class="language-plaintext highlighter-rouge">ifused</code>, <code class="language-plaintext highlighter-rouge">IFUSED</code>. Similarly, <code class="language-plaintext highlighter-rouge">.ifnused</code> accept alternative tokens: <code class="language-plaintext highlighter-rouge">.IFNUSED</code>, <code class="language-plaintext highlighter-rouge">ifnused</code>, <code class="language-plaintext highlighter-rouge">IFNUSED</code>.</p>
 </blockquote>
 
 <h3 id="ifusedifnused-semantics">IFUSED/IFNUSED Semantics</h3>
 
-<p>The <strong>SpectNetIDE</strong> compiler accepts any <code class="highlighter-rouge">.ifused</code> and <code class="highlighter-rouge">.ifnused</code> statements until they are syntactically correct. When the assembler tests their condition, it works this way:</p>
+<p>The <strong>SpectNetIDE</strong> compiler accepts any <code class="language-plaintext highlighter-rouge">.ifused</code> and <code class="language-plaintext highlighter-rouge">.ifnused</code> statements until they are syntactically correct. When the assembler tests their condition, it works this way:</p>
 <ul>
-  <li>If the specified symbol does not exists, <code class="highlighter-rouge">.ifused</code> evaluates to false, while <code class="highlighter-rouge">.ifnused</code> evaluates to true.</li>
-  <li>If the particular symbol exists and it is used in the code section preceding the <code class="highlighter-rouge">.ifused</code> or <code class="highlighter-rouge">.ifnused</code> statement, <code class="highlighter-rouge">.ifused</code> evaluates to true, <code class="highlighter-rouge">.ifnused</code> to false.</li>
-  <li>If the particular symbol exists and it is <em>not</em> used in the code section preceding the <code class="highlighter-rouge">.ifused</code> or <code class="highlighter-rouge">.ifnused</code> statement, <code class="highlighter-rouge">.ifused</code> evaluates to false, <code class="highlighter-rouge">.ifnused</code> to true.</li>
+  <li>If the specified symbol does not exists, <code class="language-plaintext highlighter-rouge">.ifused</code> evaluates to false, while <code class="language-plaintext highlighter-rouge">.ifnused</code> evaluates to true.</li>
+  <li>If the particular symbol exists and it is used in the code section preceding the <code class="language-plaintext highlighter-rouge">.ifused</code> or <code class="language-plaintext highlighter-rouge">.ifnused</code> statement, <code class="language-plaintext highlighter-rouge">.ifused</code> evaluates to true, <code class="language-plaintext highlighter-rouge">.ifnused</code> to false.</li>
+  <li>If the particular symbol exists and it is <em>not</em> used in the code section preceding the <code class="language-plaintext highlighter-rouge">.ifused</code> or <code class="language-plaintext highlighter-rouge">.ifnused</code> statement, <code class="language-plaintext highlighter-rouge">.ifused</code> evaluates to false, <code class="language-plaintext highlighter-rouge">.ifnused</code> to true.</li>
 </ul>
 
 <p>These statements do not support look-ahead in the code. This behavior could lead to paradox situations, like in this example:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyFlag = true
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyFlag = true
 MyValue: .equ #1234
   ; some other code that does not use MyValue
 
@@ -1634,7 +1634,7 @@ MyValue: .equ #1234
   .endif
 </code></pre></div></div>
 
-<p>Should <code class="highlighter-rouge">.ifused</code> work with look-ahead, this code would make the compiler scratch its virtual head. Because <code class="highlighter-rouge">MyFlag</code> is set to true, the <code class="highlighter-rouge">.if</code> statement at the bottom of the code would emit an <code class="highlighter-rouge">ld a,MyValue</code> instruction. Knowing this fact, the compiler would say that <code class="highlighter-rouge">.ifused MyValue</code> should be evaluated to true. However, in this case, the body <code class="highlighter-rouge">.ifused</code> would set <code class="highlighter-rouge">MyFlag</code> to true, and that would prevent the bottom <code class="highlighter-rouge">.if</code> to emit <code class="highlighter-rouge">ld a,MyValue</code>, and then <code class="highlighter-rouge">MyValue</code> would not be used at all.</p>
+<p>Should <code class="language-plaintext highlighter-rouge">.ifused</code> work with look-ahead, this code would make the compiler scratch its virtual head. Because <code class="language-plaintext highlighter-rouge">MyFlag</code> is set to true, the <code class="language-plaintext highlighter-rouge">.if</code> statement at the bottom of the code would emit an <code class="language-plaintext highlighter-rouge">ld a,MyValue</code> instruction. Knowing this fact, the compiler would say that <code class="language-plaintext highlighter-rouge">.ifused MyValue</code> should be evaluated to true. However, in this case, the body <code class="language-plaintext highlighter-rouge">.ifused</code> would set <code class="language-plaintext highlighter-rouge">MyFlag</code> to true, and that would prevent the bottom <code class="language-plaintext highlighter-rouge">.if</code> to emit <code class="language-plaintext highlighter-rouge">ld a,MyValue</code>, and then <code class="language-plaintext highlighter-rouge">MyValue</code> would not be used at all.</p>
 
 <h2 id="block-statements-without-a-closing-statement">Block Statements without a Closing Statement</h2>
 
@@ -1643,14 +1643,14 @@ error message accordingly.</p>
 
 <h2 id="orphan-closing-statements">Orphan Closing Statements</h2>
 
-<p>When the compiler finds a closing statement (such as <code class="highlighter-rouge">.endw</code>, <code class="highlighter-rouge">.endl</code>, <code class="highlighter-rouge">.until</code>, <code class="highlighter-rouge">.endif</code>, etc.) it will
+<p>When the compiler finds a closing statement (such as <code class="language-plaintext highlighter-rouge">.endw</code>, <code class="language-plaintext highlighter-rouge">.endl</code>, <code class="language-plaintext highlighter-rouge">.until</code>, <code class="language-plaintext highlighter-rouge">.endif</code>, etc.) it will
 issue an error.</p>
 
 <h2 id="the-break-statement">The BREAK statement</h2>
 
-<p>You can exit the loop — independently of the loop’s exit condition — with the <code class="highlighter-rouge">.break</code> statement:</p>
+<p>You can exit the loop — independently of the loop’s exit condition — with the <code class="language-plaintext highlighter-rouge">.break</code> statement:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; LOOP sample
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; LOOP sample
 .loop 5
   .if $cnt == 4
     .break
@@ -1685,21 +1685,21 @@ issue an error.</p>
 
 <p>Because all these loops are exited at the beginning of the 4th iteration, they produce this output:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #01
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #01
 .db #02
 .db #03
 </code></pre></div></div>
 
 <blockquote>
-  <p>You cannot use the <code class="highlighter-rouge">.break</code> statement outside of a loop construct. If you do so, the compiler 
+  <p>You cannot use the <code class="language-plaintext highlighter-rouge">.break</code> statement outside of a loop construct. If you do so, the compiler 
 raises an error.</p>
 </blockquote>
 
 <h2 id="the-continue-statement">The CONTINUE Statement</h2>
 
-<p>You can interrupt the current iteration of the loop and carry on the next iteration with the <code class="highlighter-rouge">.continue</code> statement:</p>
+<p>You can interrupt the current iteration of the loop and carry on the next iteration with the <code class="language-plaintext highlighter-rouge">.continue</code> statement:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; LOOP sample
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; LOOP sample
 .loop 5
   .if $cnt == 4
     .continue
@@ -1734,7 +1734,7 @@ raises an error.</p>
 
 <p>Because all these loops skip the 4th iteration, they produce this output:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #01
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.db #01
 .db #02
 .db #03
 ; #04 is skipped
@@ -1742,7 +1742,7 @@ raises an error.</p>
 </code></pre></div></div>
 
 <blockquote>
-  <p>You cannot use the <code class="highlighter-rouge">.continue</code> statement outside of a loop construct. If you do so, the compiler 
+  <p>You cannot use the <code class="language-plaintext highlighter-rouge">.continue</code> statement outside of a loop construct. If you do so, the compiler 
 raises an error.</p>
 </blockquote>
 

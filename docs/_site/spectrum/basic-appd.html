@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Appendix D: Example programs | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Appendix D: Example programs" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="This appendix contains some example programs to demonstrate the abilities of the ZX Spectrum. The first of these programs requires a date to be input and gives the day of the week which corresponds to this date." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Appendix D: Example programs","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-appd","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-appd"},"description":"This appendix contains some example programs to demonstrate the abilities of the ZX Spectrum. The first of these programs requires a date to be input and gives the day of the week which corresponds to this date.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-appd","headline":"Appendix D: Example programs","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-appd"},"description":"This appendix contains some example programs to demonstrate the abilities of the ZX Spectrum. The first of these programs requires a date to be input and gives the day of the week which corresponds to this date.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -580,7 +580,7 @@
 
 <p>The first of these programs requires a date to be input and gives the day of the week which corresponds to this date.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM convert date to day
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM convert date to day
 20 DIM d$(7,6): REM days of week
 30 FOR n=1 TO 7: READ d$(n): NEXT n
 40 DIM m(12): REM lengths of months
@@ -625,7 +625,7 @@
 </code></pre></div></div>
 
 <p>This program handles yards, feet and inches.</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT "yards?",yd,"feet?",ft, "inches?",in
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 INPUT "yards?",yd,"feet?",ft, "inches?",in
 40 GO SUB 2000: REM print the values
 50 PRINT '" = ";
 70 GO SUB 1000: REM the adjustment
@@ -644,7 +644,7 @@
 <p>Here is a program to throw coins for the I Ching. (Unfortunately it produces the
 patterns upside down. but you might not worry about this.)</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 RANDOMIZE
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 RANDOMIZE
 10 FOR m=1 TO 6: REM for 6 throws
 20 LET c=0: REM initialize coin total to 0
 30 FOR n=1 TO 3: REM for 3 coins
@@ -680,7 +680,7 @@ tries to guess what it is, by asking you questions that can be answered ‘yes�
 question that it can use next time to find out whether someone’s given it your
 new animal.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM Pangolins
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM Pangolins
 10 LET nq=100: REM number of questions and animals
 15 DIM q$(nq,50): DIM a(nq,2): DIM r$(1)
 20 LET qf=8
@@ -760,7 +760,7 @@ new animal.</p>
 
 <p>Here is a program to draw a Union Flag.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM union flag
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM union flag
 10 LET r=2: LET w=7: LET b=1
 20 BORDER 0: PAPER b: INK w: CLS
 30 REM black in bottom of screen
@@ -833,7 +833,7 @@ character * in.</p>
 <p>Here is a program to play hangman. One player enters a word, and the other
 guesses</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM hangman
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM hangman
 10 REM set up screen
 20 INK 0: PAPER 7: CLS
 30 LET x=240: GO SUB 1000: REM draw man

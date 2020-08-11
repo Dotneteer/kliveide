@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Pragmas | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Pragmas" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The compiler understands several pragmas that — thought they are not Z80 instructions — they influence the emitted code. Each pragma has two alternative syntax, one with a dot prefix and another without it." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Pragmas","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/pragmas","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/pragmas"},"description":"The compiler understands several pragmas that — thought they are not Z80 instructions — they influence the emitted code. Each pragma has two alternative syntax, one with a dot prefix and another without it.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/pragmas","headline":"Pragmas","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/pragmas"},"description":"The compiler understands several pragmas that — thought they are not Z80 instructions — they influence the emitted code. Each pragma has two alternative syntax, one with a dot prefix and another without it.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -880,7 +880,7 @@
 instructions — they influence the emitted code. Each pragma has two alternative syntax,
 one with a dot prefix and another without it.</p>
 
-<p>For example, you can write <code class="highlighter-rouge">ORG</code> or <code class="highlighter-rouge">.ORG</code> to use the <strong>ORG</strong> pragma.</p>
+<p>For example, you can write <code class="language-plaintext highlighter-rouge">ORG</code> or <code class="language-plaintext highlighter-rouge">.ORG</code> to use the <strong>ORG</strong> pragma.</p>
 
 <blockquote>
   <p>I prefer using the dot-prefixed versions of pragmas.</p>
@@ -891,7 +891,7 @@ one with a dot prefix and another without it.</p>
 <p>With the <strong>ORG</strong> pragma, you define where to place the compiled Z80 code when you run it.
 For example, the following line sets this location to the 0x6000 address:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
 </code></pre></div></div>
 
 <p>If you do not use <strong>ORG</strong>, the default address is 0x8000.</p>
@@ -899,7 +899,7 @@ For example, the following line sets this location to the 0x6000 address:</p>
 <p>You can apply multiple <strong>ORG</strong> pragmas in your source code. Each usage creates a new segment in the
 assembler output. Take a look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld h,a
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld h,a
 .org #8100
 ld d,a
 .org #8200
@@ -907,22 +907,22 @@ ld b,a
 </code></pre></div></div>
 
 <p>This code generates three output segment, each with one emitted byte that represents the 
-corresponding <code class="highlighter-rouge">LD</code> operation. The first segment will start at 0x8000 (default), 
+corresponding <code class="language-plaintext highlighter-rouge">LD</code> operation. The first segment will start at 0x8000 (default), 
 the second at 0x8100, whilst the third at 0x8200.</p>
 
 <h2 id="the-xorg-pragma">The XORG pragma</h2>
 
-<p>With the <strong>XORG</strong> pragma, you define the start address of a specific code section (the section started with the previous <code class="highlighter-rouge">.ORG</code>) to use when exporting to Intel HEX format.</p>
+<p>With the <strong>XORG</strong> pragma, you define the start address of a specific code section (the section started with the previous <code class="language-plaintext highlighter-rouge">.ORG</code>) to use when exporting to Intel HEX format.</p>
 
 <p>For example, the following line sets this location to the 0x0000 address; however, the code section starts at 0x6000.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
 .xorg #0
 </code></pre></div></div>
 
-<p>If you try to use multiple <code class="highlighter-rouge">.XORG</code> within a code section, the assembler raises an error:</p>
+<p>If you try to use multiple <code class="language-plaintext highlighter-rouge">.XORG</code> within a code section, the assembler raises an error:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
 .xorg #0
     ld a,b
     ; ...
@@ -935,7 +935,7 @@ the second at 0x8100, whilst the third at 0x8200.</p>
 If you do not apply <strong>ENT</strong> in your code, the entry point will be the first address of the 
 very first output code segment. Here’s a sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6200
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6200
 ld hl,#4000
 .ent $
 jp #6100
@@ -945,7 +945,7 @@ call MyCode
 ...
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">.ent $</code> pragma will sign the address of the <code class="highlighter-rouge">jp #6100</code> isntruction as the entry
+<p>The <code class="language-plaintext highlighter-rouge">.ent $</code> pragma will sign the address of the <code class="language-plaintext highlighter-rouge">jp #6100</code> isntruction as the entry
 address of the code. Should you omit the <strong>ENT</strong> pragma from this code, the entry point would be
 0x6200, for this is the start of the very first output segment, even though there is another
 segment starting at 0x6100.</p>
@@ -955,11 +955,11 @@ segment starting at 0x6100.</p>
 <p>The IDE provides a command, <strong>Export Z80 Program</strong>, which allows you to create a LOAD block
 that automatically starts the code. The <strong>Run Z80 Program</strong> and <strong>Debug Z80 Program</strong> command
 simply jump to the address you specify with the <strong>ENT</strong> pragma. However, the auto LOAD block uses
-the <strong><code class="highlighter-rouge">RANDOMIZE USR address</code></strong> pattern where you need to define a different entry address that
-can be closed with a <strong><code class="highlighter-rouge">RET</code></strong> statement. The <strong>XENT</strong> pragma sets this address.
+the <strong><code class="language-plaintext highlighter-rouge">RANDOMIZE USR address</code></strong> pattern where you need to define a different entry address that
+can be closed with a <strong><code class="language-plaintext highlighter-rouge">RET</code></strong> statement. The <strong>XENT</strong> pragma sets this address.
  Here’s a sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start: 
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start: 
 	.org #8000
 	.ent #8000
 	call SetBorder
@@ -971,24 +971,24 @@ SetBorder:
 	ret
 </code></pre></div></div>
 
-<p>The IDE will use #8000 — according to the <code class="highlighter-rouge">.ent #8000</code> pragma — when starting
+<p>The IDE will use #8000 — according to the <code class="language-plaintext highlighter-rouge">.ent #8000</code> pragma — when starting
 the code with the <strong>Run Z80 Program</strong>. Nonetheless, the <strong>Export Z80 Program</strong> will offer #8006
-— according to the <code class="highlighter-rouge">.xent $</code> pragma — as the startup code address.</p>
+— according to the <code class="language-plaintext highlighter-rouge">.xent $</code> pragma — as the startup code address.</p>
 
 <h2 id="the-disp-pragma">The DISP pragma</h2>
 
 <p>The <strong>DISP</strong> pragma allows you to define a displacement for the code. The value affects the
-<code class="highlighter-rouge">$</code> token that represents the current assembly address. Your code is placed according 
+<code class="language-plaintext highlighter-rouge">$</code> token that represents the current assembly address. Your code is placed according 
 to the <strong>ORG</strong> of the particular output segment, but the assembly address is always displaced
 with the value according to <strong>DISP</strong>. Take a look at this sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
 .disp #1000
 ld hl,$
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">ld hl,$</code> instruction will be placed to the 0x6000 address, but it will be equivalent
-with the <code class="highlighter-rouge">ld hl,#7000</code> statement due to the <code class="highlighter-rouge">.disp #1000</code> displacement.</p>
+<p>The <code class="language-plaintext highlighter-rouge">ld hl,$</code> instruction will be placed to the 0x6000 address, but it will be equivalent
+with the <code class="language-plaintext highlighter-rouge">ld hl,#7000</code> statement due to the <code class="language-plaintext highlighter-rouge">.disp #1000</code> displacement.</p>
 
 <blockquote>
   <p>Of course, you can use negative displacement, too.</p>
@@ -1005,18 +1005,18 @@ code and places it on the specified memory page.</p>
 
 <p>The <strong>BANK</strong> pragma accepts two parameters. The first is the bank number (so it must be between 0 and 7). The second one is
 an optional offset value (between 0 and 16383), which indicates the start offset within the bank. If you omit this, the default
-value is zero. By default, the SpectNetIDE assembler assumes that the start address of the code in the bank is <code class="highlighter-rouge">$C000</code>. Nonetheless,
+value is zero. By default, the SpectNetIDE assembler assumes that the start address of the code in the bank is <code class="language-plaintext highlighter-rouge">$C000</code>. Nonetheless,
 you can specify any other value.</p>
 
 <blockquote>
-  <p><strong>Note</strong>: You need to apply the <code class="highlighter-rouge">.model Spectrum128</code> pragma at the top of your code so that you can use <code class="highlighter-rouge">.bank</code>.</p>
+  <p><strong>Note</strong>: You need to apply the <code class="language-plaintext highlighter-rouge">.model Spectrum128</code> pragma at the top of your code so that you can use <code class="language-plaintext highlighter-rouge">.bank</code>.</p>
 </blockquote>
 
 <h3 id="using-bank-without-an-offset">Using BANK without an offset</h3>
 
 <p>Let’s assume you have this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum128
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum128
 ; ...
 .bank 3
   call yellow
@@ -1029,7 +1029,7 @@ yellow:
 
 <p>The compiler emits this code (and later, the loader takes care that it goes to bank #3):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000: call #C004  ; yellow
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000: call #C004  ; yellow
 0003: ret
 0004: ld a,#06    ; this is yellow (#C004)
 0006: out (#FE),a
@@ -1041,7 +1041,7 @@ yellow:
 
 <p>Let’s modify the previous code adding an offset value:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum128
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum128
 ; ...
 .bank 3, #100
   call yellow
@@ -1054,7 +1054,7 @@ yellow:
 
 <p>Now, the compiler emits similar code, but its starts address is #C100 (#100 away from the default #C000):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0100: call #C104  ; yellow
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0100: call #C104  ; yellow
 0103: ret
 0104: ld a,#06    ; this is yellow (#C104)
 0106: out (#FE),a
@@ -1068,7 +1068,7 @@ those bytes. The loader knows that it should load the code from address #C100.</
 <p>Though the default address to compile the code is #C000, you can change it. For example, Bank #2 is paged into the #8000-#BFFF
 memory range (slot 2), so it seems natural to use the #8000 address like this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum128
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum128
 ; ...
 .bank 2
 .org #8000
@@ -1082,7 +1082,7 @@ yellow:
 
 <p>As you expect, this is the output:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000: call #8004  ; yellow
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000: call #8004  ; yellow
 0003: ret
 0004: ld a,#06    ; this is yellow (#8004)
 0006: out (#FE),a
@@ -1092,7 +1092,7 @@ yellow:
 
 <p>You can combine the offset of the bank with ORG:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.bank 2, #100
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.bank 2, #100
 .org #8000
   call yellow
   ret
@@ -1104,7 +1104,7 @@ yellow:
 
 <p>The output is probably different from the one you expect:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0100: call #8004  ; yellow
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0100: call #8004  ; yellow
 0103: ret
 0104: ld a,#06    ; this is yellow (#8004)
 0106: out (#FE),a
@@ -1114,9 +1114,9 @@ yellow:
 
 <h3 id="using-multiple-bank-directives">Using multiple BANK directives</h3>
 
-<p>As you may need multiple memory banks in your program, you can use multiple <code class="highlighter-rouge">BANK</code> pragmas, like in this example:</p>
+<p>As you may need multiple memory banks in your program, you can use multiple <code class="language-plaintext highlighter-rouge">BANK</code> pragmas, like in this example:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.bank 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.bank 1
 ; Here goes the code for bank #1
 ; ...
 .bank 3
@@ -1127,15 +1127,15 @@ yellow:
 <h3 id="restrictions-with-bank">Restrictions with BANK</h3>
 
 <ul>
-  <li><code class="highlighter-rouge">BANK</code> cannot have a label.</li>
-  <li><code class="highlighter-rouge">BANK</code> cannot be used with the ZX Spectrum 48 model type.</li>
-  <li>The <code class="highlighter-rouge">BANK</code> value must be between 0 and 7</li>
+  <li><code class="language-plaintext highlighter-rouge">BANK</code> cannot have a label.</li>
+  <li><code class="language-plaintext highlighter-rouge">BANK</code> cannot be used with the ZX Spectrum 48 model type.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">BANK</code> value must be between 0 and 7</li>
   <li>The offset must be between 0 and 16383</li>
-  <li>You can use the <code class="highlighter-rouge">BANK</code> pragma for a particular bank page only once, so, for example, the following code raises
+  <li>You can use the <code class="language-plaintext highlighter-rouge">BANK</code> pragma for a particular bank page only once, so, for example, the following code raises
 an error message:</li>
 </ul>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.bank 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.bank 1
 ; ...
 
 .bank 3
@@ -1155,7 +1155,7 @@ an error message:</li>
 name of the identifier (or symbol), the exression used in <strong>EQU</strong> is the value of the variable.
 This is a short sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      .org #6200
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>      .org #6200
       ld hl,Sym1
 Sym1: .equ #4000
       ld bc,Sym2
@@ -1164,7 +1164,7 @@ Sym2: .equ $+4
 
 <p>This sample is equivalent with this one:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6200
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6200
 ld hl,#4000 ; Sym1 &lt;-- #4000
 ld bc,#620a ; Sym2 &lt;-- #620a as an ld bc,NNNN operation and
                        an ld hl,NNNN each takes 3 bytes
@@ -1176,7 +1176,7 @@ ld bc,#620a ; Sym2 &lt;-- #620a as an ld bc,NNNN operation and
 with mulitple value assignments, <strong>VAR</strong> assigns a new value to the symbol every time it is used.</p>
 
 <blockquote>
-  <p>The VAR pragma accepts extra syntax alternatives: <code class="highlighter-rouge">=</code>, <code class="highlighter-rouge">:=</code></p>
+  <p>The VAR pragma accepts extra syntax alternatives: <code class="language-plaintext highlighter-rouge">=</code>, <code class="language-plaintext highlighter-rouge">:=</code></p>
 </blockquote>
 
 <h2 id="the-injectopt-pragma">The INJECTOPT pragma</h2>
@@ -1186,13 +1186,13 @@ into the memory and sets up the system as if you started the code from BASIC wit
 However, in several cases, you’d like to keep the cursor in “K” mode, for example, when you intend to start the code with the 
 <strong>RANDOMIZE USER <em>addr</em></strong> command (here, <em>addr</em> is the entry address). In this case, you can add the INJECTOP pragma to the code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.injectopt cursork
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.injectopt cursork
 </code></pre></div></div>
 
-<p>The <strong>INJECTOPT</strong> pragma expects an identifier-like option tag after the starting pragma keyword, such as <code class="highlighter-rouge">cursork</code> above. Omitting that tag will cause a syntax error.</p>
+<p>The <strong>INJECTOPT</strong> pragma expects an identifier-like option tag after the starting pragma keyword, such as <code class="language-plaintext highlighter-rouge">cursork</code> above. Omitting that tag will cause a syntax error.</p>
 
 <blockquote>
-  <p>Though right now <strong>INJECTOPT</strong> supports only the <code class="highlighter-rouge">cursork</code> tag, it does not raise an exception with other tags, ignores them.</p>
+  <p>Though right now <strong>INJECTOPT</strong> supports only the <code class="language-plaintext highlighter-rouge">cursork</code> tag, it does not raise an exception with other tags, ignores them.</p>
 </blockquote>
 
 <h2 id="the-defb-pragma">The DEFB pragma</h2>
@@ -1200,30 +1200,30 @@ However, in several cases, you’d like to keep the cursor in “K” mode, for 
 <p>The <strong>DEFB</strong> pragma emits 8-bit expressions (bytes) from the current assembly position.
 here is a sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #6000
 .defb #01, #02, $, #04
 </code></pre></div></div>
 
 <p>The <strong>DEFB</strong> pragma will emit these four bytes starting at 0x6000: 0x01, 0x02, 0x03, 0x04.
-The <code class="highlighter-rouge">$</code> expression will emit 0x03, because at the emission point the current assembly
+The <code class="language-plaintext highlighter-rouge">$</code> expression will emit 0x03, because at the emission point the current assembly
 address is 0x6003. The <strong>DEFB</strong> program takes into account only the rightmost 8 bits of any
-expression: this is how <code class="highlighter-rouge">$</code> results in 0x03.</p>
+expression: this is how <code class="language-plaintext highlighter-rouge">$</code> results in 0x03.</p>
 
 <blockquote>
-  <p><strong>DEFB</strong> has extra syntax variants: <code class="highlighter-rouge">db</code>, <code class="highlighter-rouge">.db</code>, <code class="highlighter-rouge">DB</code>, and <code class="highlighter-rouge">.DB</code> are accepted, too.</p>
+  <p><strong>DEFB</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">db</code>, <code class="language-plaintext highlighter-rouge">.db</code>, <code class="language-plaintext highlighter-rouge">DB</code>, and <code class="language-plaintext highlighter-rouge">.DB</code> are accepted, too.</p>
 </blockquote>
 
 <h2 id="the-defw-pragma">The DEFW pragma</h2>
 
 <p>The <strong>DEFW</strong> pragma is similar to <strong>DEFB</strong>, but it emits 16-bit values with LSB, MSB order.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defw #1234, #abcd
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defw #1234, #abcd
 </code></pre></div></div>
 
 <p>This simple code above will emit these four bytes: 0x34, 0x12, 0xcd, 0xab.</p>
 
 <blockquote>
-  <p><strong>DEFW</strong> has extra syntax variants: <code class="highlighter-rouge">dw</code>, <code class="highlighter-rouge">.dw</code>, <code class="highlighter-rouge">DW</code>, and <code class="highlighter-rouge">.DW</code> are accepted, too.</p>
+  <p><strong>DEFW</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">dw</code>, <code class="language-plaintext highlighter-rouge">.dw</code>, <code class="language-plaintext highlighter-rouge">DW</code>, and <code class="language-plaintext highlighter-rouge">.DW</code> are accepted, too.</p>
 </blockquote>
 
 <h2 id="the-defm-pragma">The DEFM pragma</h2>
@@ -1231,22 +1231,22 @@ expression: this is how <code class="highlighter-rouge">$</code> results in 0x03
 <p>The <strong>DEFM</strong> pragma emits the byte-array representation of a string. Each character
 in the string is replaced with the correcponding byte. Take a look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defm "\C by me"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defm "\C by me"
 </code></pre></div></div>
 
 <p>Here, the <strong>DEFM</strong> pragma emits 7 bytes for the seven characters (the first escape 
 sequence represents the copyrigh sign) : 0x7f, 0x20, 0x62, 0x69, 0x20, 0x6d, 0x65.</p>
 
 <blockquote>
-  <p><strong>DEFM</strong> has extra syntax variants: <code class="highlighter-rouge">dm</code>, <code class="highlighter-rouge">.dm</code>, <code class="highlighter-rouge">DM</code>, and <code class="highlighter-rouge">.DM</code> are accepted, too.</p>
+  <p><strong>DEFM</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">dm</code>, <code class="language-plaintext highlighter-rouge">.dm</code>, <code class="language-plaintext highlighter-rouge">DM</code>, and <code class="language-plaintext highlighter-rouge">.DM</code> are accepted, too.</p>
 </blockquote>
 
 <h2 id="the-defn-pragma">The DEFN pragma</h2>
 
-<p>The <strong>DEFN</strong> pragma works just like the <code class="highlighter-rouge">DEFM</code> pragma but it emits an additional <code class="highlighter-rouge">0x00</code>
+<p>The <strong>DEFN</strong> pragma works just like the <code class="language-plaintext highlighter-rouge">DEFM</code> pragma but it emits an additional <code class="language-plaintext highlighter-rouge">0x00</code>
 byte to terminate the string. Look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defn "\C by me"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defn "\C by me"
 </code></pre></div></div>
 
 <p>Here, the <strong>DEFN</strong> pragma emits 8 bytes for the seven characters (the first escape 
@@ -1254,15 +1254,15 @@ sequence represents the copyrigh sign) plus the terminating zero:
 0x7f, 0x20, 0x62, 0x69, 0x20, 0x6d, 0x65, 0x00.</p>
 
 <blockquote>
-  <p><strong>DEFN</strong> has extra syntax variants: <code class="highlighter-rouge">dn</code>, <code class="highlighter-rouge">.dn</code>, <code class="highlighter-rouge">DN</code>, and <code class="highlighter-rouge">.DN</code> are also accepted.</p>
+  <p><strong>DEFN</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">dn</code>, <code class="language-plaintext highlighter-rouge">.dn</code>, <code class="language-plaintext highlighter-rouge">DN</code>, and <code class="language-plaintext highlighter-rouge">.DN</code> are also accepted.</p>
 </blockquote>
 
 <h2 id="the-defc-pragma">The DEFC pragma</h2>
 
-<p>The <strong>DEFC</strong> pragma works just like the <code class="highlighter-rouge">DEFM</code> pragma but it sets Bit 7 of the last 
+<p>The <strong>DEFC</strong> pragma works just like the <code class="language-plaintext highlighter-rouge">DEFM</code> pragma but it sets Bit 7 of the last 
 emitted character. Look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defc "\C by me"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defc "\C by me"
 </code></pre></div></div>
 
 <p>Here, the <strong>DEFC</strong> pragma emits 7 bytes for the seven characters (the first escape 
@@ -1270,7 +1270,7 @@ sequence represents the copyrigh sign) with Bit 7 of the last character (0x65) s
 0x7f, 0x20, 0x62, 0x69, 0x20, 0x6d, 0xE5.</p>
 
 <blockquote>
-  <p><strong>DEFC</strong> has extra syntax variants: <code class="highlighter-rouge">dc</code>, <code class="highlighter-rouge">.dc</code>, <code class="highlighter-rouge">DC</code>, and <code class="highlighter-rouge">.DC</code> are also accepted.</p>
+  <p><strong>DEFC</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">dc</code>, <code class="language-plaintext highlighter-rouge">.dc</code>, <code class="language-plaintext highlighter-rouge">DC</code>, and <code class="language-plaintext highlighter-rouge">.DC</code> are also accepted.</p>
 </blockquote>
 
 <h2 id="the-defh-pragma">The DEFH pragma</h2>
@@ -1279,41 +1279,41 @@ sequence represents the copyrigh sign) with Bit 7 of the last character (0x65) s
 byte-array representation of the input. Each character pair in the string is replaced
 with the correcponding byte. Take a look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defh "12E4afD2"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defh "12E4afD2"
 </code></pre></div></div>
 
 <p>Here, the <strong>DEFH</strong> pragma emits 4 bytes: 0x12, 0xe4, 0xaf, 0xd2.</p>
 
 <blockquote>
-  <p><strong>DEFH</strong> has extra aliases: <code class="highlighter-rouge">dh</code>, <code class="highlighter-rouge">.dh</code>, <code class="highlighter-rouge">DH</code>, and <code class="highlighter-rouge">.DH</code>.</p>
+  <p><strong>DEFH</strong> has extra aliases: <code class="language-plaintext highlighter-rouge">dh</code>, <code class="language-plaintext highlighter-rouge">.dh</code>, <code class="language-plaintext highlighter-rouge">DH</code>, and <code class="language-plaintext highlighter-rouge">.DH</code>.</p>
 </blockquote>
 
 <h2 id="the-defs-pragma">The DEFS pragma</h2>
 
-<p>You can emit zero (<code class="highlighter-rouge">0x00</code>) bytes with this pragma. It accepts a single argument,
+<p>You can emit zero (<code class="language-plaintext highlighter-rouge">0x00</code>) bytes with this pragma. It accepts a single argument,
 the number of zeros to emit. This code sends 16 zeros to the generated output:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defs 16
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defs 16
 </code></pre></div></div>
 
 <blockquote>
-  <p><strong>DEFS</strong> has extra syntax variants: <code class="highlighter-rouge">ds</code>, <code class="highlighter-rouge">.ds</code>, <code class="highlighter-rouge">DS</code>, and <code class="highlighter-rouge">.DS</code> are also accepted.</p>
+  <p><strong>DEFS</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">ds</code>, <code class="language-plaintext highlighter-rouge">.ds</code>, <code class="language-plaintext highlighter-rouge">DS</code>, and <code class="language-plaintext highlighter-rouge">.DS</code> are also accepted.</p>
 </blockquote>
 
 <h2 id="the-fillb-pragma">The FILLB pragma</h2>
 
 <p>With <strong>FILLB</strong>, you can emit a particular count of a specific byte. The first argument
 of the pragma sets the count, the second specifies the byte to emit. This code emits 24
-bytes of <code class="highlighter-rouge">#A5</code> values:</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.fillb 24,#a5
+bytes of <code class="language-plaintext highlighter-rouge">#A5</code> values:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.fillb 24,#a5
 </code></pre></div></div>
 
 <h2 id="the-fillw-pragma">The FILLW pragma</h2>
 
 <p>With <strong>FILLW</strong>, you can emit a particular count of a specific 16-bit word. The first argument
 of the pragma sets the count, the second specifies the word to emit. This code emits 8
-words (16 bytes) of <code class="highlighter-rouge">#12A5</code> values:</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.fillw 8,#12a5
+words (16 bytes) of <code class="language-plaintext highlighter-rouge">#12A5</code> values:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.fillw 8,#12a5
 </code></pre></div></div>
 
 <p>Of course, the bytes of a word are emitted in LSB/MSB order.</p>
@@ -1332,23 +1332,23 @@ does not do any action when observing this pragma.</p>
 
 <p>This pragma is used when you run or debug your Z80 code within the emulator. With Spectrum 128K, Spectrum +3, 
 and Spectrum Next models, you can run the Z80 code in differend contexts. The <strong>MODEL</strong> pragma lets you
-specify on which model you want to run the code. You can use the <code class="highlighter-rouge">SPECTRUM48</code>, <code class="highlighter-rouge">SPECTRUM128</code>, 
-<code class="highlighter-rouge">SPECTRUMP3</code>, or <code class="highlighter-rouge">NEXT</code> identifiers to choose the model (identifiers are case-insensitive):</p>
+specify on which model you want to run the code. You can use the <code class="language-plaintext highlighter-rouge">SPECTRUM48</code>, <code class="language-plaintext highlighter-rouge">SPECTRUM128</code>, 
+<code class="language-plaintext highlighter-rouge">SPECTRUMP3</code>, or <code class="language-plaintext highlighter-rouge">NEXT</code> identifiers to choose the model (identifiers are case-insensitive):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum48
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.model Spectrum48
 .model Spectrum128
 .model SpectrumP3
 .model Next
 </code></pre></div></div>
 
-<p>For example, when you create code for Spectrum 128K, and add the <code class="highlighter-rouge">.model Spectrum48</code> pragma to the code,
+<p>For example, when you create code for Spectrum 128K, and add the <code class="language-plaintext highlighter-rouge">.model Spectrum48</code> pragma to the code,
 the <strong>Run Z80 Code</strong> command will start the virtual machine, turns the machine into Spectrum 48K mode, and ignites
 the code just after that.</p>
 
-<p><em>Note</em>: With the <code class="highlighter-rouge">#ifmod</code> and <code class="highlighter-rouge">#ifnmod</code> directives, you can check the model type. For example, the following
+<p><em>Note</em>: With the <code class="language-plaintext highlighter-rouge">#ifmod</code> and <code class="language-plaintext highlighter-rouge">#ifnmod</code> directives, you can check the model type. For example, the following
 Z80 code results green background on Spectrum 48K, cyan an Spectrum 128K:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    .model Spectrum48
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    .model Spectrum48
 
 #ifmod Spectrum128
     BorderColor: .equ 5
@@ -1370,7 +1370,7 @@ Start:
 <p>This pragma allows you to align the current assembly counter to the specified byte boundary. 
 You can use this pragma with an optional expression. Look at these samples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
     nop
 .align 4
     nop
@@ -1378,36 +1378,36 @@ You can use this pragma with an optional expression. Look at these samples:</p>
 </code></pre></div></div>
 
 <p>The first pragma aligns the assembly counter to #8004, as this one is the next 4-byte boundary.
-With no value specified, <code class="highlighter-rouge">.align</code> uses #100, and thus the second <code class="highlighter-rouge">.align</code> in the sample sets
+With no value specified, <code class="language-plaintext highlighter-rouge">.align</code> uses #100, and thus the second <code class="language-plaintext highlighter-rouge">.align</code> in the sample sets
 the current assembly counter to the next page boundary, #8100.</p>
 
 <h2 id="the-trace-and-tracehex-pragmas">The TRACE and TRACEHEX pragmas</h2>
 
 <p>These pragmas send trace information to the assembler output. In the Visual Studio IDE, these
 messages are displayed in the Z80 Build Output window pane. You can list one or more expressions 
-separated by a comma after the <code class="highlighter-rouge">.trace</code> token. TRACEHEX works just like TRACE, but id displays 
+separated by a comma after the <code class="language-plaintext highlighter-rouge">.trace</code> token. TRACEHEX works just like TRACE, but id displays 
 integer numbers and strings in hexadecimal format.</p>
 
 <p>Let’assume, you add these lines to the source code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.trace "Hello, this is: ", 42
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.trace "Hello, this is: ", 42
 .tracehex "Hello, this is: ", 42
 </code></pre></div></div>
 
 <p>When you compile the source, the lines above display these messages:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TRACE: Hello, this is: 42
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TRACE: Hello, this is: 42
 TRACE: 48656C6C6F2C20746869732069733A20002A
 </code></pre></div></div>
 
 <h2 id="the-rndseed-pragma">The RNDSEED pragma</h2>
 
-<p>With the <code class="highlighter-rouge">rnd()</code> function, you can generate random numbers. The RNDSEED pragma sets the seed
+<p>With the <code class="language-plaintext highlighter-rouge">rnd()</code> function, you can generate random numbers. The RNDSEED pragma sets the seed
 value to use for random number generation. If you use this pragma with an integer expression,
 the seed is set to tha value of that expression. If you do not provide the expression, the compiler
 uses the system clock to set up the seed.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.rndseed ; sets the seed according to the system clock
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.rndseed ; sets the seed according to the system clock
 .rndseed 123 ; sets the seed to 123
 </code></pre></div></div>
 
@@ -1417,12 +1417,12 @@ uses the system clock to set up the seed.</p>
 and utilizes that string as a pattern to generate bytes for the bitmap.</p>
 
 <blockquote>
-  <p><strong>DEFGX</strong> has extra syntax variants: <code class="highlighter-rouge">dgx</code>, <code class="highlighter-rouge">.dgx</code>, <code class="highlighter-rouge">DGX</code>, and <code class="highlighter-rouge">.DGX</code> are accepted, too.</p>
+  <p><strong>DEFGX</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">dgx</code>, <code class="language-plaintext highlighter-rouge">.dgx</code>, <code class="language-plaintext highlighter-rouge">DGX</code>, and <code class="language-plaintext highlighter-rouge">.DGX</code> are accepted, too.</p>
 </blockquote>
 
-<p>If the very first character of the string pattern is <code class="highlighter-rouge">&lt;</code>, the pattern is left aligned, 
-and starts with the second character. Should the first character be <code class="highlighter-rouge">&gt;</code>, the pattern is 
-right aligned and starts with the second character. By default, (if no <code class="highlighter-rouge">&lt;</code> or <code class="highlighter-rouge">&gt;</code> is used)
+<p>If the very first character of the string pattern is <code class="language-plaintext highlighter-rouge">&lt;</code>, the pattern is left aligned, 
+and starts with the second character. Should the first character be <code class="language-plaintext highlighter-rouge">&gt;</code>, the pattern is 
+right aligned and starts with the second character. By default, (if no <code class="language-plaintext highlighter-rouge">&lt;</code> or <code class="language-plaintext highlighter-rouge">&gt;</code> is used)
 the pattern is left-aligned.</p>
 
 <p>Any space within the pattern are ignored, taken into account as helpers. Other characters
@@ -1432,12 +1432,12 @@ are converted into bits one-by-one.</p>
 If not, it uses zero bit prefixes (right-aligned), or zero-bit suffixes (left-aligned)
 so that the pattern would be adjusted to contain entire bytes.</p>
 
-<p>The <code class="highlighter-rouge">.</code> (dot), <code class="highlighter-rouge">-</code> (dash), and <code class="highlighter-rouge">_</code> (underscore) sign 0, any other characters stand for 1. 
+<p>The <code class="language-plaintext highlighter-rouge">.</code> (dot), <code class="language-plaintext highlighter-rouge">-</code> (dash), and <code class="language-plaintext highlighter-rouge">_</code> (underscore) sign 0, any other characters stand for 1. 
 Every 8 bits in the pattern emit a byte.</p>
 
 <p>Here are a few samples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dg "....OOOO"         ; #0F
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dg "....OOOO"         ; #0F
 .dg "&gt;....OOOO"        ; #0F
 .dg "&lt;----OOOO"        ; #0F
 .dg "___OOOO"          ; #1E
@@ -1451,60 +1451,60 @@ Every 8 bits in the pattern emit a byte.</p>
 and utilizes that string as a pattern to generate bytes for the bitmap.</p>
 
 <blockquote>
-  <p><strong>DEFG</strong> has extra syntax variants: <code class="highlighter-rouge">dg</code>, <code class="highlighter-rouge">.dg</code>, <code class="highlighter-rouge">DG</code>, and <code class="highlighter-rouge">.DG</code> are also accepted.</p>
+  <p><strong>DEFG</strong> has extra syntax variants: <code class="language-plaintext highlighter-rouge">dg</code>, <code class="language-plaintext highlighter-rouge">.dg</code>, <code class="language-plaintext highlighter-rouge">DG</code>, and <code class="language-plaintext highlighter-rouge">.DG</code> are also accepted.</p>
 </blockquote>
 
 <p>Any space within the pattern are ignored, taken into account as helpers. Other characters
 are converted into bits one-by-one. The pixels in a byte are planted with the LHS as the 
 most-significant bit, and multiple bytes are planted LHS byte first.</p>
 
-<p>The <code class="highlighter-rouge">.</code> (dot), <code class="highlighter-rouge">-</code> (dash), and <code class="highlighter-rouge">_</code> (underscore) sign 0, any other characters stand for 1. 
+<p>The <code class="language-plaintext highlighter-rouge">.</code> (dot), <code class="language-plaintext highlighter-rouge">-</code> (dash), and <code class="language-plaintext highlighter-rouge">_</code> (underscore) sign 0, any other characters stand for 1. 
 Every 8 bits in the pattern emit a byte.</p>
 
 <p>Here are a few samples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dg ....OOOO        ; #0F
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dg ....OOOO        ; #0F
 .dg ___OOOO         ; #1E
 .dg ....OOOO ..OO"  ; #0F, #30
 .dg ....OO OO..OOOO ; #0F, #3C
 </code></pre></div></div>
 
 <blockquote>
-  <p>Please note, unlinke in the pattern used with <code class="highlighter-rouge">DEFGX</code>, here, the leading <code class="highlighter-rouge">&gt;</code> and <code class="highlighter-rouge">&lt;</code> characters 
+  <p>Please note, unlinke in the pattern used with <code class="language-plaintext highlighter-rouge">DEFGX</code>, here, the leading <code class="language-plaintext highlighter-rouge">&gt;</code> and <code class="language-plaintext highlighter-rouge">&lt;</code> characters 
 are taken as bit 1. They do not specify bit alignment.</p>
 </blockquote>
 
 <h2 id="the-error-pragma">The ERROR Pragma</h2>
 
 <p>You can raise custom error messages with this pragma. <strong>ERROR</strong> accepts an expression
-and displays an error message with code <code class="highlighter-rouge">Z0500</code> using the text you provide. Here is a sample:</p>
+and displays an error message with code <code class="language-plaintext highlighter-rouge">Z0500</code> using the text you provide. Here is a sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.error "The value must be greater than" + str(minvalue)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.error "The value must be greater than" + str(minvalue)
 </code></pre></div></div>
 
 <h2 id="the-includebin-pragma">The INCLUDEBIN Pragma</h2>
 
 <p>You can include a binary file into the source code to emit all bytes just as if you used the 
-<code class="highlighter-rouge">.defb</code> pragma. You can include the entire file, or a single segment of it. The pragma has a 
+<code class="language-plaintext highlighter-rouge">.defb</code> pragma. You can include the entire file, or a single segment of it. The pragma has a 
 mandatory argument — the name of the binary file to include — and two optional 
 ones, the start offset of the segment, and its length, respectively. Let’s see a few examples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.includebin "./myfile.bin"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.includebin "./myfile.bin"
 .includebin "./myfile.bin" 2
 .includebin "./myfile.bin" 2, 3
 </code></pre></div></div>
 
-<p>This snippet loads the <code class="highlighter-rouge">myfile.bin</code> file from the same directory that contains the source 
-with the <code class="highlighter-rouge">.includebin</code> directive.</p>
+<p>This snippet loads the <code class="language-plaintext highlighter-rouge">myfile.bin</code> file from the same directory that contains the source 
+with the <code class="language-plaintext highlighter-rouge">.includebin</code> directive.</p>
 
-<p>Let’s assume that <code class="highlighter-rouge">myfile.bin</code> contains these bytes:</p>
+<p>Let’s assume that <code class="language-plaintext highlighter-rouge">myfile.bin</code> contains these bytes:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#00, #01, #02, #03, #04, #05, #06, #07 
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#00, #01, #02, #03, #04, #05, #06, #07 
 </code></pre></div></div>
 
 <p>The three lines of code above are the same as if we had written these code lines:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defb #00, #01, #02, #03, #04, #05, #06, #07 ; .includebin "./myfile.bin"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.defb #00, #01, #02, #03, #04, #05, #06, #07 ; .includebin "./myfile.bin"
 .defb #02, #03, #04, #05, #06, #07           ; .includebin "./myfile.bin" 2
 .defb #02, #03, #04                          ; .includebin "./myfile.bin" 2, 3
 </code></pre></div></div>
@@ -1512,29 +1512,29 @@ with the <code class="highlighter-rouge">.includebin</code> directive.</p>
 <blockquote>
   <p>Of course, the compiler does not allow negative file offset or length. It alse raises
 an error if you define a segment that does not fit into the binary file.<br />
-You can use alternative syntax for <code class="highlighter-rouge">.includebin</code>. The compiler accepts these tokens and their
-uppercase versions, too: <code class="highlighter-rouge">includebin</code>, <code class="highlighter-rouge">.include_bin</code>, and <code class="highlighter-rouge">include_bin</code>.</p>
+You can use alternative syntax for <code class="language-plaintext highlighter-rouge">.includebin</code>. The compiler accepts these tokens and their
+uppercase versions, too: <code class="language-plaintext highlighter-rouge">includebin</code>, <code class="language-plaintext highlighter-rouge">.include_bin</code>, and <code class="language-plaintext highlighter-rouge">include_bin</code>.</p>
 </blockquote>
 
 <h2 id="the-comparebin-pragma">The COMPAREBIN pragma</h2>
 
-<p>When you are re-engineering a Z80 program from an exported disassembly, it is good to know that you do not break the original code. The <code class="highlighter-rouge">.comparebin</code> pragma helps you to check that you still compile what you expect. It loads a binary file and compares that file with the output of the current code segment.</p>
+<p>When you are re-engineering a Z80 program from an exported disassembly, it is good to know that you do not break the original code. The <code class="language-plaintext highlighter-rouge">.comparebin</code> pragma helps you to check that you still compile what you expect. It loads a binary file and compares that file with the output of the current code segment.</p>
 
 <p>The pragma has a mandatory argument — the name of the binary file to include — and two optional ones, the start offset of the segment, and its length, respectively. Let’s see a few examples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.comparebin "./myfile.bin"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.comparebin "./myfile.bin"
 .comparebin "./myfile.bin" 2
 .comparebin "./myfile.bin" 2, 3
 </code></pre></div></div>
 
 <blockquote>
   <p>Of course, the compiler does not allow negative file offset or length. It also raises an error if you define a segment that does not fit into the binary file.<br />
-You can use alternative syntax for <code class="highlighter-rouge">.comparebin</code>. The compiler accepts these tokens, too: <code class="highlighter-rouge">comparebin</code>, <code class="highlighter-rouge">.COMPAREBIN</code>, and <code class="highlighter-rouge">COMPAREBIN</code>.</p>
+You can use alternative syntax for <code class="language-plaintext highlighter-rouge">.comparebin</code>. The compiler accepts these tokens, too: <code class="language-plaintext highlighter-rouge">comparebin</code>, <code class="language-plaintext highlighter-rouge">.COMPAREBIN</code>, and <code class="language-plaintext highlighter-rouge">COMPAREBIN</code>.</p>
 </blockquote>
 
-<p>When you compile the code, every <code class="highlighter-rouge">.org</code> pragma opens a new segment that starts from the point defined by <code class="highlighter-rouge">.org</code>.</p>
+<p>When you compile the code, every <code class="language-plaintext highlighter-rouge">.org</code> pragma opens a new segment that starts from the point defined by <code class="language-plaintext highlighter-rouge">.org</code>.</p>
 
-<p>You can put it into the code in as many places as you want. As the compiler parses the code, it records the positions of <code class="highlighter-rouge">.comparebin</code> pragmas, the current output segment and its length at the point where <code class="highlighter-rouge">.comparebin</code> is used. When the code compilation is ready — and there are no errors —, the compiler executes a check.
+<p>You can put it into the code in as many places as you want. As the compiler parses the code, it records the positions of <code class="language-plaintext highlighter-rouge">.comparebin</code> pragmas, the current output segment and its length at the point where <code class="language-plaintext highlighter-rouge">.comparebin</code> is used. When the code compilation is ready — and there are no errors —, the compiler executes a check.
 This check compares the emitted bytes with the recorded length to the bytes in the binary file.</p>
 
 <ul>
@@ -1543,14 +1543,14 @@ This check compares the emitted bytes with the recorded length to the bytes in t
   <li>If the compared data do not match, the assembler raises an error with the first unmatching position.</li>
 </ul>
 
-<p>Let’s assume, we have the <code class="highlighter-rouge">origin.bin</code> file that contains these six bytes:</p>
+<p>Let’s assume, we have the <code class="language-plaintext highlighter-rouge">origin.bin</code> file that contains these six bytes:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#00, #01, #02, #03, #04, #05
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#00, #01, #02, #03, #04, #05
 </code></pre></div></div>
 
 <p>Take a look at this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #8000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #8000
   .defb #00, #01, #02
   .comparebin "origin.bin"
 
@@ -1560,10 +1560,10 @@ This check compares the emitted bytes with the recorded length to the bytes in t
   .comparebin "origin.bin", 3
 </code></pre></div></div>
 
-<p>This code contains two segments (it has two <code class="highlighter-rouge">.org</code> pragmas) and three <code class="highlighter-rouge">.comparebin</code>.</p>
+<p>This code contains two segments (it has two <code class="language-plaintext highlighter-rouge">.org</code> pragmas) and three <code class="language-plaintext highlighter-rouge">.comparebin</code>.</p>
 
 <ul>
-  <li>Though <code class="highlighter-rouge">origin.bin</code> has six bytes, the first comparison succeeds, as it utilizes only the three bytes emitted in the first segment.</li>
+  <li>Though <code class="language-plaintext highlighter-rouge">origin.bin</code> has six bytes, the first comparison succeeds, as it utilizes only the three bytes emitted in the first segment.</li>
   <li>The second comparison fails, as the file starts with #00, #01, #02, while the segment emits #03, #04, and #05.</li>
   <li>The third comparison succeeds, as it starts the examination from the 4th byte (offset 3) of the binary file.</li>
 </ul>

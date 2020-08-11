@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Scripting the Screen | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Scripting the Screen" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The ScreenConfiguration class" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-04T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Scripting the Screen","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/scripting-screen","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-screen"},"description":"The ScreenConfiguration class","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/scripting-screen","headline":"Scripting the Screen","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-screen"},"description":"The ScreenConfiguration class","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -880,10 +880,10 @@
 
 <p>This class represents the configuration of the virtual machine’s screen.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class ScreenConfiguration : IScreenConfiguration
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class ScreenConfiguration : IScreenConfiguration
 </code></pre></div></div>
 
 <p>The screen rendering mechanism uses a large number of configuration options that provides
@@ -898,121 +898,121 @@ so that the electron beam could sync the screen rendering properly.</p>
 
 <h2 id="screenwidth">ScreenWidth</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenWidth { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenWidth { get; }
 </code></pre></div></div>
 
 <p>The width of the visible screen area in pixels.</p>
 
 <h2 id="screenlines">ScreenLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenLines { get; }
 </code></pre></div></div>
 
 <p>The height of the visible screen area in pixels.</p>
 
 <h2 id="displaywidth">DisplayWidth</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int DisplayWidth { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int DisplayWidth { get; }
 </code></pre></div></div>
 
 <p>The width of the display area in pixels (256).</p>
 
 <h2 id="displaylines">DisplayLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int DisplayLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int DisplayLines { get; }
 </code></pre></div></div>
 
 <p>The height of the display area in pixels.</p>
 
 <h2 id="nonvisiblebordertoplines">NonVisibleBorderTopLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int NonVisibleBorderTopLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int NonVisibleBorderTopLines { get; }
 </code></pre></div></div>
 
 <p>The number of top border lines that are not visible when rendering the screen.</p>
 
 <h2 id="bordertoplines">BorderTopLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderTopLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderTopLines { get; }
 </code></pre></div></div>
 
 <p>The number of border lines above the display area.</p>
 
 <h2 id="borderbottomlines">BorderBottomLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderBottomLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderBottomLines { get; }
 </code></pre></div></div>
 
 <p>The number of border lines below the display area.</p>
 
 <h2 id="nonvisibleborderbottomlines">NonVisibleBorderBottomLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int NonVisibleBorderBottomLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int NonVisibleBorderBottomLines { get; }
 </code></pre></div></div>
 
 <p>The number of bottom border lines that are not visible when rendering the screen.</p>
 
 <h2 id="verticalsynclines">VerticalSyncLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int VerticalSyncLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int VerticalSyncLines { get; }
 </code></pre></div></div>
 
 <p>Number of lines used for vertical synch.</p>
 
 <h2 id="borderlefttime">BorderLeftTime</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderLeftTime { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderLeftTime { get; }
 </code></pre></div></div>
 
 <p>The number of CPY T-cycles of displaying the left part of the border.</p>
 
 <h2 id="borderleftpixels">BorderLeftPixels</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderLeftPixels { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderLeftPixels { get; }
 </code></pre></div></div>
 
-<p>The number of border pixels to the left of the display (<code class="highlighter-rouge">2 * BorderLeftTime</code>).</p>
+<p>The number of border pixels to the left of the display (<code class="language-plaintext highlighter-rouge">2 * BorderLeftTime</code>).</p>
 
 <h2 id="borderrighttime">BorderRightTime</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderRightTime { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderRightTime { get; }
 </code></pre></div></div>
 
 <p>The number of CPY T-cycles of displaying the right part of the border.</p>
 
 <h2 id="borderrightpixels">BorderRightPixels</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderRightPixels { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int BorderRightPixels { get; }
 </code></pre></div></div>
 
-<p>The number of border pixels to the right of the display (<code class="highlighter-rouge">2 * BorderRightTime</code>).</p>
+<p>The number of border pixels to the right of the display (<code class="language-plaintext highlighter-rouge">2 * BorderRightTime</code>).</p>
 
 <h2 id="nonvisibleborderrighttime">NonVisibleBorderRightTime</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int NonVisibleBorderRightTime { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int NonVisibleBorderRightTime { get; }
 </code></pre></div></div>
 
 <p>The time given in CPY T-cycles to render the nonvisible right part of the border.</p>
 
 <h2 id="horizontalblankingtime">HorizontalBlankingTime</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int HorizontalBlankingTime { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int HorizontalBlankingTime { get; }
 </code></pre></div></div>
 
 <p>Horizontal blanking time (HSync + blanking) given in CPU T-cycles.</p>
 
-<p>The <code class="highlighter-rouge">ScreenConfiguration</code> class provides other properties that are related to screen rendering.</p>
+<p>The <code class="language-plaintext highlighter-rouge">ScreenConfiguration</code> class provides other properties that are related to screen rendering.</p>
 
 <h2 id="interrupttact">InterruptTact</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int InterruptTact { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int InterruptTact { get; }
 </code></pre></div></div>
 
 <p>The tact index of the interrupt signal relative to the top-left screen pixel</p>
 
 <h2 id="firstdisplayline">FirstDisplayLine</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int FirstDisplayLine { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int FirstDisplayLine { get; }
 </code></pre></div></div>
 
 <p>The screen line number of the first display line (`VerticalSyncLines</p>
@@ -1022,56 +1022,56 @@ so that the electron beam could sync the screen rendering properly.</p>
 
 <h2 id="lastdisplayline">LastDisplayLine</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int LastDisplayLine { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int LastDisplayLine { get; }
 </code></pre></div></div>
 
-<p>The screen line number of the last display line (<code class="highlighter-rouge">FirstDisplayLine + DisplayLines - 1</code>).</p>
+<p>The screen line number of the last display line (<code class="language-plaintext highlighter-rouge">FirstDisplayLine + DisplayLines - 1</code>).</p>
 
 <h2 id="displaylinetime">DisplayLineTime</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int DisplayLineTime { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int DisplayLineTime { get; }
 </code></pre></div></div>
 
 <p>The time of rendering a display pixel row, given in CPU T-cycles.</p>
 
 <h2 id="screenlinetime">ScreenLineTime</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenLineTime { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenLineTime { get; }
 </code></pre></div></div>
 
-<p>The time of rendering an entire raster line, given in CPU T-cycles (<code class="highlighter-rouge">BorderLeftTime + 
+<p>The time of rendering an entire raster line, given in CPU T-cycles (<code class="language-plaintext highlighter-rouge">BorderLeftTime + 
 DisplayLineTime + BorderRightTime + NonVisibleBorderRightTime + HorizontalBlankingTime</code>).</p>
 
 <h2 id="rasterlines">RasterLines</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RasterLines { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RasterLines { get; }
 </code></pre></div></div>
 
-<p>The number of raster lines in the screen (<code class="highlighter-rouge">FirstDisplayLine + DisplayLines + BorderBottomLines + NonVisibleBorderBottomLines</code>).</p>
+<p>The number of raster lines in the screen (<code class="language-plaintext highlighter-rouge">FirstDisplayLine + DisplayLines + BorderBottomLines + NonVisibleBorderBottomLines</code>).</p>
 
 <h2 id="firstdisplaypixeltact">FirstDisplayPixelTact</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int FirstDisplayPixelTact { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int FirstDisplayPixelTact { get; }
 </code></pre></div></div>
 
 <p>The tact in which the top left display pixel should be rendered, given in CPU T-cycles
-(<code class="highlighter-rouge">FirstDisplayLine * ScreenLineTime + BorderLeftTime</code>).</p>
+(<code class="language-plaintext highlighter-rouge">FirstDisplayLine * ScreenLineTime + BorderLeftTime</code>).</p>
 
 <h2 id="firstscreenpixeltact">FirstScreenPixelTact</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int FirstScreenPixelTact { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int FirstScreenPixelTact { get; }
 </code></pre></div></div>
 
 <p>The tact in which the top left screen pixel (border) should be displayed
-(<code class="highlighter-rouge">[VerticalSyncLines + NonVisibleBorderTopLines] * ScreenLineTime</code>).</p>
+(<code class="language-plaintext highlighter-rouge">[VerticalSyncLines + NonVisibleBorderTopLines] * ScreenLineTime</code>).</p>
 
 <h2 id="screenrenderingframetactcount">ScreenRenderingFrameTactCount</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenRenderingFrameTactCount { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int ScreenRenderingFrameTactCount { get; }
 </code></pre></div></div>
 
 <p>The number of CPU T-cycles used for the full rendering of the screen
-(<code class="highlighter-rouge">RasterLines * ScreenLineTime</code>).</p>
+(<code class="language-plaintext highlighter-rouge">RasterLines * ScreenLineTime</code>).</p>
 
 <h1 id="methods">Methods</h1>
 
@@ -1079,7 +1079,7 @@ DisplayLineTime + BorderRightTime + NonVisibleBorderRightTime + HorizontalBlanki
 
 <h2 id="istactvisibleint-int">IsTactVisible(int, int)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsTactVisible(int line, int tactInLine)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsTactVisible(int line, int tactInLine)
 </code></pre></div></div>
 
 <p>Tests whether the specified tact is in the visible area of the screen. Returns true, if
@@ -1087,12 +1087,12 @@ the tact renders the visible part of the screen; otherwise, false.</p>
 
 <h3 id="arguments">Arguments</h3>
 
-<p><code class="highlighter-rouge">line</code>: Raster line index<br />
-<code class="highlighter-rouge">tactInLine</code>: Tact index within the line</p>
+<p><code class="language-plaintext highlighter-rouge">line</code>: Raster line index<br />
+<code class="language-plaintext highlighter-rouge">tactInLine</code>: Tact index within the line</p>
 
 <h2 id="istactindisplayareaint-int">IsTactInDisplayArea(int, int)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsTactInDisplayArea(int line, int tactInLine)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsTactInDisplayArea(int line, int tactInLine)
 </code></pre></div></div>
 
 <p>Tests whether the specified tact is in the display area of the screen. Returns true, if
@@ -1100,117 +1100,117 @@ the tact renders the display part of the screen; otherwise, false.</p>
 
 <h3 id="arguments-1">Arguments</h3>
 
-<p><code class="highlighter-rouge">line</code>: Raster line index<br />
-<code class="highlighter-rouge">tactInLine</code>: Tact index within the line</p>
+<p><code class="language-plaintext highlighter-rouge">line</code>: Raster line index<br />
+<code class="language-plaintext highlighter-rouge">tactInLine</code>: Tact index within the line</p>
 
 <h1 id="the-screenbitmap-class">The ScreenBitmap class</h1>
 
 <p>This class represents the current screen’s pixels, including the border. Every byte stands for a palette
-index. The value of a pixel can be <code class="highlighter-rouge">#00</code> to <code class="highlighter-rouge">#0F</code> on a Spectrum 48K, 128K, and +3E model. On ZX Spectrum Next,
-the value is the entire byte range from <code class="highlighter-rouge">#00</code> to <code class="highlighter-rouge">#FF</code>. The content is read-only, you cannot change it.</p>
+index. The value of a pixel can be <code class="language-plaintext highlighter-rouge">#00</code> to <code class="language-plaintext highlighter-rouge">#0F</code> on a Spectrum 48K, 128K, and +3E model. On ZX Spectrum Next,
+the value is the entire byte range from <code class="language-plaintext highlighter-rouge">#00</code> to <code class="language-plaintext highlighter-rouge">#FF</code>. The content is read-only, you cannot change it.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenBitmap
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenBitmap
 </code></pre></div></div>
 
 <h2 id="thisint">this[int]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte[] this[int lineNo] { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte[] this[int lineNo] { get; }
 </code></pre></div></div>
 
-<p>Retrieves a byte array for the raster line specified in <em><code class="highlighter-rouge">lineNo</code></em>. The value at zero index represent 
+<p>Retrieves a byte array for the raster line specified in <em><code class="language-plaintext highlighter-rouge">lineNo</code></em>. The value at zero index represent 
 the leftmost border pixel of the line. The last item in the array is the rightmost pixel in the line.</p>
 
 <h2 id="thisint-int">this[int, int]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[int row, int column] { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[int row, int column] { get; }
 </code></pre></div></div>
 
-<p>Retrieves the byte for the screen pixel in the given <em><code class="highlighter-rouge">column</code></em> of the specified <em><code class="highlighter-rouge">row</code></em>.</p>
+<p>Retrieves the byte for the screen pixel in the given <em><code class="language-plaintext highlighter-rouge">column</code></em> of the specified <em><code class="language-plaintext highlighter-rouge">row</code></em>.</p>
 
 <h2 id="getdisplaypixelint-int">GetDisplayPixel(int, int)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte GetDisplayPixel(int row, int col)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte GetDisplayPixel(int row, int col)
 </code></pre></div></div>
 
-<p>While <code class="highlighter-rouge">this[int, int]</code> retrieves the specified screen pixel, this method obtains the display pixel of 
-(<em><code class="highlighter-rouge">row</code></em>, <em><code class="highlighter-rouge">column</code></em>).</p>
+<p>While <code class="language-plaintext highlighter-rouge">this[int, int]</code> retrieves the specified screen pixel, this method obtains the display pixel of 
+(<em><code class="language-plaintext highlighter-rouge">row</code></em>, <em><code class="language-plaintext highlighter-rouge">column</code></em>).</p>
 
 <h1 id="the-screenrenderingstatus-class">The ScreenRenderingStatus class</h1>
 
 <p>Provides properties about the current screen rendering status of the machine.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenRenderingStatus
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenRenderingStatus
 </code></pre></div></div>
 
 <h2 id="currentframetact">CurrentFrameTact</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int CurrentFrameTact { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int CurrentFrameTact { get; }
 </code></pre></div></div>
 
 <p>Gets the number of the current tact within the frame being rendered.</p>
 
 <h2 id="rasterline">RasterLine</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RasterLine { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RasterLine { get; }
 </code></pre></div></div>
 
 <p>Gets the number of the current raster line in the frame being rendered.</p>
 
 <h2 id="currentrenderingtact">CurrentRenderingTact</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingTact CurrentRenderingTact { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingTact CurrentRenderingTact { get; }
 </code></pre></div></div>
 
 <p>Gets details about the current tact in the frame being rendered. See more details
-in the description of <a href="ScreenRenderingTact.md"><code class="highlighter-rouge">ScreenRenderingTact</code></a>.</p>
+in the description of <a href="ScreenRenderingTact.md"><code class="language-plaintext highlighter-rouge">ScreenRenderingTact</code></a>.</p>
 
 <h1 id="the-screenrenderingtable-class">The ScreenRenderingTable class</h1>
 
 <p>Represents the screen rendering table of the virtual machine</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenRenderingTable
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenRenderingTable
 </code></pre></div></div>
 
 <h2 id="count">Count</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Count { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Count { get; }
 </code></pre></div></div>
 
 <p>Gets the number of items in the screen rendering table.</p>
 
 <h2 id="thisint-1">this[int]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingTact this[int index] { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingTact this[int index] { get; }
 </code></pre></div></div>
 
-<p>Gets the entry of the screen rendering table specified by <em><code class="highlighter-rouge">index</code></em>. See more details
-in the description of <a href="ScreenRenderingTact.md"><code class="highlighter-rouge">ScreenRenderingTact</code></a>.</p>
+<p>Gets the entry of the screen rendering table specified by <em><code class="language-plaintext highlighter-rouge">index</code></em>. See more details
+in the description of <a href="ScreenRenderingTact.md"><code class="language-plaintext highlighter-rouge">ScreenRenderingTact</code></a>.</p>
 
 <h1 id="the-screenrenderingtact-class">The ScreenRenderingTact class</h1>
 
 <p>Provides details about a screen rendering tact.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Devices.Screen</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenRenderingTact
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ScreenRenderingTact
 </code></pre></div></div>
 
 <h2 id="phase">Phase</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingPhase Phase { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingPhase Phase { get; }
 </code></pre></div></div>
 
-<p>The rendering phase to be applied for the particular tact. The <code class="highlighter-rouge">ScreenRenderingPhase</code> enum
+<p>The rendering phase to be applied for the particular tact. The <code class="language-plaintext highlighter-rouge">ScreenRenderingPhase</code> enum
 has these values:</p>
 
 <table>
@@ -1222,39 +1222,39 @@ has these values:</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">None</code></td>
+      <td><code class="language-plaintext highlighter-rouge">None</code></td>
       <td>The ULA does not do any rendering</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Border</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Border</code></td>
       <td>The ULA sets the border color to display the current pixel.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">BorderFetchPixel</code></td>
+      <td><code class="language-plaintext highlighter-rouge">BorderFetchPixel</code></td>
       <td>The ULA sets the border color to display the current pixel. It prepares to display the fist pixel in the row with prefetching the corresponding byte from the display memory.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">BorderFetchPixelAttr</code></td>
+      <td><code class="language-plaintext highlighter-rouge">BorderFetchPixelAttr</code></td>
       <td>The ULA sets the border color to display the current pixel. It has already fetched the 8 pixel bits to display. It carries on preparing to display the fist pixel in the row with prefetching the corresponding attribute byte from the display memory.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">DisplayB1</code></td>
+      <td><code class="language-plaintext highlighter-rouge">DisplayB1</code></td>
       <td>The ULA displays the next two pixels of Byte1 sequentially during a single Z80 clock cycle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">DisplayB1FetchB2</code></td>
+      <td><code class="language-plaintext highlighter-rouge">DisplayB1FetchB2</code></td>
       <td>The ULA displays the next two pixels of Byte1 sequentially during a single Z80 clock cycle. It prepares to display the pixels of the next byte in the row with prefetching the corresponding attribute from the display memory.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">DisplayB2</code></td>
+      <td><code class="language-plaintext highlighter-rouge">DisplayB2</code></td>
       <td>The ULA displays the next two pixels of Byte2 sequentially during a single Z80 clock cycle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">DisplayB2FetchB1</code></td>
+      <td><code class="language-plaintext highlighter-rouge">DisplayB2FetchB1</code></td>
       <td>The ULA displays the next two pixels of Byte2 sequentially during a single Z80 clock cycle. It prepares to display the pixels of the next byte in the row with prefetching the corresponding byte from the display memory.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">DisplayB2FetchA1</code></td>
+      <td><code class="language-plaintext highlighter-rouge">DisplayB2FetchA1</code></td>
       <td>The ULA displays the next two pixels of Byte2 sequentially during a single Z80 clock cycle. It prepares to display the pixels of the next byte in the row with prefetching the corresponding attribute from the display memory.</td>
     </tr>
   </tbody>
@@ -1262,36 +1262,36 @@ has these values:</p>
 
 <h2 id="contentiondelay">ContentionDelay</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte ContentionDelay { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte ContentionDelay { get; }
 </code></pre></div></div>
 
 <p>Contention delay during the particular screen rendering tact, provided, the CPU is reading 
-or writing data in the screen memory area (<code class="highlighter-rouge">#4000</code>-<code class="highlighter-rouge">#7FFF</code>).</p>
+or writing data in the screen memory area (<code class="language-plaintext highlighter-rouge">#4000</code>-<code class="language-plaintext highlighter-rouge">#7FFF</code>).</p>
 
 <h2 id="pixelbytetofetchaddress">PixelByteToFetchAddress</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort PixelByteToFetchAddress { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort PixelByteToFetchAddress { get; }
 </code></pre></div></div>
 
 <p>Display memory address used in the particular tact to fetch the pixel value.</p>
 
 <h2 id="attributetofetchaddress">AttributeToFetchAddress</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort AttributeToFetchAddress { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort AttributeToFetchAddress { get; }
 </code></pre></div></div>
 
 <p>Display memory address used in the particular tact to fetch the attribute of a pixel.</p>
 
 <h2 id="xpos">XPos</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort XPos { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort XPos { get; }
 </code></pre></div></div>
 
 <p>The X position of the pixel in screen coordinates.</p>
 
 <h2 id="ypos">YPos</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort YPos { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort YPos { get; }
 </code></pre></div></div>
 
 <p>The Y position of the pixel in screen coordinates.</p>

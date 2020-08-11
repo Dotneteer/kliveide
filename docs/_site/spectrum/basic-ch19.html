@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>BEEP | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="BEEP" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 19: BEEP" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"BEEP","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch19","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch19"},"description":"CHAPTER 19: BEEP","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch19","headline":"BEEP","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch19"},"description":"CHAPTER 19: BEEP","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -604,7 +604,7 @@ line and space, taking the key into account.</p>
 
 <p>For example, type:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PRINT "Frere Gustav"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PRINT "Frere Gustav"
 20 BEEP 1,0: BEEP 1,2: BEEP .5,3: BEEP.5,2: BEEP 1,0
 30 BEEP 1,0: BEEP 1,2: BEEP .5,3: BEEP.5,2: BEEP 1,0
 40 BEEP 1,3: BEEP 1,5: BEEP 2,7
@@ -631,7 +631,7 @@ to 15, but also the E on the bottom line, flattening it from 4 to 3. It should n
 <p>If you want to change the key of the piece, the best thing is to set up a variable key and insert key+ before each pitch value: thus the second line
 becomes</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 BEEP 1,key+0: BEEP 1,key+2: BEEP s,key+3: BEEP.5,key+2: BEEP 1,key+0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 BEEP 1,key+0: BEEP 1,key+2: BEEP s,key+3: BEEP.5,key+2: BEEP 1,key+0
 </code></pre></div></div>
 
 <p>Before you run a program you must give key the appropriate value - 0 for C minor, 2 for D minor, 12 for C minor an octave up, and so on. You can get the
@@ -642,7 +642,7 @@ that, half a second for a quaver and so on.</p>
 
 <p>More flexible is to set up a variable crotchet to store the length of a crotchet and specify the durations in terms of this. Then line 20 would become</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 BEEP crotchet,key+0: BEEP crotchet,key+2: BEEP crotchet/2,key+3: 
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 BEEP crotchet,key+0: BEEP crotchet,key+2: BEEP crotchet/2,key+3: 
 BEEP crotchet/2,key+2: BEEP crotchet,key+0
 </code></pre></div></div>
 
@@ -658,7 +658,7 @@ very simple instrument like a tin whistle or a recorder, and work the tunes out 
 can play on this instrument.</p>
 
 <p>Type:</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FOR n=0 TO 1000: BEEP .5,n: NEXT n
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>FOR n=0 TO 1000: BEEP .5,n: NEXT n
 </code></pre></div></div>
 
 <p>This will play notes as high as it can, and then stop with error report B integer out of range. You can print out n to find out how high it did actually
@@ -672,7 +672,7 @@ bit.</p>
 
 <p>Type in this program line:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 BEEP .5,0: BEEP .5,2: BEEP .5,4: BEEP .5,5: BEEP .5,7: BEEP .5,9:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 BEEP .5,0: BEEP .5,2: BEEP .5,4: BEEP .5,5: BEEP .5,7: BEEP .5,9:
 BEEP .5,11: BEEP .5,12: STOP
 </code></pre></div></div>
 
@@ -683,7 +683,7 @@ slightly up or down the string in a way that a pianist can’t.</p>
 
 <p>The natural scale, which is what the violinist plays, comes out like this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 BEEP .5,0: BEEP .5,2.039: BEEP .5,3.86: BEEP .5,4.98: BEEP .5,7.02:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 BEEP .5,0: BEEP .5,2.039: BEEP .5,3.86: BEEP .5,4.98: BEEP .5,7.02:
 BEEP .5,8.84: BEEP .5,10.88: BEEP .5,12: STOP**
 </code></pre></div></div>
 

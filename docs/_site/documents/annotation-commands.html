@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Disassembly: Annotations | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Disassembly: Annotations" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Managing annotations is a unique feature of SpectNetIDE. It is very useful when you re-engineer existing code, including a ZX Spectrum ROM. You can define labels, add end-of-instruction comments, prefix comments to disassembly instructions. Moreover, you can define identifiers for literal values and tell the disassembler to use them for particular instructions instead of the less meaningful numbers." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-02T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Disassembly: Annotations","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/annotation-commands","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/annotation-commands"},"description":"Managing annotations is a unique feature of SpectNetIDE. It is very useful when you re-engineer existing code, including a ZX Spectrum ROM. You can define labels, add end-of-instruction comments, prefix comments to disassembly instructions. Moreover, you can define identifiers for literal values and tell the disassembler to use them for particular instructions instead of the less meaningful numbers.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/annotation-commands","headline":"Disassembly: Annotations","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/annotation-commands"},"description":"Managing annotations is a unique feature of SpectNetIDE. It is very useful when you re-engineer existing code, including a ZX Spectrum ROM. You can define labels, add end-of-instruction comments, prefix comments to disassembly instructions. Moreover, you can define identifiers for literal values and tell the disassembler to use them for particular instructions instead of the less meaningful numbers.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -889,15 +889,15 @@
   </thead>
   <tbody>
     <tr>
-      <td><strong><code class="highlighter-rouge">L</code></strong> <em><code class="highlighter-rouge">number</code></em> <em>[<code class="highlighter-rouge">identifier</code>]</em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">L</code></strong> <em><code class="language-plaintext highlighter-rouge">number</code></em> <em>[<code class="language-plaintext highlighter-rouge">identifier</code>]</em></td>
       <td>Adds a label with the given identifier for the specified address. If the identifier is omitted, removes the label from the address.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">C</code></strong> <em><code class="highlighter-rouge">number</code></em> <em>[<code class="highlighter-rouge">text</code>]</em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">C</code></strong> <em><code class="language-plaintext highlighter-rouge">number</code></em> <em>[<code class="language-plaintext highlighter-rouge">text</code>]</em></td>
       <td>Adds a tail comment with the given text to the instruction at the specified addres. If no text is specified, the comment is removed.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">P</code></strong> <em><code class="highlighter-rouge">number</code></em> <em>[<code class="highlighter-rouge">text</code>]</em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">P</code></strong> <em><code class="language-plaintext highlighter-rouge">number</code></em> <em>[<code class="language-plaintext highlighter-rouge">text</code>]</em></td>
       <td>Adds a prefix comment with the given text to the instruction at the specified addres. If no text is specified, the comment is removed.</td>
     </tr>
   </tbody>
@@ -914,15 +914,15 @@
   </thead>
   <tbody>
     <tr>
-      <td><strong><code class="highlighter-rouge">D</code></strong> <em><code class="highlighter-rouge">literal</code></em> <em><code class="highlighter-rouge">identifier</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">D</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em> <em><code class="language-plaintext highlighter-rouge">identifier</code></em></td>
       <td>Replaces the literal value within the instruction that starts at the specified address with the given <em>identifier</em>.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">D</code></strong> <em><code class="highlighter-rouge">literal</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">D</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></td>
       <td>Removes the literal replacements from instruction that starts at the specified address.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">D</code></strong> <em><code class="highlighter-rouge">literal</code></em> <strong><code class="highlighter-rouge">#</code></strong></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">D</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em> <strong><code class="language-plaintext highlighter-rouge">#</code></strong></td>
       <td>Replaces the literal value within the instruction that starts at the specified address with the first available identifier in the symbol table that has the value of the literal.</td>
     </tr>
   </tbody>
@@ -930,7 +930,7 @@
 
 <p>The IDE saves the annotations you add with these commands into the annotations file of your project. The ZX Spectrum ROMs within SpectNetIDE ship with their predefined annotations, but you can change them, too.</p>
 
-<p>If your change regards to ROM addresses, the <code class="highlighter-rouge">.disann</code> file of the specific ROM file is changed; otherwise, modifications go to your default annotation file (<code class="highlighter-rouge">Annotations.disann</code> in a new project).</p>
+<p>If your change regards to ROM addresses, the <code class="language-plaintext highlighter-rouge">.disann</code> file of the specific ROM file is changed; otherwise, modifications go to your default annotation file (<code class="language-plaintext highlighter-rouge">Annotations.disann</code> in a new project).</p>
 
 <p>With the following commands, you can retrieve the already placed annotations of a particular address:</p>
 
@@ -943,15 +943,15 @@
   </thead>
   <tbody>
     <tr>
-      <td><strong><code class="highlighter-rouge">RL</code></strong> <em><code class="highlighter-rouge">literal</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">RL</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></td>
       <td>Retrieves the label of the specified address.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">RC</code></strong> <em><code class="highlighter-rouge">literal</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">RC</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></td>
       <td>Retrieves the comment of the specified address.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">RP</code></strong> <em><code class="highlighter-rouge">literal</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">RP</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></td>
       <td>Retrieves the prefix comment of the specified address.</td>
     </tr>
   </tbody>

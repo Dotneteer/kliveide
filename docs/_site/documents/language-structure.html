@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Language structure | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Language structure" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Each line of the source code is a declaration unit and is parsed in its own context. Such a source code line can be one of these constructs: A Z80 instruction, which can be directly compiled to binary code (such as ld bc,#12AC) A directive that is used by the preprocessor of the compiler (e.g. #include, #if, etc.) A pragma that emits binary output or instructs the compiler for about code emission (.org, .defb, etc.) A compiler statement (or shortly, a statement) that implements control flow operations for the compiler (e.g. .loop, .repeat...until, .if...elif...else...endif) A comment that helps the understanding of the code." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Language structure","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/language-structure","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/language-structure"},"description":"Each line of the source code is a declaration unit and is parsed in its own context. Such a source code line can be one of these constructs: A Z80 instruction, which can be directly compiled to binary code (such as ld bc,#12AC) A directive that is used by the preprocessor of the compiler (e.g. #include, #if, etc.) A pragma that emits binary output or instructs the compiler for about code emission (.org, .defb, etc.) A compiler statement (or shortly, a statement) that implements control flow operations for the compiler (e.g. .loop, .repeat...until, .if...elif...else...endif) A comment that helps the understanding of the code.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/language-structure","headline":"Language structure","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/language-structure"},"description":"Each line of the source code is a declaration unit and is parsed in its own context. Such a source code line can be one of these constructs: A Z80 instruction, which can be directly compiled to binary code (such as ld bc,#12AC) A directive that is used by the preprocessor of the compiler (e.g. #include, #if, etc.) A pragma that emits binary output or instructs the compiler for about code emission (.org, .defb, etc.) A compiler statement (or shortly, a statement) that implements control flow operations for the compiler (e.g. .loop, .repeat...until, .if...elif...else...endif) A comment that helps the understanding of the code.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -879,30 +879,30 @@
               <p>Each line of the source code is a declaration unit and is parsed in its own context. Such a 
 source code line can be one of these constructs:</p>
 <ul>
-  <li>A Z80 <em>instruction</em>, which can be directly compiled to binary code (such as <code class="highlighter-rouge">ld bc,#12AC</code>)</li>
-  <li>A <em>directive</em> that is used by the preprocessor of the compiler (e.g. <code class="highlighter-rouge">#include</code>, <code class="highlighter-rouge">#if</code>, etc.)</li>
-  <li>A <em>pragma</em> that emits binary output or instructs the compiler for about code emission (<code class="highlighter-rouge">.org</code>, <code class="highlighter-rouge">.defb</code>, etc.)</li>
+  <li>A Z80 <em>instruction</em>, which can be directly compiled to binary code (such as <code class="language-plaintext highlighter-rouge">ld bc,#12AC</code>)</li>
+  <li>A <em>directive</em> that is used by the preprocessor of the compiler (e.g. <code class="language-plaintext highlighter-rouge">#include</code>, <code class="language-plaintext highlighter-rouge">#if</code>, etc.)</li>
+  <li>A <em>pragma</em> that emits binary output or instructs the compiler for about code emission (<code class="language-plaintext highlighter-rouge">.org</code>, <code class="language-plaintext highlighter-rouge">.defb</code>, etc.)</li>
   <li>A <em>compiler statement</em> (or shortly, a <em>statement</em>) that implements control flow operations for the compiler
-(e.g. <code class="highlighter-rouge">.loop</code>, <code class="highlighter-rouge">.repeat</code>..<code class="highlighter-rouge">.until</code>, <code class="highlighter-rouge">.if</code>..<code class="highlighter-rouge">.elif</code>..<code class="highlighter-rouge">.else</code>..<code class="highlighter-rouge">.endif</code>)</li>
+(e.g. <code class="language-plaintext highlighter-rouge">.loop</code>, <code class="language-plaintext highlighter-rouge">.repeat</code>..<code class="language-plaintext highlighter-rouge">.until</code>, <code class="language-plaintext highlighter-rouge">.if</code>..<code class="language-plaintext highlighter-rouge">.elif</code>..<code class="language-plaintext highlighter-rouge">.else</code>..<code class="language-plaintext highlighter-rouge">.endif</code>)</li>
   <li>A <em>comment</em> that helps the understanding of the code.</li>
 </ul>
 
 <h2 id="the-two-set-of-symbols">The Two Set of Symbols</h2>
 
 <p>The compiler works with two set of symbols. It uses the first set during the preprocessing phase in the
-only in the directives. For example, with the <code class="highlighter-rouge">#define</code> directive, you define a symbol, with <code class="highlighter-rouge">#undef</code>
-you remove it. Within the expressions you use in directives (such as <code class="highlighter-rouge">#if</code>), you can refer only to these symbols.</p>
+only in the directives. For example, with the <code class="language-plaintext highlighter-rouge">#define</code> directive, you define a symbol, with <code class="language-plaintext highlighter-rouge">#undef</code>
+you remove it. Within the expressions you use in directives (such as <code class="language-plaintext highlighter-rouge">#if</code>), you can refer only to these symbols.</p>
 
 <p>The <strong>SpectNetIde</strong> option pages provide two options to declare your predefined symbols. When you compile
-the code in the IDE, it will use these symbols as if you’d declare them with <code class="highlighter-rouge">#define</code>.</p>
+the code in the IDE, it will use these symbols as if you’d declare them with <code class="language-plaintext highlighter-rouge">#define</code>.</p>
 
 <p><img src="/kliveide/assets/images/z80-assembler/predefined-symbols.png" alt="Predefined symbols" /></p>
 
 <blockquote>
-  <p>You can declare multiple symbols and separate them with the <code class="highlighter-rouge">;</code> character.</p>
+  <p>You can declare multiple symbols and separate them with the <code class="language-plaintext highlighter-rouge">;</code> character.</p>
 </blockquote>
 
-<p>The other set of symbols are the one you declare as <em>labels</em>, or with the <code class="highlighter-rouge">.equ</code> or <code class="highlighter-rouge">.var</code> pragmas
+<p>The other set of symbols are the one you declare as <em>labels</em>, or with the <code class="language-plaintext highlighter-rouge">.equ</code> or <code class="language-plaintext highlighter-rouge">.var</code> pragmas
 You can use this set everywhere except directives.</p>
 
 <p>This duality is related to the way the compiler works: in the first, preprocessing phase it only
@@ -915,8 +915,8 @@ about directives, and thus it does not accesses the symbols used in the preproce
 to explicitly declare the type of the syntax you intend to use, just use the flavor you prefer
 — or mix muliple flavors, as you wish.</p>
 
-<p>For example, you can use several mnemonics for defining a series of bytes, such as <code class="highlighter-rouge">.db</code>, <code class="highlighter-rouge">.defb</code>,
-<code class="highlighter-rouge">db</code>, <code class="highlighter-rouge">defb</code>, and both lowecase or uppercase versions are welcome.</p>
+<p>For example, you can use several mnemonics for defining a series of bytes, such as <code class="language-plaintext highlighter-rouge">.db</code>, <code class="language-plaintext highlighter-rouge">.defb</code>,
+<code class="language-plaintext highlighter-rouge">db</code>, <code class="language-plaintext highlighter-rouge">defb</code>, and both lowecase or uppercase versions are welcome.</p>
 
 <h2 id="syntax-basics">Syntax Basics</h2>
 
@@ -925,7 +925,7 @@ words (such as assembly instructions, pragmas, or directives) either with lowerc
 uppercase letters, but you cannot mix these cases. For example, this instructions use
 proper syntax:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LD c,A
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LD c,A
 JP #12ac
 ldir
 djnz MyLabel
@@ -933,7 +933,7 @@ djnz MyLabel
 
 <p>However, in these samples, character cases are mixed, and do the compiler will refuse them:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Ld c,A
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Ld c,A
 Jp #12ac
 ldIR
 djNZ MyLabel
@@ -942,7 +942,7 @@ djNZ MyLabel
 <p>In symbolic names (labels, identifiers, etc.), you can mix lowercase and uppercase letters. Nonetheless, the compiler applies
 case-insensitive comparison when mathcing symbolic names. So, these statement pairs are totally equivalent with
 each other:</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jp MainEx
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jp MainEx
 jp MAINEX
 
 djnz mylabel
@@ -960,17 +960,17 @@ ld hl,errNo
 
 <p><strong>SpectNetIDE</strong> support two types of comments: <em>end-of-line</em> and <em>block</em> comments.</p>
 
-<p>En-of-line comments start with a semicolon (<code class="highlighter-rouge">;</code>) or with a double forward slash (<code class="highlighter-rouge">//</code>). The compiler takes the rest of the line into account as the body
+<p>En-of-line comments start with a semicolon (<code class="language-plaintext highlighter-rouge">;</code>) or with a double forward slash (<code class="language-plaintext highlighter-rouge">//</code>). The compiler takes the rest of the line into account as the body
 of the comment. This sample illustrates this concept:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; This line is comment-only line
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; This line is comment-only line
 Wait:   ld b,8     ; Set the counter
 Wait1:  djnz Wait1 // wait while the counter reaches zero
 </code></pre></div></div>
 
-<p>Block comments can be put anywhere within an instruction line betwen <code class="highlighter-rouge">/*</code> and <code class="highlighter-rouge">*/</code> tokens, until they do not break other tokens. Nonetheless, block comments cannot span multiple lines, they must start and end within the same source code line. All of the block comments in this code snippet are correct:</p>
+<p>Block comments can be put anywhere within an instruction line betwen <code class="language-plaintext highlighter-rouge">/*</code> and <code class="language-plaintext highlighter-rouge">*/</code> tokens, until they do not break other tokens. Nonetheless, block comments cannot span multiple lines, they must start and end within the same source code line. All of the block comments in this code snippet are correct:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetAttr:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetAttr:
 	ld b,32
 fill:
   /* block */
@@ -982,7 +982,7 @@ fill:
 
 <p>However, this will result in syntax error:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/* 
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/* 
   This block comment spans multiple lines,
   and thus, it is invalid
 */
@@ -999,14 +999,14 @@ The Z80 assembly in <strong>SpectNetIDE</strong> does not have separate multi-li
 
 <p>The language syntax provides these types of literals:</p>
 <ul>
-  <li><strong>Boolean values.</strong> The following tokens represent Booleans: <code class="highlighter-rouge">.false</code>, <code class="highlighter-rouge">false</code>, <code class="highlighter-rouge">.true</code>, <code class="highlighter-rouge">true</code>.</li>
+  <li><strong>Boolean values.</strong> The following tokens represent Booleans: <code class="language-plaintext highlighter-rouge">.false</code>, <code class="language-plaintext highlighter-rouge">false</code>, <code class="language-plaintext highlighter-rouge">.true</code>, <code class="language-plaintext highlighter-rouge">true</code>.</li>
   <li><strong>Decimal numbers.</strong> You can use up to 5 digits (0..9) to declare a decimal number. Examples:
 16, 32768, 2354.</li>
   <li><strong>Floating point numbers.</strong> You can use the same notation for floating point numbers as in C/C++/Java/C#.
 Here are a few samples:</li>
 </ul>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.25
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.25
 123.456
 12.45E34
 12.45e-12
@@ -1015,14 +1015,14 @@ Here are a few samples:</li>
 
 <ul>
   <li><strong>Hexadecimal numbers.</strong> You can use up to 4 hexadecimal digits (0..9, a..f or A..F) to declare
-a hexadecimal literal. The compiler looks for one of the <code class="highlighter-rouge">#</code> <code class="highlighter-rouge">0x</code> or <code class="highlighter-rouge">$</code> prefix, or one of 
-the <code class="highlighter-rouge">h</code> or <code class="highlighter-rouge">H</code> suffixes to recognize them as hexadecimal. If you use the <code class="highlighter-rouge">h</code> or <code class="highlighter-rouge">H</code>
-suffixes, the hexadecimal number should start with a decimal digit <code class="highlighter-rouge">0</code>…<code class="highlighter-rouge">9</code>; otherwise the 
+a hexadecimal literal. The compiler looks for one of the <code class="language-plaintext highlighter-rouge">#</code> <code class="language-plaintext highlighter-rouge">0x</code> or <code class="language-plaintext highlighter-rouge">$</code> prefix, or one of 
+the <code class="language-plaintext highlighter-rouge">h</code> or <code class="language-plaintext highlighter-rouge">H</code> suffixes to recognize them as hexadecimal. If you use the <code class="language-plaintext highlighter-rouge">h</code> or <code class="language-plaintext highlighter-rouge">H</code>
+suffixes, the hexadecimal number should start with a decimal digit <code class="language-plaintext highlighter-rouge">0</code>…<code class="language-plaintext highlighter-rouge">9</code>; otherwise the 
 assembler interprets it as an identifier (label).
 Here are a few samples:</li>
 </ul>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#12AC
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#12AC
 0x12ac
 $12Ac
 12ACh
@@ -1031,20 +1031,20 @@ $12Ac
 </code></pre></div></div>
 
 <ul>
-  <li><strong>Binary numbers.</strong> Literal starting with the one of the <code class="highlighter-rouge">%</code> or <code class="highlighter-rouge">0b</code> prefix, (or, alternatively with the <code class="highlighter-rouge">b</code> or <code class="highlighter-rouge">B</code> suffix) are taken into 
-account as binary literals. You can follow the prefix with up to 16 <code class="highlighter-rouge">0</code> or <code class="highlighter-rouge">1</code> digits. To make
-them more readable, you can separate adjacent digits with the underscore (<code class="highlighter-rouge">_</code>) character. These 
+  <li><strong>Binary numbers.</strong> Literal starting with the one of the <code class="language-plaintext highlighter-rouge">%</code> or <code class="language-plaintext highlighter-rouge">0b</code> prefix, (or, alternatively with the <code class="language-plaintext highlighter-rouge">b</code> or <code class="language-plaintext highlighter-rouge">B</code> suffix) are taken into 
+account as binary literals. You can follow the prefix with up to 16 <code class="language-plaintext highlighter-rouge">0</code> or <code class="language-plaintext highlighter-rouge">1</code> digits. To make
+them more readable, you can separate adjacent digits with the underscore (<code class="language-plaintext highlighter-rouge">_</code>) character. These 
 are all valid binary literals:</li>
 </ul>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>%01011111
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>%01011111
 0b01011111
 0b_0101_1111
 0101_1111b
 </code></pre></div></div>
 
 <ul>
-  <li><strong>Octal numbers.</strong> You can use up to 6 digits (0..7) with an <code class="highlighter-rouge">o</code>, <code class="highlighter-rouge">O</code> (letter O), <code class="highlighter-rouge">q</code>, or <code class="highlighter-rouge">Q</code> suffix to declare an octal number. Examples:
+  <li><strong>Octal numbers.</strong> You can use up to 6 digits (0..7) with an <code class="language-plaintext highlighter-rouge">o</code>, <code class="language-plaintext highlighter-rouge">O</code> (letter O), <code class="language-plaintext highlighter-rouge">q</code>, or <code class="language-plaintext highlighter-rouge">Q</code> suffix to declare an octal number. Examples:
 16, 327, 2354.</li>
 </ul>
 
@@ -1054,8 +1054,8 @@ the part of the numeric literal, it is an operator.</p>
 </blockquote>
 
 <ul>
-  <li><strong>Characters</strong>. You can put a character between single quotes (for example: <code class="highlighter-rouge">'Q'</code>).</li>
-  <li><strong>Strings</strong>. You can put a series of character between double quotes (for example: <code class="highlighter-rouge">"Sinclair"</code>).</li>
+  <li><strong>Characters</strong>. You can put a character between single quotes (for example: <code class="language-plaintext highlighter-rouge">'Q'</code>).</li>
+  <li><strong>Strings</strong>. You can put a series of character between double quotes (for example: <code class="language-plaintext highlighter-rouge">"Sinclair"</code>).</li>
 </ul>
 
 <blockquote>
@@ -1063,15 +1063,15 @@ the part of the numeric literal, it is an operator.</p>
 </blockquote>
 
 <ul>
-  <li><strong>The <code class="highlighter-rouge">$</code>, <code class="highlighter-rouge">*</code> or <code class="highlighter-rouge">.</code> tokens</strong>. These literals are equivalent; all represent the current assembly address.</li>
+  <li><strong>The <code class="language-plaintext highlighter-rouge">$</code>, <code class="language-plaintext highlighter-rouge">*</code> or <code class="language-plaintext highlighter-rouge">.</code> tokens</strong>. These literals are equivalent; all represent the current assembly address.</li>
 </ul>
 
 <h2 id="identifiers">Identifiers</h2>
 
 <p>You can use identifiers to refer to labels and other constants. Identifiers must start with 
-a letter (a..z or A..Z) or with one of these characters: <strong><code class="highlighter-rouge">`</code></strong> (backtick), <strong><code class="highlighter-rouge">_</code></strong> (underscore), <strong><code class="highlighter-rouge">@</code></strong>, <strong><code class="highlighter-rouge">!</code></strong>, <strong><code class="highlighter-rouge">?</code></strong>, and <strong><code class="highlighter-rouge">#</code></strong>. The subsequent ones can be digits and any of the start characters except backtick. Here are a few samples:</p>
+a letter (a..z or A..Z) or with one of these characters: <strong><code class="language-plaintext highlighter-rouge">`</code></strong> (backtick), <strong><code class="language-plaintext highlighter-rouge">_</code></strong> (underscore), <strong><code class="language-plaintext highlighter-rouge">@</code></strong>, <strong><code class="language-plaintext highlighter-rouge">!</code></strong>, <strong><code class="language-plaintext highlighter-rouge">?</code></strong>, and <strong><code class="language-plaintext highlighter-rouge">#</code></strong>. The subsequent ones can be digits and any of the start characters except backtick. Here are a few samples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyCycle
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyCycle
 ERR_NO
 Cycle_4_Wait
 `MyTemp
@@ -1079,9 +1079,9 @@ Cycle_4_Wait
 IsLastLine?
 </code></pre></div></div>
 <blockquote>
-  <p>There are strings that can be both identifiers or hexadecimal literals with the <code class="highlighter-rouge">H</code> or <code class="highlighter-rouge">h</code> suffix, like
-<code class="highlighter-rouge">AC0Fh</code> or <code class="highlighter-rouge">FADH</code>. The assembler considers such strings as identifiers. To sign a hexadecimal literal, use a <code class="highlighter-rouge">0</code>
-prefix: <code class="highlighter-rouge">0FADH</code> is a hexadecimal literal, while <code class="highlighter-rouge">FADH</code> is an identifier.</p>
+  <p>There are strings that can be both identifiers or hexadecimal literals with the <code class="language-plaintext highlighter-rouge">H</code> or <code class="language-plaintext highlighter-rouge">h</code> suffix, like
+<code class="language-plaintext highlighter-rouge">AC0Fh</code> or <code class="language-plaintext highlighter-rouge">FADH</code>. The assembler considers such strings as identifiers. To sign a hexadecimal literal, use a <code class="language-plaintext highlighter-rouge">0</code>
+prefix: <code class="language-plaintext highlighter-rouge">0FADH</code> is a hexadecimal literal, while <code class="language-plaintext highlighter-rouge">FADH</code> is an identifier.</p>
 </blockquote>
 
 <blockquote>
@@ -1093,11 +1093,11 @@ prefix: <code class="highlighter-rouge">0FADH</code> is a hexadecimal literal, w
 
 <p>As you will later learn, the SpectNetIDE assembler supports modules that work like namespaces in other languages (Java, C#, C++, etc.) to encapsulate labels and symbols. To access symbols within modules, you can use scoped identifiers with this syntax:</p>
 
-<p><strong><code class="highlighter-rouge">::</code></strong>? <em>identifier</em> (<strong><code class="highlighter-rouge">.</code></strong> <em>identifier</em>)*</p>
+<p><strong><code class="language-plaintext highlighter-rouge">::</code></strong>? <em>identifier</em> (<strong><code class="language-plaintext highlighter-rouge">.</code></strong> <em>identifier</em>)*</p>
 
-<p>The optional <code class="highlighter-rouge">::</code> token means that name should start in the outermost (global) scope. The module and identifier segments are separated with a dot. Examples:</p>
+<p>The optional <code class="language-plaintext highlighter-rouge">::</code> token means that name should start in the outermost (global) scope. The module and identifier segments are separated with a dot. Examples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>::FirstLevelModule.Routine1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>::FirstLevelModule.Routine1
 NestedModule.ClearScreen
 FirstLevelModule.NestedModule.ClearScreen
 </code></pre></div></div>
@@ -1107,7 +1107,7 @@ FirstLevelModule.NestedModule.ClearScreen
 <p>You have already learned that you can utilize character and string literals (wrapped into single, or double quotes, 
 respectively), such as in these samples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"This is a string. The next sample is a single character:"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"This is a string. The next sample is a single character:"
 'c'
 </code></pre></div></div>
 
@@ -1125,72 +1125,72 @@ respectively), such as in these samples:</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">\i</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\i</code></td>
       <td>0x10</td>
       <td>INK</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\p</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\p</code></td>
       <td>0x11</td>
       <td>PAPER</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\f</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\f</code></td>
       <td>0x12</td>
       <td>FLASH</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\b</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\b</code></td>
       <td>0x13</td>
       <td>BRIGHT</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\I</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\I</code></td>
       <td>0x14</td>
       <td>INVERSE</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\o</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\o</code></td>
       <td>0x15</td>
       <td>OVER</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\a</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\a</code></td>
       <td>0x16</td>
       <td>AT</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\t</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\t</code></td>
       <td>0x17</td>
       <td>TAB</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\P</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\P</code></td>
       <td>0x60</td>
       <td>pound sign</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\C</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\C</code></td>
       <td>0x7F</td>
       <td>copyright sign</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\\</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\\</code></td>
       <td>0x5C</td>
       <td>backslash</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\'</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\'</code></td>
       <td>0x27</td>
       <td>single quote</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\"</code></td>
       <td>0x22</td>
       <td>double quote</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">\0</code></td>
+      <td><code class="language-plaintext highlighter-rouge">\0</code></td>
       <td>0x00</td>
       <td>binary zero</td>
     </tr>
@@ -1202,11 +1202,11 @@ respectively), such as in these samples:</p>
 pairs in other languages, such as C, C++, C#, or Java.</p>
 </blockquote>
 
-<p>To declare a character by its binary code, you can use the <code class="highlighter-rouge">\xH</code> or<br />
-<code class="highlighter-rouge">\xHH</code> sequences (<code class="highlighter-rouge">H</code> is a hexadecimal digit). For example, these
+<p>To declare a character by its binary code, you can use the <code class="language-plaintext highlighter-rouge">\xH</code> or<br />
+<code class="language-plaintext highlighter-rouge">\xHH</code> sequences (<code class="language-plaintext highlighter-rouge">H</code> is a hexadecimal digit). For example, these
 escape sequence pairs are equivalent:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"\i"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"\i"
 "\x10"
 
 "\C by me"

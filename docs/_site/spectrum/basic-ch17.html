@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Graphics | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Graphics" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 17: Graphics" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Graphics","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch17","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch17"},"description":"CHAPTER 17: Graphics","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch17","headline":"Graphics","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch17"},"description":"CHAPTER 17: Graphics","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -600,21 +600,21 @@ brackets, so (0,0), (255,0), (0,175) and (255,175) are the bottom left-, bottom 
 
 <p>inks in the pixel with these coordinates, so this measles program</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PLOT INT (RND*256), INT(RND*176): INPUT a$: GO TO 10
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PLOT INT (RND*256), INT(RND*176): INPUT a$: GO TO 10
 </code></pre></div></div>
 
 <p>plots a random point each time you press ENTER.</p>
 
 <p>Here is a rather more interesting program. It plots a graph of the function <strong>SIN</strong> (a sine wave) for values between 0 and 2π.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 255
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 255
 20 PLOT n,88+80*SlN (n/128*PI)
 30 NEXT n
 </code></pre></div></div>
 
 <p>This next program plots a graph of <strong>SQR</strong> (part of a parabola) between 0 and 4:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 255
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 255
 20 PLOT n,80*SQR (n/64)
 30 NEXT n
 </code></pre></div></div>
@@ -643,7 +643,7 @@ brackets, so (0,0), (255,0), (0,175) and (255,175) are the bottom left-, bottom 
 for individual pixels. When a pixel is plotted, it is set to show the full ink colour, and the whole of the character position containing it is given the
 current ink colour. This program demonstrates this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 BORDER 0: PAPER 0: INK 7: CLS: REM black oue screen
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 BORDER 0: PAPER 0: INK 7: CLS: REM black oue screen
 20 LET x1=0: LET y1=0: REM start of line
 30 LET c=1: REM for ink colour, starting blue
 40 LET x2=lNT (RND\*256): LET y2=lNT (RND\*176):REM random finish of line
@@ -741,7 +741,7 @@ line in exactly the same direction as you drew it.</p>
 
 <p>One way to get unusual colours is to speckle two normal ones together in a single square, using a user-defined graphic. Run this program:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1000 FOR n=0 TO 6 STEP 2
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1000 FOR n=0 TO 6 STEP 2
 1010 POKE USR "a"+n, BIN 01010101: POKE USR "a"+n+1, BIN 10101010
 1020 NEXT n
 </code></pre></div></div>
@@ -765,7 +765,7 @@ will find it gives a reasonably acceptable orange.</p>
   <li>Try to draw circles using <strong>SIN</strong> and <strong>COS</strong> (if you have read Chapter 10, try to work out how). Run this:</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 2\*PI STEP Pl /180
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 2\*PI STEP Pl /180
 20 PLOT 100+80\*COS n,87+80\*SlN n
 30 NEXT n
 40 CIRCLE 150,87,80
@@ -777,7 +777,7 @@ will find it gives a reasonably acceptable orange.</p>
   <li>Try</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CIRCLE 100,87,80: DRAW 50,50
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CIRCLE 100,87,80: DRAW 50,50
 </code></pre></div></div>
 
 <p>You can see from this that the <strong>CIRCLE</strong> statement leaves the <strong>PLOT</strong> position at a rather indeterminate place - it is always somewhere about half way up the right hand side of the circle. You will usually need to follow the <strong>CIRCLE</strong> statement with a <strong>PLOT</strong> statement before you do any more drawing.</p>
@@ -787,7 +787,7 @@ will find it gives a reasonably acceptable orange.</p>
 for the function itself, input as a string. The string should be an expression using <em>x</em> as the argument of the function.</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PLOT 0,87: DRAW 255,0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PLOT 0,87: DRAW 255,0
 20 PLOT 127,0: DRAW 0,175
 30 INPUT s, e$
 35 LET t=0

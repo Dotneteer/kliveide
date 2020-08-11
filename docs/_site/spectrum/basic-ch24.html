@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>The memory | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="The memory" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 24: The memory" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"The memory","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch24","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch24"},"description":"CHAPTER 24: The memory","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch24","headline":"The memory","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch24"},"description":"CHAPTER 24: The memory","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -598,7 +598,7 @@ made.</p>
 <p>To inspect the contents of a box, we use the <strong>PEEK</strong> function: its argument is the address of the box, and its result is the contents. For instance, this program
 prints out the first 21 bytes in ROM (and their addresses):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PRINT "Address"; TAB 8; "Byte"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PRINT "Address"; TAB 8; "Byte"
 20 FOR a =0 TO 20
 30 PRINT a; TAB 8; PEEK a
 40 NEXT a

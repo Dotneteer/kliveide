@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>More about PRINT and INPUT | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="More about PRINT and INPUT" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 15: More about PRINT and INPUT" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"More about PRINT and INPUT","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch15","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch15"},"description":"CHAPTER 15: More about PRINT and INPUT","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch15","headline":"More about PRINT and INPUT","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch15"},"description":"CHAPTER 15: More about PRINT and INPUT","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -626,7 +626,7 @@ next one. Note that the computer reduces the column number ‘modulo 32’ (it d
 
 <p>Try running this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=8 TO 23
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=8 TO 23
 20 PRINT TAB 8\*n;n;
 30 NEXT n
 </code></pre></div></div>
@@ -648,11 +648,11 @@ that after having carefully set up the <strong>PRINT</strong> position you immed
 
 <p>When the printing reaches the bottom of the screen, it starts to scroll upwards rather like a typewriter. You can see this if you do</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CLS: FOR n=1 TO 22: PRINT n: NEXT n
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CLS: FOR n=1 TO 22: PRINT n: NEXT n
 </code></pre></div></div>
 <p>and then do</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT 99
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT 99
 </code></pre></div></div>
 
 <p>a few times.</p>
@@ -699,7 +699,7 @@ up as well, so that the lines of text keep their same numbers.</p>
 
 <p>Now try this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 19: PRINT AT n,0;n;: NEXT n
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 19: PRINT AT n,0;n;: NEXT n
 
 20 **INPUT** AT 0,0;a$; AT 1,0;a$; AT 2,0;a$; AT 3,0;a$; AT 4,0;a$; AT
 5,0;a$;
@@ -744,7 +744,7 @@ you type in</p>
 
 <p>every so often. After this it will scroll up 255 times before stopping with <strong>scroll?</strong>. As an example, try</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 10000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR n=0 TO 10000
 20 PRINT n: POKE 23692,255
 30 NEXT n
 </code></pre></div></div>
@@ -757,7 +757,7 @@ you type in</p>
   <li>Try this program on some children, to test their multiplication tables.</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET m$=" "
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET m$=" "
 20 LET a=INT (RND*12)+1: LET b=lNT (RND*12)+1
 30 INPUT (m$) ' ' "what is ";(a) ";(b);"?";c
 100 IF c=a-b THEN LET m$="Right.": GO TO 20
@@ -769,7 +769,7 @@ the answer to 2*3, all they have to type in is 2*3.</p>
 
 <p>One way of getting round this is to make them input strings instead of numbers. Replace c in line 30 by c$. and in line 100 by <strong>VAL</strong> c$, and insert a line</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>40 IF c$ &lt;&gt; STR$ **VAL** c$ THEN LET m$="Type it properly, as a number,":GO TO 30
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>40 IF c$ &lt;&gt; STR$ **VAL** c$ THEN LET m$="Type it properly, as a number,":GO TO 30
 </code></pre></div></div>
 
 <p>That will fool them. After a few more days, however, one of them may discover that they can get round this by rubbing out the string quotes and typing in

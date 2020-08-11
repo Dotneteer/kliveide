@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Using machine code | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Using machine code" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 26: Using machine code" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Using machine code","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch26","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch26"},"description":"CHAPTER 26: Using machine code","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch26","headline":"Using machine code","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch26"},"description":"CHAPTER 26: Using machine code","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -596,7 +596,7 @@ long.</p>
 
 <p>Let’s take as an example the program</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld bc, 99
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld bc, 99
 ret
 </code></pre></div></div>
 
@@ -612,7 +612,7 @@ decide whereabouts in memory to put it, and the best thing is to make extra spac
 
 <p>If you type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CLEAR 32499
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CLEAR 32499
 </code></pre></div></div>
 
 <p>this will give you a space of 100 (for good measure) bytes starting at address 32500.</p>
@@ -621,7 +621,7 @@ decide whereabouts in memory to put it, and the best thing is to make extra spac
 
 <p>To put in the machine code program, you would run a BASIC program something like</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET a=32500
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET a=32500
 20 READ n: POKE a,n
 30 LETa=a+1:GOTO20
 40 DATA 1,99,0,201
@@ -645,7 +645,7 @@ routine.</p>
 
 <p>On the face of it, there is no way of saving it so that when loaded it automatically runs itself, but you can get round this by using a BASIC program.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LOAD "" CODE 32500,4
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LOAD "" CODE 32500,4
 20 PRINT USR 32500
 </code></pre></div></div>
 

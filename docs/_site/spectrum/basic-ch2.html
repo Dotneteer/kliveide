@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Basic programming concepts | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Basic programming concepts" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 2: Basic Programming Concepts" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Basic programming concepts","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch2","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch2"},"description":"CHAPTER 2: Basic Programming Concepts","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch2","headline":"Basic programming concepts","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch2"},"description":"CHAPTER 2: Basic Programming Concepts","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -592,7 +592,7 @@
 
 <p>Type in these two lines of a computer program to print out the sum of two numbers:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 PRINT a
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 PRINT a
 10 LET a=10 
 </code></pre></div></div>
 
@@ -606,7 +606,7 @@ order of the lines in the listing that you can see on the screen now.</p>
 
 <p>So far you have only entered one number, so type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>15 LET b=15
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>15 LET b=15
 </code></pre></div></div>
 
 <p>and in it goes. It would have been impossible to insert this line between the first two if they had been numbered 1 and 2 instead of 10 and 20 (line numbers
@@ -614,7 +614,7 @@ must be whole numbers between 1 and 9999), so that is why, when first typing in 
 
 <p>Now you need to change line 20 to</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 PRINT a+b
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 PRINT a+b
 </code></pre></div></div>
 
 <p>You could type out the replacement in full, but it is easier to use the <strong>EDIT</strong> facility described in the introductory booklet. The ❯ by line 15 is called the program cursor, and the line it points to is the current line. This is usually the last line that you entered, but you can use the ⇩ or ⇧ keys to move the program cursor down or up. (Try it, leaving the program cursor eventually at line 20.)</p>
@@ -624,7 +624,7 @@ the ⇨ key until the <strong>L</strong> cursor moves to the end of the line, an
 
 <p>The line at the bottom should now read</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 PRINT a+b
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 PRINT a+b
 </code></pre></div></div>
 
 <p>Type <strong>ENTER</strong> and it will replace the old line 20, so that the screen looks like this:</p>
@@ -635,7 +635,7 @@ the ⇨ key until the <strong>L</strong> cursor moves to the end of the line, an
 
 <p>Run the program again and then type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT a, b
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT a, b
 </code></pre></div></div>
 
 <p>The variables are still there, even though the program has finished.</p>
@@ -644,35 +644,35 @@ the ⇨ key until the <strong>L</strong> cursor moves to the end of the line, an
 
 <p>If you enter a line by mistake, say</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>12 LET b=8
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>12 LET b=8
 </code></pre></div></div>
 
 <p>it will go up into the program and you will realise your mistake. To delete this unnecessary line, type</p>
 
-<p><code class="highlighter-rouge">12</code> (with <strong>ENTER</strong> of course)</p>
+<p><code class="language-plaintext highlighter-rouge">12</code> (with <strong>ENTER</strong> of course)</p>
 
 <p>You will notice with surprise that the program cursor has gone. You should imagine it as being hidden in between lines 10 and 15, so if you press  it will
 move up to line 10, while if you press  it will move down to line 15.</p>
 
 <p>Type</p>
 
-<p><code class="highlighter-rouge">12</code> (and <code class="highlighter-rouge">ENTER</code>)</p>
+<p><code class="language-plaintext highlighter-rouge">12</code> (and <code class="language-plaintext highlighter-rouge">ENTER</code>)</p>
 
 <p>Again, the program cursor will be hidden between lines 10 and 15. Now press <strong>EDIT</strong> and line 15 will come down: when the program cursor is hidden between two lines, <strong>EDIT</strong> brings down the next line following the new line number. Type <strong>ENTER</strong> to clear the bottom part of the screen.</p>
 
 <p>Now type</p>
 
-<p><code class="highlighter-rouge">30</code> (and <code class="highlighter-rouge">ENTER</code>)</p>
+<p><code class="language-plaintext highlighter-rouge">30</code> (and <code class="language-plaintext highlighter-rouge">ENTER</code>)</p>
 
 <p>This time, the program cursor is hidden after the end of the program: and if you press <strong>EDIT</strong>, then line 20 will be brought down.</p>
 
 <p>Lastly, type</p>
 
-<p><code class="highlighter-rouge">LIST 15</code></p>
+<p><code class="language-plaintext highlighter-rouge">LIST 15</code></p>
 
 <p>You will now see on the screen</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>15 LET b=15
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>15 LET b=15
 20 PRINT a+b
 </code></pre></div></div>
 
@@ -689,7 +689,7 @@ names.</p>
 
 <p>This erases any old programs and variables in the computer. Now carefully type in this program, which changes Fahrenheit temperatures to Centigrade.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM temperature conversion
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM temperature conversion
 20 PRINT "deg F", "deg C"
 30 PRINT
 40 INPUT "Enter deg F", F
@@ -754,7 +754,7 @@ single line.</p>
 
 <p>Now type in these extra lines:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>100 REM this polite program remembers your name**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>100 REM this polite program remembers your name**
 110 INPUT n$
 120 PRINT "Hello ";n$;"!"
 130 GO TO 110
@@ -792,9 +792,9 @@ of n$ is unchanged.</p>
 
 <p>Type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>200 GO TO 200
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>200 GO TO 200
 </code></pre></div></div>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RUN 200
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RUN 200
 </code></pre></div></div>
 
 <p>This looks all set to go on for ever unless you pull the plug out; but there is a less drastic remedy. Press <strong>CAPS SHIFT</strong> with the SPACE key, which has BREAK
@@ -821,7 +821,7 @@ can do all sorts of things to fix it, and <strong>CONTINUE</strong> will still w
 <p>The automatic listings (the ones that are not the result of a <strong>LIST</strong> command but occur after entering a new line) may well have you puzzled. If you type in a
 program with 50 lines, all REM statements,</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 REM
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 REM
 2 REM
 3 REM
 : :
@@ -838,11 +838,11 @@ program with 50 lines, all REM statements,</p>
 
 <p>Now press ENTER again to get an automatic listing and you should see lines 1 to 22 on the screen. Now type</p>
 
-<p><code class="highlighter-rouge">23 REM</code></p>
+<p><code class="language-plaintext highlighter-rouge">23 REM</code></p>
 
 <p>and you get lines 2 to 23 on the screen; type</p>
 
-<p><code class="highlighter-rouge">28 REM</code></p>
+<p><code class="language-plaintext highlighter-rouge">28 REM</code></p>
 
 <p>and you get lines 7 to 28. (In both cases, by typing a new line, you have moved the program cursor so that a new listing has been made.)</p>
 
@@ -869,19 +869,19 @@ lists it moves the top line down one so that the top line drifts into the neighb
 
 <p>to get the <strong>LIST</strong> listing and then press <strong>ENTER</strong> again to make line 0 the top line. You should have lines 1 to 22 on the screen. Type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LIST 22
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LIST 22
 </code></pre></div></div>
 
 <p>which gives you lines 22 to 43; when you press ENTER again, you get back lines 1 to 22. This tends to be more useful for short programs than for long ones.</p>
 
 <p>Using the program full of REMs above, type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LIST
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>LIST
 </code></pre></div></div>
 
 <p>and then n when it asks you <strong>scroll?</strong>. Now type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CONTINUE
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CONTINUE
 </code></pre></div></div>
 
 <p><strong>CONTINUE</strong> is a bit quirky here, because the bottom part of the screen goes blank; but you can restore normality with BREAK. The reason is that <strong>LIST</strong> was the first command in the line, so <strong>CONTINUE</strong> repeats this command. Unfortunately, the first command in the line is now <strong>CONTINUE</strong> itself so the computer just sits there doing <strong>CONTINUE</strong> over and over again until you stop it.</p>

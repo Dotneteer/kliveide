@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Structures | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Structures" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="SpectNetIDE allows you to use structure definitions and placements in your Z80 programs. If you know the struct construct from C, C++, or C#, the concept in Z80 is only partly similar." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Structures","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/structs","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/structs"},"description":"SpectNetIDE allows you to use structure definitions and placements in your Z80 programs. If you know the struct construct from C, C++, or C#, the concept in Z80 is only partly similar.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/structs","headline":"Structures","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/structs"},"description":"SpectNetIDE allows you to use structure definitions and placements in your Z80 programs. If you know the struct construct from C, C++, or C#, the concept in Z80 is only partly similar.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -876,13 +876,13 @@
               <h1>Z80 Assembler &raquo; Structures</h1>
             </div>
             <div class="main-content-area">
-              <p><strong>SpectNetIDE</strong> allows you to use structure definitions and placements in your Z80 programs. If you know the <code class="highlighter-rouge">struct</code> construct from C, C++, or C#, the concept in Z80 is only partly similar.</p>
+              <p><strong>SpectNetIDE</strong> allows you to use structure definitions and placements in your Z80 programs. If you know the <code class="language-plaintext highlighter-rouge">struct</code> construct from C, C++, or C#, the concept in Z80 is only partly similar.</p>
 
 <h2 id="understanding-structures">Understanding Structures</h2>
 
 <p>In <strong>SpectNetIDE</strong> assembler, a structure definition is a placeholder that defines a byte pattern like this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
     .defw 0
     .defw 0
     .defb 1
@@ -890,14 +890,14 @@
   .ends
 </code></pre></div></div>
 
-<p>This definition says that <code class="highlighter-rouge">Object2D</code> is a structure of six bytes (two 16-bit words and two 8-bit bytes) with the following bytes emitted: #00, #00, #00, #00, #01, #01. Whenever you place a structure declaration in a program, just like in this sample, the assembler will emit the bytes you specified in the <code class="highlighter-rouge">.struct</code> definition:</p>
+<p>This definition says that <code class="language-plaintext highlighter-rouge">Object2D</code> is a structure of six bytes (two 16-bit words and two 8-bit bytes) with the following bytes emitted: #00, #00, #00, #00, #01, #01. Whenever you place a structure declaration in a program, just like in this sample, the assembler will emit the bytes you specified in the <code class="language-plaintext highlighter-rouge">.struct</code> definition:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  Object2D() ; emits #00, #00, #00, #00, #01, #01
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  Object2D() ; emits #00, #00, #00, #00, #01, #01
 </code></pre></div></div>
 
-<p>As you can see, a set of six subsequent bytes do not tell enough about the semantics of <code class="highlighter-rouge">Object2D</code>. When we created this structure, the original concept was to use two 16-bit numbers to specify the X and Y coordinates of the object, plus two 8-bit numbers to describe its horizontal and vertical velocity. With <em>field definitions</em> (see <code class="highlighter-rouge">X</code>, <code class="highlighter-rouge">Y</code>, <code class="highlighter-rouge">DX</code>, and <code class="highlighter-rouge">DY</code>), the meaning of <code class="highlighter-rouge">Object2D</code> is more straightforward than it was before:</p>
+<p>As you can see, a set of six subsequent bytes do not tell enough about the semantics of <code class="language-plaintext highlighter-rouge">Object2D</code>. When we created this structure, the original concept was to use two 16-bit numbers to specify the X and Y coordinates of the object, plus two 8-bit numbers to describe its horizontal and vertical velocity. With <em>field definitions</em> (see <code class="language-plaintext highlighter-rouge">X</code>, <code class="language-plaintext highlighter-rouge">Y</code>, <code class="language-plaintext highlighter-rouge">DX</code>, and <code class="language-plaintext highlighter-rouge">DY</code>), the meaning of <code class="language-plaintext highlighter-rouge">Object2D</code> is more straightforward than it was before:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
     X: .defw 0
     Y: .defw 0
     DX: .defb 1
@@ -905,9 +905,9 @@
   .ends
 </code></pre></div></div>
 
-<p>Of course, we would like to initialize objects with different states. With <em>field initializers</em>, we can define structures with initial states that are different from the <code class="highlighter-rouge">.struct</code> definition:</p>
+<p>Of course, we would like to initialize objects with different states. With <em>field initializers</em>, we can define structures with initial states that are different from the <code class="language-plaintext highlighter-rouge">.struct</code> definition:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Apple: Object2D()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Apple: Object2D()
   X -&gt; .defw 100
   Y -&gt; .defw 100
 
@@ -920,23 +920,23 @@ Pear: Object2D()
   ld de,Pear
 </code></pre></div></div>
 
-<p>In this sample, the <code class="highlighter-rouge">Apple</code> label (that the code later loads into <strong>HL</strong>) points to an <code class="highlighter-rouge">Object2D</code> declaration that holds 100 in its X and Y values. Another label, <code class="highlighter-rouge">Pear</code> points to a different instance of <code class="highlighter-rouge">Object2D</code> (later the code loads that address into <strong>DE</strong>). <code class="highlighter-rouge">Pear</code> has a converse velocity compared to <code class="highlighter-rouge">Apple</code>.</p>
+<p>In this sample, the <code class="language-plaintext highlighter-rouge">Apple</code> label (that the code later loads into <strong>HL</strong>) points to an <code class="language-plaintext highlighter-rouge">Object2D</code> declaration that holds 100 in its X and Y values. Another label, <code class="language-plaintext highlighter-rouge">Pear</code> points to a different instance of <code class="language-plaintext highlighter-rouge">Object2D</code> (later the code loads that address into <strong>DE</strong>). <code class="language-plaintext highlighter-rouge">Pear</code> has a converse velocity compared to <code class="language-plaintext highlighter-rouge">Apple</code>.</p>
 
-<p>The <strong>SpecNetIDE</strong> assembler allows you initialize structures with any pragma that emit bytes to the assembly output. For example, the following code snippet sets a new <code class="highlighter-rouge">Object2D</code> structure in a particular way:</p>
+<p>The <strong>SpecNetIDE</strong> assembler allows you initialize structures with any pragma that emit bytes to the assembly output. For example, the following code snippet sets a new <code class="language-plaintext highlighter-rouge">Object2D</code> structure in a particular way:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Banana: Object2D()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Banana: Object2D()
   -&gt; .defb 10, 1
   -&gt; .defb 12, 2
   DX -&gt; .defb 2, 2
 </code></pre></div></div>
 
-<p>The first <code class="highlighter-rouge">.defb</code> pragma (right after the first <code class="highlighter-rouge">-&gt;</code>) emits two bytes, 10, and 1, respectively – it sets the X field to 266 (10 + 1<em>256). The second <code class="highlighter-rouge">.defb</code> sets Y to 524 (12 * 2</em>256). The initialization of DX (<code class="highlighter-rouge">DX -&gt; .defb 2, 2</code>) emits two bytes and sets both <code class="highlighter-rouge">DX</code> and <code class="highlighter-rouge">DY</code> to 2.</p>
+<p>The first <code class="language-plaintext highlighter-rouge">.defb</code> pragma (right after the first <code class="language-plaintext highlighter-rouge">-&gt;</code>) emits two bytes, 10, and 1, respectively – it sets the X field to 266 (10 + 1<em>256). The second <code class="language-plaintext highlighter-rouge">.defb</code> sets Y to 524 (12 * 2</em>256). The initialization of DX (<code class="language-plaintext highlighter-rouge">DX -&gt; .defb 2, 2</code>) emits two bytes and sets both <code class="language-plaintext highlighter-rouge">DX</code> and <code class="language-plaintext highlighter-rouge">DY</code> to 2.</p>
 
 <h2 id="structure-definition">Structure Definition</h2>
 
-<p>You can place a structure definition between the <code class="highlighter-rouge">.struct</code> and <code class="highlighter-rouge">.ends</code>  statements. Each structure must have a unique name that you can declare with a label. The compiler accepts all of these definitions:</p>
+<p>You can place a structure definition between the <code class="language-plaintext highlighter-rouge">.struct</code> and <code class="language-plaintext highlighter-rouge">.ends</code>  statements. Each structure must have a unique name that you can declare with a label. The compiler accepts all of these definitions:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; Version #1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; Version #1
 MyStruct .struct
   ; ...
   .ends
@@ -962,20 +962,20 @@ MyStruct:
 
 <p>Nonetheless, it raises an error if you do not name the structure:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.struct ; ERROR: .struct must have a name
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.struct ; ERROR: .struct must have a name
 ; ...
 .ends
 </code></pre></div></div>
 
 <blockquote>
-  <p><strong>Note</strong>: The assembler accepts the following alternative keywords for <code class="highlighter-rouge">.struct</code>: <code class="highlighter-rouge">.STRUCT</code>, <code class="highlighter-rouge">struct</code>, or <code class="highlighter-rouge">STRUCT</code>. Similarly, <code class="highlighter-rouge">.ends</code> has these aliases, too: <code class="highlighter-rouge">.ENDS</code>, <code class="highlighter-rouge">ends</code>, <code class="highlighter-rouge">ENDS</code>. Though you can define an empty structure, there is no practical reason to do so.</p>
+  <p><strong>Note</strong>: The assembler accepts the following alternative keywords for <code class="language-plaintext highlighter-rouge">.struct</code>: <code class="language-plaintext highlighter-rouge">.STRUCT</code>, <code class="language-plaintext highlighter-rouge">struct</code>, or <code class="language-plaintext highlighter-rouge">STRUCT</code>. Similarly, <code class="language-plaintext highlighter-rouge">.ends</code> has these aliases, too: <code class="language-plaintext highlighter-rouge">.ENDS</code>, <code class="language-plaintext highlighter-rouge">ends</code>, <code class="language-plaintext highlighter-rouge">ENDS</code>. Though you can define an empty structure, there is no practical reason to do so.</p>
 </blockquote>
 
-<p>In the body of the structure, you can use only one of these byte-emitter pragmas: <code class="highlighter-rouge">.defb</code>, <code class="highlighter-rouge">.defw</code>, <code class="highlighter-rouge">.defm</code>, <code class="highlighter-rouge">.defn</code>, <code class="highlighter-rouge">.defc</code>, <code class="highlighter-rouge">.defs</code>, <code class="highlighter-rouge">.fillb</code>, <code class="highlighter-rouge">.fillw</code>, <code class="highlighter-rouge">.defg</code>,  or <code class="highlighter-rouge">.defgx</code>. If you try to use any other construct, the compiler raises an error message.</p>
+<p>In the body of the structure, you can use only one of these byte-emitter pragmas: <code class="language-plaintext highlighter-rouge">.defb</code>, <code class="language-plaintext highlighter-rouge">.defw</code>, <code class="language-plaintext highlighter-rouge">.defm</code>, <code class="language-plaintext highlighter-rouge">.defn</code>, <code class="language-plaintext highlighter-rouge">.defc</code>, <code class="language-plaintext highlighter-rouge">.defs</code>, <code class="language-plaintext highlighter-rouge">.fillb</code>, <code class="language-plaintext highlighter-rouge">.fillw</code>, <code class="language-plaintext highlighter-rouge">.defg</code>,  or <code class="language-plaintext highlighter-rouge">.defgx</code>. If you try to use any other construct, the compiler raises an error message.</p>
 
 <p>As you saw earlier, you can specify field labels within the structure body. The assembler is flexible: you can omit field labels, or even use multiple labels for a single field:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D_A: .struct
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D_A: .struct
   Coords:
     X: .defw 0
     Y: .defw 0
@@ -985,30 +985,30 @@ MyStruct:
   .ends
 </code></pre></div></div>
 
-<p>Here, <code class="highlighter-rouge">Object2D_A</code> has two field name for the first <code class="highlighter-rouge">.defw</code> field, <code class="highlighter-rouge">Coords</code>, and <code class="highlighter-rouge">X</code>, respectively. The last <code class="highlighter-rouge">.defb</code> does not have its own field name, unlike the one before, <code class="highlighter-rouge">Velocity</code>.</p>
+<p>Here, <code class="language-plaintext highlighter-rouge">Object2D_A</code> has two field name for the first <code class="language-plaintext highlighter-rouge">.defw</code> field, <code class="language-plaintext highlighter-rouge">Coords</code>, and <code class="language-plaintext highlighter-rouge">X</code>, respectively. The last <code class="language-plaintext highlighter-rouge">.defb</code> does not have its own field name, unlike the one before, <code class="language-plaintext highlighter-rouge">Velocity</code>.</p>
 
 <h2 id="labels-and-field-names">Labels and Field Names</h2>
 
-<p>The label assigned to the <code class="highlighter-rouge">.struct</code> definition has a dual role. When used in a structure initialization (for example, as <code class="highlighter-rouge">Object2D</code> is utilized in the <code class="highlighter-rouge">Object2D()</code> initializer, it identifies the structure. Nonetheless, you can use the label name in Z80 instructions, too. In this case, the label’s value is the size of the structure. For example, these instructions are equivalent, as the size of the <code class="highlighter-rouge">Object2D</code> structure is six bytes:</p>
+<p>The label assigned to the <code class="language-plaintext highlighter-rouge">.struct</code> definition has a dual role. When used in a structure initialization (for example, as <code class="language-plaintext highlighter-rouge">Object2D</code> is utilized in the <code class="language-plaintext highlighter-rouge">Object2D()</code> initializer, it identifies the structure. Nonetheless, you can use the label name in Z80 instructions, too. In this case, the label’s value is the size of the structure. For example, these instructions are equivalent, as the size of the <code class="language-plaintext highlighter-rouge">Object2D</code> structure is six bytes:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,Object2D ; Size of Object2D
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,Object2D ; Size of Object2D
 ; ...
 ld a,6 ; 
 </code></pre></div></div>
 
-<p>You can allocate a memory block for 100 uninitialized instances of <code class="highlighter-rouge">Object2D</code> with this pragma:</p>
+<p>You can allocate a memory block for 100 uninitialized instances of <code class="language-plaintext highlighter-rouge">Object2D</code> with this pragma:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>My100Objects:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>My100Objects:
   .defs 100 * Object2D
 </code></pre></div></div>
 
 <blockquote>
-  <p><strong>Note</strong>: You cannot assign a label to the <code class="highlighter-rouge">.ends</code> statement. If you do, the compiler throws an error.</p>
+  <p><strong>Note</strong>: You cannot assign a label to the <code class="language-plaintext highlighter-rouge">.ends</code> statement. If you do, the compiler throws an error.</p>
 </blockquote>
 
-<p>Labels assigned to the body of the <code class="highlighter-rouge">.struct</code> definition are used as field names. You can use them only with the structure name:</p>
+<p>Labels assigned to the body of the <code class="language-plaintext highlighter-rouge">.struct</code> definition are used as field names. You can use them only with the structure name:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
     X: .defw 0
     Y: .defw 0
     DX: .defb 1
@@ -1021,11 +1021,11 @@ Apple: Object2D()
   ld a,(hl)
 </code></pre></div></div>
 
-<p>Field label values contain the offset of the particular field from the beginning of the structure. Thus, the last two instructions in the code above load the content of the <code class="highlighter-rouge">Apple</code> structure’s <code class="highlighter-rouge">DX</code> field into <strong>A</strong>.</p>
+<p>Field label values contain the offset of the particular field from the beginning of the structure. Thus, the last two instructions in the code above load the content of the <code class="language-plaintext highlighter-rouge">Apple</code> structure’s <code class="language-plaintext highlighter-rouge">DX</code> field into <strong>A</strong>.</p>
 
-<p>According to this definitions, here are the field label values of <code class="highlighter-rouge">Object2D</code>:</p>
+<p>According to this definitions, here are the field label values of <code class="language-plaintext highlighter-rouge">Object2D</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D.X: 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D.X: 0
 Object2D.Y: 2
 Object2D.DX: 4
 Object2D.DY: 5
@@ -1033,9 +1033,9 @@ Object2D.DY: 5
 
 <h2 id="structure-initialization">Structure initialization</h2>
 
-<p>The <code class="highlighter-rouge">.struct</code> definition does not emit any code, it just tells the compiler the layout and initial contents of a structure. To allocate space for a particular structure, you need to initialize it with the name of the structure plus a pair of opening and closing parentheses, just like these samples show:</p>
+<p>The <code class="language-plaintext highlighter-rouge">.struct</code> definition does not emit any code, it just tells the compiler the layout and initial contents of a structure. To allocate space for a particular structure, you need to initialize it with the name of the structure plus a pair of opening and closing parentheses, just like these samples show:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; Initalize an Object2D
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; Initalize an Object2D
 MyObject: Object2D()
 
 ; Initialize another one
@@ -1044,7 +1044,7 @@ OtherObject: Object2D()
 
 <p>When you add a label to the structure initialization, that label’s value points to the beginning of the structure in the memory.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start: .org #8000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start: .org #8000
 
 DistanceEntry:
   .struct
@@ -1062,9 +1062,9 @@ Index = 3;
 Entry3:	DistanceEntry()
 </code></pre></div></div>
 
-<p>The compiler emits the initialization code for <code class="highlighter-rouge">Entry1</code>, <code class="highlighter-rouge">Entry2</code>, and <code class="highlighter-rouge">Entry3</code> as if you wrote this:</p>
+<p>The compiler emits the initialization code for <code class="language-plaintext highlighter-rouge">Entry1</code>, <code class="language-plaintext highlighter-rouge">Entry2</code>, and <code class="language-plaintext highlighter-rouge">Entry3</code> as if you wrote this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Data .org #9000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Data .org #9000
 Entry1:
   .defw #9000
   .defb 1
@@ -1080,17 +1080,17 @@ Entry3:
 
 <p>Field initializers can be used to change the default structure initializer. A field initializer has this syntax:</p>
 
-<p>[<em>identifier</em>] <strong><code class="highlighter-rouge">-&gt;</code></strong> <em>byte-emitter-pragma</em></p>
+<p>[<em>identifier</em>] <strong><code class="language-plaintext highlighter-rouge">-&gt;</code></strong> <em>byte-emitter-pragma</em></p>
 
-<p>For a moment let’s forget about the fact that <em>identifier</em> is optional. When you use it, it must be one of the structure’s fields names. The <em>byte-emitter-pragma</em> is one of the <strong>SpectNetIDE</strong> pragmas you can use to define a structure body; namely these:  <code class="highlighter-rouge">.defb</code>, <code class="highlighter-rouge">.defw</code>, <code class="highlighter-rouge">.defm</code>, <code class="highlighter-rouge">.defn</code>, <code class="highlighter-rouge">.defc</code>, <code class="highlighter-rouge">.defs</code>, <code class="highlighter-rouge">.fillb</code>, <code class="highlighter-rouge">.fillw</code>, <code class="highlighter-rouge">.defg</code>,  or <code class="highlighter-rouge">.defgx</code>.</p>
+<p>For a moment let’s forget about the fact that <em>identifier</em> is optional. When you use it, it must be one of the structure’s fields names. The <em>byte-emitter-pragma</em> is one of the <strong>SpectNetIDE</strong> pragmas you can use to define a structure body; namely these:  <code class="language-plaintext highlighter-rouge">.defb</code>, <code class="language-plaintext highlighter-rouge">.defw</code>, <code class="language-plaintext highlighter-rouge">.defm</code>, <code class="language-plaintext highlighter-rouge">.defn</code>, <code class="language-plaintext highlighter-rouge">.defc</code>, <code class="language-plaintext highlighter-rouge">.defs</code>, <code class="language-plaintext highlighter-rouge">.fillb</code>, <code class="language-plaintext highlighter-rouge">.fillw</code>, <code class="language-plaintext highlighter-rouge">.defg</code>,  or <code class="language-plaintext highlighter-rouge">.defgx</code>.</p>
 
 <blockquote>
   <p><strong>Note</strong>: You can use the label syntax for field names, so you can add an optional colon after the <em>identifier</em>.</p>
 </blockquote>
 
-<p>You can apply field initializer statements right after the structure initialization. Any other Z80 instruction, pragma, statement, directive signs the end of the structure initialization. This code snippet shows two examples of setting up <code class="highlighter-rouge">Object2D</code> structures. The first is correct, however, the second one raises an error:</p>
+<p>You can apply field initializer statements right after the structure initialization. Any other Z80 instruction, pragma, statement, directive signs the end of the structure initialization. This code snippet shows two examples of setting up <code class="language-plaintext highlighter-rouge">Object2D</code> structures. The first is correct, however, the second one raises an error:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Object2D: .struct
     X: .defw 0
     Y: .defw 0
     DX: .defb 1
@@ -1109,15 +1109,15 @@ Obj2: Object2D()
   DX -&gt; .defb 4  ; ERROR
 </code></pre></div></div>
 
-<p>The compiler does not care how you initialize fields. For example, even if you have created the <code class="highlighter-rouge">X</code> field of <code class="highlighter-rouge">Object2D</code> with a <code class="highlighter-rouge">.defw</code> pragma, you can set its value with <code class="highlighter-rouge">.defb</code>, like in this example:</p>
+<p>The compiler does not care how you initialize fields. For example, even if you have created the <code class="language-plaintext highlighter-rouge">X</code> field of <code class="language-plaintext highlighter-rouge">Object2D</code> with a <code class="language-plaintext highlighter-rouge">.defw</code> pragma, you can set its value with <code class="language-plaintext highlighter-rouge">.defb</code>, like in this example:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj3: Object2D()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj3: Object2D()
   X -&gt; .defb 100, 0
 </code></pre></div></div>
 
-<p>You can even initialize two fields with a simple initializer statement. For example, <code class="highlighter-rouge">DX</code> and <code class="highlighter-rouge">DY</code> are one byte each. You can initialize both of these fields in a single step, as these code snippet shows:</p>
+<p>You can even initialize two fields with a simple initializer statement. For example, <code class="language-plaintext highlighter-rouge">DX</code> and <code class="language-plaintext highlighter-rouge">DY</code> are one byte each. You can initialize both of these fields in a single step, as these code snippet shows:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj4: Object2D()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj4: Object2D()
   DX -&gt; .defb 2,2
 
 Obj5: Object2D()
@@ -1126,7 +1126,7 @@ Obj5: Object2D()
 
 <p>The order of fields is unimportant, you can initialize them in any order:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj6: Object2D()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj6: Object2D()
   DX -&gt; .defb 1
   X -&gt; .defw 100
   DY -&gt; .defb 1
@@ -1135,9 +1135,9 @@ Obj5: Object2D()
 
 <h2 id="fluent-structure-initialization">Fluent Structure Initialization</h2>
 
-<p>The assembler allows using flexible initialization, where you do not use field names. The compiler amits bytes as the byte emitter pragmas would do if you were not within a structure initialization. Let’s assume, you initialize an <code class="highlighter-rouge">Object2D</code> this way:</p>
+<p>The assembler allows using flexible initialization, where you do not use field names. The compiler amits bytes as the byte emitter pragmas would do if you were not within a structure initialization. Let’s assume, you initialize an <code class="language-plaintext highlighter-rouge">Object2D</code> this way:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj7: Object2D()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj7: Object2D()
   -&gt; .defb 1, 0
   DX -&gt; defw #0303
 </code></pre></div></div>
@@ -1151,9 +1151,9 @@ Obj5: Object2D()
 <p><strong>#01</strong>, <strong>#00</strong>, #00, #00, <strong>#03</strong>, <strong>#03</strong></p>
 
 <p>You can choose your preferred way to initialize a structure using field or unnamed initializers. The compiler does not care how you assemble the set of bytes within the structure. However, it does not allow you to overflow the structure boundaries.
-This sample shows you two initialization of <code class="highlighter-rouge">Object2D</code>. The first is correct, as it emits exactly six bytes. However, the second raises an error, since the initialization tries to put eight bytes into the structure:</p>
+This sample shows you two initialization of <code class="language-plaintext highlighter-rouge">Object2D</code>. The first is correct, as it emits exactly six bytes. However, the second raises an error, since the initialization tries to put eight bytes into the structure:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj8: Object2D()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Obj8: Object2D()
   -&gt; .defm "012345"
 
 Obj9: Object2D()    ; ERROR: The code tries to intialize the structure with 8 bytes

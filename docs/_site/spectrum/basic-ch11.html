@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Random numbers | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Random numbers" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 11: Random numbers" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Random numbers","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch11","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch11"},"description":"CHAPTER 11: Random numbers","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch11","headline":"Random numbers","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch11"},"description":"CHAPTER 11: Random numbers","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -593,7 +593,7 @@
 
 <p>Try</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PRINT RND
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PRINT RND
 20 GO TO 10
 </code></pre></div></div>
 
@@ -605,7 +605,7 @@
 
 <p>Here is the program:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM dice throwing program
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM dice throwing program
 20 CLS
 30 FOR n=1 TO 2
 40 PRINT 1+1NT (RND\*6);" ";
@@ -617,7 +617,7 @@
 
 <p>The <strong>RANDOMIZE</strong> statement is used to make <strong>RND</strong> start off at a definite place in its sequence of numbers, as you can see with this program:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 RANDOMIZE 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 RANDOMIZE 1
 20 FOR n=1 TO 5: PRINT RND ,: NEXT n
 30 PRINT: GO TO 10
 </code></pre></div></div>
@@ -628,7 +628,7 @@
 
 <p><strong>RANDOMIZE</strong> on its own (and <strong>RANDOMIZE 0</strong> has the same effect) is different, because it really does randomize <strong>RND</strong> - you can see this in the next program.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 RANDOMIZE
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 RANDOMIZE
 20 PRINT RND: GO TO 10
 </code></pre></div></div>
 
@@ -639,7 +639,7 @@ each time <strong>RANDOMIZE</strong> is executed, the next RND does more or less
 
 <p>Here is a program to toss coins and count the numbers of heads and tails.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET heads=0: LET tails=0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET heads=0: LET tails=0
 20 LET coin=lNT (RND\*2)
 30 IF coin=3 THEN LET heads=heads+1
 40 IF coin=1 THEN LET tails=tails+1

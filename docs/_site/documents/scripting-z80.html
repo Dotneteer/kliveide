@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Scripting the Z80 CPU | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Scripting the Z80 CPU" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The CpuZ80 class" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-04T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Scripting the Z80 CPU","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/scripting-z80","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-z80"},"description":"The CpuZ80 class","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/scripting-z80","headline":"Scripting the Z80 CPU","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-z80"},"description":"The CpuZ80 class","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -882,17 +882,17 @@
 set the value of each register, register pair, flag, and other state holders. The class also provides
 a few contol methods and events that are raised at different stages of the CPU’s execution cycle.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class CpuZ80
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class CpuZ80
 </code></pre></div></div>
 
 <h1 id="register-properties">Register properties</h1>
 
 <p>The class has separate properties for all 8-bit registers and 16-bit register pairs of the CPU. 
-An 8-bit register’s value is represented with a <code class="highlighter-rouge">System.Byte</code>, while a 16-bit register pair’s value
-with a <code class="highlighter-rouge">System.UInt16</code> instance.</p>
+An 8-bit register’s value is represented with a <code class="language-plaintext highlighter-rouge">System.Byte</code>, while a 16-bit register pair’s value
+with a <code class="language-plaintext highlighter-rouge">System.UInt16</code> instance.</p>
 
 <h2 id="8-bit-registers">8-bit registers</h2>
 
@@ -905,67 +905,67 @@ with a <code class="highlighter-rouge">System.UInt16</code> instance.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">A</code></td>
+      <td><code class="language-plaintext highlighter-rouge">A</code></td>
       <td>Accummulator</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">B</code></td>
+      <td><code class="language-plaintext highlighter-rouge">B</code></td>
       <td>Register <strong>B</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">C</code></td>
+      <td><code class="language-plaintext highlighter-rouge">C</code></td>
       <td>Register <strong>C</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">D</code></td>
+      <td><code class="language-plaintext highlighter-rouge">D</code></td>
       <td>Register <strong>D</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">E</code></td>
+      <td><code class="language-plaintext highlighter-rouge">E</code></td>
       <td>Register <strong>E</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">H</code></td>
+      <td><code class="language-plaintext highlighter-rouge">H</code></td>
       <td>Register <strong>H</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">L</code></td>
+      <td><code class="language-plaintext highlighter-rouge">L</code></td>
       <td>Register <strong>L</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">F</code></td>
+      <td><code class="language-plaintext highlighter-rouge">F</code></td>
       <td>Flags register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">I</code></td>
+      <td><code class="language-plaintext highlighter-rouge">I</code></td>
       <td>Interrupt Page Address Register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">R</code></td>
+      <td><code class="language-plaintext highlighter-rouge">R</code></td>
       <td>Memory Refresh Register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">XH</code></td>
+      <td><code class="language-plaintext highlighter-rouge">XH</code></td>
       <td>Higher 8 bits of the IX index register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">XL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">XL</code></td>
       <td>Lower 8 bits of the IX index register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">YH</code></td>
+      <td><code class="language-plaintext highlighter-rouge">YH</code></td>
       <td>Higher 8 bits of the IY index register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">YL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">YL</code></td>
       <td>Lower 8 bits of the IY index register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">WZh</code></td>
+      <td><code class="language-plaintext highlighter-rouge">WZh</code></td>
       <td>Higher 8 bits of the internal WZ register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">WZl</code></td>
+      <td><code class="language-plaintext highlighter-rouge">WZl</code></td>
       <td>Lower 8 bits of the internal WZ register</td>
     </tr>
   </tbody>
@@ -982,59 +982,59 @@ with a <code class="highlighter-rouge">System.UInt16</code> instance.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">AF</code></td>
+      <td><code class="language-plaintext highlighter-rouge">AF</code></td>
       <td>Register pair <strong>AF</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">BC</code></td>
+      <td><code class="language-plaintext highlighter-rouge">BC</code></td>
       <td>Register pair <strong>BC</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">DE</code></td>
+      <td><code class="language-plaintext highlighter-rouge">DE</code></td>
       <td>Register pair <strong>DE</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">HL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">HL</code></td>
       <td>Register pair <strong>HL</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">_AF_</code></td>
+      <td><code class="language-plaintext highlighter-rouge">_AF_</code></td>
       <td>Register pair <strong>AF’</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">_BC_</code></td>
+      <td><code class="language-plaintext highlighter-rouge">_BC_</code></td>
       <td>Register pair <strong>BC’</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">_DE_</code></td>
+      <td><code class="language-plaintext highlighter-rouge">_DE_</code></td>
       <td>Register pair <strong>DE’</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">_HL_</code></td>
+      <td><code class="language-plaintext highlighter-rouge">_HL_</code></td>
       <td>Register pair <strong>HL’</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">PC</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PC</code></td>
       <td>Program Counter Register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">SP</code></td>
+      <td><code class="language-plaintext highlighter-rouge">SP</code></td>
       <td>Stack Pointer Register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">IR</code></td>
+      <td><code class="language-plaintext highlighter-rouge">IR</code></td>
       <td>I/R 8-bit registers as a register pair</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">IX</code></td>
+      <td><code class="language-plaintext highlighter-rouge">IX</code></td>
       <td>Index register <strong>IX</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">IY</code></td>
+      <td><code class="language-plaintext highlighter-rouge">IY</code></td>
       <td>Index register <strong>IY</strong></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">WZ</code></td>
+      <td><code class="language-plaintext highlighter-rouge">WZ</code></td>
       <td>The internal <strong>WZ</strong> register</td>
     </tr>
   </tbody>
@@ -1043,7 +1043,7 @@ with a <code class="highlighter-rouge">System.UInt16</code> instance.</p>
 <h2 id="z80-cpu-flags">Z80 CPU flags</h2>
 
 <p>With these properties, you can query the individual flags of the <strong>F</strong> register. These properties
-retrieve a <code class="highlighter-rouge">System.Boolean</code> value.</p>
+retrieve a <code class="language-plaintext highlighter-rouge">System.Boolean</code> value.</p>
 
 <table>
   <thead>
@@ -1054,35 +1054,35 @@ retrieve a <code class="highlighter-rouge">System.Boolean</code> value.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">SFlag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">SFlag</code></td>
       <td><strong>S</strong> (Sign) Flag</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZFlag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZFlag</code></td>
       <td><strong>Z</strong> (Zero) Flag</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">R5Flag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">R5Flag</code></td>
       <td><strong>R5</strong> Flag, Bit 5 of the <strong>F</strong> register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">HFlag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">HFlag</code></td>
       <td><strong>H</strong> (Half Carry) Flag</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">R3Flag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">R3Flag</code></td>
       <td><strong>R3</strong> Flag, Bit 3 of the <strong>F</strong> register</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">PVFlag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PVFlag</code></td>
       <td><strong>P/V</strong> (Parity/Overflow) Flag</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">NFlag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">NFlag</code></td>
       <td><strong>N</strong> (Add/Subtract) Flag</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">CFlag</code></td>
+      <td><code class="language-plaintext highlighter-rouge">CFlag</code></td>
       <td><strong>C</strong> (Carry) Flag</td>
     </tr>
   </tbody>
@@ -1094,7 +1094,7 @@ retrieve a <code class="highlighter-rouge">System.Boolean</code> value.</p>
 
 <h2 id="tacts">Tacts</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long Tacts { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long Tacts { get; }
 </code></pre></div></div>
 
 <p>Gets the current T-state tacts of the CPU — the clock cycles since 
@@ -1102,28 +1102,28 @@ the CPU was powered on/reset last time</p>
 
 <h2 id="iff1">IFF1</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IFF1 { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IFF1 { get; }
 </code></pre></div></div>
 
 <p>Interrupt Enable Flip-Flop #1. Disables interrupts from being accepted.</p>
 
 <h2 id="iff2">IFF2</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IFF2 { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IFF2 { get; }
 </code></pre></div></div>
 
 <p>Interrupt Enable Flip-Flop #2. Temporary storage location for IFF1.</p>
 
 <h2 id="interruptmode">InterruptMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte InterruptMode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte InterruptMode { get; }
 </code></pre></div></div>
 
-<p>Gets the current Interrupt mode (<code class="highlighter-rouge">IM 0</code>, <code class="highlighter-rouge">IM 1</code>, or <code class="highlighter-rouge">IM 2</code>)</p>
+<p>Gets the current Interrupt mode (<code class="language-plaintext highlighter-rouge">IM 0</code>, <code class="language-plaintext highlighter-rouge">IM 1</code>, or <code class="language-plaintext highlighter-rouge">IM 2</code>)</p>
 
 <h2 id="isinterruptblocked">IsInterruptBlocked</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsInterruptBlocked { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsInterruptBlocked { get; }
 </code></pre></div></div>
 
 <p>Indicates that the CPU internally blocks the interrupts, even if the maskable interrupt is enabled.
@@ -1131,64 +1131,64 @@ When the CPU is within processing a multi-byte statement, this flag is set.</p>
 
 <h2 id="isinopexecution">IsInOpExecution</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsInOpExecution { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsInOpExecution { get; }
 </code></pre></div></div>
 
 <p>Indicates that the CPU still needs to read more bytes to decode a multi-byte operation.</p>
 
 <h2 id="maskableinterruptmodeentered">MaskableInterruptModeEntered</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool MaskableInterruptModeEntered { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool MaskableInterruptModeEntered { get; }
 </code></pre></div></div>
 
 <p>Indicates that the instructions the CPU is executing are the part of the maskable interrupt method.</p>
 
 <h1 id="control-methods">Control methods</h1>
 
-<p>The <code class="highlighter-rouge">CpuZ80</code> class provides a few control operation that you can use in the scripts.</p>
+<p>The <code class="language-plaintext highlighter-rouge">CpuZ80</code> class provides a few control operation that you can use in the scripts.</p>
 
 <h2 id="reset">Reset()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void Reset()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void Reset()
 </code></pre></div></div>
 
-<p>Issues a Reset (<code class="highlighter-rouge">RST</code>) signal to the CPU.</p>
+<p>Issues a Reset (<code class="language-plaintext highlighter-rouge">RST</code>) signal to the CPU.</p>
 
 <h2 id="disableinterrupt">DisableInterrupt()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void DisableInterrupt()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void DisableInterrupt()
 </code></pre></div></div>
 
 <p>Disables the maskable interrupt.</p>
 
 <h2 id="enableinterrupt">EnableInterrupt()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void EnableInterrupt()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void EnableInterrupt()
 </code></pre></div></div>
 
 <p>Enables the maskable interrupt.</p>
 
 <h1 id="operation-tracking">Operation tracking</h1>
 
-<p>The <code class="highlighter-rouge">CpuZ80</code> class allows you to track the addresses the CPU executes an operation for.</p>
+<p>The <code class="language-plaintext highlighter-rouge">CpuZ80</code> class allows you to track the addresses the CPU executes an operation for.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AddressTrackingState OperationTrackingState { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AddressTrackingState OperationTrackingState { get; }
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">OperationTrackingState</code> property’s value is an <a href="/kliveide/documents/scripting-z80.html#the-addresstrackingstate-class"><code class="highlighter-rouge">AddressTrackingState</code></a> 
-instance. It provides a bit for each memory address in the <code class="highlighter-rouge">#0000</code>-<code class="highlighter-rouge">#FFFF</code> range to check if the 
+<p>The <code class="language-plaintext highlighter-rouge">OperationTrackingState</code> property’s value is an <a href="/kliveide/documents/scripting-z80.html#the-addresstrackingstate-class"><code class="language-plaintext highlighter-rouge">AddressTrackingState</code></a> 
+instance. It provides a bit for each memory address in the <code class="language-plaintext highlighter-rouge">#0000</code>-<code class="language-plaintext highlighter-rouge">#FFFF</code> range to check if the 
 particular byte in the memory has been read as a part of CPU’s M1 machine cycle.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ResetOperationTracking()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ResetOperationTracking()
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">ResetOperationTracking()</code> method resets the <code class="highlighter-rouge">OperationTrackingState</code> property as if no 
+<p>The <code class="language-plaintext highlighter-rouge">ResetOperationTracking()</code> method resets the <code class="language-plaintext highlighter-rouge">OperationTrackingState</code> property as if no 
 operations had been executed.</p>
 
-<p>The following sampe demonstrates how you can use these members of <code class="highlighter-rouge">CpuZ80</code> to check which instructions
+<p>The following sampe demonstrates how you can use these members of <code class="language-plaintext highlighter-rouge">CpuZ80</code> to check which instructions
 have been executed. (This code snippet is an extract for a unit test of <strong>SpectNetIde</strong>.)</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[TestMethod]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[TestMethod]
 public async Task OperationTrackingWorks()
 {
     // --- Arrange
@@ -1221,31 +1221,31 @@ public async Task OperationTrackingWorks()
 
 <h1 id="z80-cpu-events">Z80 CPU events</h1>
 
-<p>The <code class="highlighter-rouge">CpuZ80</code> class provides about a dozen events that you can use in script.</p>
+<p>The <code class="language-plaintext highlighter-rouge">CpuZ80</code> class provides about a dozen events that you can use in script.</p>
 
 <h2 id="interruptexecuting">InterruptExecuting</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler InterruptExecuting
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler InterruptExecuting
 </code></pre></div></div>
 
 <p>This event is raised just before a maskable interrupt is about to execute.</p>
 
 <h2 id="nmiexecuting">NmiExecuting</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler NmiExecuting
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler NmiExecuting
 </code></pre></div></div>
 
 <p>This event is raised just before a non-maskable interrupt is about to execute.</p>
 
 <h2 id="memoryreading">MemoryReading</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressEventArgs&gt; MemoryReading
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressEventArgs&gt; MemoryReading
 </code></pre></div></div>
 
-<p>This event is raised just before the memory is being read. The event argument (<code class="highlighter-rouge">AddressEventArgs</code>) 
-has a property, <code class="highlighter-rouge">Address</code> that tells the memory address going to be read.</p>
+<p>This event is raised just before the memory is being read. The event argument (<code class="language-plaintext highlighter-rouge">AddressEventArgs</code>) 
+has a property, <code class="language-plaintext highlighter-rouge">Address</code> that tells the memory address going to be read.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
 </code></pre></div></div>
 
 <blockquote>
@@ -1254,45 +1254,45 @@ has a property, <code class="highlighter-rouge">Address</code> that tells the me
 
 <h2 id="memoryread">MemoryRead</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; MemoryRead
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; MemoryRead
 </code></pre></div></div>
 
-<p>This event is raised right after the memory has been read. The event argument (<code class="highlighter-rouge">AddressAndDataEventArgs</code>) 
+<p>This event is raised right after the memory has been read. The event argument (<code class="language-plaintext highlighter-rouge">AddressAndDataEventArgs</code>) 
 contains these properties:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
 public byte Data { get; }
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">Address</code> keeps the address read, <code class="highlighter-rouge">Data</code> holds the data byte resulted from the read operation.</p>
+<p>The <code class="language-plaintext highlighter-rouge">Address</code> keeps the address read, <code class="language-plaintext highlighter-rouge">Data</code> holds the data byte resulted from the read operation.</p>
 
 <h2 id="memorywriting">MemoryWriting</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; MemoryWriting
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; MemoryWriting
 </code></pre></div></div>
 
-<p>This event is raised just before the memory is being written. The <code class="highlighter-rouge">Address</code> and <code class="highlighter-rouge">Data</code> properties of the
-event argument (<code class="highlighter-rouge">AddressAndDataEventArgs</code>) contain the memory address, and the data byte to write, 
+<p>This event is raised just before the memory is being written. The <code class="language-plaintext highlighter-rouge">Address</code> and <code class="language-plaintext highlighter-rouge">Data</code> properties of the
+event argument (<code class="language-plaintext highlighter-rouge">AddressAndDataEventArgs</code>) contain the memory address, and the data byte to write, 
 respectively.</p>
 
 <h2 id="memorywritten">MemoryWritten</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; MemoryWritten
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; MemoryWritten
 </code></pre></div></div>
 
-<p>This event is raised just after the memory has been written. The <code class="highlighter-rouge">Address</code> and <code class="highlighter-rouge">Data</code> properties of the
-event argument (<code class="highlighter-rouge">AddressAndDataEventArgs</code>) contain the memory address, and the data byte written, 
+<p>This event is raised just after the memory has been written. The <code class="language-plaintext highlighter-rouge">Address</code> and <code class="language-plaintext highlighter-rouge">Data</code> properties of the
+event argument (<code class="language-plaintext highlighter-rouge">AddressAndDataEventArgs</code>) contain the memory address, and the data byte written, 
 respectively.</p>
 
 <h2 id="portreading">PortReading</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressEventArgs&gt; PortReading
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressEventArgs&gt; PortReading
 </code></pre></div></div>
 
-<p>This event is raised just before a port is being read. The event argument (<code class="highlighter-rouge">AddressEventArgs</code>) 
-has a property, <code class="highlighter-rouge">Address</code> that tells the port address going to be read.</p>
+<p>This event is raised just before a port is being read. The event argument (<code class="language-plaintext highlighter-rouge">AddressEventArgs</code>) 
+has a property, <code class="language-plaintext highlighter-rouge">Address</code> that tells the port address going to be read.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
 </code></pre></div></div>
 
 <blockquote>
@@ -1301,60 +1301,60 @@ has a property, <code class="highlighter-rouge">Address</code> that tells the po
 
 <h2 id="portread">PortRead</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; PortRead
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; PortRead
 </code></pre></div></div>
 
-<p>This event is raised just after a port has been read. The event argument (<code class="highlighter-rouge">AddressAndDataEventArgs</code>) 
+<p>This event is raised just after a port has been read. The event argument (<code class="language-plaintext highlighter-rouge">AddressAndDataEventArgs</code>) 
 contains these properties:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort Address { get; }
 public byte Data { get; }
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">Address</code> keeps the address of the port read, <code class="highlighter-rouge">Data</code> holds the data byte resulted from the read operation.</p>
+<p>The <code class="language-plaintext highlighter-rouge">Address</code> keeps the address of the port read, <code class="language-plaintext highlighter-rouge">Data</code> holds the data byte resulted from the read operation.</p>
 
 <h2 id="portwriting">PortWriting</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; PortWriting
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; PortWriting
 </code></pre></div></div>
 
-<p>This event is raised just before a port is being written. The <code class="highlighter-rouge">Address</code> and <code class="highlighter-rouge">Data</code> properties of the
-event argument (<code class="highlighter-rouge">AddressAndDataEventArgs</code>) contain the port address, and the data byte to write, 
+<p>This event is raised just before a port is being written. The <code class="language-plaintext highlighter-rouge">Address</code> and <code class="language-plaintext highlighter-rouge">Data</code> properties of the
+event argument (<code class="language-plaintext highlighter-rouge">AddressAndDataEventArgs</code>) contain the port address, and the data byte to write, 
 respectively.</p>
 
 <h2 id="portwritten">PortWritten</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; PortWritten
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;AddressAndDataEventArgs&gt; PortWritten
 </code></pre></div></div>
 
-<p>This event is raised just after a port has been written. The <code class="highlighter-rouge">Address</code> and <code class="highlighter-rouge">Data</code> properties of the
-event argument (<code class="highlighter-rouge">AddressAndDataEventArgs</code>) contain the port address, and the data byte written, 
+<p>This event is raised just after a port has been written. The <code class="language-plaintext highlighter-rouge">Address</code> and <code class="language-plaintext highlighter-rouge">Data</code> properties of the
+event argument (<code class="language-plaintext highlighter-rouge">AddressAndDataEventArgs</code>) contain the port address, and the data byte written, 
 respectively.</p>
 
 <h2 id="operationexecuting">OperationExecuting</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;Z80InstructionExecutionEventArgs&gt; OperationExecuting
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;Z80InstructionExecutionEventArgs&gt; OperationExecuting
 </code></pre></div></div>
 
 <p>This event is raised just before a Z80 operation is being executed. The event arguments
-instance (<a href="Z80InstructionExecutionEventArgs.md"><code class="highlighter-rouge">Z80InstructionExecutionEventArgs</code></a>) provides 
+instance (<a href="Z80InstructionExecutionEventArgs.md"><code class="language-plaintext highlighter-rouge">Z80InstructionExecutionEventArgs</code></a>) provides 
 properties you can check the operation being executed.</p>
 
 <blockquote>
   <p>When this event is raised, the CPU might not have read all operation code bytes, just those one that
 are enough to decode the type of operation to execute. If the operation contains arguments that are
 part of the operation code, those are not yet read.<br />
-For example when this event is signed, the opcode part for <code class="highlighter-rouge">#80</code> <code class="highlighter-rouge">LD A,#80</code>, or the #23 opcode part
-of <code class="highlighter-rouge">LD (IX+#23),C</code> operation is not read.</p>
+For example when this event is signed, the opcode part for <code class="language-plaintext highlighter-rouge">#80</code> <code class="language-plaintext highlighter-rouge">LD A,#80</code>, or the #23 opcode part
+of <code class="language-plaintext highlighter-rouge">LD (IX+#23),C</code> operation is not read.</p>
 </blockquote>
 
 <h2 id="operationexecuted">OperationExecuted</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;Z80InstructionExecutionEventArgs&gt; OperationExecuted
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;Z80InstructionExecutionEventArgs&gt; OperationExecuted
 </code></pre></div></div>
 
 <p>This event is raised just after a Z80 operation has been executed. The event arguments
-instance (<a href="Z80InstructionExecutionEventArgs.md"><code class="highlighter-rouge">Z80InstructionExecutionEventArgs</code></a>) provides 
+instance (<a href="Z80InstructionExecutionEventArgs.md"><code class="language-plaintext highlighter-rouge">Z80InstructionExecutionEventArgs</code></a>) provides 
 properties you can check the operation executed.</p>
 
 <blockquote>
@@ -1366,7 +1366,7 @@ properties you can check the operation executed.</p>
 <p>To demonstrate the difference between these events, the following sample code snippets (extracts from
 <strong>SpectNetIde</strong> unit tests) provide more details.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[TestMethod]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[TestMethod]
 public async Task OperationExecutingIsInvoked()
 {
     // --- Arrange
@@ -1437,9 +1437,9 @@ public async Task OperationExecutingIsInvoked()
 }
 </code></pre></div></div>
 
-<p>You can check that the <code class="highlighter-rouge">Instruction</code> property is tested against the partial opcode.</p>
+<p>You can check that the <code class="language-plaintext highlighter-rouge">Instruction</code> property is tested against the partial opcode.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[TestMethod]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[TestMethod]
 public async Task OperationExecutedIsInvoked()
 {
     // --- Arrange
@@ -1511,40 +1511,40 @@ public async Task OperationExecutedIsInvoked()
 }
 </code></pre></div></div>
 
-<p>Here, the <code class="highlighter-rouge">Instruction</code> property is checked against the entire opcode.</p>
+<p>Here, the <code class="language-plaintext highlighter-rouge">Instruction</code> property is checked against the entire opcode.</p>
 
 <h1 id="the-addresstrackingstate-class">The AddressTrackingState class</h1>
 
 <p>This class represents tracking information regarding memory. The scripting engine 
-(<a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> and <a href="/kliveide/documents/scripting-z80.html#the-cpuz80-class"><code class="highlighter-rouge">CpuZ80</code></a> classes) use this type to track 
+(<a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> and <a href="/kliveide/documents/scripting-z80.html#the-cpuz80-class"><code class="language-plaintext highlighter-rouge">CpuZ80</code></a> classes) use this type to track 
 operation execution, memory reads and memory writes.</p>
 
-<p>This class stores a flag for each memory address in the <code class="highlighter-rouge">#0000</code>-<code class="highlighter-rouge">#FFFF</code> range. A false value 
+<p>This class stores a flag for each memory address in the <code class="language-plaintext highlighter-rouge">#0000</code>-<code class="language-plaintext highlighter-rouge">#FFFF</code> range. A false value 
 means that the tracking event has not been signed for that particular address. The true value
 says that the tracking event has happened.</p>
 
 <p>For example, when you start the Spectrum virtual machine, after executing the first 
-instruction (<code class="highlighter-rouge">DI</code>), the flag for #0000 is set to true, but all the others remains false.</p>
+instruction (<code class="language-plaintext highlighter-rouge">DI</code>), the flag for #0000 is set to true, but all the others remains false.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class AddressTrackingState
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class AddressTrackingState
 </code></pre></div></div>
 
 <h2 id="thisushort">this[ushort]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool this[ushort address] { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool this[ushort address] { get; }
 </code></pre></div></div>
 
-<p>Gets the status bit of the specified <em><code class="highlighter-rouge">address</code></em>.</p>
+<p>Gets the status bit of the specified <em><code class="language-plaintext highlighter-rouge">address</code></em>.</p>
 
 <h2 id="touchedallushort-ushort">TouchedAll(ushort, ushort)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool TouchedAll(ushort startAddr, ushort endAddr)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool TouchedAll(ushort startAddr, ushort endAddr)
 </code></pre></div></div>
 
-<p>Checks if all tracking flag is set between <em><code class="highlighter-rouge">startAddr</code></em> and <em><code class="highlighter-rouge">endAddr</code></em>.
+<p>Checks if all tracking flag is set between <em><code class="language-plaintext highlighter-rouge">startAddr</code></em> and <em><code class="language-plaintext highlighter-rouge">endAddr</code></em>.
 Both addresses are inclusive. Returns true, if all flag is set; otherwise, false.</p>
 
 <h2 id="touchedanyushort-ushort">TouchedAny(ushort, ushort)</h2>
@@ -1552,44 +1552,44 @@ Both addresses are inclusive. Returns true, if all flag is set; otherwise, false
 <pre><code class="language-CSharp">public bool TouchedAny(ushort startAddr, ushort endAddr)
 </code></pre>
 
-<p>Checks if any tracking flag is set between <em><code class="highlighter-rouge">startAddr</code></em> and <em><code class="highlighter-rouge">endAddr</code></em> at all.
+<p>Checks if any tracking flag is set between <em><code class="language-plaintext highlighter-rouge">startAddr</code></em> and <em><code class="language-plaintext highlighter-rouge">endAddr</code></em> at all.
 Both addresses are inclusive. Returns true, if any of the flags is set; otherwise, false.</p>
 
 <h1 id="the-z80instructionexecutioneventargs-class">The Z80InstructionExecutionEventArgs class</h1>
 
-<p>This class provides event arguments the the <code class="highlighter-rouge">OperationExecuting</code> and <code class="highlighter-rouge">OperationExecuted</code> 
-events of the <a href="CpuZ80.md"><code class="highlighter-rouge">CpuZ80</code></a> class.</p>
+<p>This class provides event arguments the the <code class="language-plaintext highlighter-rouge">OperationExecuting</code> and <code class="language-plaintext highlighter-rouge">OperationExecuted</code> 
+events of the <a href="CpuZ80.md"><code class="language-plaintext highlighter-rouge">CpuZ80</code></a> class.</p>
 
 <h2 id="pcbefore">PcBefore</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort PcBefore { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort PcBefore { get; }
 </code></pre></div></div>
 
 <p>The value of PC before the execution.</p>
 
 <h2 id="instruction">Instruction</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IList&lt;byte&gt; Instruction { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IList&lt;byte&gt; Instruction { get; }
 </code></pre></div></div>
 
-<p>The opcode bytes available at the time of event. For example, if the operation is <code class="highlighter-rouge">LD A,(IX+2)</code>,
-this list contains <code class="highlighter-rouge">#DD</code> and <code class="highlighter-rouge">#7E</code> for the <code class="highlighter-rouge">OperationExecuting</code> event, but <code class="highlighter-rouge">#DD</code>, <code class="highlighter-rouge">#7E</code>, 
-and <code class="highlighter-rouge">#02</code> for the <code class="highlighter-rouge">OperationExecuted</code> event.</p>
+<p>The opcode bytes available at the time of event. For example, if the operation is <code class="language-plaintext highlighter-rouge">LD A,(IX+2)</code>,
+this list contains <code class="language-plaintext highlighter-rouge">#DD</code> and <code class="language-plaintext highlighter-rouge">#7E</code> for the <code class="language-plaintext highlighter-rouge">OperationExecuting</code> event, but <code class="language-plaintext highlighter-rouge">#DD</code>, <code class="language-plaintext highlighter-rouge">#7E</code>, 
+and <code class="language-plaintext highlighter-rouge">#02</code> for the <code class="language-plaintext highlighter-rouge">OperationExecuted</code> event.</p>
 
 <h2 id="opcode">OpCode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte OpCode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte OpCode { get; }
 </code></pre></div></div>
 
-<p>The main operation code. For example, if the operation is <code class="highlighter-rouge">LD A,(IX+2)</code>, this value is <code class="highlighter-rouge">#7E</code> from
-the entire operation opcode (<code class="highlighter-rouge">#DD</code> <code class="highlighter-rouge">#7E</code> <code class="highlighter-rouge">#02</code>).</p>
+<p>The main operation code. For example, if the operation is <code class="language-plaintext highlighter-rouge">LD A,(IX+2)</code>, this value is <code class="language-plaintext highlighter-rouge">#7E</code> from
+the entire operation opcode (<code class="language-plaintext highlighter-rouge">#DD</code> <code class="language-plaintext highlighter-rouge">#7E</code> <code class="language-plaintext highlighter-rouge">#02</code>).</p>
 
 <h2 id="pcafter">PcAfter</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort? PcAfter { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort? PcAfter { get; }
 </code></pre></div></div>
 
-<p>The value of PC after the operation has been executed. It is null during <code class="highlighter-rouge">OerationExecuting</code>.</p>
+<p>The value of PC after the operation has been executed. It is null during <code class="language-plaintext highlighter-rouge">OerationExecuting</code>.</p>
 
             </div>
           </div>
