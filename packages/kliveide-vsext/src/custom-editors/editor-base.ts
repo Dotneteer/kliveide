@@ -34,7 +34,6 @@ export function getActiveEditor(): EditorProviderBase | null {
  */
 export abstract class EditorProviderBase
   implements vscode.CustomTextEditorProvider {
-
   private _webviewPanel: vscode.WebviewPanel | null = null;
 
   /**
@@ -98,6 +97,7 @@ export abstract class EditorProviderBase
     // --- Store the instance
     this._webviewPanel = webviewPanel;
     editorInstances.push(this);
+    activeEditor = this;
 
     // --- Setup initial content for the webview
     webviewPanel.webview.options = {
@@ -124,13 +124,15 @@ export abstract class EditorProviderBase
     );
 
     // --- Notify the view about vm execution state changes
-    const execStateDisposable = onExecutionStateChanged((execState: ExecutionState) => {
-      webviewPanel.webview.postMessage({
-        viewNotification: "execState",
-        state: execState.state,
-        pc: execState.pc
-      });
-    });
+    const execStateDisposable = onExecutionStateChanged(
+      (execState: ExecutionState) => {
+        webviewPanel.webview.postMessage({
+          viewNotification: "execState",
+          state: execState.state,
+          pc: execState.pc,
+        });
+      }
+    );
 
     // --- Notify the view about emulator connection state changes
     const connectionStateDisposable = onConnectionStateChanged(
@@ -219,6 +221,19 @@ export abstract class EditorProviderBase
   }
 
   /**
+   * Instructs the view to go to the specified address
+   * @param address Address to scroll to
+   */
+  goToAddress(address: number): void {
+    if (this._webviewPanel) {
+      this._webviewPanel.webview.postMessage({
+        viewNotification: "goToAddress",
+        address,
+      });
+    }
+  }
+
+  /**
    * Gets the specified path within the extension
    * @param {String[]} path Path within the extension
    */
@@ -285,7 +300,7 @@ export abstract class EditorProviderBase
     this._webviewPanel.webview.postMessage({
       viewNotification: "execState",
       state: execState.state,
-      pc: execState.pc
+      pc: execState.pc,
     });
   }
 }

@@ -43,7 +43,7 @@
     },
     "keybindings": [
       {
-        "command": "kliveide.startEmu",
+        "command": "kliveide.goToAddress",
         "key": "ctrl+g",
         "mac": "cmd+g",
         "when": "resourceFilename == view.disassembly"
@@ -60,7 +60,10 @@
       },
       {
         "command": "kliveide.goToAddress",
-        "title": "Go To Address"
+        "title": "Go To Address",
+        "key": "ctrl+g",
+        "mac": "cmd+g",
+        "when": "resourceFilename == view.disassembly"
       },
       {
         "command": "kliveide.sendTape",
