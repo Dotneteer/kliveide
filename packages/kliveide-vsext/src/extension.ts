@@ -13,6 +13,7 @@ import { createVmStateStatusBarItem } from "./views/statusbar";
 import { createKliveProject } from "./commands/create-klive-project";
 import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
 import { goToAddress } from "./commands/goto-address";
+import { sendTapeFile } from "./commands/send-tape-file";
 
 export function activate(context: vscode.ExtensionContext) {
   let startEmuCmd = vscode.commands.registerCommand(
@@ -31,6 +32,9 @@ export function activate(context: vscode.ExtensionContext) {
     () => goToAddress(context)
   );
   context.subscriptions.push(goToAddressCmd);
+  let sendTapeCmd = vscode.commands.registerCommand("kliveide.sendTape", (uri: vscode.Uri) =>
+    sendTapeFile(uri));
+  context.subscriptions.push(sendTapeCmd);
 
   const z80RegistersProvider = new Z80RegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);
@@ -58,7 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vmStateItem);
 
   // --- Register custom editors
-	context.subscriptions.push(DisassemblyEditorProvider.register(context));
+  context.subscriptions.push(DisassemblyEditorProvider.register(context));
 
   // --- Start the notification mechanism
   startNotifier();

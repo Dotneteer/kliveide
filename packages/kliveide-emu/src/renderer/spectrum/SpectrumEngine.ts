@@ -28,6 +28,7 @@ import {
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
+import { TapReader } from "../../shared/tape/tap-file";
 import { RegisterData } from "../../shared/spectrum/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 
@@ -316,11 +317,7 @@ export class SpectrumEngine {
       }
 
       const binaryReader = new BinaryReader(this._defaultTapeSet);
-      const tzxReader = new TzxReader(binaryReader);
-      if (tzxReader.readContents()) {
-        const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
-        this.spectrum.api.initTape(blocks);
-      }
+      this.initTape(binaryReader);
 
       // --- Set fast LOAD mode
       this.spectrum.api.setFastLoad(emuState.fastLoad);
@@ -649,5 +646,26 @@ export class SpectrumEngine {
     rendererProcessStore.dispatch(
       emulatorSetMemoryContentsAction(memContents)()
     );
+  }
+
+  /**
+   * Initializes the tape from the specified binary reader
+   * @param reader Reader to use
+   */
+  initTape(reader: BinaryReader): boolean {
+    const tzxReader = new TzxReader(reader);
+    if (tzxReader.readContents()) {
+      const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
+      this.spectrum.api.initTape(blocks);
+      return true;
+    }
+
+    const tapReader = new TapReader(reader);
+    if (tapReader.readContents()) {
+      const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);
+      this.spectrum.api.initTape(blocks);
+      return true
+    }
+    return false;
   }
 }

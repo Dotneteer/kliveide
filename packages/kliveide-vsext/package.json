@@ -61,8 +61,21 @@
       {
         "command": "kliveide.goToAddress",
         "title": "Go To Address"
+      },
+      {
+        "command": "kliveide.sendTape",
+        "title": "Send Tape to Emulator",
+        "enablement": "kliveEmuConnected"
       }
     ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "kliveide.sendTape",
+          "when": "resourceExtname == .tap || resourceExtname == .tzx"
+        }
+      ]
+    },
     "views": {
       "debug": [
         {

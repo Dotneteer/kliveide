@@ -25,6 +25,8 @@ import { RegisterData } from "../shared/spectrum/api-data";
 import { breakpointSetAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state";
+import { checkTapeFile } from "../shared/tape/readers";
+import { BinaryReader } from "../shared/utils/BinaryReader";
 /**
  * Starts the web server that provides an API to manage the Klive emulator
  */
@@ -129,8 +131,13 @@ export function startApiServer() {
     let success = false;
     try {
       const contents = fs.readFileSync(_req.body?.tapeFile);
-      mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
-      success = true;
+      if (checkTapeFile(new BinaryReader(contents))) {
+        mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
+        success = true;
+      } else {
+        res.sendStatus(403);
+        return;
+      }
     } catch (err) {}
     res.sendStatus(success ? 200 : 403);
   });
