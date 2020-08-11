@@ -26,6 +26,7 @@
   let top = 0;
   let bottom = 0;
   let average_height;
+  let rescroll = false;
 
   $: visible = items.slice(start, end).map((data, i) => {
     return { index: i + start, data };
@@ -106,6 +107,7 @@
     bottom = remaining * average_height;
 
     // prevent jumping if we scrolled up into unknown territory
+    rescroll = false;
     if (start < old_start) {
       await tick();
 
@@ -121,6 +123,7 @@
 
       const d = actual_height - expected_height;
       viewport.scrollTo(0, scrollTop + d);
+      rescroll = true;
     }
 
     // TODO if we overestimated the space these
@@ -136,6 +139,11 @@
       await tick();
       if (viewport && itemHeight && item >= 0) {
         viewport.scrollTo(0, item * itemHeight);
+        await new Promise((r) => setTimeout(r, 50));
+        if (rescroll) {
+          // --- Repeat scrolling again
+          viewport.scrollTo(0, item * itemHeight);
+        }
       }
     };
     api.calculatedHeight = itemHeight;

@@ -67,6 +67,8 @@ export function emulatorSetMemoryContentsAction(memoryContents: Uint8Array) {
   return createAction("EMULATOR_SET_MEMORY_CONTENTS", { memoryContents });
 }
 
+export const engineInitializedAction = createAction("EMULATOR_INITIALIZED");
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -138,6 +140,8 @@ export function emulatorStateReducer(
       return { ...state, muted: false };
     case "EMULATOR_SET_MEMORY_CONTENTS":
       return { ...state, memoryContents: payload.memoryContents };
-  }
+    case "EMULATOR_INITIALIZED":
+        return { ...state, engineInitialized: true };
+    }
   return state;
 }

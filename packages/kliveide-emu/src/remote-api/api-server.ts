@@ -38,7 +38,8 @@ export function startApiServer() {
    * This call can be used to check if Klive Emulator is running.
    */
   app.get("/hello", (_req, res) => {
-    res.send("KliveEmu");
+    const state = mainProcessStore.getState();
+    res.send(state.emulatorPanelState.engineInitialized ? "KliveEmu": "initializing");
   });
 
   /**

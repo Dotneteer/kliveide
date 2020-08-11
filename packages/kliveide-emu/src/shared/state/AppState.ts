@@ -37,6 +37,7 @@ export interface EmulatorPanelState {
   width?: number;
   height?: number;
   zoom?: number;
+  engineInitialized?: boolean;
   executionState?: number;
   tapeContents?: Uint8Array;
   keyboardPanel?: boolean;
