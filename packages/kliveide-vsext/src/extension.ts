@@ -29,11 +29,13 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(createProjectCmd);
   let goToAddressCmd = vscode.commands.registerCommand(
     "kliveide.goToAddress",
-    () => goToAddress(context)
+    () => goToAddress()
   );
   context.subscriptions.push(goToAddressCmd);
-  let sendTapeCmd = vscode.commands.registerCommand("kliveide.sendTape", (uri: vscode.Uri) =>
-    sendTapeFile(uri));
+  let sendTapeCmd = vscode.commands.registerCommand(
+    "kliveide.sendTape",
+    (uri: vscode.Uri) => sendTapeFile(uri)
+  );
   context.subscriptions.push(sendTapeCmd);
 
   const z80RegistersProvider = new Z80RegistersProvider();

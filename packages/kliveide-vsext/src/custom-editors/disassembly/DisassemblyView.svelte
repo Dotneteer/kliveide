@@ -11,6 +11,7 @@
   let refreshed = false;
   let disassembling = false;
   let needScroll = null;
+  let scrollGap = 0;
   let execState;
   let items = [];
   let breakpoints;
@@ -42,14 +43,17 @@
               case "paused":
               case "stopped":
                 needScroll = ev.data.pc;
+                scrollGap = 3;
                 break;
               case "running":
                 if (oldState === "stopped" || oldState === "none") {
                   needScroll = 0;
+                  scrollGap = 0;
                 }
                 break;
               case "none":
                 needScroll = 0;
+                scrollGap = 0;
                 currentPc = -1;
                 break;
             }
@@ -62,6 +66,11 @@
             break;
           case "pc":
             currentPc = ev.data.pc;
+            break;
+          case "goToAddress":
+            console.log(`Go To Address ${ev.data.address}`);
+            needScroll = ev.data.address;
+            scrollGap = 0;
             break;
         }
       }
@@ -103,9 +112,10 @@
   async function scrollToAddress(address) {
     if (api) {
       let found = items.findIndex((it) => it.address >= address);
-      found = Math.max(0, found - 3);
+      found = Math.max(0, found - scrollGap);
       api.scrollToItem(found);
       needScroll = null;
+      scrollGap = 0;
     }
   }
 </script>
