@@ -77,6 +77,15 @@ class Communicator {
   }
 
   /**
+   * Sends a tape file to the emulator
+   * @param filename File name to send to the emulator
+   */
+  async setTapeFile(filename: string): Promise<boolean> {
+    const response = await this.post("/set-tape", { tapeFile: filename});
+    return response.ok;
+  }
+
+  /**
    * Invokes a GET command for a generic response
    * @param command Command string
    * @param requestInit Optional request initialization
