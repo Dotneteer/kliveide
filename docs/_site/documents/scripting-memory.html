@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Scripting the Memory | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Scripting the Memory" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The MemoryPagingInfo class" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-04T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Scripting the Memory","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/scripting-memory","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-memory"},"description":"The MemoryPagingInfo class","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/scripting-memory","headline":"Scripting the Memory","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-memory"},"description":"The MemoryPagingInfo class","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -881,41 +881,41 @@
 <p>This class provides properties and methods to obtain information about ROM and RAM paging.
 Though it works with ZX Spectrum 48K model, it provides benefits only for higher models.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class MemoryPagingInfo
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class MemoryPagingInfo
 </code></pre></div></div>
 
 <h2 id="selectedromindex">SelectedRomIndex</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int SelectedRomIndex { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int SelectedRomIndex { get; }
 </code></pre></div></div>
 
 <p>Gets the index of the currently selected ROM.</p>
 
 <h2 id="selectedrambankindex">SelectedRamBankIndex</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int SelectedRamBankIndex { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int SelectedRamBankIndex { get; }
 </code></pre></div></div>
 
-<p>Gets the index of the selecter RAM bank for the <code class="highlighter-rouge">#C000</code>-<code class="highlighter-rouge">#FFFF</code> address range.</p>
+<p>Gets the index of the selecter RAM bank for the <code class="language-plaintext highlighter-rouge">#C000</code>-<code class="language-plaintext highlighter-rouge">#FFFF</code> address range.</p>
 
 <h2 id="getbankindexforslotint">GetBankIndexForSlot(int)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int GetBankIndexForSlot(int slot)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int GetBankIndexForSlot(int slot)
 </code></pre></div></div>
 
-<p>Gets the RAM bank index for the specified <em><code class="highlighter-rouge">slot</code></em>.</p>
+<p>Gets the RAM bank index for the specified <em><code class="language-plaintext highlighter-rouge">slot</code></em>.</p>
 
 <blockquote>
-  <p>There are four slots, for the pages starting at <code class="highlighter-rouge">#0000</code>, <code class="highlighter-rouge">#4000</code>, <code class="highlighter-rouge">#8000</code>, and <code class="highlighter-rouge">#C000</code>, respectively.
-Slot index should be set accordingly, from <code class="highlighter-rouge">0</code> to <code class="highlighter-rouge">3</code>.</p>
+  <p>There are four slots, for the pages starting at <code class="language-plaintext highlighter-rouge">#0000</code>, <code class="language-plaintext highlighter-rouge">#4000</code>, <code class="language-plaintext highlighter-rouge">#8000</code>, and <code class="language-plaintext highlighter-rouge">#C000</code>, respectively.
+Slot index should be set accordingly, from <code class="language-plaintext highlighter-rouge">0</code> to <code class="language-plaintext highlighter-rouge">3</code>.</p>
 </blockquote>
 
 <h2 id="usesshadowscreen">UsesShadowScreen</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool UsesShadowScreen { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool UsesShadowScreen { get; }
 </code></pre></div></div>
 
 <p>Indicates if the virtual machine uses the shadow screen (Bit 3 of port #7FFD). If false, the normal
@@ -923,7 +923,7 @@ screen (Bank #5) is used. If true, the shadow screen (Bank #7) is displayed.</p>
 
 <h2 id="isinallrammode">IsInAllRamMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsInAllRamMode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsInAllRamMode { get; }
 </code></pre></div></div>
 
 <p>Indicates if the virtul machine (ZX Spectrum +3E and ZX Spectrum Next) machine is
@@ -934,29 +934,29 @@ in the special ALL RAM mode (Bit 0 of port #1FFD).</p>
 <p>This class represents a slice of the memory in the Spectrum virtual machine. Right now, it is used to
 represent the contents of a RAM bank.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class MemorySlice
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class MemorySlice
 </code></pre></div></div>
 
 <h2 id="size">Size</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Size { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Size { get; }
 </code></pre></div></div>
 
 <p>The size of the memory slice, given in number of bytes.</p>
 
 <h2 id="thisint">this[int]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[int index] { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[int index] { get; set; }
 </code></pre></div></div>
 
-<p>You can get and set the byte at the <em><code class="highlighter-rouge">index</code></em> position in the memory slice.</p>
+<p>You can get and set the byte at the <em><code class="language-plaintext highlighter-rouge">index</code></em> position in the memory slice.</p>
 
 <blockquote>
-  <p>Be aware, <em><code class="highlighter-rouge">index</code></em> is not the absolute memory address of the byte, but a relative address from <code class="highlighter-rouge">0</code> to
-<code class="highlighter-rouge">Size - 1</code>. For RAM banks, <code class="highlighter-rouge">Size</code> is <code class="highlighter-rouge">#4000</code>, thus you can address bytes from <code class="highlighter-rouge">0</code> to <code class="highlighter-rouge">#3FFF</code>.</p>
+  <p>Be aware, <em><code class="language-plaintext highlighter-rouge">index</code></em> is not the absolute memory address of the byte, but a relative address from <code class="language-plaintext highlighter-rouge">0</code> to
+<code class="language-plaintext highlighter-rouge">Size - 1</code>. For RAM banks, <code class="language-plaintext highlighter-rouge">Size</code> is <code class="language-plaintext highlighter-rouge">#4000</code>, thus you can address bytes from <code class="language-plaintext highlighter-rouge">0</code> to <code class="language-plaintext highlighter-rouge">#3FFF</code>.</p>
 </blockquote>
 
 <h1 id="the-readonlymemoryslice-class">The ReadOnlyMemorySlice class</h1>
@@ -964,30 +964,30 @@ represent the contents of a RAM bank.</p>
 <p>This class represents a read-only slice of the memory in the Spectrum virtual machine. Right now, it is used to
 represent the contents of a ROM pages.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ReadOnlyMemorySlice
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class ReadOnlyMemorySlice
 </code></pre></div></div>
 
 <h2 id="size-1">Size</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Size { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Size { get; }
 </code></pre></div></div>
 
 <p>The size of the memory slice, given in number of bytes.</p>
 
 <h2 id="thisint-1">this[int]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[int index] { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[int index] { get; }
 </code></pre></div></div>
 
-<p>You can get the byte at the <em><code class="highlighter-rouge">index</code></em> position in the memory slice. As the name of the class suggest,
+<p>You can get the byte at the <em><code class="language-plaintext highlighter-rouge">index</code></em> position in the memory slice. As the name of the class suggest,
 you cannot change the contents of a read-only memory slice.</p>
 
 <blockquote>
-  <p>Be aware, <em><code class="highlighter-rouge">index</code></em> is not the absolute memory address of the byte, but a relative address from <code class="highlighter-rouge">0</code> to
-<code class="highlighter-rouge">Size - 1</code>. For RAM banks, <code class="highlighter-rouge">Size</code> is <code class="highlighter-rouge">#4000</code>, thus you can address bytes from <code class="highlighter-rouge">0</code> to <code class="highlighter-rouge">#3FFF</code>.</p>
+  <p>Be aware, <em><code class="language-plaintext highlighter-rouge">index</code></em> is not the absolute memory address of the byte, but a relative address from <code class="language-plaintext highlighter-rouge">0</code> to
+<code class="language-plaintext highlighter-rouge">Size - 1</code>. For RAM banks, <code class="language-plaintext highlighter-rouge">Size</code> is <code class="language-plaintext highlighter-rouge">#4000</code>, thus you can address bytes from <code class="language-plaintext highlighter-rouge">0</code> to <code class="language-plaintext highlighter-rouge">#3FFF</code>.</p>
 </blockquote>
 
 <h1 id="the-spectrummemorycontents-class">The SpectrumMemoryContents class</h1>
@@ -995,52 +995,52 @@ you cannot change the contents of a read-only memory slice.</p>
 <p>This class provides access to the addressable 64KBytes memory contents of the Spectrum virtual machine.
 An instance of the class allows reading and writeng the memory.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class SpectrumMemoryContents
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class SpectrumMemoryContents
 </code></pre></div></div>
 
 <h2 id="thisushort">this[ushort]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[ushort address] { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public byte this[ushort address] { get; set; }
 </code></pre></div></div>
 
-<p>Gets or sets the contents of the specified <em><code class="highlighter-rouge">address</code></em>. Setting the content behaves as
+<p>Gets or sets the contents of the specified <em><code class="language-plaintext highlighter-rouge">address</code></em>. Setting the content behaves as
 in the real hardware: if you try to set a ROM address, the contents of the particular
 memory address won’t change after the write operation.</p>
 
 <h2 id="readtrackingstate">ReadTrackingState</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AddressTrackingState ReadTrackingState { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AddressTrackingState ReadTrackingState { get; }
 </code></pre></div></div>
 
-<p>The property’s value is an <a href="/kliveide/documents/scripting-z80.html#the-addresstrackingstate-class"><code class="highlighter-rouge">AddressTrackingState</code></a> 
-instance. It provides a bit for each memory address in the <code class="highlighter-rouge">#0000</code>-<code class="highlighter-rouge">#FFFF</code> range to check if the 
+<p>The property’s value is an <a href="/kliveide/documents/scripting-z80.html#the-addresstrackingstate-class"><code class="language-plaintext highlighter-rouge">AddressTrackingState</code></a> 
+instance. It provides a bit for each memory address in the <code class="language-plaintext highlighter-rouge">#0000</code>-<code class="language-plaintext highlighter-rouge">#FFFF</code> range to check if the 
 particular byte in the memory has been read during a CPU operation.</p>
 
 <h2 id="resetreadtracking">ResetReadTracking()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ResetReadTracking()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ResetReadTracking()
 </code></pre></div></div>
 
-<p>Resets the <code class="highlighter-rouge">ReadTrackingState</code> property as if no memory had been read.</p>
+<p>Resets the <code class="language-plaintext highlighter-rouge">ReadTrackingState</code> property as if no memory had been read.</p>
 
 <h2 id="writetrackingstate">WriteTrackingState</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AddressTrackingState WriteTrackingState { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AddressTrackingState WriteTrackingState { get; }
 </code></pre></div></div>
 
-<p>The property’s value is an <a href="/kliveide/documents/scripting-z80.html#the-addresstrackingstate-class"><code class="highlighter-rouge">AddressTrackingState</code></a> 
-instance. It provides a bit for each memory address in the <code class="highlighter-rouge">#0000</code>-<code class="highlighter-rouge">#FFFF</code> range to check if the 
+<p>The property’s value is an <a href="/kliveide/documents/scripting-z80.html#the-addresstrackingstate-class"><code class="language-plaintext highlighter-rouge">AddressTrackingState</code></a> 
+instance. It provides a bit for each memory address in the <code class="language-plaintext highlighter-rouge">#0000</code>-<code class="language-plaintext highlighter-rouge">#FFFF</code> range to check if the 
 particular byte in the memory has been written during a CPU operation.</p>
 
 <h2 id="resetwritetracking">ResetWriteTracking()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ResetWriteTracking()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ResetWriteTracking()
 </code></pre></div></div>
 
-<p>Resets the <code class="highlighter-rouge">WriteTrackingState</code> property as if no memory had been read.</p>
+<p>Resets the <code class="language-plaintext highlighter-rouge">WriteTrackingState</code> property as if no memory had been read.</p>
 
             </div>
           </div>

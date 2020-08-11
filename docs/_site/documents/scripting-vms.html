@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Managing Virtual machines | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Managing Virtual machines" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The SpectrumVmFactory class" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-04T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Managing Virtual machines","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/scripting-vms","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-vms"},"description":"The SpectrumVmFactory class","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/scripting-vms","headline":"Managing Virtual machines","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-vms"},"description":"The SpectrumVmFactory class","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -879,28 +879,28 @@
               <h1 id="the-spectrumvmfactory-class">The SpectrumVmFactory class</h1>
 
 <p>This class provides methods you can use to create ZX Spectrum virtual machine instances. 
-Each factory methods retrieves a <a href="SpectrumVm.md"><code class="highlighter-rouge">SpectrumVm</code></a> instance you can use to control and query
+Each factory methods retrieves a <a href="SpectrumVm.md"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance you can use to control and query
 the particular machine.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static class SpectrumVmFactory
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static class SpectrumVmFactory
 </code></pre></div></div>
 
 <h2 id="createstring-string">Create(string, string)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm Create(string modelKey, string editionKey)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm Create(string modelKey, string editionKey)
 </code></pre></div></div>
 
-<p>Creates a new <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> instance according to the specified <em><code class="highlighter-rouge">modelKey</code></em> 
-and <em><code class="highlighter-rouge">editionKey</code></em> values.</p>
+<p>Creates a new <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance according to the specified <em><code class="language-plaintext highlighter-rouge">modelKey</code></em> 
+and <em><code class="language-plaintext highlighter-rouge">editionKey</code></em> values.</p>
 
 <h3 id="arguments">Arguments</h3>
-<p><code class="highlighter-rouge">modelkey</code>: The name of the Spectrum model.<br />
-<code class="highlighter-rouge">editionKey</code>: The name of the Spectrum edition</p>
+<p><code class="language-plaintext highlighter-rouge">modelkey</code>: The name of the Spectrum model.<br />
+<code class="language-plaintext highlighter-rouge">editionKey</code>: The name of the Spectrum edition</p>
 <blockquote>
-  <p>The <a href="/kliveide/documents/scripting-vms.html#the-spectrummodels-class"><code class="highlighter-rouge">SpectrumModels</code></a> class defines several string constants that you can use for these arguments.</p>
+  <p>The <a href="/kliveide/documents/scripting-vms.html#the-spectrummodels-class"><code class="language-plaintext highlighter-rouge">SpectrumModels</code></a> class defines several string constants that you can use for these arguments.</p>
 </blockquote>
 
 <h3 id="returns">Returns</h3>
@@ -909,66 +909,66 @@ and <em><code class="highlighter-rouge">editionKey</code></em> values.</p>
 
 <h3 id="exceptions">Exceptions</h3>
 
-<p><code class="highlighter-rouge">ArgumentNullException</code>: <code class="highlighter-rouge">modelKey</code> or <code class="highlighter-rouge">editionKey</code> is <code class="highlighter-rouge">null</code>.<br />
-<code class="highlighter-rouge">KeyNotFoundException</code>: The <code class="highlighter-rouge">SpectrumModels</code> class does not have a definition
-for <code class="highlighter-rouge">modelKey</code>, or the model does not have an edition for <code class="highlighter-rouge">editionKey</code>.</p>
+<p><code class="language-plaintext highlighter-rouge">ArgumentNullException</code>: <code class="language-plaintext highlighter-rouge">modelKey</code> or <code class="language-plaintext highlighter-rouge">editionKey</code> is <code class="language-plaintext highlighter-rouge">null</code>.<br />
+<code class="language-plaintext highlighter-rouge">KeyNotFoundException</code>: The <code class="language-plaintext highlighter-rouge">SpectrumModels</code> class does not have a definition
+for <code class="language-plaintext highlighter-rouge">modelKey</code>, or the model does not have an edition for <code class="language-plaintext highlighter-rouge">editionKey</code>.</p>
 
 <h3 id="sample">Sample</h3>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = Create(SpectrumModels.ZX_SPECTRUM_48, SpectrumModels.NTSC);
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = Create(SpectrumModels.ZX_SPECTRUM_48, SpectrumModels.NTSC);
 </code></pre></div></div>
 
 <h2 id="createspectrum48pal">CreateSpectrum48Pal()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48Pal()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48Pal()
 </code></pre></div></div>
 
 <p>Creates a new ZX Spectrum 48K PAL virtual machine and retrieves it as 
-a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> instance.</p>
+a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance.</p>
 
 <h2 id="createspectrum48palturbo">CreateSpectrum48PalTurbo()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48PalTurbo()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48PalTurbo()
 </code></pre></div></div>
 
 <p>Creates a new ZX Spectrum 48K PAL virtual machine with double CPU speed (7MHz) and retrieves it as 
-a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> instance.</p>
+a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance.</p>
 
 <h2 id="createspectrum48ntsc">CreateSpectrum48Ntsc()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48Ntsc()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48Ntsc()
 </code></pre></div></div>
 
 <p>Creates a new ZX Spectrum 48K NTSC virtual machine and retrieves it as 
-a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> instance.</p>
+a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance.</p>
 
 <h2 id="createspectrum48ntscturbo">CreateSpectrum48NtscTurbo()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48NtscTurbo()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum48NtscTurbo()
 </code></pre></div></div>
 
 <p>Creates a new ZX Spectrum 48K NTSC virtual machine with double CPU speed (7MHz) and retrieves it as 
-a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> instance.</p>
+a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance.</p>
 
 <h2 id="createspectrum128">CreateSpectrum128()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum128()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum128()
 </code></pre></div></div>
 
 <p>Creates a new ZX Spectrum 128K PAL virtual machine and retrieves it as 
-a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> instance.</p>
+a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance.</p>
 
 <h2 id="createspectrump3e">CreateSpectrumP3E()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum128()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumVm CreateSpectrum128()
 </code></pre></div></div>
 
 <p>Creates a new ZX Spectrum +3E PAL virtual machine and retrieves it as 
-a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="highlighter-rouge">SpectrumVm</code></a> instance.</p>
+a <a href="/kliveide/documents/scripting-vms.html#the-spectrumvm-class"><code class="language-plaintext highlighter-rouge">SpectrumVm</code></a> instance.</p>
 
 <h1 id="provider-configuration">Provider configuration</h1>
 
-<p>The <code class="highlighter-rouge">SpectrumVmFactory</code> class allows to change providers to customize
+<p>The <code class="language-plaintext highlighter-rouge">SpectrumVmFactory</code> class allows to change providers to customize
 the virtual machine to your needs. Doing this requires a bit deeper knowledge
 of how the emulator in SpectNetIde works. Probably, you do not need to
 use your own providers at all.</p>
@@ -978,39 +978,39 @@ configuration:</p>
 
 <h2 id="reset">Reset()</h2>
 
-<p>Resets the <code class="highlighter-rouge">SpectrumVmFactory</code> class, clears the predefined providers.</p>
+<p>Resets the <code class="language-plaintext highlighter-rouge">SpectrumVmFactory</code> class, clears the predefined providers.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void Reset()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void Reset()
 </code></pre></div></div>
 
-<p>After invoking <code class="highlighter-rouge">Reset()</code> you need to set up your own providers.</p>
+<p>After invoking <code class="language-plaintext highlighter-rouge">Reset()</code> you need to set up your own providers.</p>
 
 <h2 id="registerprovidertproviderfunctprovider">RegisterProvider&lt;TProvider&gt;(Func&lt;TProvider&gt;)</h2>
 
-<p>Registers a factory method for the <code class="highlighter-rouge">TProvider</code> type.</p>
+<p>Registers a factory method for the <code class="language-plaintext highlighter-rouge">TProvider</code> type.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void RegisterProvider&lt;TProvider&gt;(Func&lt;TProvider&gt; factory)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void RegisterProvider&lt;TProvider&gt;(Func&lt;TProvider&gt; factory)
 </code></pre></div></div>
-<p>You can register your own <em><code class="highlighter-rouge">factory</code></em> method that creates a provider for 
-<code class="highlighter-rouge">TProvider</code>.</p>
+<p>You can register your own <em><code class="language-plaintext highlighter-rouge">factory</code></em> method that creates a provider for 
+<code class="language-plaintext highlighter-rouge">TProvider</code>.</p>
 
 <h2 id="registerdefaultproviders">RegisterDefaultProviders()</h2>
 
 <p>Allows you to register the default providers.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void RegisterDefaultProviders()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static void RegisterDefaultProviders()
 </code></pre></div></div>
 
-<p>When you need to restore the original behavior of <code class="highlighter-rouge">SpectrumVmFactory</code>,
+<p>When you need to restore the original behavior of <code class="language-plaintext highlighter-rouge">SpectrumVmFactory</code>,
 use this code snippet:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SpectrumVmFactory.Reset();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SpectrumVmFactory.Reset();
 SpectrumVmFactory.RegisterDefaultProviders();
 </code></pre></div></div>
 
-<p>By default, <code class="highlighter-rouge">SpectrumVmFactory</code> uses these provider registrations:</p>
+<p>By default, <code class="language-plaintext highlighter-rouge">SpectrumVmFactory</code> uses these provider registrations:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RegisterProvider&lt;IRomProvider&gt;(() 
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>RegisterProvider&lt;IRomProvider&gt;(() 
     =&gt; new ResourceRomProvider(typeof(RomResourcesPlaceHolder).Assembly));
 RegisterProvider&lt;IKeyboardProvider&gt;(() 
     =&gt; new ScriptingKeyboardProvider());
@@ -1022,21 +1022,21 @@ RegisterProvider&lt;ISoundProvider&gt;(()
     =&gt; new NoAudioProvider());
 </code></pre></div></div>
 
-<p>As the names suggest, the virtual machine created by <code class="highlighter-rouge">SpectrumVmFactory</code> does not 
+<p>As the names suggest, the virtual machine created by <code class="language-plaintext highlighter-rouge">SpectrumVmFactory</code> does not 
 generate audio (neither for the beeper nor for the PSG).</p>
 
 <h1 id="the-spectrumvm-class">The SpectrumVm class</h1>
 
 <p>This class represents a Spectrum virtual machine. You cannot instantiate a machine
-with the constructor of <code class="highlighter-rouge">SpectrumVm</code>, for it is not accessible. To create a Spectrum machine,
-use the <a href="/kliveide/documents/scripting-vms.html#the-spectrumvmfactory-class"><code class="highlighter-rouge">SpectrumVmFactory</code></a> class.</p>
+with the constructor of <code class="language-plaintext highlighter-rouge">SpectrumVm</code>, for it is not accessible. To create a Spectrum machine,
+use the <a href="/kliveide/documents/scripting-vms.html#the-spectrumvmfactory-class"><code class="language-plaintext highlighter-rouge">SpectrumVmFactory</code></a> class.</p>
 
-<p><code class="highlighter-rouge">SpectrumVm</code> is a pivotal type in the scripting feature of <strong>SpectNetIde</strong>. When you have an
+<p><code class="language-plaintext highlighter-rouge">SpectrumVm</code> is a pivotal type in the scripting feature of <strong>SpectNetIde</strong>. When you have an
 object instance in your code, it provides a plethora of properties and methods to access and control
 the Spectrum virtual machine.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
 <pre><code class="language-CSharp">public sealed class SpectrumVm: IDisposable, ISpectrumVmController
 </code></pre>
@@ -1045,63 +1045,63 @@ the Spectrum virtual machine.</p>
 
 <h2 id="modelkey">ModelKey</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public string ModelKey { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public string ModelKey { get; }
 </code></pre></div></div>
-<p>Gets the model key of the virtual machine (see <a href="/kliveide/documents/scripting-vms.html#the-spectrummodels-class"><code class="highlighter-rouge">SpectrumModels</code></a>).</p>
+<p>Gets the model key of the virtual machine (see <a href="/kliveide/documents/scripting-vms.html#the-spectrummodels-class"><code class="language-plaintext highlighter-rouge">SpectrumModels</code></a>).</p>
 
 <h2 id="editionkey">EditionKey</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public string EditionKey { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public string EditionKey { get; }
 </code></pre></div></div>
-<p>Gets the edition key of the virtual machine (see <a href="/kliveide/documents/scripting-vms.html#the-spectrummodels-class"><code class="highlighter-rouge">SpectrumModels</code></a>).</p>
+<p>Gets the edition key of the virtual machine (see <a href="/kliveide/documents/scripting-vms.html#the-spectrummodels-class"><code class="language-plaintext highlighter-rouge">SpectrumModels</code></a>).</p>
 
 <h2 id="cpu">Cpu</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public CpuZ80 Cpu { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public CpuZ80 Cpu { get; }
 </code></pre></div></div>
 
 <p>Gets the object that represents the current state of the Z80 CPU. 
-You can also use this instance to control the CPU (see also <a href="/kliveide/documents/scripting-z80.html#the-cpuz80-class"><code class="highlighter-rouge">CpuZ80</code></a>).</p>
+You can also use this instance to control the CPU (see also <a href="/kliveide/documents/scripting-z80.html#the-cpuz80-class"><code class="language-plaintext highlighter-rouge">CpuZ80</code></a>).</p>
 
 <h2 id="roms">Roms</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IReadOnlyList&lt;ReadOnlyMemorySlice&gt; Roms { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IReadOnlyList&lt;ReadOnlyMemorySlice&gt; Roms { get; }
 </code></pre></div></div>
 
 <p>Provides access to the binary contents of each individual ROM of
 the virtual machine. Each item of the list provides a ROM of the machine.
 For example, in a ZX Spectrum 128K machine instance, there are two ROMs
-with index 0, and 1. (see also <a href="/kliveide/documents/scripting-memory.html#the-readonlymemoryslice-class"><code class="highlighter-rouge">ReadOnlyMemorySlice</code></a>)</p>
+with index 0, and 1. (see also <a href="/kliveide/documents/scripting-memory.html#the-readonlymemoryslice-class"><code class="language-plaintext highlighter-rouge">ReadOnlyMemorySlice</code></a>)</p>
 
 <h2 id="romcount">RomCount</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RomCount { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RomCount { get; }
 </code></pre></div></div>
 
 <p>Retrieves the number of ROMs.</p>
 
 <h2 id="paginginfo">PagingInfo</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public MemoryPagingInfo PagingInfo { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public MemoryPagingInfo PagingInfo { get; }
 </code></pre></div></div>
 
 <p>Allows you to obtain information about memory paging. There’s no reason
 to use this property for a ZX Spectrum 48K virtual machine, as this model 
 does not support memory paging. However, it is useful for other models. 
-See <a href="/kliveide/documents/scripting-memory.html#the-memorypaginginfo-class"><code class="highlighter-rouge">MemoryPagingInfo</code></a> for more details.</p>
+See <a href="/kliveide/documents/scripting-memory.html#the-memorypaginginfo-class"><code class="language-plaintext highlighter-rouge">MemoryPagingInfo</code></a> for more details.</p>
 
 <h2 id="memory">Memory</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public SpectrumMemoryContents Memory { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public SpectrumMemoryContents Memory { get; }
 </code></pre></div></div>
 
 <p>Represents the current contents of the addressable 64K memory of the
 virtual machine. You can use this property to read and write the memory.
-See <a href="/kliveide/documents/scripting-memory.html#the-spectrummemorycontents-class"><code class="highlighter-rouge">SpectrumMemoryContents</code></a> for details.</p>
+See <a href="/kliveide/documents/scripting-memory.html#the-spectrummemorycontents-class"><code class="language-plaintext highlighter-rouge">SpectrumMemoryContents</code></a> for details.</p>
 
 <h2 id="rambanks">RamBanks</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IReadOnlyList&lt;MemorySlice&gt; RamBanks { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IReadOnlyList&lt;MemorySlice&gt; RamBanks { get; }
 </code></pre></div></div>
 
 <p>With this property, you can access the contents of each RAM bank, independently 
@@ -1110,14 +1110,14 @@ memory banks from #0 to #7. Check <a href="/kliveide/documents/scripting-memory.
 
 <h2 id="rambankcount">RamBankCount</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RamBankCount { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int RamBankCount { get; }
 </code></pre></div></div>
 
 <p>Gets the number of RAM banks available.</p>
 
 <h2 id="keyboard">Keyboard</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public KeyboardEmulator Keyboard { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public KeyboardEmulator Keyboard { get; }
 </code></pre></div></div>
 
 <p>You can access the state of the virtual keyboard through this class. You can also
@@ -1125,93 +1125,93 @@ use it to emulate keystrokes. See <a href="/kliveide/documents/scripting-vms.htm
 
 <h2 id="screenconfiguration">ScreenConfiguration</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenConfiguration ScreenConfiguration { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenConfiguration ScreenConfiguration { get; }
 </code></pre></div></div>
 
 <p>Allows access to the details of the screen configuration that determine the tacts 
 of screen rendering, such as number of raster lines, non-visible screen area, border pixels
-above and below the display area, and many more. Check <a href="/kliveide/documents/scripting-screen.html#the-screenconfiguration-class"><code class="highlighter-rouge">ScreenConfiguration</code></a> 
+above and below the display area, and many more. Check <a href="/kliveide/documents/scripting-screen.html#the-screenconfiguration-class"><code class="language-plaintext highlighter-rouge">ScreenConfiguration</code></a> 
 for all available properties of the configuration object.</p>
 
 <h2 id="screenrenderingtable">ScreenRenderingTable</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingTable ScreenRenderingTable { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingTable ScreenRenderingTable { get; }
 </code></pre></div></div>
 
 <p>The virtual machine uses a table that contains an item for each screen
 rendering tact. You can access the information about an individual tact
-through this porperty. The <a href="/kliveide/documents/scripting-screen.html#the-screenrenderingtable-class"><code class="highlighter-rouge">ScreenRenderingTable</code></a> contains more
+through this porperty. The <a href="/kliveide/documents/scripting-screen.html#the-screenrenderingtable-class"><code class="language-plaintext highlighter-rouge">ScreenRenderingTable</code></a> contains more
 details about the information you can access.</p>
 
 <h2 id="screenbitmap">ScreenBitmap</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenBitmap ScreenBitmap { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenBitmap ScreenBitmap { get; }
 </code></pre></div></div>
 
 <p>Provides access to each individual pixels of the visible screen. This object
 represents not only the display area (the 256 x 192 pixels for a ZX Spectrum 48K 
 model), but also the border area. To check the dimensions, use the properties of
-<a href="/kliveide/documents/scripting-screen.html#the-screenconfiguration-class"><code class="highlighter-rouge">ScreenConfiguration</code></a>. The reference documentation of
-<a href="/kliveide/documents/scripting-screen.html#the-screenbitmap-class"><code class="highlighter-rouge">ScreenBitmap</code></a> offers more details about addressing the pixels
+<a href="/kliveide/documents/scripting-screen.html#the-screenconfiguration-class"><code class="language-plaintext highlighter-rouge">ScreenConfiguration</code></a>. The reference documentation of
+<a href="/kliveide/documents/scripting-screen.html#the-screenbitmap-class"><code class="language-plaintext highlighter-rouge">ScreenBitmap</code></a> offers more details about addressing the pixels
 within this object.</p>
 
 <h2 id="screenrenderingstatus">ScreenRenderingStatus</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingStatus ScreenRenderingStatus { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ScreenRenderingStatus ScreenRenderingStatus { get; }
 </code></pre></div></div>
 
 <p>Provides information about the current screen rendering status. 
-See <a href="/kliveide/documents/scripting-screen.html#the-screenrenderingstatus-class"><code class="highlighter-rouge">ScreenRenderingStatus</code></a> for more details.</p>
+See <a href="/kliveide/documents/scripting-screen.html#the-screenrenderingstatus-class"><code class="language-plaintext highlighter-rouge">ScreenRenderingStatus</code></a> for more details.</p>
 
 <h2 id="beeperconfiguration">BeeperConfiguration</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IAudioConfiguration BeeperConfiguration { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IAudioConfiguration BeeperConfiguration { get; }
 </code></pre></div></div>
 
 <p>Gets the configuration of the beeper device (such as sampling frequency, and others).
-<a href="/kliveide/documents/scripting-audio.html#the-iaudioconfiguration-interface"><code class="highlighter-rouge">IAudioConfiguration</code></a> provides more details.</p>
+<a href="/kliveide/documents/scripting-audio.html#the-iaudioconfiguration-interface"><code class="language-plaintext highlighter-rouge">IAudioConfiguration</code></a> provides more details.</p>
 
 <h2 id="beepersamples">BeeperSamples</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AudioSamples BeeperSamples { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AudioSamples BeeperSamples { get; }
 </code></pre></div></div>
 
 <p>Gets the beeper samples of the current screen rendering frame. The 
-<a href="/kliveide/documents/scripting-audio.html#the-audiosamples-class"><code class="highlighter-rouge">AudioSamples</code></a> type describes how you can access individual samples.</p>
+<a href="/kliveide/documents/scripting-audio.html#the-audiosamples-class"><code class="language-plaintext highlighter-rouge">AudioSamples</code></a> type describes how you can access individual samples.</p>
 
 <h2 id="soundconfiguration">SoundConfiguration</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IAudioConfiguration SoundConfiguration { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public IAudioConfiguration SoundConfiguration { get; }
 </code></pre></div></div>
 
 <p>Gets the configuration of the PSG (AY-3-8912 chip) sound device (such as sampling frequency, and others).
-<a href="/kliveide/documents/scripting-audio.html#the-iaudioconfiguration-interface"><code class="highlighter-rouge">IAudioConfiguration</code></a> provides more details.</p>
+<a href="/kliveide/documents/scripting-audio.html#the-iaudioconfiguration-interface"><code class="language-plaintext highlighter-rouge">IAudioConfiguration</code></a> provides more details.</p>
 
 <h2 id="audiosamples">AudioSamples</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AudioSamples AudioSamples { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public AudioSamples AudioSamples { get; }
 </code></pre></div></div>
 
 <p>Gets the PSG (AY-3-8912 chip) sound samples of the current screen rendering frame. The 
-<a href="/kliveide/documents/scripting-audio.html#the-audiosamples-class"><code class="highlighter-rouge">AudioSamples</code></a> type describes how you can access individual samples.</p>
+<a href="/kliveide/documents/scripting-audio.html#the-audiosamples-class"><code class="language-plaintext highlighter-rouge">AudioSamples</code></a> type describes how you can access individual samples.</p>
 
 <h2 id="breakpoints">Breakpoints</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public CodeBreakpoints Breakpoints { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public CodeBreakpoints Breakpoints { get; }
 </code></pre></div></div>
 
 <p>This property allows you to manage the breakpoints. When you run the virtual machine
-in debug mode (see the <code class="highlighter-rouge">StartDebug()</code> method), the virtual machine is paused whenever
-it reaches a breakpoint. The <a href="/kliveide/documents/scripting-vms.html#the-codebreakpoints-class"><code class="highlighter-rouge">CodeBreakpoints</code></a> documentation gives 
+in debug mode (see the <code class="language-plaintext highlighter-rouge">StartDebug()</code> method), the virtual machine is paused whenever
+it reaches a breakpoint. The <a href="/kliveide/documents/scripting-vms.html#the-codebreakpoints-class"><code class="language-plaintext highlighter-rouge">CodeBreakpoints</code></a> documentation gives 
 you more clues.</p>
 
 <h2 id="timeoutinms">TimeoutInMs</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long TimeoutInMs { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long TimeoutInMs { get; set; }
 </code></pre></div></div>
 
 <p>You can start the virtual machine with a timeout value. When the specified
-timeout expires, the virtual machine pauses. With the <code class="highlighter-rouge">TimeoutInMs</code> property,
+timeout expires, the virtual machine pauses. With the <code class="language-plaintext highlighter-rouge">TimeoutInMs</code> property,
 you can set up this value given in milliseconds.</p>
 
 <blockquote>
@@ -1221,21 +1221,21 @@ the clock frequency.</p>
 
 <h2 id="timeouttacts">TimeoutTacts</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long TimeoutTacts { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long TimeoutTacts { get; set; }
 </code></pre></div></div>
 
 <p>With this property, you can specify the timeout value in CPU T-states. Providing the CPU uses
 a
-3.5 MHz clock, setting <code class="highlighter-rouge">TimeoutTacts</code> to 3500 equals to set <code class="highlighter-rouge">TimeoutInMs</code> to 1.</p>
+3.5 MHz clock, setting <code class="language-plaintext highlighter-rouge">TimeoutTacts</code> to 3500 equals to set <code class="language-plaintext highlighter-rouge">TimeoutInMs</code> to 1.</p>
 
 <blockquote>
-  <p>Specifying zero value for <code class="highlighter-rouge">TimeoutInMs</code> or <code class="highlighter-rouge">TimeoutTacts</code> means that there’s no explicit
+  <p>Specifying zero value for <code class="language-plaintext highlighter-rouge">TimeoutInMs</code> or <code class="language-plaintext highlighter-rouge">TimeoutTacts</code> means that there’s no explicit
 timeout, thus the virtual machine runs until explicitly stopped or paused in the code.</p>
 </blockquote>
 
 <h2 id="realtimemode">RealTimeMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool RealTimeMode { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool RealTimeMode { get; set; }
 </code></pre></div></div>
 
 <p>Normally, scripting runs the virtual machine in quick mode, so it continuously runs the
@@ -1245,54 +1245,54 @@ as a physical machine would do.</p>
 
 <h2 id="disablescreenrendering">DisableScreenRendering</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool DisableScreenRendering { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool DisableScreenRendering { get; set; }
 </code></pre></div></div>
 
 <p>Setting this property to true would disable the screen rendering, and so the virtual
 machine would faster. Nonetheless, in this mode — as the screen is not remdered
-— you cannot use <code class="highlighter-rouge">ScreenBitmap</code> to check the contents of the rendered frame. 
+— you cannot use <code class="language-plaintext highlighter-rouge">ScreenBitmap</code> to check the contents of the rendered frame. 
 After the machine starts, the contents remains the same.</p>
 
 <h2 id="machinestate">MachineState</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public VmState MachineState { get; private set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public VmState MachineState { get; private set; }
 </code></pre></div></div>
 
 <p>This property allows you to check the current state of the virtual machine.
-Take a look at the <a href="/kliveide/documents/scripting-vms.html#the-vmstate-enum"><code class="highlighter-rouge">VmState</code></a> enumeration for details about the
+Take a look at the <a href="/kliveide/documents/scripting-vms.html#the-vmstate-enum"><code class="language-plaintext highlighter-rouge">VmState</code></a> enumeration for details about the
 possible states.</p>
 
 <h2 id="executioncompletionreason">ExecutionCompletionReason</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ExecutionCompletionReason ExecutionCompletionReason { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ExecutionCompletionReason ExecutionCompletionReason { get; }
 </code></pre></div></div>
 
 <p>The virtual machine can go into paused or stopped state for many reasons.
-The <a href="/kliveide/documents/scripting-vms.html#the-executioncompletionreason-enum"><code class="highlighter-rouge">ExecutionCompletionReason</code></a> enumeration allows you to check what
+The <a href="/kliveide/documents/scripting-vms.html#the-executioncompletionreason-enum"><code class="language-plaintext highlighter-rouge">ExecutionCompletionReason</code></a> enumeration allows you to check what
 event has caused that the machine is in a specific state.</p>
 
 <h2 id="runsindebugmode">RunsInDebugMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool RunsInDebugMode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool RunsInDebugMode { get; }
 </code></pre></div></div>
 
 <p>Indicates if the virtual machine runs in debug mode.</p>
 
 <h2 id="completiontask">CompletionTask</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public Task CompletionTask { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public Task CompletionTask { get; }
 </code></pre></div></div>
 
 <p>After th virtual machine has been started, it runs in a background thread.
 While it runs, you can use the UI thread for other activities. 
-The <code class="highlighter-rouge">CompletionTask</code> property can be used to wait for the completion of
+The <code class="language-plaintext highlighter-rouge">CompletionTask</code> property can be used to wait for the completion of
 the virtual machine (it gets paused or stopped).</p>
 
 <p>For example, this sample starts the virtual machine id debug mode, does
 some other activity on the UI thread, and then wait while the machine reaches
 its firs breakpoint:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
 // --- Set up breakpoints (omitted from code)
 sm.StartDebug();
 // --- Do something on UI thread (omitted from code)
@@ -1302,13 +1302,13 @@ await sm.CompletionTask;
 
 <h2 id="cachedvmstatefolder">CachedVmStateFolder</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public string CachedVmStateFolder { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public string CachedVmStateFolder { get; set; }
 </code></pre></div></div>
 
 <p>You can speed up the virtual machine startup by starting it from its
-saved state. The scripting engine stores these state files (with <code class="highlighter-rouge">.vmstate</code> extension)
+saved state. The scripting engine stores these state files (with <code class="language-plaintext highlighter-rouge">.vmstate</code> extension)
 in a cache folder. By default, it is the current folder.
-With setting <code class="highlighter-rouge">CachedVmStateFolder</code>, you can specify the storage location
+With setting <code class="language-plaintext highlighter-rouge">CachedVmStateFolder</code>, you can specify the storage location
 of these state files.</p>
 
 <h1 id="control-methods-and-properties">Control Methods and Properties</h1>
@@ -1320,19 +1320,19 @@ completion of the execution cycle, you can use the [CompletionTask] property.</p
 
 <h2 id="isfirststart">IsFirstStart</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsFirstStart { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsFirstStart { get; }
 </code></pre></div></div>
 <p>Signs that this is the very first start of the virtual machine.</p>
 
 <h2 id="isfirstpause">IsFirstPause</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsFirstPause { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool IsFirstPause { get; }
 </code></pre></div></div>
 <p>Signs that this is the very first pause of the virtual machine after its first start.</p>
 
 <h2 id="start">Start()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void Start();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void Start();
 </code></pre></div></div>
 
 <p>Starts the virtual machine in continuous execution mode. It runs unless the script pauses or
@@ -1340,7 +1340,7 @@ stops it, or the specified timeout expires.</p>
 
 <h2 id="startexecutecycleoptions">Start(ExecuteCycleOptions)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void Start(ExecuteCycleOptions options)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void Start(ExecuteCycleOptions options)
 </code></pre></div></div>
 
 <p>Starts the virtual machine with the specified execution mode (see also <a href="/kliveide/documents/scripting-vms.html#the-executecycleoptions-class">ExecuteCycleOptions</a>).
@@ -1348,15 +1348,15 @@ The machine runs unless the script pauses or stops it, or the specified timeout 
 
 <h2 id="startdebug">StartDebug()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void StartDebug()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void StartDebug()
 </code></pre></div></div>
 
-<p>Starts the virtual machine in debug mode and sets the <code class="highlighter-rouge">RunsInDebugMode</code> property to true. Whenever the execution flow reaches a breakpoint, the machine gets
+<p>Starts the virtual machine in debug mode and sets the <code class="language-plaintext highlighter-rouge">RunsInDebugMode</code> property to true. Whenever the execution flow reaches a breakpoint, the machine gets
 paused. Additionally, the machine runs unless the script pauses or stops it, or the specified timeout expires.</p>
 
 <h2 id="rununtilhalt">RunUntilHalt()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RunUntilHalt();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RunUntilHalt();
 </code></pre></div></div>
 
 <p>Starts the Spectrum machine and runs it on a background thread until it reaches a HALT instruction, then is gets
@@ -1364,7 +1364,7 @@ paused. Otherwise, the machine runs unless the script pauses or stops it, or the
 
 <h2 id="rununtilframecompletion">RunUntilFrameCompletion()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RunUntilFrameCompletion()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RunUntilFrameCompletion()
 </code></pre></div></div>
 
 <p>Starts the Spectrum machine and runs it on a background thread until the current screen rendering frame is 
@@ -1373,7 +1373,7 @@ the specified timeout expires.</p>
 
 <h2 id="rununtilterminationpointushort-int">RunUntilTerminationPoint(ushort, int)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RunUntilTerminationPoint(ushort address, int romIndex = 0)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RunUntilTerminationPoint(ushort address, int romIndex = 0)
 </code></pre></div></div>
 
 <p>Starts the Spectrum machine and runs it on a background thread until the CPU reaches the specified 
@@ -1382,23 +1382,23 @@ the script pauses or stops it, or the specified timeout expires.</p>
 
 <h3 id="arguments-1">Arguments</h3>
 
-<p><code class="highlighter-rouge">address</code>: The address at which to pause the machine<br />
-<code class="highlighter-rouge">romIndex</code>: If the address is within the ROM, romIndex specified the index of the ROM that should 
+<p><code class="language-plaintext highlighter-rouge">address</code>: The address at which to pause the machine<br />
+<code class="language-plaintext highlighter-rouge">romIndex</code>: If the address is within the ROM, romIndex specified the index of the ROM that should 
 be selected to pause the machine.</p>
 
 <h3 id="sample-1">Sample</h3>
 
 <p>You can start and run a ZX Spectrum 48K virtual machine while it reaches the main execution cycle
-point (<code class="highlighter-rouge">#12A9</code>) in the ROM:</p>
+point (<code class="language-plaintext highlighter-rouge">#12A9</code>) in the ROM:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
 sm.RunUntilTerminationPoint(0x12A9);
 await sm.CompletionTask;
 </code></pre></div></div>
 
 <h2 id="startandruntomainbool">StartAndRunToMain(bool)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public async Task StartAndRunToMain(bool spectrum48Mode = false)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public async Task StartAndRunToMain(bool spectrum48Mode = false)
 </code></pre></div></div>
 
 <p>A convenience method that starts the virtual machine and pauses it when it reaches its main
@@ -1406,7 +1406,7 @@ execution cycle. The method can be used to wait while the machine pauses.</p>
 
 <h3 id="arguments-2">Arguments</h3>
 
-<p><code class="highlighter-rouge">spectrum48Mode</code>: Setting this flag to true, ZX Spectrum 128K and later models are started in
+<p><code class="language-plaintext highlighter-rouge">spectrum48Mode</code>: Setting this flag to true, ZX Spectrum 128K and later models are started in
 Spectrum 48 BASIC mode</p>
 
 <h3 id="remarks">Remarks</h3>
@@ -1417,7 +1417,7 @@ Spectrum 48 BASIC mode</p>
     <p>First it checks, if there’s a saved machine state image for the machine model. If there is, 
 it simply loads that state and puts the machine into paused state.</p>
   </li>
-  <li>Otherwise, according to the machine type and the <code class="highlighter-rouge">spectrum48Mode</code> flag, it determines the 
+  <li>Otherwise, according to the machine type and the <code class="language-plaintext highlighter-rouge">spectrum48Mode</code> flag, it determines the 
 termination point.
     <ul>
       <li>It starts the virtual machine and runs it to the desired termination point.</li>
@@ -1427,7 +1427,7 @@ in the desired mode.</li>
 next startup would be faster.</li>
     </ul>
   </li>
-  <li>The method retrieves the <code class="highlighter-rouge">CompletionTask</code> property so that you can wait for completion.</li>
+  <li>The method retrieves the <code class="language-plaintext highlighter-rouge">CompletionTask</code> property so that you can wait for completion.</li>
 </ol>
 
 <h3 id="sample-2">Sample</h3>
@@ -1435,37 +1435,37 @@ next startup would be faster.</li>
 <p>This code snippet starts a ZX Spectrum 128K virtual machine in 48 mode, and waits while the 
 machine reaches the main execution cycle.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum128Pal();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum128Pal();
 await sm.StartAndRunToMain(true);
 </code></pre></div></div>
 
 <h2 id="pause">Pause()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public async Task Pause()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public async Task Pause()
 </code></pre></div></div>
 
 <p>Pauses the running Spectrum virtual machine. After it is paused, you can continue the execution
-with any of these methods: <code class="highlighter-rouge">Start()</code>, <code class="highlighter-rouge">Start(ExecutionCycleOptions)</code>, <code class="highlighter-rouge">StartDebug</code>, 
-<code class="highlighter-rouge">RunUntilHalt()</code>, <code class="highlighter-rouge">RunUntilFrameCompletion()</code>, <code class="highlighter-rouge">RunUntilTerminationPoint()</code>.</p>
+with any of these methods: <code class="language-plaintext highlighter-rouge">Start()</code>, <code class="language-plaintext highlighter-rouge">Start(ExecutionCycleOptions)</code>, <code class="language-plaintext highlighter-rouge">StartDebug</code>, 
+<code class="language-plaintext highlighter-rouge">RunUntilHalt()</code>, <code class="language-plaintext highlighter-rouge">RunUntilFrameCompletion()</code>, <code class="language-plaintext highlighter-rouge">RunUntilTerminationPoint()</code>.</p>
 
 <h2 id="stop">Stop()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public async Task Stop()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public async Task Stop()
 </code></pre></div></div>
 
 <p>Stops the running or paused Spectrum virtual machine. After it is stopped, you can resttart 
-the execution with any of these methods: <code class="highlighter-rouge">Start()</code>, <code class="highlighter-rouge">Start(ExecutionCycleOptions)</code>, <code class="highlighter-rouge">StartDebug</code>, 
-<code class="highlighter-rouge">RunUntilHalt()</code>, <code class="highlighter-rouge">RunUntilFrameCompletion()</code>, <code class="highlighter-rouge">RunUntilTerminationPoint()</code>.</p>
+the execution with any of these methods: <code class="language-plaintext highlighter-rouge">Start()</code>, <code class="language-plaintext highlighter-rouge">Start(ExecutionCycleOptions)</code>, <code class="language-plaintext highlighter-rouge">StartDebug</code>, 
+<code class="language-plaintext highlighter-rouge">RunUntilHalt()</code>, <code class="language-plaintext highlighter-rouge">RunUntilFrameCompletion()</code>, <code class="language-plaintext highlighter-rouge">RunUntilTerminationPoint()</code>.</p>
 
 <h2 id="stepinto">StepInto()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void StepInto()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void StepInto()
 </code></pre></div></div>
 
 <p>Executes the subsequent Z80 instruction, and then pauses the machine. As the execution happens 
-on a background thread, you should wait for the completion with the <code class="highlighter-rouge">CompletionTask</code> property:</p>
+on a background thread, you should wait for the completion with the <code class="language-plaintext highlighter-rouge">CompletionTask</code> property:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
 // --- Do something with the machine and then pause (code omitted)
 sm.StepInto();
 await sm.CompletionTask;
@@ -1473,18 +1473,18 @@ await sm.CompletionTask;
 
 <h2 id="stepover">StepOver()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void StepOver()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void StepOver()
 </code></pre></div></div>
 
 <p>Executes the subsequent Z80 CALL, RST, or block instruction (such as LDIR, LDDR, CPIR, etc.) entirely.
 For example, when the subsequent instruction is a CALL, the machine gets paused as the engine detects
 that the control flow is right on the next instruction after CALL (when the subroutine returned). By
-using it, you do not have to step through all instructions one-by-one with <code class="highlighter-rouge">StepInto()</code>.</p>
+using it, you do not have to step through all instructions one-by-one with <code class="language-plaintext highlighter-rouge">StepInto()</code>.</p>
 
 <blockquote>
   <p>This method has a potential issue. If the method does not return to the expected location, for example,
-it manipulates the stack, the virtual machine would not pause. It is definitely an issue with <code class="highlighter-rouge">RST #08</code> on
-a ZX Spectrum 128K model, or with <code class="highlighter-rouge">RST #28</code> on ZX Spectrum 48K. In the future, I am going to examine how
+it manipulates the stack, the virtual machine would not pause. It is definitely an issue with <code class="language-plaintext highlighter-rouge">RST #08</code> on
+a ZX Spectrum 128K model, or with <code class="language-plaintext highlighter-rouge">RST #28</code> on ZX Spectrum 48K. In the future, I am going to examine how
 I can handle this issue — now, it is not perfect.</p>
 </blockquote>
 
@@ -1505,52 +1505,52 @@ I’m investigating the possible resolutions.</p>
 </blockquote>
 
 <blockquote>
-  <p>The virtual machine state files (with <code class="highlighter-rouge">.vmstate</code> extension) are simple JSON files, so you can open them
+  <p>The virtual machine state files (with <code class="language-plaintext highlighter-rouge">.vmstate</code> extension) are simple JSON files, so you can open them
 and check their structure to get more details on what’s within them. You can recognize that the contents 
 of the memory is compressed. A Spectrum 48K state file takes about 25KBytes.</p>
 </blockquote>
 
 <h2 id="savemachinestatetostring">SaveMachineStateTo(string)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void SaveMachineStateTo(string filename)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void SaveMachineStateTo(string filename)
 </code></pre></div></div>
 
 <p>Saves the state of the paused virtual machine to the specified file.</p>
 
 <h3 id="arguments-3">Arguments</h3>
-<p><code class="highlighter-rouge">filename</code>: Name of the file to save the machine state</p>
+<p><code class="language-plaintext highlighter-rouge">filename</code>: Name of the file to save the machine state</p>
 
 <h2 id="restoremachinestatestring">RestoreMachineState(string)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RestoreMachineState(string filename)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RestoreMachineState(string filename)
 </code></pre></div></div>
 
 <p>Loads the state of the paused or stopped machine from the specified file. When you continue the 
 execution, the machine will start from the freshly loaded state.</p>
 
 <h3 id="arguments-4">Arguments</h3>
-<p><code class="highlighter-rouge">filename</code>: Name of the file that contains the machine state</p>
+<p><code class="language-plaintext highlighter-rouge">filename</code>: Name of the file that contains the machine state</p>
 
 <h1 id="code-manipulation-methods">Code manipulation methods</h1>
 
 <p>While the virtual machine is stopped, you can inject code into the memory so that you can execute it.
-You do not need to use the [Memory] property of <code class="highlighter-rouge">SpectrumVm</code> to do this. There are a few methods
+You do not need to use the [Memory] property of <code class="language-plaintext highlighter-rouge">SpectrumVm</code> to do this. There are a few methods
 that makes it extremely easy.</p>
 
 <h2 id="injectcodeushort-byte-array">InjectCode(ushort, byte array)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void InjectCode(ushort address, byte[] codeArray)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void InjectCode(ushort address, byte[] codeArray)
 </code></pre></div></div>
 
 <p>Injects code into the memory. Keeps the machine in paused state.</p>
 
 <h3 id="arguments-5">Arguments</h3>
-<p><code class="highlighter-rouge">address</code>: Start address of the injection<br />
-<code class="highlighter-rouge">codeArray</code>: A byte array that contains the machine code bytes in the order of injection</p>
+<p><code class="language-plaintext highlighter-rouge">address</code>: Start address of the injection<br />
+<code class="language-plaintext highlighter-rouge">codeArray</code>: A byte array that contains the machine code bytes in the order of injection</p>
 
 <h2 id="injectcodestring-assembleroptions">InjectCode(string, AssemblerOptions)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort InjectCode(string asmSource, AssemblerOptions options = null)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort InjectCode(string asmSource, AssemblerOptions options = null)
 </code></pre></div></div>
 
 <p>This powerful method allows you to define the code to inject, in Z80 assembler language, using
@@ -1558,37 +1558,37 @@ all features the language provides. In the <strong>SpectNetIde</strong> assemble
 code segments, and this method injects all cade segments.</p>
 
 <h3 id="arguments-6">Arguments</h3>
-<p><code class="highlighter-rouge">asmSource</code>: The Z80 Assembler source code<br />
-<code class="highlighter-rouge">options</code>: Optional options to compile the source code. See <a href="/kliveide/documents/scripting-vms.html#the-assembleroptions-class"><code class="highlighter-rouge">AssemblerOptions</code></a> more details.</p>
+<p><code class="language-plaintext highlighter-rouge">asmSource</code>: The Z80 Assembler source code<br />
+<code class="language-plaintext highlighter-rouge">options</code>: Optional options to compile the source code. See <a href="/kliveide/documents/scripting-vms.html#the-assembleroptions-class"><code class="language-plaintext highlighter-rouge">AssemblerOptions</code></a> more details.</p>
 
 <h3 id="returns-1">Returns</h3>
 
-<p>The address marked as the entry point (<code class="highlighter-rouge">ENT</code> directive in the source code), or the start 
-address (<code class="highlighter-rouge">ORG</code> directive) of the first code block in the source code.</p>
+<p>The address marked as the entry point (<code class="language-plaintext highlighter-rouge">ENT</code> directive in the source code), or the start 
+address (<code class="language-plaintext highlighter-rouge">ORG</code> directive) of the first code block in the source code.</p>
 
 <h2 id="callcodeushort-ushort">CallCode(ushort, ushort?)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void CallCode(ushort startAddress, ushort? callStubAddress = null)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void CallCode(ushort startAddress, ushort? callStubAddress = null)
 </code></pre></div></div>
 
 <p>Calls the code at the specified subroutine start address.</p>
 
 <h3 id="arguments-7">Arguments</h3>
-<p><code class="highlighter-rouge">startAddress</code>: Start address of the subroutine<br />
-<code class="highlighter-rouge">callStubAddress</code>: Optional address for the call stub</p>
+<p><code class="language-plaintext highlighter-rouge">startAddress</code>: Start address of the subroutine<br />
+<code class="language-plaintext highlighter-rouge">callStubAddress</code>: Optional address for the call stub</p>
 
 <h3 id="remarks-1">Remarks</h3>
 
-<p>This method creates a Z80 CALL instruction, and stores it to the specified <code class="highlighter-rouge">callStubAddress</code>.
-If this parameter is omitted (set to <code class="highlighter-rouge">null</code>), the <code class="highlighter-rouge">#5BA0</code> address (empty area after system variables)
+<p>This method creates a Z80 CALL instruction, and stores it to the specified <code class="language-plaintext highlighter-rouge">callStubAddress</code>.
+If this parameter is omitted (set to <code class="language-plaintext highlighter-rouge">null</code>), the <code class="language-plaintext highlighter-rouge">#5BA0</code> address (empty area after system variables)
 is used. Then, the virtual machine starts and pauses at the termination point of 
-<code class="highlighter-rouge">callStubAddress + 3</code> (by default, <code class="highlighter-rouge">#5BA3</code>).</p>
+<code class="language-plaintext highlighter-rouge">callStubAddress + 3</code> (by default, <code class="language-plaintext highlighter-rouge">#5BA3</code>).</p>
 
 <h2 id="sample-using-code-injection">Sample using code injection</h2>
 
 <p>The following sample injects and executes code that sets the color of the background to blue.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
 await sm.StartAndRunToMain();
 var entryAddr = sm.InjectCode(@"
     .org #8000
@@ -1601,10 +1601,10 @@ await sm.CompletionTask;
 </code></pre></div></div>
 
 <p>Instead of call, you can jump directly to the code. Nonetheless, in this case you cannot complete
-your code with <code class="highlighter-rouge">RET</code>, you should jump back to the main execution cycle of the machine, as this
+your code with <code class="language-plaintext highlighter-rouge">RET</code>, you should jump back to the main execution cycle of the machine, as this
 sample shows:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
 await sm.StartAndRunToMain();
 var entryAddr = sm.InjectCode(@"
     .org #8000
@@ -1624,35 +1624,35 @@ await sm.CompletionTask;
 
 <h2 id="vmstatechanged">VmStateChanged</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;VmStateChangedEventArgs&gt; VmStateChanged;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;VmStateChangedEventArgs&gt; VmStateChanged;
 </code></pre></div></div>
 
 <p>This event is raised whenever the state of the virtual machine changes.</p>
 
-<p>The <code class="highlighter-rouge">VmStateChangedEventArgs</code> class has these properties:</p>
+<p>The <code class="language-plaintext highlighter-rouge">VmStateChangedEventArgs</code> class has these properties:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public VmState OldState { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public VmState OldState { get; }
 public VmState NewState { get; }
 </code></pre></div></div>
 
-<p>As theor names suggest, you can obtain the old and the new state (<a href="/kliveide/documents/scripting-vms.html#the-vmstate-enum"><code class="highlighter-rouge">VmState</code></a>) of the machine.</p>
+<p>As theor names suggest, you can obtain the old and the new state (<a href="/kliveide/documents/scripting-vms.html#the-vmstate-enum"><code class="language-plaintext highlighter-rouge">VmState</code></a>) of the machine.</p>
 
 <h2 id="vmstoppedwithexception">VmStoppedWithException</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;VmStoppedWithExceptionEventArgs&gt; VmStoppedWithException;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler&lt;VmStoppedWithExceptionEventArgs&gt; VmStoppedWithException;
 </code></pre></div></div>
 
 <p>Whenever the Spectrum virtual machine stops because of an exception, this event is raised. Normally,
 this event should not happen, it signs that there’s some unexpected issue (programming error) within
-<strong>SpectNetIde</strong>. The <code class="highlighter-rouge">VmStoppedWithExceptionEventArgs</code> has this property to check what is the exception
+<strong>SpectNetIde</strong>. The <code class="language-plaintext highlighter-rouge">VmStoppedWithExceptionEventArgs</code> has this property to check what is the exception
 that caused the machine stop:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public Exception Exception { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public Exception Exception { get; }
 </code></pre></div></div>
 
 <h2 id="vmframecompleted">VmFrameCompleted</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler VmFrameCompleted;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public event EventHandler VmFrameCompleted;
 </code></pre></div></div>
 
 <p>To sign that the virtual machine just has completed a new screen rendering frame, this event is raised.</p>
@@ -1662,43 +1662,43 @@ that caused the machine stop:</p>
 <p>This class represents the options that can be used when the Z80 Assembler compiles
 the source code to machine code.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.Assembler.Assembler</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.Assembler</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.Assembler.Assembler</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.Assembler</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class AssemblerOptions
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class AssemblerOptions
 </code></pre></div></div>
 
 <h2 id="predefinedsymbols">PredefinedSymbols</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public List&lt;string&gt; PredefinedSymbols { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public List&lt;string&gt; PredefinedSymbols { get; }
 </code></pre></div></div>
 
-<p>Predefined compilation symbols that can be checked with the <code class="highlighter-rouge">#ifdef</code>, <code class="highlighter-rouge">#ifndef</code>, and other
+<p>Predefined compilation symbols that can be checked with the <code class="language-plaintext highlighter-rouge">#ifdef</code>, <code class="language-plaintext highlighter-rouge">#ifndef</code>, and other
 directives.</p>
 
 <h2 id="defaultstartaddress">DefaultStartAddress</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort? DefaultStartAddress { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort? DefaultStartAddress { get; set; }
 </code></pre></div></div>
 
-<p>The default start address of the compilation. If there’s no <code class="highlighter-rouge">ORG</code> pragma specified in 
+<p>The default start address of the compilation. If there’s no <code class="language-plaintext highlighter-rouge">ORG</code> pragma specified in 
 the source code, this address is used.</p>
 
 <h2 id="defaultdisplacement">DefaultDisplacement</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int? DefaultDisplacement { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int? DefaultDisplacement { get; set; }
 </code></pre></div></div>
 
-<p>The default displacement of the compilation. If there’s no <code class="highlighter-rouge">ORG</code> pragma specified in 
+<p>The default displacement of the compilation. If there’s no <code class="language-plaintext highlighter-rouge">ORG</code> pragma specified in 
 the source code, this address is used. If set to null, no displacement is used.</p>
 
 <h2 id="currentmodel">CurrentModel</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public SpectrumModelType CurrentModel { get; set; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public SpectrumModelType CurrentModel { get; set; }
 </code></pre></div></div>
 
 <p>Specifies the Spectrum model to use in the source code. By default it is set to Spectrum 48K. 
-The <code class="highlighter-rouge">SpectrumModelType</code> enumeration has these values:</p>
+The <code class="language-plaintext highlighter-rouge">SpectrumModelType</code> enumeration has these values:</p>
 
 <table>
   <thead>
@@ -1709,19 +1709,19 @@ The <code class="highlighter-rouge">SpectrumModelType</code> enumeration has the
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">Spectrum48</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Spectrum48</code></td>
       <td>ZX Spectrum 48K</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Spectrum128</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Spectrum128</code></td>
       <td>ZX Spectrum 128K</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">SpectrumP3</code></td>
+      <td><code class="language-plaintext highlighter-rouge">SpectrumP3</code></td>
       <td>ZX Spectrum +3E</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Next</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Next</code></td>
       <td>ZX Spectrum Next</td>
     </tr>
   </tbody>
@@ -1732,46 +1732,46 @@ The <code class="highlighter-rouge">SpectrumModelType</code> enumeration has the
 <p>Represents the breakpoint of the Spectrum virtual machine, at which execution should be
 paused when running in debug mode.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class CodeBreakpoints
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class CodeBreakpoints
 </code></pre></div></div>
 
 <h2 id="count">Count</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Count { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Count { get; }
 </code></pre></div></div>
 
 <p>The number of breakpoint defined.</p>
 
 <h2 id="addbreakpointushort">AddBreakpoint(ushort)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void AddBreakpoint(ushort address)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void AddBreakpoint(ushort address)
 </code></pre></div></div>
 
-<p>Adds a breakpoint for the specified <em><code class="highlighter-rouge">address</code></em>.</p>
+<p>Adds a breakpoint for the specified <em><code class="language-plaintext highlighter-rouge">address</code></em>.</p>
 
 <h2 id="removebreakpointushort">RemoveBreakpoint(ushort)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RemoveBreakpoint(ushort address)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void RemoveBreakpoint(ushort address)
 </code></pre></div></div>
 
-<p>Removes the breakpoint from the specified <em><code class="highlighter-rouge">address</code></em>.</p>
+<p>Removes the breakpoint from the specified <em><code class="language-plaintext highlighter-rouge">address</code></em>.</p>
 
 <h2 id="clearallbreakpoints">ClearAllBreakpoints()</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ClearAllBreakpoints()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public void ClearAllBreakpoints()
 </code></pre></div></div>
 
 <p>Clears all previously declared breakpoints.</p>
 
 <h2 id="hasbreakpointatushort">HasBreakpointAt(ushort)</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool HasBreakpointAt(ushort address)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool HasBreakpointAt(ushort address)
 </code></pre></div></div>
 
-<p>Checks if there is a breakpoint definied for the given <em><code class="highlighter-rouge">address</code></em>.</p>
+<p>Checks if there is a breakpoint definied for the given <em><code class="language-plaintext highlighter-rouge">address</code></em>.</p>
 
 <h1 id="the-executecycleoptions-class">The ExecuteCycleOptions class</h1>
 
@@ -1779,18 +1779,18 @@ paused when running in debug mode.</p>
 the cycle, you can pass execution options that influence the machine cycle and specifies when the
 machine should be paused.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Machine</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Machine</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class ExecuteCycleOptions
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public class ExecuteCycleOptions
 </code></pre></div></div>
 
 <h2 id="emulationmode">EmulationMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public EmulationMode EmulationMode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public EmulationMode EmulationMode { get; }
 </code></pre></div></div>
 
-<p>The emulation mode that should be used. The values of the <code class="highlighter-rouge">EmulationMode</code> enumeration are these:</p>
+<p>The emulation mode that should be used. The values of the <code class="language-plaintext highlighter-rouge">EmulationMode</code> enumeration are these:</p>
 
 <table>
   <thead>
@@ -1801,23 +1801,23 @@ machine should be paused.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">Continuous</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Continuous</code></td>
       <td>Runs the virtual machine until stopped</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Debugger</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Debugger</code></td>
       <td>Runs the virtual machine in debug mode</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">UntilHalt</code></td>
+      <td><code class="language-plaintext highlighter-rouge">UntilHalt</code></td>
       <td>Run the virtual machine until the CPU is halted</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">UntilFrameEnds</code></td>
+      <td><code class="language-plaintext highlighter-rouge">UntilFrameEnds</code></td>
       <td>Runs the machine until the current ULA rendering frame ends</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">UntilExecutionPoint</code></td>
+      <td><code class="language-plaintext highlighter-rouge">UntilExecutionPoint</code></td>
       <td>Run the machine until the specified value of the PC register is reached</td>
     </tr>
   </tbody>
@@ -1825,11 +1825,11 @@ machine should be paused.</p>
 
 <h2 id="debugstepmode">DebugStepMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public DebugStepMode DebugStepMode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public DebugStepMode DebugStepMode { get; }
 </code></pre></div></div>
 
-<p>When the emulation mode is set to <code class="highlighter-rouge">Debugger</code>, this property specifies the mode to run a debug-mode
-execution cycle. The values of <code class="highlighter-rouge">DebugStepMode</code>:</p>
+<p>When the emulation mode is set to <code class="language-plaintext highlighter-rouge">Debugger</code>, this property specifies the mode to run a debug-mode
+execution cycle. The values of <code class="language-plaintext highlighter-rouge">DebugStepMode</code>:</p>
 
 <table>
   <thead>
@@ -1840,15 +1840,15 @@ execution cycle. The values of <code class="highlighter-rouge">DebugStepMode</co
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">StopAtBreakpoint</code></td>
+      <td><code class="language-plaintext highlighter-rouge">StopAtBreakpoint</code></td>
       <td>Execution stops at the next breakpoint</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">StepInto</code></td>
+      <td><code class="language-plaintext highlighter-rouge">StepInto</code></td>
       <td>Execution stops after the next instruction</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">StepOver</code></td>
+      <td><code class="language-plaintext highlighter-rouge">StepOver</code></td>
       <td>Execution stops after the next instruction. If that should be a subroutine call or a block statement, the execution stops after returning from the subroutine or completing the block statement.</td>
     </tr>
   </tbody>
@@ -1856,49 +1856,49 @@ execution cycle. The values of <code class="highlighter-rouge">DebugStepMode</co
 
 <h2 id="fasttapemode">FastTapeMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool FastTapeMode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool FastTapeMode { get; }
 </code></pre></div></div>
 
 <p>Indicates if fast loading from the tape is allowed.</p>
 
 <h2 id="terminationrom">TerminationRom</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int TerminationRom { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int TerminationRom { get; }
 </code></pre></div></div>
 
 <p>The index of the ROM when a termination point is defined.</p>
 
 <h2 id="terminationpoint">TerminationPoint</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort TerminationPoint { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public ushort TerminationPoint { get; }
 </code></pre></div></div>
 
-<p>The value of the PC register to reach when <code class="highlighter-rouge">EmulationMode</code> is set to <code class="highlighter-rouge">UntilExecutionPoint</code>.</p>
+<p>The value of the PC register to reach when <code class="language-plaintext highlighter-rouge">EmulationMode</code> is set to <code class="language-plaintext highlighter-rouge">UntilExecutionPoint</code>.</p>
 
 <h2 id="skipinterruptroutine">SkipInterruptRoutine</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool SkipInterruptRoutine { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool SkipInterruptRoutine { get; }
 </code></pre></div></div>
 
 <p>Signs if the instructions within the maskable interrupt routine should be skipped during debugging.</p>
 
 <h2 id="fastvmmode">FastVmMode</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool FastVmMode { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool FastVmMode { get; }
 </code></pre></div></div>
 
 <p>This flag indicates that the virtual machine should run in hidden mode (no screen, no sound, no delays).</p>
 
 <h2 id="disablescreenrendering-1">DisableScreenRendering</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool DisableScreenRendering { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public bool DisableScreenRendering { get; }
 </code></pre></div></div>
 
-<p>This flag shows whether the virtual machine should render the screen when runs in <code class="highlighter-rouge">FastVmMode</code>.</p>
+<p>This flag shows whether the virtual machine should render the screen when runs in <code class="language-plaintext highlighter-rouge">FastVmMode</code>.</p>
 
 <h2 id="timeouttacts-1">TimeoutTacts</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long TimeoutTacts { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public long TimeoutTacts { get; }
 </code></pre></div></div>
 
 <p>You can specify a timeout value (given in CPU tacts). If this is set to zero, no timeout is applied.
@@ -1909,10 +1909,10 @@ the virtual machine is paused.</p>
 
 <p>The values of this enumeration tells the reason the virtual machine is in paused or in stopped state.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public enum ExecutionCompletionReason
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public enum ExecutionCompletionReason
 </code></pre></div></div>
 
 <table>
@@ -1924,35 +1924,35 @@ the virtual machine is paused.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">None</code></td>
+      <td><code class="language-plaintext highlighter-rouge">None</code></td>
       <td>The machine is still executing, or it has not been ever started</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Cancelled</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Cancelled</code></td>
       <td>The execution has explicitly cancelled by the user or by the scripting code</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Timeout</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Timeout</code></td>
       <td>The specified timeout period expired</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">TerminationPointReached</code></td>
+      <td><code class="language-plaintext highlighter-rouge">TerminationPointReached</code></td>
       <td>The virtual machine reached its termintation point specified by its start</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">BreakpointReached</code></td>
+      <td><code class="language-plaintext highlighter-rouge">BreakpointReached</code></td>
       <td>The virtual machine reached a breakpoint during its execution in debug mode</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Halted</code></td>
-      <td>The virtaul machine reached a <code class="highlighter-rouge">HALT</code> statement and paused</td>
+      <td><code class="language-plaintext highlighter-rouge">Halted</code></td>
+      <td>The virtaul machine reached a <code class="language-plaintext highlighter-rouge">HALT</code> statement and paused</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">FrameCompleted</code></td>
+      <td><code class="language-plaintext highlighter-rouge">FrameCompleted</code></td>
       <td>The virtual machine has just rendered a new screen frame and paused</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Exception</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Exception</code></td>
       <td>The virtual machine stopped because of an unexpected exception</td>
     </tr>
   </tbody>
@@ -1962,10 +1962,10 @@ the virtual machine is paused.</p>
 
 <p>This class is reserved for future extension. Right now, id does not offer any property or method for scripting.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class KeyboardEmulator
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class KeyboardEmulator
 </code></pre></div></div>
 
 <h1 id="the-vmstate-enum">The VmState enum</h1>
@@ -1981,27 +1981,27 @@ the virtual machine is paused.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">None</code></td>
+      <td><code class="language-plaintext highlighter-rouge">None</code></td>
       <td>The virtual machine has just been created, but has not run yet</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Runnig</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Runnig</code></td>
       <td>The virtual machine is successfully started in the background</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Pausing</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Pausing</code></td>
       <td>The pause request has been sent to the virtual machine, now it prepares to get paused</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Paused</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Paused</code></td>
       <td>The virtual machine has been paused</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Stopping</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Stopping</code></td>
       <td>The stop request has been sent to the virtual machine, now it prepares to get stopped</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">Stopped</code></td>
+      <td><code class="language-plaintext highlighter-rouge">Stopped</code></td>
       <td>The virtual machine has been stopped</td>
     </tr>
   </tbody>
@@ -2012,27 +2012,27 @@ the virtual machine is paused.</p>
 <p>This class is a repository of all Spectrum models and editions supported 
 by <strong>SpectNetIde</strong>.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static class SpectrumModels
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static class SpectrumModels
 </code></pre></div></div>
 
 <h2 id="the-stockmodels-property">The StockModels property</h2>
 
-<p>You can use the <code class="highlighter-rouge">StockModels</code> property to access the dictionary of
+<p>You can use the <code class="language-plaintext highlighter-rouge">StockModels</code> property to access the dictionary of
 available ZX Spectrum models.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static IReadOnlyDictionary&lt;string, SpectrumModelEditions&gt; StockModels;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static IReadOnlyDictionary&lt;string, SpectrumModelEditions&gt; StockModels;
 </code></pre></div></div>
 
 <p>Each model has a unique name to look up the associated editions in the dictionary.
-A <code class="highlighter-rouge">SpectrumModelEditions</code> instance is a collection of all editions of the 
-particular model. A single edition is represented by a <code class="highlighter-rouge">SpectrumModelEdition</code> instance.</p>
+A <code class="language-plaintext highlighter-rouge">SpectrumModelEditions</code> instance is a collection of all editions of the 
+particular model. A single edition is represented by a <code class="language-plaintext highlighter-rouge">SpectrumModelEdition</code> instance.</p>
 
 <h2 id="constants-used-for-models-and-editions">Constants used for models and editions</h2>
 
-<p>The <code class="highlighter-rouge">SpectrumModels</code> class provides these constants for the unique model names and editions:</p>
+<p>The <code class="language-plaintext highlighter-rouge">SpectrumModels</code> class provides these constants for the unique model names and editions:</p>
 
 <table>
   <thead>
@@ -2043,46 +2043,46 @@ particular model. A single edition is represented by a <code class="highlighter-
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_48</code></td>
-      <td><code class="highlighter-rouge">"ZX Spectrum 48K"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_48</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"ZX Spectrum 48K"</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_128</code></td>
-      <td><code class="highlighter-rouge">"ZX Spectrum 128K"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_128</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"ZX Spectrum 128K"</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_P3_E</code></td>
-      <td><code class="highlighter-rouge">"ZX Spectrum +3E"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_P3_E</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"ZX Spectrum +3E"</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_NEXT</code></td>
-      <td><code class="highlighter-rouge">"ZX Spectrum Next"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_NEXT</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"ZX Spectrum Next"</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">PAL</code></td>
-      <td><code class="highlighter-rouge">"PAL"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PAL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"PAL"</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">NTSC</code></td>
-      <td><code class="highlighter-rouge">"NTSC"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">NTSC</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"NTSC"</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">PAL_2_X</code></td>
-      <td><code class="highlighter-rouge">"PAL2X"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PAL_2_X</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"PAL2X"</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">NTSC_2_X</code></td>
-      <td><code class="highlighter-rouge">"NTSC2X"</code></td>
+      <td><code class="language-plaintext highlighter-rouge">NTSC_2_X</code></td>
+      <td><code class="language-plaintext highlighter-rouge">"NTSC2X"</code></td>
     </tr>
   </tbody>
 </table>
 
 <h2 id="model-access">Model access</h2>
 
-<p><code class="highlighter-rouge">SpectrumModels</code> provides properties to directly access the 
-<code class="highlighter-rouge">SpectrumModelEdition</code> instances of frequently used machine types:</p>
+<p><code class="language-plaintext highlighter-rouge">SpectrumModels</code> provides properties to directly access the 
+<code class="language-plaintext highlighter-rouge">SpectrumModelEdition</code> instances of frequently used machine types:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumEdition ZxSpectrum48Pal;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public static SpectrumEdition ZxSpectrum48Pal;
 public static SpectrumEdition ZxSpectrum48Ntsc;
 public static SpectrumEdition ZxSpectrum48Pal2X;
 public static SpectrumEdition ZxSpectrum48Ntsc2X;
@@ -2103,39 +2103,39 @@ public static SpectrumEdition ZxSpectrumNextPal;
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">ZxSpectrum48Pal</code></td>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_48</code></td>
-      <td><code class="highlighter-rouge">PAL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZxSpectrum48Pal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_48</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PAL</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZxSpectrum48Ntsc</code></td>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_48</code></td>
-      <td><code class="highlighter-rouge">NTSC</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZxSpectrum48Ntsc</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_48</code></td>
+      <td><code class="language-plaintext highlighter-rouge">NTSC</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZxSpectrum48Pal2X</code></td>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_48</code></td>
-      <td><code class="highlighter-rouge">PAL2X</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZxSpectrum48Pal2X</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_48</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PAL2X</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZxSpectrum48Ntsc2X</code></td>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_48</code></td>
-      <td><code class="highlighter-rouge">NTSC2X</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZxSpectrum48Ntsc2X</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_48</code></td>
+      <td><code class="language-plaintext highlighter-rouge">NTSC2X</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZxSpectrum128Pal</code></td>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_128</code></td>
-      <td><code class="highlighter-rouge">PAL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZxSpectrum128Pal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_128</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PAL</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZxSpectrumP3EPal</code></td>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_128</code></td>
-      <td><code class="highlighter-rouge">PAL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZxSpectrumP3EPal</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_128</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PAL</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ZxSpectrumNext</code></td>
-      <td><code class="highlighter-rouge">ZX_SPECTRUM_NEXT</code></td>
-      <td><code class="highlighter-rouge">PAL</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZxSpectrumNext</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ZX_SPECTRUM_NEXT</code></td>
+      <td><code class="language-plaintext highlighter-rouge">PAL</code></td>
     </tr>
   </tbody>
 </table>

@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Motion | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Motion" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 18: Motion" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Motion","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch18","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch18"},"description":"CHAPTER 18: Motion","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch18","headline":"Motion","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch18"},"description":"CHAPTER 18: Motion","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -596,7 +596,7 @@ pause has started.</p>
 
 <p>This program works the second hand of a clock</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM First we draw the clock face
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM First we draw the clock face
 20 FOR n=1 TO 12
 30 PRINT AT 10-10\*COS (n/6\*PI),16+10\*SIN (n/6\*PI);n
 40 NEXT n
@@ -623,7 +623,7 @@ in one second is 2% or half an hour in a day.)</p>
 
 <p>Here is a revised clock program to make use of this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM First we draw the clock face
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 REM First we draw the clock face
 20 FOR n=1 TO 12
 30 PRINT AT 10-10\*COS (n/6\*PI),16+10\*SIN (n/6\*PI);n
 40 NEXT n
@@ -666,7 +666,7 @@ above you can see that it does this implicitly.</p>
 
 <p>Here is a trick to apply the rule. Define functions</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 DEF FN m(x,y)=(x+y+ABS (x-y))/2: REM the larger of x and y
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 DEF FN m(x,y)=(x+y+ABS (x-y))/2: REM the larger of x and y
 20 DEF FN u()=(65536\*PEEK 23674+256\*PEEK 23673+PEEK 23672)/50: REM time, may be wrong
 30 DEF FN t()=FN m(FN u(), FN u()): REM time, right
 </code></pre></div></div>
@@ -687,7 +687,7 @@ is the character that that key gives in L mode; otherwise the result is the empt
 
 <p>Try this program, which works like a typewriter.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 IF INKEY$ \&lt;\&gt;"" THEN GO TO 10
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 IF INKEY$ \&lt;\&gt;"" THEN GO TO 10
 20 IF INKEY$ ="" THEN GO TO 20
 30 PRINT INKEY$;
 40 GO TO 10
@@ -709,7 +709,7 @@ missed your chance.</p>
   </li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PAUSE 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 PAUSE 0
 20 PRINT INKEY$;
 30 GO TO 10
 </code></pre></div></div>
@@ -726,7 +726,7 @@ quarter of an hour it puts on some kind of show - you could produce the Big Ben 
   </li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 IF INKEY$ ="" THEN GO TO 10
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 IF INKEY$ ="" THEN GO TO 10
 20 PRINT AT 11,14;"0UCH!"
 30 IF INKEY$ \&lt;\&gt;"" THEN GO TO 30
 40 PRINT AT 11,14;" "

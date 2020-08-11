@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Watch Samples | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Watch Samples" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="These samples help you to understand how powerful the watch expressions are:" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-03T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Watch Samples","dateModified":"2019-01-03T00:00:00+01:00","datePublished":"2019-01-03T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/watch-samples","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/watch-samples"},"description":"These samples help you to understand how powerful the watch expressions are:","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/watch-samples","headline":"Watch Samples","dateModified":"2019-01-03T00:00:00+01:00","datePublished":"2019-01-03T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/watch-samples"},"description":"These samples help you to understand how powerful the watch expressions are:","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -878,27 +878,27 @@
             <div class="main-content-area">
               <p>These samples help you to understand how powerful the watch expressions are:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[XPOS:W]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[XPOS:W]
 </code></pre></div></div>
 
-<p>Displays the two bytes stored in the memory at the address pointed by the <code class="highlighter-rouge">XPOS</code> symbol.</p>
+<p>Displays the two bytes stored in the memory at the address pointed by the <code class="language-plaintext highlighter-rouge">XPOS</code> symbol.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[`Z ? XPOS : YPOS :W]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[`Z ? XPOS : YPOS :W]
 </code></pre></div></div>
 
-<p>If the Z flag is set, reads the two bytes stored at the <code class="highlighter-rouge">XPOS</code> address; otherwise retrieves
-the two bytes from <code class="highlighter-rouge">YPOS</code> address.</p>
+<p>If the Z flag is set, reads the two bytes stored at the <code class="language-plaintext highlighter-rouge">XPOS</code> address; otherwise retrieves
+the two bytes from <code class="language-plaintext highlighter-rouge">YPOS</code> address.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DE*HL
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>DE*HL
 </code></pre></div></div>
 
 <p>Displays the value of DE and HL registers multiplied. The result is a double word (32 bits).</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[#4000:DW] &amp; [MASK:DW] :%32
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[#4000:DW] &amp; [MASK:DW] :%32
 </code></pre></div></div>
 
-<p>Reads the four bytes stored at the <code class="highlighter-rouge">#4000</code> address. Uses the four bytes store at the 
-address pointed by <code class="highlighter-rouge">MASK</code> and executes a bitwise AND operation on these two 32-bit values.
+<p>Reads the four bytes stored at the <code class="language-plaintext highlighter-rouge">#4000</code> address. Uses the four bytes store at the 
+address pointed by <code class="language-plaintext highlighter-rouge">MASK</code> and executes a bitwise AND operation on these two 32-bit values.
 Displays the result as a 32-bit binary vector.</p>
 
             </div>

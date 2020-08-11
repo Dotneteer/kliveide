@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Functions | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Functions" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 9: Functions" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Functions","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch9","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch9"},"description":"CHAPTER 9: Functions","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch9","headline":"Functions","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch9"},"description":"CHAPTER 9: Functions","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -745,7 +745,7 @@ is a string, a single letter followed by $).</p>
 <p>When you have entered this line, you can invoke the function just like one of the computer’s own functions, by typing its name, FN s, followed by the
 argument. Remember that when you have defined a function yourself, the argument must be enclosed in brackets. Try it out a few times:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT FN s(2)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT FN s(2)
 PRINT FN s(3+4)
 PRINT 1+1NT FN s (LEN "chicken"/2+3)
 </code></pre></div></div>
@@ -756,7 +756,7 @@ PRINT 1+1NT FN s (LEN "chicken"/2+3)
 
 <p><strong>INT</strong> always rounds down. To round to the nearest integer, add .5 first - you could write your own function to do this.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 DEF FN r(x)=lNT (x+O.5): REM gives x rounded to the nearest integer.
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 DEF FN r(x)=lNT (x+O.5): REM gives x rounded to the nearest integer.
 </code></pre></div></div>
 
 <p>You will then get, for instance,</p>
@@ -767,7 +767,7 @@ PRINT 1+1NT FN s (LEN "chicken"/2+3)
 
 <p>Compare these with the answers you get when you use INT instead of FN r. Type in and run the following:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET x=0: LET y=0: LET a=10
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET x=0: LET y=0: LET a=10
 20 DEF FN p(x,y)=a+x
 30 DEF FN q()=a+x\*y
 40 PRINT FN p(2,3),FN q()
@@ -788,7 +788,7 @@ then, 10+2*3=16. When FN q() is beinq evaluated, on the other hand. there are no
 
 <p>Now change line 20 to</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 DEF FN p(x,y)=FN q()
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>20 DEF FN p(x,y)=FN q()
 </code></pre></div></div>
 
 <p>This time, FN p(2,3) will have the value 10 because FN q will still go back to the variables x and y rather than using the arguments of FN p.</p>
@@ -803,7 +803,7 @@ then, 10+2*3=16. When FN q() is beinq evaluated, on the other hand. there are no
 
 <p>You can write some user-defined functions to do the same: e.g.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 DEF FN t$(a$)=a$(2 TO ): REM TL$
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 DEF FN t$(a$)=a$(2 TO ): REM TL$
 20 DEF FN I$(a$ n)=a$( TO n): REM LEFT$
 </code></pre></div></div>
 

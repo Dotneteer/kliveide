@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Disassembly: Miscellaneous | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Disassembly: Miscellaneous" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Disassembly Type Command" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-02T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Disassembly: Miscellaneous","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/miscellaneous-commands","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/miscellaneous-commands"},"description":"Disassembly Type Command","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/miscellaneous-commands","headline":"Disassembly: Miscellaneous","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/miscellaneous-commands"},"description":"Disassembly Type Command","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -878,24 +878,24 @@
             <div class="main-content-area">
               <h2 id="disassembly-type-command">Disassembly Type Command</h2>
 
-<p><strong><code class="highlighter-rouge">T</code></strong> (<code class="highlighter-rouge">48</code>|<code class="highlighter-rouge">128</code>|<code class="highlighter-rouge">P3</code>|<code class="highlighter-rouge">NEXT</code>)</p>
+<p><strong><code class="language-plaintext highlighter-rouge">T</code></strong> (<code class="language-plaintext highlighter-rouge">48</code>|<code class="language-plaintext highlighter-rouge">128</code>|<code class="language-plaintext highlighter-rouge">P3</code>|<code class="language-plaintext highlighter-rouge">NEXT</code>)</p>
 
 <p>You can choose the disassembly type for the current view. ZX Spectrum models have their disassembly peculiarities. For example, 
-the Spectrum 48K model uses the <code class="highlighter-rouge">RST #28</code> instructions to implement a floating point calculator with bytecode that follows the 
-call. Spectrum 128K uses the <code class="highlighter-rouge">RST #28</code> instruction to call into ROM 0 with the 2-byte address that follows the RST call.</p>
+the Spectrum 48K model uses the <code class="language-plaintext highlighter-rouge">RST #28</code> instructions to implement a floating point calculator with bytecode that follows the 
+call. Spectrum 128K uses the <code class="language-plaintext highlighter-rouge">RST #28</code> instruction to call into ROM 0 with the 2-byte address that follows the RST call.</p>
 
 <p>With this command you can select which model type to use for the disassembly displayed in the tool window.</p>
 
 <h2 id="re-disassembly-command">Re-Disassembly Command</h2>
 
-<p><strong><code class="highlighter-rouge">RD</code></strong></p>
+<p><strong><code class="language-plaintext highlighter-rouge">RD</code></strong></p>
 
 <p>You can force a re-disassembly of the current view. If the contents of the RAM changes, you might need this command to 
 refresh the view so that you can see the latests changes.</p>
 
 <h2 id="jump-command">Jump Command</h2>
 
-<p><strong><code class="highlighter-rouge">J</code></strong> <em><code class="highlighter-rouge">literal</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">J</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></p>
 
 <p>This command works only when the Spectrum VM is paused. It sets the Program Counter (PC) to the
 specified address. When the Spectum VM continues running — after the Start command —

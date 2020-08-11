@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>The Testing Process | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="The Testing Process" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The Testing Process" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-05T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"The Testing Process","dateModified":"2019-01-05T00:00:00+01:00","datePublished":"2019-01-05T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/unit-testing-process","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/unit-testing-process"},"description":"The Testing Process","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/unit-testing-process","headline":"The Testing Process","dateModified":"2019-01-05T00:00:00+01:00","datePublished":"2019-01-05T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/unit-testing-process"},"description":"The Testing Process","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -908,9 +908,9 @@ of test sets is intentional.</p>
 <ol>
   <li>After the Spectrum machine reaches its startup state and pauses, the engine copies the compiled source code into
 the memory.</li>
-  <li>If the test set declares an <code class="highlighter-rouge">init</code> section, the engine sets up the registers and flags accordingly, copies byte array
-values into the memory. While initializing, it follows the order of <code class="highlighter-rouge">init</code> assignments.</li>
-  <li>The engine loops through the nested <code class="highlighter-rouge">test</code> blocks in their declaration order, and executes them.</li>
+  <li>If the test set declares an <code class="language-plaintext highlighter-rouge">init</code> section, the engine sets up the registers and flags accordingly, copies byte array
+values into the memory. While initializing, it follows the order of <code class="language-plaintext highlighter-rouge">init</code> assignments.</li>
+  <li>The engine loops through the nested <code class="language-plaintext highlighter-rouge">test</code> blocks in their declaration order, and executes them.</li>
   <li>When all tests are completed, the engine stops the virtual machine and disposes its state.</li>
 </ol>
 
@@ -919,11 +919,11 @@ values into the memory. While initializing, it follows the order of <code class=
 <p>To run a single test, the engine follows these steps:</p>
 
 <ol>
-  <li>If the test has a <code class="highlighter-rouge">setup</code> declaration, the engine invokes the Setup code. If that code fails 
+  <li>If the test has a <code class="language-plaintext highlighter-rouge">setup</code> declaration, the engine invokes the Setup code. If that code fails 
 — it exceeds the timeout — the engine aborts the test.</li>
   <li>If the test has a single default case, the engine runs that case. If the test has multiple cases, 
 the engine iterates through all cases in their declaration order.</li>
-  <li>Provided the test has a <code class="highlighter-rouge">cleanup</code> section, the engine invokes the Cleanup code. If this code 
+  <li>Provided the test has a <code class="language-plaintext highlighter-rouge">cleanup</code> section, the engine invokes the Cleanup code. If this code 
 exceeds the timeout, the Cleanup code aborts the test.</li>
 </ol>
 
@@ -937,23 +937,23 @@ the subsequent tests.</p>
 more cases, these steps are executed in a loop:</p>
 
 <ol>
-  <li>Provided there are <code class="highlighter-rouge">arrange</code> declarations, the engine sets up the registers and flags accordingly, 
-copies byte array values into the memory — in the order of their declaration. If any <code class="highlighter-rouge">arrange</code> 
+  <li>Provided there are <code class="language-plaintext highlighter-rouge">arrange</code> declarations, the engine sets up the registers and flags accordingly, 
+copies byte array values into the memory — in the order of their declaration. If any <code class="language-plaintext highlighter-rouge">arrange</code> 
 assignment fails, the test is aborted.</li>
-  <li>The engine invokes the <code class="highlighter-rouge">act</code> code. If it completes within the timeout, the testing process goes on;
+  <li>The engine invokes the <code class="language-plaintext highlighter-rouge">act</code> code. If it completes within the timeout, the testing process goes on;
 otherwise, the test is aborted.</li>
-  <li>If there is no <code class="highlighter-rouge">assert</code> section, the test is successful.</li>
-  <li>If there’s an <code class="highlighter-rouge">assert</code> section, the engine evaluates all expresssions within until it iterates through 
+  <li>If there is no <code class="language-plaintext highlighter-rouge">assert</code> section, the test is successful.</li>
+  <li>If there’s an <code class="language-plaintext highlighter-rouge">assert</code> section, the engine evaluates all expresssions within until it iterates through 
 all or one of the expression evaluates to false.</li>
   <li>A false assertion value completes the test as failed. If all assertions are true, the test is successful.</li>
 </ol>
 
 <h2 id="side-effects">Side effects</h2>
 
-<p>A test can have test options (such as <code class="highlighter-rouge">timeout</code>, <code class="highlighter-rouge">di</code>, or <code class="highlighter-rouge">ei</code>). The engine uses these values whenever
-it invokes Z80 code, independently whether that is <code class="highlighter-rouge">setup</code>, <code class="highlighter-rouge">act</code>, or <code class="highlighter-rouge">cleanup</code>. Between these 
+<p>A test can have test options (such as <code class="language-plaintext highlighter-rouge">timeout</code>, <code class="language-plaintext highlighter-rouge">di</code>, or <code class="language-plaintext highlighter-rouge">ei</code>). The engine uses these values whenever
+it invokes Z80 code, independently whether that is <code class="language-plaintext highlighter-rouge">setup</code>, <code class="language-plaintext highlighter-rouge">act</code>, or <code class="language-plaintext highlighter-rouge">cleanup</code>. Between these 
 code invocations, the engine simply pauses the Spectrum virtual machine and starts it again. There is one
-special action the test engine takes: if a code is invoked with <code class="highlighter-rouge">halt</code>, the test removes the CPU from its
+special action the test engine takes: if a code is invoked with <code class="language-plaintext highlighter-rouge">halt</code>, the test removes the CPU from its
 halted state before the next test.</p>
 
 <blockquote>
@@ -965,7 +965,7 @@ even may be aborted. Nonetheless, these tests won’t cause any harm in your pro
 <p>For example, the following code disrupts the Spectrum virtual machine, because it restarts it, and so it causes
 the clearing the RAM:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Crashing
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Crashing
 {
     source "../Z80CodeFiles/CodeSamples.z80asm";
 
@@ -981,13 +981,13 @@ the clearing the RAM:</p>
 
 <h2 id="using-callstub">Using Callstub</h2>
 
-<p>When you invoke the code with the <code class="highlighter-rouge">call</code> instruction, the test engine generates a stub
-that call your subroutine. By default, the engine places three bytes with a Z80 <code class="highlighter-rouge">CALL</code>
-instruction to the <strong><code class="highlighter-rouge">#5BA0</code></strong> address, that is an empty area within the ZX Spectrum system
+<p>When you invoke the code with the <code class="language-plaintext highlighter-rouge">call</code> instruction, the test engine generates a stub
+that call your subroutine. By default, the engine places three bytes with a Z80 <code class="language-plaintext highlighter-rouge">CALL</code>
+instruction to the <strong><code class="language-plaintext highlighter-rouge">#5BA0</code></strong> address, that is an empty area within the ZX Spectrum system
 variables (printer buffer in ZX Spectrum 48K). If you do not want to use this address for a
-stub, you can change it with the <strong><code class="highlighter-rouge">callstub</code></strong> attribute of a test set:</p>
+stub, you can change it with the <strong><code class="language-plaintext highlighter-rouge">callstub</code></strong> attribute of a test set:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
 {
     source "../Z80CodeFiles/CodeSamples.z80asm";
     callstub #8000;
@@ -996,18 +996,18 @@ stub, you can change it with the <strong><code class="highlighter-rouge">callstu
 }
 </code></pre></div></div>
 
-<p>This sample code instructs the engine to use the <strong><code class="highlighter-rouge">#8000</code></strong> address to generate the stub.
+<p>This sample code instructs the engine to use the <strong><code class="language-plaintext highlighter-rouge">#8000</code></strong> address to generate the stub.
 Be careful with using your custom stub!</p>
 <ul>
   <li>First, do not forget to provide 3 bytes that the test engine can override.</li>
-  <li>Second, take care that you do not declare a <code class="highlighter-rouge">call</code> code invocation that addresses a routine
-starting at the <code class="highlighter-rouge">callstub</code> + 3 address. The test engine checks if your call is completed so
-that it compares <strong>PC</strong> with <code class="highlighter-rouge">callstub</code> + 3.</li>
+  <li>Second, take care that you do not declare a <code class="language-plaintext highlighter-rouge">call</code> code invocation that addresses a routine
+starting at the <code class="language-plaintext highlighter-rouge">callstub</code> + 3 address. The test engine checks if your call is completed so
+that it compares <strong>PC</strong> with <code class="language-plaintext highlighter-rouge">callstub</code> + 3.</li>
 </ul>
 
-<p>This is a pattern you can use with your own custom <code class="highlighter-rouge">callstub</code>:</p>
+<p>This is a pattern you can use with your own custom <code class="language-plaintext highlighter-rouge">callstub</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.org #8000
 
 ; --- Here is some code
 
@@ -1021,7 +1021,7 @@ SomeRoutine:
 
 <p>Now, you can define a test line this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>testset Introduction
 {
     source "../Z80CodeFiles/CodeSamples.z80asm";
     callstub CallstubAddress;

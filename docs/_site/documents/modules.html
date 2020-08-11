@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Modules | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Modules" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="As you have earlier learned, SpectNetIDE uses nested scopes for labels and symbols. When it resolves them to their values, the engine starts from the innermost scope and traverses all outer scopes until it finds the symbol value, or goes through all scopes without success — and it declares the sought symbol undefined. This type of resolution does not allow an outer scope to reach a symbol within a nested scope." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Modules","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/modules","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/modules"},"description":"As you have earlier learned, SpectNetIDE uses nested scopes for labels and symbols. When it resolves them to their values, the engine starts from the innermost scope and traverses all outer scopes until it finds the symbol value, or goes through all scopes without success — and it declares the sought symbol undefined. This type of resolution does not allow an outer scope to reach a symbol within a nested scope.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/modules","headline":"Modules","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/modules"},"description":"As you have earlier learned, SpectNetIDE uses nested scopes for labels and symbols. When it resolves them to their values, the engine starts from the innermost scope and traverses all outer scopes until it finds the symbol value, or goes through all scopes without success — and it declares the sought symbol undefined. This type of resolution does not allow an outer scope to reach a symbol within a nested scope.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -884,9 +884,9 @@ Just as other lexical scopes, modules can be nested.</p>
 
 <h2 id="module-declarations">Module Declarations</h2>
 
-<p>A module is a section of code enclosed between the <code class="highlighter-rouge">.module</code> and <code class="highlighter-rouge">.endmodule</code> statements. Each module needs to have a name. You have three options to define the name:</p>
+<p>A module is a section of code enclosed between the <code class="language-plaintext highlighter-rouge">.module</code> and <code class="language-plaintext highlighter-rouge">.endmodule</code> statements. Each module needs to have a name. You have three options to define the name:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; #1: Label
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; #1: Label
 MyModule:
   .module
   ; ...
@@ -904,24 +904,24 @@ Module3:
   .endmodule
 </code></pre></div></div>
 
-<p>You can use either a label preceding the module declaration or an identifier after the <code class="highlighter-rouge">.module</code> token, or even both. The identifier takes precedence over the name, so the names of the three modules in this sample are <code class="highlighter-rouge">MyModule</code>, <code class="highlighter-rouge">OtherModule</code>, and <code class="highlighter-rouge">ThirdModule</code>, respectively.</p>
+<p>You can use either a label preceding the module declaration or an identifier after the <code class="language-plaintext highlighter-rouge">.module</code> token, or even both. The identifier takes precedence over the name, so the names of the three modules in this sample are <code class="language-plaintext highlighter-rouge">MyModule</code>, <code class="language-plaintext highlighter-rouge">OtherModule</code>, and <code class="language-plaintext highlighter-rouge">ThirdModule</code>, respectively.</p>
 
 <blockquote>
-  <p><strong>SpectNetIDE</strong> offers syntax variations for <code class="highlighter-rouge">.module</code> and <code class="highlighter-rouge">.endmodule</code>. You can use the following tokens instead of <code class="highlighter-rouge">.module</code>: <code class="highlighter-rouge">module</code>, <code class="highlighter-rouge">.scope</code>, or <code class="highlighter-rouge">scope</code>. <code class="highlighter-rouge">.endmodule</code> has other variants, too: <code class="highlighter-rouge">endmodule</code>, <code class="highlighter-rouge">.endscope</code>, <code class="highlighter-rouge">endscope</code>, <code class="highlighter-rouge">.moduleend</code>, <code class="highlighter-rouge">moduleend</code>, <code class="highlighter-rouge">.scopeend</code>, <code class="highlighter-rouge">scopeend</code>. You can write all these tokens with entirely lowercase or uppercase characters.</p>
+  <p><strong>SpectNetIDE</strong> offers syntax variations for <code class="language-plaintext highlighter-rouge">.module</code> and <code class="language-plaintext highlighter-rouge">.endmodule</code>. You can use the following tokens instead of <code class="language-plaintext highlighter-rouge">.module</code>: <code class="language-plaintext highlighter-rouge">module</code>, <code class="language-plaintext highlighter-rouge">.scope</code>, or <code class="language-plaintext highlighter-rouge">scope</code>. <code class="language-plaintext highlighter-rouge">.endmodule</code> has other variants, too: <code class="language-plaintext highlighter-rouge">endmodule</code>, <code class="language-plaintext highlighter-rouge">.endscope</code>, <code class="language-plaintext highlighter-rouge">endscope</code>, <code class="language-plaintext highlighter-rouge">.moduleend</code>, <code class="language-plaintext highlighter-rouge">moduleend</code>, <code class="language-plaintext highlighter-rouge">.scopeend</code>, <code class="language-plaintext highlighter-rouge">scopeend</code>. You can write all these tokens with entirely lowercase or uppercase characters.</p>
 </blockquote>
 
 <h2 id="names-and-labels">Names and Labels</h2>
 
 <p>When you define a module without a name, the assembler raises an error. So, this code is invalid because of the missing module name:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module
 ; ...
 .endmodule
 </code></pre></div></div>
 
 <p>You can’t use a temporary name for the module, so both of these declarations raise an issue:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>`TempModule:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>`TempModule:
   .module
   .endmodule
 
@@ -932,14 +932,14 @@ Module4:
 
 <p>Nonetheless, this construct is valid, as here the module uses its identifier for the name, and not its label:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>`Temp5:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>`Temp5:
   .module Fifth
   .endmodule
 </code></pre></div></div>
 
 <p>If you need to address the start point of a module, you need to declare it with a label (of course, it may have an ID, too). You can refer to this label as the start of the module. However, you cannot use the module identifier for this purpose:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyModule:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyModule:
   .module
   ld hl,MyModule     ; OK, label name is used
 EndOfMod:
@@ -956,13 +956,13 @@ Module3:
   .endmodule
 </code></pre></div></div>
 
-<p>The label preceding the <code class="highlighter-rouge">.endmodule</code> statement belongs to the scope of the module.</p>
+<p>The label preceding the <code class="language-plaintext highlighter-rouge">.endmodule</code> statement belongs to the scope of the module.</p>
 
 <h2 id="nested-modules">Nested Modules</h2>
 
 <p>You can nest modules into each other:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
   ; ...
   .module Nested
   .endmodule
@@ -980,15 +980,15 @@ Module3:
 
 <p>The full name of modules reflects the hierarchy of their nesting. The modules in this sample have these full names in the order of their declaration:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Main
 Main.Nested
 Main.OtherNested
 Main.OtherNested.DeeplyNested
 </code></pre></div></div>
 
-<p>The compiler does not allow two modules have the same full name. From this point of view, this naming is valid, even if we have two modules with the name <code class="highlighter-rouge">Nested</code>:</p>
+<p>The compiler does not allow two modules have the same full name. From this point of view, this naming is valid, even if we have two modules with the name <code class="language-plaintext highlighter-rouge">Nested</code>:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
   ; ...
   .module Nested
   .endmodule
@@ -1005,7 +1005,7 @@ Main.OtherNested.DeeplyNested
 
 <p>As you see, the full names are unique:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Main.Nested
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Main.Nested
 Main.OtherNested
 Main.OtherNested.Nested
 </code></pre></div></div>
@@ -1016,11 +1016,11 @@ Main.OtherNested.Nested
 
 <p>Scoped identifiers have this syntax:</p>
 
-<p><strong><code class="highlighter-rouge">::</code></strong>? <em>identifier</em> (<strong><code class="highlighter-rouge">.</code></strong> <em>identifier</em>)*</p>
+<p><strong><code class="language-plaintext highlighter-rouge">::</code></strong>? <em>identifier</em> (<strong><code class="language-plaintext highlighter-rouge">.</code></strong> <em>identifier</em>)*</p>
 
 <p>When the compiler finds a scoped identifier, it uses a different resolution technique. Instead of starting from the innermost scope toward the outermost, it begins with the current module and traverses toward the nested modules:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
   MyValue .equ 1
   ld a,Main.MyValue        ; ld a,1
   
@@ -1049,7 +1049,7 @@ Main.OtherNested.Nested
 
 <p>You can use the same name for modules on different hierarchy levels, such as in this case:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
   MyValue .equ 1
   ld a,Main.MyValue         ; ld a,1
   
@@ -1071,19 +1071,19 @@ Main.OtherNested.Nested
 .endmodule
 </code></pre></div></div>
 
-<p>As you see, the name <code class="highlighter-rouge">Nested</code> is used in several modules:</p>
+<p>As you see, the name <code class="language-plaintext highlighter-rouge">Nested</code> is used in several modules:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Main
 Main.Nested
 Main.Nested.Nested
 Nested
 </code></pre></div></div>
 
-<p>With the standard name resolution, we cannot access the <code class="highlighter-rouge">MyValue</code> symbol of the outer <code class="highlighter-rouge">Nested</code> module from within <code class="highlighter-rouge">Main.Nested.Nested</code>, as that module is in a different subtree. In such a situation we can use the global scope token, <code class="highlighter-rouge">::</code>, in front of the scoped identifier. This token instructs the assembler to start identifier resolution from the global module.</p>
+<p>With the standard name resolution, we cannot access the <code class="language-plaintext highlighter-rouge">MyValue</code> symbol of the outer <code class="language-plaintext highlighter-rouge">Nested</code> module from within <code class="language-plaintext highlighter-rouge">Main.Nested.Nested</code>, as that module is in a different subtree. In such a situation we can use the global scope token, <code class="language-plaintext highlighter-rouge">::</code>, in front of the scoped identifier. This token instructs the assembler to start identifier resolution from the global module.</p>
 
-<p>Now, we can access that <code class="highlighter-rouge">MyValue</code> symbol:</p>
+<p>Now, we can access that <code class="language-plaintext highlighter-rouge">MyValue</code> symbol:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
   MyValue .equ 1
   ld a,Main.MyValue         ; ld a,1
   
@@ -1108,9 +1108,9 @@ Nested
 
 <h2 id="using-module-local-names">Using Module-Local Names</h2>
 
-<p>You can hide symbols within modules using the module-local identifier notation. Every label and symbol that starts with <code class="highlighter-rouge">@</code> is a private symbol within its module. It means that the particular symbol is visible only within its containing module (and the ones nested in the containing module). In this code, every local identifier can be accessed:</p>
+<p>You can hide symbols within modules using the module-local identifier notation. Every label and symbol that starts with <code class="language-plaintext highlighter-rouge">@</code> is a private symbol within its module. It means that the particular symbol is visible only within its containing module (and the ones nested in the containing module). In this code, every local identifier can be accessed:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
   MyValue .equ 1
   ld a,Main.MyValue         ; ld a,1
   
@@ -1137,7 +1137,7 @@ Nested
 
 <p>However, module-local names cannot be used outside of their containing module, so this code snippet raises an error:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.module Main
   MyValue .equ 1
   ld a,Main.MyValue         
   

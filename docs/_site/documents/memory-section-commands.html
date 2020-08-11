@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Disassembly: Memory Sections | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Disassembly: Memory Sections" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="These commands instructs the disassembly tool how to map a certain memory section into disassembly output. The literal1 and literal2 values specify the memory range. Be aware, literal1 is inclusive, but literal2 is exclusive." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-02T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Disassembly: Memory Sections","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/memory-section-commands","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/memory-section-commands"},"description":"These commands instructs the disassembly tool how to map a certain memory section into disassembly output. The literal1 and literal2 values specify the memory range. Be aware, literal1 is inclusive, but literal2 is exclusive.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/memory-section-commands","headline":"Disassembly: Memory Sections","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/memory-section-commands"},"description":"These commands instructs the disassembly tool how to map a certain memory section into disassembly output. The literal1 and literal2 values specify the memory range. Be aware, literal1 is inclusive, but literal2 is exclusive.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -889,51 +889,51 @@ but <em>literal2</em> is exclusive.</p>
   </thead>
   <tbody>
     <tr>
-      <td><strong><code class="highlighter-rouge">MD</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MD</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
       <td>Creates a disassembly section — this section of memory is represented as a flow id Z80 instructions.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MB</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>Creates a byte section. The contents of this memory area is displayed as bytes with the <strong><code class="highlighter-rouge">.defb</code></strong> pragma.</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MB</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>Creates a byte section. The contents of this memory area is displayed as bytes with the <strong><code class="language-plaintext highlighter-rouge">.defb</code></strong> pragma.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MW</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>Creates a word section. The contents of this memory area is displayed as bytes with the <strong><code class="highlighter-rouge">.defw</code></strong> pragma.</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MW</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>Creates a word section. The contents of this memory area is displayed as bytes with the <strong><code class="language-plaintext highlighter-rouge">.defw</code></strong> pragma.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MS</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>Skip section — the view displays a simple <strong><code class="highlighter-rouge">.skip</code></strong> pragma for the section.</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MS</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>Skip section — the view displays a simple <strong><code class="language-plaintext highlighter-rouge">.skip</code></strong> pragma for the section.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MC</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MC</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
       <td>Calculator section. The disassembler takes these bytes into account as the byte code of the ZX Spectrum’s RST #28 calculator.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MG</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>Creates a <code class="highlighter-rouge">.defg</code> section. The contents of this memory area is displayed as single bytes with the <strong><code class="highlighter-rouge">.defg</code></strong> pragma.</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MG</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>Creates a <code class="language-plaintext highlighter-rouge">.defg</code> section. The contents of this memory area is displayed as single bytes with the <strong><code class="language-plaintext highlighter-rouge">.defg</code></strong> pragma.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MG1</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>The same as <code class="highlighter-rouge">MG</code></td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MG1</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>The same as <code class="language-plaintext highlighter-rouge">MG</code></td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MG2</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>Creates a <code class="highlighter-rouge">.defg</code> section. The contents of this memory area is displayed with the <strong><code class="highlighter-rouge">.defg</code></strong> pragma as a group of two bytes.</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MG2</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>Creates a <code class="language-plaintext highlighter-rouge">.defg</code> section. The contents of this memory area is displayed with the <strong><code class="language-plaintext highlighter-rouge">.defg</code></strong> pragma as a group of two bytes.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MG3</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>Creates a <code class="highlighter-rouge">.defg</code> section. The contents of this memory area is displayed with the <strong><code class="highlighter-rouge">.defg</code></strong> pragma as a group of three bytes.</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MG3</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>Creates a <code class="language-plaintext highlighter-rouge">.defg</code> section. The contents of this memory area is displayed with the <strong><code class="language-plaintext highlighter-rouge">.defg</code></strong> pragma as a group of three bytes.</td>
     </tr>
     <tr>
-      <td><strong><code class="highlighter-rouge">MG4</code></strong> <em><code class="highlighter-rouge">literal1</code></em> <em><code class="highlighter-rouge">literal2</code></em></td>
-      <td>Creates a <code class="highlighter-rouge">.defg</code> section. The contents of this memory area is displayed with the <strong><code class="highlighter-rouge">.defg</code></strong> pragma as a group of four bytes.</td>
+      <td><strong><code class="language-plaintext highlighter-rouge">MG4</code></strong> <em><code class="language-plaintext highlighter-rouge">literal1</code></em> <em><code class="language-plaintext highlighter-rouge">literal2</code></em></td>
+      <td>Creates a <code class="language-plaintext highlighter-rouge">.defg</code> section. The contents of this memory area is displayed with the <strong><code class="language-plaintext highlighter-rouge">.defg</code></strong> pragma as a group of four bytes.</td>
     </tr>
   </tbody>
 </table>
 
 <p>The IDE saves the memory map you set up with these commands into the annotations file of your project. The ZX Spectrum ROMs within SpectNetIDE ship with their memory map set, but you can change them, too.</p>
 
-<p>If your change regards to ROM addresses, the <code class="highlighter-rouge">.disann</code> file of the specific ROM file is changed; otherwise, memory map modifications go to your default annotation file (<code class="highlighter-rouge">Annotations.disann</code> in a new project).</p>
+<p>If your change regards to ROM addresses, the <code class="language-plaintext highlighter-rouge">.disann</code> file of the specific ROM file is changed; otherwise, memory map modifications go to your default annotation file (<code class="language-plaintext highlighter-rouge">Annotations.disann</code> in a new project).</p>
 
 <blockquote>
   <p><strong>Hint</strong>: When you define memory maps, avoid those that overlap the ROM/RAM boundary.</p>

@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Expressions | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Expressions" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The test language has a rich syntax for evaluating expressions. You can use operands and operators just like in most programming languages. Nevertheless, the test language implementation has its particular semantics of evaluating expression, as you will learn soon." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-05T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Expressions","dateModified":"2019-01-05T00:00:00+01:00","datePublished":"2019-01-05T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/unit-testing-expressions","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/unit-testing-expressions"},"description":"The test language has a rich syntax for evaluating expressions. You can use operands and operators just like in most programming languages. Nevertheless, the test language implementation has its particular semantics of evaluating expression, as you will learn soon.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/unit-testing-expressions","headline":"Expressions","dateModified":"2019-01-05T00:00:00+01:00","datePublished":"2019-01-05T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/unit-testing-expressions"},"description":"The test language has a rich syntax for evaluating expressions. You can use operands and operators just like in most programming languages. Nevertheless, the test language implementation has its particular semantics of evaluating expression, as you will learn soon.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -902,11 +902,11 @@ you will learn about them. I will introduce them in descending order of their pr
 
 <p>The assembler supports using only one ternary operator, the conditional operator:</p>
 
-<p><em>conditional-expression</em> <strong><code class="highlighter-rouge">?</code></strong> <em>true-value</em> <strong><code class="highlighter-rouge">:</code></strong> <em>false-value</em></p>
+<p><em>conditional-expression</em> <strong><code class="language-plaintext highlighter-rouge">?</code></strong> <em>true-value</em> <strong><code class="language-plaintext highlighter-rouge">:</code></strong> <em>false-value</em></p>
 
 <p>This operation results in -1:</p>
 
-<p><code class="highlighter-rouge">2 &gt; 3 ? 2 : -1</code></p>
+<p><code class="language-plaintext highlighter-rouge">2 &gt; 3 ? 2 : -1</code></p>
 
 <p>When the <em>conditional-expression</em> evaluates to true, the operation results 
 in <em>true-value</em>; otherwise in <em>false-value</em>.</p>
@@ -928,17 +928,17 @@ which use left-to-right evaluation.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">|</code></td>
+      <td><code class="language-plaintext highlighter-rouge">|</code></td>
       <td>1</td>
       <td>Bitwise OR</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">^</code></td>
+      <td><code class="language-plaintext highlighter-rouge">^</code></td>
       <td>2</td>
       <td>Bitwise XOR</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&amp;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&amp;</code></td>
       <td>3</td>
       <td>Bitwise AND</td>
     </tr>
@@ -957,32 +957,32 @@ which use left-to-right evaluation.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">==</code></td>
+      <td><code class="language-plaintext highlighter-rouge">==</code></td>
       <td>4</td>
       <td>Equality</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">!=</code></td>
+      <td><code class="language-plaintext highlighter-rouge">!=</code></td>
       <td>4</td>
       <td>Non-equality</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&lt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;</code></td>
       <td>5</td>
       <td>Less than</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&lt;=</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;=</code></td>
       <td>5</td>
       <td>Less than or equal</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&gt;</code></td>
       <td>5</td>
       <td>Greater than</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&gt;=</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&gt;=</code></td>
       <td>5</td>
       <td>Greater than or equal</td>
     </tr>
@@ -1003,12 +1003,12 @@ which use left-to-right evaluation.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">&lt;&lt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;&lt;</code></td>
       <td>6</td>
       <td>Shift left</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&gt;&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&gt;&gt;</code></td>
       <td>6</td>
       <td>Shift right</td>
     </tr>
@@ -1027,27 +1027,27 @@ which use left-to-right evaluation.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">+</code></td>
+      <td><code class="language-plaintext highlighter-rouge">+</code></td>
       <td>7</td>
       <td>Addition</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">-</code></td>
+      <td><code class="language-plaintext highlighter-rouge">-</code></td>
       <td>7</td>
       <td>Subtraction</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">*</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*</code></td>
       <td>8</td>
       <td>Multiplication</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">/</code></td>
+      <td><code class="language-plaintext highlighter-rouge">/</code></td>
       <td>8</td>
       <td>Division</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">%</code></td>
+      <td><code class="language-plaintext highlighter-rouge">%</code></td>
       <td>8</td>
       <td>Modulo calculation</td>
     </tr>
@@ -1066,22 +1066,22 @@ which use left-to-right evaluation.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">+</code></td>
+      <td><code class="language-plaintext highlighter-rouge">+</code></td>
       <td>9</td>
       <td>Unary plus</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">-</code></td>
+      <td><code class="language-plaintext highlighter-rouge">-</code></td>
       <td>9</td>
       <td>Unary minus</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">~</code></td>
+      <td><code class="language-plaintext highlighter-rouge">~</code></td>
       <td>9</td>
       <td>Unary bitwise NOT</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">!</code></td>
+      <td><code class="language-plaintext highlighter-rouge">!</code></td>
       <td>9</td>
       <td>Unary logical NOT</td>
     </tr>
@@ -1089,7 +1089,7 @@ which use left-to-right evaluation.</p>
 </table>
 
 <blockquote>
-  <p>Do not forget, you can change the defult precendence with <code class="highlighter-rouge">(</code> and <code class="highlighter-rouge">)</code>.</p>
+  <p>Do not forget, you can change the defult precendence with <code class="language-plaintext highlighter-rouge">(</code> and <code class="language-plaintext highlighter-rouge">)</code>.</p>
 </blockquote>
 
 <h2 id="type-semantics">Type semantics</h2>
@@ -1125,14 +1125,14 @@ and then these number into a Boolean (rule #3).</li>
 unintended programming errors, instead retrieves an error:</p>
 <ul>
   <li>No binary operators (including relational operators) accept mixing numeric and byte array values</li>
-  <li>Binary operators (except binary <code class="highlighter-rouge">+</code>) do not allow two byte array operands</li>
-  <li>The conditional operator ( <code class="highlighter-rouge">?</code> <code class="highlighter-rouge">:</code> ) does not allow a byte array as the condition</li>
-  <li>Unary operators except <code class="highlighter-rouge">!</code> and <code class="highlighter-rouge">~</code> allow only numbers.</li>
+  <li>Binary operators (except binary <code class="language-plaintext highlighter-rouge">+</code>) do not allow two byte array operands</li>
+  <li>The conditional operator ( <code class="language-plaintext highlighter-rouge">?</code> <code class="language-plaintext highlighter-rouge">:</code> ) does not allow a byte array as the condition</li>
+  <li>Unary operators except <code class="language-plaintext highlighter-rouge">!</code> and <code class="language-plaintext highlighter-rouge">~</code> allow only numbers.</li>
 </ul>
 
 <p>There are a few operators that work with byte arrays:</p>
 <ul>
-  <li>The binary <code class="highlighter-rouge">+</code> operator concatenates two byte arrays.</li>
+  <li>The binary <code class="language-plaintext highlighter-rouge">+</code> operator concatenates two byte arrays.</li>
   <li>The bitwise logical operators work with two byte array operands. The result will be
 a byte array with the shorter size of the operands. The elements of the result array are the
 corresponding bitwise operations on the bits of the operand arrays.</li>

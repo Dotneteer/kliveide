@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Common Commands | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Common Commands" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="This section describes the navigation and view commands you can use in the ZX Spectrum Memory, and Z80 Disassembly tool windows." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-02T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Common Commands","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/common-commands","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/common-commands"},"description":"This section describes the navigation and view commands you can use in the ZX Spectrum Memory, and Z80 Disassembly tool windows.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/common-commands","headline":"Common Commands","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/common-commands"},"description":"This section describes the navigation and view commands you can use in the ZX Spectrum Memory, and Z80 Disassembly tool windows.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -880,7 +880,7 @@
 
 <h2 id="navigation-command">Navigation Command</h2>
 
-<p><strong><code class="highlighter-rouge">G</code></strong> <em><code class="highlighter-rouge">literal</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">G</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em></p>
 
 <p>Sets the top position of the ZX Spectrum tool window to the specified address. <em>Note:</em> The tool window displays 
 the memory contents in 8-byte sections, so the given address is aligned to the closest segment.</p>
@@ -891,33 +891,33 @@ the memory contents in 8-byte sections, so the given address is aligned to the c
 
 <h3 id="select-rom-page">Select ROM Page</h3>
 
-<p><strong><code class="highlighter-rouge">R</code></strong> <em><code class="highlighter-rouge">number</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">R</code></strong> <em><code class="language-plaintext highlighter-rouge">number</code></em></p>
 
-<p>Displays the ROM with the specified index. When showing the memory contents, the addresses between <code class="highlighter-rouge">#0000</code> 
-and <code class="highlighter-rouge">#3fff</code> display the contents of this ROM. With a Spectrum 128K, you can use indexes <code class="highlighter-rouge">0</code> or <code class="highlighter-rouge">1</code>, as this model has two ROMs.
-With a Spectrum +3E model, you can use indexes from <code class="highlighter-rouge">0</code> to <code class="highlighter-rouge">3</code>, supporting the four ROMs of such a model.</p>
+<p>Displays the ROM with the specified index. When showing the memory contents, the addresses between <code class="language-plaintext highlighter-rouge">#0000</code> 
+and <code class="language-plaintext highlighter-rouge">#3fff</code> display the contents of this ROM. With a Spectrum 128K, you can use indexes <code class="language-plaintext highlighter-rouge">0</code> or <code class="language-plaintext highlighter-rouge">1</code>, as this model has two ROMs.
+With a Spectrum +3E model, you can use indexes from <code class="language-plaintext highlighter-rouge">0</code> to <code class="language-plaintext highlighter-rouge">3</code>, supporting the four ROMs of such a model.</p>
 
 <p>In this mode, the tool window displays only the contents of the selected ROM, and no other parts of the memory.</p>
 
 <h3 id="select-memory-bank">Select Memory Bank</h3>
 
-<p><strong><code class="highlighter-rouge">B</code></strong> <em><code class="highlighter-rouge">number</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">B</code></strong> <em><code class="language-plaintext highlighter-rouge">number</code></em></p>
 
-<p>Displays the RAM bank with the specified index. When displaying the memory contents, the addresses between <code class="highlighter-rouge">#0000</code> 
-and <code class="highlighter-rouge">#3fff</code> display the contents of this RAM bank. Indexes can be between <code class="highlighter-rouge">0</code> and <code class="highlighter-rouge">7</code>.</p>
+<p>Displays the RAM bank with the specified index. When displaying the memory contents, the addresses between <code class="language-plaintext highlighter-rouge">#0000</code> 
+and <code class="language-plaintext highlighter-rouge">#3fff</code> display the contents of this RAM bank. Indexes can be between <code class="language-plaintext highlighter-rouge">0</code> and <code class="language-plaintext highlighter-rouge">7</code>.</p>
 
 <p>In this mode, the tool window displays only the contents of the selected RAM bank, and no other parts of the memory.</p>
 
 <h3 id="select-full-memory-mode">Select Full Memory Mode</h3>
 
-<p><strong><code class="highlighter-rouge">M</code></strong></p>
+<p><strong><code class="language-plaintext highlighter-rouge">M</code></strong></p>
 
 <p>Displays the entire addressable (64K) memory, exactly as the Z80 CPU sees it. Displays the currently selected RAM
-in the <code class="highlighter-rouge">#0000</code>..<code class="highlighter-rouge">#3FFF</code> address range, Bank 5 in the <code class="highlighter-rouge">#4000</code>..<code class="highlighter-rouge">#7FFF</code> range, Bank 2 between <code class="highlighter-rouge">#8000</code> and <code class="highlighter-rouge">#BFFF</code>.
-Uses the currently paged bank for the <code class="highlighter-rouge">#C000</code>..<code class="highlighter-rouge">#FFFF</code> range.</p>
+in the <code class="language-plaintext highlighter-rouge">#0000</code>..<code class="language-plaintext highlighter-rouge">#3FFF</code> address range, Bank 5 in the <code class="language-plaintext highlighter-rouge">#4000</code>..<code class="language-plaintext highlighter-rouge">#7FFF</code> range, Bank 2 between <code class="language-plaintext highlighter-rouge">#8000</code> and <code class="language-plaintext highlighter-rouge">#BFFF</code>.
+Uses the currently paged bank for the <code class="language-plaintext highlighter-rouge">#C000</code>..<code class="language-plaintext highlighter-rouge">#FFFF</code> range.</p>
 
 <blockquote>
-  <p><strong>Note</strong>: Right now, these views cannot handle the special banking modes available in the Spectrum +3E model (through the <code class="highlighter-rouge">#1ffd</code> port).
+  <p><strong>Note</strong>: Right now, these views cannot handle the special banking modes available in the Spectrum +3E model (through the <code class="language-plaintext highlighter-rouge">#1ffd</code> port).
 This feature will be implemented later.</p>
 </blockquote>
 
@@ -925,7 +925,7 @@ This feature will be implemented later.</p>
 
 <p>You can export the contents of the memory or the disassembly with the export command:</p>
 
-<p><strong><code class="highlighter-rouge">X</code></strong> <em><code class="highlighter-rouge">literal</code></em> <em><code class="highlighter-rouge">literal</code></em></p>
+<p><strong><code class="language-plaintext highlighter-rouge">X</code></strong> <em><code class="language-plaintext highlighter-rouge">literal</code></em> <em><code class="language-plaintext highlighter-rouge">literal</code></em></p>
 
 <p>The first literal defines the start (inclusive), the second the end of the address range (inclusive) to export. When you run the command, it shows up a dialog to set a few export parameters.</p>
 

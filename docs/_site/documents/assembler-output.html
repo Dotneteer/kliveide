@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Assembler Output | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Assembler Output" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="Assembler listing output file" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Assembler Output","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/assembler-output","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/assembler-output"},"description":"Assembler listing output file","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/assembler-output","headline":"Assembler Output","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/assembler-output"},"description":"Assembler listing output file","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -888,9 +888,9 @@
 
 <h3 id="listing-file-name-and-location">Listing file name and location</h3>
 
-<p>The listing output file goes to the folder you specify with the <em>Listing file save folder</em> option. Should you leave it empty, the list files are saved into the <code class="highlighter-rouge">.SpectNetIde/Listing</code> folder within your project folder. The listing files get the name of the source file you compile with the extension set in the <em>Listing file extension</em> option. However, you can add a date-based suffix to the file name with specifying a name suffix pattern. For example, the pattern in the figure above will add minute-precision date information to the file name. If your source file is named <code class="highlighter-rouge">Code.z80asm</code>, this setting will result in a file name like this: <code class="highlighter-rouge">Code_2019-05-19-08-29.out</code>.</p>
+<p>The listing output file goes to the folder you specify with the <em>Listing file save folder</em> option. Should you leave it empty, the list files are saved into the <code class="language-plaintext highlighter-rouge">.SpectNetIde/Listing</code> folder within your project folder. The listing files get the name of the source file you compile with the extension set in the <em>Listing file extension</em> option. However, you can add a date-based suffix to the file name with specifying a name suffix pattern. For example, the pattern in the figure above will add minute-precision date information to the file name. If your source file is named <code class="language-plaintext highlighter-rouge">Code.z80asm</code>, this setting will result in a file name like this: <code class="language-plaintext highlighter-rouge">Code_2019-05-19-08-29.out</code>.</p>
 
-<p>The IDE will add the listing output file to your current project structure if you turn on the <em>Add listing file to project</em> option. By default, the IDE uses the <code class="highlighter-rouge">Listings</code> subfolder, however, you can specify a different one in with the <em>Listing file project folder</em> option.</p>
+<p>The IDE will add the listing output file to your current project structure if you turn on the <em>Add listing file to project</em> option. By default, the IDE uses the <code class="language-plaintext highlighter-rouge">Listings</code> subfolder, however, you can specify a different one in with the <em>Listing file project folder</em> option.</p>
 
 <h3 id="listing-file-format">Listing file format</h3>
 
@@ -898,17 +898,17 @@
 
 <p>To influence the format of an output line, you can specify a template with the <em>Listing file line template</em> option. This option is a string that contains placeholders. The placeholders are replaced with their current values.</p>
 <ul>
-  <li><code class="highlighter-rouge">{A}</code>: the instruction address, formatted as four hexadecimal digits.</li>
-  <li><code class="highlighter-rouge">{C}</code>: the operation codes emitted for the source code line, formatted as two hexadecimal digits for each byte, separated by a space character.</li>
-  <li><code class="highlighter-rouge">{CX}</code>: like <code class="highlighter-rouge">{C}</code>, but padded with spaces if there are less than four bytes emitted.</li>
-  <li><code class="highlighter-rouge">{F}</code>: Zero-based file index. The source files (the root source file and files included during the compilation) are counted. The root file has an index of zero, the include file loaded first has an index of one, and so on.</li>
-  <li><code class="highlighter-rouge">{F2}</code>: Like <code class="highlighter-rouge">{F}</code>, but the field width is two characters, aligned to the right, padded with spaces from left.</li>
-  <li><code class="highlighter-rouge">{F3}</code>: Like <code class="highlighter-rouge">{F2}</code>, but the field width is three characters.</li>
-  <li><code class="highlighter-rouge">{L}</code>: Source code line number, starting from one.</li>
-  <li><code class="highlighter-rouge">{L3}</code>: Like <code class="highlighter-rouge">{L}</code>, but the field width is three characters, aligned to the right, padded with spaces from left.</li>
-  <li><code class="highlighter-rouge">{L4}</code>: Like <code class="highlighter-rouge">{L3}</code>, but the field width is four characters.</li>
-  <li><code class="highlighter-rouge">{L5}</code>: Like <code class="highlighter-rouge">{L3}</code>, but the field width is five characters.</li>
-  <li><code class="highlighter-rouge">{S}</code>: The source code text of the emitted line, spaces trimmed from the left.</li>
+  <li><code class="language-plaintext highlighter-rouge">{A}</code>: the instruction address, formatted as four hexadecimal digits.</li>
+  <li><code class="language-plaintext highlighter-rouge">{C}</code>: the operation codes emitted for the source code line, formatted as two hexadecimal digits for each byte, separated by a space character.</li>
+  <li><code class="language-plaintext highlighter-rouge">{CX}</code>: like <code class="language-plaintext highlighter-rouge">{C}</code>, but padded with spaces if there are less than four bytes emitted.</li>
+  <li><code class="language-plaintext highlighter-rouge">{F}</code>: Zero-based file index. The source files (the root source file and files included during the compilation) are counted. The root file has an index of zero, the include file loaded first has an index of one, and so on.</li>
+  <li><code class="language-plaintext highlighter-rouge">{F2}</code>: Like <code class="language-plaintext highlighter-rouge">{F}</code>, but the field width is two characters, aligned to the right, padded with spaces from left.</li>
+  <li><code class="language-plaintext highlighter-rouge">{F3}</code>: Like <code class="language-plaintext highlighter-rouge">{F2}</code>, but the field width is three characters.</li>
+  <li><code class="language-plaintext highlighter-rouge">{L}</code>: Source code line number, starting from one.</li>
+  <li><code class="language-plaintext highlighter-rouge">{L3}</code>: Like <code class="language-plaintext highlighter-rouge">{L}</code>, but the field width is three characters, aligned to the right, padded with spaces from left.</li>
+  <li><code class="language-plaintext highlighter-rouge">{L4}</code>: Like <code class="language-plaintext highlighter-rouge">{L3}</code>, but the field width is four characters.</li>
+  <li><code class="language-plaintext highlighter-rouge">{L5}</code>: Like <code class="language-plaintext highlighter-rouge">{L3}</code>, but the field width is five characters.</li>
+  <li><code class="language-plaintext highlighter-rouge">{S}</code>: The source code text of the emitted line, spaces trimmed from the left.</li>
 </ul>
 
 <blockquote>
@@ -917,9 +917,9 @@
 
 <p>The file indexes do not tell too much about the names of the source files. With the <em>Source file name output</em> mode option, you can specify how the compiler puts file name information into the listing file:</p>
 <ul>
-  <li><code class="highlighter-rouge">None</code>: No source file information gets into the listing file.</li>
-  <li><code class="highlighter-rouge">Header</code>: Whenever the file index information changes, the compiler puts a section header with the name of the source code file.</li>
-  <li><code class="highlighter-rouge">FileMap</code>: The list of source files is displayed once at the top of the listing file.</li>
+  <li><code class="language-plaintext highlighter-rouge">None</code>: No source file information gets into the listing file.</li>
+  <li><code class="language-plaintext highlighter-rouge">Header</code>: Whenever the file index information changes, the compiler puts a section header with the name of the source code file.</li>
+  <li><code class="language-plaintext highlighter-rouge">FileMap</code>: The list of source files is displayed once at the top of the listing file.</li>
 </ul>
 
 

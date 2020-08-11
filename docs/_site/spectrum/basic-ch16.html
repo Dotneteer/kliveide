@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Colours | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Colours" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 16: Colours Summary" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Colours","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch16","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch16"},"description":"CHAPTER 16: Colours Summary","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch16","headline":"Colours","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch16"},"description":"CHAPTER 16: Colours Summary","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -587,7 +587,7 @@
 
 <p>Run this program:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR m=4 TO 1: BRIGHT m
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 FOR m=4 TO 1: BRIGHT m
 20 FOR n=1 TO 14
 30 FOR c=4 TO 7
 40 PAPER c: PRINT " ";: REM 4 coloured spaces
@@ -668,12 +668,12 @@ colour is left the same as it was before. <strong>INK 8</strong>, <strong>BRIGHT
 
 <p>Try this by doing</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INK 9: FOR c=0 TO 7: PAPER c: PRINT c: NEXT c
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INK 9: FOR c=0 TO 7: PAPER c: PRINT c: NEXT c
 </code></pre></div></div>
 
 <p>A more impressive display of its power is to run the program at the beginning to make coloured stripes, and then doing</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INK 9: PAPER 8: PRINT AT 0,8;: FOR n=l TO 1080: PRINT n;: NEXT n
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>INK 9: PAPER 8: PRINT AT 0,8;: FOR n=l TO 1080: PRINT n;: NEXT n
 </code></pre></div></div>
 
 <p>The ink colour here is always made to contrast with the old paper colour at each position.</p>
@@ -685,7 +685,7 @@ colours are mixtures of these. For instance, magenta is made by mixing blue with
 white paper in the dark. Where they overlap you will see mixtures of colours, as shown by this program (note that ink spaces are obtained by using either SHIFT
 with 8 when in G mode):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 BORDER 0: PAPER 0: INK 7: CLS
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 BORDER 0: PAPER 0: INK 7: CLS
 20 FOR a=1 TO 6
 30 PRINT TAB 6; INK 1; "": REM 18 ink squares
 40 NEXT a
@@ -718,7 +718,7 @@ character position. It is the dots that have changed.</p>
 
 <p>The statement <strong>OVER 1</strong> sets into action a particular sort of overprinting. Normally when something is written into a character position it completely obliterates what was there before; but now the new character will simply be added in on top of the old one (but see Exercise 1). This can be particularly useful for writing composite characters, like letters with accents on them, as in this program to print out German letters - an ‘o’ with an umlaut above it. (Do <strong>NEW</strong> first.)</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 OVER 1
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 OVER 1
 20 FOR n=1 TO 32
 30 PRINT "o"; CHRS 8;"""";
 40 NEXT n
@@ -813,7 +813,7 @@ corresponding character position on the television screen You can use this as fr
 <p>For instance, if the character position is flashing and normal with yellow paper and blue ink then the four numbers that we have to add together are 128, 0,
 8*6=48 and 1, making 177 altogether. Test this with</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT AT 0,0; FLASH 1; PAPER 6; INK 1;" "; ATTR (0,0**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT AT 0,0; FLASH 1; PAPER 6; INK 1;" "; ATTR (0,0**
 </code></pre></div></div>
 
 <h2 id="exercises">Exercises</h2>
@@ -822,25 +822,25 @@ corresponding character position on the television screen You can use this as fr
   <li>Try</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT "B"; CHR$ 8; OVER 1;"/";
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT "B"; CHR$ 8; OVER 1;"/";
 </code></pre></div></div>
 
 <p>Where the / has cut through the B, it has left a white dot This is the way overprinting works on the ZX Spectrum: two papers or two inks give a paper, one
 of each gives an ink. This has the interesting property that if you overprint with the same thing twice you get back what you started off with. If you now
 type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT CHR$ 8; OVER 1;"r'
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PRINT CHR$ 8; OVER 1;"r'
 </code></pre></div></div>
 
 <p>why do vou recover an unblemished B?</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PAPER 0: INK 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PAPER 0: INK 0
 </code></pre></div></div>
 
 <p>- isn’t it just as well that these don’t affect the lower part of the screen?
 Now type</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BORDER 0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BORDER 0
 </code></pre></div></div>
 
 <p>and see how well the computer looks after you!</p>
@@ -849,7 +849,7 @@ Now type</p>
   <li>Run this program:</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 POKE 22527+RND\*704, RND\*127
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 POKE 22527+RND\*704, RND\*127
 20 GO TO 10
 </code></pre></div></div>
 
@@ -860,7 +860,7 @@ diagonal stripes that you eventually see are a manifestation of the hidden patte
   <li>Type or <strong>LOAD</strong> in the chess piece characters in Chapter 14, and then type in this program which draws a diagram of a chess position using them.</li>
 </ol>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM draw blank board
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>5 REM draw blank board
 10 LET bb=1: LET bw=2: REM red and blue for board
 15 PAPER bw: INK bb: CLS
 20 PLOT 79,128: REM border

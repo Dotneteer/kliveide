@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Expressions | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Expressions" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The SpectNetIde assembler has a rich syntax for evaluating expressions. You can use the very same syntax with the #if directives, the Z80 instructions, and the compiler statements." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Expressions","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/expressions","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/expressions"},"description":"The SpectNetIde assembler has a rich syntax for evaluating expressions. You can use the very same syntax with the #if directives, the Z80 instructions, and the compiler statements.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/expressions","headline":"Expressions","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/expressions"},"description":"The SpectNetIde assembler has a rich syntax for evaluating expressions. You can use the very same syntax with the #if directives, the Z80 instructions, and the compiler statements.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -877,7 +877,7 @@
             </div>
             <div class="main-content-area">
               <p>The <strong>SpectNetIde</strong> assembler has a rich syntax for evaluating expressions. You can use the very
-same syntax with the <code class="highlighter-rouge">#if</code> directives, the Z80 instructions, and the compiler statements.</p>
+same syntax with the <code class="language-plaintext highlighter-rouge">#if</code> directives, the Z80 instructions, and the compiler statements.</p>
 
 <p>You can use operands and operators just like in most programming languages. Nevertheless, 
 the <strong>SpectNetIde</strong> implementation has its particular way of evaluating expressions:</p>
@@ -885,7 +885,7 @@ the <strong>SpectNetIde</strong> implementation has its particular way of evalua
 <ul>
   <li>Expressions can be one of these types:
     <ul>
-      <li><em>Booleans</em> (<code class="highlighter-rouge">true</code> or <code class="highlighter-rouge">false</code>)</li>
+      <li><em>Booleans</em> (<code class="language-plaintext highlighter-rouge">true</code> or <code class="language-plaintext highlighter-rouge">false</code>)</li>
       <li><em>integers</em> (64-bit)</li>
       <li><em>floating point numbers</em> (64-bit precision)</li>
       <li><em>strings</em> (with 8-bit characters)</li>
@@ -894,14 +894,14 @@ the <strong>SpectNetIde</strong> implementation has its particular way of evalua
   <li>The assembler applies implicit conversion whenever it’s possible.
     <ul>
       <li>Floating point numbers are truncated to integer values.</li>
-      <li>The <code class="highlighter-rouge">true</code> Boolean literal is represented with the integer value <code class="highlighter-rouge">1</code>; <code class="highlighter-rouge">false</code> with <code class="highlighter-rouge">0</code>.</li>
-      <li>When the assembler needs a Boolean value, <code class="highlighter-rouge">0</code> is taken into account as <code class="highlighter-rouge">false</code>, any other values as <code class="highlighter-rouge">true</code>.</li>
+      <li>The <code class="language-plaintext highlighter-rouge">true</code> Boolean literal is represented with the integer value <code class="language-plaintext highlighter-rouge">1</code>; <code class="language-plaintext highlighter-rouge">false</code> with <code class="language-plaintext highlighter-rouge">0</code>.</li>
+      <li>When the assembler needs a Boolean value, <code class="language-plaintext highlighter-rouge">0</code> is taken into account as <code class="language-plaintext highlighter-rouge">false</code>, any other values as <code class="language-plaintext highlighter-rouge">true</code>.</li>
       <li>There is no implicit conversion between strings and any numeric values.</li>
     </ul>
   </li>
-  <li>When the compiler needs a 16-bit value (for example, <code class="highlighter-rouge">ld hl,NNNN</code>), it uses the rightmost 
+  <li>When the compiler needs a 16-bit value (for example, <code class="language-plaintext highlighter-rouge">ld hl,NNNN</code>), it uses the rightmost 
 16 bits of an expression’s value.</li>
-  <li>When a Z80 operation (for example, <code class="highlighter-rouge">ld a,NN</code>) needs an 8-bit value, it utilizes the 
+  <li>When a Z80 operation (for example, <code class="language-plaintext highlighter-rouge">ld a,NN</code>) needs an 8-bit value, it utilizes the 
 rightmost 8 bits.</li>
 </ul>
 
@@ -911,11 +911,11 @@ arithmetic overflow.</p>
 </blockquote>
 
 <ul>
-  <li>Besides the parentheses — <code class="highlighter-rouge">(</code> and <code class="highlighter-rouge">)</code> — you can use square brackets 
-— <code class="highlighter-rouge">[</code> and <code class="highlighter-rouge">]</code> — to group operations and change operator precedence.</li>
+  <li>Besides the parentheses — <code class="language-plaintext highlighter-rouge">(</code> and <code class="language-plaintext highlighter-rouge">)</code> — you can use square brackets 
+— <code class="language-plaintext highlighter-rouge">[</code> and <code class="language-plaintext highlighter-rouge">]</code> — to group operations and change operator precedence.</li>
 </ul>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; This is valid
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>; This is valid
 ld hl,(Offset+#20)*2+BaseAddr
 
 ; Just like this
@@ -925,31 +925,31 @@ ld hl,[Offset+#20]*2+BaseAddr
 <h2 id="instant-and-late-expression-evaluation">Instant and Late Expression Evaluation</h2>
 
 <p>Depending on the context in which an expression is used, the compiler evaluates it instantly or
-decides to postpone the evaluation. For example, when you use the <code class="highlighter-rouge">.org</code> pragma, the compiler applies
+decides to postpone the evaluation. For example, when you use the <code class="language-plaintext highlighter-rouge">.org</code> pragma, the compiler applies
 immediate evaluation. Let’s assume, this is your code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Start: .org #8000 + Later
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Start: .org #8000 + Later
 ; code body (omitted)
 Later: .db #ff
 </code></pre></div></div>
 
-<p>The value of <code class="highlighter-rouge">Later</code> depends on the address in <code class="highlighter-rouge">.org</code>, and the <code class="highlighter-rouge">.org</code> address depends on <code class="highlighter-rouge">Later</code>, 
+<p>The value of <code class="language-plaintext highlighter-rouge">Later</code> depends on the address in <code class="language-plaintext highlighter-rouge">.org</code>, and the <code class="language-plaintext highlighter-rouge">.org</code> address depends on <code class="language-plaintext highlighter-rouge">Later</code>, 
 so this declaration could not be resolved properly, it’s like a deadlock. To avoid such situations, 
-the <code class="highlighter-rouge">.org</code> pragma would raise an error, as the moment of its evaluation the <code class="highlighter-rouge">Later</code> symbol’s value is 
+the <code class="language-plaintext highlighter-rouge">.org</code> pragma would raise an error, as the moment of its evaluation the <code class="language-plaintext highlighter-rouge">Later</code> symbol’s value is 
 unknown.</p>
 
 <p>For most Z80 instructions the compiler uses late evaluation:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Start: .org #6000
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Start: .org #6000
     ld hl,(MyVar)
     ; code body omitted
     ret
 MyVar: .defs 2
 </code></pre></div></div>
 
-<p>When the compiler reaches the <code class="highlighter-rouge">ld hl,(MyVar)</code> instruction, it does not know the value of <code class="highlighter-rouge">MyVar</code>. Nonetheless,
-it does not stop with an error, but generates the machine code for <code class="highlighter-rouge">ld hl,(0)</code>, namely #21, #00, and #00; 
-takes a note (it is called a <em>fixup</em>) when <code class="highlighter-rouge">MyVal</code> gets a value, the two #00 bytes generated at address #6001 
+<p>When the compiler reaches the <code class="language-plaintext highlighter-rouge">ld hl,(MyVar)</code> instruction, it does not know the value of <code class="language-plaintext highlighter-rouge">MyVar</code>. Nonetheless,
+it does not stop with an error, but generates the machine code for <code class="language-plaintext highlighter-rouge">ld hl,(0)</code>, namely #21, #00, and #00; 
+takes a note (it is called a <em>fixup</em>) when <code class="language-plaintext highlighter-rouge">MyVal</code> gets a value, the two #00 bytes generated at address #6001 
 should be updated accordingly.</p>
 
 <h2 id="operands">Operands</h2>
@@ -974,11 +974,11 @@ you will learn about them. I will introduce them in descending order of their pr
 
 <p>The assembler supports using only one ternary operator, the conditional operator:</p>
 
-<p><em>conditional-expression</em> <strong><code class="highlighter-rouge">?</code></strong> <em>true-value</em> <strong><code class="highlighter-rouge">:</code></strong> <em>false-value</em></p>
+<p><em>conditional-expression</em> <strong><code class="language-plaintext highlighter-rouge">?</code></strong> <em>true-value</em> <strong><code class="language-plaintext highlighter-rouge">:</code></strong> <em>false-value</em></p>
 
 <p>This operation results in -1:</p>
 
-<p><code class="highlighter-rouge">2 &gt; 3 ? 2 : -1</code></p>
+<p><code class="language-plaintext highlighter-rouge">2 &gt; 3 ? 2 : -1</code></p>
 
 <p>When the <em>conditional-expression</em> evaluates to true, the operation results 
 in <em>true-value</em>; otherwise in <em>false-value</em>.</p>
@@ -1000,17 +1000,17 @@ which use left-to-right evaluation.</p>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">|</code></td>
+      <td><code class="language-plaintext highlighter-rouge">|</code></td>
       <td>1</td>
       <td>Bitwise OR</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">^</code></td>
+      <td><code class="language-plaintext highlighter-rouge">^</code></td>
       <td>2</td>
       <td>Bitwise XOR</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&amp;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&amp;</code></td>
       <td>3</td>
       <td>Bitwise AND — string concatenation with new line</td>
     </tr>
@@ -1018,8 +1018,8 @@ which use left-to-right evaluation.</p>
 </table>
 
 <blockquote>
-  <p>The <code class="highlighter-rouge">&amp;</code> operator can be applied on two strings. If you do so, the compiler concatenates the two 
-strings and puts a <code class="highlighter-rouge">\r\n</code> (next line) character pair between them.</p>
+  <p>The <code class="language-plaintext highlighter-rouge">&amp;</code> operator can be applied on two strings. If you do so, the compiler concatenates the two 
+strings and puts a <code class="language-plaintext highlighter-rouge">\r\n</code> (next line) character pair between them.</p>
   <h3 id="relational-operators">Relational Operators</h3>
 </blockquote>
 
@@ -1033,32 +1033,32 @@ strings and puts a <code class="highlighter-rouge">\r\n</code> (next line) chara
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">==</code></td>
+      <td><code class="language-plaintext highlighter-rouge">==</code></td>
       <td>4</td>
       <td>Equality</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">!=</code></td>
+      <td><code class="language-plaintext highlighter-rouge">!=</code></td>
       <td>4</td>
       <td>Non-equality</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&lt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;</code></td>
       <td>5</td>
       <td>Less than</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&lt;=</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;=</code></td>
       <td>5</td>
       <td>Less than or equal</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&gt;</code></td>
       <td>5</td>
       <td>Greater than</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&gt;=</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&gt;=</code></td>
       <td>5</td>
       <td>Greater than or equal</td>
     </tr>
@@ -1079,12 +1079,12 @@ strings and puts a <code class="highlighter-rouge">\r\n</code> (next line) chara
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">&lt;&lt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;&lt;</code></td>
       <td>6</td>
       <td>Shift left</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&gt;&gt;</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&gt;&gt;</code></td>
       <td>6</td>
       <td>Shift right</td>
     </tr>
@@ -1103,27 +1103,27 @@ strings and puts a <code class="highlighter-rouge">\r\n</code> (next line) chara
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">+</code></td>
+      <td><code class="language-plaintext highlighter-rouge">+</code></td>
       <td>7</td>
       <td>Addition — string concatenation</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">-</code></td>
+      <td><code class="language-plaintext highlighter-rouge">-</code></td>
       <td>7</td>
       <td>Subtraction</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">*</code></td>
+      <td><code class="language-plaintext highlighter-rouge">*</code></td>
       <td>8</td>
       <td>Multiplication</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">/</code></td>
+      <td><code class="language-plaintext highlighter-rouge">/</code></td>
       <td>8</td>
       <td>Division</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">%</code></td>
+      <td><code class="language-plaintext highlighter-rouge">%</code></td>
       <td>8</td>
       <td>Modulo calculation</td>
     </tr>
@@ -1142,12 +1142,12 @@ strings and puts a <code class="highlighter-rouge">\r\n</code> (next line) chara
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">&lt;?</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&lt;?</code></td>
       <td>9</td>
       <td>Minimum of the left and right operand</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">&gt;?</code></td>
+      <td><code class="language-plaintext highlighter-rouge">&gt;?</code></td>
       <td>9</td>
       <td>Maximum of the left and right operand</td>
     </tr>
@@ -1166,22 +1166,22 @@ strings and puts a <code class="highlighter-rouge">\r\n</code> (next line) chara
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">+</code></td>
+      <td><code class="language-plaintext highlighter-rouge">+</code></td>
       <td>10</td>
       <td>Unary plus</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">-</code></td>
+      <td><code class="language-plaintext highlighter-rouge">-</code></td>
       <td>10</td>
       <td>Unary minus</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">~</code></td>
+      <td><code class="language-plaintext highlighter-rouge">~</code></td>
       <td>10</td>
       <td>Unary bitwise NOT</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">!</code></td>
+      <td><code class="language-plaintext highlighter-rouge">!</code></td>
       <td>10</td>
       <td>Unary logical NOT</td>
     </tr>
@@ -1189,18 +1189,18 @@ strings and puts a <code class="highlighter-rouge">\r\n</code> (next line) chara
 </table>
 
 <blockquote>
-  <p>Do not forget, you can change the defult precendence with <code class="highlighter-rouge">(</code> and <code class="highlighter-rouge">)</code>, or with <code class="highlighter-rouge">[</code> and <code class="highlighter-rouge">]</code>.</p>
+  <p>Do not forget, you can change the defult precendence with <code class="language-plaintext highlighter-rouge">(</code> and <code class="language-plaintext highlighter-rouge">)</code>, or with <code class="language-plaintext highlighter-rouge">[</code> and <code class="language-plaintext highlighter-rouge">]</code>.</p>
 </blockquote>
 
 <h2 id="functions">Functions</h2>
 
 <p>The Z80 assembler provides a number of functions that can have zero, one, or more arguments. 
-Several functions (for example as <code class="highlighter-rouge">rnd()</code>) have overloads with different signatures. Each 
+Several functions (for example as <code class="language-plaintext highlighter-rouge">rnd()</code>) have overloads with different signatures. Each 
 function has a name and a parameter list wrapped into parentheses, the parameters are separated
 by a comma. Of course, parameters can be expressions, and they may invoke other functions, too.
 Here are a few samples:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lenght("Hello" + " world")
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lenght("Hello" + " world")
 max(value1, value2)
 sin(pi()/2)
 sqrt(pear + 3.0)
@@ -1218,299 +1218,299 @@ sqrt(pear + 3.0)
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">abs(integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">abs(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The absolute value of an <em>integer</em> number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">abs(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">abs(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The absolute value of a <em>float</em> number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">acos(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">acos(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The angle whose cosine is the specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">asin(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">asin(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The angle whose sine is the specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">atan(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">atan(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The angle whose tangent is the specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">atan2(float, float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">atan2(float, float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The angle whose tangent is the quotient of two specified numbers.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">attr(integer, integer, boolean, boolean)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
-      <td>Retrieves the color attribute byte value defined by <code class="highlighter-rouge">ink</code> (first argument, 0 to 7), <code class="highlighter-rouge">paper</code> (second argument, 0 to 7), <code class="highlighter-rouge">bright</code> (third argument, 0 - non-zero), and <code class="highlighter-rouge">flash</code> (fourth argument, 0 - non-zero). The <code class="highlighter-rouge">bright</code> and <code class="highlighter-rouge">flash</code> values are optional.</td>
+      <td><code class="language-plaintext highlighter-rouge">attr(integer, integer, boolean, boolean)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
+      <td>Retrieves the color attribute byte value defined by <code class="language-plaintext highlighter-rouge">ink</code> (first argument, 0 to 7), <code class="language-plaintext highlighter-rouge">paper</code> (second argument, 0 to 7), <code class="language-plaintext highlighter-rouge">bright</code> (third argument, 0 - non-zero), and <code class="language-plaintext highlighter-rouge">flash</code> (fourth argument, 0 - non-zero). The <code class="language-plaintext highlighter-rouge">bright</code> and <code class="language-plaintext highlighter-rouge">flash</code> values are optional.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">attraddr(integer, integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
-      <td>Returns the memory address of the byte specified screen attribute in the given line (first argument, from top to bottom, 0-192) and column (second argumment, from left to right, 0-255).<code class="highlighter-rouge">ceiling(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">attraddr(integer, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
+      <td>Returns the memory address of the byte specified screen attribute in the given line (first argument, from top to bottom, 0-192) and column (second argumment, from left to right, 0-255).<code class="language-plaintext highlighter-rouge">ceiling(float)</code></td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">bright(boolean)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">bright(boolean)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Retrieves the bright flag defined by the attribute (0 - non-zero). Can be ORed to create color attribute value.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ceiling(float</code>)</td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ceiling(float</code>)</td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The smallest integral value that is greater than or equal to the specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">cos(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">cos(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The cosine of the specified angle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">cosh(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">cosh(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The hyperbolic cosine of the specified angle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">exp(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">exp(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td><strong>e</strong> raised to the specified power.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">fill(string, integer)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">fill(string, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>Creates a new string by concatenating the specified one with the given times.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">flash(boolean)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">flash(boolean)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Retrieves the flash flag defined by the argument (0 - non-zero). Can be ORed to create color attribute value.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">floor(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">floor(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The largest integer less than or equal to the specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">frac(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">frac(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The fractional part of the specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">high(integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">high(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The leftmost 8 bits (MSB) of a 16-bit integer number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ink(integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ink(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Retrieves the three ink bits defined by the color argument (0 to 7). Can be ORed to create color attribute value.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">int(float)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">int(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The integer part of the specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">lcase(string)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">lcase(string)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>The lowercase version of the input string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">left(string, integer)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">left(string, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>Takes the leftmost characters of the string with the length specified.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">len(string)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">len(string)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The length of the specified string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">length(string)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">length(string)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The length of the specified string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">log(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">log(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The natural (base <strong>e</strong>) logarithm of a specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">log(float, float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">log(float, float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The logarithm of a specified number in a specified base.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">log10(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">log10(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The base 10 logarithm of a specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">low(integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">low(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The rightmost 8 bits (LSB) of an integer number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">lowercase(string)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">lowercase(string)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>The lowercase version of the input string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">max(integer, integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">max(integer, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The larger of two <em>integer</em> numbers.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">max(float, float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">max(float, float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The larger of two <em>float</em> numbers.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">min(integer, integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">min(integer, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The smaller of two <em>integer</em> numbers.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">min(float, float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">min(float, float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The smaller of two <em>float</em> numbers.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">nat()</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">nat()</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>Represents the natural logarithmic base, specified by the constant, <strong>e</strong>.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">paper(integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">paper(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>retrieves the three paper bits defined by the argument (0 to 7). Can be ORed to create color attribute value.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">pi()</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">pi()</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>Represents the ratio of the circumference of a circle to its diameter, specified by the constant, <strong>π</strong>.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">pow(float, float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">pow(float, float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The specified number raised to the specified power.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">right(string, integer)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">right(string, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>Takes the rightmost characters of the string with the length specified.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">round(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">round(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>Rounds a <em>float</em> value to the nearest integral value.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">round(float, int)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">round(float, int)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>Rounds a <em>float</em> value to a specified number of fractional digits.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">rnd()</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">rnd()</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Returns a random 32-bit number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">rnd(integer, integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">rnd(integer, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Returns a random 32-bit integer between the first and second number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">scraddr(integer, integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">scraddr(integer, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Retrieves the memory address of the screen pixel byte in the specified line (first argument, from top to bottom, 0-192) and in the specified column (second argument, from left to right, 0-255).</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">sign(integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">sign(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Returns an integer that indicates the sign of an <em>integer</em> number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">sign(float)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">sign(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Returns an integer that indicates the sign of a <em>float</em> number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">sin(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">sin(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The sine of the specified angle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">sinh(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">sinh(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The hyperbolic sine of the specified angle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">sqrt(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">sqrt(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The square root of a specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">str(bool)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">str(bool)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>Convert the input value to a string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">str(integer)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">str(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>Convert the input value to a string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">str(float)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">str(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>Convert the input value to a string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">substr(string, integer, integer)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">substr(string, integer, integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>Takes a substring of the specified string from the given position (zero-based) and length.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">tan(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">tan(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The tangent of the specified angle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">tanh(float)</code></td>
-      <td><code class="highlighter-rouge">float</code></td>
+      <td><code class="language-plaintext highlighter-rouge">tanh(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">float</code></td>
       <td>The hyperbolic tangent of the specified angle.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">truncate(float)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">truncate(float)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>Calculates the integral part of a specified number.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">ucase(string)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">ucase(string)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>The uppercase version of the input string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">uppercase(string)</code></td>
-      <td><code class="highlighter-rouge">string</code></td>
+      <td><code class="language-plaintext highlighter-rouge">uppercase(string)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">string</code></td>
       <td>The uppercase version of the input string.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">word(integer)</code></td>
-      <td><code class="highlighter-rouge">integer</code></td>
+      <td><code class="language-plaintext highlighter-rouge">word(integer)</code></td>
+      <td><code class="language-plaintext highlighter-rouge">integer</code></td>
       <td>The rightmost 16 bits of an integer number.</td>
     </tr>
   </tbody>
 </table>
 
-<p>Functions have the same precedence as the unary operators (such as the unary <code class="highlighter-rouge">+</code> and <code class="highlighter-rouge">-</code>).</p>
+<p>Functions have the same precedence as the unary operators (such as the unary <code class="language-plaintext highlighter-rouge">+</code> and <code class="language-plaintext highlighter-rouge">-</code>).</p>
 
 <h2 id="parse-time-functions">Parse Time Functions</h2>
 
@@ -1518,12 +1518,12 @@ sqrt(pear + 3.0)
 and transform them into other language constructs. As the name suggests, these function run in the parsing phase, before
 the compiler emits code.</p>
 
-<h3 id="the-lreg-and-hreg-parse-time-functions">The <code class="highlighter-rouge">lreg()</code> and <code class="highlighter-rouge">hreg()</code> Parse Time Functions</h3>
+<h3 id="the-lreg-and-hreg-parse-time-functions">The <code class="language-plaintext highlighter-rouge">lreg()</code> and <code class="language-plaintext highlighter-rouge">hreg()</code> Parse Time Functions</h3>
 
 <p>These functions accept a 16-bit register pair token (<strong>BC</strong>, <strong>DE</strong>, <strong>HL</strong>, <strong>IX</strong>, or <strong>IY</strong>), and retrieve the lower
 or higher 8-bit register half of their input. Here is a sample code snippet:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,lreg(bc)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,lreg(bc)
 ld c,hreg(hl)
 ld a,lreg(ix)
 ld l,hreg(de)
@@ -1531,19 +1531,19 @@ ld l,hreg(de)
 
 <p>The compiler sees as if you wrote this:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,c
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a,c
 ld c,h
 ld a,ixl
 ld l,d
 </code></pre></div></div>
 
-<h3 id="the-textof-parse-time-function">The <code class="highlighter-rouge">textof()</code> Parse Time Function</h3>
+<h3 id="the-textof-parse-time-function">The <code class="language-plaintext highlighter-rouge">textof()</code> Parse Time Function</h3>
 
-<p>You can use <code class="highlighter-rouge">textof()</code>, which accepts these kinds of tokens: mnemonic, register, register indirection, C port, 
+<p>You can use <code class="language-plaintext highlighter-rouge">textof()</code>, which accepts these kinds of tokens: mnemonic, register, register indirection, C port, 
 or condition. This function translates these tokens into uppercase string constants that represent them.
 Here is a sample:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dm textof(ldir)
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dm textof(ldir)
 .dm textof(bc)
 .dm textof((de))
 .dm textof((c))
@@ -1552,7 +1552,7 @@ Here is a sample:</p>
 
 <p>The compiler sees as if you wrote this code:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dm "LDIR"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.dm "LDIR"
 .dm "BC"
 .dm "(DE)"
 .dm "(C)"

@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Labels and Symbols | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Labels and Symbols" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="In Z80 assembly, you can define labels and symbols. Both constructs are syntactically the same, but there is some difference in their semantics. While we define labels to mark addresses (code points) in the program so that we can jump to those addresses, read or write their contents, symbols are not as specific, they just store values we intend to use. From now on, I will mention “label” for both constructs and will do otherwise only when the context requires. When you write a SpectNetIDE assembly instruction, you can start the line with a label:" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Labels and Symbols","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/labels-and-symbols","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/labels-and-symbols"},"description":"In Z80 assembly, you can define labels and symbols. Both constructs are syntactically the same, but there is some difference in their semantics. While we define labels to mark addresses (code points) in the program so that we can jump to those addresses, read or write their contents, symbols are not as specific, they just store values we intend to use. From now on, I will mention “label” for both constructs and will do otherwise only when the context requires. When you write a SpectNetIDE assembly instruction, you can start the line with a label:","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/labels-and-symbols","headline":"Labels and Symbols","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/labels-and-symbols"},"description":"In Z80 assembly, you can define labels and symbols. Both constructs are syntactically the same, but there is some difference in their semantics. While we define labels to mark addresses (code points) in the program so that we can jump to those addresses, read or write their contents, symbols are not as specific, they just store values we intend to use. From now on, I will mention “label” for both constructs and will do otherwise only when the context requires. When you write a SpectNetIDE assembly instruction, you can start the line with a label:","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -880,28 +880,28 @@
 From now on, I will mention “label” for both constructs and will do otherwise only when the context requires.
 When you write a <strong>SpectNetIDE</strong> assembly instruction, you can start the line with a label:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyStart: ld hl,0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyStart: ld hl,0
 </code></pre></div></div>
 
-<p>Here, in this sample, <code class="highlighter-rouge">MyStart</code> is a label. The assembler allows you to omit the colon after the label name, so this line is valid:</p>
+<p>Here, in this sample, <code class="language-plaintext highlighter-rouge">MyStart</code> is a label. The assembler allows you to omit the colon after the label name, so this line is valid:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyStart ld hl,0
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyStart ld hl,0
 </code></pre></div></div>
 
 <p>Some developers like to put a label in a separate line from the instruction it belongs. You can use the same hanging label style within <strong>SpectNetIDE</strong>. In this case, the label should go <em>before</em> its instruction. Take a look at this code snippet:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyStart:
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>MyStart:
   ld hl,0
 MyNext
   ; Use B as a counter
   ld b,32
 </code></pre></div></div>
 
-<p>This code is entirely correct. Note, the <code class="highlighter-rouge">ld b,32</code> instruction belongs to the <code class="highlighter-rouge">MyNext</code> label. As you see from the sample, the colon character is optional for hanging labels, too. You can have multiple line breaks between a label and its instruction, and the space can include comments.</p>
+<p>This code is entirely correct. Note, the <code class="language-plaintext highlighter-rouge">ld b,32</code> instruction belongs to the <code class="language-plaintext highlighter-rouge">MyNext</code> label. As you see from the sample, the colon character is optional for hanging labels, too. You can have multiple line breaks between a label and its instruction, and the space can include comments.</p>
 
 <h2 id="label-and-symbol-declarations">Label and Symbol Declarations</h2>
 
-<p>As you will learn later, you can define symbols with the <code class="highlighter-rouge">.EQU</code> or <code class="highlighter-rouge">.VAR</code> pragmas. While <code class="highlighter-rouge">.EQU</code> allows you to assign a constant value to a symbol — and so it cannot change its value after the declaration, <code class="highlighter-rouge">.VAR</code> let’s you re-assign the initial value.</p>
+<p>As you will learn later, you can define symbols with the <code class="language-plaintext highlighter-rouge">.EQU</code> or <code class="language-plaintext highlighter-rouge">.VAR</code> pragmas. While <code class="language-plaintext highlighter-rouge">.EQU</code> allows you to assign a constant value to a symbol — and so it cannot change its value after the declaration, <code class="language-plaintext highlighter-rouge">.VAR</code> let’s you re-assign the initial value.</p>
 
 <p><strong>SpectNetIDE</strong> supports the idea of lexical scopes. When you create the program, it starts with a global (outermost) lexical scope. Particular language elements, such a <em>statements</em> create their own nested lexical scope. Labels and symbols are always created within the current lexical scope. Nonetheless, when resolving them, the assembler starts with the innermost scope and goes through all outers scopes until it manages to find the label declaration.
 This mechanism means that you can declare labels within a nested scope so that those hide labels and symbols in outer scopes.
@@ -915,7 +915,7 @@ You can learn more about this topic in the <strong>Statements</strong> section.<
 
 <p>This code snippet demonstrates this concept:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetPixels:        ; Persistent label
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SetPixels:        ; Persistent label
   ld hl, #4000
   ld a,#AA
   ld b,#20
@@ -939,7 +939,7 @@ Another: ; Persistent label, scope #2 disposed here
   ld a,b
 </code></pre></div></div>
 
-<p>As you see, the two occurrences of <strong>`loop</strong>  belong to two separate temporary scopes. The first scope is between from <code class="highlighter-rouge">SetPixels</code> to <code class="highlighter-rouge">SetAttr</code>, the second one between <code class="highlighter-rouge">SetAttr</code> and <code class="highlighter-rouge">Another</code>.</p>
+<p>As you see, the two occurrences of <strong>`loop</strong>  belong to two separate temporary scopes. The first scope is between from <code class="language-plaintext highlighter-rouge">SetPixels</code> to <code class="language-plaintext highlighter-rouge">SetAttr</code>, the second one between <code class="language-plaintext highlighter-rouge">SetAttr</code> and <code class="language-plaintext highlighter-rouge">Another</code>.</p>
 
 
             </div>

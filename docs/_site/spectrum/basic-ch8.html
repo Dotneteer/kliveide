@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Strings | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Strings" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="CHAPTER 8: Strings" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-01T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Strings","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","url":"http://localhost:4000/kliveide/spectrum/basic-ch8","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch8"},"description":"CHAPTER 8: Strings","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/spectrum/basic-ch8","headline":"Strings","dateModified":"2019-01-01T00:00:00+01:00","datePublished":"2019-01-01T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/spectrum/basic-ch8"},"description":"CHAPTER 8: Strings","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -624,16 +624,16 @@ finish, then the result is the empty string. So</p>
 
 <p>The start and finish must not be negative, or you get error <strong>B integer out of range</strong>. This next program is a simple one illustrating some of these rules.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET a$="abcdef"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET a$="abcdef"
 20 FOR n=1 TO 6
 30 PRINT a$(n TO 6)
 40 NEXT n
 50 STOP
 </code></pre></div></div>
 
-<p>Type <code class="highlighter-rouge">NEW</code> when this program has been run and enter the next program:</p>
+<p>Type <code class="language-plaintext highlighter-rouge">NEW</code> when this program has been run and enter the next program:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET a$="ABLE WAS 1"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 LET a$="ABLE WAS 1"
 20 FOR n=1 TO 10
 30 PRINT a$(n TO 10),a$((10-n) TO 10)
 40 NEXT n
@@ -642,15 +642,15 @@ finish, then the result is the empty string. So</p>
 
 <p>For string variables, we can not only extract substrings, but also assign to them. For instance, type</p>
 
-<p><code class="highlighter-rouge">LET a$="l'm the ZX Spectrum"</code></p>
+<p><code class="language-plaintext highlighter-rouge">LET a$="l'm the ZX Spectrum"</code></p>
 
 <p>and then</p>
 
-<p><code class="highlighter-rouge">LET a$(5 TO 8)="******"</code></p>
+<p><code class="language-plaintext highlighter-rouge">LET a$(5 TO 8)="******"</code></p>
 
 <p>and</p>
 
-<p><code class="highlighter-rouge">PRINT a$</code></p>
+<p><code class="language-plaintext highlighter-rouge">PRINT a$</code></p>
 
 <p>Notice how since the substring a$(5 TO 8) is only 4 characters long, only the first four stars have been used. This is a characteristic of assigning to
 substrings: the substring has to be exactly the same length afterwards as it was before. To make sure this happens, the string that is being assigned to it is
@@ -659,15 +659,15 @@ who used to make sure that his guests fitted the bed by either stretching them o
 
 <p>If you now try</p>
 
-<p><code class="highlighter-rouge">LET a$()="Hello there"</code></p>
+<p><code class="language-plaintext highlighter-rouge">LET a$()="Hello there"</code></p>
 
 <p>and</p>
 
-<p><code class="highlighter-rouge">PRINT a$;"."</code></p>
+<p><code class="language-plaintext highlighter-rouge">PRINT a$;"."</code></p>
 
 <p>you will see that the same thing has happened again (this time with spaces put in) because a$() counts as a substring.</p>
 
-<p><code class="highlighter-rouge">LET a$="Hello there"</code></p>
+<p><code class="language-plaintext highlighter-rouge">LET a$="Hello there"</code></p>
 
 <p>will do it properly.</p>
 

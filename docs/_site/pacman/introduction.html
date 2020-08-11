@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Decrypting the loader | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Decrypting the loader" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="In this series of articles, I demonstrate how easy it is to discover or re-engineer ZX Spectrum games with SpectNetIDE. I have chosen Pac-man as an example." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-02T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Decrypting the loader","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","url":"http://localhost:4000/kliveide/pacman/introduction","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/pacman/introduction"},"description":"In this series of articles, I demonstrate how easy it is to discover or re-engineer ZX Spectrum games with SpectNetIDE. I have chosen Pac-man as an example.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/pacman/introduction","headline":"Decrypting the loader","dateModified":"2019-01-02T00:00:00+01:00","datePublished":"2019-01-02T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/pacman/introduction"},"description":"In this series of articles, I demonstrate how easy it is to discover or re-engineer ZX Spectrum games with SpectNetIDE. I have chosen Pac-man as an example.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -584,15 +584,15 @@
 
 <ol>
   <li>Start the Visual Studio IDE (with SpectNetIDE already installed)</li>
-  <li>Create a new ZX Spectrum Code Discovery project. In the <strong>New Project</strong> dialog name it <code class="highlighter-rouge">PacManDiscovery</code> and click OK. Select the <strong>ZX Spectrum 48K PAL - Normal Speed</strong> model.</li>
-  <li>Download the <code class="highlighter-rouge">Pac-Man.tzx</code> file into a temporary folder from <a href="/kliveide/samples/tapefiles/Pac-Man.tzx">here</a>. Right-click the <code class="highlighter-rouge">TapeFiles</code> folder in Solution Explorer, and choose the Add | Existing file item. Navigate to the previously downloaded file, and add it to the folder.</li>
-  <li>Right-click <code class="highlighter-rouge">Pac-Man.tzx</code> and select the <strong>Set as default tape file</strong> command.</li>
-  <li>Click the <code class="highlighter-rouge">Welcome.tzx</code> file and press the Delete key to remove this file from the project.</li>
+  <li>Create a new ZX Spectrum Code Discovery project. In the <strong>New Project</strong> dialog name it <code class="language-plaintext highlighter-rouge">PacManDiscovery</code> and click OK. Select the <strong>ZX Spectrum 48K PAL - Normal Speed</strong> model.</li>
+  <li>Download the <code class="language-plaintext highlighter-rouge">Pac-Man.tzx</code> file into a temporary folder from <a href="/kliveide/samples/tapefiles/Pac-Man.tzx">here</a>. Right-click the <code class="language-plaintext highlighter-rouge">TapeFiles</code> folder in Solution Explorer, and choose the Add | Existing file item. Navigate to the previously downloaded file, and add it to the folder.</li>
+  <li>Right-click <code class="language-plaintext highlighter-rouge">Pac-Man.tzx</code> and select the <strong>Set as default tape file</strong> command.</li>
+  <li>Click the <code class="language-plaintext highlighter-rouge">Welcome.tzx</code> file and press the Delete key to remove this file from the project.</li>
 </ol>
 
 <p><img src="/kliveide/assets/images/pacman/initial-project.png" alt="PacMan" /></p>
 
-<p>Start the ZX Spectrum emulator, and issue a <code class="highlighter-rouge">LOAD ""</code> command. The command will load and start the Pac-Man game.</p>
+<p>Start the ZX Spectrum emulator, and issue a <code class="language-plaintext highlighter-rouge">LOAD ""</code> command. The command will load and start the Pac-Man game.</p>
 
 <blockquote>
   <p><strong>Note</strong>: These tutorials explain you the basics of <a href="/kliveide/getting-started/create-zx-spectrum-48k-project.html">starting the emulator</a> and <a href="/kliveide/getting-started/fast-load.html">fast loading</a> tape files.</p>
@@ -604,11 +604,11 @@
 
 <h2 id="discovering-the-pac-mantzx-file">Discovering the Pac-Man.tzx File</h2>
 
-<p><strong>SpectNetIDE</strong> allows you to look into the structure of <strong>.TZX</strong> and <strong>.TAP</strong> files. Double click the <code class="highlighter-rouge">Pac-Man.tzx</code> node in Solution Explorer to look into its details:</p>
+<p><strong>SpectNetIDE</strong> allows you to look into the structure of <strong>.TZX</strong> and <strong>.TAP</strong> files. Double click the <code class="language-plaintext highlighter-rouge">Pac-Man.tzx</code> node in Solution Explorer to look into its details:</p>
 
 <p><img src="/kliveide/assets/images/pacman/pacman-in-explorer.png" alt="PacMan" /></p>
 
-<p>This dialog shows the Tape File Explorer window with the structure of <code class="highlighter-rouge">Pac-Man.tzx</code>. The left pane shows the data blocks of the file; the right pane displays the contents of the selected block. As the figure indicates, Pac-Man contains three <em>Standard Speed</em> data blocks. The first is the program header:</p>
+<p>This dialog shows the Tape File Explorer window with the structure of <code class="language-plaintext highlighter-rouge">Pac-Man.tzx</code>. The left pane shows the data blocks of the file; the right pane displays the contents of the selected block. As the figure indicates, Pac-Man contains three <em>Standard Speed</em> data blocks. The first is the program header:</p>
 
 <p><img src="/kliveide/assets/images/pacman/pacman-program-header.png" alt="PacMan" /></p>
 
@@ -620,7 +620,7 @@
   <p><strong>Note</strong>: You do not see the BASIC program instantly when you select the block. Move the mouse over the Data label, and click it to turn to the BASIC code view.</p>
 </blockquote>
 
-<p>So what is the result of the <code class="highlighter-rouge">PEEK 23635 + 256 * PEEK 23636 + 91</code> operation? The 23635 address stores the <code class="highlighter-rouge">PROG</code> system variable in two bytes, which retrieves the start address of the BASIC program in the memory. So, this expression shows that the machine code starts from the 92nd byte of the BASIC code that loads into the memory.</p>
+<p>So what is the result of the <code class="language-plaintext highlighter-rouge">PEEK 23635 + 256 * PEEK 23636 + 91</code> operation? The 23635 address stores the <code class="language-plaintext highlighter-rouge">PROG</code> system variable in two bytes, which retrieves the start address of the BASIC program in the memory. So, this expression shows that the machine code starts from the 92nd byte of the BASIC code that loads into the memory.</p>
 
 <h2 id="obtaining-the-loader-code">Obtaining the Loader Code</h2>
 
@@ -630,41 +630,41 @@
 
 <ol>
   <li>Stop the virtual machine.</li>
-  <li>Open the Z80 Disassembly window and set a breakpoint at #05e2 with the <code class="highlighter-rouge">SB 05E2</code> command.</li>
+  <li>Open the Z80 Disassembly window and set a breakpoint at #05e2 with the <code class="language-plaintext highlighter-rouge">SB 05E2</code> command.</li>
   <li>Start the virtual machine with the Start Debugging (F5) command.</li>
-  <li>Type the <code class="highlighter-rouge">LOAD ""</code> command to start loading Pac-Man.</li>
+  <li>Type the <code class="language-plaintext highlighter-rouge">LOAD ""</code> command to start loading Pac-Man.</li>
   <li>The machine will pause at #05E2 when the first data block is loaded, you can see the current breakpoint in the Z80 Disassembly window.</li>
   <li>While either the ZX Spectrum Emulator or the Z80 Disassembly window has the focus, press F5, and wait for the next pause. Now, the autoload code is already the memory.</li>
-  <li>Open the ZX Spectrum Memory window, and use the <code class="highlighter-rouge">G 5C53</code> command to navigate to the <code class="highlighter-rouge">PROG</code> system variable:</li>
+  <li>Open the ZX Spectrum Memory window, and use the <code class="language-plaintext highlighter-rouge">G 5C53</code> command to navigate to the <code class="language-plaintext highlighter-rouge">PROG</code> system variable:</li>
 </ol>
 
 <p><img src="/kliveide/assets/images/pacman/memory-with-prog-value.png" alt="PacMan" /></p>
 
-<p>As the figure shows, the value of the <code class="highlighter-rouge">PROG</code> variable is #5CCB. We know that the loader code can be found between offset 91 and 152, so it is between #5D26 and #5D63.</p>
+<p>As the figure shows, the value of the <code class="language-plaintext highlighter-rouge">PROG</code> variable is #5CCB. We know that the loader code can be found between offset 91 and 152, so it is between #5D26 and #5D63.</p>
 
 <p>Let’s disassemble that code with these steps:</p>
 
 <ol>
-  <li>Execute the <code class="highlighter-rouge">RD</code> command in the Z80 Disassembly view to re-disassembly the code freshly loaded in the RAM.</li>
-  <li>Use the <code class="highlighter-rouge">MD 5D26 5D64</code> command to tell the disassembler to display the range (note, the end address is exclusive) as Z80 instructions, and not as <code class="highlighter-rouge">.defb</code> pragmas.</li>
-  <li>With the <code class="highlighter-rouge">G 5D26</code> command, navigate to the beginning of the code.</li>
+  <li>Execute the <code class="language-plaintext highlighter-rouge">RD</code> command in the Z80 Disassembly view to re-disassembly the code freshly loaded in the RAM.</li>
+  <li>Use the <code class="language-plaintext highlighter-rouge">MD 5D26 5D64</code> command to tell the disassembler to display the range (note, the end address is exclusive) as Z80 instructions, and not as <code class="language-plaintext highlighter-rouge">.defb</code> pragmas.</li>
+  <li>With the <code class="language-plaintext highlighter-rouge">G 5D26</code> command, navigate to the beginning of the code.</li>
 </ol>
 
 <p>You can see the loader code in the disassembly view:</p>
 
 <p><img src="/kliveide/assets/images/pacman/loader-disassembly.png" alt="PacMan" /></p>
 
-<p>We can create a <code class="highlighter-rouge">.z80asm</code> file from the disassembly and add it to the project for future examination. Issue the <code class="highlighter-rouge">X 5D26 5D64</code> command in the disassembly view. The command pops up the Export Disassembly window:</p>
+<p>We can create a <code class="language-plaintext highlighter-rouge">.z80asm</code> file from the disassembly and add it to the project for future examination. Issue the <code class="language-plaintext highlighter-rouge">X 5D26 5D64</code> command in the disassembly view. The command pops up the Export Disassembly window:</p>
 
 <p><img src="/kliveide/assets/images/pacman/export-loader.png" alt="PacMan" /></p>
 
-<p>Change the default file name to <code class="highlighter-rouge">AutoLoad.z80asm</code> and click Export. SpectNetIDE adds the disassembly export to the project:</p>
+<p>Change the default file name to <code class="language-plaintext highlighter-rouge">AutoLoad.z80asm</code> and click Export. SpectNetIDE adds the disassembly export to the project:</p>
 
 <p><img src="/kliveide/assets/images/pacman/autoload-in-se.png" alt="PacMan" /></p>
 
-<p>Now, you can click <code class="highlighter-rouge">AutoLoad.z80asm</code> to re-engineer its contents.</p>
+<p>Now, you can click <code class="language-plaintext highlighter-rouge">AutoLoad.z80asm</code> to re-engineer its contents.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #5D26
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #5D26
 
 ; External symbols
 
@@ -712,7 +712,7 @@ L5D4B:
 
 <p>I analyzed this code; it was easy to decipher. I used the SpectNetIDE debugger to execute the code step-by-step. The comments tell you how it works:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #5D26
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #5D26
 
 ; External symbols
 
@@ -746,9 +746,9 @@ DECRYPT_CODE
 
 <p>This program contains a small encrypted routine that loads the last block from tape and starts it. The code above uses a decryption code (#77) to XOR this 37 bytes long code, that spans from #5D00 to #5D24, right before this loader section. After decrypting the loader code, it jumps to #5D00 and initiates loading the actual game, including the screen. You can see that the bytes after the #5D4B are not used at all.</p>
 
-<p>Here is the decrypted loader. I obtained it with the same techniques (the <code class="highlighter-rouge">SB</code>,  <code class="highlighter-rouge">MD</code>, <code class="highlighter-rouge">RS</code>, and <code class="highlighter-rouge">X</code> disassembly commands) as the previous code part. Before allowing the loader to run, I added a breakpoint to #5D00 and then exported the disassembly of the #5D00-#5D25 memory section.</p>
+<p>Here is the decrypted loader. I obtained it with the same techniques (the <code class="language-plaintext highlighter-rouge">SB</code>,  <code class="language-plaintext highlighter-rouge">MD</code>, <code class="language-plaintext highlighter-rouge">RS</code>, and <code class="language-plaintext highlighter-rouge">X</code> disassembly commands) as the previous code part. Before allowing the loader to run, I added a breakpoint to #5D00 and then exported the disassembly of the #5D00-#5D25 memory section.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #5D00
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  .org #5D00
 
   ld xh,#40         
   ld xl,#00          ; IX=#4000, load start address

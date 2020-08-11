@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Scripting the Audio | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Scripting the Audio" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="The IAudioConfiguration interface" />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-04T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Scripting the Audio","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/scripting-audio","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-audio"},"description":"The IAudioConfiguration interface","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/scripting-audio","headline":"Scripting the Audio","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-audio"},"description":"The IAudioConfiguration interface","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -878,10 +878,10 @@
             <div class="main-content-area">
               <h1 id="the-iaudioconfiguration-interface">The IAudioConfiguration interface</h1>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Abstraction.Devices</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Abstraction.Devices</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public interface IAudioSamplesDevice
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public interface IAudioSamplesDevice
 </code></pre></div></div>
 
 <p>This interface represents the configuration of the beeper/sound device. The object type that implements
@@ -889,50 +889,50 @@ it has these properties:</p>
 
 <h2 id="audiosamplerate">AudioSampleRate</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int AudioSampleRate { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int AudioSampleRate { get; }
 </code></pre></div></div>
 
 <p>The audio sample rate used to generate sound wave form.</p>
 
 <h2 id="tactspersample">TactsPerSample</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int TactsPerSample { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int TactsPerSample { get; }
 </code></pre></div></div>
 
 <p>The number of ULA tacts per audio sample.</p>
 
 <h2 id="samplesperframe">SamplesPerFrame</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int SamplesPerFrame { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>int SamplesPerFrame { get; }
 </code></pre></div></div>
 
-<p>The number of samples per ULA video frame. It’s value is the quotient of <code class="highlighter-rouge">AudioSampleRate</code>
-and <code class="highlighter-rouge">TacsPerSample</code>. However, because it is an integer value, certain frames contain this 
+<p>The number of samples per ULA video frame. It’s value is the quotient of <code class="language-plaintext highlighter-rouge">AudioSampleRate</code>
+and <code class="language-plaintext highlighter-rouge">TacsPerSample</code>. However, because it is an integer value, certain frames contain this 
 amount of audio samples, while other frames may contain one more sample.</p>
 
 <h1 id="the-audiosamples-class">The AudioSamples class</h1>
 
 <p>This class stores audio samples for the currently rendered virtual machine frame.</p>
 
-<p><strong>Namespace</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
-<strong>Assembly</strong>: <code class="highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
+<p><strong>Namespace</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code><br />
+<strong>Assembly</strong>: <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu</code></p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class AudioSamples
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public sealed class AudioSamples
 </code></pre></div></div>
 
 <h2 id="count">Count</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Count { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public int Count { get; }
 </code></pre></div></div>
 
 <p>Gets the number of samples stored</p>
 
 <h2 id="thisint">this[int]</h2>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public float this[int index] { get; }
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>public float this[int index] { get; }
 </code></pre></div></div>
 
-<p>Gets the sample at the specified <em><code class="highlighter-rouge">index</code></em>. Each sample is a float value between <code class="highlighter-rouge">0.0f</code> and <code class="highlighter-rouge">1.0f</code>.</p>
+<p>Gets the sample at the specified <em><code class="language-plaintext highlighter-rouge">index</code></em>. Each sample is a float value between <code class="language-plaintext highlighter-rouge">0.0f</code> and <code class="language-plaintext highlighter-rouge">1.0f</code>.</p>
 
             </div>
           </div>

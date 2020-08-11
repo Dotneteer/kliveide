@@ -12,9 +12,9 @@
     <link href="https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700&amp;subset=latin-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,300i,400,400i,700,700i" rel="stylesheet">
 
-    <!-- Begin Jekyll SEO tag v2.5.0 -->
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
 <title>Overview | Klive IDE</title>
-<meta name="generator" content="Jekyll v3.8.5" />
+<meta name="generator" content="Jekyll v3.9.0" />
 <meta property="og:title" content="Overview" />
 <meta property="og:locale" content="en_US" />
 <meta name="description" content="SpectNetIde is not just a simple ZX Spectrum emulator and a set of development tools integrated with Visual Studio, it offers a collection of .NET objects that you can use to automate ZX Spectrum related tasks." />
@@ -25,7 +25,7 @@
 <meta property="og:type" content="article" />
 <meta property="article:published_time" content="2019-01-04T00:00:00+01:00" />
 <script type="application/ld+json">
-{"@type":"BlogPosting","headline":"Overview","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","url":"http://localhost:4000/kliveide/documents/scripting-overview","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-overview"},"description":"SpectNetIde is not just a simple ZX Spectrum emulator and a set of development tools integrated with Visual Studio, it offers a collection of .NET objects that you can use to automate ZX Spectrum related tasks.","@context":"http://schema.org"}</script>
+{"@type":"BlogPosting","url":"http://localhost:4000/kliveide/documents/scripting-overview","headline":"Overview","dateModified":"2019-01-04T00:00:00+01:00","datePublished":"2019-01-04T00:00:00+01:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/kliveide/documents/scripting-overview"},"description":"SpectNetIde is not just a simple ZX Spectrum emulator and a set of development tools integrated with Visual Studio, it offers a collection of .NET objects that you can use to automate ZX Spectrum related tasks.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 
   </head>
@@ -887,7 +887,7 @@ application, finding out how a particular code works within
 special conditions — scripting makes it easy to automate
 mechanical tasks.</p>
 
-<p>The <code class="highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code> namespace provides a dozen of object types suited for automation. You can use these
+<p>The <code class="language-plaintext highlighter-rouge">Spect.Net.SpectrumEmu.Scripting</code> namespace provides a dozen of object types suited for automation. You can use these
 types from any .NET language, and scripting engines that support
 directly.</p>
 
@@ -904,7 +904,7 @@ contact me at <a href="mailto:dotneteer@hotmail.com">dotneteer@hotmail.com</a>.<
 <p>Just for the sake of demonstration, here is a short sample that sets
 the border to red, and checks that the screen is rendered accordingly:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>using System;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>using System;
 using System.Threading.Tasks;
 using Spect.Net.SpectrumEmu.Scripting;
 
@@ -946,17 +946,17 @@ namespace MyFirstScript
 
 <p>The script starts with creating a ZX Spectrum 48 virtual machine:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var sm = SpectrumVmFactory.CreateSpectrum48Pal();
 </code></pre></div></div>
 
 <p>Then the code starts the virtual machine (asynchronously in the background) and waits while it initializes the operating system, and enters into its main execution cycle:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>await sm.StartAndRunToMain();
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>await sm.StartAndRunToMain();
 </code></pre></div></div>
 
 <p>As it reaches the desired state, the virtual machine pauses. At this point, it is ready for code injection. As the next code snippet shows,  _SpectNetIde__ makes it extremely easy to inject source code into the machine:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var entryAddr = sm.InjectCode(@"
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var entryAddr = sm.InjectCode(@"
   .org #8000
   ld a,2       ; RED
   out (#FE),a  ; Set the border colour to red
@@ -968,19 +968,19 @@ namespace MyFirstScript
 
 <p>You can utilize the <a href="/kliveide/documents/language-structure.html">Z80 Assembler syntax</a>
 (the same as the IDE uses) to define the machine code to inject. 
-The <code class="highlighter-rouge">InjectCode()</code> method returns the entry address of the code, so
+The <code class="language-plaintext highlighter-rouge">InjectCode()</code> method returns the entry address of the code, so
 you can explicitly start the code in the virtual machine:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sm.CallCode(entryAddr);
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sm.CallCode(entryAddr);
 await sm.CompletionTask;
 </code></pre></div></div>
 
-<p>The <code class="highlighter-rouge">CallCode()</code> method continues the execution cycle of the machine and pauses it when the code returns. The <code class="highlighter-rouge">sm.CompletionTask</code> provides an awaiter to wait while the machine gets paused.</p>
+<p>The <code class="language-plaintext highlighter-rouge">CallCode()</code> method continues the execution cycle of the machine and pauses it when the code returns. The <code class="language-plaintext highlighter-rouge">sm.CompletionTask</code> provides an awaiter to wait while the machine gets paused.</p>
 
-<p>The last part of the code uses the <code class="highlighter-rouge">ScreenConfiguration</code> property to
-get information about the screen. The <code class="highlighter-rouge">ScreenBitmap</code> object can be used to check every pixel in the rendered screen (including the border pixels):</p>
+<p>The last part of the code uses the <code class="language-plaintext highlighter-rouge">ScreenConfiguration</code> property to
+get information about the screen. The <code class="language-plaintext highlighter-rouge">ScreenBitmap</code> object can be used to check every pixel in the rendered screen (including the border pixels):</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var screen = sm.ScreenConfiguration;
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>var screen = sm.ScreenConfiguration;
 var redCount = 0;
 for (var i = 0; i &lt; screen.ScreenLines; i++)
     for (var j = 0; j &lt; screen.ScreenWidth; j++)
@@ -994,7 +994,7 @@ Console.WriteLine($"#of border pixels: {borderPixels}");
 
 <p>When you start this code from Visual Studio, it produces this output:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Setting the border to red
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Setting the border to red
 #of red pixels: 52224
 #of border pixels: 52224
 </code></pre></div></div>
