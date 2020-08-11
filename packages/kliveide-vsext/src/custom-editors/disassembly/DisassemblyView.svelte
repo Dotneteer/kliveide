@@ -11,7 +11,6 @@
   let refreshed = false;
   let disassembling = false;
   let needScroll = null;
-  let needToScrollAfterDisassembly = null;
   let execState;
   let items = [];
   let breakpoints;
@@ -41,10 +40,6 @@
             }
             switch (ev.data.state) {
               case "paused":
-                if (oldState === "none" || !oldState) {
-                  needToScrollAfterDisassembly = ev.data.pc;
-                  break;
-                }
               case "stopped":
                 needScroll = ev.data.pc;
                 break;
@@ -75,47 +70,42 @@
     vscodeApi.postMessage({ command: "refresh" });
   });
 
-  $: {
-    if (!refreshed && connected) {
-      refreshDisassembly();
-    }
+  $: if (connected) {
+    refreshDisassembly();
   }
 
-  $: {
-    if (needScroll !== null && !disassembling) {
-      console.log(`Start scroll to ${needScroll}`);
-      scrollToAddress(needScroll);
-      needScroll = null;
-    }
+  $: if (needScroll !== null && refreshed) {
+    scrollToAddress(needScroll);
   }
 
   // --- Initiate refreshing the disassembly view
   // --- Take care not to start disassembling multiple times
   async function refreshDisassembly() {
-    if (disassembling) {
+    if (refreshed || disassembling) {
       return;
     }
     disassembling = true;
     try {
       const disass = await disassembly(0, 0xffff);
       items = disass.outputItems;
-      refreshed = true;
     } finally {
       disassembling = false;
     }
-    await new Promise((r) => setTimeout(r, 100));
-    if (needToScrollAfterDisassembly !== null) {
-      scrollToAddress(needToScrollAfterDisassembly);
-      needToScrollAfterDisassembly = null;
+    await tick();
+    await new Promise((r) => setTimeout(r, 50));
+    refreshed = true;
+    if (needScroll !== null) {
+      await scrollToAddress(needScroll);
     }
   }
 
   // --- Scroll to the specified address
-  function scrollToAddress(address) {
+  async function scrollToAddress(address) {
     if (api) {
       let found = items.findIndex((it) => it.address >= address);
       found = Math.max(0, found - 3);
       api.scrollToItem(found);
+      needScroll = null;
     }
   }
 </script>

@@ -3,14 +3,13 @@ import { spawn } from "child_process";
 import { KLIVEIDE, EMU_EXEC_PATH } from "../config/sections";
 import { communicatorInstance } from "../emulator/communicator";
 
-
 /**
  * This code starts the Klive Emulator if it is not already started yet
  */
 export async function startEmulator(): Promise<void> {
   try {
-    if ((await communicatorInstance.hello()) === "KliveEmu") {
-      // --- The emulator is already running
+    if (await communicatorInstance.hello()) {
+      // --- The Klive instance is started and initialized
       return;
     }
   } catch (err) {

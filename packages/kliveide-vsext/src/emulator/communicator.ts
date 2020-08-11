@@ -18,8 +18,23 @@ class Communicator {
   /**
    * Requests a hello message
    */
-  async hello(): Promise<string> {
-    return this.getText("/hello");
+  async hello(): Promise<boolean> {
+    let retryCount = 0;
+    while (retryCount < 10) {
+      // --- Get the hello response
+      const hello = await this.getText("/hello");
+
+      // --- The "KliveEmu" message signs that the emulator has been initialized.
+      if (hello === "KliveEmu") {
+        // --- The emulator started and initialized.
+        return true;
+      }
+
+      // --- Let's wait while the emulator initializes itself
+      await new Promise((r) => setTimeout(r, 200));
+      retryCount++;
+    }
+    return false;
   }
 
   /**

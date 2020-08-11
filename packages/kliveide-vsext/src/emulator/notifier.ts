@@ -70,13 +70,16 @@ export async function startNotifier(): Promise<void> {
 
   while (!cancelled) {
     try {
-      const frameInfo = await communicatorInstance.frameInfo();
-
-      // --- Sense connection restore
       if (!connected) {
-        connected = true;
-        connectionStateChanged.fire(connected);
+        // --- Restore lost connection
+        connected = await communicatorInstance.hello();
+        if (connected) {
+          connectionStateChanged.fire(connected);
+        }
       }
+
+      // --- Obtain frame information to detect changes
+      const frameInfo = await communicatorInstance.frameInfo();
 
       // --- Handle changes in frame ID
       if (

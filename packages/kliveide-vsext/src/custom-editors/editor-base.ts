@@ -15,8 +15,18 @@ import { ExecutionState } from "../emulator/communicator";
 const editorInstances: EditorProviderBase[] = [];
 let activeEditor: EditorProviderBase | null = null;
 
+/**
+ * Retrieves all registered editor providers
+ */
 export function getRegisteredEditors(): EditorProviderBase[] {
   return editorInstances;
+}
+
+/**
+ * Gets the active editor
+ */
+export function getActiveEditor(): EditorProviderBase | null {
+  return activeEditor;
 }
 
 /**
@@ -95,12 +105,16 @@ export abstract class EditorProviderBase
     };
     webviewPanel.webview.html = this.getHtmlContents(webviewPanel.webview);
 
+    // --- Keep track of the active editor
     const stateChangeDisposable = webviewPanel.onDidChangeViewState((ev) => {
       if (ev.webviewPanel.active) {
         activeEditor = this;
       }
     });
 
+    /**
+     * Update the view when the editor text changes
+     */
     const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
       (e) => {
         if (e.document.uri.toString() === document.uri.toString()) {
@@ -109,6 +123,7 @@ export abstract class EditorProviderBase
       }
     );
 
+    // --- Notify the view about vm execution state changes
     const execStateDisposable = onExecutionStateChanged((execState: ExecutionState) => {
       webviewPanel.webview.postMessage({
         viewNotification: "execState",
@@ -117,6 +132,7 @@ export abstract class EditorProviderBase
       });
     });
 
+    // --- Notify the view about emulator connection state changes
     const connectionStateDisposable = onConnectionStateChanged(
       (state: boolean) => {
         webviewPanel.webview.postMessage({
@@ -126,7 +142,7 @@ export abstract class EditorProviderBase
       }
     );
 
-    // Make sure we get rid of the listener when our editor is closed.
+    // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       const index = editorInstances.indexOf(this);
       if (index >= 0) {
@@ -138,7 +154,7 @@ export abstract class EditorProviderBase
       connectionStateDisposable.dispose();
     });
 
-    // Receive message from the webview
+    // --- Receive message from the webview
     webviewPanel.webview.onDidReceiveMessage(
       (e: ViewCommand | RendererMessage) => {
         if ((e as ViewCommand).command !== undefined) {

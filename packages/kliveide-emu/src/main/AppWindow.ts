@@ -117,7 +117,11 @@ export class AppWindow {
 
     // --- Set up main window events
     this._window.on("focus", () => {
-      electronLocalShortcut.register(this._window, ['CommandOrControl+R','CommandOrControl+Shift+R', 'F5'], () => {})
+      electronLocalShortcut.register(
+        this._window,
+        ["CommandOrControl+R", "CommandOrControl+Shift+R", "F5"],
+        () => {}
+      );
       mainProcessStore.dispatch(appGotFocusAction());
     });
     this._window.on("blur", () => {
@@ -154,6 +158,10 @@ export class AppWindow {
     this.window.on("show", () => {
       mainProcessStore.dispatch(restoreAppWindowAction());
     });
+    this._window.on("closed", () => {
+      // --- Release resources
+      this._window = null;
+    }); // --- Load the main file
 
     // --- Allow the `electron-windows-state` package to follow and save the
     // --- app window's state
@@ -164,11 +172,10 @@ export class AppWindow {
       RENDERER_MESSAGING_CHANNEL,
       (_ev: IpcMainEvent, message: RendererMessage) => {
         const response = processRendererMessage(message);
-        response.correlationId = message.correlationId
+        response.correlationId = message.correlationId;
         const allWebContents = webContents.getAllWebContents();
-        const pageContenst = webContents.length === 1
-          ? allWebContents[0]
-          : webContents.fromId(1);
+        const pageContenst =
+          webContents.length === 1 ? allWebContents[0] : webContents.fromId(1);
         if (!pageContenst) return;
         pageContenst.send(MAIN_MESSAGING_CHANNEL, response);
       }
@@ -186,7 +193,6 @@ export class AppWindow {
    * Loads the contenst of the main window
    */
   load(): void {
-    // --- Load the main file
     this._window.loadFile(path.join(__dirname, "index.html"));
   }
 

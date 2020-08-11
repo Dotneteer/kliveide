@@ -12,6 +12,7 @@ import { StateAwareObject } from "../shared/state/StateAwareObject";
 const defaultState: AppState = {
   appHasFocus: true,
   emulatorPanelState: {
+    engineInitialized: false,
     keyboardPanel: false,
     beamPosition: false,
     shadowScreen: false,

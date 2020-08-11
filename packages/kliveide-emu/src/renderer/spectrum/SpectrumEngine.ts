@@ -24,6 +24,7 @@ import {
   emulatorSetTapeContenstAction,
   emulatorSetFrameIdAction,
   emulatorSetMemoryContentsAction,
+  engineInitializedAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -90,6 +91,7 @@ export class SpectrumEngine {
     rendererProcessStore.dispatch(
       emulatorSetMemoryContentsAction(memContents)()
     );
+    rendererProcessStore.dispatch(engineInitializedAction());
   }
 
   /**

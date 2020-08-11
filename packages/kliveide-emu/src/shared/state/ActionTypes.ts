@@ -12,6 +12,7 @@ export interface ActionTypes {
   // --- Emulator panel actions
   EMULATOR_SET_ZOOM: null;
   EMULATOR_SET_SIZE: null;
+  EMULATOR_INITIALIZED: null;
   EMULATOR_SET_EXEC_STATE: null;
   EMULATOR_SET_TAPE_CONTENTS: null;
   EMULATOR_SHOW_KEYBOARD: null;
