@@ -7827,6 +7827,9 @@
   ;; 5: Screen rendering frame/ULA frame completed
   (global $executionCompletionReason (mut i32) (i32.const 0x0000))
 
+  ;; The step-over breakpoint
+  (global $stepOverBreakpoint (mut i32) (i32.const 0x0000))
+
   ;; ==========================================================================
   ;; Port device state
 
@@ -8162,16 +8165,19 @@
     (i32.load16_u offset=4 (get_global $STATE_TRANSFER_BUFF)) set_global $terminationPoint
     (i32.load8_u offset=6 (get_global $STATE_TRANSFER_BUFF)) set_global $fastVmMode
     (i32.load8_u offset=7 (get_global $STATE_TRANSFER_BUFF)) set_global $disableScreenRendering
+    (i32.load offset=8 (get_global $STATE_TRANSFER_BUFF)) set_global $stepOverBreakpoint
   )
+
 
   ;; Executes the ZX Spectrum machine cycle
   (func $executeMachineCycle
     (local $currentUlaTact i32)
+    (local $nextOpCode i32)
+    (local $length i32)
 
     ;; Initialize the execution cycle
     i32.const 0 set_global $executionCompletionReason
     get_global $contentionAccummulated set_global $lastExecutionContentionValue
-
 
     ;; The physical frame cycle that goes on while CPU and ULA
     ;; processes everything within a screen rendering frame
@@ -8244,6 +8250,16 @@
       if
         i32.const 2 set_global $executionCompletionReason ;; Reason: Break
         return
+      end
+
+      ;; Check step-ove mode
+      (i32.eq (get_global $debugStepMode) (i32.const 3))
+      if
+        (i32.eq (get_global $PC) (get_global $stepOverBreakpoint))
+        if
+          i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+          return
+        end
       end
 
       ;; Render the screen

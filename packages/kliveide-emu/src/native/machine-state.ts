@@ -224,7 +224,8 @@ export class ExecuteCycleOptions {
     public terminationRom: number = -1,
     public terminationPoint: number = -1,
     public fastVmMode: boolean = false,
-    public disableScreenRendering = false
+    public disableScreenRendering = false,
+    public stepOverBreakpoint = -1
   ) {}
 }
 

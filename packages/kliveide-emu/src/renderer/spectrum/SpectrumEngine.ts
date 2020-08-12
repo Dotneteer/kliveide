@@ -38,6 +38,11 @@ import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 const BEEPER_SAMPLE_BUFF = 0x0b_2200;
 
 /**
+ * Start of the ZX Spectrum memory buffer
+ */
+const SPECTRUM_MEM = 0x00_0000;
+
+/**
  * This class represents the engine of the ZX Spectrum,
  * which runs within the main process.
  */
@@ -414,9 +419,36 @@ export class SpectrumEngine {
    * Starts the virtual machine in step-over mode
    */
   async stepOver(): Promise<void> {
-    await this.run(
-      new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOver)
-    );
+    // --- Calculate the location of the step-over breakpoint
+    const mh = new MemoryHelper(this.spectrum.api, SPECTRUM_MEM);
+    const pc = this.getMachineState().pc;
+    const opCode = mh.readByte(pc);
+    let length = 0;
+    if (opCode === 0xCD) { // --- CALL
+      length = 3;
+    } else if ((opCode & 0xC7) === 0xC4) { // --- CALL with conditions
+      length = 3;
+    } else if ((opCode & 0xC7) === 0xC7) { // --- RST instruction
+      length = 1;
+    } else if (opCode === 0x76) { // --- HALT
+      length = 1;
+    } else if (opCode === 0xED) { // --- Block I/O and transfer
+      const extOpCode = mh.readByte(pc + 1);
+      length = (extOpCode & 0xB4) === 0xB0 ? 2 : 0;
+    }
+
+    // --- Calculate start options
+    let options: ExecuteCycleOptions
+
+    if (length > 0) {
+      // --- Use step-over mode
+      options = new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOver);
+      options.stepOverBreakpoint = pc + length;
+    } else {
+      // --- Use step-into mode
+      options = new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepInto);
+    }
+    await this.run(options);
   }
 
   /**
