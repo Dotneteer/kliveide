@@ -61,14 +61,25 @@
       {
         "command": "kliveide.goToAddress",
         "title": "Go To Address",
-        "key": "ctrl+g",
-        "mac": "cmd+g",
-        "when": "resourceFilename == view.disassembly"
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/go-to-file.svg",
+          "dark": "assets/icons/go-to-file_dark.svg"
+        }
       },
       {
         "command": "kliveide.sendTape",
         "title": "Send Tape to Emulator",
         "enablement": "kliveEmuConnected"
+      },
+      {
+        "command": "kliveide.refreshView",
+        "title": "Refresh View",
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/refresh.svg",
+          "dark": "assets/icons/refresh_dark.svg"
+        }
       }
     ],
     "menus": {
@@ -76,6 +87,18 @@
         {
           "command": "kliveide.sendTape",
           "when": "resourceExtname == .tap || resourceExtname == .tzx"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "kliveide.refreshView",
+          "when": "resourceFilename == view.disassembly",
+          "group": "navigation"
+        },
+        {
+          "command": "kliveide.goToAddress",
+          "when": "resourceFilename == view.disassembly",
+          "group": "navigation"
         }
       ]
     },

@@ -14,29 +14,18 @@ import { createKliveProject } from "./commands/create-klive-project";
 import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
 import { goToAddress } from "./commands/goto-address";
 import { sendTapeFile } from "./commands/send-tape-file";
+import { refreshView } from "./commands/refresh-view";
 
 export function activate(context: vscode.ExtensionContext) {
-  let startEmuCmd = vscode.commands.registerCommand(
-    "kliveide.startEmu",
-    async () => await startEmulator()
+  const register = vscode.commands.registerCommand;
+  const subs = context.subscriptions;
+  subs.push(
+    register("kliveide.startEmu", async () => await startEmulator()),
+    register("kliveide.createProject", () => createKliveProject(context)),
+    register("kliveide.goToAddress", () => goToAddress()),
+    register("kliveide.sendTape", (uri: vscode.Uri) => sendTapeFile(uri)),
+    register("kliveide.refreshView", () => refreshView()),
   );
-  context.subscriptions.push(startEmuCmd);
-
-  let createProjectCmd = vscode.commands.registerCommand(
-    "kliveide.createProject",
-    () => createKliveProject(context)
-  );
-  context.subscriptions.push(createProjectCmd);
-  let goToAddressCmd = vscode.commands.registerCommand(
-    "kliveide.goToAddress",
-    () => goToAddress()
-  );
-  context.subscriptions.push(goToAddressCmd);
-  let sendTapeCmd = vscode.commands.registerCommand(
-    "kliveide.sendTape",
-    (uri: vscode.Uri) => sendTapeFile(uri)
-  );
-  context.subscriptions.push(sendTapeCmd);
 
   const z80RegistersProvider = new Z80RegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);

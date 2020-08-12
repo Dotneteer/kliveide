@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { getActiveEditor } from "../custom-editors/editor-base";
 
-let lastLocation = 0;
+let lastLocation = "0";
 
 /**
  *
@@ -16,7 +16,7 @@ export async function goToAddress(): Promise<void> {
 
   // --- Ask for the address
   const result = await vscode.window.showInputBox({
-    value: lastLocation.toString(16),
+    value: lastLocation,
     prompt: "Specify a hexadecimal address to scroll to",
     placeHolder: "For example, 15f4",
     validateInput: (text) => {
@@ -33,6 +33,7 @@ export async function goToAddress(): Promise<void> {
     const address = Number.parseInt(result, 16);
     if (!isNaN(address) && address >= 0 && address <= 0xffff) {
       activeEditor.goToAddress(address);
+      lastLocation = result;
     }
   }
 }
