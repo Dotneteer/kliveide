@@ -8,6 +8,7 @@
   export let hasBreakpoint = true;
   export let isCurrentBreakpoint = true;
   export let execState;
+  export let runsInDebug;
 
   let referenceWidth = 0;
   let opCodesWidth = 0;
@@ -68,7 +69,8 @@
     address={item.address}
     {hasBreakpoint}
     {isCurrentBreakpoint}
-    {execState} />
+    {execState}
+    {runsInDebug} />
   <span class="address" bind:clientWidth={referenceWidth}>
     {intToX4(item.address)}&nbsp;
   </span>

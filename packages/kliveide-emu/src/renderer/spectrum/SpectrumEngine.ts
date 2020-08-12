@@ -28,6 +28,7 @@ import {
   emulatorSetFrameIdAction,
   emulatorSetMemoryContentsAction,
   engineInitializedAction,
+  emulatorSetDebugAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -372,6 +373,11 @@ export class SpectrumEngine {
 
     // --- Initialize debug info before run
     this.spectrum.api.markStepOverStack();
+
+    // --- Sign the current debug mode
+    rendererProcessStore.dispatch(
+      emulatorSetDebugAction(options.debugStepMode !== DebugStepMode.None)()
+    );
 
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;

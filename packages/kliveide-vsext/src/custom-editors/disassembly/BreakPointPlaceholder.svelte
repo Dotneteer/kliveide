@@ -4,6 +4,7 @@
   export let address;
   export let hasBreakpoint;
   export let isCurrentBreakpoint;
+  export let runsInDebug;
   export let size = 16;
   export let execState;
 
@@ -38,6 +39,10 @@
   }
 
   .breakpoint {
+    fill: var(--vscode-terminal-ansiMagenta);
+  }
+
+  .runsInDebug {
     fill: var(--vscode-terminal-ansiRed);
   }
 
@@ -51,12 +56,14 @@
 </style>
 
 <div
-  class="placeholder" class:brhover={!hasBreakpoint}
+  class="placeholder"
+  class:brhover={!hasBreakpoint}
   on:click={() => sendClickEvent(address)}
   title={hasBreakpoint ? 'Remove breakpoint' : 'Set breakpoint'}>
   {#if hasBreakpoint}
     <svg
       class="breakpoint"
+      class:runsInDebug
       width={size}
       height={size}
       viewBox="0 0 16 16"
@@ -75,7 +82,8 @@
   {/if}
   {#if isCurrentBreakpoint}
     <svg
-      class="current" class:stopped={execState === "stopped"}
+      class="current"
+      class:stopped={execState === 'stopped'}
       style="margin-left:-{size}px"
       width="16"
       height="16"

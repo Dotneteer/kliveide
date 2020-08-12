@@ -166,6 +166,7 @@ export interface FrameInfo {
   executionState?: number;
   breakpoints?: number[];
   pc?: number;
+  runsInDebug?: boolean;
 }
 
 /**
@@ -173,7 +174,8 @@ export interface FrameInfo {
  */
 export interface ExecutionState {
   state: string,
-  pc?: number
+  pc?: number,
+  runsInDebug?: boolean
 }
 
 /**

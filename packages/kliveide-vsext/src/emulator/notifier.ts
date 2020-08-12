@@ -104,11 +104,13 @@ export async function startNotifier(): Promise<void> {
       // --- Handle changes in execution state
       if (
         frameInfo.executionState !== lastFrameInfo.executionState ||
+        frameInfo.runsInDebug !== lastFrameInfo.runsInDebug ||
         frameInfo.startCount !== lastFrameInfo.startCount
       ) {
         executionStateChanged.fire({
           state: getExecutionStateName(frameInfo.executionState),
           pc: frameInfo.pc,
+          runsInDebug: frameInfo.runsInDebug
         });
       }
 

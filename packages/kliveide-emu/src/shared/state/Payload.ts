@@ -8,6 +8,7 @@ export interface Payload {
   height?: number;
   zoom?: number;
   executionState?: number;
+  runsInDebug?: boolean;
   tapeContents?: Uint8Array;
   shadowScreen?: boolean;
   beamPosition?: boolean;

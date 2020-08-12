@@ -39,6 +39,7 @@ export interface EmulatorPanelState {
   zoom?: number;
   engineInitialized?: boolean;
   executionState?: number;
+  runsInDebug?: boolean;
   tapeContents?: Uint8Array;
   keyboardPanel?: boolean;
   shadowScreen?: boolean;
