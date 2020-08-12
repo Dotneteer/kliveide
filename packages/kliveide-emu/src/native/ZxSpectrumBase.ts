@@ -249,6 +249,7 @@ export abstract class ZxSpectrumBase {
     mh.writeUint16(4, options.terminationPoint);
     mh.writeBool(6, options.fastVmMode);
     mh.writeBool(7, options.disableScreenRendering);
+    mh.writeUint32(8, options.stepOverBreakpoint);
     this.api.setExecutionOptions();
 
     // --- Run the cycle and retrieve state

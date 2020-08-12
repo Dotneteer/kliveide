@@ -127,7 +127,8 @@
     iconName="step-over"
     fill="lightblue"
     title="Step over"
-    enable={executionState === 3} />
+    enable={executionState === 3} 
+    on:clicked={async () => await spectrum.stepOver()} />
   <ToolbarIconButton
     iconName="step-out"
     fill="lightblue"
