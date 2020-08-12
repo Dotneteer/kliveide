@@ -130,6 +130,7 @@ export abstract class EditorProviderBase
           viewNotification: "execState",
           state: execState.state,
           pc: execState.pc,
+          runsInDebug: execState.runsInDebug
         });
       }
     );

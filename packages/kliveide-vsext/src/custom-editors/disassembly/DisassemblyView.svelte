@@ -15,6 +15,7 @@
   let needScroll = null;
   let scrollGap = 0;
   let execState;
+  let runsInDebug;
   let breakpoints;
   let currentPc;
 
@@ -41,6 +42,7 @@
             if (!execState) {
               refreshed = false;
             }
+            runsInDebug = ev.data.runsInDebug;
             switch (ev.data.state) {
               case "paused":
               case "stopped":
@@ -177,7 +179,8 @@
         {item}
         hasBreakpoint={breakpoints.has(item.address)}
         isCurrentBreakpoint={currentPc === item.address}
-        {execState} />
+        {execState}
+        {runsInDebug} />
     </VirtualList>
   {/if}
 </div>

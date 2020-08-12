@@ -56,7 +56,8 @@ export function startApiServer() {
       frameCount: emuState.frameCount,
       executionState: emuState.executionState,
       breakpoints: Array.from(state.breakpoints),
-      pc: vmInfo.registers?.pc ?? -1
+      pc: vmInfo.registers?.pc ?? -1,
+      runsInDebug: emuState.runsInDebug
     });
   });
 

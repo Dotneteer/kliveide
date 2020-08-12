@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
     register("kliveide.createProject", () => createKliveProject(context)),
     register("kliveide.goToAddress", () => goToAddress()),
     register("kliveide.sendTape", (uri: vscode.Uri) => sendTapeFile(uri)),
-    register("kliveide.refreshView", () => refreshView()),
+    register("kliveide.refreshView", () => refreshView())
   );
 
   const z80RegistersProvider = new Z80RegistersProvider();
@@ -32,10 +32,16 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.window.registerTreeDataProvider("z80Registers", z80RegistersProvider);
 
   // --- Notify entities about virtual machine frame information change
+  let refreshCounter = 0;
   onFrameInfoChanged(async (fi) => {
+    refreshCounter++;
+    if (refreshCounter % 10 !== 0) {
+      return;
+    }
     try {
       const regData = await communicatorInstance.getRegisters();
       z80RegistersProvider.refresh(regData);
+      console.log("Refresh");
     } catch (err) {
       // --- This exception in intentionally ignored
     }

@@ -4,7 +4,7 @@ import { appReducers } from "../shared/state/app-reducers";
 import {
   triggerAlias,
   forwardToRenderer,
-  replayActionMain
+  replayActionMain,
 } from "../shared/state/redux-core";
 import { StateAwareObject } from "../shared/state/StateAwareObject";
 
@@ -16,11 +16,12 @@ const defaultState: AppState = {
     keyboardPanel: false,
     beamPosition: false,
     shadowScreen: false,
-    fastLoad: false ,
-    executionState: 0   
+    fastLoad: false,
+    executionState: 0,
+    runsInDebug: false,
   },
   emulatorCommand: "",
-  breakpoints: []
+  breakpoints: [],
 };
 
 const spectNetApp = combineReducers(appReducers);

@@ -31,6 +31,7 @@ export interface ActionTypes {
   EMULATOR_MUTE: null;
   EMULATOR_UNMUTE: null;
   EMULATOR_SET_MEMORY_CONTENTS: null;
+  EMULATOR_SET_DEBUG: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
