@@ -1,8 +1,7 @@
 import { BinaryReader } from "../utils/BinaryReader";
 import { BinaryWriter } from "../utils/BinaryWriter";
-import { MachineApi } from "../../native/api";
-import { MemoryHelper } from "../../native/memory-helpers";
-import { off } from "process";
+import { MachineApi } from "../../native/api/api";
+import { MemoryHelper } from "../../native/api/memory-helpers";
 
 /**
  * The address of the tape data buffer

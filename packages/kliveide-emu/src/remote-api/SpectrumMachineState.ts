@@ -1,6 +1,6 @@
 import { BinaryReader } from "../shared/utils/BinaryReader";
-import { OpIndexMode, OpPrefixMode, Z80StateFlags } from "../native/cpu-helpers";
-import { ExecutionCompletionReason } from "../native/machine-state";
+import { OpIndexMode, OpPrefixMode, Z80StateFlags } from "../native/api/cpu-helpers";
+import { ExecutionCompletionReason } from "../native/api/machine-state";
 
 /**
  * This type represents all ZX Spectrum machine states

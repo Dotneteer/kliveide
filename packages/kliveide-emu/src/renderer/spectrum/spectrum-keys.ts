@@ -1,4 +1,4 @@
-import { SpectrumKeyCode } from "../../native/SpectrumKeyCode";
+import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
 
 /**
  * Provides an association between JavaScript key codes and keys
