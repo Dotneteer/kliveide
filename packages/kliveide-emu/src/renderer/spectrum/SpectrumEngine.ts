@@ -18,7 +18,10 @@ import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
 import { EmulatedKeyStroke } from "./spectrum-keys";
 import { MemoryHelper } from "../../native/api/memory-helpers";
 import { AudioRenderer } from "./AudioRenderer";
-import { rendererProcessStore } from "../rendererProcessStore";
+import {
+  rendererProcessStore,
+  createRendererProcessStateAware,
+} from "../rendererProcessStore";
 import {
   emulatorSetExecStateAction,
   emulatorSetTapeContenstAction,
@@ -86,6 +89,10 @@ export class SpectrumEngine {
   private _avgEngineTime = 0.0;
   private _renderedFrames = 0;
 
+  // --- State changes
+  private _stateAware = createRendererProcessStateAware("breakpoints");
+  private _oldBrpoints: number[] = [];
+
   /**
    * Initializes the engine with the specified ZX Spectrum instance
    * @param spectrum Spectrum VM to use
@@ -98,6 +105,24 @@ export class SpectrumEngine {
       emulatorSetMemoryContentsAction(memContents)()
     );
     rendererProcessStore.dispatch(engineInitializedAction());
+    this._stateAware.onStateChanged.on((state) => {
+      const brpoints = state as number[];
+      if (!brpoints) {
+        return;
+      }
+      const oldBreaks = this._oldBrpoints;
+      if (
+        oldBreaks.length !== brpoints.length ||
+        oldBreaks.some((item) => !brpoints.includes(item))
+      ) {
+        // --- Breakpoints changed, update them
+        this.spectrum.api.eraseBreakpoints();
+        for (const brpoint of Array.from(brpoints)) {
+          this.spectrum.api.setBreakpoint(brpoint);
+        }
+      }
+      this._oldBrpoints = brpoints;
+    });
   }
 
   /**
@@ -347,7 +372,7 @@ export class SpectrumEngine {
 
     // --- Initialize debug info before run
     this.spectrum.api.markStepOverStack();
-    
+
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
     this._cancelled = false;
@@ -430,29 +455,40 @@ export class SpectrumEngine {
     const pc = this.getMachineState().pc;
     const opCode = mh.readByte(pc);
     let length = 0;
-    if (opCode === 0xCD) { // --- CALL
+    if (opCode === 0xcd) {
+      // --- CALL
       length = 3;
-    } else if ((opCode & 0xC7) === 0xC4) { // --- CALL with conditions
+    } else if ((opCode & 0xc7) === 0xc4) {
+      // --- CALL with conditions
       length = 3;
-    } else if ((opCode & 0xC7) === 0xC7) { // --- RST instruction
+    } else if ((opCode & 0xc7) === 0xc7) {
+      // --- RST instruction
       length = 1;
-    } else if (opCode === 0x76) { // --- HALT
+    } else if (opCode === 0x76) {
+      // --- HALT
       length = 1;
-    } else if (opCode === 0xED) { // --- Block I/O and transfer
+    } else if (opCode === 0xed) {
+      // --- Block I/O and transfer
       const extOpCode = mh.readByte(pc + 1);
-      length = (extOpCode & 0xB4) === 0xB0 ? 2 : 0;
+      length = (extOpCode & 0xb4) === 0xb0 ? 2 : 0;
     }
 
     // --- Calculate start options
-    let options: ExecuteCycleOptions
+    let options: ExecuteCycleOptions;
 
     if (length > 0) {
       // --- Use step-over mode
-      options = new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOver);
+      options = new ExecuteCycleOptions(
+        EmulationMode.Debugger,
+        DebugStepMode.StepOver
+      );
       options.stepOverBreakpoint = pc + length;
     } else {
       // --- Use step-into mode
-      options = new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepInto);
+      options = new ExecuteCycleOptions(
+        EmulationMode.Debugger,
+        DebugStepMode.StepInto
+      );
     }
     await this.run(options);
   }
@@ -702,7 +738,7 @@ export class SpectrumEngine {
     if (tapReader.readContents()) {
       const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);
       this.spectrum.api.initTape(blocks);
-      return true
+      return true;
     }
     return false;
   }
