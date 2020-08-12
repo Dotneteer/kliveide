@@ -27,7 +27,7 @@ export interface AppState {
   /**
    * Breakpoint command to execute
    */
-  breakpoints?: Set<number>;
+  breakpoints?: number[];
 }
 
 /**

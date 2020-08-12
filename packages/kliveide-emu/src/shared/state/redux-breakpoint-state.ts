@@ -16,26 +16,26 @@ export const breakpointEraseAllAction = createAction("BREAKPOINT_ERASE_ALL");
  * @param action Action executed
  */
 export function breakpointsStateReducer(
-  state: Set<number> = new Set<number>(),
+  state: number[] = [],
   { type, payload }: SpectNetAction
-): Set<number> {
+): number[] {
   switch (type) {
     case "BREAKPOINT_SET":
       if (payload.breakpoints) {
         const newState = new Set<number>();
         for (const val of Array.from(state)) newState.add(val);
         for (const val of Array.from(payload.breakpoints)) newState.add(val);
-        return newState;
+        return Array.from(newState);
       }
     case "BREAKPOINT_REMOVE":
       if (payload.breakpoints) {
         const newState = new Set<number>();
         for (const val of Array.from(state)) newState.add(val);
         for (const val of Array.from(payload.breakpoints)) newState.delete(val);
-        return newState;
+        return Array.from(newState);
       }
     case "BREAKPOINT_ERASE_ALL":
-      return new Set<number>();
+      return [];
   }
   return state;
 }

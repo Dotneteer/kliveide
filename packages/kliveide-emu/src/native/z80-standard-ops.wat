@@ -1637,6 +1637,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; pop bc (0xc1)
@@ -1664,6 +1666,8 @@
 
 ;; call nz (0xc4)
 (func $CallNz
+  (local $oldPC i32)
+
   call $readAddrToWZ
   call $testZ
   if return end
@@ -1676,9 +1680,12 @@
   end
 
   get_global $PC
+  tee_local $oldPC
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; push bc (0xc5)
@@ -1696,12 +1703,16 @@
 
 ;; rst N (0xc7, 0xcf, 0xd7, 0xdf, 0xe7, 0xef, 0xf7, 0xff)
 (func $RstN
+  (local $oldPC i32)
   get_global $PC
+  tee_local $oldPC
   call $pushValue
   (i32.and (get_global $opCode) (i32.const 0x38))
   call $setWZ
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; ret nz (0xc8)
@@ -1714,6 +1725,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; ret (0xc9)
@@ -1722,6 +1735,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; jp z (0xca)
@@ -1743,6 +1758,7 @@
 
 ;; call z (0xcc)
 (func $CallZ
+  (local $oldPC i32)
   call $readAddrToWZ
   call $testNZ
   if return  end
@@ -1755,13 +1771,18 @@
   end
 
   get_global $PC
+  tee_local $oldPC
+
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; call (0xcd)
 (func $CallNN
+  (local $oldPC i32)
   call $readAddrToWZ
 
   ;; Adjust tacts
@@ -1772,9 +1793,12 @@
   end
 
   get_global $PC
+  tee_local $oldPC
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; adc a,N (0xce)
@@ -1795,6 +1819,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; pop de (0xd1)
@@ -1828,6 +1854,7 @@
 
 ;; call nc (0xd4)
 (func $CallNc
+  (local $oldPC i32)
   call $readAddrToWZ
   call $testC
   if return end
@@ -1840,9 +1867,13 @@
   end
 
   get_global $PC
+  tee_local $oldPC
+
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; push de (0xd5)
@@ -1869,6 +1900,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; exx (0xd9)
@@ -1929,6 +1962,7 @@
 
 ;; call c (0xdc)
 (func $CallC
+  (local $oldPC i32)
   call $readAddrToWZ
   call $testNC
   if return end
@@ -1941,9 +1975,13 @@
   end
 
   get_global $PC
+  tee_local $oldPC
+
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; DD prefix
@@ -1971,6 +2009,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; pop hl (0xe1)
@@ -2040,6 +2080,7 @@
 
 ;; call po (0xe4)
 (func $CallPo
+  (local $oldPC i32)
   call $readAddrToWZ
   call $testPE
   if return end
@@ -2052,9 +2093,13 @@
   end
 
   get_global $PC
+  tee_local $oldPC
+
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; push hl (0xe5)
@@ -2079,6 +2124,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; jp (hl) (0xe9)
@@ -2110,6 +2157,7 @@
 
 ;; call pe (0xec)
 (func $CallPe
+  (local $oldPC i32)
   call $readAddrToWZ
   call $testPO
   if return end
@@ -2122,9 +2170,13 @@
   end
 
   get_global $PC
+  tee_local $oldPC
+
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; ED prefix
@@ -2150,6 +2202,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; pop af (0xf1)
@@ -2176,6 +2230,7 @@
 
 ;; call p (0xf4)
 (func $CallP
+  (local $oldPC i32)
   call $readAddrToWZ
   call $testM
   if return end
@@ -2188,9 +2243,13 @@
   end
 
   get_global $PC
+  tee_local $oldPC
+
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; push af (0xf5)
@@ -2215,6 +2274,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; ld sp,hl
@@ -2243,6 +2304,7 @@
 
 ;; call m (0xfc)
 (func $CallM
+  (local $oldPC i32)
   call $readAddrToWZ
   call $testP
   if return end
@@ -2255,9 +2317,13 @@
   end
 
   get_global $PC
+  tee_local $oldPC
+
   call $pushValue
   call $getWZ
   call $setPC
+
+  (call $pushToStepOver (get_local $oldPC))
 )
 
 ;; FD prefix

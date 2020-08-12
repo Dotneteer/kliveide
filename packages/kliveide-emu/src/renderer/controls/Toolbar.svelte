@@ -133,7 +133,8 @@
     iconName="step-out"
     fill="lightblue"
     title="Step out"
-    enable={executionState === 3} />
+    enable={executionState === 3} 
+    on:clicked={async () => await spectrum.stepOut()} />
   <ToolbarSeparator />
   <ToolbarIconButton
     iconName="keyboard"

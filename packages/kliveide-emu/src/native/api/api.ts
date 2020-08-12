@@ -47,4 +47,6 @@ export interface MachineApi extends CpuApi {
   setBreakpoint(brpoint: number): void;
   removeBreakpoint(brpoint: number): void;
   testBreakpoint(brpoint: number): boolean;
+  resetStepOverStack(): void;
+  markStepOverStack(): void;
 }

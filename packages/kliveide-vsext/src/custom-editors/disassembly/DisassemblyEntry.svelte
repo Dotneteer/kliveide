@@ -57,9 +57,13 @@
     padding: 0px 7px;
     border: 1px solid var(--vscode-list-hoverBackground);
   }
+
+  .currentBreakpoint {
+    background-color: var(--vscode-list-hoverBackground);
+  }
 </style>
 
-<div class="item" on:click={() => dispatch('clicked')}>
+<div class="item" class:currentBreakpoint={isCurrentBreakpoint} on:click={() => dispatch('clicked')}>
   <BreakPointPlaceholder
     address={item.address}
     {hasBreakpoint}

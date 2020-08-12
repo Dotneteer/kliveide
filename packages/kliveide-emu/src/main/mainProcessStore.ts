@@ -20,7 +20,7 @@ const defaultState: AppState = {
     executionState: 0   
   },
   emulatorCommand: "",
-  breakpoints: new Set<number>()
+  breakpoints: []
 };
 
 const spectNetApp = combineReducers(appReducers);
