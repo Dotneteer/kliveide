@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { ZxSpectrumBase } from "../../native/ZxSpectrumBase";
+import { ZxSpectrumBase } from "../../native/api/ZxSpectrumBase";
 import {
   ExecutionState,
   ExecutionStateChangedArgs,
@@ -13,10 +13,10 @@ import {
   EmulationMode,
   DebugStepMode,
   SpectrumMachineStateBase,
-} from "../../native/machine-state";
-import { SpectrumKeyCode } from "../../native/SpectrumKeyCode";
+} from "../../native/api/machine-state";
+import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
 import { EmulatedKeyStroke } from "./spectrum-keys";
-import { MemoryHelper } from "../../native/memory-helpers";
+import { MemoryHelper } from "../../native/api/memory-helpers";
 import { AudioRenderer } from "./AudioRenderer";
 import { rendererProcessStore } from "../rendererProcessStore";
 import {
