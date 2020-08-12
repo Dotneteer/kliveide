@@ -563,15 +563,38 @@
     if
       i32.const 2 set_global $executionCompletionReason ;; Reason: Break
       return
-    end
-
-    ;; Check step-ove mode
-    (i32.eq (get_global $debugStepMode) (i32.const 3))
-    if
-      (i32.eq (get_global $PC) (get_global $stepOverBreakpoint))
+    else
+      ;; Check step-over mode
+      (i32.eq (get_global $debugStepMode) (i32.const 3))
       if
-        i32.const 2 set_global $executionCompletionReason ;; Reason: Break
-        return
+        (i32.eq (get_global $PC) (get_global $stepOverBreakpoint))
+        if
+          i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+          return
+        end
+      else
+        ;; Check step-out mode
+        (i32.eq (get_global $debugStepMode) (i32.const 4))
+        if
+          get_global $retExecuted
+          if
+            ;; Last statement was a RET. Is it the call frame we're looking for?
+            (i32.eq 
+              (get_global $stepOutStartDepth)
+              (i32.add (get_global $stepOutStackDepth) (i32.const 1))
+            )
+            if
+              ;; PC is the return address after RET
+              (i32.ne (get_global $PC) (get_global $stepOutAddress))
+              if
+                ;; Some invalid code is used, clear the step over stack
+                call $resetStepOverStack
+              end
+              i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+              return
+            end
+          end
+        end
       end
     end
 
