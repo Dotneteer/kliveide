@@ -495,6 +495,8 @@
   call $setWZ
   call $getWZ
   call $setPC
+
+  call $popFromStepOver
 )
 
 ;; im N

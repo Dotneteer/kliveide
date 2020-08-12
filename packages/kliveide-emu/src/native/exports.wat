@@ -39,4 +39,6 @@
 (export "setBreakpoint" (func $setBreakpoint))
 (export "removeBreakpoint" (func $removeBreakpoint))
 (export "testBreakpoint" (func $testBreakpoint))
+(export "resetStepOverStack" (func $resetStepOverStack))
+(export "markStepOverStack" (func $markStepOverStack))
 

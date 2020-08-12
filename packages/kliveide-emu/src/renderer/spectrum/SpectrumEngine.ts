@@ -340,8 +340,14 @@ export class SpectrumEngine {
       this._lastEngineTime = 0.0;
       this._avgEngineTime = 0.0;
       this._renderedFrames = 0;
+
+      // --- Clear debug information
+      this.spectrum.api.resetStepOverStack();
     }
 
+    // --- Initialize debug info before run
+    this.spectrum.api.markStepOverStack();
+    
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
     this._cancelled = false;

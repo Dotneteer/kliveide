@@ -162,7 +162,10 @@
 ;; 0x1F_4300 Breakpoints map
 (global $BREAKPOINT_MAP i32 (i32.const 0x1F_4300))
 
-;; 0x1F_6300 Next free slot
+;; 0x1F_6300 (512 bytes): Step-out stack
+(global $STEP_OUT_STACK i32 (i32.const 0x1F_6300))
+
+;; 0x1F_6500 Next free slot
 
 
 

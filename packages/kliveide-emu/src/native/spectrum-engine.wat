@@ -443,6 +443,9 @@
   get_global $TAPE_DATA_BUFFER set_global $tapeNextBlockPtr
   i32.const 0 set_global $tapePlayPhase
   i64.const 0 set_global $tapeStartTact
+
+  ;; Reset debugging state
+  i32.const 0 set_global $stepOutStackDepth
 )
 
 ;; Sets the ULA issue to use
