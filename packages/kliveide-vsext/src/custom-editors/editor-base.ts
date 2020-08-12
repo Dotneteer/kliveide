@@ -234,6 +234,18 @@ export abstract class EditorProviderBase
   }
 
   /**
+   * Instructs the view to refresh the view
+   * @param address Address to scroll to
+   */
+  refreshView(): void {
+    if (this._webviewPanel) {
+      this._webviewPanel.webview.postMessage({
+        viewNotification: "refreshView"
+      });
+    }
+  }
+
+  /**
    * Gets the specified path within the extension
    * @param {String[]} path Path within the extension
    */

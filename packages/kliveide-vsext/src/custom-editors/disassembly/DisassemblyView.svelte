@@ -7,21 +7,23 @@
 
   let name = "Klive IDE";
 
+  let items = [];
+
   let connected = true;
   let refreshed = false;
   let disassembling = false;
   let needScroll = null;
   let scrollGap = 0;
   let execState;
-  let items = [];
   let breakpoints;
   let currentPc;
 
   let virtualList;
   let itemHeight;
   let api;
+  let startItemIndex;
 
-  onMount(async () => {
+  onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", (ev) => {
       if (ev.data.viewNotification) {
@@ -68,8 +70,18 @@
             currentPc = ev.data.pc;
             break;
           case "goToAddress":
-            console.log(`Go To Address ${ev.data.address}`);
             needScroll = ev.data.address;
+            scrollGap = 0;
+            break;
+          case "refreshView":
+            try {
+              const item = items[startItemIndex + 1];
+              needScroll = item.address;
+            } catch (err) {
+              // --- This error is intentionally ignored
+              needScroll = 0;
+            }
+            refreshed = false;
             scrollGap = 0;
             break;
         }
@@ -79,7 +91,7 @@
     vscodeApi.postMessage({ command: "refresh" });
   });
 
-  $: if (connected) {
+  $: if (connected && !refreshed) {
     refreshDisassembly();
   }
 
@@ -160,7 +172,7 @@
       </p>
     </div>
   {:else}
-    <VirtualList {items} itemHeight={20} let:item bind:api>
+    <VirtualList {items} itemHeight={20} let:item bind:api bind:start={startItemIndex}>
       <DisassemblyEntry
         {item}
         hasBreakpoint={breakpoints.has(item.address)}
