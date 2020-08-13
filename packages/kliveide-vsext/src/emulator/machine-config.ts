@@ -2,10 +2,22 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 
-/**
- * The path of the configuration file within the workspace
- */
-export const MACHINE_CONFIG_FILE = ".spectrum/spectrum.machine";
+// ============================================================================
+// File and folder name constants
+
+// --- The location of spectrum system files
+export const SPECTRUM_FOLDER = ".spectrum";
+export const SPECTRUM_CONFIG_FILE = "spectrum.machine";
+export const SPECTRUM_CONFIG_FULL = path.join(SPECTRUM_FOLDER, SPECTRUM_CONFIG_FILE);
+export const TAPE_FOLDER = "tape";
+export const CODE_FOLDER = "code";
+export const MEMORY_FILE = "view.memory";
+export const DISASSEMBLY_FILE = "view.disassembly";
+export const BASIC_FILE = "view.basic";
+export const JETSET_TAPE = "jet-set-willy.tzx";
+export const JUNGLE_TAPE = "jungle-trouble.tzx";
+export const PACMAN_TAPE = "pac-man.tzx";
+export const TEMPLATE_PATH = "out/templates";
 
 /**
  * Disassembly file name
@@ -52,7 +64,7 @@ class MachineConfiguration {
     }
 
     try {
-      const configFile = path.join(projFolder, MACHINE_CONFIG_FILE);
+      const configFile = path.join(projFolder, SPECTRUM_CONFIG_FULL);
       if (!fs.existsSync(configFile)) {
         // --- No config file, postpone the configuration
         return;

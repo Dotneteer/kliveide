@@ -1,19 +1,20 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import { spectrumConfigurationInstance } from "../emulator/machine-config";
-
-export const TEMPLATE_PATH = "out/templates";
-export const SPECTRUM_FOLDER = ".spectrum";
-export const TAPE_FOLDER = "tape";
-export const CODE_FOLDER = "code";
-export const MACHINE_FILE = "spectrum.machine";
-export const MEMORY_FILE = "view.memory";
-export const DISASSEMBLY_FILE = "view.disassembly";
-export const BASIC_FILE = "view.basic";
-export const JETSET_TAPE = "jet-set-willy.tzx";
-export const JUNGLE_TAPE = "jungle-trouble.tzx";
-export const PACMAN_TAPE = "pac-man.tzx";
+import {
+  spectrumConfigurationInstance,
+  SPECTRUM_FOLDER,
+  SPECTRUM_CONFIG_FILE,
+  TEMPLATE_PATH,
+  MEMORY_FILE,
+  DISASSEMBLY_FILE,
+  BASIC_FILE,
+  TAPE_FOLDER,
+  CODE_FOLDER,
+  JETSET_TAPE,
+  JUNGLE_TAPE,
+  PACMAN_TAPE
+} from "../emulator/machine-config";
 
 /**
  * Creates the basic structure of a Klive project
@@ -41,9 +42,9 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
     fs.mkdirSync(spectrumFolder, { recursive: true });
     foldersCreated++;
   }
-  const machineFile = path.join(spectrumFolder, MACHINE_FILE);
+  const machineFile = path.join(spectrumFolder, SPECTRUM_CONFIG_FILE);
   if (!fs.existsSync(machineFile)) {
-    copyFile(path.join(templateFolder, MACHINE_FILE), machineFile);
+    copyFile(path.join(templateFolder, SPECTRUM_CONFIG_FILE), machineFile);
     machineFileJustCreated = true;
     filesCreated++;
     const contents = fs.readFileSync(machineFile, "utf8");
@@ -95,7 +96,8 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
   }
 
   // --- Provide the result message
-  let message = "The current project folder is already a Klive project. No new files or folders were added.";
+  let message =
+    "The current project folder is already a Klive project. No new files or folders were added.";
   if (filesCreated > 0 || foldersCreated > 0) {
     message = `Klive project created with ${foldersCreated || "no"} new folder${
       foldersCreated > 1 ? "s" : ""
