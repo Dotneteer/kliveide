@@ -13,6 +13,7 @@
     "5618": "PRINT_A_2",
     "28": "TEST_CHAR",
     "116": "CH_ADD_P1",
+    "149": "TOKEN_TABLE",
     "13147": "CALCULATE",
     "5790": "RESERVE",
     "72": "KEY_INT",
