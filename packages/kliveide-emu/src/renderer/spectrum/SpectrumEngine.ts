@@ -54,6 +54,7 @@ export class SpectrumEngine {
   private _vmState: ExecutionState = ExecutionState.None;
   private _isFirstStart: boolean = false;
   private _isFirstPause: boolean = false;
+  private _isDebugging: boolean = false;
   private _executionCycleError: Error | undefined;
   private _cancelled: boolean = false;
   private _justRestoredState: boolean = false;
@@ -157,7 +158,7 @@ export class SpectrumEngine {
     const oldState = this._vmState;
     this._vmState = newState;
     this._executionStateChanged.fire(
-      new ExecutionStateChangedArgs(oldState, newState)
+      new ExecutionStateChangedArgs(oldState, newState, this._isDebugging)
     );
     rendererProcessStore.dispatch(emulatorSetExecStateAction(this._vmState)());
   }
@@ -375,8 +376,9 @@ export class SpectrumEngine {
     this.spectrum.api.markStepOverStack();
 
     // --- Sign the current debug mode
+    this._isDebugging = options.debugStepMode !== DebugStepMode.None;
     rendererProcessStore.dispatch(
-      emulatorSetDebugAction(options.debugStepMode !== DebugStepMode.None)()
+      emulatorSetDebugAction(this._isDebugging)()
     );
 
     // --- Execute a single cycle

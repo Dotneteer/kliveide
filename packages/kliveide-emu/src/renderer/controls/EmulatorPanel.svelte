@@ -5,6 +5,8 @@
   import { getSpectrumEngine } from "../spectrum-loader";
   import { pcKeyNames, currentKeyMappings } from "../spectrum/spectrum-keys";
 
+  import EmulatorOverlay from "./EmulatorOverlay.svelte";
+
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
   let spectrum;
   let frameCount = 0;
@@ -22,9 +24,28 @@
   let clientHeight;
   let emulatorStyle;
 
+  let overlay = "Not started yet";
+  let overlayHidden = false;
+
   onMount(async () => {
     spectrum = await getSpectrumEngine();
     spectrum.screenRefreshed.on(onScreenRefreshed);
+    spectrum.executionStateChanged.on((arg) => {
+      switch (arg.newState) {
+        case 1:
+          overlay = arg.isDebug ? "Debug mode" : "";
+          break;
+        case 3:
+          overlay = "Paused";
+          break;
+        case 5:
+          overlay = "Stopped";
+          break;
+        default:
+          overlay = "";
+          break;
+      }
+    });
     width = spectrum.screenWidth;
     height = spectrum.screenHeight;
     calculateDimensions(clientWidth, clientHeight, width, height);
@@ -145,11 +166,16 @@
 </style>
 
 <svelte:window
-  on:keydown={e => handleKey(e, true)}
-  on:keyup={e => handleKey(e, false)} />
+  on:keydown={(e) => handleKey(e, true)}
+  on:keyup={(e) => handleKey(e, false)} />
 <div tabindex="-1" class="emulator-panel" bind:clientWidth bind:clientHeight>
-  <div class="emulator-screen" style={emulatorStyle}
-    on:click={() => { spectrum.spectrum.api.colorize(); displayScreenData();}}>
+  <div
+    class="emulator-screen"
+    style={emulatorStyle}
+    on:click={() => (overlayHidden = false)}>
+    {#if !overlayHidden}
+      <EmulatorOverlay text={overlay} on:hide={() => (overlayHidden = true)} />
+    {/if}
     <canvas bind:this={screen} />
     <canvas bind:this={shadowScreen} style="display:none" />
   </div>

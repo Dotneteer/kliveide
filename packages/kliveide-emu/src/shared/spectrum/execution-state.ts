@@ -44,5 +44,5 @@ export class ExecutionStateChangedArgs {
    * @param oldState Old virtual machine state
    * @param newState New virtual machione state
    */
-  constructor(public oldState: ExecutionState, public newState: ExecutionState) {}
+  constructor(public oldState: ExecutionState, public newState: ExecutionState, public isDebug: boolean) {}
 }
