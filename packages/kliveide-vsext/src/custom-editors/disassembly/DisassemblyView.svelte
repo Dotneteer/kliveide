@@ -1,16 +1,17 @@
 <script>
   import { onMount, tick, afterUpdate } from "svelte";
   import { disassembly } from "./DisassemblyView";
+  import { vscodeApi } from "../messaging/messaging-core";
+  import { DisassemblyAnnotation } from "../../disassembler/annotations";
   import VirtualList from "../controls/VirtualList.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
-  import { vscodeApi } from "../messaging/messaging-core";
 
   let name = "Klive IDE";
 
   let items = [];
 
   let connected = true;
-  let refreshed = false;
+  let refreshRequestCount = 0;
   let disassembling = false;
   let needScroll = null;
   let scrollGap = 0;
@@ -18,6 +19,8 @@
   let runsInDebug;
   let breakpoints;
   let currentPc;
+  let annotations;
+  let cancellationToken;
 
   let virtualList;
   let itemHeight;
@@ -33,14 +36,14 @@
             // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
-              refreshed = false;
+              refreshRequestCount++;
             }
             break;
           case "execState":
             // --- Respond to vm execution state changes
             const oldState = execState;
             if (!execState) {
-              refreshed = false;
+              refreshRequestCount++;
             }
             runsInDebug = ev.data.runsInDebug;
             switch (ev.data.state) {
@@ -77,14 +80,20 @@
             break;
           case "refreshView":
             try {
-              const item = items[startItemIndex + 1];
+              const item = items[startItemIndex];
               needScroll = item.address;
             } catch (err) {
               // --- This error is intentionally ignored
               needScroll = 0;
             }
-            refreshed = false;
+            refreshRequestCount++;
             scrollGap = 0;
+            break;
+          case "annotations":
+            annotations = DisassemblyAnnotation.deserialize(
+              ev.data.annotations
+            );
+            refreshRequestCount++;
             break;
         }
       }
@@ -93,33 +102,53 @@
     vscodeApi.postMessage({ command: "refresh" });
   });
 
-  $: if (connected && !refreshed) {
-    refreshDisassembly();
-  }
+  $: (async () => {
+    if (connected && refreshRequestCount) {
+      if (await refreshDisassembly()) {
+        refreshRequestCount--;
+      }
+    }
+  })();
 
-  $: if (needScroll !== null && refreshed) {
+  $: if (needScroll !== null && refreshRequestCount === 0) {
     scrollToAddress(needScroll);
   }
 
   // --- Initiate refreshing the disassembly view
   // --- Take care not to start disassembling multiple times
   async function refreshDisassembly() {
-    if (refreshed || disassembling) {
-      return;
+    // --- Cancel, if disassembly in progress, and start a new disassembly
+    if (cancellationToken) {
+      cancellationToken.cancelled = true;
     }
-    disassembling = true;
+
+    // --- Start a new disassembly
     try {
-      const disass = await disassembly(0, 0xffff);
+      cancellationToken = {
+        cancelled: false,
+      };
+      const disass = await disassembly(
+        0,
+        0xffff,
+        annotations,
+        cancellationToken
+      );
+      if (!disass) {
+        // --- This disassembly was cancelled
+        return false;
+      }
       items = disass.outputItems;
     } finally {
-      disassembling = false;
+      // --- Release the cancellation token
+      cancellationToken = null;
     }
+
     await tick();
     await new Promise((r) => setTimeout(r, 50));
-    refreshed = true;
     if (needScroll !== null) {
       await scrollToAddress(needScroll);
     }
+    return true;
   }
 
   // --- Scroll to the specified address
@@ -174,7 +203,12 @@
       </p>
     </div>
   {:else}
-    <VirtualList {items} itemHeight={20} let:item bind:api bind:start={startItemIndex}>
+    <VirtualList
+      {items}
+      itemHeight={20}
+      let:item
+      bind:api
+      bind:start={startItemIndex}>
       <DisassemblyEntry
         {item}
         hasBreakpoint={breakpoints.has(item.address)}

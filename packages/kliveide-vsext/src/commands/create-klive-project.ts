@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
+import { spectrumConfigurationInstance } from "../emulator/machine-config";
 
 export const TEMPLATE_PATH = "out/templates";
 export const SPECTRUM_FOLDER = ".spectrum";
 export const TAPE_FOLDER = "tape";
 export const CODE_FOLDER = "code";
+export const MACHINE_FILE = "spectrum.machine";
 export const MEMORY_FILE = "view.memory";
 export const DISASSEMBLY_FILE = "view.disassembly";
 export const BASIC_FILE = "view.basic";
@@ -31,12 +33,21 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
 
   let foldersCreated = 0;
   let filesCreated = 0;
+  let machineFileJustCreated = false;
 
   // --- Create the .spectrum folder and its contents
   const spectrumFolder = path.join(projFolder, SPECTRUM_FOLDER);
   if (!fs.existsSync(spectrumFolder)) {
     fs.mkdirSync(spectrumFolder, { recursive: true });
     foldersCreated++;
+  }
+  const machineFile = path.join(spectrumFolder, MACHINE_FILE);
+  if (!fs.existsSync(machineFile)) {
+    copyFile(path.join(templateFolder, MACHINE_FILE), machineFile);
+    machineFileJustCreated = true;
+    filesCreated++;
+    const contents = fs.readFileSync(machineFile, "utf8");
+    console.log(contents);
   }
   const memFile = path.join(spectrumFolder, MEMORY_FILE);
   if (!fs.existsSync(memFile)) {
@@ -91,10 +102,13 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
     } and ${filesCreated || "no"} new file${filesCreated > 1 ? "s" : ""}.`;
   }
   vscode.window.showInformationMessage(message);
+
+  // --- Configure the newly created machine from file
+  if (machineFileJustCreated && !spectrumConfigurationInstance.initialized) {
+    spectrumConfigurationInstance.initialize();
+  }
 }
 
 export function copyFile(src: string, dest: string): void {
-  var oldFile = fs.createReadStream(src);
-  var newFile = fs.createWriteStream(dest);
-  oldFile.pipe(newFile);
+  fs.copyFileSync(src, dest);
 }

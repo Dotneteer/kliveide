@@ -5,6 +5,7 @@
   export let hasBreakpoint;
   export let isCurrentBreakpoint;
   export let runsInDebug;
+  export let isPrefix;
   export let size = 16;
   export let execState;
 
@@ -27,7 +28,6 @@
     margin-right: 4px;
     flex-grow: 0;
     flex-shrink: 0;
-    cursor: pointer;
   }
 
   .brhover:hover {
@@ -36,6 +36,10 @@
     background-clip: padding-box;
     opacity: 0.4;
     border-radius: 50%;
+  }
+
+  .brpointer {
+    cursor: pointer;
   }
 
   .breakpoint {
@@ -57,10 +61,11 @@
 
 <div
   class="placeholder"
-  class:brhover={!hasBreakpoint}
+  class:brhover={!hasBreakpoint && !isPrefix}
+  class:brpointer={!isPrefix}
   on:click={() => sendClickEvent(address)}
-  title={hasBreakpoint ? 'Remove breakpoint' : 'Set breakpoint'}>
-  {#if hasBreakpoint}
+  title={isPrefix ? '' : hasBreakpoint ? 'Remove breakpoint' : 'Set breakpoint'}>
+  {#if hasBreakpoint && !isPrefix}
     <svg
       class="breakpoint"
       class:runsInDebug
