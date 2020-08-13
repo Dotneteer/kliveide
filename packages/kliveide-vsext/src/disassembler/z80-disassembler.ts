@@ -29,7 +29,7 @@ import { CancellationToken } from "../utils/cancellation";
  * Number of disassembler items to process in a batch before
  * allowing the event loop
  */
-const DISASSEMBLER_BATCH = 400;
+const DISASSEMBLER_BATCH = 100;
 
 /**
  * Spectrum disassembly item

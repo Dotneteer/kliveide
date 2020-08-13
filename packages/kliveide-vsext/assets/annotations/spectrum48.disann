@@ -8746,6 +8746,16 @@
       "startAddress": 15616,
       "endAddress": 16383,
       "sectionType": 2
+    },
+    {
+      "startAddress": 16384,
+      "endAddress": 23295,
+      "sectionType": 0
+    },
+    {
+      "startAddress": 23296,
+      "endAddress": 65535,
+      "sectionType": 2
     }
   ]
 }

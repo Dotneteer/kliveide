@@ -43,7 +43,7 @@
     let content_height = top - scrollTop;
     let i = start;
 
-    while (content_height < viewport_height && i < items.length) {
+    while (content_height < viewport_height + itemHeight && i < items.length) {
       let row = rows[i - start];
 
       if (!row) {
@@ -95,7 +95,7 @@
       y += height_map[i] || average_height;
       i += 1;
 
-      if (y > scrollTop + viewport_height) break;
+      if (y > scrollTop + viewport_height + itemHeight) break;
     }
 
     end = i;
