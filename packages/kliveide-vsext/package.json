@@ -20,10 +20,8 @@
   "main": "./out/extension.js",
   "icon": "assets/icon.png",
   "activationEvents": [
-    "onCommand:kliveide.startEmu",
     "onCommand:kliveide.createProject",
-    "onView:z80Registers",
-    "onCustomEditor:kliveide.disassemblyEditor"
+    "workspaceContains: **/.spectrum/spectrum.machine"
   ],
   "contributes": {
     "configuration": {

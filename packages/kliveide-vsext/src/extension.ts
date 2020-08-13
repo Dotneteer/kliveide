@@ -15,10 +15,16 @@ import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-e
 import { goToAddress } from "./commands/goto-address";
 import { sendTapeFile } from "./commands/send-tape-file";
 import { refreshView } from "./commands/refresh-view";
+import { spectrumConfigurationInstance } from "./emulator/machine-config";
 
 export function activate(context: vscode.ExtensionContext) {
   const register = vscode.commands.registerCommand;
   const subs = context.subscriptions;
+
+  // --- Initialize the machine from configuration
+  spectrumConfigurationInstance.initialize();
+  
+  // --- Register extension commands
   subs.push(
     register("kliveide.startEmu", async () => await startEmulator()),
     register("kliveide.createProject", () => createKliveProject(context)),
@@ -27,31 +33,10 @@ export function activate(context: vscode.ExtensionContext) {
     register("kliveide.refreshView", () => refreshView())
   );
 
+  // --- Tree provider to display Z80 registers
   const z80RegistersProvider = new Z80RegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);
   vscode.window.registerTreeDataProvider("z80Registers", z80RegistersProvider);
-
-  // --- Notify entities about virtual machine frame information change
-  let refreshCounter = 0;
-  onFrameInfoChanged(async (fi) => {
-    refreshCounter++;
-    if (refreshCounter % 10 !== 0) {
-      return;
-    }
-    try {
-      const regData = await communicatorInstance.getRegisters();
-      z80RegistersProvider.refresh(regData);
-      console.log("Refresh");
-    } catch (err) {
-      // --- This exception in intentionally ignored
-    }
-  });
-
-  // --- Notify entities about virtual machine execution state changes
-  onExecutionStateChanged(async () => {
-    const regData = await communicatorInstance.getRegisters();
-    z80RegistersProvider.refresh(regData);
-  });
 
   // --- Indicate the state of Klive Emulator in the status bar
   const vmStateItem = createVmStateStatusBarItem();
@@ -65,6 +50,9 @@ export function activate(context: vscode.ExtensionContext) {
   startNotifier();
 }
 
+/**
+ * Stop watching for notifications
+ */
 export function deactivate() {
   stopNotifier();
 }
