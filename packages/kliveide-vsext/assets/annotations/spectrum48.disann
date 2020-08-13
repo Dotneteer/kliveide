@@ -1,5 +1,5 @@
-﻿{
-  "Labels": {
+{
+  "labels": {
     "0": "START",
     "8": "ERROR_1",
     "16": "PRINT_A_1",
@@ -1085,7 +1085,7 @@
     "14429": "X_IS_0",
     "14442": "ONE"
   },
-  "Comments": {
+  "comments": {
     "654": "The initial key value for each line will be +2F, +2E,...,+28. (Eight lines.)",
     "11": "The address reached by the interpreter is copied to the error pointer before proceeding.",
     "28": "Find out if the character is printable. Return if it is so.",
@@ -6349,7 +6349,7 @@
     "16368": "~",
     "16376": "©"
   },
-  "PrefixComments": {
+  "prefixComments": {
     "149": "THE TOKEN TABLE: All the tokens used by the Spectrum are expanded by reference to this table. The last code of each token is 'inverted' by having its bit 7 set.",
     "19": "Unused",
     "37": "Unused",
@@ -7156,7 +7156,7 @@
     "23552": "System variables",
     "23744": "Reserved"
   },
-  "Literals": {
+  "literals": {
     "4780": [
       "$MainExecAddress"
     ],
@@ -7436,7 +7436,7 @@
       "MEM_4_1st"
     ]
   },
-  "LiteralReplacements": {
+  "literalReplacements": {
     "8": "CH_ADD",
     "11": "X_PTR",
     "24": "CH_ADD",
@@ -7866,886 +7866,886 @@
     "13901": "CURCHL",
     "13948": "BREG"
   },
-  "MemorySections": [
+  "memorySections": [
     {
-      "StartAddress": 0,
-      "EndAddress": 18,
-      "SectionType": 1
+      "startAddress": 0,
+      "endAddress": 18,
+      "sectionType": 1
     },
     {
-      "StartAddress": 19,
-      "EndAddress": 23,
-      "SectionType": 2
+      "startAddress": 19,
+      "endAddress": 23,
+      "sectionType": 2
     },
     {
-      "StartAddress": 24,
-      "EndAddress": 36,
-      "SectionType": 1
+      "startAddress": 24,
+      "endAddress": 36,
+      "sectionType": 1
     },
     {
-      "StartAddress": 37,
-      "EndAddress": 39,
-      "SectionType": 2
+      "startAddress": 37,
+      "endAddress": 39,
+      "sectionType": 2
     },
     {
-      "StartAddress": 40,
-      "EndAddress": 42,
-      "SectionType": 1
+      "startAddress": 40,
+      "endAddress": 42,
+      "sectionType": 1
     },
     {
-      "StartAddress": 43,
-      "EndAddress": 47,
-      "SectionType": 2
+      "startAddress": 43,
+      "endAddress": 47,
+      "sectionType": 2
     },
     {
-      "StartAddress": 48,
-      "EndAddress": 94,
-      "SectionType": 1
+      "startAddress": 48,
+      "endAddress": 94,
+      "sectionType": 1
     },
     {
-      "StartAddress": 95,
-      "EndAddress": 101,
-      "SectionType": 2
+      "startAddress": 95,
+      "endAddress": 101,
+      "sectionType": 2
     },
     {
-      "StartAddress": 102,
-      "EndAddress": 148,
-      "SectionType": 1
+      "startAddress": 102,
+      "endAddress": 148,
+      "sectionType": 1
     },
     {
-      "StartAddress": 149,
-      "EndAddress": 516,
-      "SectionType": 2
+      "startAddress": 149,
+      "endAddress": 516,
+      "sectionType": 2
     },
     {
-      "StartAddress": 517,
-      "EndAddress": 555,
-      "SectionType": 2
+      "startAddress": 517,
+      "endAddress": 555,
+      "sectionType": 2
     },
     {
-      "StartAddress": 556,
-      "EndAddress": 581,
-      "SectionType": 2
+      "startAddress": 556,
+      "endAddress": 581,
+      "sectionType": 2
     },
     {
-      "StartAddress": 582,
-      "EndAddress": 607,
-      "SectionType": 2
+      "startAddress": 582,
+      "endAddress": 607,
+      "sectionType": 2
     },
     {
-      "StartAddress": 608,
-      "EndAddress": 617,
-      "SectionType": 2
+      "startAddress": 608,
+      "endAddress": 617,
+      "sectionType": 2
     },
     {
-      "StartAddress": 618,
-      "EndAddress": 643,
-      "SectionType": 2
+      "startAddress": 618,
+      "endAddress": 643,
+      "sectionType": 2
     },
     {
-      "StartAddress": 644,
-      "EndAddress": 653,
-      "SectionType": 2
+      "startAddress": 644,
+      "endAddress": 653,
+      "sectionType": 2
     },
     {
-      "StartAddress": 654,
-      "EndAddress": 1133,
-      "SectionType": 1
+      "startAddress": 654,
+      "endAddress": 1133,
+      "sectionType": 1
     },
     {
-      "StartAddress": 1134,
-      "EndAddress": 1138,
-      "SectionType": 2
+      "startAddress": 1134,
+      "endAddress": 1138,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1139,
-      "EndAddress": 1143,
-      "SectionType": 2
+      "startAddress": 1139,
+      "endAddress": 1143,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1144,
-      "EndAddress": 1148,
-      "SectionType": 2
+      "startAddress": 1144,
+      "endAddress": 1148,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1149,
-      "EndAddress": 1153,
-      "SectionType": 2
+      "startAddress": 1149,
+      "endAddress": 1153,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1154,
-      "EndAddress": 1158,
-      "SectionType": 2
+      "startAddress": 1154,
+      "endAddress": 1158,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1159,
-      "EndAddress": 1163,
-      "SectionType": 2
+      "startAddress": 1159,
+      "endAddress": 1163,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1164,
-      "EndAddress": 1168,
-      "SectionType": 2
+      "startAddress": 1164,
+      "endAddress": 1168,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1169,
-      "EndAddress": 1173,
-      "SectionType": 2
+      "startAddress": 1169,
+      "endAddress": 1173,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1174,
-      "EndAddress": 1178,
-      "SectionType": 2
+      "startAddress": 1174,
+      "endAddress": 1178,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1179,
-      "EndAddress": 1183,
-      "SectionType": 2
+      "startAddress": 1179,
+      "endAddress": 1183,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1184,
-      "EndAddress": 1188,
-      "SectionType": 2
+      "startAddress": 1184,
+      "endAddress": 1188,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1189,
-      "EndAddress": 1193,
-      "SectionType": 2
+      "startAddress": 1189,
+      "endAddress": 1193,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1194,
-      "EndAddress": 1217,
-      "SectionType": 2
+      "startAddress": 1194,
+      "endAddress": 1217,
+      "sectionType": 2
     },
     {
-      "StartAddress": 1218,
-      "EndAddress": 2464,
-      "SectionType": 1
+      "startAddress": 1218,
+      "endAddress": 2464,
+      "sectionType": 1
     },
     {
-      "StartAddress": 2465,
-      "EndAddress": 2465,
-      "SectionType": 2
+      "startAddress": 2465,
+      "endAddress": 2465,
+      "sectionType": 2
     },
     {
-      "StartAddress": 2466,
-      "EndAddress": 2496,
-      "SectionType": 2
+      "startAddress": 2466,
+      "endAddress": 2496,
+      "sectionType": 2
     },
     {
-      "StartAddress": 2497,
-      "EndAddress": 2506,
-      "SectionType": 2
+      "startAddress": 2497,
+      "endAddress": 2506,
+      "sectionType": 2
     },
     {
-      "StartAddress": 2507,
-      "EndAddress": 2521,
-      "SectionType": 2
+      "startAddress": 2507,
+      "endAddress": 2521,
+      "sectionType": 2
     },
     {
-      "StartAddress": 2522,
-      "EndAddress": 2539,
-      "SectionType": 2
+      "startAddress": 2522,
+      "endAddress": 2539,
+      "sectionType": 2
     },
     {
-      "StartAddress": 2540,
-      "EndAddress": 2547,
-      "SectionType": 2
+      "startAddress": 2540,
+      "endAddress": 2547,
+      "sectionType": 2
     },
     {
-      "StartAddress": 2548,
-      "EndAddress": 2576,
-      "SectionType": 1
+      "startAddress": 2548,
+      "endAddress": 2576,
+      "sectionType": 1
     },
     {
-      "StartAddress": 2577,
-      "EndAddress": 2594,
-      "SectionType": 2
+      "startAddress": 2577,
+      "endAddress": 2594,
+      "sectionType": 2
     },
     {
-      "StartAddress": 2595,
-      "EndAddress": 3319,
-      "SectionType": 1
+      "startAddress": 2595,
+      "endAddress": 3319,
+      "sectionType": 1
     },
     {
-      "StartAddress": 3320,
-      "EndAddress": 3327,
-      "SectionType": 2
+      "startAddress": 3320,
+      "endAddress": 3327,
+      "sectionType": 2
     },
     {
-      "StartAddress": 3328,
-      "EndAddress": 3999,
-      "SectionType": 1
+      "startAddress": 3328,
+      "endAddress": 3999,
+      "sectionType": 1
     },
     {
-      "StartAddress": 4000,
-      "EndAddress": 4008,
-      "SectionType": 2
+      "startAddress": 4000,
+      "endAddress": 4008,
+      "sectionType": 2
     },
     {
-      "StartAddress": 4009,
-      "EndAddress": 5008,
-      "SectionType": 1
+      "startAddress": 4009,
+      "endAddress": 5008,
+      "sectionType": 1
     },
     {
-      "StartAddress": 5009,
-      "EndAddress": 5009,
-      "SectionType": 2
+      "startAddress": 5009,
+      "endAddress": 5009,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5010,
-      "EndAddress": 5011,
-      "SectionType": 2
+      "startAddress": 5010,
+      "endAddress": 5011,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5012,
-      "EndAddress": 5027,
-      "SectionType": 2
+      "startAddress": 5012,
+      "endAddress": 5027,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5028,
-      "EndAddress": 5045,
-      "SectionType": 2
+      "startAddress": 5028,
+      "endAddress": 5045,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5046,
-      "EndAddress": 5061,
-      "SectionType": 2
+      "startAddress": 5046,
+      "endAddress": 5061,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5062,
-      "EndAddress": 5073,
-      "SectionType": 2
+      "startAddress": 5062,
+      "endAddress": 5073,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5074,
-      "EndAddress": 5086,
-      "SectionType": 2
+      "startAddress": 5074,
+      "endAddress": 5086,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5087,
-      "EndAddress": 5100,
-      "SectionType": 2
+      "startAddress": 5087,
+      "endAddress": 5100,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5101,
-      "EndAddress": 5120,
-      "SectionType": 2
+      "startAddress": 5101,
+      "endAddress": 5120,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5121,
-      "EndAddress": 5131,
-      "SectionType": 2
+      "startAddress": 5121,
+      "endAddress": 5131,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5132,
-      "EndAddress": 5145,
-      "SectionType": 2
+      "startAddress": 5132,
+      "endAddress": 5145,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5146,
-      "EndAddress": 5161,
-      "SectionType": 2
+      "startAddress": 5146,
+      "endAddress": 5161,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5162,
-      "EndAddress": 5181,
-      "SectionType": 2
+      "startAddress": 5162,
+      "endAddress": 5181,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5182,
-      "EndAddress": 5198,
-      "SectionType": 2
+      "startAddress": 5182,
+      "endAddress": 5198,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5199,
-      "EndAddress": 5218,
-      "SectionType": 2
+      "startAddress": 5199,
+      "endAddress": 5218,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5219,
-      "EndAddress": 5229,
-      "SectionType": 2
+      "startAddress": 5219,
+      "endAddress": 5229,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5230,
-      "EndAddress": 5246,
-      "SectionType": 2
+      "startAddress": 5230,
+      "endAddress": 5246,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5247,
-      "EndAddress": 5262,
-      "SectionType": 2
+      "startAddress": 5247,
+      "endAddress": 5262,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5263,
-      "EndAddress": 5275,
-      "SectionType": 2
+      "startAddress": 5263,
+      "endAddress": 5275,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5276,
-      "EndAddress": 5291,
-      "SectionType": 2
+      "startAddress": 5276,
+      "endAddress": 5291,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5292,
-      "EndAddress": 5309,
-      "SectionType": 2
+      "startAddress": 5292,
+      "endAddress": 5309,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5310,
-      "EndAddress": 5323,
-      "SectionType": 2
+      "startAddress": 5310,
+      "endAddress": 5323,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5324,
-      "EndAddress": 5341,
-      "SectionType": 2
+      "startAddress": 5324,
+      "endAddress": 5341,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5342,
-      "EndAddress": 5355,
-      "SectionType": 2
+      "startAddress": 5342,
+      "endAddress": 5355,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5356,
-      "EndAddress": 5369,
-      "SectionType": 2
+      "startAddress": 5356,
+      "endAddress": 5369,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5370,
-      "EndAddress": 5383,
-      "SectionType": 2
+      "startAddress": 5370,
+      "endAddress": 5383,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5384,
-      "EndAddress": 5397,
-      "SectionType": 2
+      "startAddress": 5384,
+      "endAddress": 5397,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5398,
-      "EndAddress": 5412,
-      "SectionType": 2
+      "startAddress": 5398,
+      "endAddress": 5412,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5413,
-      "EndAddress": 5430,
-      "SectionType": 2
+      "startAddress": 5413,
+      "endAddress": 5430,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5431,
-      "EndAddress": 5432,
-      "SectionType": 2
+      "startAddress": 5431,
+      "endAddress": 5432,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5433,
-      "EndAddress": 5460,
-      "SectionType": 2
+      "startAddress": 5433,
+      "endAddress": 5460,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5461,
-      "EndAddress": 5550,
-      "SectionType": 1
+      "startAddress": 5461,
+      "endAddress": 5550,
+      "sectionType": 1
     },
     {
-      "StartAddress": 5551,
-      "EndAddress": 5555,
-      "SectionType": 2
+      "startAddress": 5551,
+      "endAddress": 5555,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5556,
-      "EndAddress": 5560,
-      "SectionType": 2
+      "startAddress": 5556,
+      "endAddress": 5560,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5561,
-      "EndAddress": 5565,
-      "SectionType": 2
+      "startAddress": 5561,
+      "endAddress": 5565,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5566,
-      "EndAddress": 5571,
-      "SectionType": 2
+      "startAddress": 5566,
+      "endAddress": 5571,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5572,
-      "EndAddress": 5573,
-      "SectionType": 1
+      "startAddress": 5572,
+      "endAddress": 5573,
+      "sectionType": 1
     },
     {
-      "StartAddress": 5574,
-      "EndAddress": 5587,
-      "SectionType": 2
+      "startAddress": 5574,
+      "endAddress": 5587,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5588,
-      "EndAddress": 5676,
-      "SectionType": 1
+      "startAddress": 5588,
+      "endAddress": 5676,
+      "sectionType": 1
     },
     {
-      "StartAddress": 5677,
-      "EndAddress": 5683,
-      "SectionType": 2
+      "startAddress": 5677,
+      "endAddress": 5683,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5684,
-      "EndAddress": 5774,
-      "SectionType": 1
+      "startAddress": 5684,
+      "endAddress": 5774,
+      "sectionType": 1
     },
     {
-      "StartAddress": 5775,
-      "EndAddress": 5776,
-      "SectionType": 2
+      "startAddress": 5775,
+      "endAddress": 5776,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5777,
-      "EndAddress": 5909,
-      "SectionType": 1
+      "startAddress": 5777,
+      "endAddress": 5909,
+      "sectionType": 1
     },
     {
-      "StartAddress": 5910,
-      "EndAddress": 5915,
-      "SectionType": 2
+      "startAddress": 5910,
+      "endAddress": 5915,
+      "sectionType": 2
     },
     {
-      "StartAddress": 5916,
-      "EndAddress": 6009,
-      "SectionType": 1
+      "startAddress": 5916,
+      "endAddress": 6009,
+      "sectionType": 1
     },
     {
-      "StartAddress": 6010,
-      "EndAddress": 6016,
-      "SectionType": 2
+      "startAddress": 6010,
+      "endAddress": 6016,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6017,
-      "EndAddress": 6727,
-      "SectionType": 1
+      "startAddress": 6017,
+      "endAddress": 6727,
+      "sectionType": 1
     },
     {
-      "StartAddress": 6728,
-      "EndAddress": 6777,
-      "SectionType": 2
+      "startAddress": 6728,
+      "endAddress": 6777,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6778,
-      "EndAddress": 6780,
-      "SectionType": 2
+      "startAddress": 6778,
+      "endAddress": 6780,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6781,
-      "EndAddress": 6784,
-      "SectionType": 2
+      "startAddress": 6781,
+      "endAddress": 6784,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6785,
-      "EndAddress": 6789,
-      "SectionType": 2
+      "startAddress": 6785,
+      "endAddress": 6789,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6790,
-      "EndAddress": 6793,
-      "SectionType": 2
+      "startAddress": 6790,
+      "endAddress": 6793,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6794,
-      "EndAddress": 6796,
-      "SectionType": 2
+      "startAddress": 6794,
+      "endAddress": 6796,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6797,
-      "EndAddress": 6799,
-      "SectionType": 2
+      "startAddress": 6797,
+      "endAddress": 6799,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6800,
-      "EndAddress": 6807,
-      "SectionType": 2
+      "startAddress": 6800,
+      "endAddress": 6807,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6808,
-      "EndAddress": 6811,
-      "SectionType": 2
+      "startAddress": 6808,
+      "endAddress": 6811,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6812,
-      "EndAddress": 6814,
-      "SectionType": 2
+      "startAddress": 6812,
+      "endAddress": 6814,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6815,
-      "EndAddress": 6817,
-      "SectionType": 2
+      "startAddress": 6815,
+      "endAddress": 6817,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6818,
-      "EndAddress": 6820,
-      "SectionType": 2
+      "startAddress": 6818,
+      "endAddress": 6820,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6821,
-      "EndAddress": 6823,
-      "SectionType": 2
+      "startAddress": 6821,
+      "endAddress": 6823,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6824,
-      "EndAddress": 6826,
-      "SectionType": 2
+      "startAddress": 6824,
+      "endAddress": 6826,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6827,
-      "EndAddress": 6829,
-      "SectionType": 2
+      "startAddress": 6827,
+      "endAddress": 6829,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6830,
-      "EndAddress": 6832,
-      "SectionType": 2
+      "startAddress": 6830,
+      "endAddress": 6832,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6833,
-      "EndAddress": 6836,
-      "SectionType": 2
+      "startAddress": 6833,
+      "endAddress": 6836,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6837,
-      "EndAddress": 6839,
-      "SectionType": 2
+      "startAddress": 6837,
+      "endAddress": 6839,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6840,
-      "EndAddress": 6842,
-      "SectionType": 2
+      "startAddress": 6840,
+      "endAddress": 6842,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6843,
-      "EndAddress": 6845,
-      "SectionType": 2
+      "startAddress": 6843,
+      "endAddress": 6845,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6846,
-      "EndAddress": 6848,
-      "SectionType": 2
+      "startAddress": 6846,
+      "endAddress": 6848,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6849,
-      "EndAddress": 6852,
-      "SectionType": 2
+      "startAddress": 6849,
+      "endAddress": 6852,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6853,
-      "EndAddress": 6856,
-      "SectionType": 2
+      "startAddress": 6853,
+      "endAddress": 6856,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6857,
-      "EndAddress": 6859,
-      "SectionType": 2
+      "startAddress": 6857,
+      "endAddress": 6859,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6860,
-      "EndAddress": 6862,
-      "SectionType": 2
+      "startAddress": 6860,
+      "endAddress": 6862,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6863,
-      "EndAddress": 6865,
-      "SectionType": 2
+      "startAddress": 6863,
+      "endAddress": 6865,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6866,
-      "EndAddress": 6869,
-      "SectionType": 2
+      "startAddress": 6866,
+      "endAddress": 6869,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6870,
-      "EndAddress": 6872,
-      "SectionType": 2
+      "startAddress": 6870,
+      "endAddress": 6872,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6873,
-      "EndAddress": 6875,
-      "SectionType": 2
+      "startAddress": 6873,
+      "endAddress": 6875,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6876,
-      "EndAddress": 6878,
-      "SectionType": 2
+      "startAddress": 6876,
+      "endAddress": 6878,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6879,
-      "EndAddress": 6879,
-      "SectionType": 2
+      "startAddress": 6879,
+      "endAddress": 6879,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6880,
-      "EndAddress": 6880,
-      "SectionType": 2
+      "startAddress": 6880,
+      "endAddress": 6880,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6881,
-      "EndAddress": 6881,
-      "SectionType": 2
+      "startAddress": 6881,
+      "endAddress": 6881,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6882,
-      "EndAddress": 6882,
-      "SectionType": 2
+      "startAddress": 6882,
+      "endAddress": 6882,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6883,
-      "EndAddress": 6886,
-      "SectionType": 2
+      "startAddress": 6883,
+      "endAddress": 6886,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6887,
-      "EndAddress": 6890,
-      "SectionType": 2
+      "startAddress": 6887,
+      "endAddress": 6890,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6891,
-      "EndAddress": 6891,
-      "SectionType": 2
+      "startAddress": 6891,
+      "endAddress": 6891,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6892,
-      "EndAddress": 6892,
-      "SectionType": 2
+      "startAddress": 6892,
+      "endAddress": 6892,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6893,
-      "EndAddress": 6893,
-      "SectionType": 2
+      "startAddress": 6893,
+      "endAddress": 6893,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6894,
-      "EndAddress": 6894,
-      "SectionType": 2
+      "startAddress": 6894,
+      "endAddress": 6894,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6895,
-      "EndAddress": 6895,
-      "SectionType": 2
+      "startAddress": 6895,
+      "endAddress": 6895,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6896,
-      "EndAddress": 6896,
-      "SectionType": 2
+      "startAddress": 6896,
+      "endAddress": 6896,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6897,
-      "EndAddress": 6900,
-      "SectionType": 2
+      "startAddress": 6897,
+      "endAddress": 6900,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6901,
-      "EndAddress": 6904,
-      "SectionType": 2
+      "startAddress": 6901,
+      "endAddress": 6904,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6905,
-      "EndAddress": 6907,
-      "SectionType": 2
+      "startAddress": 6905,
+      "endAddress": 6907,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6908,
-      "EndAddress": 6913,
-      "SectionType": 2
+      "startAddress": 6908,
+      "endAddress": 6913,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6914,
-      "EndAddress": 6917,
-      "SectionType": 2
+      "startAddress": 6914,
+      "endAddress": 6917,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6918,
-      "EndAddress": 6921,
-      "SectionType": 2
+      "startAddress": 6918,
+      "endAddress": 6921,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6922,
-      "EndAddress": 6927,
-      "SectionType": 2
+      "startAddress": 6922,
+      "endAddress": 6927,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6928,
-      "EndAddress": 6931,
-      "SectionType": 2
+      "startAddress": 6928,
+      "endAddress": 6931,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6932,
-      "EndAddress": 6934,
-      "SectionType": 2
+      "startAddress": 6932,
+      "endAddress": 6934,
+      "sectionType": 2
     },
     {
-      "StartAddress": 6935,
-      "EndAddress": 7168,
-      "SectionType": 1
+      "startAddress": 6935,
+      "endAddress": 7168,
+      "sectionType": 1
     },
     {
-      "StartAddress": 7169,
-      "EndAddress": 7180,
-      "SectionType": 2
+      "startAddress": 7169,
+      "endAddress": 7180,
+      "sectionType": 2
     },
     {
-      "StartAddress": 7181,
-      "EndAddress": 7656,
-      "SectionType": 1
+      "startAddress": 7181,
+      "endAddress": 7656,
+      "sectionType": 1
     },
     {
-      "StartAddress": 7657,
-      "EndAddress": 7657,
-      "SectionType": 2
+      "startAddress": 7657,
+      "endAddress": 7657,
+      "sectionType": 2
     },
     {
-      "StartAddress": 7658,
-      "EndAddress": 9122,
-      "SectionType": 1
+      "startAddress": 7658,
+      "endAddress": 9122,
+      "sectionType": 1
     },
     {
-      "StartAddress": 9123,
-      "EndAddress": 9140,
-      "SectionType": 4
+      "startAddress": 9123,
+      "endAddress": 9140,
+      "sectionType": 4
     },
     {
-      "StartAddress": 9141,
-      "EndAddress": 9621,
-      "SectionType": 1
+      "startAddress": 9141,
+      "endAddress": 9621,
+      "sectionType": 1
     },
     {
-      "StartAddress": 9622,
-      "EndAddress": 9646,
-      "SectionType": 2
+      "startAddress": 9622,
+      "endAddress": 9646,
+      "sectionType": 2
     },
     {
-      "StartAddress": 9647,
-      "EndAddress": 10132,
-      "SectionType": 1
+      "startAddress": 9647,
+      "endAddress": 10132,
+      "sectionType": 1
     },
     {
-      "StartAddress": 10133,
-      "EndAddress": 10159,
-      "SectionType": 2
+      "startAddress": 10133,
+      "endAddress": 10159,
+      "sectionType": 2
     },
     {
-      "StartAddress": 10160,
-      "EndAddress": 10172,
-      "SectionType": 2
+      "startAddress": 10160,
+      "endAddress": 10172,
+      "sectionType": 2
     },
     {
-      "StartAddress": 10173,
-      "EndAddress": 11628,
-      "SectionType": 1
+      "startAddress": 10173,
+      "endAddress": 11628,
+      "sectionType": 1
     },
     {
-      "StartAddress": 11629,
-      "EndAddress": 11631,
-      "SectionType": 4
+      "startAddress": 11629,
+      "endAddress": 11631,
+      "sectionType": 4
     },
     {
-      "StartAddress": 11632,
-      "EndAddress": 11761,
-      "SectionType": 1
+      "startAddress": 11632,
+      "endAddress": 11761,
+      "sectionType": 1
     },
     {
-      "StartAddress": 11762,
-      "EndAddress": 11763,
-      "SectionType": 4
+      "startAddress": 11762,
+      "endAddress": 11763,
+      "sectionType": 4
     },
     {
-      "StartAddress": 11764,
-      "EndAddress": 12996,
-      "SectionType": 1
+      "startAddress": 11764,
+      "endAddress": 12996,
+      "sectionType": 1
     },
     {
-      "StartAddress": 12997,
-      "EndAddress": 12999,
-      "SectionType": 2
+      "startAddress": 12997,
+      "endAddress": 12999,
+      "sectionType": 2
     },
     {
-      "StartAddress": 13000,
-      "EndAddress": 13003,
-      "SectionType": 2
+      "startAddress": 13000,
+      "endAddress": 13003,
+      "sectionType": 2
     },
     {
-      "StartAddress": 13004,
-      "EndAddress": 13005,
-      "SectionType": 2
+      "startAddress": 13004,
+      "endAddress": 13005,
+      "sectionType": 2
     },
     {
-      "StartAddress": 13006,
-      "EndAddress": 13010,
-      "SectionType": 2
+      "startAddress": 13006,
+      "endAddress": 13010,
+      "sectionType": 2
     },
     {
-      "StartAddress": 13011,
-      "EndAddress": 13014,
-      "SectionType": 2
+      "startAddress": 13011,
+      "endAddress": 13014,
+      "sectionType": 2
     },
     {
-      "StartAddress": 13015,
-      "EndAddress": 13146,
-      "SectionType": 3
+      "startAddress": 13015,
+      "endAddress": 13146,
+      "sectionType": 3
     },
     {
-      "StartAddress": 13147,
-      "EndAddress": 14006,
-      "SectionType": 1
+      "startAddress": 13147,
+      "endAddress": 14006,
+      "sectionType": 1
     },
     {
-      "StartAddress": 14007,
-      "EndAddress": 14018,
-      "SectionType": 4
+      "startAddress": 14007,
+      "endAddress": 14018,
+      "sectionType": 4
     },
     {
-      "StartAddress": 14019,
-      "EndAddress": 14107,
-      "SectionType": 1
+      "startAddress": 14019,
+      "endAddress": 14107,
+      "sectionType": 1
     },
     {
-      "StartAddress": 14108,
-      "EndAddress": 14110,
-      "SectionType": 4
+      "startAddress": 14108,
+      "endAddress": 14110,
+      "sectionType": 4
     },
     {
-      "StartAddress": 14111,
-      "EndAddress": 14240,
-      "SectionType": 1
+      "startAddress": 14111,
+      "endAddress": 14240,
+      "sectionType": 1
     },
     {
-      "StartAddress": 14241,
-      "EndAddress": 14248,
-      "SectionType": 4
+      "startAddress": 14241,
+      "endAddress": 14248,
+      "sectionType": 4
     },
     {
-      "StartAddress": 14249,
-      "EndAddress": 14428,
-      "SectionType": 1
+      "startAddress": 14249,
+      "endAddress": 14428,
+      "sectionType": 1
     },
     {
-      "StartAddress": 14429,
-      "EndAddress": 14443,
-      "SectionType": 4
+      "startAddress": 14429,
+      "endAddress": 14443,
+      "sectionType": 4
     },
     {
-      "StartAddress": 14444,
-      "EndAddress": 14444,
-      "SectionType": 4
+      "startAddress": 14444,
+      "endAddress": 14444,
+      "sectionType": 4
     },
     {
-      "StartAddress": 14445,
-      "EndAddress": 14445,
-      "SectionType": 1
+      "startAddress": 14445,
+      "endAddress": 14445,
+      "sectionType": 1
     },
     {
-      "StartAddress": 14446,
-      "EndAddress": 15615,
-      "SectionType": 0
+      "startAddress": 14446,
+      "endAddress": 15615,
+      "sectionType": 0
     },
     {
-      "StartAddress": 15616,
-      "EndAddress": 16383,
-      "SectionType": 2
+      "startAddress": 15616,
+      "endAddress": 16383,
+      "sectionType": 2
     }
   ]
 }

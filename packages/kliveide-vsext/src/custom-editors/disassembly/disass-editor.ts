@@ -1,4 +1,7 @@
 import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
+
 import {
   EditorProviderBase,
   ReplacementTuple,
@@ -10,6 +13,11 @@ import {
   onFrameInfoChanged,
 } from "../../emulator/notifier";
 import { FrameInfo, communicatorInstance } from "../../emulator/communicator";
+import { DisassemblyAnnotation } from "../../disassembler/annotations";
+import {
+  spectrumConfigurationInstance,
+  DISASS_ANN_FILE,
+} from "../../emulator/machine-config";
 
 export class DisassemblyEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.disassemblyEditor";
@@ -59,6 +67,15 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     _token: vscode.CancellationToken
   ): Promise<void> {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
+
+    // --- Get the annotation for the view
+    const annotations = this.getAnnotation();
+    if (annotations) {
+      webviewPanel.webview.postMessage({
+        viewNotification: "annotations",
+        annotations: annotations.serialize(),
+      });
+    }
 
     // --- Watch for breakpoint changes
     const breakpointsDisposable = onBreakpointsChanged(
@@ -124,5 +141,49 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       viewNotification: "breakpoints",
       breakpoints: getLastBreakpoints(),
     });
+  }
+
+  /**
+   * Gets the annotation for the current machine
+   * @param rom Optional ROM page
+   * @param bank Optional RAM bank
+   */
+  getAnnotation(rom?: number, bank?: number): DisassemblyAnnotation | null {
+    // --- Let's assume on open project folder
+    const folders = vscode.workspace.workspaceFolders;
+    const projFolder = folders ? folders[0].uri.fsPath : null;
+    if (!projFolder) {
+      return null;
+    }
+
+    rom = rom ?? 0;
+    try {
+      // --- Obtain the file for the annotations
+      let romAnnotationFile =
+        spectrumConfigurationInstance.configuration.annotations[rom];
+      if (romAnnotationFile.startsWith("#")) {
+        romAnnotationFile = this.getAssetsFileName(
+          path.join("annotations", romAnnotationFile.substr(1))
+        );
+      } else {
+        romAnnotationFile = path.join(projFolder, romAnnotationFile);
+      }
+
+      // --- Get root annotations from the file
+      const contents = fs.readFileSync(romAnnotationFile, "utf8");
+      const annotation = DisassemblyAnnotation.deserialize(contents);
+
+      // --- Get view annotation
+      const viewFilePath = path.join(projFolder, DISASS_ANN_FILE);
+      const viewContents = fs.readFileSync(viewFilePath, "utf8");
+      const viewAnnotation = DisassemblyAnnotation.deserialize(viewContents);
+      if (annotation && viewAnnotation) {
+        annotation.merge(viewAnnotation);
+      }
+      return annotation;
+    } catch (err) {
+      console.log(err);
+    }
+    return null;
   }
 }

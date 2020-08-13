@@ -21,7 +21,7 @@
     const charWidth = referenceWidth / 5;
     opCodesWidth = 14 * charWidth;
     labelWidth = 17 * charWidth;
-    instructionWidth = 41 * charWidth;
+    instructionWidth = 65 * charWidth;
   }
 </script>
 
@@ -30,6 +30,8 @@
     padding: 1px 8px;
     display: flex;
     flex-direction: row;
+    flex-grow: 0;
+    flex-shrink: 0;
     font-family: Consolas, "Courier New", monospace;
     font-size: 1.1em;
     overflow-x: hidden;

@@ -8,6 +8,11 @@ import * as fs from "fs";
 export const MACHINE_CONFIG_FILE = ".spectrum/spectrum.machine";
 
 /**
+ * Disassembly file name
+ */
+export const DISASS_ANN_FILE = ".spectrum/view.disassembly";
+
+/**
  * The default configuration file, if none is provided
  */
 export const DEFAULT_SPECTRUM_CONFIG: SpectrumConfig = {
