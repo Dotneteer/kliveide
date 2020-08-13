@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import { getNonce } from "./utils";
 import {
   onExecutionStateChanged,
   onConnectionStateChanged,
@@ -319,6 +318,19 @@ export abstract class EditorProviderBase
 }
 
 /**
+ * Create a nonce we can use in web views
+ */
+function getNonce() {
+  let text = "";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
+/**
  * This type defines a replacement tuple
  */
 export type ReplacementTuple = [string, string | vscode.Uri];
@@ -329,3 +341,4 @@ export type ReplacementTuple = [string, string | vscode.Uri];
 export interface ViewCommand {
   readonly command: string;
 }
+
