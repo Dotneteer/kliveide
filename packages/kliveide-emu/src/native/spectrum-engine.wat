@@ -547,6 +547,9 @@
       end
     end 
 
+    ;; Render the screen
+    (call $renderScreen (get_local $currentUlaTact))
+
     ;; Check breakpoints
     (i32.eq (get_global $debugStepMode) (i32.const 1))
     if
@@ -597,10 +600,6 @@
         end
       end
     end 
-
-
-    ;; Render the screen
-    (call $renderScreen (get_local $currentUlaTact))
 
     ;; Exit if halted and execution mode is UntilHalted
     (i32.eq (get_global $emulationMode) (i32.const 1))
