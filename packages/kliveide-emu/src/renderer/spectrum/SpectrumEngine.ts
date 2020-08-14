@@ -375,6 +375,7 @@ export class SpectrumEngine {
 
     // --- Initialize debug info before run
     this.spectrum.api.markStepOverStack();
+    this.spectrum.api.eraseMemoryWriteMap();
 
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
