@@ -107,7 +107,7 @@ export class SpectrumEngine {
       emulatorSetMemoryContentsAction(memContents)()
     );
     rendererProcessStore.dispatch(engineInitializedAction());
-    this._stateAware.onStateChanged.on((state) => {
+    this._stateAware.stateChanged.on((state) => {
       const brpoints = state as number[];
       if (!brpoints) {
         return;
@@ -548,10 +548,11 @@ export class SpectrumEngine {
       this._sumEngineTime += this._lastEngineTime;
       this._avgEngineTime = this._sumEngineTime / this._renderedFrames;
 
+      const resultState = (this._loadedState = machine.spectrum.getMachineState());
+
       // --- Check for user cancellation
       if (this._cancelled) return;
 
-      const resultState = (this._loadedState = machine.spectrum.getMachineState());
       const reason = resultState.executionCompletionReason;
 
       // --- Set data frequently queried
@@ -749,5 +750,12 @@ export class SpectrumEngine {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Colorize the currently rendered screen
+   */
+  colorize(): void {
+    this.spectrum.api.colorize();
   }
 }

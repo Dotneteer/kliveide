@@ -1,8 +1,12 @@
 <script>
+  // ==========================================================================
+  // Displays the overlay with the current Execution state
   import { createEventDispatcher } from "svelte";
 
+  // --- Display this text, provided it's not empty
   export let text = "Overlay";
 
+  // --- This control will dispatch a "hide" event on click
   const dispatch = createEventDispatcher();
 </script>
 

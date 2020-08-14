@@ -36,7 +36,7 @@
 
   // --- Respond to the event when app focus changes
   const stateAware = createRendererProcessStateAware();
-  stateAware.onStateChanged.on(async state => {
+  stateAware.stateChanged.on(async state => {
     // --- Change the UI according to state change
     const emuUi = state.emulatorPanelState;
     if (emuUi) {

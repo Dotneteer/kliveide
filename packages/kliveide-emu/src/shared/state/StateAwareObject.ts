@@ -9,7 +9,7 @@ export class StateAwareObject<TState = AppState> {
   private _unsubscribeFunc: Unsubscribe;
   private _previousState: TState;
   private _state: TState;
-  private _onStateChanged = new LiteEvent<TState>();
+  private _stateChanged = new LiteEvent<TState>();
 
   constructor(
     public readonly store: any,
@@ -25,7 +25,7 @@ export class StateAwareObject<TState = AppState> {
    */
   dispose(): void {
     this._unsubscribeFunc();
-    this._onStateChanged.release();
+    this._stateChanged.release();
   }
 
   /**
@@ -59,7 +59,7 @@ export class StateAwareObject<TState = AppState> {
     this._previousState = this._state;
     this._state = this.extractPartialState(state);
     if (this._previousState !== this._state) {
-      this._onStateChanged.fire(this._state);
+      this._stateChanged.fire(this._state);
     }
   }
 
@@ -82,7 +82,7 @@ export class StateAwareObject<TState = AppState> {
    * @param oldState Old state
    * @param newState New state
    */
-  get onStateChanged(): ILiteEvent<TState> {
-    return this._onStateChanged;
+  get stateChanged(): ILiteEvent<TState> {
+    return this._stateChanged;
   }
 }

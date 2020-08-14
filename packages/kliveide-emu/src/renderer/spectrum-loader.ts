@@ -58,7 +58,7 @@ export async function loadSpectrumEngine(): Promise<void> {
     spectrum.turnOnMachine();
     _spectrumEngine = new SpectrumEngine(spectrum);
     const stateAware = createRendererProcessStateAware();
-    stateAware.onStateChanged.on(async (state) => {
+    stateAware.stateChanged.on(async (state) => {
       if (processingChange) return;
       processingChange = true;
 
