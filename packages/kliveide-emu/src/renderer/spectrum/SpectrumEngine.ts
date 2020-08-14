@@ -366,6 +366,7 @@ export class SpectrumEngine {
       this._sumEngineTime = 0.0;
       this._lastEngineTime = 0.0;
       this._avgEngineTime = 0.0;
+      this._sumFrameTime = 0.0;
       this._renderedFrames = 0;
 
       // --- Clear debug information
