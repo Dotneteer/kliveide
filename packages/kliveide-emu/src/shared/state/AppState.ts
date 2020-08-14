@@ -49,6 +49,7 @@ export interface EmulatorPanelState {
   frameCount?: number;
   muted?: boolean;
   memoryContents?: Uint8Array;
+  memWriteMap?: Uint8Array;
 }
 
 /**
