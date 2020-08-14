@@ -533,8 +533,8 @@ export class SpectrumEngine {
   ): Promise<void> {
     const state = machine.spectrum.getMachineState();
     // --- Store the start time of the frame
-    const clockFreq = state.baseClockFrequency * state.clockMultiplier;
-    const nextFrameGap = (state.tactsInFrame / clockFreq) * 1000;
+    //const clockFreq = state.baseClockFrequency * state.clockMultiplier;
+    const nextFrameGap = (state.tactsInFrame / state.baseClockFrequency) * 1000;
     let nextFrameTime = performance.now() + nextFrameGap;
 
     // --- Execute the cycle until completed

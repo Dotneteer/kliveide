@@ -1757,7 +1757,7 @@
   (i64.add
     (i64.mul
       (i64.extend_u/i32 (get_global $frameCount))
-      (i64.extend_u/i32 (get_global $tactsInFrame))
+      (i64.extend_u/i32 (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier)))
     )
     (i64.extend_u/i32 (get_global $tacts))
   )
@@ -1793,7 +1793,7 @@
   (i64.add
     (i64.mul
       (i64.extend_u/i32 (get_global $frameCount))
-      (i64.extend_u/i32 (get_global $tactsInFrame))
+      (i64.extend_u/i32 (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier)))
     )
     (i64.extend_u/i32 (get_global $tacts))
   )
