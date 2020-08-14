@@ -117,6 +117,15 @@
             "filenamePattern": "view.disassembly"
           }
         ]
+      },
+      {
+        "viewType": "kliveide.memoryEditor",
+        "displayName": "Klive Memory Editor",
+        "selector": [
+          {
+            "filenamePattern": "view.memory"
+          }
+        ]
       }
     ]
   },

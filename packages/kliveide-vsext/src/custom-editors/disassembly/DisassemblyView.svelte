@@ -6,8 +6,6 @@
   import VirtualList from "../controls/VirtualList.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
 
-  let name = "Klive IDE";
-
   let items = [];
 
   let connected = true;

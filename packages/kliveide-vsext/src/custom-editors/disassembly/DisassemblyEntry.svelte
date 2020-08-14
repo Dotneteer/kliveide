@@ -1,6 +1,5 @@
 <script>
   import { afterUpdate, tick, createEventDispatcher } from "svelte";
-  import BreakpointPlaceholder from "./BreakPointPlaceholder.svelte";
   import BreakPointPlaceholder from "./BreakPointPlaceholder.svelte";
   import { intToX4 } from "../../disassembler/disassembly-helper";
 

@@ -16,6 +16,7 @@ import { goToAddress } from "./commands/goto-address";
 import { sendTapeFile } from "./commands/send-tape-file";
 import { refreshView } from "./commands/refresh-view";
 import { spectrumConfigurationInstance } from "./emulator/machine-config";
+import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 
 export function activate(context: vscode.ExtensionContext) {
   const register = vscode.commands.registerCommand;
@@ -45,6 +46,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // --- Register custom editors
   context.subscriptions.push(DisassemblyEditorProvider.register(context));
+  context.subscriptions.push(MemoryEditorProvider.register(context));
 
   // --- Start the notification mechanism
   startNotifier();
