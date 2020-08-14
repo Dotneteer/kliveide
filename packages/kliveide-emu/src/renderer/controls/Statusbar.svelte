@@ -18,6 +18,7 @@
   let avgEngineTimeStr = "---";
   let lastFrameTimeStr = "---";
   let avgFrameTimeStr = "---";
+  let renderedFramesStr = "---";
   function onScreenRefreshed() {
     const {
       lastEngineTime,
@@ -42,6 +43,7 @@
       minimumFractionDigits: 4,
       maximumFractionDigits: 4,
     });
+    renderedFramesStr = renderedFrames.toLocaleString();
   }
 </script>
 
@@ -84,16 +86,22 @@
 </style>
 
 <div class="statusbar">
-  <div class="section">
+  <div class="section" title="Engine time per frame (average/last)">
     <SvgIcon iconName="vm-running" width="16" height="16" fill={fillValue} />
     {#if spectrum}
       <span class="label">{avgEngineTimeStr} / {lastEngineTimeStr}</span>
     {/if}
   </div>
-  <div class="section">
+  <div class="section" title="Total time per frame (average/last)">
     <SvgIcon iconName="vm" width="16" height="16" fill={fillValue} />
     {#if spectrum}
       <span class="label">{avgFrameTimeStr} / {lastFrameTimeStr}</span>
+    {/if}
+  </div>
+  <div class="section" title="# of frames rendered since start">
+    <SvgIcon iconName="window" width="16" height="16" fill={fillValue} />
+    {#if spectrum}
+      <span class="label">{renderedFramesStr}</span>
     {/if}
   </div>
   <div class="placeholder"></div>

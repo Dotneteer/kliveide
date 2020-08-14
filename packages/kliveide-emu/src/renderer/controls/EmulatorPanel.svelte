@@ -109,8 +109,14 @@
     calculateDimensions(clientWidth, clientHeight, screenWidth, screenHeight);
   }
 
+  // --- We need to update beam positions whenever the state has been updated
   afterUpdate(() => {
-    calculateBoundariesForBeam();
+    if (showBeam) {
+      calculateBoundariesForBeam();
+    }
+    if (execState) {
+      displayScreenData();
+    }
   });
 
   // --- Calculates boundaries for the beam position
@@ -225,7 +231,7 @@
   }
 
   .emulator-screen {
-    background-color: yellow;
+    background-color: #404040;
   }
 </style>
 
