@@ -1,56 +1,77 @@
 <script>
+  // ==========================================================================
+  // This component implements the view for the Memory editor
+
   import { onMount, tick, afterUpdate } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
   import VirtualList from "../controls/VirtualList.svelte";
   import MemoryEntry from "./MemoryEntry.svelte";
   import { memory } from "./MemoryView";
 
+  // --- Disassembly items to display
   let items = [];
 
+  // --- Indicates if Klive emulator is connected
   let connected = true;
-  let refreshRequestCount = 0;
-  let needScroll = null;
-  let scrollGap = 0;
-  let execState;
-  let runsInDebug;
-  let cancellationToken;
 
-  let virtualList;
-  let itemHeight;
-  let api;
+  // --- Indicates if the view is refreshed
+  let refreshed = true;
+
+  // --- Hold a cancellable refresh token while disassembly is being refreshed
+  let refreshToken;
+
+  // --- Scroll position to apply after disassembly has been refreshed
+  let needScroll = null;
+
+  // --- Gap to apply during scroll operation
+  let scrollGap = 0;
+
+  // --- Virtual machine execution state
+  let execState;
+
+  // --- The API of the virtual list component
+  let virtualListApi;
+
+  // --- The index of the visible item at the top
   let startItemIndex;
+
+  let scrolling = false;
 
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", (ev) => {
       if (ev.data.viewNotification) {
         switch (ev.data.viewNotification) {
+          case "doRefresh":
+            // --- The Webview sends this request to refresh the view
+            refreshed = false;
+            restoreViewState();
+            break;
           case "connectionState":
             // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
-              refreshRequestCount++;
+              refreshed = false;
+              needScroll = 0;
             }
             break;
           case "execState":
             // --- Respond to vm execution state changes
-            const oldState = execState;
-            if (!execState) {
-              refreshRequestCount++;
-            }
-            runsInDebug = ev.data.runsInDebug;
             switch (
               ev.data.state
-              // TODO: Process state change
+              // TODO: Implement execution state changes
             ) {
             }
             execState = ev.data.state;
+            currentPc = ev.data.pc;
             break;
           case "goToAddress":
             needScroll = ev.data.address;
             scrollGap = 0;
             break;
           case "refreshView":
+            // --- Store the current top position to scroll back
+            // --- to that after refrehs
             try {
               const item = items[startItemIndex];
               needScroll = item.address;
@@ -58,7 +79,8 @@
               // --- This error is intentionally ignored
               needScroll = 0;
             }
-            refreshRequestCount++;
+            // --- Sign that a refresh is require
+            refreshed = false;
             scrollGap = 0;
             break;
         }
@@ -66,34 +88,31 @@
     });
 
     vscodeApi.postMessage({ command: "refresh" });
-    restoreViewState();
   });
 
   $: (async () => {
-    if (connected && refreshRequestCount) {
+    if (connected && !refreshed) {
       if (await refreshMemory()) {
-        refreshRequestCount--;
+        refreshed = true;
       }
-      saveViewState();
     }
   })();
 
-  $: if (needScroll !== null && refreshRequestCount === 0) {
+  $: if (needScroll !== null && refreshed) {
     scrollToAddress(needScroll);
-    saveViewState();
   }
 
   // --- Initiate refreshing the disassembly view
   // --- Take care not to start disassembling multiple times
   async function refreshMemory() {
     // --- Cancel, if disassembly in progress, and start a new disassembly
-    if (cancellationToken) {
-      cancellationToken.cancelled = true;
+    if (refreshToken) {
+      refreshToken.cancelled = true;
     }
 
     // --- Start a new disassembly
     try {
-      cancellationToken = {
+      refreshToken = {
         cancelled: false,
       };
       const lines = await memory();
@@ -103,7 +122,7 @@
       items = lines;
     } finally {
       // --- Release the cancellation token
-      cancellationToken = null;
+      refreshToken = null;
     }
 
     await tick();
@@ -116,18 +135,22 @@
 
   // --- Scroll to the specified address
   async function scrollToAddress(address) {
-    if (api) {
+    if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
       found = Math.max(0, found - scrollGap);
-      api.scrollToItem(found);
+      scrolling = true;
+      virtualListApi.scrollToItem(found);
+      await saveViewState();
+      scrolling = false;
       needScroll = null;
       scrollGap = 0;
     }
   }
 
   // --- Save the current view state
-  function saveViewState() {
-    const item = items[startItemIndex];
+  async function saveViewState() {
+    await tick();
+    const item = items[startItemIndex + 1];
     if (item) {
       vscodeApi.setState({ needScroll: item.address });
       console.log(`Saved: ${item.address}`);
@@ -173,7 +196,6 @@
   }
 </style>
 
-
 <div class="component">
   {#if !connected}
     <div class="disconnected">
@@ -189,9 +211,13 @@
       {items}
       itemHeight={20}
       let:item
-      bind:api
+      bind:api={virtualListApi}
       bind:start={startItemIndex}
-      on:scrolled={() => saveViewState()}>
+      on:scrolled={async () => {
+        if (!scrolling) {
+          await saveViewState();
+        }
+      }}>
       <MemoryEntry {item} />
     </VirtualList>
   {/if}

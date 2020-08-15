@@ -73,7 +73,9 @@ export class MemoryEditorProvider extends EditorProviderBase {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
-        this.sendExecutionStateToView(panel);
+        panel.webview.postMessage({
+          viewNotification: "doRefresh",
+        });
     }
   }
 }

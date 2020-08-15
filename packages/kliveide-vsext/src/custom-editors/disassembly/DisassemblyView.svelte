@@ -1,61 +1,86 @@
 <script>
+  // ==========================================================================
+  // This component implements the view for the Disassembly editor
+
   import { onMount, tick, afterUpdate } from "svelte";
   import { disassembly } from "./DisassemblyView";
   import { vscodeApi } from "../messaging/messaging-core";
   import { DisassemblyAnnotation } from "../../disassembler/annotations";
   import VirtualList from "../controls/VirtualList.svelte";
+  import RefreshPanel from "../controls/RefreshPanel.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
 
+  // --- Disassembly items to display
   let items = [];
 
+  // --- Indicates if Klive emulator is connected
   let connected = true;
-  let refreshRequestCount = 0;
-  let needScroll = null;
-  let scrollGap = 0;
-  let execState;
-  let runsInDebug;
-  let breakpoints;
-  let currentPc;
-  let annotations;
-  let cancellationToken;
 
-  let virtualList;
-  let itemHeight;
-  let api;
+  // --- Indicates if the view is refreshed
+  let refreshed = true;
+
+  // --- Hold a cancellable refresh token while disassembly is being refreshed
+  let refreshToken;
+
+  // --- Scroll position to apply after disassembly has been refreshed
+  let needScroll = null;
+
+  // --- Gap to apply during scroll operation
+  let scrollGap = 0;
+
+  // --- Virtual machine execution state
+  let execState;
+
+  // --- Indicates the the vm runs in debug mode
+  let runsInDebug;
+
+  // --- Breakpoints set
+  let breakpoints;
+
+  // --- The current value of the PC register
+  let currentPc;
+
+  // --- Disassembly annotations to apply
+  let annotations;
+
+  // --- The API of the virtual list component
+  let virtualListApi;
+
+  // --- The index of the visible item at the top
   let startItemIndex;
 
+  // --- Handle the event when the component is initialized
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", (ev) => {
       if (ev.data.viewNotification) {
+        // --- We listen only messages sent to this view
         switch (ev.data.viewNotification) {
+          case "doRefresh":
+            // --- The Webview sends this request to refresh the view
+            refreshed = false;
+            if (ev.data.annotations) {
+              annotations = DisassemblyAnnotation.deserialize(
+                ev.data.annotations
+              );
+            }
+            break;
           case "connectionState":
             // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
-              refreshRequestCount++;
-              console.log(`connectionState: ${refreshRequestCount}`);
+              refreshed = false;
+              needScroll = 0;
             }
             break;
           case "execState":
             // --- Respond to vm execution state changes
-            const oldState = execState;
-            if (!execState) {
-              refreshRequestCount++;
-              console.log(`execState: ${refreshRequestCount}`);
-            }
             runsInDebug = ev.data.runsInDebug;
             switch (ev.data.state) {
               case "paused":
               case "stopped":
                 needScroll = ev.data.pc;
                 scrollGap = 3;
-                break;
-              case "running":
-                if (oldState === "stopped" || oldState === "none") {
-                  needScroll = 0;
-                  scrollGap = 0;
-                }
                 break;
               case "none":
                 needScroll = 0;
@@ -78,6 +103,8 @@
             scrollGap = 0;
             break;
           case "refreshView":
+            // --- Store the current top position to scroll back
+            // --- to that after refrehs
             try {
               const item = items[startItemIndex];
               needScroll = item.address;
@@ -85,33 +112,28 @@
               // --- This error is intentionally ignored
               needScroll = 0;
             }
-            refreshRequestCount++;
-            console.log(`refreshView: ${refreshRequestCount}`);
+            // --- Sign that a refresh is require
+            refreshed = false;
             scrollGap = 0;
-            break;
-          case "annotations":
-            annotations = DisassemblyAnnotation.deserialize(
-              ev.data.annotations
-            );
-            refreshRequestCount++;
-            console.log(`annotations: ${refreshRequestCount}`);
             break;
         }
       }
     });
 
+    // --- No, the component is initialized, notify the Webview
+    // --- and ask it to refresh this view
     vscodeApi.postMessage({ command: "refresh" });
   });
 
   $: (async () => {
-    if (connected && refreshRequestCount) {
+    if (connected && !refreshed) {
       if (await refreshDisassembly()) {
-        refreshRequestCount--;
+        refreshed = true;
       }
     }
   })();
 
-  $: if (needScroll !== null && refreshRequestCount === 0) {
+  $: if (needScroll !== null && refreshed) {
     scrollToAddress(needScroll);
   }
 
@@ -119,21 +141,16 @@
   // --- Take care not to start disassembling multiple times
   async function refreshDisassembly() {
     // --- Cancel, if disassembly in progress, and start a new disassembly
-    if (cancellationToken) {
-      cancellationToken.cancelled = true;
+    if (refreshToken) {
+      refreshToken.cancelled = true;
     }
 
     // --- Start a new disassembly
     try {
-      cancellationToken = {
+      refreshToken = {
         cancelled: false,
       };
-      const disass = await disassembly(
-        0,
-        0xffff,
-        annotations,
-        cancellationToken
-      );
+      const disass = await disassembly(0, 0xffff, annotations, refreshToken);
       if (!disass) {
         // --- This disassembly was cancelled
         return false;
@@ -141,7 +158,7 @@
       items = disass.outputItems;
     } finally {
       // --- Release the cancellation token
-      cancellationToken = null;
+      refreshToken = null;
     }
 
     await tick();
@@ -154,10 +171,10 @@
 
   // --- Scroll to the specified address
   async function scrollToAddress(address) {
-    if (api) {
+    if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
       found = Math.max(0, found - scrollGap);
-      api.scrollToItem(found);
+      virtualListApi.scrollToItem(found);
       needScroll = null;
       scrollGap = 0;
     }
@@ -204,11 +221,13 @@
       </p>
     </div>
   {:else}
+    <RefreshPanel {refreshed}
+      text="Refreshing Z80 Disassembly view..." />
     <VirtualList
       {items}
       itemHeight={20}
       let:item
-      bind:api
+      bind:api={virtualListApi}
       bind:start={startItemIndex}>
       <DisassemblyEntry
         {item}

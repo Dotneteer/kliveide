@@ -19,9 +19,19 @@ import {
   DISASS_ANN_FILE,
 } from "../../emulator/machine-config";
 
+/**
+ * This provide implements the functionality of the Disassembly Editor
+ */
 export class DisassemblyEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.disassemblyEditor";
 
+  // --- This map stores the annotations for a particular webview
+  private _annotations = new Map<vscode.WebviewPanel, DisassemblyAnnotation>();
+
+  /**
+   * Registers this editor provider
+   * @param context Extension context
+   */
   static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new DisassemblyEditorProvider(context);
     const providerRegistration = vscode.window.registerCustomEditorProvider(
@@ -71,10 +81,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     // --- Get the annotation for the view
     const annotations = this.getAnnotation();
     if (annotations) {
-      webviewPanel.webview.postMessage({
-        viewNotification: "annotations",
-        annotations: annotations.serialize(),
-      });
+      this._annotations.set(webviewPanel, annotations);
     }
 
     // --- Watch for breakpoint changes
@@ -120,7 +127,12 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   ): void {
     switch (viewCommand.command) {
       case "refresh":
-        // --- Send breakpoint info to the view
+        // --- Send the refresh command to the view
+        const annotations = this._annotations.get(panel);
+        panel.webview.postMessage({
+          viewNotification: "doRefresh",
+          annotations: annotations ? annotations.serialize() : null,
+        });
         this.sendExecutionStateToView(panel);
         this.sendBreakpointsToView(panel);
         break;
