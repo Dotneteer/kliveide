@@ -27,7 +27,6 @@ export function setZ80RegisterProvider(provider: Z80RegistersProvider): void {
     try {
       const regData = await communicatorInstance.getRegisters();
       z80RegistersProvider.refresh(regData);
-      console.log("Refresh");
     } catch (err) {
       // --- This exception in intentionally ignored
     }

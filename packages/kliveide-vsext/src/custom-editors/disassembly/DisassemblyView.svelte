@@ -10,7 +10,6 @@
 
   let connected = true;
   let refreshRequestCount = 0;
-  let disassembling = false;
   let needScroll = null;
   let scrollGap = 0;
   let execState;
@@ -35,6 +34,7 @@
             connected = ev.data.state;
             if (!connected) {
               refreshRequestCount++;
+              console.log(`connectionState: ${refreshRequestCount}`);
             }
             break;
           case "execState":
@@ -42,6 +42,7 @@
             const oldState = execState;
             if (!execState) {
               refreshRequestCount++;
+              console.log(`execState: ${refreshRequestCount}`);
             }
             runsInDebug = ev.data.runsInDebug;
             switch (ev.data.state) {
@@ -85,6 +86,7 @@
               needScroll = 0;
             }
             refreshRequestCount++;
+            console.log(`refreshView: ${refreshRequestCount}`);
             scrollGap = 0;
             break;
           case "annotations":
@@ -92,6 +94,7 @@
               ev.data.annotations
             );
             refreshRequestCount++;
+            console.log(`annotations: ${refreshRequestCount}`);
             break;
         }
       }

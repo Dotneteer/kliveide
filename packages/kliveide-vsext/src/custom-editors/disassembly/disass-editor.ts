@@ -68,8 +68,6 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   ): Promise<void> {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
 
-    console.log("resolveCustomTextEditor called.");
-
     // --- Get the annotation for the view
     const annotations = this.getAnnotation();
     if (annotations) {
@@ -107,7 +105,6 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
 
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
-      console.log("Calling dispose.");
       super.disposePanel(webviewPanel);
     });
   }
@@ -140,7 +137,6 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    * Sends the current breakpoints to the webview
    */
   protected sendBreakpointsToView(panel: vscode.WebviewPanel): void {
-    console.log("sendBreakpointsToView called.");
     panel.webview.postMessage({
       viewNotification: "breakpoints",
       breakpoints: getLastBreakpoints(),

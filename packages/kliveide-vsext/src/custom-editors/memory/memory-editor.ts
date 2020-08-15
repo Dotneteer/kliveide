@@ -66,9 +66,14 @@ export class MemoryEditorProvider extends EditorProviderBase {
    * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  processViewCommand(panel: vscode.WebviewPanel, viewCommand: ViewCommand): void {
+  processViewCommand(
+    panel: vscode.WebviewPanel,
+    viewCommand: ViewCommand
+  ): void {
     switch (viewCommand.command) {
-        // TODO: Implement commands
+      case "refresh":
+        // --- Send breakpoint info to the view
+        this.sendExecutionStateToView(panel);
     }
   }
 }

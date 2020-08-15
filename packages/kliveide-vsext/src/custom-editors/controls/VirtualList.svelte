@@ -1,5 +1,5 @@
 <script>
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, createEventDispatcher } from "svelte";
 
   // props
   export let items;
@@ -27,6 +27,8 @@
   let bottom = 0;
   let average_height;
   let rescroll = false;
+
+  const dispatch = createEventDispatcher();
 
   $: visible = items.slice(start, end).map((data, i) => {
     return { index: i + start, data };
@@ -68,6 +70,8 @@
 
   async function handle_scroll() {
     const { scrollTop } = viewport;
+
+    dispatch("scrolled", {pos: scrollTop});
 
     const old_start = start;
 
@@ -123,6 +127,7 @@
 
       const d = actual_height - expected_height;
       viewport.scrollTo(0, scrollTop + d);
+      dispatch("scrolled", {pos: scrollTop + d});
       rescroll = true;
     }
 
