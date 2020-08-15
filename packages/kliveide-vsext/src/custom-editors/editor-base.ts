@@ -179,9 +179,9 @@ export abstract class EditorProviderBase
 
     // --- Receive message from the webview
     webviewPanel.webview.onDidReceiveMessage(
-      (e: ViewCommand | RendererMessage) => {
+      async (e: ViewCommand | RendererMessage) => {
         if ((e as ViewCommand).command !== undefined) {
-          this.processViewCommand(webviewPanel, e as ViewCommand);
+          await this.processViewCommand(webviewPanel, e as ViewCommand);
         } else {
           new MessageProcessor(webviewPanel.webview).processMessage(
             e as RendererMessage
@@ -211,7 +211,7 @@ export abstract class EditorProviderBase
    * @param _panel The WebviewPanel that should process a message from its view
    * @param _viewCommand Command notification to process
    */
-  processViewCommand(_panel: vscode.WebviewPanel, _viewCommand: ViewCommand): void {}
+  async processViewCommand(_panel: vscode.WebviewPanel, _viewCommand: ViewCommand): Promise<void> {}
 
   /**
    * Gets the HTML contents belonging to this editor

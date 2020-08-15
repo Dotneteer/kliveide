@@ -5,6 +5,8 @@ import {
   ReplacementTuple,
   ViewCommand,
 } from "../editor-base";
+import { onFrameInfoChanged } from "../../emulator/notifier";
+import { communicatorInstance, RegisterData } from "../../emulator/communicator";
 
 export class MemoryEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.memoryEditor";
@@ -55,6 +57,26 @@ export class MemoryEditorProvider extends EditorProviderBase {
   ): Promise<void> {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
 
+    let refreshCounter = 0;
+    this.toDispose(
+      webviewPanel,
+      onFrameInfoChanged(async () => {
+        refreshCounter++;
+        if (refreshCounter % 4 !== 0) {
+          return;
+        }
+        try {
+          const regData = await communicatorInstance.getRegisters();
+          webviewPanel.webview.postMessage({
+            viewNotification: "registers",
+            registers: regData
+          });
+  
+        } catch (err) {
+          // --- This exception in intentionally ignored
+        }
+      })
+    );
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
@@ -66,15 +88,22 @@ export class MemoryEditorProvider extends EditorProviderBase {
    * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  processViewCommand(
+  async processViewCommand(
     panel: vscode.WebviewPanel,
     viewCommand: ViewCommand
-  ): void {
+  ): Promise<void> {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
+        let registers: RegisterData | null = null;;
+        try {
+          registers = await communicatorInstance.getRegisters();
+        } catch (err) {
+          // --- This error is intentionally ignored
+        }
         panel.webview.postMessage({
           viewNotification: "doRefresh",
+          registers
         });
     }
   }

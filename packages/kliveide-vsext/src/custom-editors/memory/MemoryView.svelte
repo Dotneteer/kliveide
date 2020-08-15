@@ -35,7 +35,11 @@
   // --- The index of the visible item at the top
   let startItemIndex;
 
+  // --- Is the view currently scrolling?
   let scrolling = false;
+
+  // --- Current value of registers
+  let registers;
 
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
@@ -45,6 +49,7 @@
           case "doRefresh":
             // --- The Webview sends this request to refresh the view
             refreshed = false;
+            registers = ev.data.registers;
             restoreViewState();
             break;
           case "connectionState":
@@ -63,7 +68,11 @@
             ) {
             }
             execState = ev.data.state;
-            currentPc = ev.data.pc;
+            break;
+          case "registers":
+            // --- Register values sent
+            registers = ev.data.registers;
+            console.log(`Register data received: ${JSON.stringify(registers)}`)
             break;
           case "goToAddress":
             needScroll = ev.data.address;
@@ -153,7 +162,6 @@
     const item = items[startItemIndex + 1];
     if (item) {
       vscodeApi.setState({ needScroll: item.address });
-      console.log(`Saved: ${item.address}`);
     }
   }
 
@@ -162,7 +170,6 @@
     const state = vscodeApi.getState();
     if (state) {
       needScroll = state.needScroll;
-      console.log(`Restored: ${needScroll}`);
     }
   }
 </script>
@@ -218,7 +225,7 @@
           await saveViewState();
         }
       }}>
-      <MemoryEntry {item} />
+      <MemoryEntry {item} {registers} />
     </VirtualList>
   {/if}
 </div>

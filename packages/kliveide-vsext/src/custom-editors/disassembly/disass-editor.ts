@@ -121,10 +121,10 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  processViewCommand(
+  async processViewCommand(
     panel: vscode.WebviewPanel,
     viewCommand: ViewCommand
-  ): void {
+  ): Promise<void> {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send the refresh command to the view
