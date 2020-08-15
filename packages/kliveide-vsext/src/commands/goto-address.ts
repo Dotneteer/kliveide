@@ -1,11 +1,10 @@
 import * as vscode from "vscode";
-import { getActiveEditor } from "../custom-editors/editor-base";
+import { getActiveEditor, postGoToAddressMessage } from "../custom-editors/editor-base";
 
 let lastLocation = "0";
 
 /**
- *
- * @param context Goes to the specified location
+ * Goes to the specified view location
  */
 export async function goToAddress(): Promise<void> {
   // --- Is there any active editor?
@@ -32,7 +31,7 @@ export async function goToAddress(): Promise<void> {
   if (result) {
     const address = Number.parseInt(result, 16);
     if (!isNaN(address) && address >= 0 && address <= 0xffff) {
-      activeEditor.goToAddress(address);
+      postGoToAddressMessage(activeEditor, address);
       lastLocation = result;
     }
   }

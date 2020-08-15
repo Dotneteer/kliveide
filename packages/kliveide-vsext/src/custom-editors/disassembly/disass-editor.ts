@@ -68,6 +68,8 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   ): Promise<void> {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
 
+    console.log("resolveCustomTextEditor called.");
+
     // --- Get the annotation for the view
     const annotations = this.getAnnotation();
     if (annotations) {
@@ -78,47 +80,52 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     }
 
     // --- Watch for breakpoint changes
-    const breakpointsDisposable = onBreakpointsChanged(
-      (breakpoints: number[]) => {
+    this.toDispose(
+      webviewPanel,
+      onBreakpointsChanged((breakpoints: number[]) => {
         webviewPanel.webview.postMessage({
           viewNotification: "breakpoints",
           breakpoints,
         });
-      }
+      })
     );
 
     // --- Watch for PC changes
     let lastPc = -1;
-    const pcDisposable = onFrameInfoChanged((fi: FrameInfo) => {
-      if (lastPc !== fi.pc && fi.pc !== undefined) {
-        lastPc = fi.pc;
-        webviewPanel.webview.postMessage({
-          viewNotification: "pc",
-          pc: lastPc,
-        });
-      }
-    });
+    this.toDispose(
+      webviewPanel,
+      onFrameInfoChanged((fi: FrameInfo) => {
+        if (lastPc !== fi.pc && fi.pc !== undefined) {
+          lastPc = fi.pc;
+          webviewPanel.webview.postMessage({
+            viewNotification: "pc",
+            pc: lastPc,
+          });
+        }
+      })
+    );
 
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
-      breakpointsDisposable.dispose();
-      pcDisposable.dispose();
+      console.log("Calling dispose.");
+      super.disposePanel(webviewPanel);
     });
-
-    // --- Send the current breakpoints to the view
-    this.sendBreakpointsToView();
   }
 
   /**
    * Process view command
+   * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  processViewCommand(viewCommand: ViewCommand): void {
+  processViewCommand(
+    panel: vscode.WebviewPanel,
+    viewCommand: ViewCommand
+  ): void {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
-        this.sendExecutionStateToView();
-        this.sendBreakpointsToView();
+        this.sendExecutionStateToView(panel);
+        this.sendBreakpointsToView(panel);
         break;
       case "setBreakpoint":
         communicatorInstance.setBreakpoint((viewCommand as any).address);
@@ -132,12 +139,9 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   /**
    * Sends the current breakpoints to the webview
    */
-  protected sendBreakpointsToView(): void {
-    if (!this.webviewPanel) {
-      return;
-    }
-
-    this.webviewPanel.webview.postMessage({
+  protected sendBreakpointsToView(panel: vscode.WebviewPanel): void {
+    console.log("sendBreakpointsToView called.");
+    panel.webview.postMessage({
       viewNotification: "breakpoints",
       breakpoints: getLastBreakpoints(),
     });

@@ -57,15 +57,16 @@ export class MemoryEditorProvider extends EditorProviderBase {
 
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
-        // TODO: Dispose here
+      super.disposePanel(webviewPanel);
     });
   }
 
   /**
    * Process view command
+   * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  processViewCommand(viewCommand: ViewCommand): void {
+  processViewCommand(panel: vscode.WebviewPanel, viewCommand: ViewCommand): void {
     switch (viewCommand.command) {
         // TODO: Implement commands
     }

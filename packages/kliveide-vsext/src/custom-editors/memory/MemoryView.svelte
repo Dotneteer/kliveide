@@ -3,6 +3,7 @@
     import { vscodeApi } from "../messaging/messaging-core";
     import VirtualList from "../controls/VirtualList.svelte";
     import MemoryEntry from "./MemoryEntry.svelte";
+    import { memory } from "./MemoryView";
 
     let items = [];
   
@@ -90,7 +91,11 @@
         cancellationToken = {
           cancelled: false,
         };
-        // TODO: Refresh the memory here
+        const lines = await memory();
+        if (!lines) {
+          return false;
+        }
+        items = lines;
       } finally {
         // --- Release the cancellation token
         cancellationToken = null;
