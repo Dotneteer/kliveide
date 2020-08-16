@@ -11,6 +11,7 @@
 - The virtual machine screen displays an overlay with the execution state.
 - The virtual machine allows CPU clock frequency multiplication. It support 3.5MHz, 7MHz, 10.5HMz, 14MHz, 17.5MHz, 21MHz, 24.5MHz, and 28MHz modes, too.
 - The statusbar displays the number of screen frames since starting the virtual machine.
+- The emulator supports displaying the screen rendering beam position
 
 #### Fixes
 
