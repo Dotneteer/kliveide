@@ -2,11 +2,13 @@
   // ==========================================================================
   // This component implements the view for the Memory editor
 
-  import { onMount, tick, afterUpdate } from "svelte";
+  import { onMount, tick } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
+  import ConnectionPanel from "../controls/ConnectionPanel.svelte";
+  import RefreshPanel from "../controls/RefreshPanel.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
   import MemoryEntry from "./MemoryEntry.svelte";
-  import { memory } from "./MemoryView";
+  import { memory, LINE_SIZE } from "./MemoryView";
 
   // --- Disassembly items to display
   let items = [];
@@ -35,15 +37,21 @@
   // --- The index of the visible item at the top
   let startItemIndex;
 
+  // --- The index of the last visible ite at the bottom
+  let endItemIndex;
+
   // --- Is the view currently scrolling?
   let scrolling = false;
 
   // --- Current value of registers
   let registers;
 
+  // --- Indicates that the view port is being refreshed
+  let viewPortRefreshing;
+
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
-    window.addEventListener("message", (ev) => {
+    window.addEventListener("message", async (ev) => {
       if (ev.data.viewNotification) {
         switch (ev.data.viewNotification) {
           case "doRefresh":
@@ -62,17 +70,17 @@
             break;
           case "execState":
             // --- Respond to vm execution state changes
-            switch (
-              ev.data.state
-              // TODO: Implement execution state changes
-            ) {
+            switch (ev.data.state) {
+              case "paused":
+              case "stopped":
+                refreshed = false;
+                break;
             }
             execState = ev.data.state;
             break;
           case "registers":
             // --- Register values sent
             registers = ev.data.registers;
-            console.log(`Register data received: ${JSON.stringify(registers)}`)
             break;
           case "goToAddress":
             needScroll = ev.data.address;
@@ -82,7 +90,7 @@
             // --- Store the current top position to scroll back
             // --- to that after refrehs
             try {
-              const item = items[startItemIndex];
+              const item = items[startItemIndex + 1];
               needScroll = item.address;
             } catch (err) {
               // --- This error is intentionally ignored
@@ -92,13 +100,19 @@
             refreshed = false;
             scrollGap = 0;
             break;
+          case "refreshViewPort":
+            await refreshViewPort();
+            break;
         }
       }
     });
 
+    // --- No, the component is initialized, notify the Webview
+    // --- and ask it to refresh this view
     vscodeApi.postMessage({ command: "refresh" });
   });
 
+  // --- Refresh the view when connection/refresh statte changes
   $: (async () => {
     if (connected && !refreshed) {
       if (await refreshMemory()) {
@@ -107,6 +121,7 @@
     }
   })();
 
+  // --- Scroll to the specified location
   $: if (needScroll !== null && refreshed) {
     scrollToAddress(needScroll);
   }
@@ -142,10 +157,35 @@
     return true;
   }
 
+  // --- Refresh the specified part of the viewport
+  async function refreshViewPort() {
+    if (viewPortRefreshing) return;
+    viewPortRefreshing = true;
+    try {
+      const viewPort = await memory(
+        LINE_SIZE * startItemIndex,
+        LINE_SIZE * endItemIndex
+      );
+      if (!viewPort) {
+        return;
+      }
+      const newItems = items.slice(0);
+      for (let i = 0; i < viewPort.length; i++) {
+        newItems[i + startItemIndex] = viewPort[i];
+      }
+      items = newItems;
+    } finally {
+      viewPortRefreshing = false;
+    }
+  }
+
   // --- Scroll to the specified address
   async function scrollToAddress(address) {
     if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
+      if (found && items[found].address > address) {
+        found--;
+      }
       found = Math.max(0, found - scrollGap);
       scrolling = true;
       virtualListApi.scrollToItem(found);
@@ -162,6 +202,11 @@
     const item = items[startItemIndex + 1];
     if (item) {
       vscodeApi.setState({ needScroll: item.address });
+      vscodeApi.postMessage({
+        command: "viewPortChanged",
+        from: startItemIndex * LINE_SIZE,
+        to: endItemIndex * LINE_SIZE,
+      });
     }
   }
 
@@ -185,41 +230,22 @@
     position: relative;
     user-select: none;
   }
-
-  .disconnected {
-    padding: 8px;
-  }
-
-  .message {
-    color: var(--vscode-terminal-ansiWhite);
-    padding: 0px 2px;
-    line-height: 1em;
-  }
-
-  .title {
-    color: var(--vscode-terminal-ansiRed);
-    padding: 0px 2px;
-    line-height: 1em;
-  }
 </style>
 
 <div class="component">
   {#if !connected}
-    <div class="disconnected">
-      <p class="title">
-        <strong>Disconnected from Klive Emulator.</strong>
-      </p>
-      <p class="message">
-        You can click the Klive icon in the status bar to start Klive Emulator.
-      </p>
-    </div>
+    <ConnectionPanel />
   {:else}
+    {#if !refreshed}
+      <RefreshPanel {refreshed} text="Refreshing Memory view..." />
+    {/if}
     <VirtualList
       {items}
       itemHeight={20}
       let:item
       bind:api={virtualListApi}
       bind:start={startItemIndex}
+      bind:end={endItemIndex}
       on:scrolled={async () => {
         if (!scrolling) {
           await saveViewState();

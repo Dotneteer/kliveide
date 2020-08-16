@@ -27,10 +27,13 @@ import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
+
 /**
  * Starts the web server that provides an API to manage the Klive emulator
  */
 export function startApiServer() {
+  let lastMemWriteMap = new Uint8Array(0x2000);
+
   const app = express();
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());

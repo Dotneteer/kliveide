@@ -6,7 +6,10 @@ import {
   ViewCommand,
 } from "../editor-base";
 import { onFrameInfoChanged } from "../../emulator/notifier";
-import { communicatorInstance, RegisterData } from "../../emulator/communicator";
+import {
+  communicatorInstance,
+  RegisterData,
+} from "../../emulator/communicator";
 
 export class MemoryEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.memoryEditor";
@@ -69,11 +72,15 @@ export class MemoryEditorProvider extends EditorProviderBase {
           const regData = await communicatorInstance.getRegisters();
           webviewPanel.webview.postMessage({
             viewNotification: "registers",
-            registers: regData
+            registers: regData,
           });
-  
+
+          webviewPanel.webview.postMessage({
+            viewNotification: "refreshViewPort",
+          });
         } catch (err) {
           // --- This exception in intentionally ignored
+          console.log(err);
         }
       })
     );
@@ -95,7 +102,7 @@ export class MemoryEditorProvider extends EditorProviderBase {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
-        let registers: RegisterData | null = null;;
+        let registers: RegisterData | null = null;
         try {
           registers = await communicatorInstance.getRegisters();
         } catch (err) {
@@ -103,8 +110,9 @@ export class MemoryEditorProvider extends EditorProviderBase {
         }
         panel.webview.postMessage({
           viewNotification: "doRefresh",
-          registers
+          registers,
         });
+        break;
     }
   }
 }

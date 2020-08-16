@@ -1,10 +1,19 @@
 <script>
     // ==========================================================================
     // Displays a Refreshing message
-  
+
+    import { onMount } from "svelte";
+
     // --- Display this text, provided it's not empty
     export let text = "Refreshing...";
-    export let refreshed = true;
+    export let delay = 400;
+
+    let show = false;
+
+    onMount(async () => {
+      await new Promise((r) => setTimeout(r, delay));
+      show = true;
+    })
   </script>
   
   <style>
@@ -28,7 +37,7 @@
     }
   </style>
   
-  {#if !refreshed && text}
+  {#if show && text}
   <div class="overlay">
     <span class="overlay-text">{text}</span>
   </div>

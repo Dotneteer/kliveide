@@ -61,6 +61,17 @@ class Communicator {
   }
 
   /**
+   * Tests if the specified segment of memory has been written
+   * @param from Firts memory address
+   * @param to Last memory address
+   */
+  async testMemoryWrite(from: number, to: number): Promise<boolean> {
+    const response = await this.getJson<MemoryWriteTest>(`/test-mem-write/${from}/${to}`);
+    console.log(from, to, JSON.stringify(response));
+    return response?.written ?? false;
+  }
+
+  /**
    * Sets the specified breakpoint
    * @param address Breakpoint address
    */
@@ -197,6 +208,13 @@ export interface RegisterData {
   i: number;
   r: number;
   wz: number;
+}
+
+/**
+ * Represents the result of the memory write test
+ */
+export interface MemoryWriteTest {
+  written: boolean;
 }
 
 /**

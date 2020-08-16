@@ -6,8 +6,9 @@
   import { disassembly } from "./DisassemblyView";
   import { vscodeApi } from "../messaging/messaging-core";
   import { DisassemblyAnnotation } from "../../disassembler/annotations";
-  import VirtualList from "../controls/VirtualList.svelte";
+  import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
+  import VirtualList from "../controls/VirtualList.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
 
   // --- Disassembly items to display
@@ -106,7 +107,7 @@
             // --- Store the current top position to scroll back
             // --- to that after refrehs
             try {
-              const item = items[startItemIndex];
+              const item = items[startItemIndex + 1];
               needScroll = item.address;
             } catch (err) {
               // --- This error is intentionally ignored
@@ -125,6 +126,7 @@
     vscodeApi.postMessage({ command: "refresh" });
   });
 
+  // --- Refresh the view when connection/refresh statte changes
   $: (async () => {
     if (connected && !refreshed) {
       if (await refreshDisassembly()) {
@@ -133,6 +135,7 @@
     }
   })();
 
+  // --- Scroll to the specified location
   $: if (needScroll !== null && refreshed) {
     scrollToAddress(needScroll);
   }
@@ -192,37 +195,15 @@
     position: relative;
     user-select: none;
   }
-
-  .disconnected {
-    padding: 8px;
-  }
-
-  .message {
-    color: var(--vscode-terminal-ansiWhite);
-    padding: 0px 2px;
-    line-height: 1em;
-  }
-
-  .title {
-    color: var(--vscode-terminal-ansiRed);
-    padding: 0px 2px;
-    line-height: 1em;
-  }
 </style>
 
 <div class="component">
   {#if !connected}
-    <div class="disconnected">
-      <p class="title">
-        <strong>Disconnected from Klive Emulator.</strong>
-      </p>
-      <p class="message">
-        You can click the Klive icon in the status bar to start Klive Emulator.
-      </p>
-    </div>
+    <ConnectionPanel />
   {:else}
-    <RefreshPanel {refreshed}
-      text="Refreshing Z80 Disassembly view..." />
+    {#if !refreshed}
+      <RefreshPanel text="Refreshing Z80 Disassembly view..." />
+    {/if}
     <VirtualList
       {items}
       itemHeight={20}

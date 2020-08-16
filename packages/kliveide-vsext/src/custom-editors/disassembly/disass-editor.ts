@@ -113,6 +113,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
+      this._annotations.delete(webviewPanel);
     });
   }
 

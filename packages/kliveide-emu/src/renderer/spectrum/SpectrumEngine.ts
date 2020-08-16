@@ -381,7 +381,6 @@ export class SpectrumEngine {
 
     // --- Initialize debug info before run
     this.spectrum.api.markStepOverStack();
-    this.spectrum.api.eraseMemoryWriteMap();
 
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
@@ -547,7 +546,11 @@ export class SpectrumEngine {
 
     // --- Execute the cycle until completed
     while (true) {
+      // --- Prepare the execution cycle
       const frameStartTime = performance.now();
+      this.spectrum.api.eraseMemoryWriteMap();
+
+      // --- Now run the cycle
       machine.spectrum.executeCycle(options);
 
       // --- Engine time information
