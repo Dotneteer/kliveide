@@ -41,4 +41,5 @@
 (export "testBreakpoint" (func $testBreakpoint))
 (export "resetStepOverStack" (func $resetStepOverStack))
 (export "markStepOverStack" (func $markStepOverStack))
-
+(export "eraseMemoryWriteMap" (func $eraseMemoryWriteMap))
+(export "setMemoryWritePoint" (func $setMemoryWritePoint))

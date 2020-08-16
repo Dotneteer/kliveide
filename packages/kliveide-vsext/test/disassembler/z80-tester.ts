@@ -25,6 +25,10 @@ export class Z80Tester {
       new Uint8Array(opCodes)
     );
     var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
     expect(output.outputItems.length).toBe(1);
     const item = output.outputItems[0];
     expect(item.instruction).toBeTruthy();
@@ -52,6 +56,10 @@ export class Z80Tester {
       true
     );
     var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
     expect(output.outputItems.length).toBe(1);
     const item = output.outputItems[0];
     expect(item.instruction).toBeTruthy();
@@ -78,6 +86,10 @@ export class Z80Tester {
       disasmFlags
     );
     var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
     expect(output.outputItems.length).toBe(expected.length);
     for (let i = 0; i < expected.length; i++) {
       const instr = output.outputItems[i].instruction;

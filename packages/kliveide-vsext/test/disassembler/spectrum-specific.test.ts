@@ -78,6 +78,10 @@ describe("Disassembler - ZX Spectrum-specific", () => {
     const output = await disassembler.disassemble();
 
     // --- Assert
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
     expect(output.outputItems.length).toBe(expected.length);
     for (let i = 0; i < expected.length; i++) {
       const instr = output.outputItems[i].instruction;

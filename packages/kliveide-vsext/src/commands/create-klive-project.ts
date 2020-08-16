@@ -48,7 +48,6 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
     machineFileJustCreated = true;
     filesCreated++;
     const contents = fs.readFileSync(machineFile, "utf8");
-    console.log(contents);
   }
   const memFile = path.join(spectrumFolder, MEMORY_FILE);
   if (!fs.existsSync(memFile)) {

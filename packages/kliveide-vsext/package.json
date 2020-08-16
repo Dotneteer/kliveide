@@ -44,7 +44,7 @@
         "command": "kliveide.goToAddress",
         "key": "ctrl+g",
         "mac": "cmd+g",
-        "when": "resourceFilename == view.disassembly"
+        "when": "resourceFilename == view.disassembly || resourceFilename == view.memory"
       }
     ],
     "commands": [
@@ -90,12 +90,12 @@
       "editor/title": [
         {
           "command": "kliveide.refreshView",
-          "when": "resourceFilename == view.disassembly",
+          "when": "resourceFilename == view.disassembly || resourceFilename == view.memory",
           "group": "navigation"
         },
         {
           "command": "kliveide.goToAddress",
-          "when": "resourceFilename == view.disassembly",
+          "when": "resourceFilename == view.disassembly || resourceFilename == view.memory",
           "group": "navigation"
         }
       ]
@@ -115,6 +115,15 @@
         "selector": [
           {
             "filenamePattern": "view.disassembly"
+          }
+        ]
+      },
+      {
+        "viewType": "kliveide.memoryEditor",
+        "displayName": "Klive Memory Editor",
+        "selector": [
+          {
+            "filenamePattern": "view.memory"
           }
         ]
       }

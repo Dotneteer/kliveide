@@ -24,6 +24,7 @@
     "build:linux": "cd packages/kliveide-emu && npm run build:linux"
   },
   "devDependencies": {
+    "@types/mocha": "^8.0.2",
     "@types/node-ipc": "^9.1.3",
     "electron-builder": "^22.8.0",
     "lerna": "^3.22.1",

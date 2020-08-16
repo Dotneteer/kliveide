@@ -29,6 +29,7 @@ import {
   emulatorSetMemoryContentsAction,
   engineInitializedAction,
   emulatorSetDebugAction,
+  emulatorSetMemWriteMapAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -45,6 +46,11 @@ const BEEPER_SAMPLE_BUFF = 0x0b_2200;
  * Start of the ZX Spectrum memory buffer
  */
 const SPECTRUM_MEM = 0x00_0000;
+
+/**
+ * Start of the memory write map
+ */
+const MEMWRITE_MAP = 0x1f_6500;
 
 /**
  * This class represents the engine of the ZX Spectrum,
@@ -540,7 +546,11 @@ export class SpectrumEngine {
 
     // --- Execute the cycle until completed
     while (true) {
+      // --- Prepare the execution cycle
       const frameStartTime = performance.now();
+      this.spectrum.api.eraseMemoryWriteMap();
+
+      // --- Now run the cycle
       machine.spectrum.executeCycle(options);
 
       // --- Engine time information
@@ -567,6 +577,11 @@ export class SpectrumEngine {
       const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
       rendererProcessStore.dispatch(
         emulatorSetMemoryContentsAction(memContents)()
+      );
+      mh = new MemoryHelper(this.spectrum.api, MEMWRITE_MAP);
+      const memWriteMap = new Uint8Array(mh.readBytes(0, 0x2000));
+      rendererProcessStore.dispatch(
+        emulatorSetMemWriteMapAction(memWriteMap)()
       );
 
       // --- Branch according the completion reason
@@ -719,17 +734,6 @@ export class SpectrumEngine {
       avgFrameTime: this._avgFrameTime,
       renderedFrames: this._renderedFrames,
     };
-  }
-
-  /**
-   * Stores the current contents of the memory in the emulator state
-   */
-  storeMemoryContents(): void {
-    const mh = new MemoryHelper(this.spectrum.api, 0);
-    const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
-    rendererProcessStore.dispatch(
-      emulatorSetMemoryContentsAction(memContents)()
-    );
   }
 
   /**

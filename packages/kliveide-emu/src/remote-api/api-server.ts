@@ -27,10 +27,13 @@ import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
+
 /**
  * Starts the web server that provides an API to manage the Klive emulator
  */
 export function startApiServer() {
+  let lastMemWriteMap = new Uint8Array(0x2000);
+
   const app = express();
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
@@ -41,7 +44,9 @@ export function startApiServer() {
    */
   app.get("/hello", (_req, res) => {
     const state = mainProcessStore.getState();
-    res.send(state.emulatorPanelState.engineInitialized ? "KliveEmu": "initializing");
+    res.send(
+      state.emulatorPanelState.engineInitialized ? "KliveEmu" : "initializing"
+    );
   });
 
   /**
@@ -57,7 +62,7 @@ export function startApiServer() {
       executionState: emuState.executionState,
       breakpoints: Array.from(state.breakpoints),
       pc: vmInfo.registers?.pc ?? -1,
-      runsInDebug: emuState.runsInDebug
+      runsInDebug: emuState.runsInDebug,
     });
   });
 
@@ -304,11 +309,33 @@ export function startApiServer() {
   });
 
   /**
+   * Tests if the specified range of memory was written
+   */
+  app.get("/test-mem-write/:from/:to", (req, res) => {
+    let fromVal = parseInt(req.params.from);
+    let toVal = parseInt(req.params.to);
+    if (fromVal > toVal) {
+      let tmp = fromVal;
+      fromVal = toVal;
+      toVal = tmp;
+    }
+    const s = mainProcessStore.getState();
+    const m = s.emulatorPanelState?.memWriteMap;
+    if (!m || isNaN(fromVal) || isNaN(toVal)) {
+      res.json({ written: false });
+    } else {
+      res.json({
+        written: m.slice(fromVal >> 3, toVal >> 3).some((b) => b !== 0),
+      });
+    }
+  });
+
+  /**
    * Gets the list of breakpoints
    */
   app.get("/breakpoints", (req, res) => {
     const state = mainProcessStore.getState();
-    res.json({ breakpoints: Array.from(state.breakpoints)});
+    res.json({ breakpoints: Array.from(state.breakpoints) });
   });
 
   /**

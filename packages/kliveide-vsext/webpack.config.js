@@ -65,4 +65,8 @@ module.exports = [
     "./src/custom-editors/disassembly/disassembly.js",
     "disass.bundle.js"
   ),
+  createConfig(
+    "./src/custom-editors/memory/memory.js",
+    "memory.bundle.js"
+  ),
 ];

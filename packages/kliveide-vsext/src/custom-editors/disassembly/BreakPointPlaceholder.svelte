@@ -85,7 +85,7 @@
   {:else}
     <div style="width:{size}px;height:{size}px" />
   {/if}
-  {#if isCurrentBreakpoint}
+  {#if isCurrentBreakpoint && !isPrefix}
     <svg
       class="current"
       class:stopped={execState === 'stopped'}

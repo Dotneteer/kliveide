@@ -19,9 +19,19 @@ import {
   DISASS_ANN_FILE,
 } from "../../emulator/machine-config";
 
+/**
+ * This provide implements the functionality of the Disassembly Editor
+ */
 export class DisassemblyEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.disassemblyEditor";
 
+  // --- This map stores the annotations for a particular webview
+  private _annotations = new Map<vscode.WebviewPanel, DisassemblyAnnotation>();
+
+  /**
+   * Registers this editor provider
+   * @param context Extension context
+   */
   static register(context: vscode.ExtensionContext): vscode.Disposable {
     const provider = new DisassemblyEditorProvider(context);
     const providerRegistration = vscode.window.registerCustomEditorProvider(
@@ -71,54 +81,61 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     // --- Get the annotation for the view
     const annotations = this.getAnnotation();
     if (annotations) {
-      webviewPanel.webview.postMessage({
-        viewNotification: "annotations",
-        annotations: annotations.serialize(),
-      });
+      this._annotations.set(webviewPanel, annotations);
     }
 
     // --- Watch for breakpoint changes
-    const breakpointsDisposable = onBreakpointsChanged(
-      (breakpoints: number[]) => {
+    this.toDispose(
+      webviewPanel,
+      onBreakpointsChanged((breakpoints: number[]) => {
         webviewPanel.webview.postMessage({
           viewNotification: "breakpoints",
           breakpoints,
         });
-      }
+      })
     );
 
     // --- Watch for PC changes
     let lastPc = -1;
-    const pcDisposable = onFrameInfoChanged((fi: FrameInfo) => {
-      if (lastPc !== fi.pc && fi.pc !== undefined) {
-        lastPc = fi.pc;
-        webviewPanel.webview.postMessage({
-          viewNotification: "pc",
-          pc: lastPc,
-        });
-      }
-    });
+    this.toDispose(
+      webviewPanel,
+      onFrameInfoChanged((fi: FrameInfo) => {
+        if (lastPc !== fi.pc && fi.pc !== undefined) {
+          lastPc = fi.pc;
+          webviewPanel.webview.postMessage({
+            viewNotification: "pc",
+            pc: lastPc,
+          });
+        }
+      })
+    );
 
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
-      breakpointsDisposable.dispose();
-      pcDisposable.dispose();
+      super.disposePanel(webviewPanel);
+      this._annotations.delete(webviewPanel);
     });
-
-    // --- Send the current breakpoints to the view
-    this.sendBreakpointsToView();
   }
 
   /**
    * Process view command
+   * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  processViewCommand(viewCommand: ViewCommand): void {
+  async processViewCommand(
+    panel: vscode.WebviewPanel,
+    viewCommand: ViewCommand
+  ): Promise<void> {
     switch (viewCommand.command) {
       case "refresh":
-        // --- Send breakpoint info to the view
-        this.sendExecutionStateToView();
-        this.sendBreakpointsToView();
+        // --- Send the refresh command to the view
+        const annotations = this._annotations.get(panel);
+        panel.webview.postMessage({
+          viewNotification: "doRefresh",
+          annotations: annotations ? annotations.serialize() : null,
+        });
+        this.sendExecutionStateToView(panel);
+        this.sendBreakpointsToView(panel);
         break;
       case "setBreakpoint":
         communicatorInstance.setBreakpoint((viewCommand as any).address);
@@ -132,12 +149,8 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   /**
    * Sends the current breakpoints to the webview
    */
-  protected sendBreakpointsToView(): void {
-    if (!this.webviewPanel) {
-      return;
-    }
-
-    this.webviewPanel.webview.postMessage({
+  protected sendBreakpointsToView(panel: vscode.WebviewPanel): void {
+    panel.webview.postMessage({
       viewNotification: "breakpoints",
       breakpoints: getLastBreakpoints(),
     });

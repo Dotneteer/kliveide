@@ -67,6 +67,10 @@ export function emulatorSetMemoryContentsAction(memoryContents: Uint8Array) {
   return createAction("EMULATOR_SET_MEMORY_CONTENTS", { memoryContents });
 }
 
+export function emulatorSetMemWriteMapAction(memWriteMap: Uint8Array) {
+  return createAction("EMULATOR_SET_MEMWRITE_MAP", { memWriteMap });
+}
+
 export const engineInitializedAction = createAction("EMULATOR_INITIALIZED");
 
 export function emulatorSetDebugAction(runsInDebug: boolean) {
@@ -144,6 +148,8 @@ export function emulatorStateReducer(
       return { ...state, muted: false };
     case "EMULATOR_SET_MEMORY_CONTENTS":
       return { ...state, memoryContents: payload.memoryContents };
+    case "EMULATOR_SET_MEMWRITE_MAP":
+      return { ...state, memWriteMap: payload.memWriteMap };
     case "EMULATOR_INITIALIZED":
       return { ...state, engineInitialized: true };
     case "EMULATOR_SET_DEBUG":

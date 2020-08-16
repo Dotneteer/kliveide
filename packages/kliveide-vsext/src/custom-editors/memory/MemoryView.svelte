@@ -1,15 +1,14 @@
 <script>
   // ==========================================================================
-  // This component implements the view for the Disassembly editor
+  // This component implements the view for the Memory editor
 
-  import { onMount, tick, afterUpdate } from "svelte";
-  import { disassembly } from "./DisassemblyView";
+  import { onMount, tick } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
-  import { DisassemblyAnnotation } from "../../disassembler/annotations";
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
-  import DisassemblyEntry from "./DisassemblyEntry.svelte";
+  import MemoryEntry from "./MemoryEntry.svelte";
+  import { memory, LINE_SIZE } from "./MemoryView";
 
   // --- Disassembly items to display
   let items = [];
@@ -32,39 +31,34 @@
   // --- Virtual machine execution state
   let execState;
 
-  // --- Indicates the the vm runs in debug mode
-  let runsInDebug;
-
-  // --- Breakpoints set
-  let breakpoints;
-
-  // --- The current value of the PC register
-  let currentPc;
-
-  // --- Disassembly annotations to apply
-  let annotations;
-
   // --- The API of the virtual list component
   let virtualListApi;
 
   // --- The index of the visible item at the top
   let startItemIndex;
 
-  // --- Handle the event when the component is initialized
+  // --- The index of the last visible ite at the bottom
+  let endItemIndex;
+
+  // --- Is the view currently scrolling?
+  let scrolling = false;
+
+  // --- Current value of registers
+  let registers;
+
+  // --- Indicates that the view port is being refreshed
+  let viewPortRefreshing;
+
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
-    window.addEventListener("message", (ev) => {
+    window.addEventListener("message", async (ev) => {
       if (ev.data.viewNotification) {
-        // --- We listen only messages sent to this view
         switch (ev.data.viewNotification) {
           case "doRefresh":
             // --- The Webview sends this request to refresh the view
             refreshed = false;
-            if (ev.data.annotations) {
-              annotations = DisassemblyAnnotation.deserialize(
-                ev.data.annotations
-              );
-            }
+            registers = ev.data.registers;
+            restoreViewState();
             break;
           case "connectionState":
             // --- Refresh after reconnection
@@ -76,28 +70,17 @@
             break;
           case "execState":
             // --- Respond to vm execution state changes
-            runsInDebug = ev.data.runsInDebug;
             switch (ev.data.state) {
               case "paused":
               case "stopped":
-                needScroll = ev.data.pc;
-                scrollGap = 3;
-                break;
-              case "none":
-                needScroll = 0;
-                scrollGap = 0;
-                currentPc = -1;
+                refreshed = false;
                 break;
             }
             execState = ev.data.state;
-            currentPc = ev.data.pc;
             break;
-          case "breakpoints":
-            // --- Receive breakpoints set in the emulator
-            breakpoints = new Set(ev.data.breakpoints);
-            break;
-          case "pc":
-            currentPc = ev.data.pc;
+          case "registers":
+            // --- Register values sent
+            registers = ev.data.registers;
             break;
           case "goToAddress":
             needScroll = ev.data.address;
@@ -117,6 +100,9 @@
             refreshed = false;
             scrollGap = 0;
             break;
+          case "refreshViewPort":
+            await refreshViewPort();
+            break;
         }
       }
     });
@@ -129,7 +115,7 @@
   // --- Refresh the view when connection/refresh statte changes
   $: (async () => {
     if (connected && !refreshed) {
-      if (await refreshDisassembly()) {
+      if (await refreshMemory()) {
         refreshed = true;
       }
     }
@@ -142,7 +128,7 @@
 
   // --- Initiate refreshing the disassembly view
   // --- Take care not to start disassembling multiple times
-  async function refreshDisassembly() {
+  async function refreshMemory() {
     // --- Cancel, if disassembly in progress, and start a new disassembly
     if (refreshToken) {
       refreshToken.cancelled = true;
@@ -153,12 +139,11 @@
       refreshToken = {
         cancelled: false,
       };
-      const disass = await disassembly(0, 0xffff, annotations, refreshToken);
-      if (!disass) {
-        // --- This disassembly was cancelled
+      const lines = await memory();
+      if (!lines) {
         return false;
       }
-      items = disass.outputItems;
+      items = lines;
     } finally {
       // --- Release the cancellation token
       refreshToken = null;
@@ -172,14 +157,64 @@
     return true;
   }
 
+  // --- Refresh the specified part of the viewport
+  async function refreshViewPort() {
+    if (viewPortRefreshing) return;
+    viewPortRefreshing = true;
+    try {
+      const viewPort = await memory(
+        LINE_SIZE * startItemIndex,
+        LINE_SIZE * endItemIndex
+      );
+      if (!viewPort) {
+        return;
+      }
+      const newItems = items.slice(0);
+      for (let i = 0; i < viewPort.length; i++) {
+        newItems[i + startItemIndex] = viewPort[i];
+      }
+      items = newItems;
+    } finally {
+      viewPortRefreshing = false;
+    }
+  }
+
   // --- Scroll to the specified address
   async function scrollToAddress(address) {
     if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
+      if (found && items[found].address > address) {
+        found--;
+      }
       found = Math.max(0, found - scrollGap);
+      scrolling = true;
       virtualListApi.scrollToItem(found);
+      await saveViewState();
+      scrolling = false;
       needScroll = null;
       scrollGap = 0;
+    }
+  }
+
+  // --- Save the current view state
+  async function saveViewState() {
+    await tick();
+    const item = items[startItemIndex + 1];
+    if (item) {
+      vscodeApi.setState({ needScroll: item.address });
+      vscodeApi.postMessage({
+        command: "viewPortChanged",
+        from: startItemIndex * LINE_SIZE,
+        to: endItemIndex * LINE_SIZE,
+      });
+    }
+  }
+
+  // --- Restores the saved state
+  function restoreViewState() {
+    const state = vscodeApi.getState();
+    if (state) {
+      needScroll = state.needScroll;
     }
   }
 </script>
@@ -202,20 +237,21 @@
     <ConnectionPanel />
   {:else}
     {#if !refreshed}
-      <RefreshPanel text="Refreshing Z80 Disassembly view..." />
+      <RefreshPanel {refreshed} text="Refreshing Memory view..." />
     {/if}
     <VirtualList
       {items}
       itemHeight={20}
       let:item
       bind:api={virtualListApi}
-      bind:start={startItemIndex}>
-      <DisassemblyEntry
-        {item}
-        hasBreakpoint={breakpoints.has(item.address)}
-        isCurrentBreakpoint={currentPc === item.address}
-        {execState}
-        {runsInDebug} />
+      bind:start={startItemIndex}
+      bind:end={endItemIndex}
+      on:scrolled={async () => {
+        if (!scrolling) {
+          await saveViewState();
+        }
+      }}>
+      <MemoryEntry {item} {registers} />
     </VirtualList>
   {/if}
 </div>
