@@ -5,7 +5,7 @@ categories:
 title:  "Install Klive IDE"
 alias: install-kliveide
 seqno: 10
-selector: setup
+selector: tutorial
 permalink: "getting-started/install-kliveide"
 ---
 

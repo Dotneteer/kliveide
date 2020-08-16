@@ -5,7 +5,7 @@ categories:
 title:  "Build Klive IDE"
 alias: build-kliveide
 seqno: 20
-selector: setup
+selector: tutorial
 permalink: "getting-started/build-kliveide"
 ---
 
