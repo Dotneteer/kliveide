@@ -63,6 +63,26 @@ export class DisassemblyItem {
   hasLabelSymbol = false;
 
   /**
+   * Formatted label
+   */
+  formattedLabel = "";
+
+  /**
+   * Formatted comment
+   */
+  formattedComment = "";
+
+  /**
+   * Signs that this item is just a prefix item
+   */
+  isPrefixItem = false;
+
+  /**
+   * The optional prefix comment
+   */
+  prefixComment = "";
+
+  /**
    * Initializes a new item
    * @param address Disassembly item address
    */
@@ -147,6 +167,20 @@ export class DisassemblyOutput {
     }
     if (referringOpAddr) {
       label.references.push(referringOpAddr);
+    }
+  }
+
+  /**
+   * Replaces the original output items
+   * @param items Items to replace the original output with
+   */
+  replaceOutputItems(items: DisassemblyItem[]): void {
+    this._outputItems = items;
+    this._outputByAddress.clear();
+    for (const item of items) {
+      if (!item.isPrefixItem) {
+        this._outputByAddress.set(item.address, item);
+      }
     }
   }
 }

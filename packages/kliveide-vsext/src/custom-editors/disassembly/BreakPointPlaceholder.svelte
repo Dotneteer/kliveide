@@ -4,6 +4,8 @@
   export let address;
   export let hasBreakpoint;
   export let isCurrentBreakpoint;
+  export let runsInDebug;
+  export let isPrefix;
   export let size = 16;
   export let execState;
 
@@ -26,7 +28,6 @@
     margin-right: 4px;
     flex-grow: 0;
     flex-shrink: 0;
-    cursor: pointer;
   }
 
   .brhover:hover {
@@ -37,7 +38,15 @@
     border-radius: 50%;
   }
 
+  .brpointer {
+    cursor: pointer;
+  }
+
   .breakpoint {
+    fill: var(--vscode-terminal-ansiMagenta);
+  }
+
+  .runsInDebug {
     fill: var(--vscode-terminal-ansiRed);
   }
 
@@ -51,12 +60,15 @@
 </style>
 
 <div
-  class="placeholder" class:brhover={!hasBreakpoint}
+  class="placeholder"
+  class:brhover={!hasBreakpoint && !isPrefix}
+  class:brpointer={!isPrefix}
   on:click={() => sendClickEvent(address)}
-  title={hasBreakpoint ? 'Remove breakpoint' : 'Set breakpoint'}>
-  {#if hasBreakpoint}
+  title={isPrefix ? '' : hasBreakpoint ? 'Remove breakpoint' : 'Set breakpoint'}>
+  {#if hasBreakpoint && !isPrefix}
     <svg
       class="breakpoint"
+      class:runsInDebug
       width={size}
       height={size}
       viewBox="0 0 16 16"
@@ -73,9 +85,10 @@
   {:else}
     <div style="width:{size}px;height:{size}px" />
   {/if}
-  {#if isCurrentBreakpoint}
+  {#if isCurrentBreakpoint && !isPrefix}
     <svg
-      class="current" class:stopped={execState === "stopped"}
+      class="current"
+      class:stopped={execState === 'stopped'}
       style="margin-left:-{size}px"
       width="16"
       height="16"

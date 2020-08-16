@@ -5,6 +5,13 @@ import { IconInfo } from "./IconInfo";
  */
 export const IconDefs: IconInfo[] = [
   {
+    name: "window",
+    path:
+      "M14.5 2h-13l-.5.5v11l.5.5h13l.5-.5v-11l-.5-.5zM14 13H2V6h12v7zm0-8H2V3h12v2z",
+    width: 16,
+    height: 16,
+  },
+  {
     name: "circle-outline",
     path:
       "M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm2.61-4a2.61 2.61 0 1 1-5.22 0 2.61 2.61 0 0 1 5.22 0zM8 5.246z",

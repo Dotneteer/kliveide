@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import { getNonce } from "./utils";
 import {
   onExecutionStateChanged,
   onConnectionStateChanged,
@@ -12,11 +11,21 @@ import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
 import { ExecutionState } from "../emulator/communicator";
 
-const editorInstances: EditorProviderBase[] = [];
-let activeEditor: EditorProviderBase | null = null;
+const editorInstances: vscode.WebviewPanel[] = [];
+let activeEditor: vscode.WebviewPanel | null = null;
 
-export function getRegisteredEditors(): EditorProviderBase[] {
+/**
+ * Retrieves all registered editor providers
+ */
+export function getRegisteredEditors(): vscode.WebviewPanel[] {
   return editorInstances;
+}
+
+/**
+ * Gets the active editor
+ */
+export function getActiveEditor(): vscode.WebviewPanel | null {
+  return activeEditor;
 }
 
 /**
@@ -24,8 +33,7 @@ export function getRegisteredEditors(): EditorProviderBase[] {
  */
 export abstract class EditorProviderBase
   implements vscode.CustomTextEditorProvider {
-
-  private _webviewPanel: vscode.WebviewPanel | null = null;
+  private _disposables = new Map<vscode.WebviewPanel, vscode.Disposable[]>();
 
   /**
    * The path of the "assets" folder within the extension
@@ -66,10 +74,38 @@ export abstract class EditorProviderBase
   }
 
   /**
-   * Retrieves the webview panel of this editor
+   * Disposes resources held by a particular WebviewPanel
+   * @param panel WebviewPanel to dispose its resorces
    */
-  get webviewPanel(): vscode.WebviewPanel | null {
-    return this._webviewPanel;
+  disposePanel(panel: vscode.WebviewPanel): void {
+    // --- Remove this editor from the other instances
+    const editorIndex = editorInstances.indexOf(panel);
+    if (editorIndex >= 0) {
+      editorInstances.splice(editorIndex, 1);
+    }
+    if (activeEditor === panel) {
+      activeEditor = null;
+    }
+
+    // --- Hanlde disposables
+    const disposables = this._disposables.get(panel);
+    if (disposables) {
+      disposables.forEach((d) => d.dispose());
+    }
+  }
+
+  /**
+   * Registers a disposable with the specified WebviewPanel
+   * @param panel WebviewPanel that holds the disposables
+   * @param disposable
+   */
+  toDispose(panel: vscode.WebviewPanel, disposable: vscode.Disposable): void {
+    const disposables = this._disposables.get(panel);
+    if (!disposables) {
+      this._disposables.set(panel, [disposable]);
+    } else {
+      disposables.push(disposable);
+    }
   }
 
   /**
@@ -86,8 +122,8 @@ export abstract class EditorProviderBase
     _token: vscode.CancellationToken
   ): Promise<void> {
     // --- Store the instance
-    this._webviewPanel = webviewPanel;
-    editorInstances.push(this);
+    editorInstances.push(webviewPanel);
+    activeEditor = webviewPanel;
 
     // --- Setup initial content for the webview
     webviewPanel.webview.options = {
@@ -95,54 +131,57 @@ export abstract class EditorProviderBase
     };
     webviewPanel.webview.html = this.getHtmlContents(webviewPanel.webview);
 
-    const stateChangeDisposable = webviewPanel.onDidChangeViewState((ev) => {
-      if (ev.webviewPanel.active) {
-        activeEditor = this;
-      }
-    });
+    // --- Keep track of the active editor
+    this.toDispose(
+      webviewPanel,
+      webviewPanel.onDidChangeViewState((ev) => {
+        if (ev.webviewPanel.active) {
+          activeEditor = ev.webviewPanel;
+        }
+      })
+    );
 
-    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(
-      (e) => {
+    /**
+     * Update the view when the editor text changes
+     */
+    this.toDispose(
+      webviewPanel,
+      vscode.workspace.onDidChangeTextDocument((e) => {
         if (e.document.uri.toString() === document.uri.toString()) {
           updateWebview();
         }
-      }
+      })
     );
 
-    const execStateDisposable = onExecutionStateChanged((execState: ExecutionState) => {
-      webviewPanel.webview.postMessage({
-        viewNotification: "execState",
-        state: execState.state,
-        pc: execState.pc
-      });
-    });
+    // --- Notify the view about vm execution state changes
+    this.toDispose(
+      webviewPanel,
+      onExecutionStateChanged((execState: ExecutionState) => {
+        webviewPanel.webview.postMessage({
+          viewNotification: "execState",
+          state: execState.state,
+          pc: execState.pc,
+          runsInDebug: execState.runsInDebug,
+        });
+      })
+    );
 
-    const connectionStateDisposable = onConnectionStateChanged(
-      (state: boolean) => {
+    // --- Notify the view about emulator connection state changes
+    this.toDispose(
+      webviewPanel,
+      onConnectionStateChanged((state: boolean) => {
         webviewPanel.webview.postMessage({
           viewNotification: "connectionState",
           state,
         });
-      }
+      })
     );
 
-    // Make sure we get rid of the listener when our editor is closed.
-    webviewPanel.onDidDispose(() => {
-      const index = editorInstances.indexOf(this);
-      if (index >= 0) {
-        editorInstances.splice(index, 1);
-      }
-      stateChangeDisposable.dispose();
-      changeDocumentSubscription.dispose();
-      execStateDisposable.dispose();
-      connectionStateDisposable.dispose();
-    });
-
-    // Receive message from the webview
+    // --- Receive message from the webview
     webviewPanel.webview.onDidReceiveMessage(
-      (e: ViewCommand | RendererMessage) => {
+      async (e: ViewCommand | RendererMessage) => {
         if ((e as ViewCommand).command !== undefined) {
-          this.processViewCommand(e as ViewCommand);
+          await this.processViewCommand(webviewPanel, e as ViewCommand);
         } else {
           new MessageProcessor(webviewPanel.webview).processMessage(
             e as RendererMessage
@@ -154,7 +193,7 @@ export abstract class EditorProviderBase
     updateWebview();
 
     // --- Get the initial state
-    this.sendExecutionStateToView();
+    this.sendExecutionStateToView(webviewPanel);
 
     /**
      * Updates the web view
@@ -169,9 +208,10 @@ export abstract class EditorProviderBase
 
   /**
    * Process view command
-   * @param viewCommand Command notification to process
+   * @param _panel The WebviewPanel that should process a message from its view
+   * @param _viewCommand Command notification to process
    */
-  processViewCommand(viewCommand: ViewCommand): void {}
+  async processViewCommand(_panel: vscode.WebviewPanel, _viewCommand: ViewCommand): Promise<void> {}
 
   /**
    * Gets the HTML contents belonging to this editor
@@ -255,23 +295,58 @@ export abstract class EditorProviderBase
   /**
    * Sends the current execution state to view
    */
-  protected sendExecutionStateToView(): void {
-    if (!this._webviewPanel) {
-      return;
-    }
+  protected sendExecutionStateToView(panel: vscode.WebviewPanel): void {
     if (!getLastConnectedState()) {
-      this._webviewPanel.webview.postMessage({
+      panel.webview.postMessage({
         viewNotification: "connectionState",
         state: false,
       });
     }
     const execState = getLastExecutionState();
-    this._webviewPanel.webview.postMessage({
+    panel.webview.postMessage({
       viewNotification: "execState",
       state: execState.state,
-      pc: execState.pc
+      pc: execState.pc,
     });
   }
+}
+
+/**
+ * Create a nonce we can use in web views
+ */
+function getNonce() {
+  let text = "";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
+/**
+ * Instructs the view of the WebviewPanel to go to the specified address
+ * @param panel WebviewPanel to notify
+ * @param address Address to scroll to
+ */
+export function postGoToAddressMessage(
+  panel: vscode.WebviewPanel,
+  address: number
+): void {
+  panel.webview.postMessage({
+    viewNotification: "goToAddress",
+    address,
+  });
+}
+
+/**
+ * Instructs the view of the WebviewPanel to refresh the view
+ * @param panel WebviewPanel to notify
+ */
+export function postRefreshViewMessage(panel: vscode.WebviewPanel): void {
+  panel.webview.postMessage({
+    viewNotification: "refreshView",
+  });
 }
 
 /**

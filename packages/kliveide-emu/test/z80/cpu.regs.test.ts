@@ -1,7 +1,7 @@
 import "mocha";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api";
+import { CpuApi } from "../../src/native/api/api";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: CpuApi;

@@ -2,7 +2,7 @@
   "name": "kliveide-vsext",
   "displayName": "Klive IDE",
   "description": "Full-fledged ZX Spectrum IDE for VS Code",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "license": "MIT",
   "engines": {
     "vscode": "^1.46.0"
@@ -20,10 +20,9 @@
   "main": "./out/extension.js",
   "icon": "assets/icon.png",
   "activationEvents": [
-    "onCommand:kliveide.startEmu",
     "onCommand:kliveide.createProject",
-    "onView:z80Registers",
-    "onCustomEditor:kliveide.disassemblyEditor"
+    "onCommand:kliveide.startEmu",
+    "workspaceContains: **/.spectrum/spectrum.machine"
   ],
   "contributes": {
     "configuration": {
@@ -43,10 +42,10 @@
     },
     "keybindings": [
       {
-        "command": "kliveide.startEmu",
+        "command": "kliveide.goToAddress",
         "key": "ctrl+g",
         "mac": "cmd+g",
-        "when": "resourceFilename == view.disassembly"
+        "when": "resourceFilename == view.disassembly || resourceFilename == view.memory"
       }
     ],
     "commands": [
@@ -60,9 +59,48 @@
       },
       {
         "command": "kliveide.goToAddress",
-        "title": "Go To Address"
+        "title": "Go To Address",
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/go-to-file.svg",
+          "dark": "assets/icons/go-to-file_dark.svg"
+        }
+      },
+      {
+        "command": "kliveide.sendTape",
+        "title": "Send Tape to Emulator",
+        "enablement": "kliveEmuConnected"
+      },
+      {
+        "command": "kliveide.refreshView",
+        "title": "Refresh View",
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/refresh.svg",
+          "dark": "assets/icons/refresh_dark.svg"
+        }
       }
     ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "kliveide.sendTape",
+          "when": "resourceExtname == .tap || resourceExtname == .tzx"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "kliveide.refreshView",
+          "when": "resourceFilename == view.disassembly || resourceFilename == view.memory",
+          "group": "navigation"
+        },
+        {
+          "command": "kliveide.goToAddress",
+          "when": "resourceFilename == view.disassembly || resourceFilename == view.memory",
+          "group": "navigation"
+        }
+      ]
+    },
     "views": {
       "debug": [
         {
@@ -78,6 +116,15 @@
         "selector": [
           {
             "filenamePattern": "view.disassembly"
+          }
+        ]
+      },
+      {
+        "viewType": "kliveide.memoryEditor",
+        "displayName": "Klive Memory Editor",
+        "selector": [
+          {
+            "filenamePattern": "view.memory"
           }
         ]
       }

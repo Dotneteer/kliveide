@@ -1,22 +1,56 @@
 <script>
+  // ==========================================================================
+  // Represents a key in the ZX Spectrum 48 keyboard
+
   import { createEventDispatcher } from "svelte";
   import { themeStore } from "../stores/theme-store";
 
+  // --- Current zoom factor
   export let zoom = 1.0;
+  
+  // --- Spectrum key code
   export let code;
+
+  // --- Key to display
   export let key;
+
+  // --- Keyword to display
   export let keyword;
+
+  // --- Symbol to display
   export let symbol;
+
+  // --- Symbol word to display
   export let symbolWord;
+
+  // --- Text above the key
   export let above;
+
+  // --- Text below the key
   export let below;
+
+  // --- The top text above a number button
   export let topNum;
+
+  // --- Color of the number button's text
   export let topNumColor;
+  
+  // --- Main text to be put to the center of the key
   export let center;
+
+  // --- Main text to be put to the top of the key
   export let top;
+
+  // --- Main text to be put to the bottom of the key
   export let bottom;
+
+  // --- Extra width to use instead of the default
   export let xwidth;
+
+  // --- Should the main text use symbol color?
   export let useSymColor;
+
+  // --- Optional glyph value of a number key
   export let glyph;
 
   // --- Dimensions
@@ -36,6 +70,7 @@
   const belowKeyColor = themeStore.getProperty("--key-below-color");
   const highlightKeyColor = themeStore.getProperty("--key-highlight-color");
 
+  // --- Reactive expressions for button dimensions
   $: normalHeight = topNum ? 148 : 128;
   $: heightOffset = topNum ? 20 : 0;
   $: currentWidth = zoom * (xwidth || normalWidth);
@@ -66,6 +101,7 @@
       ? "pointer"
       : "default";
 
+  // --- Thic component raises a "clicked" event
   const dispatch = createEventDispatcher();
 
   function raiseClicked(e, code, keyCategory) {
@@ -75,8 +111,8 @@
       altKey: e.altKey,
       button: e.button,
       ctrlKey: e.ctrlKey,
-      shiftKey: e.shiftKey
-    })
+      shiftKey: e.shiftKey,
+    });
   }
 </script>
 
@@ -87,7 +123,6 @@
   {normalHeight}"
   style="margin-right: 4px;"
   xmlns="http://www.w3.org/2000/svg">
-
   <rect
     x="0"
     y={30 + heightOffset}
@@ -99,7 +134,7 @@
     {cursor}
     on:mouseenter={() => (mouseOverKey = true)}
     on:mouseleave={() => (mouseOverKey = false)}
-    on:mousedown={e => raiseClicked(e, code, "main")} />
+    on:mousedown={(e) => raiseClicked(e, code, 'main')} />
   {#if key}
     <text
       x="12"
@@ -111,7 +146,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={e => raiseClicked(e, code, "main")} >
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
       {key}
     </text>
   {/if}
@@ -126,9 +161,23 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={e => raiseClicked(e, code, "main")} >
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
       {keyword}
     </text>
+  {/if}
+  {#if symbol || symbolWord}
+    <rect
+      x={topNum ? 36 : 44}
+      y={(topNum ? 70 : 34) + heightOffset}
+      width={topNum ? 58 : 54}
+      height={topNum ? 28 : 40}
+      fill="transparent"
+      {cursor}
+      on:mouseenter={() => (mouseOverSymbol = true)}
+      on:mouseleave={() => (mouseOverSymbol = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
+      {symbol}
+    </rect>
   {/if}
   {#if symbol}
     <text
@@ -141,7 +190,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverSymbol = true)}
       on:mouseleave={() => (mouseOverSymbol = false)}
-      on:mousedown={e => raiseClicked(e, code, "symbol")} >
+      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
       {symbol}
     </text>
   {/if}
@@ -156,7 +205,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverSymbol = true)}
       on:mouseleave={() => (mouseOverSymbol = false)}
-      on:mousedown={e => raiseClicked(e, code, "symbol")}>
+      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
       {symbolWord}
     </text>
   {/if}
@@ -171,7 +220,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverAbove = true)}
       on:mouseleave={() => (mouseOverAbove = false)}
-      on:mousedown={e => raiseClicked(e, code, topNum ? "topNum" : "above")}>
+      on:mousedown={(e) => raiseClicked(e, code, topNum ? 'topNum' : 'above')}>
       {above}
     </text>
   {/if}
@@ -186,7 +235,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverBelow = true)}
       on:mouseleave={() => (mouseOverBelow = false)}
-      on:mousedown={e => raiseClicked(e, code, "below")}>
+      on:mousedown={(e) => raiseClicked(e, code, 'below')}>
       {below}
     </text>
   {/if}
@@ -201,7 +250,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={e => raiseClicked(e, code, "main")}>
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
       {center}
     </text>
   {/if}
@@ -216,7 +265,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={e => raiseClicked(e, code, "main")}>
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
       {top}
     </text>
   {/if}
@@ -231,7 +280,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={e => raiseClicked(e, code, "main")}>
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
       {bottom}
     </text>
   {/if}
@@ -246,7 +295,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverTopNum = true)}
       on:mouseleave={() => (mouseOverTopNum = false)}
-      on:mousedown={e => raiseClicked(e, code, "above")}>
+      on:mousedown={(e) => raiseClicked(e, code, 'above')}>
       {topNum}
     </text>
   {/if}
@@ -261,8 +310,8 @@
       fill={glyphFillColor}
       {cursor}
       on:mouseenter={() => (mouseOverGlyph = true)}
-      on:mouseleave={() => (mouseOverGlyph = false)} 
-      on:mousedown={e => raiseClicked(e, code, "glyph")} />
+      on:mouseleave={() => (mouseOverGlyph = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'glyph')} />
     {#if glyph & 0x01}
       <rect
         x="61"
@@ -272,8 +321,8 @@
         fill={keyBackground}
         {cursor}
         on:mouseenter={() => (mouseOverGlyph = true)}
-        on:mouseleave={() => (mouseOverGlyph = false)} 
-        on:mousedown={e => raiseClicked(e, code, "glyph")} />
+        on:mouseleave={() => (mouseOverGlyph = false)}
+        on:mousedown={(e) => raiseClicked(e, code, 'glyph')} />
     {/if}
     {#if glyph & 0x02}
       <rect
@@ -284,8 +333,8 @@
         fill={keyBackground}
         {cursor}
         on:mouseenter={() => (mouseOverGlyph = true)}
-        on:mouseleave={() => (mouseOverGlyph = false)} 
-        on:mousedown={e => raiseClicked(e, code, "glyph")} />
+        on:mouseleave={() => (mouseOverGlyph = false)}
+        on:mousedown={(e) => raiseClicked(e, code, 'glyph')} />
     {/if}
     {#if glyph & 0x04}
       <rect
@@ -296,8 +345,8 @@
         fill={keyBackground}
         {cursor}
         on:mouseenter={() => (mouseOverGlyph = true)}
-        on:mouseleave={() => (mouseOverGlyph = false)} 
-        on:mousedown={e => raiseClicked(e, code, "glyph")} />
+        on:mouseleave={() => (mouseOverGlyph = false)}
+        on:mousedown={(e) => raiseClicked(e, code, 'glyph')} />
     {/if}
   {/if}
 </svg>

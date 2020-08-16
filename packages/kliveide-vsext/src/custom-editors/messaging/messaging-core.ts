@@ -59,7 +59,6 @@ window.addEventListener("message", (ev) => {
 
     // --- Resolve the message
     if (response.type === "error") {
-      console.log("Messaging error thrown");
       if (rejecter) {
         rejecter(response.errorMessage);
       }

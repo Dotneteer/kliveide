@@ -2,14 +2,14 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { MachineApi } from "../../src/native/api";
-import { ZxSpectrum48 } from "../../src/native/ZxSpectrum48";
+import { MachineApi } from "../../src/native/api/api";
+import { ZxSpectrum48 } from "../../src/native/api/ZxSpectrum48";
 import {
   MemoryContentionType,
   ExecuteCycleOptions,
   EmulationMode,
-} from "../../src/native/machine-state";
-import { MemoryHelper } from "../../src/native/memory-helpers";
+} from "../../src/native/api/machine-state";
+import { MemoryHelper } from "../../src/native/api/memory-helpers";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: MachineApi;

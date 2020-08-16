@@ -1,4 +1,5 @@
 <script>
+  import { tick } from "svelte";
   import SplitContainer from "./SplitContainer.svelte";
   import EmulatorPanel from "./EmulatorPanel.svelte";
   import KeyboardPanel from "./KeyboardPanel.svelte";
@@ -8,11 +9,11 @@
   let keyboardVisible = false;
   let delayIsOver = true;
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
-  stateAware.onStateChanged.on(async state => {
+  stateAware.stateChanged.on(async state => {
     if (keyboardVisible !== state.keyboardPanel) {
       delayIsOver = false;
       keyboardVisible = state.keyboardPanel;
-      await new Promise(r => setTimeout(r, 10));
+      await tick();
       delayIsOver = true;
     }
   });

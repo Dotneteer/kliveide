@@ -1,6 +1,6 @@
 // --- Audio constants
 export const FRAMES_BUFFERED = 400;
-export const FRAMES_DELAYED = 2;
+export const FRAMES_DELAYED = 4;
 export const AUDIO_BUFFER_SIZE = 4096;
 
 /**

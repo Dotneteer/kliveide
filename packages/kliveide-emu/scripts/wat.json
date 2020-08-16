@@ -1,0 +1,20 @@
+{
+  "sourceDir": "../src/native",
+  "files": [
+    "signatures.wat",
+    "imports.wat",
+    "exports.wat",
+    "memory-map.wat",
+    "z80.wat",
+    "z80-jump-tables.wat",
+    "z80-standard-ops.wat",
+    "z80-extended-ops.wat",
+    "z80-indexed-ops.wat",
+    "z80-bit-ops.wat",
+    "z80-indexed-bit-ops.wat",
+    "z80-test-helper.wat",
+    "spectrum-engine.wat",
+    "zx-spectrum-48.wat"
+  ],
+  "outFile": "../build/spectrum.wat"
+}

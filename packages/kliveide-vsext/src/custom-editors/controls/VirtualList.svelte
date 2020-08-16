@@ -1,5 +1,5 @@
 <script>
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, createEventDispatcher } from "svelte";
 
   // props
   export let items;
@@ -26,6 +26,9 @@
   let top = 0;
   let bottom = 0;
   let average_height;
+  let rescroll = false;
+
+  const dispatch = createEventDispatcher();
 
   $: visible = items.slice(start, end).map((data, i) => {
     return { index: i + start, data };
@@ -42,7 +45,7 @@
     let content_height = top - scrollTop;
     let i = start;
 
-    while (content_height < viewport_height && i < items.length) {
+    while (content_height < viewport_height + itemHeight && i < items.length) {
       let row = rows[i - start];
 
       if (!row) {
@@ -68,7 +71,7 @@
   async function handle_scroll() {
     const { scrollTop } = viewport;
 
-    console.log(`In handle_scroll ${scrollTop}`);
+    dispatch("scrolled", {pos: scrollTop});
 
     const old_start = start;
 
@@ -96,7 +99,7 @@
       y += height_map[i] || average_height;
       i += 1;
 
-      if (y > scrollTop + viewport_height) break;
+      if (y > scrollTop + viewport_height + itemHeight) break;
     }
 
     end = i;
@@ -108,6 +111,7 @@
     bottom = remaining * average_height;
 
     // prevent jumping if we scrolled up into unknown territory
+    rescroll = false;
     if (start < old_start) {
       await tick();
 
@@ -123,6 +127,8 @@
 
       const d = actual_height - expected_height;
       viewport.scrollTo(0, scrollTop + d);
+      dispatch("scrolled", {pos: scrollTop + d});
+      rescroll = true;
     }
 
     // TODO if we overestimated the space these
@@ -138,6 +144,11 @@
       await tick();
       if (viewport && itemHeight && item >= 0) {
         viewport.scrollTo(0, item * itemHeight);
+        await new Promise((r) => setTimeout(r, 50));
+        if (rescroll) {
+          // --- Repeat scrolling again
+          viewport.scrollTo(0, item * itemHeight);
+        }
       }
     };
     api.calculatedHeight = itemHeight;

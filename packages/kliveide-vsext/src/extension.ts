@@ -13,44 +13,31 @@ import { createVmStateStatusBarItem } from "./views/statusbar";
 import { createKliveProject } from "./commands/create-klive-project";
 import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
 import { goToAddress } from "./commands/goto-address";
+import { sendTapeFile } from "./commands/send-tape-file";
+import { refreshView } from "./commands/refresh-view";
+import { spectrumConfigurationInstance } from "./emulator/machine-config";
+import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 
 export function activate(context: vscode.ExtensionContext) {
-  let startEmuCmd = vscode.commands.registerCommand(
-    "kliveide.startEmu",
-    async () => await startEmulator()
-  );
-  context.subscriptions.push(startEmuCmd);
+  const register = vscode.commands.registerCommand;
+  const subs = context.subscriptions;
 
-  let createProjectCmd = vscode.commands.registerCommand(
-    "kliveide.createProject",
-    () => createKliveProject(context)
+  // --- Initialize the machine from configuration
+  spectrumConfigurationInstance.initialize();
+  
+  // --- Register extension commands
+  subs.push(
+    register("kliveide.startEmu", async () => await startEmulator()),
+    register("kliveide.createProject", () => createKliveProject(context)),
+    register("kliveide.goToAddress", () => goToAddress()),
+    register("kliveide.sendTape", (uri: vscode.Uri) => sendTapeFile(uri)),
+    register("kliveide.refreshView", () => refreshView())
   );
-  context.subscriptions.push(createProjectCmd);
-  let goToAddressCmd = vscode.commands.registerCommand(
-    "kliveide.goToAddress",
-    () => goToAddress(context)
-  );
-  context.subscriptions.push(goToAddressCmd);
 
+  // --- Tree provider to display Z80 registers
   const z80RegistersProvider = new Z80RegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);
   vscode.window.registerTreeDataProvider("z80Registers", z80RegistersProvider);
-
-  // --- Notify entities about virtual machine frame information change
-  onFrameInfoChanged(async (fi) => {
-    try {
-      const regData = await communicatorInstance.getRegisters();
-      z80RegistersProvider.refresh(regData);
-    } catch (err) {
-      // --- This exception in intentionally ignored
-    }
-  });
-
-  // --- Notify entities about virtual machine execution state changes
-  onExecutionStateChanged(async () => {
-    const regData = await communicatorInstance.getRegisters();
-    z80RegistersProvider.refresh(regData);
-  });
 
   // --- Indicate the state of Klive Emulator in the status bar
   const vmStateItem = createVmStateStatusBarItem();
@@ -58,12 +45,16 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(vmStateItem);
 
   // --- Register custom editors
-	context.subscriptions.push(DisassemblyEditorProvider.register(context));
+  context.subscriptions.push(DisassemblyEditorProvider.register(context));
+  context.subscriptions.push(MemoryEditorProvider.register(context));
 
   // --- Start the notification mechanism
   startNotifier();
 }
 
+/**
+ * Stop watching for notifications
+ */
 export function deactivate() {
   stopNotifier();
 }

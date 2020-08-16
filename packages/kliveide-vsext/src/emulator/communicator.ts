@@ -18,8 +18,23 @@ class Communicator {
   /**
    * Requests a hello message
    */
-  async hello(): Promise<string> {
-    return this.getText("/hello");
+  async hello(): Promise<boolean> {
+    let retryCount = 0;
+    while (retryCount < 10) {
+      // --- Get the hello response
+      const hello = await this.getText("/hello");
+
+      // --- The "KliveEmu" message signs that the emulator has been initialized.
+      if (hello === "KliveEmu") {
+        // --- The emulator started and initialized.
+        return true;
+      }
+
+      // --- Let's wait while the emulator initializes itself
+      await new Promise((r) => setTimeout(r, 200));
+      retryCount++;
+    }
+    return false;
   }
 
   /**
@@ -46,6 +61,17 @@ class Communicator {
   }
 
   /**
+   * Tests if the specified segment of memory has been written
+   * @param from Firts memory address
+   * @param to Last memory address
+   */
+  async testMemoryWrite(from: number, to: number): Promise<boolean> {
+    const response = await this.getJson<MemoryWriteTest>(`/test-mem-write/${from}/${to}`);
+    console.log(from, to, JSON.stringify(response));
+    return response?.written ?? false;
+  }
+
+  /**
    * Sets the specified breakpoint
    * @param address Breakpoint address
    */
@@ -59,6 +85,15 @@ class Communicator {
    */
   async removeBreakpoint(address: number): Promise<void> {
     await this.post("/delete-breakpoints", { breakpoints: [ address ]});
+  }
+
+  /**
+   * Sends a tape file to the emulator
+   * @param filename File name to send to the emulator
+   */
+  async setTapeFile(filename: string): Promise<boolean> {
+    const response = await this.post("/set-tape", { tapeFile: filename});
+    return response.ok;
   }
 
   /**
@@ -142,6 +177,7 @@ export interface FrameInfo {
   executionState?: number;
   breakpoints?: number[];
   pc?: number;
+  runsInDebug?: boolean;
 }
 
 /**
@@ -149,7 +185,8 @@ export interface FrameInfo {
  */
 export interface ExecutionState {
   state: string,
-  pc?: number
+  pc?: number,
+  runsInDebug?: boolean
 }
 
 /**
@@ -171,6 +208,13 @@ export interface RegisterData {
   i: number;
   r: number;
   wz: number;
+}
+
+/**
+ * Represents the result of the memory write test
+ */
+export interface MemoryWriteTest {
+  written: boolean;
 }
 
 /**

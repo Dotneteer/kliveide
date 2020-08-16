@@ -27,7 +27,7 @@ export interface AppState {
   /**
    * Breakpoint command to execute
    */
-  breakpoints?: Set<number>;
+  breakpoints?: number[];
 }
 
 /**
@@ -37,7 +37,9 @@ export interface EmulatorPanelState {
   width?: number;
   height?: number;
   zoom?: number;
+  engineInitialized?: boolean;
   executionState?: number;
+  runsInDebug?: boolean;
   tapeContents?: Uint8Array;
   keyboardPanel?: boolean;
   shadowScreen?: boolean;
@@ -47,6 +49,7 @@ export interface EmulatorPanelState {
   frameCount?: number;
   muted?: boolean;
   memoryContents?: Uint8Array;
+  memWriteMap?: Uint8Array;
 }
 
 /**

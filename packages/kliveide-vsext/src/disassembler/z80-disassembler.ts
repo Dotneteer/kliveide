@@ -23,12 +23,13 @@ import {
   toSbyte,
   FloatNumber,
 } from "./disassembly-helper";
+import { CancellationToken } from "../utils/cancellation";
 
 /**
  * Number of disassembler items to process in a batch before
  * allowing the event loop
  */
-const DISASSEMBLER_BATCH = 400;
+const DISASSEMBLER_BATCH = 100;
 
 /**
  * Spectrum disassembly item
@@ -53,6 +54,8 @@ export class Z80Disassembler {
   private _spectMode = SpectrumSpecificMode.None;
   private _seriesCount = 0;
   private _lineCount = 0;
+
+  private _cancellationToken: CancellationToken | null = null;
 
   /**
    * Gets the contents of the memory
@@ -99,12 +102,15 @@ export class Z80Disassembler {
    * Disassembles the memory from the specified start address with the given endAddress
    * @param startAddress The start address of the disassembly
    * @param endAddress The end address of the disassembly
-   * @returns The disassembly output
+   * @returns The disassembly output, if finished; or null, if cancelled
    */
   async disassemble(
     startAddress = 0x0000,
-    endAddress = 0xffff
-  ): Promise<DisassemblyOutput> {
+    endAddress = 0xffff,
+    cancellationToken?: CancellationToken
+  ): Promise<DisassemblyOutput | null> {
+    this._cancellationToken = cancellationToken ?? null;
+
     this._output = new DisassemblyOutput();
     if (endAddress > this.memoryContents.length) {
       endAddress = this.memoryContents.length - 1;
@@ -139,14 +145,20 @@ export class Z80Disassembler {
           await this._generateRst28ByteCodeOutput(toDisassemble);
           break;
       }
+      if (this._cancellationToken?.cancelled) {
+        return null;
+      }
     }
     return this._output;
+
+
+
   }
 
   /**
    * Allows the event loop to execute when a batch has ended
    */
-  private async _allowEventLoop(): Promise<void> {
+  private async allowEventLoop(): Promise<void> {
     if (this._lineCount++ % DISASSEMBLER_BATCH === 0) {
       await processMessages();
     }
@@ -162,7 +174,12 @@ export class Z80Disassembler {
     const endOffset = section.endAddress;
     let isSpectrumSpecific = false;
     while (this._offset <= endOffset && !this._overflow) {
-      await this._allowEventLoop();
+      
+      await this.allowEventLoop();
+      if (this._cancellationToken?.cancelled) {
+        return;
+      }
+      
       if (isSpectrumSpecific) {
         const spectItem = this._disassembleSpectrumSpecificOperation();
         isSpectrumSpecific = spectItem.carryOn;
@@ -198,7 +215,12 @@ export class Z80Disassembler {
         }
         sb += `#${intToX2(this.memoryContents[section.startAddress + i + j])}`;
       }
-      await this._allowEventLoop();
+
+      await this.allowEventLoop();
+      if (this._cancellationToken?.cancelled) {
+        return;
+      }
+
       const item = new DisassemblyItem((section.startAddress + i) & 0xffff);
       item.instruction = sb;
       this._output.addItem(item);
@@ -228,7 +250,12 @@ export class Z80Disassembler {
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
         sb += `#${intToX4(value & 0xffff)}`;
       }
-      await this._allowEventLoop();
+      
+      await this.allowEventLoop();
+      if (this._cancellationToken?.cancelled) {
+        return;
+      }
+      
       const item = new DisassemblyItem((section.startAddress + i) & 0xffff);
       item.instruction = sb;
       this._output.addItem(item);
@@ -540,7 +567,12 @@ export class Z80Disassembler {
     this._seriesCount = 0;
     let addr = (this._offset = section.startAddress);
     while (addr <= section.endAddress) {
-      await this._allowEventLoop();
+      
+      await this.allowEventLoop();
+      if (this._cancellationToken?.cancelled) {
+        return;
+      }
+
       this._currentOpCodes = "";
       const opCode = this._fetch();
       const entry = this._disassembleCalculatorEntry(addr, opCode);

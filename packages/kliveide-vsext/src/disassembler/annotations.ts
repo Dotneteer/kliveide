@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import {
   MemoryMap,
   SpectrumSpecificDisassemblyFlags,
@@ -356,73 +355,86 @@ export class DisassemblyAnnotation {
   }
 
   /**
-   * Saves the annotation to the file in resourceName
-   */
-  saveToFile() {
-    if (this.resourceName) {
-      const contents = this.serialize();
-      fs.writeFileSync(this.resourceName, contents, "utf8");
-    }
-  }
-
-  /**
    * Deserializes the specified JSON string into a DisassemblyAnnotation
    * @param json JSON representation
    */
-  static deserialize(json: string): DisassemblyAnnotation | undefined {
+  static deserialize(json: string): DisassemblyAnnotation | null {
     let data: any;
     try {
       data = JSON.parse(json);
     } catch (err) {
       console.log(err);
-      return undefined;
+      return null;
     }
 
-    const annotation = new DisassemblyAnnotation();
-    if (data) {
-      annotation.labels = new Map<number, string>();
-      for (const addr in data.labels) {
-        annotation.labels.set(parseInt(addr), data.labels[addr]);
+    try {
+      const annotation = new DisassemblyAnnotation();
+
+      if (data.labels) {
+        annotation.labels = new Map<number, string>();
+        for (const addr in data.labels) {
+          annotation.labels.set(parseInt(addr), data.labels[addr]);
+        }
       }
-      annotation.comments = new Map<number, string>();
-      for (const addr in data.comments) {
-        annotation.comments.set(parseInt(addr), data.comments[addr]);
+
+      if (data.comments) {
+        annotation.comments = new Map<number, string>();
+        for (const addr in data.comments) {
+          annotation.comments.set(parseInt(addr), data.comments[addr]);
+        }
       }
-      annotation.prefixComments = new Map<number, string>();
-      for (const addr in data.prefixComments) {
-        annotation.prefixComments.set(
-          parseInt(addr),
-          data.prefixComments[addr]
-        );
+
+      if (data.prefixComments) {
+        annotation.prefixComments = new Map<number, string>();
+        for (const addr in data.prefixComments) {
+          annotation.prefixComments.set(
+            parseInt(addr),
+            data.prefixComments[addr]
+          );
+        }
       }
-      annotation.literals = new Map<number, string[]>();
-      for (const addr in data.literals) {
-        annotation.literals.set(parseInt(addr), data.literals[addr]);
+
+      if (data.literals) {
+        annotation.literals = new Map<number, string[]>();
+        for (const addr in data.literals) {
+          annotation.literals.set(parseInt(addr), data.literals[addr]);
+        }
       }
-      annotation.literalReplacements = new Map<number, string>();
-      for (const addr in data.literalReplacements) {
-        annotation.literalReplacements.set(
-          parseInt(addr),
-          data.literalReplacements[addr]
-        );
+
+      if (data.literalReplacements) {
+        annotation.literalReplacements = new Map<number, string>();
+        for (const addr in data.literalReplacements) {
+          annotation.literalReplacements.set(
+            parseInt(addr),
+            data.literalReplacements[addr]
+          );
+        }
       }
+
       annotation.disassemblyFlags = data.disassemblyFlags || 0;
-      for (const section of data.memorySections) {
-        annotation.memoryMap.sections.push(
-          new MemorySection(
-            section.startAddress,
-            section.endAddress,
-            section.sectionType
-          )
-        );
+
+      if (data.memorySections) {
+        for (const section of data.memorySections) {
+          annotation.memoryMap.sections.push(
+            new MemorySection(
+              section.startAddress,
+              section.endAddress,
+              section.sectionType
+            )
+          );
+        }
       }
+
       for (const literal of annotation.literals) {
         for (const item of literal[1]) {
           annotation.literalValues.set(item, literal[0]);
         }
       }
+      return annotation;
+    } catch (err) {
+      console.log(err);
+      return null;
     }
-    return annotation;
   }
 }
 

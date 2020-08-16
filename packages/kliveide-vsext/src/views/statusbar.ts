@@ -16,14 +16,18 @@ export function createVmStateStatusBarItem(): vscode.StatusBarItem {
     100
   );
   vmStateItem.text = getStateMessage("none");
+  vmStateItem.tooltip = "Click to start the Klive Emulator";
   vmStateItem.show();
 
   onExecutionStateChanged((execState) => {
     vmStateItem.text = getStateMessage(execState.state);
+    vmStateItem.tooltip = getStateTooltip(execState.state);
   });
 
   onConnectionStateChanged((state) => {
-    vmStateItem.text = getStateMessage(state ? "none" : "disconnected");
+    const execState = state ? "none" : "disconnected";
+    vmStateItem.text = getStateMessage(execState);
+    vmStateItem.tooltip = getStateTooltip(execState);
   });
   return vmStateItem;
 
@@ -44,5 +48,24 @@ export function createVmStateStatusBarItem(): vscode.StatusBarItem {
         break;
     }
     return `Klive $(${statusIcon})`;
+  }
+
+  function getStateTooltip(state: string): string {
+    let tooltip = "Click to start the Klive Emulator";
+    switch (state) {
+      case "running":
+        tooltip = "The virtual machine is running.";
+        break;
+      case "pausing":
+      case "paused":
+        tooltip = "The virtual machine is paused.";
+        break;
+      case "none":
+      case "stopping":
+      case "stopped":
+        tooltip = "The virtual machine is stopped.";
+        break;
+    }
+    return tooltip;
   }
 }

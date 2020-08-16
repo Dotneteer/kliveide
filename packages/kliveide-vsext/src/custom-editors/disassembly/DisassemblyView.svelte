@@ -1,60 +1,91 @@
 <script>
+  // ==========================================================================
+  // This component implements the view for the Disassembly editor
+
   import { onMount, tick, afterUpdate } from "svelte";
   import { disassembly } from "./DisassemblyView";
+  import { vscodeApi } from "../messaging/messaging-core";
+  import { DisassemblyAnnotation } from "../../disassembler/annotations";
+  import ConnectionPanel from "../controls/ConnectionPanel.svelte";
+  import RefreshPanel from "../controls/RefreshPanel.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
-  import { vscodeApi } from "../messaging/messaging-core";
 
-  let name = "Klive IDE";
-
-  let connected = true;
-  let refreshed = false;
-  let disassembling = false;
-  let needScroll = null;
-  let needToScrollAfterDisassembly = null;
-  let execState;
+  // --- Disassembly items to display
   let items = [];
+
+  // --- Indicates if Klive emulator is connected
+  let connected = true;
+
+  // --- Indicates if the view is refreshed
+  let refreshed = true;
+
+  // --- Hold a cancellable refresh token while disassembly is being refreshed
+  let refreshToken;
+
+  // --- Scroll position to apply after disassembly has been refreshed
+  let needScroll = null;
+
+  // --- Gap to apply during scroll operation
+  let scrollGap = 0;
+
+  // --- Virtual machine execution state
+  let execState;
+
+  // --- Indicates the the vm runs in debug mode
+  let runsInDebug;
+
+  // --- Breakpoints set
   let breakpoints;
+
+  // --- The current value of the PC register
   let currentPc;
 
-  let virtualList;
-  let itemHeight;
-  let api;
+  // --- Disassembly annotations to apply
+  let annotations;
 
-  onMount(async () => {
+  // --- The API of the virtual list component
+  let virtualListApi;
+
+  // --- The index of the visible item at the top
+  let startItemIndex;
+
+  // --- Handle the event when the component is initialized
+  onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", (ev) => {
       if (ev.data.viewNotification) {
+        // --- We listen only messages sent to this view
         switch (ev.data.viewNotification) {
+          case "doRefresh":
+            // --- The Webview sends this request to refresh the view
+            refreshed = false;
+            if (ev.data.annotations) {
+              annotations = DisassemblyAnnotation.deserialize(
+                ev.data.annotations
+              );
+            }
+            break;
           case "connectionState":
             // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
               refreshed = false;
+              needScroll = 0;
             }
             break;
           case "execState":
             // --- Respond to vm execution state changes
-            const oldState = execState;
-            if (!execState) {
-              refreshed = false;
-            }
+            runsInDebug = ev.data.runsInDebug;
             switch (ev.data.state) {
               case "paused":
-                if (oldState === "none" || !oldState) {
-                  needToScrollAfterDisassembly = ev.data.pc;
-                  break;
-                }
               case "stopped":
                 needScroll = ev.data.pc;
-                break;
-              case "running":
-                if (oldState === "stopped" || oldState === "none") {
-                  needScroll = 0;
-                }
+                scrollGap = 3;
                 break;
               case "none":
                 needScroll = 0;
+                scrollGap = 0;
                 currentPc = -1;
                 break;
             }
@@ -68,54 +99,87 @@
           case "pc":
             currentPc = ev.data.pc;
             break;
+          case "goToAddress":
+            needScroll = ev.data.address;
+            scrollGap = 0;
+            break;
+          case "refreshView":
+            // --- Store the current top position to scroll back
+            // --- to that after refrehs
+            try {
+              const item = items[startItemIndex + 1];
+              needScroll = item.address;
+            } catch (err) {
+              // --- This error is intentionally ignored
+              needScroll = 0;
+            }
+            // --- Sign that a refresh is require
+            refreshed = false;
+            scrollGap = 0;
+            break;
         }
       }
     });
 
+    // --- No, the component is initialized, notify the Webview
+    // --- and ask it to refresh this view
     vscodeApi.postMessage({ command: "refresh" });
   });
 
-  $: {
-    if (!refreshed && connected) {
-      refreshDisassembly();
+  // --- Refresh the view when connection/refresh statte changes
+  $: (async () => {
+    if (connected && !refreshed) {
+      if (await refreshDisassembly()) {
+        refreshed = true;
+      }
     }
-  }
+  })();
 
-  $: {
-    if (needScroll !== null && !disassembling) {
-      console.log(`Start scroll to ${needScroll}`);
-      scrollToAddress(needScroll);
-      needScroll = null;
-    }
+  // --- Scroll to the specified location
+  $: if (needScroll !== null && refreshed) {
+    scrollToAddress(needScroll);
   }
 
   // --- Initiate refreshing the disassembly view
   // --- Take care not to start disassembling multiple times
   async function refreshDisassembly() {
-    if (disassembling) {
-      return;
+    // --- Cancel, if disassembly in progress, and start a new disassembly
+    if (refreshToken) {
+      refreshToken.cancelled = true;
     }
-    disassembling = true;
+
+    // --- Start a new disassembly
     try {
-      const disass = await disassembly(0, 0xffff);
+      refreshToken = {
+        cancelled: false,
+      };
+      const disass = await disassembly(0, 0xffff, annotations, refreshToken);
+      if (!disass) {
+        // --- This disassembly was cancelled
+        return false;
+      }
       items = disass.outputItems;
-      refreshed = true;
     } finally {
-      disassembling = false;
+      // --- Release the cancellation token
+      refreshToken = null;
     }
-    await new Promise((r) => setTimeout(r, 100));
-    if (needToScrollAfterDisassembly !== null) {
-      scrollToAddress(needToScrollAfterDisassembly);
-      needToScrollAfterDisassembly = null;
+
+    await tick();
+    await new Promise((r) => setTimeout(r, 50));
+    if (needScroll !== null) {
+      await scrollToAddress(needScroll);
     }
+    return true;
   }
 
   // --- Scroll to the specified address
-  function scrollToAddress(address) {
-    if (api) {
+  async function scrollToAddress(address) {
+    if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
-      found = Math.max(0, found - 3);
-      api.scrollToItem(found);
+      found = Math.max(0, found - scrollGap);
+      virtualListApi.scrollToItem(found);
+      needScroll = null;
+      scrollGap = 0;
     }
   }
 </script>
@@ -131,41 +195,27 @@
     position: relative;
     user-select: none;
   }
-
-  .disconnected {
-    padding: 8px;
-  }
-
-  .message {
-    color: var(--vscode-terminal-ansiWhite);
-    padding: 0px 2px;
-    line-height: 1em;
-  }
-
-  .title {
-    color: var(--vscode-terminal-ansiRed);
-    padding: 0px 2px;
-    line-height: 1em;
-  }
 </style>
 
 <div class="component">
   {#if !connected}
-    <div class="disconnected">
-      <p class="title">
-        <strong>Disconnected from Klive Emulator.</strong>
-      </p>
-      <p class="message">
-        You can click the Klive icon in the status bar to start Klive Emulator.
-      </p>
-    </div>
+    <ConnectionPanel />
   {:else}
-    <VirtualList {items} itemHeight={20} let:item bind:api>
+    {#if !refreshed}
+      <RefreshPanel text="Refreshing Z80 Disassembly view..." />
+    {/if}
+    <VirtualList
+      {items}
+      itemHeight={20}
+      let:item
+      bind:api={virtualListApi}
+      bind:start={startItemIndex}>
       <DisassemblyEntry
         {item}
         hasBreakpoint={breakpoints.has(item.address)}
         isCurrentBreakpoint={currentPc === item.address}
-        {execState} />
+        {execState}
+        {runsInDebug} />
     </VirtualList>
   {/if}
 </div>

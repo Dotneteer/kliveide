@@ -2,10 +2,10 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api";
-import { TestZ80Machine } from "../../src/native/TestZ80Machine";
-import { Z80StateFlags } from "../../src/native/cpu-helpers";
-import { RunMode } from "../../src/native/RunMode";
+import { CpuApi } from "../../src/native/api/api";
+import { TestZ80Machine } from "../../src/native/api/TestZ80Machine";
+import { Z80StateFlags } from "../../src/native/api/cpu-helpers";
+import { RunMode } from "../../src/native/api/RunMode";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: CpuApi;

@@ -8,6 +8,7 @@ export interface Payload {
   height?: number;
   zoom?: number;
   executionState?: number;
+  runsInDebug?: boolean;
   tapeContents?: Uint8Array;
   shadowScreen?: boolean;
   beamPosition?: boolean;
@@ -20,5 +21,6 @@ export interface Payload {
   from?: number;
   to?: number;
   memoryContents?: Uint8Array;
+  memWriteMap?: Uint8Array;
   breakpoints?: number[];
 }

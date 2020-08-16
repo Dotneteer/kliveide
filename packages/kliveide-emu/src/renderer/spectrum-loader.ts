@@ -1,6 +1,6 @@
 import { SpectrumEngine } from "./spectrum/SpectrumEngine";
-import { MachineApi } from "../native/api";
-import { ZxSpectrum48 } from "../native/ZxSpectrum48";
+import { MachineApi } from "../native/api/api";
+import { ZxSpectrum48 } from "../native/api/ZxSpectrum48";
 import { createRendererProcessStateAware } from "./rendererProcessStore";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 
@@ -58,7 +58,7 @@ export async function loadSpectrumEngine(): Promise<void> {
     spectrum.turnOnMachine();
     _spectrumEngine = new SpectrumEngine(spectrum);
     const stateAware = createRendererProcessStateAware();
-    stateAware.onStateChanged.on(async (state) => {
+    stateAware.stateChanged.on(async (state) => {
       if (processingChange) return;
       processingChange = true;
 

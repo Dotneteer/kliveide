@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { ZxSpectrumBase } from "../../native/ZxSpectrumBase";
+import { ZxSpectrumBase } from "../../native/api/ZxSpectrumBase";
 import {
   ExecutionState,
   ExecutionStateChangedArgs,
@@ -13,20 +13,27 @@ import {
   EmulationMode,
   DebugStepMode,
   SpectrumMachineStateBase,
-} from "../../native/machine-state";
-import { SpectrumKeyCode } from "../../native/SpectrumKeyCode";
+} from "../../native/api/machine-state";
+import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
 import { EmulatedKeyStroke } from "./spectrum-keys";
-import { MemoryHelper } from "../../native/memory-helpers";
+import { MemoryHelper } from "../../native/api/memory-helpers";
 import { AudioRenderer } from "./AudioRenderer";
-import { rendererProcessStore } from "../rendererProcessStore";
+import {
+  rendererProcessStore,
+  createRendererProcessStateAware,
+} from "../rendererProcessStore";
 import {
   emulatorSetExecStateAction,
   emulatorSetTapeContenstAction,
   emulatorSetFrameIdAction,
   emulatorSetMemoryContentsAction,
+  engineInitializedAction,
+  emulatorSetDebugAction,
+  emulatorSetMemWriteMapAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
+import { TapReader } from "../../shared/tape/tap-file";
 import { RegisterData } from "../../shared/spectrum/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 
@@ -36,6 +43,16 @@ import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 const BEEPER_SAMPLE_BUFF = 0x0b_2200;
 
 /**
+ * Start of the ZX Spectrum memory buffer
+ */
+const SPECTRUM_MEM = 0x00_0000;
+
+/**
+ * Start of the memory write map
+ */
+const MEMWRITE_MAP = 0x1f_6500;
+
+/**
  * This class represents the engine of the ZX Spectrum,
  * which runs within the main process.
  */
@@ -43,6 +60,7 @@ export class SpectrumEngine {
   private _vmState: ExecutionState = ExecutionState.None;
   private _isFirstStart: boolean = false;
   private _isFirstPause: boolean = false;
+  private _isDebugging: boolean = false;
   private _executionCycleError: Error | undefined;
   private _cancelled: boolean = false;
   private _justRestoredState: boolean = false;
@@ -79,6 +97,10 @@ export class SpectrumEngine {
   private _avgEngineTime = 0.0;
   private _renderedFrames = 0;
 
+  // --- State changes
+  private _stateAware = createRendererProcessStateAware("breakpoints");
+  private _oldBrpoints: number[] = [];
+
   /**
    * Initializes the engine with the specified ZX Spectrum instance
    * @param spectrum Spectrum VM to use
@@ -90,6 +112,25 @@ export class SpectrumEngine {
     rendererProcessStore.dispatch(
       emulatorSetMemoryContentsAction(memContents)()
     );
+    rendererProcessStore.dispatch(engineInitializedAction());
+    this._stateAware.stateChanged.on((state) => {
+      const brpoints = state as number[];
+      if (!brpoints) {
+        return;
+      }
+      const oldBreaks = this._oldBrpoints;
+      if (
+        oldBreaks.length !== brpoints.length ||
+        oldBreaks.some((item) => !brpoints.includes(item))
+      ) {
+        // --- Breakpoints changed, update them
+        this.spectrum.api.eraseBreakpoints();
+        for (const brpoint of Array.from(brpoints)) {
+          this.spectrum.api.setBreakpoint(brpoint);
+        }
+      }
+      this._oldBrpoints = brpoints;
+    });
   }
 
   /**
@@ -123,7 +164,7 @@ export class SpectrumEngine {
     const oldState = this._vmState;
     this._vmState = newState;
     this._executionStateChanged.fire(
-      new ExecutionStateChangedArgs(oldState, newState)
+      new ExecutionStateChangedArgs(oldState, newState, this._isDebugging)
     );
     rendererProcessStore.dispatch(emulatorSetExecStateAction(this._vmState)());
   }
@@ -314,11 +355,7 @@ export class SpectrumEngine {
       }
 
       const binaryReader = new BinaryReader(this._defaultTapeSet);
-      const tzxReader = new TzxReader(binaryReader);
-      if (tzxReader.readContents()) {
-        const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
-        this.spectrum.api.initTape(blocks);
-      }
+      this.initTape(binaryReader);
 
       // --- Set fast LOAD mode
       this.spectrum.api.setFastLoad(emuState.fastLoad);
@@ -335,8 +372,21 @@ export class SpectrumEngine {
       this._sumEngineTime = 0.0;
       this._lastEngineTime = 0.0;
       this._avgEngineTime = 0.0;
+      this._sumFrameTime = 0.0;
       this._renderedFrames = 0;
+
+      // --- Clear debug information
+      this.spectrum.api.resetStepOverStack();
     }
+
+    // --- Initialize debug info before run
+    this.spectrum.api.markStepOverStack();
+
+    // --- Sign the current debug mode
+    this._isDebugging = options.debugStepMode !== DebugStepMode.None;
+    rendererProcessStore.dispatch(
+      emulatorSetDebugAction(this._isDebugging)()
+    );
 
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
@@ -415,9 +465,47 @@ export class SpectrumEngine {
    * Starts the virtual machine in step-over mode
    */
   async stepOver(): Promise<void> {
-    await this.run(
-      new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOver)
-    );
+    // --- Calculate the location of the step-over breakpoint
+    const mh = new MemoryHelper(this.spectrum.api, SPECTRUM_MEM);
+    const pc = this.getMachineState().pc;
+    const opCode = mh.readByte(pc);
+    let length = 0;
+    if (opCode === 0xcd) {
+      // --- CALL
+      length = 3;
+    } else if ((opCode & 0xc7) === 0xc4) {
+      // --- CALL with conditions
+      length = 3;
+    } else if ((opCode & 0xc7) === 0xc7) {
+      // --- RST instruction
+      length = 1;
+    } else if (opCode === 0x76) {
+      // --- HALT
+      length = 1;
+    } else if (opCode === 0xed) {
+      // --- Block I/O and transfer
+      const extOpCode = mh.readByte(pc + 1);
+      length = (extOpCode & 0xb4) === 0xb0 ? 2 : 0;
+    }
+
+    // --- Calculate start options
+    let options: ExecuteCycleOptions;
+
+    if (length > 0) {
+      // --- Use step-over mode
+      options = new ExecuteCycleOptions(
+        EmulationMode.Debugger,
+        DebugStepMode.StepOver
+      );
+      options.stepOverBreakpoint = pc + length;
+    } else {
+      // --- Use step-into mode
+      options = new ExecuteCycleOptions(
+        EmulationMode.Debugger,
+        DebugStepMode.StepInto
+      );
+    }
+    await this.run(options);
   }
 
   /**
@@ -452,13 +540,17 @@ export class SpectrumEngine {
   ): Promise<void> {
     const state = machine.spectrum.getMachineState();
     // --- Store the start time of the frame
-    const clockFreq = state.baseClockFrequency * state.clockMultiplier;
-    const nextFrameGap = (state.tactsInFrame / clockFreq) * 1000;
+    //const clockFreq = state.baseClockFrequency * state.clockMultiplier;
+    const nextFrameGap = (state.tactsInFrame / state.baseClockFrequency) * 1000;
     let nextFrameTime = performance.now() + nextFrameGap;
 
     // --- Execute the cycle until completed
     while (true) {
+      // --- Prepare the execution cycle
       const frameStartTime = performance.now();
+      this.spectrum.api.eraseMemoryWriteMap();
+
+      // --- Now run the cycle
       machine.spectrum.executeCycle(options);
 
       // --- Engine time information
@@ -467,10 +559,11 @@ export class SpectrumEngine {
       this._sumEngineTime += this._lastEngineTime;
       this._avgEngineTime = this._sumEngineTime / this._renderedFrames;
 
+      const resultState = (this._loadedState = machine.spectrum.getMachineState());
+
       // --- Check for user cancellation
       if (this._cancelled) return;
 
-      const resultState = (this._loadedState = machine.spectrum.getMachineState());
       const reason = resultState.executionCompletionReason;
 
       // --- Set data frequently queried
@@ -484,6 +577,11 @@ export class SpectrumEngine {
       const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
       rendererProcessStore.dispatch(
         emulatorSetMemoryContentsAction(memContents)()
+      );
+      mh = new MemoryHelper(this.spectrum.api, MEMWRITE_MAP);
+      const memWriteMap = new Uint8Array(mh.readBytes(0, 0x2000));
+      rendererProcessStore.dispatch(
+        emulatorSetMemWriteMapAction(memWriteMap)()
       );
 
       // --- Branch according the completion reason
@@ -639,13 +737,30 @@ export class SpectrumEngine {
   }
 
   /**
-   * Stores the current contents of the memory in the emulator state
+   * Initializes the tape from the specified binary reader
+   * @param reader Reader to use
    */
-  storeMemoryContents(): void {
-    const mh = new MemoryHelper(this.spectrum.api, 0);
-    const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
-    rendererProcessStore.dispatch(
-      emulatorSetMemoryContentsAction(memContents)()
-    );
+  initTape(reader: BinaryReader): boolean {
+    const tzxReader = new TzxReader(reader);
+    if (tzxReader.readContents()) {
+      const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
+      this.spectrum.api.initTape(blocks);
+      return true;
+    }
+
+    const tapReader = new TapReader(reader);
+    if (tapReader.readContents()) {
+      const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);
+      this.spectrum.api.initTape(blocks);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Colorize the currently rendered screen
+   */
+  colorize(): void {
+    this.spectrum.api.colorize();
   }
 }

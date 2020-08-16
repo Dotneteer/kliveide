@@ -36,7 +36,7 @@
 
   // --- Respond to the event when app focus changes
   const stateAware = createRendererProcessStateAware();
-  stateAware.onStateChanged.on(async state => {
+  stateAware.stateChanged.on(async state => {
     // --- Change the UI according to state change
     const emuUi = state.emulatorPanelState;
     if (emuUi) {
@@ -127,12 +127,14 @@
     iconName="step-over"
     fill="lightblue"
     title="Step over"
-    enable={executionState === 3} />
+    enable={executionState === 3} 
+    on:clicked={async () => await spectrum.stepOver()} />
   <ToolbarIconButton
     iconName="step-out"
     fill="lightblue"
     title="Step out"
-    enable={executionState === 3} />
+    enable={executionState === 3} 
+    on:clicked={async () => await spectrum.stepOut()} />
   <ToolbarSeparator />
   <ToolbarIconButton
     iconName="keyboard"

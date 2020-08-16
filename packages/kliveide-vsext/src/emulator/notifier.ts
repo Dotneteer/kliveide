@@ -61,22 +61,36 @@ export async function startNotifier(): Promise<void> {
   if (started) {
     return;
   }
+  vscode.commands.executeCommand(
+    "setContext",
+    "kliveEmuConnected",
+    true
+  );
+
   cancelled = false;
   onConnectionStateChanged((state) => {
     if (!state) {
       resetLastFrameInfo();
     }
-  });
+    vscode.commands.executeCommand(
+      "setContext",
+      "kliveEmuConnected",
+      state
+    );
+});
 
   while (!cancelled) {
     try {
-      const frameInfo = await communicatorInstance.frameInfo();
-
-      // --- Sense connection restore
       if (!connected) {
-        connected = true;
-        connectionStateChanged.fire(connected);
+        // --- Restore lost connection
+        connected = await communicatorInstance.hello();
+        if (connected) {
+          connectionStateChanged.fire(connected);
+        }
       }
+
+      // --- Obtain frame information to detect changes
+      const frameInfo = await communicatorInstance.frameInfo();
 
       // --- Handle changes in frame ID
       if (
@@ -90,11 +104,13 @@ export async function startNotifier(): Promise<void> {
       // --- Handle changes in execution state
       if (
         frameInfo.executionState !== lastFrameInfo.executionState ||
+        frameInfo.runsInDebug !== lastFrameInfo.runsInDebug ||
         frameInfo.startCount !== lastFrameInfo.startCount
       ) {
         executionStateChanged.fire({
           state: getExecutionStateName(frameInfo.executionState),
           pc: frameInfo.pc,
+          runsInDebug: frameInfo.runsInDebug
         });
       }
 
