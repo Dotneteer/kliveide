@@ -2,9 +2,11 @@
 
 This project aims to build a full-fledged ZX Spectrum IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+), Klive IDE intends to be an attractive development platform for [ZX Spectrum Next](https://www.specnext.com/).
 
-**The current public release (v0.2.0) is released on August 2, 2020**. [You can immediately try it](#try-release).
+**The current public release (v0.3.0) is released on August 16, 2020**.
 
-[You can build the latest commit](#build-it).
+- [You can immediately try it](https://dotneteer.github.io/kliveide/getting-started/install-kliveide)
+- [You can build the binaries from the latest commit](https://dotneteer.github.io/kliveide/getting-started/build-kliveide)
+- [Discover the IDE with creating a Klive project](https://dotneteer.github.io/kliveide/getting-started/create-klive-project)
 
 ## Approach
 
@@ -54,86 +56,9 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
 4. A Klive IDE version that provides feature-parity with SpectNetIDE
 5. Moving toward ZX Spectrum Next
 
-<a name="try-release"></a>
+## Contact me
 
-## Installing and Running Release v0.1.0
-
-> **Note**: This release runs only on Windows. Not as if the source code were Windows-specific, it supposed to support Linux, Mac, and Windows. I do not have a Mac to build this product, as I miss some crucial experiences with Linux. **I'm looking for contributors who could help me with building for the other platforms.**
-
-To install the early preview release, follow these steps:
-
-1. **Make sure that Visual Studio Code is installed on your computer.** If not, or it is older than v1.46.0, visit https://code.visualstudio.com/download for the newest version.
-2. Download the `KliveSetup-0.2.0.exe`, and `kliveide-vsext-0.2.0.vsix` files from [Release v0.2.0](https://github.com/Dotneteer/kliveide/releases/tag/v0.2.0).
-3. Install the standalone **Klive Emulator** by running `KliveSetup-0.2.0.exe`. Windows may display a security message about risks&mdash;ignore that and install the app.
-4. In the Windows search box, type `Klive`, and right-click the **Klive** app within the results. From the context menu, select "Open File Location".
-5. Right-click the **Klive** shortcut, and open its properties. Copy the target file information (the entire path) from the dialog. On my machine, it looks like this: `C:\Users\dotne\AppData\Local\Programs\@dotneteerkliveide-emu\Klive.exe`. **On your machine, it will be different**. Save this information, as you need to use it soon.
-6. Open Visual Studio Code, and open any empty folder as a project. The next few steps will add files and folders, so you'd better use an empty one. 
-7. Select the Extensions tab in the activity bar (the leftmost vertical panel in VS Code) . Above the list of the extensions, in the EXTENSIONS header, click the menu, and select **Install from VSIX...**. When the dialog opens, select and install the `kliveide-vsext-0.2.0.vsix` file, and then reload VS Code.
-8. Click the settings icon in VS Code's activity bar, and select the **Settings** menu command. You must set the **Emulator Executable Path** value to the one you saved in Step 5. Please, change all backslash characters to slashes, and do not forget to include the executable name. Make sure that the **Emulator Port** value is set to 3000, as this proof-of-concept works only with this port.
-9. In VS Code, press Ctrl+Shift+P, or F1 (or if those do not work on your machine, use the **View|Command Palette...** menu). In the command box, type "Start Klive", and then run the **Create Klive Project** command.
-
-![Klive project](./intro/klive-project.png)
-
-10. Now, click the `.spectrum/view.disassebly file`. (Note: VS Code may offer you to download extensions for `.disassembly` files. Yo do not need them.) In a few seconds, you'll see this:
-
-![Disassembly disconnected](./intro/disassembly-disconnected.png)
-
-In the status bar, you can see a section that shows the disconnected state of the Klive Emulator:
-
-![Disassembly disconnected](./intro/klive-disconnected.png)
-
-In the status bar, click **Klive**. It starts the Klive Emulator, and refreshes the `view.disassembly` file's area:
-
-![Disassembly init](./intro/disassembly-init.png)
-
-> Note: There's still a bug that may cause the `view.disassembly` pane remain empty after the emulator started. Close `view.disassembly`, then open it again by clicking on the filename in the Explorer.
-
-11. Start the ZX Spectrum in the emulator. Wait for the Sinclair copyright message, then pause the machine. The disassembly will show the current execution point:
-
-![Disassembly pause 1](./intro/pause-1.png)
-
-12. Click the step-into icon in the emulator. It will move to the next Z80 instruction to execute. As the Z80 is just about to respond to the interrupt request, the execution will continue at the $0038 address:
-
-![Disassembly pause 2](./intro/pause-2.png)
-
-> Note: There's still a bug that may need you to scroll down to the $0038 address.
-
-13. Play with the virtual emulator :-)
-
-<a name="build-it"></a>
-
-## Building Klive IDE
-
-This repository is a monorepo with two packages and uses [Lerna](https://github.com/lerna/lerna) for managing them. In the future, the repo may have additional packages.
-
-Prepare the code for build and run:
-
-1. **Make sure that the latest Node.js is installed on your machine.** You can download it from here: https://nodejs.org/en/.
-3. Fork this repository, and clone it.
-3. Run `npm run bootstrap` to install and setup the packages.
-4. Open the project folder in VS Code (or in your preferred coding tool). Take care that the current working directory (as always) should be the project folder.
-
-Follow these steps to build and run the Klive Emulator in development mode:
-
-1. Start a new command-line program (a terminal window in VS Code), and execute the `npm run dev`. It will build the Klive Emulator and starts the Webpack development server that continuously watches for code changes. The server runs until you terminate this process. To run Klive Emulator, keep this process alive.
-2. Start *another* command-line prompt (terminal window), and run the emulator with `npm start`.
-3. When you have completed playing with it, close the emulator, and then terminate the open command-line prompts.
-
-> Note: Wait while the `npm run dev` command completes the build; otherwise, the `npm start` command will fail.
-
-These steps help to build and install Klive Emulator:
-
-1. On Windows, execute the `npm run build:win` command. On Mac, run `npm run build:mac`; or `npm run build:linux` on Linux. In a few minutes, these commands prepare the Klive setup kit.
-2. Open the `packages/kliveide-emu/out` folder in your preferred file manager tool. In VS Code, you can right-click this folder in the Explorer pane and select the **Reveal in File Explorer** command.
-3. Start the `KliveSetup-<version>.exe` app within this folder. It runs the setup kit and then starts Klive Emulator.
-
-With a few additional steps, you can try the Klive VS Code extension:
-
-1. If you use the development mode, start a second Visual Studio Code, and open the `packages/kliveide-vsext` folder within the project folder. If you do not, complete the build steps of Klive Emulator, and **take care that the emulator runs** while playing with the VS Code extension.
-2. Press Ctrl+F5 (**Run|Run Without Debugging** command). In a few seconds, VS Code builds the extension and starts a new VS Code instance (Extension Development Host).
-3. Select the Debug tab in VS Code's activity bar. This action displays the **Z80 REGISTERS** view at the bottom. *Unless you visit this tab, VS Code does not load the Klive IDE extension.
-4. Alternatively, you can run the **Start Klive Emulator** command with F1 or Ctrl+Shift+P (or **View|Command Palette**).
-5. Play with the emulator. As you run it, you can observe that Z80 register's values are periodically refreshed (see the value of R register).
-
+You can directly contact me: dotneteer@hotmail.com
+For discussions, join the Telegram group at https://t.me/kliveide
 
 
