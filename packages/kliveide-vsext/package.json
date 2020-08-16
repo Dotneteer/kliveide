@@ -21,6 +21,7 @@
   "icon": "assets/icon.png",
   "activationEvents": [
     "onCommand:kliveide.createProject",
+    "onCommand:kliveide.startEmu",
     "workspaceContains: **/.spectrum/spectrum.machine"
   ],
   "contributes": {
