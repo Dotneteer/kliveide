@@ -23,13 +23,25 @@ export async function startEmulator(): Promise<void> {
   delete spawn_env.ELECTRON_RUN_AS_NODE;
   const config = vscode.workspace.getConfiguration(KLIVEIDE);
   const exePath = config.get(EMU_EXEC_PATH) as string;
+  if (!exePath || exePath.trim() === "") {
+    vscode.window.showErrorMessage(`The Klive Emulator path is empty. Please set it in Klive settings.`);
+    return;
+  }
   try {
     const proc = spawn(exePath, [], {
       env: spawn_env,
       detached: true,
     });
-
-    vscode.window.showInformationMessage("Klive Emulator successfuly started.");
+    if (proc.pid) {
+      try {
+        await communicatorInstance.hello();
+        vscode.window.showInformationMessage("Klive Emulator successfuly started.");
+      } catch (err) {
+        vscode.window.showErrorMessage(`Cannot communicate with the executable on '${exePath}'.`);
+      }
+    } else {
+      vscode.window.showErrorMessage(`The path '${exePath}' is not a valid path to Klive executable.`);
+    }
   } catch (err) {
     vscode.window.showErrorMessage(`Klive Emulator: ${err}`);
   }
