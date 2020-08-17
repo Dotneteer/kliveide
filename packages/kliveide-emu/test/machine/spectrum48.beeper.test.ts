@@ -9,6 +9,7 @@ import {
   EmulationMode,
 } from "../../src/native/api/machine-state";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
+import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: MachineApi;
@@ -18,9 +19,7 @@ const BEEPER_SAMPLE_BUFFER = 0x0b_2200;
 
 describe("ZX Spectrum 48 - Beeper", () => {
   before(async () => {
-    const wasm = await WebAssembly.instantiate(buffer, {
-      imports: { trace: (arg: number) => console.log(arg) },
-    });
+    const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as MachineApi;
     machine = new ZxSpectrum48(api);
   });

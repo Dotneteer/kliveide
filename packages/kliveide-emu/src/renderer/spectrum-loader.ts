@@ -1,8 +1,10 @@
 import { SpectrumEngine } from "./spectrum/SpectrumEngine";
 import { MachineApi } from "../native/api/api";
 import { ZxSpectrum48 } from "../native/api/ZxSpectrum48";
-import { createRendererProcessStateAware } from "./rendererProcessStore";
+import { createRendererProcessStateAware, rendererProcessStore } from "./rendererProcessStore";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
+import { MemoryHelper } from "../native/api/memory-helpers";
+import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -25,6 +27,11 @@ let lastEmulatorCommand = "";
 let processingChange = false;
 
 /**
+ * Address of the tape data buffer
+ */
+const TAPE_DATA_BUFFER = 0x15_4300;
+
+/**
  * Get the initialized ZX Spectrum engine
  */
 export async function getSpectrumEngine(): Promise<SpectrumEngine> {
@@ -42,7 +49,12 @@ export async function getSpectrumEngine(): Promise<SpectrumEngine> {
  */
 export async function loadSpectrumEngine(): Promise<void> {
   const importObject = {
-    imports: { trace: (arg: number) => console.log(arg) },
+    imports: {
+      trace: (arg: number) => console.log(arg),
+      saveModeLeft: (length: number) => {
+        storeSavedDataInState(length);
+      },
+    },
   };
   try {
     const response = await fetch("./wasm/spectrum.wasm");
@@ -99,4 +111,18 @@ export async function loadSpectrumEngine(): Promise<void> {
   } catch (err) {
     console.log(err);
   }
+}
+
+/**
+ * Extracts saved data
+ * @param length Data length
+ */
+function storeSavedDataInState(length: number): void {
+  if (!_spectrumEngine) {
+    return;
+  }
+
+  const mh = new MemoryHelper(_spectrumEngine.spectrum.api, TAPE_DATA_BUFFER);
+  const savedData = new Uint8Array(mh.readBytes(0, length));
+  rendererProcessStore.dispatch(emulatorSetSavedDataAction(savedData)());
 }

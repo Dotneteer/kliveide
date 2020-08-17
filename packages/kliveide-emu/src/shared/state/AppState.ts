@@ -25,9 +25,14 @@ export interface AppState {
   emulatorCommand?: string;
 
   /**
-   * Breakpoint command to execute
+   * Breakpoints
    */
   breakpoints?: number[];
+
+  /**
+   * The current IDE configuration
+   */
+  ideConfiguration?: IdeConfiguration;
 }
 
 /**
@@ -50,6 +55,7 @@ export interface EmulatorPanelState {
   muted?: boolean;
   memoryContents?: Uint8Array;
   memWriteMap?: Uint8Array;
+  savedData?: Uint8Array;
 }
 
 /**
@@ -57,4 +63,19 @@ export interface EmulatorPanelState {
  */
 export interface VmInfo {
   registers?: RegisterData
+}
+
+/**
+ * Represents the configuration data sent by the IDE
+ */
+export interface IdeConfiguration {
+  /**
+   * The absolute path of the current project folder
+   */
+  projectFolder: string;
+
+  /**
+   * The current SAVE folder
+   */
+  saveFolder: string;
 }

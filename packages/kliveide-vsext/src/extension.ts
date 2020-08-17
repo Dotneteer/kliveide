@@ -4,8 +4,6 @@ import { Z80RegistersProvider } from "./views/z80-registers";
 import { setZ80RegisterProvider } from "./providers";
 import {
   startNotifier,
-  onFrameInfoChanged,
-  onExecutionStateChanged,
   stopNotifier,
 } from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
@@ -17,14 +15,15 @@ import { sendTapeFile } from "./commands/send-tape-file";
 import { refreshView } from "./commands/refresh-view";
 import { spectrumConfigurationInstance } from "./emulator/machine-config";
 import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
+import { KLIVEIDE, SAVE_FOLDER } from "./config/sections";
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   const register = vscode.commands.registerCommand;
   const subs = context.subscriptions;
 
   // --- Initialize the machine from configuration
   spectrumConfigurationInstance.initialize();
-  
+
   // --- Register extension commands
   subs.push(
     register("kliveide.startEmu", async () => await startEmulator()),
@@ -50,6 +49,26 @@ export function activate(context: vscode.ExtensionContext) {
 
   // --- Start the notification mechanism
   startNotifier();
+
+  // --- Send the current configuration to the emulator
+  try {
+    await communicatorInstance.signConfigurationChange();
+  } catch (err) {
+    // --- This error is intentionally ignored
+  }
+
+  // --- Observe configuration changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(async (ev) => {
+      if (ev.affectsConfiguration(`${KLIVEIDE}.${SAVE_FOLDER}`)) {
+        try {
+          await communicatorInstance.signConfigurationChange();
+        } catch (err) {
+          // --- This error is intentionally ignored
+        }
+      }
+    })
+  );
 }
 
 /**

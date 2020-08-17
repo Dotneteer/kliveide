@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import fetch, { RequestInit, Response } from "node-fetch";
-import { KLIVEIDE, EMU_PORT } from "../config/sections";
+import { KLIVEIDE, EMU_PORT, SAVE_FOLDER } from "../config/sections";
 
 /**
  * This class is responsible for communicating with the Klive Emulator
@@ -61,17 +61,6 @@ class Communicator {
   }
 
   /**
-   * Tests if the specified segment of memory has been written
-   * @param from Firts memory address
-   * @param to Last memory address
-   */
-  async testMemoryWrite(from: number, to: number): Promise<boolean> {
-    const response = await this.getJson<MemoryWriteTest>(`/test-mem-write/${from}/${to}`);
-    console.log(from, to, JSON.stringify(response));
-    return response?.written ?? false;
-  }
-
-  /**
    * Sets the specified breakpoint
    * @param address Breakpoint address
    */
@@ -85,6 +74,21 @@ class Communicator {
    */
   async removeBreakpoint(address: number): Promise<void> {
     await this.post("/delete-breakpoints", { breakpoints: [ address ]});
+  }
+
+  /**
+   * Notifies the emulator about IDE configuration changes
+   * @param ideConfig IDE configuration
+   */
+  async signConfigurationChange(): Promise<void> {
+    const folders = vscode.workspace.workspaceFolders;
+    const projectFolder = folders ? folders[0].uri.fsPath : "";
+    const kliveConfig = vscode.workspace.getConfiguration(KLIVEIDE);
+    const ideConfig: IdeConfiguration = {
+      projectFolder,
+      saveFolder: kliveConfig.get(SAVE_FOLDER) ?? ""
+    };
+    await this.post("/set-ide-config", ideConfig);
   }
 
   /**
@@ -211,10 +215,18 @@ export interface RegisterData {
 }
 
 /**
- * Represents the result of the memory write test
+ * Represents the configuration data sent by the IDE
  */
-export interface MemoryWriteTest {
-  written: boolean;
+export interface IdeConfiguration {
+  /**
+   * The absolute path of the current project folder
+   */
+  projectFolder: string;
+
+  /**
+   * The current SAVE folder
+   */
+  saveFolder: string;
 }
 
 /**

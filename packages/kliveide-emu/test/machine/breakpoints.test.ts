@@ -5,6 +5,7 @@ import * as path from "path";
 import { MachineApi } from "../../src/native/api/api";
 import { ZxSpectrum48 } from "../../src/native/api/ZxSpectrum48";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
+import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(
   path.join(__dirname, "../../build/spectrum.wasm")
@@ -16,9 +17,7 @@ const BREAKPOINT_MAP = 0x1f_4300;
 
 describe("ZX Spectrum - Breakpoints", () => {
   before(async () => {
-    const wasm = await WebAssembly.instantiate(buffer, {
-      imports: { trace: (arg: number) => console.log(arg) },
-    });
+    const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as MachineApi;
     machine = new ZxSpectrum48(api);
   });
