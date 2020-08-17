@@ -18,7 +18,10 @@ import {
   IpcMainEvent,
   webContents,
 } from "electron";
-import { mainProcessStore } from "./mainProcessStore";
+import {
+  mainProcessStore,
+  createMainProcessStateAware,
+} from "./mainProcessStore";
 import {
   appGotFocusAction,
   appLostFocusAction,
@@ -34,6 +37,10 @@ import {
   MAIN_MESSAGING_CHANNEL,
 } from "../../src/shared/utils/channel-ids";
 import { processRendererMessage } from "./mainMessageProcessor";
+import { EmulatorPanelState } from "../shared/state/AppState";
+import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
+import { BinaryWriter } from "../shared/utils/BinaryWriter";
+import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -180,6 +187,12 @@ export class AppWindow {
         pageContenst.send(MAIN_MESSAGING_CHANNEL, response);
       }
     );
+
+    // --- catch state changes
+    const stateAware = createMainProcessStateAware("emulatorPanelState");
+    stateAware.stateChanged.on((state) =>
+      this.processStateChange(state as EmulatorPanelState)
+    );
   }
 
   /**
@@ -219,7 +232,6 @@ export class AppWindow {
         label: "File",
         submenu: [__DARWIN__ ? { role: "close" } : { role: "quit" }],
       },
-
       {
         label: "View",
         submenu: [
@@ -260,5 +272,47 @@ export class AppWindow {
     });
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+  }
+
+  /**
+   * Processes emulator data changes
+   * @param state Emulator state
+   */
+  processStateChange(state: EmulatorPanelState): void {
+    if (state?.savedData && state.savedData.length > 0) {
+      const data = state.savedData;
+      const ideConfig = mainProcessStore.getState().ideConfiguration
+      if (!ideConfig) {
+        return
+      }
+
+      // --- Create filename
+      const tapeFilePath = path.join(ideConfig.projectFolder, ideConfig.saveFolder);
+      const nameBytes = data.slice(2, 12);
+      let name = "";
+      for (let i = 0; i < 10; i++) {
+        name += String.fromCharCode(nameBytes[i]);
+      }
+      const tapeFileName = path.join(tapeFilePath, `${name.trimRight()}.tzx`);
+      console.log(tapeFileName);
+
+      // --- We use this writer to save file info into
+      const writer = new BinaryWriter();
+      new TzxHeader().writeTo(writer);
+
+      // --- The first 19 bytes is the header
+      new TzxStandardSpeedDataBlock(data.slice(0, 19)).writeTo(writer);
+
+      // --- Other bytes are the data block
+      new TzxStandardSpeedDataBlock(data.slice(19)).writeTo(writer);
+
+      // --- Now, save the file
+      fs.writeFileSync(tapeFileName, writer.buffer);
+
+      // --- Sign that the file has been saved
+      mainProcessStore.dispatch(
+        emulatorSetSavedDataAction(new Uint8Array(0))()
+      );
+    }
   }
 }

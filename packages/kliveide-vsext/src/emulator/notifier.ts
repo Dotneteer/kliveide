@@ -86,6 +86,7 @@ export async function startNotifier(): Promise<void> {
         connected = await communicatorInstance.hello();
         if (connected) {
           connectionStateChanged.fire(connected);
+          communicatorInstance.signConfigurationChange();
         }
       }
 

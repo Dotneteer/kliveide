@@ -179,7 +179,7 @@ abstract class TzxDataBlockBase implements ITapeDataBlock {
 /**
  * Represents the header of the TZX file
  */
-class TzxHeader extends TzxDataBlockBase {
+export class TzxHeader extends TzxDataBlockBase {
   /**
    * Signature bytes
    */
@@ -269,7 +269,7 @@ class TzxHeader extends TzxDataBlockBase {
 /**
  * Represents the standard speed data block in a TZX file
  */
-class TzxStandardSpeedDataBlock extends TzxDataBlockBase {
+export class TzxStandardSpeedDataBlock extends TzxDataBlockBase {
   /**
    * The ID of the block
    */
@@ -292,6 +292,18 @@ class TzxStandardSpeedDataBlock extends TzxDataBlockBase {
    * block has no bytes to play
    */
   playableBytes: Uint8Array = new Uint8Array(0);
+
+  /**
+   * Construct a block from the specified data bytes
+   * @param bytes Array of bytes within this block
+   */
+  constructor(bytes?: Uint8Array) {
+    super();
+    if (bytes) {
+      this.data = bytes;
+      this.dataLength = bytes.length;
+    }
+  }
 
   /**
    * Reads the content of the block from the specified binary stream.

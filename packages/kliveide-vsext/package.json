@@ -37,6 +37,11 @@
           "type": "number",
           "default": 3000,
           "description": "The http port to access the Klive Emulator API"
+        },
+        "kliveIde.saveFolder": {
+          "type": "string",
+          "default": "tape",
+          "description": "The folder for SAVEd files"
         }
       }
     },
