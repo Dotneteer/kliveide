@@ -22,6 +22,10 @@ const defaultState: AppState = {
   },
   emulatorCommand: "",
   breakpoints: [],
+  ideConfiguration: {
+    projectFolder: "",
+    saveFolder: ""
+  }
 };
 
 const spectNetApp = combineReducers(appReducers);

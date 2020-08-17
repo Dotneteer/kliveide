@@ -1,4 +1,5 @@
 import { RegisterData } from "../spectrum/api-data";
+import { IdeConfiguration } from "./AppState";
 
 /**
  * This interface represents the shape of the payload
@@ -23,4 +24,6 @@ export interface Payload {
   memoryContents?: Uint8Array;
   memWriteMap?: Uint8Array;
   breakpoints?: number[];
+  savedData?: Uint8Array;
+  ideConfiguration?: IdeConfiguration;
 }

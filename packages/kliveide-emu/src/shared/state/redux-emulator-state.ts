@@ -77,6 +77,10 @@ export function emulatorSetDebugAction(runsInDebug: boolean) {
   return createAction("EMULATOR_SET_DEBUG", { runsInDebug });
 }
 
+export function emulatorSetSavedDataAction(savedData: Uint8Array) {
+  return createAction("EMULATOR_SET_SAVED_DATA", { savedData });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -154,6 +158,8 @@ export function emulatorStateReducer(
       return { ...state, engineInitialized: true };
     case "EMULATOR_SET_DEBUG":
       return { ...state, runsInDebug: payload.runsInDebug };
+    case "EMULATOR_SET_SAVED_DATA":
+      return { ...state, savedData: payload.savedData };
   }
   return state;
 }

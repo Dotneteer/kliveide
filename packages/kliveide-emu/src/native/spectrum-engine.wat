@@ -341,6 +341,43 @@
 ;; Start tact of the current bit
 (global $tapePauseEndPos (mut i64) (i64.const 0x0000))
 
+;; Last MIC bit activity tact
+(global $tapeLastMicBitTact (mut i64) (i64.const 0x0000))
+
+;; Lat MIC bit state
+(global $tapeLastMicBit (mut i32) (i32.const 0x0000))
+
+;; The current SAVE phase
+;; 0: None, no SAVE operation in progress
+;; 1: Pilot, emitting PILOT pulses
+;; 2: Sync1, emitting SYNC1 pulse
+;; 3: Sync2, emitting SYNC2 pulse
+;; 4: Data, emitting BIT0/BIT1 pulses
+;; 5: Error, unexpected pluse detected
+(global $tapeSavePhase (mut i32) (i32.const 0x0000))
+
+;; Number of pilot pulses
+(global $tapePilotPulseCount (mut i32) (i32.const 0x0000))
+
+;; Number of saved data blocks
+(global $tapeDataBlockCount (mut i32) (i32.const 0x0000))
+
+;; Previous data pulse received
+(global $tapePrevDataPulse (mut i32) (i32.const 0x0000))
+
+;; Lenght of the data saved so far
+(global $tapeSaveDataLen (mut i32) (i32.const 0x0000))
+
+;; Offset of the bit being saved
+(global $tapeBitOffs (mut i32) (i32.const 0x0000))
+
+;; Data byte being saved
+(global $tapeDataByte (mut i32) (i32.const 0x0000))
+
+
+
+
+
 ;; ==========================================================================
 ;; Tape constants
 
@@ -1677,8 +1714,19 @@
     if
       ;; Turn on SAVE mode
       i32.const 2 set_global $tapeMode
+
+      ;; Initialize SAVE mode variables
+      call $getCurrentTactAsI64
+      set_global $tapeLastMicBitTact
+      i32.const 0x08 set_global $tapeLastMicBit
+      i32.const 0 set_global $tapeSavePhase
+      i32.const 0 set_global $tapePilotPulseCount
+      i32.const 0 set_global $tapeDataBlockCount
+      i32.const 0 set_global $tapePrevDataPulse
+      i32.const 0 set_global $tapeSaveDataLen
       return
     end
+    return
   end
 
   (i32.eq (get_global $tapeMode) (i32.const 1))
@@ -1698,9 +1746,32 @@
       i32.const 0 set_global $tapeMode
       return
     end
+    return
   end
 
   ;; SAVE Mode
+  (i32.eq (get_global $PC) (i32.const 0x0008))
+  (i64.gt_u 
+    (i64.sub (call $getCurrentTactAsI64) (get_global $tapeLastMicBitTact))
+    (i64.const 10_500_000)
+  )
+  i32.or
+  if
+    ;; Leave SAVE Mode
+    i32.const 0 set_global $tapeMode
+    (call $saveModeLeft (get_global $tapeSaveDataLen))
+  end
+)
+
+;; Calculates an i64 value from the current tact
+(func $getCurrentTactAsI64 (result i64)
+  (i64.add
+    (i64.mul
+      (i64.extend_u/i32 (get_global $frameCount))
+      (i64.extend_u/i32 (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier)))
+    )
+    (i64.extend_u/i32 (get_global $tacts))
+  )
 )
 
 ;; Initializes the tape device
@@ -1754,13 +1825,7 @@
   i32.const 1 set_global $tapePlayPhase
 
   ;; Store start tact
-  (i64.add
-    (i64.mul
-      (i64.extend_u/i32 (get_global $frameCount))
-      (i64.extend_u/i32 (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier)))
-    )
-    (i64.extend_u/i32 (get_global $tacts))
-  )
+  call $getCurrentTactAsI64
   set_global $tapeStartTact
 
   ;; Calculate pilot signal end positions
@@ -1790,13 +1855,7 @@
   (local $bitPos i64)
   
   ;; Calculate the current position
-  (i64.add
-    (i64.mul
-      (i64.extend_u/i32 (get_global $frameCount))
-      (i64.extend_u/i32 (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier)))
-    )
-    (i64.extend_u/i32 (get_global $tacts))
-  )
+  call $getCurrentTactAsI64
   get_global $tapeStartTact
   i64.sub
   set_local $pos
@@ -2299,7 +2358,222 @@
 )
 
 ;; This function processes the MIC bit (tape device)
-(func $processMicBit (param $micBit i32))
+(func $processMicBit (param $micBit i32)
+  (local $length i64)    ;; Pulse length
+  (local $pulse i32)     ;; The pulse type detected
+  (local $tact i64)      ;; Current tact
+  (local $nextPhase i32) ;; Next SAVE phase
+
+  ;; Ignore processing when not in
+  (i32.ne (get_global $tapeMode) (i32.const 2))
+  if return end
+
+  ;; Any change in MIC bit?
+  (i32.eq (get_global $tapeLastMicBit) (get_local $micBit))
+  if return end
+
+  ;; MIC bit changed, process it
+  call $getCurrentTactAsI64 tee_local $tact
+  (i64.sub (get_global $tapeLastMicBitTact))
+  set_local $length
+
+  ;; Initialize pulse
+  i32.const 0 set_local $pulse
+
+  ;; Categorize the pulse by its lenght
+  (call $pulseLengthInRange (get_local $length) (get_global $BIT_0_PULSE))
+  if
+    i32.const 6 set_local $pulse ;; BIT_0
+  else
+    (call $pulseLengthInRange (get_local $length) (get_global $BIT_1_PULSE))
+    if
+      i32.const 7 set_local $pulse ;; BIT_1
+    else
+      (call $pulseLengthInRange (get_local $length) (get_global $PILOT_PULSE))
+      if
+        i32.const 3 set_local $pulse ;; PILOT
+      else
+        (call $pulseLengthInRange (get_local $length) (get_global $SYNC_1_PULSE))
+        if
+          i32.const 4 set_local $pulse ;; SYNC_1
+        else
+          (call $pulseLengthInRange (get_local $length) (get_global $SYNC_2_PULSE))
+          if
+            i32.const 5 set_local $pulse ;; SYNC_2
+          else
+            (call $pulseLengthInRange (get_local $length) (get_global $TERM_SYNC))
+            if
+              i32.const 8 set_local $pulse ;; TERM_SYNC
+            else
+              (i64.lt_u 
+                (get_local $length) 
+                (i64.add (get_global $SYNC_1_PULSE) (i64.const 24))
+              )
+              if
+                i32.const 1 set_local $pulse ;; Too short pulse
+              else
+                (i64.gt_u 
+                  (get_local $length) 
+                  (i64.add (get_global $PILOT_PULSE) (i64.const 48))
+                )
+                if
+                  i32.const 1 set_local $pulse ;; Too long pulse
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  ;; Now, we have a categorized pulse
+  get_local $micBit set_global $tapeLastMicBit
+  get_local $tact set_global $tapeLastMicBitTact
+
+  ;; Let's process the pulse according to the current SAVE phase and pulse width
+  i32.const 5 set_local $nextPhase ;; Assume ERROR
+  (i32.eqz (get_global $tapeSavePhase))
+  if
+    ;; ------------------------------------------------------------------------
+    ;; Process the NONE phase
+    (i32.le_u (get_local $pulse) (i32.const 2))
+    if
+      ;; Pulse too short or too long, we stay in NONE phase
+      i32.const 0 set_local $nextPhase ;; NONE phase
+    else
+      (i32.le_u (get_local $pulse) (i32.const 3)) ;; PILOT pulse?
+      if
+        ;; The first pilot pulse arrived
+        i32.const 1 set_global $tapePilotPulseCount
+        i32.const 1 set_local $nextPhase ;; PILOT phase
+      end
+    end
+  else
+    (i32.eq (get_global $tapeSavePhase) (i32.const 1))
+    if
+      ;; ----------------------------------------------------------------------
+      ;; Process the PILOT phase
+      (i32.eq (get_local $pulse) (i32.const 3)) ;; PILOT pulse?
+      if
+        ;; The next PILOT PULSE arrived
+        (i32.add (get_global $tapePilotPulseCount) (i32.const 1))
+        set_global $tapePilotPulseCount
+        i32.const 1 set_local $nextPhase ;; PILOT phase
+      else
+        (i32.eq (get_local $pulse) (i32.const 4)) ;; SYNC1 pulse?
+        if
+          i32.const 2 set_local $nextPhase ;; SYNC1 phase
+        end
+      end
+    else
+      (i32.eq (get_global $tapeSavePhase) (i32.const 2))
+      if
+        ;; --------------------------------------------------------------------
+        ;; Process the SYNC1 phase
+        (i32.eq (get_local $pulse) (i32.const 5)) ;; SYNC2 pulse?
+        if
+          i32.const 3 set_local $nextPhase ;; SYNC2 phase
+        end
+      else
+        (i32.eq (get_global $tapeSavePhase) (i32.const 3))
+        if
+          ;; ------------------------------------------------------------------
+          ;; Process the SYNC2 phase
+          (i32.or 
+            (i32.eq (get_local $pulse) (i32.const 6)) ;; BIT0 pulse?
+            (i32.eq (get_local $pulse) (i32.const 7)) ;; BIT1 pulse?
+          )
+          if
+            ;; Next pulse starts data, prepare for it
+            get_local $pulse set_global $tapePrevDataPulse
+            i32.const 4 set_local $nextPhase ;; DATA phase
+            i32.const 0 set_global $tapeBitOffs
+            i32.const 0 set_global $tapeDataByte
+          end
+        else
+          ;; ------------------------------------------------------------------
+          ;; Process the DATA phase
+          (i32.or 
+            (i32.eq (get_local $pulse) (i32.const 6)) ;; BIT0 pulse?
+            (i32.eq (get_local $pulse) (i32.const 7)) ;; BIT1 pulse?
+          )
+          if
+            (i32.eqz (get_global $tapePrevDataPulse)) ;; Previour pulse was NONE?
+            if
+              ;; We are waiting for the second half of the bit pulse
+              get_local $pulse set_global $tapePrevDataPulse ;; Save the last pulse type
+              i32.const 4 set_local $nextPhase ;; DATA phase
+            else
+              (i32.eq (get_global $tapePrevDataPulse) (get_local $pulse))
+              if
+                ;; We received a full valid bit pulse
+                i32.const 0 set_global $tapePrevDataPulse ;; Save NONE as the previous pulse type
+                i32.const 4 set_local $nextPhase ;; DATA phase
+
+                ;; Add this bit to the received data
+                (i32.add (get_global $tapeBitOffs) (i32.const 1))
+                set_global $tapeBitOffs
+
+                ;; Shift in the received bit
+                (i32.shl (get_global $tapeDataByte) (i32.const 1))
+                (i32.eq (get_local $pulse) (i32.const 7))
+                i32.or
+                set_global $tapeDataByte
+
+                ;; Have we received a full byte?
+                (i32.eq (get_global $tapeBitOffs) (i32.const 8))
+                if
+                  ;; Save the received data
+                  (i32.store8 
+                    (i32.add (get_global $TAPE_DATA_BUFFER) (get_global $tapeSaveDataLen))
+                    (get_global $tapeDataByte)
+                  )
+                  (i32.add (get_global $tapeSaveDataLen) (i32.const 1))
+                  set_global $tapeSaveDataLen
+
+                  ;; Reset byte state
+                  i32.const 0 set_global $tapeDataByte
+                  i32.const 0 set_global $tapeBitOffs
+                end
+              end
+            end
+          else
+            (i32.eq (get_local $pulse) (i32.const 8)) ;; TERMSYNC pulse?
+            if
+              i32.const 0 set_local $nextPhase
+              (i32.add (get_global $tapeDataBlockCount) (i32.const 1))
+              set_global $tapeDataBlockCount
+
+              ;; TODO: Prepare for the next block
+            end
+          end
+        end
+      end
+    end
+  end
+
+  ;; Store the next phase
+  get_local $nextPhase set_global $tapeSavePhase
+)
+
+;; Tests in the pulse length is in the tolerance range of the specified reference
+(func $pulseLengthInRange (param $length i64) (param $reference i64) (result i32)
+  (i64.ge_u 
+    (get_local $length)
+    (i64.sub (get_local $reference) (i64.const 24))
+  )
+  if
+    (i64.le_u 
+      (get_local $length)
+      (i64.add (get_local $reference) (i64.const 24))
+    )
+    return
+  end
+
+  ;; Out of expected range
+  i32.const 0
+)
 
 ;; Gets the current cursor mode
 (func $getCursorMode (result i32)

@@ -33,6 +33,7 @@ export interface ActionTypes {
   EMULATOR_SET_MEMORY_CONTENTS: null;
   EMULATOR_SET_MEMWRITE_MAP: null;
   EMULATOR_SET_DEBUG: null;
+  EMULATOR_SET_SAVED_DATA: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
@@ -44,6 +45,9 @@ export interface ActionTypes {
 
   // --- VM information actions
   VM_SET_REGISTERS: null;
+
+  // --- IDE configuration actions
+  IDE_CONFIG_SET: null;
 
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;
