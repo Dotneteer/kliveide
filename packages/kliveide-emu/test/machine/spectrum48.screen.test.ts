@@ -9,6 +9,7 @@ import {
   EmulationMode,
 } from "../../src/native/api/machine-state";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
+import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: MachineApi;
@@ -20,9 +21,7 @@ const COLORIZE_BUFFER = 0x0B_4200;
 
 describe("ZX Spectrum 48 - Screen", () => {
   before(async () => {
-    const wasm = await WebAssembly.instantiate(buffer, {
-      imports: { trace: (arg: number) => console.log(arg) },
-    });
+    const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as MachineApi;
     machine = new ZxSpectrum48(api);
   });

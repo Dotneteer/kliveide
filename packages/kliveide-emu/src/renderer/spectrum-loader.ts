@@ -42,7 +42,12 @@ export async function getSpectrumEngine(): Promise<SpectrumEngine> {
  */
 export async function loadSpectrumEngine(): Promise<void> {
   const importObject = {
-    imports: { trace: (arg: number) => console.log(arg) },
+    imports: {
+      trace: (arg: number) => console.log(arg),
+      saveModeLeft: (length: number) => {
+        console.log(`Save Mode left: ${length}`);
+      },
+    },
   };
   try {
     const response = await fetch("./wasm/spectrum.wasm");
