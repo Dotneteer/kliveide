@@ -2,11 +2,7 @@ import { BinaryReader } from "../utils/BinaryReader";
 import { BinaryWriter } from "../utils/BinaryWriter";
 import { MachineApi } from "../../native/api/api";
 import { MemoryHelper } from "../../native/api/memory-helpers";
-
-/**
- * The address of the tape data buffer
- */
-const TAPE_DATA_BUFFER = 0x15_4300
+import { TAPE_DATA_BUFFER } from "../../native/api/memory-map";
 
 /**
  * Defines the serialization operations of a TZX record

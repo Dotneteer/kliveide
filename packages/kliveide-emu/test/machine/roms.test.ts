@@ -15,7 +15,7 @@ describe("ROM", () => {
         vals += `\\${(val < 16 ? "0" : "") + val.toString(16)}`;
       }
       const page = 0x0000 + i
-      result += `  (data (i32.const 0x2_${page.toString(16)}) "${vals}")\r\n`
+      result += `(data (i32.const 0x2_${page.toString(16).padStart(4, "0")}) "${vals}")\r\n`
     }
     console.log(result);
   });

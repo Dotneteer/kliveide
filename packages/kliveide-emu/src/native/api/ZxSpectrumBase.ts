@@ -6,26 +6,10 @@ import {
   DebugStepMode,
   ExecutionCompletionReason,
   ExecuteCycleOptions,
-  SpectrumMachineStateBase,
 } from "./machine-state";
 import { MemoryHelper } from "./memory-helpers";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
-import { stat } from "fs";
-
-/**
- * Start of the register are in the memory
- */
-const REG_AREA_INDEX = 0x1_0000;
-
-/**
- * Start of the CPU state transfer area in the memory
- */
-const STATE_TRANSFER_BUFF = 0x1_0040;
-
-/**
- * Buffer of the colorized screen
- */
-const COLORIZED_BUFF = 0x0b_4200;
+import { REG_AREA_INDEX, STATE_TRANSFER_BUFF, COLORIZATION_BUFFER } from "./memory-map";
 
 /**
  * This class is intended to be the base class of all ZX Spectrum
@@ -308,8 +292,8 @@ export abstract class ZxSpectrumBase {
     const length = state.screenLines * state.screenWidth;
     const screenData = new Uint32Array(
       buffer.slice(
-        COLORIZED_BUFF,
-        COLORIZED_BUFF + 4*length
+        COLORIZATION_BUFFER,
+        COLORIZATION_BUFFER + 4*length
       )
     );
     return screenData;

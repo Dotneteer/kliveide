@@ -6,14 +6,13 @@ import { MachineApi } from "../../src/native/api/api";
 import { ZxSpectrum48 } from "../../src/native/api/ZxSpectrum48";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
 import { importObject } from "../import-object";
+import { BREAKPOINT_MAP } from "../../src/native/api/memory-map";
 
 const buffer = fs.readFileSync(
   path.join(__dirname, "../../build/spectrum.wasm")
 );
 let api: MachineApi;
 let machine: ZxSpectrum48;
-
-const BREAKPOINT_MAP = 0x1f_4300;
 
 describe("ZX Spectrum - Breakpoints", () => {
   before(async () => {

@@ -10,12 +10,11 @@ import {
 } from "../../src/native/api/machine-state";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
 import { importObject } from "../import-object";
+import { BEEPER_SAMPLE_BUFFER } from "../../src/native/api/memory-map";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: MachineApi;
 let machine: ZxSpectrum48;
-
-const BEEPER_SAMPLE_BUFFER = 0x0b_2200;
 
 describe("ZX Spectrum 48 - Beeper", () => {
   before(async () => {
