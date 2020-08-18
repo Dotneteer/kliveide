@@ -121,7 +121,7 @@
   (local $logAddr i32)
   
   ;; Read the memory value
-  (i32.add (get_local $addr) (get_global $SP_MEM_OFFS))
+  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
   i32.load8_u
   set_local $value
 
@@ -155,7 +155,7 @@
   (local $logAddr i32)
 
   ;; Write the memory value
-  (i32.add (get_local $addr) (get_global $SP_MEM_OFFS))
+  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
   get_local $v
   i32.store8
 

@@ -10,14 +10,11 @@ import {
 } from "../../src/native/api/machine-state";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
 import { importObject } from "../import-object";
+import { PIXEL_RENDERING_BUFFER, COLORIZATION_BUFFER, RENDERING_TACT_TABLE } from "../../src/native/api/memory-map";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: MachineApi;
 let machine: ZxSpectrum48;
-
-const PIXEL_BUFFER = 0x08_A200;
-const RENDERING_TABLE = 0x01_5e00;
-const COLORIZE_BUFFER = 0x0B_4200;
 
 describe("ZX Spectrum 48 - Screen", () => {
   before(async () => {
@@ -65,7 +62,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.pc).toBe(0x800e);
     expect(s.tacts).toBe(451);
     expect(s.frameCompleted).toBe(false);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
     let sum = 0x00;
     for (let row = 0; row < s.screenLines; row++) {
       for (let col = 0; col < s.screenWidth; col++) {
@@ -101,7 +98,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(3697);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -157,7 +154,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(14331);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -217,7 +214,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(14413);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -283,7 +280,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -372,7 +369,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    mh = new MemoryHelper(api, PIXEL_BUFFER);
+    mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -462,7 +459,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.pc).toBe(0x800d);
     expect(s.frameCompleted).toBe(true);
     expect(s.borderColor).toBe(0x05);
-    mh = new MemoryHelper(api, PIXEL_BUFFER);
+    mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -549,7 +546,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, COLORIZE_BUFFER);
+    const mh = new MemoryHelper(api, COLORIZATION_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -614,7 +611,7 @@ describe("ZX Spectrum 48 - Screen", () => {
  */
 function fillPixelBuffer(data: number): void {
   const s = machine.getMachineState();
-  const mh = new MemoryHelper(api, PIXEL_BUFFER);
+  const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
   const visibleLines =
     s.screenLines - s.nonVisibleBorderTopLines - s.nonVisibleBorderTopLines;
   const visibleColumns = (s.screenLineTime - s.nonVisibleBorderRightTime) * 2;
@@ -626,7 +623,7 @@ function fillPixelBuffer(data: number): void {
 
 function displayRenderingTable() {
   const s = machine.getMachineState();
-  const mh = new MemoryHelper(api, RENDERING_TABLE);
+  const mh = new MemoryHelper(api, RENDERING_TACT_TABLE);
   console.log(s.rasterLines);
   console.log(s.screenLineTime);
 

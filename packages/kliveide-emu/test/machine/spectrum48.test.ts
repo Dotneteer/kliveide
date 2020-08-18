@@ -11,8 +11,11 @@ import {
 } from "../../src/native/api/machine-state";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
 import { importObject } from "../import-object";
+import { BANK_0_OFFS } from "../../src/native/api/memory-map";
 
-const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
+const buffer = fs.readFileSync(
+  path.join(__dirname, "../../build/spectrum.wasm")
+);
 let api: MachineApi;
 let machine: ZxSpectrum48;
 
@@ -49,7 +52,7 @@ describe("ZX Spectrum 48", () => {
     expect(s.supportsNextOperations).toBeFalsy();
 
     expect(s.numberOfRoms).toBe(1);
-    expect(s.romContentsAddress).toBe(0x01_1d00);
+    expect(s.romContentsAddress).toBe(0x02_0000);
     expect(s.spectrum48RomIndex).toBe(0);
     expect(s.contentionType).toBe(MemoryContentionType.Ula);
     expect(s.nextMemorySize).toBe(0);
@@ -82,7 +85,7 @@ describe("ZX Spectrum 48", () => {
     expect(s.firstScreenPixelTact).toBe(3584);
 
     // --- Test ROM setup
-    const mh = new MemoryHelper(api, 0);
+    const mh = new MemoryHelper(api, BANK_0_OFFS);
     expect(mh.readByte(0x0000)).toBe(0xf3);
     expect(mh.readByte(0x0001)).toBe(0xaf);
     expect(mh.readByte(0x3ffe)).toBe(0x42);

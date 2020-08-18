@@ -36,21 +36,11 @@ import { TzxReader } from "../../shared/tape/tzx-file";
 import { TapReader } from "../../shared/tape/tap-file";
 import { RegisterData } from "../../shared/spectrum/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
-
-/**
- * Beeper samples in the memory
- */
-const BEEPER_SAMPLE_BUFF = 0x0b_2200;
-
-/**
- * Start of the ZX Spectrum memory buffer
- */
-const SPECTRUM_MEM = 0x00_0000;
-
-/**
- * Start of the memory write map
- */
-const MEMWRITE_MAP = 0x1f_6500;
+import {
+  BANK_0_OFFS,
+  MEMWRITE_MAP,
+  BEEPER_SAMPLE_BUFFER,
+} from "../../native/api/memory-map";
 
 /**
  * This class represents the engine of the ZX Spectrum,
@@ -107,7 +97,7 @@ export class SpectrumEngine {
    */
   constructor(public spectrum: ZxSpectrumBase) {
     this._loadedState = spectrum.getMachineState();
-    let mh = new MemoryHelper(this.spectrum.api, 0);
+    let mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
     const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
     rendererProcessStore.dispatch(
       emulatorSetMemoryContentsAction(memContents)()
@@ -384,9 +374,7 @@ export class SpectrumEngine {
 
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
-    rendererProcessStore.dispatch(
-      emulatorSetDebugAction(this._isDebugging)()
-    );
+    rendererProcessStore.dispatch(emulatorSetDebugAction(this._isDebugging)());
 
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
@@ -466,7 +454,7 @@ export class SpectrumEngine {
    */
   async stepOver(): Promise<void> {
     // --- Calculate the location of the step-over breakpoint
-    const mh = new MemoryHelper(this.spectrum.api, SPECTRUM_MEM);
+    const mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
     const pc = this.getMachineState().pc;
     const opCode = mh.readByte(pc);
     let length = 0;
@@ -617,7 +605,7 @@ export class SpectrumEngine {
           resultState.beeperSampleLength
         );
       }
-      mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
+      mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = emuState.muted
         ? new Array(resultState.beeperSampleCount).fill(0)
         : mh.readBytes(0, resultState.beeperSampleCount);
