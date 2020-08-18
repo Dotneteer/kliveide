@@ -71,7 +71,7 @@
 
 ;; Reads the memory of the ZX Spectrum 48 machine
 (func $readMemorySp48 (param $addr i32) (result i32)
-  get_global $SP_MEM_OFFS
+  get_global $BANK_0_OFFS
   (i32.and (get_local $addr) (i32.const 0xffff))
   i32.add
   i32.load8_u ;; (memory value)
@@ -85,7 +85,7 @@
 
 ;; Reads the memory of the ZX Spectrum 48 machine in non-contended way
 (func $readMemoryNcSp48 (param $addr i32) (result i32)
-  get_global $SP_MEM_OFFS
+  get_global $BANK_0_OFFS
   (i32.and (get_local $addr) (i32.const 0xffff))
   i32.add
   i32.load8_u ;; (memory value)
@@ -104,7 +104,7 @@
   if
     call $applyContentionDelay
   end
-  (i32.add (get_global $SP_MEM_OFFS) (get_local $addr))
+  (i32.add (get_global $BANK_0_OFFS) (get_local $addr))
   get_local $val
   i32.store8
 )
@@ -191,7 +191,7 @@
   ;; Setup ROM
   (call $copyMemory 
     (get_global $SPECTRUM_48_ROM_INDEX)
-    (get_global $SP_MEM_OFFS)
+    (get_global $BANK_0_OFFS)
     (i32.const 0x4000)
   )
 )

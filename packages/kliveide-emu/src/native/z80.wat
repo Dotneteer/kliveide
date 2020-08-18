@@ -498,7 +498,7 @@
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
 (func $defaultRead (param $addr i32) (result i32)
-  (i32.add (get_local $addr) (get_global $SP_MEM_OFFS))
+  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
   i32.load8_u
 )
 
@@ -506,7 +506,7 @@
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
 (func $defaultWrite (param $addr i32) (param $v i32)
-  (i32.add (get_local $addr) (get_global $SP_MEM_OFFS))
+  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
   get_local $v
   i32.store8
 )
