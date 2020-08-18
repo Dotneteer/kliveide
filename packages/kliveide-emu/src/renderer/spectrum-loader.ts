@@ -5,6 +5,7 @@ import { createRendererProcessStateAware, rendererProcessStore } from "./rendere
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { MemoryHelper } from "../native/api/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
+import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -25,11 +26,6 @@ let lastEmulatorCommand = "";
  * Indicates that the engine is processing a state change
  */
 let processingChange = false;
-
-/**
- * Address of the tape data buffer
- */
-const TAPE_DATA_BUFFER = 0x15_4300;
 
 /**
  * Get the initialized ZX Spectrum engine
@@ -122,7 +118,7 @@ function storeSavedDataInState(length: number): void {
     return;
   }
 
-  const mh = new MemoryHelper(_spectrumEngine.spectrum.api, TAPE_DATA_BUFFER);
+  const mh = new MemoryHelper(_spectrumEngine.spectrum.api, TAPE_SAVE_BUFFER);
   const savedData = new Uint8Array(mh.readBytes(0, length));
   rendererProcessStore.dispatch(emulatorSetSavedDataAction(savedData)());
 }

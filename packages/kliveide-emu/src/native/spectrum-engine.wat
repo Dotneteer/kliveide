@@ -2541,7 +2541,7 @@
                 if
                   ;; Save the received data
                   (i32.store8 
-                    (i32.add (get_global $TAPE_DATA_BUFFER) (get_global $tapeSaveDataLen))
+                    (i32.add (get_global $TAPE_SAVE_BUFFER) (get_global $tapeSaveDataLen))
                     (get_global $tapeDataByte)
                   )
                   (i32.add (get_global $tapeSaveDataLen) (i32.const 1))
