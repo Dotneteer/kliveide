@@ -46,6 +46,7 @@ export interface EmulatorPanelState {
   executionState?: number;
   runsInDebug?: boolean;
   tapeContents?: Uint8Array;
+  tapeLoaded?: boolean;
   keyboardPanel?: boolean;
   shadowScreen?: boolean;
   beamPosition?: boolean;

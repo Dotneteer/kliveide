@@ -17,6 +17,7 @@ export function emulatorSetTapeContenstAction(tapeContents: Uint8Array) {
   return createAction("EMULATOR_SET_TAPE_CONTENTS", { tapeContents });
 }
 
+export const emulatorLoadTapeAction = createAction("EMULATOR_LOAD_TAPE");
 export const emulatorShowKeyboardAction = createAction(
   "EMULATOR_SHOW_KEYBOARD"
 );
@@ -100,7 +101,13 @@ export function emulatorStateReducer(
     case "EMULATOR_SET_EXEC_STATE":
       return { ...state, executionState: payload.executionState };
     case "EMULATOR_SET_TAPE_CONTENTS":
-      return { ...state, tapeContents: payload.tapeContents };
+      return {
+        ...state,
+        tapeContents: payload.tapeContents,
+        tapeLoaded: false,
+      };
+    case "EMULATOR_LOAD_TAPE":
+      return { ...state, tapeLoaded: true };
     case "EMULATOR_SHOW_KEYBOARD":
       return { ...state, keyboardPanel: true };
     case "EMULATOR_HIDE_KEYBOARD":
