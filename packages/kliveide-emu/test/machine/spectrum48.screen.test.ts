@@ -357,10 +357,10 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     let mh = new MemoryHelper(api, 0);
     for (let addr = 0x4000; addr < 0x5800; addr++) {
-      mh.writeByte(addr, addr & 0x0100 ? 0xaa : 0x55)
+      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55)
     }
     for (let addr = 0x5800; addr < 0x5b00; addr++) {
-      mh.writeByte(addr, 0x51)
+      machine.writeMemory(addr, 0x51)
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
@@ -448,10 +448,10 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     let mh = new MemoryHelper(api, 0);
     for (let addr = 0x4000; addr < 0x5800; addr++) {
-      mh.writeByte(addr, addr & 0x0100 ? 0xaa : 0x55)
+      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55)
     }
     for (let addr = 0x5800; addr < 0x5b00; addr++) {
-      mh.writeByte(addr, 0x51)
+      machine.writeMemory(addr, 0x51)
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilUlaFrameEnds));

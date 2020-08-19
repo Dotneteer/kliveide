@@ -125,13 +125,6 @@
   i32.const 0x056b set_global $tapeLoadBytesInvalidHeader
   i32.const 0x05e2 set_global $tapeLoadBytesResume
   i32.const 0x04c2 set_global $tapeSaveBytesRoutine
-
-  ;; Setup ROM
-  (call $copyMemory 
-    (get_global $ROM_48_OFFS)
-    (get_global $BANK_0_OFFS)
-    (i32.const 0x4000)
-  )
 )
 
 ;; Gets the ZX Spectrum 48 machine state

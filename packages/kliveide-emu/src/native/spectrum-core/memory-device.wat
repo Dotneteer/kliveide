@@ -42,6 +42,24 @@
   end
 )
 
+;; Reads the paged memory according to the page index table (no contention)
+(func $readPagedMemory16Nc (param $addr i32) (result i32)
+  ;; Calculate the index table address
+  (i32.shr_u
+    (i32.and (get_local $addr) (i32.const 0xffff))  
+    (i32.const 14)
+  ) ;; Now, we have the page number
+  (i32.mul (i32.const 6)) ;; Offset in the index table
+  (i32.add (get_global $PAGE_INDEX_16))
+
+  ;; Get memory value from the offset
+  i32.load ;; New we have the page offset
+  (i32.and (get_local $addr) (i32.const 0x3fff))
+  i32.add
+  i32.load8_u ;; (memory value)
+)
+
+;; Writes the paged memory according to the page index table
 (func $writePagedMemory16 (param $addr i32) (param $value i32)
   (local $indexAddr i32)
 

@@ -97,8 +97,7 @@ export class SpectrumEngine {
    */
   constructor(public spectrum: ZxSpectrumBase) {
     this._loadedState = spectrum.getMachineState();
-    let mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
-    const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+    const memContents = this.spectrum.getMemoryContents();
     rendererProcessStore.dispatch(
       emulatorSetMemoryContentsAction(memContents)()
     );
@@ -560,12 +559,11 @@ export class SpectrumEngine {
       rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
       );
-      let mh = new MemoryHelper(this.spectrum.api, 0);
-      const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+      const memContents = this.spectrum.getMemoryContents();
       rendererProcessStore.dispatch(
         emulatorSetMemoryContentsAction(memContents)()
       );
-      mh = new MemoryHelper(this.spectrum.api, MEMWRITE_MAP);
+      let mh = new MemoryHelper(this.spectrum.api, MEMWRITE_MAP);
       const memWriteMap = new Uint8Array(mh.readBytes(0, 0x2000));
       rendererProcessStore.dispatch(
         emulatorSetMemWriteMapAction(memWriteMap)()

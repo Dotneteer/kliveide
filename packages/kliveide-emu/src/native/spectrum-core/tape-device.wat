@@ -533,7 +533,7 @@
       end
 
       ;; Store the loaded byte
-      (i32.store8 (call $getIX) (call $getL))
+      (call $writeMemory (call $getIX) (call $getL))
 
       ;; Calc the checksum
       (i32.xor (call $getH) (call $getL))
