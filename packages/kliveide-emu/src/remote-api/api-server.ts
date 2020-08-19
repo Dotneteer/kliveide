@@ -28,7 +28,8 @@ import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { IdeConfiguration } from "../shared/state/AppState";
-import { ideConfigSetAction, ideConfigStateReducer } from "../shared/state/redux-ide-config-state";
+import { ideConfigSetAction} from "../shared/state/redux-ide-config-state";
+import { appConfiguration } from "../main/klive-configuration";
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -378,5 +379,7 @@ export function startApiServer() {
     res.sendStatus(204);
   });
 
-  app.listen(3000, () => console.log("Klive Emulator is listening on port 3000..."));
+  // --- Start the API server on the configured port
+  const port = appConfiguration?.port ?? 3000;
+  app.listen(port, () => console.log(`Klive Emulator is listening on port ${port}...`));
 }
