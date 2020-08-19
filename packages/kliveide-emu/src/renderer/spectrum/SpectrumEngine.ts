@@ -30,6 +30,7 @@ import {
   engineInitializedAction,
   emulatorSetDebugAction,
   emulatorSetMemWriteMapAction,
+  emulatorLoadTapeAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -72,7 +73,6 @@ export class SpectrumEngine {
   private _beeperRenderer: AudioRenderer | null = null;
 
   // --- Tape emulation
-  private _tapeSetInitialized = false;
   private _defaultTapeSet = new Uint8Array(0);
 
   // --- FrameID information
@@ -328,7 +328,7 @@ export class SpectrumEngine {
       const emuState = state.emulatorPanelState;
 
       // --- Set tape contents
-      if (!this._tapeSetInitialized) {
+      if (!emuState.tapeContents || emuState.tapeContents.length === 0) {
         let contents = new Uint8Array(0);
         try {
           contents = fs.readFileSync(
@@ -338,7 +338,6 @@ export class SpectrumEngine {
         rendererProcessStore.dispatch(
           emulatorSetTapeContenstAction(contents)()
         );
-        this._tapeSetInitialized = true;
         this._defaultTapeSet = contents;
       } else {
         this._defaultTapeSet = emuState.tapeContents;
@@ -611,6 +610,21 @@ export class SpectrumEngine {
         : mh.readBytes(0, resultState.beeperSampleCount);
       this._beeperRenderer.storeSamples(beeperSamples);
       machine._beeperSamplesEmitted.fire(beeperSamples);
+
+      // --- Check if a tape should be loaded
+      if (
+        resultState.tapeMode === 0 &&
+        !emuState.tapeLoaded &&
+        emuState.tapeContents &&
+        emuState.tapeContents.length > 0
+      ) {
+        // --- The tape is in passive mode, and we have a new one we can load, so let's load it
+        this._defaultTapeSet = emuState.tapeContents;
+        const binaryReader = new BinaryReader(this._defaultTapeSet);
+        this.initTape(binaryReader);
+        rendererProcessStore.dispatch(emulatorLoadTapeAction());
+        console.log("Load new tape");
+      }
 
       // --- Frame time information
       const curTime = performance.now();

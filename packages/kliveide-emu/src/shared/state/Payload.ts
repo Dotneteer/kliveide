@@ -11,6 +11,7 @@ export interface Payload {
   executionState?: number;
   runsInDebug?: boolean;
   tapeContents?: Uint8Array;
+  tapeLoaded?: boolean;
   shadowScreen?: boolean;
   beamPosition?: boolean;
   fastLoad?: boolean;
