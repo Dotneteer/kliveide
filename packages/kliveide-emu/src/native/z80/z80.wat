@@ -1,28 +1,81 @@
 ;; ==========================================================================
-;; Z80 CPU core
+;; This file contains the core of the Z80 engine
 
-;; ==========================================================================
+;; --------------------------------------------------------------------------
 ;; Z80 CPU state
 
 ;; CPU registers
+;; We keep only PC and SP as global variables.
 (global $PC (mut i32) (i32.const 0x00))
 (global $SP (mut i32) (i32.const 0x00))
 
-;; Once-set
-(global $tactsInFrame (mut i32) (i32.const 1_000_000)) ;; Number of tacts within a frame
-(global $allowExtendedSet (mut i32) (i32.const 0x00))  ;; Should allow extended operation set?
+;; Other register are stored in the memory starting at the $$REG_AREA_INDEX 
+;; as 8-bit registers. With WA memory access functions they can by addressed
+;; quickly. These are their offsets:
+;; 00: F
+;; 01: A
+;; 02: C
+;; 03: B
+;; 04: E
+;; 05: D
+;; 06: L
+;; 07: H
+;; 08: AF'
+;; 10: BC'
+;; 12: DE'
+;; 14: HL'
+;; 16: I
+;; 17: R
+;; 18: 16 bits reserved for PC (not used)
+;; 20: 16 bits reserved for SP (not used)
+;; 22: IX
+;; 24: IY
+;; 26: WZ
 
-;; Mutable
-(global $tacts (mut i32) (i32.const 0x0000)) ;; CPU tacts since starting the cpu
-(global $stateFlags (mut i32) (i32.const 0x00)) ;; Z80 state flags
-(global $useGateArrayContention (mut i32) (i32.const 0x0000)) ;; Should use gate array contention?
-(global $iff1 (mut i32) (i32.const 0x00)) ;; Interrupt flip-flop #1
-(global $iff2 (mut i32) (i32.const 0x00)) ;; Interrupt flip-flop #2
-(global $interruptMode (mut i32) (i32.const 0x00)) ;; Current interrupt mode
-(global $isInterruptBlocked (mut i32) (i32.const 0x00)) ;; Current interrupt block
-(global $isInOpExecution (mut i32) (i32.const 0x00)) ;; Is currently processing an op?
-(global $prefixMode (mut i32) (i32.const 0x00)) ;; Current operation prefix mode
-(global $indexMode (mut i32) (i32.const 0x00)) ;; Current operation index mode
+;; Number of tacts within one screen rendering frame. This value indicates the
+;; number of clock cycles with normal CPU speed.
+(global $tactsInFrame (mut i32) (i32.const 1_000_000))
+
+;; Indicates if ZX Spectrum Next extended Z80 operation set is enabled
+(global $allowExtendedSet (mut i32) (i32.const 0x00))  ;; 
+
+;; CPU tacts since starting the last screen rendering frame. So this variable is reset
+;; at the beginning of each screen rendering frame.
+(global $tacts (mut i32) (i32.const 0x0000))
+
+;; Various Z80 state flags
+(global $stateFlags (mut i32) (i32.const 0x00))
+
+;; Should use ZX Spectrum +3 gate array contention?
+(global $useGateArrayContention (mut i32) (i32.const 0x0000))
+
+;; Interrupt flip-flop #1
+(global $iff1 (mut i32) (i32.const 0x00))
+
+;; Interrupt flip-flop #2
+(global $iff2 (mut i32) (i32.const 0x00))
+
+;; Current interrupt mode
+(global $interruptMode (mut i32) (i32.const 0x00)) 
+
+;; Current interrupt block. While we're within executing an operation, interrupt is blocked.
+(global $isInterruptBlocked (mut i32) (i32.const 0x00)) 
+
+;; Is the CPU currently within processing an instruction?
+(global $isInOpExecution (mut i32) (i32.const 0x00))
+
+;; Current operation prefix mode
+;; 0: No prefix
+;; 1: Extended mode (0xED prefix)
+;; 2: Bit mode (0xCB prefix)
+(global $prefixMode (mut i32) (i32.const 0x00))
+
+;; Current operation index mode
+;; 0: No index
+;; 1: IX (0xDD prefix)
+;; 2: IY (0xFD prefix)
+(global $indexMode (mut i32) (i32.const 0x00)) 
+
 (global $maskableInterruptModeEntered (mut i32) (i32.const 0x00)) ;; Signs that CPU entered into maskable interrupt mode
 (global $opCode (mut i32) (i32.const 0x00)) ;; Operation code being processed
 
@@ -68,12 +121,14 @@
 ;; SRA flags table
 (data (i32.const 0x03_C900) "\44\45\00\01\00\01\04\05\00\01\04\05\04\05\00\01\08\09\0c\0d\0c\0d\08\09\0c\0d\08\09\08\09\0c\0d\00\01\04\05\04\05\00\01\04\05\00\01\00\01\04\05\0c\0d\08\09\08\09\0c\0d\08\09\0c\0d\0c\0d\08\09\20\21\24\25\24\25\20\21\24\25\20\21\20\21\24\25\2c\2d\28\29\28\29\2c\2d\28\29\2c\2d\2c\2d\28\29\24\25\20\21\20\21\24\25\20\21\24\25\24\25\20\21\28\29\2c\2d\2c\2d\28\29\2c\2d\28\29\28\29\2c\2d\84\85\80\81\80\81\84\85\80\81\84\85\84\85\80\81\88\89\8c\8d\8c\8d\88\89\8c\8d\88\89\88\89\8c\8d\80\81\84\85\84\85\80\81\84\85\80\81\80\81\84\85\8c\8d\88\89\88\89\8c\8d\88\89\8c\8d\8c\8d\88\89\a0\a1\a4\a5\a4\a5\a0\a1\a4\a5\a0\a1\a0\a1\a4\a5\ac\ad\a8\a9\a8\a9\ac\ad\a8\a9\ac\ad\ac\ad\a8\a9\a4\a5\a0\a1\a0\a1\a4\a5\a0\a1\a4\a5\a4\a5\a0\a1\a8\a9\ac\ad\ac\ad\a8\a9\ac\ad\a8\a9\a8\a9\ac\ad")
 
-;; Writes the CPU state to the transfer area
+;; Writes the CPU state to the transfer area so that the JavaScript code
+;; can read it. This method copies only the registers that are stored in global
+;; variables. When the JavaScript side retrieves register values, it uses
+;; the memory directly.
 (func $getCpuState
   ;; Registers
   (i32.store8 offset=0 (get_global $STATE_TRANSFER_BUFF) (call $getF))
   (i32.store8 offset=1 (get_global $STATE_TRANSFER_BUFF) (call $getA))
-
   (i32.store16 offset=18 (get_global $STATE_TRANSFER_BUFF) (get_global $PC))
   (i32.store16 offset=20 (get_global $STATE_TRANSFER_BUFF) (get_global $SP))
 
@@ -94,7 +149,9 @@
   (i32.store8 offset=47 (get_global $STATE_TRANSFER_BUFF) (get_global $opCode))
 )
 
-;; Restores the CPU state from the transfer area
+;; Restores the CPU state from the transfer area. This method copies register values
+;; to global variables. The JavaScript side copies other register values directly to
+;; the memory.
 (func $updateCpuState
   ;; Registers
   (call $setF (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=0))
@@ -120,10 +177,7 @@
   (set_global $opCode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=47))
 )
 
-;; Represents a no-operation function
-(func $NOOP)
-
-;; ==========================================================================
+;; ----------------------------------------------------------------------------
 ;; Z80 CPU registers access
 
 ;; Gets the value of A
@@ -479,7 +533,7 @@
   end
 )
 
-;; ==========================================================================
+;; ----------------------------------------------------------------------------
 ;; Z80 clock management
 
 ;; Increments the current frame tact with the specified value
@@ -489,7 +543,7 @@
   set_global $tacts
 )
 
-;; ==========================================================================
+;; ----------------------------------------------------------------------------
 ;; Z80 CPU life cycle methods
 
 ;; Turns on the CPU
@@ -533,7 +587,7 @@
   set_global $allowExtendedSet
 )
 
-;; ==========================================================================
+;; ----------------------------------------------------------------------------
 ;; Z80 Memory access
 
 ;; Default memory read operation
@@ -667,7 +721,7 @@
   call_indirect (type $TbBlueWriteFunc)
 )
 
-;; ==========================================================================
+;; ----------------------------------------------------------------------------
 ;; Execution cycle methods
 
 ;; Executes the CPU's processing cycle
@@ -954,7 +1008,7 @@
   call_indirect (type $OpFunc)
 )
 
-;; ==========================================================================
+;; ----------------------------------------------------------------------------
 ;; Instruction helpers
 
 ;; Decrements the value of SP
@@ -1645,112 +1699,3 @@
   i32.or
 )
 
-;; ============================================================================
-;; Stack helper functions for step-over debugging
-
-(global $stepOutStackDepth (mut i32) (i32.const 0x0000))
-(global $retExecuted (mut i32) (i32.const 0x0000))
-(global $stepOutAddress (mut i32) (i32.const 0x0000))
-(global $stepOutStartDepth (mut i32) (i32.const 0x0000))
-
-;; Resets the step-over stack
-(func $resetStepOverStack
-  i32.const 0 set_global $stepOutStackDepth
-  i32.const 0 set_global $retExecuted
-  i32.const -1 set_global $stepOutAddress
-  i32.const 0 set_global $stepOutStartDepth
-)
-
-;; Marks the depth of the step-over stack before each run
-(func $markStepOverStack
-  get_global $stepOutStackDepth
-  set_global $stepOutStartDepth
-)
-
-;; Pushes the value to the step-over stack
-(func $pushToStepOver (param $value i32)
-  ;; Do not allow stack overflow
-  (i32.ge_u (get_global $stepOutStackDepth) (i32.const 512))
-  if return end
-
-  ;; Store the value on stack
-  (i32.store16
-    (i32.add 
-      (get_global $STEP_OUT_STACK) 
-      (i32.mul (i32.const 2) (get_global $stepOutStackDepth))
-    )
-    (get_local $value)
-  )
-
-  ;; Increment counter
-  (i32.add (get_global $stepOutStackDepth) (i32.const 1))
-  set_global $stepOutStackDepth
-)
-
-;; Pops a value from the step-over stack
-(func $popFromStepOver
-  ;; Do not allow stack underflow
-  (i32.eqz (get_global $stepOutStackDepth))
-  if
-    i32.const 0
-    return
-  end
-
-  ;; Decrement counter
-  (i32.sub (get_global $stepOutStackDepth) (i32.const 1))
-  set_global $stepOutStackDepth
-
-  ;; Load the value from the stack
-  (i32.load16_u
-    (i32.add 
-      (get_global $STEP_OUT_STACK) 
-      (i32.mul (i32.const 2) (get_global $stepOutStackDepth))
-    )
-  )
-
-  ;; Store as the step out address
-  set_global $stepOutAddress
-
-  ;; Sign a RET statement
-  i32.const 1 set_global $retExecuted
-)
-
-;; ============================================================================
-;; Memory write functions to help memory view refresh
-
-;; Erases all breakpoints
-(func $eraseMemoryWriteMap
-  (local $counter i32)
-  (local $addr i32)
-  i32.const 0x2000 set_local $counter
-  get_global $MEMWRITE_MAP set_local $addr
-  loop $eraseLoop
-    get_local $counter
-    if
-      (i32.store8 (get_local $addr) (i32.const 0))
-      (i32.add (get_local $addr) (i32.const 1))
-      set_local $addr
-      (i32.sub (get_local $counter) (i32.const 1))
-      set_local $counter
-      br $eraseLoop
-    end
-  end
-)
-
-;; Sets the specified memory write point
-(func $setMemoryWritePoint (param $point i32)
-  (local $addr i32)
-  get_global $MEMWRITE_MAP
-  (i32.shr_u (get_local $point) (i32.const 3))
-  i32.add
-  tee_local $addr
-  get_local $addr
-  i32.load8_u ;; [ addr, point byte ]
-
-  (i32.shl
-    (i32.const 0x01)
-    (i32.and (get_local $point) (i32.const 0x07))
-  ) ;; Mask to set
-  i32.or ;; [ addr, new point]
-  i32.store8
-)
