@@ -623,7 +623,6 @@ export class SpectrumEngine {
         const binaryReader = new BinaryReader(this._defaultTapeSet);
         this.initTape(binaryReader);
         rendererProcessStore.dispatch(emulatorLoadTapeAction());
-        console.log("Load new tape");
       }
 
       // --- Frame time information

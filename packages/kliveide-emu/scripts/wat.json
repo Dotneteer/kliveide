@@ -23,6 +23,7 @@
     "z80/step-over.wat",
     "z80/memory-write-map.wat",
     "spectrum-core/execution-engine.wat",
+    "spectrum-core/memory-device.wat",
     "spectrum-core/port-device.wat",
     "spectrum-core/interrupt-device.wat",
     "spectrum-core/screen-device.wat",

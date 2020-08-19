@@ -93,8 +93,11 @@
 ;; Z80 16-bit register index conversion table
 (global $REG16_TAB_OFFS i32 (i32.const 0x03_D228))
 
-;; State transfer buffer between WA and JS (0x3C0 bytes)
-(global $STATE_TRANSFER_BUFF i32 (i32.const 0x03_D240))
+;; Page index table for addressing memory
+(global $PAGE_INDEX_16 i32 (i32.const 0x03_D240))
+
+;; State transfer buffer between WA and JS (0x380 bytes)
+(global $STATE_TRANSFER_BUFF i32 (i32.const 0x03_D280))
 
 ;; ----------------------------------------------------------------------------
 ;; Test machine buffers
