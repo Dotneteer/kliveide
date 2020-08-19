@@ -9,7 +9,7 @@ import {
 } from "./machine-state";
 import { MemoryHelper } from "./memory-helpers";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
-import { REG_AREA_INDEX, STATE_TRANSFER_BUFF, COLORIZATION_BUFFER } from "./memory-map";
+import { REG_AREA_INDEX, STATE_TRANSFER_BUFF, COLORIZATION_BUFFER, PAGE_INDEX_16 } from "./memory-map";
 
 /**
  * This class is intended to be the base class of all ZX Spectrum
@@ -215,6 +215,23 @@ export abstract class ZxSpectrumBase {
   }
 
   /**
+   * Gets the addressable Z80 memory contents from the machine
+   */
+  getMemoryContents(): Uint8Array {
+    const result = new Uint8Array(0x10000);
+    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
+    for (let i = 0; i < 4; i++) {
+      const offs = i * 0x4000;
+      const pageStart = mh.readUint32(i*6);
+      const source = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
+      for (let j = 0; j < 0x4000; j++) {
+        result[offs + j] = source[j];
+      }
+    }
+    return result;
+  }
+
+  /**
    * Override this method to represent the appropriate machine state
    */
   abstract createMachineState(): SpectrumMachineState;
@@ -268,19 +285,30 @@ export abstract class ZxSpectrumBase {
     codeAddress = 0x8000,
     startAddress = 0x8000
   ): void {
-    const mem = new Uint8Array(this.api.memory.buffer, 0, 0x1_0000);
     for (let i = 0; i < code.length; i++) {
-      mem[codeAddress++] = code[i];
+      this.writeMemory(codeAddress++, code[i]);
     }
 
     let ptr = codeAddress;
     while (ptr < 0x10000) {
-      mem[ptr++] = 0;
+      this.writeMemory(ptr++, 0);
     }
 
     // --- Init code execution
     this.reset();
     this.api.setPC(startAddress);
+  }
+
+  /**
+   * Writes a byte into the memory
+   * @param addr Memory address
+   * @param value Value to write
+   */
+  writeMemory(addr: number, value: number): void {
+    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
+    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
+    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
+    mem[addr & 0x3fff] = value;
   }
 
   /**

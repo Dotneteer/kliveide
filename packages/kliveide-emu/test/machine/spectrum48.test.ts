@@ -85,11 +85,11 @@ describe("ZX Spectrum 48", () => {
     expect(s.firstScreenPixelTact).toBe(3584);
 
     // --- Test ROM setup
-    const mh = new MemoryHelper(api, BANK_0_OFFS);
-    expect(mh.readByte(0x0000)).toBe(0xf3);
-    expect(mh.readByte(0x0001)).toBe(0xaf);
-    expect(mh.readByte(0x3ffe)).toBe(0x42);
-    expect(mh.readByte(0x3fff)).toBe(0x3c);
+    const mem = machine.getMemoryContents();
+    expect(mem[0]).toBe(0xf3);
+    expect(mem[1]).toBe(0xaf);
+    expect(mem[0x3ffe]).toBe(0x42);
+    expect(mem[0x3fff]).toBe(0x3c);
   });
 
   it("ExecuteCycle", () => {

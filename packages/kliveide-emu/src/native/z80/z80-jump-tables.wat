@@ -67,9 +67,9 @@
 ;; 12-19: Unused
 (elem (i32.const 0)
   ;; Index 0: Machine type #0 (ZX Spectrum 48K)
-  $readMemorySp48               ;; 0
-  $readMemoryNcSp48             ;; 1
-  $writememorySp48              ;; 2
+  $readPagedMemory16            ;; 0
+  $readPagedMemory16Nc          ;; 1
+  $writePagedMemory16           ;; 2
   $readPortSp48                 ;; 3
   $writePortSp48                ;; 4
   $NOOP                         ;; 5

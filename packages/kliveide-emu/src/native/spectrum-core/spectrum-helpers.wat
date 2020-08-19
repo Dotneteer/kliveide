@@ -126,36 +126,6 @@
   (i32.store8 offset=254 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeBitMask))
 )
 
-;; Copies a segment of memory
-;; $from: Source address
-;; $to: Destination address
-;; $count #of bytes to copy
-(func $copyMemory (param $from i32) (param $to i32) (param $count i32)
-  loop $copy
-    (i32.gt_u (get_local $count) (i32.const 0))
-    if
-      ;; Copy a single byte
-      get_local $to
-      get_local $from
-      i32.load8_u
-      i32.store8
-
-      ;; Increment indexes
-      (i32.add (get_local $from) (i32.const 1))
-      set_local $from
-      (i32.add (get_local $to) (i32.const 1))
-      set_local $to
-
-      ;; Decrement counter
-      (i32.sub (get_local $count) (i32.const 1))
-      set_local $count
-      
-      ;; continue
-      br $copy
-    end
-  end
-)
-
 ;; Starts a new frame
 (func $startNewFrame
     ;; TODO: Init a new frame
@@ -192,4 +162,80 @@
   ;; Get the value of the MODE ZX Spectrum system variable
   (i32.add (get_global $BANK_0_OFFS) (i32.const 0x5c41))
   i32.load8_u
+)
+
+;; ----------------------------------------------------------------------------
+;; Breakpoint management
+
+;; Erases all breakpoints
+(func $eraseBreakPoints
+  (local $counter i32)
+  (local $addr i32)
+  i32.const 0x2000 set_local $counter
+  get_global $BREAKPOINT_MAP set_local $addr
+  loop $eraseLoop
+    get_local $counter
+    if
+      (i32.store8 (get_local $addr) (i32.const 0))
+      (i32.add (get_local $addr) (i32.const 1))
+      set_local $addr
+      (i32.sub (get_local $counter) (i32.const 1))
+      set_local $counter
+      br $eraseLoop
+    end
+  end
+)
+
+;; Sets the specified breakpoint
+(func $setBreakpoint (param $brpoint i32)
+  (local $addr i32)
+  get_global $BREAKPOINT_MAP
+  (i32.shr_u (get_local $brpoint) (i32.const 3))
+  i32.add
+  tee_local $addr
+  get_local $addr
+  i32.load8_u ;; [ addr, brpoint byte ]
+
+  (i32.shl
+    (i32.const 0x01)
+    (i32.and (get_local $brpoint) (i32.const 0x07))
+  ) ;; Mask to set
+  i32.or ;; [ addr, new brpoint]
+  i32.store8
+)
+
+;; Erases the specified breakpoint
+(func $removeBreakpoint (param $brpoint i32)
+  (local $addr i32)
+  get_global $BREAKPOINT_MAP
+  (i32.shr_u (get_local $brpoint) (i32.const 3))
+  i32.add
+  tee_local $addr
+  get_local $addr
+  i32.load8_u ;; [ addr, brpoint byte ]
+
+  (i32.xor
+    (i32.shl
+      (i32.const 0x01)
+      (i32.and (get_local $brpoint) (i32.const 0x07))
+    )
+    (i32.const 0xff)
+  )
+  ;; Mask to reset
+  i32.and ;; [ addr, new brpoint]
+  i32.store8
+)
+
+;; Tests the specified breakpoint
+(func $testBreakpoint (param $brpoint i32) (result i32)
+  get_global $BREAKPOINT_MAP
+  (i32.shr_u (get_local $brpoint) (i32.const 3))
+  i32.add
+  i32.load8_u ;; [ brpoint byte ]
+
+  (i32.shl
+    (i32.const 0x01)
+    (i32.and (get_local $brpoint) (i32.const 0x07))
+  ) ;; Mask to test
+  i32.and
 )
