@@ -83,10 +83,10 @@
 ;; Register index conversion tables
 
 ;; Z80 8-bit register index conversion table
-(data (i32.const 0x07_D220) "\03\02\05\04\07\06\00\01")
+(data (i32.const 0x03_D220) "\03\02\05\04\07\06\00\01")
 
 ;; Z80 16-bit register index conversion table
-(data (i32.const 0x07_D228) "\02\04\06\14")
+(data (i32.const 0x03_D228) "\02\04\06\14")
 
 ;; ----------------------------------------------------------------------------
 ;; ALU helper tables
