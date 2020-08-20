@@ -9,7 +9,7 @@
   import { themeStore } from "../stores/theme-store";
   import {
     rendererProcessStore,
-    createRendererProcessStateAware
+    createRendererProcessStateAware,
   } from "../rendererProcessStore";
   import {
     emulatorToggleKeyboardAction,
@@ -17,10 +17,12 @@
     emulatorToggleBeamPositionAction,
     emulatorToggleFastLoadAction,
     emulatorMuteAction,
-    emulatorUnmuteAction
+    emulatorUnmuteAction,
   } from "../../shared/state/redux-emulator-state";
   import { emulatorSetCommandAction } from "../../shared/state/redux-emulator-command-state";
-  import { getSpectrumEngine } from "../spectrum-loader";
+
+  // --- The ZX Spectrum engine instance
+  export let spectrum;
 
   // --- We change Titlebar colors as the app focus changes
   let backgroundColor;
@@ -31,12 +33,11 @@
   let muted;
   calculateColors(true); // --- Default: the app has the focus
 
-  let spectrum;
   let executionState = 0;
 
   // --- Respond to the event when app focus changes
   const stateAware = createRendererProcessStateAware();
-  stateAware.stateChanged.on(async state => {
+  stateAware.stateChanged.on(async (state) => {
     // --- Change the UI according to state change
     const emuUi = state.emulatorPanelState;
     if (emuUi) {
@@ -49,12 +50,14 @@
     calculateColors(state.appHasFocus);
   });
 
-  onMount(async () => {
-    spectrum = await getSpectrumEngine();
-    spectrum.executionStateChanged.on(({ newState }) => {
-      executionState = newState;
-    });
-  });
+  // --- Watch the execution state changed of the ZX Spectrum engine
+  $: {
+    if (spectrum) {
+      spectrum.executionStateChanged.on(({ newState }) => {
+        executionState = newState;
+      });
+    }
+  }
 
   // --- Calculate colors according to focus state
   function calculateColors(focused) {
@@ -81,107 +84,109 @@
   }
 </style>
 
-<div class="toolbar" style="background-color:{backgroundColor}">
-  <ToolbarIconButton
-    iconName="play"
-    fill="lightgreen"
-    title="Start"
-    enable={executionState === 0 || executionState === 3 || executionState === 5}
-    on:clicked={async () => await spectrum.start()} />
-  <ToolbarIconButton
-    iconName="pause"
-    fill="lightblue"
-    title="Stop"
-    enable={executionState === 1}
-    on:clicked={async () => await spectrum.pause()} />
-  <ToolbarIconButton
-    iconName="stop"
-    fill="orangered"
-    title="Pause"
-    enable={executionState === 1 || executionState === 3}
-    on:clicked={async () => await spectrum.stop()} />
-  <ToolbarIconButton
-    iconName="restart"
-    fill="lightgreen"
-    title="Reset"
-    size="22"
-    highlightSize="26"
-    enable={executionState === 1 || executionState === 3}
-    on:clicked={async () => await spectrum.restart()} />
-  <ToolbarSeparator />
-  <ToolbarIconButton
-    iconName="debug"
-    fill="lightgreen"
-    title="Debug"
-    size="20"
-    highlightSize="24"
-    enable={executionState === 0 || executionState === 3 || executionState === 5}
-    on:clicked={async () => await spectrum.startDebug()} />
-  <ToolbarIconButton
-    iconName="step-into"
-    fill="lightblue"
-    title="Step into"
-    enable={executionState === 3}
-    on:clicked={async () => await spectrum.stepInto()} />
-  <ToolbarIconButton
-    iconName="step-over"
-    fill="lightblue"
-    title="Step over"
-    enable={executionState === 3} 
-    on:clicked={async () => await spectrum.stepOver()} />
-  <ToolbarIconButton
-    iconName="step-out"
-    fill="lightblue"
-    title="Step out"
-    enable={executionState === 3} 
-    on:clicked={async () => await spectrum.stepOut()} />
-  <ToolbarSeparator />
-  <ToolbarIconButton
-    iconName="keyboard"
-    title="Toggle keyboard"
-    highlightSize="32"
-    selected={keyboardDisplayed}
-    on:clicked={() => {
-      stateAware.dispatch(emulatorToggleKeyboardAction());
-    }} />
-  <ToolbarSeparator />
-  <ToolbarIconButton
-    iconName="shadow-screen"
-    fill="#ff80ff"
-    title="Toggle shadow screen"
-    selected={shadowScreenEnabled}
-    on:clicked={() => {
-      stateAware.dispatch(emulatorToggleShadowScreenAction());
-    }} />
-  <ToolbarIconButton
-    iconName="beam-position"
-    fill="#ff80ff"
-    title="Show ULA position"
-    selected={beamPositionEnabled}
-    on:clicked={() => {
-      stateAware.dispatch(emulatorToggleBeamPositionAction());
-    }} />
-  <ToolbarSeparator />
-  <ToolbarIconButton
-    iconName="rocket"
-    title="Fast LOAD mode"
-    selected={fastLoadEnabled}
-    on:clicked={() => {
-      stateAware.dispatch(emulatorToggleFastLoadAction());
-    }} />
-  {#if muted}
+{#if spectrum}
+  <div class="toolbar" style="background-color:{backgroundColor}">
     <ToolbarIconButton
-      iconName="unmute"
-      title="Unmute sound"
-      on:clicked={() => {
-        stateAware.dispatch(emulatorUnmuteAction());
-      }} />
-  {:else}
+      iconName="play"
+      fill="lightgreen"
+      title="Start"
+      enable={executionState === 0 || executionState === 3 || executionState === 5}
+      on:clicked={async () => await spectrum.start()} />
     <ToolbarIconButton
-      iconName="mute"
-      title="Mute sound"
+      iconName="pause"
+      fill="lightblue"
+      title="Stop"
+      enable={executionState === 1}
+      on:clicked={async () => await spectrum.pause()} />
+    <ToolbarIconButton
+      iconName="stop"
+      fill="orangered"
+      title="Pause"
+      enable={executionState === 1 || executionState === 3}
+      on:clicked={async () => await spectrum.stop()} />
+    <ToolbarIconButton
+      iconName="restart"
+      fill="lightgreen"
+      title="Reset"
+      size="22"
+      highlightSize="26"
+      enable={executionState === 1 || executionState === 3}
+      on:clicked={async () => await spectrum.restart()} />
+    <ToolbarSeparator />
+    <ToolbarIconButton
+      iconName="debug"
+      fill="lightgreen"
+      title="Debug"
+      size="20"
+      highlightSize="24"
+      enable={executionState === 0 || executionState === 3 || executionState === 5}
+      on:clicked={async () => await spectrum.startDebug()} />
+    <ToolbarIconButton
+      iconName="step-into"
+      fill="lightblue"
+      title="Step into"
+      enable={executionState === 3}
+      on:clicked={async () => await spectrum.stepInto()} />
+    <ToolbarIconButton
+      iconName="step-over"
+      fill="lightblue"
+      title="Step over"
+      enable={executionState === 3}
+      on:clicked={async () => await spectrum.stepOver()} />
+    <ToolbarIconButton
+      iconName="step-out"
+      fill="lightblue"
+      title="Step out"
+      enable={executionState === 3}
+      on:clicked={async () => await spectrum.stepOut()} />
+    <ToolbarSeparator />
+    <ToolbarIconButton
+      iconName="keyboard"
+      title="Toggle keyboard"
+      highlightSize="32"
+      selected={keyboardDisplayed}
       on:clicked={() => {
-        stateAware.dispatch(emulatorMuteAction());
+        stateAware.dispatch(emulatorToggleKeyboardAction());
       }} />
-  {/if}
-</div>
+    <ToolbarSeparator />
+    <ToolbarIconButton
+      iconName="shadow-screen"
+      fill="#ff80ff"
+      title="Toggle shadow screen"
+      selected={shadowScreenEnabled}
+      on:clicked={() => {
+        stateAware.dispatch(emulatorToggleShadowScreenAction());
+      }} />
+    <ToolbarIconButton
+      iconName="beam-position"
+      fill="#ff80ff"
+      title="Show ULA position"
+      selected={beamPositionEnabled}
+      on:clicked={() => {
+        stateAware.dispatch(emulatorToggleBeamPositionAction());
+      }} />
+    <ToolbarSeparator />
+    <ToolbarIconButton
+      iconName="rocket"
+      title="Fast LOAD mode"
+      selected={fastLoadEnabled}
+      on:clicked={() => {
+        stateAware.dispatch(emulatorToggleFastLoadAction());
+      }} />
+    {#if muted}
+      <ToolbarIconButton
+        iconName="unmute"
+        title="Unmute sound"
+        on:clicked={() => {
+          stateAware.dispatch(emulatorUnmuteAction());
+        }} />
+    {:else}
+      <ToolbarIconButton
+        iconName="mute"
+        title="Mute sound"
+        on:clicked={() => {
+          stateAware.dispatch(emulatorMuteAction());
+        }} />
+    {/if}
+  </div>
+{/if}

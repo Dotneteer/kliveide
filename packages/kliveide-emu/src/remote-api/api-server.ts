@@ -19,6 +19,7 @@ import {
   emulatorToggleFastLoadAction,
   emulatorMuteAction,
   emulatorUnmuteAction,
+  emulatorRequestTypeAction,
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { RegisterData } from "../shared/spectrum/api-data";
@@ -28,7 +29,7 @@ import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { IdeConfiguration } from "../shared/state/AppState";
-import { ideConfigSetAction} from "../shared/state/redux-ide-config-state";
+import { ideConfigSetAction } from "../shared/state/redux-ide-config-state";
 import { appConfiguration } from "../main/klive-configuration";
 
 /**
@@ -373,13 +374,36 @@ export function startApiServer() {
   app.post("/set-ide-config", (req, res) => {
     const ideConfig: IdeConfiguration = {
       projectFolder: req.body?.projectFolder,
-      saveFolder: req.body?.saveFolder
-    }
+      saveFolder: req.body?.saveFolder,
+    };
     mainProcessStore.dispatch(ideConfigSetAction(ideConfig)());
+    res.sendStatus(204);
+  });
+
+  /**
+   * Change the emulated machine type
+   */
+  app.get("/get-machine-type", (req, res) => {
+    const state = mainProcessStore.getState();
+    res.json({
+      requestedType: state.emulatorPanelState.requestedType,
+      currentType: state.emulatorPanelState.currentType,
+    });
+  });
+
+  /**
+   * Change the emulated machine type
+   */
+  app.post("/set-machine-type", (req, res) => {
+    mainProcessStore.dispatch(
+      emulatorRequestTypeAction(req.body?.type ?? "48")()
+    );
     res.sendStatus(204);
   });
 
   // --- Start the API server on the configured port
   const port = appConfiguration?.port ?? 3000;
-  app.listen(port, () => console.log(`Klive Emulator is listening on port ${port}...`));
+  app.listen(port, () =>
+    console.log(`Klive Emulator is listening on port ${port}...`)
+  );
 }

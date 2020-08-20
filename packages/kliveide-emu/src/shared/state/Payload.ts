@@ -27,4 +27,6 @@ export interface Payload {
   breakpoints?: number[];
   savedData?: Uint8Array;
   ideConfiguration?: IdeConfiguration;
+  requestedType?: string;
+  currentType?: string;
 }

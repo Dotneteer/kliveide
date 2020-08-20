@@ -7,15 +7,17 @@
   import Statusbar from "./controls/Statusbar.svelte";
   import MainCanvas from "./controls/MainCanvas.svelte";
 
-  import { onDestroy } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { themeStore } from "./stores/theme-store";
   import { darkTheme } from "./themes/dark-theme";
+
+  import { getSpectrumEngine } from "./spectrum-loader";
 
   // --- Manage themes and theme changes
   let themeStyle = "";
   let themeClass = "";
 
-  // -- Respond to theme changes
+  // --- Respond to theme changes
   const unsubscribe = themeStore.subscribe(theme => {
     let styleValue = "";
     for (const key in theme.properties) {
@@ -23,6 +25,12 @@
     }
     themeStyle = styleValue.trimRight();
     themeClass = `${theme.name}-theme`;
+  });
+
+  // --- The ZX Spectrum machine
+  let spectrum;
+  onMount(async () => {
+    spectrum = await getSpectrumEngine();
   });
 
   // --- Cleanup subscriptions
@@ -49,7 +57,7 @@
 </style>
 
 <main style={themeStyle} class={themeClass} tabindex="0">
-  <Toolbar />
-  <MainCanvas />
+  <Toolbar {spectrum} />
+  <MainCanvas {spectrum} />
   <Statusbar />
 </main>
