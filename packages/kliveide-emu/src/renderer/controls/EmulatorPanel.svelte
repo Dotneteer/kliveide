@@ -86,6 +86,8 @@
   // --- Set up the emulator according to the current ZX Spectrum machine
   async function setupEmulator() {
     overlay = "Not started yet";
+    hideDisplayData();
+
     // --- Refresh the screen when there's a new frame
     spectrum.screenRefreshed.on(() => displayScreenData());
 
@@ -176,6 +178,9 @@
 
   // --- Displays the ZX Spectrum screen
   function displayScreenData() {
+    // --- Do not refresh after stopped state
+    if (!execState || execState === 5) return;
+
     const shadowCtx = shadowScreenEl.getContext("2d");
     if (!shadowCtx) return;
     const shadowImageData = shadowCtx.getImageData(
@@ -202,6 +207,16 @@
         screenEl.width,
         screenEl.height
       );
+    }
+  }
+
+  // --- Hide the display
+  function hideDisplayData() {
+    if (!screenEl) return;
+
+    const screenCtx = screenEl.getContext("2d");
+    if (screenCtx) {
+      screenCtx.clearRect(0, 0, screenEl.width, screenEl.height);
     }
   }
 

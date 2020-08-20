@@ -2,7 +2,7 @@
  * Gets the numeric ID of a particular machine type name
  * @param name Machine type name
  */
-export function getMachinTypeFromName(name: string): number {
+export function getMachineTypeFromName(name: string): number {
   switch (name.toLowerCase()) {
     case "128":
       return 1;

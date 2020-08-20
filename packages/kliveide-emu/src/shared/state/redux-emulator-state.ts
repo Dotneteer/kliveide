@@ -92,8 +92,7 @@ export function emulatorSetupTypeAction(currentType: string) {
  * @param action Action executed
  */
 export function emulatorStateReducer(
-  state: EmulatorPanelState = {
-  },
+  state: EmulatorPanelState = {},
   { type, payload }: SpectNetAction
 ): EmulatorPanelState {
   switch (type) {
