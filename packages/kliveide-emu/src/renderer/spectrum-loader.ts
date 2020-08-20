@@ -11,7 +11,7 @@ import { MemoryHelper } from "../native/api/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
 import { ZxSpectrumBase } from "../native/api/ZxSpectrumBase";
-import { getMachineTypeFromName } from "../shared/spectrum/machine-types";
+import { getMachineTypeIdFromName } from "../shared/spectrum/machine-types";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -104,7 +104,7 @@ export async function changeSpectrumEngine(name: string) {
   }
 
   // --- Create the new engine
-  const typeId = getMachineTypeFromName(name);
+  const typeId = getMachineTypeIdFromName(name);
   const newEngine = await createSpectrumEngine(typeId);
 
   // --- Store it

@@ -85,5 +85,5 @@
 <main style={themeStyle} class={themeClass} tabindex="0">
   <Toolbar {spectrum} />
   <MainCanvas {spectrum} />
-  <Statusbar />
+  <Statusbar {spectrum} />
 </main>
