@@ -11,8 +11,6 @@
   import { themeStore } from "./stores/theme-store";
   import { darkTheme } from "./themes/dark-theme";
 
-  import { loadSpectrumEngine } from "./spectrum-loader";
-
   // --- Manage themes and theme changes
   let themeStyle = "";
   let themeClass = "";

@@ -1,10 +1,10 @@
 ;; ==========================================================================
-;; ZX Spectrum 48K functions
+;; ZX Spectrum 128K functions
 
 ;; Reads a port of the ZX Spectrum 48 machine
 ;; $addr: port address
 ;; Returns: value read from port
-(func $readPortSp48 (param $addr i32) (result i32)
+(func $readPortSp128 (param $addr i32) (result i32)
   (call $applyIOContentionDelay (get_local $addr))
   (i32.and (get_local $addr) (i32.const 0x0001))
   (i32.eq (i32.const 0))
@@ -29,7 +29,7 @@
 ;; Writes a port of the ZX Spectrum 48 machine
 ;; $addr: port address
 ;; $v: Port value
-(func $writePortSp48 (param $addr i32) (param $v i32)
+(func $writePortSp128 (param $addr i32) (param $v i32)
   (call $applyIOContentionDelay (get_local $addr))
   (i32.and (get_local $addr) (i32.const 0x0001))
   (i32.eq (i32.const 0))
@@ -41,10 +41,10 @@
 )
 
 ;; Sets up the ZX Spectrum 48 machine
-(func $setupSpectrum48
+(func $setupSpectrum128
   ;; CPU configuration
   i32.const 3_500_000 set_global $baseClockFrequency
-  i32.const 1 set_global $clockMultiplier
+  i32.const 4 set_global $clockMultiplier
   i32.const 0 set_global $supportsNextOperation
   
   ;; Memory configuration
@@ -88,51 +88,5 @@
 )
 
 ;; Gets the ZX Spectrum 48 machine state
-(func $getSpectrum48MachineState
+(func $getSpectrum128MachineState
 )
-
-;; Colotizes the pixel data of ZX Spectrum 48
-(func $colorizeSp48
-  (local $sourcePtr i32)
-  (local $destPtr i32)
-  (local $counter i32)
-
-  ;; Calculate the counter
-  (i32.mul (get_global $screenLines) (get_global $screenWidth))
-  set_local $counter
-
-  ;; Reset the pointers
-  get_global $PIXEL_RENDERING_BUFFER set_local $sourcePtr
-  get_global $COLORIZATION_BUFFER set_local $destPtr
-
-  loop $colorizeLoop
-    get_local $counter
-    if
-      get_local $destPtr ;; [destPtr]
-      get_global $SPECTRUM_PALETTE ;; [destPtr, palette]
-
-      ;; Get the pixel information
-      get_local $sourcePtr
-      i32.load8_u
-      (i32.and (i32.const 0x0f))
-      (i32.shl (i32.const 2)) ;; [destPtr, palette, pixelPalOffset]
-      i32.add  ;; [destPtr, paletteAddr]
-      i32.load ;; [destPtr, color]
-      i32.store
-
-      ;; Increment pointers
-      (i32.add (get_local $sourcePtr) (i32.const 1))
-      set_local $sourcePtr
-      (i32.add (get_local $destPtr) (i32.const 4))
-      set_local $destPtr
-
-      ;; Decrement counter
-      (i32.sub (get_local $counter) (i32.const 1))
-      set_local $counter
-
-      ;; Next loop
-      br $colorizeLoop
-    end
-  end
-)
-
