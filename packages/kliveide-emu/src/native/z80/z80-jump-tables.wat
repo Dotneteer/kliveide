@@ -89,18 +89,18 @@
   $NOOP                         ;; 19
 
   ;; Index 20: Machine type #1 (ZX Spectrum 128K)
-  $defaultRead                  ;; 0
-  $defaultRead                  ;; 1
-  $defaultWrite                 ;; 2
-  $defaultIoRead                ;; 3
-  $defaultIoWrite               ;; 4
+  $readPagedMemory16            ;; 0
+  $readPagedMemory16Nc          ;; 1
+  $writePagedMemory16           ;; 2
+  $readPortSp128                ;; 3
+  $writePortSp128               ;; 4
   $NOOP                         ;; 5
   $NOOP                         ;; 6
-  $NOOP                         ;; 7
-  $NOOP                         ;; 8
+  $setupSpectrum128             ;; 7
+  $getSpectrum128MachineState   ;; 8
   $NOOP                         ;; 9
   $NOOP                         ;; 10
-  $NOOP                         ;; 11
+  $colorizeSp48                 ;; 11
   $NOOP                         ;; 12
   $NOOP                         ;; 13
   $NOOP                         ;; 14

@@ -67,7 +67,7 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   keyboardLines: number[];
 
   // --- Port $fe state
-  portBit3LastValue: boolean;;
+  portBit3LastValue: boolean;
   portBit4LastValue: boolean;
   portBit4ChangedFrom0Tacts: number;
   portBit4ChangedFrom1Tacts: number;
@@ -114,13 +114,22 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
 /**
  * This type represents ZX Spectrum machine states
  */
-export type SpectrumMachineState = Spectrum48MachineState;
+export type SpectrumMachineState =
+  | Spectrum48MachineState
+  | Spectrum128MachineState;
 
 /**
  * Represents the state of a ZX Spectrum 48 machine
  */
 export class Spectrum48MachineState extends SpectrumMachineStateBase {
   type: "48";
+}
+
+/**
+ * Represents the state of a ZX Spectrum 128 machine
+ */
+export class Spectrum128MachineState extends SpectrumMachineStateBase {
+  type: "128";
 }
 
 /**
@@ -188,7 +197,7 @@ export enum DebugStepMode {
    * Do not use debugger
    */
   None = 0,
-  
+
   /**
    * Execution stops at the next breakpoint
    */

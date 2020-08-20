@@ -5,10 +5,6 @@ export function emulatorSetSizeAction(width: number, height: number) {
   return createAction("EMULATOR_SET_SIZE", { width, height });
 }
 
-export function emulatorSetZoomAction(zoom: number) {
-  return createAction("EMULATOR_SET_ZOOM", { zoom });
-}
-
 export function emulatorSetExecStateAction(executionState: number) {
   return createAction("EMULATOR_SET_EXEC_STATE", { executionState });
 }
@@ -82,22 +78,26 @@ export function emulatorSetSavedDataAction(savedData: Uint8Array) {
   return createAction("EMULATOR_SET_SAVED_DATA", { savedData });
 }
 
+export function emulatorRequestTypeAction(requestedType: string) {
+  return createAction("EMULATOR_REQUEST_TYPE", { requestedType });
+}
+
+export function emulatorSetupTypeAction(currentType: string) {
+  return createAction("EMULATOR_SETUP_TYPE", { currentType });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
  * @param action Action executed
  */
 export function emulatorStateReducer(
-  state: EmulatorPanelState = {
-    zoom: 1,
-  },
+  state: EmulatorPanelState = {},
   { type, payload }: SpectNetAction
 ): EmulatorPanelState {
   switch (type) {
     case "EMULATOR_SET_SIZE":
       return { ...state, width: payload.width, height: payload.height };
-    case "EMULATOR_SET_ZOOM":
-      return { ...state, zoom: payload.zoom };
     case "EMULATOR_SET_EXEC_STATE":
       return { ...state, executionState: payload.executionState };
     case "EMULATOR_SET_TAPE_CONTENTS":
@@ -167,6 +167,10 @@ export function emulatorStateReducer(
       return { ...state, runsInDebug: payload.runsInDebug };
     case "EMULATOR_SET_SAVED_DATA":
       return { ...state, savedData: payload.savedData };
+    case "EMULATOR_REQUEST_TYPE":
+      return { ...state, requestedType: payload.requestedType };
+    case "EMULATOR_SETUP_TYPE":
+      return { ...state, currentType: payload.currentType };
   }
   return state;
 }

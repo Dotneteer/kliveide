@@ -61,7 +61,7 @@ export class SpectrumEngine {
   private _vmStoppedWithError = new LiteEvent<void>();
   private _beeperSamplesEmitted = new LiteEvent<number[]>();
 
-  private _completionTask: Promise<void> | undefined;
+  private _completionTask: Promise<void> | null = null;
 
   // --- The last loaded machine state
   private _loadedState: SpectrumMachineState;
@@ -401,7 +401,7 @@ export class SpectrumEngine {
     // --- Prepare the machine to pause
     this.executionState = ExecutionState.Pausing;
     this._isFirstPause = this._isFirstStart;
-    this.cancelRun();
+    await this.cancelRun();
     this.executionState = ExecutionState.Paused;
   }
 
@@ -416,6 +416,7 @@ export class SpectrumEngine {
         return;
 
       case ExecutionState.Paused:
+        console.log("Paused");
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
         this.executionState = ExecutionState.Stopped;
@@ -424,7 +425,7 @@ export class SpectrumEngine {
       default:
         // --- Initiate stop
         this.executionState = ExecutionState.Stopping;
-        this.cancelRun();
+        await this.cancelRun();
         this.executionState = ExecutionState.Stopped;
         break;
     }
@@ -509,6 +510,7 @@ export class SpectrumEngine {
   async cancelRun(): Promise<void> {
     this._cancelled = true;
     await this._completionTask;
+    this._completionTask = null;
     if (this._beeperRenderer) {
       this._beeperRenderer.closeAudio();
       this._beeperRenderer = null;

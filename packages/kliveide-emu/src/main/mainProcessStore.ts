@@ -19,6 +19,8 @@ const defaultState: AppState = {
     fastLoad: false,
     executionState: 0,
     runsInDebug: false,
+    requestedType: "",
+    currentType: ""
   },
   emulatorCommand: "",
   breakpoints: [],

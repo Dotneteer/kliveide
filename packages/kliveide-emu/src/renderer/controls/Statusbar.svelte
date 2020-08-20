@@ -3,16 +3,19 @@
   import { onMount } from "svelte";
   import SvgIcon from "./SvgIcon.svelte";
   import { themeStore } from "../stores/theme-store";
-  import { getSpectrumEngine } from "../spectrum-loader";
+  import { getMachineTypeNameFromId } from "../../shared/spectrum/machine-types";
+
+  // --- The ZX Spectrum engine instance
+  export let spectrum;
 
   const fillValue = themeStore.getProperty("--statusbar-foreground-color");
   const version = getVersion();
 
-  let spectrum;
-  onMount(async () => {
-    spectrum = await getSpectrumEngine();
-    spectrum.screenRefreshed.on(onScreenRefreshed);
-  });
+  $: {
+    if (spectrum) {
+      spectrum.screenRefreshed.on(onScreenRefreshed);
+    }
+  }
 
   let lastEngineTimeStr = "---";
   let avgEngineTimeStr = "---";
@@ -105,6 +108,11 @@
     {/if}
   </div>
   <div class="placeholder"></div>
+  {#if spectrum}
+  <div class="section">
+    <span class="label">[{getMachineTypeNameFromId(spectrum.spectrum.type)}]</span>
+  </div>
+  {/if}
   <div class="section">
     <span class="label">Klive v{version}</span>
   </div>

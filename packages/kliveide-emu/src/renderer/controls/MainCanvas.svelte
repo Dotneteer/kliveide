@@ -3,8 +3,10 @@
   import SplitContainer from "./SplitContainer.svelte";
   import EmulatorPanel from "./EmulatorPanel.svelte";
   import KeyboardPanel from "./KeyboardPanel.svelte";
-
   import { createRendererProcessStateAware } from "../rendererProcessStore";
+
+  // --- The ZX Spectrum engine
+  export let spectrum;
 
   let keyboardVisible = false;
   let delayIsOver = true;
@@ -42,7 +44,7 @@
     on:moved={async () => {
       initialHeight = keyboardHeight;
     }}>
-    <EmulatorPanel />
+    <EmulatorPanel {spectrum} />
     {#if keyboardVisible}
       <KeyboardPanel
         showPanel={delayIsOver}

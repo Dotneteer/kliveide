@@ -41,7 +41,6 @@ export interface AppState {
 export interface EmulatorPanelState {
   width?: number;
   height?: number;
-  zoom?: number;
   engineInitialized?: boolean;
   executionState?: number;
   runsInDebug?: boolean;
@@ -57,6 +56,8 @@ export interface EmulatorPanelState {
   memoryContents?: Uint8Array;
   memWriteMap?: Uint8Array;
   savedData?: Uint8Array;
+  requestedType?: string;
+  currentType?: string;
 }
 
 /**

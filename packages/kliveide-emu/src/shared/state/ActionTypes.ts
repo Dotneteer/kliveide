@@ -10,7 +10,6 @@ export interface ActionTypes {
   APP_LOST_FOCUS: null;
 
   // --- Emulator panel actions
-  EMULATOR_SET_ZOOM: null;
   EMULATOR_SET_SIZE: null;
   EMULATOR_INITIALIZED: null;
   EMULATOR_SET_EXEC_STATE: null;
@@ -35,6 +34,8 @@ export interface ActionTypes {
   EMULATOR_SET_MEMWRITE_MAP: null;
   EMULATOR_SET_DEBUG: null;
   EMULATOR_SET_SAVED_DATA: null;
+  EMULATOR_REQUEST_TYPE: null;
+  EMULATOR_SETUP_TYPE: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
