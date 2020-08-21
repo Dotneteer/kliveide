@@ -138,7 +138,7 @@ export function startApiServer() {
   /**
    * Sets the specified file's contents as the tape information to load
    */
-  app.post("/set-tape", async (_req, res) => {
+  app.post("/tape-contents", async (_req, res) => {
     let success = false;
     try {
       const contents = fs.readFileSync(_req.body?.tapeFile);
@@ -295,7 +295,7 @@ export function startApiServer() {
   /**
    * Gets the contents of the specified memory range
    */
-  app.get("/mem/:from/:to", (req, res) => {
+  app.get("/memory/:from/:to", (req, res) => {
     let fromVal = parseInt(req.params.from);
     let toVal = parseInt(req.params.to);
     if (fromVal > toVal) {
@@ -316,7 +316,7 @@ export function startApiServer() {
   /**
    * Tests if the specified range of memory was written
    */
-  app.get("/test-mem-write/:from/:to", (req, res) => {
+  app.get("/test-memory-write/:from/:to", (req, res) => {
     let fromVal = parseInt(req.params.from);
     let toVal = parseInt(req.params.to);
     if (fromVal > toVal) {
@@ -346,7 +346,7 @@ export function startApiServer() {
   /**
    * Set breakpoints
    */
-  app.post("/set-breakpoints", (req, res) => {
+  app.post("/breakpoints", (req, res) => {
     const breakpoints = req.body?.breakpoints as number[];
     mainProcessStore.dispatch(breakpointSetAction(breakpoints)());
     res.sendStatus(204);
@@ -364,7 +364,7 @@ export function startApiServer() {
   /**
    * Clear all breakpoints
    */
-  app.delete("/clear-all-breakpoints", (req, res) => {
+  app.delete("/all-breakpoints", (_req, res) => {
     mainProcessStore.dispatch(breakpointEraseAllAction());
     res.sendStatus(204);
   });
@@ -372,7 +372,7 @@ export function startApiServer() {
   /**
    * Set the ide configuration
    */
-  app.post("/set-ide-config", (req, res) => {
+  app.post("/ide-config", (req, res) => {
     const ideConfig: IdeConfiguration = {
       projectFolder: req.body?.projectFolder,
       saveFolder: req.body?.saveFolder,
@@ -384,7 +384,7 @@ export function startApiServer() {
   /**
    * Change the emulated machine type
    */
-  app.get("/get-machine-type", (req, res) => {
+  app.get("/machine-type", (req, res) => {
     const state = mainProcessStore.getState();
     res.json({
       requestedType: state.emulatorPanelState.requestedType,
@@ -395,7 +395,7 @@ export function startApiServer() {
   /**
    * Change the emulated machine type
    */
-  app.post("/set-machine-type", (req, res) => {
+  app.post("/machine-type", (req, res) => {
     mainProcessStore.dispatch(
       emulatorRequestTypeAction(req.body?.type ?? "48")()
     );

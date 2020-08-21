@@ -57,7 +57,7 @@ class Communicator {
    * @param to Last memory address
    */
   async getMemory(from: number, to: number): Promise<string> {
-    return this.getText(`/mem/${from}/${to}`);
+    return this.getText(`/memory/${from}/${to}`);
   }
 
   /**
@@ -65,7 +65,7 @@ class Communicator {
    * @param address Breakpoint address
    */
   async setBreakpoint(address: number): Promise<void> {
-    await this.post("/set-breakpoints", { breakpoints: [ address ]});
+    await this.post("/breakpoints", { breakpoints: [ address ]});
   }
 
   /**
@@ -88,7 +88,7 @@ class Communicator {
       projectFolder,
       saveFolder: kliveConfig.get(SAVE_FOLDER) ?? ""
     };
-    await this.post("/set-ide-config", ideConfig);
+    await this.post("/ide-config", ideConfig);
   }
 
   /**
@@ -96,7 +96,7 @@ class Communicator {
    * @param filename File name to send to the emulator
    */
   async setTapeFile(filename: string): Promise<boolean> {
-    const response = await this.post("/set-tape", { tapeFile: filename});
+    const response = await this.post("/tape-contents", { tapeFile: filename});
     return response.ok;
   }
 
@@ -105,7 +105,7 @@ class Communicator {
    * @param typeId Machine type ID
    */
   async setMachineType(typeId: string): Promise<void> {
-    await this.post("/set-machine-type", { type: typeId});
+    await this.post("/machine-type", { type: typeId});
   }
 
   /**
