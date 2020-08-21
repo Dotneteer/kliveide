@@ -101,6 +101,14 @@ class Communicator {
   }
 
   /**
+   * Sets the ZX Spectrum machine type
+   * @param typeId Machine type ID
+   */
+  async setMachineType(typeId: string): Promise<void> {
+    await this.post("/set-machine-type", { type: typeId});
+  }
+
+  /**
    * Invokes a GET command for a generic response
    * @param command Command string
    * @param requestInit Optional request initialization

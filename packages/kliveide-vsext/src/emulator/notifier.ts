@@ -4,6 +4,7 @@ import {
   FrameInfo,
   ExecutionState,
 } from "./communicator";
+import { spectrumConfigurationInstance } from "./machine-config";
 
 // --- Communicator internal state
 let started = false;
@@ -86,7 +87,8 @@ export async function startNotifier(): Promise<void> {
         connected = await communicatorInstance.hello();
         if (connected) {
           connectionStateChanged.fire(connected);
-          communicatorInstance.signConfigurationChange();
+          await communicatorInstance.signConfigurationChange();
+          await communicatorInstance.setMachineType(spectrumConfigurationInstance.configuration.type);
         }
       }
 

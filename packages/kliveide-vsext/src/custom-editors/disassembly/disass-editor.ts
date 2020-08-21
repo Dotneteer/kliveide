@@ -172,8 +172,13 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     rom = rom ?? 0;
     try {
       // --- Obtain the file for the annotations
-      let romAnnotationFile =
-        spectrumConfigurationInstance.configuration.annotations[rom];
+      const annotations =
+        spectrumConfigurationInstance.configuration?.annotations;
+      if (!annotations) {
+        return null;
+      }
+
+      let romAnnotationFile = annotations[rom];
       if (romAnnotationFile.startsWith("#")) {
         romAnnotationFile = this.getAssetsFileName(
           path.join("annotations", romAnnotationFile.substr(1))

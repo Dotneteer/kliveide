@@ -28,7 +28,7 @@ export const DISASS_ANN_FILE = ".spectrum/view.disassembly";
  * The default configuration file, if none is provided
  */
 export const DEFAULT_SPECTRUM_CONFIG: SpectrumConfig = {
-  type: "Spectrum48",
+  type: "48",
   annotations: ["#spectrum48.disann"],
 };
 
@@ -36,7 +36,6 @@ export const DEFAULT_SPECTRUM_CONFIG: SpectrumConfig = {
  * This class represents the configuration of the current ZX Spectrum machine
  */
 class MachineConfiguration {
-  private _initialized = false;
   private _config: SpectrumConfig | null = null;
 
   /**
@@ -50,11 +49,7 @@ class MachineConfiguration {
    * Initializes configuration from the machine config file
    */
   initialize(): void {
-    // --- Initialize only once
-    if (this._initialized) {
-        return;
-    }
-    
+   
     // --- Check for available project folder
     const folders = vscode.workspace.workspaceFolders;
     const projFolder = folders ? folders[0].uri.fsPath : null;
@@ -75,7 +70,6 @@ class MachineConfiguration {
         type: configObj.type,
         annotations: configObj.annotations,
       };
-      this._initialized = true;
       // TODO: Validate configuration object
 
       // --- Let's sign successful configuration
@@ -90,13 +84,6 @@ class MachineConfiguration {
       );
     }
   }
-
-  /**
-   * Tests if the machine configuration has already been initialized
-   */
-  get initialized(): boolean {
-    return this._initialized;
-  }
 }
 
 /**
@@ -104,7 +91,7 @@ class MachineConfiguration {
  */
 export interface SpectrumConfig {
   type: string;
-  annotations: string[];
+  annotations?: string[];
 }
 
 /**
