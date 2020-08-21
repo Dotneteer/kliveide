@@ -9,13 +9,16 @@ import { spectrumConfigurationInstance } from "./machine-config";
 // --- Communicator internal state
 let started = false;
 let cancelled = false;
-let connected = true;
+let connected = false;
 
 // --- The last frame information received
 let lastFrameInfo: FrameInfo;
 
 // --- The last set of breakpoints received
 let lastBreakpoints: number[] = [];
+
+// --- The last machine type
+let lastMachineType: string | undefined = "";
 
 let frameInfoChanged: vscode.EventEmitter<FrameInfo> = new vscode.EventEmitter<
   FrameInfo
@@ -29,6 +32,10 @@ let connectionStateChanged: vscode.EventEmitter<boolean> = new vscode.EventEmitt
 
 let breakpointsChanged: vscode.EventEmitter<number[]> = new vscode.EventEmitter<
   number[]
+>();
+
+let machineTypeChanged: vscode.EventEmitter<string> = new vscode.EventEmitter<
+  string
 >();
 
 /**
@@ -56,29 +63,27 @@ export const onBreakpointsChanged: vscode.Event<number[]> =
   breakpointsChanged.event;
 
 /**
+ * Fires when machine type has been changed
+ */
+export const onMachineTypeChanged: vscode.Event<string> =
+  machineTypeChanged.event;
+
+/**
  * Starts the notification watcher task
  */
 export async function startNotifier(): Promise<void> {
   if (started) {
     return;
   }
-  vscode.commands.executeCommand(
-    "setContext",
-    "kliveEmuConnected",
-    true
-  );
+  vscode.commands.executeCommand("setContext", "kliveEmuConnected", true);
 
   cancelled = false;
   onConnectionStateChanged((state) => {
     if (!state) {
       resetLastFrameInfo();
     }
-    vscode.commands.executeCommand(
-      "setContext",
-      "kliveEmuConnected",
-      state
-    );
-});
+    vscode.commands.executeCommand("setContext", "kliveEmuConnected", state);
+  });
 
   while (!cancelled) {
     try {
@@ -88,7 +93,9 @@ export async function startNotifier(): Promise<void> {
         if (connected) {
           connectionStateChanged.fire(connected);
           await communicatorInstance.signConfigurationChange();
-          await communicatorInstance.setMachineType(spectrumConfigurationInstance.configuration.type);
+          await communicatorInstance.setMachineType(
+            spectrumConfigurationInstance.configuration.type
+          );
         }
       }
 
@@ -113,7 +120,7 @@ export async function startNotifier(): Promise<void> {
         executionStateChanged.fire({
           state: getExecutionStateName(frameInfo.executionState),
           pc: frameInfo.pc,
-          runsInDebug: frameInfo.runsInDebug
+          runsInDebug: frameInfo.runsInDebug,
         });
       }
 
@@ -135,6 +142,12 @@ export async function startNotifier(): Promise<void> {
           breakpointsChanged.fire(frameInfo.breakpoints);
         }
         lastBreakpoints = frameInfo.breakpoints;
+      }
+
+      // --- Handle changes in machine type
+      if (frameInfo.machineType !== lastMachineType) {
+        lastMachineType = frameInfo.machineType;
+        machineTypeChanged.fire(lastMachineType ?? "");
       }
     } catch (err) {
       // --- Handle changes in connection state
@@ -183,6 +196,13 @@ export function getLastBreakpoints(): number[] {
 }
 
 /**
+ * Gets the lates machine type
+ */
+export function getLastMachineType(): string | undefined {
+  return lastMachineType;
+}
+
+/**
  * Resets last frame information to fire events after
  * reconnection
  */
@@ -191,6 +211,7 @@ function resetLastFrameInfo(): void {
     startCount: -1,
     frameCount: -1,
     executionState: 0,
+    pc: -1
   };
 }
 

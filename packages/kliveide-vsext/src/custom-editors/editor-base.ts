@@ -303,6 +303,7 @@ export abstract class EditorProviderBase
       });
     }
     const execState = getLastExecutionState();
+    console.log(JSON.stringify(execState));
     panel.webview.postMessage({
       viewNotification: "execState",
       state: execState.state,

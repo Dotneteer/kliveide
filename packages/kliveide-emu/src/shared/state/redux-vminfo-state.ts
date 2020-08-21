@@ -21,6 +21,8 @@ export function vmInfoStateReducer(
         ...state,
         registers: payload.registers,
       };
+    case "EMULATOR_SETUP_TYPE":
+      return { ...state, registers: null };
   }
   return state;
 }

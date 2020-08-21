@@ -416,7 +416,6 @@ export class SpectrumEngine {
         return;
 
       case ExecutionState.Paused:
-        console.log("Paused");
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
         this.executionState = ExecutionState.Stopped;

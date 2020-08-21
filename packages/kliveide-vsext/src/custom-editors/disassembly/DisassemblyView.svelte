@@ -64,6 +64,8 @@
               annotations = DisassemblyAnnotation.deserialize(
                 ev.data.annotations
               );
+            } else {
+              annotations = null;
             }
             break;
           case "connectionState":

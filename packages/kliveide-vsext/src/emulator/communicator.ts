@@ -190,6 +190,7 @@ export interface FrameInfo {
   breakpoints?: number[];
   pc?: number;
   runsInDebug?: boolean;
+  machineType?: string;
 }
 
 /**
