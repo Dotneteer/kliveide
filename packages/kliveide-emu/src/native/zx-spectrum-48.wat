@@ -54,6 +54,7 @@
   i32.const 1 set_global $contentionType
   i32.const 0 set_global $ramBanks
   i32.const 0 set_global $nextMemorySize
+  get_global $BANK_0_OFFS set_global $memoryScreenOffset
 
   ;; Set up memory pages
   (call $setMemoryPageIndex (i32.const 0) (get_global $ROM_48_OFFS) (i32.const 0) (i32.const 1))

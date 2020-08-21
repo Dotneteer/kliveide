@@ -237,6 +237,12 @@
   (i32.store offset=0 (get_global $KEYBOARD_LINES) (i32.const 0))
   (i32.store offset=4 (get_global $KEYBOARD_LINES) (i32.const 0))
 
+  ;; Reset memory state
+  i32.const 0 set_global $memorySelectedRom
+  i32.const 1 set_global $memoryPagingEnabled
+  i32.const 0 set_global $memorySelectedBank
+  i32.const 0 set_global $memoryUseShadowScreen
+
   ;; Reset port state
   i32.const 0 set_global $portBit3LastValue
   i32.const 0 set_global $portBit4LastValue

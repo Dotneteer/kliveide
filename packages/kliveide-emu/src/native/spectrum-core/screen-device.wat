@@ -477,8 +477,8 @@
   )
 
   ;; Calculate the address
-  i32.const 0x4000
-  i32.add
+  ;; i32.const 0x4000
+  ;; i32.add
   i32.add
   i32.add
   i32.add
@@ -508,7 +508,8 @@
 
   ;; Combine address parts
   i32.or
-  i32.const 0x5800
+  ;;i32.const 0x5800
+  i32.const 0x1800
   i32.add
 )
 
@@ -543,13 +544,13 @@
           (i32.and (get_local $phase) (i32.const 0x01))
           if
             ;; Fetch pixel byte 1
-            (call $readMemoryNc (i32.load16_u offset=1 (get_global $renderingTablePtr)))
+            (call $readScreenMemory (i32.load16_u offset=1 (get_global $renderingTablePtr)))
             set_global $pixelByte1
           else
             (i32.and (get_local $phase) (i32.const 0x02))
             if
               ;; Fetch attr byte 1
-              (call $readMemoryNc (i32.load16_u offset=3 (get_global $renderingTablePtr)))
+              (call $readScreenMemory (i32.load16_u offset=3 (get_global $renderingTablePtr)))
               set_global $attrByte1
             end
           end
@@ -579,13 +580,13 @@
             (i32.and (get_local $phase) (i32.const 0x01))
             if
               ;; Fetch pixel byte 2
-              (call $readMemoryNc (i32.load16_u offset=1 (get_global $renderingTablePtr)))
+              (call $readScreenMemory (i32.load16_u offset=1 (get_global $renderingTablePtr)))
               set_global $pixelByte2
             else
               (i32.and (get_local $phase) (i32.const 0x02))
               if
                 ;; Fetch attr byte 2
-                (call $readMemoryNc (i32.load16_u offset=3 (get_global $renderingTablePtr)))
+                (call $readScreenMemory (i32.load16_u offset=3 (get_global $renderingTablePtr)))
                 set_global $attrByte2
               end
             end
@@ -611,13 +612,13 @@
             (i32.and (get_local $phase) (i32.const 0x01))
             if
               ;; Fetch pixel byte 1
-              (call $readMemoryNc (i32.load16_u offset=1 (get_global $renderingTablePtr)))
+              (call $readScreenMemory (i32.load16_u offset=1 (get_global $renderingTablePtr)))
               set_global $pixelByte1
             else
               (i32.and (get_local $phase) (i32.const 0x02))
               if
                 ;; Fetch attr byte 1
-                (call $readMemoryNc (i32.load16_u offset=3 (get_global $renderingTablePtr)))
+                (call $readScreenMemory (i32.load16_u offset=3 (get_global $renderingTablePtr)))
                 set_global $attrByte1
               end
             end
@@ -668,6 +669,11 @@
   i32.load8_u
 )
 
-;; Puts a pair of pixels into the rendering buffer
-(func $setPixels (param $pixelAddr i32) (param $pixel1Color i32) (param $pixel2Color i32)
+;; Reads the contents of the screen memory
+(func $readScreenMemory (param $addr i32) (result i32)
+  (i32.add 
+    (get_global $memoryScreenOffset)
+    (get_local $addr)
+  )
+  i32.load8_u
 )
