@@ -9606,6 +9606,28 @@
       "endAddress": 16383,
       "sectionType": 2,
       "lenght": 768
+    },
+    {
+      "startAddress": 16384,
+      "endAddress": 23295,
+      "sectionType": 2
+    },
+    {
+      "startAddress": 23296,
+      "endAddress": 23551,
+      "sectionType": 1
+    },
+    {
+      "startAddress": 23552,
+      "endAddress": 49151,
+      "sectionType": 1,
+      "lenght": 25600
+    },
+    {
+      "startAddress": 49152,
+      "endAddress": 65535,
+      "sectionType": 2,
+      "lenght": 16384
     }
   ],
   "disassemblyFlags": 0

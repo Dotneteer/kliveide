@@ -211,7 +211,9 @@
 )
 
 ;; Turns on the ZX Spectrum machine
-(func $turnOnMachine)
+(func $turnOnMachine
+  call $setupMachine
+)
 
 ;; Resets the ZX Spectrum machine
 (func $resetMachine

@@ -320,7 +320,7 @@ export class SpectrumEngine {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      this.spectrum.reset();
+      this.spectrum.turnOnMachine();
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();

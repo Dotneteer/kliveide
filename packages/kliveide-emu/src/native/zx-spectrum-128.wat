@@ -39,15 +39,70 @@
     return
   end
 
-  (i32.and (get_local $addr) (i32.const 0x4002))
+  (i32.and (get_local $addr) (i32.const 0xc002))
   (i32.eq (i32.const 0x4000))
   if
-    ;; Handle the memory paging port port
-    i32.const 444444
-    call $trace
+    (call $handleMemoryPagingPort (get_local $v))
     return
   end
+)
 
+;; Handles port writes to the memory paging port
+(func $handleMemoryPagingPort (param $v i32)
+  ;; Check if memory paging is enabled
+  (i32.eqz (get_global $memoryPagingEnabled))
+  if return end
+
+  ;; Update the current bank
+  ;; Get page index
+  i32.const 3
+
+  ;; Get page offset
+  (i32.add
+    (i32.shl 
+      (i32.and (get_local $v) (i32.const 0x07))
+      (i32.const 14)
+    )
+    (get_global $BANK_0_OFFS)
+  )
+
+  ;; Get contention information
+  (i32.and (get_local $v) (i32.const 0x01))
+
+  ;; Get read-only flag
+  i32.const 0
+  call $setMemoryPageIndex
+
+  ;; Handle shadow screen
+  (i32.and (get_local $v) (i32.const 0x08))
+  if
+    i32.const 1 set_global $memoryUseShadowScreen
+    get_global $BANK_7_OFFS set_global $memoryScreenOffset
+  else
+    i32.const 0 set_global $memoryUseShadowScreen
+    get_global $BANK_5_OFFS set_global $memoryScreenOffset
+  end
+
+  ;; Set memory page index
+  i32.const 0
+
+  ;; Select ROM page
+  (i32.and (get_local $v) (i32.const 0x10))
+  if (result i32)
+    i32.const 1 set_global $memorySelectedRom
+    get_global $ROM_128_1_OFFS
+  else
+    i32.const 0 set_global $memorySelectedRom
+    get_global $ROM_128_0_OFFS
+  end
+  (call $setMemoryPageIndex (i32.const 0) (i32.const 1))
+
+  ;; Paging enabled flag
+  (i32.xor
+    (i32.and (get_local $v) (i32.const 0x20))
+    (i32.const 0x20)
+  )
+  set_global $memoryPagingEnabled
 )
 
 ;; Sets up the ZX Spectrum 48 machine
@@ -64,6 +119,7 @@
   i32.const 1 set_global $contentionType
   i32.const 8 set_global $ramBanks
   i32.const 0 set_global $nextMemorySize
+  get_global $BANK_5_OFFS set_global $memoryScreenOffset
 
   ;; Set up memory pages
   (call $setMemoryPageIndex (i32.const 0) (get_global $ROM_128_0_OFFS) (i32.const 0) (i32.const 1))

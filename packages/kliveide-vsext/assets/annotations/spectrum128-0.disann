@@ -12958,9 +12958,13 @@
     },
     {
       "startAddress": 16384,
+      "endAddress": 23295,
+      "sectionType": 2
+    },
+    {
+      "startAddress": 23296,
       "endAddress": 23551,
-      "sectionType": 2,
-      "lenght": 7168
+      "sectionType": 1
     },
     {
       "startAddress": 23552,
