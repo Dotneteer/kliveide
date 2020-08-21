@@ -48,6 +48,12 @@ export async function updateKliveProject(
     case "48":
       spectrumConfig.annotations = ["#spectrum48.disann"];
       break;
+    case "128":
+      spectrumConfig.annotations = [
+        "#spectrum128-0.disann",
+        "#spectrum128-1.disann",
+      ];
+      break;
     // TODO: Add other annotation files
   }
 
@@ -67,7 +73,10 @@ export async function updateKliveProject(
   if (fs.existsSync(machineFile)) {
     fs.unlinkSync(machineFile);
   }
-  fs.writeFileSync(path.join(spectrumFolder, SPECTRUM_CONFIG_FILE), JSON.stringify(spectrumConfig));
+  fs.writeFileSync(
+    path.join(spectrumFolder, SPECTRUM_CONFIG_FILE),
+    JSON.stringify(spectrumConfig)
+  );
   machineFileJustCreated = true;
   filesCreated++;
 
@@ -129,7 +138,9 @@ export async function updateKliveProject(
   // --- Configure the newly created machine from file
   if (machineFileJustCreated) {
     spectrumConfigurationInstance.initialize();
-    await communicatorInstance.setMachineType(spectrumConfigurationInstance.configuration.type);
+    await communicatorInstance.setMachineType(
+      spectrumConfigurationInstance.configuration.type
+    );
   }
 }
 
