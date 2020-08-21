@@ -170,7 +170,7 @@ export function emulatorStateReducer(
     case "EMULATOR_REQUEST_TYPE":
       return { ...state, requestedType: payload.requestedType };
     case "EMULATOR_SETUP_TYPE":
-      return { ...state, currentType: payload.currentType };
+      return { ...state, currentType: payload.currentType, executionState: 0 };
   }
   return state;
 }

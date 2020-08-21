@@ -11,6 +11,7 @@ import {
   onBreakpointsChanged,
   getLastBreakpoints,
   onFrameInfoChanged,
+  onMachineTypeChanged,
 } from "../../emulator/notifier";
 import { FrameInfo, communicatorInstance } from "../../emulator/communicator";
 import { DisassemblyAnnotation } from "../../disassembler/annotations";
@@ -110,6 +111,20 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       })
     );
 
+    // --- Refresh annotations whenever machine type changes
+    this.toDispose(
+      webviewPanel,
+      onMachineTypeChanged(() => {
+        const annotations = this.getAnnotation();
+        if (annotations) {
+          this._annotations.set(webviewPanel, annotations);
+        } else {
+          this._annotations.delete(webviewPanel);
+        }
+        this.refreshView(webviewPanel);
+      })
+    );
+
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
@@ -129,13 +144,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send the refresh command to the view
-        const annotations = this._annotations.get(panel);
-        panel.webview.postMessage({
-          viewNotification: "doRefresh",
-          annotations: annotations ? annotations.serialize() : null,
-        });
-        this.sendExecutionStateToView(panel);
-        this.sendBreakpointsToView(panel);
+        this.refreshView(panel);
         break;
       case "setBreakpoint":
         communicatorInstance.setBreakpoint((viewCommand as any).address);
@@ -157,6 +166,19 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   }
 
   /**
+   * Sends messages to the view so that can refresh itself
+   */
+  refreshView(panel: vscode.WebviewPanel): void {
+    const annotations = this._annotations.get(panel);
+    panel.webview.postMessage({
+      viewNotification: "doRefresh",
+      annotations: annotations ? annotations.serialize() : null,
+    });
+    this.sendExecutionStateToView(panel);
+    this.sendBreakpointsToView(panel);
+  }
+
+  /**
    * Gets the annotation for the current machine
    * @param rom Optional ROM page
    * @param bank Optional RAM bank
@@ -172,8 +194,13 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     rom = rom ?? 0;
     try {
       // --- Obtain the file for the annotations
-      let romAnnotationFile =
-        spectrumConfigurationInstance.configuration.annotations[rom];
+      const annotations =
+        spectrumConfigurationInstance.configuration?.annotations;
+      if (!annotations) {
+        return null;
+      }
+
+      let romAnnotationFile = annotations[rom];
       if (romAnnotationFile.startsWith("#")) {
         romAnnotationFile = this.getAssetsFileName(
           path.join("annotations", romAnnotationFile.substr(1))

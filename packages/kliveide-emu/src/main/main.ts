@@ -1,6 +1,8 @@
 import { app } from "electron";
 import { AppWindow } from "./AppWindow";
 import { startApiServer } from "../remote-api/api-server";
+import { mainProcessStore } from "./mainProcessStore";
+import { emulatorRequestTypeAction } from "../shared/state/redux-emulator-state";
 
 // --- Global reference to the mainwindow
 let mainWindow: AppWindow;
@@ -12,6 +14,9 @@ function setupAppWindow(): void {
   mainWindow = new AppWindow();
   mainWindow.setupMenu();
   mainWindow.load();
+  // --- Start with the ZX Spectrum 48 model by default
+  mainProcessStore.dispatch(emulatorRequestTypeAction("48")());
+
 }
 
 // --- This method will be called when Electron has finished

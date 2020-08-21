@@ -20,7 +20,7 @@
   "main": "./out/extension.js",
   "icon": "assets/icon.png",
   "activationEvents": [
-    "onCommand:kliveide.createProject",
+    "onCommand:kliveide.updateKliveProject",
     "onCommand:kliveide.startEmu",
     "workspaceContains: **/.spectrum/spectrum.machine"
   ],
@@ -59,8 +59,8 @@
         "title": "Start Klive Emulator"
       },
       {
-        "command": "kliveide.createProject",
-        "title": "Create Klive Project"
+        "command": "kliveide.updateKliveProject",
+        "title": "Update Klive Project"
       },
       {
         "command": "kliveide.goToAddress",

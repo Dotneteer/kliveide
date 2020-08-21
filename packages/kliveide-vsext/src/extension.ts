@@ -8,7 +8,7 @@ import {
 } from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
 import { createVmStateStatusBarItem } from "./views/statusbar";
-import { createKliveProject } from "./commands/create-klive-project";
+import { updateKliveProject } from "./commands/update-klive-project";
 import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
 import { goToAddress } from "./commands/goto-address";
 import { sendTapeFile } from "./commands/send-tape-file";
@@ -27,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // --- Register extension commands
   subs.push(
     register("kliveide.startEmu", async () => await startEmulator()),
-    register("kliveide.createProject", () => createKliveProject(context)),
+    register("kliveide.updateKliveProject", () => updateKliveProject(context)),
     register("kliveide.goToAddress", () => goToAddress()),
     register("kliveide.sendTape", (uri: vscode.Uri) => sendTapeFile(uri)),
     register("kliveide.refreshView", () => refreshView())
