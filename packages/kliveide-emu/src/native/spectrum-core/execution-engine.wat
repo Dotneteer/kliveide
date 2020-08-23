@@ -234,6 +234,7 @@
   i32.const 0 set_global $fastVmMode
   i32.const 0 set_global $disableScreenRendering
   i32.const 0 set_global $executionCompletionReason
+  i32.const 0 set_global $stepOverBreakpoint
 
   ;; Reset keyboard line status
   (i32.store offset=0 (get_global $KEYBOARD_LINES) (i32.const 0))
@@ -260,6 +261,19 @@
   i32.const 0 set_global $beeperNextSampleTact
   i32.const 0 set_global $beeperLastEarBit
 
+  ;; Reset PSG state
+  i32.const 0 set_global $psgGateValue
+  i32.const 0 set_global $psgNextSampleTact
+  (i32.store offset=0 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=8 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=12 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=16 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=20 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=24 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=28 (get_global $PSG_REGS) (i32.const 0))
+  i32.const 0xffff set_global $psgNoiseSeed
+
   ;; Reset tape state
   i32.const 0 set_global $tapeMode
   i32.const 0 set_global $tapeBlocksToPlay
@@ -282,7 +296,7 @@
   set_global $ulaIssue
 )
 
-;; Copies exeution options from the transfer area
+;; Copies execution options from the transfer area
 (func $setExecutionOptions
   (i32.load8_u offset=0 (get_global $STATE_TRANSFER_BUFF)) set_global $emulationMode
   (i32.load8_u offset=1 (get_global $STATE_TRANSFER_BUFF)) set_global $debugStepMode
@@ -340,7 +354,13 @@
       i32.const 0 set_global $beeperSampleCount
       call $createEarBitSamples
 
-      call $startNewFrame
+      get_global $psgSupportsSound
+      if
+        ;; Reset PSG frame state and create samples
+        i32.const 0 set_global $psgSampleCount
+        call $createPsgSoundSamples
+      end
+
     end
 
     ;; Calculate the current frame tact
@@ -446,6 +466,35 @@
     set_global $beeperNextSampleTact
   end
 
+  ;; Support PSG sound samples
+  get_global $psgSupportsSound
+  if
+    ;; Calculate PSG tact (64 bit)
+    (i64.add
+      (i64.mul 
+        (i64.extend_u/i32 (get_global $frameCount))
+        (i64.extend_u/i32 (get_global $tactsInFrame))
+      )
+      (i64.extend_u/i32 (get_global $tacts))
+    )
+    (i64.shl (i64.const 4))
+    set_global $psgPreviousTact
+
+    ;; ;; The current screen rendering frame completed
+    ;; ;; Create the missing PSG sound samples
+    ;; call $createPsgSoundSamples
+
+    ;; ;; Prepare for the next beeper sample rate
+    ;; (i32.gt_u (get_global $psgNextSampleTact) (get_global $tacts))
+    ;; if
+    ;;   (i32.sub 
+    ;;     (get_global $psgNextSampleTact)
+    ;;     (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier))
+    ;;   )
+    ;;   set_global $psgNextSampleTact
+    ;; end
+  end
+
   ;; Adjust tacts
   (i32.sub 
     (get_global $tacts)
@@ -457,6 +506,5 @@
   set_global $frameCount
 
   ;; Sign frame completion
-  call $completeFrame
   i32.const 5 set_global $executionCompletionReason ;; Reason: frame completed
 )

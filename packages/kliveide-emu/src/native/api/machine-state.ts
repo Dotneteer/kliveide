@@ -16,8 +16,8 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   numberOfRoms: number;
   romContentsAddress: number;
   spectrum48RomIndex: number;
-  ramBanks: number;
   contentionType: MemoryContentionType;
+  ramBanks: number;
   nextMemorySize: number;
 
   // --- Screen frame configuration
@@ -62,6 +62,7 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   fastVmMode: boolean;
   disableScreenRendering: boolean;
   executionCompletionReason: number;
+  stepOverBreakPoint: number;
 
   // --- Keyboard state
   keyboardLines: number[];
@@ -96,6 +97,8 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   beeperNextSampleTact: number;
   beeperLastEarBit: boolean;
   beeperSampleCount: number;
+
+  // --- Tape state
   tapeMode: number;
   tapeLoadBytesRoutine: number;
   tapeLoadBytesResume: number;
@@ -109,6 +112,35 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   tapeStartFrame: number;
   tapeStartTact: number;
   tapeBitMask: number;
+  tapeLastMicBitTact: number;
+  tapeLastMicBitTactH: number;
+  tapeLastMicBit: boolean;
+  tapeSavePhase: number;
+  tapePilotPulseCount: number;
+  tapeDataBlockCount: number;
+  tapePrevDataPulse: number;
+  tapeSaveDataLen: number;
+  tapeBitOffs: number;
+  tapeDataByte: number;
+
+  // --- Memory paging info
+  memorySelectedRom: number;
+  memoryPagingEnabled: boolean;
+  memorySelectedBank: number;
+  memoryUseShadowScreen: boolean;
+  memoryScreenOffset: number;
+
+  // --- PSG Sound state
+  psgSupportsSound: boolean;
+  psgSampleRate: number;
+  psgSampleLength: number;
+  psgLowerGate: number;
+  psgUpperGate: number;
+  psgGateValue: number;
+  psgNextSampleTact: number;
+  psgSampleCount: number;
+  psgRegisterIndex: number;
+  
 }
 
 /**

@@ -263,28 +263,6 @@
   (i32.store8 offset=254 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeBitMask))
 )
 
-;; Starts a new frame
-(func $startNewFrame
-    ;; TODO: Init a new frame
-    ;; Invoke machine type specific "New frame" function
-    (i32.add
-    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    (i32.const 9)
-  )
-  call_indirect (type $ActionFunc)
-)
-
-;; Executes the actions to respond a screen rendering frame completion
-(func $completeFrame
-    ;; TODO: Complete
-    ;; Invoke machine type specific "Frame completed" function
-    (i32.add
-    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    (i32.const 10)
-  )
-  call_indirect (type $ActionFunc)
-)
-
 ;; Colorizes the data in pixel buffer
 (func $colorize
   (i32.add

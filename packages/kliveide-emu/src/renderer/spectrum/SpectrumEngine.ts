@@ -72,6 +72,9 @@ export class SpectrumEngine {
   // --- Beeper emulation
   private _beeperRenderer: AudioRenderer | null = null;
 
+  // --- PSG emulation
+  private _psgRenderer: AudioRenderer | null = null;
+
   // --- Tape emulation
   private _defaultTapeSet = new Uint8Array(0);
 
@@ -514,6 +517,10 @@ export class SpectrumEngine {
       this._beeperRenderer.closeAudio();
       this._beeperRenderer = null;
     }
+    if (this._psgRenderer) {
+      this._psgRenderer.closeAudio();
+      this._psgRenderer = null;
+    }
   }
 
   /**
@@ -584,6 +591,10 @@ export class SpectrumEngine {
         if (this._beeperRenderer) {
           this._beeperRenderer.closeAudio();
           this._beeperRenderer = null;
+        }
+        if (this._psgRenderer) {
+          this._psgRenderer.closeAudio();
+          this._psgRenderer = null;
         }
         return;
       }
