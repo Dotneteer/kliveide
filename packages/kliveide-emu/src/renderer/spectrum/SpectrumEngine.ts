@@ -452,9 +452,9 @@ export class SpectrumEngine {
    */
   async stepOver(): Promise<void> {
     // --- Calculate the location of the step-over breakpoint
-    const mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
+    const memContents = this.spectrum.getMemoryContents();
     const pc = this.getMachineState().pc;
-    const opCode = mh.readByte(pc);
+    const opCode = memContents[pc];
     let length = 0;
     if (opCode === 0xcd) {
       // --- CALL
@@ -470,7 +470,7 @@ export class SpectrumEngine {
       length = 1;
     } else if (opCode === 0xed) {
       // --- Block I/O and transfer
-      const extOpCode = mh.readByte(pc + 1);
+      const extOpCode = memContents[pc + 1];
       length = (extOpCode & 0xb4) === 0xb0 ? 2 : 0;
     }
 
