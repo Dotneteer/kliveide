@@ -1,6 +1,131 @@
 ;; ==========================================================================
 ;; Helper functions to manage a ZX Spectrum machine
 
+;; ----------------------------------------------------------------------------
+;; Z80 Memory access
+
+;; Reads the specified memory location of the current machine type
+;; $addr: 16-bit memory address
+;; returns: Memory contents
+(func $readMemory (param $addr i32) (result i32)
+  get_local $addr
+  (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+  call_indirect (type $MemReadFunc)
+  (call $incTacts (i32.const 3))
+)
+
+;; Reads the specified memory location of the current machine type
+;; but with no extra delay applies
+;; $addr: 16-bit memory address
+(func $memoryDelay (param $addr i32)
+  get_local $addr
+  (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+  call_indirect (type $MemReadFunc)
+  drop
+)
+
+;; Writes the specified memory location of the current machine type
+;; $addr: 16-bit memory address
+;; $v: 8-bit value to write
+(func $writeMemory (param $addr i32) (param $v i32)
+  get_local $addr
+  get_local $v
+  (i32.add
+    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+    (i32.const 1)
+  )
+  call_indirect (type $MemWriteFunc)
+  (call $incTacts (i32.const 3))
+  (call $setMemoryWritePoint (get_local $addr))
+)
+
+;; Default memory read operation
+;; $addr: 16-bit memory address
+;; returns: Memory contents
+(func $defaultRead (param $addr i32) (result i32)
+  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
+  i32.load8_u
+)
+
+;; Default memory write operation
+;; $addr: 16-bit memory address
+;; $v: 8-bit value to write
+(func $defaultWrite (param $addr i32) (param $v i32)
+  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
+  get_local $v
+  i32.store8
+)
+
+;; ----------------------------------------------------------------------------
+;; Z80 I/O access
+
+;; Default I/O read operation
+;; $addr: 16-bit memory address
+;; returns: Memory contents
+(func $defaultIoRead (param $addr i32) (result i32)
+  i32.const 0xff
+)
+
+;; Default I/O write operation
+;; $addr: 16-bit memory address
+;; $v: 8-bit value to write
+(func $defaultIoWrite (param $addr i32) (param $v i32)
+  (call $incTacts (i32.const 4))
+)
+
+;; Reads the specified I/O port of the current machine type
+;; $addr: 16-bit port address
+;; returns: Port value
+(func $readPort (param $addr i32) (result i32)
+  get_local $addr
+  (i32.add
+    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+    (i32.const 2)
+  )
+  call_indirect (type $PortReadFunc)
+  (call $incTacts (i32.const 4))
+)
+
+;; Writes the specified port of the current machine type
+;; $addr: 16-bit port address
+;; $v: 8-bit value to write
+(func $writePort (param $addr i32) (param $v i32)
+  get_local $addr
+  get_local $v
+  (i32.add
+    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+    (i32.const 3)
+  )
+  call_indirect (type $PortWriteFunc)
+)
+
+;; Writes the specified TBBLUE index of the current machine type
+;; $idx: 8-bit index register value
+(func $writeTbBlueIndex (param $idx i32)
+  (call $incTacts (i32.const 3))
+
+  ;; Allow to write the log
+  get_local $idx
+  (i32.add
+    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+    (i32.const 4)
+  )
+  call_indirect (type $TbBlueWriteFunc)
+)
+
+;; Writes the specified TBBLUE value of the current machine type
+;; $idx: 8-bit index register value
+(func $writeTbBlueValue (param $idx i32)
+  (call $incTacts (i32.const 3))
+
+  get_local $idx
+  (i32.add
+    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+    (i32.const 5)
+  )
+  call_indirect (type $TbBlueWriteFunc)
+)
+
 ;; Sets up the ZX Spectrum machine
 (func $setupMachine 
   ;; Let's use ULA issue 3 by default
@@ -9,6 +134,18 @@
   call $resetMachine
 
   ;; Invoke machine type specific setup
+  (i32.add
+    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
+    (i32.const 6)
+  )
+  call_indirect (type $ActionFunc)
+)
+
+;; Writes the ZX Spectrum machine state to the transfer area
+(func $getMachineState
+  ;; Start with CPU state
+  call $getCpuState
+  call $getCommonSpectrumMachineState
   (i32.add
     (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
     (i32.const 7)
@@ -152,7 +289,7 @@
 (func $colorize
   (i32.add
     (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    (i32.const 11)
+    (i32.const 8)
   )
   call_indirect (type $ActionFunc)
 )

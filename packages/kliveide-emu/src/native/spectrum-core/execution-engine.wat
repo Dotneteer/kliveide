@@ -282,18 +282,6 @@
   set_global $ulaIssue
 )
 
-;; Writes the ZX Spectrum machine state to the transfer area
-(func $getMachineState
-  ;; Start with CPU state
-  call $getCpuState
-  call $getCommonSpectrumMachineState
-  (i32.add
-    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    (i32.const 8)
-  )
-  call_indirect (type $ActionFunc)
-)
-
 ;; Copies exeution options from the transfer area
 (func $setExecutionOptions
   (i32.load8_u offset=0 (get_global $STATE_TRANSFER_BUFF)) set_global $emulationMode
