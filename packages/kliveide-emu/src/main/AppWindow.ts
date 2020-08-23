@@ -37,10 +37,11 @@ import {
   MAIN_MESSAGING_CHANNEL,
 } from "../../src/shared/utils/channel-ids";
 import { processRendererMessage } from "./mainMessageProcessor";
-import { EmulatorPanelState } from "../shared/state/AppState";
-import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
+import { EmulatorPanelState, IdeConnection } from "../shared/state/AppState";
+import { emulatorSetSavedDataAction, emulatorRequestTypeAction } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
+import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -60,6 +61,12 @@ const MIN_HEIGHT = 676;
 export class AppWindow {
   // --- The associated BrowserWindow instance
   private _window: BrowserWindow | null;
+
+  // --- Last machine type used
+  private _lastMachineType: string | null = null;
+
+  // --- Indicates that the main window watches for IDE notifications
+  private _watchingIde = false;
 
   // ==========================================================================
   // Static members
@@ -188,11 +195,20 @@ export class AppWindow {
       }
     );
 
-    // --- catch state changes
-    const stateAware = createMainProcessStateAware("emulatorPanelState");
-    stateAware.stateChanged.on((state) =>
+    // --- Catch state changes
+    const emulatorStateAware = createMainProcessStateAware("emulatorPanelState");
+    emulatorStateAware.stateChanged.on((state) =>
       this.processStateChange(state as EmulatorPanelState)
     );
+    const ideConnectionStateAware = createMainProcessStateAware("ideConnection");
+    ideConnectionStateAware.stateChanged.on((state) => {
+      const conn = state as IdeConnection;
+      if (conn.connected) {
+        this.disableMachineMenu();
+      } else {
+        this.enableMachineMenu();
+      }
+    })
   }
 
   /**
@@ -245,6 +261,41 @@ export class AppWindow {
         ],
       }
     );
+
+    template.push({
+      label: "Machine",
+      submenu: [
+        {
+          id: MACHINE_MENU_ITEMS[0],
+          label: "ZX Spectrum 48",
+          type: "radio",
+          checked: true,
+          click: (mi) => this.requestMachineType(mi.id)
+        },
+        {
+          id: MACHINE_MENU_ITEMS[1],
+          label: "ZX Spectrum 128",
+          type: "radio",
+          checked: false,
+          click: (mi) => this.requestMachineType(mi.id)
+        },
+        {
+          id: MACHINE_MENU_ITEMS[2],
+          label: "ZX Spectrum +3E",
+          type: "radio",
+          checked: false,
+          click: (mi) => this.requestMachineType(mi.id)
+        },
+        {
+          id: MACHINE_MENU_ITEMS[3],
+          label: "ZX Spectrum Next",
+          type: "radio",
+          checked: false,
+          click: (mi) => this.requestMachineType(mi.id)
+        },
+      ]
+    });
+
     if (__DARWIN__) {
       template.push({
         label: "Window",
@@ -258,6 +309,7 @@ export class AppWindow {
         ],
       });
     }
+
     template.push({
       role: "help",
       submenu: [
@@ -275,10 +327,63 @@ export class AppWindow {
   }
 
   /**
+   * Disables all machine menu items
+   */
+  disableMachineMenu(): void {
+    for (const id of MACHINE_MENU_ITEMS) {
+      const menuItem = Menu.getApplicationMenu().getMenuItemById(id);
+      if (menuItem) {
+        menuItem.enabled = false;
+      }
+    }
+  }
+
+  /**
+   * Disables all machine menu items
+   */
+  enableMachineMenu(): void {
+    for (const id of MACHINE_MENU_ITEMS) {
+      const menuItem = Menu.getApplicationMenu().getMenuItemById(id);
+      if (menuItem) {
+        menuItem.enabled = true;
+      }
+    }
+  }
+
+  /**
+   * Sets the active menu according to the current machine type
+   */
+  setMachineTypeMenu(type: string): void {
+    const menuItem = Menu.getApplicationMenu().getMenuItemById(`machine_${type}`);
+    if (menuItem) {
+      menuItem.checked = true;
+    }
+  }
+
+  /**
+   * Requests a machine type according to its menu ID
+   * @param id Menu ID of the machine type
+   */
+  requestMachineType(id: string): void {
+    const parts = id.split("_");
+    if (parts.length > 1) {
+      const typeId = parts[1];
+      mainProcessStore.dispatch(emulatorRequestTypeAction(typeId)());
+    }
+  }
+
+  /**
    * Processes emulator data changes
    * @param state Emulator state
    */
   processStateChange(state: EmulatorPanelState): void {
+    if (this._lastMachineType !== state.currentType) {
+      // --- Current machine types has changed
+      this._lastMachineType = state.currentType;
+      this.setMachineTypeMenu(this._lastMachineType)
+    }
+
+
     if (state?.savedData && state.savedData.length > 0) {
       const data = state.savedData;
       const ideConfig = mainProcessStore.getState().ideConfiguration
@@ -315,4 +420,39 @@ export class AppWindow {
       );
     }
   }
+
+  /**
+   * Verifies if IDE is still connected
+   */
+  async startWatchingIde(): Promise<void> {
+    this._watchingIde = true;
+    while (this._watchingIde) {
+      await new Promise((r) => setTimeout(r, 400));
+      const state = mainProcessStore.getState();
+      const lastHeartBeat = state.ideConnection?.lastHeartBeat ?? -1;
+      if (lastHeartBeat > 0) {
+        if (Date.now() - lastHeartBeat > 3000) {
+          // --- IDE seems to be disconnected
+          mainProcessStore.dispatch(ideDisconnectsAction());
+        }
+      }
+    }
+  }
+
+  /**
+   * Stops watching IDE connection
+   */
+  stopWatchingIde(): void {
+    this._watchingIde = false;
+  }
 }
+
+/**
+ * The list of machine menu items
+ */
+const MACHINE_MENU_ITEMS = [
+  "machine_48",
+  "machine_128",
+  "machine_p3e",
+  "machine_next"
+];

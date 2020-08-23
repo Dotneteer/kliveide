@@ -31,6 +31,7 @@ import { BinaryReader } from "../shared/utils/BinaryReader";
 import { IdeConfiguration } from "../shared/state/AppState";
 import { ideConfigSetAction } from "../shared/state/redux-ide-config-state";
 import { appConfiguration } from "../main/klive-configuration";
+import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -69,6 +70,7 @@ export function startApiServer() {
       runsInDebug: emuState.runsInDebug,
       machineType: emuState.currentType
     });
+    mainProcessStore.dispatch(ideConnectsAction());
   });
 
   /**

@@ -127,6 +127,12 @@ export async function createSpectrumEngine(
     case 1:
       spectrum = new ZxSpectrum128(machineApi);
       break;
+    case 2:
+      spectrum = new ZxSpectrum128(machineApi);
+      break;
+    case 3:
+      spectrum = new ZxSpectrum128(machineApi);
+    break;
     default:
       spectrum = new ZxSpectrum48(machineApi);
       break;

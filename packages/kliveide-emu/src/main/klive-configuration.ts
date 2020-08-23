@@ -11,6 +11,7 @@ export const CONFIG_FILE_PATH = "Klive/klive.config";
  */
 export interface KliveConfiguration {
   port?: number;
+  machineType?: string;
 }
 
 /**

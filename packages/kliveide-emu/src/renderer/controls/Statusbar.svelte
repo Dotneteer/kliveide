@@ -1,6 +1,11 @@
 <script>
+  // ==========================================================================
+  // The coomponent that displays the emulator's status bar
+
   import { getVersion } from "../../version";
   import { onMount } from "svelte";
+  import { createRendererProcessStateAware } from "../rendererProcessStore";
+
   import SvgIcon from "./SvgIcon.svelte";
   import { themeStore } from "../stores/theme-store";
   import { getMachineTypeNameFromId } from "../../shared/spectrum/machine-types";
@@ -8,20 +13,38 @@
   // --- The ZX Spectrum engine instance
   export let spectrum;
 
+  // --- We need to be aware of state changes
+  const stateAware = createRendererProcessStateAware("ideConnection");
+
+  // --- Apply theme
   const fillValue = themeStore.getProperty("--statusbar-foreground-color");
+
+  // --- Display this version number
   const version = getVersion();
 
+  // --- Indicates if the IDE is connected
+  let ideConnected = false;
+
+  // --- Connect to the virtual machine whenever that changes
   $: {
     if (spectrum) {
       spectrum.screenRefreshed.on(onScreenRefreshed);
     }
   }
 
+  // --- Catch the state of IDE connection changes
+  stateAware.stateChanged.on((state) => {
+    ideConnected = state.connected;
+  });
+
+  // --- Initialize frame counters
   let lastEngineTimeStr = "---";
   let avgEngineTimeStr = "---";
   let lastFrameTimeStr = "---";
   let avgFrameTimeStr = "---";
   let renderedFramesStr = "---";
+
+  // --- Calculate counters on every screen refresh
   function onScreenRefreshed() {
     const {
       lastEngineTime,
@@ -108,9 +131,14 @@
     {/if}
   </div>
   <div class="placeholder"></div>
+  {#if ideConnected} 
+  <div class="section">
+    <span class="label">IDE connected</span>
+  </div>
+  {/if}
   {#if spectrum}
   <div class="section">
-    <span class="label">[{getMachineTypeNameFromId(spectrum.spectrum.type)}]</span>
+    <span class="label">{getMachineTypeNameFromId(spectrum.spectrum.type)}</span>
   </div>
   {/if}
   <div class="section">
