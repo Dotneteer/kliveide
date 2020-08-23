@@ -29,4 +29,5 @@ export interface Payload {
   ideConfiguration?: IdeConfiguration;
   requestedType?: string;
   currentType?: string;
+  connected?: boolean;
 }

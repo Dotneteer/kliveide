@@ -13,7 +13,7 @@
   // --- The ZX Spectrum engine
   export let spectrum;
 
-  // --- We need to be awae of state changes
+  // --- We need to be aware of state changes
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
 
   // --- References to the HTML elements of this component

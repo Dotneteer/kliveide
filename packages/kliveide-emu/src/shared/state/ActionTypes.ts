@@ -51,6 +51,10 @@ export interface ActionTypes {
   // --- IDE configuration actions
   IDE_CONFIG_SET: null;
 
+  // --- IDE connection actions
+  IDE_CONNECTS: null;
+  IDE_DISCONNECTS: null;
+
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;
   MINIMIZE_APP_WINDOW: null;

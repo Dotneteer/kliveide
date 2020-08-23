@@ -33,6 +33,11 @@ export interface AppState {
    * The current IDE configuration
    */
   ideConfiguration?: IdeConfiguration;
+
+  /**
+   * The current state of IDE connection
+   */
+  ideConnection?: IdeConnection;
 }
 
 /**
@@ -80,4 +85,16 @@ export interface IdeConfiguration {
    * The current SAVE folder
    */
   saveFolder: string;
+}
+
+export interface IdeConnection {
+  /**
+   * Indicates if the IDE is connected
+   */
+  connected: boolean;
+
+  /**
+   * The last time when the IDE sent a heartbeat
+   */
+  lastHeartBeat: number;
 }
