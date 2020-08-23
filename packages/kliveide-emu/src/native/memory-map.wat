@@ -209,5 +209,7 @@
 ;; Step-out stack (512 bytes)
 (global $STEP_OUT_STACK i32 (i32.const 0x23_2D00))
 
-;; Next free slot: 0x23_2F00
+;; PSG Register area: 0x23_2F00 (256 bytes)
+(global $PSG_REGS i32 (i32.const 0x23_2F00))
 
+;; Next free slot: 0x23_3000

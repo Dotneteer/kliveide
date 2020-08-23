@@ -27,8 +27,8 @@ describe("ZX Spectrum 48 - Beeper", () => {
     machine.reset();
   });
 
-  it("setBeeperSampleRate #1", () => {
-    machine.setBeeperSampleRate(44_100);
+  it("setAudioSampleRate #1", () => {
+    machine.setAudioSampleRate(44_100);
     const s = machine.getMachineState();
 
     expect(s.beeperSampleRate).toBe(44_100);
@@ -37,8 +37,8 @@ describe("ZX Spectrum 48 - Beeper", () => {
     expect(s.beeperUpperGate).toBe(100000);
   });
 
-  it("setBeeperSampleRate #2", () => {
-    machine.setBeeperSampleRate(25_000);
+  it("setAudioSampleRate #2", () => {
+    machine.setAudioSampleRate(25_000);
     const s = machine.getMachineState();
 
     expect(s.beeperSampleRate).toBe(25_000);
@@ -48,7 +48,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
   });
 
   it("Beeper sample #1", () => {
-    machine.setBeeperSampleRate(10000);
+    machine.setAudioSampleRate(10000);
     machine.injectCode([
       0xf3, // DI
       0x16,
@@ -102,7 +102,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
   });
 
   it("Beeper sample #2", () => {
-    machine.setBeeperSampleRate(13000);
+    machine.setAudioSampleRate(13000);
     machine.injectCode([
       0xf3, // DI
       0x16,
@@ -156,7 +156,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
   });
 
   it("Beeper with frame end", () => {
-    machine.setBeeperSampleRate(18700);
+    machine.setAudioSampleRate(18700);
     machine.injectCode([
       0xf3, // DI
       0x16,
@@ -211,7 +211,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
   });
 
   it("Beeper with multiple frames", () => {
-    machine.setBeeperSampleRate(18700);
+    machine.setAudioSampleRate(18700);
     machine.injectCode([
       0xf3, // DI
       0x16,

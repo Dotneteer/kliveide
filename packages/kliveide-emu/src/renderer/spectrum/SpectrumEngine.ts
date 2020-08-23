@@ -252,7 +252,7 @@ export class SpectrumEngine {
    * @param rate Audio sampe rate to use
    */
   setAudioSampleRate(rate: number): void {
-    this.spectrum.setBeeperSampleRate(rate);
+    this.spectrum.setAudioSampleRate(rate);
   }
 
   /**
@@ -320,7 +320,7 @@ export class SpectrumEngine {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      this.spectrum.reset();
+      this.spectrum.turnOnMachine();
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();

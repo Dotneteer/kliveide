@@ -51,8 +51,9 @@ export abstract class ZxSpectrumBase {
    * Sets the beeper's sample rate
    * @param rate Sample rate
    */
-  setBeeperSampleRate(rate: number): void {
+  setAudioSampleRate(rate: number): void {
     this.api.setBeeperSampleRate(rate);
+    this.api.setPsgSampleRate(rate);
   }
 
   /**

@@ -632,18 +632,6 @@
 )
 
 ;; Reads the specified memory location of the current machine type
-;; $addr: 16-bit memory address
-;; returns: Memory contents
-(func $readMemoryNc (param $addr i32) (result i32)
-  get_local $addr
-  (i32.add
-    (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    (i32.const 1)
-  )
-  call_indirect (type $MemReadFunc)
-)
-
-;; Reads the specified memory location of the current machine type
 ;; but with no extra delay applies
 ;; $addr: 16-bit memory address
 (func $memoryDelay (param $addr i32)

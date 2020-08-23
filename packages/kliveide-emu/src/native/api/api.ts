@@ -39,6 +39,7 @@ export interface MachineApi extends CpuApi {
   setKeyStatus(key: SpectrumKeyCode, isDown: boolean): void;
   getKeyStatus(key: SpectrumKeyCode): number;
   setBeeperSampleRate(rate: number): void;
+  setPsgSampleRate(rate: number): void;
   colorize(): void;
   getCursorMode(): number;
   initTape(blocks: number): void;
