@@ -22,6 +22,14 @@
     return
   end
 
+  ;; Test for PSG register index port
+  (i32.and (get_local $addr) (i32.const 0xc002))
+  (i32.eq (i32.const 0xc000))
+  if
+    (call $psgReadPsgRegisterValue)
+    return
+  end
+
   ;; TODO: Implement floating port handling
   i32.const 0xff
 )
@@ -39,10 +47,29 @@
     return
   end
 
+  ;; Test for memory paging port
   (i32.and (get_local $addr) (i32.const 0xc002))
   (i32.eq (i32.const 0x4000))
   if
     (call $handleMemoryPagingPort (get_local $v))
+    return
+  end
+
+  ;; Test for PSG register index port
+  (i32.and (get_local $addr) (i32.const 0xc002))
+  (i32.eq (i32.const 0xc000))
+  if
+    ;; Store the selected PSG reginster index
+    (i32.and (get_local $v) (i32.const 0x0f))
+    set_global $psgRegisterIndex
+    return
+  end
+
+  ;; Test for PSG register value port
+  (i32.and (get_local $addr) (i32.const 0xc002))
+  (i32.eq (i32.const 0x8000))
+  if
+    (call $psgWriteRegisterValue (get_local $v))
     return
   end
 )
@@ -105,6 +132,7 @@
   set_global $memoryPagingEnabled
 )
 
+;; Handles writes to the PSG value port
 ;; Sets up the ZX Spectrum 48 machine
 (func $setupSpectrum128
   ;; CPU configuration

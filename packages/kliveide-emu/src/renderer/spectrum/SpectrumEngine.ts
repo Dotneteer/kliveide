@@ -252,7 +252,7 @@ export class SpectrumEngine {
    * @param rate Audio sampe rate to use
    */
   setAudioSampleRate(rate: number): void {
-    this.spectrum.setBeeperSampleRate(rate);
+    this.spectrum.setAudioSampleRate(rate);
   }
 
   /**

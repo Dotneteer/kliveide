@@ -28,6 +28,7 @@
     "spectrum-core/interrupt-device.wat",
     "spectrum-core/screen-device.wat",
     "spectrum-core/beeper-device.wat",
+    "spectrum-core/sound-device.wat",
     "spectrum-core/keyboard-device.wat",
     "spectrum-core/tape-device.wat",
     "spectrum-core/spectrum-helpers.wat",
