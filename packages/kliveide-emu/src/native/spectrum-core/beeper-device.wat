@@ -5,28 +5,28 @@
 ;; Beeper device state
 
 ;; Sample rate of the beeper audio
-(global $beeperSampleRate (mut i32) (i32.const 0x0000))
+(global $audioSampleRate (mut i32) (i32.const 0x0000))
 
 ;; Sample length (lower) in CPU clock tacts
-(global $beeperSampleLength (mut i32) (i32.const 0x0000))
+(global $audioSampleLength (mut i32) (i32.const 0x0000))
 
 ;; Lower gate for sample length
-(global $beeperLowerGate (mut i32) (i32.const 0x0000))
+(global $audioLowerGate (mut i32) (i32.const 0x0000))
 
 ;; Upper gate for sample length
-(global $beeperUpperGate (mut i32) (i32.const 0x0000))
+(global $audioUpperGate (mut i32) (i32.const 0x0000))
 
 ;; Current beeper gate value
-(global $beeperGateValue (mut i32) (i32.const 0x0000))
+(global $audioGateValue (mut i32) (i32.const 0x0000))
 
 ;; Tact value of the last sample
-(global $beeperNextSampleTact (mut i32) (i32.const 0x0000))
+(global $audioNextSampleTact (mut i32) (i32.const 0x0000))
+
+;; Count of samples in this frame
+(global $audioSampleCount (mut i32) (i32.const 0x0000))
 
 ;; Last EAR bit value
 (global $beeperLastEarBit (mut i32) (i32.const 0x0000))
-
-;; Count of samples in this frame
-(global $beeperSampleCount (mut i32) (i32.const 0x0000))
 
 ;; ----------------------------------------------------------------------------
 ;; Beeper device routines
@@ -35,7 +35,7 @@
 ;; $rate: New beeper sample rate
 (func $setBeeperSampleRate (param $rate i32)
   (local $sampleLength f32)
-  get_local $rate set_global $beeperSampleRate
+  get_local $rate set_global $audioSampleRate
 
   ;; Calculate the sample length
   (f32.div
@@ -44,22 +44,17 @@
   )
   tee_local $sampleLength
   i32.trunc_u/f32
-  set_global $beeperSampleLength
+  set_global $audioSampleLength
 
   ;; Calculate the gate values for the sample length
   (f32.mul 
     (f32.sub 
       (get_local $sampleLength) 
-      (f32.convert_u/i32 (get_global $beeperSampleLength))
+      (f32.convert_u/i32 (get_global $audioSampleLength))
     )
     (f32.const 100_000)
   )
   i32.trunc_u/f32
-  set_global $beeperLowerGate
-  i32.const 100_000 set_global $beeperUpperGate
-)
-
-;; This function processes the EAR bit (beeper device)
-(func $processEarBit (param $earBit i32)
-  get_local $earBit set_global $beeperLastEarBit
+  set_global $audioLowerGate
+  i32.const 100_000 set_global $audioUpperGate
 )

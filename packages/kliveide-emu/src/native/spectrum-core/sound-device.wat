@@ -3,6 +3,8 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Sound device state
+;; NOTE: The sound device shares all state variables related to sampling
+;; with the beeper device, as these use the *same* sample rate.
 
 ;; Flag that indicates is the model supports PSG sound
 (global $psgSupportsSound (mut i32) (i32.const 0x0000))

@@ -186,14 +186,14 @@ export abstract class ZxSpectrumBase {
     s.pixelBufferPtr = mh.readUint32(193);
 
     // --- Get beeper state
-    s.beeperSampleRate = mh.readUint32(197);
-    s.beeperSampleLength = mh.readUint32(201);
-    s.beeperLowerGate = mh.readUint32(205);
-    s.beeperUpperGate = mh.readUint32(209);
-    s.beeperGateValue = mh.readUint32(213);
-    s.beeperNextSampleTact = mh.readUint32(217);
+    s.audioSampleRate = mh.readUint32(197);
+    s.audioSampleLength = mh.readUint32(201);
+    s.audioLowerGate = mh.readUint32(205);
+    s.audioUpperGate = mh.readUint32(209);
+    s.audioGateValue = mh.readUint32(213);
+    s.audioNextSampleTact = mh.readUint32(217);
     s.beeperLastEarBit = mh.readBool(221);
-    s.beeperSampleCount = mh.readUint32(222);
+    s.audioSampleCount = mh.readUint32(222);
 
     // --- Get tape state
     s.tapeMode = mh.readByte(226);

@@ -239,14 +239,14 @@
   (i32.store offset=193 (get_global $STATE_TRANSFER_BUFF) (get_global $pixelBufferPtr))
 
   ;; Beeper state
-  (i32.store offset=197 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperSampleRate))
-  (i32.store offset=201 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperSampleLength))
-  (i32.store offset=205 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperLowerGate))
-  (i32.store offset=209 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperUpperGate))
-  (i32.store offset=213 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperGateValue))
-  (i32.store offset=217 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperNextSampleTact))
+  (i32.store offset=197 (get_global $STATE_TRANSFER_BUFF) (get_global $audioSampleRate))
+  (i32.store offset=201 (get_global $STATE_TRANSFER_BUFF) (get_global $audioSampleLength))
+  (i32.store offset=205 (get_global $STATE_TRANSFER_BUFF) (get_global $audioLowerGate))
+  (i32.store offset=209 (get_global $STATE_TRANSFER_BUFF) (get_global $audioUpperGate))
+  (i32.store offset=213 (get_global $STATE_TRANSFER_BUFF) (get_global $audioGateValue))
+  (i32.store offset=217 (get_global $STATE_TRANSFER_BUFF) (get_global $audioNextSampleTact))
   (i32.store8 offset=221 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperLastEarBit))
-  (i32.store offset=222 (get_global $STATE_TRANSFER_BUFF) (get_global $beeperSampleCount))
+  (i32.store offset=222 (get_global $STATE_TRANSFER_BUFF) (get_global $audioSampleCount))
 
   ;; Tape device state
   (i32.store8 offset=226 (get_global $STATE_TRANSFER_BUFF) (get_global $tapeMode))

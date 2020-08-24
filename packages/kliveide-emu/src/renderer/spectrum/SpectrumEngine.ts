@@ -41,6 +41,7 @@ import {
   BANK_0_OFFS,
   MEMWRITE_MAP,
   BEEPER_SAMPLE_BUFFER,
+  PSG_SAMPLE_BUFFER,
 } from "../../native/api/memory-map";
 
 /**
@@ -59,7 +60,6 @@ export class SpectrumEngine {
   private _executionStateChanged = new LiteEvent<ExecutionStateChangedArgs>();
   private _screenRefreshed = new LiteEvent<void>();
   private _vmStoppedWithError = new LiteEvent<void>();
-  private _beeperSamplesEmitted = new LiteEvent<number[]>();
 
   private _completionTask: Promise<void> | null = null;
 
@@ -211,13 +211,6 @@ export class SpectrumEngine {
    */
   get screenRefreshed(): ILiteEvent<void> {
     return this._screenRefreshed.expose();
-  }
-
-  /**
-   * This event is raised when a new beeper sample frame is emitted
-   */
-  get beeperSamplesEmitted(): ILiteEvent<number[]> {
-    return this._beeperSamplesEmitted.expose();
   }
 
   /**
@@ -611,15 +604,26 @@ export class SpectrumEngine {
       const emuState = rendererProcessStore.getState().emulatorPanelState;
       if (!this._beeperRenderer) {
         this._beeperRenderer = new AudioRenderer(
-          resultState.beeperSampleLength
+          resultState.audioSampleLength
         );
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = emuState.muted
-        ? new Array(resultState.beeperSampleCount).fill(0)
-        : mh.readBytes(0, resultState.beeperSampleCount);
+        ? new Array(resultState.audioSampleCount).fill(0)
+        : mh.readBytes(0, resultState.audioSampleCount);
       this._beeperRenderer.storeSamples(beeperSamples);
-      machine._beeperSamplesEmitted.fire(beeperSamples);
+
+      // --- Obtain psg samples
+      if (!this._psgRenderer) {
+        this._psgRenderer = new AudioRenderer(
+          resultState.audioSampleLength
+        );
+      }
+      mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
+      const psgSamples = emuState.muted
+        ? new Array(resultState.audioSampleCount).fill(0)
+        : mh.readBytes(0, resultState.audioSampleCount);
+      this._psgRenderer.storeSamples(psgSamples);
 
       // --- Check if a tape should be loaded
       if (
