@@ -85,34 +85,6 @@
 ;; ----------------------------------------------------------------------------
 ;; Sound device routines
 
-;; Sets the specified sound sample rate
-;; $rate: New sound sample rate
-(func $setPsgSampleRate (param $rate i32)
-  (local $sampleLength f32)
-  get_local $rate set_global $psgSampleRate
-
-  ;; Calculate the sample length
-  (f32.div
-    (f32.convert_u/i32 (i32.mul (get_global $baseClockFrequency) (get_global $clockMultiplier)))
-    (f32.convert_u/i32 (get_local $rate))
-  )
-  tee_local $sampleLength
-  i32.trunc_u/f32
-  set_global $psgSampleLength
-
-  ;; Calculate the gate values for the sample length
-  (f32.mul 
-    (f32.sub 
-      (get_local $sampleLength) 
-      (f32.convert_u/i32 (get_global $psgSampleLength))
-    )
-    (f32.const 100_000)
-  )
-  i32.trunc_u/f32
-  set_global $psgLowerGate
-  i32.const 100_000 set_global $psgUpperGate
-)
-
 ;; Sets the index of the PSG register
 (func $setPsgRegisterIndex (param $index i32)
   (i32.and (get_local $index) (i32.const 0x0f))

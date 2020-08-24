@@ -61,43 +61,5 @@
 
 ;; This function processes the EAR bit (beeper device)
 (func $processEarBit (param $earBit i32)
-  call $createEarBitSamples
   get_local $earBit set_global $beeperLastEarBit
-)
-
-;; Creates EAR bit samples until the current CPU tact
-(func $createEarBitSamples
-  loop $earBitLoop
-    (i32.le_u (get_global $beeperNextSampleTact) (get_global $tacts))
-    if
-      ;; Store the next sample
-      (i32.add (get_global $BEEPER_SAMPLE_BUFFER) (get_global $beeperSampleCount))
-      i32.const 1
-      i32.const 0
-      get_global $beeperLastEarBit
-      select
-      i32.store8 
-
-      ;; Adjust sample count
-      (i32.add (get_global $beeperSampleCount) (i32.const 1))
-      set_global $beeperSampleCount
-
-      ;; Calculate the next beeper sample tact
-      (i32.add (get_global $beeperGateValue) (get_global $beeperLowerGate))
-      set_global $beeperGateValue
-      (i32.add (get_global $beeperNextSampleTact) (get_global $beeperSampleLength))
-      set_global $beeperNextSampleTact
-
-      (i32.ge_u (get_global $beeperGateValue) (get_global $beeperUpperGate))
-      if
-        ;; Shift the next sample 
-        (i32.add (get_global $beeperNextSampleTact) (i32.const 1))
-        set_global $beeperNextSampleTact
-
-        (i32.sub (get_global $beeperGateValue) (get_global $beeperUpperGate))
-        set_global $beeperGateValue
-      end
-      br $earBitLoop
-    end
-  end
 )
