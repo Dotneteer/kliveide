@@ -209,7 +209,13 @@
 ;; Step-out stack (512 bytes)
 (global $STEP_OUT_STACK i32 (i32.const 0x23_2D00))
 
+;; ----------------------------------------------------------------------------
+;; Sound generation
+
 ;; PSG Register area: 0x23_2F00 (256 bytes)
 (global $PSG_REGS i32 (i32.const 0x23_2F00))
 
-;; Next free slot: 0x23_3000
+;; Envelop tables for PSG sound generation (0x800 bytes)
+(global $PSG_ENVELOP_TABLE i32 (i32.const 0x23_3000))
+
+;; Next free slot: 0x23_3800

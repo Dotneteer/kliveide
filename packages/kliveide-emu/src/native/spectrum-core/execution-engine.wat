@@ -234,6 +234,7 @@
   i32.const 0 set_global $fastVmMode
   i32.const 0 set_global $disableScreenRendering
   i32.const 0 set_global $executionCompletionReason
+  i32.const 0 set_global $stepOverBreakpoint
 
   ;; Reset keyboard line status
   (i32.store offset=0 (get_global $KEYBOARD_LINES) (i32.const 0))
@@ -260,6 +261,21 @@
   i32.const 0 set_global $beeperNextSampleTact
   i32.const 0 set_global $beeperLastEarBit
 
+  ;; Reset PSG state
+  i32.const 0 set_global $psgGateValue
+  i32.const 0 set_global $psgNextSampleTact
+
+
+  (i32.store offset=0 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=8 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=12 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=16 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=20 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=24 (get_global $PSG_REGS) (i32.const 0))
+  (i32.store offset=28 (get_global $PSG_REGS) (i32.const 0))
+  i32.const 0xffff set_global $psgNoiseSeed
+
   ;; Reset tape state
   i32.const 0 set_global $tapeMode
   i32.const 0 set_global $tapeBlocksToPlay
@@ -282,7 +298,7 @@
   set_global $ulaIssue
 )
 
-;; Copies exeution options from the transfer area
+;; Copies execution options from the transfer area
 (func $setExecutionOptions
   (i32.load8_u offset=0 (get_global $STATE_TRANSFER_BUFF)) set_global $emulationMode
   (i32.load8_u offset=1 (get_global $STATE_TRANSFER_BUFF)) set_global $debugStepMode
@@ -336,11 +352,8 @@
         set_global $flashPhase
       end
 
-      ;; Reset beeper frame state and create samples
+      ;; Reset beeper frame state
       i32.const 0 set_global $beeperSampleCount
-      call $createEarBitSamples
-
-      call $startNewFrame
     end
 
     ;; Calculate the current frame tact
@@ -426,6 +439,43 @@
     ;; Notify the tape device to check tape hooks
     call $checkTapeHooks
 
+    ;; Is it time to render the next beeper/sound sample?
+    (i32.ge_u (get_global $tacts) (get_global $beeperNextSampleTact))
+    if
+      ;; Render next beeper sample
+      (i32.add (get_global $BEEPER_SAMPLE_BUFFER) (get_global $beeperSampleCount))
+      i32.const 1
+      i32.const 0
+      get_global $beeperLastEarBit
+      select
+      i32.store8 
+
+      ;; Render next PSG sample
+      (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $beeperSampleCount))
+      i32.const 0
+      i32.store8 
+
+      ;; Adjust sample count
+      (i32.add (get_global $beeperSampleCount) (i32.const 1))
+      set_global $beeperSampleCount
+
+      ;; Calculate next sample tact
+      (i32.add (get_global $beeperGateValue) (get_global $beeperLowerGate))
+      set_global $beeperGateValue
+      (i32.add (get_global $beeperNextSampleTact) (get_global $beeperSampleLength))
+      set_global $beeperNextSampleTact
+
+      (i32.ge_u (get_global $beeperGateValue) (get_global $beeperUpperGate))
+      if
+        ;; Shift the next sample 
+        (i32.add (get_global $beeperNextSampleTact) (i32.const 1))
+        set_global $beeperNextSampleTact
+
+        (i32.sub (get_global $beeperGateValue) (get_global $beeperUpperGate))
+        set_global $beeperGateValue
+      end
+    end
+
     ;; Test frame completion
     (i32.ge_u (get_local $currentUlaTact) (get_global $tactsInFrame))
     set_global $frameCompleted
@@ -433,10 +483,7 @@
   end
 
   ;; The current screen rendering frame completed
-  ;; Create the missing beeper samples
-  call $createEarBitSamples
-
-  ;; Prepare for the next beeper sample rate
+  ;; Prepare for the next beeper sample rate that may overflow to the next frame
   (i32.gt_u (get_global $beeperNextSampleTact) (get_global $tacts))
   if
     (i32.sub 
@@ -457,6 +504,5 @@
   set_global $frameCount
 
   ;; Sign frame completion
-  call $completeFrame
   i32.const 5 set_global $executionCompletionReason ;; Reason: frame completed
 )

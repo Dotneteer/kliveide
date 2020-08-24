@@ -53,7 +53,6 @@ export abstract class ZxSpectrumBase {
    */
   setAudioSampleRate(rate: number): void {
     this.api.setBeeperSampleRate(rate);
-    this.api.setPsgSampleRate(rate);
   }
 
   /**

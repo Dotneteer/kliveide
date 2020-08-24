@@ -10,6 +10,9 @@
 ;; Signs that the interrupt request has been revoked.
 (global $interruptRevoked (mut i32) (i32.const 0x0000))
 
+;; ----------------------------------------------------------------------------
+;; Interrupt device routines
+
 ;; Checks and executes interrupt, if it's time
 (func $checkForInterrupt (param $currentUlaTact i32)
   ;; We've already handled the interrupt
@@ -51,4 +54,3 @@
 (func $setInterruptTact (param $tact i32)
   get_local $tact set_global $interruptTact
 )
-

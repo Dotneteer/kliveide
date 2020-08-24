@@ -81,6 +81,9 @@
   call $calcScreenAttributes
   call $initRenderingTactTable
 
+  ;; PSG sound configuration
+  i32.const 0 set_global $psgSupportsSound
+
   ;; Tape device data
   i32.const 0x056c set_global $tapeLoadBytesRoutine
   i32.const 0x056b set_global $tapeLoadBytesInvalidHeader

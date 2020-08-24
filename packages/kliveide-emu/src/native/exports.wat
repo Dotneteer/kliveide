@@ -31,7 +31,6 @@
 (export "setInterruptTact" (func $setInterruptTact))
 (export "checkForInterrupt" (func $checkForInterrupt))
 (export "setBeeperSampleRate" (func $setBeeperSampleRate))
-(export "setPsgSampleRate" (func $setPsgSampleRate))
 (export "colorize" (func $colorize))
 (export "getCursorMode" (func $getCursorMode))
 (export "initTape" (func $initTape))
