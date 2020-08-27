@@ -262,9 +262,7 @@
   i32.const 0 set_global $beeperLastEarBit
 
   ;; Reset PSG state
-  i32.const 0 set_global $psgGateValue
-  i32.const 0 set_global $psgNextSampleTact
-
+  get_global $psgCLockStep set_global $psgNextClockTact
 
   (i32.store offset=0 (get_global $PSG_REGS) (i32.const 0))
   (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
@@ -364,10 +362,12 @@
 
     ;; Execute an entire instruction
     call $executeCpuCycle
+    call $preparePsgSample
     loop $instructionLoop
       get_global $isInOpExecution
       if
         call $executeCpuCycle
+        call $preparePsgSample
         br $instructionLoop
       end
     end 
@@ -439,6 +439,21 @@
     ;; Notify the tape device to check tape hooks
     call $checkTapeHooks
 
+    ;; ;; Is it time to generate the next PSG output value?
+    ;; (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
+    ;; if
+    ;;   call $generatePsgOutputValue
+    ;;   loop $nextClock
+    ;;     (i32.add (get_global $psgNextClockTact) (get_global $psgCLockStep))
+    ;;     set_global $psgNextClockTact
+    ;;     (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
+    ;;     if
+    ;;       call $generatePsgOutputValue
+    ;;       br $nextClock
+    ;;     end
+    ;;   end
+    ;; end
+
     ;; Is it time to render the next beeper/sound sample?
     (i32.ge_u (get_global $tacts) (get_global $audioNextSampleTact))
     if
@@ -452,8 +467,8 @@
 
       ;; Render next PSG sample
       (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $audioSampleCount))
-      i32.const 0
-      i32.store8 
+      get_global $psgLastOutputValue
+      i32.store8
 
       ;; Adjust sample count
       (i32.add (get_global $audioSampleCount) (i32.const 1))
@@ -483,6 +498,16 @@
   end
 
   ;; The current screen rendering frame completed
+  ;; Prepare for the next PSG tact that may overflow to the next frame
+  (i32.gt_u (get_global $psgNextClockTact) (get_global $tactsInFrame))
+  if
+    (i32.sub 
+      (get_global $psgNextClockTact)
+      (get_global $tactsInFrame)
+    )
+    set_global $psgNextClockTact
+  end
+
   ;; Prepare for the next beeper sample rate that may overflow to the next frame
   (i32.gt_u (get_global $audioNextSampleTact) (get_global $tacts))
   if
@@ -505,4 +530,22 @@
 
   ;; Sign frame completion
   i32.const 5 set_global $executionCompletionReason ;; Reason: frame completed
+)
+
+(func $preparePsgSample
+  (local $currentUlaTact i32)
+  (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
+  (i32.ge_u (tee_local $currentUlaTact) (get_global $psgNextClockTact))
+  if
+    call $generatePsgOutputValue
+    loop $nextClock
+      (i32.add (get_global $psgNextClockTact) (get_global $psgCLockStep))
+      set_global $psgNextClockTact
+      (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
+      if
+        call $generatePsgOutputValue
+        br $nextClock
+      end
+    end
+  end
 )

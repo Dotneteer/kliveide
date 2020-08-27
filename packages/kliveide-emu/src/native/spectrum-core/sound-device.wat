@@ -9,38 +9,23 @@
 ;; Flag that indicates is the model supports PSG sound
 (global $psgSupportsSound (mut i32) (i32.const 0x0000))
 
-;; Sample rate of the PSG audio
-(global $psgSampleRate (mut i32) (i32.const 0x0000))
-
-;; Sample length (lower) in CPU clock tacts
-(global $psgSampleLength (mut i32) (i32.const 0x0000))
-
-;; Lower gate for sample length
-(global $psgLowerGate (mut i32) (i32.const 0x0000))
-
-;; Upper gate for sample length
-(global $psgUpperGate (mut i32) (i32.const 0x0000))
-
-;; Current PSG gate value
-(global $psgGateValue (mut i32) (i32.const 0x0000))
-
-;; Tact value of the last sample
-(global $psgNextSampleTact (mut i32) (i32.const 0x0000))
-
-;; Count of samples in this frame
-(global $psgSampleCount (mut i32) (i32.const 0x0000))
-
 ;; The index of the last selected PSG register
 (global $psgRegisterIndex (mut i32) (i32.const 0x0000))
 
-;; The clock frequency of the PSG chip
-(global $psgClockFrequency (mut i32) (i32.const 0x0000))
-
-;; The previous PSG chip tact used for calculation
-(global $psgPreviousTact (mut i64) (i64.const 0x0000))
-
 ;; The noise seed value
 (global $psgNoiseSeed (mut i32) (i32.const 0x0000))
+
+;; The number of ULA tacts that represent a single PSG clock tick
+(global $psgCLockStep i32 (i32.const 16))
+
+;; The value of the next ULA tact when a PSG output value should be 
+;; generated
+(global $psgNextClockTact (mut i32) (i32.const 0x0000))
+
+;; The last PSG output value
+(global $psgLastOutputValue (mut i32) (i32.const 0x0000))
+
+(global $psgCounter (mut i32) (i32.const 0x0000))
 
 ;; ----------------------------------------------------------------------------
 ;; PSG Registers are stored in the $PSG_REGS memory area. Byte offsets:
@@ -83,6 +68,14 @@
 ;; 27: ENV_C (boolean)
 ;; 28: ENV_FREQ (12 bits)
 ;; 29: ENV_SHAPE (4 bits)
+;;
+;; State values
+;; 30: CNT_A (12 bits)
+;; 32: CNT_B (12 bits)
+;; 34: CNT_C (12 bits)
+;; 36: BIT_A (1 bit)
+;; 37: BIT_B (1 bit)
+;; 38: BIT_C (1 bit)
 
 ;; ----------------------------------------------------------------------------
 ;; Sound device routines
@@ -109,6 +102,13 @@
     (i32.add (get_global $PSG_REGS) (get_global $psgRegisterIndex))
     (get_local $v)
   )
+
+  i32.const 111111
+  call $trace
+  get_global $psgRegisterIndex
+  call $trace
+  get_local $v
+  call $trace
 
   ;; Write preprocessed register values
   ;; Check for TONE values
@@ -337,83 +337,45 @@
   end
 )
 
-;; Creates PSG sound samples
-(func $createPsgSoundSamples
-  (local $psgTact i64)
-  (local $tone_A i32)
-  (local $tone_B i32)
-  (local $tone_C i32)
-  loop $psgLoop
-    (i32.le_u (get_global $psgNextSampleTact) (get_global $tacts))
-    if
-      ;; Calculate PSG tact (64 bit)
-      (i64.add
-        (i64.mul 
-          (i64.extend_u/i32 (get_global $frameCount))
-          (i64.extend_u/i32 (get_global $tactsInFrame))
-        )
-        (i64.extend_u/i32 (get_global $tacts))
+;; Generates a PSG output value
+(func $generatePsgOutputValue
+  (local $tmp i32)
+  
+  ;; Increment TONE A counter
+  (i32.add 
+    (i32.load16_u offset=30 (get_global $PSG_REGS))
+    (i32.const 1)
+  )
+  set_local $tmp
+  (i32.store16 offset=30 (get_global $PSG_REGS) (get_local $tmp))
+
+  ;; CNT_A >= TONE A?
+  (i32.ge_u 
+    (get_local $tmp)
+    (i32.load16_u offset=0 (get_global $PSG_REGS))
+  )
+  if
+    ;; Reset counter and reverse output bit
+    (i32.store16 offset=30 (get_global $PSG_REGS) (i32.const 0))
+    (i32.store8 offset=36 (get_global $PSG_REGS)
+      (i32.xor 
+        (i32.load8_u offset=36 (get_global $PSG_REGS))
+        (i32.const 0x01)
       )
-      (i64.shl (i64.const 5))
-      set_local $psgTact
-
-      ;; ;; Calc TONE A bit
-      ;; (i64.div_u 
-      ;;   (get_local $psgTact) 
-      ;;   (i64.extend_u/i32 (i32.load16_u offset=0 (get_global $PSG_REGS)))
-      ;; )
-      ;; (i64.and (i64.const 0x01))
-      ;; (i32.wrap/i64)
-      ;; set_local $tone_A
-
-      ;; ;; Calc TONE B bit
-      ;; (i64.div_u 
-      ;;   (get_local $psgTact) 
-      ;;   (i64.extend_u/i32 (i32.load16_u offset=2 (get_global $PSG_REGS)))
-      ;; )
-      ;; (i64.and (i64.const 0x01))
-      ;; (i32.wrap/i64)
-      ;; set_local $tone_B
-
-      ;; ;; Calc TONE C bit
-      ;; (i64.div_u 
-      ;;   (get_local $psgTact) 
-      ;;   (i64.extend_u/i32 (i32.load16_u offset=4 (get_global $PSG_REGS)))
-      ;; )
-      ;; (i64.and (i64.const 0x01))
-      ;; (i32.wrap/i64)
-      ;; set_local $tone_C
-
-      ;; Note the last calculation tact
-      get_local $psgTact set_global $psgPreviousTact
-
-      ;; Store the next sample
-      (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $psgSampleCount))
-
-      ;; TODO: Use the sample bit to store
-      i32.const 0
-      i32.store8 
-
-      ;; Adjust sample count
-      (i32.add (get_global $psgSampleCount) (i32.const 1))
-      set_global $psgSampleCount
-
-      ;; Calculate the next sound sample tact
-      (i32.add (get_global $psgGateValue) (get_global $psgLowerGate))
-      set_global $psgGateValue
-      (i32.add (get_global $psgNextSampleTact) (get_global $psgSampleLength))
-      set_global $psgNextSampleTact
-
-      (i32.ge_u (get_global $psgGateValue) (get_global $psgUpperGate))
-      if
-        ;; Shift the next sample 
-        (i32.add (get_global $psgNextSampleTact) (i32.const 1))
-        set_global $psgNextSampleTact
-
-        (i32.sub (get_global $psgGateValue) (get_global $psgUpperGate))
-        set_global $psgGateValue
-      end
-      br $psgLoop
-    end
+    )
   end
+
+  ;; Output the merged volume value
+  (i32.load8_u offset=36 (get_global $PSG_REGS))
+  set_global $psgLastOutputValue
+
+  ;; (i32.eqz (get_global $psgCounter))
+  ;; if
+  ;;   i32.const 0xfc set_global $psgCounter
+  ;;   (i32.xor (get_global $psgLastOutputValue) (i32.const 0x01))
+  ;;   set_global $psgLastOutputValue
+  ;; else
+  ;;   (i32.sub (get_global $psgCounter) (i32.const 1))
+  ;;   set_global $psgCounter
+  ;; end
 )
