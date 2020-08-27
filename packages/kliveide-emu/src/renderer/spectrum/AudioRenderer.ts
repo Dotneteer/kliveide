@@ -51,10 +51,12 @@ export class AudioRenderer {
     highpass.frequency.value = 20;
     const lowpass = this._ctx.createBiquadFilter();
     lowpass.type = "lowpass";
-    lowpass.frequency.value = 18000;
-    node.connect(highpass);
-    highpass.connect(lowpass);
+    lowpass.frequency.value = 10000;
+    node.connect(lowpass);
     lowpass.connect(this._ctx.destination);
+    // node.connect(highpass);
+    // highpass.connect(lowpass);
+    // lowpass.connect(this._ctx.destination);
   }
 
   /**

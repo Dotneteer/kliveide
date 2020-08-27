@@ -362,12 +362,12 @@
 
     ;; Execute an entire instruction
     call $executeCpuCycle
-    call $preparePsgSample
+    call $preparePsgSamples
     loop $instructionLoop
       get_global $isInOpExecution
       if
         call $executeCpuCycle
-        call $preparePsgSample
+        call $preparePsgSamples
         br $instructionLoop
       end
     end 
@@ -467,8 +467,15 @@
 
       ;; Render next PSG sample
       (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $audioSampleCount))
-      get_global $psgLastOutputValue
+      (i32.eqz (get_global $psgOrphanSamples))
+      if (result i32)
+        i32.const 0
+      else
+        (i32.div_u (get_global $psgOrphanSum) (get_global $psgOrphanSamples))
+      end
       i32.store8
+      i32.const 0 set_global $psgOrphanSum
+      i32.const 0 set_global $psgOrphanSamples
 
       ;; Adjust sample count
       (i32.add (get_global $audioSampleCount) (i32.const 1))
@@ -532,7 +539,7 @@
   i32.const 5 set_global $executionCompletionReason ;; Reason: frame completed
 )
 
-(func $preparePsgSample
+(func $preparePsgSamples
   (local $currentUlaTact i32)
   (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
   (i32.ge_u (tee_local $currentUlaTact) (get_global $psgNextClockTact))
