@@ -439,21 +439,6 @@
     ;; Notify the tape device to check tape hooks
     call $checkTapeHooks
 
-    ;; ;; Is it time to generate the next PSG output value?
-    ;; (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
-    ;; if
-    ;;   call $generatePsgOutputValue
-    ;;   loop $nextClock
-    ;;     (i32.add (get_global $psgNextClockTact) (get_global $psgCLockStep))
-    ;;     set_global $psgNextClockTact
-    ;;     (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
-    ;;     if
-    ;;       call $generatePsgOutputValue
-    ;;       br $nextClock
-    ;;     end
-    ;;   end
-    ;; end
-
     ;; Is it time to render the next beeper/sound sample?
     (i32.ge_u (get_global $tacts) (get_global $audioNextSampleTact))
     if
@@ -465,17 +450,20 @@
       select
       i32.store8 
 
-      ;; Render next PSG sample
-      (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $audioSampleCount))
-      (i32.eqz (get_global $psgOrphanSamples))
-      if (result i32)
-        i32.const 0
-      else
-        (i32.div_u (get_global $psgOrphanSum) (get_global $psgOrphanSamples))
+      get_global $psgSupportsSound
+      if
+        ;; Render next PSG sample
+        (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $audioSampleCount))
+        (i32.eqz (get_global $psgOrphanSamples))
+        if (result i32)
+          i32.const 0
+        else
+          (i32.div_u (get_global $psgOrphanSum) (get_global $psgOrphanSamples))
+        end
+        i32.store8
+        i32.const 0 set_global $psgOrphanSum
+        i32.const 0 set_global $psgOrphanSamples
       end
-      i32.store8
-      i32.const 0 set_global $psgOrphanSum
-      i32.const 0 set_global $psgOrphanSamples
 
       ;; Adjust sample count
       (i32.add (get_global $audioSampleCount) (i32.const 1))
@@ -541,6 +529,9 @@
 
 (func $preparePsgSamples
   (local $currentUlaTact i32)
+  (i32.eqz (get_global $psgSupportsSound))
+  if return end
+
   (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
   (i32.ge_u (tee_local $currentUlaTact) (get_global $psgNextClockTact))
   if

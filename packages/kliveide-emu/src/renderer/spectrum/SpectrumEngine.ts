@@ -41,7 +41,7 @@ import {
   MEMWRITE_MAP,
   BEEPER_SAMPLE_BUFFER,
   PSG_SAMPLE_BUFFER,
-  PSG_ENVELOP_TABLE
+  PSG_ENVELOP_TABLE,
 } from "../../native/api/memory-map";
 
 /**
@@ -370,16 +370,6 @@ export class SpectrumEngine {
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
     rendererProcessStore.dispatch(emulatorSetDebugAction(this._isDebugging)());
 
-    // --- Otput envelop tables
-    const mh = new MemoryHelper(this.spectrum.api, PSG_ENVELOP_TABLE);
-    for (let i = 0; i < 16; i++) {
-      let result = "";
-      for (let j = 0; j < 128; j++) {
-        result += `${mh.readByte(i*128 + j)} `
-      }
-      console.log(`(${i}): ${result}`);
-    }
-
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
     this._cancelled = false;
@@ -613,26 +603,22 @@ export class SpectrumEngine {
       // --- Obtain beeper samples
       const emuState = rendererProcessStore.getState().emulatorPanelState;
       if (!this._beeperRenderer) {
-        this._beeperRenderer = new AudioRenderer(
-          resultState.audioSampleLength
-        );
+        this._beeperRenderer = new AudioRenderer(resultState.audioSampleLength);
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
-        : mh.readBytes(0, resultState.audioSampleCount);
+        : mh.readBytes(0, resultState.audioSampleCount); //.map((b) => b * 32);
       this._beeperRenderer.storeSamples(beeperSamples);
 
       // --- Obtain psg samples
       if (!this._psgRenderer) {
-        this._psgRenderer = new AudioRenderer(
-          resultState.audioSampleLength
-        );
+        this._psgRenderer = new AudioRenderer(resultState.audioSampleLength);
       }
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
       const psgSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
-        : mh.readBytes(0, resultState.audioSampleCount).map(b => b/32);
+        : mh.readBytes(0, resultState.audioSampleCount).map((b) => b / 3);
       this._psgRenderer.storeSamples(psgSamples);
 
       // --- Check if a tape should be loaded
