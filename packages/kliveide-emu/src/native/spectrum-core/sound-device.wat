@@ -276,7 +276,7 @@
   (i32.eq (get_global $psgRegisterIndex) (i32.const 11))
   if
     (i32.or 
-      (i32.and (get_global $psgEnvFreq) (i32.const 0x0f00))
+      (i32.and (get_global $psgEnvFreq) (i32.const 0xff00))
       (get_local $v)
     )
     set_global $psgEnvFreq
@@ -288,7 +288,7 @@
   if
     (i32.or 
       (i32.and (get_global $psgEnvFreq) (i32.const 0x0ff))
-      (i32.shl (i32.and (get_local $v) (i32.const 0x0f)) (i32.const 8))
+      (i32.shl (get_local $v) (i32.const 8))
     )
     set_global $psgEnvFreq
     return
@@ -300,6 +300,8 @@
     ;; Store lower 4 bits
     (i32.and (get_local $v) (i32.const 0x0f))
     set_global $psgEnvStyle
+    i32.const 0 set_global $psgPosEnv
+    i32.const 0 set_global $psgCntEnv
     return
   end
 )
@@ -335,8 +337,9 @@
       i32.const -1
       i32.const 0x20
       (i32.and (get_local $env) (i32.const 4))
+      select
       set_local $vol
-      
+
       ;; Iterate through envelope positions
       i32.const 0 set_local $pos
       loop $posLoop
@@ -368,18 +371,18 @@
                 ;; Set start volume according to direction
                 i32.const 0
                 i32.const 31
-                (i32.gt_u (get_local $dir) (i32.const 0))
+                (i32.gt_s (get_local $dir) (i32.const 0))
                 select
                 set_local $vol
 
                 ;; Hold is set?
-                (i32.and (get_local $env) (i32.const 1))
+                (i32.and (get_local $env) (i32.const 0x01))
                 if
                   ;; Hold, and set up next volume
                   i32.const 1 set_local $hold
                   i32.const 31
                   i32.const 0
-                  (i32.gt_u (get_local $dir) (i32.const 0))
+                  (i32.gt_s (get_local $dir) (i32.const 0))
                   select
                   set_local $vol
                 end
@@ -434,12 +437,40 @@
     set_global $psgBitA
   end
 
+  ;; Calculate envelope position
+  (i32.add (get_global $psgCntEnv) (i32.const 1))
+  set_global $psgCntEnv
+  (i32.ge_u (get_global $psgCntEnv) (get_global $psgEnvFreq))
+  if
+    ;; Move to the new position
+    i32.const 0 set_global $psgCntEnv
+    (i32.add (get_global $psgPosEnv) (i32.const 1))
+    set_global $psgPosEnv
+    (i32.gt_u (get_global $psgPosEnv) (i32.const 0x7f))
+    if
+      i32.const 0x40 set_global $psgPosEnv
+    end
+  end
+
   ;; Add the volume value
   get_global $psgBitA
   if
     get_global $psgToneAEnabled
     if
-      (i32.add (get_local $vol) (i32.const 1))
+      get_global $psgEnvA
+      if (result i32)
+        (i32.add
+          (i32.add 
+            (get_global $PSG_ENVELOP_TABLE)
+            (i32.mul (i32.const 128) (get_global $psgEnvStyle))
+          )
+          (get_global $psgPosEnv)
+        )
+        i32.load8_u
+      else
+        (i32.mul (i32.const 2) (get_global $psgVolA))
+      end
+      (i32.add (get_local $vol))
       set_local $vol
     end
   end

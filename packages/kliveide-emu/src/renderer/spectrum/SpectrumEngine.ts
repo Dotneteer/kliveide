@@ -38,10 +38,10 @@ import { TapReader } from "../../shared/tape/tap-file";
 import { RegisterData } from "../../shared/spectrum/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import {
-  BANK_0_OFFS,
   MEMWRITE_MAP,
   BEEPER_SAMPLE_BUFFER,
   PSG_SAMPLE_BUFFER,
+  PSG_ENVELOP_TABLE
 } from "../../native/api/memory-map";
 
 /**
@@ -370,6 +370,16 @@ export class SpectrumEngine {
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
     rendererProcessStore.dispatch(emulatorSetDebugAction(this._isDebugging)());
 
+    // --- Otput envelop tables
+    const mh = new MemoryHelper(this.spectrum.api, PSG_ENVELOP_TABLE);
+    for (let i = 0; i < 16; i++) {
+      let result = "";
+      for (let j = 0; j < 128; j++) {
+        result += `${mh.readByte(i*128 + j)} `
+      }
+      console.log(`(${i}): ${result}`);
+    }
+
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
     this._cancelled = false;
@@ -622,7 +632,7 @@ export class SpectrumEngine {
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
       const psgSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
-        : mh.readBytes(0, resultState.audioSampleCount);
+        : mh.readBytes(0, resultState.audioSampleCount).map(b => b/32);
       this._psgRenderer.storeSamples(psgSamples);
 
       // --- Check if a tape should be loaded

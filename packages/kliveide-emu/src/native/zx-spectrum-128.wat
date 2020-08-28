@@ -183,14 +183,6 @@
   i32.const 0x056b set_global $tapeLoadBytesInvalidHeader
   i32.const 0x05e2 set_global $tapeLoadBytesResume
   i32.const 0x04c2 set_global $tapeSaveBytesRoutine
-
-  ;; Sound Test
-  (call $setPsgRegisterIndex (i32.const 0))
-  (call $psgWriteRegisterValue (i32.const 0xfc))
-  (call $setPsgRegisterIndex (i32.const 7))
-  (call $psgWriteRegisterValue (i32.const 0xfe))
-  (call $setPsgRegisterIndex (i32.const 8))
-  (call $psgWriteRegisterValue (i32.const 0x0f))
 )
 
 ;; Gets the ZX Spectrum 48 machine state
