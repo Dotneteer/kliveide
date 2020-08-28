@@ -88,6 +88,9 @@
 (global $psgCntEnv (mut i32) (i32.const 0x0000))
 (global $psgPosEnv (mut i32) (i32.const 0x0000))
 
+;; PSG Volumes
+(data (i32.const 0x23_3800) "\00\00\01\02\3c\03\d7\04\83\07\a6\0c\3e\13\93\23\68\28\d4\45\6a\60\ea\76\bc\97\a6\b8\52\dc\ff\ff")
+
 ;; ----------------------------------------------------------------------------
 ;; Sound device routines
 
@@ -144,12 +147,12 @@
 
 ;; Writes the value of the selected PSG register
 (func $psgWriteRegisterValue (param $v i32)
-  i32.const 111111
-  call $trace
-  get_global $psgRegisterIndex
-  call $trace
-  get_local $v
-  call $trace
+  ;; i32.const 111111
+  ;; call $trace
+  ;; get_global $psgRegisterIndex
+  ;; call $trace
+  ;; get_local $v
+  ;; call $trace
 
   ;; Just for the sake of safety
   (i32.and (get_local $v) (i32.const 0xff))
@@ -296,9 +299,9 @@
   (i32.eq (get_global $psgRegisterIndex) (i32.const 10))
   if
     (i32.and (get_local $v) (i32.const 0x0f))
-    set_global $psgVolB
+    set_global $psgVolC
     (i32.and (get_local $v) (i32.const 0x10))
-    set_global $psgEnvB
+    set_global $psgEnvC
     return
   end
 
@@ -313,7 +316,7 @@
     return
   end
 
-  ;; Envelope frequency (upper 4 bits)
+  ;; Envelope frequency (upper 8 bits)
   (i32.eq (get_global $psgRegisterIndex) (i32.const 12))
   if
     (i32.or 
@@ -550,6 +553,7 @@
       i32.load8_u
     else
       (i32.mul (i32.const 2) (get_global $psgVolA))
+      (i32.add (i32.const 1))
     end
     (i32.add (get_local $vol))
     set_local $vol
@@ -573,6 +577,7 @@
       i32.load8_u
     else
       (i32.mul (i32.const 2) (get_global $psgVolB))
+      (i32.add (i32.const 1))
     end
     (i32.add (get_local $vol))
     set_local $vol
@@ -596,7 +601,8 @@
       i32.load8_u
     else
       (i32.mul (i32.const 2) (get_global $psgVolC))
-    end
+      (i32.add (i32.const 1))
+   end
     (i32.add (get_local $vol))
     set_local $vol
   end

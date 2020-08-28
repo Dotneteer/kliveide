@@ -1,6 +1,6 @@
 // --- Audio constants
 export const FRAMES_BUFFERED = 400;
-export const FRAMES_DELAYED = 10;
+export const FRAMES_DELAYED = 4;
 export const AUDIO_BUFFER_SIZE = 4096;
 
 /**
@@ -87,11 +87,12 @@ export class AudioRenderer {
    */
   storeSamples(samples: number[]) {
     for (const sample of samples) {
-      // let volumeIdx = sample/2;
-      // if (volumeIdx > 15) {
-      //   volumeIdx = 15;
-      // }
-      this._waveBuffer[this._writeIndex++] = sample; //VOLUME_TABLE[volumeIdx];
+      let volumeIdx = Math.floor(sample/2);
+      if (volumeIdx > 15) {
+        console.log(`OOO: ${sample}`);
+        volumeIdx = 15;
+      }
+      this._waveBuffer[this._writeIndex++] = VOLUME_TABLE[volumeIdx];
       if (this._writeIndex >= this._waveBuffer.length) {
         this._writeIndex = 0;
       }

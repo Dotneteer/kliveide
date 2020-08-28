@@ -608,7 +608,7 @@ export class SpectrumEngine {
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
-        : mh.readBytes(0, resultState.audioSampleCount); //.map((b) => b * 32);
+        : mh.readBytes(0, resultState.audioSampleCount).map((b) => b * 31);
       this._beeperRenderer.storeSamples(beeperSamples);
 
       // --- Obtain psg samples
@@ -618,7 +618,7 @@ export class SpectrumEngine {
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
       const psgSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
-        : mh.readBytes(0, resultState.audioSampleCount).map((b) => b / 3);
+        : mh.readBytes(0, resultState.audioSampleCount).map(b => b/3);
       this._psgRenderer.storeSamples(psgSamples);
 
       // --- Check if a tape should be loaded
@@ -759,10 +759,12 @@ export class SpectrumEngine {
       return true;
     }
 
+    reader.seek(0);
     const tapReader = new TapReader(reader);
     if (tapReader.readContents()) {
       const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);
       this.spectrum.api.initTape(blocks);
+      console.log(`${blocks} blocks sent to engine.`)
       return true;
     }
     return false;
