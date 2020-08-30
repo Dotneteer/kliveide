@@ -453,14 +453,20 @@
       get_global $psgSupportsSound
       if
         ;; Render next PSG sample
-        (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $audioSampleCount))
+        (i32.add 
+          (get_global $PSG_SAMPLE_BUFFER) 
+          (i32.mul (get_global $audioSampleCount) (i32.const 2))
+        )
         (i32.eqz (get_global $psgOrphanSamples))
         if (result i32)
           i32.const 0
         else
-          (i32.div_u (get_global $psgOrphanSum) (get_global $psgOrphanSamples))
+          (i32.div_u 
+            (i32.div_u (get_global $psgOrphanSum) (get_global $psgOrphanSamples))
+            (i32.const 3)
+          )
         end
-        i32.store8
+        i32.store16
         i32.const 0 set_global $psgOrphanSum
         i32.const 0 set_global $psgOrphanSamples
       end

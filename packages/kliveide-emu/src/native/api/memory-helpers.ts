@@ -25,14 +25,30 @@ export class MemoryHelper {
   }
 
   /**
-   * Reads a byte from the memory
+   * Reads bytes from the memory
    * @param offs Offset value
+   * @param length #of bytes to read
    */
   readBytes(offs: number, length: number): number[] {
     offs += this.ptr;
     const result: number[] = [];
     for (let i = 0; i < length; i++) {
       result[i] = this._memory[offs + i];
+    }
+    return result;
+  }
+
+  /**
+   * Reads 16-bit words from the memory
+   * @param offs Offset value
+   * @param length #of bytes to read
+   */
+  readWords(offs: number, length: number): number[] {
+    offs += this.ptr;
+    const result: number[] = [];
+    for (let i = 0; i < length; i++) {
+      result[i] =
+        this._memory[offs + i * 2] + (this._memory[offs + i * 2 + 1] << 8);
     }
     return result;
   }

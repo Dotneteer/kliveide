@@ -147,13 +147,6 @@
 
 ;; Writes the value of the selected PSG register
 (func $psgWriteRegisterValue (param $v i32)
-  ;; i32.const 111111
-  ;; call $trace
-  ;; get_global $psgRegisterIndex
-  ;; call $trace
-  ;; get_local $v
-  ;; call $trace
-
   ;; Just for the sake of safety
   (i32.and (get_local $v) (i32.const 0xff))
   set_local $v
@@ -555,6 +548,13 @@
       (i32.mul (i32.const 2) (get_global $psgVolA))
       (i32.add (i32.const 1))
     end
+
+    ;; At this point $vol is 0-31, let's convert it to 0-65535
+    (i32.add 
+      (i32.and (i32.const 0x1e))
+      (get_global $PSG_VOLUME_TABLE)
+    )
+    i32.load16_u
     (i32.add (get_local $vol))
     set_local $vol
   end
@@ -579,6 +579,13 @@
       (i32.mul (i32.const 2) (get_global $psgVolB))
       (i32.add (i32.const 1))
     end
+
+    ;; At this point $vol is 0-31, let's convert it to 0-65535
+    (i32.add 
+      (i32.and (i32.const 0x1e))
+      (get_global $PSG_VOLUME_TABLE)
+    )
+    i32.load16_u
     (i32.add (get_local $vol))
     set_local $vol
   end
@@ -602,7 +609,14 @@
     else
       (i32.mul (i32.const 2) (get_global $psgVolC))
       (i32.add (i32.const 1))
-   end
+    end
+ 
+    ;; At this point $vol is 0-31, let's convert it to 0-65535
+    (i32.add 
+      (i32.and (i32.const 0x1e))
+      (get_global $PSG_VOLUME_TABLE)
+    )
+    i32.load16_u
     (i32.add (get_local $vol))
     set_local $vol
   end

@@ -9626,7 +9626,7 @@
     {
       "startAddress": 49152,
       "endAddress": 65535,
-      "sectionType": 2,
+      "sectionType": 1,
       "lenght": 16384
     }
   ],
