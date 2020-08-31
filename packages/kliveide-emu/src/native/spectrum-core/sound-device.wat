@@ -147,6 +147,7 @@
 
 ;; Writes the value of the selected PSG register
 (func $psgWriteRegisterValue (param $v i32)
+
   ;; Just for the sake of safety
   (i32.and (get_local $v) (i32.const 0xff))
   set_local $v
