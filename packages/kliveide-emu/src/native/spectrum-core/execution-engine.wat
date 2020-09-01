@@ -257,23 +257,17 @@
   i32.const 0 set_global $interruptRevoked
 
   ;; Reset beeper state
-  i32.const 0 set_global $beeperGateValue
-  i32.const 0 set_global $beeperNextSampleTact
+  i32.const 0 set_global $audioGateValue
+  i32.const 0 set_global $audioNextSampleTact
   i32.const 0 set_global $beeperLastEarBit
 
   ;; Reset PSG state
-  i32.const 0 set_global $psgGateValue
-  i32.const 0 set_global $psgNextSampleTact
-
+  get_global $psgCLockStep set_global $psgNextClockTact
 
   (i32.store offset=0 (get_global $PSG_REGS) (i32.const 0))
   (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
   (i32.store offset=8 (get_global $PSG_REGS) (i32.const 0))
   (i32.store offset=12 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=16 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=20 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=24 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=28 (get_global $PSG_REGS) (i32.const 0))
   i32.const 0xffff set_global $psgNoiseSeed
 
   ;; Reset tape state
@@ -353,7 +347,7 @@
       end
 
       ;; Reset beeper frame state
-      i32.const 0 set_global $beeperSampleCount
+      i32.const 0 set_global $audioSampleCount
     end
 
     ;; Calculate the current frame tact
@@ -364,10 +358,12 @@
 
     ;; Execute an entire instruction
     call $executeCpuCycle
+    call $preparePsgSamples
     loop $instructionLoop
       get_global $isInOpExecution
       if
         call $executeCpuCycle
+        call $preparePsgSamples
         br $instructionLoop
       end
     end 
@@ -440,39 +436,55 @@
     call $checkTapeHooks
 
     ;; Is it time to render the next beeper/sound sample?
-    (i32.ge_u (get_global $tacts) (get_global $beeperNextSampleTact))
+    (i32.ge_u (get_global $tacts) (get_global $audioNextSampleTact))
     if
       ;; Render next beeper sample
-      (i32.add (get_global $BEEPER_SAMPLE_BUFFER) (get_global $beeperSampleCount))
+      (i32.add (get_global $BEEPER_SAMPLE_BUFFER) (get_global $audioSampleCount))
       i32.const 1
       i32.const 0
       get_global $beeperLastEarBit
       select
       i32.store8 
 
-      ;; Render next PSG sample
-      (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $beeperSampleCount))
-      i32.const 0
-      i32.store8 
+      get_global $psgSupportsSound
+      if
+        ;; Render next PSG sample
+        (i32.add 
+          (get_global $PSG_SAMPLE_BUFFER) 
+          (i32.mul (get_global $audioSampleCount) (i32.const 2))
+        )
+        (i32.eqz (get_global $psgOrphanSamples))
+        if (result i32)
+          i32.const 0
+        else
+          (i32.div_u 
+            (i32.div_u (get_global $psgOrphanSum) (get_global $psgOrphanSamples))
+            (i32.const 3)
+          )
+        end
+        i32.store16
+        i32.const 0 set_global $psgOrphanSum
+        i32.const 0 set_global $psgOrphanSamples
+      end
 
       ;; Adjust sample count
-      (i32.add (get_global $beeperSampleCount) (i32.const 1))
-      set_global $beeperSampleCount
+      (i32.add (get_global $audioSampleCount) (i32.const 1))
+      set_global $audioSampleCount
 
       ;; Calculate next sample tact
-      (i32.add (get_global $beeperGateValue) (get_global $beeperLowerGate))
-      set_global $beeperGateValue
-      (i32.add (get_global $beeperNextSampleTact) (get_global $beeperSampleLength))
-      set_global $beeperNextSampleTact
+      (i32.add (get_global $audioGateValue) (get_global $audioLowerGate))
+      set_global $audioGateValue
+      (i32.add (get_global $audioNextSampleTact) (get_global $audioSampleLength))
+      set_global $audioNextSampleTact
 
-      (i32.ge_u (get_global $beeperGateValue) (get_global $beeperUpperGate))
+      (i32.ge_u (get_global $audioGateValue) (get_global $audioUpperGate))
       if
         ;; Shift the next sample 
-        (i32.add (get_global $beeperNextSampleTact) (i32.const 1))
-        set_global $beeperNextSampleTact
+        (i32.add (get_global $audioNextSampleTact) (i32.const 1))
+        set_global $audioNextSampleTact
 
-        (i32.sub (get_global $beeperGateValue) (get_global $beeperUpperGate))
-        set_global $beeperGateValue
+        (i32.sub (get_global $audioGateValue) (get_global $audioUpperGate))
+        set_global $audioGateValue
       end
     end
 
@@ -483,14 +495,24 @@
   end
 
   ;; The current screen rendering frame completed
-  ;; Prepare for the next beeper sample rate that may overflow to the next frame
-  (i32.gt_u (get_global $beeperNextSampleTact) (get_global $tacts))
+  ;; Prepare for the next PSG tact that may overflow to the next frame
+  (i32.gt_u (get_global $psgNextClockTact) (get_global $tactsInFrame))
   if
     (i32.sub 
-      (get_global $beeperNextSampleTact)
+      (get_global $psgNextClockTact)
+      (get_global $tactsInFrame)
+    )
+    set_global $psgNextClockTact
+  end
+
+  ;; Prepare for the next beeper sample rate that may overflow to the next frame
+  (i32.gt_u (get_global $audioNextSampleTact) (get_global $tacts))
+  if
+    (i32.sub 
+      (get_global $audioNextSampleTact)
       (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier))
     )
-    set_global $beeperNextSampleTact
+    set_global $audioNextSampleTact
   end
 
   ;; Adjust tacts
@@ -505,4 +527,25 @@
 
   ;; Sign frame completion
   i32.const 5 set_global $executionCompletionReason ;; Reason: frame completed
+)
+
+(func $preparePsgSamples
+  (local $currentUlaTact i32)
+  (i32.eqz (get_global $psgSupportsSound))
+  if return end
+
+  (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
+  (i32.ge_u (tee_local $currentUlaTact) (get_global $psgNextClockTact))
+  if
+    call $generatePsgOutputValue
+    loop $nextClock
+      (i32.add (get_global $psgNextClockTact) (get_global $psgCLockStep))
+      set_global $psgNextClockTact
+      (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
+      if
+        call $generatePsgOutputValue
+        br $nextClock
+      end
+    end
+  end
 )

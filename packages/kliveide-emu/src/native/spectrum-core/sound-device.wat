@@ -3,42 +3,27 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Sound device state
+;; NOTE: The sound device shares all state variables related to sampling
+;; with the beeper device, as these use the *same* sample rate.
 
 ;; Flag that indicates is the model supports PSG sound
 (global $psgSupportsSound (mut i32) (i32.const 0x0000))
 
-;; Sample rate of the PSG audio
-(global $psgSampleRate (mut i32) (i32.const 0x0000))
-
-;; Sample length (lower) in CPU clock tacts
-(global $psgSampleLength (mut i32) (i32.const 0x0000))
-
-;; Lower gate for sample length
-(global $psgLowerGate (mut i32) (i32.const 0x0000))
-
-;; Upper gate for sample length
-(global $psgUpperGate (mut i32) (i32.const 0x0000))
-
-;; Current PSG gate value
-(global $psgGateValue (mut i32) (i32.const 0x0000))
-
-;; Tact value of the last sample
-(global $psgNextSampleTact (mut i32) (i32.const 0x0000))
-
-;; Count of samples in this frame
-(global $psgSampleCount (mut i32) (i32.const 0x0000))
-
 ;; The index of the last selected PSG register
 (global $psgRegisterIndex (mut i32) (i32.const 0x0000))
 
-;; The clock frequency of the PSG chip
-(global $psgClockFrequency (mut i32) (i32.const 0x0000))
+;; The number of ULA tacts that represent a single PSG clock tick
+(global $psgCLockStep i32 (i32.const 16))
 
-;; The previous PSG chip tact used for calculation
-(global $psgPreviousTact (mut i64) (i64.const 0x0000))
+;; The value of the next ULA tact when a PSG output value should be 
+;; generated
+(global $psgNextClockTact (mut i32) (i32.const 0x0000))
 
-;; The noise seed value
-(global $psgNoiseSeed (mut i32) (i32.const 0x0000))
+;; Number of orphan PSG samples
+(global $psgOrphanSamples (mut i32) (i32.const 0x0000))
+
+;; Sum of orphan PSG sample values
+(global $psgOrphanSum (mut i32) (i32.const 0x0000))
 
 ;; ----------------------------------------------------------------------------
 ;; PSG Registers are stored in the $PSG_REGS memory area. Byte offsets:
@@ -65,25 +50,90 @@
 ;; 11: R11: ENVELOPE period (lower 8 bits)
 ;; 12: R12: ENVELOPE period (upper 4 bits)
 ;; 13: R13: ENVELOPE shape (lower 4 bits)
-;; 
-;; Extracted form:
-;; 16: TONE_A_EN (boolean)
-;; 17: TONE_B_EN (boolean)
-;; 18: TONE_C_EN (boolean)
-;; 19: NOISE_A_EN (boolean)
-;; 20: NOISE_B_EN (boolean)
-;; 21: NOISE_C_EN (boolean)
-;; 22: VOL_A (4 bits)
-;; 23: VOL_B (4 bits)
-;; 24: VOL_C (4 bits)
-;; 25: ENV_A (boolean)
-;; 26: ENV_B (boolean)
-;; 27: ENV_C (boolean)
-;; 28: ENV_FREQ (12 bits)
-;; 29: ENV_SHAPE (4 bits)
+
+;; ----------------------------------------------------------------------------
+;; PSG sound generation state
+
+(global $psgToneA (mut i32) (i32.const 0x0000))
+(global $psgToneAEnabled (mut i32) (i32.const 0x0000))
+(global $psgNoiseAEnabled (mut i32) (i32.const 0x0000))
+(global $psgVolA (mut i32) (i32.const 0x0000))
+(global $psgEnvA (mut i32) (i32.const 0x0000))
+(global $psgCntA (mut i32) (i32.const 0x0000))
+(global $psgBitA (mut i32) (i32.const 0x0000))
+
+(global $psgToneB (mut i32) (i32.const 0x0000))
+(global $psgToneBEnabled (mut i32) (i32.const 0x0000))
+(global $psgNoiseBEnabled (mut i32) (i32.const 0x0000))
+(global $psgVolB (mut i32) (i32.const 0x0000))
+(global $psgEnvB (mut i32) (i32.const 0x0000))
+(global $psgCntB (mut i32) (i32.const 0x0000))
+(global $psgBitB (mut i32) (i32.const 0x0000))
+
+(global $psgToneC (mut i32) (i32.const 0x0000))
+(global $psgToneCEnabled (mut i32) (i32.const 0x0000))
+(global $psgNoiseCEnabled (mut i32) (i32.const 0x0000))
+(global $psgVolC (mut i32) (i32.const 0x0000))
+(global $psgEnvC (mut i32) (i32.const 0x0000))
+(global $psgCntC (mut i32) (i32.const 0x0000))
+(global $psgBitC (mut i32) (i32.const 0x0000))
+
+(global $psgNoiseSeed (mut i32) (i32.const 0x0000))
+(global $psgNoiseFreq (mut i32) (i32.const 0x0000))
+(global $psgCntNoise (mut i32) (i32.const 0x0000))
+(global $psgBitNoise (mut i32) (i32.const 0x0000))
+
+(global $psgEnvFreq (mut i32) (i32.const 0x0000))
+(global $psgEnvStyle (mut i32) (i32.const 0x0000))
+(global $psgCntEnv (mut i32) (i32.const 0x0000))
+(global $psgPosEnv (mut i32) (i32.const 0x0000))
+
+;; PSG Volumes
+(data (i32.const 0x23_3800) "\00\00\01\02\3c\03\d7\04\83\07\a6\0c\3e\13\93\23\68\28\d4\45\6a\60\ea\76\bc\97\a6\b8\52\dc\ff\ff")
 
 ;; ----------------------------------------------------------------------------
 ;; Sound device routines
+
+(func $initSound
+  i32.const 0 set_global $psgToneA
+  i32.const 0 set_global $psgToneAEnabled
+  i32.const 0 set_global $psgNoiseAEnabled
+  i32.const 0 set_global $psgVolA
+  i32.const 0 set_global $psgEnvA
+  i32.const 0 set_global $psgCntA
+  i32.const 0 set_global $psgBitA
+
+  i32.const 0 set_global $psgToneB
+  i32.const 0 set_global $psgToneBEnabled
+  i32.const 0 set_global $psgNoiseBEnabled
+  i32.const 0 set_global $psgVolB
+  i32.const 0 set_global $psgEnvB
+  i32.const 0 set_global $psgCntB
+  i32.const 0 set_global $psgBitB
+
+  i32.const 0 set_global $psgToneC
+  i32.const 0 set_global $psgToneCEnabled
+  i32.const 0 set_global $psgNoiseCEnabled
+  i32.const 0 set_global $psgVolC
+  i32.const 0 set_global $psgEnvC
+  i32.const 0 set_global $psgCntC
+  i32.const 0 set_global $psgBitC
+
+  i32.const 0xffff set_global $psgNoiseSeed
+  i32.const 0 set_global $psgNoiseFreq
+  i32.const 0 set_global $psgCntNoise
+  i32.const 0 set_global $psgBitNoise
+
+  i32.const 0 set_global $psgEnvFreq
+  i32.const 0 set_global $psgEnvStyle
+  i32.const 0 set_global $psgCntEnv
+  i32.const 0 set_global $psgPosEnv
+
+  i32.const 0 set_global $psgRegisterIndex
+  i32.const 0 set_global $psgNextClockTact
+  i32.const 0 set_global $psgOrphanSamples
+  i32.const 0 set_global $psgOrphanSum
+)
 
 ;; Sets the index of the PSG register
 (func $setPsgRegisterIndex (param $index i32)
@@ -102,126 +152,188 @@
 
 ;; Writes the value of the selected PSG register
 (func $psgWriteRegisterValue (param $v i32)
+
+  ;; Just for the sake of safety
+  (i32.and (get_local $v) (i32.const 0xff))
+  set_local $v
+
   ;; Write the native register values
   (i32.store8
     (i32.add (get_global $PSG_REGS) (get_global $psgRegisterIndex))
     (get_local $v)
   )
 
-  ;; Write preprocessed register values
-  ;; Check for TONE values
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 6))
+  ;; Tone A (lower 8 bits)
+  (i32.eqz (get_global $psgRegisterIndex))
   if
-    ;; Lower 8-bit values are already stored
-    (i32.and (get_global $psgRegisterIndex) (i32.const 1))
-    if
-      ;; Store upper 4-bit values
-      (i32.add
-        (get_global $PSG_REGS)
-        (get_global $psgRegisterIndex)
-      )
-      (i32.and (get_local $v) (i32.const 0x0f))
-      i32.store8
-    end
+    (i32.or 
+      (i32.and (get_global $psgToneA) (i32.const 0x0f00))
+      (get_local $v)
+    )
+    set_global $psgToneA
     return
   end
 
-  ;; Check for NOISE values
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 6))
+  ;; Tone A (upper 4 bits)
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 1))
   if
-    (get_global $PSG_REGS)
-    (i32.and (get_local $v) (i32.const 0x1f))
-    i32.store8 offset=6
+    (i32.or 
+      (i32.and (get_global $psgToneA) (i32.const 0x0ff))
+      (i32.shl (i32.and (get_local $v) (i32.const 0x0f)) (i32.const 8))
+    )
+    set_global $psgToneA
     return
   end
 
-  ;; Check for mixer values
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 7))
+  ;; Tone B (lower 8 bits)
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 2))
   if
-    (i32.store8 offset=16
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x01))
+    (i32.or 
+      (i32.and (get_global $psgToneB) (i32.const 0x0f00))
+      (get_local $v)
     )
-    (i32.store8 offset=17
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x02))
-    )
-    (i32.store8 offset=18
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x04))
-    )
-    (i32.store8 offset=19
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x08))
-    )
-    (i32.store8 offset=20
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x10))
-    )
-    (i32.store8 offset=21
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x20))
-    )
+    set_global $psgToneB
     return
   end
 
-  ;; Check for volume values
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 8))
+  ;; Tone B (upper 4 bits)
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 3))
   if
-    (i32.store8 offset=22
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x0f))
+    (i32.or 
+      (i32.and (get_global $psgToneB) (i32.const 0x0ff))
+      (i32.shl (i32.and (get_local $v) (i32.const 0x0f)) (i32.const 8))
     )
-    (i32.store8 offset=25
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x10))
-    )
-    return
-  end
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 9))
-  if
-    (i32.store8 offset=23
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x0f))
-    )
-    (i32.store8 offset=26
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x10))
-    )
-    return
-  end
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 10))
-  if
-    (i32.store8 offset=24
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x0f))
-    )
-    (i32.store8 offset=27
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x10))
-    )
+    set_global $psgToneB
     return
   end
 
-  ;; Check envelope frequency
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 12))
+  ;; Tone C (lower 8 bits)
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 4))
   if
-    ;; Store upper 4 bits
-    (i32.store8 offset=12
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x0f))
+    (i32.or 
+      (i32.and (get_global $psgToneC) (i32.const 0x0f00))
+      (get_local $v)
     )
+    set_global $psgToneC
+    return
+  end
+
+  ;; Tone C (upper 4 bits)
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 5))
+  if
+    (i32.or 
+      (i32.and (get_global $psgToneC) (i32.const 0x0ff))
+      (i32.shl (i32.and (get_local $v) (i32.const 0x0f)) (i32.const 8))
+    )
+    set_global $psgToneC
+    return
+  end
+
+  ;; Noise frequency
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 6))
+  if
+    (i32.mul 
+      (i32.and (get_local $v) (i32.const 0x1f))
+      (i32.const 2)
+    )
+    set_global $psgNoiseFreq
+    return
+  end
+
+  ;; Mixer flags
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 7))
+  if
+    (i32.and (get_local $v) (i32.const 0x01))
+    (i32.xor (i32.const 0x01))
+    set_global $psgToneAEnabled
+
+    (i32.and (get_local $v) (i32.const 0x02))
+    (i32.xor (i32.const 0x02))
+    (i32.shr_u (i32.const 1))
+    set_global $psgToneBEnabled
+
+    (i32.and (get_local $v) (i32.const 0x04))
+    (i32.xor (i32.const 0x04))
+    (i32.shr_u (i32.const 2))
+    set_global $psgToneCEnabled
+
+    (i32.and (get_local $v) (i32.const 0x08))
+    (i32.xor (i32.const 0x08))
+    (i32.shr_u (i32.const 3))
+    set_global $psgNoiseAEnabled
+
+    (i32.and (get_local $v) (i32.const 0x10))
+    (i32.xor (i32.const 0x10))
+    (i32.shr_u (i32.const 4))
+    set_global $psgNoiseBEnabled
+
+    (i32.and (get_local $v) (i32.const 0x20))
+    (i32.xor (i32.const 0x20))
+    (i32.shr_u (i32.const 5))
+    set_global $psgNoiseCEnabled
+    return
+  end
+
+  ;; Volume A
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 8))
+  if
+    (i32.and (get_local $v) (i32.const 0x0f))
+    set_global $psgVolA
+    (i32.and (get_local $v) (i32.const 0x10))
+    set_global $psgEnvA
+    return
+  end
+
+  ;; Volume B
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 9))
+  if
+    (i32.and (get_local $v) (i32.const 0x0f))
+    set_global $psgVolB
+    (i32.and (get_local $v) (i32.const 0x10))
+    set_global $psgEnvB
+    return
+  end
+
+  ;; Volume C
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 10))
+  if
+    (i32.and (get_local $v) (i32.const 0x0f))
+    set_global $psgVolC
+    (i32.and (get_local $v) (i32.const 0x10))
+    set_global $psgEnvC
+    return
+  end
+
+  ;; Envelope fequency (lower 8 bit)
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 11))
+  if
+    (i32.or 
+      (i32.and (get_global $psgEnvFreq) (i32.const 0xff00))
+      (get_local $v)
+    )
+    set_global $psgEnvFreq
+    return
+  end
+
+  ;; Envelope frequency (upper 8 bits)
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 12))
+  if
+    (i32.or 
+      (i32.and (get_global $psgEnvFreq) (i32.const 0x0ff))
+      (i32.shl (get_local $v) (i32.const 8))
+    )
+    set_global $psgEnvFreq
     return
   end
   
   ;; Check envelope shape
-  (i32.lt_u (get_global $psgRegisterIndex) (i32.const 12))
+  (i32.eq (get_global $psgRegisterIndex) (i32.const 13))
   if
     ;; Store lower 4 bits
-    (i32.store8 offset=13
-      (get_global $PSG_REGS)
-      (i32.and (get_local $v) (i32.const 0x0f))
-    )
+    (i32.and (get_local $v) (i32.const 0x0f))
+    set_global $psgEnvStyle
+    i32.const 0 set_global $psgPosEnv
+    i32.const 0 set_global $psgCntEnv
     return
   end
 )
@@ -257,8 +369,9 @@
       i32.const -1
       i32.const 0x20
       (i32.and (get_local $env) (i32.const 4))
+      select
       set_local $vol
-      
+
       ;; Iterate through envelope positions
       i32.const 0 set_local $pos
       loop $posLoop
@@ -290,18 +403,18 @@
                 ;; Set start volume according to direction
                 i32.const 0
                 i32.const 31
-                (i32.gt_u (get_local $dir) (i32.const 0))
+                (i32.gt_s (get_local $dir) (i32.const 0))
                 select
                 set_local $vol
 
                 ;; Hold is set?
-                (i32.and (get_local $env) (i32.const 1))
+                (i32.and (get_local $env) (i32.const 0x01))
                 if
                   ;; Hold, and set up next volume
                   i32.const 1 set_local $hold
                   i32.const 31
                   i32.const 0
-                  (i32.gt_u (get_local $dir) (i32.const 0))
+                  (i32.gt_s (get_local $dir) (i32.const 0))
                   select
                   set_local $vol
                 end
@@ -335,83 +448,189 @@
   end
 )
 
-;; Creates PSG sound samples
-(func $createPsgSoundSamples
-  (local $psgTact i64)
-  (local $tone_A i32)
-  (local $tone_B i32)
-  (local $tone_C i32)
-  loop $psgLoop
-    (i32.le_u (get_global $psgNextSampleTact) (get_global $tacts))
+;; Generates a PSG output value
+(func $generatePsgOutputValue
+  (local $tmp i32)
+  (local $vol i32)
+
+  i32.const 0 set_local $vol
+  
+  ;; Increment TONE A counter
+  (i32.add (get_global $psgCntA) (i32.const 1))
+  tee_local $tmp
+  set_global $psgCntA
+
+  ;; CNT_A >= TONE A?
+  (i32.ge_u (get_local $tmp) (get_global $psgToneA))
+  if
+    ;; Reset counter and reverse output bit
+    i32.const 0 set_global $psgCntA
+    (i32.xor (get_global $psgBitA) (i32.const 0x01))
+    set_global $psgBitA
+  end
+
+  ;; Increment TONE B counter
+  (i32.add (get_global $psgCntB) (i32.const 1))
+  tee_local $tmp
+  set_global $psgCntB
+
+  ;; CNT_B >= TONE B?
+  (i32.ge_u (get_local $tmp) (get_global $psgToneB))
+  if
+    ;; Reset counter and reverse output bit
+    i32.const 0 set_global $psgCntB
+    (i32.xor (get_global $psgBitB) (i32.const 0x01))
+    set_global $psgBitB
+  end
+
+  ;; Increment TONE C counter
+  (i32.add (get_global $psgCntC) (i32.const 1))
+  tee_local $tmp
+  set_global $psgCntC
+
+  ;; CNT_C >= TONE C?
+  (i32.ge_u (get_local $tmp) (get_global $psgToneC))
+  if
+    ;; Reset counter and reverse output bit
+    i32.const 0 set_global $psgCntC
+    (i32.xor (get_global $psgBitC) (i32.const 0x01))
+    set_global $psgBitC
+  end
+
+  ;; Calculate noise sample
+  (i32.add (get_global $psgCntNoise) (i32.const 1))
+  set_global $psgCntNoise
+  (i32.ge_u (get_global $psgCntNoise) (get_global $psgNoiseFreq))
+  if
+    ;; It is time to generate the next noise sample
+    i32.const 0 set_global $psgCntNoise
+    (i32.add 
+      (i32.mul (i32.const 2) (get_global $psgNoiseSeed)) 
+      (i32.const 1)
+    )                                                      ;; [ seed * 2 + 1 ]
+    (i32.shr_u (get_global $psgNoiseSeed) (i32.const 16))  ;; [ seed * 2 + 1, seed >> 16 ]
+    (i32.shr_u (get_global $psgNoiseSeed) (i32.const 13))  ;; [ seed * 2 + 1, seed >> 16, seed >> 13 ]
+    i32.xor
+    (i32.and (i32.const 0x01))
+    i32.xor
+    set_global $psgNoiseSeed ;; New noise seed
+
+    (i32.and (i32.shr_u (get_global $psgNoiseSeed) (i32.const 16)) (i32.const 0x01))
+    set_global $psgBitNoise
+  end
+
+  ;; Calculate envelope position
+  (i32.add (get_global $psgCntEnv) (i32.const 1))
+  set_global $psgCntEnv
+  (i32.ge_u (get_global $psgCntEnv) (get_global $psgEnvFreq))
+  if
+    ;; Move to the new position
+    i32.const 0 set_global $psgCntEnv
+    (i32.add (get_global $psgPosEnv) (i32.const 1))
+    set_global $psgPosEnv
+    (i32.gt_u (get_global $psgPosEnv) (i32.const 0x7f))
     if
-      ;; Calculate PSG tact (64 bit)
-      (i64.add
-        (i64.mul 
-          (i64.extend_u/i32 (get_global $frameCount))
-          (i64.extend_u/i32 (get_global $tactsInFrame))
-        )
-        (i64.extend_u/i32 (get_global $tacts))
-      )
-      (i64.shl (i64.const 5))
-      set_local $psgTact
-
-      ;; ;; Calc TONE A bit
-      ;; (i64.div_u 
-      ;;   (get_local $psgTact) 
-      ;;   (i64.extend_u/i32 (i32.load16_u offset=0 (get_global $PSG_REGS)))
-      ;; )
-      ;; (i64.and (i64.const 0x01))
-      ;; (i32.wrap/i64)
-      ;; set_local $tone_A
-
-      ;; ;; Calc TONE B bit
-      ;; (i64.div_u 
-      ;;   (get_local $psgTact) 
-      ;;   (i64.extend_u/i32 (i32.load16_u offset=2 (get_global $PSG_REGS)))
-      ;; )
-      ;; (i64.and (i64.const 0x01))
-      ;; (i32.wrap/i64)
-      ;; set_local $tone_B
-
-      ;; ;; Calc TONE C bit
-      ;; (i64.div_u 
-      ;;   (get_local $psgTact) 
-      ;;   (i64.extend_u/i32 (i32.load16_u offset=4 (get_global $PSG_REGS)))
-      ;; )
-      ;; (i64.and (i64.const 0x01))
-      ;; (i32.wrap/i64)
-      ;; set_local $tone_C
-
-      ;; Note the last calculation tact
-      get_local $psgTact set_global $psgPreviousTact
-
-      ;; Store the next sample
-      (i32.add (get_global $PSG_SAMPLE_BUFFER) (get_global $psgSampleCount))
-
-      ;; TODO: Use the sample bit to store
-      i32.const 0
-      i32.store8 
-
-      ;; Adjust sample count
-      (i32.add (get_global $psgSampleCount) (i32.const 1))
-      set_global $psgSampleCount
-
-      ;; Calculate the next sound sample tact
-      (i32.add (get_global $psgGateValue) (get_global $psgLowerGate))
-      set_global $psgGateValue
-      (i32.add (get_global $psgNextSampleTact) (get_global $psgSampleLength))
-      set_global $psgNextSampleTact
-
-      (i32.ge_u (get_global $psgGateValue) (get_global $psgUpperGate))
-      if
-        ;; Shift the next sample 
-        (i32.add (get_global $psgNextSampleTact) (i32.const 1))
-        set_global $psgNextSampleTact
-
-        (i32.sub (get_global $psgGateValue) (get_global $psgUpperGate))
-        set_global $psgGateValue
-      end
-      br $psgLoop
+      i32.const 0x40 set_global $psgPosEnv
     end
   end
+
+  ;; Add Channel A volume value
+  (i32.or
+    (i32.and (get_global $psgBitA) (get_global $psgToneAEnabled))
+    (i32.and (get_global $psgBitNoise) (get_global $psgNoiseAEnabled))
+  )
+  if
+    get_global $psgEnvA
+    if (result i32)
+      (i32.add
+        (i32.add 
+          (get_global $PSG_ENVELOP_TABLE)
+          (i32.mul (i32.const 128) (get_global $psgEnvStyle))
+        )
+        (get_global $psgPosEnv)
+      )
+      i32.load8_u
+    else
+      (i32.mul (i32.const 2) (get_global $psgVolA))
+      (i32.add (i32.const 1))
+    end
+
+    ;; At this point $vol is 0-31, let's convert it to 0-65535
+    (i32.add 
+      (i32.and (i32.const 0x1e))
+      (get_global $PSG_VOLUME_TABLE)
+    )
+    i32.load16_u
+    (i32.add (get_local $vol))
+    set_local $vol
+  end
+
+  ;; Add Channel B volume value
+  (i32.or
+    (i32.and (get_global $psgBitB) (get_global $psgToneBEnabled))
+    (i32.and (get_global $psgBitNoise) (get_global $psgNoiseBEnabled))
+  )
+  if
+    get_global $psgEnvB
+    if (result i32)
+      (i32.add
+        (i32.add 
+          (get_global $PSG_ENVELOP_TABLE)
+          (i32.mul (i32.const 128) (get_global $psgEnvStyle))
+        )
+        (get_global $psgPosEnv)
+      )
+      i32.load8_u
+    else
+      (i32.mul (i32.const 2) (get_global $psgVolB))
+      (i32.add (i32.const 1))
+    end
+
+    ;; At this point $vol is 0-31, let's convert it to 0-65535
+    (i32.add 
+      (i32.and (i32.const 0x1e))
+      (get_global $PSG_VOLUME_TABLE)
+    )
+    i32.load16_u
+    (i32.add (get_local $vol))
+    set_local $vol
+  end
+
+  ;; Add Channel C volume value
+  (i32.or
+    (i32.and (get_global $psgBitC) (get_global $psgToneCEnabled))
+    (i32.and (get_global $psgBitNoise) (get_global $psgNoiseCEnabled))
+  )
+  if
+    get_global $psgEnvC
+    if (result i32)
+      (i32.add
+        (i32.add 
+          (get_global $PSG_ENVELOP_TABLE)
+          (i32.mul (i32.const 128) (get_global $psgEnvStyle))
+        )
+        (get_global $psgPosEnv)
+      )
+      i32.load8_u
+    else
+      (i32.mul (i32.const 2) (get_global $psgVolC))
+      (i32.add (i32.const 1))
+    end
+ 
+    ;; At this point $vol is 0-31, let's convert it to 0-65535
+    (i32.add 
+      (i32.and (i32.const 0x1e))
+      (get_global $PSG_VOLUME_TABLE)
+    )
+    i32.load16_u
+    (i32.add (get_local $vol))
+    set_local $vol
+  end
+
+  (i32.add (get_local $vol) (get_global $psgOrphanSum))
+  set_global $psgOrphanSum
+
+  ;; Increment the number of orphan samples
+  (i32.add (get_global $psgOrphanSamples) (i32.const 1))
+  set_global $psgOrphanSamples
 )

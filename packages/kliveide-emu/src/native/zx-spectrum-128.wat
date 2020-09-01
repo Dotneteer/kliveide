@@ -174,6 +174,7 @@
   call $calcScreenAttributes
   call $initRenderingTactTable
   call $initEnvelopeTables
+  call $initSound
 
   ;; PSG sound configuration
   i32.const 1 set_global $psgSupportsSound

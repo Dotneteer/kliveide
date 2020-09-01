@@ -89,14 +89,14 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   pixelBufferPtr: number;
 
   // --- Beeper state
-  beeperSampleRate: number;
-  beeperSampleLength: number;
-  beeperLowerGate: number;
-  beeperUpperGate: number;
-  beeperGateValue: number;
-  beeperNextSampleTact: number;
+  audioSampleRate: number;
+  audioSampleLength: number;
+  audioLowerGate: number;
+  audioUpperGate: number;
+  audioGateValue: number;
+  audioNextSampleTact: number;
   beeperLastEarBit: boolean;
-  beeperSampleCount: number;
+  audioSampleCount: number;
 
   // --- Tape state
   tapeMode: number;

@@ -38,9 +38,10 @@ import { TapReader } from "../../shared/tape/tap-file";
 import { RegisterData } from "../../shared/spectrum/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import {
-  BANK_0_OFFS,
   MEMWRITE_MAP,
   BEEPER_SAMPLE_BUFFER,
+  PSG_SAMPLE_BUFFER,
+  PSG_ENVELOP_TABLE,
 } from "../../native/api/memory-map";
 
 /**
@@ -59,7 +60,6 @@ export class SpectrumEngine {
   private _executionStateChanged = new LiteEvent<ExecutionStateChangedArgs>();
   private _screenRefreshed = new LiteEvent<void>();
   private _vmStoppedWithError = new LiteEvent<void>();
-  private _beeperSamplesEmitted = new LiteEvent<number[]>();
 
   private _completionTask: Promise<void> | null = null;
 
@@ -211,13 +211,6 @@ export class SpectrumEngine {
    */
   get screenRefreshed(): ILiteEvent<void> {
     return this._screenRefreshed.expose();
-  }
-
-  /**
-   * This event is raised when a new beeper sample frame is emitted
-   */
-  get beeperSamplesEmitted(): ILiteEvent<number[]> {
-    return this._beeperSamplesEmitted.expose();
   }
 
   /**
@@ -390,14 +383,11 @@ export class SpectrumEngine {
     if (
       this.executionState === ExecutionState.None ||
       this.executionState === ExecutionState.Stopped ||
-      this.executionState === ExecutionState.Paused
+      this.executionState === ExecutionState.Paused ||
+      !this._completionTask
     ) {
       // --- Nothing to pause
-      return;
-    }
-
-    if (!this._completionTask) {
-      // --- No completion to wait for
+      await this.cleanupAudio();
       return;
     }
 
@@ -416,12 +406,14 @@ export class SpectrumEngine {
     switch (this._vmState) {
       case ExecutionState.None:
       case ExecutionState.Stopped:
+        await this.cleanupAudio();
         return;
 
       case ExecutionState.Paused:
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
         this.executionState = ExecutionState.Stopped;
+        await this.cleanupAudio();
         break;
 
       default:
@@ -438,7 +430,7 @@ export class SpectrumEngine {
    */
   async restart(): Promise<void> {
     await this.stop();
-    this.start();
+    await this.start();
   }
 
   /**
@@ -513,12 +505,19 @@ export class SpectrumEngine {
     this._cancelled = true;
     await this._completionTask;
     this._completionTask = null;
+    await this.cleanupAudio();
+  }
+
+  /**
+   * Cleans up audio
+   */
+  async cleanupAudio(): Promise<void> {
     if (this._beeperRenderer) {
-      this._beeperRenderer.closeAudio();
+      await this._beeperRenderer.closeAudio();
       this._beeperRenderer = null;
     }
     if (this._psgRenderer) {
-      this._psgRenderer.closeAudio();
+      await this._psgRenderer.closeAudio();
       this._psgRenderer = null;
     }
   }
@@ -588,14 +587,7 @@ export class SpectrumEngine {
         }
 
         // --- Stop audio
-        if (this._beeperRenderer) {
-          this._beeperRenderer.closeAudio();
-          this._beeperRenderer = null;
-        }
-        if (this._psgRenderer) {
-          this._psgRenderer.closeAudio();
-          this._psgRenderer = null;
-        }
+        await this.cleanupAudio();
         return;
       }
 
@@ -611,15 +603,28 @@ export class SpectrumEngine {
       const emuState = rendererProcessStore.getState().emulatorPanelState;
       if (!this._beeperRenderer) {
         this._beeperRenderer = new AudioRenderer(
-          resultState.beeperSampleLength
+          resultState.tactsInFrame / resultState.audioSampleLength
         );
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
+      console.log("Beeper");
       const beeperSamples = emuState.muted
-        ? new Array(resultState.beeperSampleCount).fill(0)
-        : mh.readBytes(0, resultState.beeperSampleCount);
+        ? new Array(resultState.audioSampleCount).fill(0)
+        : mh.readBytes(0, resultState.audioSampleCount);
       this._beeperRenderer.storeSamples(beeperSamples);
-      machine._beeperSamplesEmitted.fire(beeperSamples);
+
+      // --- Obtain psg samples
+      if (!this._psgRenderer) {
+        this._psgRenderer = new AudioRenderer(
+          resultState.tactsInFrame / resultState.audioSampleLength
+        );
+      }
+      mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
+      console.log("PSG");
+      const psgSamples = emuState.muted
+        ? new Array(resultState.audioSampleCount).fill(0)
+        : mh.readWords(0, resultState.audioSampleCount).map((v) => v / 65535);
+      this._psgRenderer.storeSamples(psgSamples);
 
       // --- Check if a tape should be loaded
       if (
@@ -642,7 +647,6 @@ export class SpectrumEngine {
       this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
 
       // --- Wait for the next screen frame
-
       const toWait = Math.floor(nextFrameTime - curTime);
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
@@ -759,6 +763,7 @@ export class SpectrumEngine {
       return true;
     }
 
+    reader.seek(0);
     const tapReader = new TapReader(reader);
     if (tapReader.readContents()) {
       const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);

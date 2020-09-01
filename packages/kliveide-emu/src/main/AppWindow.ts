@@ -17,6 +17,7 @@ import {
   ipcMain,
   IpcMainEvent,
   webContents,
+  dialog,
 } from "electron";
 import {
   mainProcessStore,
@@ -38,10 +39,16 @@ import {
 } from "../../src/shared/utils/channel-ids";
 import { processRendererMessage } from "./mainMessageProcessor";
 import { EmulatorPanelState, IdeConnection } from "../shared/state/AppState";
-import { emulatorSetSavedDataAction, emulatorRequestTypeAction } from "../shared/state/redux-emulator-state";
+import {
+  emulatorSetSavedDataAction,
+  emulatorRequestTypeAction,
+  emulatorSetTapeContenstAction,
+} from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
 import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
+import { checkTapeFile } from "../shared/tape/readers";
+import { BinaryReader } from "../shared/utils/BinaryReader";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -196,11 +203,15 @@ export class AppWindow {
     );
 
     // --- Catch state changes
-    const emulatorStateAware = createMainProcessStateAware("emulatorPanelState");
+    const emulatorStateAware = createMainProcessStateAware(
+      "emulatorPanelState"
+    );
     emulatorStateAware.stateChanged.on((state) =>
       this.processStateChange(state as EmulatorPanelState)
     );
-    const ideConnectionStateAware = createMainProcessStateAware("ideConnection");
+    const ideConnectionStateAware = createMainProcessStateAware(
+      "ideConnection"
+    );
     ideConnectionStateAware.stateChanged.on((state) => {
       const conn = state as IdeConnection;
       if (conn.connected) {
@@ -208,7 +219,7 @@ export class AppWindow {
       } else {
         this.enableMachineMenu();
       }
-    })
+    });
   }
 
   /**
@@ -270,30 +281,36 @@ export class AppWindow {
           label: "ZX Spectrum 48",
           type: "radio",
           checked: true,
-          click: (mi) => this.requestMachineType(mi.id)
+          click: (mi) => this.requestMachineType(mi.id),
         },
         {
           id: MACHINE_MENU_ITEMS[1],
           label: "ZX Spectrum 128",
           type: "radio",
           checked: false,
-          click: (mi) => this.requestMachineType(mi.id)
+          click: (mi) => this.requestMachineType(mi.id),
         },
         {
           id: MACHINE_MENU_ITEMS[2],
           label: "ZX Spectrum +3E",
           type: "radio",
           checked: false,
-          click: (mi) => this.requestMachineType(mi.id)
+          click: (mi) => this.requestMachineType(mi.id),
         },
         {
           id: MACHINE_MENU_ITEMS[3],
           label: "ZX Spectrum Next",
           type: "radio",
           checked: false,
-          click: (mi) => this.requestMachineType(mi.id)
+          click: (mi) => this.requestMachineType(mi.id),
         },
-      ]
+        { type: "separator" },
+        {
+          id: "set_tape",
+          label: "Set tape file...",
+          click: async () => await this.selectTapeFile()
+        },
+      ],
     });
 
     if (__DARWIN__) {
@@ -354,7 +371,9 @@ export class AppWindow {
    * Sets the active menu according to the current machine type
    */
   setMachineTypeMenu(type: string): void {
-    const menuItem = Menu.getApplicationMenu().getMenuItemById(`machine_${type}`);
+    const menuItem = Menu.getApplicationMenu().getMenuItemById(
+      `machine_${type}`
+    );
     if (menuItem) {
       menuItem.checked = true;
     }
@@ -380,26 +399,27 @@ export class AppWindow {
     if (this._lastMachineType !== state.currentType) {
       // --- Current machine types has changed
       this._lastMachineType = state.currentType;
-      this.setMachineTypeMenu(this._lastMachineType)
+      this.setMachineTypeMenu(this._lastMachineType);
     }
-
 
     if (state?.savedData && state.savedData.length > 0) {
       const data = state.savedData;
-      const ideConfig = mainProcessStore.getState().ideConfiguration
+      const ideConfig = mainProcessStore.getState().ideConfiguration;
       if (!ideConfig) {
-        return
+        return;
       }
 
       // --- Create filename
-      const tapeFilePath = path.join(ideConfig.projectFolder, ideConfig.saveFolder);
+      const tapeFilePath = path.join(
+        ideConfig.projectFolder,
+        ideConfig.saveFolder
+      );
       const nameBytes = data.slice(2, 12);
       let name = "";
       for (let i = 0; i < 10; i++) {
         name += String.fromCharCode(nameBytes[i]);
       }
       const tapeFileName = path.join(tapeFilePath, `${name.trimRight()}.tzx`);
-      console.log(tapeFileName);
 
       // --- We use this writer to save file info into
       const writer = new BinaryWriter();
@@ -445,6 +465,26 @@ export class AppWindow {
   stopWatchingIde(): void {
     this._watchingIde = false;
   }
+
+  async selectTapeFile(): Promise<void> {
+    const result = await dialog.showOpenDialog(this.window, {
+      title: "Open tape file",
+      filters: [
+        { name: "Tape files", extensions: ["tzx", "tap"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    });
+    if (!result.canceled) {
+      try {
+        const contents = fs.readFileSync(result.filePaths[0]);
+        if (checkTapeFile(new BinaryReader(contents))) {
+          mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
+        }
+      } catch (err) {
+        // --- This error is intentionally ignored
+      }
+    }
+  }
 }
 
 /**
@@ -454,5 +494,5 @@ const MACHINE_MENU_ITEMS = [
   "machine_48",
   "machine_128",
   "machine_p3e",
-  "machine_next"
+  "machine_next",
 ];

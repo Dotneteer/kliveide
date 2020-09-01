@@ -31,20 +31,20 @@ describe("ZX Spectrum 48 - Beeper", () => {
     machine.setAudioSampleRate(44_100);
     const s = machine.getMachineState();
 
-    expect(s.beeperSampleRate).toBe(44_100);
-    expect(s.beeperSampleLength).toBe(79);
-    expect(s.beeperLowerGate).toBe(36508);
-    expect(s.beeperUpperGate).toBe(100000);
+    expect(s.audioSampleRate).toBe(44_100);
+    expect(s.audioSampleLength).toBe(79);
+    expect(s.audioLowerGate).toBe(36508);
+    expect(s.audioUpperGate).toBe(100000);
   });
 
   it("setAudioSampleRate #2", () => {
     machine.setAudioSampleRate(25_000);
     const s = machine.getMachineState();
 
-    expect(s.beeperSampleRate).toBe(25_000);
-    expect(s.beeperSampleLength).toBe(140);
-    expect(s.beeperLowerGate).toBe(0);
-    expect(s.beeperUpperGate).toBe(100000);
+    expect(s.audioSampleRate).toBe(25_000);
+    expect(s.audioSampleLength).toBe(140);
+    expect(s.audioLowerGate).toBe(0);
+    expect(s.audioUpperGate).toBe(100000);
   });
 
   it("Beeper sample #1", () => {
@@ -90,12 +90,12 @@ describe("ZX Spectrum 48 - Beeper", () => {
     expect(s.pc).toBe(0x8020);
     expect(s.tacts).toBe(13571);
     expect(s.frameCompleted).toBe(false);
-    expect(s.beeperSampleLength).toBe(350);
-    expect(s.beeperSampleCount).toBe(39);
+    expect(s.audioSampleLength).toBe(350);
+    expect(s.audioSampleCount).toBe(39);
     const mh = new MemoryHelper(api, BEEPER_SAMPLE_BUFFER);
     const expected = "011110000011111000001111100000111100000";
     let samples = "";
-    for (let i = 0; i < s.beeperSampleCount; i++) {
+    for (let i = 0; i < s.audioSampleCount; i++) {
       samples += mh.readByte(i) === 1 ? "1" : "0";
     }
     expect(samples).toBe(expected);
@@ -144,12 +144,12 @@ describe("ZX Spectrum 48 - Beeper", () => {
     expect(s.pc).toBe(0x8020);
     expect(s.tacts).toBe(13571);
     expect(s.frameCompleted).toBe(false);
-    expect(s.beeperSampleLength).toBe(269);
-    expect(s.beeperSampleCount).toBe(51);
+    expect(s.audioSampleLength).toBe(269);
+    expect(s.audioSampleCount).toBe(51);
     const mh = new MemoryHelper(api, BEEPER_SAMPLE_BUFFER);
     const expected = "011111100000011111100000001111110000001111111000000";
     let samples = "";
-    for (let i = 0; i < s.beeperSampleCount; i++) {
+    for (let i = 0; i < s.audioSampleCount; i++) {
       samples += mh.readByte(i) === 1 ? "1" : "0";
     }
     expect(samples).toBe(expected);
@@ -199,12 +199,12 @@ describe("ZX Spectrum 48 - Beeper", () => {
     expect(s.tacts).toBe(6);
     expect(s.frameCount).toBe(1);
     expect(s.frameCompleted).toBe(true);
-    expect(s.beeperSampleLength).toBe(187);
-    expect(s.beeperSampleCount).toBe(374);
+    expect(s.audioSampleLength).toBe(187);
+    expect(s.audioSampleCount).toBe(374);
     const mh = new MemoryHelper(api, BEEPER_SAMPLE_BUFFER);
     const expected = "01111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     let samples = "";
-    for (let i = 0; i < s.beeperSampleCount; i++) {
+    for (let i = 0; i < s.audioSampleCount; i++) {
       samples += mh.readByte(i) === 1 ? "1" : "0";
     }
     expect(samples).toBe(expected);
@@ -255,12 +255,12 @@ describe("ZX Spectrum 48 - Beeper", () => {
     expect(s.tacts).toBe(8);
     expect(s.frameCount).toBe(2);
     expect(s.frameCompleted).toBe(true);
-    expect(s.beeperSampleLength).toBe(187);
-    expect(s.beeperSampleCount).toBe(373);
+    expect(s.audioSampleLength).toBe(187);
+    expect(s.audioSampleCount).toBe(373);
     const mh = new MemoryHelper(api, BEEPER_SAMPLE_BUFFER);
     const expected = "0000000111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111";
     let samples = "";
-    for (let i = 0; i < s.beeperSampleCount; i++) {
+    for (let i = 0; i < s.audioSampleCount; i++) {
       samples += mh.readByte(i) === 1 ? "1" : "0";
     }
     //console.log(samples);

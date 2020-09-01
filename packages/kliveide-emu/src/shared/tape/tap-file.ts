@@ -18,7 +18,7 @@ export class TapReader extends TapeFileReader {
         this.tapeFileBlocks.push(tapBlock);
       }
       return true;
-    } catch {
+    } catch (err) {
       // --- This exception is intentionally ignored
       return false;
     }
@@ -40,12 +40,18 @@ class TapDataBlock implements ITapeDataBlock {
   pauseAfter = 1000;
 
   /**
+   * This contains the playable bytes of the block. If undefined, the
+   * block has no bytes to play
+   */
+  playableBytes: Uint8Array = new Uint8Array(0);
+
+  /**
    * Reads the content of the block from the specified binary stream.
    * @param reader Stream to read the block from
    */
   readFrom(reader: BinaryReader): void {
     const length = reader.readUint16();
-    this.data = new Uint8Array(reader.readBytes(length));
+    this.playableBytes = this.data = new Uint8Array(reader.readBytes(length));
   }
 
   /**

@@ -97,7 +97,7 @@
     (i32.and (get_local $portValue) (i32.const 0xbf))
     call $getTapeEarBit tee_local $earBit
     (i32.shl (i32.const 4))
-    call $processEarBit
+    set_global $beeperLastEarBit
     (i32.shl (get_local $earBit) (i32.const 6))
     i32.or
   else
@@ -168,9 +168,10 @@
   (i32.and (get_local $v) (i32.const 0x07))
   set_global $borderColor
 
-  ;; Let the beeper device process the EAR bit
+  ;; Let's store the last EAR bit
   (i32.and (get_local $v) (i32.const 0x10))
-  (call $processEarBit (tee_local $bit4))
+  tee_local $bit4
+  set_global $beeperLastEarBit
 
   ;; Set the last value of bit3
   (i32.and (get_local $v) (i32.const 0x08))

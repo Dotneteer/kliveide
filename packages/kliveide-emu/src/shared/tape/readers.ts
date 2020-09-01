@@ -12,6 +12,7 @@ export function checkTapeFile(reader: BinaryReader): boolean {
     return true;
   }
 
+  reader.seek(0);
   const tapReader = new TapReader(reader);
   if (tapReader.readContents()) {
     return true;

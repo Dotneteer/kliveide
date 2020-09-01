@@ -218,4 +218,7 @@
 ;; Envelop tables for PSG sound generation (0x800 bytes)
 (global $PSG_ENVELOP_TABLE i32 (i32.const 0x23_3000))
 
-;; Next free slot: 0x23_3800
+;; PSG volumes (16 words)
+(global $PSG_VOLUME_TABLE i32 (i32.const 0x23_3800))
+
+;; Next free slot: 0x23_3900

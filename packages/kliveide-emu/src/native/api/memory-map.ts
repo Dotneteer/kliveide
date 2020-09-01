@@ -37,3 +37,4 @@ export const TAPE_SAVE_BUFFER = 0x21_ED00;
 export const BREAKPOINT_MAP = 0x22_ED00;
 export const MEMWRITE_MAP = 0x23_0D00;
 export const STEP_OUT_STACK = 0x23_2D00;
+export const PSG_ENVELOP_TABLE = 0x23_3000;

@@ -266,7 +266,7 @@
   (call $incTacts (i32.const 1))
 
   ;; Adjust flags
-  (i32.add (get_global $INC_FLAGS) (get_local $v))
+  (i32.add (get_global $DEC_FLAGS) (get_local $v))
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
