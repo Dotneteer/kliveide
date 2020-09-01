@@ -36,6 +36,8 @@ export interface ActionTypes {
   EMULATOR_SET_SAVED_DATA: null;
   EMULATOR_REQUEST_TYPE: null;
   EMULATOR_SETUP_TYPE: null;
+  EMULATOR_SELECT_ROM: null;
+  EMULATOR_SELECT_BANK: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;

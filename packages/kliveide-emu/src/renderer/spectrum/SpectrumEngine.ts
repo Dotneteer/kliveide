@@ -31,6 +31,8 @@ import {
   emulatorSetDebugAction,
   emulatorSetMemWriteMapAction,
   emulatorLoadTapeAction,
+  emulatorSelectRomAction,
+  emulatorSelectBankAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -564,6 +566,12 @@ export class SpectrumEngine {
         emulatorSetFrameIdAction(this._startCount, resultState.frameCount)()
       );
       rendererProcessStore.dispatch(
+        emulatorSelectRomAction(resultState.memorySelectedRom)()
+      );
+      rendererProcessStore.dispatch(
+        emulatorSelectBankAction(resultState.memorySelectedBank)()
+      );
+      rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
       );
       const memContents = this.spectrum.getMemoryContents();
@@ -607,7 +615,6 @@ export class SpectrumEngine {
         );
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
-      console.log("Beeper");
       const beeperSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
         : mh.readBytes(0, resultState.audioSampleCount);
@@ -620,7 +627,6 @@ export class SpectrumEngine {
         );
       }
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
-      console.log("PSG");
       const psgSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
         : mh.readWords(0, resultState.audioSampleCount).map((v) => v / 65535);

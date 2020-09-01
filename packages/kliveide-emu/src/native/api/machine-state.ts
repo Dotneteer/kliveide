@@ -98,6 +98,14 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   beeperLastEarBit: boolean;
   audioSampleCount: number;
 
+  // --- Sound state
+  psgSupportsSound: boolean;
+  psgRegisterIndex: number;
+  psgClockStep: number;
+  psgNextClockTact: number;
+  psgOrphanSamples: number;
+  psgOrphanSum: number;
+
   // --- Tape state
   tapeMode: number;
   tapeLoadBytesRoutine: number;
@@ -109,8 +117,8 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   tapeBufferPtr: number;
   tapeNextBlockPtr: number;
   tapePlayPhase: number;
-  tapeStartFrame: number;
-  tapeStartTact: number;
+  tapeStartTactL: number;
+  tapeStartTactH: number;
   tapeBitMask: number;
   tapeLastMicBitTact: number;
   tapeLastMicBitTactH: number;
@@ -129,18 +137,6 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   memorySelectedBank: number;
   memoryUseShadowScreen: boolean;
   memoryScreenOffset: number;
-
-  // --- PSG Sound state
-  psgSupportsSound: boolean;
-  psgSampleRate: number;
-  psgSampleLength: number;
-  psgLowerGate: number;
-  psgUpperGate: number;
-  psgGateValue: number;
-  psgNextSampleTact: number;
-  psgSampleCount: number;
-  psgRegisterIndex: number;
-  
 }
 
 /**

@@ -3,6 +3,7 @@ import {
   communicatorInstance,
   FrameInfo,
   ExecutionState,
+  MemoryPageInfo,
 } from "./communicator";
 import { spectrumConfigurationInstance } from "./machine-config";
 
@@ -20,6 +21,9 @@ let lastBreakpoints: number[] = [];
 // --- The last machine type
 let lastMachineType: string | undefined = "";
 
+// --- The last memory page info
+let lastMemoryPageInfo: MemoryPageInfo | null = null;
+
 let frameInfoChanged: vscode.EventEmitter<FrameInfo> = new vscode.EventEmitter<
   FrameInfo
 >();
@@ -36,6 +40,10 @@ let breakpointsChanged: vscode.EventEmitter<number[]> = new vscode.EventEmitter<
 
 let machineTypeChanged: vscode.EventEmitter<string> = new vscode.EventEmitter<
   string
+>();
+
+let memoryPagingChanged: vscode.EventEmitter<MemoryPageInfo> = new vscode.EventEmitter<
+  MemoryPageInfo
 >();
 
 /**
@@ -67,6 +75,12 @@ export const onBreakpointsChanged: vscode.Event<number[]> =
  */
 export const onMachineTypeChanged: vscode.Event<string> =
   machineTypeChanged.event;
+
+/**
+ * Fires when memory paging has been changed
+ */
+export const onMemoryPagingChanged: vscode.Event<MemoryPageInfo> =
+  memoryPagingChanged.event;
 
 /**
  * Starts the notification watcher task
@@ -121,6 +135,17 @@ export async function startNotifier(): Promise<void> {
           state: getExecutionStateName(frameInfo.executionState),
           pc: frameInfo.pc,
           runsInDebug: frameInfo.runsInDebug,
+        });
+      }
+
+      // --- Handle changes in memory pages
+      if (
+        frameInfo.selectedRom !== lastFrameInfo?.selectedRom ||
+        frameInfo.selectedBank !== lastFrameInfo?.selectedBank
+      ) {
+        memoryPagingChanged.fire({
+          selectedRom: frameInfo.selectedRom ?? 0,
+          selectedBank: frameInfo.selectedBank ?? 0,
         });
       }
 
@@ -211,7 +236,7 @@ function resetLastFrameInfo(): void {
     startCount: -1,
     frameCount: -1,
     executionState: 0,
-    pc: -1
+    pc: -1,
   };
 }
 

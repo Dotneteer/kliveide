@@ -262,7 +262,7 @@
   i32.const 0 set_global $beeperLastEarBit
 
   ;; Reset PSG state
-  get_global $psgCLockStep set_global $psgNextClockTact
+  get_global $psgClockStep set_global $psgNextClockTact
 
   (i32.store offset=0 (get_global $PSG_REGS) (i32.const 0))
   (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
@@ -539,7 +539,7 @@
   if
     call $generatePsgOutputValue
     loop $nextClock
-      (i32.add (get_global $psgNextClockTact) (get_global $psgCLockStep))
+      (i32.add (get_global $psgNextClockTact) (get_global $psgClockStep))
       set_global $psgNextClockTact
       (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
       if

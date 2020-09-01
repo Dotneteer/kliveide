@@ -30,4 +30,6 @@ export interface Payload {
   requestedType?: string;
   currentType?: string;
   connected?: boolean;
+  selectedRom?: number;
+  selectedBank?: number;
 }

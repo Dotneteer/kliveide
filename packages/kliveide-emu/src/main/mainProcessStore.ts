@@ -20,7 +20,9 @@ const defaultState: AppState = {
     executionState: 0,
     runsInDebug: false,
     requestedType: "",
-    currentType: ""
+    currentType: "",
+    selectedRom: 0,
+    selectedBank: 0
   },
   emulatorCommand: "",
   breakpoints: [],

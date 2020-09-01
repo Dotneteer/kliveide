@@ -78,6 +78,9 @@
             }
             execState = ev.data.state;
             break;
+          case "memoryPaging":
+            console.log("Memory paging changed.")
+            break;
           case "registers":
             // --- Register values sent
             registers = ev.data.registers;

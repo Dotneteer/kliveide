@@ -68,7 +68,9 @@ export function startApiServer() {
       breakpoints: Array.from(state.breakpoints),
       pc: vmInfo.registers?.pc ?? -1,
       runsInDebug: emuState.runsInDebug,
-      machineType: emuState.currentType
+      machineType: emuState.currentType,
+      selectedRom: emuState.selectedRom,
+      selectedBank: emuState.selectedBank
     });
     mainProcessStore.dispatch(ideConnectsAction());
   });

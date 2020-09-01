@@ -6,10 +6,11 @@ import {
   onConnectionStateChanged,
   getLastConnectedState,
   getLastExecutionState,
+  onMemoryPagingChanged,
 } from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
-import { ExecutionState } from "../emulator/communicator";
+import { ExecutionState, MemoryPageInfo } from "../emulator/communicator";
 
 const editorInstances: vscode.WebviewPanel[] = [];
 let activeEditor: vscode.WebviewPanel | null = null;
@@ -162,6 +163,18 @@ export abstract class EditorProviderBase
           state: execState.state,
           pc: execState.pc,
           runsInDebug: execState.runsInDebug,
+        });
+      })
+    );
+
+    // --- Notify the view about memory paging changes
+    this.toDispose(
+      webviewPanel,
+      onMemoryPagingChanged((pageInfo: MemoryPageInfo) => {
+        webviewPanel.webview.postMessage({
+          viewNotification: "memoryPaging",
+          selectedRom: pageInfo.selectedRom,
+          selectedBank: pageInfo.selectedBank
         });
       })
     );

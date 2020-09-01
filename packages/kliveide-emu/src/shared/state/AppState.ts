@@ -63,6 +63,8 @@ export interface EmulatorPanelState {
   savedData?: Uint8Array;
   requestedType?: string;
   currentType?: string;
+  selectedRom?: number;
+  selectedBank?: number;
 }
 
 /**

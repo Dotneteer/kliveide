@@ -191,6 +191,8 @@ export interface FrameInfo {
   pc?: number;
   runsInDebug?: boolean;
   machineType?: string;
+  selectedRom?: number;
+  selectedBank?: number;
 }
 
 /**
@@ -236,6 +238,21 @@ export interface IdeConfiguration {
    * The current SAVE folder
    */
   saveFolder: string;
+}
+
+/**
+ * Information about current memory pages
+ */
+export interface MemoryPageInfo {
+  /**
+   * Selected ROM page
+   */
+  selectedRom: number;
+
+  /**
+   * Selected upper memory bank
+   */
+  selectedBank: number;
 }
 
 /**
