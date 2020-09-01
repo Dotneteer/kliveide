@@ -383,14 +383,11 @@ export class SpectrumEngine {
     if (
       this.executionState === ExecutionState.None ||
       this.executionState === ExecutionState.Stopped ||
-      this.executionState === ExecutionState.Paused
+      this.executionState === ExecutionState.Paused ||
+      !this._completionTask
     ) {
       // --- Nothing to pause
-      return;
-    }
-
-    if (!this._completionTask) {
-      // --- No completion to wait for
+      await this.cleanupAudio();
       return;
     }
 
@@ -409,12 +406,14 @@ export class SpectrumEngine {
     switch (this._vmState) {
       case ExecutionState.None:
       case ExecutionState.Stopped:
+        await this.cleanupAudio();
         return;
 
       case ExecutionState.Paused:
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
         this.executionState = ExecutionState.Stopped;
+        await this.cleanupAudio();
         break;
 
       default:
@@ -431,7 +430,7 @@ export class SpectrumEngine {
    */
   async restart(): Promise<void> {
     await this.stop();
-    this.start();
+    await this.start();
   }
 
   /**
@@ -506,12 +505,19 @@ export class SpectrumEngine {
     this._cancelled = true;
     await this._completionTask;
     this._completionTask = null;
+    await this.cleanupAudio();
+  }
+
+  /**
+   * Cleans up audio
+   */
+  async cleanupAudio(): Promise<void> {
     if (this._beeperRenderer) {
-      this._beeperRenderer.closeAudio();
+      await this._beeperRenderer.closeAudio();
       this._beeperRenderer = null;
     }
     if (this._psgRenderer) {
-      this._psgRenderer.closeAudio();
+      await this._psgRenderer.closeAudio();
       this._psgRenderer = null;
     }
   }
@@ -581,14 +587,7 @@ export class SpectrumEngine {
         }
 
         // --- Stop audio
-        if (this._beeperRenderer) {
-          this._beeperRenderer.closeAudio();
-          this._beeperRenderer = null;
-        }
-        if (this._psgRenderer) {
-          this._psgRenderer.closeAudio();
-          this._psgRenderer = null;
-        }
+        await this.cleanupAudio();
         return;
       }
 
@@ -603,9 +602,12 @@ export class SpectrumEngine {
       // --- Obtain beeper samples
       const emuState = rendererProcessStore.getState().emulatorPanelState;
       if (!this._beeperRenderer) {
-        this._beeperRenderer = new AudioRenderer(resultState.audioSampleLength);
+        this._beeperRenderer = new AudioRenderer(
+          resultState.tactsInFrame / resultState.audioSampleLength
+        );
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
+      console.log("Beeper");
       const beeperSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
         : mh.readBytes(0, resultState.audioSampleCount);
@@ -613,12 +615,15 @@ export class SpectrumEngine {
 
       // --- Obtain psg samples
       if (!this._psgRenderer) {
-        this._psgRenderer = new AudioRenderer(resultState.audioSampleLength);
+        this._psgRenderer = new AudioRenderer(
+          resultState.tactsInFrame / resultState.audioSampleLength
+        );
       }
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
+      console.log("PSG");
       const psgSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
-        : mh.readWords(0, resultState.audioSampleCount).map(v => v/65535);
+        : mh.readWords(0, resultState.audioSampleCount).map((v) => v / 65535);
       this._psgRenderer.storeSamples(psgSamples);
 
       // --- Check if a tape should be loaded
@@ -642,7 +647,6 @@ export class SpectrumEngine {
       this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
 
       // --- Wait for the next screen frame
-
       const toWait = Math.floor(nextFrameTime - curTime);
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
@@ -764,7 +768,6 @@ export class SpectrumEngine {
     if (tapReader.readContents()) {
       const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);
       this.spectrum.api.initTape(blocks);
-      console.log(`${blocks} blocks sent to engine.`)
       return true;
     }
     return false;

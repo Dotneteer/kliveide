@@ -1,6 +1,6 @@
 // --- Audio constants
 export const FRAMES_BUFFERED = 400;
-export const FRAMES_DELAYED = 8;
+export const FRAMES_DELAYED = 5;
 export const AUDIO_BUFFER_SIZE = 4096;
 
 /**
@@ -12,6 +12,10 @@ export class AudioRenderer {
   private _waveBuffer = new Float32Array(0);
   private _writeIndex = 0;
   private _readIndex = 0;
+  private _isClosing = false;
+
+  private _written = 0;
+  private _read = 0;
 
   /**
    * Initializes the renderer
@@ -25,9 +29,6 @@ export class AudioRenderer {
    * Initializes the audio in the browser
    */
   initializeAudio() {
-    // --- Close the audio, if already initialized
-    this.closeAudio();
-
     // --- Create and initialize the context and the buffers
     this._ctx = new AudioContext();
     this._waveBuffer = new Float32Array(
@@ -38,25 +39,14 @@ export class AudioRenderer {
     for (let i = 0; i < FRAMES_DELAYED * this._samplesPerFrame; i++) {
       this._waveBuffer[this._writeIndex++] = 0.0;
     }
+    this._written = FRAMES_DELAYED * this._samplesPerFrame;
 
     // --- Initialize the audio node
     const node = this._ctx.createScriptProcessor(AUDIO_BUFFER_SIZE, 1, 1);
     const self = this;
     node.onaudioprocess = (e: AudioProcessingEvent) =>
       self._processAudio(self, e);
-
-    // --- Add filters
-    const highpass = this._ctx.createBiquadFilter();
-    highpass.type = "highpass";
-    highpass.frequency.value = 20;
-    const lowpass = this._ctx.createBiquadFilter();
-    lowpass.type = "lowpass";
-    lowpass.frequency.value = 10000;
-    node.connect(lowpass);
-    lowpass.connect(this._ctx.destination);
-    // node.connect(highpass);
-    // highpass.connect(lowpass);
-    // lowpass.connect(this._ctx.destination);
+    node.connect(this._ctx.destination);
   }
 
   /**
@@ -64,21 +54,25 @@ export class AudioRenderer {
    * @param samples Next batch of samples to store
    */
   storeSamples(samples: number[]) {
+    if (this._isClosing) return;
     for (const sample of samples) {
       this._waveBuffer[this._writeIndex++] = sample;
       if (this._writeIndex >= this._waveBuffer.length) {
         this._writeIndex = 0;
       }
     }
+    this._written += samples.length;
   }
 
   /**
    * Closes the audio
    */
-  closeAudio(): void {
+  async closeAudio(): Promise<void> {
     if (this._ctx) {
-      this._ctx.close();
+      this._isClosing = true;
+      await this._ctx.close();
       this._ctx = undefined;
+      this._isClosing = false;
     }
   }
 
@@ -98,5 +92,6 @@ export class AudioRenderer {
         renderer._readIndex = 0;
       }
     }
+    this._read += AUDIO_BUFFER_SIZE;
   }
 }

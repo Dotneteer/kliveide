@@ -268,10 +268,6 @@
   (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
   (i32.store offset=8 (get_global $PSG_REGS) (i32.const 0))
   (i32.store offset=12 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=16 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=20 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=24 (get_global $PSG_REGS) (i32.const 0))
-  (i32.store offset=28 (get_global $PSG_REGS) (i32.const 0))
   i32.const 0xffff set_global $psgNoiseSeed
 
   ;; Reset tape state

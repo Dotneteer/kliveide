@@ -128,6 +128,11 @@
   i32.const 0 set_global $psgEnvStyle
   i32.const 0 set_global $psgCntEnv
   i32.const 0 set_global $psgPosEnv
+
+  i32.const 0 set_global $psgRegisterIndex
+  i32.const 0 set_global $psgNextClockTact
+  i32.const 0 set_global $psgOrphanSamples
+  i32.const 0 set_global $psgOrphanSum
 )
 
 ;; Sets the index of the PSG register
