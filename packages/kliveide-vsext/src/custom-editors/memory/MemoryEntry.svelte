@@ -16,7 +16,7 @@
     const charWidth = referenceWidth / 4;
     memByteWidth = 3 * charWidth;
     memByteMargin = charWidth;
-    stringWidth = 16 * charWidth;
+    stringWidth = 17 * charWidth;
   }
 
   function tooltip(i, regs) {
