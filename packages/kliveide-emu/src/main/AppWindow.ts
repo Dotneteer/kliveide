@@ -306,7 +306,7 @@ export class AppWindow {
         },
         { type: "separator" },
         {
-          id: "set_tape",
+          id: MACHINE_MENU_ITEMS[4],
           label: "Set tape file...",
           click: async () => await this.selectTapeFile()
         },
@@ -495,4 +495,5 @@ const MACHINE_MENU_ITEMS = [
   "machine_128",
   "machine_p3e",
   "machine_next",
+  "set_tape"
 ];
