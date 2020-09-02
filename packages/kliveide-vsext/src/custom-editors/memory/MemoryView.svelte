@@ -51,6 +51,9 @@
   // --- Indicates that the view port is being refreshed
   let viewPortRefreshing;
 
+  // --- Type of the current machine
+  let machineType;
+
   // --- Configuration of the current machine
   let machineConfig;
 
@@ -92,6 +95,7 @@
             execState = ev.data.state;
             break;
           case "machineType":
+            machineType = ev.data.type;
             machineConfig = ev.data.config;
             viewMode = 0;
           // --- This case intentionally flows to the next
@@ -260,6 +264,18 @@
     position: relative;
     user-select: none;
   }
+
+  .shadowed {
+    width: 100%;
+    box-shadow: #000000 0 6px 6px -6px inset;
+    flex-grow: 0;
+    flex-shrink: 0;
+    position: relative;
+    top: 0;
+    left: 0;
+    height: 6px;
+    z-index: 10;
+  }
 </style>
 
 <div class="component">
@@ -276,6 +292,9 @@
         bind:displayedRom
         bind:displayedBank />
     {/if}
+    <div>
+      <div class="shadowed" />
+    </div>
     <VirtualList
       {items}
       itemHeight={20}
@@ -288,7 +307,7 @@
           await saveViewState();
         }
       }}>
-      <MemoryEntry {item} {registers} displayRegisters={!viewMode} />
+      <MemoryEntry {item} {registers} displayRegisters={!viewMode} {machineType} />
     </VirtualList>
   {/if}
 </div>

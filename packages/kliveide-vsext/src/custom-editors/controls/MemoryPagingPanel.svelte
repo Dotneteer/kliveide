@@ -51,18 +51,6 @@
     font-size: 0.9em;
   }
 
-  .shadowed {
-    width: 100%;
-    box-shadow: #000000 0 6px 6px -6px inset;
-    flex-grow: 0;
-    flex-shrink: 0;
-    position: absolute;
-    top: 28px;
-    left: 0;
-    height: 6px;
-    z-index: 10;
-  }
-
   .section {
     display: flex;
     flex-shrink: 0;
@@ -147,4 +135,3 @@
     </div>
   {/if}
 </div>
-<div class="shadowed" />

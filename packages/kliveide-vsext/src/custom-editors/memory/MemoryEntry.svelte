@@ -1,17 +1,15 @@
 <script>
-  import { afterUpdate, tick, createEventDispatcher } from "svelte";
   import { intToX4, intToX2 } from "../../disassembler/disassembly-helper";
 
   export let item;
   export let registers;
   export let displayRegisters;
+  export let machineType;
 
   let referenceWidth = 0;
   let memByteWidth = 0;
   let memByteMargin = 0;
   let stringWidth = 0;
-
-  const dispatch = createEventDispatcher();
 
   $: {
     const charWidth = referenceWidth / 4;
@@ -78,6 +76,16 @@
     }
     return result;
   }
+
+  // --- Tests if an address is a ROM address
+  function isRom(addr) {
+    return addr < 0x4000;
+  }
+
+  // --- Test if an address is a BANK address
+  function isBank(addr) {
+    return machineType !== "48" && addr >= 0xc000;
+  }
 </script>
 
 <style>
@@ -98,6 +106,14 @@
     color: var(--vscode-editorLineNumber-foreground);
     flex-grow: 0;
     flex-shrink: 0;
+  }
+
+  .isRom {
+    color: var(--vscode-terminal-ansiRed);
+  }
+
+  .isBank {
+    color: var(--vscode-terminal-ansiYellow);
   }
 
   .value {
@@ -135,9 +151,11 @@
   }
 </style>
 
-<div class="item" on:click={() => dispatch('clicked')}>
+<div class="item">
   <span
     class="address"
+    class:isRom={isRom(item.address)}
+    class:isBank={isBank(item.address)}
     bind:clientWidth={referenceWidth}
     title="{intToX4(item.address)} ({item.address})">
     {intToX4(item.address)}
