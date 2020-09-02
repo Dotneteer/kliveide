@@ -44,6 +44,7 @@ import {
   BEEPER_SAMPLE_BUFFER,
   PSG_SAMPLE_BUFFER,
   PSG_ENVELOP_TABLE,
+  BANK_0_OFFS,
 } from "../../native/api/memory-map";
 
 /**
@@ -784,5 +785,34 @@ export class SpectrumEngine {
    */
   colorize(): void {
     this.spectrum.api.colorize();
+  }
+
+  // ==========================================================================
+  // Memory commands
+
+  /**
+   * Gets the specified ROM page
+   * @param page Page index
+   */
+  getRomPage(page: number): Uint8Array {
+    const state = this.spectrum.getMachineState();
+    if (!state.memoryPagingEnabled || page < 0 || page > state.numberOfRoms) {
+      return new Uint8Array(0);
+    }
+    const mh = new MemoryHelper(this.spectrum.api, this.spectrum.getRomPageBaseAddress());
+    return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
+  }
+
+  /**
+   * Gets the specified BANK page
+   * @param page Page index
+   */
+  getBankPage(page: number): Uint8Array {
+    const state = this.spectrum.getMachineState();
+    if (!state.memoryPagingEnabled || page < 0 || page > state.ramBanks) {
+      return new Uint8Array(0);
+    }
+    const mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
+    return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
 }

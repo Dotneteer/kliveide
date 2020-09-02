@@ -12,6 +12,8 @@ import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
 import { ZxSpectrumBase } from "../native/api/ZxSpectrumBase";
 import { getMachineTypeIdFromName } from "../shared/spectrum/machine-types";
+import { MemoryCommand } from "../shared/state/AppState";
+import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -32,6 +34,11 @@ let loader: Promise<SpectrumEngine> | null = null;
  * Last emulator command requested
  */
 let lastEmulatorCommand = "";
+
+/**
+ * Last emulator command requested
+ */
+let lastMemoryCommand: MemoryCommand | undefined;
 
 /**
  * Indicates that the engine is processing a state change
@@ -77,6 +84,23 @@ stateAware.stateChanged.on(async (state) => {
         break;
     }
     stateAware.dispatch(emulatorSetCommandAction("")());
+  }
+
+  // --- Process server-api memory commands
+  if (lastMemoryCommand !== state.memoryCommand) {
+    lastMemoryCommand = state.memoryCommand;
+    if (lastMemoryCommand && lastMemoryCommand.command) {
+      let contents = new Uint8Array(0);
+      switch (lastMemoryCommand.command) {
+        case "rom":
+          contents = spectrumEngine.getRomPage(lastMemoryCommand.index ?? 0)
+          break;
+        case "bank":
+          contents = spectrumEngine.getBankPage(lastMemoryCommand.index ?? 0)
+          break;
+      }
+      stateAware.dispatch(memorySetResultAction(lastMemoryCommand.seqNo, contents)())
+    }
   }
   processingChange = false;
 });

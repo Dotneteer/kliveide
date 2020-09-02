@@ -4,6 +4,8 @@ import {
   GetMemoryContentsResponse,
   MessageBase,
   GetExecutionStateResponse,
+  GetRomPageResponse,
+  GetBankPageResponse,
 } from "./message-types";
 
 /**
@@ -99,6 +101,28 @@ export async function getMemoryContents(
     type: "getMemoryContents",
     from,
     to,
+  });
+}
+
+/**
+ * Gets the contents of the specified ROM page
+ * @param page Page index
+ */
+export async function getRomPage(page: number): Promise<GetRomPageResponse> {
+  return sendMessageToMain({
+    type: "getRomPage",
+    page,
+  });
+}
+
+/**
+ * Gets the contents of the specified ROM page
+ * @param page Page index
+ */
+export async function getBankPage(page: number): Promise<GetBankPageResponse> {
+  return sendMessageToMain({
+    type: "getBankPage",
+    page,
   });
 }
 

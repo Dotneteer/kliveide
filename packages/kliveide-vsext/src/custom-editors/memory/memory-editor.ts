@@ -65,23 +65,10 @@ export class MemoryEditorProvider extends EditorProviderBase {
       webviewPanel,
       onFrameInfoChanged(async () => {
         refreshCounter++;
-        if (refreshCounter % 4 !== 0) {
+        if (refreshCounter % 10 !== 0) {
           return;
         }
-        try {
-          const regData = await communicatorInstance.getRegisters();
-          webviewPanel.webview.postMessage({
-            viewNotification: "registers",
-            registers: regData,
-          });
-
-          webviewPanel.webview.postMessage({
-            viewNotification: "refreshViewPort",
-          });
-        } catch (err) {
-          // --- This exception in intentionally ignored
-          console.log(err);
-        }
+        this.refreshViewPort(webviewPanel);
       })
     );
     // --- Make sure we get rid of the listener when our editor is closed.
@@ -114,6 +101,29 @@ export class MemoryEditorProvider extends EditorProviderBase {
           registers,
         });
         break;
+      case "changeView":
+        await this.refreshViewPort(panel);
+        break;
+    }
+  }
+
+  /**
+   * Refresh the viewport of the specified panel
+   * @param panel Panel to refresh
+   */
+  async refreshViewPort(panel: vscode.WebviewPanel): Promise<void> {
+    try {
+      const regData = await communicatorInstance.getRegisters();
+      panel.webview.postMessage({
+        viewNotification: "registers",
+        registers: regData,
+      });
+
+      panel.webview.postMessage({
+        viewNotification: "refreshViewPort",
+      });
+    } catch (err) {
+      // --- This exception in intentionally ignored
     }
   }
 }

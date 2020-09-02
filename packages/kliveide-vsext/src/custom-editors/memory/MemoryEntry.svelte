@@ -4,6 +4,7 @@
 
   export let item;
   export let registers;
+  export let displayRegisters;
 
   let referenceWidth = 0;
   let memByteWidth = 0;
@@ -31,7 +32,7 @@
   }
 
   function hasPointingRegs(i, regs) {
-    if (regs) {
+    if (regs && displayRegisters) {
       const address = item.address + i;
       return (
         address === regs.bc ||
@@ -48,6 +49,9 @@
 
   function getPointingRegs(i, regs) {
     let result = "";
+    if (!displayRegisters) {
+      return;
+    }
     if (regs) {
       const address = item.address + i;
       if (address === regs.bc) {

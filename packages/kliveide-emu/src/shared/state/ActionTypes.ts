@@ -42,6 +42,10 @@ export interface ActionTypes {
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
 
+  // --- Nenory command actions
+  MEMORY_COMMAND: null;
+  MEMORY_COMMAND_RESULT: null;
+
   // --- Breakpoint command action
   BREAKPOINT_SET: null;
   BREAKPOINT_REMOVE: null;

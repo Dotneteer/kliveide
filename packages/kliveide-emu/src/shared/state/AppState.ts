@@ -38,6 +38,11 @@ export interface AppState {
    * The current state of IDE connection
    */
   ideConnection?: IdeConnection;
+
+  /**
+   * Memory command to execute
+   */
+  memoryCommand?: MemoryCommand;
 }
 
 /**
@@ -89,6 +94,9 @@ export interface IdeConfiguration {
   saveFolder: string;
 }
 
+/**
+ * Represents the state of IDE connection
+ */
 export interface IdeConnection {
   /**
    * Indicates if the IDE is connected
@@ -100,3 +108,34 @@ export interface IdeConnection {
    */
   lastHeartBeat: number;
 }
+
+
+/**
+ * Represents a memory command to execute
+ */
+export interface MemoryCommand {
+  /**
+   * Command sequence number
+   */
+  seqNo: number;
+
+  /**
+   * Command type
+   */
+  command: MemoryCommandType;
+
+  /**
+   * Command index
+   */
+  index?: number;
+
+  /**
+   * The result of the memory command;
+   */
+  memoryCommandResult?: Uint8Array;
+}
+
+/**
+ * Available memory command types
+ */
+export type MemoryCommandType = "" | "rom" | "bank";

@@ -57,6 +57,11 @@
   // --- Memory page information
   let pageInfo;
 
+  // --- View information
+  let viewMode;
+  let displayedRom;
+  let displayedBank;
+
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", async (ev) => {
@@ -88,6 +93,7 @@
             break;
           case "machineType":
             machineConfig = ev.data.config;
+            viewMode = 0;
           // --- This case intentionally flows to the next
           case "memoryPaging":
             if (machineConfig) {
@@ -151,6 +157,12 @@
     scrollToAddress(needScroll);
   }
 
+  $: {
+    (function () {
+      vscodeApi.postMessage({ command: "changeView" });
+    })(viewMode, displayedRom, displayedBank);
+  }
+
   // --- Initiate refreshing the disassembly view
   // --- Take care not to start disassembling multiple times
   async function refreshMemory() {
@@ -164,7 +176,7 @@
       refreshToken = {
         cancelled: false,
       };
-      const lines = await memory();
+      const lines = await memory(viewMode, displayedRom, displayedBank);
       if (!lines) {
         return false;
       }
@@ -187,18 +199,11 @@
     if (viewPortRefreshing) return;
     viewPortRefreshing = true;
     try {
-      const viewPort = await memory(
-        LINE_SIZE * startItemIndex,
-        LINE_SIZE * endItemIndex
-      );
+      const viewPort = await memory(viewMode, displayedRom, displayedBank);
       if (!viewPort) {
         return;
       }
-      const newItems = items.slice(0);
-      for (let i = 0; i < viewPort.length; i++) {
-        newItems[i + startItemIndex] = viewPort[i];
-      }
-      items = newItems;
+      items = viewPort;
     } finally {
       viewPortRefreshing = false;
     }
@@ -265,16 +270,11 @@
       <RefreshPanel {refreshed} text="Refreshing Memory view..." />
     {/if}
     {#if pageInfo && pageInfo.supportsPaging}
-      <MemoryPagingPanel {pageInfo} 
-        on:romSelected={(ev) => {
-          console.log(`ROM view: ${ev.detail.romID}`)
-        }}
-        on:bankSelected={(ev) => {
-          console.log(`BANK view: ${ev.detail.bankID}`)
-        }}
-        on:fullView={() => {
-          console.log("Full view");
-        }}/>
+      <MemoryPagingPanel
+        {pageInfo}
+        bind:viewMode
+        bind:displayedRom
+        bind:displayedBank />
     {/if}
     <VirtualList
       {items}
@@ -288,7 +288,7 @@
           await saveViewState();
         }
       }}>
-      <MemoryEntry {item} {registers} />
+      <MemoryEntry {item} {registers} displayRegisters={!viewMode} />
     </VirtualList>
   {/if}
 </div>

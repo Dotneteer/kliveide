@@ -61,6 +61,22 @@ class Communicator {
   }
 
   /**
+   * Gets the contents of the specified ROM page
+   * @param page Page to get
+   */
+  async getRomPage(page: number): Promise<string> {
+    return this.getText(`/rom/${page}`);
+  }
+
+  /**
+   * Gets the contents of the specified BANK page
+   * @param page Page to get
+   */
+  async getBankPage(page: number): Promise<string> {
+    return this.getText(`/bank/${page}`);
+  }
+
+  /**
    * Sets the specified breakpoint
    * @param address Breakpoint address
    */

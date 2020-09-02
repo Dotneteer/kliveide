@@ -1,7 +1,6 @@
 <script>
   // ==========================================================================
   // This component implements a header that displays memory paging information
-  import { createEventDispatcher } from "svelte";
 
   // --- Paging information
   export let pageInfo;
@@ -14,9 +13,6 @@
 
   // --- The BANK to display in BANK view mode
   export let displayedBank = 0;
-
-  // --- This component will raise events
-  const dispatch = createEventDispatcher();
 
   // --- Helpre ranges to display ROMs and BANKs
   $: romIDs = createRange(0, pageInfo.roms);
@@ -113,47 +109,42 @@
       class="label"
       class:pointable={viewMode}
       title="The current view mode{viewMode ? '. Click to change to Full view' : ''}"
-      on:click={() => {
-        viewMode = 0;
-        dispatch('fullView');
-      }}>
+      on:click={() => (viewMode = 0)}>
       {viewModeLabel} View
     </span>
   </div>
   <div class="placeholder" />
   {#if !viewMode}
-  <div class="section">
-    <span class="label">ROM:</span>
-    {#each romIDs as romID}
-      <span
-        class="idLabel"
-        class:selected={pageInfo.selectedRom === romID}
-        title="Click to view ROM {romID}"
-        on:click={() => {
-          viewMode = 1;
-          displayedRom = romID;
-          dispatch('romSelected', { romID });
-        }}>
-        {romID}
-      </span>
-    {/each}
-  </div>
-  <div class="section">
-    <span class="label">Bank:</span>
-    {#each bankIDs as bankID}
-      <span
-        class="idLabel"
-        class:selected={pageInfo.selectedBank === bankID}
-        title="Click to view Bank {bankID}"
-        on:click={() => {
-          viewMode = 2;
-          displayedBank = bankID;
-          dispatch('bankSelected', { bankID });
-        }}>
-        {bankID}
-      </span>
-    {/each}
-  </div>
+    <div class="section">
+      <span class="label">ROM:</span>
+      {#each romIDs as romID}
+        <span
+          class="idLabel"
+          class:selected={pageInfo.selectedRom === romID}
+          title="Click to view ROM {romID}"
+          on:click={() => {
+            viewMode = 1;
+            displayedRom = romID;
+          }}>
+          {romID}
+        </span>
+      {/each}
+    </div>
+    <div class="section">
+      <span class="label">Bank:</span>
+      {#each bankIDs as bankID}
+        <span
+          class="idLabel"
+          class:selected={pageInfo.selectedBank === bankID}
+          title="Click to view Bank {bankID}"
+          on:click={() => {
+            viewMode = 2;
+            displayedBank = bankID;
+          }}>
+          {bankID}
+        </span>
+      {/each}
+    </div>
   {/if}
 </div>
 <div class="shadowed" />

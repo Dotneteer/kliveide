@@ -253,6 +253,11 @@ export abstract class ZxSpectrumBase {
   abstract createMachineState(): SpectrumMachineState;
 
   /**
+   * Gets the memory address of the first ROM page of the machine
+   */
+  abstract getRomPageBaseAddress(): number;
+
+  /**
    * Executes the machine cycle
    * @param options Execution options
    */
