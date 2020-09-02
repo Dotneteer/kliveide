@@ -102,6 +102,7 @@ export class MemoryEditorProvider extends EditorProviderBase {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
+        this.sendInitialStateToView(panel);
         let registers: RegisterData | null = null;
         try {
           registers = await communicatorInstance.getRegisters();

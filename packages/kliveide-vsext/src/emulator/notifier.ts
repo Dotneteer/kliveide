@@ -22,7 +22,7 @@ let lastBreakpoints: number[] = [];
 let lastMachineType: string | undefined = "";
 
 // --- The last memory page info
-let lastMemoryPageInfo: MemoryPageInfo | null = null;
+let lastMemoryPageInfo: MemoryPageInfo | undefined;
 
 let frameInfoChanged: vscode.EventEmitter<FrameInfo> = new vscode.EventEmitter<
   FrameInfo
@@ -100,91 +100,109 @@ export async function startNotifier(): Promise<void> {
   });
 
   while (!cancelled) {
-    try {
-      if (!connected) {
-        // --- Restore lost connection
-        connected = await communicatorInstance.hello();
-        if (connected) {
-          connectionStateChanged.fire(connected);
-          await communicatorInstance.signConfigurationChange();
-          await communicatorInstance.setMachineType(
-            spectrumConfigurationInstance.configuration.type
-          );
-        }
-      }
+    await requestEmulatorInfo();
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
 
-      // --- Obtain frame information to detect changes
-      const frameInfo = await communicatorInstance.frameInfo();
-
-      // --- Handle changes in frame ID
-      if (
-        frameInfo.frameCount !== lastFrameInfo.frameCount ||
-        frameInfo.startCount !== lastFrameInfo.startCount ||
-        frameInfo.pc !== lastFrameInfo.pc
-      ) {
-        frameInfoChanged.fire(frameInfo);
-      }
-
-      // --- Handle changes in execution state
-      if (
-        frameInfo.executionState !== lastFrameInfo.executionState ||
-        frameInfo.runsInDebug !== lastFrameInfo.runsInDebug ||
-        frameInfo.startCount !== lastFrameInfo.startCount
-      ) {
-        executionStateChanged.fire({
-          state: getExecutionStateName(frameInfo.executionState),
-          pc: frameInfo.pc,
-          runsInDebug: frameInfo.runsInDebug,
-        });
-      }
-
-      // --- Handle changes in memory pages
-      if (
-        frameInfo.selectedRom !== lastFrameInfo?.selectedRom ||
-        frameInfo.selectedBank !== lastFrameInfo?.selectedBank
-      ) {
-        memoryPagingChanged.fire({
-          selectedRom: frameInfo.selectedRom ?? 0,
-          selectedBank: frameInfo.selectedBank ?? 0,
-        });
-      }
-
-      // --- Remember the last frame information
-      lastFrameInfo = frameInfo;
-
-      // --- Handle changes in breakpoint state
-      if (!frameInfo.breakpoints) {
-        frameInfo.breakpoints = [];
-      }
-      if (lastBreakpoints !== frameInfo.breakpoints) {
-        // --- Compare breakpoints
-        let differs = lastBreakpoints.length !== frameInfo.breakpoints.length;
-        if (
-          differs ||
-          frameInfo.breakpoints.some((item) => !lastBreakpoints.includes(item))
-        ) {
-          // --- Breakpoints changed
-          breakpointsChanged.fire(frameInfo.breakpoints);
-        }
-        lastBreakpoints = frameInfo.breakpoints;
-      }
-
-      // --- Handle changes in machine type
-      if (frameInfo.machineType !== lastMachineType) {
-        lastMachineType = frameInfo.machineType;
-        machineTypeChanged.fire(lastMachineType ?? "");
-      }
-    } catch (err) {
-      // --- Handle changes in connection state
-      if (
-        (err as Error).toString().indexOf("network timeout") >= 0 &&
-        connected
-      ) {
-        connected = false;
+/**
+ * Tries to query information from the emulator
+ */
+export async function requestEmulatorInfo(): Promise<void> {
+  try {
+    if (!connected) {
+      // --- Restore lost connection
+      connected = await communicatorInstance.hello();
+      if (connected) {
         connectionStateChanged.fire(connected);
+        await communicatorInstance.signConfigurationChange();
+        await communicatorInstance.setMachineType(
+          spectrumConfigurationInstance.configuration.type
+        );
       }
     }
-    await new Promise((r) => setTimeout(r, 100));
+
+    // --- Obtain frame information to detect changes
+    const frameInfo = await communicatorInstance.frameInfo();
+
+    // --- Handle changes in frame ID
+    if (
+      frameInfo.frameCount !== lastFrameInfo.frameCount ||
+      frameInfo.startCount !== lastFrameInfo.startCount ||
+      frameInfo.pc !== lastFrameInfo.pc
+    ) {
+      frameInfoChanged.fire(frameInfo);
+    }
+
+    // --- Handle changes in execution state
+    if (
+      frameInfo.executionState !== lastFrameInfo.executionState ||
+      frameInfo.runsInDebug !== lastFrameInfo.runsInDebug ||
+      frameInfo.startCount !== lastFrameInfo.startCount
+    ) {
+      executionStateChanged.fire({
+        state: getExecutionStateName(frameInfo.executionState),
+        pc: frameInfo.pc,
+        runsInDebug: frameInfo.runsInDebug,
+      });
+      signMemoryPageInfo(frameInfo);
+    }
+
+    // --- Handle changes in memory pages
+    if (
+      frameInfo.selectedRom !== lastFrameInfo?.selectedRom ||
+      frameInfo.selectedBank !== lastFrameInfo?.selectedBank
+    ) {
+      signMemoryPageInfo(frameInfo);
+    }
+
+    // --- Remember the last frame information
+    lastFrameInfo = frameInfo;
+
+    // --- Handle changes in breakpoint state
+    if (!frameInfo.breakpoints) {
+      frameInfo.breakpoints = [];
+    }
+    if (lastBreakpoints !== frameInfo.breakpoints) {
+      // --- Compare breakpoints
+      let differs = lastBreakpoints.length !== frameInfo.breakpoints.length;
+      if (
+        differs ||
+        frameInfo.breakpoints.some((item) => !lastBreakpoints.includes(item))
+      ) {
+        // --- Breakpoints changed
+        breakpointsChanged.fire(frameInfo.breakpoints);
+      }
+      lastBreakpoints = frameInfo.breakpoints;
+    }
+
+    // --- Handle changes in machine type
+    if (frameInfo.machineType !== lastMachineType) {
+      lastMachineType = frameInfo.machineType;
+      machineTypeChanged.fire(lastMachineType ?? "");
+      signMemoryPageInfo(frameInfo);
+    }
+  } catch (err) {
+    // --- Handle changes in connection state
+    if (
+      (err as Error).toString().indexOf("network timeout") >= 0 &&
+      connected
+    ) {
+      connected = false;
+      connectionStateChanged.fire(connected);
+    }
+  }
+
+  // --- Sign the memory page info based on the frame
+  function signMemoryPageInfo(frameInfo: FrameInfo): void {
+    lastMemoryPageInfo = {
+      selectedRom: frameInfo.selectedRom ?? 0,
+      selectedBank: frameInfo.selectedBank ?? 0,
+    };
+    memoryPagingChanged.fire({
+      selectedRom: lastMemoryPageInfo.selectedRom,
+      selectedBank: lastMemoryPageInfo.selectedBank,
+    });
   }
 }
 
@@ -221,10 +239,17 @@ export function getLastBreakpoints(): number[] {
 }
 
 /**
- * Gets the lates machine type
+ * Gets the latest machine type
  */
 export function getLastMachineType(): string | undefined {
   return lastMachineType;
+}
+
+/**
+ * Gets the latest memory page info
+ */
+export function getLastMemoryPagingInfo(): MemoryPageInfo | undefined {
+  return lastMemoryPageInfo;
 }
 
 /**

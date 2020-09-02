@@ -7,10 +7,15 @@ import {
   getLastConnectedState,
   getLastExecutionState,
   onMemoryPagingChanged,
+  onMachineTypeChanged,
+  getLastMachineType,
+  getLastMemoryPagingInfo,
+  requestEmulatorInfo,
 } from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
 import { ExecutionState, MemoryPageInfo } from "../emulator/communicator";
+import { machineTypes } from "../emulator/machine-info";
 
 const editorInstances: vscode.WebviewPanel[] = [];
 let activeEditor: vscode.WebviewPanel | null = null;
@@ -142,18 +147,6 @@ export abstract class EditorProviderBase
       })
     );
 
-    /**
-     * Update the view when the editor text changes
-     */
-    this.toDispose(
-      webviewPanel,
-      vscode.workspace.onDidChangeTextDocument((e) => {
-        if (e.document.uri.toString() === document.uri.toString()) {
-          updateWebview();
-        }
-      })
-    );
-
     // --- Notify the view about vm execution state changes
     this.toDispose(
       webviewPanel,
@@ -174,7 +167,7 @@ export abstract class EditorProviderBase
         webviewPanel.webview.postMessage({
           viewNotification: "memoryPaging",
           selectedRom: pageInfo.selectedRom,
-          selectedBank: pageInfo.selectedBank
+          selectedBank: pageInfo.selectedBank,
         });
       })
     );
@@ -186,6 +179,18 @@ export abstract class EditorProviderBase
         webviewPanel.webview.postMessage({
           viewNotification: "connectionState",
           state,
+        });
+      })
+    );
+
+    // --- Send machine information to the view when machine type changes
+    this.toDispose(
+      webviewPanel,
+      onMachineTypeChanged((type) => {
+        webviewPanel.webview.postMessage({
+          viewNotification: "machineType",
+          type,
+          config: machineTypes[type],
         });
       })
     );
@@ -203,20 +208,8 @@ export abstract class EditorProviderBase
       }
     );
 
-    updateWebview();
-
     // --- Get the initial state
-    this.sendExecutionStateToView(webviewPanel);
-
-    /**
-     * Updates the web view
-     */
-    function updateWebview() {
-      webviewPanel.webview.postMessage({
-        viewNotification: "update",
-        text: document.getText(),
-      });
-    }
+    // await this.sendInitialStateToView(webviewPanel);
   }
 
   /**
@@ -224,7 +217,10 @@ export abstract class EditorProviderBase
    * @param _panel The WebviewPanel that should process a message from its view
    * @param _viewCommand Command notification to process
    */
-  async processViewCommand(_panel: vscode.WebviewPanel, _viewCommand: ViewCommand): Promise<void> {}
+  async processViewCommand(
+    _panel: vscode.WebviewPanel,
+    _viewCommand: ViewCommand
+  ): Promise<void> {}
 
   /**
    * Gets the HTML contents belonging to this editor
@@ -308,11 +304,27 @@ export abstract class EditorProviderBase
   /**
    * Sends the current execution state to view
    */
-  protected sendExecutionStateToView(panel: vscode.WebviewPanel): void {
+  protected sendInitialStateToView(panel: vscode.WebviewPanel): void {
     if (!getLastConnectedState()) {
       panel.webview.postMessage({
         viewNotification: "connectionState",
         state: false,
+      });
+    }
+    const machineType = getLastMachineType();
+    if (machineType) {
+      panel.webview.postMessage({
+        viewNotification: "machineType",
+        type: machineType,
+        config: machineTypes[machineType],
+      });
+    }
+    const pageInfo = getLastMemoryPagingInfo();
+    if (pageInfo) {
+      panel.webview.postMessage({
+        viewNotification: "memoryPaging",
+        selectedRom: pageInfo.selectedRom,
+        selectedBank: pageInfo.selectedBank,
       });
     }
     const execState = getLastExecutionState();

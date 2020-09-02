@@ -174,7 +174,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       viewNotification: "doRefresh",
       annotations: annotations ? annotations.serialize() : null,
     });
-    this.sendExecutionStateToView(panel);
+    this.sendInitialStateToView(panel);
     this.sendBreakpointsToView(panel);
   }
 

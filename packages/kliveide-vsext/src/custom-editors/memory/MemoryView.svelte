@@ -7,8 +7,10 @@
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
+  import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
   import MemoryEntry from "./MemoryEntry.svelte";
   import { memory, LINE_SIZE } from "./MemoryView";
+  import { config } from "process";
 
   // --- Disassembly items to display
   let items = [];
@@ -49,6 +51,12 @@
   // --- Indicates that the view port is being refreshed
   let viewPortRefreshing;
 
+  // --- Configuration of the current machine
+  let machineConfig;
+
+  // --- Memory page information
+  let pageInfo;
+
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", async (ev) => {
@@ -78,8 +86,22 @@
             }
             execState = ev.data.state;
             break;
+          case "machineType":
+            machineConfig = ev.data.config;
+          // --- This case intentionally flows to the next
           case "memoryPaging":
-            console.log("Memory paging changed.")
+            if (machineConfig) {
+              const paging = machineConfig.paging;
+              if (paging) {
+                pageInfo = {
+                  supportsPaging: paging.supportsPaging,
+                  roms: paging.roms,
+                  banks: paging.banks,
+                  selectedRom: ev.data.selectedRom,
+                  selectedBank: ev.data.selectedBank,
+                };
+              }
+            }
             break;
           case "registers":
             // --- Register values sent
@@ -241,6 +263,18 @@
   {:else}
     {#if !refreshed}
       <RefreshPanel {refreshed} text="Refreshing Memory view..." />
+    {/if}
+    {#if pageInfo && pageInfo.supportsPaging}
+      <MemoryPagingPanel {pageInfo} 
+        on:romSelected={(ev) => {
+          console.log(`ROM view: ${ev.detail.romID}`)
+        }}
+        on:bankSelected={(ev) => {
+          console.log(`BANK view: ${ev.detail.bankID}`)
+        }}
+        on:fullView={() => {
+          console.log("Full view");
+        }}/>
     {/if}
     <VirtualList
       {items}
