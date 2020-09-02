@@ -86,6 +86,14 @@ export function emulatorSetupTypeAction(currentType: string) {
   return createAction("EMULATOR_SETUP_TYPE", { currentType });
 }
 
+export function emulatorSelectRomAction(selectedRom: number) {
+  return createAction("EMULATOR_SELECT_ROM", { selectedRom });
+}
+
+export function emulatorSelectBankAction(selectedBank: number) {
+  return createAction("EMULATOR_SELECT_BANK", { selectedBank });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -171,6 +179,10 @@ export function emulatorStateReducer(
       return { ...state, requestedType: payload.requestedType };
     case "EMULATOR_SETUP_TYPE":
       return { ...state, currentType: payload.currentType, executionState: 0 };
+    case "EMULATOR_SELECT_ROM":
+      return { ...state, selectedRom: payload.selectedRom };
+    case "EMULATOR_SELECT_BANK":
+      return { ...state, selectedBank: payload.selectedBank };
   }
   return state;
 }

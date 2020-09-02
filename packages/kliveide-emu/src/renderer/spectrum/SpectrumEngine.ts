@@ -31,6 +31,8 @@ import {
   emulatorSetDebugAction,
   emulatorSetMemWriteMapAction,
   emulatorLoadTapeAction,
+  emulatorSelectRomAction,
+  emulatorSelectBankAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -42,6 +44,7 @@ import {
   BEEPER_SAMPLE_BUFFER,
   PSG_SAMPLE_BUFFER,
   PSG_ENVELOP_TABLE,
+  BANK_0_OFFS,
 } from "../../native/api/memory-map";
 
 /**
@@ -564,6 +567,12 @@ export class SpectrumEngine {
         emulatorSetFrameIdAction(this._startCount, resultState.frameCount)()
       );
       rendererProcessStore.dispatch(
+        emulatorSelectRomAction(resultState.memorySelectedRom)()
+      );
+      rendererProcessStore.dispatch(
+        emulatorSelectBankAction(resultState.memorySelectedBank)()
+      );
+      rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
       );
       const memContents = this.spectrum.getMemoryContents();
@@ -607,7 +616,6 @@ export class SpectrumEngine {
         );
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
-      console.log("Beeper");
       const beeperSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
         : mh.readBytes(0, resultState.audioSampleCount);
@@ -620,7 +628,6 @@ export class SpectrumEngine {
         );
       }
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
-      console.log("PSG");
       const psgSamples = emuState.muted
         ? new Array(resultState.audioSampleCount).fill(0)
         : mh.readWords(0, resultState.audioSampleCount).map((v) => v / 65535);
@@ -778,5 +785,34 @@ export class SpectrumEngine {
    */
   colorize(): void {
     this.spectrum.api.colorize();
+  }
+
+  // ==========================================================================
+  // Memory commands
+
+  /**
+   * Gets the specified ROM page
+   * @param page Page index
+   */
+  getRomPage(page: number): Uint8Array {
+    const state = this.spectrum.getMachineState();
+    if (!state.memoryPagingEnabled || page < 0 || page > state.numberOfRoms) {
+      return new Uint8Array(0);
+    }
+    const mh = new MemoryHelper(this.spectrum.api, this.spectrum.getRomPageBaseAddress());
+    return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
+  }
+
+  /**
+   * Gets the specified BANK page
+   * @param page Page index
+   */
+  getBankPage(page: number): Uint8Array {
+    const state = this.spectrum.getMachineState();
+    if (!state.memoryPagingEnabled || page < 0 || page > state.ramBanks) {
+      return new Uint8Array(0);
+    }
+    const mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
+    return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
 }

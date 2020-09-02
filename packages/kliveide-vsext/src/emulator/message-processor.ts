@@ -6,6 +6,8 @@ import {
   DefaultResponse,
   GetExecutionStateResponse,
   ErrorResponse,
+  GetRomPageResponse,
+  GetBankPageResponse,
 } from "../custom-editors/messaging/message-types";
 import { communicatorInstance } from "./communicator";
 import { getLastConnectedState, getLastExecutionState } from "./notifier";
@@ -46,11 +48,31 @@ export class MessageProcessor {
             state: connected ? execState.state : "disconnected",
           };
           break;
+
+        case "getRomPage":
+          const romContents = await communicatorInstance.getRomPage(
+            message.page
+          );
+          response = <GetRomPageResponse>{
+            type: "ackGetRomPage",
+            bytes: romContents,
+          };
+          break;
+
+        case "getBankPage":
+          const bankContents = await communicatorInstance.getBankPage(
+            message.page
+          );
+          response = <GetBankPageResponse>{
+            type: "ackGetBankPage",
+            bytes: bankContents,
+          };
+          break;
       }
     } catch (err) {
       response = <ErrorResponse>{
         type: "error",
-        errorMessage: err.toString()
+        errorMessage: err.toString(),
       };
     }
     response.correlationId = message.correlationId;

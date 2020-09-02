@@ -1,4 +1,8 @@
-import { getMemoryContents } from "../messaging/messaging-core";
+import {
+  getMemoryContents,
+  getRomPage,
+  getBankPage,
+} from "../messaging/messaging-core";
 
 /**
  * Size of a memory line
@@ -8,22 +12,29 @@ export const LINE_SIZE = 0x10;
 /**
  * Gets the contents of memory ordered into memory lines
  */
-export async function memory(from?: number, to?: number): Promise<MemoryLine[] | null> {
-  if (from === undefined) {
-    from = 0x0000;
-  }
-  if (to === undefined) {
-    to = 0xffff;
-  }
-
-  // --- Round values according to line size
-  from = LINE_SIZE * Math.floor(from/LINE_SIZE);
-  to = LINE_SIZE * Math.floor((to + LINE_SIZE)/LINE_SIZE) - 1;
+export async function memory(
+  viewMode: number,
+  displayedRom: number,
+  displayedBank: number
+): Promise<MemoryLine[] | null> {
+  const from = 0x0000;
+  const to = viewMode ? 0x3fff : 0xffff;
 
   // --- Get the Z80 memory to disassemble
-  const memoryContents = await getMemoryContents(from, to);
-  const bytes = new Uint8Array(Buffer.from(memoryContents.bytes, "base64"));
-  
+  let memoryContents: string;
+  switch (viewMode) {
+    case 1:
+      memoryContents = (await getRomPage(displayedRom)).bytes;
+      break;
+    case 2:
+      memoryContents = (await getBankPage(displayedBank)).bytes;
+      break;
+    default:
+      memoryContents = (await getMemoryContents(from, to)).bytes;
+      break;
+  }
+  const bytes = new Uint8Array(Buffer.from(memoryContents, "base64"));
+
   if (!bytes) {
     return null;
   }

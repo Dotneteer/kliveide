@@ -157,58 +157,74 @@ export abstract class ZxSpectrumBase {
     s.fastVmMode = mh.readBool(159);
     s.disableScreenRendering = mh.readBool(160);
     s.executionCompletionReason = mh.readByte(161) as ExecutionCompletionReason;
+    s.stepOverBreakPoint = mh.readUint16(162);
 
     // --- Get keyboard state
     s.keyboardLines = [];
     for (let i = 0; i < 8; i++) {
-      s.keyboardLines[i] = mh.readByte(162 + i);
+      s.keyboardLines[i] = mh.readByte(164 + i);
     }
 
     // --- Get port state
-    s.portBit3LastValue = mh.readBool(170);
-    s.portBit4LastValue = mh.readBool(171);
-    s.portBit4ChangedFrom0Tacts = mh.readUint32(172);
-    s.portBit4ChangedFrom1Tacts = mh.readUint32(176);
+    s.portBit3LastValue = mh.readBool(172);
+    s.portBit4LastValue = mh.readBool(173);
+    s.portBit4ChangedFrom0Tacts = mh.readUint32(174);
+    s.portBit4ChangedFrom1Tacts = mh.readUint32(178);
 
     // --- Get interrupt state
-    s.interruptRaised = mh.readBool(180);
-    s.interruptRevoked = mh.readBool(181);
+    s.interruptRaised = mh.readBool(182);
+    s.interruptRevoked = mh.readBool(183);
 
     // --- Get screen state
-    s.borderColor = mh.readByte(182);
-    s.flashPhase = mh.readBool(183);
-    s.pixelByte1 = mh.readByte(184);
-    s.pixelByte2 = mh.readByte(185);
-    s.attrByte1 = mh.readByte(186);
-    s.attrByte2 = mh.readByte(187);
-    s.flashFrames = mh.readByte(188);
-    s.renderingTablePtr = mh.readUint32(189);
-    s.pixelBufferPtr = mh.readUint32(193);
+    s.borderColor = mh.readByte(184);
+    s.flashPhase = mh.readBool(185);
+    s.pixelByte1 = mh.readByte(186);
+    s.pixelByte2 = mh.readByte(187);
+    s.attrByte1 = mh.readByte(188);
+    s.attrByte2 = mh.readByte(189);
+    s.flashFrames = mh.readByte(190);
+    s.renderingTablePtr = mh.readUint32(181);
+    s.pixelBufferPtr = mh.readUint32(195);
 
     // --- Get beeper state
-    s.audioSampleRate = mh.readUint32(197);
-    s.audioSampleLength = mh.readUint32(201);
-    s.audioLowerGate = mh.readUint32(205);
-    s.audioUpperGate = mh.readUint32(209);
-    s.audioGateValue = mh.readUint32(213);
-    s.audioNextSampleTact = mh.readUint32(217);
-    s.beeperLastEarBit = mh.readBool(221);
-    s.audioSampleCount = mh.readUint32(222);
+    s.audioSampleRate = mh.readUint32(199);
+    s.audioSampleLength = mh.readUint32(203);
+    s.audioLowerGate = mh.readUint32(207);
+    s.audioUpperGate = mh.readUint32(211);
+    s.audioGateValue = mh.readUint32(215);
+    s.audioNextSampleTact = mh.readUint32(219);
+    s.beeperLastEarBit = mh.readBool(223);
+    s.audioSampleCount = mh.readUint32(224);
+
+    // --- Get sound state
+    s.psgSupportsSound = mh.readBool(228);
+    s.psgRegisterIndex = mh.readByte(229);
+    s.psgClockStep = mh.readUint32(230);
+    s.psgNextClockTact = mh.readUint32(234);
+    s.psgOrphanSamples = mh.readUint32(238);
+    s.psgOrphanSum = mh.readUint32(242);
 
     // --- Get tape state
-    s.tapeMode = mh.readByte(226);
-    s.tapeLoadBytesRoutine = mh.readUint16(227);
-    s.tapeLoadBytesResume = mh.readUint16(229);
-    s.tapeLoadBytesInvalidHeader = mh.readUint16(231);
-    s.tapeSaveBytesRoutine = mh.readUint16(233);
-    s.tapeBlocksToPlay = mh.readByte(235);
-    s.tapeEof = mh.readBool(236);
-    s.tapeBufferPtr = mh.readUint32(237);
-    s.tapeNextBlockPtr = mh.readUint32(241);
-    s.tapePlayPhase = mh.readByte(245);
-    s.tapeStartFrame = mh.readUint32(246);
-    s.tapeStartTact = mh.readUint32(250);
-    s.tapeBitMask = mh.readByte(254);
+    s.tapeMode = mh.readByte(246);
+    s.tapeLoadBytesRoutine = mh.readUint16(247);
+    s.tapeLoadBytesResume = mh.readUint16(249);
+    s.tapeLoadBytesInvalidHeader = mh.readUint16(251);
+    s.tapeSaveBytesRoutine = mh.readUint16(253);
+    s.tapeBlocksToPlay = mh.readByte(255);
+    s.tapeEof = mh.readBool(256);
+    s.tapeBufferPtr = mh.readUint32(257);
+    s.tapeNextBlockPtr = mh.readUint32(261);
+    s.tapePlayPhase = mh.readByte(265);
+    s.tapeStartTactL = mh.readUint32(266);
+    s.tapeStartTactH = mh.readUint32(270);
+    s.tapeBitMask = mh.readByte(274);
+
+    // --- Memory pages
+    s.memorySelectedRom = mh.readByte(275);
+    s.memoryPagingEnabled = mh.readBool(276);
+    s.memorySelectedBank = mh.readByte(277);
+    s.memoryUseShadowScreen = mh.readBool(278);
+    s.memoryScreenOffset = mh.readUint16(279);
 
     // --- Done.
     return s;
@@ -235,6 +251,11 @@ export abstract class ZxSpectrumBase {
    * Override this method to represent the appropriate machine state
    */
   abstract createMachineState(): SpectrumMachineState;
+
+  /**
+   * Gets the memory address of the first ROM page of the machine
+   */
+  abstract getRomPageBaseAddress(): number;
 
   /**
    * Executes the machine cycle

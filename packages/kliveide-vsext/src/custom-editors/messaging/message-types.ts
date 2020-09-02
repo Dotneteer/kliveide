@@ -6,7 +6,11 @@ export type AnyMessage = RendererMessage | MainMessage;
 /**
  * The messages a renderer process can send to the main process
  */
-export type RendererMessage = GetMemoryContents | GetExecutionState;
+export type RendererMessage =
+  | GetMemoryContents
+  | GetExecutionState
+  | GetRomPage
+  | GetBankPage;
 
 /**
  * The messages the main process can send as an acknowledgement
@@ -15,6 +19,8 @@ export type MainMessage =
   | DefaultResponse
   | ErrorResponse
   | GetMemoryContentsResponse
+  | GetRomPageResponse
+  | GetBankPageResponse
   | GetExecutionStateResponse;
 
 /**
@@ -39,6 +45,38 @@ export interface GetMemoryContents extends MessageBase {
  */
 export interface GetMemoryContentsResponse extends MessageBase {
   type: "ackGetMemoryContents";
+  bytes: string;
+}
+
+/**
+ * Get the ROM page request
+ */
+export interface GetRomPage extends MessageBase {
+  type: "getRomPage";
+  page: number;
+}
+
+/**
+ * Get the ROM page response
+ */
+export interface GetRomPageResponse extends MessageBase {
+  type: "ackGetRomPage";
+  bytes: string;
+}
+
+/**
+ * Get the BANK page request
+ */
+export interface GetBankPage extends MessageBase {
+  type: "getBankPage";
+  page: number;
+}
+
+/**
+ * Get the BANK page response
+ */
+export interface GetBankPageResponse extends MessageBase {
+  type: "ackGetBankPage";
   bytes: string;
 }
 

@@ -13,7 +13,7 @@
 (global $psgRegisterIndex (mut i32) (i32.const 0x0000))
 
 ;; The number of ULA tacts that represent a single PSG clock tick
-(global $psgCLockStep i32 (i32.const 16))
+(global $psgClockStep i32 (i32.const 16))
 
 ;; The value of the next ULA tact when a PSG output value should be 
 ;; generated

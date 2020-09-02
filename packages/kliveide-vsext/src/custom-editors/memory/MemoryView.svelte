@@ -7,8 +7,10 @@
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
+  import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
   import MemoryEntry from "./MemoryEntry.svelte";
   import { memory, LINE_SIZE } from "./MemoryView";
+  import { config } from "process";
 
   // --- Disassembly items to display
   let items = [];
@@ -49,6 +51,20 @@
   // --- Indicates that the view port is being refreshed
   let viewPortRefreshing;
 
+  // --- Type of the current machine
+  let machineType;
+
+  // --- Configuration of the current machine
+  let machineConfig;
+
+  // --- Memory page information
+  let pageInfo;
+
+  // --- View information
+  let viewMode;
+  let displayedRom;
+  let displayedBank;
+
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", async (ev) => {
@@ -77,6 +93,25 @@
                 break;
             }
             execState = ev.data.state;
+            break;
+          case "machineType":
+            machineType = ev.data.type;
+            machineConfig = ev.data.config;
+            viewMode = 0;
+          // --- This case intentionally flows to the next
+          case "memoryPaging":
+            if (machineConfig) {
+              const paging = machineConfig.paging;
+              if (paging) {
+                pageInfo = {
+                  supportsPaging: paging.supportsPaging,
+                  roms: paging.roms,
+                  banks: paging.banks,
+                  selectedRom: ev.data.selectedRom,
+                  selectedBank: ev.data.selectedBank,
+                };
+              }
+            }
             break;
           case "registers":
             // --- Register values sent
@@ -126,6 +161,12 @@
     scrollToAddress(needScroll);
   }
 
+  $: {
+    (function () {
+      vscodeApi.postMessage({ command: "changeView" });
+    })(viewMode, displayedRom, displayedBank);
+  }
+
   // --- Initiate refreshing the disassembly view
   // --- Take care not to start disassembling multiple times
   async function refreshMemory() {
@@ -139,7 +180,7 @@
       refreshToken = {
         cancelled: false,
       };
-      const lines = await memory();
+      const lines = await memory(viewMode, displayedRom, displayedBank);
       if (!lines) {
         return false;
       }
@@ -162,18 +203,11 @@
     if (viewPortRefreshing) return;
     viewPortRefreshing = true;
     try {
-      const viewPort = await memory(
-        LINE_SIZE * startItemIndex,
-        LINE_SIZE * endItemIndex
-      );
+      const viewPort = await memory(viewMode, displayedRom, displayedBank);
       if (!viewPort) {
         return;
       }
-      const newItems = items.slice(0);
-      for (let i = 0; i < viewPort.length; i++) {
-        newItems[i + startItemIndex] = viewPort[i];
-      }
-      items = newItems;
+      items = viewPort;
     } finally {
       viewPortRefreshing = false;
     }
@@ -230,6 +264,18 @@
     position: relative;
     user-select: none;
   }
+
+  .shadowed {
+    width: 100%;
+    box-shadow: #000000 0 6px 6px -6px inset;
+    flex-grow: 0;
+    flex-shrink: 0;
+    position: relative;
+    top: 0;
+    left: 0;
+    height: 6px;
+    z-index: 10;
+  }
 </style>
 
 <div class="component">
@@ -239,6 +285,16 @@
     {#if !refreshed}
       <RefreshPanel {refreshed} text="Refreshing Memory view..." />
     {/if}
+    {#if pageInfo && pageInfo.supportsPaging}
+      <MemoryPagingPanel
+        {pageInfo}
+        bind:viewMode
+        bind:displayedRom
+        bind:displayedBank />
+    {/if}
+    <div>
+      <div class="shadowed" />
+    </div>
     <VirtualList
       {items}
       itemHeight={20}
@@ -251,7 +307,7 @@
           await saveViewState();
         }
       }}>
-      <MemoryEntry {item} {registers} />
+      <MemoryEntry {item} {registers} displayRegisters={!viewMode} {machineType} />
     </VirtualList>
   {/if}
 </div>
