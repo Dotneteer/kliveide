@@ -1,6 +1,7 @@
 <script>
   // ==========================================================================
   // This component implements a header that displays memory paging information
+  // and allows selecting Full, ROM, and Bank views
 
   // --- Paging information
   export let pageInfo;

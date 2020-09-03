@@ -1,16 +1,27 @@
 <script>
+  // ==========================================================================
+  // Displays a line (16 bytes) of the memory dump
   import { intToX4, intToX2 } from "../../disassembler/disassembly-helper";
 
+  // --- The item that contains the memory line
   export let item;
+
+  // --- Current register values
   export let registers;
+
+  // --- Enables/disables displaying register positions
   export let displayRegisters;
+
+  // --- Type of the ZX Spectrum machine
   export let machineType;
 
+  // --- Memory line column dimensions
   let referenceWidth = 0;
   let memByteWidth = 0;
   let memByteMargin = 0;
   let stringWidth = 0;
 
+  // --- Whenever the reference width changes, re-calculate dimensions
   $: {
     const charWidth = referenceWidth / 4;
     memByteWidth = 3 * charWidth;
@@ -18,6 +29,8 @@
     stringWidth = 17 * charWidth;
   }
 
+  // --- Create the tooltip for the specified (i) position using the
+  // --- register data (regs)
   function tooltip(i, regs) {
     const byte = item.contents[i];
     const address = item.address + i;
@@ -29,6 +42,7 @@
     );
   }
 
+  // --- Test the specified (i) position is pointed by any registers (regs)
   function hasPointingRegs(i, regs) {
     if (regs && displayRegisters) {
       const address = item.address + i;
@@ -45,6 +59,7 @@
     return false;
   }
 
+  // --- Get the list of registers that point to the specified position
   function getPointingRegs(i, regs) {
     let result = "";
     if (!displayRegisters) {
@@ -109,7 +124,7 @@
   }
 
   .isRom {
-    color: var(--vscode-terminal-ansiRed);
+    color: var(--vscode-terminal-ansiBrightRed);
   }
 
   .isBank {

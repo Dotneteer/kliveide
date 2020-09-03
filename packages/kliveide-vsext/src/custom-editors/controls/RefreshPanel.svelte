@@ -1,6 +1,6 @@
 <script>
     // ==========================================================================
-    // Displays a Refreshing message
+    // Displays a "Refreshing" message
 
     import { onMount } from "svelte";
 
@@ -10,6 +10,7 @@
 
     let show = false;
 
+    // --- Display the message only after the specified delay
     onMount(async () => {
       await new Promise((r) => setTimeout(r, delay));
       show = true;
