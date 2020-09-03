@@ -6,6 +6,7 @@
   import { vscodeApi } from "../messaging/messaging-core";
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
+  import HeaderShadow from "../controls/HeaderShadow.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
   import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
   import MemoryEntry from "./MemoryEntry.svelte";
@@ -264,18 +265,6 @@
     position: relative;
     user-select: none;
   }
-
-  .shadowed {
-    width: 100%;
-    box-shadow: #000000 0 6px 6px -6px inset;
-    flex-grow: 0;
-    flex-shrink: 0;
-    position: relative;
-    top: 0;
-    left: 0;
-    height: 6px;
-    z-index: 10;
-  }
 </style>
 
 <div class="component">
@@ -292,9 +281,7 @@
         bind:displayedRom
         bind:displayedBank />
     {/if}
-    <div>
-      <div class="shadowed" />
-    </div>
+    <HeaderShadow />
     <VirtualList
       {items}
       itemHeight={20}

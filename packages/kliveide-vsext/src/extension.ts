@@ -2,10 +2,7 @@ import * as vscode from "vscode";
 import { startEmulator } from "./commands/start-emu";
 import { Z80RegistersProvider } from "./views/z80-registers";
 import { setZ80RegisterProvider } from "./providers";
-import {
-  startNotifier,
-  stopNotifier,
-} from "./emulator/notifier";
+import { startNotifier, stopNotifier } from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
 import { createVmStateStatusBarItem } from "./views/statusbar";
 import { updateKliveProject } from "./commands/update-klive-project";
@@ -16,6 +13,10 @@ import { refreshView } from "./commands/refresh-view";
 import { spectrumConfigurationInstance } from "./emulator/machine-config";
 import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 import { KLIVEIDE, SAVE_FOLDER } from "./config/sections";
+import {
+  startBackgroundDisassembly,
+  stopBackgroundDisassembly,
+} from "./custom-editors/disassembly/background-disassembly";
 
 export async function activate(context: vscode.ExtensionContext) {
   const register = vscode.commands.registerCommand;
@@ -69,11 +70,15 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+
+  // --- Start disassembly and caching
+  startBackgroundDisassembly();
 }
 
 /**
  * Stop watching for notifications
  */
-export function deactivate() {
+export async function deactivate() {
   stopNotifier();
+  await stopBackgroundDisassembly();
 }

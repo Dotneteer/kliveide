@@ -8,7 +8,9 @@
   import { DisassemblyAnnotation } from "../../disassembler/annotations";
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
+  import HeaderShadow from "../controls/HeaderShadow.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
+  import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
 
   // --- Disassembly items to display
@@ -49,6 +51,20 @@
 
   // --- The index of the visible item at the top
   let startItemIndex;
+
+  // --- Type of the current machine
+  let machineType;
+
+  // --- Configuration of the current machine
+  let machineConfig;
+
+  // --- Memory page information
+  let pageInfo;
+
+  // --- View information
+  let viewMode;
+  let displayedRom;
+  let displayedBank;
 
   // --- Handle the event when the component is initialized
   onMount(() => {
@@ -93,6 +109,25 @@
             }
             execState = ev.data.state;
             currentPc = ev.data.pc;
+            break;
+          case "machineType":
+            machineType = ev.data.type;
+            machineConfig = ev.data.config;
+            viewMode = 0;
+          // --- This case intentionally flows to the next
+          case "memoryPaging":
+            if (machineConfig) {
+              const paging = machineConfig.paging;
+              if (paging) {
+                pageInfo = {
+                  supportsPaging: paging.supportsPaging,
+                  roms: paging.roms,
+                  banks: paging.banks,
+                  selectedRom: ev.data.selectedRom,
+                  selectedBank: ev.data.selectedBank,
+                };
+              }
+            }
             break;
           case "breakpoints":
             // --- Receive breakpoints set in the emulator
@@ -206,6 +241,14 @@
     {#if !refreshed}
       <RefreshPanel text="Refreshing Z80 Disassembly view..." />
     {/if}
+    {#if pageInfo && pageInfo.supportsPaging}
+      <MemoryPagingPanel
+        {pageInfo}
+        bind:viewMode
+        bind:displayedRom
+        bind:displayedBank />
+    {/if}
+    <HeaderShadow />
     <VirtualList
       {items}
       itemHeight={20}
