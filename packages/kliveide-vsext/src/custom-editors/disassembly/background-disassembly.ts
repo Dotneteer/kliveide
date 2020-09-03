@@ -12,6 +12,7 @@ import {
 import {
   onConnectionStateChanged,
   onMachineTypeChanged,
+  onExecutionStateChanged,
 } from "../../emulator/notifier";
 import { machineTypes } from "../../emulator/machine-info";
 import { DisassemblyAnnotation } from "../../disassembler/annotations";
@@ -21,12 +22,21 @@ import {
 } from "../../emulator/machine-config";
 import { getAssetsFileName } from "../../extension-paths";
 import { Z80Disassembler } from "../../disassembler/z80-disassembler";
-import { communicatorInstance } from "../../emulator/communicator";
+import {
+  communicatorInstance,
+  ExecutionState,
+} from "../../emulator/communicator";
+import { exec } from "child_process";
 
 /**
  * The current machine type
  */
 let machineType: string | null = null;
+
+/**
+ * The current execution state
+ */
+let executionState = "";
 
 /**
  * Cache for the disassembly of ROMs
@@ -64,6 +74,11 @@ let cancellationTokenSource: CancellationTokenSource | null = null;
 const disposables: Disposable[] = [];
 
 /**
+ * Number of disassemblies since the last start
+ */
+let disassemblyCount = 0;
+
+/**
  * Gets the full disassembly
  */
 export async function getFullDisassembly(): Promise<DisassemblyItem[]> {
@@ -80,6 +95,10 @@ export async function getFullDisassembly(): Promise<DisassemblyItem[]> {
  * the machine type is set.
  */
 export function startBackgroundDisassembly(): void {
+  // --- Reset the counter
+  disassemblyCount = 0;
+
+  // --- Set up event handlers
   disposables.push(
     onConnectionStateChanged(async (state: boolean) => {
       // --- Stop disassembly if emulator disconnects
@@ -89,8 +108,15 @@ export function startBackgroundDisassembly(): void {
     })
   );
   disposables.push(
+    onExecutionStateChanged((exec: ExecutionState) => {
+      // --- Follow the execution state
+      executionState = exec.state;
+    })
+  );
+  disposables.push(
     onMachineTypeChanged(async (type: string) => {
       // --- Erase the cache and start disassembly again
+      // --- whenever the machine type changes
       console.log(`Changing to machine type ${type}`);
       await stopDisassembly();
       romDisassemblyCache.length = 0;
@@ -164,54 +190,60 @@ async function doBackroundDisassembly(
   const roms = config.paging.supportsPaging ? config.paging.roms : 1;
 
   while (!cancellation.isCancellationRequested) {
-    // --- Get and cache ROM pages
-    for (let i = 0; i < roms; i++) {
-      if (romAnnotations[i] === undefined) {
-        const romAnn = (romAnnotations[i] = getRomAnnotation(i));
-        console.log(`ROM annotation ${i} read.`);
-        const fullAnnotation = getFullAnnotation();
-        if (romAnn && fullAnnotation) {
-          fullAnnotation.merge(romAnn);
-          fullAnnotations[i] = fullAnnotation;
-          console.log(`Full annotation ${i} read.`);
-        } else {
-          fullAnnotations[i] = null;
+    // --- Do the disassembly if we may have changes
+    if (disassemblyCount === 0 || executionState === "running") {
+      // --- Get and cache ROM pages
+      for (let i = 0; i < roms; i++) {
+        if (romAnnotations[i] === undefined) {
+          const romAnn = (romAnnotations[i] = getRomAnnotation(i));
+          console.log(`ROM annotation ${i} read.`);
+          const fullAnnotation = getFullAnnotation();
+          if (romAnn && fullAnnotation) {
+            fullAnnotation.merge(romAnn);
+            fullAnnotations[i] = fullAnnotation;
+            console.log(`Full annotation ${i} read.`);
+          } else {
+            fullAnnotations[i] = null;
+          }
         }
-      }
 
-      if (!romDisassemblyCache[i]) {
-        // --- Obtain the disassembly for this ROM
-        const romPage = await communicatorInstance.getRomPage(i);
-        const bytes = new Uint8Array(Buffer.from(romPage, "base64"));
-        const disassemblyOut = await disassembly(
-          bytes,
-          0x0000,
-          0x3fff,
-          romAnnotations[i]
-        );
-        if (disassemblyOut) {
-          romDisassemblyCache[i] = disassemblyOut;
-          console.log(
-            `ROM ${i} disassembled (${disassemblyOut.outputItems.length})`
+        if (!romDisassemblyCache[i]) {
+          // --- Obtain the disassembly for this ROM
+          const romPage = await communicatorInstance.getRomPage(i);
+          const bytes = new Uint8Array(Buffer.from(romPage, "base64"));
+          const disassemblyOut = await disassembly(
+            bytes,
+            0x0000,
+            0x3fff,
+            romAnnotations[i]
           );
+          if (disassemblyOut) {
+            romDisassemblyCache[i] = disassemblyOut;
+            console.log(
+              `ROM ${i} disassembled (${disassemblyOut.outputItems.length})`
+            );
+          }
         }
       }
-    }
 
-    // --- Obtain the disassembly for the full view
-    const memContents = await communicatorInstance.getMemory(0x0000, 0xffff);
-    const bytes = new Uint8Array(Buffer.from(memContents, "base64"));
-    const disassemblyOut = await disassembly(
-      bytes,
-      0x0000,
-      0xffff,
-      fullAnnotations[0]
-    );
-    if (disassemblyOut) {
-      fullDisassemblyCache = disassemblyOut;
-      console.log(
-        `Full memory disassembled (${disassemblyOut.outputItems.length})`
+      // --- Obtain the disassembly for the full view
+      const memContents = await communicatorInstance.getMemory(0x0000, 0xffff);
+      const bytes = new Uint8Array(Buffer.from(memContents, "base64"));
+      const disassemblyOut = await disassembly(
+        bytes,
+        0x0000,
+        0xffff,
+        fullAnnotations[0]
       );
+      if (disassemblyOut) {
+        fullDisassemblyCache = disassemblyOut;
+        console.log(
+          `Full memory disassembled (${disassemblyOut.outputItems.length})`
+        );
+      }
+
+      // --- A new disassembly done
+      disassemblyCount++;
     }
 
     // --- Allow short break before going on

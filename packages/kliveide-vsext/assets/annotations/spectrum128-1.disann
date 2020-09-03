@@ -7644,7 +7644,15 @@
     "15376": "TV TUNER ROUTINE: This routine generates a display showing all possible colours and emitting a continuous cycle of a 440 Hz tone for 1 second followed by silence for 1 second. Its purpose is to ease the tuning in of TV sets to the Spectrum 128's RF signal. The display consists of vertical stripes of width four character squares showing each of the eight colours available at both their normal and bright intensities. The display begins with white on the left progressing up to black on the right. With in each colour stripe in the first eight rows is shown the year '1986' in varying ink colours. This leads to a display that shows all possible ink colours on all possible paper colours.",
     "15463": "Now that the display has been constructed, produce a continuous cycle of a 440 Hz tone for 1 second followed by a period of silence for 1 second (actually 962ms).",
     "15488": "At this point the speaker is turned off, so delay for 1 second.",
-    "15511": "Unused"
+    "15511": "Unused",
+    "16383": "END OF ROM MARKER",
+    "16384": "Screen memory",
+    "23296": "RAM paging routines",
+    "23384": "Reserved",
+    "23552": "System variables",
+    "23744": "Reserved",
+    "23755": "Available for code",
+    "65368": "Reserved"
   },
   "literals": {
     "4780": [
@@ -9610,24 +9618,37 @@
     {
       "startAddress": 16384,
       "endAddress": 23295,
-      "sectionType": 2
+      "sectionType": 0
     },
     {
       "startAddress": 23296,
-      "endAddress": 23551,
+      "endAddress": 23383,
       "sectionType": 1
     },
     {
-      "startAddress": 23552,
-      "endAddress": 49151,
-      "sectionType": 1,
-      "lenght": 25600
+      "startAddress": 23384,
+      "endAddress": 23551,
+      "sectionType": 2
     },
     {
-      "startAddress": 49152,
+      "startAddress": 23552,
+      "endAddress": 23743,
+      "sectionType": 2
+    },
+    {
+      "startAddress": 23744,
+      "endAddress": 23754,
+      "sectionType": 2
+    },
+    {
+      "startAddress": 23755,
+      "endAddress": 65367,
+      "sectionType": 1
+    },
+    {
+      "startAddress": 65368,
       "endAddress": 65535,
-      "sectionType": 1,
-      "lenght": 16384
+      "sectionType": 2
     }
   ],
   "disassemblyFlags": 0
