@@ -37,7 +37,7 @@ export class Z80Tester {
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
     expect(item.lastAddress).toBe(opCodes.length - 1);
-    expect(item.opCodes.trim()).toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
   }
 
   /**
@@ -68,7 +68,7 @@ export class Z80Tester {
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
     expect(item.lastAddress).toBe(opCodes.length - 1);
-    expect(item.opCodes.trim()).toBe(this._joinOpCodes(opCodes));
+    expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
   }
 
   static async TestZx(

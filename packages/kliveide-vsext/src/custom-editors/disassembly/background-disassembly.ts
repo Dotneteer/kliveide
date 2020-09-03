@@ -135,6 +135,9 @@ async function doBackroundDisassembly(
 
     // --- Obtain the disassembly for the full view
     // TODO
+
+    // --- Allow short break before going on
+    await new Promise((r) => setTimeout(r, 2000));
   }
 
   // TODO: Implement this method

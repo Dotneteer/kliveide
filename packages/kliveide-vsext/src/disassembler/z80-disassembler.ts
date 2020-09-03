@@ -150,9 +150,6 @@ export class Z80Disassembler {
       }
     }
     return this._output;
-
-
-
   }
 
   /**
@@ -174,12 +171,11 @@ export class Z80Disassembler {
     const endOffset = section.endAddress;
     let isSpectrumSpecific = false;
     while (this._offset <= endOffset && !this._overflow) {
-      
       await this.allowEventLoop();
       if (this._cancellationToken?.cancelled) {
         return;
       }
-      
+
       if (isSpectrumSpecific) {
         const spectItem = this._disassembleSpectrumSpecificOperation();
         isSpectrumSpecific = spectItem.carryOn;
@@ -221,9 +217,12 @@ export class Z80Disassembler {
         return;
       }
 
-      const item = new DisassemblyItem((section.startAddress + i) & 0xffff);
-      item.instruction = sb;
-      this._output.addItem(item);
+      const startAddress = (section.startAddress + i) & 0xffff;
+      this._output.addItem({
+        address: startAddress,
+        lastAddress: startAddress,
+        instruction: sb,
+      });
     }
   }
 
@@ -250,15 +249,18 @@ export class Z80Disassembler {
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
         sb += `#${intToX4(value & 0xffff)}`;
       }
-      
+
       await this.allowEventLoop();
       if (this._cancellationToken?.cancelled) {
         return;
       }
-      
-      const item = new DisassemblyItem((section.startAddress + i) & 0xffff);
-      item.instruction = sb;
-      this._output.addItem(item);
+
+      const startAddress = (section.startAddress + i) & 0xffff;
+      this._output.addItem({
+        address: startAddress,
+        lastAddress: startAddress,
+        instruction: sb,
+      });
     }
     if (length % 2 === 1) {
       this._generateByteArray(
@@ -272,11 +274,13 @@ export class Z80Disassembler {
    * @param section Section information
    */
   private _generateSkipOutput(section: MemorySection): void {
-    const item = new DisassemblyItem(section.startAddress);
-    item.instruction = `.skip ${intToX4(
-      section.endAddress - section.startAddress + 1
-    )}H`;
-    this._output.addItem(item);
+    this._output.addItem({
+      address: section.startAddress,
+      lastAddress: section.startAddress,
+      instruction: `.skip ${intToX4(
+        section.endAddress - section.startAddress + 1
+      )}H`,
+    });
   }
 
   /**
@@ -374,10 +378,13 @@ export class Z80Disassembler {
     opInfo: OperationMap | undefined
   ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
-    var disassemblyItem = new DisassemblyItem(address);
-    disassemblyItem.opCodes = this._currentOpCodes;
-    disassemblyItem.instruction = "nop";
-    disassemblyItem.lastAddress = (this._offset - 1) & 0xffff;
+    const disassemblyItem: DisassemblyItem = {
+      address,
+      lastAddress: (this._offset - 1) & 0xffff,
+      opCodes: this._currentOpCodes,
+      instruction: "nop",
+    };
+
     if (!opInfo || !opInfo.instructionPattern) {
       return disassemblyItem;
     }
@@ -567,7 +574,6 @@ export class Z80Disassembler {
     this._seriesCount = 0;
     let addr = (this._offset = section.startAddress);
     while (addr <= section.endAddress) {
-      
       await this.allowEventLoop();
       if (this._cancellationToken?.cancelled) {
         return;
@@ -594,7 +600,7 @@ export class Z80Disassembler {
   ): ISpectrumDisassemblyItem {
     // --- Create the default disassembly item
     const result = {
-      item: new DisassemblyItem(address),
+      item: <DisassemblyItem>{ address, lastAddress: address },
       carryOn: false,
     };
     result.item.lastAddress = (this._offset - 1) & 0xffff;
@@ -736,6 +742,7 @@ export class Z80Disassembler {
     // --- Check for Spectrum 48K RST #08
     if (
       (flags & SpectrumSpecificDisassemblyFlags.Spectrum48Rst08) !== 0 &&
+      item.opCodes &&
       item.opCodes.trim() === "CF"
     ) {
       this._spectMode = SpectrumSpecificMode.Spectrum48Rst08;
@@ -746,8 +753,9 @@ export class Z80Disassembler {
     // --- Check for Spectrum 48K RST #28
     if (
       (flags & SpectrumSpecificDisassemblyFlags.Spectrum48Rst28) !== 0 &&
+      item.opCodes &&
       (item.opCodes.trim() === "EF" || // --- RST #28
-      item.opCodes.trim() === "CD 5E 33" || // --- CALL 335E
+        item.opCodes.trim() === "CD 5E 33" || // --- CALL 335E
         item.opCodes.trim() === "CD 62 33")
     ) {
       // --- CALL 3362
@@ -760,6 +768,7 @@ export class Z80Disassembler {
     // --- Check for Spectrum 128K RST #28
     if (
       (flags & SpectrumSpecificDisassemblyFlags.Spectrum128Rst28) !== 0 &&
+      item.opCodes &&
       item.opCodes.trim() === "EF"
     ) {
       this._spectMode = SpectrumSpecificMode.Spectrum128Rst8;
@@ -791,10 +800,12 @@ export class Z80Disassembler {
       const address = this._offset;
       const errorCode = this._fetch();
       this._spectMode = SpectrumSpecificMode.None;
-      result.item = new DisassemblyItem(address);
-      result.item.instruction = `.defb #${intToX2(errorCode)}`;
-      (result.item.hardComment = `(error code: #${intToX2(errorCode)})`),
-        (result.item.lastAddress = (this._offset - 1) & 0xffff);
+      result.item = <DisassemblyItem>{
+        address,
+        lastAddress: (this._offset - 1) & 0xffff,
+        instruction: `.defb #${intToX2(errorCode)}`,
+        hardComment: `(error code: #${intToX2(errorCode)})`,
+      };
     }
 
     // --- Handle Spectrum 48 RST #28
@@ -811,9 +822,11 @@ export class Z80Disassembler {
       const address = this._offset & 0xffff;
       const callAddress = this._fetchWord();
       this._spectMode = SpectrumSpecificMode.None;
-      result.item = new DisassemblyItem(address);
-      (result.item.instruction = `.defw #${intToX4(callAddress)}`),
-        (result.item.lastAddress = (this._offset - 1) & 0xffff);
+      result.item = <DisassemblyItem>{
+        address,
+        lastAddress: (this._offset - 1) & 0xffff,
+        instruction: `.defw #${intToX4(callAddress)}`
+      };
     }
 
     if (!result.carryOn) {

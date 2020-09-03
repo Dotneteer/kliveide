@@ -1,11 +1,11 @@
 /**
  * This class represents the output of a single disassembly item
  */
-export class DisassemblyItem {
+export interface DisassemblyItem {
   /**
    * The memory address of the disassembled instruction
    */
-  readonly address: number;
+  address: number;
 
   /**
    * The last address that belongs to the operation
@@ -15,94 +15,72 @@ export class DisassemblyItem {
   /**
    * Operation codes used for the disassembly
    */
-  opCodes: string;
+  opCodes?: string;
 
   /**
    * Indicates that the disassembly instruction has an associated label
    */
-  hasLabel = false;
+  hasLabel?: boolean;
 
   /**
    * The Z80 assembly instruction
    */
-  instruction: string | null;
+  instruction?: string;
 
   /**
    * Disassembler-generated comment
    */
-  hardComment: string | null;
+  hardComment?: string;
 
   /**
    * Optional target address, if the instruction contains any
    */
-  targetAddress: number;
+  targetAddress?: number;
 
   /**
    * The start position of token to replace
    */
-  tokenPosition = 0;
+  tokenPosition?: number;
 
   /**
    * The length of token to replace
    */
-  tokenLength = 0;
+  tokenLength?: number;
 
   /**
    * Signs that this item has a symbol that can be associated with a literal
    */
-  hasSymbol = false;
+  hasSymbol?: boolean;
 
   /**
    * The symbol value
    */
-  symbolValue = 0;
+  symbolValue?: number;
 
   /**
    * Indicates if this item has a label symbol
    */
-  hasLabelSymbol = false;
+  hasLabelSymbol?: boolean;
 
   /**
    * Formatted label
    */
-  formattedLabel = "";
+  formattedLabel?: string;
 
   /**
    * Formatted comment
    */
-  formattedComment = "";
+  formattedComment?: string;
 
   /**
    * Signs that this item is just a prefix item
    */
-  isPrefixItem = false;
+  isPrefixItem?: boolean;
 
   /**
    * The optional prefix comment
    */
-  prefixComment = "";
-
-  /**
-   * Initializes a new item
-   * @param address Disassembly item address
-   */
-  constructor(address: number) {
-    this.address = address;
-    this.lastAddress = address;
-    this.opCodes = "";
-    this.instruction = null;
-    this.targetAddress = 0;
-    this.hardComment = null;
-  }
-
-  /**
-   * Returns a string that represents the current object.
-   */
-  toString(): string {
-    return `${intToX4(this.address)} ${this.opCodes} ${
-      this.hasLabel ? "L" + intToX4(this.address) : ""
-    }${this.instruction}`;
-  }
+  prefixComment?: string;
 }
 
 /**

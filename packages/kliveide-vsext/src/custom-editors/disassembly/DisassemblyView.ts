@@ -42,9 +42,12 @@ export async function disassembly(
   for (const item of rawItems.outputItems) {
     const prefixComment = annotations?.prefixComments.get(item.address);
     if (prefixComment) {
-      const prefixItem = new DisassemblyItem(item.address);
-      prefixItem.isPrefixItem = true;
-      prefixItem.prefixComment = prefixComment;
+      const prefixItem: DisassemblyItem = {
+        address: item.address,
+        lastAddress: item.address,
+        isPrefixItem: true,
+        prefixComment
+      };
       updatedItems.push(prefixItem);
     }
     const formattedLabel = annotations?.labels.get(item.address);
@@ -55,9 +58,9 @@ export async function disassembly(
     if (comment) {
       item.formattedComment += comment;
     }
-    if (annotations && item.tokenLength > 0) {
+    if (annotations && item.tokenLength && item.tokenLength > 0) {
       let symbol: string | undefined;
-      if (item.hasLabelSymbol) {
+      if (item.hasLabelSymbol && item.symbolValue) {
         const label = annotations.labels.get(item.symbolValue);
         if (label) {
           symbol = label;
@@ -65,7 +68,7 @@ export async function disassembly(
       } else {
         symbol = annotations.literalReplacements.get(item.address);
       }
-      if (symbol && item.instruction) {
+      if (symbol && item.instruction && item.tokenPosition) {
         item.instruction =
           item.instruction.substr(0, item.tokenPosition) +
           symbol +
