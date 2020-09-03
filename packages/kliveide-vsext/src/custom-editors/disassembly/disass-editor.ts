@@ -127,6 +127,18 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       })
     );
 
+    let refreshCounter = 0;
+    this.toDispose(
+      webviewPanel,
+      onFrameInfoChanged(async () => {
+        refreshCounter++;
+        if (refreshCounter % 100 !== 0) {
+          return;
+        }
+        this.refreshViewPort(webviewPanel, Date.now());
+      })
+    );
+
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
@@ -171,12 +183,10 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    * Sends messages to the view so that can refresh itself
    */
   async refreshView(panel: vscode.WebviewPanel): Promise<void> {
-    const fullView = await getFullDisassembly();
     const annotations = this._annotations.get(panel);
     panel.webview.postMessage({
       viewNotification: "doRefresh",
-      annotations: annotations ? annotations.serialize() : null,
-      fullView
+      annotations: annotations ? annotations.serialize() : null
     });
     this.sendInitialStateToView(panel);
     this.sendBreakpointsToView(panel);
@@ -229,5 +239,22 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       console.log(err);
     }
     return null;
+  }
+
+    /**
+   * Refresh the viewport of the specified panel
+   * @param panel Panel to refresh
+   */
+  async refreshViewPort(panel: vscode.WebviewPanel, start: number): Promise<void> {
+    try {
+      const fullView = await getFullDisassembly();
+      panel.webview.postMessage({
+        viewNotification: "refreshViewPort",
+        fullView: JSON.stringify(fullView),
+        start
+      });
+    } catch (err) {
+      // --- This exception in intentionally ignored
+    }
   }
 }

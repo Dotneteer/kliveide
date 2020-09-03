@@ -32,7 +32,7 @@ export async function disassembly(
 
   // --- Do the disassembly
   const disassembler = new Z80Disassembler(sections, bytes);
-  const rawItems = await disassembler.disassemble(from, to, cancellation);
+  const rawItems = await disassembler.disassemble(from, to, 0, cancellation);
   if (!rawItems) {
     return rawItems;
   }

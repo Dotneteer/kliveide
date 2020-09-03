@@ -56,6 +56,7 @@ export class Z80Disassembler {
   private _lineCount = 0;
 
   private _cancellationToken: CancellationToken | null = null;
+  private _batchPause = 0;
 
   /**
    * Gets the contents of the memory
@@ -102,14 +103,18 @@ export class Z80Disassembler {
    * Disassembles the memory from the specified start address with the given endAddress
    * @param startAddress The start address of the disassembly
    * @param endAddress The end address of the disassembly
+   * @param cancellationToken Cancellation token to abort disassembly
+   * @param batchPause Optional break after a disassembly batch
    * @returns The disassembly output, if finished; or null, if cancelled
    */
   async disassemble(
     startAddress = 0x0000,
     endAddress = 0xffff,
-    cancellationToken?: CancellationToken
+    batchPause?: number,
+    cancellationToken?: CancellationToken,
   ): Promise<DisassemblyOutput | null> {
     this._cancellationToken = cancellationToken ?? null;
+    this._batchPause = batchPause ?? 0;
 
     this._output = new DisassemblyOutput();
     if (endAddress > this.memoryContents.length) {

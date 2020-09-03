@@ -73,6 +73,10 @@
       if (ev.data.viewNotification) {
         // --- We listen only messages sent to this view
         switch (ev.data.viewNotification) {
+          case "refreshViewPort":
+            const parsed = JSON.parse(ev.data.fullView);
+            console.log(`Full view: ${parsed.length}, ${Date.now()-ev.data.start}`)
+            break;
           case "doRefresh":
             // --- The Webview sends this request to refresh the view
             refreshed = false;
@@ -83,7 +87,6 @@
             } else {
               annotations = null;
             }
-            console.log(`Full view: ${ev.data.fullView ? ev.data.fullView.length : -1}`)
             break;
           case "connectionState":
             // --- Refresh after reconnection

@@ -26,7 +26,6 @@ import {
   communicatorInstance,
   ExecutionState,
 } from "../../emulator/communicator";
-import { exec } from "child_process";
 
 /**
  * The current machine type
@@ -37,11 +36,6 @@ let machineType: string | null = null;
  * The current execution state
  */
 let executionState = "";
-
-/**
- * Cache for the disassembly of ROMs
- */
-const romDisassemblyCache: DisassemblyOutput[] = [];
 
 /**
  * Cache for the full disassembly
@@ -117,9 +111,7 @@ export function startBackgroundDisassembly(): void {
     onMachineTypeChanged(async (type: string) => {
       // --- Erase the cache and start disassembly again
       // --- whenever the machine type changes
-      console.log(`Changing to machine type ${type}`);
       await stopDisassembly();
-      romDisassemblyCache.length = 0;
       romAnnotations.length = 0;
       fullDisassemblyCache = null;
       machineType = type;
@@ -149,7 +141,6 @@ function startDisassembly(): void {
     return;
   }
 
-  console.log("Disasembly starting.");
   cancellationTokenSource = new CancellationTokenSource();
   disassemblyTask = doBackroundDisassembly(cancellationTokenSource.token);
 }
@@ -166,7 +157,6 @@ async function stopDisassembly(): Promise<void> {
   }
   cancellationTokenSource = null;
   disassemblyTask = null;
-  console.log("Disasembly stopped.");
 }
 
 /**
@@ -196,49 +186,34 @@ async function doBackroundDisassembly(
       for (let i = 0; i < roms; i++) {
         if (romAnnotations[i] === undefined) {
           const romAnn = (romAnnotations[i] = getRomAnnotation(i));
-          console.log(`ROM annotation ${i} read.`);
           const fullAnnotation = getFullAnnotation();
           if (romAnn && fullAnnotation) {
             fullAnnotation.merge(romAnn);
             fullAnnotations[i] = fullAnnotation;
-            console.log(`Full annotation ${i} read.`);
           } else {
             fullAnnotations[i] = null;
-          }
-        }
-
-        if (!romDisassemblyCache[i]) {
-          // --- Obtain the disassembly for this ROM
-          const romPage = await communicatorInstance.getRomPage(i);
-          const bytes = new Uint8Array(Buffer.from(romPage, "base64"));
-          const disassemblyOut = await disassembly(
-            bytes,
-            0x0000,
-            0x3fff,
-            romAnnotations[i]
-          );
-          if (disassemblyOut) {
-            romDisassemblyCache[i] = disassemblyOut;
-            console.log(
-              `ROM ${i} disassembled (${disassemblyOut.outputItems.length})`
-            );
           }
         }
       }
 
       // --- Obtain the disassembly for the full view
+      const start = Date.now();
       const memContents = await communicatorInstance.getMemory(0x0000, 0xffff);
       const bytes = new Uint8Array(Buffer.from(memContents, "base64"));
       const disassemblyOut = await disassembly(
         bytes,
         0x0000,
         0xffff,
-        fullAnnotations[0]
+        fullAnnotations[0],
+        undefined,
+        disassemblyCount ? 0 : 50
       );
       if (disassemblyOut) {
         fullDisassemblyCache = disassemblyOut;
         console.log(
-          `Full memory disassembled (${disassemblyOut.outputItems.length})`
+          `Full memory disassembled (${disassemblyOut.outputItems.length}): ${
+            Date.now() - start
+          }`
         );
       }
 
@@ -249,9 +224,6 @@ async function doBackroundDisassembly(
     // --- Allow short break before going on
     await new Promise((r) => setTimeout(r, 2000));
   }
-
-  // TODO: Implement this method
-  console.log("Disasembly pass completed.");
 }
 
 /**
@@ -323,7 +295,8 @@ async function disassembly(
   from: number,
   to: number,
   annotations?: DisassemblyAnnotation | null,
-  cancellation?: CancellationToken
+  cancellation?: CancellationToken,
+  batchPause?: number
 ): Promise<DisassemblyOutput | null> {
   // --- Use the memory sections in the annotations
   const sections: MemorySection[] = annotations?.memoryMap?.sections ?? [
@@ -332,7 +305,7 @@ async function disassembly(
 
   // --- Do the disassembly
   const disassembler = new Z80Disassembler(sections, bytes);
-  const rawItems = await disassembler.disassemble(from, to);
+  const rawItems = await disassembler.disassemble(from, to, batchPause);
   if (!rawItems) {
     return rawItems;
   }
