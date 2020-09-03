@@ -8,11 +8,6 @@ export interface DisassemblyItem {
   address: number;
 
   /**
-   * The last address that belongs to the operation
-   */
-  lastAddress: number;
-
-  /**
    * Operation codes used for the disassembly
    */
   opCodes?: string;
@@ -31,11 +26,6 @@ export interface DisassemblyItem {
    * Disassembler-generated comment
    */
   hardComment?: string;
-
-  /**
-   * Optional target address, if the instruction contains any
-   */
-  targetAddress?: number;
 
   /**
    * The start position of token to replace

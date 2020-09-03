@@ -220,7 +220,6 @@ export class Z80Disassembler {
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
         address: startAddress,
-        lastAddress: startAddress,
         instruction: sb,
       });
     }
@@ -258,7 +257,6 @@ export class Z80Disassembler {
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
         address: startAddress,
-        lastAddress: startAddress,
         instruction: sb,
       });
     }
@@ -276,7 +274,6 @@ export class Z80Disassembler {
   private _generateSkipOutput(section: MemorySection): void {
     this._output.addItem({
       address: section.startAddress,
-      lastAddress: section.startAddress,
       instruction: `.skip ${intToX4(
         section.endAddress - section.startAddress + 1
       )}H`,
@@ -380,7 +377,6 @@ export class Z80Disassembler {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
       address,
-      lastAddress: (this._offset - 1) & 0xffff,
       opCodes: this._currentOpCodes,
       instruction: "nop",
     };
@@ -405,7 +401,6 @@ export class Z80Disassembler {
 
     // --- We've fully processed the instruction
     disassemblyItem.opCodes = this._currentOpCodes;
-    disassemblyItem.lastAddress = (this._offset - 1) & 0xffff;
     return disassemblyItem;
   }
 
@@ -451,7 +446,6 @@ export class Z80Disassembler {
       case "L":
         // --- #L: absolute label (16 bit address)
         var target = this._fetchWord();
-        disassemblyItem.targetAddress = target;
         this._output.createLabel(target, this._opOffset);
         replacement = this._getLabelName(target);
         symbolPresent = true;
@@ -603,7 +597,6 @@ export class Z80Disassembler {
       item: <DisassemblyItem>{ address, lastAddress: address },
       carryOn: false,
     };
-    result.item.lastAddress = (this._offset - 1) & 0xffff;
     result.item.instruction = `.defb #${intToX2(calcCode)}`;
     const opCodes: number[] = [calcCode];
     result.carryOn = true;

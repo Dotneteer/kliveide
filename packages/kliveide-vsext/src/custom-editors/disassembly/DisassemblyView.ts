@@ -44,7 +44,6 @@ export async function disassembly(
     if (prefixComment) {
       const prefixItem: DisassemblyItem = {
         address: item.address,
-        lastAddress: item.address,
         isPrefixItem: true,
         prefixComment
       };
