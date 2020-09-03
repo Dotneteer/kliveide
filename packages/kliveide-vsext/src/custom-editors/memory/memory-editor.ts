@@ -10,6 +10,7 @@ import {
   communicatorInstance,
   RegisterData,
 } from "../../emulator/communicator";
+import { getAssetsFileResource } from "../../extension-paths";
 
 export class MemoryEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.memoryEditor";
@@ -40,8 +41,8 @@ export class MemoryEditorProvider extends EditorProviderBase {
    */
   getContentReplacements(): ReplacementTuple[] {
     return [
-      ["stylefile", this.getAssetsFileResource("style.css")],
-      ["jsfile", this.getAssetsFileResource("memory.bundle.js")],
+      ["stylefile", getAssetsFileResource("style.css")],
+      ["jsfile", getAssetsFileResource("memory.bundle.js")],
     ];
   }
 

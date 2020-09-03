@@ -19,6 +19,8 @@ import {
   spectrumConfigurationInstance,
   DISASS_ANN_FILE,
 } from "../../emulator/machine-config";
+import { getAssetsFileName, getAssetsFileResource } from "../../extension-paths";
+import { getFullDisassembly } from "./background-disassembly";
 
 /**
  * This provide implements the functionality of the Disassembly Editor
@@ -59,8 +61,8 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    */
   getContentReplacements(): ReplacementTuple[] {
     return [
-      ["stylefile", this.getAssetsFileResource("style.css")],
-      ["jsfile", this.getAssetsFileResource("disass.bundle.js")],
+      ["stylefile", getAssetsFileResource("style.css")],
+      ["jsfile", getAssetsFileResource("disass.bundle.js")],
     ];
   }
 
@@ -168,11 +170,13 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   /**
    * Sends messages to the view so that can refresh itself
    */
-  refreshView(panel: vscode.WebviewPanel): void {
+  async refreshView(panel: vscode.WebviewPanel): Promise<void> {
+    const fullView = await getFullDisassembly();
     const annotations = this._annotations.get(panel);
     panel.webview.postMessage({
       viewNotification: "doRefresh",
       annotations: annotations ? annotations.serialize() : null,
+      fullView
     });
     this.sendInitialStateToView(panel);
     this.sendBreakpointsToView(panel);
@@ -202,7 +206,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
 
       let romAnnotationFile = annotations[rom];
       if (romAnnotationFile.startsWith("#")) {
-        romAnnotationFile = this.getAssetsFileName(
+        romAnnotationFile = getAssetsFileName(
           path.join("annotations", romAnnotationFile.substr(1))
         );
       } else {

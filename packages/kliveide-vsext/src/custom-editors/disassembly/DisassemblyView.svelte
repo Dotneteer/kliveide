@@ -83,6 +83,7 @@
             } else {
               annotations = null;
             }
+            console.log(`Full view: ${ev.data.fullView ? ev.data.fullView.length : -1}`)
             break;
           case "connectionState":
             // --- Refresh after reconnection

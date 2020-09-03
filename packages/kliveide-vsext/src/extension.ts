@@ -17,8 +17,13 @@ import {
   startBackgroundDisassembly,
   stopBackgroundDisassembly,
 } from "./custom-editors/disassembly/background-disassembly";
+import { setExtensionContext } from "./extension-paths";
 
 export async function activate(context: vscode.ExtensionContext) {
+  // --- We use the context in several places, save it
+  setExtensionContext(context);
+
+  // --- Helper shortcuts
   const register = vscode.commands.registerCommand;
   const subs = context.subscriptions;
 
