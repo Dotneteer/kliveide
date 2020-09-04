@@ -20,12 +20,6 @@
   // --- Indicates if the view is refreshed
   let refreshed = true;
 
-  // --- Scroll position to apply after disassembly has been refreshed
-  let needScroll = null;
-
-  // --- Gap to apply during scroll operation
-  let scrollGap = 0;
-
   // --- Virtual machine execution state
   let execState;
 
@@ -61,7 +55,7 @@
   // --- Handle the event when the component is initialized
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
-    window.addEventListener("message", (ev) => {
+    window.addEventListener("message", async (ev) => {
       if (ev.data.viewNotification) {
         // --- We listen only messages sent to this view
         switch (ev.data.viewNotification) {
@@ -76,7 +70,6 @@
             connected = ev.data.state;
             if (!connected) {
               refreshed = false;
-              needScroll = 0;
             }
             break;
           case "execState":
@@ -85,12 +78,9 @@
             switch (ev.data.state) {
               case "paused":
               case "stopped":
-                needScroll = ev.data.pc;
-                scrollGap = 3;
+                await scrollToAddress(ev.data.pc, 3);
                 break;
               case "none":
-                needScroll = 0;
-                scrollGap = 0;
                 currentPc = -1;
                 break;
             }
@@ -124,23 +114,22 @@
             currentPc = ev.data.pc;
             break;
           case "goToAddress":
-            needScroll = ev.data.address;
-            scrollGap = 0;
+            await scrollToAddress(ev.data.address || 0);
             break;
           case "refreshView":
             // --- Store the current top position to scroll back
             // --- to that after refrehs
             try {
-              const item = items[startItemIndex + 1];
-              needScroll = item.address;
+              const item = items[startItemIndex];
+              if (item && item.address !== undefined) {
+                await scrollToAddress(item.address);
+              }
             } catch (err) {
               // --- This error is intentionally ignored
-              needScroll = 0;
             }
             // --- Sign that a refresh is require
             refreshed = false;
             vscodeApi.postMessage({ command: "requestViewportRefresh" });        
-            scrollGap = 0;
             break;
         }
       }
@@ -151,19 +140,18 @@
     vscodeApi.postMessage({ command: "requestRefresh" });
   });
 
-  // --- Scroll to the specified location
-  $: if (needScroll !== null && refreshed) {
-    scrollToAddress(needScroll);
+  $: {
+    (function () {
+      vscodeApi.postMessage({ command: "changeView" });
+    })(viewMode, displayedRom, displayedBank);
   }
 
   // --- Scroll to the specified address
-  async function scrollToAddress(address) {
+  async function scrollToAddress(address, scrollGap = 0) {
     if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
       found = Math.max(0, found - scrollGap);
       virtualListApi.scrollToItem(found);
-      needScroll = null;
-      scrollGap = 0;
     }
   }
 </script>

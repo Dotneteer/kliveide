@@ -98,6 +98,8 @@ export function startBackgroundDisassembly(): void {
       // --- Stop disassembly if emulator disconnects
       if (!state) {
         await stopDisassembly();
+      } else {
+        startDisassembly();
       }
     })
   );
