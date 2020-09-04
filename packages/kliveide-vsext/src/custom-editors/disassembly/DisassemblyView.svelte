@@ -2,10 +2,8 @@
   // ==========================================================================
   // This component implements the view for the Disassembly editor
 
-  import { onMount, tick, afterUpdate } from "svelte";
-  import { disassembly } from "./DisassemblyView";
+  import { onMount } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
-  import { DisassemblyAnnotation } from "../../disassembler/annotations";
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
   import HeaderShadow from "../controls/HeaderShadow.svelte";
@@ -21,9 +19,6 @@
 
   // --- Indicates if the view is refreshed
   let refreshed = true;
-
-  // --- Hold a cancellable refresh token while disassembly is being refreshed
-  let refreshToken;
 
   // --- Scroll position to apply after disassembly has been refreshed
   let needScroll = null;
@@ -42,9 +37,6 @@
 
   // --- The current value of the PC register
   let currentPc;
-
-  // --- Disassembly annotations to apply
-  let annotations;
 
   // --- The API of the virtual list component
   let virtualListApi;
@@ -73,20 +65,11 @@
       if (ev.data.viewNotification) {
         // --- We listen only messages sent to this view
         switch (ev.data.viewNotification) {
-          case "refreshViewPort":
+          case "refreshViewport":
             const parsed = JSON.parse(ev.data.fullView);
+            items = parsed;
+            refreshed = true;
             console.log(`Full view: ${parsed.length}, ${Date.now()-ev.data.start}`)
-            break;
-          case "doRefresh":
-            // --- The Webview sends this request to refresh the view
-            refreshed = false;
-            if (ev.data.annotations) {
-              annotations = DisassemblyAnnotation.deserialize(
-                ev.data.annotations
-              );
-            } else {
-              annotations = null;
-            }
             break;
           case "connectionState":
             // --- Refresh after reconnection
@@ -156,6 +139,7 @@
             }
             // --- Sign that a refresh is require
             refreshed = false;
+            vscodeApi.postMessage({ command: "requestViewportRefresh" });        
             scrollGap = 0;
             break;
         }
@@ -164,53 +148,12 @@
 
     // --- No, the component is initialized, notify the Webview
     // --- and ask it to refresh this view
-    vscodeApi.postMessage({ command: "refresh" });
+    vscodeApi.postMessage({ command: "requestRefresh" });
   });
-
-  // --- Refresh the view when connection/refresh statte changes
-  $: (async () => {
-    if (connected && !refreshed) {
-      if (await refreshDisassembly()) {
-        refreshed = true;
-      }
-    }
-  })();
 
   // --- Scroll to the specified location
   $: if (needScroll !== null && refreshed) {
     scrollToAddress(needScroll);
-  }
-
-  // --- Initiate refreshing the disassembly view
-  // --- Take care not to start disassembling multiple times
-  async function refreshDisassembly() {
-    // --- Cancel, if disassembly in progress, and start a new disassembly
-    if (refreshToken) {
-      refreshToken.cancelled = true;
-    }
-
-    // --- Start a new disassembly
-    try {
-      refreshToken = {
-        cancelled: false,
-      };
-      const disass = await disassembly(0, 0xffff, annotations, refreshToken);
-      if (!disass) {
-        // --- This disassembly was cancelled
-        return false;
-      }
-      items = disass.outputItems;
-    } finally {
-      // --- Release the cancellation token
-      refreshToken = null;
-    }
-
-    await tick();
-    await new Promise((r) => setTimeout(r, 50));
-    if (needScroll !== null) {
-      await scrollToAddress(needScroll);
-    }
-    return true;
   }
 
   // --- Scroll to the specified address

@@ -77,7 +77,7 @@ let disassemblyCount = 0;
  */
 export async function getFullDisassembly(): Promise<DisassemblyItem[]> {
   const start = Date.now();
-  while (!fullDisassemblyCache && Date.now() - start < 10000) {
+  while (!fullDisassemblyCache && Date.now() - start < 15000) {
     await new Promise((r) => setTimeout(r, 50));
   }
   return fullDisassemblyCache ? fullDisassemblyCache.outputItems : [];

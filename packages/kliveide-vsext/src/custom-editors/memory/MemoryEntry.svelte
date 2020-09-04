@@ -15,6 +15,9 @@
   // --- Type of the ZX Spectrum machine
   export let machineType;
 
+  // --- Current view mode
+  export let viewMode;
+
   // --- Memory line column dimensions
   let referenceWidth = 0;
   let memByteWidth = 0;
@@ -94,12 +97,12 @@
 
   // --- Tests if an address is a ROM address
   function isRom(addr) {
-    return addr < 0x4000;
+    return viewMode === 2 ? false : addr < 0x4000;
   }
 
   // --- Test if an address is a BANK address
   function isBank(addr) {
-    return machineType !== "48" && addr >= 0xc000;
+    return machineType !== "48" && !viewMode && addr >= 0xc000;
   }
 </script>
 
@@ -166,6 +169,7 @@
   }
 </style>
 
+{#if item}
 <div class="item">
   <span
     class="address"
@@ -190,3 +194,4 @@
   {/each}
   <span class="string" style="width:{stringWidth}px">{item.charContents}</span>
 </div>
+{/if}
