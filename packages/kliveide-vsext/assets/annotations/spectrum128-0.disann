@@ -8299,7 +8299,14 @@
     "16348": "No match found",
     "16353": "Found a match",
     "16367": "PROGRAMMERS' INITIALS: [Provided by Andrew Owen]",
-    "16383": "END OF ROM MARKER"
+    "16383": "END OF ROM MARKER",
+    "16384": "Screen memory",
+    "23296": "RAM paging routines",
+    "23384": "Reserved",
+    "23552": "System variables",
+    "23744": "Reserved",
+    "23755": "Available for code",
+    "65368": "Reserved"
   },
   "literals": {
     "23386": [
@@ -12959,24 +12966,37 @@
     {
       "startAddress": 16384,
       "endAddress": 23295,
-      "sectionType": 2
+      "sectionType": 0
     },
     {
       "startAddress": 23296,
-      "endAddress": 23551,
+      "endAddress": 23383,
       "sectionType": 1
     },
     {
-      "startAddress": 23552,
-      "endAddress": 49151,
-      "sectionType": 1,
-      "lenght": 25600
+      "startAddress": 23384,
+      "endAddress": 23551,
+      "sectionType": 2
     },
     {
-      "startAddress": 49152,
+      "startAddress": 23552,
+      "endAddress": 23743,
+      "sectionType": 2
+    },
+    {
+      "startAddress": 23744,
+      "endAddress": 23754,
+      "sectionType": 2
+    },
+    {
+      "startAddress": 23755,
+      "endAddress": 65367,
+      "sectionType": 1
+    },
+    {
+      "startAddress": 65368,
       "endAddress": 65535,
-      "sectionType": 1,
-      "lenght": 16384
+      "sectionType": 2
     }
   ],
   "disassemblyFlags": 4

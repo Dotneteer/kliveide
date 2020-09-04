@@ -1,4 +1,8 @@
 <script>
+  // ==========================================================================
+  // Implements a virtualized list
+  // Source: https://github.com/sveltejs/svelte-virtual-list
+
   import { onMount, tick, createEventDispatcher } from "svelte";
 
   // props
@@ -10,11 +14,11 @@
 
   let foo;
 
-  // read-only, but visible to consumers via bind:start
+  // --- read-only, but visible to consumers via bind:start
   export let start = 0;
   export let end = 0;
 
-  // local state
+  // --- local state
   let height_map = [];
   let rows;
   let viewport;

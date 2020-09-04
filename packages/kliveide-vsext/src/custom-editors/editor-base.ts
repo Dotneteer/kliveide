@@ -16,6 +16,7 @@ import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
 import { ExecutionState, MemoryPageInfo } from "../emulator/communicator";
 import { machineTypes } from "../emulator/machine-info";
+import { getAssetsFileName } from "../extension-paths";
 
 const editorInstances: vscode.WebviewPanel[] = [];
 let activeEditor: vscode.WebviewPanel | null = null;
@@ -42,16 +43,6 @@ export abstract class EditorProviderBase
   private _disposables = new Map<vscode.WebviewPanel, vscode.Disposable[]>();
 
   /**
-   * The path of the "assets" folder within the extension
-   */
-  readonly assetsPath: string;
-
-  /**
-   * The path of the "out" folder within the extension
-   */
-  readonly outPath: string;
-
-  /**
    * The title of the webview
    */
   abstract readonly title: string;
@@ -75,8 +66,6 @@ export abstract class EditorProviderBase
    * @param context Extension context
    */
   constructor(protected readonly context: vscode.ExtensionContext) {
-    this.outPath = this.getExtensionPath("out");
-    this.assetsPath = this.getExtensionPath("out/assets");
   }
 
   /**
@@ -231,7 +220,7 @@ export abstract class EditorProviderBase
     let htmlContents: string;
     try {
       htmlContents = fs.readFileSync(
-        this.getAssetsFileName(this.htmlFileName),
+        getAssetsFileName(this.htmlFileName),
         "utf8"
       );
 
@@ -249,56 +238,6 @@ export abstract class EditorProviderBase
       htmlContents = `<p>Error loading HTML resource ${this.htmlFileName}: ${err}</p>`;
     }
     return htmlContents;
-  }
-
-  /**
-   * Gets the specified path within the extension
-   * @param {String[]} path Path within the extension
-   */
-  protected getExtensionPath(...paths: string[]): string {
-    return path.join(this.context.extensionPath, ...paths);
-  }
-
-  /**
-   * Gets the specified file resource URI
-   * @param {String} basePath Base path of the resource within the extension folder
-   * @param {String} resource Resource file name
-   */
-  protected getFileResource(basePath: string, resource: string): vscode.Uri {
-    const file = vscode.Uri.file(path.join(basePath, resource));
-    return file.with({ scheme: "vscode-resource" });
-  }
-
-  /**
-   * Gets a resource from the "out" extension folder
-   * @param {String} resource Resource file name
-   */
-  protected getOuFileResource(resource: string): vscode.Uri {
-    return this.getFileResource(this.outPath, resource);
-  }
-
-  /**
-   * Gets a resource from the "assets" extension folder
-   * @param {String} resource Resource file name
-   */
-  protected getAssetsFileResource(resource: string): vscode.Uri {
-    return this.getFileResource(this.assetsPath, resource);
-  }
-
-  /**
-   * Gets a file name from the "out" extension folder
-   * @param {String} filename Filename
-   */
-  protected getOuFileName(filename: string): string {
-    return path.join(this.outPath, filename);
-  }
-
-  /**
-   * Gets a file name from the "assets" extension folder
-   * @param {String} filename Filename
-   */
-  protected getAssetsFileName(filename: string): string {
-    return path.join(this.assetsPath, filename);
   }
 
   /**

@@ -96,7 +96,7 @@
       "editor/title": [
         {
           "command": "kliveide.refreshView",
-          "when": "resourceFilename == view.disassembly || resourceFilename == view.memory",
+          "when": "resourceFilename == view.disassembly",
           "group": "navigation"
         },
         {

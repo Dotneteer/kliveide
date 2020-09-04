@@ -2,13 +2,13 @@
   // ==========================================================================
   // This component implements the view for the Disassembly editor
 
-  import { onMount, tick, afterUpdate } from "svelte";
-  import { disassembly } from "./DisassemblyView";
+  import { onMount } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
-  import { DisassemblyAnnotation } from "../../disassembler/annotations";
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
+  import HeaderShadow from "../controls/HeaderShadow.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
+  import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
 
   // --- Disassembly items to display
@@ -19,15 +19,6 @@
 
   // --- Indicates if the view is refreshed
   let refreshed = true;
-
-  // --- Hold a cancellable refresh token while disassembly is being refreshed
-  let refreshToken;
-
-  // --- Scroll position to apply after disassembly has been refreshed
-  let needScroll = null;
-
-  // --- Gap to apply during scroll operation
-  let scrollGap = 0;
 
   // --- Virtual machine execution state
   let execState;
@@ -41,39 +32,44 @@
   // --- The current value of the PC register
   let currentPc;
 
-  // --- Disassembly annotations to apply
-  let annotations;
-
   // --- The API of the virtual list component
   let virtualListApi;
 
   // --- The index of the visible item at the top
   let startItemIndex;
 
+  // --- Type of the current machine
+  let machineType;
+
+  // --- Configuration of the current machine
+  let machineConfig;
+
+  // --- Memory page information
+  let pageInfo;
+
+  // --- View information
+  let viewMode;
+  let displayedRom;
+  let displayedBank;
+
   // --- Handle the event when the component is initialized
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
-    window.addEventListener("message", (ev) => {
+    window.addEventListener("message", async (ev) => {
       if (ev.data.viewNotification) {
         // --- We listen only messages sent to this view
         switch (ev.data.viewNotification) {
-          case "doRefresh":
-            // --- The Webview sends this request to refresh the view
-            refreshed = false;
-            if (ev.data.annotations) {
-              annotations = DisassemblyAnnotation.deserialize(
-                ev.data.annotations
-              );
-            } else {
-              annotations = null;
-            }
+          case "refreshViewport":
+            const parsed = JSON.parse(ev.data.fullView);
+            items = parsed;
+            refreshed = true;
+            console.log(`Full view: ${parsed.length}, ${Date.now()-ev.data.start}`)
             break;
           case "connectionState":
             // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
               refreshed = false;
-              needScroll = 0;
             }
             break;
           case "execState":
@@ -82,17 +78,33 @@
             switch (ev.data.state) {
               case "paused":
               case "stopped":
-                needScroll = ev.data.pc;
-                scrollGap = 3;
+                await scrollToAddress(ev.data.pc, 3);
                 break;
               case "none":
-                needScroll = 0;
-                scrollGap = 0;
                 currentPc = -1;
                 break;
             }
             execState = ev.data.state;
             currentPc = ev.data.pc;
+            break;
+          case "machineType":
+            machineType = ev.data.type;
+            machineConfig = ev.data.config;
+            viewMode = 0;
+          // --- This case intentionally flows to the next
+          case "memoryPaging":
+            if (machineConfig) {
+              const paging = machineConfig.paging;
+              if (paging) {
+                pageInfo = {
+                  supportsPaging: paging.supportsPaging,
+                  roms: paging.roms,
+                  banks: paging.banks,
+                  selectedRom: ev.data.selectedRom,
+                  selectedBank: ev.data.selectedBank,
+                };
+              }
+            }
             break;
           case "breakpoints":
             // --- Receive breakpoints set in the emulator
@@ -102,22 +114,22 @@
             currentPc = ev.data.pc;
             break;
           case "goToAddress":
-            needScroll = ev.data.address;
-            scrollGap = 0;
+            await scrollToAddress(ev.data.address || 0);
             break;
           case "refreshView":
             // --- Store the current top position to scroll back
             // --- to that after refrehs
             try {
-              const item = items[startItemIndex + 1];
-              needScroll = item.address;
+              const item = items[startItemIndex];
+              if (item && item.address !== undefined) {
+                await scrollToAddress(item.address);
+              }
             } catch (err) {
               // --- This error is intentionally ignored
-              needScroll = 0;
             }
             // --- Sign that a refresh is require
             refreshed = false;
-            scrollGap = 0;
+            vscodeApi.postMessage({ command: "requestViewportRefresh" });        
             break;
         }
       }
@@ -125,63 +137,21 @@
 
     // --- No, the component is initialized, notify the Webview
     // --- and ask it to refresh this view
-    vscodeApi.postMessage({ command: "refresh" });
+    vscodeApi.postMessage({ command: "requestRefresh" });
   });
 
-  // --- Refresh the view when connection/refresh statte changes
-  $: (async () => {
-    if (connected && !refreshed) {
-      if (await refreshDisassembly()) {
-        refreshed = true;
-      }
-    }
-  })();
-
-  // --- Scroll to the specified location
-  $: if (needScroll !== null && refreshed) {
-    scrollToAddress(needScroll);
-  }
-
-  // --- Initiate refreshing the disassembly view
-  // --- Take care not to start disassembling multiple times
-  async function refreshDisassembly() {
-    // --- Cancel, if disassembly in progress, and start a new disassembly
-    if (refreshToken) {
-      refreshToken.cancelled = true;
-    }
-
-    // --- Start a new disassembly
-    try {
-      refreshToken = {
-        cancelled: false,
-      };
-      const disass = await disassembly(0, 0xffff, annotations, refreshToken);
-      if (!disass) {
-        // --- This disassembly was cancelled
-        return false;
-      }
-      items = disass.outputItems;
-    } finally {
-      // --- Release the cancellation token
-      refreshToken = null;
-    }
-
-    await tick();
-    await new Promise((r) => setTimeout(r, 50));
-    if (needScroll !== null) {
-      await scrollToAddress(needScroll);
-    }
-    return true;
+  $: {
+    (function () {
+      vscodeApi.postMessage({ command: "changeView" });
+    })(viewMode, displayedRom, displayedBank);
   }
 
   // --- Scroll to the specified address
-  async function scrollToAddress(address) {
+  async function scrollToAddress(address, scrollGap = 0) {
     if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
       found = Math.max(0, found - scrollGap);
       virtualListApi.scrollToItem(found);
-      needScroll = null;
-      scrollGap = 0;
     }
   }
 </script>
@@ -206,6 +176,14 @@
     {#if !refreshed}
       <RefreshPanel text="Refreshing Z80 Disassembly view..." />
     {/if}
+    {#if pageInfo && pageInfo.supportsPaging}
+      <MemoryPagingPanel
+        {pageInfo}
+        bind:viewMode
+        bind:displayedRom
+        bind:displayedBank />
+    {/if}
+    <HeaderShadow />
     <VirtualList
       {items}
       itemHeight={20}

@@ -10,6 +10,7 @@ import {
   communicatorInstance,
   RegisterData,
 } from "../../emulator/communicator";
+import { getAssetsFileResource } from "../../extension-paths";
 
 export class MemoryEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.memoryEditor";
@@ -22,6 +23,11 @@ export class MemoryEditorProvider extends EditorProviderBase {
     );
     return providerRegistration;
   }
+
+  /**
+   * Signs that the view has been initialized
+   */
+  private _viewInitialized = false;
 
   /**
    * Instantiates an editor provider
@@ -40,8 +46,8 @@ export class MemoryEditorProvider extends EditorProviderBase {
    */
   getContentReplacements(): ReplacementTuple[] {
     return [
-      ["stylefile", this.getAssetsFileResource("style.css")],
-      ["jsfile", this.getAssetsFileResource("memory.bundle.js")],
+      ["stylefile", getAssetsFileResource("style.css")],
+      ["jsfile", getAssetsFileResource("memory.bundle.js")],
     ];
   }
 
@@ -61,6 +67,7 @@ export class MemoryEditorProvider extends EditorProviderBase {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
 
     let refreshCounter = 0;
+    let refreshing = false;
     this.toDispose(
       webviewPanel,
       onFrameInfoChanged(async () => {
@@ -68,13 +75,27 @@ export class MemoryEditorProvider extends EditorProviderBase {
         if (refreshCounter % 10 !== 0) {
           return;
         }
-        this.refreshViewPort(webviewPanel);
+        try {
+          if (!refreshing) {
+            refreshing = true;
+            this.refreshViewPort(webviewPanel);
+          }
+        } finally {
+          refreshing = false;
+        }
       })
     );
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
     });
+
+    webviewPanel.onDidChangeViewState((state) => {
+      if (!state.webviewPanel.active) {
+        this._viewInitialized = false;
+      }
+    });
+
   }
 
   /**
@@ -90,19 +111,13 @@ export class MemoryEditorProvider extends EditorProviderBase {
       case "refresh":
         // --- Send breakpoint info to the view
         this.sendInitialStateToView(panel);
-        let registers: RegisterData | null = null;
-        try {
-          registers = await communicatorInstance.getRegisters();
-        } catch (err) {
-          // --- This error is intentionally ignored
-        }
-        panel.webview.postMessage({
-          viewNotification: "doRefresh",
-          registers,
-        });
+        await this.refreshViewPort(panel, -1);
+        this._viewInitialized = true;
         break;
       case "changeView":
-        await this.refreshViewPort(panel);
+        if (this._viewInitialized) {
+          await this.refreshViewPort(panel, 0);
+        }
         break;
     }
   }
@@ -111,7 +126,10 @@ export class MemoryEditorProvider extends EditorProviderBase {
    * Refresh the viewport of the specified panel
    * @param panel Panel to refresh
    */
-  async refreshViewPort(panel: vscode.WebviewPanel): Promise<void> {
+  async refreshViewPort(
+    panel: vscode.WebviewPanel,
+    itemIndex?: number
+  ): Promise<void> {
     try {
       const regData = await communicatorInstance.getRegisters();
       panel.webview.postMessage({
@@ -121,6 +139,7 @@ export class MemoryEditorProvider extends EditorProviderBase {
 
       panel.webview.postMessage({
         viewNotification: "refreshViewPort",
+        itemIndex,
       });
     } catch (err) {
       // --- This exception in intentionally ignored
