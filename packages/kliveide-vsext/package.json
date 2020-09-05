@@ -132,6 +132,15 @@
             "filenamePattern": "view.memory"
           }
         ]
+      },
+      {
+        "viewType": "kliveide.basicEditor",
+        "displayName": "Klive Basic Editor",
+        "selector": [
+          {
+            "filenamePattern": "view.basic"
+          }
+        ]
       }
     ]
   },

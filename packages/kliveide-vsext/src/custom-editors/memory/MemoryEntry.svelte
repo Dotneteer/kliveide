@@ -1,6 +1,10 @@
 <script>
   // ==========================================================================
   // Displays a line (16 bytes) of the memory dump
+  // For performance reasons, this components assembles the HTML contents
+  // programmatically, instead of using Svelte features.
+  // The component uses styles in global.css.
+
   import { intToX4, intToX2 } from "../../disassembler/disassembly-helper";
 
   // --- The item that contains the memory line
@@ -18,18 +22,37 @@
   // --- Current view mode
   export let viewMode;
 
-  // --- Memory line column dimensions
-  let referenceWidth = 0;
-  let memByteWidth = 0;
-  let memByteMargin = 0;
-  let stringWidth = 0;
+  // --- The HTML text of the component
+  let htmlText;
 
-  // --- Whenever the reference width changes, re-calculate dimensions
   $: {
-    const charWidth = referenceWidth / 4;
-    memByteWidth = 3 * charWidth;
-    memByteMargin = charWidth;
-    stringWidth = 17 * charWidth;
+    htmlText =
+      '<span class="memory-address ' +
+      (isRom(item.address) ? " isRom" : "") +
+      (isBank(item.address) ? " isBank" : "") +
+      '" title="' +
+      intToX4(item.address) +
+      " (" +
+      item.address +
+      ')">' +
+      intToX4(item.address) +
+      "</span>";
+    htmlText += '<span class="separator" />';
+    for (let i = 0; i < item.contents.length; i++) {
+      htmlText +=
+        '<span class="memory-value ' +
+        (hasPointingRegs(i, registers) ? "memory-register" : "") +
+        '" title="' +
+        tooltip(i, registers) +
+        '">' +
+        intToX2(item.contents[i]) +
+        "</span>";
+      if (i % 8 === 7) {
+        htmlText += '<span class="separator" />';
+      }
+    }
+    htmlText += '<span class="memory-string">' + item.charContents + "</span>";
+    console.log(htmlText);
   }
 
   // --- Create the tooltip for the specified (i) position using the
@@ -110,6 +133,7 @@
   .item {
     padding: 1px 8px;
     height: 20px;
+    width: 100%;
     display: flex;
     flex-direction: row;
     flex-grow: 0;
@@ -119,79 +143,12 @@
     overflow: hidden;
     align-items: flex-start;
   }
-
-  .address {
-    color: var(--vscode-editorLineNumber-foreground);
-    flex-grow: 0;
-    flex-shrink: 0;
-  }
-
-  .isRom {
-    color: var(--vscode-terminal-ansiBrightRed);
-  }
-
-  .isBank {
-    color: var(--vscode-terminal-ansiYellow);
-  }
-
-  .value {
-    color: var(--vscode-terminal-ansiBrightCyan);
-    padding: 0px 2px;
-    overflow: hidden;
-    flex-grow: 0;
-    flex-shrink: 0;
-    text-align: center;
-  }
-
-  .value:hover {
-    background: var(--vscode-list-hoverBackground);
-  }
-
-  .separator {
-    flex-grow: 0;
-    flex-shrink: 0;
-  }
-
-  .string {
-    color: var(--vscode-terminal-ansiBrightBlue);
-    overflow: hidden;
-    flex-grow: 0;
-    flex-shrink: 0;
-  }
-
-  .register {
-    background: var(--vscode-terminal-ansiMagenta);
-    color: var(--vscode-terminal-ansiBrightWhite);
-  }
-
-  .register:hover {
-    background: var(--vscode-terminal-ansiMagenta);
-  }
 </style>
 
 {#if item}
-<div class="item">
-  <span
-    class="address"
-    class:isRom={isRom(item.address)}
-    class:isBank={isBank(item.address)}
-    bind:clientWidth={referenceWidth}
-    title="{intToX4(item.address)} ({item.address})">
-    {intToX4(item.address)}
-  </span>
-  <span class="separator" style="width:{2 * memByteMargin}px" />
-  {#each item.contents as byte, i}
-    <span
-      class="value"
-      class:register={hasPointingRegs(i, registers)}
-      style="width:{memByteWidth}px"
-      title={tooltip(i, registers)}>
-      {intToX2(byte)}
-    </span>
-    {#if i % 8 === 7}
-      <span class="separator" style="width:{memByteMargin}px" />
+  <div class="item">
+    {#if htmlText}
+      {@html htmlText}
     {/if}
-  {/each}
-  <span class="string" style="width:{stringWidth}px">{item.charContents}</span>
-</div>
+  </div>
 {/if}

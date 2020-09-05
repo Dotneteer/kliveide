@@ -63,7 +63,8 @@
             const parsed = JSON.parse(ev.data.fullView);
             items = parsed;
             refreshed = true;
-            console.log(`Full view: ${parsed.length}, ${Date.now()-ev.data.start}`)
+            await new Promise((r) => setTimeout(r, 100));
+            await virtualListApi.refreshContents();
             break;
           case "connectionState":
             // --- Refresh after reconnection
@@ -152,6 +153,8 @@
       let found = items.findIndex((it) => it.address >= address);
       found = Math.max(0, found - scrollGap);
       virtualListApi.scrollToItem(found);
+      await new Promise((r) => setTimeout(r, 10));
+      await virtualListApi.refreshContents();
     }
   }
 </script>

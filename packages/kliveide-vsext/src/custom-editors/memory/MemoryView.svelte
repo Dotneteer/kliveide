@@ -1,6 +1,6 @@
 <script>
   // ==========================================================================
-  // This component implements the view for the Memory editor
+  // This component implements the view for the Memory editor.
 
   import { onMount, tick } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
@@ -33,6 +33,12 @@
   // --- The index of the last visible ite at the bottom
   let endItemIndex;
 
+  // --- The item index of the top hem item
+  let topHemItemIndex;
+
+  // --- The item index of the bottom hem item
+  let bottomHemItemIndex;
+
   // --- Is the view currently scrolling?
   let scrolling = false;
 
@@ -52,6 +58,9 @@
   let viewMode;
   let displayedRom;
   let displayedBank;
+
+  // --- The last time the view was scrolled
+  let lastScrollTime = 0;
 
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
@@ -97,16 +106,19 @@
             if (isRefreshing) break;
             isRefreshing = true;
             try {
-              await refreshViewPort();
+              if (lastScrollTime !== 0 && Date.now() - lastScrollTime < 500) {
+                break;
+              }
+              await refreshViewPort(ev.data.fullRefresh);
               let pos = ev.data.itemIndex;
               if (pos !== undefined) {
                 if (pos < 0) {
-                  pos = restoreViewState();
+                  pos = restoreViewState(ev.data);
                 } else {
                   pos = items[pos] && items[pos].address;
                 }
                 if (pos !== undefined) {
-                  await new Promise((r) => setTimeout(r, 50));
+                  await tick();
                   await scrollToAddress(pos || 0);
                 }
               }
@@ -131,13 +143,22 @@
   }
 
   // --- Refresh the specified part of the viewport
-  async function refreshViewPort() {
+  async function refreshViewPort(fullRefresh) {
     try {
-      const viewPort = await memory(viewMode, displayedRom, displayedBank);
-      if (!viewPort) {
+      const viewportItems = await memory(viewMode, displayedRom, displayedBank);
+      if (!viewportItems) {
         return;
       }
-      items = viewPort;
+      if (!items || items.length === 0 || fullRefresh) {
+        items = viewportItems;
+      } else {
+        for (let i = topHemItemIndex; i <= bottomHemItemIndex; i++) {
+          items[i] = viewportItems[i];
+        }
+      }
+      if (virtualListApi) {
+        await virtualListApi.refreshContents();
+      }
     } catch (err) {
       console.log(err);
     }
@@ -145,7 +166,6 @@
 
   // --- Scroll to the specified address
   async function scrollToAddress(address) {
-    await tick();
     if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
       if (found >= 0 && items[found].address > address) {
@@ -153,16 +173,20 @@
       }
       found = Math.max(0, found);
       scrolling = true;
-      virtualListApi.scrollToItem(found);
+      await virtualListApi.scrollToItem(found);
       await saveViewState();
       scrolling = false;
+      await new Promise((r) => setTimeout(r, 10));
+      if (virtualListApi) {
+        await virtualListApi.refreshContents();
+      }
     }
   }
 
   // --- Save the current view state
   async function saveViewState() {
     await tick();
-    const item = items[startItemIndex + 1];
+    const item = items[startItemIndex];
     if (item) {
       vscodeApi.setState({ scrollPos: item.address });
     }
@@ -206,14 +230,19 @@
     <VirtualList
       {items}
       itemHeight={20}
+      topHem={5}
+      bottomHem={5}
       let:item
       bind:api={virtualListApi}
-      bind:start={startItemIndex}
-      bind:end={endItemIndex}
+      bind:startItemIndex
+      bind:endItemIndex
+      bind:topHemItemIndex
+      bind:bottomHemItemIndex
       on:scrolled={async () => {
         if (!scrolling) {
           await saveViewState();
         }
+        lastScrollTime = Date.now();
       }}>
       <MemoryEntry
         {item}
