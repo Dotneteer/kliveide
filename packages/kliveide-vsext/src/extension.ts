@@ -18,6 +18,7 @@ import {
   stopBackgroundDisassembly,
 } from "./custom-editors/disassembly/background-disassembly";
 import { setExtensionContext } from "./extension-paths";
+import { BasicEditorProvider } from "./custom-editors/basic/basic-editor";
 
 export async function activate(context: vscode.ExtensionContext) {
   // --- We use the context in several places, save it
@@ -52,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // --- Register custom editors
   context.subscriptions.push(DisassemblyEditorProvider.register(context));
   context.subscriptions.push(MemoryEditorProvider.register(context));
+  context.subscriptions.push(BasicEditorProvider.register(context));
 
   // --- Start the notification mechanism
   startNotifier();

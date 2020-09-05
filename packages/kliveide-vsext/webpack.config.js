@@ -69,4 +69,8 @@ module.exports = [
     "./src/custom-editors/memory/memory.js",
     "memory.bundle.js"
   ),
+  createConfig(
+    "./src/custom-editors/basic/basic.js",
+    "basic.bundle.js"
+  ),
 ];
