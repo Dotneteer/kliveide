@@ -170,28 +170,30 @@
 </style>
 
 {#if item}
-<div class="item">
-  <span
-    class="address"
-    class:isRom={isRom(item.address)}
-    class:isBank={isBank(item.address)}
-    bind:clientWidth={referenceWidth}
-    title="{intToX4(item.address)} ({item.address})">
-    {intToX4(item.address)}
-  </span>
-  <span class="separator" style="width:{2 * memByteMargin}px" />
-  {#each item.contents as byte, i}
+  <div class="item">
     <span
-      class="value"
-      class:register={hasPointingRegs(i, registers)}
-      style="width:{memByteWidth}px"
-      title={tooltip(i, registers)}>
-      {intToX2(byte)}
+      class="address"
+      class:isRom={isRom(item.address)}
+      class:isBank={isBank(item.address)}
+      bind:clientWidth={referenceWidth}
+      title="{intToX4(item.address)} ({item.address})">
+      {intToX4(item.address)}
     </span>
-    {#if i % 8 === 7}
-      <span class="separator" style="width:{memByteMargin}px" />
-    {/if}
-  {/each}
-  <span class="string" style="width:{stringWidth}px">{item.charContents}</span>
-</div>
+    <span class="separator" style="width:{2 * memByteMargin}px" />
+    {#each item.contents as byte, i}
+      <span
+        class="value"
+        class:register={hasPointingRegs(i, registers)}
+        style="width:{memByteWidth}px"
+        title={tooltip(i, registers)}>
+        {intToX2(byte)}
+      </span>
+      {#if i % 8 === 7}
+        <span class="separator" style="width:{memByteMargin}px" />
+      {/if}
+    {/each}
+    <span
+      class="string"
+      style="width:{stringWidth}px">{item.charContents}</span>
+  </div>
 {/if}

@@ -1,164 +1,153 @@
 <script>
+  import { create } from "lodash";
+
   // ==========================================================================
-  // Implements a virtualized list
-  // Source: https://github.com/sveltejs/svelte-virtual-list
+  // This component implements a virtaulized list where each item has the
+  // same height
 
   import { onMount, tick, createEventDispatcher } from "svelte";
 
-  // props
-  export let items;
-  export let height = "100%";
-  export let itemHeight = undefined;
+  // --------------------------------------------------------------------------
+  // Component input properties
+
+  // --- Data items of the virtual list
+  export let items = [];
+
+  // --- The height of the entire components
+  export let componentHeight = "100%";
+
+  // --- Height of items given in pixels
+  export let itemHeight = 20;
+
+  // --- Tab order to use
   export let tabOrder = 0;
-  export let api = {};
 
-  // --- read-only, but visible to consumers via bind:start
-  export let start = 0;
-  export let end = 0;
+  // --- Number of items rendered above the viewport
+  export let topHem = 0;
 
-  // --- local state
-  let height_map = [];
-  let rows;
+  // --- Number of items rendered below the viewport
+  export let bottomHem = 0;
+
+  // --------------------------------------------------------------------------
+  // Bindable component values
+
+  // --- The item index of the first visible item
+  export let startItemIndex = 0;
+
+  // --- The item index of the last visible item
+  export let endItemIndex = 0;
+
+  // --- The item index of the top hem item
+  export let topHemItemIndex = 0;
+
+  // --- The item index of the bottom hem item
+  export let bottomHemItemIndex = 0;
+
+  // --- The public API of this component
+  export let api;
+
+  // --------------------------------------------------------------------------
+  // Internals
+
+  // --- Items to display in the virtual list
+  let toDisplay;
+
+  // --- Viewport element
   let viewport;
+
+  // --- Contents element
   let contents;
-  let viewport_height = 0;
-  let visible;
-  let mounted;
 
-  let top = 0;
-  let bottom = 0;
-  let average_height;
-  let rescroll = false;
+  // --- Height of the viewport
+  let viewportHeight = 0;
 
+  // --- Height of the contents
+  let contentsHeight = 0;
+
+  // --- This component will dispatch events
   const dispatch = createEventDispatcher();
 
-  $: visible = items.slice(start, end).map((data, i) => {
-    return { index: i + start, data };
-  });
-
-  // whenever `items` changes, invalidate the current heightmap
-  $: if (mounted) refresh(items, viewport_height, itemHeight);
-
-  async function refresh(items, viewport_height, itemHeight) {
-    const { scrollTop } = viewport;
-
-    await tick(); // wait until the DOM is up to date
-
-    let content_height = top - scrollTop;
-    let i = start;
-
-    while (content_height < viewport_height + itemHeight && i < items.length) {
-      let row = rows[i - start];
-
-      if (!row) {
-        end = i + 1;
-        await tick(); // render the newly visible row
-        row = rows[i - start];
-      }
-
-      const row_height = (height_map[i] = itemHeight || row.offsetHeight);
-      content_height += row_height;
-      i += 1;
-    }
-
-    end = i;
-
-    const remaining = items.length - end;
-    api.calculatedHeight = average_height = (top + content_height) / end;
-
-    bottom = remaining * average_height;
-    height_map.length = items.length;
-  }
-
-  async function handle_scroll() {
-    const { scrollTop } = viewport;
-
-    dispatch("scrolled", {pos: scrollTop});
-
-    const old_start = start;
-
-    for (let v = 0; v < rows.length; v += 1) {
-      height_map[start + v] = itemHeight || rows[v].offsetHeight;
-    }
-
-    let i = 0;
-    let y = 0;
-
-    while (i < items.length) {
-      const row_height = height_map[i] || average_height;
-      if (y + row_height > scrollTop) {
-        start = i;
-        top = y;
-
-        break;
-      }
-
-      y += row_height;
-      i += 1;
-    }
-
-    while (i < items.length) {
-      y += height_map[i] || average_height;
-      i += 1;
-
-      if (y > scrollTop + viewport_height + itemHeight) break;
-    }
-
-    end = i;
-
-    const remaining = items.length - end;
-    average_height = y / end;
-
-    while (i < items.length) height_map[i++] = average_height;
-    bottom = remaining * average_height;
-
-    // prevent jumping if we scrolled up into unknown territory
-    rescroll = false;
-    if (start < old_start) {
-      await tick();
-
-      let expected_height = 0;
-      let actual_height = 0;
-
-      for (let i = start; i < old_start; i += 1) {
-        if (rows[i - start]) {
-          expected_height += height_map[i];
-          actual_height += itemHeight || rows[i - start].offsetHeight;
-        }
-      }
-
-      const d = actual_height - expected_height;
-      viewport.scrollTo(0, scrollTop + d);
-      dispatch("scrolled", {pos: scrollTop + d});
-      rescroll = true;
-    }
-
-    // TODO if we overestimated the space these
-    // rows would occupy we may need to add some
-    // more. maybe we can just call handle_scroll again?
-  }
-
-  // trigger initial refresh
-  onMount(() => {
-    rows = contents.getElementsByTagName("svelte-virtual-list-row");
-    mounted = true;
-    api.scrollToItem = async (item) => {
-      await tick();
-      if (viewport && itemHeight && item >= 0) {
-        viewport.scrollTo(0, item * itemHeight);
-        await new Promise((r) => setTimeout(r, 50));
-        if (rescroll) {
-          // --- Repeat scrolling again
-          viewport.scrollTo(0, item * itemHeight);
-        }
-      }
+  // --- Initialize the API on mount
+  onMount(async () => {
+    await tick();
+    api = {
+      refreshContents,
+      scrollToItem,
     };
-    api.calculatedHeight = itemHeight;
   });
+
+  // --- Whenever items changes, invalidate the current viewport
+  $: refresh(items, viewportHeight, itemHeight);
+
+  $: toDisplay = items
+    .slice(topHemItemIndex, bottomHemItemIndex + 1)
+    .map((data, i) => {
+      return { index: i + topHemItemIndex, data };
+    });
+
+  // --- Refresh the positions when items change
+  async function refresh(items, _viewportHeight, itemHeight, keepPosition) {
+    await tick(); // --- Wait until the DOM is up to date
+    if (!items || items.length === undefined) return;
+    startItemIndex = keepPosition
+      ? Math.min(startItemIndex, items.length - 1)
+      : 0;
+    contentsHeight = itemHeight * items.length;
+    calculateVirtualContents();
+  }
+
+  // --- Refreshes to contents trying to keep positions
+  async function refreshContents() {
+    await refresh(items, viewportHeight, itemHeight, true);
+    handleScroll();
+  }
+
+  // Scrolls to the item with the specified index using an
+  // optional gap at the top
+  async function scrollToItem(itemIndex, topGap) {
+    if (!items || items.length === undefined) return;
+    topGap = topGap || 0;
+    itemIndex = Math.max(0, Math.min(itemIndex - topGap, items.length - 1));
+    viewport.scrollTo(0, itemIndex * itemHeight);
+    await tick();
+  }
+
+  // --- Handles the scroll event of the viewport
+  async function handleScroll() {
+    if (!items || items.length === undefined) return;
+
+    const { scrollTop } = viewport;
+    startItemIndex = Math.min(
+      Math.floor(scrollTop / itemHeight),
+      items.length - 1
+    );
+    calculateVirtualContents();
+    dispatch("scrolled");
+  }
+
+  // --- Calculates the bottom position given the top position
+  function calculateVirtualContents() {
+    if (!items || items.length === undefined) return;
+    endItemIndex = Math.min(
+      startItemIndex + Math.floor(viewportHeight / itemHeight) + 1,
+      items.length - 1
+    );
+    const topItems =
+      topHem === null || topHem === undefined
+        ? endItemIndex - startItemIndex + 1
+        : topHem;
+    topHemItemIndex = Math.max(0, startItemIndex - topItems);
+    const bottomItems =
+      bottomHem === null || bottomHem === undefined
+        ? endItemIndex - startItemIndex + 1
+        : bottomHem;
+
+    bottomHemItemIndex = Math.min(items.length - 1, endItemIndex + bottomItems);
+  }
 </script>
 
 <style>
-  svelte-virtual-list-viewport {
+  vl-viewport {
     position: relative;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -166,29 +155,30 @@
     outline: none;
   }
 
-  svelte-virtual-list-contents,
-  svelte-virtual-list-row {
+  vl-contents {
     display: block;
   }
 
-  svelte-virtual-list-row {
+  vl-row {
+    position: absolute;
+    left: 0;
+    top: 100px;
+    display: flex;
     overflow: hidden;
   }
 </style>
 
-<svelte-virtual-list-viewport
+<vl-viewport
   tabindex={tabOrder}
   bind:this={viewport}
-  bind:offsetHeight={viewport_height}
-  on:scroll={handle_scroll}
-  style="height: {height};">
-  <svelte-virtual-list-contents
-    bind:this={contents}
-    style="padding-top: {top}px; padding-bottom: {bottom}px;">
-    {#each visible as row (row.index)}
-      <svelte-virtual-list-row>
-        <slot item={row.data}>Missing template</slot>
-      </svelte-virtual-list-row>
+  bind:offsetHeight={viewportHeight}
+  on:scroll={handleScroll}
+  style="height:{componentHeight}">
+  <vl-contents bind:this={contents} style="height:{contentsHeight}px">
+    {#each toDisplay as row (row.index)}
+      <vl-row style="top:{row.index * itemHeight}px">
+        <slot item={row.data}>[item #{row.index}]</slot>
+      </vl-row>
     {/each}
-  </svelte-virtual-list-contents>
-</svelte-virtual-list-viewport>
+  </vl-contents>
+</vl-viewport>

@@ -140,6 +140,7 @@ export class MemoryEditorProvider extends EditorProviderBase {
       panel.webview.postMessage({
         viewNotification: "refreshViewPort",
         itemIndex,
+        fullRefresh: true
       });
     } catch (err) {
       // --- This exception in intentionally ignored

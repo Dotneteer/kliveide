@@ -1,6 +1,6 @@
 <script>
   import { onMount, tick } from "svelte";
-  import VirtualizedList from "../controls/VirtualizedList.svelte";
+  import VirtualList from "../controls/VirtualList.svelte";
 
   // --- Access the API of the virtual list
   let virtualListApi;
@@ -17,7 +17,10 @@
   let endItemIndex;
 
   async function handleClick() {
-    await virtualListApi.scrollToItem(10, 3);
+    for (let i = 0; i < 10; i++) {
+      items[i].label = `Date: ${Date.now()}`;
+    }
+    await virtualListApi.refreshContents();
   }
 </script>
 
@@ -39,7 +42,7 @@
 </style>
 
 <div class="component">
-  <VirtualizedList
+  <VirtualList
     {items}
     itemHeight={24}
     topHem={10}
@@ -49,5 +52,5 @@
     bind:endItemIndex
     let:item>
     <div class="row" on:click={handleClick}>{item.seqNo}: {item.label}</div>
-  </VirtualizedList>
+  </VirtualList>
 </div>
