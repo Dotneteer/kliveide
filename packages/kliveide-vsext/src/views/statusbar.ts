@@ -15,7 +15,7 @@ export function createVmStateStatusBarItem(): vscode.StatusBarItem {
     vscode.StatusBarAlignment.Right,
     100
   );
-  vmStateItem.text = getStateMessage("none");
+  vmStateItem.text = getStateMessage("unkonwn");
   vmStateItem.tooltip = "Click to start the Klive Emulator";
   vmStateItem.show();
 
