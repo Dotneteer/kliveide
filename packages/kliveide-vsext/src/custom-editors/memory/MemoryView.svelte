@@ -1,6 +1,6 @@
 <script>
   // ==========================================================================
-  // This component implements the view for the Memory editor
+  // This component implements the view for the Memory editor.
 
   import { onMount, tick } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
@@ -106,7 +106,7 @@
             if (isRefreshing) break;
             isRefreshing = true;
             try {
-              if (lastScrollTime !== 0 && Date.now() - lastScrollTime < 1000) {
+              if (lastScrollTime !== 0 && Date.now() - lastScrollTime < 500) {
                 break;
               }
               await refreshViewPort(ev.data.fullRefresh);
@@ -114,7 +114,6 @@
               if (pos !== undefined) {
                 if (pos < 0) {
                   pos = restoreViewState(ev.data);
-                  console.log(`Restored: ${pos}`);
                 } else {
                   pos = items[pos] && items[pos].address;
                 }
@@ -157,7 +156,9 @@
           items[i] = viewportItems[i];
         }
       }
-      virtualListApi.refreshContents();
+      if (virtualListApi) {
+        await virtualListApi.refreshContents();
+      }
     } catch (err) {
       console.log(err);
     }
@@ -176,7 +177,9 @@
       await saveViewState();
       scrolling = false;
       await new Promise((r) => setTimeout(r, 10));
-      await virtualListApi.refreshContents();
+      if (virtualListApi) {
+        await virtualListApi.refreshContents();
+      }
     }
   }
 
@@ -227,8 +230,8 @@
     <VirtualList
       {items}
       itemHeight={20}
-      topHem={20}
-      bottomHem={20}
+      topHem={5}
+      bottomHem={5}
       let:item
       bind:api={virtualListApi}
       bind:startItemIndex

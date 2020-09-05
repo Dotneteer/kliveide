@@ -1,5 +1,5 @@
 <script>
-  import { create } from "lodash";
+  import { create, last } from "lodash";
 
   // ==========================================================================
   // This component implements a virtaulized list where each item has the
@@ -162,8 +162,8 @@
   vl-row {
     position: absolute;
     left: 0;
-    top: 100px;
     display: flex;
+    width: 100%;
     overflow: hidden;
   }
 </style>
