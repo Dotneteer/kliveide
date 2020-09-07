@@ -1,0 +1,68 @@
+WS [done]
+BLCOMMENT [done]
+COMMENT [done]
+NEWLINE [done]
+COLON [done]
+DCOLON [done]
+SCOLON [done]
+COMSEP [done]
+COMMA [done]
+ASSIGN [done]
+LPAR [done]
+RPAR [done]
+LSBRAC [done]
+RSBRAC [done]
+QMARK [done]
+PLUS [done]
+MINUS [done]
+VBAR [done]
+UPARR [done]
+AMP [done]
+EQOP [done]
+CIEQOP [done]
+NEQOP [done]
+CINEQOP [done]
+LTOP [done]
+LTEOP [done]
+GTOP [done]
+GTEOP [done]
+LSHOP [done]
+RSHOP [done]
+MULOP [done]
+DIVOP [done]
+MODOP [done]
+MINOP [done]
+MAXOP [done]
+TILDE [done]
+LDBRAC [done]
+RDBRAC [done]
+EXCLM [done]
+DOT [done]
+GOESTO [done]
+
+Preprocessor tokens
+
+Name-like tokens
+
+Pragma-like tokens
+
+HEXNUM
+BINNUM
+OCTNUM
+DECNUM
+CURADDR
+REALNUM
+CHAR
+STRING
+FSTRING
+
+BOOLLIT
+TRUE
+FALSE
+
+IDENTIFIER [done]
+IDSTART [done]
+IDCONT [done]
+
+CURCNT
+NONEARG
