@@ -56,9 +56,9 @@ CHAR
 STRING
 FSTRING
 
-BOOLLIT
-TRUE
-FALSE
+BOOLLIT [done]
+TRUE [done]
+FALSE [done]
 
 IDENTIFIER [done]
 IDSTART [done]
