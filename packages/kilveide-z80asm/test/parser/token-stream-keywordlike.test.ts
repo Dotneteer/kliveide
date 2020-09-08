@@ -1,8 +1,7 @@
 import "mocha";
-import * as expect from "expect";
 
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream, TokenType } from "../../src/parser/token-stream";
+import { TokenType } from "../../src/parser/token-stream";
+import { testToken} from "./token-stream-helper";
 
 describe("Parser - token: operator-like", () => {
   it("get: register A", () => {
@@ -1122,10 +1121,11 @@ describe("Parser - token: operator-like", () => {
   });
 
   it("get: cnt variable", () => {
+    testToken("$cnt", TokenType.CurCnt);
+    testToken("$CNT", TokenType.CurCnt);
     testToken(".cnt", TokenType.CurCnt);
     testToken(".CNT", TokenType.CurCnt);
   });
-
 
   it("get: identifier", () => {
     testToken("_", TokenType.Identifier);
@@ -1140,39 +1140,21 @@ describe("Parser - token: operator-like", () => {
     testToken("apple112", TokenType.Identifier);
     testToken("apple'", TokenType.Unknown);
   });
+
+  it("get: preprocessor directives", () => {
+    testToken("#ifdef", TokenType.IfDefDir);
+    testToken("#ifndef", TokenType.IfNDefDir);
+    testToken("#endif", TokenType.EndIfDir);
+    testToken("#else", TokenType.ElseDir);
+    testToken("#define", TokenType.DefineDir);
+    testToken("#undef", TokenType.UndefDir);
+    testToken("#include", TokenType.IncludeDir);
+    testToken("#if", TokenType.IfDir);
+    testToken("#ifmod", TokenType.IfModDir);
+    testToken("#ifnmod", TokenType.IfNModDir);
+  });
+
+  it("get: '$<none>$' placeholder", () => {
+    testToken("$<none>$", TokenType.NoneArg);
+  });
 });
-
-function testToken(tokenStr: string, type: TokenType): void {
-  // --- Test for the single token
-  let ts = new TokenStream(new InputStream(tokenStr));
-  let token = ts.get();
-  expect(token.type).toBe(type);
-  expect(token.text).toBe(tokenStr);
-  expect(token.location.startPos).toBe(0);
-  expect(token.location.endPos).toBe(tokenStr.length);
-  expect(token.location.line).toBe(1);
-  expect(token.location.startColumn).toBe(0);
-  expect(token.location.endColumn).toBe(tokenStr.length);
-
-  // --- Test for token with subsequent token
-  ts = new TokenStream(new InputStream(tokenStr + "/"));
-  token = ts.get();
-  expect(token.type).toBe(type);
-  expect(token.text).toBe(tokenStr);
-  expect(token.location.startPos).toBe(0);
-  expect(token.location.endPos).toBe(tokenStr.length);
-  expect(token.location.line).toBe(1);
-  expect(token.location.startColumn).toBe(0);
-  expect(token.location.endColumn).toBe(tokenStr.length);
-
-  // --- Test for token with leading whitespace
-  ts = new TokenStream(new InputStream("  " + tokenStr));
-  token = ts.get();
-  expect(token.type).toBe(type);
-  expect(token.text).toBe(tokenStr);
-  expect(token.location.startPos).toBe(2);
-  expect(token.location.endPos).toBe(tokenStr.length + 2);
-  expect(token.location.line).toBe(1);
-  expect(token.location.startColumn).toBe(2);
-  expect(token.location.endColumn).toBe(tokenStr.length + 2);
-}

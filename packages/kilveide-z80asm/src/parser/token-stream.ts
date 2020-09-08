@@ -85,7 +85,7 @@ export class TokenStream {
     let ch: string | null = null;
     let useResolver = false;
 
-    let phase = LexerPhase.Start;
+    let phase: LexerPhase = LexerPhase.Start;
     while (true) {
       // --- Get the next character
       ch = fetchNextChar();
@@ -215,9 +215,11 @@ export class TokenStream {
             case "*":
               return completeToken(TokenType.Multiplication);
 
-            // --- Modulo operation
+            // --- Modulo operation or binary literal
             case "%":
-              return completeToken(TokenType.Modulo);
+              phase = LexerPhase.ModuloOrBinary;
+              tokenType = TokenType.Modulo;
+              break;
 
             // --- Binary not
             case "~":
@@ -239,8 +241,36 @@ export class TokenStream {
               tokenType = TokenType.Dot;
               break;
 
+            // --- "#" received
+            case "#":
+              phase = LexerPhase.DirectiveOrHexLiteral;
+              break;
+
+            // --- "$" received
+            case "$":
+              phase = LexerPhase.Dollar;
+              tokenType = TokenType.CurAddress;
+              break;
+
+            // Start of a numeric literal
+            case "0":
+              phase = LexerPhase.NumericLiteral0;
+              tokenType = TokenType.DecimalLiteral;
+              break;
+
+            case "'":
+              phase = LexerPhase.Char;
+              break;
+
+            case '"':
+              phase = LexerPhase.String;
+              break;
+
             default:
-              if (isIdStart(ch)) {
+              if (ch >= "1" && ch <= "9") {
+                phase = LexerPhase.NumericLiteral1_9;
+                tokenType = TokenType.DecimalLiteral;
+              } else if (isIdStart(ch)) {
                 useResolver = true;
                 phase = LexerPhase.IdTail;
               }
@@ -402,7 +432,8 @@ export class TokenStream {
           if (isLetter(ch)) {
             phase = LexerPhase.KeywordLike;
           } else if (isDecimalDigit(ch)) {
-            phase = LexerPhase.RealFractional;
+            phase = LexerPhase.FractionalPartTail;
+            tokenType = TokenType.RealLiteral;
           } else {
             return makeToken();
           }
@@ -428,6 +459,382 @@ export class TokenStream {
           }
           break;
 
+        // --- Wait for the completion of hexadecimal number of preprocessor directive
+        case LexerPhase.DirectiveOrHexLiteral:
+          if (isLetterOrDigit(ch)) {
+            if (input.peek() !== null) break;
+            appendTokenChar();
+          }
+          if (
+            text.length <= 5 &&
+            text
+              .substr(1)
+              .split("")
+              .every((c) => isHexadecimalDigit(c))
+          ) {
+            tokenType = TokenType.HexadecimalLiteral;
+          } else {
+            useResolver = true;
+          }
+          return makeToken();
+
+        // --- Continuation of a "$"
+        case LexerPhase.Dollar:
+          if (ch === "<") {
+            phase = LexerPhase.NoneArgTail;
+            break;
+          }
+          if (isLetterOrDigit(ch)) {
+            if (input.peek() !== null) break;
+            appendTokenChar();
+          }
+          if (
+            text.length <= 5 &&
+            text
+              .substr(1)
+              .split("")
+              .every((c) => isHexadecimalDigit(c))
+          ) {
+            tokenType = TokenType.HexadecimalLiteral;
+          } else {
+            useResolver = true;
+          }
+          return makeToken();
+
+        // --- Wait for the completion od "$<none>$" placeholder
+        case LexerPhase.NoneArgTail:
+          if (ch === "$") {
+            useResolver = false;
+            tokenType =
+              text === "$<none>" ? TokenType.NoneArg : TokenType.Unknown;
+            return completeToken();
+          }
+          break;
+
+        // ====================================================================
+        // --- Literals
+
+        // --- Modulo operator or continuation of a binary literal
+        case LexerPhase.ModuloOrBinary:
+          if (!isBinaryDigit(ch)) {
+            return makeToken();
+          }
+          phase = LexerPhase.BinLiteral;
+          tokenType = TokenType.BinaryLiteral;
+          break;
+
+        // --- Wait for the completion of a binary literal
+        case LexerPhase.BinLiteral:
+          if (!isBinaryDigit(ch)) {
+            return makeToken();
+          }
+          break;
+
+        // --- "0" received
+        case LexerPhase.NumericLiteral0:
+          if (ch === "x") {
+            // --- Test if the look-ahead char is a hexadecimal literal
+            const nextCh = input.peek();
+            if (!nextCh || !isHexadecimalDigit(nextCh)) {
+              return completeToken(TokenType.Unknown);
+            }
+            phase = LexerPhase.HexaLiteralPrefix;
+            break;
+          } else if (ch === "b") {
+            // --- Binary or hexadecimal literal. Look ahead to check
+            const nextCh = input.peek();
+            if (
+              !nextCh ||
+              (!isBinaryDigit(nextCh) && !isHexadecimalDigit(nextCh))
+            ) {
+              return completeToken(TokenType.Unknown);
+            }
+            if (
+              isHexaSuffix(input.ahead(1)) ||
+              isHexaSuffix(input.ahead(2)) ||
+              isHexaSuffix(input.ahead(3)) ||
+              isHexaSuffix(input.ahead(4))
+            ) {
+              phase = LexerPhase.HexaLiteralSuffix;
+              break;
+            }
+          } else if (isHexaSuffix(ch)) {
+            return completeToken(TokenType.HexadecimalLiteral);
+          } else if (isOctalSuffix(ch)) {
+            return completeToken(TokenType.OctalLiteral);
+          } else if (isDecimalDigit(ch)) {
+            phase = LexerPhase.DecimalOrReal;
+            tokenType = TokenType.DecimalLiteral;
+          } else if (ch === "e" || ch === "E") {
+            phase = LexerPhase.ExponentSign;
+            tokenType = TokenType.RealLiteral;
+          } else if (ch === ".") {
+            phase = LexerPhase.FractionalPart;
+          } else {
+            return makeToken();
+          }
+
+        // --- This previous case intentionally flows to this label
+        case LexerPhase.NumericLiteral1_9:
+          // --- Octal, decimal, or suffixed hexadecimal
+          if (isHexaSuffix(ch)) {
+            return completeToken(TokenType.HexadecimalLiteral);
+          }
+          const startIsOctal = text >= "0" && text <= "7";
+          if (isOctalSuffix(ch)) {
+            return startIsOctal
+              ? completeToken(TokenType.OctalLiteral)
+              : completeToken(TokenType.Unknown);
+          }
+          const nextCh = input.peek();
+          if (startIsOctal && nextCh && isOctalSuffix(nextCh)) {
+            phase = LexerPhase.OctalLiteralSuffix;
+          } else if (nextCh && isHexaSuffix(nextCh)) {
+            phase = LexerPhase.OctalLiteralSuffix;
+          } else if (startIsOctal && isOctalSuffix(input.ahead(1))) {
+            phase = LexerPhase.OctalLiteralSuffix;
+          } else if (isHexaSuffix(input.ahead(1))) {
+            phase = LexerPhase.HexaLiteralSuffix;
+          } else if (startIsOctal && isOctalSuffix(input.ahead(2))) {
+            phase = LexerPhase.OctalLiteralSuffix;
+          } else if (isHexaSuffix(input.ahead(2))) {
+            phase = LexerPhase.HexaLiteralSuffix;
+          } else if (startIsOctal && isOctalSuffix(input.ahead(3))) {
+            phase = LexerPhase.OctalLiteralSuffix;
+          } else if (isHexaSuffix(input.ahead(3))) {
+            phase = LexerPhase.HexaLiteralSuffix;
+          } else if (startIsOctal && isOctalSuffix(input.ahead(4))) {
+            phase = LexerPhase.OctalLiteralSuffix;
+          } else if (startIsOctal && isOctalSuffix(input.ahead(5))) {
+            phase = LexerPhase.OctalLiteralSuffix;
+          } else if (isDecimalDigit(ch)) {
+            phase = LexerPhase.DecimalOrReal;
+            tokenType = TokenType.DecimalLiteral;
+          } else if (ch === "e" || ch === "E") {
+            phase = LexerPhase.ExponentSign;
+            tokenType = TokenType.RealLiteral;
+          } else if (ch === ".") {
+            phase = LexerPhase.FractionalPart;
+          } else {
+            return makeToken();
+          }
+          break;
+
+        // --- Wait for the completion of hexadecimal literal
+        case LexerPhase.HexaLiteralPrefix:
+          if (isHexadecimalDigit(ch)) {
+            if (text.length >= 6) {
+              return completeToken(TokenType.Unknown);
+            }
+            tokenType = TokenType.HexadecimalLiteral;
+          } else {
+            return makeToken();
+          }
+          break;
+
+        // --- Wait for the completion of a suffixed hexadecimal literal
+        case LexerPhase.HexaLiteralSuffix:
+          if (isHexadecimalDigit(ch)) {
+            tokenType = TokenType.HexadecimalLiteral;
+          } else if (!isHexaSuffix(ch)) {
+            return completeToken(TokenType.Unknown);
+          } else {
+            return completeToken(TokenType.HexadecimalLiteral);
+          }
+          break;
+
+        // --- Wait for the completion of a suffixed octal literal
+        case LexerPhase.OctalLiteralSuffix:
+          if (isOctalDigit(ch)) {
+            tokenType = TokenType.OctalLiteral;
+          } else if (!isOctalSuffix(ch)) {
+            return completeToken(TokenType.Unknown);
+          } else {
+            return completeToken(TokenType.OctalLiteral);
+          }
+          break;
+
+        // Number can be decimal or real
+        case LexerPhase.DecimalOrReal:
+          if (ch === ".") {
+            phase = LexerPhase.FractionalPart;
+          } else if (ch === "e" || ch === "E") {
+            phase = LexerPhase.ExponentSign;
+          } else if (!isDecimalDigit(ch)) {
+            return makeToken();
+          }
+          break;
+
+        // First digit of fractional part
+        case LexerPhase.FractionalPart:
+          if (!isDecimalDigit(ch)) {
+            return completeToken(TokenType.Unknown);
+          }
+          phase = LexerPhase.FractionalPartTail;
+          tokenType = TokenType.RealLiteral;
+          break;
+
+        // Remaining digits of fractional part
+        case LexerPhase.FractionalPartTail:
+          if (ch === "e" || ch === "E") {
+            phase = LexerPhase.ExponentSign;
+          } else if (!isDecimalDigit(ch)) {
+            return makeToken();
+          }
+          break;
+
+        // Wait for exponent sign
+        case LexerPhase.ExponentSign:
+          if (ch === "+" || ch === "-") {
+            tokenType = TokenType.Unknown;
+            phase = LexerPhase.ExponentDigit;
+          } else if (isDecimalDigit(ch)) {
+            phase = LexerPhase.ExponentTail;
+          } else {
+            return completeToken(TokenType.Unknown);
+          }
+          break;
+
+        // First digit of exponent
+        case LexerPhase.ExponentDigit:
+          if (!isDecimalDigit(ch)) {
+            return completeToken(TokenType.Unknown);
+          }
+          phase = LexerPhase.ExponentTail;
+          tokenType = TokenType.RealLiteral;
+          break;
+
+        // Remaining digits of exponent
+        case LexerPhase.ExponentTail:
+          if (isDecimalDigit(ch)) {
+            break;
+          }
+          return makeToken();
+
+        // Character data
+        case LexerPhase.Char:
+          if (isRestrictedInString(ch)) {
+            return completeToken(TokenType.Unknown);
+          } else if (ch === "\\") {
+            phase = LexerPhase.CharBackSlash;
+            tokenType = TokenType.Unknown;
+          } else {
+            phase = LexerPhase.CharTail;
+          }
+          break;
+
+        // Character literal delimiter
+        case LexerPhase.CharTail:
+          return ch === "'"
+            ? completeToken(TokenType.CharLiteral)
+            : completeToken(TokenType.Unknown);
+
+        // Start of character escape
+        case LexerPhase.CharBackSlash:
+          switch (ch) {
+            case "i":
+            case "p":
+            case "f":
+            case "b":
+            case "I":
+            case "o":
+            case "a":
+            case "t":
+            case "P":
+            case "C":
+            case "'":
+            case '"':
+            case "\\":
+            case "0":
+              phase = LexerPhase.CharTail;
+              break;
+            default:
+              if (ch === "x") {
+                phase = LexerPhase.CharHexa1;
+              } else {
+                return completeToken(TokenType.Unknown);
+              }
+          }
+          break;
+
+        // First hexadecimal digit of character escape
+        case LexerPhase.CharHexa1:
+          if (isHexadecimalDigit(ch)) {
+            phase = LexerPhase.CharHexa2;
+          } else {
+            return completeToken(TokenType.Unknown);
+          }
+          break;
+
+        // Second hexadecimal digit of character escape
+        case LexerPhase.CharHexa2:
+          if (isHexadecimalDigit(ch)) {
+            phase = LexerPhase.CharTail;
+          } else {
+            return completeToken(TokenType.Unknown);
+          }
+          break;
+
+        // String data
+        case LexerPhase.String:
+          if (text[0] === "<" && ch === ">") {
+            return completeToken(TokenType.FString);
+          } else if (text[0] === '"' && ch === '"') {
+            return completeToken(TokenType.StringLiteral);
+          } else if (isRestrictedInString(ch)) {
+            return completeToken(TokenType.Unknown);
+          } else if (ch === "\\") {
+            phase = LexerPhase.StringBackSlash;
+            tokenType = TokenType.Unknown;
+          }
+          break;
+
+        // Start of string character escape
+        case LexerPhase.StringBackSlash:
+          switch (ch) {
+            case "i":
+            case "p":
+            case "f":
+            case "b":
+            case "I":
+            case "o":
+            case "a":
+            case "t":
+            case "P":
+            case "C":
+            case "'":
+            case '"':
+            case "\\":
+            case "0":
+              phase = LexerPhase.String;
+              break;
+            default:
+              if (ch === "x") {
+                phase = LexerPhase.StringHexa1;
+              } else {
+                return completeToken(TokenType.Unknown);
+              }
+          }
+          break;
+
+        // First hexadecimal digit of string character escape
+        case LexerPhase.StringHexa1:
+          if (isHexadecimalDigit(ch)) {
+            phase = LexerPhase.StringHexa2;
+          } else {
+            return completeToken(TokenType.Unknown);
+          }
+          break;
+
+        // Second hexadecimal digit of character escape
+        case LexerPhase.StringHexa2:
+          if (isHexadecimalDigit(ch)) {
+            phase = LexerPhase.String;
+          } else {
+            return completeToken(TokenType.Unknown);
+          }
+          break;
+
         // ====================================================================
         // --- We cannot continue
         default:
@@ -435,14 +842,21 @@ export class TokenStream {
       }
 
       // --- Append the char to the current text
+      appendTokenChar();
+
+      // --- Go on with parsing the next character
+    }
+
+    /**
+     * Appends the last character to the token, and manages positions
+     */
+    function appendTokenChar(): void {
       text += ch;
       lexer._prefetched = null;
       lexer._prefetchedPos = null;
       lexer._prefetchedColumn = null;
       lastEndPos = input.position;
       lastEndColumn = input.position;
-
-      // --- Go on with parsing the next character
     }
 
     /**
@@ -487,16 +901,10 @@ export class TokenStream {
      * Add the last character to the token and return it
      */
     function completeToken(suggestedType?: TokenType): Token {
-      // --- Make the last character part of the token
-      text += ch;
-      lexer._prefetched = null;
-      lexer._prefetchedPos = null;
-      lexer._prefetchedColumn = null;
-      lastEndPos = input.position;
-      lastEndColumn = input.position;
+      appendTokenChar();
 
       // --- Send back the token
-      if (suggestedType) {
+      if (suggestedType !== undefined) {
         tokenType = suggestedType;
       }
       return makeToken();
@@ -800,6 +1208,28 @@ export enum TokenType {
   True,
   False,
   CurCnt,
+
+  IfDefDir,
+  IfNDefDir,
+  EndIfDir,
+  ElseDir,
+  DefineDir,
+  UndefDir,
+  IncludeDir,
+  IfDir,
+  IfModDir,
+  IfNModDir,
+
+  CurAddress,
+  NoneArg,
+
+  BinaryLiteral,
+  OctalLiteral,
+  DecimalLiteral,
+  HexadecimalLiteral,
+  RealLiteral,
+  CharLiteral,
+  StringLiteral,
 }
 
 /**
@@ -863,11 +1293,80 @@ enum LexerPhase {
   // Waiting for keyword completion
   KeywordLike,
 
-  // Collecting the fractional part of a real number
-  RealFractional,
-
   // Waiting for the identifier completion
   IdTail,
+
+  // "#" received
+  DirectiveOrHexLiteral,
+
+  // "$" received
+  Dollar,
+
+  // Wait for the end of "$<none>$"
+  NoneArgTail,
+
+  // "%" received
+  ModuloOrBinary,
+
+  // Wait for the completion of a binary literal
+  BinLiteral,
+
+  // "0" received
+  NumericLiteral0,
+
+  // "0" received
+  NumericLiteral1_9,
+
+  // "0b" received
+  BinLeteralPrefix,
+
+  // "0x" received
+  HexaLiteralPrefix,
+
+  // Wait for the completion of a suffixed hexadecimal
+  HexaLiteralSuffix,
+
+  // Wait for the completion of a suffixed octal number
+  OctalLiteralSuffix,
+
+  // Wait for the continuation of a decimal or real number
+  DecimalOrReal,
+
+  // Wait for for the first digit of fractional part
+  FractionalPart,
+
+  // Wait for completing the fractional part
+  FractionalPartTail,
+
+  // Wait for the sign of exponent
+  ExponentSign,
+
+  // Wait for the first exponent digit
+  ExponentDigit,
+
+  // Wait for the completion of exponent
+  ExponentTail,
+
+  // "'" received
+  Char,
+
+  CharBackSlash,
+
+  CharHexa1,
+
+  CharHexa2,
+
+  CharTail,
+
+  String,
+
+  StringBackSlash,
+
+  StringHexa1,
+
+  StringHexa2,
+
+  StringTail,
 }
 
 /**
@@ -911,7 +1410,7 @@ function isLetterOrDigit(ch: string): boolean {
  * @param ch Character to test
  */
 function isBinaryDigit(ch: string): boolean {
-  return ch === "0" || ch === "1";
+  return ch === "0" || ch === "1" || ch === "_";
 }
 
 /**
@@ -968,6 +1467,36 @@ function isIdContinuation(ch: string): boolean {
     ch === "?" ||
     ch === "#" ||
     isLetterOrDigit(ch)
+  );
+}
+
+/**
+ * Tests if a character can be the suffix of a hexadecimal literal
+ * @param ch Character to test
+ */
+function isHexaSuffix(ch: string | null): boolean {
+  return ch === "h" || ch === "H";
+}
+
+/**
+ * Tests if a character can be the suffix of an octal literal
+ * @param ch Character to test
+ */
+function isOctalSuffix(ch: string | null): boolean {
+  return ch === "o" || ch === "O" || ch === "q" || ch === "Q";
+}
+
+/**
+ * Tests if a character is restricted in a string
+ * @param ch Character to test
+ */
+function isRestrictedInString(ch: string): boolean {
+  return (
+    ch === "\r" ||
+    ch === "\n" ||
+    ch === "\u0085" ||
+    ch === "\u2028" ||
+    ch === "\u2029"
   );
 }
 
@@ -1208,7 +1737,6 @@ const resolverHash: { [key: string]: TokenType } = {
   LDPIRX: TokenType.Ldpirx,
   lddrx: TokenType.Lddrx,
   LDDRX: TokenType.Lddrx,
-
 
   ".org": TokenType.Org,
   ".ORG": TokenType.Org,
@@ -1615,4 +2143,17 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".cnt": TokenType.CurCnt,
   ".CNT": TokenType.CurCnt,
+  $cnt: TokenType.CurCnt,
+  $CNT: TokenType.CurCnt,
+
+  "#ifdef": TokenType.IfDefDir,
+  "#ifndef": TokenType.IfNDefDir,
+  "#endif": TokenType.EndIfDir,
+  "#else": TokenType.ElseDir,
+  "#define": TokenType.DefineDir,
+  "#undef": TokenType.UndefDir,
+  "#include": TokenType.IncludeDir,
+  "#if": TokenType.IfDir,
+  "#ifmod": TokenType.IfModDir,
+  "#ifnmod": TokenType.IfNModDir,
 };

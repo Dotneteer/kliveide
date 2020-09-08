@@ -40,11 +40,9 @@ EXCLM [done]
 DOT [done]
 GOESTO [done]
 
-Preprocessor tokens
-
-Name-like tokens
-
-Pragma-like tokens
+Preprocessor tokens [done]
+Name-like tokens [done]
+Pragma-like tokens [done]
 
 HEXNUM
 BINNUM
@@ -64,5 +62,5 @@ IDENTIFIER [done]
 IDSTART [done]
 IDCONT [done]
 
-CURCNT
-NONEARG
+CURCNT [done]
+NONEARG [done]
