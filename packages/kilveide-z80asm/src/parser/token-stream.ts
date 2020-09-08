@@ -397,7 +397,6 @@ export class TokenStream {
               return completeToken(TokenType.MinOp);
             default:
               return makeToken();
-            // TODO: Handle file-string
           }
 
         // --- ">", ">=", ">>", ">?"
@@ -567,7 +566,6 @@ export class TokenStream {
             tokenType = TokenType.DecimalLiteral;
           } else if (ch === "e" || ch === "E") {
             phase = LexerPhase.ExponentSign;
-            tokenType = TokenType.RealLiteral;
           } else if (ch === ".") {
             phase = LexerPhase.FractionalPart;
           } else {
@@ -691,14 +689,14 @@ export class TokenStream {
           } else if (isDecimalDigit(ch)) {
             phase = LexerPhase.ExponentTail;
           } else {
-            return completeToken(TokenType.Unknown);
+            return makeToken();
           }
           break;
 
         // First digit of exponent
         case LexerPhase.ExponentDigit:
           if (!isDecimalDigit(ch)) {
-            return completeToken(TokenType.Unknown);
+            return makeToken();
           }
           phase = LexerPhase.ExponentTail;
           tokenType = TokenType.RealLiteral;
@@ -777,9 +775,7 @@ export class TokenStream {
 
         // String data
         case LexerPhase.String:
-          if (text[0] === "<" && ch === ">") {
-            return completeToken(TokenType.FString);
-          } else if (text[0] === '"' && ch === '"') {
+          if (ch === '"') {
             return completeToken(TokenType.StringLiteral);
           } else if (isRestrictedInString(ch)) {
             return completeToken(TokenType.Unknown);
@@ -1118,7 +1114,6 @@ export enum TokenType {
   LessThanOrEqual,
   LeftShift,
   MinOp,
-  FString,
   GreaterThan,
   GreaterThanOrEqual,
   RightShift,

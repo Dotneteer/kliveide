@@ -166,6 +166,15 @@ describe("Parser - token: literals", () => {
     testToken(".467e-23", TokenType.RealLiteral);
   });
 
+  it("get: real literal #2", () => {
+    testToken("0e+", TokenType.Unknown);
+    testToken("0e-", TokenType.Unknown);
+    testToken("911.356e+", TokenType.Unknown);
+    testToken("121.467e-", TokenType.Unknown);
+    testToken(".e+0", TokenType.Unknown, ".e");
+    testToken(".e-0", TokenType.Unknown, ".e");
+  });
+
   it("get: character literal #1", () => {
     testToken("'a'", TokenType.CharLiteral);
     testToken("'q'", TokenType.CharLiteral);
@@ -179,7 +188,7 @@ describe("Parser - token: literals", () => {
     testToken("'\\t'", TokenType.CharLiteral);
     testToken("'\\P'", TokenType.CharLiteral);
     testToken("'\\C'", TokenType.CharLiteral);
-    testToken("'\\\''", TokenType.CharLiteral);
+    testToken("'\\''", TokenType.CharLiteral);
     testToken("'\\\"'", TokenType.CharLiteral);
     testToken("'\\0'", TokenType.CharLiteral);
     testToken("'\\\\'", TokenType.CharLiteral);
@@ -189,5 +198,39 @@ describe("Parser - token: literals", () => {
     testToken("'\\xBC'", TokenType.CharLiteral);
   });
 
+  it("get: character literal #2", () => {
+    testToken("'\\'", TokenType.Unknown, null);
+    testToken("'\\x0'", TokenType.Unknown, null);
+    testToken("'a", TokenType.Unknown, null);
+  });
 
+  it("get: string literal #1", () => {
+    testToken('""', TokenType.StringLiteral);
+    testToken('"a"', TokenType.StringLiteral);
+    testToken('"abcd"', TokenType.StringLiteral);
+    testToken('"\\i"', TokenType.StringLiteral);
+    testToken('"\\p"', TokenType.StringLiteral);
+    testToken('"\\f"', TokenType.StringLiteral);
+    testToken('"\\b"', TokenType.StringLiteral);
+    testToken('"\\I"', TokenType.StringLiteral);
+    testToken('"\\o"', TokenType.StringLiteral);
+    testToken('"\\a"', TokenType.StringLiteral);
+    testToken('"\\t"', TokenType.StringLiteral);
+    testToken('"\\P"', TokenType.StringLiteral);
+    testToken('"\\C"', TokenType.StringLiteral);
+    testToken('"\\\'"', TokenType.StringLiteral);
+    testToken('"\\""', TokenType.StringLiteral);
+    testToken('"\\0"', TokenType.StringLiteral);
+    testToken('"\\\\"', TokenType.StringLiteral);
+
+    testToken('"\\x01"', TokenType.StringLiteral);
+    testToken('"\\xa1"', TokenType.StringLiteral);
+    testToken('"\\xBC"', TokenType.StringLiteral);
+  });
+
+  it("get: string literal #2", () => {
+    testToken('"\\"', TokenType.Unknown, null);
+    testToken('"\\x0"', TokenType.Unknown, null);
+    testToken('"a', TokenType.Unknown, null);
+  });
 });
