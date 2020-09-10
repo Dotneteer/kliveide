@@ -41,7 +41,7 @@ export class TokenStream {
     }
 
     // --- Prefetch missing tokens
-    while (this._ahead.length < n) {
+    while (this._ahead.length <= n) {
       const token = this.fetch();
       if (isEof(token)) {
         return token;
@@ -67,6 +67,19 @@ export class TokenStream {
         return token;
       }
     }
+  }
+
+  /**
+   * Peeks for the specified token type. If found, returns the token
+   * representing it.
+   * @param type Token type to search for
+   */
+  peekAndGet(type: TokenType): Token | null {
+    const token = this.peek();
+    if (token?.type === type) {
+      this.get();
+    }
+    return token;
   }
 
   /**
@@ -1568,10 +1581,14 @@ const resolverHash: { [key: string]: TokenType } = {
   RLA: TokenType.Rla,
   rra: TokenType.Rra,
   RRA: TokenType.Rra,
+  daa: TokenType.Daa,
+  DAA: TokenType.Daa,
   cpl: TokenType.Cpl,
   CPL: TokenType.Cpl,
   scf: TokenType.Scf,
   SCF: TokenType.Scf,
+  ccf: TokenType.Ccf,
+  CCF: TokenType.Ccf,
   halt: TokenType.Halt,
   HALT: TokenType.Halt,
   ret: TokenType.Ret,
