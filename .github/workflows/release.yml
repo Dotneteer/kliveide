@@ -101,6 +101,8 @@ jobs:
 
   build-vsce-package:
     needs: [build-on-windows, build-on-linux, build-on-mac]
+    
+    runs-on: ubuntu-latest
 
     steps:
       - name: Build VSCE package
