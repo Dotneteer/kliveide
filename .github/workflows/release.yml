@@ -25,6 +25,6 @@ jobs:
       run: npm run test
 
     - name: Build Electron app on windows
-      with:
-        github_token: ${{ secrets.github_token }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: npm run build:win
