@@ -8,7 +8,7 @@
   import RefreshPanel from "../controls/RefreshPanel.svelte";
   import HeaderShadow from "../controls/HeaderShadow.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
-  import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
+  import MemoryPagingInfo from "../controls/MemoryPagingInfo.svelte";
   import DisassemblyEntry from "./DisassemblyEntry.svelte";
 
   // --- Disassembly items to display
@@ -180,11 +180,7 @@
       <RefreshPanel text="Refreshing Z80 Disassembly view..." />
     {/if}
     {#if pageInfo && pageInfo.supportsPaging}
-      <MemoryPagingPanel
-        {pageInfo}
-        bind:viewMode
-        bind:displayedRom
-        bind:displayedBank />
+      <MemoryPagingInfo displayedRom={pageInfo.selectedRom} displayedBank={pageInfo.selectedBank}/>
     {/if}
     <HeaderShadow />
     <VirtualList
