@@ -233,4 +233,5 @@ describe("Parser - token: literals", () => {
     testToken('"\\x0"', TokenType.Unknown, null);
     testToken('"a', TokenType.Unknown, null);
   });
+
 });

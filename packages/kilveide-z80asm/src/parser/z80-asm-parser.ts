@@ -2,8 +2,6 @@ import { TokenStream, Token, TokenType } from "./token-stream";
 import {
   Program,
   Z80AssemblyLine,
-  program,
-  simpleZ80Instruction,
   PartialZ80AssemblyLine,
   LabelOnlyLine,
   SimpleZ80Instruction,
@@ -12,12 +10,24 @@ import {
   Symbol,
   ConditionalExpression,
   BinaryExpression,
+  IntegerLiteral,
+  BooleanLiteral,
+  CurrentAddressLiteral,
+  CurrentCounterLiteral,
+  RealLiteral,
+  StringLiteral,
+  CharLiteral,
+  EndIfDirective,
+  ElseDirective,
+  IfDefDirective,
+  Directive,
+  IfNDefDirective,
+  DefineDirective,
+  UndefDirective,
 } from "./tree-nodes";
 import { ErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
-import { parse } from "path";
-import { totalmem } from "os";
 
 /**
  * This class implements the Z80 assembly parser
@@ -89,12 +99,17 @@ export class Z80AsmParser {
         }
       }
     }
-    return program(assemblyLines);
+    return <Program>{
+      type: "Program",
+      assemblyLines,
+    };
   }
 
   // ==========================================================================
   // Rule parsers
 
+  // --------------------------------------------------------------------------
+  // Assembly line parsing
   /**
    * assemblyLine
    *   : label? lineBody?
@@ -117,7 +132,7 @@ export class Z80AsmParser {
         };
       }
     } else {
-      // Handle the "directive" alternative branch
+      asmLine = this.parseDirective(parsePoint);
     }
 
     if (!asmLine) {
@@ -138,32 +153,8 @@ export class Z80AsmParser {
   }
 
   /**
-   * expr
-   *   : LPar expr RPar
-   *   | LSBrac expr RSBrac
-   *   | conditionalExpr
-   *   ;
-   */
-  parseExpr(): ExpressionNode | null {
-    const parsePoint = this.getParsePoint();
-    const { start, traits } = parsePoint;
-    if (!traits.expressionStart) {
-      // --- Cannot be an expression
-      return null;
-    }
-
-    if (start.type === TokenType.LPar) {
-      return this.parseParExpr();
-    }
-    if (start.type === TokenType.LSBrac) {
-      return this.parseBrackExpr();
-    }
-    return this.parseCondExpr();
-  }
-
-  /**
    * label
-   *   : Identifier Colon?
+   *   : Identifier ":"?
    *   ;
    */
   private parseLabel(parsePoint: ParsePoint): string | null {
@@ -178,7 +169,7 @@ export class Z80AsmParser {
       // --- The token is an identifier
       // --- Skip the identifier and the optional colon
       this.tokens.get();
-      this.tokens.peekAndGet(TokenType.Colon);
+      this.skipToken(TokenType.Colon);
       return start.text;
     }
     return null;
@@ -270,7 +261,7 @@ export class Z80AsmParser {
   }
 
   /**
-   * simpleOperation
+   * simpleInstruction
    *   : NOP
    *   | RLCA
    *   | RRCA
@@ -328,6 +319,10 @@ export class Z80AsmParser {
     };
   }
 
+  /**
+   *
+   * @param parsePoint
+   */
   private parseCompoundInstruction(
     parsePoint: ParsePoint
   ): PartialZ80AssemblyLine | null {
@@ -336,12 +331,88 @@ export class Z80AsmParser {
   }
 
   /**
-   * macroParam
-   *   : LDBrac Identifier RDBrac
+   *
+   * @param parsePoint
+   */
+  private parseDirective(
+    parsePoint: ParsePoint
+  ): PartialZ80AssemblyLine | null {
+    const { start } = parsePoint;
+    const parser = this;
+    switch (start.type) {
+      case TokenType.IfDefDir:
+        return createDirectiveWithId<IfDefDirective>("IfDefDirective");
+      case TokenType.IfNDefDir:
+        return createDirectiveWithId<IfNDefDirective>("IfNDefDirective");
+      case TokenType.DefineDir:
+        return createDirectiveWithId<DefineDirective>("DefineDirective");
+      case TokenType.UndefDir:
+        return createDirectiveWithId<UndefDirective>("UndefDirective");
+      case TokenType.IfModDir:
+        // TODO
+        break;
+      case TokenType.IfNModDir:
+        // TODO
+        break;
+      case TokenType.EndIfDir:
+        this.tokens.get();
+        return <EndIfDirective>{
+          type: "EndIfDirective",
+        };
+      case TokenType.ElseDir:
+        this.tokens.get();
+        return <ElseDirective>{
+          type: "ElseDirective",
+        };
+      case TokenType.IfDir:
+        // TODO
+        break;
+      case TokenType.IncludeDir:
+        // TODO
+        break;
+      case TokenType.LineDir:
+        // TODO
+        break;
+    }
+    return null;
+
+    function createDirectiveWithId<T extends Directive>(
+      type: Directive["type"]
+    ): PartialZ80AssemblyLine | null {
+      parser.tokens.get();
+      const identifier = parser.getIdentifier();
+      if (identifier) {
+        return <T>{
+          type,
+          identifier,
+        };
+      }
+      return null;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Expression parsing
+
+  /**
+   * expr
+   *   : parExpr
+   *   | brackExpr
+   *   | conditionalExpr
    *   ;
    */
-  private parseMacroParam(parsePoint: ParsePoint): ExpressionNode | null {
-    // TODO: Implement this method
+  parseExpr(): ExpressionNode | null {
+    const parsePoint = this.getParsePoint();
+    const { start, traits } = parsePoint;
+    if (start.type === TokenType.LPar) {
+      return this.parseParExpr();
+    }
+    if (start.type === TokenType.LSBrac) {
+      return this.parseBrackExpr();
+    }
+    if (traits.expressionStart) {
+      return this.parseCondExpr();
+    }
     return null;
   }
 
@@ -380,7 +451,7 @@ export class Z80AsmParser {
 
   /**
    * macroOrStructInvocation
-   *   : Identifier LPar macroArgument (Comma macroArgument)* RPar
+   *   : Identifier "(" macroArgument ("," macroArgument)* ")"
    *   ;
    */
   private parseMacroOrStructInvocation(
@@ -392,7 +463,7 @@ export class Z80AsmParser {
 
   /**
    * fieldAssignment
-   *   : GoesTo byteEmPragma
+   *   : "->" byteEmPragma
    *   ;
    */
   private parseFieldAssignment(
@@ -403,48 +474,8 @@ export class Z80AsmParser {
   }
 
   /**
-   *
-   * @param parsePoint
-   */
-  private parseBuiltInFunctionInvocation(
-    parsePoint: ParsePoint
-  ): ExpressionNode | null {
-    // TODO: Implement this method
-    return null;
-  }
-
-  /**
-   *
-   * @param parsePoint
-   */
-  private parseFunctionInvocation(
-    parsePoint: ParsePoint
-  ): ExpressionNode | null {
-    // TODO: Implement this method
-    return null;
-  }
-
-  /**
-   *
-   * @param parsePoint
-   */
-  private parseSymbol(parsePoint: ParsePoint): ExpressionNode | null {
-    // TODO: Implement this method
-    return null;
-  }
-
-  /**
-   *
-   * @param parsePoint
-   */
-  private parseUnaryExpression(parsePoint: ParsePoint): UnaryExpression | null {
-    // TODO: Implement this method
-    return null;
-  }
-
-  /**
    * parExpr
-   *   : "[" expr "]"
+   *   : "(" expr ")"
    *   ;
    */
   private parseParExpr(): ExpressionNode | null {
@@ -461,7 +492,7 @@ export class Z80AsmParser {
 
   /**
    * brackExpr
-   *   : "(" expr ")"
+   *   : "[" expr "]"
    *   ;
    */
   private parseBrackExpr(): ExpressionNode | null {
@@ -483,15 +514,12 @@ export class Z80AsmParser {
    * @param parsePoint
    */
   private parseCondExpr(): ExpressionNode | null {
-    // --- Obtain the condition
     const condExpr = this.parseOrExpr();
     if (!condExpr) {
       return null;
     }
 
-    const { start } = this.getParsePoint();
     if (!this.skipToken(TokenType.QuestionMark)) {
-      // --- This is not a conditional expression
       return condExpr;
     }
 
@@ -506,6 +534,7 @@ export class Z80AsmParser {
       this.reportError("Z1003");
       return null;
     }
+
     return <ConditionalExpression>{
       type: "ConditionalExpression",
       condition: condExpr,
@@ -524,7 +553,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     while (this.skipToken(TokenType.VerticalBar)) {
       const rightExpr = this.parseXorExpr();
       if (!rightExpr) {
@@ -551,7 +579,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     while (this.skipToken(TokenType.UpArrow)) {
       const rightExpr = this.parseAndExpr();
       if (!rightExpr) {
@@ -578,7 +605,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     while (this.skipToken(TokenType.Ampersand)) {
       const rightExpr = this.parseEquExpr();
       if (!rightExpr) {
@@ -605,7 +631,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     let opType: Token | null;
     while (
       (opType = this.skipTokens(
@@ -640,7 +665,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     let opType: Token | null;
     while (
       (opType = this.skipTokens(
@@ -675,7 +699,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     let opType: Token | null;
     while (
       (opType = this.skipTokens(TokenType.LeftShift, TokenType.RightShift))
@@ -705,7 +728,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     let opType: Token | null;
     while ((opType = this.skipTokens(TokenType.Plus, TokenType.Minus))) {
       const rightExpr = this.parseMultExpr();
@@ -733,7 +755,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     let opType: Token | null;
     while (
       (opType = this.skipTokens(
@@ -767,7 +788,6 @@ export class Z80AsmParser {
       return null;
     }
 
-    // --- Build binary expressions from left to right
     let opType: Token | null;
     while ((opType = this.skipTokens(TokenType.MinOp, TokenType.MaxOp))) {
       const rightExpr = this.parsePrimaryExpr();
@@ -786,20 +806,50 @@ export class Z80AsmParser {
   }
 
   /**
-   *
-   * @param parsePoint
+   * primaryExpr
+   *   : builtInFuncInvocation
+   *   | funcInvocation
+   *   | literal
+   *   | symbol
+   *   | unaryExpression
+   *   | macroParam
    */
   private parsePrimaryExpr(): ExpressionNode | null {
-    const { start } = this.getParsePoint();
+    const parsePoint = this.getParsePoint();
+    const { start, traits } = parsePoint;
 
-    // TODO: Extend this simplified implementation
-    if (start.type === TokenType.Identifier) {
-      this.tokens.get();
-      return <Symbol>{
-        type: "Symbol",
-        startsFromGlobal: false,
-        identifier: start.text,
-      };
+    if (start.type === TokenType.Multiplication) {
+      // --- Special case, it might be the "*" operator or the current address
+      const ahead = this.tokens.ahead(1);
+      const atraits = getTokenTraits(ahead.type);
+      if (ahead.type === TokenType.Eof || !atraits.expressionStart) {
+        this.tokens.get();
+        return <CurrentAddressLiteral>{
+          type: "CurrentAddressLiteral",
+        };
+      }
+    }
+    if (traits.builtInFunction) {
+      return this.parseBuiltInFuncInvocation(parsePoint);
+    }
+    if (traits.literal) {
+      return this.parseLiteral(parsePoint);
+    }
+    switch (start.type) {
+      case TokenType.Identifier:
+        const lpar = this.tokens.ahead(1);
+        return lpar.type === TokenType.LPar
+          ? this.parseFuncInvocation(parsePoint)
+          : this.parseSymbol(parsePoint);
+      case TokenType.DoubleColon:
+        return this.parseSymbol(parsePoint);
+      case TokenType.Plus:
+      case TokenType.Minus:
+      case TokenType.BinaryNot:
+      case TokenType.Exclamation:
+        return this.parseUnaryExpr(parsePoint);
+      case TokenType.LDBrac:
+        return this.parseMacroParam(parsePoint);
     }
     return null;
   }
@@ -808,7 +858,9 @@ export class Z80AsmParser {
    *
    * @param parsePoint
    */
-  private parseLiteral(parsePoint: ParsePoint): ExpressionNode | null {
+  private parseBuiltInFuncInvocation(
+    parsePoint: ParsePoint
+  ): ExpressionNode | null {
     // TODO: Implement this method
     return null;
   }
@@ -817,10 +869,348 @@ export class Z80AsmParser {
    *
    * @param parsePoint
    */
-  private parseBinaryExpression(
-    leftExpr: ExpressionNode,
-    parsePoint: ParsePoint
-  ): ExpressionNode | null {
+  private parseFuncInvocation(parsePoint: ParsePoint): ExpressionNode | null {
+    // TODO: Implement this method
+    return null;
+  }
+
+  /**
+   * symbol
+   *   : "::"? Identifier
+   *   ;
+   */
+  private parseSymbol(parsePoint: ParsePoint): ExpressionNode | null {
+    let startsFromGlobal = false;
+    if (this.skipToken(TokenType.DoubleColon)) {
+      startsFromGlobal = true;
+      parsePoint = this.getParsePoint();
+    }
+    if (parsePoint.start.type === TokenType.Identifier) {
+      this.tokens.get();
+      return <Symbol>{
+        type: "Symbol",
+        startsFromGlobal,
+        identifier: parsePoint.start.text,
+      };
+    }
+    this.reportError("Z1004");
+    return null;
+  }
+
+  /**
+   * unaryExpr
+   *   : ( "+" | "-" | "~" | "!" ) expr
+   *   ;
+   */
+  private parseUnaryExpr(parsePoint: ParsePoint): UnaryExpression | null {
+    // --- Obtain and skip the operator token
+    const operator = parsePoint.start.text;
+    this.tokens.get();
+
+    const operand = this.parseExpr();
+    if (operand) {
+      return <UnaryExpression>{
+        type: "UnaryExpression",
+        operator,
+        operand,
+      };
+    }
+    this.reportError("Z1003");
+    return null;
+  }
+
+  /**
+   * literal
+   *   : binaryLiteral
+   *   | octalLiteral
+   *   | decimalLiteral
+   *   | hexadecimalLiteral
+   *   | realLiteral
+   *   | charLiteral
+   *   | stringLiteral
+   *   | booleanLiteral
+   *   ;
+   */
+  private parseLiteral(parsePoint: ParsePoint): ExpressionNode | null {
+    const { start } = parsePoint;
+    switch (start.type) {
+      case TokenType.BinaryLiteral:
+        return this.parseBinaryLiteral(start.text);
+      case TokenType.OctalLiteral:
+        return this.parseOctalLiteral(start.text);
+      case TokenType.DecimalLiteral:
+        return this.parseDecimalLiteral(start.text);
+      case TokenType.HexadecimalLiteral:
+        return this.parseHexadecimalLiteral(start.text);
+      case TokenType.RealLiteral:
+        return this.parseRealLiteral(start.text);
+      case TokenType.CharLiteral:
+        return this.parseCharLiteral(start.text);
+      case TokenType.StringLiteral:
+        return this.parseStringLiteral(start.text);
+      case TokenType.True:
+        return <BooleanLiteral>{
+          type: "BooleanLiteral",
+          value: true,
+        };
+      case TokenType.False:
+        return <BooleanLiteral>{
+          type: "BooleanLiteral",
+          value: false,
+        };
+      case TokenType.CurAddress:
+      case TokenType.Dot:
+      case TokenType.Multiplication:
+        return <CurrentAddressLiteral>{
+          type: "CurrentAddressLiteral",
+        };
+      case TokenType.CurCnt:
+        return <CurrentCounterLiteral>{
+          type: "CurrentCounterLiteral",
+        };
+    }
+    return null;
+  }
+
+  /**
+   * BinaryLiteral
+   *   : "%" ("_" | "0" | "1")+
+   * @param text
+   */
+  private parseBinaryLiteral(text: string): IntegerLiteral | null {
+    if (text.startsWith("%")) {
+      text = text.substr(1);
+    } else if (text.startsWith("0b")) {
+      text = text.substr(2);
+    }
+    while (text.includes("_")) {
+      text = text.replace("_", "");
+    }
+    const value = parseInt(text, 2);
+    if (!isNaN(value)) {
+      return <IntegerLiteral>{
+        type: "IntegerLiteral",
+        value,
+      };
+    }
+    this.reportError("Z1005");
+    return null;
+  }
+
+  /**
+   * OctalLiteral
+   *   : ("0".."7")+ ("q" | "Q" | "o" | "O")
+   */
+  private parseOctalLiteral(text: string): IntegerLiteral | null {
+    text = text.substr(0, text.length - 1);
+    const value = parseInt(text, 8);
+    if (!isNaN(value)) {
+      return <IntegerLiteral>{
+        type: "IntegerLiteral",
+        value,
+      };
+    }
+    this.reportError("Z1005");
+    return null;
+  }
+
+  /**
+   * decimalLiteral
+   *   : ("0".."9")+
+   * @param text
+   */
+  private parseDecimalLiteral(text: string): IntegerLiteral | null {
+    const value = parseInt(text, 10);
+    if (!isNaN(value)) {
+      return <IntegerLiteral>{
+        type: "IntegerLiteral",
+        value,
+      };
+    }
+    this.reportError("Z1005");
+    return null;
+  }
+
+  /**
+   * hexadecimalLiteral
+   *   : ("#" | "$" | "0x") ("0".."9" | "a".."f" | "A".."F") {1-4}
+   *   | ("0".."9") ("0".."9" | "a".."f" | "A".."F") {1-4} ("h" | "H")
+   * @param text
+   */
+  private parseHexadecimalLiteral(text: string): IntegerLiteral | null {
+    if (text.startsWith("#") || text.startsWith("$")) {
+      text = text.substring(1);
+    } else if (text.endsWith("h") || text.endsWith("H")) {
+      text = text.substr(0, text.length - 1);
+    }
+    const value = parseInt(text, 16);
+    if (!isNaN(value)) {
+      return <IntegerLiteral>{
+        type: "IntegerLiteral",
+        value,
+      };
+    }
+    this.reportError("Z1005");
+    return null;
+  }
+
+  /**
+   * realLiteral
+   *   : ("0".."9")* "." ("0".."9")+ (("e" | "E") ("+" | "-")? ("0".."9")+)?
+   *   | ("0".."9")+ (("e" | "E") ("+" | "-")? ("0".."9")+)
+   *   ;
+   */
+  private parseRealLiteral(text: string): RealLiteral | null {
+    const value = parseFloat(text);
+    if (!isNaN(value)) {
+      return <RealLiteral>{
+        type: "RealLiteral",
+        value,
+      };
+    }
+    this.reportError("Z1005");
+    return null;
+  }
+
+  /**
+   * Parses a character literal
+   *
+   */
+  private parseCharLiteral(text: string): CharLiteral | null {
+    text = text.substr(1, text.length - 2);
+    return <CharLiteral>{
+      type: "CharLiteral",
+      value: this.convertSpectrumString(text),
+    };
+  }
+
+  private parseStringLiteral(text: string): StringLiteral | null {
+    text = text.substr(1, text.length - 2);
+    return <StringLiteral>{
+      type: "StringLiteral",
+      value: this.convertSpectrumString(text),
+    };
+  }
+
+  /**
+   * Converts a ZX Spectrum string to intrinsic string
+   * @param input ZX Spectrum string to convert
+   */
+  private convertSpectrumString(input: string): string {
+    let result = "";
+    let state: StrParseState = StrParseState.Normal;
+    let collect = 0;
+    for (const ch of input) {
+      switch (state) {
+        case StrParseState.Normal:
+          if (ch == "\\") {
+            state = StrParseState.Backslash;
+          } else {
+            result += ch;
+          }
+          break;
+
+        case StrParseState.Backslash:
+          state = StrParseState.Normal;
+          switch (ch) {
+            case "i": // INK
+              result += String.fromCharCode(0x10);
+              break;
+            case "p": // PAPER
+              result += String.fromCharCode(0x11);
+              break;
+            case "f": // FLASH
+              result += String.fromCharCode(0x12);
+              break;
+            case "b": // BRIGHT
+              result += String.fromCharCode(0x13);
+              break;
+            case "I": // INVERSE
+              result += String.fromCharCode(0x14);
+              break;
+            case "o": // OVER
+              result += String.fromCharCode(0x15);
+              break;
+            case "a": // AT
+              result += String.fromCharCode(0x16);
+              break;
+            case "t": // TAB
+              result += String.fromCharCode(0x17);
+              break;
+            case "P": // Pound sign
+              result += String.fromCharCode(0x60);
+              break;
+            case "C": // Copyright sign
+              result += String.fromCharCode(0x7f);
+              break;
+            case "0":
+              result += String.fromCharCode(0x00);
+              break;
+            case "x":
+              state = StrParseState.X;
+              break;
+            default:
+              result += ch;
+              break;
+          }
+          break;
+
+        case StrParseState.X:
+          if (
+            (ch >= "0" && ch <= "9") ||
+            (ch >= "a" && ch <= "f") ||
+            (ch >= "A" && ch <= "F")
+          ) {
+            collect = parseInt(ch, 16);
+            state = StrParseState.Xh;
+          } else {
+            result += "x";
+            state = StrParseState.Normal;
+          }
+          break;
+
+        case StrParseState.Xh:
+          if (
+            (ch >= "0" && ch <= "9") ||
+            (ch >= "a" && ch <= "f") ||
+            (ch >= "A" && ch <= "F")
+          ) {
+            collect = collect * 0x10 + parseInt(ch, 16);
+            result += String.fromCharCode(collect);
+            state = StrParseState.Normal;
+          } else {
+            result += String.fromCharCode(collect);
+            result += ch;
+            state = StrParseState.Normal;
+          }
+          break;
+      }
+    }
+
+    // --- Handle the final machine state
+    switch (state) {
+      case StrParseState.Backslash:
+        result += "\\";
+        break;
+      case StrParseState.X:
+        result += "x";
+        break;
+      case StrParseState.Xh:
+        result += String.fromCharCode(collect);
+        break;
+    }
+    return result;
+  }
+
+  // --------------------------------------------------------------------------
+  // Miscellaneous
+
+  /**
+   * macroParam
+   *   : "{{" Identifier "}}"
+   *   ;
+   */
+  private parseMacroParam(parsePoint: ParsePoint): ExpressionNode | null {
     // TODO: Implement this method
     return null;
   }
@@ -952,6 +1342,18 @@ export class Z80AsmParser {
 
     return false;
   }
+
+  /**
+   * Gets an identifier
+   */
+  private getIdentifier(): string | null {
+    const idToken = this.tokens.get();
+    if (idToken.type === TokenType.Identifier) {
+      return idToken.text;
+    }
+    this.reportError("Z1004");
+    return null;
+  }
 }
 
 /**
@@ -967,4 +1369,14 @@ interface ParsePoint {
    * Traist of the start token
    */
   traits: TokenTraits;
+}
+
+/**
+ * States of the string parsing
+ */
+enum StrParseState {
+  Normal,
+  Backslash,
+  X,
+  Xh,
 }

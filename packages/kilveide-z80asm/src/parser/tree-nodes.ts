@@ -1,16 +1,37 @@
-import { Token } from "./token-stream";
-
 /**
  * Aggregate type for all syntax nodes
  */
-export type Node = Program | LabelOnlyLine | Instruction | Expression;
+export type Node =
+  | Program
+  | LabelOnlyLine
+  | Instruction
+  | Expression
+  | Directive;
 export type Instruction = SimpleZ80Instruction;
 export type Expression =
   | UnaryExpression
   | BinaryExpression
   | ConditionalExpression
   | Symbol
-  | IntegerLiteral;
+  | IntegerLiteral
+  | RealLiteral
+  | CharLiteral
+  | StringLiteral
+  | BooleanLiteral
+  | CurrentAddressLiteral
+  | CurrentCounterLiteral;
+export type Directive =
+  | IfDefDirective
+  | IfNDefDirective
+  | DefineDirective
+  | UndefDirective
+  | IfModDirective
+  | IfNModDirective
+  | EndIfDirective
+  | ElseDirective
+  | IfDirective
+  | IncludeDirective
+  | LineDirective;
 
 /**
  * This class represents the root class of all syntax nodes
@@ -101,7 +122,7 @@ export interface BinaryExpression extends ExpressionNode {
  */
 export interface Symbol extends ExpressionNode {
   type: "Symbol";
-  
+
   /**
    * Starts form global namespace?
    */
@@ -125,15 +146,77 @@ export interface ConditionalExpression extends ExpressionNode {
 }
 
 /**
- * Common root type of all literals
+ * Represents an integer literal with any radix
  */
 export interface IntegerLiteral extends ExpressionNode {
   type: "IntegerLiteral";
 
   /**
-   * Value of the integer literal
+   * Value of the literal
    */
   value: number;
+}
+
+/**
+ * Represents a real number literal
+ */
+export interface RealLiteral extends ExpressionNode {
+  type: "RealLiteral";
+
+  /**
+   * Value of the literal
+   */
+  value: number;
+}
+
+/**
+ * Represents a string literal
+ */
+export interface StringLiteral extends ExpressionNode {
+  type: "StringLiteral";
+
+  /**
+   * Value of the literal
+   */
+  value: string;
+}
+
+/**
+ * Represents a character literal
+ */
+export interface CharLiteral extends ExpressionNode {
+  type: "CharLiteral";
+
+  /**
+   * Value of the literal
+   */
+  value: string;
+}
+
+/**
+ * Represents a boolean literal
+ */
+export interface BooleanLiteral extends ExpressionNode {
+  type: "BooleanLiteral";
+
+  /**
+   * Value of the literal
+   */
+  value: boolean;
+}
+
+/**
+ * Represents a current address literal
+ */
+export interface CurrentAddressLiteral extends ExpressionNode {
+  type: "CurrentAddressLiteral";
+}
+
+/**
+ * Represents a current counter literal
+ */
+export interface CurrentCounterLiteral extends ExpressionNode {
+  type: "CurrentCounterLiteral";
 }
 
 // ============================================================================
@@ -209,27 +292,99 @@ export interface SimpleZ80Instruction extends Z80Instruction {
   type: "SimpleZ80Instruction";
 }
 
-/**
- * Factory method for a program node
- * @param assemblyLines
- */
-export function program(assemblyLines: Z80AssemblyLine[]): Program {
-  return {
-    type: "Program",
-    assemblyLines,
-  };
+export interface IfDefDirective extends PartialZ80AssemblyLine {
+  type: "IfDefDirective";
+
+  /**
+   * Identifier of the directive
+   */
+  identifier: string;
 }
 
-/**
- * Factory method for a simple Z80 instruction node
- * @param label Optional label
- * @param startToken Start token
- * @param nextToken End token
- * @param mnemonic Mnemonic
- */
-export function simpleZ80Instruction(mnemonic: string): SimpleZ80Instruction {
-  return {
-    type: "SimpleZ80Instruction",
-    mnemonic,
-  };
+export interface IfNDefDirective extends PartialZ80AssemblyLine {
+  type: "IfNDefDirective";
+
+  /**
+   * Identifier of the directive
+   */
+  identifier: string;
 }
+
+export interface DefineDirective extends PartialZ80AssemblyLine {
+  type: "DefineDirective";
+
+  /**
+   * Identifier of the directive
+   */
+  identifier: string;
+}
+
+export interface UndefDirective extends PartialZ80AssemblyLine {
+  type: "UndefDirective";
+
+  /**
+   * Identifier of the directive
+   */
+  identifier: string;
+}
+
+export interface IfModDirective extends PartialZ80AssemblyLine {
+  type: "IfModDirective";
+
+  /**
+   * Identifier of the directive
+   */
+  identifier: string;
+}
+
+export interface IfNModDirective extends PartialZ80AssemblyLine {
+  type: "IfNModDirective";
+
+  /**
+   * Identifier of the directive
+   */
+  identifier: string;
+}
+
+export interface EndIfDirective extends PartialZ80AssemblyLine {
+  type: "EndIfDirective";
+}
+
+export interface ElseDirective extends PartialZ80AssemblyLine {
+  type: "ElseDirective";
+}
+
+export interface IfDirective extends PartialZ80AssemblyLine {
+  type: "IfDirective";
+
+  /**
+   * IF condition
+   */
+  condition: ExpressionNode;
+}
+
+export interface IncludeDirective extends PartialZ80AssemblyLine {
+  type: "IncludeDirective";
+
+  /**
+   * Name of the file to include
+   */
+  filename: string;
+}
+
+export interface LineDirective extends PartialZ80AssemblyLine {
+  type: "LineDirective";
+
+  /**
+   * Line number
+   */
+  line: ExpressionNode;
+
+  /**
+   * Optional line comment
+   */
+  comment: string | null;
+}
+
+
+
