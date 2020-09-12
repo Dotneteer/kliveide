@@ -3,9 +3,13 @@ name: Release latest version
 on: workflow_dispatch
 
 jobs:
-  ci_cd:
-    runs-on: windows-latest
+  release-latest:
+    runs-on: ${{ matrix.os }}
 
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+  
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -25,3 +29,9 @@ jobs:
 
     - name: Test the packages
       run: npm run test
+
+    - name: Build/release Electron app
+      uses: samuelmeuli/action-electron-builder@v1
+      with:
+        github_token: ${{ secrets.github_token }}
+        release: true
