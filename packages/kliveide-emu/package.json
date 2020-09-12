@@ -35,7 +35,7 @@
     "directories": {
       "buildResources": "buildResources",
       "app": "./dist/",
-      "output": "./out/"
+      "output": "../../artifacts/"
     },
     "mac": {
       "target": "pkg"
