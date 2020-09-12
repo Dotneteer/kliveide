@@ -263,7 +263,6 @@ describe("ZX Spectrum 48 - Beeper", () => {
     for (let i = 0; i < s.audioSampleCount; i++) {
       samples += mh.readByte(i) === 1 ? "1" : "0";
     }
-    //console.log(samples);
     expect(samples).toBe(expected);
   });
 
@@ -277,19 +276,13 @@ describe("ZX Spectrum 48 - Beeper", () => {
 
     const sampleLength = (baseClockFrequency * clockMultiplier) / sampleRate;
 
-    console.log(sampleLength);
-
     const lowerGap = Math.floor(sampleLength);
     const lowerGate = Math.floor((sampleLength - lowerGap) * 100_000);
     const upperGate = 100_000;
 
-    console.log(lowerGate);
-    console.log(upperGate);
-
     let gateValue = (lowerGate + upperGate) / 2;
     let sampleTact = 0;
     for (let i = 0; i < 101; i++) {
-      console.log(sampleTact);
 
       gateValue += lowerGate;
       sampleTact += lowerGap;

@@ -1,6 +1,6 @@
 {
   "name": "kliveide-emu",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "ZX Spectrum Emulator",
   "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
@@ -23,7 +23,7 @@
     "tscbuild": "tsc",
     "mergewat": "node ./scripts/mergewat.js",
     "spbuild": "npm run mergewat && wat2wasm ./build/spectrum.wat -o ./build/spectrum.wasm",
-    "test": "ts-mocha -p ./test/tsconfig.json ./test/**/*.test.ts",
+    "test": "ts-mocha -p ./tsconfig.json ./test/**/*.test.ts",
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
     "build:linux": "npm run build && electron-builder build --linux --x64"
