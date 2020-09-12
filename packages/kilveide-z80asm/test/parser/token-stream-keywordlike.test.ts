@@ -170,7 +170,6 @@ describe("Parser - token: operator-like", () => {
     testToken("DAA", TokenType.Daa);
   });
 
-
   it("get: cpl instruction", () => {
     testToken("cpl", TokenType.Cpl);
     testToken("CPL", TokenType.Cpl);

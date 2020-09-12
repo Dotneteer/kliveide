@@ -1207,7 +1207,6 @@ export enum TokenType {
   IfModDir,
   IfNModDir,
   LineDir,
-
   CurAddress,
   NoneArg,
 
