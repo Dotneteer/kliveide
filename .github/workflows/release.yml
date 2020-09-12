@@ -3,13 +3,9 @@ name: Release latest version
 on: workflow_dispatch
 
 jobs:
-  release-latest:
+  build-on-windows:
     runs-on: ${{ matrix.os }}
 
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-  
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -30,8 +26,6 @@ jobs:
     - name: Test the packages
       run: npm run test
 
-    - name: Build/release Electron app
-      uses: samuelmeuli/action-electron-builder@v1
-      with:
-        github_token: ${{ secrets.github_token }}
-        release: true
+    - name: Build Electron app on windows
+      run: cd packages/klive-emu && nmp run build:win
+      
