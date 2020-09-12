@@ -20,5 +20,8 @@ jobs:
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GT_WORKAROUND_PAT }}
 
+    - name: Build the packages
+      run: npm run build
+
     - name: Test the packages
       run: npm run test
