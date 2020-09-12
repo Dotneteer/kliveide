@@ -1,7 +1,12 @@
-;; ==========================================================================
-;; Z80 jump tables
+;; ============================================================================
+;; Z80 jump tables used
 
-;; Machine type discriminator
+;; Represents a no-operation function
+(func $NOOP)
+
+;; Machine type discriminator. This variable shows the type of ZX Spectrum
+;; machine the engine uses. Dynamic operations just as memory read/write 
+;; (and all the others) are dispatched according machine type.
 ;; 0x00: ZX Spectrum 48K
 ;; 0x01: ZX Spectrum 128K
 ;; 0x02: ZX Spectrum +3
@@ -9,162 +14,164 @@
 ;; 0x04: Z80 Test machine
 (global $MACHINE_TYPE (mut i32) (i32.const 0x00))
 
-;; Number of functions per machine types
+;; Number of dispatchable functions per machine types
 (global $MACHINE_FUNC_COUNT i32 (i32.const 20))
 
+;; ----------------------------------------------------------------------------
 ;; Jump table start indices
+
+;; Z80 standard instructions
 (global $STANDARD_JT i32 (i32.const 100))
+
+;; Z80 indexed instructions
 (global $INDEXED_JT i32 (i32.const 356))
+
+;; Z80 extended instructions
 (global $EXTENDED_JT i32 (i32.const 612))
+
+;; Z80 bit instructions
 (global $BIT_JT i32 (i32.const 868))
+
+;; Z80 indexed bit instructions
 (global $INDEXED_BIT_JT i32 (i32.const 1124))
+
+;; ALU bit manipulation operations table
 (global $BOP_JT i32 (i32.const 1380))
 
-;; 100: 5 machine types (12 function for each)
+;; This table stores all dispatchable functions
+;; 100: 5 machine types (20 function for each)
 ;; 256: Standard operations
 ;; 256: Indexed operations
 ;; 256: Extended operations
 ;; 256: Bit operations
 ;; 256: Indexed bit operations
 ;; 8: ALU bit operations
-
 (table $dispatch 1388 anyfunc)
 
-;; Table of machine type functions
+;; ----------------------------------------------------------------------------
+;; Table of machine-type specific functions
+
 ;; Function indexes
 ;; 0: Read memory (func (param $addr i32) (result i32)))
-;; 1: Read memory, non-contended (func (param $addr i32) (result i32)))
-;; 2: Write memory (func (param $addr i32) (param $v i32)))
-;; 3: Read port (func (param $addr i32) (result i32)))
-;; 4: Write port (func (param $addr i32) (param $v i32)))
-;; 5: Write TbBlue register index (func (param $addr i32)))
-;; 6: Write TbBlue register value (func (param $addr i32)))
-;; 7: Setup machine (func)
-;; 8: Get machine state (func)
-;; 9: Start new frame (func)
-;; 10: Screen frame ended (func)
-;; 11: Colorize (func)
-;; 12-19: Unused
+;; 1: Write memory (func (param $addr i32) (param $v i32)))
+;; 2: Read port (func (param $addr i32) (result i32)))
+;; 3: Write port (func (param $addr i32) (param $v i32)))
+;; 4: Write TbBlue register index (func (param $addr i32)))
+;; 5: Write TbBlue register value (func (param $addr i32)))
+;; 6: Setup machine (func)
+;; 7: Get machine state (func)
+;; 8: Colorize (func)
+;; 9-19: Unused
 (elem (i32.const 0)
-  ;; Index 0: Machine type #0
-  $readMemorySp48
-  $readMemoryNcSp48
-  $writememorySp48
-  $readPortSp48
-  $writePortSp48
-  $NOOP
-  $NOOP
+  ;; Index 0: Machine type #0 (ZX Spectrum 48K)
+  $readPagedMemory16            ;; 0
+  $writePagedMemory16           ;; 1
+  $readPortSp48                 ;; 2
+  $writePortSp48                ;; 3
+  $NOOP                         ;; 4
+  $NOOP                         ;; 5
+  $setupSpectrum48              ;; 6
+  $getSpectrum48MachineState    ;; 7
+  $colorizeSp48                 ;; 8
+  $NOOP                         ;; 9
+  $NOOP                         ;; 10
+  $NOOP                         ;; 11
+  $NOOP                         ;; 12
+  $NOOP                         ;; 13
+  $NOOP                         ;; 14
+  $NOOP                         ;; 15
+  $NOOP                         ;; 16
+  $NOOP                         ;; 17
+  $NOOP                         ;; 18
+  $NOOP                         ;; 19
 
-  $setupSpectrum48
-  $getSpectrum48MachineState
-  $NOOP
-  $NOOP
-  $colorizeSp48
-  $NOOP
+  ;; Index 20: Machine type #1 (ZX Spectrum 128K)
+  $readPagedMemory16            ;; 0
+  $writePagedMemory16           ;; 1
+  $readPortSp128                ;; 2
+  $writePortSp128               ;; 3
+  $NOOP                         ;; 4
+  $NOOP                         ;; 5
+  $setupSpectrum128             ;; 6
+  $getSpectrum128MachineState   ;; 7
+  $colorizeSp48                 ;; 8
+  $NOOP                         ;; 9
+  $NOOP                         ;; 10
+  $NOOP                         ;; 11
+  $NOOP                         ;; 12
+  $NOOP                         ;; 13
+  $NOOP                         ;; 14
+  $NOOP                         ;; 15
+  $NOOP                         ;; 16
+  $NOOP                         ;; 17
+  $NOOP                         ;; 18
+  $NOOP                         ;; 19
 
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
+  ;; Index 40: Machine type #2 (ZX Spectrum +3)
+  $defaultRead                  ;; 0
+  $defaultWrite                 ;; 1
+  $defaultIoRead                ;; 2
+  $defaultIoWrite               ;; 3
+  $NOOP                         ;; 4
+  $NOOP                         ;; 5
+  $NOOP                         ;; 6
+  $NOOP                         ;; 7
+  $NOOP                         ;; 8
+  $NOOP                         ;; 9
+  $NOOP                         ;; 10
+  $NOOP                         ;; 11
+  $NOOP                         ;; 12
+  $NOOP                         ;; 13
+  $NOOP                         ;; 14
+  $NOOP                         ;; 15
+  $NOOP                         ;; 16
+  $NOOP                         ;; 17
+  $NOOP                         ;; 18
+  $NOOP                         ;; 19
 
-  ;; Index 20: Machine type #1
-  $defaultRead
-  $defaultRead
-  $defaultWrite
-  $defaultIoRead
-  $defaultIoWrite
-  $NOOP
-  $NOOP
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-
-  ;; Index 40: Machine type #2
-  $defaultRead
-  $defaultRead
-  $defaultWrite
-  $defaultIoRead
-  $defaultIoWrite
-  $NOOP
-  $NOOP
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-
-  ;; Index 60: Machine type #3
-  $defaultRead
-  $defaultRead
-  $defaultWrite
-  $defaultIoRead
-  $defaultIoWrite
-  $NOOP
-  $NOOP
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
+  ;; Index 60: Machine type #3 (ZX Spectrum Next)
+  $defaultRead                  ;; 0
+  $defaultWrite                 ;; 1
+  $defaultIoRead                ;; 2
+  $defaultIoWrite               ;; 3
+  $NOOP                         ;; 4
+  $NOOP                         ;; 5
+  $NOOP                         ;; 6
+  $NOOP                         ;; 7
+  $NOOP                         ;; 8
+  $NOOP                         ;; 9
+  $NOOP                         ;; 10
+  $NOOP                         ;; 11
+  $NOOP                         ;; 12
+  $NOOP                         ;; 13
+  $NOOP                         ;; 14
+  $NOOP                         ;; 15
+  $NOOP                         ;; 16
+  $NOOP                         ;; 17
+  $NOOP                         ;; 18
+  $NOOP                         ;; 19
 
   ;; Index 80: Test Z80 CPU Machine (type #4)
-  $testMachineRead
-  $testMachineRead
-  $testMachineWrite
-  $testMachineIoRead
-  $testMachineIoWrite
-  $testMachineTbBlueIndexWrite
-  $testMachineTbBlueValueWrite
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
-  $NOOP
+  $testMachineRead              ;; 0
+  $testMachineWrite             ;; 1
+  $testMachineIoRead            ;; 2
+  $testMachineIoWrite           ;; 3
+  $testMachineTbBlueIndexWrite  ;; 4
+  $testMachineTbBlueValueWrite  ;; 5
+  $NOOP                         ;; 6
+  $NOOP                         ;; 7
+  $NOOP                         ;; 8
+  $NOOP                         ;; 9
+  $NOOP                         ;; 10
+  $NOOP                         ;; 11
+  $NOOP                         ;; 12
+  $NOOP                         ;; 13
+  $NOOP                         ;; 14
+  $NOOP                         ;; 15
+  $NOOP                         ;; 16
+  $NOOP                         ;; 17
+  $NOOP                         ;; 18
+  $NOOP                         ;; 19
 )
 
 ;; Table of standard instructions

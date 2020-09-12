@@ -2,13 +2,10 @@ import * as vscode from "vscode";
 import { startEmulator } from "./commands/start-emu";
 import { Z80RegistersProvider } from "./views/z80-registers";
 import { setZ80RegisterProvider } from "./providers";
-import {
-  startNotifier,
-  stopNotifier,
-} from "./emulator/notifier";
+import { startNotifier, stopNotifier } from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
 import { createVmStateStatusBarItem } from "./views/statusbar";
-import { createKliveProject } from "./commands/create-klive-project";
+import { updateKliveProject } from "./commands/update-klive-project";
 import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
 import { goToAddress } from "./commands/goto-address";
 import { sendTapeFile } from "./commands/send-tape-file";
@@ -16,8 +13,18 @@ import { refreshView } from "./commands/refresh-view";
 import { spectrumConfigurationInstance } from "./emulator/machine-config";
 import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 import { KLIVEIDE, SAVE_FOLDER } from "./config/sections";
+import {
+  startBackgroundDisassembly,
+  stopBackgroundDisassembly,
+} from "./custom-editors/disassembly/background-disassembly";
+import { setExtensionContext } from "./extension-paths";
+import { BasicEditorProvider } from "./custom-editors/basic/basic-editor";
 
 export async function activate(context: vscode.ExtensionContext) {
+  // --- We use the context in several places, save it
+  setExtensionContext(context);
+
+  // --- Helper shortcuts
   const register = vscode.commands.registerCommand;
   const subs = context.subscriptions;
 
@@ -27,7 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // --- Register extension commands
   subs.push(
     register("kliveide.startEmu", async () => await startEmulator()),
-    register("kliveide.createProject", () => createKliveProject(context)),
+    register("kliveide.updateKliveProject", () => updateKliveProject(context)),
     register("kliveide.goToAddress", () => goToAddress()),
     register("kliveide.sendTape", (uri: vscode.Uri) => sendTapeFile(uri)),
     register("kliveide.refreshView", () => refreshView())
@@ -46,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // --- Register custom editors
   context.subscriptions.push(DisassemblyEditorProvider.register(context));
   context.subscriptions.push(MemoryEditorProvider.register(context));
+  context.subscriptions.push(BasicEditorProvider.register(context));
 
   // --- Start the notification mechanism
   startNotifier();
@@ -69,11 +77,15 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+
+  // --- Start disassembly and caching
+  startBackgroundDisassembly();
 }
 
 /**
  * Stop watching for notifications
  */
-export function deactivate() {
+export async function deactivate() {
   stopNotifier();
+  await stopBackgroundDisassembly();
 }

@@ -1,20 +1,34 @@
 import { SpectrumEngine } from "./spectrum/SpectrumEngine";
 import { MachineApi } from "../native/api/api";
 import { ZxSpectrum48 } from "../native/api/ZxSpectrum48";
-import { createRendererProcessStateAware, rendererProcessStore } from "./rendererProcessStore";
+import { ZxSpectrum128 } from "../native/api/ZxSpectrum128";
+import {
+  createRendererProcessStateAware,
+  rendererProcessStore,
+} from "./rendererProcessStore";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { MemoryHelper } from "../native/api/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
+import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
+import { ZxSpectrumBase } from "../native/api/ZxSpectrumBase";
+import { getMachineTypeIdFromName } from "../shared/spectrum/machine-types";
+import { MemoryCommand } from "../shared/state/AppState";
+import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
 
 /**
  * Store the ZX Spectrum engine instance
  */
-let _spectrumEngine: SpectrumEngine | null = null;
+let spectrumEngine: SpectrumEngine | null = null;
 
 /**
- * Async loader
+ * The WebAssembly instance with the ZX Spectrum core
  */
-let _loader: Promise<void> | null = null;
+let waInstance: WebAssembly.Instance | null = null;
+
+/**
+ * Loader promise
+ */
+let loader: Promise<SpectrumEngine> | null = null;
 
 /**
  * Last emulator command requested
@@ -22,32 +36,140 @@ let _loader: Promise<void> | null = null;
 let lastEmulatorCommand = "";
 
 /**
+ * Last emulator command requested
+ */
+let lastMemoryCommand: MemoryCommand | undefined;
+
+/**
  * Indicates that the engine is processing a state change
  */
 let processingChange = false;
 
 /**
- * Address of the tape data buffer
+ * Let's handle virtual machine commands
  */
-const TAPE_DATA_BUFFER = 0x15_4300;
+const stateAware = createRendererProcessStateAware();
+stateAware.stateChanged.on(async (state) => {
+  if (processingChange || !spectrumEngine) return;
+  processingChange = true;
+
+  // --- Process server-api execution state commands
+  if (lastEmulatorCommand !== state.emulatorCommand) {
+    lastEmulatorCommand = state.emulatorCommand;
+
+    switch (lastEmulatorCommand) {
+      case "start":
+        await spectrumEngine.start();
+        break;
+      case "pause":
+        await spectrumEngine.pause();
+        break;
+      case "stop":
+        await spectrumEngine.stop();
+        break;
+      case "restart":
+        await spectrumEngine.restart();
+        break;
+      case "start-debug":
+        await spectrumEngine.startDebug();
+        break;
+      case "step-into":
+        await spectrumEngine.stepInto();
+        break;
+      case "step-over":
+        await spectrumEngine.stepOver();
+        break;
+      case "step-out":
+        await spectrumEngine.stepOut();
+        break;
+    }
+    stateAware.dispatch(emulatorSetCommandAction("")());
+  }
+
+  // --- Process server-api memory commands
+  if (lastMemoryCommand !== state.memoryCommand) {
+    lastMemoryCommand = state.memoryCommand;
+    if (lastMemoryCommand && lastMemoryCommand.command) {
+      let contents = new Uint8Array(0);
+      switch (lastMemoryCommand.command) {
+        case "rom":
+          contents = spectrumEngine.getRomPage(lastMemoryCommand.index ?? 0)
+          break;
+        case "bank":
+          contents = spectrumEngine.getBankPage(lastMemoryCommand.index ?? 0)
+          break;
+      }
+      stateAware.dispatch(memorySetResultAction(lastMemoryCommand.seqNo, contents)())
+    }
+  }
+  processingChange = false;
+});
 
 /**
  * Get the initialized ZX Spectrum engine
  */
 export async function getSpectrumEngine(): Promise<SpectrumEngine> {
-  if (!_spectrumEngine) {
-    if (!_loader) {
-      _loader = loadSpectrumEngine();
+  if (!spectrumEngine) {
+    if (!loader) {
+      loader = createSpectrumEngine(0);
     }
-    await _loader;
+    spectrumEngine = await loader;
   }
-  return _spectrumEngine;
+  return spectrumEngine;
+}
+
+export async function changeSpectrumEngine(name: string) {
+  // --- Stop the engine
+  if (spectrumEngine) {
+    await spectrumEngine.stop();
+
+    // --- Allow 100 ms for pending entities to update
+    await new Promise((r) => setTimeout(r, 100));
+  }
+
+  // --- Create the new engine
+  const typeId = getMachineTypeIdFromName(name);
+  const newEngine = await createSpectrumEngine(typeId);
+
+  // --- Store it
+  spectrumEngine = newEngine;
 }
 
 /**
- * Load the WebAssembly ZX Spectrum engine
+ * Creates a new ZX Spectrum engine with the provided type
+ * @param type Spectrum engine type
  */
-export async function loadSpectrumEngine(): Promise<void> {
+export async function createSpectrumEngine(
+  type: number
+): Promise<SpectrumEngine> {
+  if (!waInstance) {
+    waInstance = await createWaInstance();
+  }
+  const machineApi = (waInstance.exports as unknown) as MachineApi;
+  let spectrum: ZxSpectrumBase;
+  switch (type) {
+    case 1:
+      spectrum = new ZxSpectrum128(machineApi);
+      break;
+    case 2:
+      spectrum = new ZxSpectrum128(machineApi);
+      break;
+    case 3:
+      spectrum = new ZxSpectrum128(machineApi);
+    break;
+    default:
+      spectrum = new ZxSpectrum48(machineApi);
+      break;
+  }
+  spectrum.setUlaIssue(3);
+  spectrum.turnOnMachine();
+  return new SpectrumEngine(spectrum);
+}
+
+/**
+ * Creates a WebAssembly instance with the ZX Spectrum Emulator core
+ */
+async function createWaInstance(): Promise<WebAssembly.Instance> {
   const importObject = {
     imports: {
       trace: (arg: number) => console.log(arg),
@@ -56,61 +178,10 @@ export async function loadSpectrumEngine(): Promise<void> {
       },
     },
   };
-  try {
-    const response = await fetch("./wasm/spectrum.wasm");
-    const results = await WebAssembly.instantiate(
-      await response.arrayBuffer(),
-      importObject
-    );
-    const waInst = results.instance;
-    const spectrum = new ZxSpectrum48(
-      (waInst.exports as unknown) as MachineApi
-    );
-    spectrum.setUlaIssue(3);
-    spectrum.turnOnMachine();
-    _spectrumEngine = new SpectrumEngine(spectrum);
-    const stateAware = createRendererProcessStateAware();
-    stateAware.stateChanged.on(async (state) => {
-      if (processingChange) return;
-      processingChange = true;
-
-      // --- Process server-api execution state commands
-      if (lastEmulatorCommand !== state.emulatorCommand) {
-        lastEmulatorCommand = state.emulatorCommand;
-
-        switch (lastEmulatorCommand) {
-          case "start":
-            await _spectrumEngine.start();
-            break;
-          case "pause":
-            await _spectrumEngine.pause();
-            break;
-          case "stop":
-            await _spectrumEngine.stop();
-            break;
-          case "restart":
-            await _spectrumEngine.restart();
-            break;
-          case "start-debug":
-            await _spectrumEngine.startDebug();
-            break;
-          case "step-into":
-            await _spectrumEngine.stepInto();
-            break;
-          case "step-over":
-            await _spectrumEngine.stepOver();
-            break;
-          case "step-out":
-            await _spectrumEngine.stepOut();
-            break;
-        }
-        stateAware.dispatch(emulatorSetCommandAction("")());
-      }
-      processingChange = false;
-    });
-  } catch (err) {
-    console.log(err);
-  }
+  const response = await fetch("./wasm/spectrum.wasm");
+  return (
+    await WebAssembly.instantiate(await response.arrayBuffer(), importObject)
+  ).instance;
 }
 
 /**
@@ -118,11 +189,11 @@ export async function loadSpectrumEngine(): Promise<void> {
  * @param length Data length
  */
 function storeSavedDataInState(length: number): void {
-  if (!_spectrumEngine) {
+  if (!spectrumEngine) {
     return;
   }
 
-  const mh = new MemoryHelper(_spectrumEngine.spectrum.api, TAPE_DATA_BUFFER);
+  const mh = new MemoryHelper(spectrumEngine.spectrum.api, TAPE_SAVE_BUFFER);
   const savedData = new Uint8Array(mh.readBytes(0, length));
   rendererProcessStore.dispatch(emulatorSetSavedDataAction(savedData)());
 }

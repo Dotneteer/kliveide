@@ -16,8 +16,8 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   numberOfRoms: number;
   romContentsAddress: number;
   spectrum48RomIndex: number;
-  ramBanks: number;
   contentionType: MemoryContentionType;
+  ramBanks: number;
   nextMemorySize: number;
 
   // --- Screen frame configuration
@@ -62,12 +62,13 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   fastVmMode: boolean;
   disableScreenRendering: boolean;
   executionCompletionReason: number;
+  stepOverBreakPoint: number;
 
   // --- Keyboard state
   keyboardLines: number[];
 
   // --- Port $fe state
-  portBit3LastValue: boolean;;
+  portBit3LastValue: boolean;
   portBit4LastValue: boolean;
   portBit4ChangedFrom0Tacts: number;
   portBit4ChangedFrom1Tacts: number;
@@ -88,14 +89,24 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   pixelBufferPtr: number;
 
   // --- Beeper state
-  beeperSampleRate: number;
-  beeperSampleLength: number;
-  beeperLowerGate: number;
-  beeperUpperGate: number;
-  beeperGateValue: number;
-  beeperNextSampleTact: number;
+  audioSampleRate: number;
+  audioSampleLength: number;
+  audioLowerGate: number;
+  audioUpperGate: number;
+  audioGateValue: number;
+  audioNextSampleTact: number;
   beeperLastEarBit: boolean;
-  beeperSampleCount: number;
+  audioSampleCount: number;
+
+  // --- Sound state
+  psgSupportsSound: boolean;
+  psgRegisterIndex: number;
+  psgClockStep: number;
+  psgNextClockTact: number;
+  psgOrphanSamples: number;
+  psgOrphanSum: number;
+
+  // --- Tape state
   tapeMode: number;
   tapeLoadBytesRoutine: number;
   tapeLoadBytesResume: number;
@@ -106,21 +117,47 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
   tapeBufferPtr: number;
   tapeNextBlockPtr: number;
   tapePlayPhase: number;
-  tapeStartFrame: number;
-  tapeStartTact: number;
+  tapeStartTactL: number;
+  tapeStartTactH: number;
   tapeBitMask: number;
+  tapeLastMicBitTact: number;
+  tapeLastMicBitTactH: number;
+  tapeLastMicBit: boolean;
+  tapeSavePhase: number;
+  tapePilotPulseCount: number;
+  tapeDataBlockCount: number;
+  tapePrevDataPulse: number;
+  tapeSaveDataLen: number;
+  tapeBitOffs: number;
+  tapeDataByte: number;
+
+  // --- Memory paging info
+  memorySelectedRom: number;
+  memoryPagingEnabled: boolean;
+  memorySelectedBank: number;
+  memoryUseShadowScreen: boolean;
+  memoryScreenOffset: number;
 }
 
 /**
  * This type represents ZX Spectrum machine states
  */
-export type SpectrumMachineState = Spectrum48MachineState;
+export type SpectrumMachineState =
+  | Spectrum48MachineState
+  | Spectrum128MachineState;
 
 /**
  * Represents the state of a ZX Spectrum 48 machine
  */
 export class Spectrum48MachineState extends SpectrumMachineStateBase {
   type: "48";
+}
+
+/**
+ * Represents the state of a ZX Spectrum 128 machine
+ */
+export class Spectrum128MachineState extends SpectrumMachineStateBase {
+  type: "128";
 }
 
 /**
@@ -188,7 +225,7 @@ export enum DebugStepMode {
    * Do not use debugger
    */
   None = 0,
-  
+
   /**
    * Execution stops at the next breakpoint
    */

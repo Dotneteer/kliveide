@@ -103,12 +103,16 @@
     {runsInDebug}
     isPrefix={item.isPrefixItem} />
   {#if item.isPrefixItem}
-    <span class="prefixComment" title={item.prefixComment}>{item.prefixComment}</span>
+    <span
+      class="prefixComment"
+      title={item.prefixComment}>{item.prefixComment}</span>
   {:else}
     <span class="address" bind:clientWidth={referenceWidth}>
       {intToX4(item.address)}&nbsp;
     </span>
-    <span class="opCodes" style="width:{opCodesWidth}px">{item.opCodes}</span>
+    <span
+      class="opCodes"
+      style="width:{opCodesWidth}px">{item.opCodes || ''}</span>
     <span class="label" style="width:{labelWidth}px">
       {item.formattedLabel}
     </span>

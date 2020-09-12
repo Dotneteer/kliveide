@@ -11,6 +11,7 @@ import {
   onBreakpointsChanged,
   getLastBreakpoints,
   onFrameInfoChanged,
+  onMachineTypeChanged,
 } from "../../emulator/notifier";
 import { FrameInfo, communicatorInstance } from "../../emulator/communicator";
 import { DisassemblyAnnotation } from "../../disassembler/annotations";
@@ -18,6 +19,8 @@ import {
   spectrumConfigurationInstance,
   DISASS_ANN_FILE,
 } from "../../emulator/machine-config";
+import { getAssetsFileName, getAssetsFileResource } from "../../extension-paths";
+import { getFullDisassembly } from "./background-disassembly";
 
 /**
  * This provide implements the functionality of the Disassembly Editor
@@ -58,8 +61,8 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    */
   getContentReplacements(): ReplacementTuple[] {
     return [
-      ["stylefile", this.getAssetsFileResource("style.css")],
-      ["jsfile", this.getAssetsFileResource("disass.bundle.js")],
+      ["stylefile", getAssetsFileResource("style.css")],
+      ["jsfile", getAssetsFileResource("disass.bundle.js")],
     ];
   }
 
@@ -110,6 +113,32 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       })
     );
 
+    // --- Refresh annotations whenever machine type changes
+    this.toDispose(
+      webviewPanel,
+      onMachineTypeChanged(() => {
+        const annotations = this.getAnnotation();
+        if (annotations) {
+          this._annotations.set(webviewPanel, annotations);
+        } else {
+          this._annotations.delete(webviewPanel);
+        }
+        this.refreshView(webviewPanel);
+      })
+    );
+
+    let refreshCounter = 0;
+    this.toDispose(
+      webviewPanel,
+      onFrameInfoChanged(async () => {
+        refreshCounter++;
+        if (refreshCounter % 100 !== 0) {
+          return;
+        }
+        this.refreshViewport(webviewPanel, Date.now());
+      })
+    );
+
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
@@ -127,15 +156,13 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     viewCommand: ViewCommand
   ): Promise<void> {
     switch (viewCommand.command) {
-      case "refresh":
+      case "requestRefresh":
         // --- Send the refresh command to the view
-        const annotations = this._annotations.get(panel);
-        panel.webview.postMessage({
-          viewNotification: "doRefresh",
-          annotations: annotations ? annotations.serialize() : null,
-        });
-        this.sendExecutionStateToView(panel);
-        this.sendBreakpointsToView(panel);
+        this.refreshView(panel);
+        this.refreshViewport(panel, Date.now());
+        break;
+      case "requestViewportRefresh":
+        this.refreshViewport(panel, Date.now());
         break;
       case "setBreakpoint":
         communicatorInstance.setBreakpoint((viewCommand as any).address);
@@ -157,6 +184,14 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   }
 
   /**
+   * Sends messages to the view so that can refresh itself
+   */
+  async refreshView(panel: vscode.WebviewPanel): Promise<void> {
+    this.sendInitialStateToView(panel);
+    this.sendBreakpointsToView(panel);
+  }
+
+  /**
    * Gets the annotation for the current machine
    * @param rom Optional ROM page
    * @param bank Optional RAM bank
@@ -172,10 +207,15 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     rom = rom ?? 0;
     try {
       // --- Obtain the file for the annotations
-      let romAnnotationFile =
-        spectrumConfigurationInstance.configuration.annotations[rom];
+      const annotations =
+        spectrumConfigurationInstance.configuration?.annotations;
+      if (!annotations) {
+        return null;
+      }
+
+      let romAnnotationFile = annotations[rom];
       if (romAnnotationFile.startsWith("#")) {
-        romAnnotationFile = this.getAssetsFileName(
+        romAnnotationFile = getAssetsFileName(
           path.join("annotations", romAnnotationFile.substr(1))
         );
       } else {
@@ -198,5 +238,22 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       console.log(err);
     }
     return null;
+  }
+
+    /**
+   * Refresh the viewport of the specified panel
+   * @param panel Panel to refresh
+   */
+  async refreshViewport(panel: vscode.WebviewPanel, start: number): Promise<void> {
+    try {
+      const fullView = await getFullDisassembly();
+      panel.webview.postMessage({
+        viewNotification: "refreshViewport",
+        fullView: JSON.stringify(fullView),
+        start
+      });
+    } catch (err) {
+      // --- This exception in intentionally ignored
+    }
   }
 }

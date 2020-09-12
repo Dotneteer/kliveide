@@ -13,14 +13,18 @@ import {
   CODE_FOLDER,
   JETSET_TAPE,
   JUNGLE_TAPE,
-  PACMAN_TAPE
+  PACMAN_TAPE,
+  SpectrumConfig,
 } from "../emulator/machine-config";
+import { communicatorInstance } from "../emulator/communicator";
 
 /**
  * Creates the basic structure of a Klive project
  * @param context VS Code extension context
  */
-export function createKliveProject(context: vscode.ExtensionContext): void {
+export async function updateKliveProject(
+  context: vscode.ExtensionContext
+): Promise<void> {
   const folders = vscode.workspace.workspaceFolders;
   const projFolder = folders ? folders[0].uri.fsPath : null;
   if (!projFolder) {
@@ -28,6 +32,29 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
       "Please open a project folder before creating a Klive project. No Klive project has been created yet."
     );
     return;
+  }
+
+  // --- Allow the user to select machine type
+  const machineType = await pickMachineType();
+  if (!machineType) {
+    return;
+  }
+
+  // --- Prepare the machine configuration
+  const spectrumConfig: SpectrumConfig = {
+    type: machineType.id,
+  };
+  switch (machineType.id) {
+    case "48":
+      spectrumConfig.annotations = ["#spectrum48.disann"];
+      break;
+    case "128":
+      spectrumConfig.annotations = [
+        "#spectrum128-0.disann",
+        "#spectrum128-1.disann",
+      ];
+      break;
+    // TODO: Add other annotation files
   }
 
   const templateFolder = path.join(context.extensionPath, TEMPLATE_PATH);
@@ -43,12 +70,16 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
     foldersCreated++;
   }
   const machineFile = path.join(spectrumFolder, SPECTRUM_CONFIG_FILE);
-  if (!fs.existsSync(machineFile)) {
-    copyFile(path.join(templateFolder, SPECTRUM_CONFIG_FILE), machineFile);
-    machineFileJustCreated = true;
-    filesCreated++;
-    const contents = fs.readFileSync(machineFile, "utf8");
+  if (fs.existsSync(machineFile)) {
+    fs.unlinkSync(machineFile);
   }
+  fs.writeFileSync(
+    path.join(spectrumFolder, SPECTRUM_CONFIG_FILE),
+    JSON.stringify(spectrumConfig)
+  );
+  machineFileJustCreated = true;
+  filesCreated++;
+
   const memFile = path.join(spectrumFolder, MEMORY_FILE);
   if (!fs.existsSync(memFile)) {
     copyFile(path.join(templateFolder, MEMORY_FILE), memFile);
@@ -105,11 +136,54 @@ export function createKliveProject(context: vscode.ExtensionContext): void {
   vscode.window.showInformationMessage(message);
 
   // --- Configure the newly created machine from file
-  if (machineFileJustCreated && !spectrumConfigurationInstance.initialized) {
+  if (machineFileJustCreated) {
     spectrumConfigurationInstance.initialize();
+    await communicatorInstance.setMachineType(
+      spectrumConfigurationInstance.configuration.type
+    );
   }
 }
 
 export function copyFile(src: string, dest: string): void {
   fs.copyFileSync(src, dest);
+}
+
+/**
+ * Allows the user picking up a machine type
+ */
+async function pickMachineType(): Promise<MachineTypeItem | null> {
+  return await new Promise<MachineTypeItem | null>((resolve, reject) => {
+    const input = vscode.window.createQuickPick<MachineTypeItem>();
+    input.placeholder = "Select the machine type";
+    input.items = [
+      new MachineTypeItem("48", "ZX Spectrum 48K", true),
+      new MachineTypeItem("128", "ZX Spectrum 128K (*)"),
+      new MachineTypeItem("p3", "ZX Spectrum +3E (*)"),
+      new MachineTypeItem("next", "ZX Spectrum Next (*)"),
+    ];
+    input.onDidChangeSelection((selection) => {
+      if (selection[0]) {
+        resolve(selection[0]);
+      } else {
+        resolve(null);
+      }
+      input.hide();
+    });
+    input.onDidHide(() => {
+      input.dispose();
+      resolve(null);
+    });
+    input.show();
+  });
+}
+
+/**
+ * Represent a machine type item
+ */
+class MachineTypeItem implements vscode.QuickPickItem {
+  constructor(
+    public id: string,
+    public label: string,
+    public picked?: boolean
+  ) {}
 }

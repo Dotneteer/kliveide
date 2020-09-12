@@ -57,7 +57,23 @@ class Communicator {
    * @param to Last memory address
    */
   async getMemory(from: number, to: number): Promise<string> {
-    return this.getText(`/mem/${from}/${to}`);
+    return this.getText(`/memory/${from}/${to}`);
+  }
+
+  /**
+   * Gets the contents of the specified ROM page
+   * @param page Page to get
+   */
+  async getRomPage(page: number): Promise<string> {
+    return this.getText(`/rom/${page}`);
+  }
+
+  /**
+   * Gets the contents of the specified BANK page
+   * @param page Page to get
+   */
+  async getBankPage(page: number): Promise<string> {
+    return this.getText(`/bank/${page}`);
   }
 
   /**
@@ -65,7 +81,7 @@ class Communicator {
    * @param address Breakpoint address
    */
   async setBreakpoint(address: number): Promise<void> {
-    await this.post("/set-breakpoints", { breakpoints: [ address ]});
+    await this.post("/breakpoints", { breakpoints: [ address ]});
   }
 
   /**
@@ -88,7 +104,7 @@ class Communicator {
       projectFolder,
       saveFolder: kliveConfig.get(SAVE_FOLDER) ?? ""
     };
-    await this.post("/set-ide-config", ideConfig);
+    await this.post("/ide-config", ideConfig);
   }
 
   /**
@@ -96,8 +112,16 @@ class Communicator {
    * @param filename File name to send to the emulator
    */
   async setTapeFile(filename: string): Promise<boolean> {
-    const response = await this.post("/set-tape", { tapeFile: filename});
+    const response = await this.post("/tape-contents", { tapeFile: filename});
     return response.ok;
+  }
+
+  /**
+   * Sets the ZX Spectrum machine type
+   * @param typeId Machine type ID
+   */
+  async setMachineType(typeId: string): Promise<void> {
+    await this.post("/machine-type", { type: typeId});
   }
 
   /**
@@ -182,6 +206,9 @@ export interface FrameInfo {
   breakpoints?: number[];
   pc?: number;
   runsInDebug?: boolean;
+  machineType?: string;
+  selectedRom?: number;
+  selectedBank?: number;
 }
 
 /**
@@ -227,6 +254,21 @@ export interface IdeConfiguration {
    * The current SAVE folder
    */
   saveFolder: string;
+}
+
+/**
+ * Information about current memory pages
+ */
+export interface MemoryPageInfo {
+  /**
+   * Selected ROM page
+   */
+  selectedRom: number;
+
+  /**
+   * Selected upper memory bank
+   */
+  selectedBank: number;
 }
 
 /**

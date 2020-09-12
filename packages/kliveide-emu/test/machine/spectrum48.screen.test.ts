@@ -10,14 +10,11 @@ import {
 } from "../../src/native/api/machine-state";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
 import { importObject } from "../import-object";
+import { PIXEL_RENDERING_BUFFER, COLORIZATION_BUFFER, RENDERING_TACT_TABLE } from "../../src/native/api/memory-map";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
 let api: MachineApi;
 let machine: ZxSpectrum48;
-
-const PIXEL_BUFFER = 0x08_A200;
-const RENDERING_TABLE = 0x01_5e00;
-const COLORIZE_BUFFER = 0x0B_4200;
 
 describe("ZX Spectrum 48 - Screen", () => {
   before(async () => {
@@ -65,7 +62,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.pc).toBe(0x800e);
     expect(s.tacts).toBe(451);
     expect(s.frameCompleted).toBe(false);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
     let sum = 0x00;
     for (let row = 0; row < s.screenLines; row++) {
       for (let col = 0; col < s.screenWidth; col++) {
@@ -101,7 +98,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(3697);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -117,7 +114,6 @@ describe("ZX Spectrum 48 - Screen", () => {
       const pixel = mh.readByte(col);
       sum += pixel;
     }
-    console.log(s.screenWidth);
     expect(sum).toBe(0xff * (s.screenWidth - 220));
 
     // --- Remaining screen part should be 0xff
@@ -157,7 +153,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(14331);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -186,7 +182,6 @@ describe("ZX Spectrum 48 - Screen", () => {
         sum += pixel;
       }
     }
-    console.log(s.screenLines);
     expect(sum).toBe(0xff * s.screenWidth * (lastLine - 48));
   });
 
@@ -217,7 +212,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(14413);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -283,7 +278,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, PIXEL_BUFFER);
+    const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -360,10 +355,10 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     let mh = new MemoryHelper(api, 0);
     for (let addr = 0x4000; addr < 0x5800; addr++) {
-      mh.writeByte(addr, addr & 0x0100 ? 0xaa : 0x55)
+      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55)
     }
     for (let addr = 0x5800; addr < 0x5b00; addr++) {
-      mh.writeByte(addr, 0x51)
+      machine.writeMemory(addr, 0x51)
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
@@ -372,7 +367,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    mh = new MemoryHelper(api, PIXEL_BUFFER);
+    mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -451,10 +446,10 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     let mh = new MemoryHelper(api, 0);
     for (let addr = 0x4000; addr < 0x5800; addr++) {
-      mh.writeByte(addr, addr & 0x0100 ? 0xaa : 0x55)
+      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55)
     }
     for (let addr = 0x5800; addr < 0x5b00; addr++) {
-      mh.writeByte(addr, 0x51)
+      machine.writeMemory(addr, 0x51)
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilUlaFrameEnds));
@@ -462,7 +457,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.pc).toBe(0x800d);
     expect(s.frameCompleted).toBe(true);
     expect(s.borderColor).toBe(0x05);
-    mh = new MemoryHelper(api, PIXEL_BUFFER);
+    mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -518,10 +513,6 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(sum).toBe(0x05 * s.screenWidth * (s.screenLines - 192 - 48));
   });
 
-  it("Display rendering table", () => {
-    displayRenderingTable();
-  });
-
   it("Colorize border + empty pixels", () => {
     machine.api.initZxSpectrum(0);
     machine.injectCode([
@@ -549,7 +540,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
-    const mh = new MemoryHelper(api, COLORIZE_BUFFER);
+    const mh = new MemoryHelper(api, COLORIZATION_BUFFER);
 
     // --- Border pixels should be 0x05
     let sum = 0;
@@ -561,49 +552,6 @@ describe("ZX Spectrum 48 - Screen", () => {
         }
       }
     }
-    console.log(sum);
-    // expect(sum).toBe(0x05 * s.screenWidth * 48);
-
-    // // --- The left border of row 48 should be set to 0x05
-    // sum = 0;
-    // for (let col = 0; col < 48; col++) {
-    //   const pixel = mh.readByte(48 * s.screenWidth + col);
-    //   sum += pixel;
-    // }
-    // expect(sum).toBe(0x05 * 48);
-
-    // // --- Display rows should have a border value of 0x05 and a pixel value of 0x00
-    // for (let row = 48; row < 48 + 192; row++) {
-    //   sum = 0x00;
-    //   for (let col = 0; col < s.borderLeftPixels; col++) {
-    //     const pixel = mh.readByte(row * s.screenWidth + col);
-    //     sum += pixel;
-    //   }
-    //   expect(sum).toBe(0x05 * s.borderLeftPixels);
-
-    //   sum = 0x00;
-    //   for (let col = s.borderLeftPixels; col < s.screenWidth - s.borderRightPixels; col++) {
-    //     const pixel = mh.readByte(row * s.screenWidth + col);
-    //     sum += pixel;
-    //   }
-    //   expect(sum).toBe(0x00);
-
-    //   sum = 0x00;
-    //   for (let col = s.screenWidth - s.borderRightPixels; col < s.screenWidth;  col++) {
-    //     const pixel = mh.readByte(row * s.screenWidth + col);
-    //     sum += pixel;
-    //   }
-    //   expect(sum).toBe(0x05 * s.borderRightPixels);
-    // }
-
-    // sum = 0;
-    // for (let row = 48 + 192 ; row < s.screenLines; row++) {
-    //   for (let col = 0; col < s.screenWidth; col++) {
-    //     const pixel = mh.readByte(row * s.screenWidth + col);
-    //     sum += pixel;
-    //   }
-    // }
-    // expect(sum).toBe(0x05 * s.screenWidth * (s.screenLines - 192 - 48));
   });
 
 });
@@ -614,74 +562,12 @@ describe("ZX Spectrum 48 - Screen", () => {
  */
 function fillPixelBuffer(data: number): void {
   const s = machine.getMachineState();
-  const mh = new MemoryHelper(api, PIXEL_BUFFER);
+  const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
   const visibleLines =
     s.screenLines - s.nonVisibleBorderTopLines - s.nonVisibleBorderTopLines;
   const visibleColumns = (s.screenLineTime - s.nonVisibleBorderRightTime) * 2;
   const pixels = visibleLines * visibleColumns;
   for (let i = 0; i < pixels; i++) {
     mh.writeByte(i, data);
-  }
-}
-
-function displayRenderingTable() {
-  const s = machine.getMachineState();
-  const mh = new MemoryHelper(api, RENDERING_TABLE);
-  console.log(s.rasterLines);
-  console.log(s.screenLineTime);
-
-  let result = "";
-
-  // --- Display horizontal axis
-  result += "   |";
-  for (let i = 0; i < s.screenLineTime; i++) {
-    result += `${toHexa(i, 2)}|`;
-  }
-  result += "\r\n";
-  displayAxis();
-
-  let row = 0;
-  displayRows(row, 0, s.verticalSyncLines);
-  displayAxis();
-  row += s.verticalSyncLines;
-  displayRows(row, 0, s.nonVisibleBorderTopLines);
-  displayAxis();
-  row += s.nonVisibleBorderTopLines;
-  displayRows(row, 0, s.borderTopLines);
-  displayAxis();
-  row += s.borderTopLines;
-  displayRows(row, 0, s.displayLines);
-  displayAxis();
-  row += s.displayLines;
-  displayRows(row, 0, s.borderBottomLines);
-  displayAxis();
-  row += s.borderBottomLines;
-  displayRows(row, 0, s.nonVisibleBorderBottomLines);
-  displayAxis();
-  console.log(result);
-
-  function displayRows(offset: number, fromRow: number, toRow: number): void {
-    for (let j = fromRow; j < toRow; j++) {
-      result += `${toHexa(offset + j, 3)}|`;
-      for (let i = 0; i < s.screenLineTime; i++) {
-        result += `${toHexa(
-          mh.readByte(((j + offset) * s.screenLineTime + i) * 5),
-          2
-        )}|`;
-      }
-      result += "\r\n";
-    }
-  }
-
-  function displayAxis(): void {
-    result += "   ";
-    for (let i = 0; i < s.screenLineTime; i++) {
-      result += "---";
-    }
-    result += "-\r\n";
-  }
-
-  function toHexa(input: number, digits: number): string {
-    return input.toString(16).toUpperCase().padStart(digits, "0");
   }
 }

@@ -10,6 +10,7 @@ import {
   communicatorInstance,
   RegisterData,
 } from "../../emulator/communicator";
+import { getAssetsFileResource } from "../../extension-paths";
 
 export class MemoryEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.memoryEditor";
@@ -22,6 +23,11 @@ export class MemoryEditorProvider extends EditorProviderBase {
     );
     return providerRegistration;
   }
+
+  /**
+   * Signs that the view has been initialized
+   */
+  private _viewInitialized = false;
 
   /**
    * Instantiates an editor provider
@@ -40,8 +46,8 @@ export class MemoryEditorProvider extends EditorProviderBase {
    */
   getContentReplacements(): ReplacementTuple[] {
     return [
-      ["stylefile", this.getAssetsFileResource("style.css")],
-      ["jsfile", this.getAssetsFileResource("memory.bundle.js")],
+      ["stylefile", getAssetsFileResource("style.css")],
+      ["jsfile", getAssetsFileResource("memory.bundle.js")],
     ];
   }
 
@@ -61,26 +67,21 @@ export class MemoryEditorProvider extends EditorProviderBase {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
 
     let refreshCounter = 0;
+    let refreshing = false;
     this.toDispose(
       webviewPanel,
       onFrameInfoChanged(async () => {
         refreshCounter++;
-        if (refreshCounter % 4 !== 0) {
+        if (refreshCounter % 10 !== 0) {
           return;
         }
         try {
-          const regData = await communicatorInstance.getRegisters();
-          webviewPanel.webview.postMessage({
-            viewNotification: "registers",
-            registers: regData,
-          });
-
-          webviewPanel.webview.postMessage({
-            viewNotification: "refreshViewPort",
-          });
-        } catch (err) {
-          // --- This exception in intentionally ignored
-          console.log(err);
+          if (!refreshing) {
+            refreshing = true;
+            this.refreshViewPort(webviewPanel);
+          }
+        } finally {
+          refreshing = false;
         }
       })
     );
@@ -88,6 +89,13 @@ export class MemoryEditorProvider extends EditorProviderBase {
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
     });
+
+    webviewPanel.onDidChangeViewState((state) => {
+      if (!state.webviewPanel.active) {
+        this._viewInitialized = false;
+      }
+    });
+
   }
 
   /**
@@ -102,17 +110,40 @@ export class MemoryEditorProvider extends EditorProviderBase {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
-        let registers: RegisterData | null = null;
-        try {
-          registers = await communicatorInstance.getRegisters();
-        } catch (err) {
-          // --- This error is intentionally ignored
-        }
-        panel.webview.postMessage({
-          viewNotification: "doRefresh",
-          registers,
-        });
+        this.sendInitialStateToView(panel);
+        await this.refreshViewPort(panel, -1);
+        this._viewInitialized = true;
         break;
+      case "changeView":
+        if (this._viewInitialized) {
+          await this.refreshViewPort(panel, 0);
+        }
+        break;
+    }
+  }
+
+  /**
+   * Refresh the viewport of the specified panel
+   * @param panel Panel to refresh
+   */
+  async refreshViewPort(
+    panel: vscode.WebviewPanel,
+    itemIndex?: number
+  ): Promise<void> {
+    try {
+      const regData = await communicatorInstance.getRegisters();
+      panel.webview.postMessage({
+        viewNotification: "registers",
+        registers: regData,
+      });
+
+      panel.webview.postMessage({
+        viewNotification: "refreshViewPort",
+        itemIndex,
+        fullRefresh: true
+      });
+    } catch (err) {
+      // --- This exception in intentionally ignored
     }
   }
 }

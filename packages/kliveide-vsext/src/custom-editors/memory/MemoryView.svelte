@@ -1,12 +1,14 @@
 <script>
   // ==========================================================================
-  // This component implements the view for the Memory editor
+  // This component implements the view for the Memory editor.
 
   import { onMount, tick } from "svelte";
   import { vscodeApi } from "../messaging/messaging-core";
   import ConnectionPanel from "../controls/ConnectionPanel.svelte";
   import RefreshPanel from "../controls/RefreshPanel.svelte";
+  import HeaderShadow from "../controls/HeaderShadow.svelte";
   import VirtualList from "../controls/VirtualList.svelte";
+  import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
   import MemoryEntry from "./MemoryEntry.svelte";
   import { memory, LINE_SIZE } from "./MemoryView";
 
@@ -19,17 +21,8 @@
   // --- Indicates if the view is refreshed
   let refreshed = true;
 
-  // --- Hold a cancellable refresh token while disassembly is being refreshed
-  let refreshToken;
-
-  // --- Scroll position to apply after disassembly has been refreshed
-  let needScroll = null;
-
-  // --- Gap to apply during scroll operation
-  let scrollGap = 0;
-
-  // --- Virtual machine execution state
-  let execState;
+  // --- Indicates if the viewport is refreshing
+  let isRefreshing = false;
 
   // --- The API of the virtual list component
   let virtualListApi;
@@ -40,68 +33,99 @@
   // --- The index of the last visible ite at the bottom
   let endItemIndex;
 
+  // --- The item index of the top hem item
+  let topHemItemIndex;
+
+  // --- The item index of the bottom hem item
+  let bottomHemItemIndex;
+
   // --- Is the view currently scrolling?
   let scrolling = false;
 
   // --- Current value of registers
   let registers;
 
-  // --- Indicates that the view port is being refreshed
-  let viewPortRefreshing;
+  // --- Type of the current machine
+  let machineType;
+
+  // --- Configuration of the current machine
+  let machineConfig;
+
+  // --- Memory page information
+  let pageInfo;
+
+  // --- View information
+  let viewMode;
+  let displayedRom;
+  let displayedBank;
+
+  // --- The last time the view was scrolled
+  let lastScrollTime = 0;
 
   onMount(() => {
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", async (ev) => {
       if (ev.data.viewNotification) {
         switch (ev.data.viewNotification) {
-          case "doRefresh":
-            // --- The Webview sends this request to refresh the view
-            refreshed = false;
-            registers = ev.data.registers;
-            restoreViewState();
-            break;
           case "connectionState":
             // --- Refresh after reconnection
             connected = ev.data.state;
             if (!connected) {
               refreshed = false;
-              needScroll = 0;
+              await refreshViewPort();
+              refreshed = true;
             }
             break;
-          case "execState":
-            // --- Respond to vm execution state changes
-            switch (ev.data.state) {
-              case "paused":
-              case "stopped":
-                refreshed = false;
-                break;
+          case "machineType":
+            machineType = ev.data.type;
+            machineConfig = ev.data.config;
+            viewMode = 0;
+          // --- This case intentionally flows to the next
+          case "memoryPaging":
+            if (machineConfig) {
+              const paging = machineConfig.paging;
+              if (paging) {
+                pageInfo = {
+                  supportsPaging: paging.supportsPaging,
+                  roms: paging.roms,
+                  banks: paging.banks,
+                  selectedRom: ev.data.selectedRom,
+                  selectedBank: ev.data.selectedBank,
+                };
+              }
             }
-            execState = ev.data.state;
             break;
           case "registers":
             // --- Register values sent
             registers = ev.data.registers;
             break;
           case "goToAddress":
-            needScroll = ev.data.address;
-            scrollGap = 0;
-            break;
-          case "refreshView":
-            // --- Store the current top position to scroll back
-            // --- to that after refrehs
-            try {
-              const item = items[startItemIndex + 1];
-              needScroll = item.address;
-            } catch (err) {
-              // --- This error is intentionally ignored
-              needScroll = 0;
-            }
-            // --- Sign that a refresh is require
-            refreshed = false;
-            scrollGap = 0;
+            await scrollToAddress(ev.data.address || 0);
             break;
           case "refreshViewPort":
-            await refreshViewPort();
+            if (isRefreshing) break;
+            isRefreshing = true;
+            try {
+              if (lastScrollTime !== 0 && Date.now() - lastScrollTime < 500) {
+                break;
+              }
+              await refreshViewPort(ev.data.fullRefresh);
+              let pos = ev.data.itemIndex;
+              if (pos !== undefined) {
+                if (pos < 0) {
+                  pos = restoreViewState(ev.data);
+                } else {
+                  pos = items[pos] && items[pos].address;
+                }
+                if (pos !== undefined) {
+                  await tick();
+                  await scrollToAddress(pos || 0);
+                }
+              }
+            } finally {
+              isRefreshing = false;
+            }
+            refreshed = true;
             break;
         }
       }
@@ -112,70 +136,31 @@
     vscodeApi.postMessage({ command: "refresh" });
   });
 
-  // --- Refresh the view when connection/refresh statte changes
-  $: (async () => {
-    if (connected && !refreshed) {
-      if (await refreshMemory()) {
-        refreshed = true;
-      }
-    }
-  })();
-
-  // --- Scroll to the specified location
-  $: if (needScroll !== null && refreshed) {
-    scrollToAddress(needScroll);
-  }
-
-  // --- Initiate refreshing the disassembly view
-  // --- Take care not to start disassembling multiple times
-  async function refreshMemory() {
-    // --- Cancel, if disassembly in progress, and start a new disassembly
-    if (refreshToken) {
-      refreshToken.cancelled = true;
-    }
-
-    // --- Start a new disassembly
-    try {
-      refreshToken = {
-        cancelled: false,
-      };
-      const lines = await memory();
-      if (!lines) {
-        return false;
-      }
-      items = lines;
-    } finally {
-      // --- Release the cancellation token
-      refreshToken = null;
-    }
-
-    await tick();
-    await new Promise((r) => setTimeout(r, 50));
-    if (needScroll !== null) {
-      await scrollToAddress(needScroll);
-    }
-    return true;
+  $: {
+    (function () {
+      vscodeApi.postMessage({ command: "changeView" });
+    })(viewMode, displayedRom, displayedBank);
   }
 
   // --- Refresh the specified part of the viewport
-  async function refreshViewPort() {
-    if (viewPortRefreshing) return;
-    viewPortRefreshing = true;
+  async function refreshViewPort(fullRefresh) {
     try {
-      const viewPort = await memory(
-        LINE_SIZE * startItemIndex,
-        LINE_SIZE * endItemIndex
-      );
-      if (!viewPort) {
+      const viewportItems = await memory(viewMode, displayedRom, displayedBank);
+      if (!viewportItems) {
         return;
       }
-      const newItems = items.slice(0);
-      for (let i = 0; i < viewPort.length; i++) {
-        newItems[i + startItemIndex] = viewPort[i];
+      if (!items || items.length === 0 || fullRefresh) {
+        items = viewportItems;
+      } else {
+        for (let i = topHemItemIndex; i <= bottomHemItemIndex; i++) {
+          items[i] = viewportItems[i];
+        }
       }
-      items = newItems;
-    } finally {
-      viewPortRefreshing = false;
+      if (virtualListApi) {
+        await virtualListApi.refreshContents();
+      }
+    } catch (err) {
+      console.log(err);
     }
   }
 
@@ -183,39 +168,34 @@
   async function scrollToAddress(address) {
     if (virtualListApi) {
       let found = items.findIndex((it) => it.address >= address);
-      if (found && items[found].address > address) {
+      if (found >= 0 && items[found].address > address) {
         found--;
       }
-      found = Math.max(0, found - scrollGap);
+      found = Math.max(0, found);
       scrolling = true;
-      virtualListApi.scrollToItem(found);
+      await virtualListApi.scrollToItem(found);
       await saveViewState();
       scrolling = false;
-      needScroll = null;
-      scrollGap = 0;
+      await new Promise((r) => setTimeout(r, 10));
+      if (virtualListApi) {
+        await virtualListApi.refreshContents();
+      }
     }
   }
 
   // --- Save the current view state
   async function saveViewState() {
     await tick();
-    const item = items[startItemIndex + 1];
+    const item = items[startItemIndex];
     if (item) {
-      vscodeApi.setState({ needScroll: item.address });
-      vscodeApi.postMessage({
-        command: "viewPortChanged",
-        from: startItemIndex * LINE_SIZE,
-        to: endItemIndex * LINE_SIZE,
-      });
+      vscodeApi.setState({ scrollPos: item.address });
     }
   }
 
   // --- Restores the saved state
   function restoreViewState() {
     const state = vscodeApi.getState();
-    if (state) {
-      needScroll = state.needScroll;
-    }
+    return state ? state.scrollPos : null;
   }
 </script>
 
@@ -237,21 +217,39 @@
     <ConnectionPanel />
   {:else}
     {#if !refreshed}
-      <RefreshPanel {refreshed} text="Refreshing Memory view..." />
+      <RefreshPanel text="Refreshing Memory view..." />
     {/if}
+    {#if pageInfo && pageInfo.supportsPaging}
+      <MemoryPagingPanel
+        {pageInfo}
+        bind:viewMode
+        bind:displayedRom
+        bind:displayedBank />
+    {/if}
+    <HeaderShadow />
     <VirtualList
       {items}
       itemHeight={20}
+      topHem={5}
+      bottomHem={5}
       let:item
       bind:api={virtualListApi}
-      bind:start={startItemIndex}
-      bind:end={endItemIndex}
+      bind:startItemIndex
+      bind:endItemIndex
+      bind:topHemItemIndex
+      bind:bottomHemItemIndex
       on:scrolled={async () => {
         if (!scrolling) {
           await saveViewState();
         }
+        lastScrollTime = Date.now();
       }}>
-      <MemoryEntry {item} {registers} />
+      <MemoryEntry
+        {item}
+        {registers}
+        displayRegisters={!viewMode}
+        {machineType}
+        {viewMode} />
     </VirtualList>
   {/if}
 </div>

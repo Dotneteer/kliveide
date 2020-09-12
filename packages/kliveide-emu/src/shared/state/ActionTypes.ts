@@ -10,11 +10,11 @@ export interface ActionTypes {
   APP_LOST_FOCUS: null;
 
   // --- Emulator panel actions
-  EMULATOR_SET_ZOOM: null;
   EMULATOR_SET_SIZE: null;
   EMULATOR_INITIALIZED: null;
   EMULATOR_SET_EXEC_STATE: null;
   EMULATOR_SET_TAPE_CONTENTS: null;
+  EMULATOR_LOAD_TAPE: null;
   EMULATOR_SHOW_KEYBOARD: null;
   EMULATOR_HIDE_KEYBOARD: null;
   EMULATOR_TOGGLE_KEYBOARD: null;
@@ -34,9 +34,17 @@ export interface ActionTypes {
   EMULATOR_SET_MEMWRITE_MAP: null;
   EMULATOR_SET_DEBUG: null;
   EMULATOR_SET_SAVED_DATA: null;
+  EMULATOR_REQUEST_TYPE: null;
+  EMULATOR_SETUP_TYPE: null;
+  EMULATOR_SELECT_ROM: null;
+  EMULATOR_SELECT_BANK: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
+
+  // --- Nenory command actions
+  MEMORY_COMMAND: null;
+  MEMORY_COMMAND_RESULT: null;
 
   // --- Breakpoint command action
   BREAKPOINT_SET: null;
@@ -48,6 +56,10 @@ export interface ActionTypes {
 
   // --- IDE configuration actions
   IDE_CONFIG_SET: null;
+
+  // --- IDE connection actions
+  IDE_CONNECTS: null;
+  IDE_DISCONNECTS: null;
 
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;

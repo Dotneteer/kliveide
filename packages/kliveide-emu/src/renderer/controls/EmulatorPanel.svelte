@@ -2,16 +2,18 @@
   // ==========================================================================
   // The panel that displays the ZX Spectrum emulator with its overlays
 
-  import { onMount, tick, afterUpdate } from "svelte";
+  import { afterUpdate } from "svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
   import { emulatorSetZoomAction } from "../../shared/state/redux-emulator-state";
-  import { getSpectrumEngine } from "../spectrum-loader";
   import { pcKeyNames, currentKeyMappings } from "../spectrum/spectrum-keys";
 
   import ExecutionStateOverlay from "./ExecutionStateOverlay.svelte";
   import BeamOverlay from "./BeamOverlay.svelte";
 
-  // --- We need to be awae of state changes
+  // --- The ZX Spectrum engine
+  export let spectrum;
+
+  // --- We need to be aware of state changes
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
 
   // --- References to the HTML elements of this component
@@ -19,12 +21,9 @@
   let screenEl;
   let shadowScreenEl;
 
-  // --- The ZX Spectrum virtual machine
-  let spectrum;
-
   // --- ZX Spectrum screen dimensions
-  let screenWidth = 0;
-  let screenHeight = 0;
+  let screenWidth = 256;
+  let screenHeight = 192;
 
   // --- Dimensions of the canvas displaying the ZX Spectrum screen
   let canvasWidth;
@@ -40,7 +39,7 @@
   let pixelData;
 
   // --- Text and visibility of execution status overlay
-  let overlay = "Not started yet";
+  let overlay = "No ZX Spectrum virtual machine type set";
   let overlayHidden = false;
 
   // --- Current execution state
@@ -56,10 +55,38 @@
   let panelRectangle;
   let screenRectangle;
 
-  // --- Initialize the component when mounted
-  onMount(async () => {
-    // --- Access the spectrum engine
-    spectrum = await getSpectrumEngine();
+  // --- Catch the state of beam position indicator visibility
+  stateAware.stateChanged.on((state) => {
+    showBeam = state.beamPosition;
+    keyboardVisible = state.keyboardPanel;
+  });
+
+  // --- Set up the component when the ZX Spectrum engine changes
+  $: {
+    if (spectrum) {
+      setupEmulator();
+    }
+  }
+
+  // --- Respond to panel size changes
+  $: {
+    calculateDimensions(clientWidth, clientHeight, screenWidth, screenHeight);
+  }
+
+  // --- We need to update beam positions whenever the state has been updated
+  afterUpdate(() => {
+    if (showBeam) {
+      calculateBoundariesForBeam();
+    }
+    if (execState) {
+      displayScreenData();
+    }
+  });
+
+  // --- Set up the emulator according to the current ZX Spectrum machine
+  async function setupEmulator() {
+    overlay = "Not started yet";
+    hideDisplayData();
 
     // --- Refresh the screen when there's a new frame
     spectrum.screenRefreshed.on(() => displayScreenData());
@@ -87,12 +114,6 @@
       }
     });
 
-    // --- Catch the state of beam position indicator visibility
-    stateAware.stateChanged.on((state) => {
-      showBeam = state.beamPosition;
-      keyboardVisible = state.keyboardPanel;
-    });
-
     // --- Calculate the initial dimensions
     screenWidth = spectrum.screenWidth;
     screenHeight = spectrum.screenHeight;
@@ -102,22 +123,7 @@
     // --- Prepare displayiong the screen and playing the sound
     configureScreen();
     configureSound();
-  });
-
-  // --- Respond to panel size changes
-  $: {
-    calculateDimensions(clientWidth, clientHeight, screenWidth, screenHeight);
   }
-
-  // --- We need to update beam positions whenever the state has been updated
-  afterUpdate(() => {
-    if (showBeam) {
-      calculateBoundariesForBeam();
-    }
-    if (execState) {
-      displayScreenData();
-    }
-  });
 
   // --- Calculates boundaries for the beam position
   function calculateBoundariesForBeam() {
@@ -140,7 +146,9 @@
     const audioCtx = new AudioContext();
     const sampleRate = audioCtx.sampleRate;
     audioCtx.close();
-    spectrum.setAudioSampleRate(sampleRate);
+    if (spectrum) {
+      spectrum.setAudioSampleRate(sampleRate);
+    }
   }
 
   // --- Calculate the dimensions so that the ZX Spectrum display fits the screen
@@ -150,7 +158,6 @@
     let heightRatio = Math.floor((clientHeight - 8) / height);
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
-    stateAware.dispatch(emulatorSetZoomAction(ratio)());
     canvasWidth = width * ratio;
     canvasHeight = height * ratio;
 
@@ -171,6 +178,9 @@
 
   // --- Displays the ZX Spectrum screen
   function displayScreenData() {
+    // --- Do not refresh after stopped state
+    if (!execState || execState === 5) return;
+
     const shadowCtx = shadowScreenEl.getContext("2d");
     if (!shadowCtx) return;
     const shadowImageData = shadowCtx.getImageData(
@@ -197,6 +207,16 @@
         screenEl.width,
         screenEl.height
       );
+    }
+  }
+
+  // --- Hide the display
+  function hideDisplayData() {
+    if (!screenEl) return;
+
+    const screenCtx = screenEl.getContext("2d");
+    if (screenCtx) {
+      screenCtx.clearRect(0, 0, screenEl.width, screenEl.height);
     }
   }
 

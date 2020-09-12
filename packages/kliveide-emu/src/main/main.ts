@@ -1,6 +1,9 @@
 import { app } from "electron";
 import { AppWindow } from "./AppWindow";
 import { startApiServer } from "../remote-api/api-server";
+import { mainProcessStore, createMainProcessStateAware } from "./mainProcessStore";
+import { emulatorRequestTypeAction } from "../shared/state/redux-emulator-state";
+import { appConfiguration } from "./klive-configuration";
 
 // --- Global reference to the mainwindow
 let mainWindow: AppWindow;
@@ -12,6 +15,11 @@ function setupAppWindow(): void {
   mainWindow = new AppWindow();
   mainWindow.setupMenu();
   mainWindow.load();
+
+  // --- Start with the preconfigured ZX Spectrum model
+  const startupType = appConfiguration?.machineType ?? "48";
+  mainProcessStore.dispatch(emulatorRequestTypeAction(startupType)());
+  mainWindow.startWatchingIde();
 }
 
 // --- This method will be called when Electron has finished
@@ -39,3 +47,7 @@ app.on("activate", () => {
     startApiServer();
   }
 });
+
+app.on("before-quit", () => {
+  mainWindow.stopWatchingIde();
+})

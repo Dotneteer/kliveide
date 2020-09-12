@@ -1,5 +1,5 @@
 import { RegisterData } from "../spectrum/api-data";
-import { IdeConfiguration } from "./AppState";
+import { IdeConfiguration, MemoryCommand } from "./AppState";
 
 /**
  * This interface represents the shape of the payload
@@ -11,6 +11,7 @@ export interface Payload {
   executionState?: number;
   runsInDebug?: boolean;
   tapeContents?: Uint8Array;
+  tapeLoaded?: boolean;
   shadowScreen?: boolean;
   beamPosition?: boolean;
   fastLoad?: boolean;
@@ -26,4 +27,12 @@ export interface Payload {
   breakpoints?: number[];
   savedData?: Uint8Array;
   ideConfiguration?: IdeConfiguration;
+  requestedType?: string;
+  currentType?: string;
+  connected?: boolean;
+  selectedRom?: number;
+  selectedBank?: number;
+  index?: number;
+  memoryCommandResult?: Uint8Array;
+  seqNo?: number;
 }

@@ -1,24 +1,62 @@
 <script>
-  import { afterUpdate, tick, createEventDispatcher } from "svelte";
+  // ==========================================================================
+  // Displays a line (16 bytes) of the memory dump
+  // For performance reasons, this components assembles the HTML contents
+  // programmatically, instead of using Svelte features.
+  // The component uses styles in global.css.
+
   import { intToX4, intToX2 } from "../../disassembler/disassembly-helper";
 
+  // --- The item that contains the memory line
   export let item;
+
+  // --- Current register values
   export let registers;
 
-  let referenceWidth = 0;
-  let memByteWidth = 0;
-  let memByteMargin = 0;
-  let stringWidth = 0;
+  // --- Enables/disables displaying register positions
+  export let displayRegisters;
 
-  const dispatch = createEventDispatcher();
+  // --- Type of the ZX Spectrum machine
+  export let machineType;
+
+  // --- Current view mode
+  export let viewMode;
+
+  // --- The HTML text of the component
+  let htmlText;
 
   $: {
-    const charWidth = referenceWidth / 4;
-    memByteWidth = 3 * charWidth;
-    memByteMargin = charWidth;
-    stringWidth = 16 * charWidth;
+    htmlText =
+      '<span class="memory-address ' +
+      (isRom(item.address) ? " isRom" : "") +
+      (isBank(item.address) ? " isBank" : "") +
+      '" title="' +
+      intToX4(item.address) +
+      " (" +
+      item.address +
+      ')">' +
+      intToX4(item.address) +
+      "</span>";
+    htmlText += '<span class="separator" />';
+    for (let i = 0; i < item.contents.length; i++) {
+      htmlText +=
+        '<span class="memory-value ' +
+        (hasPointingRegs(i, registers) ? "memory-register" : "") +
+        '" title="' +
+        tooltip(i, registers) +
+        '">' +
+        intToX2(item.contents[i]) +
+        "</span>";
+      if (i % 8 === 7) {
+        htmlText += '<span class="separator" />';
+      }
+    }
+    htmlText += '<span class="memory-string">' + item.charContents + "</span>";
+    console.log(htmlText);
   }
 
+  // --- Create the tooltip for the specified (i) position using the
+  // --- register data (regs)
   function tooltip(i, regs) {
     const byte = item.contents[i];
     const address = item.address + i;
@@ -30,8 +68,9 @@
     );
   }
 
+  // --- Test the specified (i) position is pointed by any registers (regs)
   function hasPointingRegs(i, regs) {
-    if (regs) {
+    if (regs && displayRegisters) {
       const address = item.address + i;
       return (
         address === regs.bc ||
@@ -46,8 +85,12 @@
     return false;
   }
 
+  // --- Get the list of registers that point to the specified position
   function getPointingRegs(i, regs) {
     let result = "";
+    if (!displayRegisters) {
+      return;
+    }
     if (regs) {
       const address = item.address + i;
       if (address === regs.bc) {
@@ -74,12 +117,23 @@
     }
     return result;
   }
+
+  // --- Tests if an address is a ROM address
+  function isRom(addr) {
+    return viewMode === 2 ? false : addr < 0x4000;
+  }
+
+  // --- Test if an address is a BANK address
+  function isBank(addr) {
+    return machineType !== "48" && !viewMode && addr >= 0xc000;
+  }
 </script>
 
 <style>
   .item {
     padding: 1px 8px;
     height: 20px;
+    width: 100%;
     display: flex;
     flex-direction: row;
     flex-grow: 0;
@@ -89,67 +143,12 @@
     overflow: hidden;
     align-items: flex-start;
   }
-
-  .address {
-    color: var(--vscode-editorLineNumber-foreground);
-    flex-grow: 0;
-    flex-shrink: 0;
-  }
-
-  .value {
-    color: var(--vscode-terminal-ansiBrightCyan);
-    padding: 0px 2px;
-    overflow: hidden;
-    flex-grow: 0;
-    flex-shrink: 0;
-    text-align: center;
-  }
-
-  .value:hover {
-    background: var(--vscode-list-hoverBackground);
-  }
-
-  .separator {
-    flex-grow: 0;
-    flex-shrink: 0;
-  }
-
-  .string {
-    color: var(--vscode-terminal-ansiBrightBlue);
-    overflow: hidden;
-    flex-grow: 0;
-    flex-shrink: 0;
-  }
-
-  .register {
-    background: var(--vscode-terminal-ansiMagenta);
-    color: var(--vscode-terminal-ansiBrightWhite);
-  }
-
-  .register:hover {
-    background: var(--vscode-terminal-ansiMagenta);
-  }
 </style>
 
-<div class="item" on:click={() => dispatch('clicked')}>
-  <span
-    class="address"
-    bind:clientWidth={referenceWidth}
-    title="{intToX4(item.address)} ({item.address})">
-    {intToX4(item.address)}
-  </span>
-  <span class="separator" style="width:{2 * memByteMargin}px" />
-  {#each item.contents as byte, i}
-    <span
-      class="value"
-      class:register={hasPointingRegs(i, registers)}
-      style="width:{memByteWidth}px"
-      title={tooltip(i, registers)}>
-      {intToX2(byte)}
-    </span>
-    {#if i % 8 === 7}
-      <span class="separator" style="width:{memByteMargin}px" />
+{#if item}
+  <div class="item">
+    {#if htmlText}
+      {@html htmlText}
     {/if}
-  {/each}
-  <span class="string" style="width:{stringWidth}px">{item.charContents}</span>
-</div>
+  </div>
+{/if}

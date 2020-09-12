@@ -56,7 +56,7 @@ describe("Disassembler - ZX Spectrum-specific", () => {
       "(get-mem-1)",
       "(stk-data)",
       "(1.442695)",
-      null,
+      undefined,
     ];
 
     // --- Act

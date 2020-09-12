@@ -33,6 +33,16 @@ export interface AppState {
    * The current IDE configuration
    */
   ideConfiguration?: IdeConfiguration;
+
+  /**
+   * The current state of IDE connection
+   */
+  ideConnection?: IdeConnection;
+
+  /**
+   * Memory command to execute
+   */
+  memoryCommand?: MemoryCommand;
 }
 
 /**
@@ -41,11 +51,11 @@ export interface AppState {
 export interface EmulatorPanelState {
   width?: number;
   height?: number;
-  zoom?: number;
   engineInitialized?: boolean;
   executionState?: number;
   runsInDebug?: boolean;
   tapeContents?: Uint8Array;
+  tapeLoaded?: boolean;
   keyboardPanel?: boolean;
   shadowScreen?: boolean;
   beamPosition?: boolean;
@@ -56,6 +66,10 @@ export interface EmulatorPanelState {
   memoryContents?: Uint8Array;
   memWriteMap?: Uint8Array;
   savedData?: Uint8Array;
+  requestedType?: string;
+  currentType?: string;
+  selectedRom?: number;
+  selectedBank?: number;
 }
 
 /**
@@ -79,3 +93,49 @@ export interface IdeConfiguration {
    */
   saveFolder: string;
 }
+
+/**
+ * Represents the state of IDE connection
+ */
+export interface IdeConnection {
+  /**
+   * Indicates if the IDE is connected
+   */
+  connected: boolean;
+
+  /**
+   * The last time when the IDE sent a heartbeat
+   */
+  lastHeartBeat: number;
+}
+
+
+/**
+ * Represents a memory command to execute
+ */
+export interface MemoryCommand {
+  /**
+   * Command sequence number
+   */
+  seqNo: number;
+
+  /**
+   * Command type
+   */
+  command: MemoryCommandType;
+
+  /**
+   * Command index
+   */
+  index?: number;
+
+  /**
+   * The result of the memory command;
+   */
+  memoryCommandResult?: Uint8Array;
+}
+
+/**
+ * Available memory command types
+ */
+export type MemoryCommandType = "" | "rom" | "bank";

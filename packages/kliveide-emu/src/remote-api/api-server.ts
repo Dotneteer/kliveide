@@ -2,7 +2,10 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as fs from "fs";
 
-import { mainProcessStore } from "../main/mainProcessStore";
+import {
+  mainProcessStore,
+  createMainProcessStateAware,
+} from "../main/mainProcessStore";
 import {
   emulatorSetTapeContenstAction,
   emulatorShowKeyboardAction,
@@ -19,6 +22,7 @@ import {
   emulatorToggleFastLoadAction,
   emulatorMuteAction,
   emulatorUnmuteAction,
+  emulatorRequestTypeAction,
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { RegisterData } from "../shared/spectrum/api-data";
@@ -28,7 +32,21 @@ import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { IdeConfiguration } from "../shared/state/AppState";
-import { ideConfigSetAction, ideConfigStateReducer } from "../shared/state/redux-ide-config-state";
+import { ideConfigSetAction } from "../shared/state/redux-ide-config-state";
+import { appConfiguration } from "../main/klive-configuration";
+import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
+import { memorySetCommandAction } from "../shared/state/redux-memory-command-state";
+import { SpectNetAction } from "../shared/state/redux-core";
+
+/**
+ * Sequence number of the latest memory request
+ */
+let memoryRequestSeqNo = 0;
+
+/**
+ * Memory request results
+ */
+let memoryResults = new Map<number, Uint8Array>();
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -55,6 +73,7 @@ export function startApiServer() {
    * Gets frame information
    */
   app.get("/frame-info", (_req, res) => {
+    const resp = res;
     const state = mainProcessStore.getState();
     const emuState = state.emulatorPanelState;
     const vmInfo = state.vmInfo;
@@ -65,7 +84,11 @@ export function startApiServer() {
       breakpoints: Array.from(state.breakpoints),
       pc: vmInfo.registers?.pc ?? -1,
       runsInDebug: emuState.runsInDebug,
+      machineType: emuState.currentType,
+      selectedRom: emuState.selectedRom,
+      selectedBank: emuState.selectedBank,
     });
+    mainProcessStore.dispatch(ideConnectsAction());
   });
 
   /**
@@ -135,7 +158,7 @@ export function startApiServer() {
   /**
    * Sets the specified file's contents as the tape information to load
    */
-  app.post("/set-tape", async (_req, res) => {
+  app.post("/tape-contents", async (_req, res) => {
     let success = false;
     try {
       const contents = fs.readFileSync(_req.body?.tapeFile);
@@ -292,7 +315,7 @@ export function startApiServer() {
   /**
    * Gets the contents of the specified memory range
    */
-  app.get("/mem/:from/:to", (req, res) => {
+  app.get("/memory/:from/:to", (req, res) => {
     let fromVal = parseInt(req.params.from);
     let toVal = parseInt(req.params.to);
     if (fromVal > toVal) {
@@ -313,7 +336,7 @@ export function startApiServer() {
   /**
    * Tests if the specified range of memory was written
    */
-  app.get("/test-mem-write/:from/:to", (req, res) => {
+  app.get("/test-memory-write/:from/:to", (req, res) => {
     let fromVal = parseInt(req.params.from);
     let toVal = parseInt(req.params.to);
     if (fromVal > toVal) {
@@ -333,9 +356,31 @@ export function startApiServer() {
   });
 
   /**
+   * Gets the contents of the specified ROM page
+   */
+  app.get("/rom/:page", async (req, res) => {
+    let pageVal = parseInt(req.params.page);
+
+    executeMemoryCommand(res, (requestId) =>
+      memorySetCommandAction(requestId, "rom", pageVal)()
+    );
+  });
+
+  /**
+   * Gets the contents of the specified BANK page
+   */
+  app.get("/bank/:page", async (req, res) => {
+    let pageVal = parseInt(req.params.page);
+
+    executeMemoryCommand(res, (requestId) =>
+      memorySetCommandAction(requestId, "bank", pageVal)()
+    );
+  });
+
+  /**
    * Gets the list of breakpoints
    */
-  app.get("/breakpoints", (req, res) => {
+  app.get("/breakpoints", (_req, res) => {
     const state = mainProcessStore.getState();
     res.json({ breakpoints: Array.from(state.breakpoints) });
   });
@@ -343,7 +388,7 @@ export function startApiServer() {
   /**
    * Set breakpoints
    */
-  app.post("/set-breakpoints", (req, res) => {
+  app.post("/breakpoints", (req, res) => {
     const breakpoints = req.body?.breakpoints as number[];
     mainProcessStore.dispatch(breakpointSetAction(breakpoints)());
     res.sendStatus(204);
@@ -361,7 +406,7 @@ export function startApiServer() {
   /**
    * Clear all breakpoints
    */
-  app.delete("/clear-all-breakpoints", (req, res) => {
+  app.delete("/all-breakpoints", (_req, res) => {
     mainProcessStore.dispatch(breakpointEraseAllAction());
     res.sendStatus(204);
   });
@@ -369,14 +414,115 @@ export function startApiServer() {
   /**
    * Set the ide configuration
    */
-  app.post("/set-ide-config", (req, res) => {
+  app.post("/ide-config", (req, res) => {
     const ideConfig: IdeConfiguration = {
       projectFolder: req.body?.projectFolder,
-      saveFolder: req.body?.saveFolder
-    }
+      saveFolder: req.body?.saveFolder,
+    };
     mainProcessStore.dispatch(ideConfigSetAction(ideConfig)());
     res.sendStatus(204);
   });
 
-  app.listen(3000, () => console.log("Klive Emulator is listening on port 3000..."));
+  /**
+   * Change the emulated machine type
+   */
+  app.get("/machine-type", (req, res) => {
+    const state = mainProcessStore.getState();
+    res.json({
+      requestedType: state.emulatorPanelState.requestedType,
+      currentType: state.emulatorPanelState.currentType,
+    });
+  });
+
+  /**
+   * Change the emulated machine type
+   */
+  app.post("/machine-type", (req, res) => {
+    mainProcessStore.dispatch(
+      emulatorRequestTypeAction(req.body?.type ?? "48")()
+    );
+    res.sendStatus(204);
+  });
+
+  // --- Start the API server on the configured port
+  const port = appConfiguration?.port ?? 3000;
+  app.listen(port, () =>
+    console.log(`Klive Emulator is listening on port ${port}...`)
+  );
+}
+
+/**
+ * Executes a memory command
+ * @param res Response object
+ * @param actionCreator Action creator object
+ */
+async function executeMemoryCommand(
+  res: express.Response,
+  actionCreator: (requestId: number) => SpectNetAction
+): Promise<void> {
+  const stateAware = createMainProcessStateAware();
+  try {
+    // --- Declare the promise for the communication between
+    // --- the api-server and the renderer process
+    const promise = new Promise<Uint8Array>(async (resolve, reject) => {
+      try {
+        // --- The unique number of this request
+        const thisReqestNo = ++memoryRequestSeqNo;
+        try {
+          // --- Initiate the status watch
+          let lastMemoryCommand = mainProcessStore.getState().memoryCommand;
+
+          // --- Catch status changes
+          let result: Uint8Array | null = null;
+          stateAware.stateChanged.on((state) => {
+            if (state && state.memoryCommand === lastMemoryCommand) {
+              // --- No change in memory command state
+              return;
+            }
+
+            lastMemoryCommand = state.memoryCommand;
+            if (
+              state.memoryCommand.command === "" &&
+              state.memoryCommand.memoryCommandResult
+            ) {
+              // --- We just received a result, store it
+              memoryResults.set(
+                state.memoryCommand.seqNo,
+                state.memoryCommand.memoryCommandResult
+              );
+            }
+
+            // --- Check for the current request's result
+            const thisResult = memoryResults.get(thisReqestNo);
+            if (thisResult) {
+              memoryResults.delete(thisReqestNo);
+              result = thisResult;
+            }
+          });
+
+          // --- Initiate the memory command execution
+          stateAware.dispatch(actionCreator(thisReqestNo));
+
+          // --- Wait for resolve/reject
+          const startTime = Date.now();
+          while (Date.now() - startTime < 3000) {
+            if (result) {
+              resolve(result);
+            }
+            await new Promise((r) => setTimeout(r, 100));
+          }
+          throw new Error("Memory request timeout");
+        } catch (err) {
+          reject(err);
+        }
+      } finally {
+        // --- Do not watch changes anymore
+        stateAware.dispose();
+      }
+    });
+    const result = await promise;
+    res.send(Buffer.from(result).toString("base64"));
+  } catch (err) {
+    res.status(500).send(err.toString());
+  }
 }

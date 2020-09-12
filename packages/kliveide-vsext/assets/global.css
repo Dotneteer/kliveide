@@ -14,6 +14,54 @@ body {
   padding: 0;
 }
 
-h1 {
-  color: yellow;
+/* ============================================================================ */
+/* Styles of MemoryEntry.svelte */
+ 
+.memory-address {
+  color: var(--vscode-editorLineNumber-foreground);
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.isRom {
+  color: var(--vscode-terminal-ansiBrightRed);
+}
+
+.isBank {
+  color: var(--vscode-terminal-ansiYellow);
+}
+
+.memory-value {
+  color: var(--vscode-terminal-ansiBrightCyan);
+  padding: 0px 3px;
+  overflow: hidden;
+  flex-grow: 0;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.memory-value:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.separator {
+  margin-left: 12px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.memory-string {
+  color: var(--vscode-terminal-ansiBrightBlue);
+  overflow: hidden;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.memory-register {
+  background: var(--vscode-terminal-ansiMagenta);
+  color: var(--vscode-terminal-ansiBrightWhite);
+}
+
+.memory-register:hover {
+  background: var(--vscode-terminal-ansiMagenta);
 }

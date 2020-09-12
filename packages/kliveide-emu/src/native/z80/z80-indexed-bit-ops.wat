@@ -1,5 +1,5 @@
-;; ==========================================================================
-;; Indexed bit operations
+;; ============================================================================
+;; Implementation of Z80 indexed bit operations
 
 ;; rlc (ix+d),Q
 (func $XBopQ (param $addr i32)

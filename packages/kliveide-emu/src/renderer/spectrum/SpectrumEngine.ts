@@ -30,27 +30,22 @@ import {
   engineInitializedAction,
   emulatorSetDebugAction,
   emulatorSetMemWriteMapAction,
+  emulatorLoadTapeAction,
+  emulatorSelectRomAction,
+  emulatorSelectBankAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
 import { TapReader } from "../../shared/tape/tap-file";
 import { RegisterData } from "../../shared/spectrum/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
-
-/**
- * Beeper samples in the memory
- */
-const BEEPER_SAMPLE_BUFF = 0x0b_2200;
-
-/**
- * Start of the ZX Spectrum memory buffer
- */
-const SPECTRUM_MEM = 0x00_0000;
-
-/**
- * Start of the memory write map
- */
-const MEMWRITE_MAP = 0x1f_6500;
+import {
+  MEMWRITE_MAP,
+  BEEPER_SAMPLE_BUFFER,
+  PSG_SAMPLE_BUFFER,
+  PSG_ENVELOP_TABLE,
+  BANK_0_OFFS,
+} from "../../native/api/memory-map";
 
 /**
  * This class represents the engine of the ZX Spectrum,
@@ -68,9 +63,8 @@ export class SpectrumEngine {
   private _executionStateChanged = new LiteEvent<ExecutionStateChangedArgs>();
   private _screenRefreshed = new LiteEvent<void>();
   private _vmStoppedWithError = new LiteEvent<void>();
-  private _beeperSamplesEmitted = new LiteEvent<number[]>();
 
-  private _completionTask: Promise<void> | undefined;
+  private _completionTask: Promise<void> | null = null;
 
   // --- The last loaded machine state
   private _loadedState: SpectrumMachineState;
@@ -81,8 +75,10 @@ export class SpectrumEngine {
   // --- Beeper emulation
   private _beeperRenderer: AudioRenderer | null = null;
 
+  // --- PSG emulation
+  private _psgRenderer: AudioRenderer | null = null;
+
   // --- Tape emulation
-  private _tapeSetInitialized = false;
   private _defaultTapeSet = new Uint8Array(0);
 
   // --- FrameID information
@@ -107,8 +103,7 @@ export class SpectrumEngine {
    */
   constructor(public spectrum: ZxSpectrumBase) {
     this._loadedState = spectrum.getMachineState();
-    let mh = new MemoryHelper(this.spectrum.api, 0);
-    const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+    const memContents = this.spectrum.getMemoryContents();
     rendererProcessStore.dispatch(
       emulatorSetMemoryContentsAction(memContents)()
     );
@@ -222,13 +217,6 @@ export class SpectrumEngine {
   }
 
   /**
-   * This event is raised when a new beeper sample frame is emitted
-   */
-  get beeperSamplesEmitted(): ILiteEvent<number[]> {
-    return this._beeperSamplesEmitted.expose();
-  }
-
-  /**
    * This event is raised when the engine stops because of an exception
    */
   get stoppedWithError(): ILiteEvent<void> {
@@ -263,7 +251,7 @@ export class SpectrumEngine {
    * @param rate Audio sampe rate to use
    */
   setAudioSampleRate(rate: number): void {
-    this.spectrum.setBeeperSampleRate(rate);
+    this.spectrum.setAudioSampleRate(rate);
   }
 
   /**
@@ -331,14 +319,14 @@ export class SpectrumEngine {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      this.spectrum.reset();
+      this.spectrum.turnOnMachine();
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();
       const emuState = state.emulatorPanelState;
 
       // --- Set tape contents
-      if (!this._tapeSetInitialized) {
+      if (!emuState.tapeContents || emuState.tapeContents.length === 0) {
         let contents = new Uint8Array(0);
         try {
           contents = fs.readFileSync(
@@ -348,7 +336,6 @@ export class SpectrumEngine {
         rendererProcessStore.dispatch(
           emulatorSetTapeContenstAction(contents)()
         );
-        this._tapeSetInitialized = true;
         this._defaultTapeSet = contents;
       } else {
         this._defaultTapeSet = emuState.tapeContents;
@@ -384,9 +371,7 @@ export class SpectrumEngine {
 
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
-    rendererProcessStore.dispatch(
-      emulatorSetDebugAction(this._isDebugging)()
-    );
+    rendererProcessStore.dispatch(emulatorSetDebugAction(this._isDebugging)());
 
     // --- Execute a single cycle
     this.executionState = ExecutionState.Running;
@@ -401,21 +386,18 @@ export class SpectrumEngine {
     if (
       this.executionState === ExecutionState.None ||
       this.executionState === ExecutionState.Stopped ||
-      this.executionState === ExecutionState.Paused
+      this.executionState === ExecutionState.Paused ||
+      !this._completionTask
     ) {
       // --- Nothing to pause
-      return;
-    }
-
-    if (!this._completionTask) {
-      // --- No completion to wait for
+      await this.cleanupAudio();
       return;
     }
 
     // --- Prepare the machine to pause
     this.executionState = ExecutionState.Pausing;
     this._isFirstPause = this._isFirstStart;
-    this.cancelRun();
+    await this.cancelRun();
     this.executionState = ExecutionState.Paused;
   }
 
@@ -427,18 +409,20 @@ export class SpectrumEngine {
     switch (this._vmState) {
       case ExecutionState.None:
       case ExecutionState.Stopped:
+        await this.cleanupAudio();
         return;
 
       case ExecutionState.Paused:
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
         this.executionState = ExecutionState.Stopped;
+        await this.cleanupAudio();
         break;
 
       default:
         // --- Initiate stop
         this.executionState = ExecutionState.Stopping;
-        this.cancelRun();
+        await this.cancelRun();
         this.executionState = ExecutionState.Stopped;
         break;
     }
@@ -449,7 +433,7 @@ export class SpectrumEngine {
    */
   async restart(): Promise<void> {
     await this.stop();
-    this.start();
+    await this.start();
   }
 
   /**
@@ -466,9 +450,9 @@ export class SpectrumEngine {
    */
   async stepOver(): Promise<void> {
     // --- Calculate the location of the step-over breakpoint
-    const mh = new MemoryHelper(this.spectrum.api, SPECTRUM_MEM);
+    const memContents = this.spectrum.getMemoryContents();
     const pc = this.getMachineState().pc;
-    const opCode = mh.readByte(pc);
+    const opCode = memContents[pc];
     let length = 0;
     if (opCode === 0xcd) {
       // --- CALL
@@ -484,7 +468,7 @@ export class SpectrumEngine {
       length = 1;
     } else if (opCode === 0xed) {
       // --- Block I/O and transfer
-      const extOpCode = mh.readByte(pc + 1);
+      const extOpCode = memContents[pc + 1];
       length = (extOpCode & 0xb4) === 0xb0 ? 2 : 0;
     }
 
@@ -523,9 +507,21 @@ export class SpectrumEngine {
   async cancelRun(): Promise<void> {
     this._cancelled = true;
     await this._completionTask;
+    this._completionTask = null;
+    await this.cleanupAudio();
+  }
+
+  /**
+   * Cleans up audio
+   */
+  async cleanupAudio(): Promise<void> {
     if (this._beeperRenderer) {
-      this._beeperRenderer.closeAudio();
+      await this._beeperRenderer.closeAudio();
       this._beeperRenderer = null;
+    }
+    if (this._psgRenderer) {
+      await this._psgRenderer.closeAudio();
+      this._psgRenderer = null;
     }
   }
 
@@ -571,14 +567,19 @@ export class SpectrumEngine {
         emulatorSetFrameIdAction(this._startCount, resultState.frameCount)()
       );
       rendererProcessStore.dispatch(
+        emulatorSelectRomAction(resultState.memorySelectedRom)()
+      );
+      rendererProcessStore.dispatch(
+        emulatorSelectBankAction(resultState.memorySelectedBank)()
+      );
+      rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
       );
-      let mh = new MemoryHelper(this.spectrum.api, 0);
-      const memContents = new Uint8Array(mh.readBytes(0, 0x10000));
+      const memContents = this.spectrum.getMemoryContents();
       rendererProcessStore.dispatch(
         emulatorSetMemoryContentsAction(memContents)()
       );
-      mh = new MemoryHelper(this.spectrum.api, MEMWRITE_MAP);
+      let mh = new MemoryHelper(this.spectrum.api, MEMWRITE_MAP);
       const memWriteMap = new Uint8Array(mh.readBytes(0, 0x2000));
       rendererProcessStore.dispatch(
         emulatorSetMemWriteMapAction(memWriteMap)()
@@ -595,10 +596,7 @@ export class SpectrumEngine {
         }
 
         // --- Stop audio
-        if (this._beeperRenderer) {
-          this._beeperRenderer.closeAudio();
-          this._beeperRenderer = null;
-        }
+        await this.cleanupAudio();
         return;
       }
 
@@ -614,15 +612,40 @@ export class SpectrumEngine {
       const emuState = rendererProcessStore.getState().emulatorPanelState;
       if (!this._beeperRenderer) {
         this._beeperRenderer = new AudioRenderer(
-          resultState.beeperSampleLength
+          resultState.tactsInFrame / resultState.audioSampleLength
         );
       }
-      mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFF);
+      mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = emuState.muted
-        ? new Array(resultState.beeperSampleCount).fill(0)
-        : mh.readBytes(0, resultState.beeperSampleCount);
+        ? new Array(resultState.audioSampleCount).fill(0)
+        : mh.readBytes(0, resultState.audioSampleCount);
       this._beeperRenderer.storeSamples(beeperSamples);
-      machine._beeperSamplesEmitted.fire(beeperSamples);
+
+      // --- Obtain psg samples
+      if (!this._psgRenderer) {
+        this._psgRenderer = new AudioRenderer(
+          resultState.tactsInFrame / resultState.audioSampleLength
+        );
+      }
+      mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
+      const psgSamples = emuState.muted
+        ? new Array(resultState.audioSampleCount).fill(0)
+        : mh.readWords(0, resultState.audioSampleCount).map((v) => v / 65535);
+      this._psgRenderer.storeSamples(psgSamples);
+
+      // --- Check if a tape should be loaded
+      if (
+        resultState.tapeMode === 0 &&
+        !emuState.tapeLoaded &&
+        emuState.tapeContents &&
+        emuState.tapeContents.length > 0
+      ) {
+        // --- The tape is in passive mode, and we have a new one we can load, so let's load it
+        this._defaultTapeSet = emuState.tapeContents;
+        const binaryReader = new BinaryReader(this._defaultTapeSet);
+        this.initTape(binaryReader);
+        rendererProcessStore.dispatch(emulatorLoadTapeAction());
+      }
 
       // --- Frame time information
       const curTime = performance.now();
@@ -631,7 +654,6 @@ export class SpectrumEngine {
       this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
 
       // --- Wait for the next screen frame
-
       const toWait = Math.floor(nextFrameTime - curTime);
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
@@ -748,6 +770,7 @@ export class SpectrumEngine {
       return true;
     }
 
+    reader.seek(0);
     const tapReader = new TapReader(reader);
     if (tapReader.readContents()) {
       const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);
@@ -762,5 +785,34 @@ export class SpectrumEngine {
    */
   colorize(): void {
     this.spectrum.api.colorize();
+  }
+
+  // ==========================================================================
+  // Memory commands
+
+  /**
+   * Gets the specified ROM page
+   * @param page Page index
+   */
+  getRomPage(page: number): Uint8Array {
+    const state = this.spectrum.getMachineState();
+    if (!state.memoryPagingEnabled || page < 0 || page > state.numberOfRoms) {
+      return new Uint8Array(0);
+    }
+    const mh = new MemoryHelper(this.spectrum.api, this.spectrum.getRomPageBaseAddress());
+    return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
+  }
+
+  /**
+   * Gets the specified BANK page
+   * @param page Page index
+   */
+  getBankPage(page: number): Uint8Array {
+    const state = this.spectrum.getMachineState();
+    if (!state.memoryPagingEnabled || page < 0 || page > state.ramBanks) {
+      return new Uint8Array(0);
+    }
+    const mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
+    return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
 }

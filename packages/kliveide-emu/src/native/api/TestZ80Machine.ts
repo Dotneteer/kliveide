@@ -8,31 +8,13 @@ import {
 import { CpuApi } from "./api";
 import { MemoryHelper } from "./memory-helpers";
 import { RunMode } from "./RunMode";
-
-/**
- * Start of the register are in the memory
- */
-const REG_AREA_INDEX = 0x1_0000;
-
-/**
- * Start of the CPU state transfer area in the memory
- */
-const STATE_TRANSFER_BUFF = 0x1_0040;
-
-/**
- * Buffer for the test CPU I/O input
- */
-const TEST_INPUT_BUFF = 0x1_0200;
-
-/**
- * The start of the I/O access log
- */
-const TEST_IO_LOG_OFFS = 0x1_0700;
-
-/**
- * The start of the TBBLUE access log
- */
-const TEST_TBBLUE_LOG_OFFS = 0x1_0b00;
+import {
+  TEST_INPUT_OFFS,
+  REG_AREA_INDEX,
+  STATE_TRANSFER_BUFF,
+  TEST_IO_LOG_OFFS,
+  TEST_TBBLUE_LOG_OFFS
+} from "./memory-map";
 
 /**
  * This class represents a test machine that can be used for testing the WA machine
@@ -93,9 +75,9 @@ export class TestZ80Machine {
    * @param input List of input byte values
    */
   initInput(input: number[]): void {
-    const mh = new MemoryHelper(this.cpuApi, TEST_INPUT_BUFF)
+    const mh = new MemoryHelper(this.cpuApi, TEST_INPUT_OFFS);
     for (let i = 0; i < input.length; i++) {
-      mh.writeByte(i, input[i])
+      mh.writeByte(i, input[i]);
     }
     this.cpuApi.setTestInputLength(input.length);
   }
@@ -145,7 +127,7 @@ export class TestZ80Machine {
 
     // --- Get state data
     mh = new MemoryHelper(this.cpuApi, STATE_TRANSFER_BUFF);
-    s.af = mh.readUint16(0)
+    s.af = mh.readUint16(0);
 
     s.pc = mh.readUint16(18);
     s.sp = mh.readUint16(20);

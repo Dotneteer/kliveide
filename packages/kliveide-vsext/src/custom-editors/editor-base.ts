@@ -6,10 +6,17 @@ import {
   onConnectionStateChanged,
   getLastConnectedState,
   getLastExecutionState,
+  onMemoryPagingChanged,
+  onMachineTypeChanged,
+  getLastMachineType,
+  getLastMemoryPagingInfo,
+  requestEmulatorInfo,
 } from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
-import { ExecutionState } from "../emulator/communicator";
+import { ExecutionState, MemoryPageInfo } from "../emulator/communicator";
+import { machineTypes } from "../emulator/machine-info";
+import { getAssetsFileName } from "../extension-paths";
 
 const editorInstances: vscode.WebviewPanel[] = [];
 let activeEditor: vscode.WebviewPanel | null = null;
@@ -36,16 +43,6 @@ export abstract class EditorProviderBase
   private _disposables = new Map<vscode.WebviewPanel, vscode.Disposable[]>();
 
   /**
-   * The path of the "assets" folder within the extension
-   */
-  readonly assetsPath: string;
-
-  /**
-   * The path of the "out" folder within the extension
-   */
-  readonly outPath: string;
-
-  /**
    * The title of the webview
    */
   abstract readonly title: string;
@@ -69,8 +66,6 @@ export abstract class EditorProviderBase
    * @param context Extension context
    */
   constructor(protected readonly context: vscode.ExtensionContext) {
-    this.outPath = this.getExtensionPath("out");
-    this.assetsPath = this.getExtensionPath("out/assets");
   }
 
   /**
@@ -141,18 +136,6 @@ export abstract class EditorProviderBase
       })
     );
 
-    /**
-     * Update the view when the editor text changes
-     */
-    this.toDispose(
-      webviewPanel,
-      vscode.workspace.onDidChangeTextDocument((e) => {
-        if (e.document.uri.toString() === document.uri.toString()) {
-          updateWebview();
-        }
-      })
-    );
-
     // --- Notify the view about vm execution state changes
     this.toDispose(
       webviewPanel,
@@ -166,6 +149,18 @@ export abstract class EditorProviderBase
       })
     );
 
+    // --- Notify the view about memory paging changes
+    this.toDispose(
+      webviewPanel,
+      onMemoryPagingChanged((pageInfo: MemoryPageInfo) => {
+        webviewPanel.webview.postMessage({
+          viewNotification: "memoryPaging",
+          selectedRom: pageInfo.selectedRom,
+          selectedBank: pageInfo.selectedBank,
+        });
+      })
+    );
+
     // --- Notify the view about emulator connection state changes
     this.toDispose(
       webviewPanel,
@@ -173,6 +168,18 @@ export abstract class EditorProviderBase
         webviewPanel.webview.postMessage({
           viewNotification: "connectionState",
           state,
+        });
+      })
+    );
+
+    // --- Send machine information to the view when machine type changes
+    this.toDispose(
+      webviewPanel,
+      onMachineTypeChanged((type) => {
+        webviewPanel.webview.postMessage({
+          viewNotification: "machineType",
+          type,
+          config: machineTypes[type],
         });
       })
     );
@@ -190,20 +197,8 @@ export abstract class EditorProviderBase
       }
     );
 
-    updateWebview();
-
     // --- Get the initial state
-    this.sendExecutionStateToView(webviewPanel);
-
-    /**
-     * Updates the web view
-     */
-    function updateWebview() {
-      webviewPanel.webview.postMessage({
-        viewNotification: "update",
-        text: document.getText(),
-      });
-    }
+    // await this.sendInitialStateToView(webviewPanel);
   }
 
   /**
@@ -211,7 +206,10 @@ export abstract class EditorProviderBase
    * @param _panel The WebviewPanel that should process a message from its view
    * @param _viewCommand Command notification to process
    */
-  async processViewCommand(_panel: vscode.WebviewPanel, _viewCommand: ViewCommand): Promise<void> {}
+  async processViewCommand(
+    _panel: vscode.WebviewPanel,
+    _viewCommand: ViewCommand
+  ): Promise<void> {}
 
   /**
    * Gets the HTML contents belonging to this editor
@@ -222,7 +220,7 @@ export abstract class EditorProviderBase
     let htmlContents: string;
     try {
       htmlContents = fs.readFileSync(
-        this.getAssetsFileName(this.htmlFileName),
+        getAssetsFileName(this.htmlFileName),
         "utf8"
       );
 
@@ -243,63 +241,29 @@ export abstract class EditorProviderBase
   }
 
   /**
-   * Gets the specified path within the extension
-   * @param {String[]} path Path within the extension
-   */
-  protected getExtensionPath(...paths: string[]): string {
-    return path.join(this.context.extensionPath, ...paths);
-  }
-
-  /**
-   * Gets the specified file resource URI
-   * @param {String} basePath Base path of the resource within the extension folder
-   * @param {String} resource Resource file name
-   */
-  protected getFileResource(basePath: string, resource: string): vscode.Uri {
-    const file = vscode.Uri.file(path.join(basePath, resource));
-    return file.with({ scheme: "vscode-resource" });
-  }
-
-  /**
-   * Gets a resource from the "out" extension folder
-   * @param {String} resource Resource file name
-   */
-  protected getOuFileResource(resource: string): vscode.Uri {
-    return this.getFileResource(this.outPath, resource);
-  }
-
-  /**
-   * Gets a resource from the "assets" extension folder
-   * @param {String} resource Resource file name
-   */
-  protected getAssetsFileResource(resource: string): vscode.Uri {
-    return this.getFileResource(this.assetsPath, resource);
-  }
-
-  /**
-   * Gets a file name from the "out" extension folder
-   * @param {String} filename Filename
-   */
-  protected getOuFileName(filename: string): string {
-    return path.join(this.outPath, filename);
-  }
-
-  /**
-   * Gets a file name from the "assets" extension folder
-   * @param {String} filename Filename
-   */
-  protected getAssetsFileName(filename: string): string {
-    return path.join(this.assetsPath, filename);
-  }
-
-  /**
    * Sends the current execution state to view
    */
-  protected sendExecutionStateToView(panel: vscode.WebviewPanel): void {
+  protected sendInitialStateToView(panel: vscode.WebviewPanel): void {
     if (!getLastConnectedState()) {
       panel.webview.postMessage({
         viewNotification: "connectionState",
         state: false,
+      });
+    }
+    const machineType = getLastMachineType();
+    if (machineType) {
+      panel.webview.postMessage({
+        viewNotification: "machineType",
+        type: machineType,
+        config: machineTypes[machineType],
+      });
+    }
+    const pageInfo = getLastMemoryPagingInfo();
+    if (pageInfo) {
+      panel.webview.postMessage({
+        viewNotification: "memoryPaging",
+        selectedRom: pageInfo.selectedRom,
+        selectedBank: pageInfo.selectedBank,
       });
     }
     const execState = getLastExecutionState();
