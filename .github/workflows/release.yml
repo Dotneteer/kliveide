@@ -27,4 +27,4 @@ jobs:
       run: npm run test
 
     - name: Build Electron app on windows
-      run: cd packages/klive-emu && nmp run build:win
+      run: npm run build:win
