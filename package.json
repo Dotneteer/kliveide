@@ -22,7 +22,9 @@
     "bump": "lerna version --no-push --no-git-tag-version",
     "build:win": "cd packages/kliveide-emu && npm run build:win",
     "build:mac": "cd packages/kliveide-emu && npm run build:mac",
-    "build:linux": "cd packages/kliveide-emu && npm run build:linux"
+    "build:linux": "cd packages/kliveide-emu && npm run build:linux",
+
+    "bootstrap:ci": "npm ci && lerna bootstrap --ci"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.2",
