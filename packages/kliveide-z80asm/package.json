@@ -1,6 +1,6 @@
 {
   "name": "kilveide-z80asm",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Klive IDE Z80 Assembler",
   "author": "Istvan Novak",
   "main": "index.js",
@@ -14,7 +14,7 @@
     "Other"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "ts-mocha -p ./tsconfig.json ./test/**/*.test.ts"
   },
   "license": "MIT",
   "devDependencies": {
