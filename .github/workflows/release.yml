@@ -68,7 +68,7 @@ jobs:
         path: artifacts/*.AppImage
 
   build-on-mac:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     - name: Checkout repository
