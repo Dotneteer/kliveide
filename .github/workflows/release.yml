@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 jobs:
   build-on-windows:
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     steps:
     - name: Checkout repository
@@ -28,4 +28,3 @@ jobs:
 
     - name: Build Electron app on windows
       run: cd packages/klive-emu && nmp run build:win
-      
