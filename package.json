@@ -23,12 +23,12 @@
     "build:win": "cd packages/kliveide-emu && npm run build:win",
     "build:mac": "cd packages/kliveide-emu && npm run build:mac",
     "build:linux": "cd packages/kliveide-emu && npm run build:linux",
-
     "bootstrap:ci": "npm ci && lerna bootstrap --ci"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.2",
     "@types/node-ipc": "^9.1.3",
+    "electron": "^10.1.1",
     "electron-builder": "^22.8.0",
     "lerna": "^3.22.1",
     "mocha": "^8.1.1",
