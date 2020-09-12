@@ -19,3 +19,6 @@ jobs:
       run: npm run bootstrap:ci
       env:
         NODE_AUTH_TOKEN: ${{ secrets.GT_WORKAROUND_PAT }}
+
+    - name: Test the packages
+      run: npm run test
