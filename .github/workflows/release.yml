@@ -1,4 +1,4 @@
-name: Release latest version
+name: Build artifacts
 
 on: workflow_dispatch
 
@@ -17,8 +17,6 @@ jobs:
 
     - name: Install npm dependencies
       run: npm run bootstrap:ci
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GT_WORKAROUND_PAT }}
 
     - name: Build the packages
       run: npm run build
@@ -27,4 +25,6 @@ jobs:
       run: npm run test
 
     - name: Build Electron app on windows
+      with:
+        github_token: ${{ secrets.github_token }}
       run: npm run build:win
