@@ -165,6 +165,11 @@ describe("Parser - token: operator-like", () => {
     testToken("RRA", TokenType.Rra);
   });
 
+  it("get: daa instruction", () => {
+    testToken("daa", TokenType.Daa);
+    testToken("DAA", TokenType.Daa);
+  });
+
   it("get: cpl instruction", () => {
     testToken("cpl", TokenType.Cpl);
     testToken("CPL", TokenType.Cpl);
@@ -173,6 +178,11 @@ describe("Parser - token: operator-like", () => {
   it("get: scf instruction", () => {
     testToken("scf", TokenType.Scf);
     testToken("SCF", TokenType.Scf);
+  });
+
+  it("get: ccf instruction", () => {
+    testToken("ccf", TokenType.Ccf);
+    testToken("CCF", TokenType.Ccf);
   });
 
   it("get: halt instruction", () => {

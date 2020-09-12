@@ -41,7 +41,7 @@ export class TokenStream {
     }
 
     // --- Prefetch missing tokens
-    while (this._ahead.length < n) {
+    while (this._ahead.length <= n) {
       const token = this.fetch();
       if (isEof(token)) {
         return token;
@@ -539,15 +539,7 @@ export class TokenStream {
             }
             phase = LexerPhase.HexaLiteralPrefix;
             break;
-          } else if (ch === "b") {
-            // --- Binary or hexadecimal literal. Look ahead to check
-            const nextCh = input.peek();
-            if (
-              !nextCh ||
-              (!isBinaryDigit(nextCh) && !isHexadecimalDigit(nextCh))
-            ) {
-              return completeToken(TokenType.Unknown);
-            }
+          } else if (isHexadecimalDigit(ch)) {
             if (
               isHexaSuffix(input.ahead(1)) ||
               isHexaSuffix(input.ahead(2)) ||
@@ -588,7 +580,7 @@ export class TokenStream {
           if (startIsOctal && nextCh && isOctalSuffix(nextCh)) {
             phase = LexerPhase.OctalLiteralSuffix;
           } else if (nextCh && isHexaSuffix(nextCh)) {
-            phase = LexerPhase.OctalLiteralSuffix;
+            phase = LexerPhase.HexaLiteralSuffix;
           } else if (startIsOctal && isOctalSuffix(input.ahead(1))) {
             phase = LexerPhase.OctalLiteralSuffix;
           } else if (isHexaSuffix(input.ahead(1))) {
@@ -750,7 +742,7 @@ export class TokenStream {
               if (ch === "x") {
                 phase = LexerPhase.CharHexa1;
               } else {
-                return completeToken(TokenType.Unknown);
+                phase = LexerPhase.CharTail;
               }
           }
           break;
@@ -808,7 +800,7 @@ export class TokenStream {
               if (ch === "x") {
                 phase = LexerPhase.StringHexa1;
               } else {
-                return completeToken(TokenType.Unknown);
+                phase = LexerPhase.String;
               }
           }
           break;
@@ -1214,7 +1206,7 @@ export enum TokenType {
   IfDir,
   IfModDir,
   IfNModDir,
-
+  LineDir,
   CurAddress,
   NoneArg,
 
@@ -1568,10 +1560,14 @@ const resolverHash: { [key: string]: TokenType } = {
   RLA: TokenType.Rla,
   rra: TokenType.Rra,
   RRA: TokenType.Rra,
+  daa: TokenType.Daa,
+  DAA: TokenType.Daa,
   cpl: TokenType.Cpl,
   CPL: TokenType.Cpl,
   scf: TokenType.Scf,
   SCF: TokenType.Scf,
+  ccf: TokenType.Ccf,
+  CCF: TokenType.Ccf,
   halt: TokenType.Halt,
   HALT: TokenType.Halt,
   ret: TokenType.Ret,
@@ -2151,4 +2147,5 @@ const resolverHash: { [key: string]: TokenType } = {
   "#if": TokenType.IfDir,
   "#ifmod": TokenType.IfModDir,
   "#ifnmod": TokenType.IfNModDir,
+  "#line": TokenType.LineDir,
 };
