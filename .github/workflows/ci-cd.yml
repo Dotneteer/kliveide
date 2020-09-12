@@ -1,0 +1,27 @@
+name: CI/CD
+
+on: push
+
+jobs:
+  ci_cd:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.x
+
+    - name: Install npm dependencies
+      run: npm run bootstrap:ci
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GT_WORKAROUND_PAT }}
+
+    - name: Build the packages
+      run: npm run build
+
+    - name: Test the packages
+      run: npm run test
