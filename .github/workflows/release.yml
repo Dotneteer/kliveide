@@ -32,7 +32,7 @@ jobs:
     - name: Add install Emulator install kit to artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: windows-install
+        name: install-kit
         path: artifacts/*.exe
 
   build-on-linux:
@@ -64,7 +64,7 @@ jobs:
     - name: Add install Emulator install kit to artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: linux-install
+        name: install-kit
         path: artifacts/*.AppImage
 
   build-on-mac:
@@ -96,8 +96,8 @@ jobs:
     - name: Add install Emulator install kit to artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: mac-install
-        path: artifacts/*.AppImage
+        name: install-kit
+        path: artifacts/*.pkg
 
   build-vsce-package:
     needs: [build-on-windows, build-on-linux, build-on-mac]
