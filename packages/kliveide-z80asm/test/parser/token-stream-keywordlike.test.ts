@@ -1,7 +1,7 @@
 import "mocha";
 
 import { TokenType } from "../../src/parser/token-stream";
-import { testToken} from "./token-stream-helper";
+import { testToken } from "./token-stream-helper";
 
 describe("Parser - token: operator-like", () => {
   it("get: register A", () => {
@@ -581,240 +581,269 @@ describe("Parser - token: operator-like", () => {
   });
 
   it("get: org pragma", () => {
-    testToken(".org", TokenType.Org);
-    testToken(".ORG", TokenType.Org);
-    testToken("org", TokenType.Org);
-    testToken("ORG", TokenType.Org);
+    testToken(".org", TokenType.OrgPragma);
+    testToken(".ORG", TokenType.OrgPragma);
+    testToken("org", TokenType.OrgPragma);
+    testToken("ORG", TokenType.OrgPragma);
+  });
+
+  it("get: bank pragma", () => {
+    testToken(".bank", TokenType.BankPragma);
+    testToken(".BANK", TokenType.BankPragma);
+    testToken("bank", TokenType.BankPragma);
+    testToken("BANK", TokenType.BankPragma);
   });
 
   it("get: xorg pragma", () => {
-    testToken(".xorg", TokenType.Xorg);
-    testToken(".XORG", TokenType.Xorg);
-    testToken("xorg", TokenType.Xorg);
-    testToken("XORG", TokenType.Xorg);
+    testToken(".xorg", TokenType.XorgPragma);
+    testToken(".XORG", TokenType.XorgPragma);
+    testToken("xorg", TokenType.XorgPragma);
+    testToken("XORG", TokenType.XorgPragma);
   });
 
   it("get: ent pragma", () => {
-    testToken(".ent", TokenType.Ent);
-    testToken(".ENT", TokenType.Ent);
-    testToken("ent", TokenType.Ent);
-    testToken("ENT", TokenType.Ent);
+    testToken(".ent", TokenType.EntPragma);
+    testToken(".ENT", TokenType.EntPragma);
+    testToken("ent", TokenType.EntPragma);
+    testToken("ENT", TokenType.EntPragma);
   });
 
   it("get: xent pragma", () => {
-    testToken(".xent", TokenType.Xent);
-    testToken(".XENT", TokenType.Xent);
-    testToken("xent", TokenType.Xent);
-    testToken("XENT", TokenType.Xent);
+    testToken(".xent", TokenType.XentPragma);
+    testToken(".XENT", TokenType.XentPragma);
+    testToken("xent", TokenType.XentPragma);
+    testToken("XENT", TokenType.XentPragma);
   });
 
   it("get: equ pragma", () => {
-    testToken(".equ", TokenType.Equ);
-    testToken(".EQU", TokenType.Equ);
-    testToken("equ", TokenType.Equ);
-    testToken("EQU", TokenType.Equ);
+    testToken(".equ", TokenType.EquPragma);
+    testToken(".EQU", TokenType.EquPragma);
+    testToken("equ", TokenType.EquPragma);
+    testToken("EQU", TokenType.EquPragma);
   });
 
   it("get: var pragma", () => {
-    testToken(".var", TokenType.Var);
-    testToken(".VAR", TokenType.Var);
-    testToken("var", TokenType.Var);
-    testToken("VAR", TokenType.Var);
-    testToken(":=", TokenType.Var);
+    testToken(".var", TokenType.VarPragma);
+    testToken(".VAR", TokenType.VarPragma);
+    testToken("var", TokenType.VarPragma);
+    testToken("VAR", TokenType.VarPragma);
+    testToken(":=", TokenType.VarPragma);
   });
 
   it("get: disp pragma", () => {
-    testToken(".disp", TokenType.Disp);
-    testToken(".DISP", TokenType.Disp);
-    testToken("disp", TokenType.Disp);
-    testToken("DISP", TokenType.Disp);
+    testToken(".disp", TokenType.DispPragma);
+    testToken(".DISP", TokenType.DispPragma);
+    testToken("disp", TokenType.DispPragma);
+    testToken("DISP", TokenType.DispPragma);
   });
 
   it("get: defb pragma", () => {
-    testToken(".defb", TokenType.Defb);
-    testToken(".DEFB", TokenType.Defb);
-    testToken("defb", TokenType.Defb);
-    testToken("DB", TokenType.Defb);
-    testToken(".db", TokenType.Defb);
-    testToken(".DB", TokenType.Defb);
-    testToken("db", TokenType.Defb);
-    testToken("DB", TokenType.Defb);
+    testToken(".defb", TokenType.DefbPragma);
+    testToken(".DEFB", TokenType.DefbPragma);
+    testToken("defb", TokenType.DefbPragma);
+    testToken("DB", TokenType.DefbPragma);
+    testToken(".db", TokenType.DefbPragma);
+    testToken(".DB", TokenType.DefbPragma);
+    testToken("db", TokenType.DefbPragma);
+    testToken("DB", TokenType.DefbPragma);
   });
 
   it("get: defw pragma", () => {
-    testToken(".defw", TokenType.Defw);
-    testToken(".DEFW", TokenType.Defw);
-    testToken("defw", TokenType.Defw);
-    testToken("DEFW", TokenType.Defw);
-    testToken(".dw", TokenType.Defw);
-    testToken(".DW", TokenType.Defw);
-    testToken("dw", TokenType.Defw);
-    testToken("DW", TokenType.Defw);
+    testToken(".defw", TokenType.DefwPragma);
+    testToken(".DEFW", TokenType.DefwPragma);
+    testToken("defw", TokenType.DefwPragma);
+    testToken("DEFW", TokenType.DefwPragma);
+    testToken(".dw", TokenType.DefwPragma);
+    testToken(".DW", TokenType.DefwPragma);
+    testToken("dw", TokenType.DefwPragma);
+    testToken("DW", TokenType.DefwPragma);
   });
 
   it("get: defm pragma", () => {
-    testToken(".defm", TokenType.Defm);
-    testToken(".DEFM", TokenType.Defm);
-    testToken("defm", TokenType.Defm);
-    testToken("DEFM", TokenType.Defm);
-    testToken(".dm", TokenType.Defm);
-    testToken(".DM", TokenType.Defm);
-    testToken("dm", TokenType.Defm);
-    testToken("DM", TokenType.Defm);
+    testToken(".defm", TokenType.DefmPragma);
+    testToken(".DEFM", TokenType.DefmPragma);
+    testToken("defm", TokenType.DefmPragma);
+    testToken("DEFM", TokenType.DefmPragma);
+    testToken(".dm", TokenType.DefmPragma);
+    testToken(".DM", TokenType.DefmPragma);
+    testToken("dm", TokenType.DefmPragma);
+    testToken("DM", TokenType.DefmPragma);
   });
 
   it("get: defn pragma", () => {
-    testToken(".defn", TokenType.Defn);
-    testToken(".DEFN", TokenType.Defn);
-    testToken("defn", TokenType.Defn);
-    testToken("DEFN", TokenType.Defn);
-    testToken(".dn", TokenType.Defn);
-    testToken(".DN", TokenType.Defn);
-    testToken("dn", TokenType.Defn);
-    testToken("DN", TokenType.Defn);
+    testToken(".defn", TokenType.DefnPragma);
+    testToken(".DEFN", TokenType.DefnPragma);
+    testToken("defn", TokenType.DefnPragma);
+    testToken("DEFN", TokenType.DefnPragma);
+    testToken(".dn", TokenType.DefnPragma);
+    testToken(".DN", TokenType.DefnPragma);
+    testToken("dn", TokenType.DefnPragma);
+    testToken("DN", TokenType.DefnPragma);
   });
 
   it("get: defh pragma", () => {
-    testToken(".defh", TokenType.Defh);
-    testToken(".DEFH", TokenType.Defh);
-    testToken("defh", TokenType.Defh);
-    testToken("DEFH", TokenType.Defh);
-    testToken(".dh", TokenType.Defh);
-    testToken(".DH", TokenType.Defh);
-    testToken("dh", TokenType.Defh);
-    testToken("DH", TokenType.Defh);
+    testToken(".defh", TokenType.DefhPragma);
+    testToken(".DEFH", TokenType.DefhPragma);
+    testToken("defh", TokenType.DefhPragma);
+    testToken("DEFH", TokenType.DefhPragma);
+    testToken(".dh", TokenType.DefhPragma);
+    testToken(".DH", TokenType.DefhPragma);
+    testToken("dh", TokenType.DefhPragma);
+    testToken("DH", TokenType.DefhPragma);
   });
 
   it("get: defgx pragma", () => {
-    testToken(".defgx", TokenType.Defgx);
-    testToken(".DEFGX", TokenType.Defgx);
-    testToken("defgx", TokenType.Defgx);
-    testToken("DEFGX", TokenType.Defgx);
-    testToken(".dgx", TokenType.Defgx);
-    testToken(".DGX", TokenType.Defgx);
-    testToken("dgx", TokenType.Defgx);
-    testToken("DGX", TokenType.Defgx);
+    testToken(".defgx", TokenType.DefgxPragma);
+    testToken(".DEFGX", TokenType.DefgxPragma);
+    testToken("defgx", TokenType.DefgxPragma);
+    testToken("DEFGX", TokenType.DefgxPragma);
+    testToken(".dgx", TokenType.DefgxPragma);
+    testToken(".DGX", TokenType.DefgxPragma);
+    testToken("dgx", TokenType.DefgxPragma);
+    testToken("DGX", TokenType.DefgxPragma);
   });
 
   it("get: defg pragma", () => {
-    testToken(".defg", TokenType.Defg);
-    testToken(".DEFG", TokenType.Defg);
-    testToken("defg", TokenType.Defg);
-    testToken("DEFG", TokenType.Defg);
-    testToken(".dg", TokenType.Defg);
-    testToken(".DG", TokenType.Defg);
-    testToken("dg", TokenType.Defg);
-    testToken("DG", TokenType.Defg);
+    testToken("defg ", TokenType.DefgPragma, null);
+    testToken("DEFG ", TokenType.DefgPragma, null);
+    testToken("dg ", TokenType.DefgPragma, null);
+    testToken("DG ", TokenType.DefgPragma, null);
+    testToken(".defg ", TokenType.DefgPragma, null);
+    testToken(".DEFG ", TokenType.DefgPragma, null);
+    testToken(".dg ", TokenType.DefgPragma, null);
+    testToken(".DG ", TokenType.DefgPragma, null);
+    testToken("defg ....OOOO", TokenType.DefgPragma, null);
+    testToken("DEFG ....OOOO", TokenType.DefgPragma, null);
+    testToken("dg ....OOOO", TokenType.DefgPragma, null);
+    testToken("DG ....OOOO", TokenType.DefgPragma, null);
+    testToken(".defg ....OOOO", TokenType.DefgPragma, null);
+    testToken(".DEFG ....OOOO", TokenType.DefgPragma, null);
+    testToken(".dg ....OOOO", TokenType.DefgPragma, null);
+    testToken(".DG ....OOOO", TokenType.DefgPragma, null);
   });
 
   it("get: defc pragma", () => {
-    testToken(".defc", TokenType.Defc);
-    testToken(".DEFC", TokenType.Defc);
-    testToken("defc", TokenType.Defc);
-    testToken("DEFC", TokenType.Defc);
-    testToken(".dc", TokenType.Defc);
-    testToken(".DC", TokenType.Defc);
-    testToken("dc", TokenType.Defc);
-    testToken("DC", TokenType.Defc);
+    testToken(".defc", TokenType.DefcPragma);
+    testToken(".DEFC", TokenType.DefcPragma);
+    testToken("defc", TokenType.DefcPragma);
+    testToken("DEFC", TokenType.DefcPragma);
+    testToken(".dc", TokenType.DefcPragma);
+    testToken(".DC", TokenType.DefcPragma);
+    testToken("dc", TokenType.DefcPragma);
+    testToken("DC", TokenType.DefcPragma);
   });
 
   it("get: skip pragma", () => {
-    testToken(".skip", TokenType.Skip);
-    testToken(".SKIP", TokenType.Skip);
-    testToken("skip", TokenType.Skip);
-    testToken("SKIP", TokenType.Skip);
+    testToken(".skip", TokenType.SkipPragma);
+    testToken(".SKIP", TokenType.SkipPragma);
+    testToken("skip", TokenType.SkipPragma);
+    testToken("SKIP", TokenType.SkipPragma);
   });
 
   it("get: extern pragma", () => {
-    testToken(".extern", TokenType.Extern);
-    testToken(".EXTERN", TokenType.Extern);
-    testToken("extern", TokenType.Extern);
-    testToken("EXTERN", TokenType.Extern);
+    testToken(".extern", TokenType.ExternPragma);
+    testToken(".EXTERN", TokenType.ExternPragma);
+    testToken("extern", TokenType.ExternPragma);
+    testToken("EXTERN", TokenType.ExternPragma);
   });
 
   it("get: defs pragma", () => {
-    testToken(".defs", TokenType.Defs);
-    testToken(".DEFS", TokenType.Defs);
-    testToken("defs", TokenType.Defs);
-    testToken("DEFS", TokenType.Defs);
-    testToken(".ds", TokenType.Defs);
-    testToken(".DS", TokenType.Defs);
-    testToken("ds", TokenType.Defs);
-    testToken("DS", TokenType.Defs);
+    testToken(".defs", TokenType.DefsPragma);
+    testToken(".DEFS", TokenType.DefsPragma);
+    testToken("defs", TokenType.DefsPragma);
+    testToken("DEFS", TokenType.DefsPragma);
+    testToken(".ds", TokenType.DefsPragma);
+    testToken(".DS", TokenType.DefsPragma);
+    testToken("ds", TokenType.DefsPragma);
+    testToken("DS", TokenType.DefsPragma);
   });
 
   it("get: fillb pragma", () => {
-    testToken(".fillb", TokenType.Fillb);
-    testToken(".FILLB", TokenType.Fillb);
-    testToken("fillb", TokenType.Fillb);
-    testToken("FILLB", TokenType.Fillb);
+    testToken(".fillb", TokenType.FillbPragma);
+    testToken(".FILLB", TokenType.FillbPragma);
+    testToken("fillb", TokenType.FillbPragma);
+    testToken("FILLB", TokenType.FillbPragma);
   });
 
   it("get: fillw pragma", () => {
-    testToken(".fillw", TokenType.Fillw);
-    testToken(".FILLW", TokenType.Fillw);
-    testToken("fillw", TokenType.Fillw);
-    testToken("FILLW", TokenType.Fillw);
+    testToken(".fillw", TokenType.FillwPragma);
+    testToken(".FILLW", TokenType.FillwPragma);
+    testToken("fillw", TokenType.FillwPragma);
+    testToken("FILLW", TokenType.FillwPragma);
   });
 
   it("get: model pragma", () => {
-    testToken(".model", TokenType.Model);
-    testToken(".MODEL", TokenType.Model);
-    testToken("model", TokenType.Model);
-    testToken("MODEL", TokenType.Model);
+    testToken(".model", TokenType.ModelPragma);
+    testToken(".MODEL", TokenType.ModelPragma);
+    testToken("model", TokenType.ModelPragma);
+    testToken("MODEL", TokenType.ModelPragma);
   });
 
   it("get: align pragma", () => {
-    testToken(".align", TokenType.Align);
-    testToken(".ALIGN", TokenType.Align);
-    testToken("align", TokenType.Align);
-    testToken("ALIGN", TokenType.Align);
+    testToken(".align", TokenType.AlignPragma);
+    testToken(".ALIGN", TokenType.AlignPragma);
+    testToken("align", TokenType.AlignPragma);
+    testToken("ALIGN", TokenType.AlignPragma);
   });
 
   it("get: trace pragma", () => {
-    testToken(".trace", TokenType.Trace);
-    testToken(".TRACE", TokenType.Trace);
-    testToken("trace", TokenType.Trace);
-    testToken("TRACE", TokenType.Trace);
+    testToken(".trace", TokenType.TracePragma);
+    testToken(".TRACE", TokenType.TracePragma);
+    testToken("trace", TokenType.TracePragma);
+    testToken("TRACE", TokenType.TracePragma);
   });
 
   it("get: tracehex pragma", () => {
-    testToken(".tracehex", TokenType.TraceHex);
-    testToken(".TRACEHEX", TokenType.TraceHex);
-    testToken("tracehex", TokenType.TraceHex);
-    testToken("TRACEHEX", TokenType.TraceHex);
+    testToken(".tracehex", TokenType.TraceHexPragma);
+    testToken(".TRACEHEX", TokenType.TraceHexPragma);
+    testToken("tracehex", TokenType.TraceHexPragma);
+    testToken("TRACEHEX", TokenType.TraceHexPragma);
   });
 
   it("get: rndseed pragma", () => {
-    testToken(".rndseed", TokenType.RndSeed);
-    testToken(".RNDSEED", TokenType.RndSeed);
-    testToken("rndseed", TokenType.RndSeed);
-    testToken("RNDSEED", TokenType.RndSeed);
+    testToken(".rndseed", TokenType.RndSeedPragma);
+    testToken(".RNDSEED", TokenType.RndSeedPragma);
+    testToken("rndseed", TokenType.RndSeedPragma);
+    testToken("RNDSEED", TokenType.RndSeedPragma);
   });
 
   it("get: error pragma", () => {
-    testToken(".error", TokenType.Error);
-    testToken(".ERROR", TokenType.Error);
-    testToken("error", TokenType.Error);
-    testToken("ERROR", TokenType.Error);
+    testToken(".error", TokenType.ErrorPragma);
+    testToken(".ERROR", TokenType.ErrorPragma);
+    testToken("error", TokenType.ErrorPragma);
+    testToken("ERROR", TokenType.ErrorPragma);
   });
 
   it("get: includebin pragma", () => {
-    testToken(".includebin", TokenType.IncludeBin);
-    testToken(".INCLUDEBIN", TokenType.IncludeBin);
-    testToken(".include_bin", TokenType.IncludeBin);
-    testToken(".INCLUDE_BIN", TokenType.IncludeBin);
-    testToken("includebin", TokenType.IncludeBin);
-    testToken("INCLUDEBIN", TokenType.IncludeBin);
-    testToken("include_bin", TokenType.IncludeBin);
-    testToken("INCLUDE_BIN", TokenType.IncludeBin);
+    testToken(".includebin", TokenType.IncludeBinPragma);
+    testToken(".INCLUDEBIN", TokenType.IncludeBinPragma);
+    testToken(".include_bin", TokenType.IncludeBinPragma);
+    testToken(".INCLUDE_BIN", TokenType.IncludeBinPragma);
+    testToken("includebin", TokenType.IncludeBinPragma);
+    testToken("INCLUDEBIN", TokenType.IncludeBinPragma);
+    testToken("include_bin", TokenType.IncludeBinPragma);
+    testToken("INCLUDE_BIN", TokenType.IncludeBinPragma);
   });
 
   it("get: comparebin pragma", () => {
-    testToken(".comparebin", TokenType.CompareBin);
-    testToken(".COMPAREBIN", TokenType.CompareBin);
-    testToken("comparebin", TokenType.CompareBin);
-    testToken("COMPAREBIN", TokenType.CompareBin);
+    testToken(".comparebin", TokenType.CompareBinPragma);
+    testToken(".COMPAREBIN", TokenType.CompareBinPragma);
+    testToken("comparebin", TokenType.CompareBinPragma);
+    testToken("COMPAREBIN", TokenType.CompareBinPragma);
+  });
+
+  it("get: zxbasic pragma", () => {
+    testToken(".zxbasic", TokenType.ZxBasicPragma);
+    testToken(".ZXBASIC", TokenType.ZxBasicPragma);
+    testToken("zxbasic", TokenType.ZxBasicPragma);
+    testToken("ZXBASIC", TokenType.ZxBasicPragma);
+  });
+
+  it("get: injectopt pragma", () => {
+    testToken(".injectopt", TokenType.InjectOptPragma);
+    testToken(".INJECTOPT", TokenType.InjectOptPragma);
+    testToken("injectopt", TokenType.InjectOptPragma);
+    testToken("INJECTOPT", TokenType.InjectOptPragma);
   });
 
   it("get: macro statement", () => {

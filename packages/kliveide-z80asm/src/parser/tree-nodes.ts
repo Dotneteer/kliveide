@@ -6,7 +6,8 @@ export type Node =
   | LabelOnlyLine
   | Instruction
   | Expression
-  | Directive;
+  | Directive
+  | Pragma;
 export type Instruction = SimpleZ80Instruction;
 export type Expression =
   | UnaryExpression
@@ -32,6 +33,37 @@ export type Directive =
   | IfDirective
   | IncludeDirective
   | LineDirective;
+export type Pragma =
+  | OrgPragma
+  | BankPragma
+  | XorgPragma
+  | EntPragma
+  | XentPragma
+  | DispPragma
+  | EquPragma
+  | VarPragma
+  | DefBPragma
+  | DefWPragma
+  | DefCPragma
+  | DefMPragma
+  | DefNPragma
+  | DefHPragma
+  | SkipPragma
+  | ExternPragma
+  | DefSPragma
+  | FillbPragma
+  | FillwPragma
+  | ModelPragma
+  | AlignPragma
+  | TracePragma
+  | RndSeedPragma
+  | DefGPragma
+  | DefGxPragma
+  | ErrorPragma
+  | IncBinPragma
+  | CompareBinPragma
+  | ZxBasicPragma
+  | InjectOptPragma;
 
 /**
  * This class represents the root class of all syntax nodes
@@ -378,13 +410,320 @@ export interface LineDirective extends PartialZ80AssemblyLine {
   /**
    * Line number
    */
-  line: ExpressionNode;
+  lineNumber: ExpressionNode;
 
   /**
    * Optional line comment
    */
-  comment: string | null;
+  comment?: string;
 }
 
+export interface OrgPragma extends PartialZ80AssemblyLine {
+  type: "OrgPragma";
 
+  /**
+   * Origin address
+   */
+  address: ExpressionNode;
+}
 
+export interface BankPragma extends PartialZ80AssemblyLine {
+  type: "BankPragma";
+
+  /**
+   * ID of the bank
+   */
+  bankId: ExpressionNode;
+
+  /**
+   * Origin address
+   */
+  offset?: ExpressionNode;
+}
+
+export interface XorgPragma extends PartialZ80AssemblyLine {
+  type: "XorgPragma";
+
+  /**
+   * Origin address
+   */
+  address: ExpressionNode;
+}
+
+export interface EntPragma extends PartialZ80AssemblyLine {
+  type: "EntPragma";
+
+  /**
+   * Entry address
+   */
+  address: ExpressionNode;
+}
+
+export interface XentPragma extends PartialZ80AssemblyLine {
+  type: "XentPragma";
+
+  /**
+   * Entry address
+   */
+  address: ExpressionNode;
+}
+
+export interface DispPragma extends PartialZ80AssemblyLine {
+  type: "DispPragma";
+
+  /**
+   * Displacement
+   */
+  offset: ExpressionNode;
+}
+
+export interface EquPragma extends PartialZ80AssemblyLine {
+  type: "EquPragma";
+
+  /**
+   * Pragma value
+   */
+  value: ExpressionNode;
+}
+
+export interface VarPragma extends PartialZ80AssemblyLine {
+  type: "VarPragma";
+
+  /**
+   * Pragma value
+   */
+  value: ExpressionNode;
+}
+
+export interface DefBPragma extends PartialZ80AssemblyLine {
+  type: "DefBPragma";
+
+  /**
+   * Pragma values
+   */
+  values: ExpressionNode[];
+}
+
+export interface DefWPragma extends PartialZ80AssemblyLine {
+  type: "DefWPragma";
+
+  /**
+   * Pragma values
+   */
+  values: ExpressionNode[];
+}
+
+export interface DefCPragma extends PartialZ80AssemblyLine {
+  type: "DefCPragma";
+
+  /**
+   * Pragma value
+   */
+  value: ExpressionNode;
+}
+
+export interface DefNPragma extends PartialZ80AssemblyLine {
+  type: "DefNPragma";
+
+  /**
+   * Pragma value
+   */
+  value: ExpressionNode;
+}
+
+export interface DefMPragma extends PartialZ80AssemblyLine {
+  type: "DefMPragma";
+
+  /**
+   * Pragma value
+   */
+  value: ExpressionNode;
+}
+
+export interface DefHPragma extends PartialZ80AssemblyLine {
+  type: "DefHPragma";
+
+  /**
+   * Pragma value
+   */
+  value: ExpressionNode;
+}
+
+export interface SkipPragma extends PartialZ80AssemblyLine {
+  type: "SkipPragma";
+
+  /**
+   * Number of bytes to skip
+   */
+  skip: ExpressionNode;
+
+  /**
+   * Filler byte
+   */
+  fill?: ExpressionNode;
+}
+
+export interface ExternPragma extends PartialZ80AssemblyLine {
+  type: "ExternPragma";
+}
+
+export interface DefSPragma extends PartialZ80AssemblyLine {
+  type: "DefSPragma";
+
+  /**
+   * Number of bytes to skip
+   */
+  count: ExpressionNode;
+
+  /**
+   * Filler byte
+   */
+  fill?: ExpressionNode;
+}
+
+export interface FillbPragma extends PartialZ80AssemblyLine {
+  type: "FillbPragma";
+
+  /**
+   * Number of bytes to skip
+   */
+  count: ExpressionNode;
+
+  /**
+   * Filler byte
+   */
+  fill?: ExpressionNode;
+}
+
+export interface FillwPragma extends PartialZ80AssemblyLine {
+  type: "FillwPragma";
+
+  /**
+   * Number of words to skip
+   */
+  count: ExpressionNode;
+
+  /**
+   * Filler byte
+   */
+  fill?: ExpressionNode;
+}
+
+export interface ModelPragma extends PartialZ80AssemblyLine {
+  type: "ModelPragma";
+
+  /**
+   * ID of the model
+   */
+  modelId: string;
+}
+
+export interface AlignPragma extends PartialZ80AssemblyLine {
+  type: "AlignPragma";
+
+  /**
+   * ID of the model
+   */
+  alignExpr?: ExpressionNode;
+}
+
+export interface TracePragma extends PartialZ80AssemblyLine {
+  type: "TracePragma";
+
+  /**
+   * Hexa output?
+   */
+  isHex: boolean;
+
+  /**
+   * Pragma values
+   */
+  values: ExpressionNode[];
+}
+
+export interface RndSeedPragma extends PartialZ80AssemblyLine {
+  type: "RndSeedPragma";
+
+  /**
+   * ID of the model
+   */
+  seedExpr?: ExpressionNode;
+}
+
+export interface DefGxPragma extends PartialZ80AssemblyLine {
+  type: "DefGxPragma";
+
+  /**
+   * Pragma value
+   */
+  pattern: ExpressionNode;
+}
+
+export interface DefGPragma extends PartialZ80AssemblyLine {
+  type: "DefGPragma";
+
+  /**
+   * Pragma value
+   */
+  pattern: string;
+}
+
+export interface ErrorPragma extends PartialZ80AssemblyLine {
+  type: "ErrorPragma";
+
+  /**
+   * Pragma value
+   */
+  message: ExpressionNode;
+}
+
+export interface IncBinPragma extends PartialZ80AssemblyLine {
+  type: "IncBinPragma";
+
+  /**
+   * File to include
+   */
+  filename: ExpressionNode;
+
+  /**
+   * Offset
+   */
+  offset?: ExpressionNode;
+
+  /**
+   * Included length
+   */
+  length?: ExpressionNode;
+}
+
+export interface CompareBinPragma extends PartialZ80AssemblyLine {
+  type: "CompareBinPragma";
+
+  /**
+   * File to include
+   */
+  filename: ExpressionNode;
+
+  /**
+   * Offset
+   */
+  offset?: ExpressionNode;
+
+  /**
+   * Included length
+   */
+  length?: ExpressionNode;
+}
+
+export interface ZxBasicPragma extends PartialZ80AssemblyLine {
+  type: "ZxBasicPragma";
+}
+
+export interface InjectOptPragma extends PartialZ80AssemblyLine {
+  type: "InjectOptPragma";
+
+  /**
+   * Option identifier
+   */
+  identifier: string;
+}

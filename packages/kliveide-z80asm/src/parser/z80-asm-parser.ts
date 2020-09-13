@@ -24,6 +24,41 @@ import {
   IfNDefDirective,
   DefineDirective,
   UndefDirective,
+  IfModDirective,
+  IfNModDirective,
+  IfDirective,
+  IncludeDirective,
+  LineDirective,
+  ZxBasicPragma,
+  OrgPragma,
+  XorgPragma,
+  EntPragma,
+  XentPragma,
+  EquPragma,
+  VarPragma,
+  DispPragma,
+  DefCPragma,
+  DefMPragma,
+  DefNPragma,
+  DefHPragma,
+  DefGxPragma,
+  ErrorPragma,
+  ExternPragma,
+  AlignPragma,
+  RndSeedPragma,
+  BankPragma,
+  SkipPragma,
+  DefSPragma,
+  FillbPragma,
+  FillwPragma,
+  IncBinPragma,
+  CompareBinPragma,
+  DefBPragma,
+  DefWPragma,
+  TracePragma,
+  ModelPragma,
+  InjectOptPragma,
+  DefGPragma,
 } from "./tree-nodes";
 import { ErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
@@ -209,6 +244,7 @@ export class Z80AsmParser {
   /**
    * pragma
    *   : orgPragma
+   *   | bankPragma
    *   | xorgPragma
    *   | entPragma
    *   | xentPragma
@@ -235,10 +271,242 @@ export class Z80AsmParser {
    *   | errorPragma
    *   | incBinPragma
    *   | compareBinPragma
+   *   | zxBasicPragma
+   *   | injectOptPragma
    *   ;
    */
   private parsePragma(parsePoint: ParsePoint): PartialZ80AssemblyLine | null {
-    // TODO: Implement this method
+    const { start } = parsePoint;
+
+    // --- Skip the pragma token
+    this.tokens.get();
+    switch (start.type) {
+      case TokenType.OrgPragma:
+        const orgExpr = this.getExpression();
+        return <OrgPragma>{
+          type: "OrgPragma",
+          address: orgExpr,
+        };
+      case TokenType.BankPragma:
+        const bankExpr = this.getExpression();
+        const bankOffsExpr = this.getExpression(true, true);
+        return <BankPragma>{
+          type: "BankPragma",
+          bankId: bankExpr,
+          offset: bankOffsExpr,
+        };
+      case TokenType.XorgPragma:
+        const xorgExpr = this.getExpression();
+        return <XorgPragma>{
+          type: "XorgPragma",
+          address: xorgExpr,
+        };
+      case TokenType.EntPragma:
+        const entExpr = this.getExpression();
+        return <EntPragma>{
+          type: "EntPragma",
+          address: entExpr,
+        };
+      case TokenType.XentPragma:
+        const xentExpr = this.getExpression();
+        return <XentPragma>{
+          type: "XentPragma",
+          address: xentExpr,
+        };
+      case TokenType.EquPragma:
+        const equExpr = this.getExpression();
+        return <EquPragma>{
+          type: "EquPragma",
+          value: equExpr,
+        };
+      case TokenType.VarPragma:
+      case TokenType.Assign:
+        const varExpr = this.getExpression();
+        return <VarPragma>{
+          type: "VarPragma",
+          value: varExpr,
+        };
+      case TokenType.DispPragma:
+        const dispExpr = this.getExpression();
+        return <DispPragma>{
+          type: "DispPragma",
+          offset: dispExpr,
+        };
+      case TokenType.DefbPragma:
+        const defbExprs = this.getExpressionList(true);
+        return <DefBPragma>{
+          type: "DefBPragma",
+          values: defbExprs,
+        };
+      case TokenType.DefwPragma:
+        const defwExprs = this.getExpressionList(true);
+        return <DefWPragma>{
+          type: "DefWPragma",
+          values: defwExprs,
+        };
+        break;
+      case TokenType.DefmPragma:
+        const defmExpr = this.getExpression();
+        return <DefMPragma>{
+          type: "DefMPragma",
+          value: defmExpr,
+        };
+      case TokenType.DefnPragma:
+        const defnExpr = this.getExpression();
+        return <DefNPragma>{
+          type: "DefNPragma",
+          value: defnExpr,
+        };
+      case TokenType.DefhPragma:
+        const defhExpr = this.getExpression();
+        return <DefHPragma>{
+          type: "DefHPragma",
+          value: defhExpr,
+        };
+      case TokenType.DefgxPragma:
+        const defgxExpr = this.getExpression();
+        return <DefGxPragma>{
+          type: "DefGxPragma",
+          pattern: defgxExpr,
+        };
+      case TokenType.DefgPragma:
+        let pattern = "";
+        let fspace = start.text.indexOf(" ");
+        if (fspace < 0) {
+          fspace = start.text.indexOf("\t");
+        }
+        if (fspace >= 0 && fspace < start.text.length - 1) {
+          pattern = start.text.substr(fspace + 1);
+        }
+        return <DefGPragma>{
+          type: "DefGPragma",
+          pattern,
+        };
+      case TokenType.DefcPragma:
+        const defcExpr = this.getExpression();
+        return <DefCPragma>{
+          type: "DefCPragma",
+          value: defcExpr,
+        };
+      case TokenType.SkipPragma:
+        const skipExpr = this.getExpression();
+        const skipFillExpr = this.getExpression(true, true);
+        return <SkipPragma>{
+          type: "SkipPragma",
+          skip: skipExpr,
+          fill: skipFillExpr,
+        };
+      case TokenType.ExternPragma:
+        return <ExternPragma>{
+          type: "ExternPragma",
+        };
+      case TokenType.DefsPragma:
+        const defsExpr = this.getExpression();
+        const defsFillExpr = this.getExpression(true, true);
+        return <DefSPragma>{
+          type: "DefSPragma",
+          count: defsExpr,
+          fill: defsFillExpr,
+        };
+      case TokenType.FillbPragma:
+        const fillbExpr = this.getExpression();
+        const fillValbExpr = this.getExpression(false, true);
+        return <FillbPragma>{
+          type: "FillbPragma",
+          count: fillbExpr,
+          fill: fillValbExpr,
+        };
+      case TokenType.FillwPragma:
+        const fillwExpr = this.getExpression();
+        const fillValwExpr = this.getExpression(false, true);
+        return <FillwPragma>{
+          type: "FillwPragma",
+          count: fillwExpr,
+          fill: fillValwExpr,
+        };
+      case TokenType.ModelPragma:
+        const nextToken = this.tokens.peek();
+        let modelId: string | null = null;
+        if (
+          nextToken.type === TokenType.Identifier ||
+          nextToken.type === TokenType.Next
+        ) {
+          modelId = nextToken.text;
+          this.tokens.get();
+        } else {
+          this.reportError("Z1004");
+        }
+        return <ModelPragma>{
+          type: "ModelPragma",
+          modelId,
+        };
+      case TokenType.AlignPragma:
+        const alignExpr = this.getExpression(true);
+        return <AlignPragma>{
+          type: "AlignPragma",
+          alignExpr: alignExpr,
+        };
+      case TokenType.TracePragma:
+        const traceExprs = this.getExpressionList(true);
+        return <TracePragma>{
+          type: "TracePragma",
+          isHex: false,
+          values: traceExprs,
+        };
+      case TokenType.TraceHexPragma:
+        const traceHexExprs = this.getExpressionList(true);
+        return <TracePragma>{
+          type: "TracePragma",
+          isHex: true,
+          values: traceHexExprs,
+        };
+      case TokenType.RndSeedPragma:
+        const rndSeedExpr = this.getExpression(true);
+        return <RndSeedPragma>{
+          type: "RndSeedPragma",
+          seedExpr: rndSeedExpr,
+        };
+      case TokenType.ErrorPragma:
+        const errorExpr = this.getExpression();
+        return <ErrorPragma>{
+          type: "ErrorPragma",
+          message: errorExpr,
+        };
+      case TokenType.IncludeBinPragma:
+        const incBinExpr = this.getExpression();
+        const incBinOffsExpr = this.getExpression(true, true);
+        const incBinLenExpr = incBinOffsExpr
+          ? this.getExpression(true, true)
+          : null;
+        return <IncBinPragma>{
+          type: "IncBinPragma",
+          filename: incBinExpr,
+          offset: incBinOffsExpr,
+          length: incBinLenExpr,
+        };
+      case TokenType.CompareBinPragma:
+        const compBinExpr = this.getExpression();
+        const compBinOffsExpr = this.getExpression(true, true);
+        const compBinLenExpr = compBinOffsExpr
+          ? this.getExpression(true, true)
+          : null;
+        return <CompareBinPragma>{
+          type: "CompareBinPragma",
+          filename: compBinExpr,
+          offset: compBinOffsExpr,
+          length: compBinLenExpr,
+        };
+      case TokenType.ZxBasicPragma:
+        return <ZxBasicPragma>{
+          type: "ZxBasicPragma",
+        };
+      case TokenType.InjectOptPragma:
+        const optId = this.getIdentifier();
+        return <InjectOptPragma>{
+          type: "InjectOptPragma",
+          identifier: optId,
+        };
+    }
     return null;
   }
 
@@ -349,11 +617,9 @@ export class Z80AsmParser {
       case TokenType.UndefDir:
         return createDirectiveWithId<UndefDirective>("UndefDirective");
       case TokenType.IfModDir:
-        // TODO
-        break;
+        return createDirectiveWithId<IfModDirective>("IfModDirective");
       case TokenType.IfNModDir:
-        // TODO
-        break;
+        return createDirectiveWithId<IfNModDirective>("IfNModDirective");
       case TokenType.EndIfDir:
         this.tokens.get();
         return <EndIfDirective>{
@@ -365,14 +631,11 @@ export class Z80AsmParser {
           type: "ElseDirective",
         };
       case TokenType.IfDir:
-        // TODO
-        break;
+        return createIfDirective();
       case TokenType.IncludeDir:
-        // TODO
-        break;
+        return createIncludeDirective();
       case TokenType.LineDir:
-        // TODO
-        break;
+        return createLineDirective();
     }
     return null;
 
@@ -388,6 +651,51 @@ export class Z80AsmParser {
         };
       }
       return null;
+    }
+
+    function createIfDirective(): PartialZ80AssemblyLine | null {
+      parser.tokens.get();
+      return <IfDirective>{
+        type: "IfDirective",
+        condition: parser.getExpression(),
+      };
+    }
+
+    function createIncludeDirective(): PartialZ80AssemblyLine | null {
+      parser.tokens.get();
+      const token = parser.skipToken(TokenType.StringLiteral);
+      if (token) {
+        const literal = parser.parseStringLiteral(token.text);
+        return <IncludeDirective>{
+          type: "IncludeDirective",
+          filename: literal.value,
+        };
+      }
+      parser.reportError("Z1006");
+      return null;
+    }
+
+    function createLineDirective(): PartialZ80AssemblyLine | null {
+      parser.tokens.get();
+      const expr = parser.getExpression();
+
+      let stringValue: string | null = null;
+      let token = parser.skipToken(TokenType.Comma);
+      if (token) {
+        token = parser.skipToken(TokenType.StringLiteral);
+        if (token) {
+          const literal = parser.parseStringLiteral(token.text);
+          stringValue = literal.value;
+        } else {
+          parser.reportError("Z1006");
+          return null;
+        }
+      }
+      return <LineDirective>{
+        type: "LineDirective",
+        lineNumber: expr,
+        comment: stringValue,
+      };
     }
   }
 
@@ -523,17 +831,9 @@ export class Z80AsmParser {
       return condExpr;
     }
 
-    const trueExpr = this.parseExpr();
-    if (!trueExpr) {
-      this.reportError("Z1003");
-      return null;
-    }
+    const trueExpr = this.getExpression();
     this.expectToken(TokenType.Colon);
-    const falseExpr = this.parseExpr();
-    if (!falseExpr) {
-      this.reportError("Z1003");
-      return null;
-    }
+    const falseExpr = this.getExpression();
 
     return <ConditionalExpression>{
       type: "ConditionalExpression",
@@ -907,16 +1207,12 @@ export class Z80AsmParser {
     const operator = parsePoint.start.text;
     this.tokens.get();
 
-    const operand = this.parseExpr();
-    if (operand) {
-      return <UnaryExpression>{
-        type: "UnaryExpression",
-        operator,
-        operand,
-      };
-    }
-    this.reportError("Z1003");
-    return null;
+    const operand = this.getExpression();
+    return <UnaryExpression>{
+      type: "UnaryExpression",
+      operator,
+      operand,
+    };
   }
 
   /**
@@ -933,43 +1229,59 @@ export class Z80AsmParser {
    */
   private parseLiteral(parsePoint: ParsePoint): ExpressionNode | null {
     const { start } = parsePoint;
+    let literal: ExpressionNode | null = null;
     switch (start.type) {
       case TokenType.BinaryLiteral:
-        return this.parseBinaryLiteral(start.text);
+        literal = this.parseBinaryLiteral(start.text);
+        break;
       case TokenType.OctalLiteral:
-        return this.parseOctalLiteral(start.text);
+        literal = this.parseOctalLiteral(start.text);
+        break;
       case TokenType.DecimalLiteral:
-        return this.parseDecimalLiteral(start.text);
+        literal = this.parseDecimalLiteral(start.text);
+        break;
       case TokenType.HexadecimalLiteral:
-        return this.parseHexadecimalLiteral(start.text);
+        literal = this.parseHexadecimalLiteral(start.text);
+        break;
       case TokenType.RealLiteral:
-        return this.parseRealLiteral(start.text);
+        literal = this.parseRealLiteral(start.text);
+        break;
       case TokenType.CharLiteral:
-        return this.parseCharLiteral(start.text);
+        literal = this.parseCharLiteral(start.text);
+        break;
       case TokenType.StringLiteral:
-        return this.parseStringLiteral(start.text);
+        literal = this.parseStringLiteral(start.text);
+        break;
       case TokenType.True:
-        return <BooleanLiteral>{
+        literal = <BooleanLiteral>{
           type: "BooleanLiteral",
           value: true,
         };
+        break;
       case TokenType.False:
-        return <BooleanLiteral>{
+        literal = <BooleanLiteral>{
           type: "BooleanLiteral",
           value: false,
         };
+        break;
       case TokenType.CurAddress:
       case TokenType.Dot:
       case TokenType.Multiplication:
-        return <CurrentAddressLiteral>{
+        literal = <CurrentAddressLiteral>{
           type: "CurrentAddressLiteral",
         };
+        break;
       case TokenType.CurCnt:
-        return <CurrentCounterLiteral>{
+        literal = <CurrentCounterLiteral>{
           type: "CurrentCounterLiteral",
         };
+        break;
     }
-    return null;
+    if (literal) {
+      // --- Skip the parsed literal
+      this.tokens.get();
+    }
+    return literal;
   }
 
   /**
@@ -1353,6 +1665,55 @@ export class Z80AsmParser {
     }
     this.reportError("Z1004");
     return null;
+  }
+
+  /**
+   * Gets an expression
+   * @param optional Is the expression optional?
+   * @param leadingComma Test for leading comma?
+   */
+  private getExpression(
+    optional: boolean = false,
+    leadingComma: boolean = false
+  ): ExpressionNode | null {
+    if (leadingComma) {
+      if (!this.skipToken(TokenType.Comma)) {
+        if (!optional) {
+          this.reportError("Z1007");
+        }
+        return null;
+      } else {
+        // --- We have a comma, so the expression in not optional
+        optional = false;
+      }
+    }
+    const expr = this.parseExpr();
+    if (expr) {
+      return expr;
+    }
+    if (!optional) {
+      this.reportError("Z1003");
+    }
+    return null;
+  }
+
+  /**
+   * Gets a list of expressions
+   * @param atLeastOne Is the first expression mandatory?
+   */
+  private getExpressionList(atLeastOne: boolean): ExpressionNode[] {
+    const expressions: ExpressionNode[] = [];
+    const first = this.getExpression(!atLeastOne);
+    if (first) {
+      expressions.push(first);
+    }
+    while (this.skipToken(TokenType.Comma)) {
+      const next = this.getExpression();
+      if (next) {
+        expressions.push(next);
+      }
+    }
+    return expressions;
   }
 }
 
