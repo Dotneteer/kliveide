@@ -59,10 +59,25 @@ import {
   ModelPragma,
   InjectOptPragma,
   DefGPragma,
+  TestInstruction,
+  NextRegInstruction,
+  MirrorInstruction,
+  MulInstruction,
+  DjnzInstruction,
+  RstInstruction,
+  ImInstruction,
+  JrInstruction,
+  JpInstruction,
+  CallInstruction,
+  RetInstruction,
+  Operand,
+  OperandType,
+  IncInstruction,
 } from "./tree-nodes";
 import { ErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
+import { report } from "process";
 
 /**
  * This class implements the Z80 assembly parser
@@ -123,7 +138,7 @@ export class Z80AsmParser {
         const parsedLine = this.parseAssemblyLine();
         if (parsedLine) {
           assemblyLines.push(parsedLine);
-          this.expectToken(TokenType.NewLine, true);
+          this.expectToken(TokenType.NewLine, null, true);
         }
       } catch (err) {
         // --- We recover from all reported parser errors here
@@ -172,7 +187,7 @@ export class Z80AsmParser {
 
     if (!asmLine) {
       // --- Unsuccessful parsing
-      return null;
+      this.reportError("Z1017", start, [start.text]);
     }
 
     // --- Complete the line with position information
@@ -520,12 +535,9 @@ export class Z80AsmParser {
     parsePoint: ParsePoint
   ): PartialZ80AssemblyLine | null {
     const { traits } = parsePoint;
-    if (traits.simple) {
-      return this.parseSimpleInstruction(parsePoint);
-    } else {
-      // TODO: Implement this method
-    }
-    return null;
+    return traits.simple
+      ? this.parseSimpleInstruction(parsePoint)
+      : this.parseCompoundInstruction(parsePoint);
   }
 
   /**
@@ -594,8 +606,233 @@ export class Z80AsmParser {
   private parseCompoundInstruction(
     parsePoint: ParsePoint
   ): PartialZ80AssemblyLine | null {
-    // TODO: Implement this method
+    const { start } = parsePoint;
+    const parser = this;
+    this.tokens.get();
+    switch (start.type) {
+      case TokenType.Ld:
+        break;
+
+      case TokenType.Inc:
+        return <IncInstruction>{
+          type: "IncInstruction",
+          operand: this.getOperand()
+        };
+
+      case TokenType.Dec:
+        break;
+
+      case TokenType.Ex:
+        break;
+
+      case TokenType.Add:
+        break;
+
+      case TokenType.Adc:
+        break;
+
+      case TokenType.Sub:
+        break;
+
+      case TokenType.Sbc:
+        break;
+
+      case TokenType.And:
+        break;
+
+      case TokenType.Xor:
+        break;
+
+      case TokenType.Cp:
+        break;
+
+      case TokenType.Djnz:
+        const djnzTarget = this.getExpression();
+        return <DjnzInstruction>{
+          type: "DjnzInstruction",
+          target: djnzTarget,
+        };
+
+      case TokenType.Jr:
+        const jrNext = this.tokens.peek();
+        const jrTrait = getTokenTraits(jrNext.type);
+        let jrCondition: string | undefined = undefined;
+        if (jrTrait.relCondition) {
+          jrCondition = jrNext.text.toLowerCase();
+          this.tokens.get();
+          this.expectToken(TokenType.Comma, "Z1007");
+        }
+        return <JrInstruction>{
+          type: "JrInstruction",
+          condition: jrCondition,
+          target: this.getExpression(),
+        };
+
+      case TokenType.Jp:
+        const jpNext = this.tokens.peek();
+        const jpTrait = getTokenTraits(jpNext.type);
+        let jpCondition: string | undefined = undefined;
+        if (jpTrait.condition) {
+          jpCondition = jpNext.text.toLowerCase();
+          this.tokens.get();
+          this.expectToken(TokenType.Comma, "Z1007");
+        }
+        return <JpInstruction>{
+          type: "JpInstruction",
+          condition: jpCondition,
+          target: this.getExpression(),
+        };
+
+      case TokenType.Call:
+        const callNext = this.tokens.peek();
+        const callTrait = getTokenTraits(callNext.type);
+        let callCondition: string | undefined = undefined;
+        if (callTrait.condition) {
+          callCondition = callNext.text.toLowerCase();
+          this.tokens.get();
+          this.expectToken(TokenType.Comma, "Z1007");
+        }
+        return <CallInstruction>{
+          type: "CallInstruction",
+          condition: callCondition,
+          target: this.getExpression(),
+        };
+
+      case TokenType.Ret:
+        const retNext = this.tokens.peek();
+        const retTrait = getTokenTraits(retNext.type);
+        let retCondition: string | undefined = undefined;
+        if (retTrait.condition) {
+          retCondition = retNext.text.toLowerCase();
+          this.tokens.get();
+        }
+        return <RetInstruction>{
+          type: "RetInstruction",
+          condition: retCondition,
+        };
+
+      case TokenType.Rst:
+        const rstTarget = this.getExpression();
+        return <RstInstruction>{
+          type: "RstInstruction",
+          target: rstTarget,
+        };
+
+      case TokenType.Push:
+        break;
+
+      case TokenType.Pop:
+        break;
+
+      case TokenType.In:
+        break;
+
+      case TokenType.Out:
+        break;
+
+      case TokenType.Im:
+        const mode = this.getExpression();
+        return <ImInstruction>{
+          type: "ImInstruction",
+          mode,
+        };
+
+      case TokenType.Rlc:
+        break;
+
+      case TokenType.Rrc:
+        break;
+
+      case TokenType.Rl:
+        break;
+
+      case TokenType.Rr:
+        break;
+
+      case TokenType.Sla:
+        break;
+
+      case TokenType.Sra:
+        break;
+
+      case TokenType.Sll:
+        break;
+
+      case TokenType.Srl:
+        break;
+
+      case TokenType.Bit:
+        break;
+
+      case TokenType.Res:
+        break;
+
+      case TokenType.Set:
+        break;
+
+      case TokenType.Mul:
+        parser.expectToken(TokenType.D, "Z1011");
+        parser.expectToken(TokenType.Comma, "Z1007");
+        parser.expectToken(TokenType.E, "Z1012");
+        return <MulInstruction>{
+          type: "MulInstruction",
+        };
+
+      case TokenType.Mirror:
+        this.expectToken(TokenType.A, "Z1010");
+        return <MirrorInstruction>{
+          type: "MirrorInstruction",
+        };
+
+      case TokenType.NextReg:
+        const nextReg = this.getExpression();
+        let nextRegValue = null;
+        if (this.skipToken(TokenType.Comma)) {
+          const valueToken = this.tokens.peek();
+          if (valueToken.type === TokenType.A) {
+            this.tokens.get();
+          } else {
+            nextRegValue = this.getExpression();
+          }
+        }
+        return <NextRegInstruction>{
+          type: "NextRegInstruction",
+          register: nextReg,
+          value: nextRegValue,
+        };
+
+      case TokenType.Test:
+        return <TestInstruction>{
+          type: "TestInstruction",
+          expr: this.getExpression(),
+        };
+
+      case TokenType.Bsla:
+        return expectDeAndA("bsla");
+
+      case TokenType.Bsra:
+        return expectDeAndA("bsra");
+
+      case TokenType.Bsrl:
+        return expectDeAndA("bsrl");
+
+      case TokenType.Bsrf:
+        return expectDeAndA("bsrf");
+
+      case TokenType.Brlc:
+        return expectDeAndA("brlc");
+    }
     return null;
+
+    function expectDeAndA(mnemonic: string): SimpleZ80Instruction {
+      parser.expectToken(TokenType.DE, "Z1008");
+      parser.expectToken(TokenType.Comma, "Z1007");
+      parser.expectToken(TokenType.B, "Z1009");
+      return <SimpleZ80Instruction>{
+        type: "SimpleZ80Instruction",
+        mnemonic,
+      };
+    }
   }
 
   /**
@@ -697,6 +934,151 @@ export class Z80AsmParser {
         comment: stringValue,
       };
     }
+  }
+
+  /**
+   * Parses an operand
+   */
+  private parseOperand(): Operand | null {
+    const { start, traits } = this.getParsePoint();
+
+    // --- Check registers
+    if (traits.reg) {
+      // --- We have a register operand
+      this.tokens.get();
+      const register = start.text.toLowerCase();
+      let operandType = OperandType.Reg8;
+      if (traits.reg8Spec) {
+        operandType = OperandType.Reg8Spec;
+      } else if (traits.reg8Idx) {
+        operandType = OperandType.Reg8Idx;
+      } else if (traits.reg16) {
+        operandType = OperandType.Reg16;
+      } else if (traits.reg16Idx) {
+        operandType = OperandType.Reg16Idx;
+      } else if (traits.reg16Spec) {
+        operandType = OperandType.Reg16Spec;
+      }
+      return <Operand>{
+        type: "Operand",
+        operandType,
+        register,
+      };
+    }
+
+    // --- Check NONEARG
+    if (start.type === TokenType.NoneArg) {
+      this.tokens.get();
+      return <Operand>{
+        type: "Operand",
+        operandType: OperandType.NoneArg,
+      };
+    }
+
+    // --- Check for HREG/LREG operation
+    if (start.type === TokenType.HReg || start.type === TokenType.LReg) {
+      this.tokens.get();
+      const regOperation = start.text.toLowerCase();
+      this.expectToken(TokenType.LPar, "Z1013");
+      const argToken = this.tokens.peek();
+      const traits = getTokenTraits(argToken.type);
+      let register: string | undefined = undefined;
+      let macroParam: string | undefined = undefined;
+      if (argToken.type === TokenType.LDBrac) {
+        // Macro parameter
+        this.tokens.get();
+        macroParam = this.getIdentifier();
+        this.expectToken(TokenType.RDBrac, "Z1015");
+      } else if (traits.reg16 || traits.reg16Idx) {
+        // 16-bit register
+        this.tokens.get();
+        register = argToken.text.toLowerCase();
+      }
+      this.expectToken(TokenType.RPar, "Z1014");
+      return <Operand>{
+        type: "Operand",
+        operandType: OperandType.RegOperation,
+        regOperation,
+        register,
+        macroParam,
+      };
+    }
+
+    // --- Check for "("
+    if (start.type === TokenType.LPar) {
+      const ahead = this.tokens.ahead(1);
+      const traits = getTokenTraits(ahead.type);
+      if (ahead.type === TokenType.C) {
+        // C port
+        this.tokens.get();
+        this.tokens.get();
+        this.expectToken(TokenType.RPar, "Z1014");
+        return <Operand>{
+          type: "Operand",
+          operandType: OperandType.CPort,
+        };
+      }
+      if (traits.reg16) {
+        // 16-bit register indirection
+        this.tokens.get();
+        this.tokens.get();
+        this.expectToken(TokenType.RPar, "Z1014");
+        return <Operand>{
+          type: "Operand",
+          operandType: OperandType.RegIndirect,
+          register: ahead.text.toLowerCase(),
+        };
+      }
+      if (traits.reg16Idx) {
+        // 16-bit index register indirection
+        this.tokens.get();
+        this.tokens.get();
+        let expr: ExpressionNode | undefined = undefined;
+        const register = ahead.text.toLowerCase();
+        let sign = this.tokens.peek();
+        let offsetSign =
+          sign.type === TokenType.Plus || sign.type === TokenType.Minus
+            ? sign.text
+            : undefined;
+        if (offsetSign) {
+          this.tokens.get();
+          expr = this.getExpression();
+          sign = this.tokens.peek();
+        }
+        this.expectToken(TokenType.RPar, "Z1014");
+        return <Operand>{
+          type: "Operand",
+          operandType: OperandType.IndexedIndirect,
+          register,
+          offsetSign,
+          expr,
+        };
+      }
+      if (traits.expressionStart) {
+        // Memory indirection
+        this.tokens.get();
+        const expr = this.getExpression();
+        this.expectToken(TokenType.RPar, "Z1014");
+        return <Operand>{
+          type: "Operand",
+          operandType: OperandType.MemIndirect,
+          expr,
+        };
+      }
+    }
+
+    // --- Check for an expression
+    if (traits.expressionStart) {
+      // Expression
+      return <Operand>{
+        type: "Operand",
+        operandType: OperandType.Expression,
+        expr: this.getExpression(),
+      };
+    }
+
+    // --- It's not an operand
+    return null;
   }
 
   // --------------------------------------------------------------------------
@@ -1543,7 +1925,11 @@ export class Z80AsmParser {
    * Tests the type of the next token
    * @param type Expected token type
    */
-  private expectToken(type: TokenType, allowEof?: boolean) {
+  private expectToken(
+    type: TokenType,
+    errorCode?: ErrorCodes,
+    allowEof?: boolean
+  ) {
     const next = this.tokens.peek();
     if (next.type === type || (allowEof && next.type === TokenType.Eof)) {
       // --- Skip the expected token
@@ -1551,7 +1937,7 @@ export class Z80AsmParser {
       return;
     }
 
-    this.reportError("Z1001", next, [next.text]);
+    this.reportError(errorCode ?? "Z1001", next, [next.text]);
   }
 
   /**
@@ -1714,6 +2100,18 @@ export class Z80AsmParser {
       }
     }
     return expressions;
+  }
+
+  /**
+   * Gets a mandatory operand
+   */
+  private getOperand(): Operand | null {
+    const operand = this.parseOperand();
+    if (operand) {
+      return operand;
+    }
+    this.reportError("Z1016");
+    return null;
   }
 }
 

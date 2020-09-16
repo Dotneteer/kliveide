@@ -43,6 +43,51 @@ export interface TokenTraits {
    * Represents a literal?
    */
   literal?: boolean;
+
+  /**
+   * Represents a register?
+   */
+  reg?: boolean;
+
+  /**
+   * Represents a standard 8-bit register?
+   */
+  reg8?: boolean;
+
+  /**
+   * Represenst a special 8-bit register?
+   */
+  reg8Spec?: boolean;
+
+  /**
+   * Represents an 8-bit index register?
+   */
+  reg8Idx?: boolean;
+
+  /**
+   * Represents an 16-bit register?
+   */
+  reg16?: boolean;
+
+  /**
+   * Represents an 16-bit special register?
+   */
+  reg16Spec?: boolean;
+
+  /**
+   * Represents an 16-bit index register?
+   */
+  reg16Idx?: boolean;
+
+  /**
+   * Represents a condition value?
+   */
+  condition?: boolean;
+
+  /**
+   * Represents a JR condition value?
+   */
+  relCondition?: boolean;
 }
 
 /**
@@ -60,9 +105,9 @@ const tokenTraits = new Map<TokenType, TokenTraits>();
 
 // ----------------------------------------------------------------------------
 // A
-tokenTraits.set(TokenType.A, {});
-tokenTraits.set(TokenType.AF, {});
-tokenTraits.set(TokenType.AF_, {});
+tokenTraits.set(TokenType.A, { reg: true, reg8: true });
+tokenTraits.set(TokenType.AF, { reg: true, reg16Spec: true });
+tokenTraits.set(TokenType.AF_, { reg: true, reg16Spec: true });
 tokenTraits.set(TokenType.Adc, { instruction: true });
 tokenTraits.set(TokenType.Add, { instruction: true });
 tokenTraits.set(TokenType.AlignPragma, { pragma: true });
@@ -72,9 +117,9 @@ tokenTraits.set(TokenType.Assign, { pragma: true });
 
 // ----------------------------------------------------------------------------
 // B
-tokenTraits.set(TokenType.B, {});
+tokenTraits.set(TokenType.B, { reg: true, reg8: true });
 tokenTraits.set(TokenType.BankPragma, { pragma: true });
-tokenTraits.set(TokenType.BC, {});
+tokenTraits.set(TokenType.BC, { reg: true, reg16: true });
 tokenTraits.set(TokenType.BinaryLiteral, {
   expressionStart: true,
   literal: true,
@@ -90,7 +135,12 @@ tokenTraits.set(TokenType.Bsrl, { instruction: true });
 
 // ----------------------------------------------------------------------------
 // C
-tokenTraits.set(TokenType.C, {});
+tokenTraits.set(TokenType.C, {
+  reg: true,
+  reg8: true,
+  condition: true,
+  relCondition: true,
+});
 tokenTraits.set(TokenType.Call, { instruction: true });
 tokenTraits.set(TokenType.Ccf, { instruction: true, simple: true });
 tokenTraits.set(TokenType.CharLiteral, {
@@ -114,8 +164,8 @@ tokenTraits.set(TokenType.CurCnt, { expressionStart: true, literal: true });
 
 // ----------------------------------------------------------------------------
 // D
-tokenTraits.set(TokenType.D, {});
-tokenTraits.set(TokenType.DE, {});
+tokenTraits.set(TokenType.D, { reg: true, reg8: true });
+tokenTraits.set(TokenType.DE, { reg: true, reg16: true });
 tokenTraits.set(TokenType.Daa, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Dec, { instruction: true });
 tokenTraits.set(TokenType.DecimalLiteral, {
@@ -145,7 +195,7 @@ tokenTraits.set(TokenType.DoubleColon, { expressionStart: true });
 
 // ----------------------------------------------------------------------------
 // E
-tokenTraits.set(TokenType.E, {});
+tokenTraits.set(TokenType.E, { reg: true, reg8: true });
 tokenTraits.set(TokenType.Ei, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Elif, { statement: true });
 tokenTraits.set(TokenType.Else, { statement: true });
@@ -182,8 +232,8 @@ tokenTraits.set(TokenType.GreaterThanOrEqual, {});
 
 // ----------------------------------------------------------------------------
 // H
-tokenTraits.set(TokenType.H, {});
-tokenTraits.set(TokenType.HL, {});
+tokenTraits.set(TokenType.H, { reg: true, reg8: true });
+tokenTraits.set(TokenType.HL, { reg: true, reg16: true });
 tokenTraits.set(TokenType.HReg, {});
 tokenTraits.set(TokenType.Halt, { instruction: true, simple: true });
 tokenTraits.set(TokenType.HexadecimalLiteral, {
@@ -193,9 +243,9 @@ tokenTraits.set(TokenType.HexadecimalLiteral, {
 
 // ----------------------------------------------------------------------------
 // H
-tokenTraits.set(TokenType.I, {});
-tokenTraits.set(TokenType.IX, {});
-tokenTraits.set(TokenType.IY, {});
+tokenTraits.set(TokenType.I, { reg: true, reg8Spec: true });
+tokenTraits.set(TokenType.IX, { reg: true, reg16Idx: true });
+tokenTraits.set(TokenType.IY, { reg: true, reg16Idx: true });
 tokenTraits.set(TokenType.Identifier, { expressionStart: true });
 tokenTraits.set(TokenType.If, { statement: true });
 tokenTraits.set(TokenType.IfDefDir, { directive: true });
@@ -272,7 +322,7 @@ tokenTraits.set(TokenType.Jr, { instruction: true });
 
 // ----------------------------------------------------------------------------
 // L
-tokenTraits.set(TokenType.L, {});
+tokenTraits.set(TokenType.L, { reg: true, reg8: true });
 tokenTraits.set(TokenType.LDBrac, { expressionStart: true });
 tokenTraits.set(TokenType.LineDir, { directive: true });
 tokenTraits.set(TokenType.LPar, { expressionStart: true });
@@ -300,12 +350,12 @@ tokenTraits.set(TokenType.Loop, { statement: true });
 
 // ----------------------------------------------------------------------------
 // M
-tokenTraits.set(TokenType.M, {});
+tokenTraits.set(TokenType.M, { condition: true });
 tokenTraits.set(TokenType.Macro, { statement: true });
 tokenTraits.set(TokenType.MaxOp, {});
 tokenTraits.set(TokenType.MinOp, {});
 tokenTraits.set(TokenType.Minus, { expressionStart: true });
-tokenTraits.set(TokenType.Mirror, {});
+tokenTraits.set(TokenType.Mirror, { instruction: true });
 tokenTraits.set(TokenType.ModelPragma, { pragma: true });
 tokenTraits.set(TokenType.Module, {});
 tokenTraits.set(TokenType.Modulo, {});
@@ -317,8 +367,8 @@ tokenTraits.set(TokenType.Multiplication, {
 
 // ----------------------------------------------------------------------------
 // N
-tokenTraits.set(TokenType.NC, {});
-tokenTraits.set(TokenType.NZ, {});
+tokenTraits.set(TokenType.NC, { condition: true, relCondition: true });
+tokenTraits.set(TokenType.NZ, { condition: true, relCondition: true });
 tokenTraits.set(TokenType.Neg, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Next, { statement: true });
 tokenTraits.set(TokenType.NextReg, { instruction: true });
@@ -343,9 +393,9 @@ tokenTraits.set(TokenType.Outi, { instruction: true, simple: true });
 
 // ----------------------------------------------------------------------------
 // P
-tokenTraits.set(TokenType.P, {});
-tokenTraits.set(TokenType.PE, {});
-tokenTraits.set(TokenType.PO, {});
+tokenTraits.set(TokenType.P, { condition: true });
+tokenTraits.set(TokenType.PE, { condition: true });
+tokenTraits.set(TokenType.PO, { condition: true });
 tokenTraits.set(TokenType.PixelAd, { instruction: true, simple: true });
 tokenTraits.set(TokenType.PixelDn, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Plus, { expressionStart: true });
@@ -359,7 +409,7 @@ tokenTraits.set(TokenType.QuestionMark, {});
 
 // ----------------------------------------------------------------------------
 // R
-tokenTraits.set(TokenType.R, {});
+tokenTraits.set(TokenType.R, { reg: true, reg8Spec: true });
 tokenTraits.set(TokenType.RDBrac, {});
 tokenTraits.set(TokenType.RPar, {});
 tokenTraits.set(TokenType.RSBrac, {});
@@ -388,7 +438,7 @@ tokenTraits.set(TokenType.Rst, { instruction: true });
 
 // ----------------------------------------------------------------------------
 // S
-tokenTraits.set(TokenType.SP, {});
+tokenTraits.set(TokenType.SP, { reg: true, reg16: true });
 tokenTraits.set(TokenType.Sbc, { instruction: true });
 tokenTraits.set(TokenType.Scf, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Set, { instruction: true });
@@ -436,18 +486,18 @@ tokenTraits.set(TokenType.While, { statement: true });
 
 // ----------------------------------------------------------------------------
 // X
-tokenTraits.set(TokenType.XH, {});
-tokenTraits.set(TokenType.XL, {});
+tokenTraits.set(TokenType.XH, { reg: true, reg8Idx: true });
+tokenTraits.set(TokenType.XL, { reg: true, reg8Idx: true });
 tokenTraits.set(TokenType.XentPragma, { pragma: true });
 tokenTraits.set(TokenType.Xor, {});
 tokenTraits.set(TokenType.XorgPragma, { pragma: true });
 
 // ----------------------------------------------------------------------------
 // Y
-tokenTraits.set(TokenType.YH, {});
-tokenTraits.set(TokenType.YL, {});
+tokenTraits.set(TokenType.YH, { reg: true, reg8Idx: true });
+tokenTraits.set(TokenType.YL, { reg: true, reg8Idx: true });
 
 // ----------------------------------------------------------------------------
 // Z
-tokenTraits.set(TokenType.Z, {});
+tokenTraits.set(TokenType.Z, { condition: true, relCondition: true });
 tokenTraits.set(TokenType.ZxBasicPragma, { pragma: true });

@@ -7,8 +7,23 @@ export type Node =
   | Instruction
   | Expression
   | Directive
-  | Pragma;
-export type Instruction = SimpleZ80Instruction;
+  | Pragma
+  | Operand;
+
+export type Instruction =
+  | SimpleZ80Instruction
+  | TestInstruction
+  | NextRegInstruction
+  | MirrorInstruction
+  | MulInstruction
+  | DjnzInstruction
+  | RstInstruction
+  | ImInstruction
+  | JrInstruction
+  | JpInstruction
+  | CallInstruction
+  | RetInstruction
+  | IncInstruction;
 export type Expression =
   | UnaryExpression
   | BinaryExpression
@@ -65,6 +80,9 @@ export type Pragma =
   | ZxBasicPragma
   | InjectOptPragma;
 
+// ============================================================================
+// Fundamental syntax node types
+
 /**
  * This class represents the root class of all syntax nodes
  */
@@ -75,6 +93,20 @@ export interface BaseNode {
   type: Node["type"];
 }
 
+/*
+ * Represents the root node of the entire Z80 program
+ */
+export interface Program extends BaseNode {
+  type: "Program";
+  /**
+   * Assembly lines of the program
+   */
+  assemblyLines: Z80AssemblyLine[];
+}
+
+// ============================================================================
+// Assembly line node types
+
 /**
  * Represents a Z80 assembly line that can be expanded with attributes
  */
@@ -84,6 +116,51 @@ export interface PartialZ80AssemblyLine extends BaseNode {
    */
   label?: string;
 }
+
+/**
+ * Represents a node that describes an assembly line
+ */
+export interface Z80AssemblyLine extends PartialZ80AssemblyLine {
+  /**
+   * Optional label
+   */
+  label?: string;
+
+  /**
+   * Start line number of the start token of the node
+   */
+  line: number;
+
+  /**
+   * Start position (inclusive) of the node
+   */
+  startPosition: number;
+
+  /**
+   * End position (exclusive)
+   */
+  endPosition: number;
+
+  /**
+   * Start column number (inclusive) of the node
+   */
+  startColumn: number;
+
+  /**
+   * End column number (exclusive) of the node
+   */
+  endColumn: number;
+}
+
+/**
+ * Represents an assembly line with a single label
+ */
+export interface LabelOnlyLine extends PartialZ80AssemblyLine {
+  type: "LabelOnlyLine";
+}
+
+// ============================================================================
+// Expression node types
 
 /**
  * Represents the common root node of expressions
@@ -252,77 +329,156 @@ export interface CurrentCounterLiteral extends ExpressionNode {
 }
 
 // ============================================================================
-// Factory methods
-
-/*
- * Represents the root node of the entire Z80 program
- */
-export interface Program extends BaseNode {
-  type: "Program";
-  /**
-   * Assembly lines of the program
-   */
-  assemblyLines: Z80AssemblyLine[];
-}
-
-/**
- * Represents a node that describes an assembly line
- */
-export interface Z80AssemblyLine extends PartialZ80AssemblyLine {
-  /**
-   * Optional label
-   */
-  label?: string;
-
-  /**
-   * Start line number of the start token of the node
-   */
-  line: number;
-
-  /**
-   * Start position (inclusive) of the node
-   */
-  startPosition: number;
-
-  /**
-   * End position (exclusive)
-   */
-  endPosition: number;
-
-  /**
-   * Start column number (inclusive) of the node
-   */
-  startColumn: number;
-
-  /**
-   * End column number (exclusive) of the node
-   */
-  endColumn: number;
-}
-
-/**
- * Represents an assembly line with a single label
- */
-export interface LabelOnlyLine extends PartialZ80AssemblyLine {
-  type: "LabelOnlyLine";
-}
+// Instrcution syntax node types
 
 /**
  * This class is the root case of all syntax nodes that describe an operation
  */
-export interface Z80Instruction extends PartialZ80AssemblyLine {
-  /**
-   * Mnemonic of the instruction (uppercase)
-   */
-  mnemonic: string;
-}
+export interface Z80Instruction extends PartialZ80AssemblyLine {}
 
 /**
  * Represents a trivial (argumentless) Z80 instruction
  */
 export interface SimpleZ80Instruction extends Z80Instruction {
   type: "SimpleZ80Instruction";
+  mnemonic: string;
 }
+
+/**
+ * Represents a TEST Z80 instruction
+ */
+export interface TestInstruction extends Z80Instruction {
+  type: "TestInstruction";
+  expr: ExpressionNode;
+}
+
+/**
+ * Represents a NEXTREG Z80 instruction
+ */
+export interface NextRegInstruction extends Z80Instruction {
+  type: "NextRegInstruction";
+  register: ExpressionNode;
+  value: ExpressionNode | null;
+}
+
+/**
+ * Represents a MIRROR Z80 instruction
+ */
+export interface MirrorInstruction extends Z80Instruction {
+  type: "MirrorInstruction";
+}
+
+/**
+ * Represents a MUL Z80 instruction
+ */
+export interface MulInstruction extends Z80Instruction {
+  type: "MulInstruction";
+}
+
+/**
+ * Represents a DJNZ Z80 instruction
+ */
+export interface DjnzInstruction extends Z80Instruction {
+  type: "DjnzInstruction";
+  target: ExpressionNode;
+}
+
+/**
+ * Represents an RST Z80 instruction
+ */
+export interface RstInstruction extends Z80Instruction {
+  type: "RstInstruction";
+  target: ExpressionNode;
+}
+
+/**
+ * Represents an IM Z80 instruction
+ */
+export interface ImInstruction extends Z80Instruction {
+  type: "ImInstruction";
+  mode: ExpressionNode;
+}
+
+/**
+ * Represents a JR Z80 instruction
+ */
+export interface JrInstruction extends Z80Instruction {
+  type: "JrInstruction";
+  condition?: string;
+  target: ExpressionNode;
+}
+
+/**
+ * Represents a JP Z80 instruction
+ */
+export interface JpInstruction extends Z80Instruction {
+  type: "JpInstruction";
+  condition?: string;
+  target: ExpressionNode;
+}
+
+/**
+ * Represents a CALL Z80 instruction
+ */
+export interface CallInstruction extends Z80Instruction {
+  type: "CallInstruction";
+  condition?: string;
+  target: ExpressionNode;
+}
+
+/**
+ * Represents a RET Z80 instruction
+ */
+export interface RetInstruction extends Z80Instruction {
+  type: "RetInstruction";
+  condition?: string;
+}
+
+/**
+ * Represents an INC Z80 instruction
+ */
+export interface IncInstruction extends Z80Instruction {
+  type: "IncInstruction";
+  operand: Operand;
+}
+
+// ============================================================================
+// Operand syntax node types
+
+/**
+ * Represents an operand that may have many forms
+ */
+export interface Operand extends BaseNode {
+  type: "Operand";
+  operandType: OperandType;
+  register?: string;
+  expr?: ExpressionNode;
+  offsetSign?: string;
+  regOperation?: string;
+  macroParam?: string;
+}
+
+/**
+ * Classification of operands
+ */
+export enum OperandType {
+  Reg8,
+  Reg8Spec,
+  Reg8Idx,
+  Reg16,
+  Reg16Spec,
+  Reg16Idx,
+  RegIndirect,
+  IndexedIndirect,
+  MemIndirect,
+  CPort,
+  Expression,
+  RegOperation,
+  NoneArg,
+}
+
+// ============================================================================
+// Directive syntax node types
 
 export interface IfDefDirective extends PartialZ80AssemblyLine {
   type: "IfDefDirective";
@@ -417,6 +573,9 @@ export interface LineDirective extends PartialZ80AssemblyLine {
    */
   comment?: string;
 }
+
+// ============================================================================
+// Pragma syntax node types
 
 export interface OrgPragma extends PartialZ80AssemblyLine {
   type: "OrgPragma";
