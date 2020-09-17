@@ -23,7 +23,34 @@ export type Instruction =
   | JpInstruction
   | CallInstruction
   | RetInstruction
-  | IncInstruction;
+  | IncInstruction
+  | DecInstruction
+  | PushInstruction
+  | PopInstruction
+  | LdInstruction
+  | ExInstruction
+  | AddInstruction
+  | AdcInstruction
+  | SbcInstruction
+  | BitInstruction
+  | SubInstruction
+  | AndInstruction
+  | XorInstruction
+  | OrInstruction
+  | CpInstruction
+  | InInstruction
+  | OutInstruction
+  | RlcInstruction
+  | RrcInstruction
+  | RlInstruction
+  | RrInstruction
+  | SlaInstruction
+  | SraInstruction
+  | SllInstruction
+  | SrlInstruction
+  | ResInstruction
+  | SetInstruction;
+
 export type Expression =
   | UnaryExpression
   | BinaryExpression
@@ -435,11 +462,224 @@ export interface RetInstruction extends Z80Instruction {
 }
 
 /**
+ * Represents a Z80 instruction with a single mandatory operand
+ */
+export interface Z80InstructionWithOneOperand extends Z80Instruction {
+  operand: Operand;
+}
+
+/**
  * Represents an INC Z80 instruction
  */
-export interface IncInstruction extends Z80Instruction {
+export interface IncInstruction extends Z80InstructionWithOneOperand {
   type: "IncInstruction";
-  operand: Operand;
+}
+
+/**
+ * Represents a DEC Z80 instruction
+ */
+export interface DecInstruction extends Z80InstructionWithOneOperand {
+  type: "DecInstruction";
+}
+
+/**
+ * Represents a PUSH Z80 instruction
+ */
+export interface PushInstruction extends Z80InstructionWithOneOperand {
+  type: "PushInstruction";
+}
+
+/**
+ * Represents a POP Z80 instruction
+ */
+export interface PopInstruction extends Z80InstructionWithOneOperand {
+  type: "PopInstruction";
+}
+
+/**
+ * Represents a Z80 instruction with two mandatory operands
+ */
+export interface Z80InstructionWithTwoOperands extends Z80Instruction {
+  operand1: Operand;
+  operand2: Operand;
+}
+
+/**
+ * Represents an LD Z80 instruction
+ */
+export interface LdInstruction extends Z80InstructionWithTwoOperands {
+  type: "LdInstruction";
+}
+
+/**
+ * Represents an EX Z80 instruction
+ */
+export interface ExInstruction extends Z80InstructionWithTwoOperands {
+  type: "ExInstruction";
+}
+
+/**
+ * Represents an ADD Z80 instruction
+ */
+export interface AddInstruction extends Z80InstructionWithTwoOperands {
+  type: "AddInstruction";
+}
+
+/**
+ * Represents an ADC Z80 instruction
+ */
+export interface AdcInstruction extends Z80InstructionWithTwoOperands {
+  type: "AdcInstruction";
+}
+
+/**
+ * Represents an SBC Z80 instruction
+ */
+export interface SbcInstruction extends Z80InstructionWithTwoOperands {
+  type: "SbcInstruction";
+}
+
+/**
+ * Represents an BIT Z80 instruction
+ */
+export interface BitInstruction extends Z80InstructionWithTwoOperands {
+  type: "BitInstruction";
+}
+
+/**
+ * Represents a Z80 instruction with one mandatory and an optional operand
+ */
+export interface Z80InstructionWithOneOrTwoOperands extends Z80Instruction {
+  operand1: Operand;
+  operand2?: Operand;
+}
+
+/**
+ * Represents an SUB Z80 instruction
+ */
+export interface SubInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "SubInstruction";
+}
+
+/**
+ * Represents an AND Z80 instruction
+ */
+export interface AndInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "AndInstruction";
+}
+
+/**
+ * Represents a XOR Z80 instruction
+ */
+export interface XorInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "XorInstruction";
+}
+
+/**
+ * Represents an OR Z80 instruction
+ */
+export interface OrInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "OrInstruction";
+}
+
+/**
+ * Represents a CP Z80 instruction
+ */
+export interface CpInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "CpInstruction";
+}
+
+/**
+ * Represents an IN Z80 instruction
+ */
+export interface InInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "InInstruction";
+}
+
+/**
+ * Represents an OUT Z80 instruction
+ */
+export interface OutInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "OutInstruction";
+}
+
+/**
+ * Represents an RLC Z80 instruction
+ */
+export interface RlcInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "RlcInstruction";
+}
+
+/**
+ * Represents an RRC Z80 instruction
+ */
+export interface RrcInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "RrcInstruction";
+}
+
+/**
+ * Represents an RL Z80 instruction
+ */
+export interface RlInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "RlInstruction";
+}
+
+/**
+ * Represents an RR Z80 instruction
+ */
+export interface RrInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "RrInstruction";
+}
+
+/**
+ * Represents an SLA Z80 instruction
+ */
+export interface SlaInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "SlaInstruction";
+}
+
+/**
+ * Represents an SRA Z80 instruction
+ */
+export interface SraInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "SraInstruction";
+}
+
+/**
+ * Represents an SLL Z80 instruction
+ */
+export interface SllInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "SllInstruction";
+}
+
+/**
+ * Represents an SRL Z80 instruction
+ */
+export interface SrlInstruction extends Z80InstructionWithOneOrTwoOperands {
+  type: "SrlInstruction";
+}
+
+/**
+ * Represents a Z80 instruction with two mandatory and an optional operand
+ */
+export interface Z80InstructionWithTwoOrThreeOperands extends Z80Instruction {
+  operand1: Operand;
+  operand2: Operand;
+  operand3?: Operand;
+}
+
+/**
+ * Represents an RES Z80 instruction
+ */
+export interface ResInstruction extends Z80InstructionWithTwoOrThreeOperands {
+  type: "ResInstruction";
+}
+
+/**
+ * Represents a SET Z80 instruction
+ */
+export interface SetInstruction extends Z80InstructionWithTwoOrThreeOperands {
+  type: "SetInstruction";
 }
 
 // ============================================================================

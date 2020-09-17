@@ -489,7 +489,7 @@ tokenTraits.set(TokenType.While, { statement: true });
 tokenTraits.set(TokenType.XH, { reg: true, reg8Idx: true });
 tokenTraits.set(TokenType.XL, { reg: true, reg8Idx: true });
 tokenTraits.set(TokenType.XentPragma, { pragma: true });
-tokenTraits.set(TokenType.Xor, {});
+tokenTraits.set(TokenType.Xor, { instruction: true });
 tokenTraits.set(TokenType.XorgPragma, { pragma: true });
 
 // ----------------------------------------------------------------------------

@@ -73,11 +73,41 @@ import {
   Operand,
   OperandType,
   IncInstruction,
+  DecInstruction,
+  PushInstruction,
+  PopInstruction,
+  Node,
+  Z80InstructionWithTwoOperands,
+  LdInstruction,
+  Z80InstructionWithOneOperand,
+  ExInstruction,
+  AddInstruction,
+  AdcInstruction,
+  SbcInstruction,
+  BitInstruction,
+  Z80InstructionWithOneOrTwoOperands,
+  SubInstruction,
+  AndInstruction,
+  XorInstruction,
+  CpInstruction,
+  InInstruction,
+  OutInstruction,
+  RlcInstruction,
+  RrcInstruction,
+  RlInstruction,
+  RrInstruction,
+  SlaInstruction,
+  SraInstruction,
+  SllInstruction,
+  SrlInstruction,
+  OrInstruction,
+  Z80InstructionWithTwoOrThreeOperands,
+  ResInstruction,
+  SetInstruction,
 } from "./tree-nodes";
 import { ErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
-import { report } from "process";
 
 /**
  * This class implements the Z80 assembly parser
@@ -611,40 +641,40 @@ export class Z80AsmParser {
     this.tokens.get();
     switch (start.type) {
       case TokenType.Ld:
-        break;
+        return twoOperands<LdInstruction>("LdInstruction");
 
       case TokenType.Inc:
-        return <IncInstruction>{
-          type: "IncInstruction",
-          operand: this.getOperand()
-        };
+        return <IncInstruction>oneOperand("IncInstruction");
 
       case TokenType.Dec:
-        break;
+        return <DecInstruction>oneOperand("DecInstruction");
 
       case TokenType.Ex:
-        break;
+        return twoOperands<ExInstruction>("ExInstruction");
 
       case TokenType.Add:
-        break;
+        return twoOperands<AddInstruction>("AddInstruction");
 
       case TokenType.Adc:
-        break;
+        return twoOperands<AdcInstruction>("AdcInstruction");
 
       case TokenType.Sub:
-        break;
+        return oneOrTwoOperands<SubInstruction>("SubInstruction");
 
       case TokenType.Sbc:
-        break;
+        return twoOperands<SbcInstruction>("SbcInstruction");
 
       case TokenType.And:
-        break;
+        return oneOrTwoOperands<AndInstruction>("AndInstruction");
 
       case TokenType.Xor:
-        break;
+        return oneOrTwoOperands<XorInstruction>("XorInstruction");
+
+      case TokenType.Or:
+        return oneOrTwoOperands<OrInstruction>("OrInstruction");
 
       case TokenType.Cp:
-        break;
+        return oneOrTwoOperands<CpInstruction>("CpInstruction");
 
       case TokenType.Djnz:
         const djnzTarget = this.getExpression();
@@ -719,16 +749,16 @@ export class Z80AsmParser {
         };
 
       case TokenType.Push:
-        break;
+        return <PushInstruction>oneOperand("PushInstruction");
 
       case TokenType.Pop:
-        break;
+        return <PopInstruction>oneOperand("PopInstruction");
 
       case TokenType.In:
-        break;
+        return oneOrTwoOperands<InInstruction>("InInstruction");
 
       case TokenType.Out:
-        break;
+        return oneOrTwoOperands<OutInstruction>("OutInstruction");
 
       case TokenType.Im:
         const mode = this.getExpression();
@@ -738,37 +768,37 @@ export class Z80AsmParser {
         };
 
       case TokenType.Rlc:
-        break;
+        return oneOrTwoOperands<RlcInstruction>("RlcInstruction");
 
       case TokenType.Rrc:
-        break;
+        return oneOrTwoOperands<RrcInstruction>("RrcInstruction");
 
       case TokenType.Rl:
-        break;
+        return oneOrTwoOperands<RlInstruction>("RlInstruction");
 
       case TokenType.Rr:
-        break;
+        return oneOrTwoOperands<RrInstruction>("RrInstruction");
 
       case TokenType.Sla:
-        break;
+        return oneOrTwoOperands<SlaInstruction>("SlaInstruction");
 
       case TokenType.Sra:
-        break;
+        return oneOrTwoOperands<SraInstruction>("SraInstruction");
 
       case TokenType.Sll:
-        break;
+        return oneOrTwoOperands<SllInstruction>("SllInstruction");
 
       case TokenType.Srl:
-        break;
+        return oneOrTwoOperands<SrlInstruction>("SrlInstruction");
 
       case TokenType.Bit:
-        break;
+        return twoOperands<BitInstruction>("BitInstruction");
 
       case TokenType.Res:
-        break;
+        return twoOrThreeOperands<ResInstruction>("ResInstruction");
 
       case TokenType.Set:
-        break;
+        return twoOrThreeOperands<SetInstruction>("SetInstruction");
 
       case TokenType.Mul:
         parser.expectToken(TokenType.D, "Z1011");
@@ -823,6 +853,61 @@ export class Z80AsmParser {
         return expectDeAndA("brlc");
     }
     return null;
+
+    function oneOperand<T extends Z80InstructionWithOneOperand>(
+      instrType: Node["type"]
+    ): T | null {
+      return <T>{
+        type: instrType,
+        operand: parser.getOperand(),
+      };
+    }
+
+    function twoOperands<T extends Z80InstructionWithTwoOperands>(
+      instrType: Node["type"]
+    ): T | null {
+      const operand1 = parser.getOperand();
+      parser.expectToken(TokenType.Comma, "Z1007");
+      const operand2 = parser.getOperand();
+      return <T>{
+        type: instrType,
+        operand1,
+        operand2,
+      };
+    }
+
+    function oneOrTwoOperands<T extends Z80InstructionWithOneOrTwoOperands>(
+      instrType: Node["type"]
+    ): T | null {
+      const operand1 = parser.getOperand();
+      let operand2: Operand | undefined = undefined;
+      if (parser.skipToken(TokenType.Comma)) {
+        operand2 = parser.getOperand();
+      }
+      return <T>{
+        type: instrType,
+        operand1,
+        operand2,
+      };
+    }
+
+    function twoOrThreeOperands<T extends Z80InstructionWithTwoOrThreeOperands>(
+      instrType: Node["type"]
+    ): T | null {
+      const operand1 = parser.getOperand();
+      parser.expectToken(TokenType.Comma, "Z1007");
+      const operand2 = parser.getOperand();
+      let operand3: Operand | undefined = undefined;
+      if (parser.skipToken(TokenType.Comma)) {
+        operand3 = parser.getOperand();
+      }
+      return <T>{
+        type: instrType,
+        operand1,
+        operand2,
+        operand3,
+      };
+    }
 
     function expectDeAndA(mnemonic: string): SimpleZ80Instruction {
       parser.expectToken(TokenType.DE, "Z1008");
