@@ -54,6 +54,10 @@ const commonConfig = {
           name: "[path][name].[ext]",
         },
       },
+      {
+        test: /\.worklet\.js$/,
+        use: { loader: 'worklet-loader' }
+      }
     ],
   },
 };
