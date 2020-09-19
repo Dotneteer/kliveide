@@ -183,7 +183,7 @@ export class AppWindow {
       // --- Release resources
       this._window = null;
     }); // --- Load the main file
-
+    
     // --- Allow the `electron-windows-state` package to follow and save the
     // --- app window's state
     savedWindowState.manage(this._window);
