@@ -85,6 +85,7 @@
     "typescript": "^3.8.3",
     "wat2wasm": "^1.0.2",
     "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.12"
+    "webpack-cli": "^3.3.12",
+    "worklet-loader": "^1.0.0"
   }
 }

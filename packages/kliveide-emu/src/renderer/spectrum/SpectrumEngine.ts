@@ -614,6 +614,7 @@ export class SpectrumEngine {
         this._beeperRenderer = new AudioRenderer(
           resultState.tactsInFrame / resultState.audioSampleLength
         );
+        await this._beeperRenderer.initializeAudio();
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = emuState.muted
@@ -626,6 +627,7 @@ export class SpectrumEngine {
         this._psgRenderer = new AudioRenderer(
           resultState.tactsInFrame / resultState.audioSampleLength
         );
+        await this._psgRenderer.initializeAudio();
       }
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
       const psgSamples = emuState.muted
