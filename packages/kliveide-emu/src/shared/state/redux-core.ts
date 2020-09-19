@@ -1,4 +1,4 @@
-import { webContents, ipcMain, remote, ipcRenderer } from "electron";
+import { webContents, ipcMain, ipcRenderer } from "electron";
 import { Payload } from "./Payload";
 import { ActionTypes } from "./ActionTypes";
 import { REDUX_ACTION_CHANNEL } from "../utils/channel-ids";
@@ -131,20 +131,6 @@ export function replayActionMain(store: any) {
   ipcMain.on(REDUX_ACTION_CHANNEL, (event, payload) => {
     store.dispatch(payload);
   });
-}
-
-/**
- * Gets the initial redux store state to set the initial contents of the store at the
- * renderer side.
- */
-export function getInitialStateRenderer() {
-  const getReduxState = remote.getGlobal(GET_REDUX_STATE_FUNC);
-  if (!getReduxState) {
-    throw new Error(
-      "Could not find reduxState global in main process, did you forget to call replayActionMain?"
-    );
-  }
-  return JSON.parse(getReduxState());
 }
 
 /**

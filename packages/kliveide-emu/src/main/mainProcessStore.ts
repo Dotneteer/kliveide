@@ -1,5 +1,5 @@
 import { combineReducers, createStore, applyMiddleware } from "redux";
-import { AppState } from "../shared/state/AppState";
+import { AppState, getDefaultAppState } from "../shared/state/AppState";
 import { appReducers } from "../shared/state/app-reducers";
 import {
   triggerAlias,
@@ -9,28 +9,7 @@ import {
 import { StateAwareObject } from "../shared/state/StateAwareObject";
 
 // --- Set up the store
-const defaultState: AppState = {
-  appHasFocus: true,
-  emulatorPanelState: {
-    engineInitialized: false,
-    keyboardPanel: false,
-    beamPosition: false,
-    shadowScreen: false,
-    fastLoad: false,
-    executionState: 0,
-    runsInDebug: false,
-    requestedType: "",
-    currentType: "",
-    selectedRom: 0,
-    selectedBank: 0
-  },
-  emulatorCommand: "",
-  breakpoints: [],
-  ideConfiguration: {
-    projectFolder: "",
-    saveFolder: ""
-  }
-};
+const defaultState = getDefaultAppState();
 
 const spectNetApp = combineReducers(appReducers);
 const store = createStore(
