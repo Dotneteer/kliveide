@@ -97,7 +97,7 @@ describe("ZX Spectrum 48", () => {
       EmulationMode.UntilUlaFrameEnds
     );
     const start = Date.now().valueOf();
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 100; i++) {
       machine.executeCycle(options);
     }
     console.log(Date.now().valueOf() - start);
