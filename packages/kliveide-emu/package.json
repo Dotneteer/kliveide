@@ -53,6 +53,7 @@
     ]
   },
   "dependencies": {
+    "@electron/remote": "^1.0.0",
     "@types/electron-localshortcut": "^3.1.0",
     "electron-localshortcut": "^3.2.1",
     "electron-window-state": "^5.0.3",
@@ -69,8 +70,8 @@
     "copy-webpack-plugin": "^6.0.2",
     "cross-env": "^7.0.2",
     "css-loader": "^3.6.0",
-    "electron": "^9.0.4",
-    "electron-builder": "^22.7.0",
+    "electron": "^10.1.2",
+    "electron-builder": "^22.8.1",
     "expect": "^25.1.0",
     "html-webpack-plugin": "^4.3.0",
     "lodash": "^4.17.19",

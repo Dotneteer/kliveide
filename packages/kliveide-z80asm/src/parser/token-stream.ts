@@ -2001,8 +2001,6 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".loop": TokenType.Loop,
   ".LOOP": TokenType.Loop,
-  loop: TokenType.Loop,
-  LOOP: TokenType.Loop,
 
   ".endl": TokenType.Endl,
   ".ENDL": TokenType.Endl,
@@ -2015,18 +2013,12 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".repeat": TokenType.Repeat,
   ".REPEAT": TokenType.Repeat,
-  repeat: TokenType.Repeat,
-  REPEAT: TokenType.Repeat,
 
   ".until": TokenType.Until,
   ".UNTIL": TokenType.Until,
-  until: TokenType.Until,
-  UNTIL: TokenType.Until,
 
   ".while": TokenType.While,
   ".WHILE": TokenType.While,
-  while: TokenType.While,
-  WHILE: TokenType.While,
 
   ".endw": TokenType.Endw,
   ".ENDW": TokenType.Endw,
@@ -2054,9 +2046,7 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".elif": TokenType.Elif,
   ".ELIF": TokenType.Elif,
-  elif: TokenType.Elif,
-  ELIF: TokenType.Elif,
-
+  
   ".else": TokenType.Else,
   ".ELSE": TokenType.Else,
   else: TokenType.Else,

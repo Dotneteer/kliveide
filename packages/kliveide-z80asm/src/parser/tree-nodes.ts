@@ -8,7 +8,8 @@ export type Node =
   | Expression
   | Directive
   | Pragma
-  | Operand;
+  | Operand
+  | Statement;
 
 export type Instruction =
   | SimpleZ80Instruction
@@ -63,6 +64,7 @@ export type Expression =
   | BooleanLiteral
   | CurrentAddressLiteral
   | CurrentCounterLiteral;
+
 export type Directive =
   | IfDefDirective
   | IfNDefDirective
@@ -75,6 +77,7 @@ export type Directive =
   | IfDirective
   | IncludeDirective
   | LineDirective;
+
 export type Pragma =
   | OrgPragma
   | BankPragma
@@ -106,6 +109,16 @@ export type Pragma =
   | CompareBinPragma
   | ZxBasicPragma
   | InjectOptPragma;
+
+export type Statement =
+  | MacroStatement
+  | MacroEndStatement
+  | LoopStatement
+  | LoopEndStatement
+  | WhileStatement
+  | WhileEndStatement
+  | RepeatStatement
+  | UntilStatement
 
 // ============================================================================
 // Fundamental syntax node types
@@ -1125,4 +1138,68 @@ export interface InjectOptPragma extends PartialZ80AssemblyLine {
    * Option identifier
    */
   identifier: string;
+}
+
+// ============================================================================
+// Statement syntax nodes
+
+/**
+ * Represents a macro definition
+ */
+export interface MacroStatement extends PartialZ80AssemblyLine {
+  type: "MacroStatement";
+
+  parameters: string[];
+}
+
+/**
+ * Represents a macro end statement
+ */
+export interface MacroEndStatement extends PartialZ80AssemblyLine {
+  type: "MacroEndStatement";
+}
+
+/**
+ * Represents a .loop statement
+ */
+export interface LoopStatement extends PartialZ80AssemblyLine {
+  type: "LoopStatement";
+  expr: ExpressionNode;
+}
+
+/**
+ * Represents a loop end statement
+ */
+export interface LoopEndStatement extends PartialZ80AssemblyLine {
+  type: "LoopEndStatement";
+}
+
+/**
+ * Represents a .while statement
+ */
+export interface WhileStatement extends PartialZ80AssemblyLine {
+  type: "WhileStatement";
+  expr: ExpressionNode;
+}
+
+/**
+ * Represents a while end statement
+ */
+export interface WhileEndStatement extends PartialZ80AssemblyLine {
+  type: "WhileEndStatement";
+}
+
+/**
+ * Represents a .repeat statement
+ */
+export interface RepeatStatement extends PartialZ80AssemblyLine {
+  type: "RepeatStatement";
+}
+
+/**
+ * Represents an until statement
+ */
+export interface UntilStatement extends PartialZ80AssemblyLine {
+  type: "UntilStatement";
+  expr: ExpressionNode;
 }

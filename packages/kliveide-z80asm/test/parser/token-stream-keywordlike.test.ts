@@ -885,8 +885,6 @@ describe("Parser - token: operator-like", () => {
   it("get: loop statement", () => {
     testToken(".loop", TokenType.Loop);
     testToken(".LOOP", TokenType.Loop);
-    testToken("loop", TokenType.Loop);
-    testToken("LOOP", TokenType.Loop);
   });
 
   it("get: end loop statement", () => {
@@ -903,22 +901,16 @@ describe("Parser - token: operator-like", () => {
   it("get: repeat statement", () => {
     testToken(".repeat", TokenType.Repeat);
     testToken(".REPEAT", TokenType.Repeat);
-    testToken("repeat", TokenType.Repeat);
-    testToken("REPEAT", TokenType.Repeat);
   });
 
   it("get: until statement", () => {
     testToken(".until", TokenType.Until);
     testToken(".UNTIL", TokenType.Until);
-    testToken("until", TokenType.Until);
-    testToken("UNTIL", TokenType.Until);
   });
 
   it("get: while statement", () => {
     testToken(".while", TokenType.While);
     testToken(".WHILE", TokenType.While);
-    testToken("while", TokenType.While);
-    testToken("WHILE", TokenType.While);
   });
 
   it("get: end while statement", () => {
@@ -956,8 +948,6 @@ describe("Parser - token: operator-like", () => {
   it("get: else if statement", () => {
     testToken(".elif", TokenType.Elif);
     testToken(".ELIF", TokenType.Elif);
-    testToken("elif", TokenType.Elif);
-    testToken("ELIF", TokenType.Elif);
   });
 
   it("get: else statement", () => {

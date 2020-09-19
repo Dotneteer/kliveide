@@ -76,7 +76,7 @@ export interface EmulatorPanelState {
  * Represents the data about the running virtual machine
  */
 export interface VmInfo {
-  registers?: RegisterData
+  registers?: RegisterData;
 }
 
 /**
@@ -109,7 +109,6 @@ export interface IdeConnection {
   lastHeartBeat: number;
 }
 
-
 /**
  * Represents a memory command to execute
  */
@@ -139,3 +138,31 @@ export interface MemoryCommand {
  * Available memory command types
  */
 export type MemoryCommandType = "" | "rom" | "bank";
+
+/**
+ * Gets the default application state
+ */
+export function getDefaultAppState(): AppState {
+  return {
+    appHasFocus: true,
+    emulatorPanelState: {
+      engineInitialized: false,
+      keyboardPanel: false,
+      beamPosition: false,
+      shadowScreen: false,
+      fastLoad: false,
+      executionState: 0,
+      runsInDebug: false,
+      requestedType: "",
+      currentType: "",
+      selectedRom: 0,
+      selectedBank: 0,
+    },
+    emulatorCommand: "",
+    breakpoints: [],
+    ideConfiguration: {
+      projectFolder: "",
+      saveFolder: "",
+    },
+  };
+};

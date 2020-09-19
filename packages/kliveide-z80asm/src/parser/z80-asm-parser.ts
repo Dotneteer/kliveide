@@ -104,6 +104,12 @@ import {
   Z80InstructionWithTwoOrThreeOperands,
   ResInstruction,
   SetInstruction,
+  MacroStatement,
+  MacroEndStatement,
+  LoopStatement,
+  LoopEndStatement,
+  WhileStatement,
+  WhileEndStatement,
 } from "./tree-nodes";
 import { ErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
@@ -200,8 +206,11 @@ export class Z80AsmParser {
     const parsePoint = this.getParsePoint();
     const { start } = parsePoint;
     let asmLine: PartialZ80AssemblyLine | null = null;
-    if (this.startsLabel(start) || this.startsLineBody(start)) {
-      const label = this.parseLabel(parsePoint);
+    let label: string | null = null;
+    if (this.startsLabel(start)) {
+      label = this.parseLabel(parsePoint);
+    }
+    if (this.startsLineBody(start)) {
       asmLine = this.parseLineBody(this.getParsePoint());
       if (asmLine) {
         asmLine.label = label;
@@ -269,17 +278,31 @@ export class Z80AsmParser {
     const { start, traits } = parsePoint;
     if (start.type === TokenType.NewLine || start.type === TokenType.Eof) {
       return null;
-    } else if (traits.pragma) {
+    }
+    if (traits.pragma) {
       return this.parsePragma(parsePoint);
-    } else if (traits.instruction) {
+    }
+    if (traits.instruction) {
       return this.parseInstruction(parsePoint);
-    } else if (start.type === TokenType.LDBrac) {
+    }
+    if (start.type === TokenType.LDBrac) {
       return this.parseMacroParam(parsePoint);
-    } else if (traits.statement) {
+    }
+    if (traits.statement) {
       return this.parseStatement(parsePoint);
-    } else if (start.type === TokenType.Identifier) {
+    }
+    if (start.type === TokenType.Identifier) {
+      if (start.text === "loop" || start.text === "LOOP") {
+        this.tokens.get();
+        return this.parseLoopStatement();
+      }
+      if (start.text === "while" || start.text === "WHILE") {
+        this.tokens.get();
+        return this.parseWhileStatement();
+      }
       return this.parseMacroOrStructInvocation(parsePoint);
-    } else if (start.type === TokenType.GoesTo) {
+    }
+    if (start.type === TokenType.GoesTo) {
       return this.parseFieldAssignment(parsePoint);
     }
     this.reportError("Z1002", start, [start.text]);
@@ -1220,8 +1243,72 @@ export class Z80AsmParser {
   private parseStatement(
     parsePoint: ParsePoint
   ): PartialZ80AssemblyLine | null {
-    // TODO: Implement this method
+    const { start } = parsePoint;
+    this.tokens.get();
+    if (start.type === TokenType.Macro) {
+      return this.parseMacroStatement();
+    }
+    if (start.type === TokenType.Endm) {
+      return <MacroEndStatement>{
+        type: "MacroEndStatement",
+      };
+    }
+
+    if (start.type === TokenType.Loop) {
+      return this.parseLoopStatement();
+    }
+    if (start.type === TokenType.Endl) {
+      return <LoopEndStatement>{
+        type: "LoopEndStatement",
+      };
+    }
+
+    if (start.type === TokenType.While) {
+      return this.parseWhileStatement();
+    }
+    if (start.type === TokenType.Endw) {
+      return <WhileEndStatement>{
+        type: "WhileEndStatement",
+      };
+    }
+
     return null;
+  }
+
+  /**
+   * macroStatement
+   *   : "macro" "(" Identifier? ( "," Identifier)* ")"
+   */
+  private parseMacroStatement(): PartialZ80AssemblyLine | null {
+    this.expectToken(TokenType.LPar, "Z1013");
+    const parameters = this.getIdentifierList();
+    this.expectToken(TokenType.RPar, "Z1014");
+    return <MacroStatement>{
+      type: "MacroStatement",
+      parameters,
+    };
+  }
+
+  /**
+   * loopStatement
+   *   : ".loop" expression
+   */
+  private parseLoopStatement(): PartialZ80AssemblyLine | null {
+    return <LoopStatement>{
+      type: "LoopStatement",
+      expr: this.getExpression(),
+    };
+  }
+
+  /**
+   * whileStatement
+   *   : ".while" expression
+   */
+  private parseWhileStatement(): PartialZ80AssemblyLine | null {
+    return <WhileStatement>{
+      type: "WhileStatement",
+      expr: this.getExpression(),
+    };
   }
 
   /**
@@ -2104,7 +2191,21 @@ export class Z80AsmParser {
    * @param token Token to test
    */
   private startsLabel(token: Token): boolean {
-    return token.type === TokenType.Identifier;
+    if (token.type !== TokenType.Identifier) {
+      return false;
+    }
+    return (
+      token.text !== "loop" &&
+      token.text !== "LOOP" &&
+      token.text !== "repeat" &&
+      token.text !== "REPEAT" &&
+      token.text !== "until" &&
+      token.text !== "UNTIL" &&
+      token.text !== "while" &&
+      token.text !== "WHILE" &&
+      token.text !== "elif" &&
+      token.text !== "ELIF"
+    );
   }
 
   /**
@@ -2118,7 +2219,8 @@ export class Z80AsmParser {
       traits.pragma ||
       traits.statement ||
       token.type === TokenType.GoesTo ||
-      token.type === TokenType.LDBrac
+      token.type === TokenType.LDBrac ||
+      token.type === TokenType.Identifier
     ) {
       return true;
     }
@@ -2197,6 +2299,27 @@ export class Z80AsmParser {
     }
     this.reportError("Z1016");
     return null;
+  }
+
+  /**
+   * Gets a list of expressions
+   * @param atLeastOne Is the first expression mandatory?
+   */
+  private getIdentifierList(): string[] {
+    const expressions: string[] = [];
+    if (this.tokens.peek().type === TokenType.Identifier) {
+      const first = this.getIdentifier();
+      if (first) {
+        expressions.push(first);
+      }
+      while (this.skipToken(TokenType.Comma)) {
+        const next = this.getIdentifier();
+        if (next) {
+          expressions.push(next);
+        }
+      }
+    }
+    return expressions;
   }
 }
 
