@@ -253,8 +253,8 @@ tokenTraits.set(TokenType.IfDir, { directive: true });
 tokenTraits.set(TokenType.IfModDir, { directive: true });
 tokenTraits.set(TokenType.IfNDefDir, { directive: true });
 tokenTraits.set(TokenType.IfNModDir, { directive: true });
-tokenTraits.set(TokenType.IfNUsed, { directive: true });
-tokenTraits.set(TokenType.IfUsed, { directive: true });
+tokenTraits.set(TokenType.IfNUsed, { statement: true });
+tokenTraits.set(TokenType.IfUsed, { statement: true });
 tokenTraits.set(TokenType.Im, { instruction: true });
 tokenTraits.set(TokenType.In, { instruction: true });
 tokenTraits.set(TokenType.Inc, { instruction: true });
@@ -314,6 +314,86 @@ tokenTraits.set(TokenType.IsRegIndirect, {
   expressionStart: true,
   builtInFunction: true,
 });
+tokenTraits.set(TokenType.IsRegA, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegAf, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegB, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegC, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegBc, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegD, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegE, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegDe, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegH, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegL, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegHl, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegI, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegR, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegXh, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegXl, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegIx, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegYh, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegYl, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegIy, {
+  expressionStart: true,
+  builtInFunction: true,
+});
+tokenTraits.set(TokenType.IsRegSp, {
+  expressionStart: true,
+  builtInFunction: true,
+});
 
 // ----------------------------------------------------------------------------
 // J
@@ -346,6 +426,7 @@ tokenTraits.set(TokenType.Ldws, { instruction: true, simple: true });
 tokenTraits.set(TokenType.LeftShift, {});
 tokenTraits.set(TokenType.LessThan, {});
 tokenTraits.set(TokenType.LessThanOrEqual, {});
+tokenTraits.set(TokenType.Local, { statement: true });
 tokenTraits.set(TokenType.Loop, { statement: true });
 
 // ----------------------------------------------------------------------------
@@ -357,7 +438,7 @@ tokenTraits.set(TokenType.MinOp, {});
 tokenTraits.set(TokenType.Minus, { expressionStart: true });
 tokenTraits.set(TokenType.Mirror, { instruction: true });
 tokenTraits.set(TokenType.ModelPragma, { pragma: true });
-tokenTraits.set(TokenType.Module, {});
+tokenTraits.set(TokenType.Module, { statement: true });
 tokenTraits.set(TokenType.Modulo, {});
 tokenTraits.set(TokenType.Mul, { instruction: true });
 tokenTraits.set(TokenType.Multiplication, {

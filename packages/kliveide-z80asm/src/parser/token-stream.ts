@@ -596,6 +596,9 @@ export class TokenStream {
 
         // --- This previous case intentionally flows to this label
         case LexerPhase.NumericLiteral1_9:
+          if (ch === " " || ch === "\t") {
+            return makeToken();
+          }
           // --- Octal, decimal, or suffixed hexadecimal
           if (isHexaSuffix(ch)) {
             return completeToken(TokenType.HexadecimalLiteral);
@@ -1207,6 +1210,7 @@ export enum TokenType {
   EndModule,
   Struct,
   Ends,
+  Local,
 
   TextOf,
   LTextOf,
@@ -1225,6 +1229,26 @@ export enum TokenType {
   IsIndexedAddr,
   IsCondition,
   IsExpr,
+  IsRegA,
+  IsRegAf,
+  IsRegB,
+  IsRegC,
+  IsRegBc,
+  IsRegD,
+  IsRegE,
+  IsRegDe,
+  IsRegH,
+  IsRegL,
+  IsRegHl,
+  IsRegI,
+  IsRegR,
+  IsRegXh,
+  IsRegXl,
+  IsRegIx,
+  IsRegYh,
+  IsRegYl,
+  IsRegIy,
+  IsRegSp,
 
   True,
   False,
@@ -1987,29 +2011,19 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".proc": TokenType.Proc,
   ".PROC": TokenType.Proc,
-  proc: TokenType.Proc,
-  PROC: TokenType.Proc,
 
   ".endp": TokenType.Endp,
   ".ENDP": TokenType.Endp,
-  endp: TokenType.Endp,
-  ENDP: TokenType.Endp,
   ".pend": TokenType.Endp,
   ".PEND": TokenType.Endp,
-  pend: TokenType.Endp,
-  PEND: TokenType.Endp,
 
   ".loop": TokenType.Loop,
   ".LOOP": TokenType.Loop,
 
   ".endl": TokenType.Endl,
   ".ENDL": TokenType.Endl,
-  endl: TokenType.Endl,
-  ENDL: TokenType.Endl,
   ".lend": TokenType.Endl,
   ".LEND": TokenType.Endl,
-  lend: TokenType.Endl,
-  LEND: TokenType.Endl,
 
   ".repeat": TokenType.Repeat,
   ".REPEAT": TokenType.Repeat,
@@ -2022,12 +2036,8 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".endw": TokenType.Endw,
   ".ENDW": TokenType.Endw,
-  endw: TokenType.Endw,
-  ENDW: TokenType.Endw,
   ".wend": TokenType.Endw,
   ".WEND": TokenType.Endw,
-  wend: TokenType.Endw,
-  WEND: TokenType.Endw,
 
   ".if": TokenType.If,
   ".IF": TokenType.If,
@@ -2049,8 +2059,6 @@ const resolverHash: { [key: string]: TokenType } = {
   
   ".else": TokenType.Else,
   ".ELSE": TokenType.Else,
-  else: TokenType.Else,
-  ELSE: TokenType.Else,
 
   ".endif": TokenType.Endif,
   ".ENDIF": TokenType.Endif,
@@ -2074,18 +2082,12 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".next": TokenType.Next,
   ".NEXT": TokenType.Next,
-  next: TokenType.Next,
-  NEXT: TokenType.Next,
 
   ".break": TokenType.Break,
   ".BREAK": TokenType.Break,
-  break: TokenType.Break,
-  BREAK: TokenType.Break,
 
   ".continue": TokenType.Continue,
   ".CONTINUE": TokenType.Continue,
-  continue: TokenType.Continue,
-  CONTINUE: TokenType.Continue,
 
   ".module": TokenType.Module,
   ".MODULE": TokenType.Module,
@@ -2120,8 +2122,13 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".ends": TokenType.Ends,
   ".ENDS": TokenType.Ends,
-  ends: TokenType.Ends,
-  ENDS: TokenType.Ends,
+
+  ".local": TokenType.Local,
+  ".LOCAL": TokenType.Local,
+  "local": TokenType.Local,
+  "LOCAL": TokenType.Local,
+  "Local": TokenType.Local,
+
 
   textof: TokenType.TextOf,
   TEXTOF: TokenType.TextOf,
@@ -2173,6 +2180,47 @@ const resolverHash: { [key: string]: TokenType } = {
 
   isexpr: TokenType.IsExpr,
   ISEXPR: TokenType.IsExpr,
+
+  isrega: TokenType.IsRegA,
+  ISREGA: TokenType.IsRegA,
+  isregaf: TokenType.IsRegAf,
+  ISREGAF: TokenType.IsRegAf,
+  isregb: TokenType.IsRegB,
+  ISREGB: TokenType.IsRegB,
+  isregc: TokenType.IsRegC,
+  ISREGC: TokenType.IsRegC,
+  isregbc: TokenType.IsRegBc,
+  ISREGBC: TokenType.IsRegBc,
+  isregd: TokenType.IsRegD,
+  ISREGD: TokenType.IsRegD,
+  isrege: TokenType.IsRegE,
+  ISREGE: TokenType.IsRegE,
+  isregde: TokenType.IsRegDe,
+  ISREGDE: TokenType.IsRegDe,
+  isregh: TokenType.IsRegH,
+  ISREGH: TokenType.IsRegH,
+  isregl: TokenType.IsRegL,
+  ISREGL: TokenType.IsRegL,
+  isreghl: TokenType.IsRegHl,
+  ISREGHL: TokenType.IsRegHl,
+  isregi: TokenType.IsRegI,
+  ISREGI: TokenType.IsRegI,
+  isregr: TokenType.IsRegR,
+  ISREGR: TokenType.IsRegR,
+  isregxh: TokenType.IsRegXh,
+  ISREGXH: TokenType.IsRegXh,
+  isregxl: TokenType.IsRegXl,
+  ISREGXL: TokenType.IsRegXl,
+  isregix: TokenType.IsRegIx,
+  ISREGIX: TokenType.IsRegIx,
+  isregyh: TokenType.IsRegYh,
+  ISREGYH: TokenType.IsRegYh,
+  isregyl: TokenType.IsRegYl,
+  ISREGYL: TokenType.IsRegYl,
+  isregiy: TokenType.IsRegIy,
+  ISREGIY: TokenType.IsRegIy,
+  isregsp: TokenType.IsRegSp,
+  ISREGSP: TokenType.IsRegSp,
 
   ".true": TokenType.True,
   ".TRUE": TokenType.True,

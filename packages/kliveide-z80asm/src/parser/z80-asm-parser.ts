@@ -110,6 +110,30 @@ import {
   LoopEndStatement,
   WhileStatement,
   WhileEndStatement,
+  RepeatStatement,
+  UntilStatement,
+  ProcEndStatement,
+  ProcStatement,
+  IfStatement,
+  IfUsedStatement,
+  IfNUsedStatement,
+  ElseStatement,
+  EndIfStatement,
+  ElseIfStatement,
+  BreakStatement,
+  ContinueStatement,
+  ModuleStatement,
+  ModuleEndStatement,
+  StructStatement,
+  StructEndStatement,
+  LocalStatement,
+  ForStatement,
+  NextStatement,
+  FieldAssignment,
+  MacroOrStructInvocation,
+  MacroParameter,
+  BuiltInFunctionInvocation,
+  FunctionInvocation,
 } from "./tree-nodes";
 import { ErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
@@ -286,24 +310,93 @@ export class Z80AsmParser {
       return this.parseInstruction(parsePoint);
     }
     if (start.type === TokenType.LDBrac) {
-      return this.parseMacroParam(parsePoint);
+      return this.parseMacroParam();
     }
     if (traits.statement) {
       return this.parseStatement(parsePoint);
     }
     if (start.type === TokenType.Identifier) {
-      if (start.text === "loop" || start.text === "LOOP") {
+      const text = start.text.toLowerCase();
+      if (text === "loop") {
         this.tokens.get();
         return this.parseLoopStatement();
       }
-      if (start.text === "while" || start.text === "WHILE") {
+      if (text === "endl" || text === "lend") {
+        this.tokens.get();
+        return <LoopEndStatement>{
+          type: "LoopEndStatement",
+        };
+      }
+      if (text === "while") {
         this.tokens.get();
         return this.parseWhileStatement();
       }
-      return this.parseMacroOrStructInvocation(parsePoint);
+      if (text === "endw" || text === "wend") {
+        this.tokens.get();
+        return <WhileEndStatement>{
+          type: "WhileEndStatement",
+        };
+      }
+      if (text === "repeat") {
+        this.tokens.get();
+        return <RepeatStatement>{
+          type: "RepeatStatement",
+        };
+      }
+      if (text === "until") {
+        this.tokens.get();
+        return this.parseUntilStatement();
+      }
+      if (text === "proc") {
+        this.tokens.get();
+        return <ProcStatement>{
+          type: "ProcStatement",
+        };
+      }
+      if (text === "endp" || text === "pend") {
+        this.tokens.get();
+        return <ProcEndStatement>{
+          type: "ProcEndStatement",
+        };
+      }
+      if (text === "else") {
+        this.tokens.get();
+        return <ElseStatement>{
+          type: "ElseStatement",
+        };
+      }
+      if (text === "elif") {
+        this.tokens.get();
+        return this.parseElseIfStatement();
+      }
+      if (text === "break") {
+        this.tokens.get();
+        return <BreakStatement>{
+          type: "BreakStatement",
+        };
+      }
+      if (text === "continue") {
+        this.tokens.get();
+        return <ContinueStatement>{
+          type: "ContinueStatement",
+        };
+      }
+      if (text === "ends") {
+        this.tokens.get();
+        return <StructEndStatement>{
+          type: "StructEndStatement",
+        };
+      }
+      if (text === "next") {
+        this.tokens.get();
+        return <NextStatement>{
+          type: "NextStatement",
+        };
+      }
+      return this.parseMacroOrStructInvocation();
     }
     if (start.type === TokenType.GoesTo) {
-      return this.parseFieldAssignment(parsePoint);
+      return this.parseFieldAssignment();
     }
     this.reportError("Z1002", start, [start.text]);
     return null;
@@ -1272,6 +1365,91 @@ export class Z80AsmParser {
       };
     }
 
+    if (start.type === TokenType.Repeat) {
+      return <RepeatStatement>{
+        type: "RepeatStatement",
+      };
+    }
+    if (start.type === TokenType.Until) {
+      return this.parseUntilStatement();
+    }
+
+    if (start.type === TokenType.Proc) {
+      return <ProcStatement>{
+        type: "ProcStatement",
+      };
+    }
+    if (start.type === TokenType.Endp) {
+      return <ProcEndStatement>{
+        type: "ProcEndStatement",
+      };
+    }
+
+    if (start.type === TokenType.If) {
+      return this.parseIfStatement();
+    }
+    if (start.type === TokenType.IfUsed) {
+      return this.parseIfUsedStatement();
+    }
+    if (start.type === TokenType.IfNUsed) {
+      return this.parseIfNUsedStatement();
+    }
+    if (start.type === TokenType.Else) {
+      return <ElseStatement>{
+        type: "ElseStatement",
+      };
+    }
+    if (start.type === TokenType.Endif) {
+      return <EndIfStatement>{
+        type: "EndIfStatement",
+      };
+    }
+    if (start.type === TokenType.Elif) {
+      return this.parseElseIfStatement();
+    }
+
+    if (start.type === TokenType.Break) {
+      return <BreakStatement>{
+        type: "BreakStatement",
+      };
+    }
+    if (start.type === TokenType.Continue) {
+      return <ContinueStatement>{
+        type: "ContinueStatement",
+      };
+    }
+
+    if (start.type === TokenType.Module) {
+      return this.parseModuleStatement();
+    }
+    if (start.type === TokenType.EndModule) {
+      return <ModuleEndStatement>{
+        type: "ModuleEndStatement",
+      };
+    }
+
+    if (start.type === TokenType.Struct) {
+      return <StructStatement>{
+        type: "StructStatement",
+      };
+    }
+    if (start.type === TokenType.Ends) {
+      return <StructEndStatement>{
+        type: "StructEndStatement",
+      };
+    }
+    if (start.type === TokenType.Local) {
+      return this.parseLocalStatement();
+    }
+
+    if (start.type === TokenType.For) {
+      return this.parseForStatement();
+    }
+    if (start.type === TokenType.Next) {
+      return <NextStatement>{
+        type: "NextStatement",
+      };
+    }
     return null;
   }
 
@@ -1312,15 +1490,140 @@ export class Z80AsmParser {
   }
 
   /**
+   * untilStatement
+   *   : ".until" expression
+   */
+  private parseUntilStatement(): PartialZ80AssemblyLine | null {
+    return <UntilStatement>{
+      type: "UntilStatement",
+      expr: this.getExpression(),
+    };
+  }
+
+  /**
+   * ifStatement
+   *   : ".if" expression
+   */
+  private parseIfStatement(): PartialZ80AssemblyLine | null {
+    return <IfStatement>{
+      type: "IfStatement",
+      expr: this.getExpression(),
+    };
+  }
+
+  /**
+   * ifUsedStatement
+   *   : ".ifused" expression
+   */
+  private parseIfUsedStatement(): PartialZ80AssemblyLine | null {
+    const parsePoint = this.getParsePoint();
+    const symbol = this.parseSymbol(parsePoint);
+    return <IfUsedStatement>{
+      type: "IfUsedStatement",
+      symbol,
+    };
+  }
+
+  /**
+   * ifNUsedStatement
+   *   : ".ifnused" expression
+   */
+  private parseIfNUsedStatement(): PartialZ80AssemblyLine | null {
+    const parsePoint = this.getParsePoint();
+    const symbol = this.parseSymbol(parsePoint);
+    return <IfNUsedStatement>{
+      type: "IfNUsedStatement",
+      symbol,
+    };
+  }
+
+  /**
+   * elseIfStatement
+   *   : ".elseif" expression
+   */
+  private parseElseIfStatement(): PartialZ80AssemblyLine | null {
+    return <ElseIfStatement>{
+      type: "ElseIfStatement",
+      expr: this.getExpression(),
+    };
+  }
+
+  /**
+   * moduleStatement
+   *   : ".loop" expression
+   */
+  private parseModuleStatement(): PartialZ80AssemblyLine | null {
+    let identifier: string | undefined = undefined;
+    const idToken = this.tokens.get();
+    if (idToken.type === TokenType.Identifier) {
+      identifier = idToken.text;
+    }
+    return <ModuleStatement>{
+      type: "ModuleStatement",
+      identifier,
+    };
+  }
+
+  /**
+   * localStatement
+   *   : ".local" Identifier ("," Identifier)*
+   */
+  private parseLocalStatement(): PartialZ80AssemblyLine | null {
+    const identifiers = this.getIdentifierList();
+    if (identifiers.length === 0) {
+      this.reportError("Z1004");
+    }
+    return <LocalStatement>{
+      type: "LocalStatement",
+      identifiers,
+    };
+  }
+
+  /**
+   * forStatement
+   *   : ".for" identifier "=" expression ".to" expression ( ".step" expression )?
+   */
+  private parseForStatement(): PartialZ80AssemblyLine | null {
+    const identifier = this.getIdentifier();
+    this.expectToken(TokenType.Assign, "Z1019");
+    const startExpr = this.getExpression();
+    this.expectToken(TokenType.To, "Z1020");
+    const toExpr = this.getExpression();
+    let stepExpr: ExpressionNode | undefined = undefined;
+    if (this.tokens.peek().type === TokenType.Step) {
+      this.tokens.get();
+      stepExpr = this.getExpression();
+    }
+    return <ForStatement>{
+      type: "ForStatement",
+      identifier,
+      startExpr,
+      toExpr,
+      stepExpr,
+    };
+  }
+
+  /**
    * macroOrStructInvocation
    *   : Identifier "(" macroArgument ("," macroArgument)* ")"
    *   ;
    */
-  private parseMacroOrStructInvocation(
-    parsePoint: ParsePoint
-  ): PartialZ80AssemblyLine | null {
-    // TODO: Implement this method
-    return null;
+  private parseMacroOrStructInvocation(): PartialZ80AssemblyLine | null {
+    const identifier = this.getIdentifier();
+    this.expectToken(TokenType.LPar, "Z1013");
+    const operands: Operand[] = [];
+    if (this.tokens.peek().type !== TokenType.RPar) {
+      operands.push(this.getOperand());
+      while (this.skipToken(TokenType.Comma)) {
+        operands.push(this.getOperand());
+      }
+    }
+    this.expectToken(TokenType.RPar, "Z1014");
+    return <MacroOrStructInvocation>{
+      type: "MacroOrStructInvocation",
+      identifier,
+      operands,
+    };
   }
 
   /**
@@ -1328,11 +1631,30 @@ export class Z80AsmParser {
    *   : "->" byteEmPragma
    *   ;
    */
-  private parseFieldAssignment(
-    parsePoint: ParsePoint
-  ): PartialZ80AssemblyLine | null {
-    // TODO: Implement this method
-    return null;
+  private parseFieldAssignment(): PartialZ80AssemblyLine | null {
+    this.tokens.get();
+    const parsePoint = this.getParsePoint();
+    const { start } = parsePoint;
+    switch (start.type) {
+      case TokenType.DefbPragma:
+      case TokenType.DefwPragma:
+      case TokenType.DefcPragma:
+      case TokenType.DefmPragma:
+      case TokenType.DefnPragma:
+      case TokenType.DefhPragma:
+      case TokenType.DefsPragma:
+      case TokenType.FillbPragma:
+      case TokenType.FillwPragma:
+      case TokenType.DefgPragma:
+      case TokenType.DefgxPragma:
+        return <FieldAssignment>{
+          type: "FieldAssignment",
+          assignment: this.parsePragma(parsePoint),
+        };
+      default:
+        this.reportError("Z1021");
+        return null;
+    }
   }
 
   /**
@@ -1693,7 +2015,7 @@ export class Z80AsmParser {
       case TokenType.Identifier:
         const lpar = this.tokens.ahead(1);
         return lpar.type === TokenType.LPar
-          ? this.parseFuncInvocation(parsePoint)
+          ? this.parseFunctionInvocation()
           : this.parseSymbol(parsePoint);
       case TokenType.DoubleColon:
         return this.parseSymbol(parsePoint);
@@ -1703,7 +2025,7 @@ export class Z80AsmParser {
       case TokenType.Exclamation:
         return this.parseUnaryExpr(parsePoint);
       case TokenType.LDBrac:
-        return this.parseMacroParam(parsePoint);
+        return this.parseMacroParam();
     }
     return null;
   }
@@ -1715,17 +2037,69 @@ export class Z80AsmParser {
   private parseBuiltInFuncInvocation(
     parsePoint: ParsePoint
   ): ExpressionNode | null {
-    // TODO: Implement this method
-    return null;
+    const { start } = parsePoint;
+    this.tokens.get();
+    if (start.type === TokenType.TextOf || start.type === TokenType.LTextOf) {
+      this.expectToken(TokenType.LPar, "Z1013");
+      const argToken = this.tokens.peek();
+      const traits = getTokenTraits(argToken.type);
+      let mnemonic: string | undefined;
+      let regsOrConds: string | undefined;
+      let macroParam: string | undefined;
+      if (traits.instruction) {
+        mnemonic = argToken.text.toLowerCase();
+        this.tokens.get();
+      } else if (traits.reg || traits.condition) {
+        regsOrConds = argToken.text.toLowerCase();
+        this.tokens.get();
+      } else if (argToken.type === TokenType.LDBrac) {
+        const param = this.parseMacroParam();
+        macroParam = param.identifier;
+      } else if (argToken.type === TokenType.LPar) {
+        this.tokens.get();
+        const reg16 = this.tokens.peek();
+        const reg16Traits = getTokenTraits(reg16.type);
+        if (reg16Traits.reg16) {
+          this.tokens.get();
+          regsOrConds = `(${reg16.text.toLowerCase()})`;
+        } else {
+          this.reportError("Z1022");
+        }
+        this.expectToken(TokenType.RPar, "Z1014");
+      }
+      this.expectToken(TokenType.RPar, "Z1014");
+      return <BuiltInFunctionInvocation>{
+        type: "BuiltInFunctionInvocation",
+        functionName: start.text.toLowerCase(),
+        mnemonic,
+        regsOrConds,
+        macroParam,
+      };
+    }
+    this.expectToken(TokenType.LPar, "Z1013");
+    const operand = this.getOperand();
+    this.expectToken(TokenType.RPar, "Z1014");
+    return <BuiltInFunctionInvocation>{
+      type: "BuiltInFunctionInvocation",
+      functionName: start.text.toLowerCase(),
+      operand,
+    };
   }
 
   /**
-   *
-   * @param parsePoint
+   * functionInvocation
+   *   : identifier "(" expression? ("," expression)* ")" 
    */
-  private parseFuncInvocation(parsePoint: ParsePoint): ExpressionNode | null {
-    // TODO: Implement this method
-    return null;
+  private parseFunctionInvocation(): ExpressionNode | null {
+    const functionName = this.getIdentifier();
+    this.expectToken(TokenType.LPar, "Z1013");
+    const args = this.getExpressionList(false);
+    this.expectToken(TokenType.RPar, "Z1014");
+    return <FunctionInvocation> {
+      type: "FunctionInvocation",
+      functionName,
+      args
+    }
   }
 
   /**
@@ -2076,9 +2450,14 @@ export class Z80AsmParser {
    *   : "{{" Identifier "}}"
    *   ;
    */
-  private parseMacroParam(parsePoint: ParsePoint): ExpressionNode | null {
-    // TODO: Implement this method
-    return null;
+  private parseMacroParam(): MacroParameter | null {
+    this.tokens.get();
+    const identifier = this.getIdentifier();
+    this.expectToken(TokenType.RDBrac, "Z1015");
+    return <MacroParameter>{
+      type: "MacroParameter",
+      identifier,
+    };
   }
 
   // ==========================================================================
@@ -2194,17 +2573,29 @@ export class Z80AsmParser {
     if (token.type !== TokenType.Identifier) {
       return false;
     }
+    const text = token.text.toLowerCase();
     return (
-      token.text !== "loop" &&
-      token.text !== "LOOP" &&
-      token.text !== "repeat" &&
-      token.text !== "REPEAT" &&
-      token.text !== "until" &&
-      token.text !== "UNTIL" &&
-      token.text !== "while" &&
-      token.text !== "WHILE" &&
-      token.text !== "elif" &&
-      token.text !== "ELIF"
+      text != "continue" &&
+      text != "break" &&
+      text !== "endm" &&
+      text !== "mend" &&
+      text !== "endl" &&
+      text !== "lend" &&
+      text !== "proc" &&
+      text !== "endp" &&
+      text !== "pend" &&
+      text !== "repeat" &&
+      text !== "endw" &&
+      text !== "wend" &&
+      text !== "ends" &&
+      text !== "else" &&
+      text !== "elif" &&
+      text !== "endif" &&
+      text !== "while" &&
+      text !== "repeat" &&
+      text !== "until" &&
+      text !== "loop" &&
+      text !== "next"
     );
   }
 

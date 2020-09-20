@@ -3,7 +3,7 @@ import "mocha";
 import { TokenType } from "../../src/parser/token-stream";
 import { testToken } from "./token-stream-helper";
 
-describe("Parser - token: operator-like", () => {
+describe("Parser - token: keyword-like", () => {
   it("get: register A", () => {
     testToken("a", TokenType.A);
     testToken("A", TokenType.A);
@@ -867,19 +867,13 @@ describe("Parser - token: operator-like", () => {
   it("get: proc statement", () => {
     testToken(".proc", TokenType.Proc);
     testToken(".PROC", TokenType.Proc);
-    testToken("proc", TokenType.Proc);
-    testToken("PROC", TokenType.Proc);
   });
 
   it("get: end proc statement", () => {
     testToken(".endp", TokenType.Endp);
     testToken(".ENDP", TokenType.Endp);
-    testToken("endp", TokenType.Endp);
-    testToken("ENDP", TokenType.Endp);
     testToken(".pend", TokenType.Endp);
     testToken(".PEND", TokenType.Endp);
-    testToken("pend", TokenType.Endp);
-    testToken("PEND", TokenType.Endp);
   });
 
   it("get: loop statement", () => {
@@ -890,12 +884,8 @@ describe("Parser - token: operator-like", () => {
   it("get: end loop statement", () => {
     testToken(".endl", TokenType.Endl);
     testToken(".ENDL", TokenType.Endl);
-    testToken("endl", TokenType.Endl);
-    testToken("ENDL", TokenType.Endl);
     testToken(".lend", TokenType.Endl);
     testToken(".LEND", TokenType.Endl);
-    testToken("lend", TokenType.Endl);
-    testToken("LEND", TokenType.Endl);
   });
 
   it("get: repeat statement", () => {
@@ -916,12 +906,8 @@ describe("Parser - token: operator-like", () => {
   it("get: end while statement", () => {
     testToken(".endw", TokenType.Endw);
     testToken(".ENDW", TokenType.Endw);
-    testToken("endw", TokenType.Endw);
-    testToken("ENDW", TokenType.Endw);
     testToken(".wend", TokenType.Endw);
     testToken(".WEND", TokenType.Endw);
-    testToken("wend", TokenType.Endw);
-    testToken("WEND", TokenType.Endw);
   });
 
   it("get: if statement", () => {
@@ -953,8 +939,6 @@ describe("Parser - token: operator-like", () => {
   it("get: else statement", () => {
     testToken(".else", TokenType.Else);
     testToken(".ELSE", TokenType.Else);
-    testToken("else", TokenType.Else);
-    testToken("ELSE", TokenType.Else);
   });
 
   it("get: endif statement", () => {
@@ -988,22 +972,16 @@ describe("Parser - token: operator-like", () => {
   it("get: next statement", () => {
     testToken(".next", TokenType.Next);
     testToken(".NEXT", TokenType.Next);
-    testToken("next", TokenType.Next);
-    testToken("NEXT", TokenType.Next);
   });
 
   it("get: break statement", () => {
     testToken(".break", TokenType.Break);
     testToken(".BREAK", TokenType.Break);
-    testToken("break", TokenType.Break);
-    testToken("BREAK", TokenType.Break);
   });
 
   it("get: continue statement", () => {
     testToken(".continue", TokenType.Continue);
     testToken(".CONTINUE", TokenType.Continue);
-    testToken("continue", TokenType.Continue);
-    testToken("CONTINUE", TokenType.Continue);
   });
 
   it("get: module statement", () => {
@@ -1046,9 +1024,16 @@ describe("Parser - token: operator-like", () => {
   it("get: end struct statement", () => {
     testToken(".ends", TokenType.Ends);
     testToken(".ENDS", TokenType.Ends);
-    testToken("ends", TokenType.Ends);
-    testToken("ENDS", TokenType.Ends);
   });
+
+  it("get: local statement", () => {
+    testToken(".local", TokenType.Local);
+    testToken(".LOCAL", TokenType.Local);
+    testToken("local", TokenType.Local);
+    testToken("LOCAL", TokenType.Local);
+    testToken("Local", TokenType.Local);
+  });
+
 
   it("get: textof function", () => {
     testToken("textof", TokenType.TextOf);
