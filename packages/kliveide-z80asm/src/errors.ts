@@ -31,7 +31,12 @@ export type ErrorCodes =
   | "Z1014"
   | "Z1015"
   | "Z1016"
-  | "Z1017";
+  | "Z1017"
+  | "Z1018"
+  | "Z1019"
+  | "Z1020"
+  | "Z1021"
+  | "Z1022"
 
 export const errorMessages: ErrorText = {
   Z1001: "Invalid token at the end of the line: {{0}}",
@@ -51,4 +56,9 @@ export const errorMessages: ErrorText = {
   Z1015: "'}}' expected",
   Z1016: "Operand expected",
   Z1017: "Invalid token at the start of the line: {{0}}",
+  Z1018: "An identifier or symbol expected",
+  Z1019: "'=' expected",
+  Z1020: "'to' expected",
+  Z1021: "A byte-emitting pragma expected",
+  Z1022: "BC, DE, HL, or SP expected",
 };

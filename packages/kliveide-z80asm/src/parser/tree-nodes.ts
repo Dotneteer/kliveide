@@ -1,3 +1,5 @@
+import { Func } from "mocha";
+
 /**
  * Aggregate type for all syntax nodes
  */
@@ -9,7 +11,9 @@ export type Node =
   | Directive
   | Pragma
   | Operand
-  | Statement;
+  | Statement
+  | MacroOrStructInvocation
+  | FieldAssignment;
 
 export type Instruction =
   | SimpleZ80Instruction
@@ -63,7 +67,10 @@ export type Expression =
   | StringLiteral
   | BooleanLiteral
   | CurrentAddressLiteral
-  | CurrentCounterLiteral;
+  | CurrentCounterLiteral
+  | MacroParameter
+  | BuiltInFunctionInvocation
+  | FunctionInvocation;
 
 export type Directive =
   | IfDefDirective
@@ -110,6 +117,19 @@ export type Pragma =
   | ZxBasicPragma
   | InjectOptPragma;
 
+export type ByteEmittingPragma =
+  | DefBPragma
+  | DefWPragma
+  | DefCPragma
+  | DefMPragma
+  | DefNPragma
+  | DefHPragma
+  | DefSPragma
+  | FillbPragma
+  | FillwPragma
+  | DefGPragma
+  | DefGxPragma;
+
 export type Statement =
   | MacroStatement
   | MacroEndStatement
@@ -119,6 +139,23 @@ export type Statement =
   | WhileEndStatement
   | RepeatStatement
   | UntilStatement
+  | ProcStatement
+  | ProcEndStatement
+  | IfStatement
+  | IfUsedStatement
+  | IfNUsedStatement
+  | ElseStatement
+  | ElseIfStatement
+  | EndIfStatement
+  | BreakStatement
+  | ContinueStatement
+  | ModuleStatement
+  | ModuleEndStatement
+  | StructStatement
+  | StructEndStatement
+  | LocalStatement
+  | NextStatement
+  | ForStatement;
 
 // ============================================================================
 // Fundamental syntax node types
@@ -366,6 +403,35 @@ export interface CurrentAddressLiteral extends ExpressionNode {
  */
 export interface CurrentCounterLiteral extends ExpressionNode {
   type: "CurrentCounterLiteral";
+}
+
+/**
+ * Represents a macro parameter expression
+ */
+export interface MacroParameter extends ExpressionNode {
+  type: "MacroParameter";
+  identifier: string;
+}
+
+/**
+ * Represents a built-in function invocation
+ */
+export interface BuiltInFunctionInvocation extends ExpressionNode {
+  type: "BuiltInFunctionInvocation";
+  functionName: string;
+  operand?: Operand;
+  mnemonic?: string;
+  regsOrConds?: string;
+  macroParam?: string;
+}
+
+/**
+ * Represents a function invocation
+ */
+export interface FunctionInvocation extends ExpressionNode {
+  type: "FunctionInvocation";
+  functionName: string;
+  args: ExpressionNode[];
 }
 
 // ============================================================================
@@ -1202,4 +1268,150 @@ export interface RepeatStatement extends PartialZ80AssemblyLine {
 export interface UntilStatement extends PartialZ80AssemblyLine {
   type: "UntilStatement";
   expr: ExpressionNode;
+}
+
+/**
+ * Represents a .proc statement
+ */
+export interface ProcStatement extends PartialZ80AssemblyLine {
+  type: "ProcStatement";
+}
+
+/**
+ * Represents a proc end statement
+ */
+export interface ProcEndStatement extends PartialZ80AssemblyLine {
+  type: "ProcEndStatement";
+}
+
+/**
+ * Represents an if statement
+ */
+export interface IfStatement extends PartialZ80AssemblyLine {
+  type: "IfStatement";
+  expr: ExpressionNode;
+}
+
+/**
+ * Represents an ifused statement
+ */
+export interface IfUsedStatement extends PartialZ80AssemblyLine {
+  type: "IfUsedStatement";
+  symbol: Symbol;
+}
+
+/**
+ * Represents an ifnused statement
+ */
+export interface IfNUsedStatement extends PartialZ80AssemblyLine {
+  type: "IfNUsedStatement";
+  symbol: Symbol;
+}
+
+/**
+ * Represents an else statement
+ */
+export interface ElseStatement extends PartialZ80AssemblyLine {
+  type: "ElseStatement";
+}
+
+/**
+ * Represents an endif statement
+ */
+export interface EndIfStatement extends PartialZ80AssemblyLine {
+  type: "EndIfStatement";
+}
+
+/**
+ * Represents an elseif statement
+ */
+export interface ElseIfStatement extends PartialZ80AssemblyLine {
+  type: "ElseIfStatement";
+  expr: ExpressionNode;
+}
+
+/**
+ * Represents a break statement
+ */
+export interface BreakStatement extends PartialZ80AssemblyLine {
+  type: "BreakStatement";
+}
+
+/**
+ * Represents a continue statement
+ */
+export interface ContinueStatement extends PartialZ80AssemblyLine {
+  type: "ContinueStatement";
+}
+
+/**
+ * Represents a module statement
+ */
+export interface ModuleStatement extends PartialZ80AssemblyLine {
+  type: "ModuleStatement";
+  identifier?: string;
+}
+
+/**
+ * Represents a module end statement
+ */
+export interface ModuleEndStatement extends PartialZ80AssemblyLine {
+  type: "ModuleEndStatement";
+}
+
+/**
+ * Represents a struct statement
+ */
+export interface StructStatement extends PartialZ80AssemblyLine {
+  type: "StructStatement";
+}
+
+/**
+ * Represents a struct statement
+ */
+export interface StructEndStatement extends PartialZ80AssemblyLine {
+  type: "StructEndStatement";
+}
+
+/**
+ * Represents a local statement
+ */
+export interface LocalStatement extends PartialZ80AssemblyLine {
+  type: "LocalStatement";
+  identifiers: string[];
+}
+
+/**
+ * Represents a struct statement
+ */
+export interface NextStatement extends PartialZ80AssemblyLine {
+  type: "NextStatement";
+}
+
+/**
+ * Represents a for statement
+ */
+export interface ForStatement extends PartialZ80AssemblyLine {
+  type: "ForStatement";
+  identifier: string;
+  startExpr: ExpressionNode;
+  toExpr: ExpressionNode;
+  stepExpr?: ExpressionNode;
+}
+
+/**
+ * Represents a field assignment
+ */
+export interface FieldAssignment extends PartialZ80AssemblyLine {
+  type: "FieldAssignment";
+  assignment: ByteEmittingPragma;
+}
+
+/**
+ * Represents a macro or struct invokation
+ */
+export interface MacroOrStructInvocation extends PartialZ80AssemblyLine {
+  type: "MacroOrStructInvocation";
+  identifier: string;
+  operands: Operand[];
 }
