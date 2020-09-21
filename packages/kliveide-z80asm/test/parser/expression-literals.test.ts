@@ -124,6 +124,7 @@ describe("Parser - expression literals", () => {
     { source: "0.245e-0", expected: 0.245 },
     { source: "0.356e+12", expected: 0.356e12 },
     { source: "0.467e-23", expected: 0.467e-23 },
+    { source: "1.e0", expected: 1 },
     { source: "1e0", expected: 1 },
     { source: "1e+0", expected: 1 },
     { source: "1e-0", expected: 1 },

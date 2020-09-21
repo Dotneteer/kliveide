@@ -142,6 +142,23 @@
           }
         ]
       }
+    ],
+    "languages": [
+      {
+        "id": "z80asm",
+        "extensions": [
+          ".z80asm"
+        ],
+        "aliases": ["Z80 Assembly"],
+        "configuration": "./src/z80lang/z80asm-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "z80asm",
+        "scopeName": "source.asm.klivez80",
+        "path": "./src/z80lang/klivez80.tmGrammar.json"
+      }
     ]
   },
   "scripts": {
