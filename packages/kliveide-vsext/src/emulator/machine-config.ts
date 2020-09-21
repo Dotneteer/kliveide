@@ -11,6 +11,7 @@ export const SPECTRUM_CONFIG_FILE = "spectrum.machine";
 export const SPECTRUM_CONFIG_FULL = path.join(SPECTRUM_FOLDER, SPECTRUM_CONFIG_FILE);
 export const TAPE_FOLDER = "tape";
 export const CODE_FOLDER = "code";
+export const CODE_FILE = "code.z80asm";
 export const MEMORY_FILE = "view.memory";
 export const DISASSEMBLY_FILE = "view.disassembly";
 export const BASIC_FILE = "view.basic";
