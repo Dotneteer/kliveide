@@ -60,6 +60,7 @@ export interface EmulatorPanelState {
   shadowScreen?: boolean;
   beamPosition?: boolean;
   fastLoad?: boolean;
+  isLoading?: boolean;
   startCount?: number;
   frameCount?: number;
   muted?: boolean;
@@ -70,6 +71,7 @@ export interface EmulatorPanelState {
   currentType?: string;
   selectedRom?: number;
   selectedBank?: number;
+  panelMessage?: string;
 }
 
 /**
@@ -151,12 +153,14 @@ export function getDefaultAppState(): AppState {
       beamPosition: false,
       shadowScreen: false,
       fastLoad: false,
+      isLoading: false,
       executionState: 0,
       runsInDebug: false,
       requestedType: "",
       currentType: "",
       selectedRom: 0,
       selectedBank: 0,
+      panelMessage: "",
     },
     emulatorCommand: "",
     breakpoints: [],
@@ -165,4 +169,4 @@ export function getDefaultAppState(): AppState {
       saveFolder: "",
     },
   };
-};
+}

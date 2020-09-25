@@ -49,16 +49,16 @@
   let showBeam;
   let tactsInFrame;
   let tactToDisplay;
-  let keyboardVisible;
 
   // --- Bounding renctangle information to display beam position
   let panelRectangle;
   let screenRectangle;
+  let panelMessage;
 
   // --- Catch the state of beam position indicator visibility
   stateAware.stateChanged.on((state) => {
     showBeam = state.beamPosition;
-    keyboardVisible = state.keyboardPanel;
+    panelMessage = state.panelMessage;
   });
 
   // --- Set up the component when the ZX Spectrum engine changes
@@ -278,7 +278,7 @@
     {/if}
     {#if !overlayHidden}
       <ExecutionStateOverlay
-        text={overlay}
+        text={panelMessage ? panelMessage : overlay}
         on:hide={() => (overlayHidden = true)} />
     {/if}
     <canvas bind:this={screenEl} />
