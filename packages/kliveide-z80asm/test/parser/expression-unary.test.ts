@@ -27,7 +27,7 @@ function testUnary(operator: string): void {
   const { operand } = unary;
   expect(operand.type === "Symbol").toBe(true);
   const symbol = operand as Symbol;
-  expect(symbol.identifier).toBe("abc");
+  expect(symbol.identifier.name).toBe("abc");
 
   parser = createParser(operator + "de");
   try {

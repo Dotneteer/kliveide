@@ -68,7 +68,7 @@ describe("Parser - miscellaneous", () => {
     );
     const instr = (parsed
       .assemblyLines[0] as unknown) as MacroOrStructInvocation;
-    expect(instr.identifier).toBe("myMacro");
+    expect(instr.identifier.name).toBe("myMacro");
     expect(instr.operands.length).toBe(0);
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -92,7 +92,7 @@ describe("Parser - miscellaneous", () => {
     );
     const instr = (parsed
       .assemblyLines[0] as unknown) as MacroOrStructInvocation;
-    expect(instr.identifier).toBe("myMacro");
+    expect(instr.identifier.name).toBe("myMacro");
     expect(instr.operands.length).toBe(1);
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -116,7 +116,7 @@ describe("Parser - miscellaneous", () => {
     );
     const instr = (parsed
       .assemblyLines[0] as unknown) as MacroOrStructInvocation;
-    expect(instr.identifier).toBe("myMacro");
+    expect(instr.identifier.name).toBe("myMacro");
     expect(instr.operands.length).toBe(2);
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -140,7 +140,7 @@ describe("Parser - miscellaneous", () => {
     );
     const instr = (parsed
       .assemblyLines[0] as unknown) as MacroOrStructInvocation;
-    expect(instr.identifier).toBe("myMacro");
+    expect(instr.identifier.name).toBe("myMacro");
     expect(instr.operands.length).toBe(3);
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -612,7 +612,7 @@ describe("Parser - miscellaneous", () => {
     expect(invocation.operand).toBeUndefined();
     expect(invocation.mnemonic).toBeUndefined();
     expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam).toBe("abc");
+    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);
@@ -638,7 +638,7 @@ describe("Parser - miscellaneous", () => {
     expect(invocation.operand).toBeUndefined();
     expect(invocation.mnemonic).toBeUndefined();
     expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam).toBe("abc");
+    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);
@@ -664,7 +664,7 @@ describe("Parser - miscellaneous", () => {
     expect(invocation.operand).toBeUndefined();
     expect(invocation.mnemonic).toBeUndefined();
     expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam).toBe("abc");
+    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);
@@ -690,7 +690,7 @@ describe("Parser - miscellaneous", () => {
     expect(invocation.operand).toBeUndefined();
     expect(invocation.mnemonic).toBeUndefined();
     expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam).toBe("abc");
+    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);
@@ -712,7 +712,7 @@ describe("Parser - miscellaneous", () => {
     const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
     expect(instr.value.type === "FunctionInvocation").toBe(true);
     const invocation = (instr.value as unknown) as FunctionInvocation;
-    expect(invocation.functionName).toBe("myFunc");
+    expect(invocation.functionName.name).toBe("myFunc");
     expect(invocation.args.length).toBe(0);
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -735,7 +735,7 @@ describe("Parser - miscellaneous", () => {
     const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
     expect(instr.value.type === "FunctionInvocation").toBe(true);
     const invocation = (instr.value as unknown) as FunctionInvocation;
-    expect(invocation.functionName).toBe("myFunc");
+    expect(invocation.functionName.name).toBe("myFunc");
     expect(invocation.args.length).toBe(1);
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -758,7 +758,7 @@ describe("Parser - miscellaneous", () => {
     const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
     expect(instr.value.type === "FunctionInvocation").toBe(true);
     const invocation = (instr.value as unknown) as FunctionInvocation;
-    expect(invocation.functionName).toBe("myFunc");
+    expect(invocation.functionName.name).toBe("myFunc");
     expect(invocation.args.length).toBe(2);
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -768,6 +768,59 @@ describe("Parser - miscellaneous", () => {
     expect(line.line).toBe(1);
     expect(line.startColumn).toBe(0);
     expect(line.endColumn).toBe(source.length);
+  });
+
+  it(`comment #1`, () => {
+    const source = `equ myFunc(abc, 123) ; This is comment`;
+    const parser = createParser(source);
+    const parsed = parser.parseProgram();
+    expect(parser.hasErrors).toBe(false);
+    expect(parsed).not.toBeNull();
+    expect(parsed.assemblyLines.length).toBe(1);
+    expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
+    const line = parsed.assemblyLines[0] as Z80AssemblyLine;
+    expect(line.label).toBe(null);
+    expect(line.startPosition).toBe(0);
+    expect(line.endPosition).toBe(source.length);
+    expect(line.line).toBe(1);
+    expect(line.startColumn).toBe(0);
+    expect(line.endColumn).toBe(source.length);
+    expect(line.comment).toBe("; This is comment");
+  });
+
+  it(`comment #2`, () => {
+    const source = `equ myFunc(abc, 123) // This is comment`;
+    const parser = createParser(source);
+    const parsed = parser.parseProgram();
+    expect(parser.hasErrors).toBe(false);
+    expect(parsed).not.toBeNull();
+    expect(parsed.assemblyLines.length).toBe(1);
+    expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
+    const line = parsed.assemblyLines[0] as Z80AssemblyLine;
+    expect(line.label).toBe(null);
+    expect(line.startPosition).toBe(0);
+    expect(line.endPosition).toBe(source.length);
+    expect(line.line).toBe(1);
+    expect(line.startColumn).toBe(0);
+    expect(line.endColumn).toBe(source.length);
+    expect(line.comment).toBe("// This is comment");
+  });
+
+  it(`comment #3`, () => {
+    const source = `// This is comment`;
+    const parser = createParser(source);
+    const parsed = parser.parseProgram();
+    expect(parser.hasErrors).toBe(false);
+    expect(parsed).not.toBeNull();
+    expect(parsed.assemblyLines.length).toBe(1);
+    expect(parsed.assemblyLines[0].type === "CommentOnlyLine").toBe(true);
+    const line = parsed.assemblyLines[0] as Z80AssemblyLine;
+    expect(line.startPosition).toBe(0);
+    expect(line.endPosition).toBe(source.length);
+    expect(line.line).toBe(1);
+    expect(line.startColumn).toBe(0);
+    expect(line.endColumn).toBe(source.length);
+    expect(line.comment).toBe("// This is comment");
   });
 
 });

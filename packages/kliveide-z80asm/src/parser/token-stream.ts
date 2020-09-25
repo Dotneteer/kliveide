@@ -16,11 +16,28 @@ export class TokenStream {
   // --- Prefetched character column (from the next token)
   private _prefetchedColumn: number | null = null;
 
+  // --- The last end-of-line comment
+  private _lastComment: string | null = null ;
+
   /**
    * Initializes the tokenizer with the input stream
    * @param input Input source code stream
    */
   constructor(public readonly input: InputStream) {}
+
+  /**
+   * Resets the last comment
+   */
+  resetComment(): void {
+    this._lastComment = null;
+  }
+
+  /**
+   * Gets the last end-of-line comment
+   */
+  get lastComment(): string | null {
+    return this._lastComment;
+  }
 
   /**
    * Fethches the next token without advancing to its position
@@ -43,6 +60,9 @@ export class TokenStream {
     // --- Prefetch missing tokens
     while (this._ahead.length <= n) {
       const token = this.fetch();
+      if (token.type === TokenType.EolComment) {
+        this._lastComment = token.text;
+      }
       if (isEof(token)) {
         return token;
       }
@@ -63,6 +83,9 @@ export class TokenStream {
     }
     while (true) {
       const token = this.fetch();
+      if (token.type === TokenType.EolComment) {
+        this._lastComment = token.text;
+      }
       if (isEof(token) || ws || (!ws && !isWs(token))) {
         return token;
       }

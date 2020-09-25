@@ -2,6 +2,7 @@ import "mocha";
 import * as expect from "expect";
 
 import {
+  DefineDirective,
   IfDefDirective,
   IfDirective,
   IfModDirective,
@@ -25,7 +26,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "IfDefDirective").toBe(true);
     const dir = (parsed.assemblyLines[0] as unknown) as IfDefDirective;
-    expect(dir.identifier).toBe("myId");
+    expect(dir.identifier.name).toBe("myId");
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(11);
@@ -49,7 +50,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "IfNDefDirective").toBe(true);
     const dir = (parsed.assemblyLines[0] as unknown) as IfNDefDirective;
-    expect(dir.identifier).toBe("myId");
+    expect(dir.identifier.name).toBe("myId");
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(12);
@@ -73,7 +74,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "UndefDirective").toBe(true);
     const dir = (parsed.assemblyLines[0] as unknown) as UndefDirective;
-    expect(dir.identifier).toBe("myId");
+    expect(dir.identifier.name).toBe("myId");
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(11);
@@ -97,7 +98,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "IfModDirective").toBe(true);
     const dir = (parsed.assemblyLines[0] as unknown) as IfModDirective;
-    expect(dir.identifier).toBe("myId");
+    expect(dir.identifier.name).toBe("myId");
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(11);
@@ -121,7 +122,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "IfNModDirective").toBe(true);
     const dir = (parsed.assemblyLines[0] as unknown) as IfNModDirective;
-    expect(dir.identifier).toBe("myId");
+    expect(dir.identifier.name).toBe("myId");
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(12);
@@ -200,7 +201,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines[0].type === "LineDirective").toBe(true);
     const lineDir = (parsed.assemblyLines[0] as unknown) as LineDirective;
     expect(lineDir.lineNumber.type === "IntegerLiteral").toBe(true);
-    expect(lineDir.comment).toBe("myComment");
+    expect(lineDir.lineComment).toBe("myComment");
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(21);
@@ -225,7 +226,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines[0].type === "LineDirective").toBe(true);
     const lineDir = (parsed.assemblyLines[0] as unknown) as LineDirective;
     expect(lineDir.lineNumber.type === "IntegerLiteral").toBe(true);
-    expect(lineDir.comment).toBeNull();
+    expect(lineDir.lineComment).toBeNull();
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(9);
@@ -263,6 +264,30 @@ describe("Parser - directives", () => {
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
     expect(parser.errors[0].code === "Z1006").toBe(true);
+  });
+
+  it("#define #1", () => {
+    const parser = createParser("#define myId");
+    const parsed = parser.parseProgram();
+    expect(parser.hasErrors).toBe(false);
+    expect(parsed).not.toBeNull();
+    expect(parsed.assemblyLines.length).toBe(1);
+    expect(parsed.assemblyLines[0].type === "DefineDirective").toBe(true);
+    const dir = (parsed.assemblyLines[0] as unknown) as DefineDirective;
+    expect(dir.identifier.name).toBe("myId");
+    const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
+    expect(line.startPosition).toBe(0);
+    expect(line.endPosition).toBe(12);
+    expect(line.line).toBe(1);
+    expect(line.startColumn).toBe(0);
+    expect(line.endColumn).toBe(12);
+  });
+
+  it("#define #2", () => {
+    const parser = createParser("#define");
+    parser.parseProgram();
+    expect(parser.hasErrors).toBe(true);
+    expect(parser.errors[0].code === "Z1004").toBe(true);
   });
 });
 
