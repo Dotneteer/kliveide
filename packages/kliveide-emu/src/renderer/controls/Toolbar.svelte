@@ -8,7 +8,6 @@
 
   import { themeStore } from "../stores/theme-store";
   import {
-    rendererProcessStore,
     createRendererProcessStateAware,
   } from "../rendererProcessStore";
   import {
@@ -19,7 +18,6 @@
     emulatorMuteAction,
     emulatorUnmuteAction,
   } from "../../shared/state/redux-emulator-state";
-  import { emulatorSetCommandAction } from "../../shared/state/redux-emulator-command-state";
 
   // --- The ZX Spectrum engine instance
   export let spectrum;
@@ -30,6 +28,7 @@
   let shadowScreenEnabled;
   let beamPositionEnabled;
   let fastLoadEnabled;
+  let isLoading;
   let muted;
   calculateColors(true); // --- Default: the app has the focus
 
@@ -45,6 +44,7 @@
       shadowScreenEnabled = emuUi.shadowScreen;
       beamPositionEnabled = emuUi.beamPosition;
       fastLoadEnabled = emuUi.fastLoad;
+      isLoading = emuUi.isLoading;
       muted = emuUi.muted;
     }
     calculateColors(state.appHasFocus);
@@ -188,5 +188,10 @@
           stateAware.dispatch(emulatorMuteAction());
         }} />
     {/if}
+    <ToolbarIconButton
+      iconName="reverse-tape"
+      title="Rewind the tape"
+      enable={!isLoading}
+      on:clicked={() => spectrum.initTapeContents("Tape rewound")} />
   </div>
 {/if}

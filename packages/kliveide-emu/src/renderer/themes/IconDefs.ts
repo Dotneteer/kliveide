@@ -5,6 +5,13 @@ import { IconInfo } from "./IconInfo";
  */
 export const IconDefs: IconInfo[] = [
   {
+    name: "reverse-tape",
+    path:
+    "M13.5 2H12v12h1.5V2zm-3.5.18V14L1 8.062l9-5.881zM3.685 8.063L8.5 5v6.18L3.685 8.063z",
+    width: 16,
+    height: 16,
+  },
+  {
     name: "window",
     path:
       "M14.5 2h-13l-.5.5v11l.5.5h13l.5-.5v-11l-.5-.5zM14 13H2V6h12v7zm0-8H2V3h12v2z",

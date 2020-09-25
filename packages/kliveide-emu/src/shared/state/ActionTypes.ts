@@ -38,10 +38,12 @@ export interface ActionTypes {
   EMULATOR_SETUP_TYPE: null;
   EMULATOR_SELECT_ROM: null;
   EMULATOR_SELECT_BANK: null;
+  EMULATOR_LOAD_MODE: null;
+  EMULATOR_SET_MESSAGE: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;
-
+  
   // --- Nenory command actions
   MEMORY_COMMAND: null;
   MEMORY_COMMAND_RESULT: null;
