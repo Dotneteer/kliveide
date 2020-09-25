@@ -1,7 +1,7 @@
 import "mocha";
 import * as expect from "expect";
 
-import { InputStream } from "../../src/parser/input-stream";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
 
 describe("Parser - input stream", () => {
   it("peek: empty stream results EOF", () => {

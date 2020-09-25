@@ -6,10 +6,10 @@ import {
   Z80AssemblyLine,
   TestInstruction,
   NextRegInstruction,
-} from "../../src/parser/tree-nodes";
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream } from "../../src/parser/token-stream";
-import { Z80AsmParser } from "../../src/parser/z80-asm-parser";
+} from "../../src/z80lang/parser/tree-nodes";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
+import { TokenStream } from "../../src/z80lang/parser/token-stream";
+import { Z80AsmParser } from "../../src/z80lang/parser/z80-asm-parser";
 
 describe("Parser - Next Z80 instructions", () => {
   const bsInsts = [

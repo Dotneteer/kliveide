@@ -10,10 +10,10 @@ import {
   RetInstruction,
   RstInstruction,
   Z80AssemblyLine,
-} from "../../src/parser/tree-nodes";
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream } from "../../src/parser/token-stream";
-import { Z80AsmParser } from "../../src/parser/z80-asm-parser";
+} from "../../src/z80lang/parser/tree-nodes";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
+import { TokenStream } from "../../src/z80lang/parser/token-stream";
+import { Z80AsmParser } from "../../src/z80lang/parser/z80-asm-parser";
 
 describe("Parser - control flow instructions", () => {
   const djnzInsts = ["djnz", "DJNZ"];

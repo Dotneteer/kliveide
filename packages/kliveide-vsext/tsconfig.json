@@ -1,12 +1,18 @@
 {
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "module": "commonjs",
     "target": "es2019",
-    "outDir": "out",
-    "lib": ["ES2019", "DOM"],
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": false,
     "sourceMap": true,
-    "rootDir": "src",
-    "strict": true
+    "outDir": "dist",
+    "baseUrl": ".",
+    "downlevelIteration": true,
+    "paths": {
+      "*": ["node_modules/*"]
+    }
   },
   "include": [
     "src/**/*.ts",

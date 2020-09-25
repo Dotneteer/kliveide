@@ -1,6 +1,6 @@
 import "mocha";
 
-import { TokenType } from "../../src/parser/token-stream";
+import { TokenType } from "../../src/z80lang/parser/token-stream";
 import { testToken } from "./token-stream-helper";
 
 describe("Parser - token: keyword-like", () => {

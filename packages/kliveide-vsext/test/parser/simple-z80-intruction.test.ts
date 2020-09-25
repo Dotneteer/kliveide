@@ -1,10 +1,10 @@
 import "mocha";
 import * as expect from "expect";
 
-import { SimpleZ80Instruction, Z80AssemblyLine, Z80Instruction } from "../../src/parser/tree-nodes";
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream } from "../../src/parser/token-stream";
-import { Z80AsmParser } from "../../src/parser/z80-asm-parser";
+import { SimpleZ80Instruction, Z80AssemblyLine, Z80Instruction } from "../../src/z80lang/parser/tree-nodes";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
+import { TokenStream } from "../../src/z80lang/parser/token-stream";
+import { Z80AsmParser } from "../../src/z80lang/parser/z80-asm-parser";
 
 describe("Parser - simple Z80 instructions", () => {
   it("label-only #1", () => {
