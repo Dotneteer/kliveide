@@ -1,9 +1,9 @@
 import "mocha";
 import * as expect from "expect";
 
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream } from "../../src/parser/token-stream";
-import { Z80AsmParser } from "../../src/parser/z80-asm-parser";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
+import { TokenStream } from "../../src/z80lang/parser/token-stream";
+import { Z80AsmParser } from "../../src/z80lang/parser/z80-asm-parser";
 import {
   AdcInstruction,
   AddInstruction,
@@ -34,7 +34,7 @@ import {
   SubInstruction,
   XorInstruction,
   Z80AssemblyLine,
-} from "../../src/parser/tree-nodes";
+} from "../../src/z80lang/parser/tree-nodes";
 
 describe("Parser - instructions with operands", () => {
   const incOp = ["inc", "INC"];

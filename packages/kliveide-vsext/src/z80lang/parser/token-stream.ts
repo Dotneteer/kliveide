@@ -79,7 +79,11 @@ export class TokenStream {
    */
   get(ws = false): Token {
     if (this._ahead.length > 0) {
-      return this._ahead.shift();
+      const token = this._ahead.shift();
+      if (!token) {
+        throw new Error("Token expected")
+      }
+      return token;
     }
     while (true) {
       const token = this.fetch();

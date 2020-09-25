@@ -1,6 +1,6 @@
 import * as expect from "expect";
-import { TokenType, TokenStream } from "../../src/parser/token-stream";
-import { InputStream } from "../../src/parser/input-stream";
+import { TokenType, TokenStream } from "../../src/z80lang/parser/token-stream";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
 
 export function testToken(
   tokenStr: string,

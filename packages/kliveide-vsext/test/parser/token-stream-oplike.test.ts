@@ -1,8 +1,8 @@
 import "mocha";
 import * as expect from "expect";
 
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream, TokenType } from "../../src/parser/token-stream";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
+import { TokenStream, TokenType } from "../../src/z80lang/parser/token-stream";
 import { testToken} from "./token-stream-helper";
 
 describe("Parser - token: operator-like", () => {
