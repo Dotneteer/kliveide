@@ -6,6 +6,7 @@ import { Func } from "mocha";
 export type Node =
   | Program
   | LabelOnlyLine
+  | CommentOnlyLine
   | Instruction
   | Expression
   | Directive
@@ -57,6 +58,7 @@ export type Instruction =
   | SetInstruction;
 
 export type Expression =
+  | IdentifierNode
   | UnaryExpression
   | BinaryExpression
   | ConditionalExpression
@@ -170,39 +172,7 @@ export interface BaseNode {
   type: Node["type"];
 }
 
-/*
- * Represents the root node of the entire Z80 program
- */
-export interface Program extends BaseNode {
-  type: "Program";
-  /**
-   * Assembly lines of the program
-   */
-  assemblyLines: Z80AssemblyLine[];
-}
-
-// ============================================================================
-// Assembly line node types
-
-/**
- * Represents a Z80 assembly line that can be expanded with attributes
- */
-export interface PartialZ80AssemblyLine extends BaseNode {
-  /**
-   * Optional label
-   */
-  label?: string;
-}
-
-/**
- * Represents a node that describes an assembly line
- */
-export interface Z80AssemblyLine extends PartialZ80AssemblyLine {
-  /**
-   * Optional label
-   */
-  label?: string;
-
+export interface NodePosition {
   /**
    * Start line number of the start token of the node
    */
@@ -229,11 +199,52 @@ export interface Z80AssemblyLine extends PartialZ80AssemblyLine {
   endColumn: number;
 }
 
+/*
+ * Represents the root node of the entire Z80 program
+ */
+export interface Program extends BaseNode {
+  type: "Program";
+  /**
+   * Assembly lines of the program
+   */
+  assemblyLines: Z80AssemblyLine[];
+}
+
+// ============================================================================
+// Assembly line node types
+
+/**
+ * Represents a Z80 assembly line that can be expanded with attributes
+ */
+export interface PartialZ80AssemblyLine extends BaseNode {
+  /**
+   * Optional label
+   */
+  label?: IdentifierNode | null;
+}
+
+/**
+ * Represents a node that describes an assembly line
+ */
+export interface Z80AssemblyLine extends PartialZ80AssemblyLine, NodePosition {
+  /**
+   * The optional end-of-line comment of the line
+   */
+  comment: string | null;
+}
+
 /**
  * Represents an assembly line with a single label
  */
 export interface LabelOnlyLine extends PartialZ80AssemblyLine {
   type: "LabelOnlyLine";
+}
+
+/**
+ * Represents an assembly line with a single label
+ */
+export interface CommentOnlyLine extends PartialZ80AssemblyLine {
+  type: "CommentOnlyLine";
 }
 
 // ============================================================================
@@ -243,6 +254,18 @@ export interface LabelOnlyLine extends PartialZ80AssemblyLine {
  * Represents the common root node of expressions
  */
 export interface ExpressionNode extends BaseNode {}
+
+/**
+ * Represents a node that describes an assembly line
+ */
+export interface IdentifierNode extends ExpressionNode, NodePosition {
+  type: "Identifier";
+
+  /**
+   * Identifier name
+   */
+  name: string;
+}
 
 /**
  * Represents an unary expression
@@ -317,7 +340,7 @@ export interface Symbol extends ExpressionNode {
   /**
    * Identifier name
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 /**
@@ -410,7 +433,7 @@ export interface CurrentCounterLiteral extends ExpressionNode {
  */
 export interface MacroParameter extends ExpressionNode {
   type: "MacroParameter";
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 /**
@@ -422,7 +445,7 @@ export interface BuiltInFunctionInvocation extends ExpressionNode {
   operand?: Operand;
   mnemonic?: string;
   regsOrConds?: string;
-  macroParam?: string;
+  macroParam?: IdentifierNode;
 }
 
 /**
@@ -430,7 +453,7 @@ export interface BuiltInFunctionInvocation extends ExpressionNode {
  */
 export interface FunctionInvocation extends ExpressionNode {
   type: "FunctionInvocation";
-  functionName: string;
+  functionName: IdentifierNode;
   args: ExpressionNode[];
 }
 
@@ -774,7 +797,7 @@ export interface Operand extends BaseNode {
   expr?: ExpressionNode;
   offsetSign?: string;
   regOperation?: string;
-  macroParam?: string;
+  macroParam?: IdentifierNode;
 }
 
 /**
@@ -805,7 +828,7 @@ export interface IfDefDirective extends PartialZ80AssemblyLine {
   /**
    * Identifier of the directive
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 export interface IfNDefDirective extends PartialZ80AssemblyLine {
@@ -814,7 +837,7 @@ export interface IfNDefDirective extends PartialZ80AssemblyLine {
   /**
    * Identifier of the directive
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 export interface DefineDirective extends PartialZ80AssemblyLine {
@@ -823,7 +846,7 @@ export interface DefineDirective extends PartialZ80AssemblyLine {
   /**
    * Identifier of the directive
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 export interface UndefDirective extends PartialZ80AssemblyLine {
@@ -832,7 +855,7 @@ export interface UndefDirective extends PartialZ80AssemblyLine {
   /**
    * Identifier of the directive
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 export interface IfModDirective extends PartialZ80AssemblyLine {
@@ -841,7 +864,7 @@ export interface IfModDirective extends PartialZ80AssemblyLine {
   /**
    * Identifier of the directive
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 export interface IfNModDirective extends PartialZ80AssemblyLine {
@@ -850,7 +873,7 @@ export interface IfNModDirective extends PartialZ80AssemblyLine {
   /**
    * Identifier of the directive
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 export interface EndIfDirective extends PartialZ80AssemblyLine {
@@ -890,7 +913,7 @@ export interface LineDirective extends PartialZ80AssemblyLine {
   /**
    * Optional line comment
    */
-  comment?: string;
+  lineComment?: string;
 }
 
 // ============================================================================
@@ -1203,7 +1226,7 @@ export interface InjectOptPragma extends PartialZ80AssemblyLine {
   /**
    * Option identifier
    */
-  identifier: string;
+  identifier: IdentifierNode;
 }
 
 // ============================================================================
@@ -1215,7 +1238,7 @@ export interface InjectOptPragma extends PartialZ80AssemblyLine {
 export interface MacroStatement extends PartialZ80AssemblyLine {
   type: "MacroStatement";
 
-  parameters: string[];
+  parameters: IdentifierNode[];
 }
 
 /**
@@ -1349,7 +1372,7 @@ export interface ContinueStatement extends PartialZ80AssemblyLine {
  */
 export interface ModuleStatement extends PartialZ80AssemblyLine {
   type: "ModuleStatement";
-  identifier?: string;
+  identifier?: IdentifierNode;
 }
 
 /**
@@ -1378,7 +1401,7 @@ export interface StructEndStatement extends PartialZ80AssemblyLine {
  */
 export interface LocalStatement extends PartialZ80AssemblyLine {
   type: "LocalStatement";
-  identifiers: string[];
+  identifiers: IdentifierNode[];
 }
 
 /**
@@ -1393,7 +1416,7 @@ export interface NextStatement extends PartialZ80AssemblyLine {
  */
 export interface ForStatement extends PartialZ80AssemblyLine {
   type: "ForStatement";
-  identifier: string;
+  identifier: IdentifierNode;
   startExpr: ExpressionNode;
   toExpr: ExpressionNode;
   stepExpr?: ExpressionNode;
@@ -1412,6 +1435,6 @@ export interface FieldAssignment extends PartialZ80AssemblyLine {
  */
 export interface MacroOrStructInvocation extends PartialZ80AssemblyLine {
   type: "MacroOrStructInvocation";
-  identifier: string;
+  identifier: IdentifierNode;
   operands: Operand[];
 }

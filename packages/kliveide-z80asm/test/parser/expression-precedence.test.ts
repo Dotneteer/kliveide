@@ -14,7 +14,7 @@ describe("Parser - expression precedence", () => {
     expect(parsed).not.toBeNull();
     expect(parsed.type === "Symbol").toBe(true);
     const symbol = parsed as Symbol;
-    expect(symbol.identifier).toBe("abc");
+    expect(symbol.identifier.name).toBe("abc");
   });
 
   it("bracketed #1", () => {
@@ -24,7 +24,7 @@ describe("Parser - expression precedence", () => {
     expect(parsed).not.toBeNull();
     expect(parsed.type === "Symbol").toBe(true);
     const symbol = parsed as Symbol;
-    expect(symbol.identifier).toBe("abc");
+    expect(symbol.identifier.name).toBe("abc");
   });
 
   it("conditional #1", () => {
@@ -36,13 +36,13 @@ describe("Parser - expression precedence", () => {
     const cond = parsed as ConditionalExpression;
     expect(cond.condition.type === "Symbol").toBe(true);
     let symbol = cond.condition as Symbol;
-    expect(symbol.identifier).toBe("abc");
+    expect(symbol.identifier.name).toBe("abc");
     expect(cond.consequent.type === "Symbol").toBe(true);
     symbol = cond.consequent as Symbol;
-    expect(symbol.identifier).toBe("d1");
+    expect(symbol.identifier.name).toBe("d1");
     expect(cond.alternate.type === "Symbol").toBe(true);
     symbol = cond.alternate as Symbol;
-    expect(symbol.identifier).toBe("d2");
+    expect(symbol.identifier.name).toBe("d2");
   });
 
   it("conditional #2", () => {
@@ -54,18 +54,18 @@ describe("Parser - expression precedence", () => {
     const cond = parsed as ConditionalExpression;
     expect(cond.condition.type === "Symbol").toBe(true);
     let symbol = cond.condition as Symbol;
-    expect(symbol.identifier).toBe("cond");
+    expect(symbol.identifier.name).toBe("cond");
     expect(cond.consequent.type === "BinaryExpression").toBe(true);
     let binary = cond.consequent as BinaryExpression;
     expect(binary.operator).toBe("|");
     expect(cond.alternate.type === "Symbol").toBe(true);
     expect(binary.left.type === "Symbol").toBe(true);
     symbol = binary.left as Symbol;
-    expect(symbol.identifier).toBe("b1");
+    expect(symbol.identifier.name).toBe("b1");
     symbol = binary.right as Symbol;
-    expect(symbol.identifier).toBe("b2");
+    expect(symbol.identifier.name).toBe("b2");
     symbol = cond.alternate as Symbol;
-    expect(symbol.identifier).toBe("d2");
+    expect(symbol.identifier.name).toBe("d2");
   });
 
   it("xor-or #1", () => {

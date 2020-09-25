@@ -1229,7 +1229,7 @@ describe("Parser - pragmas", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "InjectOptPragma").toBe(true);
       const prg = (parsed.assemblyLines[0] as unknown) as InjectOptPragma;
-      expect(prg.identifier).toBe("option");
+      expect(prg.identifier.name).toBe("option");
       const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
       expect(line.startPosition).toBe(0);
       expect(line.endPosition).toBe(pragma.length + 7);

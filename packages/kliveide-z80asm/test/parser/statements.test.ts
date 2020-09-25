@@ -52,7 +52,7 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines[0].type === "MacroStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as MacroStatement;
       expect(instr.parameters.length).toBe(1);
-      expect(instr.parameters[0]).toBe("abc");
+      expect(instr.parameters[0].name).toBe("abc");
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -72,8 +72,8 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines[0].type === "MacroStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as MacroStatement;
       expect(instr.parameters.length).toBe(2);
-      expect(instr.parameters[0]).toBe("abc");
-      expect(instr.parameters[1]).toBe("cde");
+      expect(instr.parameters[0].name).toBe("abc");
+      expect(instr.parameters[1].name).toBe("cde");
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -93,9 +93,9 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines[0].type === "MacroStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as MacroStatement;
       expect(instr.parameters.length).toBe(3);
-      expect(instr.parameters[0]).toBe("abc");
-      expect(instr.parameters[1]).toBe("cde");
-      expect(instr.parameters[2]).toBe("hgi");
+      expect(instr.parameters[0].name).toBe("abc");
+      expect(instr.parameters[1].name).toBe("cde");
+      expect(instr.parameters[2].name).toBe("hgi");
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -605,7 +605,7 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "ModuleStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as ModuleStatement;
-      expect(instr.identifier).toBe("myModule");
+      expect(instr.identifier.name).toBe("myModule");
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -705,7 +705,7 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines[0].type === "LocalStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as LocalStatement;
       expect(instr.identifiers.length).toBe(1);
-      expect(instr.identifiers[0]).toBe("myId");
+      expect(instr.identifiers[0].name).toBe("myId");
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -725,8 +725,8 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines[0].type === "LocalStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as LocalStatement;
       expect(instr.identifiers.length).toBe(2);
-      expect(instr.identifiers[0]).toBe("myId");
-      expect(instr.identifiers[1]).toBe("other");
+      expect(instr.identifiers[0].name).toBe("myId");
+      expect(instr.identifiers[1].name).toBe("other");
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -762,7 +762,7 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "ForStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as ForStatement;
-      expect(instr.identifier).toBe("abc");
+      expect(instr.identifier.name).toBe("abc");
       expect(instr.startExpr.type === "IntegerLiteral").toBe(true);
       expect(instr.toExpr.type === "IntegerLiteral").toBe(true);
       expect(instr.stepExpr.type === "IntegerLiteral").toBe(true);
@@ -784,7 +784,7 @@ describe("Parser - statements", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "ForStatement").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as ForStatement;
-      expect(instr.identifier).toBe("abc");
+      expect(instr.identifier.name).toBe("abc");
       expect(instr.startExpr.type === "IntegerLiteral").toBe(true);
       expect(instr.toExpr.type === "IntegerLiteral").toBe(true);
       expect(instr.stepExpr).toBeUndefined();
@@ -833,7 +833,7 @@ describe("Parser - statements", () => {
       expect(parser.errors[0].code === "Z1003").toBe(true);
     });
 
-    it(`${stmt} #7`, () => {
+    it(`${stmt} #8`, () => {
       const parser = createParser(`${stmt} abc = 0 to 2 step`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
