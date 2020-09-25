@@ -183,7 +183,7 @@ export class AppWindow {
       // --- Release resources
       this._window = null;
     }); // --- Load the main file
-    
+
     // --- Allow the `electron-windows-state` package to follow and save the
     // --- app window's state
     savedWindowState.manage(this._window);
@@ -308,7 +308,7 @@ export class AppWindow {
         {
           id: MACHINE_MENU_ITEMS[4],
           label: "Set tape file...",
-          click: async () => await this.selectTapeFile()
+          click: async () => await this.selectTapeFile(),
         },
       ],
     });
@@ -474,14 +474,30 @@ export class AppWindow {
         { name: "All Files", extensions: ["*"] },
       ],
     });
+    let tapeFile: string = "";
     if (!result.canceled) {
       try {
-        const contents = fs.readFileSync(result.filePaths[0]);
+        tapeFile = result.filePaths[0];
+        const contents = fs.readFileSync(tapeFile);
         if (checkTapeFile(new BinaryReader(contents))) {
           mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
+          await dialog.showMessageBox(this.window, {
+            title: `Tape file loaded`,
+            message: `Tape file ${tapeFile} successfully loaded.`,
+            type: "info",
+          });
+        } else {
+          throw new Error("Could not process the contenst of tape file.");
         }
       } catch (err) {
         // --- This error is intentionally ignored
+        await dialog.showMessageBox(this.window, {
+          title: `Error processing the tape file ${tapeFile}`,
+          message: err.toString(),
+          type: "error",
+          detail:
+            "Please check if you have the appropriate access rights to read the files contents and the file is a valid .tap or .tzx file.",
+        });
       }
     }
   }
@@ -495,5 +511,5 @@ const MACHINE_MENU_ITEMS = [
   "machine_128",
   "machine_p3e",
   "machine_next",
-  "set_tape"
+  "set_tape",
 ];
