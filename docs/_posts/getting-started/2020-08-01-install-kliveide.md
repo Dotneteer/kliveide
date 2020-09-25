@@ -21,8 +21,10 @@ To install Klive, follow these steps:
 6. If Klive Emulator is running, close it.
 7. Open Visual Studio Code, and open any empty folder as a project. The next few steps will add files and folders, so you'd better use an empty one. 
 8. Select the Extensions tab in the activity bar (the leftmost vertical panel in VS Code) . Above the list of the extensions, in the EXTENSIONS header, click the menu, and select **Install from VSIX...**. When the dialog opens, select and install the `kliveide-vsext-<version>.vsix` file, and then reload VS Code.
-9. Click the settings icon in VS Code's activity bar, and select the **Settings** menu command. You must set the **Emulator Executable Path** value to the one you saved in Step 5. Please, change all backslash characters to slashes, and do not forget to include the executable name. Make sure that the **Emulator Port** value is set to 3000, as today, Klive Emulator works only with this port. Shortly, you'll be able to set up a different port.
+9. Click the settings icon in VS Code's activity bar, and select the **Settings** menu command. You must set the **Emulator Executable Path** value to the one you saved in Step 5. Please, change all backslash characters to slashes, and do not forget to include the executable name. Make sure that the **Emulator Port** value is set to the same (3000, by default) as in Klive Emulator.
 10. In VS Code, press Ctrl+Shift+P, or F1 (or if those do not work on your machine, use the **View\|Command Palette...** menu). In the command box, type "Start Klive", and then run the **Start Klive Emulator** command. As its name suggests, this command ignites the Klive Emulator. If it starts successfully, the setup is complete. If not, probably you mistyped the name of the executable in the previous step.
+
+> Note: In Step 9, On Mac, you need to use the entire binary path. So, for example, instead of `/Applications/Klive.app`, you should specify `/Applications/Klive.app/Contents/MacOS/Klive`.
 
 Now, Klive is fully functional on your machine.
 
