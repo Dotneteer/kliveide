@@ -228,6 +228,16 @@ export interface PartialZ80AssemblyLine extends BaseNode {
  */
 export interface Z80AssemblyLine extends PartialZ80AssemblyLine, NodePosition {
   /**
+   * The file index of the parsed file
+   */
+  fileIndex: number;
+  
+  /**
+   * Source line text (to store macro text)
+   */
+  sourceText?: string;
+
+  /**
    * The optional end-of-line comment of the line
    */
   comment: string | null;
