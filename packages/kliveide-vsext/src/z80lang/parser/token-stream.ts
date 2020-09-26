@@ -16,11 +16,28 @@ export class TokenStream {
   // --- Prefetched character column (from the next token)
   private _prefetchedColumn: number | null = null;
 
+  // --- The last end-of-line comment
+  private _lastComment: string | null = null ;
+
   /**
    * Initializes the tokenizer with the input stream
    * @param input Input source code stream
    */
   constructor(public readonly input: InputStream) {}
+
+  /**
+   * Resets the last comment
+   */
+  resetComment(): void {
+    this._lastComment = null;
+  }
+
+  /**
+   * Gets the last end-of-line comment
+   */
+  get lastComment(): string | null {
+    return this._lastComment;
+  }
 
   /**
    * Fethches the next token without advancing to its position
@@ -43,6 +60,9 @@ export class TokenStream {
     // --- Prefetch missing tokens
     while (this._ahead.length <= n) {
       const token = this.fetch();
+      if (token.type === TokenType.EolComment) {
+        this._lastComment = token.text;
+      }
       if (isEof(token)) {
         return token;
       }
@@ -59,10 +79,17 @@ export class TokenStream {
    */
   get(ws = false): Token {
     if (this._ahead.length > 0) {
-      return this._ahead.shift();
+      const token = this._ahead.shift();
+      if (!token) {
+        throw new Error("Token expected")
+      }
+      return token;
     }
     while (true) {
       const token = this.fetch();
+      if (token.type === TokenType.EolComment) {
+        this._lastComment = token.text;
+      }
       if (isEof(token) || ws || (!ws && !isWs(token))) {
         return token;
       }
@@ -343,7 +370,7 @@ export class TokenStream {
           if (ch === ":") {
             return completeToken(TokenType.DoubleColon);
           } else if (ch === "=") {
-            return completeToken(TokenType.Var);
+            return completeToken(TokenType.VarPragma);
           }
           return makeToken();
 
@@ -446,6 +473,18 @@ export class TokenStream {
           if (ch === "'") {
             return completeToken(TokenType.Identifier);
           } else if (!isIdContinuation(ch)) {
+            // --- Special case: DEFG pragma
+            if (
+              text === "defg" ||
+              text === "DEFG" ||
+              text == "dg" ||
+              text === "DG"
+            ) {
+              phase = LexerPhase.DefgTail;
+              useResolver = false;
+              tokenType = TokenType.DefgPragma;
+              break;
+            }
             return makeToken();
           }
           break;
@@ -454,6 +493,18 @@ export class TokenStream {
         case LexerPhase.KeywordLike:
           useResolver = true;
           if (!isLetterOrDigit(ch) && ch !== "_") {
+            // --- Special case: DEFG pragma
+            if (
+              text === ".defg" ||
+              text === ".DEFG" ||
+              text == ".dg" ||
+              text === ".DG"
+            ) {
+              phase = LexerPhase.DefgTail;
+              useResolver = false;
+              tokenType = TokenType.DefgPragma;
+              break;
+            }
             return makeToken();
           }
           break;
@@ -507,6 +558,12 @@ export class TokenStream {
             tokenType =
               text === "$<none>" ? TokenType.NoneArg : TokenType.Unknown;
             return completeToken();
+          }
+          break;
+
+        case LexerPhase.DefgTail:
+          if (ch === "\r" || ch === "\n") {
+            return makeToken();
           }
           break;
 
@@ -566,6 +623,9 @@ export class TokenStream {
 
         // --- This previous case intentionally flows to this label
         case LexerPhase.NumericLiteral1_9:
+          if (ch === " " || ch === "\t") {
+            return makeToken();
+          }
           // --- Octal, decimal, or suffixed hexadecimal
           if (isHexaSuffix(ch)) {
             return completeToken(TokenType.HexadecimalLiteral);
@@ -1119,34 +1179,38 @@ export enum TokenType {
 
   Identifier,
 
-  Org,
-  Xorg,
-  Ent,
-  Xent,
-  Equ,
-  Var,
-  Disp,
-  Defb,
-  Defw,
-  Defm,
-  Defn,
-  Defh,
-  Defgx,
-  Defg,
-  Defc,
-  Skip,
-  Extern,
-  Defs,
-  Fillb,
-  Fillw,
-  Model,
-  Align,
-  Trace,
-  TraceHex,
-  RndSeed,
-  Error,
-  IncludeBin,
-  CompareBin,
+  OrgPragma,
+  BankPragma,
+  XorgPragma,
+  EntPragma,
+  XentPragma,
+  EquPragma,
+  VarPragma,
+  DispPragma,
+  DefbPragma,
+  DefwPragma,
+  DefmPragma,
+  DefnPragma,
+  DefhPragma,
+  DefgxPragma,
+  DefgPragma,
+  DefcPragma,
+  SkipPragma,
+  ExternPragma,
+  DefsPragma,
+  FillbPragma,
+  FillwPragma,
+  ModelPragma,
+  AlignPragma,
+  TracePragma,
+  TraceHexPragma,
+  RndSeedPragma,
+  ErrorPragma,
+  IncludeBinPragma,
+  CompareBinPragma,
+  ZxBasicPragma,
+  InjectOptPragma,
+
   Macro,
   Endm,
   Proc,
@@ -1173,6 +1237,7 @@ export enum TokenType {
   EndModule,
   Struct,
   Ends,
+  Local,
 
   TextOf,
   LTextOf,
@@ -1191,6 +1256,26 @@ export enum TokenType {
   IsIndexedAddr,
   IsCondition,
   IsExpr,
+  IsRegA,
+  IsRegAf,
+  IsRegB,
+  IsRegC,
+  IsRegBc,
+  IsRegD,
+  IsRegE,
+  IsRegDe,
+  IsRegH,
+  IsRegL,
+  IsRegHl,
+  IsRegI,
+  IsRegR,
+  IsRegXh,
+  IsRegXl,
+  IsRegIx,
+  IsRegYh,
+  IsRegYl,
+  IsRegIy,
+  IsRegSp,
 
   True,
   False,
@@ -1354,6 +1439,9 @@ enum LexerPhase {
   StringHexa2,
 
   StringTail,
+
+  // Wait for the end of DEFG pragma
+  DefgTail,
 }
 
 /**
@@ -1517,6 +1605,16 @@ const resolverHash: { [key: string]: TokenType } = {
   iyl: TokenType.YL,
   IYL: TokenType.YL,
   IYl: TokenType.YL,
+  xh: TokenType.XH,
+  XH: TokenType.XH,
+  ixh: TokenType.XH,
+  IXH: TokenType.XH,
+  IXh: TokenType.XH,
+  yh: TokenType.YH,
+  YH: TokenType.YH,
+  iyh: TokenType.YH,
+  IYH: TokenType.YH,
+  IYh: TokenType.YH,
 
   bc: TokenType.BC,
   BC: TokenType.BC,
@@ -1729,185 +1827,200 @@ const resolverHash: { [key: string]: TokenType } = {
   lddrx: TokenType.Lddrx,
   LDDRX: TokenType.Lddrx,
 
-  ".org": TokenType.Org,
-  ".ORG": TokenType.Org,
-  org: TokenType.Org,
-  ORG: TokenType.Org,
+  ".org": TokenType.OrgPragma,
+  ".ORG": TokenType.OrgPragma,
+  org: TokenType.OrgPragma,
+  ORG: TokenType.OrgPragma,
 
-  ".xorg": TokenType.Xorg,
-  ".XORG": TokenType.Xorg,
-  xorg: TokenType.Xorg,
-  XORG: TokenType.Xorg,
+  ".bank": TokenType.BankPragma,
+  ".BANK": TokenType.BankPragma,
+  bank: TokenType.BankPragma,
+  BANK: TokenType.BankPragma,
 
-  ".ent": TokenType.Ent,
-  ".ENT": TokenType.Ent,
-  ent: TokenType.Ent,
-  ENT: TokenType.Ent,
+  ".xorg": TokenType.XorgPragma,
+  ".XORG": TokenType.XorgPragma,
+  xorg: TokenType.XorgPragma,
+  XORG: TokenType.XorgPragma,
 
-  ".xent": TokenType.Xent,
-  ".XENT": TokenType.Xent,
-  xent: TokenType.Xent,
-  XENT: TokenType.Xent,
+  ".ent": TokenType.EntPragma,
+  ".ENT": TokenType.EntPragma,
+  ent: TokenType.EntPragma,
+  ENT: TokenType.EntPragma,
 
-  ".equ": TokenType.Equ,
-  ".EQU": TokenType.Equ,
-  equ: TokenType.Equ,
-  EQU: TokenType.Equ,
+  ".xent": TokenType.XentPragma,
+  ".XENT": TokenType.XentPragma,
+  xent: TokenType.XentPragma,
+  XENT: TokenType.XentPragma,
 
-  ".var": TokenType.Var,
-  ".VAR": TokenType.Var,
-  var: TokenType.Var,
-  VAR: TokenType.Var,
+  ".equ": TokenType.EquPragma,
+  ".EQU": TokenType.EquPragma,
+  equ: TokenType.EquPragma,
+  EQU: TokenType.EquPragma,
 
-  ".disp": TokenType.Disp,
-  ".DISP": TokenType.Disp,
-  disp: TokenType.Disp,
-  DISP: TokenType.Disp,
+  ".var": TokenType.VarPragma,
+  ".VAR": TokenType.VarPragma,
+  var: TokenType.VarPragma,
+  VAR: TokenType.VarPragma,
 
-  ".defb": TokenType.Defb,
-  ".DEFB": TokenType.Defb,
-  defb: TokenType.Defb,
-  DEFB: TokenType.Defb,
-  ".db": TokenType.Defb,
-  ".DB": TokenType.Defb,
-  db: TokenType.Defb,
-  DB: TokenType.Defb,
+  ".disp": TokenType.DispPragma,
+  ".DISP": TokenType.DispPragma,
+  disp: TokenType.DispPragma,
+  DISP: TokenType.DispPragma,
 
-  ".defw": TokenType.Defw,
-  ".DEFW": TokenType.Defw,
-  defw: TokenType.Defw,
-  DEFW: TokenType.Defw,
-  ".dw": TokenType.Defw,
-  ".DW": TokenType.Defw,
-  dw: TokenType.Defw,
-  DW: TokenType.Defw,
+  ".defb": TokenType.DefbPragma,
+  ".DEFB": TokenType.DefbPragma,
+  defb: TokenType.DefbPragma,
+  DEFB: TokenType.DefbPragma,
+  ".db": TokenType.DefbPragma,
+  ".DB": TokenType.DefbPragma,
+  db: TokenType.DefbPragma,
+  DB: TokenType.DefbPragma,
 
-  ".defm": TokenType.Defm,
-  ".DEFM": TokenType.Defm,
-  defm: TokenType.Defm,
-  DEFM: TokenType.Defm,
-  ".dm": TokenType.Defm,
-  ".DM": TokenType.Defm,
-  dm: TokenType.Defm,
-  DM: TokenType.Defm,
+  ".defw": TokenType.DefwPragma,
+  ".DEFW": TokenType.DefwPragma,
+  defw: TokenType.DefwPragma,
+  DEFW: TokenType.DefwPragma,
+  ".dw": TokenType.DefwPragma,
+  ".DW": TokenType.DefwPragma,
+  dw: TokenType.DefwPragma,
+  DW: TokenType.DefwPragma,
 
-  ".defn": TokenType.Defn,
-  ".DEFN": TokenType.Defn,
-  defn: TokenType.Defn,
-  DEFN: TokenType.Defn,
-  ".dn": TokenType.Defn,
-  ".DN": TokenType.Defn,
-  dn: TokenType.Defn,
-  DN: TokenType.Defn,
+  ".defm": TokenType.DefmPragma,
+  ".DEFM": TokenType.DefmPragma,
+  defm: TokenType.DefmPragma,
+  DEFM: TokenType.DefmPragma,
+  ".dm": TokenType.DefmPragma,
+  ".DM": TokenType.DefmPragma,
+  dm: TokenType.DefmPragma,
+  DM: TokenType.DefmPragma,
 
-  ".defh": TokenType.Defh,
-  ".DEFH": TokenType.Defh,
-  defh: TokenType.Defh,
-  DEFH: TokenType.Defh,
-  ".dh": TokenType.Defh,
-  ".DH": TokenType.Defh,
-  dh: TokenType.Defh,
-  DH: TokenType.Defh,
+  ".defn": TokenType.DefnPragma,
+  ".DEFN": TokenType.DefnPragma,
+  defn: TokenType.DefnPragma,
+  DEFN: TokenType.DefnPragma,
+  ".dn": TokenType.DefnPragma,
+  ".DN": TokenType.DefnPragma,
+  dn: TokenType.DefnPragma,
+  DN: TokenType.DefnPragma,
 
-  ".defgx": TokenType.Defgx,
-  ".DEFGX": TokenType.Defgx,
-  defgx: TokenType.Defgx,
-  DEFGX: TokenType.Defgx,
-  ".dgx": TokenType.Defgx,
-  ".DGX": TokenType.Defgx,
-  dgx: TokenType.Defgx,
-  DGX: TokenType.Defgx,
+  ".defh": TokenType.DefhPragma,
+  ".DEFH": TokenType.DefhPragma,
+  defh: TokenType.DefhPragma,
+  DEFH: TokenType.DefhPragma,
+  ".dh": TokenType.DefhPragma,
+  ".DH": TokenType.DefhPragma,
+  dh: TokenType.DefhPragma,
+  DH: TokenType.DefhPragma,
 
-  ".defg": TokenType.Defg,
-  ".DEFG": TokenType.Defg,
-  defg: TokenType.Defg,
-  DEFG: TokenType.Defg,
-  ".dg": TokenType.Defg,
-  ".DG": TokenType.Defg,
-  dg: TokenType.Defg,
-  DG: TokenType.Defg,
+  ".defgx": TokenType.DefgxPragma,
+  ".DEFGX": TokenType.DefgxPragma,
+  defgx: TokenType.DefgxPragma,
+  DEFGX: TokenType.DefgxPragma,
+  ".dgx": TokenType.DefgxPragma,
+  ".DGX": TokenType.DefgxPragma,
+  dgx: TokenType.DefgxPragma,
+  DGX: TokenType.DefgxPragma,
 
-  ".defc": TokenType.Defc,
-  ".DEFC": TokenType.Defc,
-  defc: TokenType.Defc,
-  DEFC: TokenType.Defc,
-  ".dc": TokenType.Defc,
-  ".DC": TokenType.Defc,
-  dc: TokenType.Defc,
-  DC: TokenType.Defc,
+  ".defg": TokenType.DefgPragma,
+  ".DEFG": TokenType.DefgPragma,
+  defg: TokenType.DefgPragma,
+  DEFG: TokenType.DefgPragma,
+  ".dg": TokenType.DefgPragma,
+  ".DG": TokenType.DefgPragma,
+  dg: TokenType.DefgPragma,
+  DG: TokenType.DefgPragma,
 
-  ".skip": TokenType.Skip,
-  ".SKIP": TokenType.Skip,
-  skip: TokenType.Skip,
-  SKIP: TokenType.Skip,
+  ".defc": TokenType.DefcPragma,
+  ".DEFC": TokenType.DefcPragma,
+  defc: TokenType.DefcPragma,
+  DEFC: TokenType.DefcPragma,
+  ".dc": TokenType.DefcPragma,
+  ".DC": TokenType.DefcPragma,
+  dc: TokenType.DefcPragma,
+  DC: TokenType.DefcPragma,
 
-  ".extern": TokenType.Extern,
-  ".EXTERN": TokenType.Extern,
-  extern: TokenType.Extern,
-  EXTERN: TokenType.Extern,
+  ".skip": TokenType.SkipPragma,
+  ".SKIP": TokenType.SkipPragma,
+  skip: TokenType.SkipPragma,
+  SKIP: TokenType.SkipPragma,
 
-  ".defs": TokenType.Defs,
-  ".DEFS": TokenType.Defs,
-  defs: TokenType.Defs,
-  DEFS: TokenType.Defs,
-  ".ds": TokenType.Defs,
-  ".DS": TokenType.Defs,
-  ds: TokenType.Defs,
-  DS: TokenType.Defs,
+  ".extern": TokenType.ExternPragma,
+  ".EXTERN": TokenType.ExternPragma,
+  extern: TokenType.ExternPragma,
+  EXTERN: TokenType.ExternPragma,
 
-  ".fillb": TokenType.Fillb,
-  ".FILLB": TokenType.Fillb,
-  fillb: TokenType.Fillb,
-  FILLB: TokenType.Fillb,
+  ".defs": TokenType.DefsPragma,
+  ".DEFS": TokenType.DefsPragma,
+  defs: TokenType.DefsPragma,
+  DEFS: TokenType.DefsPragma,
+  ".ds": TokenType.DefsPragma,
+  ".DS": TokenType.DefsPragma,
+  ds: TokenType.DefsPragma,
+  DS: TokenType.DefsPragma,
 
-  ".fillw": TokenType.Fillw,
-  ".FILLW": TokenType.Fillw,
-  fillw: TokenType.Fillw,
-  FILLW: TokenType.Fillw,
+  ".fillb": TokenType.FillbPragma,
+  ".FILLB": TokenType.FillbPragma,
+  fillb: TokenType.FillbPragma,
+  FILLB: TokenType.FillbPragma,
 
-  ".model": TokenType.Model,
-  ".MODEL": TokenType.Model,
-  model: TokenType.Model,
-  MODEL: TokenType.Model,
+  ".fillw": TokenType.FillwPragma,
+  ".FILLW": TokenType.FillwPragma,
+  fillw: TokenType.FillwPragma,
+  FILLW: TokenType.FillwPragma,
 
-  ".align": TokenType.Align,
-  ".ALIGN": TokenType.Align,
-  align: TokenType.Align,
-  ALIGN: TokenType.Align,
+  ".model": TokenType.ModelPragma,
+  ".MODEL": TokenType.ModelPragma,
+  model: TokenType.ModelPragma,
+  MODEL: TokenType.ModelPragma,
 
-  ".trace": TokenType.Trace,
-  ".TRACE": TokenType.Trace,
-  trace: TokenType.Trace,
-  TRACE: TokenType.Trace,
+  ".align": TokenType.AlignPragma,
+  ".ALIGN": TokenType.AlignPragma,
+  align: TokenType.AlignPragma,
+  ALIGN: TokenType.AlignPragma,
 
-  ".tracehex": TokenType.TraceHex,
-  ".TRACEHEX": TokenType.TraceHex,
-  tracehex: TokenType.TraceHex,
-  TRACEHEX: TokenType.TraceHex,
+  ".trace": TokenType.TracePragma,
+  ".TRACE": TokenType.TracePragma,
+  trace: TokenType.TracePragma,
+  TRACE: TokenType.TracePragma,
 
-  ".rndseed": TokenType.RndSeed,
-  ".RNDSEED": TokenType.RndSeed,
-  rndseed: TokenType.RndSeed,
-  RNDSEED: TokenType.RndSeed,
+  ".tracehex": TokenType.TraceHexPragma,
+  ".TRACEHEX": TokenType.TraceHexPragma,
+  tracehex: TokenType.TraceHexPragma,
+  TRACEHEX: TokenType.TraceHexPragma,
 
-  ".error": TokenType.Error,
-  ".ERROR": TokenType.Error,
-  error: TokenType.Error,
-  ERROR: TokenType.Error,
+  ".rndseed": TokenType.RndSeedPragma,
+  ".RNDSEED": TokenType.RndSeedPragma,
+  rndseed: TokenType.RndSeedPragma,
+  RNDSEED: TokenType.RndSeedPragma,
 
-  ".includebin": TokenType.IncludeBin,
-  ".INCLUDEBIN": TokenType.IncludeBin,
-  ".include_bin": TokenType.IncludeBin,
-  ".INCLUDE_BIN": TokenType.IncludeBin,
-  includebin: TokenType.IncludeBin,
-  INCLUDEBIN: TokenType.IncludeBin,
-  include_bin: TokenType.IncludeBin,
-  INCLUDE_BIN: TokenType.IncludeBin,
+  ".error": TokenType.ErrorPragma,
+  ".ERROR": TokenType.ErrorPragma,
+  error: TokenType.ErrorPragma,
+  ERROR: TokenType.ErrorPragma,
 
-  ".comparebin": TokenType.CompareBin,
-  ".COMPAREBIN": TokenType.CompareBin,
-  comparebin: TokenType.CompareBin,
-  COMPAREBIN: TokenType.CompareBin,
+  ".includebin": TokenType.IncludeBinPragma,
+  ".INCLUDEBIN": TokenType.IncludeBinPragma,
+  ".include_bin": TokenType.IncludeBinPragma,
+  ".INCLUDE_BIN": TokenType.IncludeBinPragma,
+  includebin: TokenType.IncludeBinPragma,
+  INCLUDEBIN: TokenType.IncludeBinPragma,
+  include_bin: TokenType.IncludeBinPragma,
+  INCLUDE_BIN: TokenType.IncludeBinPragma,
+
+  ".comparebin": TokenType.CompareBinPragma,
+  ".COMPAREBIN": TokenType.CompareBinPragma,
+  comparebin: TokenType.CompareBinPragma,
+  COMPAREBIN: TokenType.CompareBinPragma,
+
+  ".zxbasic": TokenType.ZxBasicPragma,
+  ".ZXBASIC": TokenType.ZxBasicPragma,
+  zxbasic: TokenType.ZxBasicPragma,
+  ZXBASIC: TokenType.ZxBasicPragma,
+
+  ".injectopt": TokenType.InjectOptPragma,
+  ".INJECTOPT": TokenType.InjectOptPragma,
+  injectopt: TokenType.InjectOptPragma,
+  INJECTOPT: TokenType.InjectOptPragma,
 
   ".macro": TokenType.Macro,
   ".MACRO": TokenType.Macro,
@@ -1925,55 +2038,33 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".proc": TokenType.Proc,
   ".PROC": TokenType.Proc,
-  proc: TokenType.Proc,
-  PROC: TokenType.Proc,
 
   ".endp": TokenType.Endp,
   ".ENDP": TokenType.Endp,
-  endp: TokenType.Endp,
-  ENDP: TokenType.Endp,
   ".pend": TokenType.Endp,
   ".PEND": TokenType.Endp,
-  pend: TokenType.Endp,
-  PEND: TokenType.Endp,
 
   ".loop": TokenType.Loop,
   ".LOOP": TokenType.Loop,
-  loop: TokenType.Loop,
-  LOOP: TokenType.Loop,
 
   ".endl": TokenType.Endl,
   ".ENDL": TokenType.Endl,
-  endl: TokenType.Endl,
-  ENDL: TokenType.Endl,
   ".lend": TokenType.Endl,
   ".LEND": TokenType.Endl,
-  lend: TokenType.Endl,
-  LEND: TokenType.Endl,
 
   ".repeat": TokenType.Repeat,
   ".REPEAT": TokenType.Repeat,
-  repeat: TokenType.Repeat,
-  REPEAT: TokenType.Repeat,
 
   ".until": TokenType.Until,
   ".UNTIL": TokenType.Until,
-  until: TokenType.Until,
-  UNTIL: TokenType.Until,
 
   ".while": TokenType.While,
   ".WHILE": TokenType.While,
-  while: TokenType.While,
-  WHILE: TokenType.While,
 
   ".endw": TokenType.Endw,
   ".ENDW": TokenType.Endw,
-  endw: TokenType.Endw,
-  ENDW: TokenType.Endw,
   ".wend": TokenType.Endw,
   ".WEND": TokenType.Endw,
-  wend: TokenType.Endw,
-  WEND: TokenType.Endw,
 
   ".if": TokenType.If,
   ".IF": TokenType.If,
@@ -1992,13 +2083,9 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".elif": TokenType.Elif,
   ".ELIF": TokenType.Elif,
-  elif: TokenType.Elif,
-  ELIF: TokenType.Elif,
-
+  
   ".else": TokenType.Else,
   ".ELSE": TokenType.Else,
-  else: TokenType.Else,
-  ELSE: TokenType.Else,
 
   ".endif": TokenType.Endif,
   ".ENDIF": TokenType.Endif,
@@ -2022,18 +2109,12 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".next": TokenType.Next,
   ".NEXT": TokenType.Next,
-  next: TokenType.Next,
-  NEXT: TokenType.Next,
 
   ".break": TokenType.Break,
   ".BREAK": TokenType.Break,
-  break: TokenType.Break,
-  BREAK: TokenType.Break,
 
   ".continue": TokenType.Continue,
   ".CONTINUE": TokenType.Continue,
-  continue: TokenType.Continue,
-  CONTINUE: TokenType.Continue,
 
   ".module": TokenType.Module,
   ".MODULE": TokenType.Module,
@@ -2068,8 +2149,13 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".ends": TokenType.Ends,
   ".ENDS": TokenType.Ends,
-  ends: TokenType.Ends,
-  ENDS: TokenType.Ends,
+
+  ".local": TokenType.Local,
+  ".LOCAL": TokenType.Local,
+  "local": TokenType.Local,
+  "LOCAL": TokenType.Local,
+  "Local": TokenType.Local,
+
 
   textof: TokenType.TextOf,
   TEXTOF: TokenType.TextOf,
@@ -2121,6 +2207,47 @@ const resolverHash: { [key: string]: TokenType } = {
 
   isexpr: TokenType.IsExpr,
   ISEXPR: TokenType.IsExpr,
+
+  isrega: TokenType.IsRegA,
+  ISREGA: TokenType.IsRegA,
+  isregaf: TokenType.IsRegAf,
+  ISREGAF: TokenType.IsRegAf,
+  isregb: TokenType.IsRegB,
+  ISREGB: TokenType.IsRegB,
+  isregc: TokenType.IsRegC,
+  ISREGC: TokenType.IsRegC,
+  isregbc: TokenType.IsRegBc,
+  ISREGBC: TokenType.IsRegBc,
+  isregd: TokenType.IsRegD,
+  ISREGD: TokenType.IsRegD,
+  isrege: TokenType.IsRegE,
+  ISREGE: TokenType.IsRegE,
+  isregde: TokenType.IsRegDe,
+  ISREGDE: TokenType.IsRegDe,
+  isregh: TokenType.IsRegH,
+  ISREGH: TokenType.IsRegH,
+  isregl: TokenType.IsRegL,
+  ISREGL: TokenType.IsRegL,
+  isreghl: TokenType.IsRegHl,
+  ISREGHL: TokenType.IsRegHl,
+  isregi: TokenType.IsRegI,
+  ISREGI: TokenType.IsRegI,
+  isregr: TokenType.IsRegR,
+  ISREGR: TokenType.IsRegR,
+  isregxh: TokenType.IsRegXh,
+  ISREGXH: TokenType.IsRegXh,
+  isregxl: TokenType.IsRegXl,
+  ISREGXL: TokenType.IsRegXl,
+  isregix: TokenType.IsRegIx,
+  ISREGIX: TokenType.IsRegIx,
+  isregyh: TokenType.IsRegYh,
+  ISREGYH: TokenType.IsRegYh,
+  isregyl: TokenType.IsRegYl,
+  ISREGYL: TokenType.IsRegYl,
+  isregiy: TokenType.IsRegIy,
+  ISREGIY: TokenType.IsRegIy,
+  isregsp: TokenType.IsRegSp,
+  ISREGSP: TokenType.IsRegSp,
 
   ".true": TokenType.True,
   ".TRUE": TokenType.True,

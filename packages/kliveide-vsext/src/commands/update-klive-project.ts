@@ -11,6 +11,7 @@ import {
   BASIC_FILE,
   TAPE_FOLDER,
   CODE_FOLDER,
+  CODE_FILE,
   JETSET_TAPE,
   JUNGLE_TAPE,
   PACMAN_TAPE,
@@ -109,6 +110,12 @@ export async function updateKliveProject(
     fs.mkdirSync(codeFolder, { recursive: true });
     foldersCreated++;
   }
+  const codeFile = path.join(codeFolder, CODE_FILE);
+  if (!fs.existsSync(codeFile)) {
+    copyFile(path.join(templateFolder, CODE_FILE), codeFile);
+    filesCreated++;
+  }
+
   const jetSetFile = path.join(tapeFolder, JETSET_TAPE);
   if (!fs.existsSync(jetSetFile)) {
     copyFile(path.join(templateFolder, JETSET_TAPE), jetSetFile);

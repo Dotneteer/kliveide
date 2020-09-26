@@ -1,10 +1,10 @@
 import "mocha";
 import * as expect from "expect";
 
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream } from "../../src/parser/token-stream";
-import { Z80AsmParser } from "../../src/parser/z80-asm-parser";
-import { Symbol, UnaryExpression } from "../../src/parser/tree-nodes";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
+import { TokenStream } from "../../src/z80lang/parser/token-stream";
+import { Z80AsmParser } from "../../src/z80lang/parser/z80-asm-parser";
+import { Symbol, UnaryExpression } from "../../src/z80lang/parser/tree-nodes";
 import { fail } from "assert";
 
 describe("Parser - unary expressions", () => {
@@ -27,7 +27,7 @@ function testUnary(operator: string): void {
   const { operand } = unary;
   expect(operand.type === "Symbol").toBe(true);
   const symbol = operand as Symbol;
-  expect(symbol.identifier).toBe("abc");
+  expect(symbol.identifier.name).toBe("abc");
 
   parser = createParser(operator + "de");
   try {

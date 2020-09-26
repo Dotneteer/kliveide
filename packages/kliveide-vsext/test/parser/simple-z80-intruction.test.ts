@@ -1,10 +1,10 @@
 import "mocha";
 import * as expect from "expect";
 
-import { Z80AssemblyLine, Z80Instruction } from "../../src/parser/tree-nodes";
-import { InputStream } from "../../src/parser/input-stream";
-import { TokenStream } from "../../src/parser/token-stream";
-import { Z80AsmParser } from "../../src/parser/z80-asm-parser";
+import { SimpleZ80Instruction, Z80AssemblyLine, Z80Instruction } from "../../src/z80lang/parser/tree-nodes";
+import { InputStream } from "../../src/z80lang/parser/input-stream";
+import { TokenStream } from "../../src/z80lang/parser/token-stream";
+import { Z80AsmParser } from "../../src/z80lang/parser/z80-asm-parser";
 
 describe("Parser - simple Z80 instructions", () => {
   it("label-only #1", () => {
@@ -15,7 +15,7 @@ describe("Parser - simple Z80 instructions", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type).toBe("LabelOnlyLine");
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
-    expect(line.label).toBe("myLabel");
+    expect(line.label.name).toBe("myLabel");
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(7);
     expect(line.line).toBe(1);
@@ -31,7 +31,7 @@ describe("Parser - simple Z80 instructions", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type).toBe("LabelOnlyLine");
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
-    expect(line.label).toBe("myLabel");
+    expect(line.label.name).toBe("myLabel");
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(8);
     expect(line.line).toBe(1);
@@ -47,7 +47,7 @@ describe("Parser - simple Z80 instructions", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type).toBe("LabelOnlyLine");
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
-    expect(line.label).toBe("myLabel");
+    expect(line.label.name).toBe("myLabel");
     expect(line.startPosition).toBe(2);
     expect(line.endPosition).toBe(10);
     expect(line.line).toBe(1);
@@ -63,7 +63,7 @@ describe("Parser - simple Z80 instructions", () => {
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type).toBe("LabelOnlyLine");
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
-    expect(line.label).toBe("myLabel");
+    expect(line.label.name).toBe("myLabel");
     expect(line.startPosition).toBe(2);
     expect(line.endPosition).toBe(10);
     expect(line.line).toBe(1);
@@ -134,7 +134,7 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  let line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  let line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   let asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
   expect(asmLine.label).toBeNull();
@@ -151,7 +151,7 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
   expect(asmLine.label).toBeNull();
@@ -168,7 +168,7 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
   expect(asmLine.label).toBeNull();
@@ -185,7 +185,7 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
   expect(asmLine.label).toBeNull();
@@ -202,7 +202,7 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
   expect(asmLine.label).toBeNull();
@@ -219,7 +219,7 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
   expect(asmLine.label).toBeNull();
@@ -236,10 +236,10 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
-  expect(asmLine.label).toBe("myLabel");
+  expect(asmLine.label.name).toBe("myLabel");
   expect(asmLine.startPosition).toBe(0);
   expect(asmLine.endPosition).toBe(8 + source.length);
   expect(asmLine.line).toBe(1);
@@ -253,10 +253,10 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
-  expect(asmLine.label).toBe("myLabel");
+  expect(asmLine.label.name).toBe("myLabel");
   expect(asmLine.startPosition).toBe(0);
   expect(asmLine.endPosition).toBe(8 + source.length);
   expect(asmLine.line).toBe(1);
@@ -270,10 +270,10 @@ function testInstruction(source: string): void {
   expect(parsed).not.toBeNull();
   expect(parsed.assemblyLines.length).toBe(1);
   expect(parsed.assemblyLines[0].type).toBe("SimpleZ80Instruction");
-  line = (parsed.assemblyLines[0] as unknown) as Z80Instruction;
+  line = (parsed.assemblyLines[0] as unknown) as SimpleZ80Instruction;
   expect(line.mnemonic).toBe(source.toUpperCase());
   asmLine = parsed.assemblyLines[0] as Z80AssemblyLine;
-  expect(asmLine.label).toBe("myLabel");
+  expect(asmLine.label.name).toBe("myLabel");
   expect(asmLine.startPosition).toBe(0);
   expect(asmLine.endPosition).toBe(9 + source.length);
   expect(asmLine.line).toBe(1);

@@ -94,6 +94,14 @@ export function emulatorSelectBankAction(selectedBank: number) {
   return createAction("EMULATOR_SELECT_BANK", { selectedBank });
 }
 
+export function emulatorSetLoadModeAction(isLoading: boolean) {
+  return createAction("EMULATOR_LOAD_MODE", { isLoading });
+}
+
+export function emulatorSetPanelMessageAction(panelMessage: string) {
+  return createAction("EMULATOR_SET_MESSAGE", { panelMessage });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -183,6 +191,10 @@ export function emulatorStateReducer(
       return { ...state, selectedRom: payload.selectedRom };
     case "EMULATOR_SELECT_BANK":
       return { ...state, selectedBank: payload.selectedBank };
+    case "EMULATOR_LOAD_MODE":
+      return { ...state, isLoading: payload.isLoading };
+    case "EMULATOR_SET_MESSAGE":
+      return { ...state, panelMessage: payload.panelMessage };
   }
   return state;
 }

@@ -33,6 +33,8 @@ import {
   emulatorLoadTapeAction,
   emulatorSelectRomAction,
   emulatorSelectBankAction,
+  emulatorSetLoadModeAction,
+  emulatorSetPanelMessageAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -43,7 +45,6 @@ import {
   MEMWRITE_MAP,
   BEEPER_SAMPLE_BUFFER,
   PSG_SAMPLE_BUFFER,
-  PSG_ENVELOP_TABLE,
   BANK_0_OFFS,
 } from "../../native/api/memory-map";
 
@@ -323,29 +324,9 @@ export class SpectrumEngine {
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();
-      const emuState = state.emulatorPanelState;
 
-      // --- Set tape contents
-      if (!emuState.tapeContents || emuState.tapeContents.length === 0) {
-        let contents = new Uint8Array(0);
-        try {
-          contents = fs.readFileSync(
-            path.join(__dirname, "./tapes/Pac-Man.tzx")
-          );
-        } catch (err) {}
-        rendererProcessStore.dispatch(
-          emulatorSetTapeContenstAction(contents)()
-        );
-        this._defaultTapeSet = contents;
-      } else {
-        this._defaultTapeSet = emuState.tapeContents;
-      }
-
-      const binaryReader = new BinaryReader(this._defaultTapeSet);
-      this.initTape(binaryReader);
-
-      // --- Set fast LOAD mode
-      this.spectrum.api.setFastLoad(emuState.fastLoad);
+      // --- Rewind the tape
+      this.initTapeContents();
 
       // --- Set breakpoints
       this.spectrum.api.eraseBreakpoints();
@@ -542,6 +523,8 @@ export class SpectrumEngine {
 
     // --- Execute the cycle until completed
     while (true) {
+      // --- Update fast load mode
+
       // --- Prepare the execution cycle
       const frameStartTime = performance.now();
       this.spectrum.api.eraseMemoryWriteMap();
@@ -608,12 +591,19 @@ export class SpectrumEngine {
       machine.spectrum.api.colorize();
       machine._screenRefreshed.fire();
 
-      // --- Obtain beeper samples
+      // --- Update load state
       const emuState = rendererProcessStore.getState().emulatorPanelState;
+      rendererProcessStore.dispatch(
+        emulatorSetLoadModeAction(resultState.tapeMode === 1)()
+      );
+      this.spectrum.api.setFastLoad(emuState.fastLoad);
+
+      // --- Obtain beeper samples
       if (!this._beeperRenderer) {
         this._beeperRenderer = new AudioRenderer(
           resultState.tactsInFrame / resultState.audioSampleLength
         );
+        await this._beeperRenderer.initializeAudio();
       }
       mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = emuState.muted
@@ -626,6 +616,7 @@ export class SpectrumEngine {
         this._psgRenderer = new AudioRenderer(
           resultState.tactsInFrame / resultState.audioSampleLength
         );
+        await this._psgRenderer.initializeAudio();
       }
       mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
       const psgSamples = emuState.muted
@@ -758,11 +749,39 @@ export class SpectrumEngine {
     };
   }
 
+  initTapeContents(message?: string): void {
+    const state = rendererProcessStore.getState();
+    const emuState = state.emulatorPanelState;
+
+    // --- Set tape contents
+    if (!emuState.tapeContents || emuState.tapeContents.length === 0) {
+      let contents = new Uint8Array(0);
+      try {
+        contents = fs.readFileSync(path.join(__dirname, "./tapes/Pac-Man.tzx"));
+      } catch (err) {}
+      rendererProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
+      this._defaultTapeSet = contents;
+    } else {
+      this._defaultTapeSet = emuState.tapeContents;
+    }
+
+    const binaryReader = new BinaryReader(this._defaultTapeSet);
+    this.initTape(binaryReader);
+
+    if (message) {
+      (async () => {
+        rendererProcessStore.dispatch(emulatorSetPanelMessageAction(message)());
+        await new Promise((r) => setTimeout(r, 3000));
+        rendererProcessStore.dispatch(emulatorSetPanelMessageAction("")());
+      })();
+    }
+  }
+
   /**
    * Initializes the tape from the specified binary reader
    * @param reader Reader to use
    */
-  initTape(reader: BinaryReader): boolean {
+  private initTape(reader: BinaryReader): boolean {
     const tzxReader = new TzxReader(reader);
     if (tzxReader.readContents()) {
       const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
@@ -799,7 +818,10 @@ export class SpectrumEngine {
     if (!state.memoryPagingEnabled || page < 0 || page > state.numberOfRoms) {
       return new Uint8Array(0);
     }
-    const mh = new MemoryHelper(this.spectrum.api, this.spectrum.getRomPageBaseAddress());
+    const mh = new MemoryHelper(
+      this.spectrum.api,
+      this.spectrum.getRomPageBaseAddress()
+    );
     return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
 

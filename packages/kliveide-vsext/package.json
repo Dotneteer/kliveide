@@ -142,6 +142,25 @@
           }
         ]
       }
+    ],
+    "languages": [
+      {
+        "id": "z80asm",
+        "extensions": [
+          ".z80asm"
+        ],
+        "aliases": [
+          "Z80 Assembly"
+        ],
+        "configuration": "./src/z80lang/z80asm-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "z80asm",
+        "scopeName": "source.asm.klivez80",
+        "path": "./src/z80lang/klivez80.tmGrammar.json"
+      }
     ]
   },
   "scripts": {
@@ -186,6 +205,9 @@
   },
   "dependencies": {
     "node-fetch": "^2.6.1",
-    "node-ipc": "^9.1.1"
+    "node-ipc": "^9.1.1",
+    "vscode-languageclient": "^6.1.3",
+    "vscode-languageserver": "^6.1.1",
+    "vscode-languageserver-textdocument": "^1.0.1"
   }
 }

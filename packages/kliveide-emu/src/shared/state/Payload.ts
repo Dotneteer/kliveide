@@ -15,6 +15,7 @@ export interface Payload {
   shadowScreen?: boolean;
   beamPosition?: boolean;
   fastLoad?: boolean;
+  isLoading?: boolean;
   command?: string;
   startCount?: number;
   frameCount?: number;
@@ -35,4 +36,5 @@ export interface Payload {
   index?: number;
   memoryCommandResult?: Uint8Array;
   seqNo?: number;
+  panelMessage?: string;
 }
