@@ -496,7 +496,7 @@ export class AppWindow {
           message: err.toString(),
           type: "error",
           detail:
-            "Please check if you have the appropriate access rights to read the files contents and the file is a valid .tap or .tzx file.",
+            "Please check if you have the appropriate access rights to read the files contents and the file is a valid .tap or .tzx file (note: 'dsk' format is not supported, yet).",
         });
       }
     }
