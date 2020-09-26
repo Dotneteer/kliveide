@@ -6,7 +6,7 @@ type ErrorText = { [key: string]: string };
 /**
  * DEscribes the structure of error messages
  */
-export interface ErrorMessage {
+export interface ParserErrorMessage {
   code: ErrorCodes;
   text: string;
   position: number;
@@ -37,6 +37,19 @@ export type ErrorCodes =
   | "Z1020"
   | "Z1021"
   | "Z1022"
+  | "Z2000"
+  | "Z2001"
+  | "Z2002"
+  | "Z2003"
+  | "Z2004"
+  | "Z2005"
+  | "Z2006"
+  | "Z2007"
+  | "Z2008"
+  | "Z2009"
+  | "Z2010"
+  | "Z2011"
+  | "Z2012";
 
 export const errorMessages: ErrorText = {
   Z1001: "Invalid token at the end of the line: {{0}}",
@@ -61,4 +74,18 @@ export const errorMessages: ErrorText = {
   Z1020: "'to' expected",
   Z1021: "A byte-emitting pragma expected",
   Z1022: "BC, DE, HL, or SP expected",
+
+  Z2000: "The current assembly address overflew $FFFF",
+  Z2001: "The emitted code overflows the segment/bank.",
+  Z2002: "The .ZXBASIC pragma should be used before any other pragma or instruction.",
+  Z2003: "Missing #endif directive",
+  Z2004: "Cannot find include file: '{0}'",
+  Z2005: "Include file '{0}' is included more than once into the same parent source file",
+  Z2006: "Include file '{0}' causes circular file reference",
+  Z2007: "Error reading include file: '{0}' ({1})",
+  Z2008: "An #ifmod or #ifnmod directive cen be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
+  Z2009: "Unexpected #else directive",
+  Z2010: "Unexpected #endif directive",
+  Z2011: "A MODEL pragma can be used only once.",
+  Z2012: "A MODEL pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'."
 };

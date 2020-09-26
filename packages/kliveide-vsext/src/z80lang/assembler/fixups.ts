@@ -1,0 +1,77 @@
+import { ExpressionNode, Z80AssemblyLine } from "../parser/tree-nodes";
+import { AssemblyModule } from "./assembly-module";
+import { EvaluationContext, ExpressionValue, ValueInfo } from "./expressions";
+
+/**
+ * This class represents a fixup that recalculates and replaces
+ * unresolved symbol value at the end of the compilation
+ */
+export class FixupEntry implements EvaluationContext {
+  constructor(
+    public readonly parentContext: EvaluationContext,
+    public readonly module: AssemblyModule,
+    public readonly sourceLine: Z80AssemblyLine,
+    public readonly type: FixupType,
+    public readonly offset: number,
+    public readonly expression: ExpressionNode,
+    public readonly label: string | null = null,
+    public readonly structBytes: { [key: number]: number } | null = null
+  ) {}
+
+  /**
+   * Indicates if this entry has already been resolved
+   */
+  resolved: boolean;
+
+  /**
+   * Gets the current assembly address
+   */
+  getCurrentAddress(): number {
+    return this.parentContext.getCurrentAddress();
+  }
+
+  /**
+   * Gets the value of the specified symbol
+   * @param symbol Symbol name
+   * @param startFromGlobal Should resolution start from global scope?
+   */
+  getSymbolValue(symbol: string, startFromGlobal?: boolean): ValueInfo | null {
+    let resolved: ValueInfo;
+    if (startFromGlobal) {
+      // --- Most be a compound symbol
+      resolved = this.module.resolveCompoundSymbol(symbol, true);
+    } else if (symbol.indexOf(".") >= 0) {
+      resolved = this.module.resolveCompoundSymbol(symbol, false);
+      if (resolved === null) {
+        resolved = this.module.resolveSimpleSymbol(symbol);
+      }
+    } else {
+      resolved = this.module.resolveSimpleSymbol(symbol);
+    }
+    return resolved !== null
+      ? resolved
+      : this.parentContext.getSymbolValue(symbol, startFromGlobal);
+  }
+
+  /**
+   * Gets the current loop counter value
+   */
+  getLoopCounterValue(): ExpressionValue {
+    return this.parentContext.getLoopCounterValue();
+  }
+}
+
+/**
+ * Type of the fixup
+ */
+export enum FixupType {
+  Jr,
+  Bit8,
+  Bit16,
+  Equ,
+  Ent,
+  Xent,
+  Struct,
+  FieldBit8,
+  FieldBit16,
+}

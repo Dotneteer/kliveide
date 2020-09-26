@@ -136,7 +136,7 @@ import {
   FunctionInvocation,
   IdentifierNode,
 } from "./tree-nodes";
-import { ErrorMessage, errorMessages, ErrorCodes } from "../errors";
+import { ParserErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
 
@@ -144,18 +144,19 @@ import { getTokenTraits, TokenTraits } from "./token-traits";
  * This class implements the Z80 assembly parser
  */
 export class Z80AsmParser {
-  private readonly _parseErrors: ErrorMessage[] = [];
+  private readonly _parseErrors: ParserErrorMessage[] = [];
 
   /**
    * Initializes the parser with the specified token stream
    * @param tokens Token stream of the source code
+   * @param fileIndex Optional file index of the file being parsed
    */
-  constructor(public readonly tokens: TokenStream) {}
+  constructor(public readonly tokens: TokenStream, private readonly fileIndex = 0) {}
 
   /**
    * The errors raised during the parse phase
    */
-  get errors(): ErrorMessage[] {
+  get errors(): ParserErrorMessage[] {
     return this._parseErrors;
   }
 
@@ -283,6 +284,7 @@ export class Z80AsmParser {
     // --- Complete the line with position information
     const nextToken = this.tokens.peek();
     const resultLine: Z80AssemblyLine = Object.assign({}, asmLine, {
+      fileIndex: this.fileIndex,
       line: start.location.line,
       startPosition: start.location.startPos,
       startColumn: start.location.startColumn,
