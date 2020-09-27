@@ -2,7 +2,7 @@
   "name": "kliveide-vsext",
   "displayName": "Klive IDE",
   "description": "Full-fledged ZX Spectrum IDE for VS Code",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "license": "MIT",
   "engines": {
     "vscode": "^1.46.0"
