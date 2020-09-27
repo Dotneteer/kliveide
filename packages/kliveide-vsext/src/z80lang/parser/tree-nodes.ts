@@ -231,7 +231,7 @@ export interface Z80AssemblyLine extends PartialZ80AssemblyLine, NodePosition {
    * The file index of the parsed file
    */
   fileIndex: number;
-  
+
   /**
    * Source line text (to store macro text)
    */

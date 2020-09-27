@@ -269,7 +269,7 @@ export class AssemblyModule {
           const fieldDefinition = structFound.getField(segment);
           return fieldDefinition
             ? {
-                value: ExpressionValue.fromNumber(fieldDefinition.offset),
+                value: new ExpressionValue(fieldDefinition.offset),
                 usageInfo: fieldDefinition,
               }
             : null;

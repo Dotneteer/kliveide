@@ -2373,7 +2373,7 @@ export class Z80AsmParser {
     for (const ch of input) {
       switch (state) {
         case StrParseState.Normal:
-          if (ch == "\\") {
+          if (ch === "\\") {
             state = StrParseState.Backslash;
           } else {
             result += ch;
@@ -2605,8 +2605,8 @@ export class Z80AsmParser {
     }
     const text = token.text.toLowerCase();
     return (
-      text != "continue" &&
-      text != "break" &&
+      text !== "continue" &&
+      text !== "break" &&
       text !== "endm" &&
       text !== "mend" &&
       text !== "endl" &&
@@ -2665,7 +2665,7 @@ export class Z80AsmParser {
       line: idToken.location.line,
       startColumn: idToken.location.startColumn,
       endColumn: idToken.location.endColumn
-    }
+    };
   }
 
   /**

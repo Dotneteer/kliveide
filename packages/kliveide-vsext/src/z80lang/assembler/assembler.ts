@@ -48,6 +48,9 @@ export class Z80Assembler {
   // --- The current module
   private _currentModule: AssemblyModule;
 
+  // --- Current list of symbol errors
+  private _symbolErrorList: string[] = [];
+
   /**
    * The condition symbols
    */
@@ -348,8 +351,7 @@ export class Z80Assembler {
               (directive as unknown) as Z80AssemblyLine,
               directive.condition
             );
-            // TODO: Update this
-            processOps.ops = true; // value.isValid && value.Value !== 0;
+            processOps.ops = value.isValid && value.value !== 0;
           } else if (
             directive.type === "IfModDirective" ||
             directive.type === "IfNModDirective"
@@ -447,10 +449,39 @@ export class Z80Assembler {
   // ==========================================================================
   // Process Expressions
 
+  /**
+   * Clears the current symbol error list
+   */
+  clearSymbolErrorList(): void {
+    this._symbolErrorList = [];
+  }
+
+  /**
+   * Adds a symbol to the error list
+   * @param id Symbol identifier
+   */
+  addSymbolError(id: string): void {
+    this._symbolErrorList.push(id);
+  }
+
+  /**
+   * Retrieves the form of string errors for output
+   */
+  getSymbolErrors(): string {
+    return this._symbolErrorList.join(", ");
+  }
+
+  /**
+   * Immediately evaluates the specified expression
+   * @param opLine Assembly line that contains the expression
+   * @param expr Expression to evaluate
+   */
   evalImmediate(
     opLine: Z80AssemblyLine,
     expr: ExpressionNode
   ): ExpressionValue {
+    this.clearSymbolErrorList();
+    
     throw new Error();
   }
 
