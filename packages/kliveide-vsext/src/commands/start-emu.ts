@@ -50,14 +50,15 @@ export async function startEmulator(): Promise<void> {
     let retries = 0;
     let connected = false;
 
-    // --- Let's try to connect 5 times
-    while (retries < 5) {
+    // --- Let's try to connect 15 times
+    while (retries < 15) {
       try {
         // --- Getting a response for "hello" is a proof of communication
         await communicatorInstance.hello();
         connected = true;
         break;
       } catch {
+        await await new Promise((r) => setTimeout(r, 1000));
         retries++;
       }
     }
