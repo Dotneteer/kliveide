@@ -2,7 +2,7 @@
 
 This project aims to build a full-fledged ZX Spectrum IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+), Klive IDE intends to be an attractive development platform for [ZX Spectrum Next](https://www.specnext.com/).
 
-**The current public release (v0.4.0) is released on September 12, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
+**The current public release (v0.5.0) is released on September 27, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
 
 - [You can immediately try it](https://dotneteer.github.io/kliveide/getting-started/install-kliveide)
 - [You can build the binaries from the latest commit](https://dotneteer.github.io/kliveide/getting-started/build-kliveide)
@@ -44,8 +44,8 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
     - Ability to measure how WebAssembly plays its role on this area. (_Note_: So far measures show that the native WA implementation is about three times faster than the tuned JavaScript implementation.) (&check;)
     - An easy to use API to support integration with external apps, main focus on VS Code. (&check;)
 2. A series of POC-pieces to find out which VS Code extensibility tools suit the best for particular pieces of the IDE:
-    - Z80 Disassembly
-    - ZX Spectrum live memory map
+    - Z80 Disassembly (&check;)
+    - ZX Spectrum live memory map (&check;)
     - Z80/Boriel's BASIC source code/Z80 Disassembly debugging experience (breakpoints, stepping modes, watching register and symbol values, etc.)
     - Z80 Assembly/Boriel's BASIC source code development experience
     - Compilation (Z80 Assembler, Boriel's BASIC integration) &mdash; using/implementing an excellent Z80 Assembler

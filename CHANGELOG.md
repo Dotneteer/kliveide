@@ -1,5 +1,48 @@
 # Klive IDE Changelog
 
+## 0.5.0-alpha.5
+
+### Klive Emulator
+
+#### Known Issues
+
+- The ZX Spectrum 48 and 128 models do not implement the floating port feature yet.
+
+#### Features
+
+- You can toggle Fast Load mode while the ZX Spectrum machine runs
+- The toolbar contains a Rewind button to reset the tape to its initial position
+
+#### Fixes
+
+- Sound generation now uses `AudioWorkletProcessor` to fix sound issues on Mac.
+- Windows restore works normally on Mac.
+- The Emulator displays an error message when loading a tape file fails.
+- Keys do not struck when left-Alt or Command key is used.
+
+### Klive IDE
+
+#### Known Issues
+
+- Disassembly View does not refresh automatically when the selected ROM or Bank changes.
+
+#### Features
+
+- The IDE looks for the Emulator within the user's home folder, too.
+- The IDE can send tape files to Emulator without restarting the virtual machine.
+- You can select the machine type with the Update Klive Project command.
+- The Memory view supports Spectrum 128 ROM and Bank pages.
+
+#### Fixes
+
+- The IDE does not display the "Cannot communicate with the executable" message when successfully strating the Emulator.
+- The Update Klive Project now adds a code file (`code.z80asm`) to the project.
+- The extension supports in initial model of Z80 Assembly language service (work in progress) that uses Z80 Assembly syntax highlighting.
+
+#### Others
+
+- Z80 Assembler building is in progress.
+
 ## 0.4.0-alpha.4
 
 ### Klive Emulator
