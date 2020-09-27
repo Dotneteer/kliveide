@@ -4,7 +4,6 @@
 
   import { afterUpdate } from "svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
-  import { emulatorSetZoomAction } from "../../shared/state/redux-emulator-state";
   import { pcKeyNames, currentKeyMappings } from "../spectrum/spectrum-keys";
 
   import ExecutionStateOverlay from "./ExecutionStateOverlay.svelte";
@@ -54,6 +53,9 @@
   let panelRectangle;
   let screenRectangle;
   let panelMessage;
+
+  // --- Store the last key event to play back
+  let lastKeyEvent;
 
   // --- Catch the state of beam position indicator visibility
   stateAware.stateChanged.on((state) => {
@@ -222,6 +224,10 @@
 
   // --- Handles key presses
   function handleKey(e, status) {
+    if (!e) return;
+    if (!e.altKey && status) {
+      lastKeyEvent = e;
+    }
     const key = pcKeyNames.get(e.code);
     if (!key) return;
     const mapping = currentKeyMappings.get(key);
@@ -257,7 +263,8 @@
 
 <svelte:window
   on:keydown={(e) => handleKey(e, true)}
-  on:keyup={(e) => handleKey(e, false)} />
+  on:keyup={(e) => handleKey(e, false)}
+  on:blur={() => handleKey(lastKeyEvent, false)} />
 <div
   tabindex="-1"
   class="emulator-panel"
