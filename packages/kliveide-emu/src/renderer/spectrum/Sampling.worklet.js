@@ -32,7 +32,6 @@ class SamplingGenerator extends AudioWorkletProcessor {
     for (let i = 0; i < FRAMES_DELAYED * samplesPerFrame; i++) {
       waveBuffer[writeIndex++] = 0.0;
     }
-    console.log(`Buffer initialized: ${waveBuffer.length}`);
   }
 
   /**
