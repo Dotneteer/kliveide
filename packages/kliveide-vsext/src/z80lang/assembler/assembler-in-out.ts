@@ -80,6 +80,22 @@ export class AssemblerOutput extends AssemblyModule {
    * The type of the source that resulted in this compilation (for example, ZX BASIC)
    */
   sourceType?: string;
+
+  /**
+   * Adds the specified information to the address map
+   * @param fileIndex File index
+   * @param line Source line number
+   * @param address Address
+   */
+  addToAddressMap(fileIndex: number, line: number, address: number): void {
+    const sourceInfo: FileLine = { fileIndex, line};
+    const addressList = this.addressMap.get(sourceInfo);
+    if (addressList) {
+      addressList.push(address);
+    } else {
+      this.addressMap.set(sourceInfo, [address]);
+    }
+  }
 }
 
 /**
@@ -175,7 +191,8 @@ export class AssemblerErrorInfo {
   constructor(
     public readonly errorCode: ErrorCodes,
     public readonly fileName: string,
-    public readonly position: number,
+    public readonly startPosition: number,
+    public readonly endPosition: number | null,
     public readonly message: string,
     public isWarning?: boolean
   ) {}
@@ -188,6 +205,7 @@ export class AssemblerErrorInfo {
       syntaxErrorInfo.code,
       sourceItem.filename,
       syntaxErrorInfo.position,
+      null,
       syntaxErrorInfo.text
     );
   }

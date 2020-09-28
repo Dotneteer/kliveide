@@ -1,3 +1,6 @@
+import { reporters } from "mocha";
+import { ErrorCodes } from "../errors";
+import { BinaryExpression, Expression, IdentifierNode, NodePosition, Symbol, Z80AssemblyLine } from "../parser/tree-nodes";
 import { HasUsageInfo } from "./assembler-types";
 
 /**
@@ -197,6 +200,17 @@ export interface ValueInfo {
  */
 export interface EvaluationContext {
   /**
+   * Gets the source line the evaluation context is bound to
+   */
+  getSourceLine(): Z80AssemblyLine;
+  
+  /**
+   * Sets the source line the evaluation context is bound to
+   * @param sourceLine Source line information
+   */
+  setSourceLine(sourceLine: Z80AssemblyLine): void;
+
+  /**
    * Gets the current assembly address
    */
   getCurrentAddress(): number;
@@ -212,4 +226,117 @@ export interface EvaluationContext {
    * Gets the current loop counter value
    */
   getLoopCounterValue(): ExpressionValue;
+
+  /**
+   * Evaluates the value if the specified expression node
+   * @param expr Expression to evaluate
+   */
+  doEvalExpression(
+    expr: Expression
+  ): ExpressionValue;
+
+  /**
+   * Reports an error during evaluation
+   * @param code Error code
+   * @param node Error position
+   * @param parameters Optional error parameters
+   */
+  reportEvaluationError(code: ErrorCodes, node: NodePosition, ...parameters: any[]): void;
+}
+
+/**
+ * Evaluate the value of an identifier
+ * @param context Evaluation context
+ * @param expr Expression to evaluate
+ */
+export function evalIdentifierValue(
+  context: EvaluationContext,
+  expr: IdentifierNode
+): ExpressionValue {
+  var valueInfo = context.getSymbolValue(expr.name);
+  if (valueInfo !== null) {
+    if (valueInfo.usageInfo !== null) {
+      valueInfo.usageInfo.isUsed = true;
+    }
+    return valueInfo.value;
+  }
+  context.reportEvaluationError("Z3000", expr, expr.name);
+  return ExpressionValue.NonEvaluated;
+}
+
+/**
+ * Evaluate the value of a symbol
+ * @param context Evaluation context
+ * @param expr Expression to evaluate
+ */
+export function evalSymbolValue(
+  context: EvaluationContext,
+  expr: Symbol
+): ExpressionValue {
+  var valueInfo = context.getSymbolValue(
+    expr.identifier.name,
+    expr.startsFromGlobal
+  );
+  if (valueInfo !== null) {
+    if (valueInfo.usageInfo !== null) {
+      valueInfo.usageInfo.isUsed = true;
+    }
+    return valueInfo.value;
+  }
+  context.reportEvaluationError("Z3000", expr.identifier, expr.identifier.name);
+  return ExpressionValue.NonEvaluated;
+}
+
+export function evalBinaryOperationValue(
+  context: EvaluationContext,
+  expr: BinaryExpression
+): ExpressionValue {
+  const left = context.doEvalExpression(expr.left);
+  const right = context.doEvalExpression(expr.right);
+  if (!left.isValid || !right.isValid) {
+    return ExpressionValue.NonEvaluated;
+  }
+  switch (expr.operator) {
+    case "<?":
+      break;
+    case ">?":
+      break;
+    case "*":
+      break;
+    case "/":
+      break;
+    case "%":
+      break;
+    case "+":
+      break;
+    case "-":
+      break;
+    case "<<":
+      break;
+    case ">>":
+      break;
+    case "<":
+      break;
+    case "<=":
+      break;
+    case ">":
+      break;
+    case ">=":
+      break;
+    case "==":
+      break;
+    case "===":
+      break;
+    case "!=":
+      break;
+    case "!==":
+      break;
+    case "&":
+      break;
+    case "|":
+      break;
+    case "^": 
+      break;
+  }
+  return ExpressionValue.NonEvaluated;
 }

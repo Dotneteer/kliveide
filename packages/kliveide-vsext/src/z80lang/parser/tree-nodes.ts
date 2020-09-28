@@ -291,7 +291,7 @@ export interface UnaryExpression extends ExpressionNode {
   /**
    * Operand of the expression
    */
-  operand: ExpressionNode;
+  operand: Expression;
 }
 
 /**
@@ -328,12 +328,12 @@ export interface BinaryExpression extends ExpressionNode {
   /**
    * Left operand
    */
-  left: ExpressionNode;
+  left: Expression;
 
   /**
    * Right operand
    */
-  right: ExpressionNode;
+  right: Expression;
 }
 
 /**
@@ -359,9 +359,9 @@ export interface Symbol extends ExpressionNode {
 export interface ConditionalExpression extends ExpressionNode {
   type: "ConditionalExpression";
 
-  condition: ExpressionNode;
-  consequent: ExpressionNode;
-  alternate: ExpressionNode;
+  condition: Expression;
+  consequent: Expression;
+  alternate: Expression;
 }
 
 /**
@@ -464,7 +464,7 @@ export interface BuiltInFunctionInvocation extends ExpressionNode {
 export interface FunctionInvocation extends ExpressionNode {
   type: "FunctionInvocation";
   functionName: IdentifierNode;
-  args: ExpressionNode[];
+  args: Expression[];
 }
 
 // ============================================================================
@@ -488,7 +488,7 @@ export interface SimpleZ80Instruction extends Z80Instruction {
  */
 export interface TestInstruction extends Z80Instruction {
   type: "TestInstruction";
-  expr: ExpressionNode;
+  expr: Expression;
 }
 
 /**
@@ -496,8 +496,8 @@ export interface TestInstruction extends Z80Instruction {
  */
 export interface NextRegInstruction extends Z80Instruction {
   type: "NextRegInstruction";
-  register: ExpressionNode;
-  value: ExpressionNode | null;
+  register: Expression;
+  value: Expression | null;
 }
 
 /**
@@ -519,7 +519,7 @@ export interface MulInstruction extends Z80Instruction {
  */
 export interface DjnzInstruction extends Z80Instruction {
   type: "DjnzInstruction";
-  target: ExpressionNode;
+  target: Expression;
 }
 
 /**
@@ -527,7 +527,7 @@ export interface DjnzInstruction extends Z80Instruction {
  */
 export interface RstInstruction extends Z80Instruction {
   type: "RstInstruction";
-  target: ExpressionNode;
+  target: Expression;
 }
 
 /**
@@ -535,7 +535,7 @@ export interface RstInstruction extends Z80Instruction {
  */
 export interface ImInstruction extends Z80Instruction {
   type: "ImInstruction";
-  mode: ExpressionNode;
+  mode: Expression;
 }
 
 /**
@@ -544,7 +544,7 @@ export interface ImInstruction extends Z80Instruction {
 export interface JrInstruction extends Z80Instruction {
   type: "JrInstruction";
   condition?: string;
-  target: ExpressionNode;
+  target: Expression;
 }
 
 /**
@@ -553,7 +553,7 @@ export interface JrInstruction extends Z80Instruction {
 export interface JpInstruction extends Z80Instruction {
   type: "JpInstruction";
   condition?: string;
-  target: ExpressionNode;
+  target: Expression;
 }
 
 /**
@@ -562,7 +562,7 @@ export interface JpInstruction extends Z80Instruction {
 export interface CallInstruction extends Z80Instruction {
   type: "CallInstruction";
   condition?: string;
-  target: ExpressionNode;
+  target: Expression;
 }
 
 /**
@@ -804,7 +804,7 @@ export interface Operand extends BaseNode {
   type: "Operand";
   operandType: OperandType;
   register?: string;
-  expr?: ExpressionNode;
+  expr?: Expression;
   offsetSign?: string;
   regOperation?: string;
   macroParam?: IdentifierNode;
@@ -900,7 +900,7 @@ export interface IfDirective extends PartialZ80AssemblyLine {
   /**
    * IF condition
    */
-  condition: ExpressionNode;
+  condition: Expression;
 }
 
 export interface IncludeDirective extends PartialZ80AssemblyLine {
@@ -918,7 +918,7 @@ export interface LineDirective extends PartialZ80AssemblyLine {
   /**
    * Line number
    */
-  lineNumber: ExpressionNode;
+  lineNumber: Expression;
 
   /**
    * Optional line comment
@@ -935,7 +935,7 @@ export interface OrgPragma extends PartialZ80AssemblyLine {
   /**
    * Origin address
    */
-  address: ExpressionNode;
+  address: Expression;
 }
 
 export interface BankPragma extends PartialZ80AssemblyLine {
@@ -944,12 +944,12 @@ export interface BankPragma extends PartialZ80AssemblyLine {
   /**
    * ID of the bank
    */
-  bankId: ExpressionNode;
+  bankId: Expression;
 
   /**
    * Origin address
    */
-  offset?: ExpressionNode;
+  offset?: Expression;
 }
 
 export interface XorgPragma extends PartialZ80AssemblyLine {
@@ -958,7 +958,7 @@ export interface XorgPragma extends PartialZ80AssemblyLine {
   /**
    * Origin address
    */
-  address: ExpressionNode;
+  address: Expression;
 }
 
 export interface EntPragma extends PartialZ80AssemblyLine {
@@ -967,7 +967,7 @@ export interface EntPragma extends PartialZ80AssemblyLine {
   /**
    * Entry address
    */
-  address: ExpressionNode;
+  address: Expression;
 }
 
 export interface XentPragma extends PartialZ80AssemblyLine {
@@ -976,7 +976,7 @@ export interface XentPragma extends PartialZ80AssemblyLine {
   /**
    * Entry address
    */
-  address: ExpressionNode;
+  address: Expression;
 }
 
 export interface DispPragma extends PartialZ80AssemblyLine {
@@ -985,7 +985,7 @@ export interface DispPragma extends PartialZ80AssemblyLine {
   /**
    * Displacement
    */
-  offset: ExpressionNode;
+  offset: Expression;
 }
 
 export interface EquPragma extends PartialZ80AssemblyLine {
@@ -994,7 +994,7 @@ export interface EquPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  value: ExpressionNode;
+  value: Expression;
 }
 
 export interface VarPragma extends PartialZ80AssemblyLine {
@@ -1003,7 +1003,7 @@ export interface VarPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  value: ExpressionNode;
+  value: Expression;
 }
 
 export interface DefBPragma extends PartialZ80AssemblyLine {
@@ -1012,7 +1012,7 @@ export interface DefBPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma values
    */
-  values: ExpressionNode[];
+  values: Expression[];
 }
 
 export interface DefWPragma extends PartialZ80AssemblyLine {
@@ -1021,7 +1021,7 @@ export interface DefWPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma values
    */
-  values: ExpressionNode[];
+  values: Expression[];
 }
 
 export interface DefCPragma extends PartialZ80AssemblyLine {
@@ -1030,7 +1030,7 @@ export interface DefCPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  value: ExpressionNode;
+  value: Expression;
 }
 
 export interface DefNPragma extends PartialZ80AssemblyLine {
@@ -1039,7 +1039,7 @@ export interface DefNPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  value: ExpressionNode;
+  value: Expression;
 }
 
 export interface DefMPragma extends PartialZ80AssemblyLine {
@@ -1048,7 +1048,7 @@ export interface DefMPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  value: ExpressionNode;
+  value: Expression;
 }
 
 export interface DefHPragma extends PartialZ80AssemblyLine {
@@ -1057,7 +1057,7 @@ export interface DefHPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  value: ExpressionNode;
+  value: Expression;
 }
 
 export interface SkipPragma extends PartialZ80AssemblyLine {
@@ -1066,12 +1066,12 @@ export interface SkipPragma extends PartialZ80AssemblyLine {
   /**
    * Number of bytes to skip
    */
-  skip: ExpressionNode;
+  skip: Expression;
 
   /**
    * Filler byte
    */
-  fill?: ExpressionNode;
+  fill?: Expression;
 }
 
 export interface ExternPragma extends PartialZ80AssemblyLine {
@@ -1084,12 +1084,12 @@ export interface DefSPragma extends PartialZ80AssemblyLine {
   /**
    * Number of bytes to skip
    */
-  count: ExpressionNode;
+  count: Expression;
 
   /**
    * Filler byte
    */
-  fill?: ExpressionNode;
+  fill?: Expression;
 }
 
 export interface FillbPragma extends PartialZ80AssemblyLine {
@@ -1098,12 +1098,12 @@ export interface FillbPragma extends PartialZ80AssemblyLine {
   /**
    * Number of bytes to skip
    */
-  count: ExpressionNode;
+  count: Expression;
 
   /**
    * Filler byte
    */
-  fill?: ExpressionNode;
+  fill?: Expression;
 }
 
 export interface FillwPragma extends PartialZ80AssemblyLine {
@@ -1112,12 +1112,12 @@ export interface FillwPragma extends PartialZ80AssemblyLine {
   /**
    * Number of words to skip
    */
-  count: ExpressionNode;
+  count: Expression;
 
   /**
    * Filler byte
    */
-  fill?: ExpressionNode;
+  fill?: Expression;
 }
 
 export interface ModelPragma extends PartialZ80AssemblyLine {
@@ -1135,7 +1135,7 @@ export interface AlignPragma extends PartialZ80AssemblyLine {
   /**
    * ID of the model
    */
-  alignExpr?: ExpressionNode;
+  alignExpr?: Expression;
 }
 
 export interface TracePragma extends PartialZ80AssemblyLine {
@@ -1149,7 +1149,7 @@ export interface TracePragma extends PartialZ80AssemblyLine {
   /**
    * Pragma values
    */
-  values: ExpressionNode[];
+  values: Expression[];
 }
 
 export interface RndSeedPragma extends PartialZ80AssemblyLine {
@@ -1158,7 +1158,7 @@ export interface RndSeedPragma extends PartialZ80AssemblyLine {
   /**
    * ID of the model
    */
-  seedExpr?: ExpressionNode;
+  seedExpr?: Expression;
 }
 
 export interface DefGxPragma extends PartialZ80AssemblyLine {
@@ -1167,7 +1167,7 @@ export interface DefGxPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  pattern: ExpressionNode;
+  pattern: Expression;
 }
 
 export interface DefGPragma extends PartialZ80AssemblyLine {
@@ -1185,7 +1185,7 @@ export interface ErrorPragma extends PartialZ80AssemblyLine {
   /**
    * Pragma value
    */
-  message: ExpressionNode;
+  message: Expression;
 }
 
 export interface IncBinPragma extends PartialZ80AssemblyLine {
@@ -1194,17 +1194,17 @@ export interface IncBinPragma extends PartialZ80AssemblyLine {
   /**
    * File to include
    */
-  filename: ExpressionNode;
+  filename: Expression;
 
   /**
    * Offset
    */
-  offset?: ExpressionNode;
+  offset?: Expression;
 
   /**
    * Included length
    */
-  length?: ExpressionNode;
+  length?: Expression;
 }
 
 export interface CompareBinPragma extends PartialZ80AssemblyLine {
@@ -1213,17 +1213,17 @@ export interface CompareBinPragma extends PartialZ80AssemblyLine {
   /**
    * File to include
    */
-  filename: ExpressionNode;
+  filename: Expression;
 
   /**
    * Offset
    */
-  offset?: ExpressionNode;
+  offset?: Expression;
 
   /**
    * Included length
    */
-  length?: ExpressionNode;
+  length?: Expression;
 }
 
 export interface ZxBasicPragma extends PartialZ80AssemblyLine {
@@ -1263,7 +1263,7 @@ export interface MacroEndStatement extends PartialZ80AssemblyLine {
  */
 export interface LoopStatement extends PartialZ80AssemblyLine {
   type: "LoopStatement";
-  expr: ExpressionNode;
+  expr: Expression;
 }
 
 /**
@@ -1278,7 +1278,7 @@ export interface LoopEndStatement extends PartialZ80AssemblyLine {
  */
 export interface WhileStatement extends PartialZ80AssemblyLine {
   type: "WhileStatement";
-  expr: ExpressionNode;
+  expr: Expression;
 }
 
 /**
@@ -1300,7 +1300,7 @@ export interface RepeatStatement extends PartialZ80AssemblyLine {
  */
 export interface UntilStatement extends PartialZ80AssemblyLine {
   type: "UntilStatement";
-  expr: ExpressionNode;
+  expr: Expression;
 }
 
 /**
@@ -1322,7 +1322,7 @@ export interface ProcEndStatement extends PartialZ80AssemblyLine {
  */
 export interface IfStatement extends PartialZ80AssemblyLine {
   type: "IfStatement";
-  expr: ExpressionNode;
+  expr: Expression;
 }
 
 /**
@@ -1360,7 +1360,7 @@ export interface EndIfStatement extends PartialZ80AssemblyLine {
  */
 export interface ElseIfStatement extends PartialZ80AssemblyLine {
   type: "ElseIfStatement";
-  expr: ExpressionNode;
+  expr: Expression;
 }
 
 /**
@@ -1427,9 +1427,9 @@ export interface NextStatement extends PartialZ80AssemblyLine {
 export interface ForStatement extends PartialZ80AssemblyLine {
   type: "ForStatement";
   identifier: IdentifierNode;
-  startExpr: ExpressionNode;
-  toExpr: ExpressionNode;
-  stepExpr?: ExpressionNode;
+  startExpr: Expression;
+  toExpr: Expression;
+  stepExpr?: Expression;
 }
 
 /**

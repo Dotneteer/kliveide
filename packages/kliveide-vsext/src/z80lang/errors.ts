@@ -49,7 +49,13 @@ export type ErrorCodes =
   | "Z2009"
   | "Z2010"
   | "Z2011"
-  | "Z2012";
+  | "Z2012"
+  | "Z2013"
+  | "Z2014"
+  | "Z2015"
+  | "Z2016"
+  | "Z2017"
+  | "Z3000";
 
 export const errorMessages: ErrorText = {
   Z1001: "Invalid token at the end of the line: {{0}}",
@@ -87,5 +93,12 @@ export const errorMessages: ErrorText = {
   Z2009: "Unexpected #else directive",
   Z2010: "Unexpected #endif directive",
   Z2011: "A MODEL pragma can be used only once.",
-  Z2012: "A MODEL pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'."
+  Z2012: "A MODEL pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
+  Z2013: "The .struct size of {0} is {1} byte(s). The invocation wants to emit {2} bytes.",
+  Z2014: "The .struct definition of {0} does not have a field named {1}.",
+  Z2015: "Field assignment instruction cannot be used outside of .struct invocation.",
+  Z2016: "An EQU pragma must have a label",
+  Z2017: "Label '{0}' is already defined",
+
+  Z3000: "Identifier '{0}' is not defined yet.",
 };

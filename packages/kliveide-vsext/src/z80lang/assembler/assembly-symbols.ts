@@ -94,7 +94,7 @@ export class SymbolScope {
   /**
    * The symbol table with properly defined symbols
    */
-  readonly symbols: { [key: string]: AssemblySymbolInfo } = {};
+  readonly symbols: SymbolInfoMap = {};
 
   /**
    * Local symbol bookings
@@ -200,3 +200,8 @@ export class SymbolScope {
     return !!this.localSymbolBookings.has(name);
   }
 }
+
+/**
+ * Represents symbol information map
+ */
+export type SymbolInfoMap = { [key: string]: AssemblySymbolInfo };
