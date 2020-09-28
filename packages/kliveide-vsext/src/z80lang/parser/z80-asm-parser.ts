@@ -5,7 +5,6 @@ import {
   PartialZ80AssemblyLine,
   LabelOnlyLine,
   SimpleZ80Instruction,
-  ExpressionNode,
   UnaryExpression,
   Symbol,
   ConditionalExpression,
@@ -135,6 +134,7 @@ import {
   BuiltInFunctionInvocation,
   FunctionInvocation,
   IdentifierNode,
+  Expression,
 } from "./tree-nodes";
 import { ParserErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
@@ -151,7 +151,10 @@ export class Z80AsmParser {
    * @param tokens Token stream of the source code
    * @param fileIndex Optional file index of the file being parsed
    */
-  constructor(public readonly tokens: TokenStream, private readonly fileIndex = 0) {}
+  constructor(
+    public readonly tokens: TokenStream,
+    private readonly fileIndex = 0
+  ) {}
 
   /**
    * The errors raised during the parse phase
@@ -1264,7 +1267,7 @@ export class Z80AsmParser {
         // 16-bit index register indirection
         this.tokens.get();
         this.tokens.get();
-        let expr: ExpressionNode | undefined = undefined;
+        let expr: Expression | undefined = undefined;
         const register = ahead.text.toLowerCase();
         let sign = this.tokens.peek();
         let offsetSign =
@@ -1322,7 +1325,7 @@ export class Z80AsmParser {
    *   | conditionalExpr
    *   ;
    */
-  parseExpr(): ExpressionNode | null {
+  parseExpr(): Expression | null {
     const parsePoint = this.getParsePoint();
     const { start, traits } = parsePoint;
     if (start.type === TokenType.LPar) {
@@ -1619,7 +1622,7 @@ export class Z80AsmParser {
     const startExpr = this.getExpression();
     this.expectToken(TokenType.To, "Z1020");
     const toExpr = this.getExpression();
-    let stepExpr: ExpressionNode | undefined = undefined;
+    let stepExpr: Expression | undefined = undefined;
     if (this.tokens.peek().type === TokenType.Step) {
       this.tokens.get();
       stepExpr = this.getExpression();
@@ -1692,7 +1695,7 @@ export class Z80AsmParser {
    *   : "(" expr ")"
    *   ;
    */
-  private parseParExpr(): ExpressionNode | null {
+  private parseParExpr(): Expression | null {
     if (this.skipToken(TokenType.LPar)) {
       const expr = this.parseExpr();
       if (!expr) {
@@ -1709,7 +1712,7 @@ export class Z80AsmParser {
    *   : "[" expr "]"
    *   ;
    */
-  private parseBrackExpr(): ExpressionNode | null {
+  private parseBrackExpr(): Expression | null {
     if (this.skipToken(TokenType.LSBrac)) {
       const expr = this.parseExpr();
       if (!expr) {
@@ -1727,7 +1730,7 @@ export class Z80AsmParser {
    *   ;
    * @param parsePoint
    */
-  private parseCondExpr(): ExpressionNode | null {
+  private parseCondExpr(): Expression | null {
     const condExpr = this.parseOrExpr();
     if (!condExpr) {
       return null;
@@ -1753,7 +1756,7 @@ export class Z80AsmParser {
    * orExpr
    *   : xorExpr ( "|" xorExpr )?
    */
-  private parseOrExpr(): ExpressionNode | null {
+  private parseOrExpr(): Expression | null {
     let leftExpr = this.parseXorExpr();
     if (!leftExpr) {
       return null;
@@ -1779,7 +1782,7 @@ export class Z80AsmParser {
    * xorExpr
    *   : andExpr ( "^" andExpr )?
    */
-  private parseXorExpr(): ExpressionNode | null {
+  private parseXorExpr(): Expression | null {
     let leftExpr = this.parseAndExpr();
     if (!leftExpr) {
       return null;
@@ -1805,7 +1808,7 @@ export class Z80AsmParser {
    * andExpr
    *   : equExpr ( "&" equExpr )?
    */
-  private parseAndExpr(): ExpressionNode | null {
+  private parseAndExpr(): Expression | null {
     let leftExpr = this.parseEquExpr();
     if (!leftExpr) {
       return null;
@@ -1831,7 +1834,7 @@ export class Z80AsmParser {
    * equExpr
    *   : relExpr ( ( "==" | "===" | "!=" | "!==" ) relExpr )?
    */
-  private parseEquExpr(): ExpressionNode | null {
+  private parseEquExpr(): Expression | null {
     let leftExpr = this.parseRelExpr();
     if (!leftExpr) {
       return null;
@@ -1865,7 +1868,7 @@ export class Z80AsmParser {
    * relExpr
    *   : shiftExpr ( ( "<" | "<=" | ">" | ">=" ) shiftExpr )?
    */
-  private parseRelExpr(): ExpressionNode | null {
+  private parseRelExpr(): Expression | null {
     let leftExpr = this.parseShiftExpr();
     if (!leftExpr) {
       return null;
@@ -1899,7 +1902,7 @@ export class Z80AsmParser {
    * shiftExpr
    *   : addExpr ( ( "<<" | ">>" ) addExpr )?
    */
-  private parseShiftExpr(): ExpressionNode | null {
+  private parseShiftExpr(): Expression | null {
     let leftExpr = this.parseAddExpr();
     if (!leftExpr) {
       return null;
@@ -1928,7 +1931,7 @@ export class Z80AsmParser {
    * addExpr
    *   : multExpr ( ( "+" | "-" ) multExpr )?
    */
-  private parseAddExpr(): ExpressionNode | null {
+  private parseAddExpr(): Expression | null {
     let leftExpr = this.parseMultExpr();
     if (!leftExpr) {
       return null;
@@ -1955,7 +1958,7 @@ export class Z80AsmParser {
    * multExpr
    *   : minMaxExpr ( ( "*" | "/" | "%") minMaxExpr )?
    */
-  private parseMultExpr(): ExpressionNode | null {
+  private parseMultExpr(): Expression | null {
     let leftExpr = this.parseMinMaxExpr();
     if (!leftExpr) {
       return null;
@@ -1988,7 +1991,7 @@ export class Z80AsmParser {
    * minMaxExpr
    *   : primaryExpr ( ( "<?" | ">?") primaryExpr )?
    */
-  private parseMinMaxExpr(): ExpressionNode | null {
+  private parseMinMaxExpr(): Expression | null {
     let leftExpr = this.parsePrimaryExpr();
     if (!leftExpr) {
       return null;
@@ -2020,7 +2023,7 @@ export class Z80AsmParser {
    *   | unaryExpression
    *   | macroParam
    */
-  private parsePrimaryExpr(): ExpressionNode | null {
+  private parsePrimaryExpr(): Expression | null {
     const parsePoint = this.getParsePoint();
     const { start, traits } = parsePoint;
 
@@ -2066,7 +2069,7 @@ export class Z80AsmParser {
    */
   private parseBuiltInFuncInvocation(
     parsePoint: ParsePoint
-  ): ExpressionNode | null {
+  ): Expression | null {
     const { start } = parsePoint;
     this.tokens.get();
     if (start.type === TokenType.TextOf || start.type === TokenType.LTextOf) {
@@ -2120,7 +2123,7 @@ export class Z80AsmParser {
    * functionInvocation
    *   : identifier "(" expression? ("," expression)* ")"
    */
-  private parseFunctionInvocation(): ExpressionNode | null {
+  private parseFunctionInvocation(): Expression | null {
     const functionName = this.getIdentifier();
     this.expectToken(TokenType.LPar, "Z1013");
     const args = this.getExpressionList(false);
@@ -2137,7 +2140,7 @@ export class Z80AsmParser {
    *   : "::"? Identifier
    *   ;
    */
-  private parseSymbol(parsePoint: ParsePoint): ExpressionNode | null {
+  private parseSymbol(parsePoint: ParsePoint): Expression | null {
     let startsFromGlobal = false;
     if (this.skipToken(TokenType.DoubleColon)) {
       startsFromGlobal = true;
@@ -2148,7 +2151,7 @@ export class Z80AsmParser {
       return <Symbol>{
         type: "Symbol",
         startsFromGlobal,
-        identifier
+        identifier,
       };
     }
     this.reportError("Z1004");
@@ -2185,9 +2188,9 @@ export class Z80AsmParser {
    *   | booleanLiteral
    *   ;
    */
-  private parseLiteral(parsePoint: ParsePoint): ExpressionNode | null {
+  private parseLiteral(parsePoint: ParsePoint): Expression | null {
     const { start } = parsePoint;
-    let literal: ExpressionNode | null = null;
+    let literal: Expression | null = null;
     switch (start.type) {
       case TokenType.BinaryLiteral:
         literal = this.parseBinaryLiteral(start.text);
@@ -2657,14 +2660,14 @@ export class Z80AsmParser {
     if (idToken.type !== TokenType.Identifier) {
       this.reportError("Z1004");
     }
-    return <IdentifierNode> {
+    return <IdentifierNode>{
       type: "Identifier",
       name: idToken.text,
       startPosition: idToken.location.startPos,
       endPosition: idToken.location.endPos,
       line: idToken.location.line,
       startColumn: idToken.location.startColumn,
-      endColumn: idToken.location.endColumn
+      endColumn: idToken.location.endColumn,
     };
   }
 
@@ -2676,7 +2679,7 @@ export class Z80AsmParser {
   private getExpression(
     optional: boolean = false,
     leadingComma: boolean = false
-  ): ExpressionNode | null {
+  ): Expression | null {
     if (leadingComma) {
       if (!this.skipToken(TokenType.Comma)) {
         if (!optional) {
@@ -2702,8 +2705,8 @@ export class Z80AsmParser {
    * Gets a list of expressions
    * @param atLeastOne Is the first expression mandatory?
    */
-  private getExpressionList(atLeastOne: boolean): ExpressionNode[] {
-    const expressions: ExpressionNode[] = [];
+  private getExpressionList(atLeastOne: boolean): Expression[] {
+    const expressions: Expression[] = [];
     const first = this.getExpression(!atLeastOne);
     if (first) {
       expressions.push(first);

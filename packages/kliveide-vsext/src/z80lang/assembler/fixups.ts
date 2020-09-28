@@ -1,4 +1,10 @@
-import { ExpressionNode, Z80AssemblyLine } from "../parser/tree-nodes";
+import { ErrorCodes } from "../errors";
+import {
+  Expression,
+  ExpressionNode,
+  NodePosition,
+  Z80AssemblyLine,
+} from "../parser/tree-nodes";
 import { AssemblyModule } from "./assembly-module";
 import { EvaluationContext, ExpressionValue, ValueInfo } from "./expressions";
 
@@ -22,6 +28,21 @@ export class FixupEntry implements EvaluationContext {
    * Indicates if this entry has already been resolved
    */
   resolved: boolean;
+
+  /**
+   * Gets the source line the evaluation context is bound to
+   */
+  getSourceLine(): Z80AssemblyLine {
+    return this.sourceLine;
+  }
+
+  /**
+   * Sets the source line the evaluation context is bound to
+   * @param sourceLine Source line information
+   */
+  setSourceLine(_sourceLine: Z80AssemblyLine): void {
+    // --- The constructor already sets the source line
+  }
 
   /**
    * Gets the current assembly address
@@ -59,6 +80,21 @@ export class FixupEntry implements EvaluationContext {
   getLoopCounterValue(): ExpressionValue {
     return this.parentContext.getLoopCounterValue();
   }
+
+  /**
+   * Evaluates the value if the specified expression node
+   * @param expr Expression to evaluate
+   */
+  doEvalExpression(expr: Expression): ExpressionValue {
+    throw new Error("Not implemented yet.");
+  }
+
+  /**
+   * Reports an error during evaluation
+   * @param code Error code
+   * @param node Error position
+   */
+  reportEvaluationError(code: ErrorCodes, node: NodePosition, ...parameters: any[]): void {}
 }
 
 /**
