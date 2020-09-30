@@ -1,5 +1,5 @@
 import { MacroDefinition, StructDefinition } from "./assembler-types";
-import { AssemblySymbolInfo, SymbolScope } from "./assembly-symbols";
+import { AssemblySymbolInfo, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionValue, ValueInfo } from "./expressions";
 import { FixupEntry } from "./fixups";
 
@@ -28,7 +28,7 @@ export class AssemblyModule {
   /**
    * The symbol table with properly defined symbols
    */
-  readonly symbols: { [key: string]: AssemblySymbolInfo } = {};
+  readonly symbols: SymbolInfoMap = {};
 
   /**
    * The map of structures within the module

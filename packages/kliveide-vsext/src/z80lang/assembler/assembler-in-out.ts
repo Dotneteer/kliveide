@@ -1,5 +1,6 @@
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { AssemblyModule } from "./assembly-module";
+import { SymbolValueMap } from "./expressions";
 
 /**
  * This class represents the output of the Z80 assembler
@@ -303,7 +304,7 @@ export class AssemblerOptions {
   /**
    * Predefined compilation symbols
    */
-  readonly predefinedSymbols: string[] = [];
+  predefinedSymbols: SymbolValueMap = {};
 
   /**
    * The default start address of the compilation
