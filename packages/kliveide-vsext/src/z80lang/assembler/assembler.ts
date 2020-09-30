@@ -14,6 +14,7 @@ import {
   MacroOrStructInvocation,
   ModelPragma,
   NodePosition,
+  OrgPragma,
   PartialZ80AssemblyLine,
   Pragma,
   Z80AssemblyLine,
@@ -30,12 +31,22 @@ import {
 } from "./assembler-in-out";
 import { BinaryComparisonInfo, StructDefinition } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
-import { SymbolInfoMap, SymbolType } from "./assembly-symbols";
 import {
+  AssemblySymbolInfo,
+  SymbolInfoMap,
+  SymbolScope,
+  SymbolType,
+} from "./assembly-symbols";
+import {
+  evalBinaryOperationValue,
+  evalConditionalOperationValue,
+  evalFunctionInvocationValue,
   evalIdentifierValue,
   evalSymbolValue,
   EvaluationContext,
+  evalUnaryOperationValue,
   ExpressionValue,
+  SymbolValueMap,
   ValueInfo,
 } from "./expressions";
 import { FixupEntry, FixupType } from "./fixups";
@@ -96,7 +107,7 @@ export class Z80Assembler implements EvaluationContext {
   /**
    * The condition symbols
    */
-  conditionSymbols = new Set<string>();
+  conditionSymbols: SymbolValueMap = {};
 
   /**
    * Lines after running the preprocessor
@@ -148,12 +159,25 @@ export class Z80Assembler implements EvaluationContext {
     options?: AssemblerOptions
   ): AssemblerOutput {
     this._options = options ?? new AssemblerOptions();
-    this.conditionSymbols = new Set<string>(this._options.predefinedSymbols);
+
     this._currentModule = this._output = new AssemblerOutput(
       sourceItem,
       options?.useCaseSensitiveSymbols ?? false
     );
     this.compareBins = [];
+
+    // --- Prepare pre-defined symbols
+    this.conditionSymbols = Object.assign({}, this._options.predefinedSymbols);
+    for (const key in this.conditionSymbols) {
+      this._currentModule.symbols[key] = {
+        name: key,
+        type: SymbolType.Var,
+        value: this.conditionSymbols[key],
+        isModuleLocal: false,
+        isShortTerm: false,
+        isUsed: false,
+      };
+    }
 
     // --- Execute the compilation phases
     let success = false;
@@ -308,7 +332,7 @@ export class Z80Assembler implements EvaluationContext {
    */
   private emitCode(lines: Z80AssemblyLine[]): boolean {
     this._output.segments.length = 0;
-    this.ensureCodeSegments();
+    this.ensureCodeSegment();
 
     const currentLineIndex = { index: 0 };
     while (currentLineIndex.index < lines.length) {
@@ -454,13 +478,15 @@ export class Z80Assembler implements EvaluationContext {
     switch (directive.type) {
       case "DefineDirective":
         if (doProc) {
-          this.conditionSymbols.add(directive.identifier.name);
+          this.conditionSymbols[
+            directive.identifier.name
+          ] = new ExpressionValue(true);
         }
         break;
 
       case "UndefDirective":
         if (doProc) {
-          this.conditionSymbols.delete(directive.identifier.name);
+          delete this.conditionSymbols[directive.identifier.name];
         }
         break;
 
@@ -491,9 +517,7 @@ export class Z80Assembler implements EvaluationContext {
               processOps.ops = (contains && !negate) || (!contains && negate);
             }
           } else {
-            const contains = this.conditionSymbols.has(
-              directive.identifier.name
-            );
+            const contains = !!this.conditionSymbols[directive.identifier.name];
             const negate = directive.type === "IfNDefDirective";
             processOps.ops = (contains && !negate) || (!contains && negate);
           }
@@ -683,13 +707,50 @@ export class Z80Assembler implements EvaluationContext {
    * @param expr Expression to evaluate
    */
   doEvalExpression(expr: Expression): ExpressionValue {
-    switch (expr.type) {
-      case "Identifier":
-        return evalIdentifierValue(this, expr);
-      case "Symbol":
-        return evalSymbolValue(this, expr);
+    try {
+      switch (expr.type) {
+        case "Identifier":
+          return evalIdentifierValue(this, expr);
+        case "Symbol":
+          return evalSymbolValue(this, expr);
+        case "IntegerLiteral":
+        case "RealLiteral":
+        case "CharLiteral":
+        case "StringLiteral":
+        case "BooleanLiteral":
+          return new ExpressionValue(expr.value);
+        case "BinaryExpression":
+          return evalBinaryOperationValue(this, expr);
+        case "UnaryExpression":
+          return evalUnaryOperationValue(this, expr);
+        case "ConditionalExpression":
+          return evalConditionalOperationValue(this, expr);
+        case "CurrentAddressLiteral":
+          // TODO: Implement this
+          break;
+        case "CurrentCounterLiteral":
+          // TODO: Implement this
+          break;
+        case "MacroParameter":
+          // TODO: Implement this
+          break;
+        case "BuiltInFunctionInvocation":
+          // TODO: Implement this
+          break;
+        case "FunctionInvocation":
+          return evalFunctionInvocationValue(this, expr);
+        default:
+          return ExpressionValue.Error;
+      }
+    } catch (err) {
+      this.reportAssemblyError(
+        "Z3001",
+        this.getSourceLine(),
+        null,
+        (err as Error).message
+      );
+      return ExpressionValue.Error;
     }
-    return ExpressionValue.Error;
   }
 
   /**
@@ -718,7 +779,7 @@ export class Z80Assembler implements EvaluationContext {
    * @param defaultAddress Default start address of the segment
    * @param maxLength Maximum segment length
    */
-  private ensureCodeSegments(
+  private ensureCodeSegment(
     defaultAddress?: number,
     maxLength: number = 0xffff
   ): void {
@@ -1007,7 +1068,74 @@ export class Z80Assembler implements EvaluationContext {
     line: Z80AssemblyLine,
     value: ExpressionValue
   ): void {
-    // TODO: Implement this method
+    const assembler = this;
+    let currentScopeIsTemporary = false;
+    if (this._currentModule.localScopes.length > 0) {
+      currentScopeIsTemporary = this.getTopLocalScope().isTemporaryScope;
+    }
+    const symbolIsTemporary = symbol.startsWith("`");
+
+    let lookup = getSymbols();
+    if (currentScopeIsTemporary) {
+      if (!symbolIsTemporary) {
+        // --- Remove the previous temporary scope
+        const tempsScope = this.getTopLocalScope();
+        this.fixupSymbols(tempsScope.fixups, tempsScope.symbols, false);
+        this._currentModule.localScopes.pop();
+      }
+    } else {
+      // --- Create a new temporary scope
+      const newScope = new SymbolScope(
+        null,
+        this._options?.useCaseSensitiveSymbols ?? false
+      );
+      newScope.isTemporaryScope = true;
+      this._currentModule.localScopes.push(newScope);
+      if (symbolIsTemporary) {
+        lookup = getSymbols();
+      }
+    }
+
+    if (this._currentModule.localScopes.length > 0) {
+      // --- We are in a local scope, get the next non-temporary scope
+      let localScopes = this._currentModule.localScopes;
+      let scope = localScopes[localScopes.length - 1];
+      if (scope.isTemporaryScope) {
+        const tmpScope = localScopes.pop();
+        scope =
+          localScopes.length > 0 ? localScopes[localScopes.length - 1] : null;
+        localScopes.push(tmpScope);
+      }
+
+      if (scope?.localSymbolBookings.size > 0) {
+        // --- We already booked local symbols
+        if (!scope.localSymbolBookings.has(symbol)) {
+          lookup = this._currentModule.symbols;
+        }
+      } else {
+        if (this._options.procExplicitLocalsOnly) {
+          lookup = this._currentModule.symbols;
+        }
+      }
+    }
+
+    // --- Check for already defined symbols
+    const symbolInfo = lookup[symbol];
+    if (symbolInfo && symbolInfo.type === SymbolType.Label) {
+      this.reportAssemblyError("Z2017", line, null, symbol);
+      return;
+    }
+
+    lookup[symbol] = AssemblySymbolInfo.createLabel(symbol, value);
+
+    /**
+     * Gets the current symbol map that can be used for symbol resolution
+     */
+    function getSymbols(): SymbolInfoMap {
+      return assembler._currentModule.localScopes.length === 0
+        ? assembler._currentModule.symbols
+        : assembler.getTopLocalScope().symbols;
+    }
   }
 
   /**
@@ -1024,6 +1152,14 @@ export class Z80Assembler implements EvaluationContext {
     return symbolInfo && symbolInfo.type === SymbolType.Label;
   }
 
+  /**
+   * Gets the top local scope
+   */
+  private getTopLocalScope(): SymbolScope {
+    const localScopes = this._currentModule.localScopes;
+    return localScopes[localScopes.length - 1];
+  }
+
   // ==========================================================================
   // Pragma processing methods
 
@@ -1032,18 +1168,51 @@ export class Z80Assembler implements EvaluationContext {
    * @param pragmaLine Assembly line with a pragma
    * @param label Pragma label
    */
-  private applyPragma(
-    pragmaLine: Pragma,
-    label: string | null
-  ): void {
-    switch(pragmaLine.type) {
+  private applyPragma(pragmaLine: Pragma, label: string | null): void {
+    switch (pragmaLine.type) {
+      case "OrgPragma":
+        this.processOrgPragma(pragmaLine, label);
+        break;
       case "EquPragma":
         this.processEquPragma(pragmaLine, label);
+        break;
     }
   }
 
   /**
-   * Processes the .equ pragme
+   * Processes the .org pragma
+   * @param pragma Pragma to process
+   * @param label Label information
+   */
+  processOrgPragma(pragma: OrgPragma, label: string | null): void {
+    const value = this.evaluateExprImmediate(pragma.address);
+    if (!value.isValid) {
+      return;
+    }
+
+    this.ensureCodeSegment();
+    if (this._currentSegment.currentOffset) {
+      // --- There is already code emitted for the current segment
+      const segment = new BinarySegment();
+      segment.startAddress = value.value;
+      segment.maxCodeLength = 0x10000 - value.value;
+      this._output.segments.push(segment);
+      this._currentSegment = segment;
+    } else {
+      this._currentSegment.startAddress = value.value;
+    }
+
+    if (!label) {
+      return;
+    }
+
+    // --- There is a labels, set its value
+    this.fixupTemporaryScope();
+    this.addSymbol(label, (pragma as unknown) as Z80AssemblyLine, value);
+  }
+
+  /**
+   * Processes the .equ pragma
    * @param pragma Pragma to process
    * @param label Label information
    */
@@ -1062,7 +1231,7 @@ export class Z80Assembler implements EvaluationContext {
 
     // --- Evaluate .equ value
     const value = this.evaluateExpr(pragma.value);
-    const asmLine = pragma as unknown as Z80AssemblyLine;
+    const asmLine = (pragma as unknown) as Z80AssemblyLine;
     if (value.isNonEvaluated) {
       this.recordFixup(asmLine, FixupType.Equ, pragma.value, label);
     } else {
@@ -1147,8 +1316,7 @@ export class Z80Assembler implements EvaluationContext {
     if (this._currentModule.localScopes.length === 0) {
       return;
     }
-    const localScopes = this._currentModule.localScopes;
-    const topScope = localScopes[localScopes.length - 1];
+    const topScope = this.getTopLocalScope();
     if (topScope.isTemporaryScope) {
       this.fixupSymbols(topScope.fixups, topScope.symbols, false);
       this._currentModule.localScopes.pop();
@@ -1201,7 +1369,7 @@ export class Z80Assembler implements EvaluationContext {
         (o, idx) =>
           (errorText = replace(
             errorText,
-            `{{${idx}}}`,
+            `{${idx}}`,
             parameters[idx].toString()
           ))
       );

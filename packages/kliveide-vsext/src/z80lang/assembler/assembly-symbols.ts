@@ -205,3 +205,4 @@ export class SymbolScope {
  * Represents symbol information map
  */
 export type SymbolInfoMap = { [key: string]: AssemblySymbolInfo };
+

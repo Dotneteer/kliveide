@@ -55,11 +55,12 @@ export type ErrorCodes =
   | "Z2015"
   | "Z2016"
   | "Z2017"
-  | "Z3000";
+  | "Z3000"
+  | "Z3001";
 
 export const errorMessages: ErrorText = {
-  Z1001: "Invalid token at the end of the line: {{0}}",
-  Z1002: "A line cannot start with this token: {{0}}",
+  Z1001: "Invalid token at the end of the line: {0}",
+  Z1002: "A line cannot start with this token: {0}",
   Z1003: "An expression expected",
   Z1004: "An identifier expected",
   Z1005: "Cannot parse an integer literal",
@@ -74,7 +75,7 @@ export const errorMessages: ErrorText = {
   Z1014: "')' expected",
   Z1015: "'}}' expected",
   Z1016: "Operand expected",
-  Z1017: "Invalid token at the start of the line: {{0}}",
+  Z1017: "Invalid token at the start of the line: {0}",
   Z1018: "An identifier or symbol expected",
   Z1019: "'=' expected",
   Z1020: "'to' expected",
@@ -101,4 +102,5 @@ export const errorMessages: ErrorText = {
   Z2017: "Label '{0}' is already defined",
 
   Z3000: "Identifier '{0}' is not defined yet.",
+  Z3001: "Expression evaluation error: {0}",
 };
