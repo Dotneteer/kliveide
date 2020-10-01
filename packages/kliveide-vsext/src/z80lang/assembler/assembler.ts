@@ -512,7 +512,7 @@ export class Z80Assembler implements EvaluationContext {
               const refModel =
                 this._output.modelType ?? this._options.currentModel;
               const modelName = SpectrumModelType[refModel].toUpperCase();
-              const contains = modelName === directive.identifier.name;
+              const contains = modelName === directive.identifier.name.toUpperCase();
               const negate = directive.type === "IfNModDirective";
               processOps.ops = (contains && !negate) || (!contains && negate);
             }

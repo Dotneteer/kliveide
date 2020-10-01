@@ -2,7 +2,7 @@ import "mocha";
 import * as expect from "expect";
 
 import { Z80Assembler } from "../../src/z80lang/assembler/assembler";
-import { AssemblerOptions } from "../../src/z80lang/assembler/assembler-in-out";
+import { AssemblerOptions, SpectrumModelType } from "../../src/z80lang/assembler/assembler-in-out";
 import { ExpressionValue } from "../../src/z80lang/assembler/expressions";
 
 describe("Assembler - directives", () => {
@@ -998,4 +998,207 @@ describe("Assembler - directives", () => {
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
   });
+
+  it("#if true-no-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    const source = `
+      nop ; 1
+      #if 3 > 2
+      nop ; 2
+      nop ; 3
+      nop ; 4
+      #endif
+      nop ; 5
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(5);
+  });
+
+  it("#if false-no-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    const source = `
+      nop ; 1
+      #if 2 == 3
+      nop
+      nop
+      nop
+      #endif
+      nop ; 2
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(2);
+  });
+
+  it("#if true-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    const source = `
+      nop ; 1
+      #if 6*8 != 49
+      nop ; 2
+      nop ; 3
+      nop ; 4
+      #else
+      nop
+      nop
+      #endif
+      nop ; 5
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(5);
+  });
+
+  it("#if false-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    const source = `
+      nop ; 1
+      #if 34 <= 13
+      nop
+      nop
+      nop
+      #else
+      nop ; 2
+      nop ; 3
+      #endif
+      nop ; 4
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(4);
+  });
+
+  it("#ifmod true-no-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    options.currentModel = SpectrumModelType.Spectrum48;
+    const source = `
+      nop ; 1
+      #ifmod Spectrum48
+      nop ; 2
+      nop ; 3
+      nop ; 4
+      #endif
+      nop ; 5
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(5);
+  });
+
+  it("#ifmod false-no-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    options.currentModel = SpectrumModelType.Spectrum128;
+    const source = `
+      nop ; 1
+      #ifmod Spectrum48
+      nop
+      nop
+      nop
+      #endif
+      nop ; 2
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(2);
+  });
+
+  it("#ifnmod false-no-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    options.currentModel = SpectrumModelType.Spectrum48;
+    const source = `
+      nop ; 1
+      #ifnmod Spectrum48
+      nop
+      nop
+      nop
+      #endif
+      nop ; 2
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(2);
+  });
+
+  it("#ifnmod true-no-else works", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    options.currentModel = SpectrumModelType.Spectrum128;
+    const source = `
+      nop ; 1
+      #ifnmod Spectrum48
+      nop ; 2
+      nop ; 3
+      nop ; 4
+      #endif
+      nop ; 5
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(0);
+    expect(compiler.preprocessedLines.length).toBe(5);
+  });
+
+  it("#ifmod with invalid mode", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    options.currentModel = SpectrumModelType.Spectrum128;
+    const source = `
+      nop
+      #ifmod unknown
+      nop
+      nop
+      nop
+      #endif
+      nop
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z2008").toBe(true);
+  });
+
+  it("#ifnmod with invalid mode", () => {
+    const compiler = new Z80Assembler();
+    const options = new AssemblerOptions();
+    options.currentModel = SpectrumModelType.Spectrum128;
+    const source = `
+      nop
+      #ifnmod unknown
+      nop
+      nop
+      nop
+      #endif
+      nop
+    `;
+
+    const output = compiler.compile(source, options);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z2008").toBe(true);
+  });
+
 });
