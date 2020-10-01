@@ -6,6 +6,7 @@ import { InputStream } from "../parser/input-stream";
 import { TokenStream } from "../parser/token-stream";
 
 import {
+  BankPragma,
   Directive,
   EquPragma,
   Expression,
@@ -17,6 +18,7 @@ import {
   OrgPragma,
   PartialZ80AssemblyLine,
   Pragma,
+  SimpleZ80Instruction,
   Z80AssemblyLine,
 } from "../parser/tree-nodes";
 import { Z80AsmParser } from "../parser/z80-asm-parser";
@@ -512,7 +514,8 @@ export class Z80Assembler implements EvaluationContext {
               const refModel =
                 this._output.modelType ?? this._options.currentModel;
               const modelName = SpectrumModelType[refModel].toUpperCase();
-              const contains = modelName === directive.identifier.name.toUpperCase();
+              const contains =
+                modelName === directive.identifier.name.toUpperCase();
               const negate = directive.type === "IfNModDirective";
               processOps.ops = (contains && !negate) || (!contains && negate);
             }
@@ -1173,6 +1176,9 @@ export class Z80Assembler implements EvaluationContext {
       case "OrgPragma":
         this.processOrgPragma(pragmaLine, label);
         break;
+      case "BankPragma":
+        this.processBankPragma(pragmaLine, label);
+        break;
       case "EquPragma":
         this.processEquPragma(pragmaLine, label);
         break;
@@ -1209,6 +1215,72 @@ export class Z80Assembler implements EvaluationContext {
     // --- There is a labels, set its value
     this.fixupTemporaryScope();
     this.addSymbol(label, (pragma as unknown) as Z80AssemblyLine, value);
+  }
+
+  /**
+   * Processes the .bank pragma
+   * @param pragma Pragma to process
+   * @param label Label information
+   */
+  processBankPragma(pragma: BankPragma, label: string | null): void {
+    if (label) {
+      // --- No label is allowed
+      this.reportAssemblyError("Z2018", pragma);
+      return;
+    }
+
+    // --- Check pragma value
+    var value = this.evaluateExprImmediate(pragma.bankId);
+    if (!value.isValid) {
+      return;
+    }
+    if (value.asWord() > 7) {
+      this.reportAssemblyError("Z2019", pragma);
+      return;
+    }
+
+    // --- Check offsetValue
+    let offset = 0;
+    if (pragma.offset !== null) {
+      var offsetValue = this.evaluateExprImmediate(pragma.offset);
+      if (!offsetValue.isValid) {
+        return;
+      }
+      offset = offsetValue.asWord();
+      if (offset > 0x3fff) {
+        this.reportAssemblyError("Z2020", pragma);
+        return;
+      }
+    }
+
+    // --- Check for appropriate model type
+    if (
+      this._output.modelType === undefined ||
+      this._output.modelType === SpectrumModelType.Spectrum48
+    ) {
+      this.reportAssemblyError("Z2021", pragma);
+      return;
+    }
+
+    this.ensureCodeSegment((0xc000 + offset) & 0xffff);
+    if (
+      this._currentSegment.currentOffset !== 0 ||
+      this._currentSegment.bank !== undefined
+    ) {
+      // --- There is already code emitted for the current segment,
+      // --- thus create a new segment
+      this._currentSegment = new BinarySegment();
+      this._output.segments.push(this._currentSegment);
+    }
+    if (this._output.segments.some((s) => s.bank === value.value)) {
+      // --- A bank can be used only once
+      this.reportAssemblyError("Z2022", pragma, null, value.value);
+      return;
+    }
+    this._currentSegment.startAddress = (0xc000 + offset) & 0xffff;
+    this._currentSegment.bank = value.value;
+    this._currentSegment.bankOffset = offset;
+    this._currentSegment.maxCodeLength = 0x4000 - offset;
   }
 
   /**
@@ -1268,7 +1340,36 @@ export class Z80Assembler implements EvaluationContext {
    * @param opLine Operation to emit the code for
    */
   private emitAssemblyOperationCode(opLine: Z80AssemblyLine): void {
-    // TODO: Implement this method
+    if (opLine.type === "SimpleZ80Instruction") {
+      const mnemonic = ((opLine as unknown) as SimpleZ80Instruction).mnemonic.toLowerCase();
+
+      // --- Get the op codes for the instruction
+      const opCodes = simpleInstructionCodes[mnemonic];
+      if (opCodes === undefined) {
+        this.reportEvaluationError("Z2023", opLine, null, mnemonic);
+      }
+
+      // --- Emit the opcode(s);
+      const high = (opCodes >> 8) & 0xff;
+      if (high) {
+        this.emitByte(high);
+      }
+      this.emitByte(opCodes & 0xff);
+    } else {
+      // TODO: Implement this method
+    }
+  }
+
+  /**
+   * Emits a new byte to the current code segment
+   * @param data Data byte to emit
+   */
+  private emitByte(data: number): void {
+    this.ensureCodeSegment();
+    const overflow = this._currentSegment.emitByte(data);
+    if (overflow) {
+      this.reportAssemblyError(overflow, this._currentSourceLine);
+    }
   }
 
   // ==========================================================================
@@ -1422,3 +1523,54 @@ export class Z80Assembler implements EvaluationContext {
 interface ProcessOps {
   ops: boolean;
 }
+
+/**
+ * Represents the operation codes for simple Z80 instructions.
+ */
+const simpleInstructionCodes: { [key: string]: number } = {
+  ccf: 0x3f,
+  cpd: 0xeda9,
+  cpdr: 0xedb9,
+  cpi: 0xeda1,
+  cpir: 0xedb1,
+  cpl: 0x2f,
+  daa: 0x27,
+  di: 0xf3,
+  ei: 0xfb,
+  exx: 0xd9,
+  halt: 0x76,
+  ind: 0xedaa,
+  indr: 0xedba,
+  ini: 0xeda2,
+  inir: 0xedb2,
+  ldd: 0xeda8,
+  lddr: 0xedb8,
+  lddrx: 0xedbc,
+  lddx: 0xedac,
+  ldi: 0xeda0,
+  ldir: 0xedb0,
+  ldirx: 0xedb4,
+  ldix: 0xeda4,
+  ldpirx: 0xedb7,
+  ldws: 0xeda5,
+  neg: 0xed44,
+  nop: 0x00,
+  otdr: 0xedbb,
+  otir: 0xedb3,
+  outinb: 0xed90,
+  outd: 0xedab,
+  outi: 0xeda3,
+  pixelad: 0xed94,
+  pixeldn: 0xed93,
+  reti: 0xed4d,
+  retn: 0xed45,
+  rla: 0x17,
+  rlca: 0x07,
+  rld: 0xed6f,
+  rra: 0x1f,
+  rrca: 0x0f,
+  rrd: 0xed67,
+  scf: 0x37,
+  setae: 0xed95,
+  swapnib: 0xed23,
+};

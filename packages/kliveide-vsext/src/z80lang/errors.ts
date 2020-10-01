@@ -55,6 +55,13 @@ export type ErrorCodes =
   | "Z2015"
   | "Z2016"
   | "Z2017"
+  | "Z2018"
+  | "Z2019"
+  | "Z2020"
+  | "Z2021"
+  | "Z2022"
+  | "Z2023"
+
   | "Z3000"
   | "Z3001";
 
@@ -100,6 +107,12 @@ export const errorMessages: ErrorText = {
   Z2015: "Field assignment instruction cannot be used outside of .struct invocation.",
   Z2016: "An EQU pragma must have a label",
   Z2017: "Label '{0}' is already defined",
+  Z2018: "The .BANK pragma cannot have a label.",
+  Z2019: "The .BANK pragma's value must be between 0 and 7.",
+  Z2020: "The .BANK pragma's offset value must be between 0 and #03fff.",
+  Z2021: "The .BANK pragma cannot be used with the ZX Spectrum 48 model type.",
+  Z2022: "You have already used the .BANK pragma for bank {0}.",
+  Z2023: "Unexpected error when emitting code for mnemonic '{0}'.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",
