@@ -165,21 +165,21 @@ export class BinarySegment {
    * @param data Byte to emit
    * @returns Null, if byte emitted; otherwise, error message
    */
-  emitByte(data: number): string | null {
+  emitByte(data: number): ErrorCodes | null {
     this.emittedCode.push(data & 0xff);
     if (
       this.startAddress + this.emittedCode.length > 0x10000 &&
       !this.overflowDetected
     ) {
       this.overflowDetected = true;
-      return errorMessages.Z2000;
+      return "Z2000";
     }
     if (
       this.emittedCode.length > this.maxCodeLength &&
       !this.overflowDetected
     ) {
       this.overflowDetected = true;
-      return errorMessages.Z2001;
+      return "Z2001";
     }
     return null;
   }
