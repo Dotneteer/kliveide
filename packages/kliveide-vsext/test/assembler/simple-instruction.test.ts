@@ -59,4 +59,31 @@ describe("Assembler - simple instructions", () => {
       testCodeEmit(inst.source, ...bytes);
     });
   });
+
+  const nextInstructions = [
+    { source: "ldix", emit: 0xeda4 },
+    { source: "ldws", emit: 0xeda5 },
+    { source: "ldirx", emit: 0xedb4 },
+    { source: "lddx", emit: 0xedac },
+    { source: "lddrx", emit: 0xedbc },
+    { source: "ldpirx", emit: 0xedb7 },
+    { source: "outinb", emit: 0xed90 },
+    { source: "swapnib", emit: 0xed23 },
+    { source: "pixeldn", emit: 0xed93 },
+    { source: "pixelad", emit: 0xed94 },
+    { source: "setae", emit: 0xed95 },
+  ];
+  nextInstructions.forEach((inst) => {
+    it(inst.source, () => {
+      const high = inst.emit >> 8;
+      const low = inst.emit & 0xff;
+      const bytes = high ? [high, low] : [low];
+      testCodeEmit(
+        `
+        .model next
+        ${inst.source}
+        `,
+        ...bytes);
+    });
+  });
 });

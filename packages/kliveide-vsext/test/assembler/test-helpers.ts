@@ -90,3 +90,11 @@ export function testCodeEmit(source: string, ...bytes: number[]): void {
     expect(output.segments[0].emittedCode[i]).toBe(bytes[i]);
   }
 }
+
+export function codeRaisesError(source: string, code: ErrorCodes): void {
+  const compiler = new Z80Assembler();
+
+  const output = compiler.compile(source);
+  expect(output.errorCount).toBe(1);
+  expect(output.errors[0].errorCode === code).toBe(true);
+}

@@ -79,11 +79,16 @@ export type ErrorCodes =
   | "Z2039"
   | "Z2040"
   | "Z2041"
+  | "Z2042"
 
   | "Z3000"
   | "Z3001"
 
-  | "Z4000";
+  | "Z4000"
+
+  | "Z5000"
+  | "Z5001"
+  | "Z5002";
 
 export const errorMessages: ErrorText = {
   Z1001: "Invalid token at the end of the line: {0}",
@@ -151,8 +156,13 @@ export const errorMessages: ErrorText = {
   Z2039: "Emitting the .includebin segment would overflow the current segment.",
   Z2040: ".defgx pragma requires a string argument.",
   Z2041: "Cannot use an empty pattern with .defg/.defgx pragma.",
+  Z2042: "A numeric expression expected.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",
   Z4000: "ERROR: {0}",
+
+  Z5000: "The pop instruction cannot be used with an expression operand",
+  Z5001: "To use this Spectrum Next-specific instruction, you need to set .model type to NEXT explicitly.",
+  Z5002: "The push and pop instructions can use only these registers: af, bc, de, hl, ix, and iy.",
 };

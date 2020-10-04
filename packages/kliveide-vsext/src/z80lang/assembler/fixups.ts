@@ -104,6 +104,7 @@ export enum FixupType {
   Jr,
   Bit8,
   Bit16,
+  Bit16Be,
   Equ,
   Ent,
   Xent,

@@ -3,7 +3,6 @@ import * as expect from "expect";
 
 import { Z80Assembler } from "../../src/z80lang/assembler/assembler";
 import { testCodeEmit } from "./test-helpers";
-import { some } from "lodash";
 
 describe("Assembler - pragmas", () => {
   it("org - existing segment", () => {
