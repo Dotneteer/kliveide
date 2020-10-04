@@ -67,7 +67,7 @@ export class SymbolScope {
   private _errorsReported = new Set<ErrorCodes>();
 
   constructor(
-    public readonly ownerScope: SymbolScope,
+    public readonly ownerScope: SymbolScope | null,
     private readonly caseSensitive: boolean
   ) {}
 

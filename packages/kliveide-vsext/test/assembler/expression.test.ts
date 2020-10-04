@@ -875,4 +875,14 @@ describe("Assembler - expressions", () => {
       testExpression(lit.source, lit.value);
     });
   });
+
+  const currentAddressSamples = [
+    { source: "$", value: 0x8000 },
+  ];
+  currentAddressSamples.forEach((lit) => {
+    it(`Current address: ${lit.source}`, () => {
+      testExpression(lit.source, lit.value);
+    });
+  });
+
 });

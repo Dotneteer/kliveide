@@ -53,7 +53,7 @@ export class AssemblerOutput extends AssemblyModule {
   /**
    * Inject options
    */
-  injectOptions: { [key: string]: string } = {};
+  injectOptions: { [key: string]: boolean } = {};
 
   /**
    * The source files involved in this compilation, in
