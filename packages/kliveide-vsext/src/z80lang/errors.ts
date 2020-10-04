@@ -61,9 +61,29 @@ export type ErrorCodes =
   | "Z2021"
   | "Z2022"
   | "Z2023"
+  | "Z2024"
+  | "Z2025"
+  | "Z2026"
+  | "Z2027"
+  | "Z2028"
+  | "Z2029"
+  | "Z2030"
+  | "Z2031"
+  | "Z2032"
+  | "Z2033"
+  | "Z2034"
+  | "Z2035"
+  | "Z2036"
+  | "Z2037"
+  | "Z2038"
+  | "Z2039"
+  | "Z2040"
+  | "Z2041"
 
   | "Z3000"
-  | "Z3001";
+  | "Z3001"
+
+  | "Z4000";
 
 export const errorMessages: ErrorText = {
   Z1001: "Invalid token at the end of the line: {0}",
@@ -100,20 +120,39 @@ export const errorMessages: ErrorText = {
   Z2008: "An #ifmod or #ifnmod directive cen be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
   Z2009: "Unexpected #else directive",
   Z2010: "Unexpected #endif directive",
-  Z2011: "A MODEL pragma can be used only once.",
-  Z2012: "A MODEL pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
+  Z2011: "A .model pragma can be used only once.",
+  Z2012: "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
   Z2013: "The .struct size of {0} is {1} byte(s). The invocation wants to emit {2} bytes.",
   Z2014: "The .struct definition of {0} does not have a field named {1}.",
   Z2015: "Field assignment instruction cannot be used outside of .struct invocation.",
-  Z2016: "An EQU pragma must have a label",
+  Z2016: "An .equ pragma must have a label",
   Z2017: "Label '{0}' is already defined",
-  Z2018: "The .BANK pragma cannot have a label.",
-  Z2019: "The .BANK pragma's value must be between 0 and 7.",
-  Z2020: "The .BANK pragma's offset value must be between 0 and #03fff.",
-  Z2021: "The .BANK pragma cannot be used with the ZX Spectrum 48 model type.",
-  Z2022: "You have already used the .BANK pragma for bank {0}.",
+  Z2018: "The .bank pragma cannot have a label.",
+  Z2019: "The .bank pragma's value must be between 0 and 7.",
+  Z2020: "The .bank pragma's offset value must be between 0 and #03fff.",
+  Z2021: "The .bank pragma cannot be used with the ZX Spectrum 48 model type.",
+  Z2022: "You have already used the .bank pragma for bank {0}.",
   Z2023: "Unexpected error when emitting code for mnemonic '{0}'.",
+  Z2024: "Only one .xorg pragma can be used within a code segment.",
+  Z2025: "The {0} pragma can be used only in the global scope.",
+  Z2026: "A .var pragma must have a label",
+  Z2027: "A .var pragma cannot redefine a non-.var-created symbol",
+  Z2028: ".skip to {0} is invalid, as this address is less then the current address, {1}",
+  Z2029: "A string value is used where a numeric value is expected.",
+  Z2030: ".defm/.defn pragma requires a string argument.",
+  Z2031: ".defh pragma requires a string argument.",
+  Z2032: ".defh pragma requires a string with even hexadecimal digits.",
+  Z2033: ".align pragma must be used with a parameter value between 1 and #4000; {0} is an invalid value.",
+  Z2034: ".includebin pragma requires a string argument.",
+  Z2035: "An integral value is expected." ,
+  Z2036: "Invalid .includebin offset value (negative, or greater than the file length).",
+  Z2037: "Invalid .includebin length value (negative, or segment exceends the file length).",
+  Z2038: "Cannot open file '{0}' used in .includebin pragma ({0}).",
+  Z2039: "Emitting the .includebin segment would overflow the current segment.",
+  Z2040: ".defgx pragma requires a string argument.",
+  Z2041: "Cannot use an empty pattern with .defg/.defgx pragma.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",
+  Z4000: "ERROR: {0}",
 };

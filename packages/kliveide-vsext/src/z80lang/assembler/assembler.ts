@@ -6,11 +6,29 @@ import { InputStream } from "../parser/input-stream";
 import { TokenStream } from "../parser/token-stream";
 
 import {
+  AlignPragma,
   BankPragma,
+  CompareBinPragma,
+  DefBPragma,
+  DefCPragma,
+  DefGPragma,
+  DefGxPragma,
+  DefHPragma,
+  DefMPragma,
+  DefNPragma,
+  DefSPragma,
+  DefWPragma,
   Directive,
+  DispPragma,
+  EntPragma,
   EquPragma,
+  ErrorPragma,
   Expression,
+  FillbPragma,
+  FillwPragma,
+  IncBinPragma,
   IncludeDirective,
+  InjectOptPragma,
   LabelOnlyLine,
   MacroOrStructInvocation,
   ModelPragma,
@@ -18,10 +36,17 @@ import {
   OrgPragma,
   PartialZ80AssemblyLine,
   Pragma,
+  RndSeedPragma,
   SimpleZ80Instruction,
+  SkipPragma,
+  TracePragma,
+  VarPragma,
+  XentPragma,
+  XorgPragma,
   Z80AssemblyLine,
 } from "../parser/tree-nodes";
 import { Z80AsmParser } from "../parser/z80-asm-parser";
+import { convertSpectrumString } from "../utils";
 import {
   AssemblerErrorInfo,
   AssemblerOptions,
@@ -48,6 +73,8 @@ import {
   EvaluationContext,
   evalUnaryOperationValue,
   ExpressionValue,
+  ExpressionValueType,
+  setRandomSeed,
   SymbolValueMap,
   ValueInfo,
 } from "./expressions";
@@ -122,6 +149,11 @@ export class Z80Assembler implements EvaluationContext {
   compareBins: BinaryComparisonInfo[] = [];
 
   /**
+   * Store the handler of trace messages
+   */
+  private _traceHandler: (message: string) => void;
+
+  /**
    * Compiles the Z80 Assembly code in the specified file into Z80
    * binary code.
    * @param filename Z80 assembly source file (absolute path)
@@ -146,6 +178,14 @@ export class Z80Assembler implements EvaluationContext {
       sourceText,
       options
     );
+  }
+
+  /**
+   * Sets the trace handler function
+   * @param handler Trace handler function
+   */
+  setTraceHandler(handler: (message: string) => void): void {
+    this._traceHandler = handler;
   }
 
   /**
@@ -396,6 +436,19 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   // ==========================================================================
+  // Compilation helpers
+
+  /**
+   * Tests if the compilation point is in the global scope
+   */
+  get isInGlobalScope(): boolean {
+    return (
+      this._currentModule.localScopes.filter((s) => !s.isTemporaryScope)
+        .length === 0
+    );
+  }
+
+  // ==========================================================================
   // Process directives
 
   /**
@@ -616,8 +669,14 @@ export class Z80Assembler implements EvaluationContext {
    * Gets the current assembly address
    */
   getCurrentAddress(): number {
-    // TODO: Implement this method;
-    return 0;
+    this.ensureCodeSegment();
+    const curSegment = this._currentSegment;
+    return (
+      (curSegment.startAddress +
+        (curSegment?.displacement ?? 0) +
+        curSegment.emittedCode.length) &
+      0xffff
+    );
   }
 
   /**
@@ -729,7 +788,7 @@ export class Z80Assembler implements EvaluationContext {
         case "ConditionalExpression":
           return evalConditionalOperationValue(this, expr);
         case "CurrentAddressLiteral":
-          // TODO: Implement this
+          return new ExpressionValue(this.getCurrentAddress());
           break;
         case "CurrentCounterLiteral":
           // TODO: Implement this
@@ -809,14 +868,6 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   /**
-   * Gets the current assembly address
-   */
-  private getCurrentAssemblyAddress(): number {
-    // TODO: Implement this method
-    return 0;
-  }
-
-  /**
    * Emits the binary code for a single source line
    * @param allLines All parsed lines
    * @param scopeLines Lines to process in the current scope
@@ -835,7 +886,7 @@ export class Z80Assembler implements EvaluationContext {
     this._currentSourceLine = asmLine;
     this._currentListFileItem = {
       fileIndex: asmLine.fileIndex,
-      address: this.getCurrentAssemblyAddress(),
+      address: this.getCurrentAddress(),
       lineNumber: asmLine.line,
       segmentIndex: this._output.segments.length - 1,
       codeStartIndex: this._currentSegment.emittedCode.length,
@@ -909,7 +960,7 @@ export class Z80Assembler implements EvaluationContext {
           this.addSymbol(
             currentLabel,
             asmLine,
-            new ExpressionValue(this.getCurrentAssemblyAddress())
+            new ExpressionValue(this.getCurrentAddress())
           );
         }
       }
@@ -980,7 +1031,7 @@ export class Z80Assembler implements EvaluationContext {
       if (asmLine.type.endsWith("Pragma")) {
         // --- Process a pragma
         // TODO: Check if ensureCodeSegment() is enough
-        this.getCurrentAssemblyAddress();
+        this.getCurrentAddress();
         this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
         this.applyPragma(asmLine as Pragma, currentLabel);
         emitListItem();
@@ -994,7 +1045,7 @@ export class Z80Assembler implements EvaluationContext {
         );
       } else {
         // --- Process operations
-        const addr = this.getCurrentAssemblyAddress();
+        const addr = this.getCurrentAddress();
         this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
         this.emitAssemblyOperationCode(asmLine);
 
@@ -1156,11 +1207,72 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   /**
+   * Checks if the variable with the specified name exists
+   * @param name Variable name
+   */
+  private variableExists(name: string): boolean {
+    // --- Search for the variable from inside out
+    for (const scope of this._currentModule.localScopes) {
+      const symbolInfo = scope.getSymbol(name);
+      if (symbolInfo && symbolInfo.type === SymbolType.Var) {
+        return true;
+      }
+    }
+
+    // --- Check the global scope
+    const globalSymbol = this._currentModule.getSymbol(name);
+    return globalSymbol && globalSymbol.type === SymbolType.Var;
+  }
+
+  /**
+   * Sets the value of a variable
+   * @param name Variable name
+   * @param value Variable value
+   */
+  private setVariable(name: string, value: ExpressionValue): void {
+    // --- Search for the variable from inside out
+    for (const scope of this._currentModule.localScopes) {
+      const symbolInfo = scope.getSymbol(name);
+      if (symbolInfo && symbolInfo.type === SymbolType.Var) {
+        symbolInfo.value = value;
+        return;
+      }
+    }
+
+    // --- Check the global scope
+    const globalSymbol = this._currentModule.getSymbol(name);
+    if (globalSymbol && globalSymbol.type === SymbolType.Var) {
+      globalSymbol.value = value;
+      return;
+    }
+
+    // --- The variable does not exist, create it in the current scope
+    const scope =
+      this._currentModule.localScopes.length > 0
+        ? this.getTopLocalScope()
+        : this._currentModule;
+    scope.addSymbol(name, AssemblySymbolInfo.createVar(name, value));
+  }
+
+  /**
    * Gets the top local scope
    */
   private getTopLocalScope(): SymbolScope {
     const localScopes = this._currentModule.localScopes;
     return localScopes[localScopes.length - 1];
+  }
+
+  /**
+   * Gets the current assembly address
+   */
+  private getCurrentAssemblyAddress(): number {
+    this.ensureCodeSegment();
+    return (
+      (this._currentSegment.startAddress +
+        (this._currentSegment?.displacement ?? 0) +
+        this._currentSegment.emittedCode.length) &
+      0xffff
+    );
   }
 
   // ==========================================================================
@@ -1179,10 +1291,114 @@ export class Z80Assembler implements EvaluationContext {
       case "BankPragma":
         this.processBankPragma(pragmaLine, label);
         break;
+      case "XorgPragma":
+        this.processXorgPragma(pragmaLine);
+        break;
+      case "EntPragma":
+        this.processEntPragma(pragmaLine);
+        break;
+      case "XentPragma":
+        this.processXentPragma(pragmaLine);
+        break;
+      case "DispPragma":
+        this.processDispPragma(pragmaLine);
+        break;
+      case "VarPragma":
+        this.processVarPragma(pragmaLine, label);
+        break;
       case "EquPragma":
         this.processEquPragma(pragmaLine, label);
         break;
+      case "SkipPragma":
+        this.processSkipPragma(pragmaLine);
+        break;
+      case "DefBPragma":
+        if (this._currentStructInvocation) {
+          this.processDefBPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefBPragma(pragmaLine);
+        }
+        break;
+      case "DefWPragma":
+        if (this._currentStructInvocation) {
+          this.processDefWPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefWPragma(pragmaLine);
+        }
+        break;
+      case "DefMPragma":
+      case "DefNPragma":
+      case "DefCPragma":
+        if (this._currentStructInvocation) {
+          this.processDefMNCPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefMNCPragma(pragmaLine);
+        }
+        break;
+      case "DefHPragma":
+        if (this._currentStructInvocation) {
+          this.processDefHPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefHPragma(pragmaLine);
+        }
+        break;
+      case "DefSPragma":
+        if (this._currentStructInvocation) {
+          this.processDefSPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefSPragma(pragmaLine);
+        }
+        break;
+      case "FillbPragma":
+        if (this._currentStructInvocation) {
+          this.processFillbPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processFillbPragma(pragmaLine);
+        }
+        break;
+      case "FillwPragma":
+        if (this._currentStructInvocation) {
+          this.processFillwPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processFillwPragma(pragmaLine);
+        }
+        break;
+      case "AlignPragma":
+        this.processAlignPragma(pragmaLine);
+        break;
+      case "TracePragma":
+        this.processTracePragma(pragmaLine);
+        break;
+      case "RndSeedPragma":
+        this.processRndSeedPragma(pragmaLine);
+        break;
+      case "ErrorPragma":
+        this.processErrorPragma(pragmaLine);
+        break;
+      case "IncBinPragma":
+        this.processIncBinPragma(pragmaLine);
+        break;
+      case "CompareBinPragma":
+        this.processCompareBinPragma(pragmaLine);
+        break;
+      case "InjectOptPragma":
+        this.processInjectOptPragma(pragmaLine);
+        break;
+      case "DefGPragma":
+        this.processDefGPragma(pragmaLine);
+        break;
+      case "DefGxPragma":
+        this.processDefGXPragma(pragmaLine);
+        break;
     }
+  }
+
+  /**
+   * Emits a new byte for a structure
+   * @param data
+   */
+  private emitStructByte(data: number): void {
+    this._currentStructBytes.set(this._currentStructOffset++, data & 0xff);
   }
 
   /**
@@ -1284,6 +1500,89 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   /**
+   * Processes the .xorg pragma
+   * @param pragma Pragma to process
+   */
+  processXorgPragma(pragma: XorgPragma): void {
+    const value = this.evaluateExprImmediate(pragma.address);
+    if (!value.isValid) {
+      return;
+    }
+
+    this.ensureCodeSegment();
+    if (
+      this._currentSegment.currentOffset &&
+      this._currentSegment.xorgValue !== undefined
+    ) {
+      this.reportAssemblyError("Z2024", pragma);
+    } else {
+      this._currentSegment.xorgValue = value.value;
+    }
+  }
+
+  /**
+   * Processes the .ent pragma
+   * @param pragma Pragma to process
+   */
+  processEntPragma(pragma: EntPragma): void {
+    if (
+      !this.isInGlobalScope &&
+      this.shouldReportErrorInCurrentScope("Z2025")
+    ) {
+      this.reportAssemblyError("Z2025", pragma, null, ".ent");
+    }
+    const value = this.evaluateExprImmediate(pragma.address);
+    if (value.isNonEvaluated) {
+      this.recordFixup(
+        (pragma as unknown) as Z80AssemblyLine,
+        FixupType.Ent,
+        pragma.address
+      );
+      return;
+    }
+    this._output.entryAddress = value.value;
+  }
+
+  /**
+   * Processes the .xent pragma
+   * @param pragma Pragma to process
+   */
+  processXentPragma(pragma: XentPragma): void {
+    if (
+      !this.isInGlobalScope &&
+      this.shouldReportErrorInCurrentScope("Z2025")
+    ) {
+      this.reportAssemblyError("Z2025", pragma, null, ".xent");
+    }
+    const value = this.evaluateExprImmediate(pragma.address);
+    if (value.isNonEvaluated) {
+      this.recordFixup(
+        (pragma as unknown) as Z80AssemblyLine,
+        FixupType.Xent,
+        pragma.address
+      );
+      return;
+    }
+    this._output.exportEntryAddress = value.value;
+  }
+
+  /**
+   * Processes the .disp pragma
+   * @param pragma Pragma to process
+   */
+  processDispPragma(pragma: DispPragma): void {
+    const value = this.evaluateExprImmediate(pragma.offset);
+    if (!value.isValid) {
+      return;
+    }
+    this.ensureCodeSegment();
+    const curSegment = this._currentSegment;
+    curSegment.displacement = value.value;
+    curSegment.dispPragmaOffset =
+      (curSegment.startAddress + curSegment.currentOffset) & 0xffff;
+  }
+
+  /**
    * Processes the .equ pragma
    * @param pragma Pragma to process
    * @param label Label information
@@ -1308,6 +1607,628 @@ export class Z80Assembler implements EvaluationContext {
       this.recordFixup(asmLine, FixupType.Equ, pragma.value, label);
     } else {
       this.addSymbol(label, asmLine, value);
+    }
+  }
+
+  /**
+   * Processes the .var pragma
+   * @param pragma Pragma to process
+   * @param label Label information
+   */
+  processVarPragma(pragma: VarPragma, label: string | null): void {
+    if (!label) {
+      this.reportAssemblyError("Z2026", pragma);
+      return;
+    }
+    this.fixupTemporaryScope();
+
+    const value = this.evaluateExprImmediate(pragma.value);
+    if (!value.isValid) {
+      return;
+    }
+
+    // --- Do not allow reusing a symbol already declared
+    if (this.symbolExists(label)) {
+      this.reportAssemblyError("Z2027", pragma);
+      return;
+    }
+    this.setVariable(label, value);
+  }
+
+  /**
+   * Processes the .skip pragma
+   * @param pragma Pragma to process
+   */
+  processSkipPragma(pragma: SkipPragma): void {
+    const skipAddr = this.evaluateExprImmediate(pragma.skip);
+    if (!skipAddr.isValid) {
+      return;
+    }
+
+    let currentAddr = this.getCurrentAssemblyAddress();
+    if (skipAddr.value < currentAddr) {
+      this.reportAssemblyError("Z2028", pragma, null, skipAddr, currentAddr);
+      return;
+    }
+    var fillByte = 0xff;
+    if (pragma.fill !== null) {
+      var fillValue = this.evaluateExprImmediate(pragma.fill);
+      if (fillValue === null) {
+        return;
+      }
+      fillByte = fillValue.value;
+    }
+
+    while (currentAddr < skipAddr.value) {
+      this.emitByte(fillByte & 0xff);
+      currentAddr++;
+    }
+  }
+
+  /**
+   * Processes the .defb pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefBPragma(
+    pragma: DefBPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const assembler = this;
+    for (const expr of pragma.values) {
+      var value = this.evaluateExpr(expr);
+      if (value.isValid) {
+        if (value.type === ExpressionValueType.String) {
+          if (this._options.flexibleDefPragmas) {
+            // --- In flexible mode, we allow strings...
+            this.emitString(value, false, false, emitAction);
+          } else {
+            // --- ...otherwise, we accept only numeric values
+            this.reportAssemblyError("Z2029", pragma);
+          }
+        } else {
+          emit(value.value & 0xff);
+        }
+      } else if (value.isNonEvaluated) {
+        this.recordFixup(
+          (pragma as unknown) as Z80AssemblyLine,
+          FixupType.Bit8,
+          expr
+        );
+        emit(0x00);
+      }
+    }
+
+    // --- Emits a byte
+    function emit(value: number): void {
+      if (emitAction) {
+        emitAction(value);
+      } else {
+        assembler.emitByte(value);
+      }
+    }
+  }
+
+  /**
+   * Processes the .defb pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefWPragma(
+    pragma: DefWPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const assembler = this;
+    for (const expr of pragma.values) {
+      var value = this.evaluateExpr(expr);
+      if (value.isValid) {
+        if (value.type === ExpressionValueType.String) {
+          if (this._options.flexibleDefPragmas) {
+            // --- In flexible mode, we allow strings...
+            this.emitString(value, false, false, emitAction);
+          } else {
+            // --- ...otherwise, we accept only numeric values
+            this.reportAssemblyError("Z2029", pragma);
+          }
+        } else {
+          emit(value.value & 0xffff);
+        }
+      } else if (value.isNonEvaluated) {
+        this.recordFixup(
+          (pragma as unknown) as Z80AssemblyLine,
+          FixupType.Bit16,
+          expr
+        );
+        emit(0x0000);
+      }
+    }
+
+    // --- Emits a byte
+    function emit(value: number): void {
+      if (emitAction) {
+        emitAction(value & 0xff);
+        emitAction((value >> 8) & 0xff);
+      } else {
+        assembler.emitWord(value);
+      }
+    }
+  }
+
+  /**
+   * Processes the .defm, .defn, .defc pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefMNCPragma(
+    pragma: DefMPragma | DefNPragma | DefCPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const message = this.evaluateExprImmediate(pragma.value);
+    if (message.isValid && message.type !== ExpressionValueType.String) {
+      if (this._options.flexibleDefPragmas) {
+        // --- In flexible mode, the argument expression can be numeric...
+        var value =
+          (message.asByte() | (pragma.type === "DefCPragma" ? 0x80 : 0x00)) &
+          0xff;
+        if (emitAction) {
+          emitAction(value);
+          if (pragma.type === "DefNPragma") {
+            emitAction(0x00);
+          }
+        } else {
+          this.emitByte(value);
+          if (pragma.type === "DefNPragma") {
+            this.emitByte(0x00);
+          }
+        }
+      } else {
+        // --- otherwise, only string is accepted.
+        this.reportAssemblyError("Z2030", pragma);
+      }
+    } else {
+      this.emitString(
+        message,
+        pragma.type === "DefCPragma",
+        pragma.type === "DefNPragma",
+        emitAction
+      );
+    }
+  }
+
+  /**
+   * Processes the .defh pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefHPragma(
+    pragma: DefHPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const assembler = this;
+    const byteVector = this.evaluateExprImmediate(pragma.value);
+    if (byteVector.isValid && byteVector.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z2031", pragma);
+    }
+
+    const bytesString = byteVector.asString();
+    if (bytesString.length % 2 !== 0) {
+      this.reportAssemblyError("Z2032", pragma);
+      return;
+    }
+
+    // --- Convert the byte vector
+    for (let i = 0; i < bytesString.length; i += 2) {
+      const hexaChars = "0123456789abcdefABCDEF";
+      const char1 = bytesString[i];
+      const char2 = bytesString[i + 1];
+      if (hexaChars.indexOf(char1) < 0 || hexaChars.indexOf(char2) < 0) {
+        this.reportAssemblyError("Z2032", pragma);
+        return;
+      }
+      emit(parseInt(bytesString.substr(i, 2), 16));
+    }
+
+    // --- Emits a byte
+    function emit(value: number): void {
+      if (emitAction) {
+        emitAction(value);
+      } else {
+        assembler.emitByte(value);
+      }
+    }
+  }
+
+  /**
+   * Processes the .defs pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefSPragma(
+    pragma: DefSPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const count = this.evaluateExprImmediate(pragma.count);
+    let fillValue = 0x00;
+    if (pragma.fill) {
+      fillValue = this.evaluateExprImmediate(pragma.fill).asByte();
+    }
+
+    for (let i = 0; i < count.value; i++) {
+      if (emitAction) {
+        emitAction(fillValue);
+      } else {
+        this.emitByte(fillValue);
+      }
+    }
+  }
+
+  /**
+   * Processes the .fillb pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processFillbPragma(
+    pragma: FillbPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const count = this.evaluateExprImmediate(pragma.count);
+    let fillValue = 0x00;
+    fillValue = this.evaluateExprImmediate(pragma.fill).asByte();
+
+    for (let i = 0; i < count.value; i++) {
+      if (emitAction) {
+        emitAction(fillValue);
+      } else {
+        this.emitByte(fillValue);
+      }
+    }
+  }
+
+  /**
+   * Processes the .fillw pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processFillwPragma(
+    pragma: FillwPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const count = this.evaluateExprImmediate(pragma.count);
+    let fillValue = 0x00;
+    fillValue = this.evaluateExprImmediate(pragma.fill).asWord();
+
+    for (let i = 0; i < count.value; i++) {
+      if (emitAction) {
+        emitAction(fillValue & 0xff);
+        emitAction((fillValue >> 8) & 0xff);
+      } else {
+        this.emitWord(fillValue);
+      }
+    }
+  }
+
+  /**
+   * Processes the .align pragma
+   * @param pragma Pragma to process
+   */
+  processAlignPragma(pragma: AlignPragma): void {
+    let alignment = 0x0100;
+    if (pragma.alignExpr) {
+      const alignValue = this.evaluateExprImmediate(pragma.alignExpr);
+      alignment = alignValue.value;
+      if (alignment < 1 || alignment > 0x4000) {
+        this.reportAssemblyError("Z2033", pragma, null, alignment);
+        return;
+      }
+    }
+
+    var currentAddress = this.getCurrentAssemblyAddress();
+    var newAddress =
+      currentAddress % alignment === 0
+        ? currentAddress
+        : (Math.floor(currentAddress / alignment) + 1) * alignment;
+    for (var i = currentAddress; i < newAddress; i++) {
+      this.emitByte(0x00);
+    }
+  }
+
+  /**
+   * Processes the .trace pragma
+   * @param pragma Pragma to process
+   */
+  processTracePragma(pragma: TracePragma): void {
+    let message = "";
+    for (const expr of pragma.values) {
+      const exprValue = this.evaluateExprImmediate(expr);
+
+      switch (exprValue.type) {
+        case ExpressionValueType.Bool:
+          message += exprValue.asBool();
+          break;
+        case ExpressionValueType.Integer:
+          let intValue = exprValue.asLong();
+          if (pragma.isHex) {
+            const valueStr =
+              intValue > 0x10000
+                ? `${intValue.toString(16).padStart(8, "0")}`
+                : `${intValue.toString(16).padStart(4, "0")}`;
+            message += valueStr;
+          } else {
+            message += intValue;
+          }
+          break;
+        case ExpressionValueType.Real:
+          message += exprValue.asReal();
+          break;
+        case ExpressionValueType.String:
+          if (pragma.isHex) {
+            var bytes = convertSpectrumString(exprValue.asString());
+            for (let i = 0; i < bytes.length; i++) {
+              message += `${bytes.charCodeAt(i).toString(16).padStart(2, "0")}`;
+            }
+          } else {
+            message += exprValue.asString();
+          }
+          break;
+      }
+    }
+    if (this._traceHandler) {
+      this._traceHandler(message);
+    }
+  }
+
+  /**
+   * Processes the .rndseed pragma
+   * @param pragma Pragma to process
+   */
+  processRndSeedPragma(pragma: RndSeedPragma): void {
+    if (pragma.seedExpr) {
+      const seedValue = this.evaluateExprImmediate(pragma.seedExpr);
+      setRandomSeed(seedValue.value);
+    } else {
+      setRandomSeed(Date.now());
+    }
+  }
+
+  /**
+   * Processes the .error pragma
+   * @param pragma Pragma to process
+   */
+  processErrorPragma(pragma: ErrorPragma): void {
+    const errorValue = this.evaluateExprImmediate(pragma.message);
+    this.reportAssemblyError("Z4000", pragma, null, errorValue.asString());
+  }
+
+  /**
+   * Processes the .includebin pragma
+   * @param pragma Pragma to process
+   */
+  processIncBinPragma(pragma: IncBinPragma): void {
+    // --- Obtain the file name
+    const fileNameValue = this.evaluateExprImmediate(pragma.filename);
+    if (fileNameValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z2034", pragma);
+      return;
+    }
+
+    // --- Obtain optional offset
+    let offset = 0;
+    if (pragma.offset) {
+      const offsValue = this.evaluateExprImmediate(pragma.offset);
+      if (offsValue.type !== ExpressionValueType.Integer) {
+        this.reportAssemblyError("Z2035", pragma);
+        return;
+      }
+      offset = offsValue.asLong();
+      if (offset < 0) {
+        this.reportAssemblyError("Z2036", pragma);
+        return;
+      }
+    }
+
+    // --- Obtain optional length
+    let length: number | null = null;
+    if (pragma.length) {
+      const lengthValue = this.evaluateExprImmediate(pragma.length);
+      if (lengthValue.type !== ExpressionValueType.Integer) {
+        this.reportAssemblyError("Z2035", pragma);
+        return;
+      }
+      length = lengthValue.asLong();
+      if (length < 0) {
+        this.reportAssemblyError("Z2037", pragma);
+        return;
+      }
+    }
+
+    // --- Read the binary file
+    const currentSourceFile = this._output.sourceFileList[
+      ((pragma as unknown) as Z80AssemblyLine).fileIndex
+    ];
+    const dirname = path.dirname(currentSourceFile.filename) ?? "";
+    const filename = path.join(dirname, fileNameValue.asString());
+
+    let contents: Buffer | null = null;
+    try {
+      contents = fs.readFileSync(filename);
+    } catch (err) {
+      this.reportAssemblyError("Z2038", pragma, null, err.message);
+      return;
+    }
+
+    // --- Check content segment
+    if (offset >= contents.length) {
+      this.reportAssemblyError("Z2036", pragma);
+      return;
+    }
+
+    if (length === null) {
+      length = contents.length - offset;
+    }
+
+    // --- Check length
+    if (offset + length > contents.length) {
+      this.reportAssemblyError("Z2037", pragma);
+      return;
+    }
+
+    // --- Check for too long binary segment
+    if (
+      this.getCurrentAssemblyAddress() + length >=
+      this._currentSegment.maxCodeLength
+    ) {
+      this.reportAssemblyError("Z2038", pragma);
+      return;
+    }
+
+    // --- Everything is ok, emit the binary data
+    for (let i = offset; i < offset + length; i++) {
+      this.emitByte(contents[i]);
+    }
+  }
+
+  /**
+   * Processes the .comparebin pragma
+   * @param pragma Pragma to process
+   */
+  processCompareBinPragma(pragma: CompareBinPragma): void {
+    // --- Obtain the file name
+    const fileNameValue = this.evaluateExprImmediate(pragma.filename);
+    if (fileNameValue.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z2034", pragma);
+      return;
+    }
+
+    // --- Store pragma information
+    this.compareBins.push(
+      new BinaryComparisonInfo(
+        pragma,
+        this._currentSegment,
+        this._currentSegment.currentOffset
+      )
+    );
+  }
+
+  /**
+   * Processes the .injectopt pragma
+   * @param pragma Pragma to process
+   */
+  processInjectOptPragma(pragma: InjectOptPragma): void {
+    // --- Obtain the file name
+    this._output.injectOptions[pragma.identifier.name] = true;
+  }
+
+  /**
+   * Processes the .defg pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefGPragma(
+    pragma: DefGPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    this.emitDefgBytes(
+      (pragma as unknown) as Z80AssemblyLine,
+      pragma.pattern.trim(),
+      false,
+      emitAction
+    );
+  }
+
+  /**
+   * Processes the .defgx pragma
+   * @param pragma Pragma to process
+   * @param emitAction Action to emit a code byte
+   */
+  processDefGXPragma(
+    pragma: DefGxPragma,
+    emitAction?: (b: number) => void
+  ): void {
+    const value = this.evaluateExprImmediate(pragma.pattern);
+    if (value.type !== ExpressionValueType.String) {
+      this.reportAssemblyError("Z2040", pragma);
+      return;
+    }
+    var pattern = value.asString().trim();
+    this.emitDefgBytes(
+      (pragma as unknown) as Z80AssemblyLine,
+      pattern,
+      true,
+      emitAction
+    );
+  }
+
+  /**
+   * Emits the pattern bytes for .defg/.defgx
+   * @param line Pragma line
+   * @param pattern Pattern to emit
+   * @param allowAlign Signs if alignment indicators are allowed or not
+   * @param emitAction Action to emit a code byte
+   */
+  emitDefgBytes(
+    line: Z80AssemblyLine,
+    pattern: string,
+    allowAlign: boolean = true,
+    emitAction?: (b: number) => void
+  ): void {
+    let parts = pattern.split(";");
+    if (parts.length > 1) {
+      pattern = parts[0];
+    } else {
+      parts = pattern.split("//");
+      if (parts.length > 1) {
+        pattern = parts[0];
+      }
+    }
+    if (!pattern) {
+      this.reportAssemblyError("Z2041", line);
+      return;
+    }
+
+    // --- Go through all values
+    let alignToLeft = true;
+    if (pattern[0] === "<" && allowAlign) {
+      pattern = pattern.substr(1);
+    } else if (pattern[0] === ">" && allowAlign) {
+      alignToLeft = false;
+      pattern = pattern.substr(1);
+    }
+    pattern = pattern.split(" ").join("");
+    if (pattern.length === 0) {
+      return;
+    }
+
+    var remainingBits = pattern.length % 8;
+    if (remainingBits > 0) {
+      pattern = alignToLeft
+        ? pattern.padEnd(pattern.length + 8 - remainingBits, "_")
+        : pattern.padStart(pattern.length + 8 - remainingBits, "_");
+    }
+
+    var bitPattern = 0x00;
+    for (var i = 0; i < pattern.length; i++) {
+      // --- Calculate the bit pattern
+      switch (pattern[i]) {
+        case "-":
+        case ".":
+        case "_":
+          bitPattern <<= 1;
+          break;
+        default:
+          bitPattern = (bitPattern << 1) | 1;
+          break;
+      }
+      if ((i + 1) % 8 !== 0) {
+        continue;
+      }
+
+      // --- Emit a full byte
+      if (emitAction) {
+        emitAction(bitPattern);
+      } else {
+        this.emitByte(bitPattern);
+      }
+      bitPattern = 0x00;
     }
   }
 
@@ -1369,6 +2290,52 @@ export class Z80Assembler implements EvaluationContext {
     const overflow = this._currentSegment.emitByte(data);
     if (overflow) {
       this.reportAssemblyError(overflow, this._currentSourceLine);
+    }
+  }
+
+  /**
+   * Emits a new word to the current code segment
+   * @param data Data byte to emit
+   */
+  private emitWord(data: number): void {
+    this.emitByte(data & 0xff);
+    this.emitByte((data >> 8) & 0xff);
+  }
+
+  /**
+   * Emits a string
+   * @param message Expression with the string
+   * @param bit7Terminator Bit 7 terminator flag
+   * @param nullTerminator Null terminator flag
+   * @param emitAction Action to emit a code byte
+   */
+  private emitString(
+    message: ExpressionValue,
+    bit7Terminator: boolean,
+    nullTerminator: boolean,
+    emitAction?: (byte: number) => void
+  ): void {
+    const assembler = this;
+    const bytes = convertSpectrumString(message.asString());
+    if (bytes.length > 1) {
+      for (let i = 0; i < bytes.length - 1; i++) {
+        emit(bytes.charCodeAt(i));
+      }
+    }
+    var lastByte =
+      bytes.charCodeAt(bytes.length - 1) | (bit7Terminator ? 0x80 : 0x00);
+    emit(lastByte);
+    if (nullTerminator) {
+      emit(0x00);
+    }
+
+    // --- Emits a byte
+    function emit(value: number) {
+      if (emitAction) {
+        emitAction(value);
+      } else {
+        assembler.emitByte(value);
+      }
     }
   }
 
@@ -1514,6 +2481,22 @@ export class Z80Assembler implements EvaluationContext {
       localScope = localScope.ownerScope;
     }
     localScope.reportError(errorCode);
+  }
+
+  /**
+   *
+   * @param code Checks if the specified error should be reported
+   * in the local scope
+   */
+  private shouldReportErrorInCurrentScope(code: ErrorCodes): boolean {
+    if (this.isInGlobalScope) {
+      return true;
+    }
+    let localScope = this.getTopLocalScope();
+    if (localScope.ownerScope) {
+      localScope = localScope.ownerScope;
+    }
+    return localScope.isErrorReported(code);
   }
 }
 

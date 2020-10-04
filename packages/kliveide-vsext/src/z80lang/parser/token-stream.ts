@@ -17,7 +17,7 @@ export class TokenStream {
   private _prefetchedColumn: number | null = null;
 
   // --- The last end-of-line comment
-  private _lastComment: string | null = null ;
+  private _lastComment: string | null = null;
 
   /**
    * Initializes the tokenizer with the input stream
@@ -81,7 +81,7 @@ export class TokenStream {
     if (this._ahead.length > 0) {
       const token = this._ahead.shift();
       if (!token) {
-        throw new Error("Token expected")
+        throw new Error("Token expected");
       }
       return token;
     }
@@ -535,11 +535,14 @@ export class TokenStream {
             break;
           }
           if (isLetterOrDigit(ch)) {
-            if (input.peek() !== null) break;
+            if (input.peek() !== null) {
+              break;
+            }
             appendTokenChar();
           }
           if (
             text.length <= 5 &&
+            text.length >= 2 &&
             text
               .substr(1)
               .split("")
@@ -2083,7 +2086,7 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".elif": TokenType.Elif,
   ".ELIF": TokenType.Elif,
-  
+
   ".else": TokenType.Else,
   ".ELSE": TokenType.Else,
 
@@ -2152,10 +2155,9 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".local": TokenType.Local,
   ".LOCAL": TokenType.Local,
-  "local": TokenType.Local,
-  "LOCAL": TokenType.Local,
-  "Local": TokenType.Local,
-
+  local: TokenType.Local,
+  LOCAL: TokenType.Local,
+  Local: TokenType.Local,
 
   textof: TokenType.TextOf,
   TEXTOF: TokenType.TextOf,
@@ -2275,4 +2277,6 @@ const resolverHash: { [key: string]: TokenType } = {
   "#ifmod": TokenType.IfModDir,
   "#ifnmod": TokenType.IfNModDir,
   "#line": TokenType.LineDir,
+
+  "$": TokenType.CurAddress,
 };

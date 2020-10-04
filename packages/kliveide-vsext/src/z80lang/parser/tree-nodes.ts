@@ -1103,7 +1103,7 @@ export interface FillbPragma extends PartialZ80AssemblyLine {
   /**
    * Filler byte
    */
-  fill?: Expression;
+  fill: Expression;
 }
 
 export interface FillwPragma extends PartialZ80AssemblyLine {
