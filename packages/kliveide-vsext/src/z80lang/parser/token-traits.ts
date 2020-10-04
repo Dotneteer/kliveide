@@ -10,6 +10,11 @@ export interface TokenTraits {
   instruction?: boolean;
 
   /**
+   * This token is a Z80 Next instruction
+   */
+  next?: boolean;
+
+  /**
    * Indicates if an instruction is simple (argumentless)
    */
   simple?: boolean;
@@ -127,11 +132,11 @@ tokenTraits.set(TokenType.BinaryLiteral, {
 tokenTraits.set(TokenType.BinaryNot, { expressionStart: true });
 tokenTraits.set(TokenType.Bit, { instruction: true });
 tokenTraits.set(TokenType.Break, { statement: true });
-tokenTraits.set(TokenType.Brlc, { instruction: true });
-tokenTraits.set(TokenType.Bsla, { instruction: true });
-tokenTraits.set(TokenType.Bsra, { instruction: true });
-tokenTraits.set(TokenType.Bsrf, { instruction: true });
-tokenTraits.set(TokenType.Bsrl, { instruction: true });
+tokenTraits.set(TokenType.Brlc, { instruction: true, next: true });
+tokenTraits.set(TokenType.Bsla, { instruction: true, next: true });
+tokenTraits.set(TokenType.Bsra, { instruction: true, next: true });
+tokenTraits.set(TokenType.Bsrf, { instruction: true, next: true });
+tokenTraits.set(TokenType.Bsrl, { instruction: true, next: true });
 
 // ----------------------------------------------------------------------------
 // C
@@ -415,14 +420,14 @@ tokenTraits.set(TokenType.LTextOf, {
 tokenTraits.set(TokenType.Ld, { instruction: true });
 tokenTraits.set(TokenType.Ldd, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Lddr, { instruction: true, simple: true });
-tokenTraits.set(TokenType.Lddrx, { instruction: true, simple: true });
-tokenTraits.set(TokenType.Lddx, { instruction: true, simple: true });
+tokenTraits.set(TokenType.Lddrx, { instruction: true, simple: true, next: true });
+tokenTraits.set(TokenType.Lddx, { instruction: true, simple: true, next: true });
 tokenTraits.set(TokenType.Ldi, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Ldir, { instruction: true, simple: true });
-tokenTraits.set(TokenType.Ldirx, { instruction: true, simple: true });
-tokenTraits.set(TokenType.Ldix, { instruction: true, simple: true });
-tokenTraits.set(TokenType.Ldpirx, { instruction: true, simple: true });
-tokenTraits.set(TokenType.Ldws, { instruction: true, simple: true });
+tokenTraits.set(TokenType.Ldirx, { instruction: true, simple: true, next: true });
+tokenTraits.set(TokenType.Ldix, { instruction: true, simple: true, next: true });
+tokenTraits.set(TokenType.Ldpirx, { instruction: true, simple: true, next: true });
+tokenTraits.set(TokenType.Ldws, { instruction: true, simple: true, next: true });
 tokenTraits.set(TokenType.LeftShift, {});
 tokenTraits.set(TokenType.LessThan, {});
 tokenTraits.set(TokenType.LessThanOrEqual, {});
@@ -436,11 +441,11 @@ tokenTraits.set(TokenType.Macro, { statement: true });
 tokenTraits.set(TokenType.MaxOp, {});
 tokenTraits.set(TokenType.MinOp, {});
 tokenTraits.set(TokenType.Minus, { expressionStart: true });
-tokenTraits.set(TokenType.Mirror, { instruction: true });
+tokenTraits.set(TokenType.Mirror, { instruction: true, next: true });
 tokenTraits.set(TokenType.ModelPragma, { pragma: true });
 tokenTraits.set(TokenType.Module, { statement: true });
 tokenTraits.set(TokenType.Modulo, {});
-tokenTraits.set(TokenType.Mul, { instruction: true });
+tokenTraits.set(TokenType.Mul, { instruction: true, next: true });
 tokenTraits.set(TokenType.Multiplication, {
   expressionStart: true,
   literal: true,
@@ -452,7 +457,7 @@ tokenTraits.set(TokenType.NC, { condition: true, relCondition: true });
 tokenTraits.set(TokenType.NZ, { condition: true, relCondition: true });
 tokenTraits.set(TokenType.Neg, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Next, { statement: true });
-tokenTraits.set(TokenType.NextReg, { instruction: true });
+tokenTraits.set(TokenType.NextReg, { instruction: true, next: true });
 tokenTraits.set(TokenType.NoneArg, {});
 tokenTraits.set(TokenType.Nop, { instruction: true, simple: true });
 tokenTraits.set(TokenType.NotEqual, {});
@@ -468,7 +473,7 @@ tokenTraits.set(TokenType.OrgPragma, { pragma: true });
 tokenTraits.set(TokenType.Otdr, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Otir, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Out, { instruction: true });
-tokenTraits.set(TokenType.OutInB, { instruction: true, simple: true });
+tokenTraits.set(TokenType.OutInB, { instruction: true, simple: true, next: true });
 tokenTraits.set(TokenType.Outd, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Outi, { instruction: true, simple: true });
 
@@ -477,8 +482,8 @@ tokenTraits.set(TokenType.Outi, { instruction: true, simple: true });
 tokenTraits.set(TokenType.P, { condition: true });
 tokenTraits.set(TokenType.PE, { condition: true });
 tokenTraits.set(TokenType.PO, { condition: true });
-tokenTraits.set(TokenType.PixelAd, { instruction: true, simple: true });
-tokenTraits.set(TokenType.PixelDn, { instruction: true, simple: true });
+tokenTraits.set(TokenType.PixelAd, { instruction: true, simple: true, next: true });
+tokenTraits.set(TokenType.PixelDn, { instruction: true, simple: true, next: true });
 tokenTraits.set(TokenType.Plus, { expressionStart: true });
 tokenTraits.set(TokenType.Pop, { instruction: true });
 tokenTraits.set(TokenType.Proc, { statement: true });
@@ -523,7 +528,7 @@ tokenTraits.set(TokenType.SP, { reg: true, reg16: true });
 tokenTraits.set(TokenType.Sbc, { instruction: true });
 tokenTraits.set(TokenType.Scf, { instruction: true, simple: true });
 tokenTraits.set(TokenType.Set, { instruction: true });
-tokenTraits.set(TokenType.SetAE, { instruction: true, simple: true });
+tokenTraits.set(TokenType.SetAE, { instruction: true, simple: true, next: true });
 tokenTraits.set(TokenType.SkipPragma, { pragma: true });
 tokenTraits.set(TokenType.Sla, { instruction: true });
 tokenTraits.set(TokenType.Sll, { instruction: true });
@@ -536,11 +541,11 @@ tokenTraits.set(TokenType.StringLiteral, {
 });
 tokenTraits.set(TokenType.Struct, { statement: true });
 tokenTraits.set(TokenType.Sub, { instruction: true });
-tokenTraits.set(TokenType.Swapnib, { instruction: true, simple: true });
+tokenTraits.set(TokenType.Swapnib, { instruction: true, simple: true, next: true });
 
 // ----------------------------------------------------------------------------
 // T
-tokenTraits.set(TokenType.Test, { instruction: true });
+tokenTraits.set(TokenType.Test, { instruction: true, next: true });
 tokenTraits.set(TokenType.TextOf, {
   expressionStart: true,
   builtInFunction: true,

@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { ThemeIcon } from "vscode";
 
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { InputStream } from "../parser/input-stream";
@@ -24,21 +25,31 @@ import {
   EquPragma,
   ErrorPragma,
   Expression,
+  ExpressionNode,
   FillbPragma,
   FillwPragma,
   IncBinPragma,
   IncludeDirective,
   InjectOptPragma,
+  Instruction,
   LabelOnlyLine,
   MacroOrStructInvocation,
+  MirrorInstruction,
   ModelPragma,
+  MulInstruction,
+  NextRegInstruction,
   NodePosition,
+  OperandType,
   OrgPragma,
   PartialZ80AssemblyLine,
+  PopInstruction,
   Pragma,
+  PushInstruction,
+  RetInstruction,
   RndSeedPragma,
   SimpleZ80Instruction,
   SkipPragma,
+  TestInstruction,
   TracePragma,
   VarPragma,
   XentPragma,
@@ -2265,19 +2276,158 @@ export class Z80Assembler implements EvaluationContext {
       const mnemonic = ((opLine as unknown) as SimpleZ80Instruction).mnemonic.toLowerCase();
 
       // --- Get the op codes for the instruction
+      if (
+        nextInstructionCodes[mnemonic] !== undefined &&
+        this._output.modelType !== SpectrumModelType.Next
+      ) {
+        this.reportAssemblyError("Z5001", opLine);
+        return;
+      }
       const opCodes = simpleInstructionCodes[mnemonic];
       if (opCodes === undefined) {
         this.reportEvaluationError("Z2023", opLine, null, mnemonic);
       }
 
       // --- Emit the opcode(s);
-      const high = (opCodes >> 8) & 0xff;
-      if (high) {
-        this.emitByte(high);
-      }
-      this.emitByte(opCodes & 0xff);
+      this.emitOpCode(opCodes);
+      return;
+    }
+    const instr = opLine as Instruction;
+    switch (instr.type) {
+      case "NextRegInstruction":
+        this.processNextRegInst(instr);
+        break;
+      case "PushInstruction":
+      case "PopInstruction":
+        this.processStackInst(instr);
+        break;
+      case "RetInstruction":
+        this.processRetInst(instr);
+        break;
+      case "TestInstruction":
+        this.processTestInst(instr);
+        break;
+    }
+  }
+
+  /**
+   * Processes a MUL instruction
+   * @param op Instruction
+   */
+  private processNextRegInst(op: NextRegInstruction) {
+    if (this.invalidNextInst(op)) {
+      return;
+    }
+    if (op.value !== null) {
+      this.emitOpCode(0xed91);
+      this.emitNumericExpr(op, op.register, FixupType.Bit8);
+      this.emitNumericExpr(op, op.value, FixupType.Bit8);
     } else {
-      // TODO: Implement this method
+      this.emitOpCode(0xed92);
+      this.emitNumericExpr(op, op.register, FixupType.Bit8);
+    }
+  }
+
+  /**
+   * Processes a PUSH or POP operation
+   * @param op Instruction
+   */
+  private processStackInst(op: PushInstruction | PopInstruction) {
+    switch (op.operand.operandType) {
+      case OperandType.Expression:
+        // --- PUSH NNNN operation
+        if (op.type === "PopInstruction") {
+          this.reportAssemblyError("Z5000", op);
+          return;
+        }
+        if (this.invalidNextInst(op)) {
+          return;
+        }
+        this.emitOpCode(0xed8a);
+        this.emitNumericExpr(op, op.operand.expr, FixupType.Bit16Be);
+        return;
+      case OperandType.Reg16:
+      case OperandType.Reg16Spec:
+      case OperandType.Reg16Idx:
+        let opcode = popOpBytes[op.operand.register];
+        if (opcode) {
+          if (op.type === "PushInstruction") {
+            opcode |= 0x04;
+          }
+          this.emitOpCode(opcode);
+          return;
+        }
+    }
+    this.reportAssemblyError("Z5002", op);
+  }
+
+  /**
+   * Processes a RET operation
+   * @param op Push or Pop instruction
+   */
+  private processRetInst(op: RetInstruction) {
+    if (op.condition) {
+      const order = conditionOrder[op.condition] ?? 0;
+      this.emitByte(0xc0 + order * 8);
+      return;
+    }
+    this.emitOpCode(0xc9);
+  }
+
+  /**
+   * Processes a TEST operation
+   * @param op Push or Pop instruction
+   */
+  private processTestInst(op: TestInstruction) {
+    if (this.invalidNextInst(op)) {
+      return;
+    }
+    this.emitOpCode(0xed27);
+    this.emitNumericExpr(op, op.expr, FixupType.Bit8);
+  }
+
+  /**
+   * Checks if the specified operation results an error as it
+   * can be used only with the ZX Spectrum Next
+   * @param op
+   */
+  private invalidNextInst(op: Instruction): boolean {
+    if (this._output.modelType !== SpectrumModelType.Next) {
+      this.reportAssemblyError("Z5001", op);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Evaluates the expression and emits bytes accordingly. If the expression
+   * cannot be resolved, creates a fixup.
+   * @param opLine Assembly line
+   * @param expr Expression to evaluate
+   * @param type Expression/Fixup type
+   */
+  private emitNumericExpr(
+    instr: Instruction,
+    expr: Expression,
+    type: FixupType
+  ): void {
+    const opLine = (instr as unknown) as Z80AssemblyLine;
+    const value = this.evaluateExpr(expr);
+    if (value.isNonEvaluated) {
+      this.recordFixup(opLine, type, expr);
+    }
+    if (value.isValid && value.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z2042", opLine);
+    }
+    const fixupValue = value.value;
+    if (type === FixupType.Bit16Be) {
+      this.emitByte(fixupValue >> 8);
+      this.emitByte(fixupValue);
+    } else {
+      this.emitByte(fixupValue);
+      if (type === FixupType.Bit16) {
+        this.emitByte(fixupValue >> 8);
+      }
     }
   }
 
@@ -2302,6 +2452,17 @@ export class Z80Assembler implements EvaluationContext {
     this.emitByte((data >> 8) & 0xff);
   }
 
+  /**
+   * Emits a byte (high 8-bit value is zero)or a word
+   * @param data byte or word data
+   */
+  private emitOpCode(data: number): void {
+    const high = (data >> 8) & 0xff;
+    if (high) {
+      this.emitByte(high);
+    }
+    this.emitByte(data & 0xff);
+  }
   /**
    * Emits a string
    * @param message Expression with the string
@@ -2511,6 +2672,11 @@ interface ProcessOps {
  * Represents the operation codes for simple Z80 instructions.
  */
 const simpleInstructionCodes: { [key: string]: number } = {
+  bsla: 0xed28,
+  bsra: 0xed29,
+  bsrl: 0xed2a,
+  bsrf: 0xed2b,
+  brlc: 0xed2c,
   ccf: 0x3f,
   cpd: 0xeda9,
   cpdr: 0xedb9,
@@ -2536,6 +2702,8 @@ const simpleInstructionCodes: { [key: string]: number } = {
   ldix: 0xeda4,
   ldpirx: 0xedb7,
   ldws: 0xeda5,
+  mirror: 0xed24,
+  mul: 0xed30,
   neg: 0xed44,
   nop: 0x00,
   otdr: 0xedbb,
@@ -2556,4 +2724,56 @@ const simpleInstructionCodes: { [key: string]: number } = {
   scf: 0x37,
   setae: 0xed95,
   swapnib: 0xed23,
+};
+
+/**
+ * Represents the Z80 NEXT operations
+ */
+const nextInstructionCodes: { [key: string]: boolean } = {
+  ldix: true,
+  lsws: true,
+  ldirx: true,
+  lddx: true,
+  lddrx: true,
+  ldpirx: true,
+  outinb: true,
+  mul: true,
+  swapnib: true,
+  mirror: true,
+  nextreg: true,
+  pixeldn: true,
+  pixelad: true,
+  setae: true,
+  test: true,
+  bsla: true,
+  bsra: true,
+  bsrl: true,
+  bsrf: true,
+  brlc: true,
+};
+
+/**
+ * Instruction codes for pop operations
+ */
+const popOpBytes: { [key: string]: number } = {
+  af: 0xf1,
+  bc: 0xc1,
+  de: 0xd1,
+  hl: 0xe1,
+  ix: 0xdde1,
+  iy: 0xfde1,
+};
+
+/**
+ * Order of conditions
+ */
+const conditionOrder: { [key: string]:number} = {
+  nz: 0,
+  z: 1,
+  nc: 2,
+  c: 3,
+  po: 4,
+  pe: 5,
+  p: 6,
+  m: 7
 };

@@ -954,14 +954,16 @@ export class Z80AsmParser {
         parser.expectToken(TokenType.D, "Z1011");
         parser.expectToken(TokenType.Comma, "Z1007");
         parser.expectToken(TokenType.E, "Z1012");
-        return <MulInstruction>{
-          type: "MulInstruction",
+        return <SimpleZ80Instruction>{
+          type: "SimpleZ80Instruction",
+          mnemonic: "mul"
         };
 
       case TokenType.Mirror:
         this.expectToken(TokenType.A, "Z1010");
-        return <MirrorInstruction>{
-          type: "MirrorInstruction",
+        return <SimpleZ80Instruction>{
+          type: "SimpleZ80Instruction",
+          mnemonic: "mirror"
         };
 
       case TokenType.NextReg:

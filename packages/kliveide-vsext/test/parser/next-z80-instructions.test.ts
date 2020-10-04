@@ -152,7 +152,9 @@ describe("Parser - Next Z80 instructions", () => {
       expect(parser.hasErrors).toBe(false);
       expect(parsed).not.toBeNull();
       expect(parsed.assemblyLines.length).toBe(1);
-      expect(parsed.assemblyLines[0].type === "MirrorInstruction").toBe(true);
+      expect(parsed.assemblyLines[0].type === "SimpleZ80Instruction").toBe(true);
+      const instr = parsed.assemblyLines[0] as unknown as SimpleZ80Instruction;
+      expect(instr.mnemonic).toBe("mirror");
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -185,7 +187,9 @@ describe("Parser - Next Z80 instructions", () => {
       expect(parser.hasErrors).toBe(false);
       expect(parsed).not.toBeNull();
       expect(parsed.assemblyLines.length).toBe(1);
-      expect(parsed.assemblyLines[0].type === "MulInstruction").toBe(true);
+      expect(parsed.assemblyLines[0].type === "SimpleZ80Instruction").toBe(true);
+      const instr = parsed.assemblyLines[0] as unknown as SimpleZ80Instruction;
+      expect(instr.mnemonic).toBe("mul");
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
