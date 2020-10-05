@@ -7,6 +7,7 @@ import {
   ImInstruction,
   JpInstruction,
   JrInstruction,
+  OperandType,
   RetInstruction,
   RstInstruction,
   Z80AssemblyLine,
@@ -315,13 +316,6 @@ describe("Parser - control flow instructions", () => {
       expect(parser.hasErrors).toBe(true);
       expect(parser.errors[0].code === "Z1003").toBe(true);
     });
-
-    it(`${inst} po #1`, () => {
-      const parser = createParser(`${inst} po,#4000`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
   });
 
   const jpInsts = ["jp", "JP"];
@@ -334,8 +328,8 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
-      expect(instr.condition).toBeFalsy();
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.condition).toBeUndefined();
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -349,14 +343,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} #3`, () => {
-      const parser = createParser(`${inst} de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} z #1`, () => {
@@ -368,7 +355,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("z");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -389,14 +376,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} z,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} z #4`, () => {
-      const parser = createParser(`${inst} z,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} nz #1`, () => {
@@ -408,7 +388,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("nz");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -429,14 +409,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nz,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} nz #4`, () => {
-      const parser = createParser(`${inst} nz,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} c #1`, () => {
@@ -448,7 +421,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("c");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -469,14 +442,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} c,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} c #4`, () => {
-      const parser = createParser(`${inst} c,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} nc #1`, () => {
@@ -488,7 +454,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("nc");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -509,14 +475,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nc,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} nc #4`, () => {
-      const parser = createParser(`${inst} nc,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} po #1`, () => {
@@ -528,7 +487,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("po");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -549,14 +508,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} po,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} po #4`, () => {
-      const parser = createParser(`${inst} po,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} pe #1`, () => {
@@ -568,7 +520,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("pe");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -589,14 +541,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} pe,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} pe #4`, () => {
-      const parser = createParser(`${inst} pe,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} m #1`, () => {
@@ -608,7 +553,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("m");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -629,14 +574,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} m,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} m #4`, () => {
-      const parser = createParser(`${inst} m,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
 
     it(`${inst} p #1`, () => {
@@ -648,7 +586,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed.assemblyLines[0].type === "JpInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
       expect(instr.condition).toBe("p");
-      expect(instr.target.type === "IntegerLiteral").toBe(true);
+      expect(instr.target.operandType).toBe(OperandType.Expression);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -669,14 +607,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} p,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
-    });
-
-    it(`${inst} p #4`, () => {
-      const parser = createParser(`${inst} p,de`);
-      parser.parseProgram();
-      expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
   });
 
@@ -842,7 +773,7 @@ describe("Parser - control flow instructions", () => {
       expect(parsed).not.toBeNull();
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "CallInstruction").toBe(true);
-      const instr = (parsed.assemblyLines[0] as unknown) as JpInstruction;
+      const instr = (parsed.assemblyLines[0] as unknown) as CallInstruction;
       expect(instr.condition).toBe("nc");
       expect(instr.target.type === "IntegerLiteral").toBe(true);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
