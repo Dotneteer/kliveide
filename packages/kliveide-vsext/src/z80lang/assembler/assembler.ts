@@ -9,6 +9,7 @@ import { TokenStream } from "../parser/token-stream";
 import {
   AlignPragma,
   BankPragma,
+  CallInstruction,
   CompareBinPragma,
   DefBPragma,
   DefCPragma,
@@ -32,6 +33,8 @@ import {
   IncludeDirective,
   InjectOptPragma,
   Instruction,
+  JpInstruction,
+  JrInstruction,
   LabelOnlyLine,
   MacroOrStructInvocation,
   MirrorInstruction,
@@ -47,6 +50,7 @@ import {
   PushInstruction,
   RetInstruction,
   RndSeedPragma,
+  RstInstruction,
   SimpleZ80Instruction,
   SkipPragma,
   TestInstruction,
@@ -2301,8 +2305,23 @@ export class Z80Assembler implements EvaluationContext {
       case "PopInstruction":
         this.processStackInst(instr);
         break;
+      case "CallInstruction":
+        this.processCallInst(instr);
+        break;
+      case "JpInstruction":
+        this.processJpInst(instr);
+        break;
+      case "JrInstruction":
+        this.processJrInst(instr);
+        break;
       case "RetInstruction":
         this.processRetInst(instr);
+        break;
+      case "RstInstruction":
+        this.processRstInst(instr);
+        break;
+      case "DjnzInstruction":
+        this.emitJumpRelativeOp(instr, instr.target, 0x10);
         break;
       case "TestInstruction":
         this.processTestInst(instr);
@@ -2314,7 +2333,7 @@ export class Z80Assembler implements EvaluationContext {
    * Processes a MUL instruction
    * @param op Instruction
    */
-  private processNextRegInst(op: NextRegInstruction) {
+  private processNextRegInst(op: NextRegInstruction): void {
     if (this.invalidNextInst(op)) {
       return;
     }
@@ -2332,7 +2351,7 @@ export class Z80Assembler implements EvaluationContext {
    * Processes a PUSH or POP operation
    * @param op Instruction
    */
-  private processStackInst(op: PushInstruction | PopInstruction) {
+  private processStackInst(op: PushInstruction | PopInstruction): void {
     switch (op.operand.operandType) {
       case OperandType.Expression:
         // --- PUSH NNNN operation
@@ -2362,10 +2381,90 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   /**
-   * Processes a RET operation
-   * @param op Push or Pop instruction
+   * Processes a CALL operation
+   * @param op Instruction
    */
-  private processRetInst(op: RetInstruction) {
+  private processCallInst(op: CallInstruction): void {
+    if (op.condition) {
+      const order = conditionOrder[op.condition] ?? 0;
+      this.emitOpCode(0xc4 + order * 8);
+    } else {
+      this.emitOpCode(0xcd);
+    }
+    this.emitNumericExpr(op, op.target, FixupType.Bit16);
+  }
+
+  /**
+   * Processes a JP operation
+   * @param op Instruction
+   */
+  private processJpInst(op: JpInstruction): void {
+    if (op.condition) {
+      const order = conditionOrder[op.condition] ?? 0;
+      if (op.target.operandType !== OperandType.Expression) {
+        this.reportAssemblyError("Z1003", op);
+        return;
+      }
+      this.emitOpCode(0xc2 + order * 8);
+      this.emitNumericExpr(op, op.target.expr, FixupType.Bit16);
+    } else {
+      switch (op.target.operandType) {
+        case OperandType.CPort:
+          this.emitOpCode(0xed98);
+          return;
+        case OperandType.Reg16:
+        case OperandType.RegIndirect:
+          if (op.target.register !== "hl") {
+            break;
+          }
+          this.emitOpCode(0xe9);
+          return;
+        case OperandType.IndexedIndirect:
+          if (op.target.offsetSign) {
+            break;
+          }
+        // --- Flow to the next label is intentional
+        case OperandType.Reg16Idx:
+          if (op.target.register === "ix") {
+            this.emitOpCode(0xdde9);
+            return;
+          }
+          if (op.target.register === "iy") {
+            this.emitOpCode(0xfde9);
+            return;
+          }
+          break;
+        case OperandType.Expression:
+          this.emitOpCode(0xc3);
+          this.emitNumericExpr(op, op.target.expr, FixupType.Bit16);
+          return;
+      }
+      this.reportAssemblyError("Z2043", op);
+    }
+  }
+
+  /**
+   * Processes a JR operation
+   * @param op Instruction
+   */
+  private processJrInst(op: JrInstruction): void {
+    let opCode = 0x18;
+    if (op.condition) {
+      const order = conditionOrder[op.condition] ?? 0;
+      if (order >= 4) {
+        this.reportAssemblyError("Z2044", op);
+        return;
+      }
+      opCode = 0x20 + order * 8;
+    }
+    this.emitJumpRelativeOp(op, op.target, opCode);
+  }
+
+  /**
+   * Processes a RET operation
+   * @param op Instruction
+   */
+  private processRetInst(op: RetInstruction): void {
     if (op.condition) {
       const order = conditionOrder[op.condition] ?? 0;
       this.emitByte(0xc0 + order * 8);
@@ -2375,10 +2474,23 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   /**
-   * Processes a TEST operation
-   * @param op Push or Pop instruction
+   * Processes an RST operation
+   * @param op Instruction
    */
-  private processTestInst(op: TestInstruction) {
+  private processRstInst(op: RstInstruction): void {
+    const value = this.evaluateExprImmediate(op.target).value;
+    if (value > 0x38 || value %8 !== 0) {
+      this.reportAssemblyError("Z2046", op, null, value);
+      return;
+    }
+    this.emitOpCode(0xc7 + value);
+  }
+
+  /**
+   * Processes a TEST operation
+   * @param op Instruction
+   */
+  private processTestInst(op: TestInstruction): void {
     if (this.invalidNextInst(op)) {
       return;
     }
@@ -2389,7 +2501,7 @@ export class Z80Assembler implements EvaluationContext {
   /**
    * Checks if the specified operation results an error as it
    * can be used only with the ZX Spectrum Next
-   * @param op
+   * @param op Instruction to test
    */
   private invalidNextInst(op: Instruction): boolean {
     if (this._output.modelType !== SpectrumModelType.Next) {
@@ -2428,6 +2540,33 @@ export class Z80Assembler implements EvaluationContext {
       if (type === FixupType.Bit16) {
         this.emitByte(fixupValue >> 8);
       }
+    }
+  }
+
+  /**
+   *
+   * @param instr Control flow operation line
+   * @param target Target expression
+   * @param opCode Operation code
+   */
+  private emitJumpRelativeOp(
+    instr: Instruction,
+    target: Expression,
+    opCode: number
+  ) {
+    const value = this.evaluateExpr(target);
+    let dist = 0;
+    const opLine = (instr as unknown) as Z80AssemblyLine;
+    if (value.isNonEvaluated) {
+      this.recordFixup(opLine, FixupType.Jr, target);
+    } else {
+      dist = value.value - (this.getCurrentAssemblyAddress() + 2);
+      if (dist < -128 || dist > 127) {
+        this.reportAssemblyError("Z2045", opLine, null, dist);
+        return;
+      }
+      this.emitByte(opCode);
+      this.emitByte(dist);
     }
   }
 
@@ -2767,7 +2906,7 @@ const popOpBytes: { [key: string]: number } = {
 /**
  * Order of conditions
  */
-const conditionOrder: { [key: string]:number} = {
+const conditionOrder: { [key: string]: number } = {
   nz: 0,
   z: 1,
   nc: 2,
@@ -2775,5 +2914,5 @@ const conditionOrder: { [key: string]:number} = {
   po: 4,
   pe: 5,
   p: 6,
-  m: 7
+  m: 7,
 };

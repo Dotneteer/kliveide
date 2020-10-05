@@ -80,6 +80,10 @@ export type ErrorCodes =
   | "Z2040"
   | "Z2041"
   | "Z2042"
+  | "Z2043"
+  | "Z2044"
+  | "Z2045"
+  | "Z2046"
 
   | "Z3000"
   | "Z3001"
@@ -157,6 +161,10 @@ export const errorMessages: ErrorText = {
   Z2040: ".defgx pragma requires a string argument.",
   Z2041: "Cannot use an empty pattern with .defg/.defgx pragma.",
   Z2042: "A numeric expression expected.",
+  Z2043: "Invalid operand",
+  Z2044: "The jr instructions cannot be used with the pe, po, p, or m conditions.",
+  Z2045: "Relative jump distance should be between -128 and 127. {0} is invalid.",
+  Z2046: "The rst instruction can be used only with #00, #08, #10, #18, #20, #28, #30, or #38 arguments. #{0} is invalid.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",

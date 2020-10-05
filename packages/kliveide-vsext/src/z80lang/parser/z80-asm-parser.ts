@@ -60,8 +60,6 @@ import {
   DefGPragma,
   TestInstruction,
   NextRegInstruction,
-  MirrorInstruction,
-  MulInstruction,
   DjnzInstruction,
   RstInstruction,
   ImInstruction,
@@ -837,7 +835,7 @@ export class Z80AsmParser {
         const jrNext = this.tokens.peek();
         const jrTrait = getTokenTraits(jrNext.type);
         let jrCondition: string | undefined = undefined;
-        if (jrTrait.relCondition) {
+        if (jrTrait.condition) {
           jrCondition = jrNext.text.toLowerCase();
           this.tokens.get();
           this.expectToken(TokenType.Comma, "Z1007");
@@ -851,16 +849,16 @@ export class Z80AsmParser {
       case TokenType.Jp:
         const jpNext = this.tokens.peek();
         const jpTrait = getTokenTraits(jpNext.type);
-        let jpCondition: string | undefined = undefined;
+        let condition: string | undefined;
         if (jpTrait.condition) {
-          jpCondition = jpNext.text.toLowerCase();
+          condition = jpNext.text.toLowerCase();
           this.tokens.get();
           this.expectToken(TokenType.Comma, "Z1007");
         }
         return <JpInstruction>{
           type: "JpInstruction",
-          condition: jpCondition,
-          target: this.getExpression(),
+          condition,
+          target: this.getOperand()
         };
 
       case TokenType.Call:

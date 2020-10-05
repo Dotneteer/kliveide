@@ -553,7 +553,7 @@ export interface JrInstruction extends Z80Instruction {
 export interface JpInstruction extends Z80Instruction {
   type: "JpInstruction";
   condition?: string;
-  target: Expression;
+  target: Operand;
 }
 
 /**
