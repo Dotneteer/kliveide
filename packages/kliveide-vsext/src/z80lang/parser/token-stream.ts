@@ -497,7 +497,7 @@ export class TokenStream {
             if (
               text === ".defg" ||
               text === ".DEFG" ||
-              text == ".dg" ||
+              text === ".dg" ||
               text === ".DG"
             ) {
               phase = LexerPhase.DefgTail;
@@ -512,7 +512,9 @@ export class TokenStream {
         // --- Wait for the completion of hexadecimal number of preprocessor directive
         case LexerPhase.DirectiveOrHexLiteral:
           if (isLetterOrDigit(ch)) {
-            if (input.peek() !== null) break;
+            if (input.peek() !== null) {
+              break;
+            }
             appendTokenChar();
           }
           if (
@@ -626,7 +628,7 @@ export class TokenStream {
 
         // --- This previous case intentionally flows to this label
         case LexerPhase.NumericLiteral1_9:
-          if (ch === " " || ch === "\t") {
+          if (!isHexadecimalDigit(ch) && !isHexaSuffix(ch) && !isOctalSuffix(ch) && ch !== ".") {
             return makeToken();
           }
           // --- Octal, decimal, or suffixed hexadecimal

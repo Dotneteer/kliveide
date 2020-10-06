@@ -84,6 +84,9 @@ export type ErrorCodes =
   | "Z2044"
   | "Z2045"
   | "Z2046"
+  | "Z2047"
+  | "Z2048"
+  | "Z2049"
 
   | "Z3000"
   | "Z3001"
@@ -165,6 +168,9 @@ export const errorMessages: ErrorText = {
   Z2044: "The jr instructions cannot be used with the pe, po, p, or m conditions.",
   Z2045: "Relative jump distance should be between -128 and 127. {0} is invalid.",
   Z2046: "The rst instruction can be used only with #00, #08, #10, #18, #20, #28, #30, or #38 arguments. #{0} is invalid.",
+  Z2047: "Interrupt mode can only be 0, 1, or 2. '{0}' is invalid.",
+  Z2048: "Output value can only be 0",
+  Z2049: "Bit index should be between 0 and 7. '{0}' is invalid",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",

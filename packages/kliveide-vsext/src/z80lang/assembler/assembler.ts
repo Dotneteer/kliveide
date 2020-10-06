@@ -9,6 +9,7 @@ import { TokenStream } from "../parser/token-stream";
 import {
   AlignPragma,
   BankPragma,
+  BitInstruction,
   CallInstruction,
   CompareBinPragma,
   DefBPragma,
@@ -25,12 +26,15 @@ import {
   EntPragma,
   EquPragma,
   ErrorPragma,
+  ExInstruction,
   Expression,
   ExpressionNode,
   FillbPragma,
   FillwPragma,
+  ImInstruction,
   IncBinPragma,
   IncludeDirective,
+  InInstruction,
   InjectOptPragma,
   Instruction,
   JpInstruction,
@@ -44,15 +48,19 @@ import {
   NodePosition,
   OperandType,
   OrgPragma,
+  OutInstruction,
   PartialZ80AssemblyLine,
   PopInstruction,
   Pragma,
   PushInstruction,
+  ResInstruction,
   RetInstruction,
   RndSeedPragma,
   RstInstruction,
+  SetInstruction,
   SimpleZ80Instruction,
   SkipPragma,
+  Statement,
   TestInstruction,
   TracePragma,
   VarPragma,
@@ -1054,7 +1062,7 @@ export class Z80Assembler implements EvaluationContext {
         this.processStatement(
           allLines,
           scopeLines,
-          asmLine,
+          asmLine as Statement,
           currentLabel,
           currentLineIndex
         );
@@ -2261,11 +2269,87 @@ export class Z80Assembler implements EvaluationContext {
   private processStatement(
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
-    stmt: Z80AssemblyLine,
+    stmt: Statement,
     label: string,
     currentLineIndex: { index: number }
   ): void {
-    // TODO: Implement this method
+    switch (stmt.type) {
+      case "MacroStatement":
+        // TODO: Implement this
+        break;
+      case "MacroEndStatement":
+        // TODO: Implement this
+        break;
+      case "LoopStatement":
+        // TODO: Implement this
+        break;
+      case "LoopEndStatement":
+        // TODO: Implement this
+        break;
+      case "WhileStatement":
+        // TODO: Implement this
+        break;
+      case "WhileEndStatement":
+        // TODO: Implement this
+        break;
+      case "RepeatStatement":
+        // TODO: Implement this
+        break;
+      case "UntilStatement":
+        // TODO: Implement this
+        break;
+      case "ProcStatement":
+        // TODO: Implement this
+        break;
+      case "ProcEndStatement":
+        // TODO: Implement this
+        break;
+      case "IfStatement":
+        // TODO: Implement this
+        break;
+      case "IfUsedStatement":
+        // TODO: Implement this
+        break;
+      case "IfNUsedStatement":
+        // TODO: Implement this
+        break;
+      case "ElseStatement":
+        // TODO: Implement this
+        break;
+      case "ElseIfStatement":
+        // TODO: Implement this
+        break;
+      case "EndIfStatement":
+        // TODO: Implement this
+        break;
+      case "BreakStatement":
+        // TODO: Implement this
+        break;
+      case "ContinueStatement":
+        // TODO: Implement this
+        break;
+      case "ModuleStatement":
+        // TODO: Implement this
+        break;
+      case "ModuleEndStatement":
+        // TODO: Implement this
+        break;
+      case "StructStatement":
+        // TODO: Implement this
+        break;
+      case "StructEndStatement":
+        // TODO: Implement this
+        break;
+      case "LocalStatement":
+        // TODO: Implement this
+        break;
+      case "NextStatement":
+        // TODO: Implement this
+        break;
+      case "ForStatement":
+        // TODO: Implement this
+        break;
+    }
   }
 
   // ==========================================================================
@@ -2322,6 +2406,84 @@ export class Z80Assembler implements EvaluationContext {
         break;
       case "DjnzInstruction":
         this.emitJumpRelativeOp(instr, instr.target, 0x10);
+        break;
+      case "ImInstruction":
+        this.processImInst(instr);
+        break;
+      case "IncInstruction":
+        // TODO: Implement this
+        break;
+      case "DecInstruction":
+        // TODO: Implement this
+        break;
+      case "LdInstruction":
+        // TODO: Implement this
+        break;
+      case "ExInstruction":
+        this.processExInst(instr);
+        break;
+      case "AddInstruction":
+        // TODO: Implement this
+        break;
+      case "AdcInstruction":
+        // TODO: Implement this
+        break;
+      case "SubInstruction":
+        // TODO: Implement this
+        break;
+      case "SbcInstruction":
+        // TODO: Implement this
+        break;
+      case "AndInstruction":
+        // TODO: Implement this
+        break;
+      case "XorInstruction":
+        // TODO: Implement this
+        break;
+      case "OrInstruction":
+        // TODO: Implement this
+        break;
+      case "CpInstruction":
+        // TODO: Implement this
+        break;
+      case "InInstruction":
+        this.processInInst(instr);
+        break;
+      case "OutInstruction":
+        this.processOutInst(instr);
+        break;
+      case "RlcInstruction":
+        // TODO: Implement this
+        break;
+      case "RrcInstruction":
+        // TODO: Implement this
+        break;
+      case "RlInstruction":
+        // TODO: Implement this
+        break;
+      case "RrInstruction":
+        // TODO: Implement this
+        break;
+      case "SlaInstruction":
+        // TODO: Implement this
+        break;
+      case "SraInstruction":
+        // TODO: Implement this
+        break;
+      case "SllInstruction":
+        // TODO: Implement this
+        break;
+      case "SrlInstruction":
+        // TODO: Implement this
+        break;
+      case "BitInstruction":
+        this.processBitInst(instr, 0x40);
+        break;
+      case "ResInstruction":
+        this.processBitInst(instr, 0x80);
+        break;
+      case "SetInstruction":
+        this.processBitInst(instr, 0xC0);
         break;
       case "TestInstruction":
         this.processTestInst(instr);
@@ -2479,11 +2641,193 @@ export class Z80Assembler implements EvaluationContext {
    */
   private processRstInst(op: RstInstruction): void {
     const value = this.evaluateExprImmediate(op.target).value;
-    if (value > 0x38 || value %8 !== 0) {
+    if (value > 0x38 || value % 8 !== 0) {
       this.reportAssemblyError("Z2046", op, null, value);
       return;
     }
     this.emitOpCode(0xc7 + value);
+  }
+
+  /**
+   * Processes an IM operation
+   * @param op Instruction
+   */
+  private processImInst(op: ImInstruction): void {
+    const value = this.evaluateExprImmediate(op.mode).value;
+    if (value < 0 || value > 2) {
+      this.reportAssemblyError("Z2047", op, null, value);
+      return;
+    }
+    this.emitOpCode([0xed46, 0xed56, 0xed5e][value]);
+  }
+
+  /**
+   * Processes an EX operation
+   * @param op Instruction
+   */
+  private processExInst(op: ExInstruction): void {
+    switch (op.operand1.operandType) {
+      case OperandType.Reg16Spec:
+        if (op.operand1.register === "af") {
+          if (op.operand2.register === "af'") {
+            this.emitOpCode(0x08);
+            return;
+          }
+        }
+        break;
+      case OperandType.Reg16:
+        if (op.operand1.register === "de") {
+          if (op.operand2.register === "hl") {
+            this.emitOpCode(0xeb);
+            return;
+          }
+        }
+        break;
+      case OperandType.RegIndirect:
+        if (op.operand1.register !== "sp") {
+          break;
+        }
+        if (op.operand2.register === "hl") {
+          this.emitOpCode(0xe3);
+          return;
+        } else if (op.operand2.operandType === OperandType.Reg16Idx) {
+          this.emitOpCode(op.operand2.register === "ix" ? 0xdde3 : 0xfde3);
+          return;
+        }
+        break;
+    }
+    this.reportAssemblyError("Z2043", op);
+  }
+
+  /**
+   * Processes an IN operation
+   * @param op Instruction
+   */
+  private processInInst(op: InInstruction): void {
+    switch (op.operand1.operandType) {
+      case OperandType.CPort:
+        if (op.operand2) {
+          break;
+        }
+        this.emitOpCode(0xed70);
+        return;
+      case OperandType.Reg8:
+        if (!op.operand2) {
+          break;
+        }
+        if (op.operand1.register === "a") {
+          if (op.operand2.operandType === OperandType.MemIndirect) {
+            this.emitOpCode(0xdb);
+            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
+            return;
+          }
+          if (op.operand2.operandType === OperandType.CPort) {
+            this.emitOpCode(0xed78);
+            return;
+          }
+        }
+        if (op.operand2?.operandType !== OperandType.CPort) {
+          break;
+        }
+        this.emitOpCode(0xed40 + 8 * reg8Order[op.operand1.register]);
+        return;
+    }
+    this.reportAssemblyError("Z2043", op);
+  }
+
+  /**
+   * Processes an OUT operation
+   * @param op Instruction
+   */
+  private processOutInst(op: OutInstruction): void {
+    switch (op.operand1.operandType) {
+      case OperandType.MemIndirect:
+        if (!op.operand2) {
+          break;
+        }
+        if (op.operand2.register === "a") {
+          this.emitOpCode(0xd3);
+          this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
+          return;
+        }
+        break;
+      case OperandType.CPort:
+        if (!op.operand2) {
+          break;
+        }
+        if (op.operand2.operandType === OperandType.Reg8) {
+          this.emitOpCode(0xed41 + 8 * reg8Order[op.operand2.register]);
+          return;
+        }
+        if (op.operand2.operandType !== OperandType.Expression) {
+          break;
+        }
+        const value = this.evaluateExprImmediate(op.operand2.expr).value;
+        if (value !== 0) {
+          this.reportAssemblyError("Z2048", op);
+        } else {
+          this.emitOpCode(0xed71);
+        }
+        return;
+    }
+    this.reportAssemblyError("Z2043", op);
+  }
+
+  /**
+   * Processes a BIT/RES/SET operation
+   * @param op Instruction
+   * @param opByte Operation base value
+   */
+  private processBitInst(
+    op: BitInstruction | ResInstruction | SetInstruction,
+    opByte: number
+  ): void {
+    if (op.operand1.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    const bitIndex = this.evaluateExprImmediate(op.operand1.expr).value;
+    if (bitIndex < 0 || bitIndex > 7) {
+      this.reportAssemblyError("Z2049", op, null, bitIndex);
+      return;
+    }
+    switch (op.operand2.operandType) {
+      case OperandType.IndexedIndirect:
+        if (op.type !== "BitInstruction") {
+          if (!op.operand3) {
+            opByte |= 0x06;
+          } else if (op.operand3.operandType === OperandType.Reg8) {
+            opByte |= reg8Order[op.operand3.register];
+          } else {
+            this.reportAssemblyError("Z2043", op);
+            return;
+          }
+        } else {
+          opByte |= 0x06;
+        }
+        this.emitIndexedBitOperation(
+          (op as unknown) as Z80AssemblyLine,
+          op.operand2.register,
+          op.operand2.offsetSign,
+          op.operand2.expr,
+          opByte + 8 * bitIndex
+        );
+        return;
+      // Flows to the next label intentionally
+      case OperandType.Reg8:
+        opByte |= reg8Order[op.operand2.register];
+        this.emitByte(0xcb);
+        this.emitByte(opByte + 8 * bitIndex);
+        return;
+      case OperandType.RegIndirect:
+        if (op.operand2.register !== "hl") {
+          break;
+        }
+        this.emitByte(0xcb);
+        this.emitByte((opByte | 0x06) + 8 * bitIndex);
+        return;
+    }
+    this.reportAssemblyError("Z2043", op);
   }
 
   /**
@@ -2568,6 +2912,44 @@ export class Z80Assembler implements EvaluationContext {
       this.emitByte(opCode);
       this.emitByte(dist);
     }
+  }
+
+  /**
+   * Emits an indexed bit operation with the specified operand and operation code
+   * @param opLine Operation source line
+   * @param register Index register
+   * @param sign Displacement sign
+   * @param expr Displacement expression
+   * @param opCode Operation code
+   */
+  private emitIndexedBitOperation(
+    opLine: Z80AssemblyLine,
+    register: string,
+    sign: string,
+    expr: Expression,
+    opCode: number
+  ): void {
+    const idxByte = register === "ix" ? 0xdd : 0xfd;
+    let dispValue = 0x00;
+    let evaluated = true;
+    if (sign) {
+      const value = this.evaluateExpr(expr);
+      if (!value.isValid) {
+        evaluated = false;
+      } else {
+        dispValue = value.value;
+        if (sign === "-") {
+          dispValue = -dispValue;
+        }
+      }
+    }
+    this.emitByte(idxByte);
+    this.emitByte(0xcb);
+    if (!evaluated) {
+      this.recordFixup(opLine, FixupType.Bit8, expr);
+    }
+    this.emitByte(dispValue);
+    this.emitByte(opCode);
   }
 
   /**
@@ -2915,4 +3297,17 @@ const conditionOrder: { [key: string]: number } = {
   pe: 5,
   p: 6,
   m: 7,
+};
+
+/**
+ * Order of conditions
+ */
+const reg8Order: { [key: string]: number } = {
+  a: 7,
+  b: 0,
+  c: 1,
+  d: 2,
+  e: 3,
+  h: 4,
+  l: 5,
 };
