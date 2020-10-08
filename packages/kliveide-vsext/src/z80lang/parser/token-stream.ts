@@ -628,9 +628,10 @@ export class TokenStream {
 
         // --- This previous case intentionally flows to this label
         case LexerPhase.NumericLiteral1_9:
-          if (!isHexadecimalDigit(ch) && !isHexaSuffix(ch) && !isOctalSuffix(ch) && ch !== ".") {
+          if (isLiteralBreakingChar(ch) || ch === "+" || ch === "-") {
             return makeToken();
           }
+
           // --- Octal, decimal, or suffixed hexadecimal
           if (isHexaSuffix(ch)) {
             return completeToken(TokenType.HexadecimalLiteral);
@@ -641,28 +642,44 @@ export class TokenStream {
               ? completeToken(TokenType.OctalLiteral)
               : completeToken(TokenType.Unknown);
           }
-          const nextCh = input.peek();
-          if (startIsOctal && nextCh && isOctalSuffix(nextCh)) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (nextCh && isHexaSuffix(nextCh)) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(1))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isHexaSuffix(input.ahead(1))) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(2))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isHexaSuffix(input.ahead(2))) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(3))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isHexaSuffix(input.ahead(3))) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(4))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(5))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isDecimalDigit(ch)) {
+          // --- Test the next 4 characters for octal or hexa prefix
+          let phaseSet = false;
+          for (let i = 0; i < 4; i++) {
+            const nextCh = input.ahead(i);
+            if (!nextCh || isLiteralBreakingChar(nextCh)) {
+              break;
+            }
+            if (startIsOctal && isOctalSuffix(nextCh)) {
+              phase = LexerPhase.OctalLiteralSuffix;
+              phaseSet = true;
+              break;
+            }
+            if (isHexaSuffix(nextCh)) {
+              phase = LexerPhase.HexaLiteralSuffix;
+              phaseSet = true;
+              break;
+            }
+          }
+          if (phaseSet) {
+            break;
+          }
+
+          // --- Test char 5 and 6 for octal prefix
+          for (let i = 4; i < 6; i++) {
+            const nextCh = input.ahead(i);
+            if (isLiteralBreakingChar(nextCh)) {
+              break;
+            }
+            if (startIsOctal && isOctalSuffix(nextCh)) {
+              phase = LexerPhase.OctalLiteralSuffix;
+              phaseSet = true;
+              break;
+            }
+          }
+          if (phaseSet) {
+            break;
+          }
+          if (isDecimalDigit(ch)) {
             phase = LexerPhase.DecimalOrReal;
             tokenType = TokenType.DecimalLiteral;
           } else if (ch === "e" || ch === "E") {
@@ -673,6 +690,7 @@ export class TokenStream {
           } else {
             return makeToken();
           }
+
           break;
 
         // --- Wait for the completion of hexadecimal literal
@@ -1580,6 +1598,18 @@ function isRestrictedInString(ch: string): boolean {
   );
 }
 
+// --- Tests for a breaking char
+function isLiteralBreakingChar(ch: string): boolean {
+  return (
+    !isHexadecimalDigit(ch) &&
+    !isHexaSuffix(ch) &&
+    !isOctalSuffix(ch) &&
+    ch !== "." &&
+    ch !== "+" &&
+    ch !== "-"
+  );
+}
+
 // A hash of keyword-like tokens starting with a dot
 const resolverHash: { [key: string]: TokenType } = {
   a: TokenType.A,
@@ -2280,5 +2310,5 @@ const resolverHash: { [key: string]: TokenType } = {
   "#ifnmod": TokenType.IfNModDir,
   "#line": TokenType.LineDir,
 
-  "$": TokenType.CurAddress,
+  $: TokenType.CurAddress,
 };

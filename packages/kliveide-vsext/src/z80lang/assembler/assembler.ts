@@ -7,11 +7,16 @@ import { InputStream } from "../parser/input-stream";
 import { TokenStream } from "../parser/token-stream";
 
 import {
+  AdcInstruction,
+  AddInstruction,
   AlignPragma,
+  AndInstruction,
   BankPragma,
   BitInstruction,
   CallInstruction,
   CompareBinPragma,
+  CpInstruction,
+  DecInstruction,
   DefBPragma,
   DefCPragma,
   DefGPragma,
@@ -33,6 +38,7 @@ import {
   FillwPragma,
   ImInstruction,
   IncBinPragma,
+  IncInstruction,
   IncludeDirective,
   InInstruction,
   InjectOptPragma,
@@ -40,14 +46,17 @@ import {
   JpInstruction,
   JrInstruction,
   LabelOnlyLine,
+  LdInstruction,
   MacroOrStructInvocation,
   MirrorInstruction,
   ModelPragma,
   MulInstruction,
   NextRegInstruction,
   NodePosition,
+  Operand,
   OperandType,
   OrgPragma,
+  OrInstruction,
   OutInstruction,
   PartialZ80AssemblyLine,
   PopInstruction,
@@ -55,17 +64,23 @@ import {
   PushInstruction,
   ResInstruction,
   RetInstruction,
+  RlcInstruction,
   RndSeedPragma,
+  RrcInstruction,
   RstInstruction,
+  SbcInstruction,
   SetInstruction,
+  ShiftRotateInstruction,
   SimpleZ80Instruction,
   SkipPragma,
   Statement,
+  SubInstruction,
   TestInstruction,
   TracePragma,
   VarPragma,
   XentPragma,
   XorgPragma,
+  XorInstruction,
   Z80AssemblyLine,
 } from "../parser/tree-nodes";
 import { Z80AsmParser } from "../parser/z80-asm-parser";
@@ -2411,40 +2426,26 @@ export class Z80Assembler implements EvaluationContext {
         this.processImInst(instr);
         break;
       case "IncInstruction":
-        // TODO: Implement this
-        break;
       case "DecInstruction":
-        // TODO: Implement this
+        this.processIncDecInst(instr);
         break;
       case "LdInstruction":
-        // TODO: Implement this
+        this.processLdInst(instr);
         break;
       case "ExInstruction":
         this.processExInst(instr);
         break;
       case "AddInstruction":
-        // TODO: Implement this
-        break;
       case "AdcInstruction":
-        // TODO: Implement this
+      case "SbcInstruction":
+        this.processAlu1Inst(instr);
         break;
       case "SubInstruction":
-        // TODO: Implement this
-        break;
-      case "SbcInstruction":
-        // TODO: Implement this
-        break;
       case "AndInstruction":
-        // TODO: Implement this
-        break;
       case "XorInstruction":
-        // TODO: Implement this
-        break;
       case "OrInstruction":
-        // TODO: Implement this
-        break;
       case "CpInstruction":
-        // TODO: Implement this
+        this.processAlu2Inst(instr);
         break;
       case "InInstruction":
         this.processInInst(instr);
@@ -2453,28 +2454,14 @@ export class Z80Assembler implements EvaluationContext {
         this.processOutInst(instr);
         break;
       case "RlcInstruction":
-        // TODO: Implement this
-        break;
       case "RrcInstruction":
-        // TODO: Implement this
-        break;
       case "RlInstruction":
-        // TODO: Implement this
-        break;
       case "RrInstruction":
-        // TODO: Implement this
-        break;
       case "SlaInstruction":
-        // TODO: Implement this
-        break;
       case "SraInstruction":
-        // TODO: Implement this
-        break;
       case "SllInstruction":
-        // TODO: Implement this
-        break;
       case "SrlInstruction":
-        // TODO: Implement this
+        this.processShiftRotateInst(instr);
         break;
       case "BitInstruction":
         this.processBitInst(instr, 0x40);
@@ -2483,7 +2470,7 @@ export class Z80Assembler implements EvaluationContext {
         this.processBitInst(instr, 0x80);
         break;
       case "SetInstruction":
-        this.processBitInst(instr, 0xC0);
+        this.processBitInst(instr, 0xc0);
         break;
       case "TestInstruction":
         this.processTestInst(instr);
@@ -2831,6 +2818,539 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   /**
+   * Processes an RLC/RRC/RL/RR/SLA/SRA/SLL/SRL operation
+   * @param op Instruction
+   */
+  private processShiftRotateInst(op: ShiftRotateInstruction): void {
+    let opCode = 8 * shiftOpOrder[op.type];
+    let error = false;
+    switch (op.operand1.operandType) {
+      case OperandType.Reg8:
+        opCode |= reg8Order[op.operand1.register];
+        if (op.operand2) {
+          error = true;
+        }
+        break;
+      case OperandType.RegIndirect:
+        if (op.operand1.register === "hl") {
+          opCode |= 0x06;
+          if (op.operand2) {
+            error = true;
+          }
+        } else {
+          error = true;
+        }
+        break;
+      case OperandType.IndexedIndirect:
+        if (!op.operand2) {
+          opCode |= 0x06;
+        } else if (op.operand2.operandType !== OperandType.Reg8) {
+          error = true;
+          break;
+        } else {
+          opCode |= reg8Order[op.operand2.register];
+        }
+        this.emitIndexedBitOperation(
+          (op as unknown) as Z80AssemblyLine,
+          op.operand1.register,
+          op.operand1.offsetSign,
+          op.operand1.expr,
+          opCode
+        );
+        return;
+      default:
+        error = true;
+        break;
+    }
+    if (error) {
+      this.reportAssemblyError("Z2043", op);
+    } else {
+      this.emitByte(0xcb);
+      this.emitByte(opCode);
+    }
+  }
+
+  /**
+   * Processes an INC/DEC operation
+   * @param op Instruction
+   */
+  private processIncDecInst(op: IncInstruction | DecInstruction): void {
+    switch (op.operand.operandType) {
+      case OperandType.Reg8:
+        this.emitOpCode(
+          (op.type === "IncInstruction" ? 0x04 : 0x05) +
+            8 * reg8Order[op.operand.register]
+        );
+        return;
+      case OperandType.Reg8Idx:
+      case OperandType.Reg16:
+      case OperandType.Reg16Idx:
+        this.emitOpCode(
+          op.type === "IncInstruction"
+            ? incOpCodes[op.operand.register]
+            : decOpCodes[op.operand.register]
+        );
+        return;
+      case OperandType.RegIndirect:
+        if (op.operand.register !== "hl") {
+          break;
+        }
+        this.emitOpCode(op.type === "IncInstruction" ? 0x34 : 0x35);
+        return;
+      case OperandType.IndexedIndirect:
+        this.emitIndexedOperation(
+          (op as unknown) as Z80AssemblyLine,
+          op.operand,
+          op.type === "IncInstruction" ? 0x34 : 0x35
+        );
+        return;
+    }
+    this.reportAssemblyError("Z2043", op);
+  }
+
+  /**
+   * Processes a ADD/ADC/SBC operation
+   * @param op Instruction
+   */
+  private processAlu1Inst(
+    op: AddInstruction | AdcInstruction | SbcInstruction
+  ): void {
+    const aluIdx = aluOpOrder[op.type];
+    switch (op.operand1.operandType) {
+      case OperandType.Reg8:
+        if (op.operand1.register !== "a") {
+          this.reportAssemblyError("Z2051", op);
+          return;
+        }
+        switch (op.operand2.operandType) {
+          case OperandType.Reg8:
+            this.emitOpCode(
+              0x80 + aluIdx * 8 + reg8Order[op.operand2.register]
+            );
+            return;
+          case OperandType.RegIndirect:
+            if (op.operand2.register !== "hl") {
+              break;
+            }
+            this.emitOpCode(0x86 + aluIdx * 8);
+            return;
+          case OperandType.Reg8Idx:
+            this.emitByte(op.operand2.register.indexOf("x") >= 0 ? 0xdd : 0xfd);
+            this.emitByte(
+              aluIdx * 8 + (op.operand2.register.endsWith("h") ? 0x84 : 0x85)
+            );
+            return;
+          case OperandType.IndexedIndirect:
+            this.emitIndexedOperation(
+              (op as unknown) as Z80AssemblyLine,
+              op.operand2,
+              0x86 + aluIdx * 8
+            );
+            return;
+          case OperandType.Expression:
+            this.emitOpCode(0xc6 + aluIdx * 8);
+            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
+            return;
+        }
+        break;
+
+      case OperandType.Reg16:
+        switch (op.operand2.operandType) {
+          case OperandType.Reg16:
+            if (op.operand1.register !== "hl") {
+              break;
+            }
+            let opCodeBase = 0xed42;
+            if (op.type === "AddInstruction") {
+              opCodeBase = 0x09;
+            } else if (op.type === "AdcInstruction") {
+              opCodeBase = 0xed4a;
+            }
+            this.emitOpCode(opCodeBase + reg16Order[op.operand2.register] * 16);
+            return;
+          case OperandType.Reg8:
+            if (
+              this.invalidNextInst(op) ||
+              op.operand1.register === "sp" ||
+              op.operand2.register !== "a"
+            ) {
+              break;
+            }
+            {
+              let opCodeBase = 0xed33;
+              if (op.operand1.register === "hl") {
+                opCodeBase = 0xed31;
+              } else if (op.operand1.register === "de") {
+                opCodeBase = 0xed32;
+              }
+              this.emitOpCode(opCodeBase);
+              return;
+            }
+          case OperandType.Expression:
+            if (this.invalidNextInst(op) || op.operand1.register === "sp") {
+              break;
+            }
+            {
+              let opCodeBase = 0xed36;
+              if (op.operand1.register === "hl") {
+                opCodeBase = 0xed34;
+              } else if (op.operand1.register === "de") {
+                opCodeBase = 0xed35;
+              }
+              this.emitOpCode(opCodeBase);
+              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
+              return;
+            }
+        }
+        break;
+
+      case OperandType.Reg16Idx:
+        if (op.type !== "AddInstruction") {
+          break;
+        }
+        const opCode = op.operand1.register === "ix" ? 0xdd09 : 0xfd09;
+        switch (op.operand2.operandType) {
+          case OperandType.Reg16:
+            if (op.operand2.register === "hl") {
+              break;
+            }
+            this.emitOpCode(opCode + reg16Order[op.operand2.register] * 16);
+            return;
+          case OperandType.Reg16Idx:
+            if (op.operand1.register !== op.operand2.register) {
+              break;
+            }
+            this.emitOpCode(opCode + 0x20);
+            return;
+        }
+        break;
+    }
+    this.reportAssemblyError("Z2043", op);
+  }
+
+  /**
+   * Processes a SUB/AND/XOR/OR/CP operation
+   * @param op Instruction
+   */
+  private processAlu2Inst(
+    op:
+      | SubInstruction
+      | AndInstruction
+      | XorInstruction
+      | OrInstruction
+      | CpInstruction
+  ): void {
+    let operand = op.operand1;
+    let opType = op.operand1.operandType;
+    let opReg = op.operand1.register;
+
+    // --- Check for alternative syntax (A register as the first operand)
+    if (op.operand2) {
+      if (opType !== OperandType.Reg8 || opReg !== "a") {
+        this.reportAssemblyError("Z2050", op);
+        return;
+      }
+      operand = op.operand2;
+      opType = op.operand2.operandType;
+      opReg = op.operand2.register;
+    }
+
+    const aluIdx = aluOpOrder[op.type];
+    switch (opType) {
+      case OperandType.Reg8:
+        this.emitOpCode(0x80 + aluIdx * 8 + reg8Order[opReg]);
+        return;
+      case OperandType.RegIndirect:
+        if (opReg !== "hl") {
+          break;
+        }
+        this.emitOpCode(0x86 + aluIdx * 8);
+        return;
+      case OperandType.Reg8Idx:
+        this.emitByte(opReg.indexOf("x") >= 0 ? 0xdd : 0xfd);
+        this.emitByte(aluIdx * 8 + (opReg.endsWith("h") ? 0x84 : 0x85));
+        return;
+      case OperandType.Expression:
+        this.emitByte(0xc6 + aluIdx * 8);
+        this.emitNumericExpr(op, operand.expr, FixupType.Bit8);
+        return;
+      case OperandType.IndexedIndirect:
+        this.emitIndexedOperation(
+          (op as unknown) as Z80AssemblyLine,
+          operand,
+          0x86 + aluIdx * 8
+        );
+        return;
+    }
+    this.reportAssemblyError("Z2043", op);
+  }
+
+  /**
+   * Processes an LD operation
+   * @param op Instruction
+   */
+  private processLdInst(op: LdInstruction): void {
+    switch (op.operand1.operandType) {
+      case OperandType.Reg8: {
+        const destReg = op.operand1.register;
+        const destRegIdx = reg8Order[destReg];
+        const sourceReg = op.operand2.register;
+        switch (op.operand2.operandType) {
+          case OperandType.Reg8:
+            this.emitOpCode(0x40 + destRegIdx * 8 + reg8Order[sourceReg]);
+            return;
+
+          case OperandType.RegIndirect:
+            if (sourceReg === "bc" && destReg === "a") {
+              this.emitOpCode(0x0a);
+              return;
+            } else if (sourceReg === "de" && destReg === "a") {
+              this.emitOpCode(0x1a);
+              return;
+            } else if (sourceReg === "hl") {
+              this.emitOpCode(0x46 + destRegIdx * 8);
+              return;
+            }
+            break;
+
+          case OperandType.Reg8Spec:
+            if (destReg !== "a") {
+              break;
+            }
+            this.emitOpCode(sourceReg === "r" ? 0xed5f : 0xed57);
+            return;
+
+          case OperandType.Reg8Idx:
+            if (destRegIdx >= 4 && destRegIdx <= 6) {
+              break;
+            }
+            this.emitOpCode(
+              (sourceReg.indexOf("x") >= 0 ? 0xdd44 : 0xfd44) +
+                destRegIdx * 8 +
+                (sourceReg.endsWith("h") ? 0 : 1)
+            );
+            return;
+
+          case OperandType.Expression:
+            this.emitOpCode(0x06 + destRegIdx * 8);
+            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
+            return;
+
+          case OperandType.MemIndirect:
+            if (destReg !== "a") {
+              break;
+            }
+            this.emitOpCode(0x3a);
+            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
+            return;
+
+          case OperandType.IndexedIndirect:
+            this.emitIndexedOperation(
+              (op as unknown) as Z80AssemblyLine,
+              op.operand2,
+              0x46 + destRegIdx * 8
+            );
+            return;
+        }
+        break;
+      }
+
+      case OperandType.Reg8Idx:
+        {
+          const destReg = op.operand1.register;
+          const sourceReg = op.operand2.register;
+          switch (op.operand2.operandType) {
+            case OperandType.Reg8:
+              const sourceRegIdx = reg8Order[op.operand2.register];
+              if (sourceRegIdx >= 4 && sourceRegIdx <= 6) {
+                break;
+              }
+              this.emitOpCode(
+                (destReg.indexOf("x") >= 0 ? 0xdd60 : 0xfd60) +
+                  (destReg.endsWith("h") ? 0 : 8) +
+                  sourceRegIdx
+              );
+              return;
+
+            case OperandType.Reg8Idx:
+              if (
+                (sourceReg.indexOf("x") >= 0 && destReg.indexOf("y") >= 0) ||
+                (sourceReg.indexOf("y") >= 0 && destReg.indexOf("x") >= 0)
+              ) {
+                break;
+              }
+              this.emitOpCode(
+                (destReg.indexOf("x") >= 0 ? 0xdd64 : 0xfd64) +
+                  (destReg.endsWith("h") ? 0 : 8) +
+                  (sourceReg.endsWith("h") ? 0 : 1)
+              );
+              return;
+
+            case OperandType.Expression:
+              this.emitOpCode(
+                (destReg.indexOf("x") >= 0 ? 0xdd26 : 0xfd26) +
+                  (destReg.endsWith("h") ? 0 : 8)
+              );
+              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
+              return;
+          }
+        }
+        break;
+
+      case OperandType.Reg8Spec:
+        if (op.operand2.register !== "a") {
+          break;
+        }
+        this.emitOpCode(op.operand1.register === "r" ? 0xed4f : 0xed47);
+        return;
+
+      case OperandType.RegIndirect:
+        {
+          const destReg = op.operand1.register;
+          switch (op.operand2.operandType) {
+            case OperandType.Reg8:
+              const sourceReg = op.operand2.register;
+              if (destReg === "bc" && sourceReg === "a") {
+                this.emitOpCode(0x02);
+                return;
+              } else if (destReg === "de" && sourceReg === "a") {
+                this.emitOpCode(0x12);
+                return;
+              } else if (destReg === "hl") {
+                this.emitOpCode(0x70 + reg8Order[sourceReg]);
+                return;
+              }
+              break;
+
+            case OperandType.Expression:
+              if (destReg !== "hl") {
+                break;
+              }
+              this.emitByte(0x36);
+              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
+              return;
+          }
+        }
+        break;
+
+      case OperandType.MemIndirect: {
+        let opCode = 0x00;
+        switch (op.operand2.operandType) {
+          case OperandType.Reg8:
+            if (op.operand2.register !== "a") {
+              break;
+            }
+            opCode = 0x32;
+            break;
+
+          case OperandType.Reg16:
+            const sourceReg = op.operand2.register;
+            opCode = 0x22;
+            if (sourceReg === "bc") {
+              opCode = 0xed43;
+            } else if (sourceReg === "de") {
+              opCode = 0xed53;
+            } else if (sourceReg === "sp") {
+              opCode = 0xed73;
+            }
+            break;
+
+          case OperandType.Reg16Idx:
+            opCode = op.operand2.register === "ix" ? 0xdd22 : 0xfd22;
+            break;
+        }
+        if (!opCode) {
+          break;
+        }
+        this.emitOpCode(opCode);
+        this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit16);
+        return;
+      }
+
+      case OperandType.Reg16:
+        {
+          const destReg = op.operand1.register;
+          const sourceReg = op.operand2.register;
+          switch (op.operand2.operandType) {
+            case OperandType.MemIndirect:
+              let opCode = 0x2a;
+              if (destReg === "bc") {
+                opCode = 0xed4b;
+              } else if (destReg === "de") {
+                opCode = 0xed5b;
+              } else if (destReg === "sp") {
+                opCode = 0xed7b;
+              }
+              this.emitOpCode(opCode);
+              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
+              return;
+
+            case OperandType.Expression:
+              this.emitOpCode(0x01 + reg16Order[op.operand1.register] * 16);
+              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
+              return;
+
+            default: {
+              if (destReg !== "sp") {
+                break;
+              }
+              let opCode = 0xf9;
+              if (sourceReg === "ix") {
+                opCode = 0xddf9;
+              } else if (sourceReg === "iy") {
+                opCode = 0xfdf9;
+              } else if (sourceReg !== "hl") {
+                break;
+              }
+              this.emitOpCode(opCode);
+              return;
+            }
+          }
+        }
+        break;
+
+      case OperandType.Reg16Idx:
+        {
+          const destReg = op.operand1.register;
+          switch (op.operand2.operandType) {
+            case OperandType.MemIndirect:
+              this.emitOpCode(destReg === "ix" ? 0xdd2a : 0xfd2a);
+              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
+              return;
+
+            case OperandType.Expression:
+              this.emitOpCode(destReg === "ix" ? 0xdd21 : 0xfd21);
+              this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
+              return;
+          }
+        }
+        break;
+
+      case OperandType.IndexedIndirect: {
+        switch (op.operand2.operandType) {
+          case OperandType.Reg8:
+            this.emitIndexedOperation(
+              (op as unknown) as Z80AssemblyLine,
+              op.operand1,
+              0x70 + reg8Order[op.operand2.register]
+            );
+            return;
+          case OperandType.Expression:
+            this.emitIndexedOperation(
+              (op as unknown) as Z80AssemblyLine,
+              op.operand1,
+              0x36
+            );
+            this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
+            return;
+        }
+        break;
+      }
+    }
+    this.reportAssemblyError("Z2043", op);
+  }
+
+  /**
    * Processes a TEST operation
    * @param op Instruction
    */
@@ -2912,6 +3432,41 @@ export class Z80Assembler implements EvaluationContext {
       this.emitByte(opCode);
       this.emitByte(dist);
     }
+  }
+
+  /**
+   * Emits an indexed operation with the specified operand and operation code
+   * @param opLine Operation source line
+   * @param register Index register
+   * @param sign Displacement sign
+   * @param expr Displacement expression
+   * @param opCode Operation code
+   */
+  private emitIndexedOperation(
+    opLine: Z80AssemblyLine,
+    operand: Operand,
+    opCode: number
+  ): void {
+    const idxByte = operand.register === "ix" ? 0xdd : 0xfd;
+    let dispValue = 0x00;
+    let evaluated = true;
+    if (operand.offsetSign) {
+      const value = this.evaluateExpr(operand.expr);
+      if (!value.isValid) {
+        evaluated = false;
+      } else {
+        dispValue = value.value;
+        if (operand.offsetSign === "-") {
+          dispValue = -dispValue;
+        }
+      }
+    }
+    this.emitByte(idxByte);
+    this.emitByte(opCode);
+    if (!evaluated) {
+      this.recordFixup(opLine, FixupType.Bit8, operand.expr);
+    }
+    this.emitByte(dispValue);
   }
 
   /**
@@ -3300,7 +3855,7 @@ const conditionOrder: { [key: string]: number } = {
 };
 
 /**
- * Order of conditions
+ * Order of 8-bit registers
  */
 const reg8Order: { [key: string]: number } = {
   a: 7,
@@ -3310,4 +3865,82 @@ const reg8Order: { [key: string]: number } = {
   e: 3,
   h: 4,
   l: 5,
+};
+
+/**
+ * Order of shift operations
+ */
+const shiftOpOrder: { [key: string]: number } = {
+  RlcInstruction: 0,
+  RrcInstruction: 1,
+  RlInstruction: 2,
+  RrInstruction: 3,
+  SlaInstruction: 4,
+  SraInstruction: 5,
+  SllInstruction: 6,
+  SrlInstruction: 7,
+};
+
+/**
+ * Increment operation codes
+ */
+const incOpCodes: { [key: string]: number } = {
+  xl: 0xdd2c,
+  xh: 0xdd24,
+  yl: 0xfd2c,
+  yh: 0xfd24,
+  ixl: 0xdd2c,
+  ixh: 0xdd24,
+  iyl: 0xfd2c,
+  iyh: 0xfd24,
+  bc: 0x03,
+  de: 0x13,
+  hl: 0x23,
+  sp: 0x33,
+  ix: 0xdd23,
+  iy: 0xfd23,
+};
+
+/**
+ * Decrement operation codes
+ */
+const decOpCodes: { [key: string]: number } = {
+  xl: 0xdd2d,
+  xh: 0xdd25,
+  yl: 0xfd2d,
+  yh: 0xfd25,
+  ixl: 0xdd2d,
+  ixh: 0xdd25,
+  iyl: 0xfd2d,
+  iyh: 0xfd25,
+  bc: 0x0b,
+  de: 0x1b,
+  hl: 0x2b,
+  sp: 0x3b,
+  ix: 0xdd2b,
+  iy: 0xfd2b,
+};
+
+/**
+ * Order of shift operations
+ */
+const aluOpOrder: { [key: string]: number } = {
+  AddInstruction: 0,
+  AdcInstruction: 1,
+  SubInstruction: 2,
+  SbcInstruction: 3,
+  AndInstruction: 4,
+  XorInstruction: 5,
+  OrInstruction: 6,
+  CpInstruction: 7,
+};
+
+/**
+ * Order of 16-bit registers
+ */
+const reg16Order: { [key: string]: number } = {
+  bc: 0,
+  de: 1,
+  hl: 2,
+  sp: 3,
 };
