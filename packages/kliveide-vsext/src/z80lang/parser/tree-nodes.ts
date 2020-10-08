@@ -35,17 +35,15 @@ export type Instruction =
   | PopInstruction
   | LdInstruction
   | ExInstruction
-  | AddInstruction
-  | AdcInstruction
-  | SbcInstruction
-  | BitInstruction
-  | SubInstruction
-  | AndInstruction
-  | XorInstruction
-  | OrInstruction
-  | CpInstruction
+  | AluInstruction
   | InInstruction
   | OutInstruction
+  | ShiftRotateInstruction
+  | BitInstruction
+  | ResInstruction
+  | SetInstruction;
+
+export type ShiftRotateInstruction =
   | RlcInstruction
   | RrcInstruction
   | RlInstruction
@@ -53,9 +51,17 @@ export type Instruction =
   | SlaInstruction
   | SraInstruction
   | SllInstruction
-  | SrlInstruction
-  | ResInstruction
-  | SetInstruction;
+  | SrlInstruction;
+
+export type AluInstruction =
+  | AddInstruction
+  | AdcInstruction
+  | SbcInstruction
+  | SubInstruction
+  | AndInstruction
+  | XorInstruction
+  | OrInstruction
+  | CpInstruction;
 
 export type Expression =
   | IdentifierNode

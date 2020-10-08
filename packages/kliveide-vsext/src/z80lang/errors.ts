@@ -87,6 +87,8 @@ export type ErrorCodes =
   | "Z2047"
   | "Z2048"
   | "Z2049"
+  | "Z2050"
+  | "Z2051"
 
   | "Z3000"
   | "Z3001"
@@ -171,6 +173,8 @@ export const errorMessages: ErrorText = {
   Z2047: "Interrupt mode can only be 0, 1, or 2. '{0}' is invalid.",
   Z2048: "Output value can only be 0",
   Z2049: "Bit index should be between 0 and 7. '{0}' is invalid",
+  Z2050: "The first operand must be 'a' when using the two-argument form of the ALU operation.",
+  Z2051: "The first argument of an 8-bit ALU operation can only be 'a'.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",

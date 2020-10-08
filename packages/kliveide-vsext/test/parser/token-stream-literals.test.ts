@@ -107,6 +107,7 @@ describe("Parser - token: literals", () => {
   });
 
   it("get: real literal #1", () => {
+    testToken("1.023e0", TokenType.RealLiteral);
     testToken("0e0", TokenType.RealLiteral);
     testToken("0e+0", TokenType.RealLiteral);
     testToken("0e-0", TokenType.RealLiteral);
@@ -132,7 +133,6 @@ describe("Parser - token: literals", () => {
     testToken("1.2e-0", TokenType.RealLiteral);
     testToken("1.3e+12", TokenType.RealLiteral);
     testToken("1.4e-23", TokenType.RealLiteral);
-    testToken("1.023e0", TokenType.RealLiteral);
     testToken("1.134e+0", TokenType.RealLiteral);
     testToken("1.245e-0", TokenType.RealLiteral);
     testToken("1.356e+12", TokenType.RealLiteral);
