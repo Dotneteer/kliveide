@@ -6,6 +6,7 @@ import {
   FunctionInvocation,
   IdentifierNode,
   NodePosition,
+  PartialZ80AssemblyLine,
   Symbol,
   UnaryExpression,
   Z80AssemblyLine,
@@ -252,6 +253,7 @@ export interface EvaluationContext {
   /**
    * Evaluates the value if the specified expression node
    * @param expr Expression to evaluate
+   * @param context: Evaluation context
    */
   doEvalExpression(expr: Expression): ExpressionValue;
 
@@ -269,810 +271,926 @@ export interface EvaluationContext {
 }
 
 /**
- * Evaluate the value of an identifier
- * @param context Evaluation context
- * @param expr Expression to evaluate
+ * Base class that evaluates an expression in a specific contents
  */
-export function evalIdentifierValue(
-  context: EvaluationContext,
-  expr: IdentifierNode
-): ExpressionValue {
-  var valueInfo = context.getSymbolValue(expr.name);
-  if (valueInfo !== null) {
-    if (valueInfo.usageInfo !== null) {
-      valueInfo.usageInfo.isUsed = true;
+export abstract class ExpressionEvaluator implements EvaluationContext {
+  /**
+   * Gets the source line the evaluation context is bound to
+   */
+  abstract getSourceLine(): Z80AssemblyLine;
+
+  /**
+   * Sets the source line the evaluation context is bound to
+   * @param sourceLine Source line information
+   */
+  abstract setSourceLine(sourceLine: Z80AssemblyLine): void;
+
+  /**
+   * Gets the current assembly address
+   */
+  abstract getCurrentAddress(): number;
+
+  /**
+   * Gets the value of the specified symbol
+   * @param symbol Symbol name
+   * @param startFromGlobal Should resolution start from global scope?
+   */
+  abstract getSymbolValue(
+    symbol: string,
+    startFromGlobal?: boolean
+  ): ValueInfo | null;
+
+  /**
+   * Gets the current loop counter value
+   */
+  abstract getLoopCounterValue(): ExpressionValue;
+
+  /**
+   * Evaluates the value if the specified expression node
+   * @param expr Expression to evaluate
+   * @param context: Evaluation context
+   */
+  /**
+   * Evaluates the value if the specified expression node
+   * @param context The context to evaluate the expression
+   * @param expr Expression to evaluate
+   */
+  doEvalExpression(expr: Expression): ExpressionValue {
+    try {
+      switch (expr.type) {
+        case "Identifier":
+          return evalIdentifierValue(this, expr);
+        case "Symbol":
+          return evalSymbolValue(this, expr);
+        case "IntegerLiteral":
+        case "RealLiteral":
+        case "CharLiteral":
+        case "StringLiteral":
+        case "BooleanLiteral":
+          return new ExpressionValue(expr.value);
+        case "BinaryExpression":
+          return evalBinaryOperationValue(this, expr);
+        case "UnaryExpression":
+          return evalUnaryOperationValue(this, expr);
+        case "ConditionalExpression":
+          return evalConditionalOperationValue(this, expr);
+        case "CurrentAddressLiteral":
+          return new ExpressionValue(this.getCurrentAddress());
+          break;
+        case "CurrentCounterLiteral":
+          // TODO: Implement this
+          break;
+        case "MacroParameter":
+          // TODO: Implement this
+          break;
+        case "BuiltInFunctionInvocation":
+          // TODO: Implement this
+          break;
+        case "FunctionInvocation":
+          return evalFunctionInvocationValue(this, expr);
+        default:
+          return ExpressionValue.Error;
+      }
+    } catch (err) {
+      this.reportEvaluationError("Z3001", null, (err as Error).message);
+      return ExpressionValue.Error;
     }
-    return valueInfo.value;
-  }
-  context.reportEvaluationError("Z3000", expr, expr.name);
-  return ExpressionValue.NonEvaluated;
-}
 
-/**
- * Evaluate the value of a symbol
- * @param context Evaluation context
- * @param expr Expression to evaluate
- */
-export function evalSymbolValue(
-  context: EvaluationContext,
-  expr: Symbol
-): ExpressionValue {
-  var valueInfo = context.getSymbolValue(
-    expr.identifier.name,
-    expr.startsFromGlobal
-  );
-  if (valueInfo !== null) {
-    if (valueInfo.usageInfo !== null) {
-      valueInfo.usageInfo.isUsed = true;
+    /**
+     * Evaluate the value of an identifier
+     * @param context Evaluation context
+     * @param expr Expression to evaluate
+     */
+    function evalIdentifierValue(
+      context: EvaluationContext,
+      expr: IdentifierNode
+    ): ExpressionValue {
+      var valueInfo = context.getSymbolValue(expr.name);
+      if (valueInfo !== null) {
+        if (valueInfo.usageInfo !== null) {
+          valueInfo.usageInfo.isUsed = true;
+        }
+        return valueInfo.value;
+      }
+      context.reportEvaluationError("Z3000", expr, expr.name);
+      return ExpressionValue.NonEvaluated;
     }
-    return valueInfo.value;
-  }
-  context.reportEvaluationError("Z3000", expr.identifier, expr.identifier.name);
-  return ExpressionValue.NonEvaluated;
-}
 
-/**
- * Evaluates a binary operation
- * @param context Evaluation context
- * @param expr Bynary expression
- * @returns The value of the evaluated expression
- */
-export function evalBinaryOperationValue(
-  context: EvaluationContext,
-  expr: BinaryExpression
-): ExpressionValue {
-  const left = context.doEvalExpression(expr.left);
-  const right = context.doEvalExpression(expr.right);
-  if (!left.isValid || !right.isValid) {
-    return ExpressionValue.NonEvaluated;
-  }
-  switch (expr.operator) {
-    case "<?":
-      switch (right.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          const rightNum = right.asLong();
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(
-                left.asLong() < rightNum ? left.asLong() : rightNum
-              );
-            case ExpressionValueType.Real:
-              return new ExpressionValue(
-                left.asReal() < rightNum ? left.asReal() : rightNum
-              );
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-        case ExpressionValueType.Real:
-          const rightReal = right.asReal();
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(
-                left.asLong() < rightReal ? left.asLong() : rightReal
-              );
-            case ExpressionValueType.Real:
-              return new ExpressionValue(
-                left.asReal() < rightReal ? left.asReal() : rightReal
-              );
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-        case ExpressionValueType.String:
-          throwStringError("right", expr.operator);
-          return ExpressionValue.Error;
+    /**
+     * Evaluate the value of a symbol
+     * @param context Evaluation context
+     * @param expr Expression to evaluate
+     */
+    function evalSymbolValue(
+      context: EvaluationContext,
+      expr: Symbol
+    ): ExpressionValue {
+      var valueInfo = context.getSymbolValue(
+        expr.identifier.name,
+        expr.startsFromGlobal
+      );
+      if (valueInfo !== null) {
+        if (valueInfo.usageInfo !== null) {
+          valueInfo.usageInfo.isUsed = true;
+        }
+        return valueInfo.value;
       }
-      break;
+      context.reportEvaluationError(
+        "Z3000",
+        expr.identifier,
+        expr.identifier.name
+      );
+      return ExpressionValue.NonEvaluated;
+    }
 
-    case ">?":
-      switch (right.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          const rightNum = right.asLong();
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(
-                left.asLong() > rightNum ? left.asLong() : rightNum
-              );
-            case ExpressionValueType.Real:
-              return new ExpressionValue(
-                left.asReal() > rightNum ? left.asReal() : rightNum
-              );
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-
-        case ExpressionValueType.Real:
-          const rightReal = right.asReal();
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(
-                left.asLong() > rightReal ? left.asLong() : rightReal
-              );
-            case ExpressionValueType.Real:
-              return new ExpressionValue(
-                left.asReal() > rightReal ? left.asReal() : rightReal
-              );
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-
-        case ExpressionValueType.String:
-          throwStringError("right", expr.operator);
-          return ExpressionValue.Error;
+    /**
+     * Evaluates a binary operation
+     * @param context Evaluation context
+     * @param expr Bynary expression
+     * @returns The value of the evaluated expression
+     */
+    function evalBinaryOperationValue(
+      context: EvaluationContext,
+      expr: BinaryExpression
+    ): ExpressionValue {
+      const left = context.doEvalExpression(expr.left);
+      const right = context.doEvalExpression(expr.right);
+      if (!left.isValid || !right.isValid) {
+        return ExpressionValue.NonEvaluated;
       }
-      break;
-
-    case "*":
-      switch (right.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var rightNum = right.asLong();
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(left.asLong() * rightNum);
-            case ExpressionValueType.Real:
-              return new ExpressionValue(left.asReal() * rightNum);
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-
-        case ExpressionValueType.Real:
-          var rightReal = right.asReal();
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(left.asLong() * rightReal);
-            case ExpressionValueType.Real:
-              return new ExpressionValue(left.asReal() * rightReal);
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-
-        case ExpressionValueType.String:
-          throwStringError("right", expr.operator);
-          return ExpressionValue.Error;
-      }
-      break;
-
-    case "/":
-      switch (right.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var rightNum = right.asLong();
-          if (rightNum === 0) {
-            throw new Error(DIV_BY_ZERO_ERROR);
-          }
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(left.asLong() / rightNum);
-            case ExpressionValueType.Real:
-              return new ExpressionValue(left.asReal() / rightNum);
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-
-        case ExpressionValueType.Real:
-          var rightReal = right.asReal();
-          if (Math.abs(rightReal) < Number.EPSILON) {
-            throw new Error(DIV_BY_ZERO_ERROR);
-          }
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(left.asLong() / rightReal);
-            case ExpressionValueType.Real:
-              return new ExpressionValue(left.asReal() / rightReal);
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-
-        case ExpressionValueType.String:
-          throwStringError("right", expr.operator);
-          return ExpressionValue.Error;
-      }
-      break;
-
-    case "%":
-      switch (right.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var rightNum = right.asLong();
-          if (rightNum === 0) {
-            throw new Error(DIV_BY_ZERO_ERROR);
-          }
-          switch (left.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(left.asLong() % rightNum);
-            case ExpressionValueType.Real:
-            case ExpressionValueType.String:
-              throwStringError("left", expr.operator);
-              return ExpressionValue.Error;
-          }
-
-        case ExpressionValueType.Real:
-        case ExpressionValueType.String:
-          throwStringError("right", expr.operator);
-          return ExpressionValue.Error;
-      }
-      break;
-
-    case "+":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
+      switch (expr.operator) {
+        case "<?":
           switch (right.type) {
             case ExpressionValueType.Bool:
             case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum + right.asLong());
+              const rightNum = right.asLong();
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(
+                    left.asLong() < rightNum ? left.asLong() : rightNum
+                  );
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(
+                    left.asReal() < rightNum ? left.asReal() : rightNum
+                  );
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
             case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum + right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(ADD_ERROR);
-          }
-
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal + right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal + right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(ADD_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(`${left.asString()}${right.asString()}`);
-          } else {
-            throw new Error(ADD_STRING_ERROR);
-          }
-      }
-      break;
-
-    case "-":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum - right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum - right.asReal());
+              const rightReal = right.asReal();
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(
+                    left.asLong() < rightReal ? left.asLong() : rightReal
+                  );
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(
+                    left.asReal() < rightReal ? left.asReal() : rightReal
+                  );
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
             case ExpressionValueType.String:
               throwStringError("right", expr.operator);
               return ExpressionValue.Error;
           }
+          break;
 
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
+        case ">?":
           switch (right.type) {
             case ExpressionValueType.Bool:
             case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal - right.asLong());
+              const rightNum = right.asLong();
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(
+                    left.asLong() > rightNum ? left.asLong() : rightNum
+                  );
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(
+                    left.asReal() > rightNum ? left.asReal() : rightNum
+                  );
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
             case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal - right.asReal());
+              const rightReal = right.asReal();
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(
+                    left.asLong() > rightReal ? left.asLong() : rightReal
+                  );
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(
+                    left.asReal() > rightReal ? left.asReal() : rightReal
+                  );
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
             case ExpressionValueType.String:
               throwStringError("right", expr.operator);
               return ExpressionValue.Error;
           }
+          break;
 
-        case ExpressionValueType.String:
-          throwStringError("left", expr.operator);
-          return ExpressionValue.Error;
-      }
-
-      break;
-    case "<<":
-      if (
-        left.type !== ExpressionValueType.Bool &&
-        left.type !== ExpressionValueType.Integer
-      ) {
-        throwStringError("left", expr.operator);
-        return ExpressionValue.Error;
-      }
-      if (
-        right.type !== ExpressionValueType.Bool &&
-        right.type !== ExpressionValueType.Integer
-      ) {
-        throwIntegralError("right", expr.operator);
-        return ExpressionValue.Error;
-      }
-      return new ExpressionValue(left.asLong() << (right.asLong() & 0xffff));
-
-    case ">>":
-      if (
-        left.type !== ExpressionValueType.Bool &&
-        left.type !== ExpressionValueType.Integer
-      ) {
-        throwIntegralError("left", expr.operator);
-        return ExpressionValue.Error;
-      }
-      if (
-        right.type !== ExpressionValueType.Bool &&
-        right.type !== ExpressionValueType.Integer
-      ) {
-        throwIntegralError("right", expr.operator);
-        return ExpressionValue.Error;
-      }
-      return new ExpressionValue(left.asLong() >> (right.asLong() & 0xffff));
-
-    case "<":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
+        case "*":
           switch (right.type) {
             case ExpressionValueType.Bool:
             case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum < right.asLong());
+              var rightNum = right.asLong();
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(left.asLong() * rightNum);
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(left.asReal() * rightNum);
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
             case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum < right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
+              var rightReal = right.asReal();
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(left.asLong() * rightReal);
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(left.asReal() * rightReal);
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
 
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
+            case ExpressionValueType.String:
+              throwStringError("right", expr.operator);
+              return ExpressionValue.Error;
+          }
+          break;
+
+        case "/":
           switch (right.type) {
             case ExpressionValueType.Bool:
             case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal < right.asLong());
+              var rightNum = right.asLong();
+              if (rightNum === 0) {
+                throw new Error(DIV_BY_ZERO_ERROR);
+              }
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(left.asLong() / rightNum);
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(left.asReal() / rightNum);
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
             case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal < right.asReal());
+              var rightReal = right.asReal();
+              if (Math.abs(rightReal) < Number.EPSILON) {
+                throw new Error(DIV_BY_ZERO_ERROR);
+              }
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(left.asLong() / rightReal);
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(left.asReal() / rightReal);
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
             case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
+              throwStringError("right", expr.operator);
+              return ExpressionValue.Error;
           }
+          break;
 
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(left.asString() < right.asString());
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case "<=":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
+        case "%":
           switch (right.type) {
             case ExpressionValueType.Bool:
             case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum <= right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum <= right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
+              var rightNum = right.asLong();
+              if (rightNum === 0) {
+                throw new Error(DIV_BY_ZERO_ERROR);
+              }
+              switch (left.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(left.asLong() % rightNum);
+                case ExpressionValueType.Real:
+                case ExpressionValueType.String:
+                  throwStringError("left", expr.operator);
+                  return ExpressionValue.Error;
+              }
 
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal <= right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal <= right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(left.asString() <= right.asString());
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case ">":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum > right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum > right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal > right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal > right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(left.asString() > right.asString());
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case ">=":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum >= right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum >= right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal >= right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal >= right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(left.asString() >= right.asString());
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case "==":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum === right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum === right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal === right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal === right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(left.asString() === right.asString());
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case "===":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum === right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum === right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal === right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal === right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(
-              left.asString().toLowerCase() === right.asString().toLowerCase()
-            );
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case "!=":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum !== right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum !== right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal !== right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal !== right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(left.asString() !== right.asString());
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case "!==":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum !== right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftNum !== right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.Real:
-          var leftReal = left.asReal();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftReal !== right.asLong());
-            case ExpressionValueType.Real:
-              return new ExpressionValue(leftReal !== right.asReal());
-            case ExpressionValueType.String:
-              throw new Error(COMPARE_ERROR);
-          }
-
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(
-              left.asString().toLowerCase() !== right.asString().toLowerCase()
-            );
-          }
-          throw new Error(COMPARE_STRING_ERROR);
-      }
-      break;
-
-    case "&":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
-            case ExpressionValueType.Bool:
-            case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum & right.asLong());
             case ExpressionValueType.Real:
             case ExpressionValueType.String:
               throwStringError("right", expr.operator);
               return ExpressionValue.Error;
           }
+          break;
 
-        case ExpressionValueType.String:
-          if (right.type === ExpressionValueType.String) {
-            return new ExpressionValue(
-              `${left.asString()}\r\n${right.asString()}`
-            );
-          }
-          throw new Error(
-            `The right side of ${expr.operator} must be a string`
-          );
-
-        case ExpressionValueType.Real:
-          throw new Error(
-            `The left side of ${expr.operator} must be an integral type or a string`
-          );
-      }
-
-    case "|":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
+        case "+":
+          switch (left.type) {
             case ExpressionValueType.Bool:
             case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum | right.asLong());
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum + right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum + right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(ADD_ERROR);
+              }
+
             case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal + right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal + right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(ADD_ERROR);
+              }
+
             case ExpressionValueType.String:
-              throwIntegralError("right", expr.operator);
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(
+                  `${left.asString()}${right.asString()}`
+                );
+              } else {
+                throw new Error(ADD_STRING_ERROR);
+              }
+          }
+          break;
+
+        case "-":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum - right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum - right.asReal());
+                case ExpressionValueType.String:
+                  throwStringError("right", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal - right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal - right.asReal());
+                case ExpressionValueType.String:
+                  throwStringError("right", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
+            case ExpressionValueType.String:
+              throwStringError("left", expr.operator);
               return ExpressionValue.Error;
           }
 
-        case ExpressionValueType.Real:
-        case ExpressionValueType.String:
-          throwIntegralError("left", expr.operator);
-          return ExpressionValue.Error;
-      }
-      break;
+          break;
+        case "<<":
+          if (
+            left.type !== ExpressionValueType.Bool &&
+            left.type !== ExpressionValueType.Integer
+          ) {
+            throwStringError("left", expr.operator);
+            return ExpressionValue.Error;
+          }
+          if (
+            right.type !== ExpressionValueType.Bool &&
+            right.type !== ExpressionValueType.Integer
+          ) {
+            throwIntegralError("right", expr.operator);
+            return ExpressionValue.Error;
+          }
+          return new ExpressionValue(
+            left.asLong() << (right.asLong() & 0xffff)
+          );
 
-    case "^":
-      switch (left.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          var leftNum = left.asLong();
-          switch (right.type) {
+        case ">>":
+          if (
+            left.type !== ExpressionValueType.Bool &&
+            left.type !== ExpressionValueType.Integer
+          ) {
+            throwIntegralError("left", expr.operator);
+            return ExpressionValue.Error;
+          }
+          if (
+            right.type !== ExpressionValueType.Bool &&
+            right.type !== ExpressionValueType.Integer
+          ) {
+            throwIntegralError("right", expr.operator);
+            return ExpressionValue.Error;
+          }
+          return new ExpressionValue(
+            left.asLong() >> (right.asLong() & 0xffff)
+          );
+
+        case "<":
+          switch (left.type) {
             case ExpressionValueType.Bool:
             case ExpressionValueType.Integer:
-              return new ExpressionValue(leftNum ^ right.asLong());
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum < right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum < right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal < right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal < right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(left.asString() < right.asString());
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case "<=":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum <= right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum <= right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal <= right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal <= right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(left.asString() <= right.asString());
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case ">":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum > right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum > right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal > right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal > right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(left.asString() > right.asString());
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case ">=":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum >= right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum >= right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal >= right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal >= right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(left.asString() >= right.asString());
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case "==":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum === right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum === right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal === right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal === right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(
+                  left.asString() === right.asString()
+                );
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case "===":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum === right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum === right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal === right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal === right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(
+                  left.asString().toLowerCase() ===
+                    right.asString().toLowerCase()
+                );
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case "!=":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum !== right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum !== right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal !== right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal !== right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(
+                  left.asString() !== right.asString()
+                );
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case "!==":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum !== right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftNum !== right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.Real:
+              var leftReal = left.asReal();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftReal !== right.asLong());
+                case ExpressionValueType.Real:
+                  return new ExpressionValue(leftReal !== right.asReal());
+                case ExpressionValueType.String:
+                  throw new Error(COMPARE_ERROR);
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(
+                  left.asString().toLowerCase() !==
+                    right.asString().toLowerCase()
+                );
+              }
+              throw new Error(COMPARE_STRING_ERROR);
+          }
+          break;
+
+        case "&":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum & right.asLong());
+                case ExpressionValueType.Real:
+                case ExpressionValueType.String:
+                  throwStringError("right", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
+            case ExpressionValueType.String:
+              if (right.type === ExpressionValueType.String) {
+                return new ExpressionValue(
+                  `${left.asString()}\r\n${right.asString()}`
+                );
+              }
+              throw new Error(
+                `The right side of ${expr.operator} must be a string`
+              );
+
+            case ExpressionValueType.Real:
+              throw new Error(
+                `The left side of ${expr.operator} must be an integral type or a string`
+              );
+          }
+
+        case "|":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum | right.asLong());
+                case ExpressionValueType.Real:
+                case ExpressionValueType.String:
+                  throwIntegralError("right", expr.operator);
+                  return ExpressionValue.Error;
+              }
+
             case ExpressionValueType.Real:
             case ExpressionValueType.String:
-              throwIntegralError("right", expr.operator);
+              throwIntegralError("left", expr.operator);
               return ExpressionValue.Error;
           }
+          break;
 
-        case ExpressionValueType.Real:
-        case ExpressionValueType.String:
-          throwIntegralError("left", expr.operator);
-          return ExpressionValue.Error;
-      }
-      break;
-  }
-  return ExpressionValue.NonEvaluated;
-}
+        case "^":
+          switch (left.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              var leftNum = left.asLong();
+              switch (right.type) {
+                case ExpressionValueType.Bool:
+                case ExpressionValueType.Integer:
+                  return new ExpressionValue(leftNum ^ right.asLong());
+                case ExpressionValueType.Real:
+                case ExpressionValueType.String:
+                  throwIntegralError("right", expr.operator);
+                  return ExpressionValue.Error;
+              }
 
-/**
- * Evaluates a unary operation
- * @param context Evaluation context
- * @param expr Unary expression
- * @returns The value of the evaluated expression
- */
-export function evalUnaryOperationValue(
-  context: EvaluationContext,
-  expr: UnaryExpression
-): ExpressionValue {
-  const operand = context.doEvalExpression(expr.operand);
-  if (!operand.isValid) {
-    return ExpressionValue.NonEvaluated;
-  }
-  switch (expr.operator) {
-    case "+":
-      return operand;
-
-    case "-":
-      switch (operand.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          return new ExpressionValue(-operand.asLong());
-        case ExpressionValueType.Real:
-          return new ExpressionValue(-operand.asReal());
-        case ExpressionValueType.String:
-          const realValue = parseFloat(operand.asString());
-          if (!isNaN(realValue)) {
-            return new ExpressionValue(-realValue);
+            case ExpressionValueType.Real:
+            case ExpressionValueType.String:
+              throwIntegralError("left", expr.operator);
+              return ExpressionValue.Error;
           }
-          const intValue = parseInt(operand.asString());
-          if (!isNaN(intValue)) {
-            return new ExpressionValue(-intValue);
+          break;
+      }
+      return ExpressionValue.NonEvaluated;
+    }
+
+    /**
+     * Evaluates a unary operation
+     * @param context Evaluation context
+     * @param expr Unary expression
+     * @returns The value of the evaluated expression
+     */
+    function evalUnaryOperationValue(
+      context: EvaluationContext,
+      expr: UnaryExpression
+    ): ExpressionValue {
+      const operand = context.doEvalExpression(expr.operand);
+      if (!operand.isValid) {
+        return ExpressionValue.NonEvaluated;
+      }
+      switch (expr.operator) {
+        case "+":
+          return operand;
+
+        case "-":
+          switch (operand.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              return new ExpressionValue(-operand.asLong());
+            case ExpressionValueType.Real:
+              return new ExpressionValue(-operand.asReal());
+            case ExpressionValueType.String:
+              const realValue = parseFloat(operand.asString());
+              if (!isNaN(realValue)) {
+                return new ExpressionValue(-realValue);
+              }
+              const intValue = parseInt(operand.asString());
+              if (!isNaN(intValue)) {
+                return new ExpressionValue(-intValue);
+              }
+              throw new Error(STRING_CONVERSION_ERROR);
           }
-          throw new Error(STRING_CONVERSION_ERROR);
-      }
-      break;
+          break;
 
-    case "!":
-      switch (operand.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          return new ExpressionValue(operand.asLong() === 0);
-        case ExpressionValueType.Real:
-        case ExpressionValueType.String:
-          throw new Error(
-            "Unary logical not operation can be applied only on integral types"
-          );
-      }
-      break;
+        case "!":
+          switch (operand.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              return new ExpressionValue(operand.asLong() === 0);
+            case ExpressionValueType.Real:
+            case ExpressionValueType.String:
+              throw new Error(
+                "Unary logical not operation can be applied only on integral types"
+              );
+          }
+          break;
 
-    case "~":
-      switch (operand.type) {
-        case ExpressionValueType.Bool:
-        case ExpressionValueType.Integer:
-          return new ExpressionValue(~operand.asLong());
-        case ExpressionValueType.Real:
-        case ExpressionValueType.String:
-          throw new Error(
-            "Unary bitwise not operation can be applied only on integral types"
-          );
+        case "~":
+          switch (operand.type) {
+            case ExpressionValueType.Bool:
+            case ExpressionValueType.Integer:
+              return new ExpressionValue(~operand.asLong());
+            case ExpressionValueType.Real:
+            case ExpressionValueType.String:
+              throw new Error(
+                "Unary bitwise not operation can be applied only on integral types"
+              );
+          }
+          break;
       }
-      break;
+      return ExpressionValue.NonEvaluated;
+    }
+
+    /**
+     * Evaluates a unary operation
+     * @param context Evaluation context
+     * @param expr Unary expression
+     * @returns The value of the evaluated expression
+     */
+    function evalConditionalOperationValue(
+      context: EvaluationContext,
+      expr: ConditionalExpression
+    ): ExpressionValue {
+      const cond = context.doEvalExpression(expr.condition);
+      if (!cond.isValid) {
+        return ExpressionValue.NonEvaluated;
+      }
+      return cond.asBool()
+        ? context.doEvalExpression(expr.consequent)
+        : context.doEvalExpression(expr.alternate);
+    }
+
+    function throwStringError(side: string, operator: string): void {
+      throw new Error(`The ${side} operand of ${operator} cannot be a string.`);
+    }
+
+    function throwIntegralError(side: string, operator: string): void {
+      throw new Error(
+        `The ${side} operand of ${operator} must be an integral type.`
+      );
+    }
   }
-  return ExpressionValue.NonEvaluated;
-}
 
-/**
- * Evaluates a unary operation
- * @param context Evaluation context
- * @param expr Unary expression
- * @returns The value of the evaluated expression
- */
-export function evalConditionalOperationValue(
-  context: EvaluationContext,
-  expr: ConditionalExpression
-): ExpressionValue {
-  const cond = context.doEvalExpression(expr.condition);
-  if (!cond.isValid) {
-    return ExpressionValue.NonEvaluated;
-  }
-  return cond.asBool()
-    ? context.doEvalExpression(expr.consequent)
-    : context.doEvalExpression(expr.alternate);
-}
-
-function throwStringError(side: string, operator: string): void {
-  throw new Error(`The ${side} operand of ${operator} cannot be a string.`);
-}
-
-function throwIntegralError(side: string, operator: string): void {
-  throw new Error(
-    `The ${side} operand of ${operator} must be an integral type.`
-  );
+  /**
+   * Reports an error during evaluation
+   * @param code Error code
+   * @param node Error position
+   * @param parameters Optional error parameters
+   */
+  abstract reportEvaluationError(
+    code: ErrorCodes,
+    node: NodePosition,
+    ...parameters: any[]
+  ): void;
 }
 
 /**
@@ -1206,7 +1324,11 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
       [ExpressionValueType.Real]
     ),
     new FunctionEvaluator(
-      (args) => new ExpressionValue(Math.log(args[0].asReal())/(args[1].asReal() === 0.0 ? 1 : Math.log(args[1].asReal()))),
+      (args) =>
+        new ExpressionValue(
+          Math.log(args[0].asReal()) /
+            (args[1].asReal() === 0.0 ? 1 : Math.log(args[1].asReal()))
+        ),
       [ExpressionValueType.Real, ExpressionValueType.Real]
     ),
   ],

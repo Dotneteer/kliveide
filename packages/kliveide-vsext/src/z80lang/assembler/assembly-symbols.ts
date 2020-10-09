@@ -61,9 +61,43 @@ export enum SymbolType {
 }
 
 /**
+ * Represents a symbol scope
+ */
+export interface ISymbolScope {
+  /**
+   * The symbol table with properly defined symbols
+   */
+  readonly symbols: SymbolInfoMap;
+
+  /**
+   *  The list of fixups to resolve in the last phase of the compilation
+   */
+  readonly fixups: FixupEntry[];
+
+  /**
+   * Adds a symbol to this scope
+   * @param name Symbol name
+   * @param symbol Symbol data
+   */
+  addSymbol(name: string, symbol: AssemblySymbolInfo): void;
+
+  /**
+   * Tests if the specified symbol has been defined
+   */
+  containsSymbol(name: string): boolean;
+
+  /**
+   * Gets the specified symbol
+   * @param name Symbol name
+   * @returns The symbol information, if found; otherwise, undefined.
+   */
+  getSymbol(name: string): AssemblySymbolInfo | undefined;
+}
+
+/**
  * Represents a scope where local symbols are declared
  */
-export class SymbolScope {
+export class SymbolScope implements ISymbolScope {
   private _errorsReported = new Set<ErrorCodes>();
 
   constructor(

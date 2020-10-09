@@ -1,6 +1,6 @@
 import * as fs from "fs";
+import { sum } from "lodash";
 import * as path from "path";
-import { ThemeIcon } from "vscode";
 
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { InputStream } from "../parser/input-stream";
@@ -33,7 +33,6 @@ import {
   ErrorPragma,
   ExInstruction,
   Expression,
-  ExpressionNode,
   FillbPragma,
   FillwPragma,
   ImInstruction,
@@ -48,9 +47,7 @@ import {
   LabelOnlyLine,
   LdInstruction,
   MacroOrStructInvocation,
-  MirrorInstruction,
   ModelPragma,
-  MulInstruction,
   NextRegInstruction,
   NodePosition,
   Operand,
@@ -64,9 +61,7 @@ import {
   PushInstruction,
   ResInstruction,
   RetInstruction,
-  RlcInstruction,
   RndSeedPragma,
-  RrcInstruction,
   RstInstruction,
   SbcInstruction,
   SetInstruction,
@@ -98,18 +93,13 @@ import { BinaryComparisonInfo, StructDefinition } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
 import {
   AssemblySymbolInfo,
+  ISymbolScope,
   SymbolInfoMap,
   SymbolScope,
   SymbolType,
 } from "./assembly-symbols";
 import {
-  evalBinaryOperationValue,
-  evalConditionalOperationValue,
-  evalFunctionInvocationValue,
-  evalIdentifierValue,
-  evalSymbolValue,
-  EvaluationContext,
-  evalUnaryOperationValue,
+  ExpressionEvaluator,
   ExpressionValue,
   ExpressionValueType,
   setRandomSeed,
@@ -131,7 +121,7 @@ const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT"];
 /**
  * This class provides the functionality of the Z80 Assembler
  */
-export class Z80Assembler implements EvaluationContext {
+export class Z80Assembler extends ExpressionEvaluator {
   // --- Use these options
   private _options: AssemblerOptions;
 
@@ -461,8 +451,16 @@ export class Z80Assembler implements EvaluationContext {
    * Fixes the unresolved symbols after code emission
    */
   private fixupUnresolvedSymbols(): boolean {
-    // TODO: Implement this method
-    return true;
+    for (const scope of this._currentModule.localScopes) {
+      if (scope.fixups.length === 0) {
+        continue;
+      }
+      if (this.fixupSymbols(scope, false)) {
+        // --- Local scope successfully resolved
+        break;
+      }
+    }
+    return this.fixupSymbols(this._currentModule, true);
   }
 
   /**
@@ -802,58 +800,6 @@ export class Z80Assembler implements EvaluationContext {
   }
 
   /**
-   * Evaluates the value if the specified expression node
-   * @param context The context to evaluate the expression
-   * @param expr Expression to evaluate
-   */
-  doEvalExpression(expr: Expression): ExpressionValue {
-    try {
-      switch (expr.type) {
-        case "Identifier":
-          return evalIdentifierValue(this, expr);
-        case "Symbol":
-          return evalSymbolValue(this, expr);
-        case "IntegerLiteral":
-        case "RealLiteral":
-        case "CharLiteral":
-        case "StringLiteral":
-        case "BooleanLiteral":
-          return new ExpressionValue(expr.value);
-        case "BinaryExpression":
-          return evalBinaryOperationValue(this, expr);
-        case "UnaryExpression":
-          return evalUnaryOperationValue(this, expr);
-        case "ConditionalExpression":
-          return evalConditionalOperationValue(this, expr);
-        case "CurrentAddressLiteral":
-          return new ExpressionValue(this.getCurrentAddress());
-          break;
-        case "CurrentCounterLiteral":
-          // TODO: Implement this
-          break;
-        case "MacroParameter":
-          // TODO: Implement this
-          break;
-        case "BuiltInFunctionInvocation":
-          // TODO: Implement this
-          break;
-        case "FunctionInvocation":
-          return evalFunctionInvocationValue(this, expr);
-        default:
-          return ExpressionValue.Error;
-      }
-    } catch (err) {
-      this.reportAssemblyError(
-        "Z3001",
-        this.getSourceLine(),
-        null,
-        (err as Error).message
-      );
-      return ExpressionValue.Error;
-    }
-  }
-
-  /**
    * Reports an error during evaluation
    * @param code Error code
    * @param node Error position
@@ -1165,6 +1111,9 @@ export class Z80Assembler implements EvaluationContext {
     if (this._currentModule.localScopes.length > 0) {
       currentScopeIsTemporary = this.getTopLocalScope().isTemporaryScope;
     }
+    if (!this._options.useCaseSensitiveSymbols) {
+      symbol = symbol.toLowerCase();
+    }
     const symbolIsTemporary = symbol.startsWith("`");
 
     let lookup = getSymbols();
@@ -1172,7 +1121,7 @@ export class Z80Assembler implements EvaluationContext {
       if (!symbolIsTemporary) {
         // --- Remove the previous temporary scope
         const tempsScope = this.getTopLocalScope();
-        this.fixupSymbols(tempsScope.fixups, tempsScope.symbols, false);
+        this.fixupSymbols(tempsScope, false);
         this._currentModule.localScopes.pop();
       }
     } else {
@@ -3388,12 +3337,13 @@ export class Z80Assembler implements EvaluationContext {
     type: FixupType
   ): void {
     const opLine = (instr as unknown) as Z80AssemblyLine;
-    const value = this.evaluateExpr(expr);
+    let value = this.evaluateExpr(expr);
     if (value.isNonEvaluated) {
       this.recordFixup(opLine, type, expr);
     }
     if (value.isValid && value.type === ExpressionValueType.String) {
       this.reportAssemblyError("Z2042", opLine);
+      value = new ExpressionValue(0);
     }
     const fixupValue = value.value;
     if (type === FixupType.Bit16Be) {
@@ -3429,10 +3379,10 @@ export class Z80Assembler implements EvaluationContext {
         this.reportAssemblyError("Z2045", opLine, null, dist);
         return;
       }
-      this.emitByte(opCode);
-      this.emitByte(dist);
     }
-  }
+    this.emitByte(opCode);
+    this.emitByte(dist);
+}
 
   /**
    * Emits an indexed operation with the specified operand and operation code
@@ -3588,7 +3538,7 @@ export class Z80Assembler implements EvaluationContext {
    * @param structBytes Optional structure bytes
    * @param offset Fixup offset, if not the current position
    */
-  recordFixup(
+  private recordFixup(
     opLine: Z80AssemblyLine,
     type: FixupType,
     expr: Expression,
@@ -3596,7 +3546,79 @@ export class Z80Assembler implements EvaluationContext {
     structBytes: Map<number, number> | null = null,
     offset: number | null = null
   ): void {
-    // TODO: Implement this method
+    let fixupOffset = this._currentSegment.currentOffset;
+
+    // --- Translate field invocation fixups so that field-related fixups will be
+    // --- processed only after other fixups.
+    if (this._currentStructInvocation) {
+      fixupOffset = this._currentStructStartOffset + this._currentStructOffset;
+      if (type === FixupType.Bit8) {
+        type = FixupType.FieldBit8;
+      } else if (type === FixupType.Bit16) {
+        type = FixupType.FieldBit16;
+      }
+    }
+
+    // --- Create to fixup entry to resolve
+    const fixup = new FixupEntry(
+      this,
+      this._currentModule,
+      opLine,
+      type,
+      this._output.segments.length - 1,
+      offset ?? fixupOffset,
+      expr,
+      label,
+      structBytes
+    );
+
+    // --- Record fixups in every local scope up to the root
+    for (const scope of this._currentModule.localScopes) {
+      scope.fixups.push(fixup);
+    }
+
+    // --- Record fixup in every module up to the root
+    var currentModule = this._currentModule;
+    while (currentModule) {
+      currentModule.fixups.push(fixup);
+      currentModule = currentModule.parentModule;
+    }
+  }
+
+  /**
+   * Evaluates the fixup entry
+   * @param fixup Fixup item
+   * @param numericOnly Signs if only numeric expressions are expected
+   * @param signNotEvaluable Raise error if the symbol is not evaluable
+   */
+  private evaluateFixupExpression(
+    fixup: FixupEntry,
+    numericOnly: boolean,
+    signNotEvaluable: boolean
+  ): { success: boolean; value: ExpressionValue } {
+    let exprValue = new ExpressionValue(0);
+    if (!this.readyToEvaluate(fixup.expression)) {
+      if (!signNotEvaluable) {
+        return {
+          success: false,
+          value: ExpressionValue.NonEvaluated,
+        };
+      }
+    }
+
+    // --- Now, resolve the fixup
+    exprValue = fixup.doEvalExpression(fixup.expression);
+
+    if (!exprValue.isValid) {
+      return { success: false, value: ExpressionValue.Error };
+    }
+    if (numericOnly && exprValue.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z2042", fixup.getSourceLine());
+      return { success: false, value: ExpressionValue.Error };
+    }
+
+    fixup.resolved = true;
+    return { success: true, value: exprValue };
   }
 
   /**
@@ -3606,12 +3628,139 @@ export class Z80Assembler implements EvaluationContext {
    * @param signNotEvaluable Raise error if the symbol is not evaluable
    */
   private fixupSymbols(
-    fixups: FixupEntry[],
-    symbols: SymbolInfoMap,
+    scope: ISymbolScope,
     signNotEvaluable: boolean
   ): boolean {
-    // TODO: Implement this method
-    return false;
+    // --- #1: fix the .equ values
+    let success = true;
+    for (const equ of scope.fixups.filter(
+      (f) => f.type === FixupType.Equ && !f.resolved
+    )) {
+      const evalResult = this.evaluateFixupExpression(
+        equ,
+        false,
+        signNotEvaluable
+      );
+      if (evalResult.success) {
+        const symbolInfo = scope.getSymbol(equ.label);
+        if (symbolInfo) {
+          symbolInfo.value = evalResult.value;
+        } else {
+          scope.addSymbol(
+            equ.label,
+            AssemblySymbolInfo.createLabel(equ.label, evalResult.value)
+          );
+        }
+      } else {
+        success = false;
+      }
+    }
+
+    // --- #2: fix Bit8, Bit16, Jr, Ent, Xent
+    for (const fixup of scope.fixups.filter(
+      (f) =>
+        !f.resolved &&
+        (f.type === FixupType.Bit8 ||
+          f.type === FixupType.Bit16 ||
+          f.type === FixupType.Jr ||
+          f.type === FixupType.Ent ||
+          f.type === FixupType.Xent)
+    )) {
+      const evalResult = this.evaluateFixupExpression(
+        fixup,
+        true,
+        signNotEvaluable
+      );
+
+      if (evalResult.success) {
+        const segment = this._output.segments[fixup.segmentIndex];
+        const emittedCode = segment.emittedCode;
+        switch (fixup.type) {
+          case FixupType.Bit8:
+            emittedCode[fixup.offset] = evalResult.value.asByte();
+            break;
+
+          case FixupType.Bit16:
+            emittedCode[fixup.offset] = evalResult.value.asByte();
+            emittedCode[fixup.offset + 1] = evalResult.value.asWord() >> 8;
+            break;
+
+          case FixupType.Jr:
+            // --- Check for Relative address
+            var currentAssemblyAddress =
+              segment.startAddress +
+              ((segment.startAddress + fixup.offset >= segment.dispPragmaOffset
+                ? segment.displacement ?? 0
+                : 0) &
+                0xffff) +
+              fixup.offset;
+            var dist = evalResult.value.asWord() - (currentAssemblyAddress + 2);
+            if (dist < -128 || dist > 127) {
+              this.reportAssemblyError("Z2045", fixup.sourceLine, null, dist);
+              success = false;
+              break;
+            }
+            emittedCode[fixup.offset + 1] = dist & 0xff;
+            break;
+
+          case FixupType.Ent:
+            this._output.entryAddress = evalResult.value.asWord();
+            break;
+
+          case FixupType.Xent:
+            this._output.exportEntryAddress = evalResult.value.asWord();
+            break;
+        }
+      } else {
+        success = false;
+      }
+    }
+
+    // --- #3: fix Struct
+    for (const fixup of scope.fixups.filter(
+      (f) => !f.resolved && f.type === FixupType.Struct
+    )) {
+      const segment = this._output.segments[fixup.segmentIndex];
+      const emittedCode = segment.emittedCode;
+
+      // --- Override structure bytes
+      for (const key of fixup.structBytes.keys()) {
+        const entry = fixup.structBytes.get(key);
+        const offset = fixup.offset + entry;
+        emittedCode[offset] = entry;
+      }
+    }
+
+    // --- #4: fix FieldBit8, and FieldBit16
+    for (const fixup of scope.fixups.filter(
+      (f) =>
+        !f.resolved &&
+        (f.type === FixupType.FieldBit8 || f.type === FixupType.FieldBit16)
+    )) {
+      const evalResult = this.evaluateFixupExpression(
+        fixup,
+        true,
+        signNotEvaluable
+      );
+      if (evalResult.success) {
+        var segment = this._output.segments[fixup.segmentIndex];
+        var emittedCode = segment.emittedCode;
+
+        switch (fixup.type) {
+          case FixupType.FieldBit8:
+            emittedCode[fixup.offset] = evalResult.value.asByte();
+            break;
+
+          case FixupType.FieldBit16:
+            emittedCode[fixup.offset] = evalResult.value.asByte();
+            emittedCode[fixup.offset + 1] = evalResult.value.asWord() >> 8;
+            break;
+        }
+      } else {
+        success = false;
+      }
+    }
+    return success;
   }
 
   /**
@@ -3623,7 +3772,7 @@ export class Z80Assembler implements EvaluationContext {
     }
     const topScope = this.getTopLocalScope();
     if (topScope.isTemporaryScope) {
-      this.fixupSymbols(topScope.fixups, topScope.symbols, false);
+      this.fixupSymbols(topScope, false);
       this._currentModule.localScopes.pop();
     }
   }
