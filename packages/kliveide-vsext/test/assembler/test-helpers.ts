@@ -21,7 +21,7 @@ export function testExpression(
 
   expect(output.errorCount).toBe(0);
   expect(output.segments.length).toBe(1);
-  const symbol = output.symbols["MySymbol"];
+  const symbol = output.getSymbol("MySymbol");
   expect(symbol).toBeDefined();
   if (!symbol) {
     return;

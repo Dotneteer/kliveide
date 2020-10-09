@@ -31,7 +31,7 @@ describe("Assembler - pragmas", () => {
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
-    expect(output.symbols["MySymbol"].value.value).toBe(200);
+    expect(output.getSymbol("MySymbol").value.value).toBe(200);
   });
 
   it("bank - existing segment #1", () => {
@@ -743,7 +743,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3001").toBe(true);
+    expect(output.errors[0].errorCode === "Z3000").toBe(true);
   });
 
   it("skip - non-immediate value and fill", () => {
@@ -753,7 +753,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3001").toBe(true);
+    expect(output.errors[0].errorCode === "Z3000").toBe(true);
   });
 
   it("defb - immediate evaluation", () => {

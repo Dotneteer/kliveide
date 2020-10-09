@@ -1,28 +1,35 @@
 import { ErrorCodes } from "../errors";
 import {
   Expression,
-  ExpressionNode,
   NodePosition,
   Z80AssemblyLine,
 } from "../parser/tree-nodes";
 import { AssemblyModule } from "./assembly-module";
-import { EvaluationContext, ExpressionValue, ValueInfo } from "./expressions";
+import {
+  EvaluationContext,
+  ExpressionEvaluator,
+  ExpressionValue,
+  ValueInfo,
+} from "./expressions";
 
 /**
  * This class represents a fixup that recalculates and replaces
  * unresolved symbol value at the end of the compilation
  */
-export class FixupEntry implements EvaluationContext {
+export class FixupEntry extends ExpressionEvaluator {
   constructor(
     public readonly parentContext: EvaluationContext,
     public readonly module: AssemblyModule,
     public readonly sourceLine: Z80AssemblyLine,
     public readonly type: FixupType,
+    public readonly segmentIndex: number,
     public readonly offset: number,
-    public readonly expression: ExpressionNode,
+    public readonly expression: Expression,
     public readonly label: string | null = null,
-    public readonly structBytes: { [key: number]: number } | null = null
-  ) {}
+    public readonly structBytes: Map<number, number> | null = null
+  ) {
+    super();
+  }
 
   /**
    * Indicates if this entry has already been resolved
@@ -82,19 +89,18 @@ export class FixupEntry implements EvaluationContext {
   }
 
   /**
-   * Evaluates the value if the specified expression node
-   * @param expr Expression to evaluate
-   */
-  doEvalExpression(expr: Expression): ExpressionValue {
-    throw new Error("Not implemented yet.");
-  }
-
-  /**
    * Reports an error during evaluation
    * @param code Error code
    * @param node Error position
+   * @param parameters Optional error parameters
    */
-  reportEvaluationError(code: ErrorCodes, node: NodePosition, ...parameters: any[]): void {}
+  reportEvaluationError(
+    code: ErrorCodes,
+    node: NodePosition,
+    ...parameters: any[]
+  ): void {
+    this.parentContext.reportEvaluationError(code, node, ...parameters);
+  }
 }
 
 /**

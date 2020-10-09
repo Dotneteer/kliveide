@@ -1,5 +1,5 @@
 import { MacroDefinition, StructDefinition } from "./assembler-types";
-import { AssemblySymbolInfo, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
+import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionValue, ValueInfo } from "./expressions";
 import { FixupEntry } from "./fixups";
 
@@ -7,7 +7,7 @@ import { FixupEntry } from "./fixups";
  * This class represents an assembly module that my contain child
  * modules and symbols.
  */
-export class AssemblyModule {
+export class AssemblyModule implements ISymbolScope {
   constructor(
     public readonly parentModule: AssemblyModule | null,
     private readonly caseSensitive: boolean
@@ -197,7 +197,7 @@ export class AssemblyModule {
     let currentModule: AssemblyModule | null = this;
     while (currentModule) {
       const valueFound = resolveInModule(currentModule, symbol);
-      if (valueFound.value) {
+      if (valueFound) {
         return valueFound;
       }
       currentModule = currentModule.parentModule;
