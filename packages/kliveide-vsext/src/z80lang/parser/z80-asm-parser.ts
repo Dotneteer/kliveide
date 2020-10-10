@@ -373,6 +373,7 @@ export class Z80AsmParser {
         this.tokens.get();
         return <RepeatStatement>{
           type: "RepeatStatement",
+          isBlock: true,
         };
       }
       if (text === "until") {
@@ -383,6 +384,7 @@ export class Z80AsmParser {
         this.tokens.get();
         return <ProcStatement>{
           type: "ProcStatement",
+          isBlock: true,
         };
       }
       if (text === "endp" || text === "pend") {
@@ -1402,6 +1404,7 @@ export class Z80AsmParser {
     if (start.type === TokenType.Repeat) {
       return <RepeatStatement>{
         type: "RepeatStatement",
+        isBlock: true,
       };
     }
     if (start.type === TokenType.Until) {
@@ -1411,6 +1414,7 @@ export class Z80AsmParser {
     if (start.type === TokenType.Proc) {
       return <ProcStatement>{
         type: "ProcStatement",
+        isBlock: true,
       };
     }
     if (start.type === TokenType.Endp) {
@@ -1465,6 +1469,7 @@ export class Z80AsmParser {
     if (start.type === TokenType.Struct) {
       return <StructStatement>{
         type: "StructStatement",
+        isBlock: true,
       };
     }
     if (start.type === TokenType.Ends) {
@@ -1497,6 +1502,7 @@ export class Z80AsmParser {
     this.expectToken(TokenType.RPar, "Z1014");
     return <MacroStatement>{
       type: "MacroStatement",
+      isBlock: true,
       parameters,
     };
   }
@@ -1508,6 +1514,7 @@ export class Z80AsmParser {
   private parseLoopStatement(): PartialZ80AssemblyLine | null {
     return <LoopStatement>{
       type: "LoopStatement",
+      isBlock: true,
       expr: this.getExpression(),
     };
   }
@@ -1519,6 +1526,7 @@ export class Z80AsmParser {
   private parseWhileStatement(): PartialZ80AssemblyLine | null {
     return <WhileStatement>{
       type: "WhileStatement",
+      isBlock: true,
       expr: this.getExpression(),
     };
   }
@@ -1541,6 +1549,7 @@ export class Z80AsmParser {
   private parseIfStatement(): PartialZ80AssemblyLine | null {
     return <IfStatement>{
       type: "IfStatement",
+      isBlock: true,
       expr: this.getExpression(),
     };
   }
@@ -1554,6 +1563,7 @@ export class Z80AsmParser {
     const symbol = this.parseSymbol(parsePoint);
     return <IfUsedStatement>{
       type: "IfUsedStatement",
+      isBlock: true,
       symbol,
     };
   }
@@ -1567,6 +1577,7 @@ export class Z80AsmParser {
     const symbol = this.parseSymbol(parsePoint);
     return <IfNUsedStatement>{
       type: "IfNUsedStatement",
+      isBlock: true,
       symbol,
     };
   }
@@ -1594,6 +1605,7 @@ export class Z80AsmParser {
     }
     return <ModuleStatement>{
       type: "ModuleStatement",
+      isBlock: true,
       identifier,
     };
   }
@@ -1630,6 +1642,7 @@ export class Z80AsmParser {
     }
     return <ForStatement>{
       type: "ForStatement",
+      isBlock: true,
       identifier,
       startExpr,
       toExpr,

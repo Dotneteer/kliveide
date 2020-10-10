@@ -477,7 +477,7 @@ export class TokenStream {
             if (
               text === "defg" ||
               text === "DEFG" ||
-              text == "dg" ||
+              text === "dg" ||
               text === "DG"
             ) {
               phase = LexerPhase.DefgTail;
@@ -628,7 +628,7 @@ export class TokenStream {
 
         // --- This previous case intentionally flows to this label
         case LexerPhase.NumericLiteral1_9:
-          if (isLiteralBreakingChar(ch) || ch === "+" || ch === "-") {
+          if (isLiteralBreakingChar(ch)) {
             return makeToken();
           }
 
@@ -644,9 +644,11 @@ export class TokenStream {
           }
           // --- Test the next 4 characters for octal or hexa prefix
           let phaseSet = false;
+          let breakFound = false;
           for (let i = 0; i < 4; i++) {
             const nextCh = input.ahead(i);
             if (!nextCh || isLiteralBreakingChar(nextCh)) {
+              breakFound = true;
               break;
             }
             if (startIsOctal && isOctalSuffix(nextCh)) {
@@ -664,16 +666,18 @@ export class TokenStream {
             break;
           }
 
-          // --- Test char 5 and 6 for octal prefix
-          for (let i = 4; i < 6; i++) {
-            const nextCh = input.ahead(i);
-            if (isLiteralBreakingChar(nextCh)) {
-              break;
-            }
-            if (startIsOctal && isOctalSuffix(nextCh)) {
-              phase = LexerPhase.OctalLiteralSuffix;
-              phaseSet = true;
-              break;
+          if (!breakFound) {
+            // --- Test char 5 and 6 for octal prefix
+            for (let i = 4; i < 6; i++) {
+              const nextCh = input.ahead(i);
+              if (isLiteralBreakingChar(nextCh)) {
+                break;
+              }
+              if (startIsOctal && isOctalSuffix(nextCh)) {
+                phase = LexerPhase.OctalLiteralSuffix;
+                phaseSet = true;
+                break;
+              }
             }
           }
           if (phaseSet) {
@@ -1564,6 +1568,7 @@ function isIdContinuation(ch: string): boolean {
     ch === "!" ||
     ch === "?" ||
     ch === "#" ||
+    ch === "." ||
     isLetterOrDigit(ch)
   );
 }
@@ -1604,9 +1609,9 @@ function isLiteralBreakingChar(ch: string): boolean {
     !isHexadecimalDigit(ch) &&
     !isHexaSuffix(ch) &&
     !isOctalSuffix(ch) &&
-    ch !== "." &&
-    ch !== "+" &&
-    ch !== "-"
+    ch !== "." //&&
+    //ch !== "+" &&
+    //ch !== "-"
   );
 }
 

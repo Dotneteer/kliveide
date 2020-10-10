@@ -91,10 +91,31 @@ export function testCodeEmit(source: string, ...bytes: number[]): void {
   }
 }
 
+export function testCodeEmitWithOptions(source: string, options: AssemblerOptions, ...bytes: number[]): void {
+  const compiler = new Z80Assembler();
+
+  const output = compiler.compile(source, options);
+  expect(output.errorCount).toBe(0);
+  expect(output.segments.length).toBe(1);
+  expect(output.segments[0].emittedCode.length).toBe(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    expect(output.segments[0].emittedCode[i]).toBe(bytes[i]);
+  }
+}
+
+
 export function codeRaisesError(source: string, code: ErrorCodes): void {
   const compiler = new Z80Assembler();
 
   const output = compiler.compile(source);
+  expect(output.errorCount).toBe(1);
+  expect(output.errors[0].errorCode === code).toBe(true);
+}
+
+export function codeRaisesErrorWithOptions(source: string, options: AssemblerOptions, code: ErrorCodes): void {
+  const compiler = new Z80Assembler();
+
+  const output = compiler.compile(source, options);
   expect(output.errorCount).toBe(1);
   expect(output.errors[0].errorCode === code).toBe(true);
 }

@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import { sum } from "lodash";
 import * as path from "path";
 
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
@@ -46,6 +45,7 @@ import {
   JrInstruction,
   LabelOnlyLine,
   LdInstruction,
+  LoopStatement,
   MacroOrStructInvocation,
   ModelPragma,
   NextRegInstruction,
@@ -214,6 +214,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   setTraceHandler(handler: (message: string) => void): void {
     this._traceHandler = handler;
+  }
+
+  /**
+   * Tests if the current compilation mode is case sensitive.
+   */
+  private get isCaseSensitive(): boolean {
+    return !!this._options?.useCaseSensitiveSymbols;
   }
 
   /**
@@ -740,8 +747,17 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Gets the current loop counter value
    */
   getLoopCounterValue(): ExpressionValue {
-    // TODO: Implement this method;
-    return ExpressionValue.Error;
+    if (this.isInGlobalScope) {
+      this.reportAssemblyError("Z2056", this._currentSourceLine);
+      return ExpressionValue.Error;
+    }
+
+    const scope = this.getTopLocalScope();
+    if (!scope.isLoopScope) {
+      this.reportAssemblyError("Z2056", this._currentSourceLine);
+      return ExpressionValue.Error;
+    }
+    return new ExpressionValue(scope.loopCounter);
   }
 
   /**
@@ -848,7 +864,11 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param asmLine Assembly line with a lable
    */
   private createCurrentPointLabel(asmLine: LabelOnlyLine): void {
-    // TODO: Implement this method
+    this.addSymbol(
+      asmLine.label.name,
+      (asmLine as unknown) as Z80AssemblyLine,
+      new ExpressionValue(this.getCurrentAssemblyAddress())
+    );
   }
 
   /**
@@ -904,7 +924,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         // --- No hanging label, use the current line
         currentLabel = asmLine.label?.name;
       } else {
-        if (asmLine.label) {
+        if (!asmLine.label) {
           // --- No current label, use the hanging label
           currentLabel = this._overflowLabelLine.label?.name;
         } else {
@@ -1023,7 +1043,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processStatement(
           allLines,
           scopeLines,
-          asmLine as Statement,
+          (asmLine as unknown) as Statement,
           currentLabel,
           currentLineIndex
         );
@@ -1663,7 +1683,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): void {
     const assembler = this;
     for (const expr of pragma.values) {
-      var value = this.evaluateExpr(expr);
+      const value = this.evaluateExpr(expr);
       if (value.isValid) {
         if (value.type === ExpressionValueType.String) {
           if (this._options.flexibleDefPragmas) {
@@ -2242,31 +2262,37 @@ export class Z80Assembler extends ExpressionEvaluator {
         // TODO: Implement this
         break;
       case "MacroEndStatement":
-        // TODO: Implement this
+        this.reportAssemblyError(
+          "Z2055",
+          stmt,
+          null,
+          ".endm/.mend",
+          ".if/.ifused/.ifnused"
+        );
         break;
       case "LoopStatement":
-        // TODO: Implement this
+        this.processLoopStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "LoopEndStatement":
-        // TODO: Implement this
+        this.reportAssemblyError("Z2055", stmt, null, ".endl/.lend", ".loop");
         break;
       case "WhileStatement":
         // TODO: Implement this
         break;
       case "WhileEndStatement":
-        // TODO: Implement this
+        this.reportAssemblyError("Z2055", stmt, null, ".endw/.wend", ".while");
         break;
       case "RepeatStatement":
         // TODO: Implement this
         break;
       case "UntilStatement":
-        // TODO: Implement this
+        this.reportAssemblyError("Z2055", stmt, null, ".until", ".repeat");
         break;
       case "ProcStatement":
         // TODO: Implement this
         break;
       case "ProcEndStatement":
-        // TODO: Implement this
+        this.reportAssemblyError("Z2055", stmt, null, ".endp/.pend", ".proc");
         break;
       case "IfStatement":
         // TODO: Implement this
@@ -2278,13 +2304,31 @@ export class Z80Assembler extends ExpressionEvaluator {
         // TODO: Implement this
         break;
       case "ElseStatement":
-        // TODO: Implement this
+        this.reportAssemblyError(
+          "Z2055",
+          stmt,
+          null,
+          ".else",
+          ".if/.ifused/.ifnused"
+        );
         break;
       case "ElseIfStatement":
-        // TODO: Implement this
+        this.reportAssemblyError(
+          "Z2055",
+          stmt,
+          null,
+          ".elseif",
+          ".if/.ifused/.ifnused"
+        );
         break;
       case "EndIfStatement":
-        // TODO: Implement this
+        this.reportAssemblyError(
+          "Z2055",
+          stmt,
+          null,
+          ".endif",
+          ".if/.ifused/.ifnused"
+        );
         break;
       case "BreakStatement":
         // TODO: Implement this
@@ -2296,19 +2340,25 @@ export class Z80Assembler extends ExpressionEvaluator {
         // TODO: Implement this
         break;
       case "ModuleEndStatement":
-        // TODO: Implement this
+        this.reportAssemblyError(
+          "Z2055",
+          stmt,
+          null,
+          ".endmodule/.moduleend",
+          ".module"
+        );
         break;
       case "StructStatement":
         // TODO: Implement this
         break;
       case "StructEndStatement":
-        // TODO: Implement this
+        this.reportAssemblyError("Z2055", stmt, null, ".ends", ".struct");
         break;
       case "LocalStatement":
         // TODO: Implement this
         break;
       case "NextStatement":
-        // TODO: Implement this
+        this.reportAssemblyError("Z2055", stmt, null, ".next", ".for");
         break;
       case "ForStatement":
         // TODO: Implement this
@@ -2316,6 +2366,176 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
   }
 
+  /**
+   * Processes the LOOP statement
+   * @param loop Loop statement
+   * @param allLines All parsed lines
+   * @param scopeLines Lines to process in the current scope
+   * @param currentLineIndex Current line index
+   */
+  private processLoopStatement(
+    loop: LoopStatement,
+    allLines: Z80AssemblyLine[],
+    scopeLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    // --- Search for the end of the loop
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      scopeLines,
+      "LoopEndStatement",
+      ".loop",
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    // --- End found
+    const lastLine = currentLineIndex.index;
+
+    // --- Now, we can process the loop
+    const loopCounter = this.evaluateExprImmediate(loop.expr);
+    if (!loopCounter.isValid) {
+      return;
+    }
+    if (loopCounter.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z2042", loop);
+      return;
+    }
+
+    // --- Check the loop counter
+    var counter = loopCounter.asLong();
+    if (counter >= 0x10000) {
+      this.reportAssemblyError("Z2053", loop);
+      counter = 1;
+    }
+
+    // --- Create a scope for the loop
+    const loopScope = new SymbolScope(null, this.isCaseSensitive);
+    this._currentModule.localScopes.push(loopScope);
+    const errorsBefore = this._output.errorCount;
+
+    for (let i = 0; i < counter; i++) {
+      // --- Create a local scope for the loop body
+      var iterationScope = new SymbolScope(loopScope, this.isCaseSensitive);
+      this._currentModule.localScopes.push(iterationScope);
+      iterationScope.loopCounter = i + 1;
+
+      const loopLineIndex = { index: firstLine + 1 };
+      while (loopLineIndex.index < lastLine) {
+        const curLine = scopeLines[loopLineIndex.index];
+        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        if (iterationScope.breakReached || iterationScope.continueReached) {
+          break;
+        }
+        loopLineIndex.index++;
+      }
+
+      // --- Add the end label to the local scope
+      const endLabel = searchResult.label;
+      if (endLabel) {
+        // --- Add the end label to the loop scope
+        this.addSymbol(
+          endLabel,
+          scopeLines[currentLineIndex.index],
+          new ExpressionValue(this.getCurrentAssemblyAddress())
+        );
+      }
+
+      // --- Clean up the hanging label
+      this._overflowLabelLine = null;
+
+      // --- Fixup the temporary scope over the iteration scope, if there is any
+      const topScope = this.getTopLocalScope();
+      if (topScope !== iterationScope && topScope.isTemporaryScope) {
+        this.fixupSymbols(topScope, false);
+        this._currentModule.localScopes.pop();
+      }
+
+      // --- Fixup the symbols locally
+      this.fixupSymbols(iterationScope, false);
+
+      // --- Remove the local scope
+      this._currentModule.localScopes.pop();
+
+      // --- Check for the maximum number of error
+      if (
+        this._output.errorCount - errorsBefore >=
+        this._options.maxLoopErrorsToReport
+      ) {
+        this.reportAssemblyError("Z2054", loop);
+        break;
+      }
+
+      // --- BREAK reached, exit the loop
+      if (iterationScope.breakReached) {
+        break;
+      }
+    }
+
+    // --- Clean up the loop's scope
+    this._currentModule.localScopes.pop();
+  }
+
+  /**
+   * Searches the assembly lines for the end of the block
+   * @param lines Lines to search in
+   * @param endType Type of end statement
+   * @param currentLineIndex
+   */
+  private searchForEndStatement(
+    lines: Z80AssemblyLine[],
+    endType: Statement["type"],
+    endDisplayName: string,
+    currentLineIndex: { index: number }
+  ): { found: boolean; label?: string } {
+    let endLabel: string | undefined;
+    if (currentLineIndex.index >= lines.length) {
+      return { found: false };
+    }
+
+    // --- Store the start line for error reference
+    const startLine = lines[currentLineIndex.index];
+    currentLineIndex.index++;
+
+    // --- Iterate through lines
+    while (currentLineIndex.index < lines.length) {
+      var curLine = lines[currentLineIndex.index];
+      if (curLine.type === endType) {
+        // --- We have found the end line, get its label
+        return {
+          found: true,
+          label: curLine.label ? curLine.label.name : endLabel,
+        };
+      }
+
+      if (
+        curLine.type === "CommentOnlyLine" ||
+        curLine.type === "LabelOnlyLine"
+      ) {
+        // --- Record the last hanging label
+        endLabel = curLine.label.name;
+      } else {
+        endLabel = undefined;
+        if (((curLine as any) as Statement).isBlock) {
+          var nestedSearch = this.searchForEndStatement(
+            lines,
+            endType,
+            endDisplayName,
+            currentLineIndex
+          );
+          if (!nestedSearch.found) {
+            this.reportAssemblyError("Z2052", startLine, null, endDisplayName);
+            return { found: false };
+          }
+        }
+      }
+      currentLineIndex.index++;
+    }
+    this.reportAssemblyError("Z2052", startLine, null, endDisplayName);
+    return { found: false };
+  }
   // ==========================================================================
   // Z80 instruction processing methods
 
@@ -3382,7 +3602,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
     this.emitByte(opCode);
     this.emitByte(dist);
-}
+  }
 
   /**
    * Emits an indexed operation with the specified operand and operation code
@@ -3882,7 +4102,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (localScope.ownerScope) {
       localScope = localScope.ownerScope;
     }
-    return localScope.isErrorReported(code);
+    return !localScope.isErrorReported(code);
   }
 }
 

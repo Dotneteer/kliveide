@@ -1248,26 +1248,29 @@ export interface InjectOptPragma extends PartialZ80AssemblyLine {
 // ============================================================================
 // Statement syntax nodes
 
+export interface StatementBase extends PartialZ80AssemblyLine {
+  isBlock?: boolean;
+}
+
 /**
  * Represents a macro definition
  */
-export interface MacroStatement extends PartialZ80AssemblyLine {
+export interface MacroStatement extends StatementBase {
   type: "MacroStatement";
-
   parameters: IdentifierNode[];
 }
 
 /**
  * Represents a macro end statement
  */
-export interface MacroEndStatement extends PartialZ80AssemblyLine {
+export interface MacroEndStatement extends StatementBase {
   type: "MacroEndStatement";
 }
 
 /**
  * Represents a .loop statement
  */
-export interface LoopStatement extends PartialZ80AssemblyLine {
+export interface LoopStatement extends StatementBase {
   type: "LoopStatement";
   expr: Expression;
 }
@@ -1275,14 +1278,14 @@ export interface LoopStatement extends PartialZ80AssemblyLine {
 /**
  * Represents a loop end statement
  */
-export interface LoopEndStatement extends PartialZ80AssemblyLine {
+export interface LoopEndStatement extends StatementBase {
   type: "LoopEndStatement";
 }
 
 /**
  * Represents a .while statement
  */
-export interface WhileStatement extends PartialZ80AssemblyLine {
+export interface WhileStatement extends StatementBase {
   type: "WhileStatement";
   expr: Expression;
 }
@@ -1290,21 +1293,21 @@ export interface WhileStatement extends PartialZ80AssemblyLine {
 /**
  * Represents a while end statement
  */
-export interface WhileEndStatement extends PartialZ80AssemblyLine {
+export interface WhileEndStatement extends StatementBase {
   type: "WhileEndStatement";
 }
 
 /**
  * Represents a .repeat statement
  */
-export interface RepeatStatement extends PartialZ80AssemblyLine {
+export interface RepeatStatement extends StatementBase {
   type: "RepeatStatement";
 }
 
 /**
  * Represents an until statement
  */
-export interface UntilStatement extends PartialZ80AssemblyLine {
+export interface UntilStatement extends StatementBase {
   type: "UntilStatement";
   expr: Expression;
 }
@@ -1312,21 +1315,21 @@ export interface UntilStatement extends PartialZ80AssemblyLine {
 /**
  * Represents a .proc statement
  */
-export interface ProcStatement extends PartialZ80AssemblyLine {
+export interface ProcStatement extends StatementBase {
   type: "ProcStatement";
 }
 
 /**
  * Represents a proc end statement
  */
-export interface ProcEndStatement extends PartialZ80AssemblyLine {
+export interface ProcEndStatement extends StatementBase {
   type: "ProcEndStatement";
 }
 
 /**
  * Represents an if statement
  */
-export interface IfStatement extends PartialZ80AssemblyLine {
+export interface IfStatement extends StatementBase {
   type: "IfStatement";
   expr: Expression;
 }
@@ -1334,7 +1337,7 @@ export interface IfStatement extends PartialZ80AssemblyLine {
 /**
  * Represents an ifused statement
  */
-export interface IfUsedStatement extends PartialZ80AssemblyLine {
+export interface IfUsedStatement extends StatementBase {
   type: "IfUsedStatement";
   symbol: Symbol;
 }
@@ -1342,7 +1345,7 @@ export interface IfUsedStatement extends PartialZ80AssemblyLine {
 /**
  * Represents an ifnused statement
  */
-export interface IfNUsedStatement extends PartialZ80AssemblyLine {
+export interface IfNUsedStatement extends StatementBase {
   type: "IfNUsedStatement";
   symbol: Symbol;
 }
@@ -1350,21 +1353,21 @@ export interface IfNUsedStatement extends PartialZ80AssemblyLine {
 /**
  * Represents an else statement
  */
-export interface ElseStatement extends PartialZ80AssemblyLine {
+export interface ElseStatement extends StatementBase {
   type: "ElseStatement";
 }
 
 /**
  * Represents an endif statement
  */
-export interface EndIfStatement extends PartialZ80AssemblyLine {
+export interface EndIfStatement extends StatementBase {
   type: "EndIfStatement";
 }
 
 /**
  * Represents an elseif statement
  */
-export interface ElseIfStatement extends PartialZ80AssemblyLine {
+export interface ElseIfStatement extends StatementBase {
   type: "ElseIfStatement";
   expr: Expression;
 }
@@ -1372,21 +1375,21 @@ export interface ElseIfStatement extends PartialZ80AssemblyLine {
 /**
  * Represents a break statement
  */
-export interface BreakStatement extends PartialZ80AssemblyLine {
+export interface BreakStatement extends StatementBase {
   type: "BreakStatement";
 }
 
 /**
  * Represents a continue statement
  */
-export interface ContinueStatement extends PartialZ80AssemblyLine {
+export interface ContinueStatement extends StatementBase {
   type: "ContinueStatement";
 }
 
 /**
  * Represents a module statement
  */
-export interface ModuleStatement extends PartialZ80AssemblyLine {
+export interface ModuleStatement extends StatementBase {
   type: "ModuleStatement";
   identifier?: IdentifierNode;
 }
@@ -1394,28 +1397,28 @@ export interface ModuleStatement extends PartialZ80AssemblyLine {
 /**
  * Represents a module end statement
  */
-export interface ModuleEndStatement extends PartialZ80AssemblyLine {
+export interface ModuleEndStatement extends StatementBase {
   type: "ModuleEndStatement";
 }
 
 /**
  * Represents a struct statement
  */
-export interface StructStatement extends PartialZ80AssemblyLine {
+export interface StructStatement extends StatementBase {
   type: "StructStatement";
 }
 
 /**
  * Represents a struct statement
  */
-export interface StructEndStatement extends PartialZ80AssemblyLine {
+export interface StructEndStatement extends StatementBase {
   type: "StructEndStatement";
 }
 
 /**
  * Represents a local statement
  */
-export interface LocalStatement extends PartialZ80AssemblyLine {
+export interface LocalStatement extends StatementBase {
   type: "LocalStatement";
   identifiers: IdentifierNode[];
 }
@@ -1423,14 +1426,14 @@ export interface LocalStatement extends PartialZ80AssemblyLine {
 /**
  * Represents a struct statement
  */
-export interface NextStatement extends PartialZ80AssemblyLine {
+export interface NextStatement extends StatementBase {
   type: "NextStatement";
 }
 
 /**
  * Represents a for statement
  */
-export interface ForStatement extends PartialZ80AssemblyLine {
+export interface ForStatement extends StatementBase {
   type: "ForStatement";
   identifier: IdentifierNode;
   startExpr: Expression;
@@ -1441,7 +1444,7 @@ export interface ForStatement extends PartialZ80AssemblyLine {
 /**
  * Represents a field assignment
  */
-export interface FieldAssignment extends PartialZ80AssemblyLine {
+export interface FieldAssignment extends StatementBase {
   type: "FieldAssignment";
   assignment: ByteEmittingPragma;
 }
@@ -1449,7 +1452,7 @@ export interface FieldAssignment extends PartialZ80AssemblyLine {
 /**
  * Represents a macro or struct invokation
  */
-export interface MacroOrStructInvocation extends PartialZ80AssemblyLine {
+export interface MacroOrStructInvocation extends StatementBase {
   type: "MacroOrStructInvocation";
   identifier: IdentifierNode;
   operands: Operand[];

@@ -89,6 +89,11 @@ export type ErrorCodes =
   | "Z2049"
   | "Z2050"
   | "Z2051"
+  | "Z2052"
+  | "Z2053"
+  | "Z2054"
+  | "Z2055"
+  | "Z2056"
 
   | "Z3000"
   | "Z3001"
@@ -175,6 +180,11 @@ export const errorMessages: ErrorText = {
   Z2049: "Bit index should be between 0 and 7. '{0}' is invalid",
   Z2050: "The first operand must be 'a' when using the two-argument form of the ALU operation.",
   Z2051: "The first argument of an 8-bit ALU operation can only be 'a'.",
+  Z2052: "Missing end statement for {0}.",
+  Z2053: "Loop counter cannot be greater than 65535 (#FFFF).",
+  Z2054: "Too many errors detected while compiling a loop, further processing aborted.",
+  Z2055: "Orphan '{0}' statement found without a corresponding '{1}' statement.",
+  Z2056: "$CNT cannot be used outside of loop constructs.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",
