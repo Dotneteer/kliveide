@@ -336,9 +336,8 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
           return evalConditionalOperationValue(this, expr);
         case "CurrentAddressLiteral":
           return new ExpressionValue(this.getCurrentAddress());
-          break;
         case "CurrentCounterLiteral":
-          // TODO: Implement this
+          return this.getLoopCounterValue();
           break;
         case "MacroParameter":
           // TODO: Implement this

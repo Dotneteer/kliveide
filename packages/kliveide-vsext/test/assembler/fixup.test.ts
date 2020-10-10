@@ -2,7 +2,7 @@ import "mocha";
 import * as expect from "expect";
 
 import { Z80Assembler } from "../../src/z80lang/assembler/assembler";
-import { codeRaisesError, testCodeEmit } from "./test-helpers";
+import { testCodeEmit } from "./test-helpers";
 import { ExpressionValueType } from "../../src/z80lang/assembler/expressions";
 
 describe("Assembler - fixups", () => {
