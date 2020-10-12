@@ -1,4 +1,4 @@
-import { CompareBinPragma } from "../parser/tree-nodes";
+import { CompareBinPragma, Statement } from "../parser/tree-nodes";
 import { BinarySegment } from "./assembler-in-out";
 
 /**
@@ -19,6 +19,43 @@ export class DefinitionSection {
     public readonly firstLine: number,
     public readonly lastLine: number
   ) {}
+}
+
+/**
+ * Represents the definition of an IF statement
+ */
+export class IfDefinition {
+  /**
+   * The entire if section
+   */
+  fullSection: DefinitionSection;
+
+  /**
+   * List of IF sections
+   */
+  ifSections: IfSection[] = [];
+
+  /**
+   * Optional ELSE section
+   */
+  elseSection?: IfSection;
+}
+
+/**
+ * Represents a section of an IF definition
+ */
+export class IfSection {
+  constructor(
+    public readonly ifStatement: Statement,
+    firstLine: number,
+    lastLine: number
+  ) {
+    this.section = new DefinitionSection(firstLine, lastLine);
+  }
+  /**
+   * Section boundaries
+   */
+  section: DefinitionSection;
 }
 
 /**

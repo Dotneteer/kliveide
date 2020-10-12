@@ -94,6 +94,12 @@ export type ErrorCodes =
   | "Z2054"
   | "Z2055"
   | "Z2056"
+  | "Z2057"
+  | "Z2058"
+  | "Z2059"
+  | "Z2060"
+  | "Z2061"
+  | "Z2062"
 
   | "Z3000"
   | "Z3001"
@@ -185,6 +191,12 @@ export const errorMessages: ErrorText = {
   Z2054: "Too many errors detected while compiling a loop, further processing aborted.",
   Z2055: "Orphan '{0}' statement found without a corresponding '{1}' statement.",
   Z2056: "$CNT cannot be used outside of loop constructs.",
+  Z2057: "The .step value in a .for-loop cannot be zero.",
+  Z2058: "Variable {0} is already declared, it cannot be used as a .for-loop variable again.",
+  Z2059: ".break cannot be used outside of loop constructs.",
+  Z2060: ".continue cannot be used outside of loop constructs.",
+  Z2061: "The {0} section in .if/.ifused/.ifnused cannot have a label.",
+  Z2062: ".if/.ifused/.ifnused cannot have an {0} section after a detected .else section.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",
