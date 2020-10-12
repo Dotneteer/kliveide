@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { CodeAction } from "vscode";
 
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { InputStream } from "../parser/input-stream";
@@ -12,8 +13,10 @@ import {
   AndInstruction,
   BankPragma,
   BitInstruction,
+  BreakStatement,
   CallInstruction,
   CompareBinPragma,
+  ContinueStatement,
   CpInstruction,
   DecInstruction,
   DefBPragma,
@@ -34,6 +37,11 @@ import {
   Expression,
   FillbPragma,
   FillwPragma,
+  ForStatement,
+  IfLikeStatement,
+  IfNUsedStatement,
+  IfStatement,
+  IfUsedStatement,
   ImInstruction,
   IncBinPragma,
   IncInstruction,
@@ -59,6 +67,7 @@ import {
   PopInstruction,
   Pragma,
   PushInstruction,
+  RepeatStatement,
   ResInstruction,
   RetInstruction,
   RndSeedPragma,
@@ -72,7 +81,9 @@ import {
   SubInstruction,
   TestInstruction,
   TracePragma,
+  UntilStatement,
   VarPragma,
+  WhileStatement,
   XentPragma,
   XorgPragma,
   XorInstruction,
@@ -89,7 +100,13 @@ import {
   SourceFileItem,
   SpectrumModelType,
 } from "./assembler-in-out";
-import { BinaryComparisonInfo, StructDefinition } from "./assembler-types";
+import {
+  BinaryComparisonInfo,
+  DefinitionSection,
+  IfDefinition,
+  IfSection,
+  StructDefinition,
+} from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
 import {
   AssemblySymbolInfo,
@@ -2277,13 +2294,23 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z2055", stmt, null, ".endl/.lend", ".loop");
         break;
       case "WhileStatement":
-        // TODO: Implement this
+        this.processWhileStatement(
+          stmt,
+          allLines,
+          scopeLines,
+          currentLineIndex
+        );
         break;
       case "WhileEndStatement":
         this.reportAssemblyError("Z2055", stmt, null, ".endw/.wend", ".while");
         break;
       case "RepeatStatement":
-        // TODO: Implement this
+        this.processRepeatStatement(
+          stmt,
+          allLines,
+          scopeLines,
+          currentLineIndex
+        );
         break;
       case "UntilStatement":
         this.reportAssemblyError("Z2055", stmt, null, ".until", ".repeat");
@@ -2295,13 +2322,13 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z2055", stmt, null, ".endp/.pend", ".proc");
         break;
       case "IfStatement":
-        // TODO: Implement this
+        this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "IfUsedStatement":
-        // TODO: Implement this
+        this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "IfNUsedStatement":
-        // TODO: Implement this
+        this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "ElseStatement":
         this.reportAssemblyError(
@@ -2331,10 +2358,10 @@ export class Z80Assembler extends ExpressionEvaluator {
         );
         break;
       case "BreakStatement":
-        // TODO: Implement this
+        this.processBreakStatement(stmt);
         break;
       case "ContinueStatement":
-        // TODO: Implement this
+        this.processContinueStatement(stmt);
         break;
       case "ModuleStatement":
         // TODO: Implement this
@@ -2361,9 +2388,126 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z2055", stmt, null, ".next", ".for");
         break;
       case "ForStatement":
-        // TODO: Implement this
+        this.processForStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
     }
+  }
+
+  /**
+   * Processes the WHILE statement
+   * @param whileStmt While statement
+   * @param allLines All parsed lines
+   * @param scopeLines Lines to process in the current scope
+   * @param currentLineIndex Current line index
+   */
+  private processWhileStatement(
+    whileStmt: WhileStatement,
+    allLines: Z80AssemblyLine[],
+    scopeLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    // --- Search for the end of the loop
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      "WhileStatement",
+      scopeLines,
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    // --- End found
+    const lastLine = currentLineIndex.index;
+
+    // --- Create a scope for the loop
+    const loopScope = new SymbolScope(null, this.isCaseSensitive);
+    this._currentModule.localScopes.push(loopScope);
+    const errorsBefore = this._output.errorCount;
+
+    let loopCount = 1;
+    while (true) {
+      // --- Create a local scope for the loop body
+      var iterationScope = new SymbolScope(loopScope, this.isCaseSensitive);
+      this._currentModule.localScopes.push(iterationScope);
+      iterationScope.loopCounter = loopCount;
+
+      // --- Evaluate the loop expression
+      var loopCondition = this.evaluateExprImmediate(whileStmt.expr);
+      if (!loopCondition.isValid) {
+        return;
+      }
+      if (loopCondition.type === ExpressionValueType.String) {
+        this.reportAssemblyError("Z2042", whileStmt);
+        return;
+      }
+
+      // --- Exit if while condition fails
+      if (!loopCondition.asBool()) {
+        break;
+      }
+
+      const loopLineIndex = { index: firstLine + 1 };
+      while (loopLineIndex.index < lastLine) {
+        var curLine = scopeLines[loopLineIndex.index];
+        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        if (iterationScope.breakReached || iterationScope.continueReached) {
+          break;
+        }
+        loopLineIndex.index++;
+      }
+
+      // --- Add the end label to the local scope
+      const endLabel = searchResult.label;
+      if (endLabel) {
+        // --- Add the end label to the loop scope
+        this.addSymbol(
+          endLabel,
+          scopeLines[currentLineIndex.index],
+          new ExpressionValue(this.getCurrentAssemblyAddress())
+        );
+      }
+
+      // --- Clean up the hanging label
+      this._overflowLabelLine = null;
+
+      // --- Fixup the temporary scope over the iteration scope, if there is any
+      const topScope = this.getTopLocalScope();
+      if (topScope !== iterationScope && topScope.isTemporaryScope) {
+        this.fixupSymbols(topScope, false);
+        this._currentModule.localScopes.pop();
+      }
+
+      // --- Fixup the symbols locally
+      this.fixupSymbols(iterationScope, false);
+
+      // --- Remove the local scope
+      this._currentModule.localScopes.pop();
+
+      // --- Check for the maximum number of error
+      if (
+        this._output.errorCount - errorsBefore >=
+        this._options.maxLoopErrorsToReport
+      ) {
+        this.reportAssemblyError("Z2054", whileStmt);
+        break;
+      }
+
+      // --- Increment counter, check loop safety
+      loopCount++;
+      if (loopCount >= 0xffff) {
+        this.reportAssemblyError("Z2053", whileStmt);
+        break;
+      }
+
+      // --- BREAK reached, exit the loop
+      if (iterationScope.breakReached) {
+        break;
+      }
+    }
+
+    // --- Clean up the loop's scope
+    this._currentModule.localScopes.pop();
   }
 
   /**
@@ -2382,9 +2526,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
     const searchResult = this.searchForEndStatement(
+      "LoopStatement",
       scopeLines,
-      "LoopEndStatement",
-      ".loop",
       currentLineIndex
     );
     if (!searchResult.found) {
@@ -2479,21 +2622,595 @@ export class Z80Assembler extends ExpressionEvaluator {
   }
 
   /**
+   * Processes the REPEAT statement
+   * @param repeatStmt While statement
+   * @param allLines All parsed lines
+   * @param scopeLines Lines to process in the current scope
+   * @param currentLineIndex Current line index
+   */
+  private processRepeatStatement(
+    repeatStmt: RepeatStatement,
+    allLines: Z80AssemblyLine[],
+    scopeLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    // --- Search for the end of the loop
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      "RepeatStatement",
+      scopeLines,
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    // --- End found
+    const lastLine = currentLineIndex.index;
+    const untilStmt = (scopeLines[lastLine] as unknown) as UntilStatement;
+
+    // --- Create a scope for the loop
+    const loopScope = new SymbolScope(null, this.isCaseSensitive);
+    this._currentModule.localScopes.push(loopScope);
+    const errorsBefore = this._output.errorCount;
+
+    let loopCount = 1;
+    let condition = false;
+    do {
+      // --- Create a local scope for the loop body
+      var iterationScope = new SymbolScope(loopScope, this.isCaseSensitive);
+      this._currentModule.localScopes.push(iterationScope);
+      iterationScope.loopCounter = loopCount;
+
+      // --- Evaluate the loop expression
+      const loopLineIndex = { index: firstLine + 1 };
+      while (loopLineIndex.index < lastLine) {
+        var curLine = scopeLines[loopLineIndex.index];
+        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        if (iterationScope.breakReached || iterationScope.continueReached) {
+          break;
+        }
+        loopLineIndex.index++;
+      }
+
+      // --- Add the end label to the local scope
+      const endLabel = searchResult.label;
+      if (endLabel) {
+        // --- Add the end label to the loop scope
+        this.addSymbol(
+          endLabel,
+          scopeLines[currentLineIndex.index],
+          new ExpressionValue(this.getCurrentAssemblyAddress())
+        );
+      }
+
+      // --- Clean up the hanging label
+      this._overflowLabelLine = null;
+
+      // --- Fixup the temporary scope over the iteration scope, if there is any
+      const topScope = this.getTopLocalScope();
+      if (topScope !== iterationScope && topScope.isTemporaryScope) {
+        this.fixupSymbols(topScope, false);
+        this._currentModule.localScopes.pop();
+      }
+
+      // --- Fixup the symbols locally
+      this.fixupSymbols(iterationScope, false);
+
+      // --- Remove the local scope
+      this._currentModule.localScopes.pop();
+
+      // --- Check for the maximum number of error
+      if (
+        this._output.errorCount - errorsBefore >=
+        this._options.maxLoopErrorsToReport
+      ) {
+        this.reportAssemblyError("Z2054", repeatStmt);
+        break;
+      }
+
+      // --- Evaluate the loop expression
+      const loopExitCondition = this.evaluateExprImmediate(untilStmt.expr);
+      if (!loopExitCondition.isValid) {
+        return;
+      }
+      if (loopExitCondition.type === ExpressionValueType.String) {
+        this.reportAssemblyError("Z2042", untilStmt);
+        return;
+      }
+      condition = loopExitCondition.asBool();
+
+      // --- Increment counter, check loop safety
+      loopCount++;
+      if (loopCount >= 0xffff) {
+        this.reportAssemblyError("Z2053", repeatStmt);
+        break;
+      }
+
+      // --- BREAK reached, exit the loop
+      if (iterationScope.breakReached) {
+        break;
+      }
+    } while (!condition);
+
+    // --- Clean up the loop's scope
+    this._currentModule.localScopes.pop();
+  }
+
+  /**
+   * Processes the FOR statement
+   * @param forStmt While statement
+   * @param allLines All parsed lines
+   * @param scopeLines Lines to process in the current scope
+   * @param currentLineIndex Current line index
+   */
+  private processForStatement(
+    forStmt: ForStatement,
+    allLines: Z80AssemblyLine[],
+    scopeLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    // --- Search for the end of the loop
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      "ForStatement",
+      scopeLines,
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    // --- End found
+    const lastLine = currentLineIndex.index;
+
+    // --- Evaluate FROM, TO, and STEP expressions
+    const fromValue = this.evaluateExprImmediate(forStmt.startExpr);
+    if (!fromValue.isValid) {
+      return;
+    }
+    if (fromValue.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z2042", forStmt);
+      return;
+    }
+
+    const toValue = this.evaluateExprImmediate(forStmt.toExpr);
+    if (!toValue.isValid) {
+      return;
+    }
+    if (toValue.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z2042", forStmt);
+      return;
+    }
+
+    let stepValue = new ExpressionValue(1);
+    if (forStmt.stepExpr) {
+      stepValue = this.evaluateExprImmediate(forStmt.stepExpr);
+      if (!stepValue.isValid) {
+        return;
+      }
+      if (stepValue.type === ExpressionValueType.String) {
+        this.reportAssemblyError("Z2042", forStmt);
+        return;
+      }
+      if (Math.abs(stepValue.asReal()) < Number.EPSILON) {
+        this.reportAssemblyError("Z2057", forStmt);
+        return;
+      }
+    }
+
+    // --- Check the FOR variable
+    const forVariable = forStmt.identifier.name;
+    if (this.variableExists(forVariable)) {
+      this.reportAssemblyError("Z2058", forStmt, null, forVariable);
+      return;
+    }
+
+    // --- Create a scope for the loop
+    const loopScope = new SymbolScope(null, this.isCaseSensitive);
+    this._currentModule.localScopes.push(loopScope);
+    const errorsBefore = this._output.errorCount;
+
+    // --- Init the FOR variable
+    loopScope.addSymbol(
+      forVariable,
+      AssemblySymbolInfo.createVar(forVariable, fromValue)
+    );
+
+    const isIntLoop =
+      (fromValue.type === ExpressionValueType.Bool ||
+        fromValue.type === ExpressionValueType.Integer) &&
+      (toValue.type === ExpressionValueType.Bool ||
+        toValue.type === ExpressionValueType.Integer) &&
+      (stepValue.type === ExpressionValueType.Bool ||
+        stepValue.type === ExpressionValueType.Integer);
+
+    let loopIntValue = fromValue.asLong();
+    const endIntValue = toValue.asLong();
+    const incIntValue = stepValue.asLong();
+    let loopRealValue = fromValue.asReal();
+    const endRealValue = toValue.asReal();
+    const incRealValue = stepValue.asReal();
+
+    let loopCount = 0;
+    while (true) {
+      // --- Check the loop's exit condition
+      if (isIntLoop) {
+        if (incIntValue > 0 && loopIntValue > endIntValue) {
+          break;
+        }
+        if (incIntValue < 0 && loopIntValue < endIntValue) {
+          break;
+        }
+      } else {
+        if (incRealValue > 0 && loopRealValue > endRealValue) {
+          break;
+        }
+        if (incRealValue < 0 && loopRealValue < endRealValue) {
+          break;
+        }
+      }
+
+      // --- Increment counter, check loop safety
+      loopCount++;
+      if (loopCount >= 0xffff) {
+        this.reportAssemblyError("Z2053", forStmt);
+        break;
+      }
+
+      // --- Create a local scope for the loop body
+      var iterationScope = new SymbolScope(loopScope, this.isCaseSensitive);
+      this._currentModule.localScopes.push(iterationScope);
+      iterationScope.loopCounter = loopCount;
+
+      // --- Evaluate the loop expression
+      const loopLineIndex = { index: firstLine + 1 };
+      while (loopLineIndex.index < lastLine) {
+        var curLine = scopeLines[loopLineIndex.index];
+        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        if (iterationScope.breakReached || iterationScope.continueReached) {
+          break;
+        }
+        loopLineIndex.index++;
+      }
+
+      // --- Add the end label to the local scope
+      const endLabel = searchResult.label;
+      if (endLabel) {
+        // --- Add the end label to the loop scope
+        this.addSymbol(
+          endLabel,
+          scopeLines[currentLineIndex.index],
+          new ExpressionValue(this.getCurrentAssemblyAddress())
+        );
+      }
+
+      // --- Clean up the hanging label
+      this._overflowLabelLine = null;
+
+      // --- Fixup the temporary scope over the iteration scope, if there is any
+      const topScope = this.getTopLocalScope();
+      if (topScope !== iterationScope && topScope.isTemporaryScope) {
+        this.fixupSymbols(topScope, false);
+        this._currentModule.localScopes.pop();
+      }
+
+      // --- Fixup the symbols locally
+      this.fixupSymbols(iterationScope, false);
+
+      // --- Remove the local scope
+      this._currentModule.localScopes.pop();
+
+      // --- Check for the maximum number of error
+      if (
+        this._output.errorCount - errorsBefore >=
+        this._options.maxLoopErrorsToReport
+      ) {
+        this.reportAssemblyError("Z2054", forStmt);
+        break;
+      }
+
+      // --- BREAK reached, exit the loop
+      if (iterationScope.breakReached) {
+        break;
+      }
+
+      // --- Increment cycle variable
+      if (isIntLoop) {
+        loopIntValue += incIntValue;
+        loopScope.getSymbol(forVariable).value = new ExpressionValue(
+          loopIntValue
+        );
+      } else {
+        loopRealValue += incRealValue;
+        loopScope.getSymbol(forVariable).value = new ExpressionValue(
+          loopRealValue
+        );
+      }
+    }
+
+    // --- Clean up the loop's scope
+    this._currentModule.localScopes.pop();
+  }
+
+  /**
+   * Processes a BREAK statement
+   * @param breakStmt Break statement
+   */
+  private processBreakStatement(breakStmt: BreakStatement): void {
+    if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
+      this.reportAssemblyError("Z2059", breakStmt);
+      return;
+    }
+    this.getTopLocalScope().breakReached = true;
+  }
+
+  /**
+   * Processes a CONTINUE statement
+   * @param continueStmt Break statement
+   */
+  private processContinueStatement(continueStmt: ContinueStatement): void {
+    if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
+      this.reportAssemblyError("Z2060", continueStmt);
+      return;
+    }
+    this.getTopLocalScope().continueReached = true;
+  }
+
+  /**
+   * Processes the IF/IFUSED/IFNUSED statement
+   * @param ifStmt IF statement
+   * @param allLines All parsed lines
+   * @param scopeLines Lines to process in the current scope
+   * @param currentLineIndex Current line index
+   */
+  private processIfStatement(
+    ifStmt: IfLikeStatement,
+    allLines: Z80AssemblyLine[],
+    scopeLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    // --- Map the sections of IF
+    const ifDef = this.getIfSections(ifStmt, scopeLines, currentLineIndex);
+    if (!ifDef.definition) {
+      return;
+    }
+
+    // --- Process the IF definition
+    let sectionToCompile: IfSection | undefined;
+    for (const ifSection of ifDef.definition.ifSections) {
+      // --- Evaluate the condition
+      let conditionValue: ExpressionValue;
+      if (ifSection.ifStatement.type === "ElseIfStatement") {
+        conditionValue = this.evaluateExprImmediate(ifSection.ifStatement.expr);
+      } else {
+        switch (ifStmt.type) {
+          case "IfStatement":
+            conditionValue = this.evaluateExprImmediate(ifStmt.expr);
+            break;
+          case "IfUsedStatement":
+          case "IfNUsedStatement":
+            const idSymbol = ifStmt.symbol;
+            const valueInfo = this.getSymbolValue(
+              idSymbol.identifier.name,
+              idSymbol.startsFromGlobal
+            );
+            var isUsed =
+              valueInfo && valueInfo.usageInfo && valueInfo.usageInfo.isUsed || false;
+            conditionValue = new ExpressionValue(
+              ifStmt.type === "IfUsedStatement" ? isUsed : !isUsed
+            );
+            break;
+          default:
+            // --- Just for the sake of completeness
+            conditionValue = new ExpressionValue(false);
+            break;
+        }
+      }
+
+      // --- Handle evaluation errors
+      if (!conditionValue.isValid) {
+        continue;
+      }
+      if (conditionValue.type === ExpressionValueType.String) {
+        this.reportAssemblyError("Z2042", ifSection.ifStatement);
+        continue;
+      }
+
+      // --- Check the condition
+      if (conditionValue.asBool()) {
+        sectionToCompile = ifSection;
+      }
+    }
+
+    // --- Check if there is any section to compile
+    sectionToCompile = sectionToCompile ?? ifDef.definition.elseSection;
+    if (!sectionToCompile) {
+      // --- No matching IF, ELIF, and no ELSE, so there's nothing to emit
+      return;
+    }
+
+    // --- Emit the matching section
+    let loopLineIndex = { index: sectionToCompile.section.firstLine + 1 };
+    while (loopLineIndex.index < sectionToCompile.section.lastLine) {
+      var curLine = scopeLines[loopLineIndex.index];
+      this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+      loopLineIndex.index++;
+    }
+
+    // --- Add the end label to the local scope
+    if (ifDef.label) {
+      // --- Add the end label to the loop scope
+      this.addSymbol(
+        ifDef.label,
+        scopeLines[currentLineIndex.index],
+        new ExpressionValue(this.getCurrentAssemblyAddress())
+      );
+    }
+
+    // --- Clean up the hanging label
+    this._overflowLabelLine = null;
+  }
+
+  /**
+   * Collects the structural information of an IF statement and makes fundamental
+   * syntax checks
+   * @param ifStmt IF statement
+   * @param lines Parsed assembly lines
+   * @param currentLineIndex Index of the IF defintion line
+   */
+  private getIfSections(
+    ifStmt: IfLikeStatement,
+    lines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): {
+    definition: IfDefinition | null;
+    label?: string;
+  } {
+    let endLabel: string | undefined;
+    if (currentLineIndex.index >= lines.length) {
+      return { definition: null };
+    }
+
+    const ifDef = new IfDefinition();
+    const firstLine = currentLineIndex.index;
+    let sectionStart = firstLine;
+    let sectionStmt = (lines[sectionStart] as unknown) as Statement;
+    let elseDetected = false;
+    let errorDetected = false;
+    currentLineIndex.index++;
+
+    // --- Iterate through lines
+    while (currentLineIndex.index < lines.length) {
+      const curLine = (lines[currentLineIndex.index] as unknown) as Statement;
+
+      // --- Check for ENDIF
+      if (curLine.type === "EndIfStatement") {
+        // --- We have found the end line, get its label
+        endLabel = curLine.label ? curLine.label.name : endLabel;
+        if (elseDetected) {
+          // --- Store the ELSE section
+          ifDef.elseSection = new IfSection(
+            null,
+            sectionStart,
+            currentLineIndex.index
+          );
+        } else {
+          // --- Store the IF/ELIF section
+          ifDef.ifSections.push(
+            new IfSection(sectionStmt, sectionStart, currentLineIndex.index)
+          );
+        }
+
+        // --- Calculate the entire IF section and return with it
+        ifDef.fullSection = new DefinitionSection(
+          firstLine,
+          currentLineIndex.index
+        );
+        return errorDetected
+          ? { definition: null }
+          : { definition: ifDef, label: endLabel };
+      }
+
+      // --- Check for ELIF section
+      if (curLine.type === "ElseIfStatement") {
+        endLabel = curLine.label ? curLine.label.name : endLabel;
+        if (endLabel) {
+          this.reportAssemblyError("Z2061", sectionStmt, null, ".elif");
+        }
+        if (elseDetected) {
+          errorDetected = true;
+          this.reportAssemblyError("Z2062", sectionStmt, null, ".elif");
+        } else {
+          // --- Store the previous section
+          ifDef.ifSections.push(
+            new IfSection(sectionStmt, sectionStart, currentLineIndex.index)
+          );
+          sectionStmt = curLine;
+          sectionStart = currentLineIndex.index;
+        }
+      }
+
+      // --- Check for ELSE section
+      else if (curLine.type === "ElseStatement") {
+        endLabel = curLine.label ? curLine.label.name : endLabel;
+        if (endLabel) {
+          this.reportAssemblyError("Z2061", sectionStmt, null, ".else");
+        }
+        if (elseDetected) {
+          errorDetected = true;
+          this.reportAssemblyError("Z2062", sectionStmt, null, ".else");
+        } else {
+          // --- Store the previous section
+          ifDef.ifSections.push(
+            new IfSection(sectionStmt, sectionStart, currentLineIndex.index)
+          );
+          sectionStart = currentLineIndex.index;
+        }
+        elseDetected = true;
+      }
+
+      if (
+        (curLine as any).type === "LabelOnlyLine" ||
+        (curLine as any).type === "CommentOnlyLine"
+      ) {
+        // --- Record the last hanging label
+        endLabel = curLine.label ? curLine.label.name : endLabel;
+      } else {
+        endLabel = null;
+        if (curLine.isBlock) {
+          // --- Search for the end of an embedded block statement
+          const searchResult = this.searchForEndStatement(
+            curLine.type,
+            lines,
+            currentLineIndex
+          );
+          if (!searchResult.found) {
+            this.reportAssemblyError(
+              "Z2052",
+              lines[firstLine],
+              null,
+              ".if/.ifused/.ifnused"
+            );
+            return { definition: null };
+          }
+        }
+      }
+      currentLineIndex.index++;
+    }
+    this.reportAssemblyError(
+      "Z2052",
+      lines[firstLine],
+      null,
+      ".if/.ifused/.ifnused"
+    );
+    return { definition: null };
+  }
+
+  /**
    * Searches the assembly lines for the end of the block
+   * @param searchType Line type to search for
    * @param lines Lines to search in
    * @param endType Type of end statement
    * @param currentLineIndex
    */
   private searchForEndStatement(
+    searchType: Statement["type"],
     lines: Z80AssemblyLine[],
-    endType: Statement["type"],
-    endDisplayName: string,
     currentLineIndex: { index: number }
   ): { found: boolean; label?: string } {
     let endLabel: string | undefined;
     if (currentLineIndex.index >= lines.length) {
       return { found: false };
     }
+
+    const endStmt = this.getEndStatementInfo(searchType);
+    if (!endStmt) {
+      return { found: false };
+    }
+
+    const endType = endStmt.type;
+    const endDisplayName = endStmt.displayName;
 
     // --- Store the start line for error reference
     const startLine = lines[currentLineIndex.index];
@@ -2520,9 +3237,8 @@ export class Z80Assembler extends ExpressionEvaluator {
         endLabel = undefined;
         if (((curLine as any) as Statement).isBlock) {
           var nestedSearch = this.searchForEndStatement(
+            ((curLine as any) as Statement).type,
             lines,
-            endType,
-            endDisplayName,
             currentLineIndex
           );
           if (!nestedSearch.found) {
@@ -2536,6 +3252,73 @@ export class Z80Assembler extends ExpressionEvaluator {
     this.reportAssemblyError("Z2052", startLine, null, endDisplayName);
     return { found: false };
   }
+
+  /**
+   * Gets information about the end of a statement
+   * @param stmtType Statement to check
+   */
+  private getEndStatementInfo(
+    stmtType: Statement["type"]
+  ): { type: Statement["type"]; displayName: string } | null {
+    let type: Statement["type"] | undefined;
+    let displayName: string | undefined;
+    switch (stmtType) {
+      case "MacroStatement":
+        type = "MacroEndStatement";
+        displayName = ".macro";
+        break;
+      case "LoopStatement":
+        type = "LoopEndStatement";
+        displayName = ".loop";
+        break;
+      case "WhileStatement":
+        type = "WhileEndStatement";
+        displayName = ".while";
+        break;
+      case "RepeatStatement":
+        type = "UntilStatement";
+        displayName = ".repeat";
+        break;
+      case "ForStatement":
+        type = "NextStatement";
+        displayName = ".for";
+        break;
+      case "IfStatement":
+        type = "EndIfStatement";
+        displayName = ".if";
+        break;
+      case "IfUsedStatement":
+        type = "EndIfStatement";
+        displayName = ".ifused";
+        break;
+      case "IfNUsedStatement":
+        type = "EndIfStatement";
+        displayName = ".infused";
+        break;
+      case "ModuleStatement":
+        type = "ModuleEndStatement";
+        displayName = ".module";
+        break;
+      case "ModuleStatement":
+        type = "ModuleEndStatement";
+        displayName = ".module";
+        break;
+      case "ProcStatement":
+        type = "ProcEndStatement";
+        displayName = ".proc";
+        break;
+      case "StructStatement":
+        type = "StructEndStatement";
+        displayName = ".struct";
+        break;
+    }
+
+    if (!type || !displayName) {
+      return null;
+    }
+    return { type, displayName };
+  }
+
   // ==========================================================================
   // Z80 instruction processing methods
 

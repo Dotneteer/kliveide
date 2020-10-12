@@ -1,15 +1,11 @@
 import "mocha";
 import * as expect from "expect";
 
-import {
-  codeRaisesError,
-  testCodeEmit,
-  testCodeEmitWithOptions,
-} from "./test-helpers";
+import { codeRaisesError, testCodeEmit } from "./test-helpers";
 import { AssemblerOptions } from "../../src/z80lang/assembler/assembler-in-out";
 import { Z80Assembler } from "../../src/z80lang/assembler/assembler";
 
-describe("Assembler - loops", () => {
+describe("Assembler - .loop", () => {
   it("ent - fails in loop", () => {
     codeRaisesError(
       `

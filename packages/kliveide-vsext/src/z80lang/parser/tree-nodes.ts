@@ -138,6 +138,8 @@ export type ByteEmittingPragma =
   | DefGPragma
   | DefGxPragma;
 
+export type IfLikeStatement = IfStatement | IfUsedStatement | IfNUsedStatement;
+
 export type Statement =
   | MacroStatement
   | MacroEndStatement
@@ -149,9 +151,7 @@ export type Statement =
   | UntilStatement
   | ProcStatement
   | ProcEndStatement
-  | IfStatement
-  | IfUsedStatement
-  | IfNUsedStatement
+  | IfLikeStatement
   | ElseStatement
   | ElseIfStatement
   | EndIfStatement
