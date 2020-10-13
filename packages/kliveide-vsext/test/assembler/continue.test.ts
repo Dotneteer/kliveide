@@ -2,75 +2,74 @@ import "mocha";
 
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
-describe("Assembler - .break", () => {
-  it("break - fails in global scope", () => {
+describe("Assembler - .continue", () => {
+  it("fails in global scope", () => {
     codeRaisesError(
       `
       ld a,b
-      .break
+      .continue
     `,
-      "Z2059"
+      "Z2060"
     );
   });
 
-  it("break - fails in non-loop scope", () => {
+  it("fails in non-loop scope", () => {
     codeRaisesError(
       `
     ld a,b
     .if true
-      .break
+      .continue
     .endif
     `,
-      "Z2059"
+      "Z2060"
     );
   });
 
-  it("break - in loop scope", () => {
+  it("in loop scope", () => {
     testCodeEmit(
       `
     ld a,b
     .loop 3
-        .break
+      .continue
     .endl
     `,
       0x78
     );
   });
 
-  it("break - in repeat scope", () => {
+  it("in repeat scope", () => {
     testCodeEmit(
       `
     ld a,b
     .repeat
-        .break
+      .continue
     .until true
     `,
       0x78
     );
   });
 
-  it("break - in while scope", () => {
+  it("in while scope", () => {
     testCodeEmit(
       `
     ld a,b
     exit = false
     .while !exit
-        .break
-        exit = true;
+      exit = true;
+      .continue
     .endw
     `,
       0x78
     );
   });
 
-  it("break - in for scope", () => {
+  it("in for scope", () => {
     testCodeEmit(
       `
     ld a,b
     .for _i = 0 .to 3
-        .break
-    .next
-    `,
+      .continue
+    .next    `,
       0x78
     );
   });
@@ -79,63 +78,16 @@ describe("Assembler - .break", () => {
     testCodeEmit(
       `
     .loop 5
-      .if $cnt == 4
-        .break
-      .endif
+    .if $cnt == 4
+      .continue
+    .endif
       .db $cnt
     .endl
     `,
       0x01,
       0x02,
-      0x03
-    );
-  });
-
-  it("emit - with repeat", () => {
-    testCodeEmit(
-      `
-    .repeat
-      .if $cnt == 4
-        .break
-      .endif
-      .db $cnt
-    .until $cnt == 5
-    `,
-      0x01,
-      0x02,
-      0x03
-    );
-  });
-
-  it("emit - with while", () => {
-    testCodeEmit(
-      `
-    .while $cnt < 5
-      .if $cnt == 4
-        .break
-      .endif
-      .db $cnt
-    .endw
-    `,
-      0x01,
-      0x02,
-      0x03
-    );
-  });
-
-  it("emit - with for", () => {
-    testCodeEmit(
-      `
-    .for value = 1 to 5
-      .if value == 4
-        .break
-      .endif
-      .db value
-    .next
-    `,
-      0x01,
-      0x02,
-      0x03
+      0x03,
+      0x05
     );
   });
 
@@ -145,11 +97,11 @@ describe("Assembler - .break", () => {
     .loop 2
       ld bc,#1234
       .loop 3
-          inc a
-          .if $cnt == 2
-            .break;
-          .endif
-          nop
+        inc a
+        .if $cnt == 2
+          .continue;
+        .endif
+        nop
       .endl
     .endl
     `,
@@ -159,12 +111,67 @@ describe("Assembler - .break", () => {
       0x3c,
       0x00,
       0x3c,
+      0x3c,
+      0x00,
       0x01,
       0x34,
       0x12,
       0x3c,
       0x00,
-      0x3c
+      0x3c,
+      0x3c,
+      0x00
+    );
+  });
+
+  it("emit - with repeat", () => {
+    testCodeEmit(
+      `
+    .repeat
+      .if $cnt == 4
+        .continue
+      .endif
+      .db $cnt
+    .until $cnt == 5
+    `,
+      0x01,
+      0x02,
+      0x03,
+      0x05
+    );
+  });
+
+  it("emit - with while", () => {
+    testCodeEmit(
+      `
+    .while $cnt <= 5 
+      .if $cnt == 4
+        .continue
+      .endif
+      .db $cnt
+    .endw
+    `,
+      0x01,
+      0x02,
+      0x03,
+      0x05
+    );
+  });
+
+  it("emit - with for", () => {
+    testCodeEmit(
+      `
+    .for value = 1 to 5
+      .if value == 4
+        .continue
+      .endif
+      .db value
+    .next
+    `,
+      0x01,
+      0x02,
+      0x03,
+      0x05
     );
   });
 
@@ -175,12 +182,12 @@ describe("Assembler - .break", () => {
       ld bc,#1234
       counter = 0
       .repeat
+        counter = counter + 1
         inc a
         .if $cnt == 2
-          .break;
+          .continue;
         .endif
         nop
-        counter = counter + 1
       .until counter == 3
     .endl
     `,
@@ -190,12 +197,16 @@ describe("Assembler - .break", () => {
       0x3c,
       0x00,
       0x3c,
+      0x3c,
+      0x00,
       0x01,
       0x34,
       0x12,
       0x3c,
       0x00,
-      0x3c
+      0x3c,
+      0x3c,
+      0x00
     );
   });
 
@@ -206,12 +217,12 @@ describe("Assembler - .break", () => {
       ld bc,#1234
       counter = 0
       .while counter < 3
+        counter = counter + 1
         inc a
         .if $cnt == 2
-          .break;
+          .continue;
         .endif
         nop
-        counter = counter + 1
       .endw
     .endl
     `,
@@ -221,12 +232,16 @@ describe("Assembler - .break", () => {
       0x3c,
       0x00,
       0x3c,
+      0x3c,
+      0x00,
       0x01,
       0x34,
       0x12,
       0x3c,
       0x00,
-      0x3c
+      0x3c,
+      0x3c,
+      0x00
     );
   });
 
@@ -238,7 +253,7 @@ describe("Assembler - .break", () => {
       .for _i = 1 to 3
         inc a
         .if $cnt == 2
-          .break;
+          .continue;
         .endif
         nop
       .next
@@ -250,12 +265,16 @@ describe("Assembler - .break", () => {
       0x3c,
       0x00,
       0x3c,
+      0x3c,
+      0x00,
       0x01,
       0x34,
       0x12,
       0x3c,
       0x00,
-      0x3c
+      0x3c,
+      0x3c,
+      0x00
     );
   });
 });

@@ -100,6 +100,12 @@ export type ErrorCodes =
   | "Z2060"
   | "Z2061"
   | "Z2062"
+  | "Z2063"
+  | "Z2064"
+  | "Z2065"
+  | "Z2066"
+  | "Z2067"
+  | "Z2068"
 
   | "Z3000"
   | "Z3001"
@@ -197,6 +203,12 @@ export const errorMessages: ErrorText = {
   Z2060: ".continue cannot be used outside of loop constructs.",
   Z2061: "The {0} section in .if/.ifused/.ifnused cannot have a label.",
   Z2062: ".if/.ifused/.ifnused cannot have an {0} section after a detected .else section.",
+  Z2063: "You cannot define a local symbol with a temporary name ({0}).",
+  Z2064: "This local symbol is already declared: ({0}).",
+  Z2065: ".local can be used only within .proc",
+  Z2066: "You cannot define a module without a name.",
+  Z2067: "You cannot define a module with a temporary name ({0}).",
+  Z2068: "Module with name '{0}' already exists.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",
