@@ -53,9 +53,11 @@ import {
   JrInstruction,
   LabelOnlyLine,
   LdInstruction,
+  LocalStatement,
   LoopStatement,
   MacroOrStructInvocation,
   ModelPragma,
+  ModuleStatement,
   NextRegInstruction,
   NodePosition,
   Operand,
@@ -66,6 +68,7 @@ import {
   PartialZ80AssemblyLine,
   PopInstruction,
   Pragma,
+  ProcStatement,
   PushInstruction,
   RepeatStatement,
   ResInstruction,
@@ -1160,13 +1163,11 @@ export class Z80Assembler extends ExpressionEvaluator {
         const tempsScope = this.getTopLocalScope();
         this.fixupSymbols(tempsScope, false);
         this._currentModule.localScopes.pop();
+        lookup = getSymbols();
       }
     } else {
       // --- Create a new temporary scope
-      const newScope = new SymbolScope(
-        null,
-        this._options?.useCaseSensitiveSymbols ?? false
-      );
+      const newScope = new SymbolScope(null, this.isCaseSensitive);
       newScope.isTemporaryScope = true;
       this._currentModule.localScopes.push(newScope);
       if (symbolIsTemporary) {
@@ -2316,7 +2317,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z2055", stmt, null, ".until", ".repeat");
         break;
       case "ProcStatement":
-        // TODO: Implement this
+        this.processProcStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "ProcEndStatement":
         this.reportAssemblyError("Z2055", stmt, null, ".endp/.pend", ".proc");
@@ -2364,7 +2365,13 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processContinueStatement(stmt);
         break;
       case "ModuleStatement":
-        // TODO: Implement this
+        this.processModuleStatement(
+          stmt,
+          label,
+          allLines,
+          scopeLines,
+          currentLineIndex
+        );
         break;
       case "ModuleEndStatement":
         this.reportAssemblyError(
@@ -2382,7 +2389,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z2055", stmt, null, ".ends", ".struct");
         break;
       case "LocalStatement":
-        // TODO: Implement this
+        this.processLocalStatement(stmt);
         break;
       case "NextStatement":
         this.reportAssemblyError("Z2055", stmt, null, ".next", ".for");
@@ -2697,9 +2704,6 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Fixup the symbols locally
       this.fixupSymbols(iterationScope, false);
 
-      // --- Remove the local scope
-      this._currentModule.localScopes.pop();
-
       // --- Check for the maximum number of error
       if (
         this._output.errorCount - errorsBefore >=
@@ -2726,6 +2730,9 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z2053", repeatStmt);
         break;
       }
+
+      // --- Remove the local scope
+      this._currentModule.localScopes.pop();
 
       // --- BREAK reached, exit the loop
       if (iterationScope.breakReached) {
@@ -2996,7 +3003,10 @@ export class Z80Assembler extends ExpressionEvaluator {
               idSymbol.startsFromGlobal
             );
             var isUsed =
-              valueInfo && valueInfo.usageInfo && valueInfo.usageInfo.isUsed || false;
+              (valueInfo &&
+                valueInfo.usageInfo &&
+                valueInfo.usageInfo.isUsed) ||
+              false;
             conditionValue = new ExpressionValue(
               ifStmt.type === "IfUsedStatement" ? isUsed : !isUsed
             );
@@ -3188,6 +3198,213 @@ export class Z80Assembler extends ExpressionEvaluator {
   }
 
   /**
+   * Processes the LOOP statement
+   * @param proc Loop statement
+   * @param allLines All parsed lines
+   * @param scopeLines Lines to process in the current scope
+   * @param currentLineIndex Current line index
+   */
+  private processProcStatement(
+    proc: ProcStatement,
+    allLines: Z80AssemblyLine[],
+    scopeLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    // --- Search for the end of the proc
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      "ProcStatement",
+      scopeLines,
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    // --- End found
+    const lastLine = currentLineIndex.index;
+
+    // --- Create a scope for the proc
+    const procScope = new SymbolScope(null, this.isCaseSensitive);
+    procScope.isLoopScope = false;
+    procScope.isProcScope = true;
+    this._currentModule.localScopes.push(procScope);
+
+    // --- Collect and process LOCAL statements
+
+    for (let line = firstLine + 1; line < lastLine; line++) {
+      const localLine = scopeLines[line];
+      if (localLine.type !== "LocalStatement") {
+        continue;
+      }
+      for (const symbol of ((localLine as unknown) as LocalStatement)
+        .identifiers) {
+        if (symbol.name.startsWith("`")) {
+          this.reportAssemblyError("Z2063", localLine, null, symbol.name);
+        }
+        if (procScope.containsLocalBooking(symbol.name)) {
+          this.reportAssemblyError("Z2064", localLine, null, symbol.name);
+        }
+        procScope.addLocalBooking(symbol.name);
+      }
+    }
+
+    // --- Emit loop instructions
+    const procLineIndex = { index: firstLine + 1 };
+    while (procLineIndex.index < lastLine) {
+      const curLine = scopeLines[procLineIndex.index];
+      this.emitSingleLine(allLines, scopeLines, curLine, procLineIndex);
+      procLineIndex.index++;
+    }
+
+    // --- Add the end label to the local scope
+    const endLabel = searchResult.label;
+    if (endLabel) {
+      // --- Add the end label to the loop scope
+      this.addSymbol(
+        endLabel,
+        scopeLines[currentLineIndex.index],
+        new ExpressionValue(this.getCurrentAssemblyAddress())
+      );
+    }
+
+    // --- Clean up the hanging label
+    this._overflowLabelLine = null;
+
+    // --- Fixup the temporary scope over the iteration scope, if there is any
+    const topScope = this.getTopLocalScope();
+    if (topScope !== procScope && topScope.isTemporaryScope) {
+      this.fixupSymbols(topScope, false);
+      this._currentModule.localScopes.pop();
+    }
+
+    // --- Fixup the symbols locally
+    this.fixupSymbols(procScope, false);
+
+    // --- Clean up the loop's scope
+    this._currentModule.localScopes.pop();
+  }
+
+  /**
+   * Processes LOCAL statement
+   * @param localStmt LOCAL statement
+   */
+  private processLocalStatement(localStmt: LocalStatement): void {
+    if (this.isInGlobalScope) {
+      this.reportAssemblyError("Z2065", localStmt);
+      return;
+    }
+
+    const localScopes = this._currentModule.localScopes;
+    let scope: SymbolScope | null = localScopes[localScopes.length - 1];
+    if (scope.isTemporaryScope) {
+      const tmpScope = localScopes.pop();
+      scope =
+        localScopes.length > 0 ? localScopes[localScopes.length - 1] : null;
+      localScopes.push(tmpScope);
+    }
+
+    if (!scope || !scope.isProcScope) {
+      this.reportAssemblyError("Z2065", localStmt);
+    }
+  }
+
+  /**
+   * Processes the MODULE statement
+   * @param moduleStmt Module statement
+   * @param label Module label
+   * @param allLines All parsed lines
+   * @param scopeLines Lines to process in the current scope
+   * @param currentLineIndex Current line index
+   */
+  private processModuleStatement(
+    moduleStmt: ModuleStatement,
+    label: string,
+    allLines: Z80AssemblyLine[],
+    scopeLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    // --- Search for the end of the proc
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      "ModuleStatement",
+      scopeLines,
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    // --- End found
+    const lastLine = currentLineIndex.index;
+
+    // --- Process label
+    const moduleName = moduleStmt.identifier
+      ? moduleStmt.identifier.name
+      : label;
+    if (!moduleName) {
+      this.reportAssemblyError("Z2066", moduleStmt);
+      return;
+    }
+    if (moduleName.startsWith("`")) {
+      this.reportAssemblyError("Z2067", moduleStmt, null, moduleName);
+      return;
+    }
+    if (this._currentModule.containsNestedModule(moduleName)) {
+      this.reportAssemblyError("Z2068", moduleStmt, null, moduleName);
+      return;
+    }
+
+    // --- Create a new nested module
+    const newModule = new AssemblyModule(
+      this._currentModule,
+      this.isCaseSensitive
+    );
+    this._currentModule.addNestedModule(moduleName, newModule);
+    this._currentModule = newModule;
+
+    // --- The module has a label, so create a temporary scope, too
+    const newScope = new SymbolScope(null, this.isCaseSensitive);
+    newScope.isTemporaryScope = true;
+    newModule.localScopes.push(newScope);
+
+    // --- Emit module instructions
+    const moduleLineIndex = { index: firstLine + 1 };
+    while (moduleLineIndex.index < lastLine) {
+      const curLine = scopeLines[moduleLineIndex.index];
+      this.emitSingleLine(allLines, scopeLines, curLine, moduleLineIndex);
+      moduleLineIndex.index++;
+    }
+
+    // --- Add the end label to the local scope
+    const endLabel = searchResult.label;
+    if (endLabel) {
+      // --- Add the end label to the loop scope
+      this.addSymbol(
+        endLabel,
+        scopeLines[currentLineIndex.index],
+        new ExpressionValue(this.getCurrentAssemblyAddress())
+      );
+    }
+
+    // --- Clean up the hanging label
+    this._overflowLabelLine = null;
+
+    // --- Fixup the temporary scope over the iteration scope, if there is any
+    const topScope = this.getTopLocalScope();
+    if (topScope && topScope.isTemporaryScope) {
+      this.fixupSymbols(topScope, false);
+      this._currentModule.localScopes.pop();
+    }
+
+    // --- Fixup the symbols locally
+    this.fixupSymbols(newModule, false);
+
+    // --- Step back to the outer module
+    this._currentModule = newModule.parentModule;
+  }
+
+  /**
    * Searches the assembly lines for the end of the block
    * @param searchType Line type to search for
    * @param lines Lines to search in
@@ -3232,7 +3449,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         curLine.type === "LabelOnlyLine"
       ) {
         // --- Record the last hanging label
-        endLabel = curLine.label.name;
+        endLabel = curLine.label ? curLine.label.name : null;
       } else {
         endLabel = undefined;
         if (((curLine as any) as Statement).isBlock) {

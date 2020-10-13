@@ -17,7 +17,7 @@ export class AssemblyModule implements ISymbolScope {
    * Gets the root (global) module
    */
   get rootModule(): AssemblyModule {
-    return this.parentModule === null ? this : this.parentModule;
+    return this.parentModule === null ? this : this.parentModule.rootModule;
   }
 
   /**
