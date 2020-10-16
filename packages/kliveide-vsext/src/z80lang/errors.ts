@@ -106,6 +106,23 @@ export type ErrorCodes =
   | "Z2066"
   | "Z2067"
   | "Z2068"
+  | "Z2069"
+  | "Z2070"
+  | "Z2071"
+  | "Z2072"
+  | "Z2073"
+  | "Z2074"
+  | "Z2075"
+  | "Z2076"
+  | "Z2077"
+  | "Z2078"
+  | "Z2079"
+  | "Z2080"
+  | "Z2081"
+  | "Z2082"
+  | "Z2083"
+  | "Z2084"
+  | "Z2085"
 
   | "Z3000"
   | "Z3001"
@@ -209,6 +226,23 @@ export const errorMessages: ErrorText = {
   Z2066: "You cannot define a module without a name.",
   Z2067: "You cannot define a module with a temporary name ({0}).",
   Z2068: "Module with name '{0}' already exists.",
+  Z2069: "You cannot define a struct without a name.",
+  Z2070: "You cannot define a struct with a temporary name ({0}).",
+  Z2071: "Structure name '{0}' has already been declared.",
+  Z2072: "The .ends statement cannot have a label.",
+  Z2073: "Structures can use only pragmas that emit bytes, words, strings, or reserve space.",
+  Z2074: "Duplicated field label {0} in a .struct definition.",
+  Z2075: "Duplicated .macro argument: {0}.",
+  Z2076: "You cannot define a macro without a name.",
+  Z2077: "You cannot define a macro with a temporary name ({0}).",
+  Z2078: "Macro name '{0}' has already been declared.",
+  Z2079: "Macro definition cannot be nested into another macro definition.",
+  Z2080: "Unknown macro argument ('{0}') is used in a macro definition.",
+  Z2081: "The .comparebin pragma expects a string as its first argument.",
+  Z2082: "Invalid .comparebin offset value (negative, or greater than the file length).",
+  Z2083: "Invalid .comparebin length value (negative, or segment exceends the file length).",
+  Z2084: "Cannot open file '{0}' used in COMPAREBIN pragma ({1}).",
+  Z2085: ".comparebin fails: {0}.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",

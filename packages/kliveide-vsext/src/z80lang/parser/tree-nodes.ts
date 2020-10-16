@@ -7,6 +7,7 @@ export type Node =
   | Program
   | LabelOnlyLine
   | CommentOnlyLine
+  | MacroParameterLine
   | Instruction
   | Expression
   | Directive
@@ -227,6 +228,11 @@ export interface PartialZ80AssemblyLine extends BaseNode {
    * Optional label
    */
   label?: IdentifierNode | null;
+
+  /**
+   * Optional macro parameters in the line
+   */
+  macroParams?: MacroParameter[];
 }
 
 /**
@@ -261,6 +267,13 @@ export interface LabelOnlyLine extends PartialZ80AssemblyLine {
  */
 export interface CommentOnlyLine extends PartialZ80AssemblyLine {
   type: "CommentOnlyLine";
+}
+
+/**
+ * Represents an assembly line with a single label
+ */
+export interface MacroParameterLine extends PartialZ80AssemblyLine {
+  type: "MacroParameterLine";
 }
 
 // ============================================================================
@@ -447,7 +460,7 @@ export interface CurrentCounterLiteral extends ExpressionNode {
 /**
  * Represents a macro parameter expression
  */
-export interface MacroParameter extends ExpressionNode {
+export interface MacroParameter extends ExpressionNode, NodePosition {
   type: "MacroParameter";
   identifier: IdentifierNode;
 }
@@ -813,7 +826,7 @@ export interface Operand extends BaseNode {
   expr?: Expression;
   offsetSign?: string;
   regOperation?: string;
-  macroParam?: IdentifierNode;
+  macroParam?: MacroParameter;
 }
 
 /**

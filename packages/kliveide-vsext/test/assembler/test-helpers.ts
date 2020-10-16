@@ -1,8 +1,12 @@
 import "mocha";
+import * as path from "path";
 import * as expect from "expect";
 
 import { Z80Assembler } from "../../src/z80lang/assembler/assembler";
-import { AssemblerOptions } from "../../src/z80lang/assembler/assembler-in-out";
+import {
+  AssemblerOptions,
+  AssemblerOutput,
+} from "../../src/z80lang/assembler/assembler-in-out";
 import { SymbolValueMap } from "../../src/z80lang/assembler/expressions";
 import { ErrorCodes } from "../../src/z80lang/errors";
 
@@ -91,7 +95,11 @@ export function testCodeEmit(source: string, ...bytes: number[]): void {
   }
 }
 
-export function testCodeEmitWithOptions(source: string, options: AssemblerOptions, ...bytes: number[]): void {
+export function testCodeEmitWithOptions(
+  source: string,
+  options: AssemblerOptions,
+  ...bytes: number[]
+): void {
   const compiler = new Z80Assembler();
 
   const output = compiler.compile(source, options);
@@ -103,7 +111,6 @@ export function testCodeEmitWithOptions(source: string, options: AssemblerOption
   }
 }
 
-
 export function codeRaisesError(source: string, code: ErrorCodes): void {
   const compiler = new Z80Assembler();
 
@@ -112,10 +119,31 @@ export function codeRaisesError(source: string, code: ErrorCodes): void {
   expect(output.errors[0].errorCode === code).toBe(true);
 }
 
-export function codeRaisesErrorWithOptions(source: string, options: AssemblerOptions, code: ErrorCodes): void {
+export function codeRaisesErrorWithOptions(
+  source: string,
+  options: AssemblerOptions,
+  code: ErrorCodes
+): void {
   const compiler = new Z80Assembler();
 
   const output = compiler.compile(source, options);
   expect(output.errorCount).toBe(1);
   expect(output.errors[0].errorCode === code).toBe(true);
+}
+
+export function compileFileWorks(filename: string): void {
+  const output = compileFile(filename);
+  expect(output.errorCount).toBe(0);
+}
+
+export function compileFileFails(filename: string, code: ErrorCodes): void {
+  const output = compileFile(filename);
+  expect(output.errorCount).toBe(1);
+  expect(output.errors[0].errorCode === code).toBe(true);
+}
+
+export function compileFile(filename: string): AssemblerOutput {
+  const fullname = path.join(__dirname, "../testfiles", filename);
+  const assembler = new Z80Assembler();
+  return assembler.compileFile(fullname);
 }

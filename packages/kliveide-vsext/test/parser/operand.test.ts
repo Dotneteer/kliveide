@@ -452,7 +452,7 @@ describe("Parser - operands", () => {
       const operand = instr.operand;
       expect(operand.operandType).toBe(OperandType.RegOperation);
       expect(operand.register).toBeUndefined();
-      expect(operand.macroParam.name).toBe("abc");
+      expect(operand.macroParam.identifier.name).toBe("abc");
       expect(operand.regOperation).toBe(opr.toLowerCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;

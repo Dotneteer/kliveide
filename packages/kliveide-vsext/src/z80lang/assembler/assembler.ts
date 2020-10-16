@@ -1,6 +1,5 @@
 import * as fs from "fs";
 import * as path from "path";
-import { CodeAction } from "vscode";
 
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { InputStream } from "../parser/input-stream";
@@ -56,6 +55,7 @@ import {
   LocalStatement,
   LoopStatement,
   MacroOrStructInvocation,
+  MacroStatement,
   ModelPragma,
   ModuleStatement,
   NextRegInstruction,
@@ -81,6 +81,7 @@ import {
   SimpleZ80Instruction,
   SkipPragma,
   Statement,
+  StructStatement,
   SubInstruction,
   TestInstruction,
   TracePragma,
@@ -106,8 +107,10 @@ import {
 import {
   BinaryComparisonInfo,
   DefinitionSection,
+  FieldDefinition,
   IfDefinition,
   IfSection,
+  MacroDefinition,
   StructDefinition,
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
@@ -209,7 +212,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @returns Output of the compilation
    */
   compileFile(filename: string, options?: AssemblerOptions): AssemblerOutput {
-    const sourceText = fs.readFileSync(filename, "utf8");
+    const sourceText = readSourceFile(filename);
     return this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
 
@@ -494,8 +497,120 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Compares binaries at the end of comilation
    */
   private compareBinaries(): boolean {
-    // TODO: Implement this method
-    return true;
+    for (const binInfo of this.compareBins) {
+      const pragma = binInfo.comparePragma;
+
+      // --- Get the file name
+      const fileNameValue = this.evaluateExprImmediate(pragma.filename);
+      if (!fileNameValue.isValid) {
+        continue;
+      }
+
+      if (fileNameValue.type !== ExpressionValueType.String) {
+        this.reportAssemblyError("Z2081", pragma);
+        continue;
+      }
+
+      // --- Obtain optional offset
+      var offset = 0;
+      if (pragma.offset) {
+        const offsValue = this.evaluateExprImmediate(pragma.offset);
+        if (offsValue.type !== ExpressionValueType.Integer) {
+          this.reportAssemblyError("Z2042", pragma);
+          continue;
+        }
+        offset = offsValue.asLong();
+        if (offset < 0) {
+          this.reportAssemblyError("Z2082", pragma);
+          continue;
+        }
+      }
+
+      // --- Obtain optional length
+      let length: number | undefined;
+      if (pragma.length) {
+        const lengthValue = this.evaluateExprImmediate(pragma.length);
+        if (lengthValue.type !== ExpressionValueType.Integer) {
+          this.reportAssemblyError("Z2042", pragma);
+          continue;
+        }
+        length = lengthValue.asLong();
+        if (length < 0) {
+          this.reportAssemblyError("Z2083", pragma);
+          continue;
+        }
+      }
+
+      // --- Read the binary file
+      const currentSourceFile = this._output.sourceFileList[
+        ((pragma as unknown) as Z80AssemblyLine).fileIndex
+      ];
+      const dirname = path.dirname(currentSourceFile.filename) ?? "";
+      const filename = path.join(dirname, fileNameValue.asString());
+
+      let contents: Buffer;
+      try {
+        contents = fs.readFileSync(filename);
+      } catch (err) {
+        this.reportAssemblyError("Z2084", pragma, null, filename, err.message);
+        continue;
+      }
+
+      // --- Check content segment
+      if (offset >= contents.length) {
+        this.reportAssemblyError("Z2082", pragma);
+        continue;
+      }
+
+      if (!length) {
+        length = contents.length - offset;
+      }
+
+      // --- Check length
+      if (offset + length > contents.length) {
+        this.reportAssemblyError("Z2082", pragma);
+        continue;
+      }
+
+      // --- Everything is ok, do the comparison
+      var segment = binInfo.segment;
+      if (!segment) {
+        this.reportAssemblyError(
+          "Z2085",
+          pragma,
+          null,
+          "No output segment to compare."
+        );
+        continue;
+      }
+
+      // --- Check current segment length
+      if (binInfo.segmentLength > length) {
+        this.reportAssemblyError(
+          "Z2085",
+          pragma,
+          null,
+          `Current binary length is only ${length} while segment length to check is ${binInfo.segmentLength}`
+        );
+        continue;
+      }
+
+      for (let i = 0; i < binInfo.segmentLength; i++) {
+        var segmData = segment.emittedCode[i];
+        var binData = contents[i + offset];
+        if (segmData === binData) {
+          continue;
+        }
+        this.reportAssemblyError(
+          "Z2085",
+          pragma,
+          null,
+          `Output segment at offset ${i} is ${segmData}, but in binary it is ${binData}`
+        );
+        break;
+      }
+    }
+    return this._output.errorCount === 0;
   }
 
   // ==========================================================================
@@ -560,7 +675,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Read the include file
     let sourceText: string;
     try {
-      sourceText = fs.readFileSync(filename, "utf8");
+      sourceText = readSourceFile(filename);
     } catch (err) {
       this.reportAssemblyError(
         "Z2007",
@@ -1093,30 +1208,6 @@ export class Z80Assembler extends ExpressionEvaluator {
         assembler._currentListFileItem.codeStartIndex;
       assembler._output.listFileItems.push(assembler._currentListFileItem);
     }
-
-    /**
-     * Is the line a byte-emitting pragma?
-     * @param asmLine Assembly line to test
-     */
-    function isByteEmittingPragma(asmLine: Z80AssemblyLine): boolean {
-      switch (asmLine.type) {
-        case "DefBPragma":
-        case "DefWPragma":
-        case "DefCPragma":
-        case "DefMPragma":
-        case "DefNPragma":
-        case "DefHPragma":
-        case "DefSPragma":
-        case "FillbPragma":
-        case "FillwPragma":
-        case "DefGPragma":
-        case "DefGxPragma":
-          return true;
-        default:
-          return false;
-      }
-    }
-
     /**
      * Tests if the specified line is a label-setter
      * @param asmLine Line to test
@@ -2277,7 +2368,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): void {
     switch (stmt.type) {
       case "MacroStatement":
-        // TODO: Implement this
+        this.collectMacroDefinition(stmt, label, allLines, currentLineIndex);
         break;
       case "MacroEndStatement":
         this.reportAssemblyError(
@@ -2383,7 +2474,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         );
         break;
       case "StructStatement":
-        // TODO: Implement this
+        this.collectStructDefinition(stmt, label, allLines, currentLineIndex);
         break;
       case "StructEndStatement":
         this.reportAssemblyError("Z2055", stmt, null, ".ends", ".struct");
@@ -2398,6 +2489,256 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processForStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
     }
+  }
+
+  /**
+   * Collects macro definition
+   * @param macro Struct statement
+   * @param label Label of the structure
+   * @param allLines All parsed lines
+   * @param currentLineIndex Current line index
+   */
+  private collectMacroDefinition(
+    macro: MacroStatement,
+    label: string,
+    allLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    let errorFound = false;
+    // --- Check for parameter uniqueness
+    var args = new Set<string>();
+    for (const macroArg of macro.parameters) {
+      const argName = macroArg.name.toLowerCase();
+      if (args.has(argName)) {
+        this.reportAssemblyError("Z2075", macro, null, macroArg.name);
+        errorFound = true;
+      }
+      args.add(argName);
+    }
+
+    // --- Check if the macro name is correct
+    if (!label) {
+      errorFound = true;
+      this.reportAssemblyError("Z2076", macro);
+    } else if (label.startsWith("`")) {
+      errorFound = true;
+      this.reportAssemblyError("Z2077", macro, null, label);
+    } else if (
+      this._currentModule.containsMacro(label) ||
+      this._currentModule.containsSymbol(label) ||
+      this._currentModule.containsNestedModule(label) ||
+      this._currentModule.containsStruct(label)
+    ) {
+      errorFound = true;
+      this.reportAssemblyError("Z2078", macro, null, label);
+    }
+
+    // --- Search for the end of the macro
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      "MacroStatement",
+      allLines,
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    // --- Create macro definition
+    const macroDef = new MacroDefinition(
+      label,
+      firstLine,
+      currentLineIndex.index,
+      macro.parameters,
+      searchResult.label
+    );
+
+    // --- Check each macro line for invalid macro parameter names
+    // --- or nested macro
+    for (let i = firstLine + 1; i < currentLineIndex.index; i++) {
+      var macroLine = allLines[i];
+
+      // TODO: Check for parse-time function parameters (they can have only macro parameter arguments)
+      if (macroLine.type === "MacroStatement") {
+        this.reportAssemblyError("Z2079", macroLine);
+        errorFound = true;
+        continue;
+      }
+
+      if (macroLine.macroParams) {
+        for (const param of macroLine.macroParams) {
+          const findParam = macro.parameters.find(
+            (p) => p.name.toLowerCase() === param.identifier.name
+          );
+          if (findParam) {
+            continue;
+          }
+
+          errorFound = true;
+          this.reportAssemblyError(
+            "Z2080",
+            macroLine,
+            null,
+            param.identifier.name
+          );
+        }
+      }
+    }
+
+    // --- If macro is OK, store it
+    if (!errorFound) {
+      this._currentModule.addMacro(label, macroDef);
+    }
+  }
+
+  /**
+   * Collects structure definition
+   * @param structStmt Struct statement
+   * @param label Label of the structure
+   * @param allLines All parsed lines
+   * @param currentLineIndex Current line index
+   */
+  private collectStructDefinition(
+    structStmt: StructStatement,
+    label: string,
+    allLines: Z80AssemblyLine[],
+    currentLineIndex: { index: number }
+  ): void {
+    let errorFound = false;
+
+    // --- Check if the structure name is correct
+    if (!label) {
+      errorFound = true;
+      this.reportAssemblyError("Z2069", structStmt);
+    } else if (label.startsWith("`")) {
+      errorFound = true;
+      this.reportAssemblyError("Z2070", structStmt, null, label);
+    } else if (
+      this._currentModule.containsMacro(label) ||
+      this._currentModule.containsSymbol(label) ||
+      this._currentModule.containsNestedModule(label) ||
+      this._currentModule.containsStruct(label)
+    ) {
+      errorFound = true;
+      this.reportAssemblyError("Z2071", structStmt, null, label);
+    }
+
+    // --- Search for the end of the structure
+    const firstLine = currentLineIndex.index;
+    const searchResult = this.searchForEndStatement(
+      "StructStatement",
+      allLines,
+      currentLineIndex
+    );
+    if (!searchResult.found) {
+      return;
+    }
+
+    if (searchResult.label) {
+      errorFound = true;
+      this.reportAssemblyError("Z2072", structStmt);
+    }
+
+    // --- Create structure definition
+    const structDef = new StructDefinition(
+      label,
+      firstLine,
+      currentLineIndex.index,
+      this.isCaseSensitive
+    );
+
+    // --- Check each macro line for valid instruction type
+    let structErrors = 0;
+    let structOffset = 0;
+    for (let i = firstLine + 1; i < currentLineIndex.index; i++) {
+      const structLine = allLines[i];
+      if (
+        (!isByteEmittingPragma(structLine) &&
+          structLine.type !== "CommentOnlyLine") ||
+        structLine.type !== "LabelOnlyLine"
+      ) {
+        this.reportAssemblyError("Z2073", structLine);
+        errorFound = true;
+        structErrors++;
+        if (structErrors > 16) {
+          break;
+        }
+      }
+
+      // --- Check for field definition
+      if (structLine.label) {
+        const fieldLabel = structLine.label.name;
+        if (structDef.containsField(fieldLabel)) {
+          this.reportAssemblyError("Z2074", structLine, null, fieldLabel);
+          errorFound = true;
+        } else {
+          structDef.addField(fieldLabel, new FieldDefinition(structOffset));
+        }
+      }
+
+      // --- Determine structure size
+      const pragma = structLine as Pragma;
+      switch (pragma.type) {
+        case "DefBPragma":
+          structOffset += pragma.values.length;
+          break;
+
+        case "DefWPragma":
+          structOffset += pragma.values.length * 2;
+          break;
+
+        case "DefMPragma":
+        case "DefNPragma":
+        case "DefCPragma":
+          this.processDefMNCPragma(pragma, emitAction);
+          break;
+
+        case "DefHPragma":
+          this.processDefHPragma(pragma, emitAction);
+          break;
+
+        case "DefSPragma":
+          this.processDefSPragma(pragma, emitAction);
+          break;
+
+        case "FillwPragma":
+          this.processFillwPragma(pragma, emitAction);
+          break;
+
+        case "FillbPragma":
+          this.processFillbPragma(pragma, emitAction);
+          break;
+
+        case "DefGPragma":
+          this.processDefGPragma(pragma, emitAction);
+          break;
+
+        case "DefGxPragma":
+          this.processDefGXPragma(pragma, emitAction);
+          break;
+      }
+
+      // --- We use this fuction to emit a byte
+      function emitAction(_data: number): void {
+        // ReSharper disable once AccessToModifiedClosure
+        structOffset++;
+      }
+    }
+
+    // --- Store the structure size
+    structDef.size = structOffset;
+
+    // -- Stop, if error found
+    if (errorFound) {
+      return;
+    }
+
+    // --- Register the structure and the structure symbol
+    this._currentModule.addStruct(label, structDef);
+    this._currentModule.addSymbol(
+      label,
+      AssemblySymbolInfo.createLabel(label, new ExpressionValue(structOffset))
+    );
   }
 
   /**
@@ -5313,3 +5654,39 @@ const reg16Order: { [key: string]: number } = {
   hl: 2,
   sp: 3,
 };
+
+/**
+ * Is the line a byte-emitting pragma?
+ * @param asmLine Assembly line to test
+ */
+function isByteEmittingPragma(asmLine: Z80AssemblyLine): boolean {
+  switch (asmLine.type) {
+    case "DefBPragma":
+    case "DefWPragma":
+    case "DefCPragma":
+    case "DefMPragma":
+    case "DefNPragma":
+    case "DefHPragma":
+    case "DefSPragma":
+    case "FillbPragma":
+    case "FillwPragma":
+    case "DefGPragma":
+    case "DefGxPragma":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Reads the source code text of the specified file
+ * @param filename File name
+ * @param Handles UTF-8 with and without BOM header
+ */
+function readSourceFile(filename: string): string {
+  const sourceText = fs.readFileSync(filename, "utf8");
+  if (sourceText.length < 4) {
+    return sourceText;
+  }
+  return sourceText.charCodeAt(0) >= 0xbf00 ? sourceText.substr(1) : sourceText;
+}

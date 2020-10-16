@@ -1,4 +1,4 @@
-import { CompareBinPragma, Statement } from "../parser/tree-nodes";
+import { CompareBinPragma, IdentifierNode, Statement } from "../parser/tree-nodes";
 import { BinarySegment } from "./assembler-in-out";
 
 /**
@@ -143,7 +143,7 @@ export class MacroDefinition {
     public readonly macroName: string,
     macroDefLine: number,
     macroEndLine: number,
-    public readonly argNames: string[],
+    public readonly argNames: IdentifierNode[],
     public readonly endLabel: string | null
   ) {
     this.section = new DefinitionSection(macroDefLine, macroEndLine);
