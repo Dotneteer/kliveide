@@ -144,6 +144,7 @@ import { convertSpectrumString } from "../utils";
  */
 export class Z80AsmParser {
   private readonly _parseErrors: ParserErrorMessage[] = [];
+  private readonly _macroParamsCollected: MacroParameter[] = [];
 
   /**
    * Initializes the parser with the specified token stream
@@ -265,9 +266,13 @@ export class Z80AsmParser {
       label = this.parseLabel(parsePoint);
     }
     if (this.startsLineBody(start)) {
+      this._macroParamsCollected.length = 0;
       asmLine = this.parseLineBody(this.getParsePoint());
       if (asmLine) {
         asmLine.label = label;
+        if (this._macroParamsCollected.length > 0) {
+          asmLine.macroParams = this._macroParamsCollected.slice(0);
+        }
       } else {
         asmLine = <LabelOnlyLine>{
           type: "LabelOnlyLine",
@@ -1220,12 +1225,10 @@ export class Z80AsmParser {
       const argToken = this.tokens.peek();
       const traits = getTokenTraits(argToken.type);
       let register: string | undefined = undefined;
-      let macroParam: IdentifierNode | undefined = undefined;
+      let macroParam: MacroParameter | undefined = undefined;
       if (argToken.type === TokenType.LDBrac) {
         // Macro parameter
-        this.tokens.get();
-        macroParam = this.getIdentifier();
-        this.expectToken(TokenType.RDBrac, "Z1015");
+        macroParam = this.parseMacroParam();
       } else if (traits.reg16 || traits.reg16Idx) {
         // 16-bit register
         this.tokens.get();
@@ -2388,13 +2391,21 @@ export class Z80AsmParser {
    *   ;
    */
   private parseMacroParam(): MacroParameter | null {
-    this.tokens.get();
+    const paramToken = this.tokens.get();
     const identifier = this.getIdentifier();
     this.expectToken(TokenType.RDBrac, "Z1015");
-    return <MacroParameter>{
+    const nextToken = this.tokens.peek();
+    const macroParam: MacroParameter = {
       type: "MacroParameter",
       identifier,
+      startPosition: paramToken.location.startPos,
+      endPosition: nextToken.location.endPos,
+      line: paramToken.location.line,
+      startColumn: paramToken.location.startColumn,
+      endColumn: nextToken.location.endColumn,
     };
+    this._macroParamsCollected.push(macroParam);
+    return macroParam;
   }
 
   // ==========================================================================
