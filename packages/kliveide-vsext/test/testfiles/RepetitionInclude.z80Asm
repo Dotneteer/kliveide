@@ -2,14 +2,14 @@
 .org #8000
 nop
 
-#include "./inc1.z80Asm"
+#include "./inc1.z80asm"
 
 nop
 
-#include "./inc2.z80Asm"
+#include "./inc2.z80asm"
 
 nop
 
-#include "./inc1.z80Asm" ; ERROR
+#include "./inc1.z80asm" ; ERROR
 
 nop

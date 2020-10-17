@@ -123,6 +123,7 @@ export type ErrorCodes =
   | "Z2083"
   | "Z2084"
   | "Z2085"
+  | "Z2086"
 
   | "Z3000"
   | "Z3001"
@@ -241,8 +242,9 @@ export const errorMessages: ErrorText = {
   Z2081: "The .comparebin pragma expects a string as its first argument.",
   Z2082: "Invalid .comparebin offset value (negative, or greater than the file length).",
   Z2083: "Invalid .comparebin length value (negative, or segment exceends the file length).",
-  Z2084: "Cannot open file '{0}' used in COMPAREBIN pragma ({1}).",
+  Z2084: "Cannot open file '{0}' used in .comparebin pragma ({1}).",
   Z2085: ".comparebin fails: {0}.",
+  Z2086: "A .struct invocation ({0}) cannot have arguments.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",

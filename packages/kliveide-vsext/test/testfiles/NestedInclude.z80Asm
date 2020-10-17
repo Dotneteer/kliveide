@@ -2,10 +2,10 @@
 .org #8000
 nop
 
-#include "./incA.z80Asm"
+#include "./incA.z80asm"
 
 nop
 
-#include "./incB.z80Asm"
+#include "./incB.z80asm"
 
 nop
