@@ -34,6 +34,7 @@ import {
   ErrorPragma,
   ExInstruction,
   Expression,
+  FieldAssignment,
   FillbPragma,
   FillwPragma,
   ForStatement,
@@ -375,9 +376,9 @@ export class Z80Assembler extends ExpressionEvaluator {
             (line as unknown) as IncludeDirective,
             sourceItem
           );
-          if (includedLines.success && includedLines.lines) {
+          if (includedLines.success && includedLines.parsedLines) {
             // --- Add the parse result of the include file to the result
-            parsedLines.push(...includedLines.lines);
+            parsedLines.push(...includedLines.parsedLines);
             anyProcessed = true;
           }
 
@@ -637,7 +638,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   applyIncludeDirective(
     includeDir: IncludeDirective,
     sourceItem: SourceFileItem
-  ): { success: boolean; lines?: Z80AssemblyLine[] } {
+  ): { success: boolean; parsedLines?: Z80AssemblyLine[] } {
     const parsedLines: Z80AssemblyLine[] = [];
 
     // --- Check the #include directive
@@ -1109,6 +1110,10 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       // --- Handle field assignment statement
       const isFieldAssignment = asmLine.type === "FieldAssignment";
+      if (isFieldAssignment) {
+        asmLine = (((asmLine as unknown) as FieldAssignment)
+          .assignment as unknown) as Z80AssemblyLine;
+      }
       if (this._currentStructInvocation) {
         // --- We are in a .struct invocation...
         if (!isFieldAssignment) {
@@ -1181,6 +1186,11 @@ export class Z80Assembler extends ExpressionEvaluator {
           (asmLine as unknown) as Statement,
           currentLabel,
           currentLineIndex
+        );
+      } else if (asmLine.type === "MacroOrStructInvocation") {
+        this.processMacroOrStructInvocation(
+          (asmLine as unknown) as MacroOrStructInvocation,
+          allLines
         );
       } else {
         // --- Process operations
@@ -1501,10 +1511,18 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processInjectOptPragma(pragmaLine);
         break;
       case "DefGPragma":
-        this.processDefGPragma(pragmaLine);
+        if (this._currentStructInvocation) {
+          this.processDefGPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefGPragma(pragmaLine);
+        }
         break;
       case "DefGxPragma":
-        this.processDefGXPragma(pragmaLine);
+        if (this._currentStructInvocation) {
+          this.processDefGXPragma(pragmaLine, this.emitStructByte);
+        } else {
+          this.processDefGXPragma(pragmaLine);
+        }
         break;
     }
   }
@@ -1818,7 +1836,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Emits a byte
     function emit(value: number): void {
       if (emitAction) {
-        emitAction(value);
+        const emitter = emitAction.bind(assembler);
+        emitter(value);
       } else {
         assembler.emitByte(value);
       }
@@ -1862,8 +1881,9 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Emits a byte
     function emit(value: number): void {
       if (emitAction) {
-        emitAction(value & 0xff);
-        emitAction((value >> 8) & 0xff);
+        const emitter = emitAction.bind(assembler);
+        emitter(value & 0xff);
+        emitter((value >> 8) & 0xff);
       } else {
         assembler.emitWord(value);
       }
@@ -1947,7 +1967,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Emits a byte
     function emit(value: number): void {
       if (emitAction) {
-        emitAction(value);
+        const emitter = emitAction.bind(assembler);
+        emitter(value);
       } else {
         assembler.emitByte(value);
       }
@@ -1971,7 +1992,8 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     for (let i = 0; i < count.value; i++) {
       if (emitAction) {
-        emitAction(fillValue);
+        const emitter = emitAction.bind(this);
+        emitter(fillValue);
       } else {
         this.emitByte(fillValue);
       }
@@ -1993,7 +2015,8 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     for (let i = 0; i < count.value; i++) {
       if (emitAction) {
-        emitAction(fillValue);
+        const emitter = emitAction.bind(this);
+        emitter(fillValue);
       } else {
         this.emitByte(fillValue);
       }
@@ -2015,8 +2038,9 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     for (let i = 0; i < count.value; i++) {
       if (emitAction) {
-        emitAction(fillValue & 0xff);
-        emitAction((fillValue >> 8) & 0xff);
+        const emitter = emitAction.bind(this);
+        emitter(fillValue & 0xff);
+        emitter((fillValue >> 8) & 0xff);
       } else {
         this.emitWord(fillValue);
       }
@@ -2340,7 +2364,8 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       // --- Emit a full byte
       if (emitAction) {
-        emitAction(bitPattern);
+        const emitter = emitAction.bind(this);
+        emitter(bitPattern);
       } else {
         this.emitByte(bitPattern);
       }
@@ -2350,6 +2375,71 @@ export class Z80Assembler extends ExpressionEvaluator {
 
   // ==========================================================================
   // Statement processing methods
+
+  /**
+   * Process macro or structure invocation
+   * @param macroOrStructStatement A macro or struct invocation statement
+   * @param allLines All parsed lines
+   */
+  private processMacroOrStructInvocation(
+    macroOrStructStatement: MacroOrStructInvocation,
+    allLines: Z80AssemblyLine[]
+  ): void {
+    const structDef = this._currentModule.getStruct(
+      macroOrStructStatement.identifier.name
+    );
+    if (structDef) {
+      // --- We have found a structure definition
+      this.processStructInvocation(macroOrStructStatement, structDef, allLines);
+      return;
+    }
+  }
+
+  /**
+   * Process a structure invocation
+   * @param structStmt A macro or struct invocation statement
+   * @param structDef Structure definition
+   * @param allLines All parsed lines
+   */
+  private processStructInvocation(
+    structStmt: MacroOrStructInvocation,
+    structDef: StructDefinition,
+    allLines: Z80AssemblyLine[]
+  ): void {
+    if (structStmt.operands.length > 0) {
+      this.reportAssemblyError(
+        "Z2086",
+        structStmt,
+        null,
+        structStmt.identifier.name
+      );
+    }
+
+    this.ensureCodeSegment();
+    this._currentStructStartOffset = this._currentSegment.currentOffset;
+
+    // --- Emit the default pattern of the structure (including fixups)
+    try {
+      this._isInStructCloning = true;
+      for (
+        let lineIndex = structDef.section.firstLine + 1;
+        lineIndex < structDef.section.lastLine;
+        lineIndex++
+      ) {
+        const structLineIndex = { index: lineIndex };
+        const curLine = allLines[lineIndex];
+        this.emitSingleLine(allLines, allLines, curLine, structLineIndex);
+      }
+    } finally {
+      this._isInStructCloning = false;
+    }
+
+    // --- Sign that we are inside a struct invocation
+    this._currentStructInvocation = structDef;
+    this._currentStructLine = structStmt;
+    this._currentStructBytes = new Map<number, number>();
+    this._currentStructOffset = 0;
+  }
 
   /**
    * Processes a compiler statement
@@ -2653,8 +2743,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     for (let i = firstLine + 1; i < currentLineIndex.index; i++) {
       const structLine = allLines[i];
       if (
-        (!isByteEmittingPragma(structLine) &&
-          structLine.type !== "CommentOnlyLine") ||
+        !isByteEmittingPragma(structLine) &&
+        structLine.type !== "CommentOnlyLine" &&
         structLine.type !== "LabelOnlyLine"
       ) {
         this.reportAssemblyError("Z2073", structLine);
@@ -5080,7 +5170,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Emits a byte
     function emit(value: number) {
       if (emitAction) {
-        emitAction(value);
+        const emitter = emitAction.bind(assembler);
+        emitter(value);
       } else {
         assembler.emitByte(value);
       }
@@ -5287,7 +5378,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Override structure bytes
       for (const key of fixup.structBytes.keys()) {
         const entry = fixup.structBytes.get(key);
-        const offset = fixup.offset + entry;
+        const offset = fixup.offset + key;
         emittedCode[offset] = entry;
       }
     }

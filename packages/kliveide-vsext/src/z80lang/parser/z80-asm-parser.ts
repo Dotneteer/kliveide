@@ -262,9 +262,13 @@ export class Z80AsmParser {
     const { start } = parsePoint;
     let asmLine: PartialZ80AssemblyLine | null = null;
     let label: IdentifierNode | null = null;
-    if (this.startsLabel(start)) {
+    
+    // --- Does the line start with a label?
+    if (start.type === TokenType.Identifier && !keywordLikeIDs[start.text]) {
       label = this.parseLabel(parsePoint);
     }
+
+    // --- Is the token the start of line body?
     if (this.startsLineBody(start)) {
       this._macroParamsCollected.length = 0;
       asmLine = this.parseLineBody(this.getParsePoint());
@@ -280,6 +284,7 @@ export class Z80AsmParser {
         };
       }
     } else {
+      // --- So, it must be a directive
       asmLine = this.parseDirective(parsePoint);
     }
 
@@ -2514,40 +2519,6 @@ export class Z80AsmParser {
   }
 
   /**
-   * Tests if the specified token can be the start of a label
-   * @param token Token to test
-   */
-  private startsLabel(token: Token): boolean {
-    if (token.type !== TokenType.Identifier) {
-      return false;
-    }
-    const text = token.text.toLowerCase();
-    return (
-      text !== "continue" &&
-      text !== "break" &&
-      text !== "endm" &&
-      text !== "mend" &&
-      text !== "endl" &&
-      text !== "lend" &&
-      text !== "proc" &&
-      text !== "endp" &&
-      text !== "pend" &&
-      text !== "repeat" &&
-      text !== "endw" &&
-      text !== "wend" &&
-      text !== "ends" &&
-      text !== "else" &&
-      text !== "elif" &&
-      text !== "endif" &&
-      text !== "while" &&
-      text !== "repeat" &&
-      text !== "until" &&
-      text !== "loop" &&
-      text !== "next"
-    );
-  }
-
-  /**
    * Tests if the specified token can be the start of a line's body
    * @param token Token to test
    */
@@ -2683,3 +2654,48 @@ interface ParsePoint {
   traits: TokenTraits;
 }
 
+/**
+ * IDs that can be contextual keywords
+ */
+const keywordLikeIDs: { [key: string]: boolean }  = {
+  continue: true,
+  CONTINUE: true,
+  break: true,
+  BREAK: true,
+  endm: true,
+  ENDM: true,
+  mend: true,
+  MEND: true,
+  endl: true,
+  ENDL: true,
+  lend: true,
+  LEND: true,
+  proc: true,
+  PROC: true,
+  endp: true,
+  ENDP: true,
+  pend: true,
+  PEND: true,
+  repeat: true,
+  REPEAT: true,
+  endw: true,
+  ENDW: true,
+  wend: true,
+  WEND: true,
+  ends: true,
+  ENDS: true,
+  else: true,
+  ELSE: true,
+  elif: true,
+  ELIF: true,
+  endif: true,
+  ENDIF: true,
+  while: true,
+  WHILE: true,
+  until: true,
+  UNTIL: true,
+  loop: true,
+  LOOP: true,
+  next: true,
+  NEXT: true
+};

@@ -131,9 +131,10 @@ export function codeRaisesErrorWithOptions(
   expect(output.errors[0].errorCode === code).toBe(true);
 }
 
-export function compileFileWorks(filename: string): void {
+export function compileFileWorks(filename: string): AssemblerOutput {
   const output = compileFile(filename);
   expect(output.errorCount).toBe(0);
+  return output;
 }
 
 export function compileFileFails(filename: string, code: ErrorCodes): void {
@@ -146,4 +147,14 @@ export function compileFile(filename: string): AssemblerOutput {
   const fullname = path.join(__dirname, "../testfiles", filename);
   const assembler = new Z80Assembler();
   return assembler.compileFile(fullname);
+}
+
+export function testCodeFileEmit(filename: string, ...bytes: number[]): void {
+  const output = compileFile(filename);
+  expect(output.errorCount).toBe(0);
+  expect(output.segments.length).toBe(1);
+  expect(output.segments[0].emittedCode.length).toBe(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    expect(output.segments[0].emittedCode[i]).toBe(bytes[i]);
+  }
 }
