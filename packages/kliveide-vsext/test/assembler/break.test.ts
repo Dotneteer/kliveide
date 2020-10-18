@@ -258,4 +258,25 @@ describe("Assembler - .break", () => {
       0x3c
     );
   });
+
+  it("Experiment", () => {
+    const lineText = "aaa {{a}}, {{ab}}, {{abc}}, {{de}}"; 
+    const replacements: any = {
+      a: "_A$A_",
+      ab: "_AB$AB_",
+      abc: "_ABC$ABC_",
+      de: "_DE$DE_"
+    };
+    let newText = lineText;
+    const regExpr = /{{\s*([_a-zA-Z][_a-zA-Z0-9]*)\s*}}/g;
+    let myStr: RegExpExecArray;
+    while ((myStr = regExpr.exec(lineText)) !== null) {
+      const toReplace = myStr[0];
+      const argName = myStr[1];
+      if (replacements[argName]) {
+        newText = newText.replace(toReplace, replacements[argName]);
+      }
+      console.log(newText);
+    }
+  });
 });
