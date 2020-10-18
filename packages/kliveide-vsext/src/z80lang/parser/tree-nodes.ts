@@ -282,12 +282,17 @@ export interface MacroParameterLine extends PartialZ80AssemblyLine {
 /**
  * Represents the common root node of expressions
  */
-export interface ExpressionNode extends BaseNode {}
+export interface ExpressionNode extends BaseNode, NodePosition {
+  /**
+   * The expression source code (used for macro argument replacement)
+   */
+  sourceText: string;
+}
 
 /**
  * Represents a node that describes an assembly line
  */
-export interface IdentifierNode extends ExpressionNode, NodePosition {
+export interface IdentifierNode extends ExpressionNode {
   type: "Identifier";
 
   /**
@@ -845,6 +850,7 @@ export enum OperandType {
   CPort,
   Expression,
   RegOperation,
+  Condition,
   NoneArg,
 }
 

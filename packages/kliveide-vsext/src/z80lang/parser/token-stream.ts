@@ -26,6 +26,15 @@ export class TokenStream {
   constructor(public readonly input: InputStream) {}
 
   /**
+   * Gets the specified part of the source code
+   * @param start Start position
+   * @param end End position
+   */
+  getSourceSpan(start: number, end: number): string {
+    return this.input.getSourceSpan(start, end);
+  }
+
+  /**
    * Resets the last comment
    */
   resetComment(): void {

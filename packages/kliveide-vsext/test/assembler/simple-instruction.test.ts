@@ -1,5 +1,6 @@
 import "mocha";
-import { testCodeEmit } from "./test-helpers";
+import { AssemblerOptions, SpectrumModelType } from "../../src/z80lang/assembler/assembler-in-out";
+import { testCodeEmit, testCodeEmitWithOptions } from "./test-helpers";
 
 describe("Assembler - simple instructions", () => {
   const instructions = [
@@ -38,18 +39,6 @@ describe("Assembler - simple instructions", () => {
     { source: "cpdr", emit: 0xedb9 },
     { source: "indr", emit: 0xedba },
     { source: "otdr", emit: 0xedbb },
-
-    { source: "ldix", emit: 0xeda4 },
-    { source: "ldws", emit: 0xeda5 },
-    { source: "ldirx", emit: 0xedb4 },
-    { source: "lddx", emit: 0xedac },
-    { source: "lddrx", emit: 0xedbc },
-    { source: "ldpirx", emit: 0xedb7 },
-    { source: "outinb", emit: 0xed90 },
-    { source: "swapnib", emit: 0xed23 },
-    { source: "pixeldn", emit: 0xed93 },
-    { source: "pixelad", emit: 0xed94 },
-    { source: "setae", emit: 0xed95 },
   ];
   instructions.forEach((inst) => {
     it(inst.source, () => {

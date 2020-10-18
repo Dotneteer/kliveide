@@ -124,6 +124,11 @@ export type ErrorCodes =
   | "Z2084"
   | "Z2085"
   | "Z2086"
+  | "Z2087"
+  | "Z2088"
+  | "Z2089"
+  | "Z2090"
+  | "Z2091"
 
   | "Z3000"
   | "Z3001"
@@ -245,6 +250,11 @@ export const errorMessages: ErrorText = {
   Z2084: "Cannot open file '{0}' used in .comparebin pragma ({1}).",
   Z2085: ".comparebin fails: {0}.",
   Z2086: "A .struct invocation ({0}) cannot have arguments.",
+  Z2087: "Unknown macro: {0}.",
+  Z2088: "The declaration of macro {0} contains {1} argument(s), but it is invoked with more parameters ({2}).",
+  Z2089: "A macro-time function accepts only macro parameters.",
+  Z2090: "Cannot pass a macro parameter template in a macro argument.",
+  Z2091: "Macro parameter can only be used within a macro declaration.",
 
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",

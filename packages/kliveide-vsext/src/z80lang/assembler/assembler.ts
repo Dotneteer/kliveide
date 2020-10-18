@@ -4,6 +4,7 @@ import * as path from "path";
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { InputStream } from "../parser/input-stream";
 import { TokenStream } from "../parser/token-stream";
+import { getTokenTraits } from "../parser/token-traits";
 
 import {
   AdcInstruction,
@@ -101,6 +102,7 @@ import {
   AssemblerOptions,
   AssemblerOutput,
   BinarySegment,
+  FileLine,
   ListFileItem,
   SourceFileItem,
   SpectrumModelType,
@@ -1106,7 +1108,24 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
 
       // --- Let's handle assembly lines with macro parameters
-      // TODO: Implement this feature
+      if (asmLine.macroParams && asmLine.macroParams.length > 0) {
+        if (fromMacroEmit) {
+          this.reportAssemblyError("Z2090", asmLine);
+          return;
+        }
+        if (this.isInGlobalScope) {
+          this.reportAssemblyError("Z2091", asmLine);
+        } else {
+          const topScope = this.getTopLocalScope();
+          if (topScope.isMacroContext) {
+            return;
+          }
+          if (this.shouldReportErrorInCurrentScope("Z2091")) {
+            this.reportAssemblyError("Z2091", asmLine);
+          }
+        }
+        return;
+      }
 
       // --- Handle field assignment statement
       const isFieldAssignment = asmLine.type === "FieldAssignment";
@@ -2378,21 +2397,254 @@ export class Z80Assembler extends ExpressionEvaluator {
 
   /**
    * Process macro or structure invocation
-   * @param macroOrStructStatement A macro or struct invocation statement
+   * @param macroOrStructStmt A macro or struct invocation statement
    * @param allLines All parsed lines
    */
   private processMacroOrStructInvocation(
-    macroOrStructStatement: MacroOrStructInvocation,
+    macroOrStructStmt: MacroOrStructInvocation,
     allLines: Z80AssemblyLine[]
   ): void {
     const structDef = this._currentModule.getStruct(
-      macroOrStructStatement.identifier.name
+      macroOrStructStmt.identifier.name
     );
     if (structDef) {
       // --- We have found a structure definition
-      this.processStructInvocation(macroOrStructStatement, structDef, allLines);
+      this.processStructInvocation(macroOrStructStmt, structDef, allLines);
       return;
     }
+
+    // --- Let's handle macro invocation
+    // --- Check if macro definition exists
+    const macroName = macroOrStructStmt.identifier.name;
+    const macroDef = this._currentModule.getMacro(macroName);
+    if (!macroDef) {
+      this.reportAssemblyError("Z2087", macroOrStructStmt, null, macroName);
+      return;
+    }
+
+    // --- Match parameters
+    if (macroDef.argNames.length < macroOrStructStmt.operands.length) {
+      this.reportAssemblyError(
+        "Z2088",
+        macroOrStructStmt,
+        null,
+        macroDef.macroName,
+        macroDef.argNames.length,
+        macroOrStructStmt.operands.length
+      );
+      return;
+    }
+
+    // --- Evaluate arguments
+    const macroArgs: { [key: string]: ExpressionValue } = {};
+    let errorFound = false;
+    const emptyArgValue = new ExpressionValue("$<none>$");
+    for (let i = 0; i < macroDef.argNames.length; i++) {
+      if (i >= macroOrStructStmt.operands.length) {
+        macroArgs[macroDef.argNames[i].name] = emptyArgValue;
+        continue;
+      }
+      var op = macroOrStructStmt.operands[i];
+      let argValue: ExpressionValue;
+      switch (op.operandType) {
+        case OperandType.Reg8:
+        case OperandType.Reg8Idx:
+        case OperandType.Reg8Spec:
+        case OperandType.Reg16:
+        case OperandType.Reg16Idx:
+        case OperandType.Reg16Spec:
+        case OperandType.RegIndirect:
+          argValue = new ExpressionValue(op.register);
+          break;
+        case OperandType.Expression:
+          argValue = this.evaluateExpr(op.expr);
+          if (argValue.isNonEvaluated) {
+            argValue = new ExpressionValue(op.expr.sourceText);
+          }
+          break;
+        case OperandType.MemIndirect:
+          argValue = this.evaluateExprImmediate(op.expr);
+          if (!argValue.isValid) {
+            errorFound = true;
+          } else {
+            argValue = new ExpressionValue(`(${argValue.asString()})`);
+          }
+          break;
+        case OperandType.CPort:
+          argValue = new ExpressionValue("(c)");
+          break;
+        case OperandType.IndexedIndirect:
+          if (!op.expr) {
+            argValue = new ExpressionValue(`(${op.register})`);
+          } else {
+            argValue = this.evaluateExprImmediate(op.expr);
+            if (!argValue.isValid) {
+              errorFound = true;
+            } else {
+              argValue = new ExpressionValue(
+                `(${op.register}${op.offsetSign}${argValue.asString()})`
+              );
+            }
+          }
+          break;
+        case OperandType.Condition:
+          argValue = new ExpressionValue(op.register);
+          break;
+        default:
+          argValue = emptyArgValue;
+          break;
+      }
+      if (errorFound) {
+        continue;
+      }
+
+      macroArgs[macroDef.argNames[i].name] = argValue;
+    }
+    if (errorFound) {
+      return;
+    }
+
+    // --- Create a scope for the macro
+    const macroScope = new SymbolScope(null, this.isCaseSensitive);
+    macroScope.macroArguments = macroArgs;
+    this._currentModule.localScopes.push(macroScope);
+
+    // --- The macro name will serve as its starting label
+    macroScope.addSymbol(
+      macroDef.macroName,
+      AssemblySymbolInfo.createLabel(
+        macroDef.macroName,
+        new ExpressionValue(this.getCurrentAssemblyAddress())
+      )
+    );
+
+    let lineIndex = { index: macroDef.section.firstLine + 1 };
+    const lastLine = macroDef.section.lastLine;
+
+    // --- Create source info for the macro invocation
+    const currentAddress = this.getCurrentAssemblyAddress();
+    const asmLine = (macroOrStructStmt as unknown) as Z80AssemblyLine;
+    this._output.addToAddressMap(
+      asmLine.fileIndex,
+      asmLine.line,
+      currentAddress
+    );
+    const fileLine = { fileIndex: asmLine.fileIndex, line: asmLine.line };
+    this._output.sourceMap[currentAddress] = fileLine;
+
+    // --- We store the original source file information to
+    // --- assign it later with the re-parsed macro code
+    const sourceInfo: FileLine[] = [fileLine];
+
+    // --- Setup the macro source
+    let macroSource = "";
+    while (lineIndex.index < lastLine) {
+      // --- Replace all macro arguments by their actual value
+      const curLine = allLines[lineIndex.index];
+      const lineText = curLine.sourceText as string;
+      let newText = lineText;
+      const regExpr = /{{\s*([_a-zA-Z][_a-zA-Z0-9]*)\s*}}/g;
+      let matches: RegExpExecArray;
+      while ((matches = regExpr.exec(lineText)) !== null) {
+        const toReplace = matches[0];
+        const argName = matches[1];
+        if (macroArgs[argName]) {
+          newText = newText.replace(toReplace, macroArgs[argName].asString());
+        }
+      }
+
+      // --- Store the source information for the currently processed macro line
+      var newLines = newText.split("\r\n").length;
+      for (let i = 0; i < newLines; i++) {
+        sourceInfo.push({ fileIndex: curLine.fileIndex, line: curLine.line });
+      }
+      macroSource += newText;
+      lineIndex.index++;
+    }
+
+    // --- Now we have the source text to compile
+    // TODO: Sign that we're processing macros
+    const inputStream = new InputStream(macroSource);
+    const tokenStream = new TokenStream(inputStream);
+    const macroParser = new Z80AsmParser(tokenStream, 0, true);
+    const macroProgram = macroParser.parseProgram();
+
+    // --- Collect syntax errors
+    for (const error of macroParser.errors) {
+      // --- Translate the syntax error location
+      if (error.line > 0 && error.line < sourceInfo.length) {
+        const fileInfo = sourceInfo[error.line - 1];
+        error.line = fileInfo.line;
+        const errorInfo = AssemblerErrorInfo.fromParserError(
+          this._output.sourceFileList[fileInfo.fileIndex],
+          error
+        );
+        this._output.errors.push(errorInfo);
+        this.reportScopeError(errorInfo.errorCode);
+      } else {
+        const errorInfo = AssemblerErrorInfo.fromParserError(
+          this._output.sourceItem,
+          error
+        );
+        this._output.errors.push(errorInfo);
+        this.reportScopeError(errorInfo.errorCode);
+      }
+      errorFound = true;
+    }
+
+    if (errorFound) {
+      // --- Stop compilation, if macro contains error
+      return;
+    }
+
+    // --- Set the source line information
+    const visitedLines = macroProgram.assemblyLines;
+    for (let i = 0; i < sourceInfo.length; i++) {
+      if (i < visitedLines.length) {
+        var lineInfo = sourceInfo[i];
+        var line = visitedLines[i];
+        line.fileIndex = lineInfo.fileIndex;
+        line.line = lineInfo.line;
+      }
+    }
+
+    // --- Now, emit the compiled lines
+    lineIndex.index = 0;
+    while (lineIndex.index < visitedLines.length) {
+      var macroLine = visitedLines[lineIndex.index];
+      this.emitSingleLine(allLines, visitedLines, macroLine, lineIndex, true);
+
+      // --- Next line
+      lineIndex.index++;
+    }
+
+    // --- Add the end label to the local scope
+    const endLabel = macroDef.endLabel;
+    if (endLabel) {
+      // --- Add the end label to the macro scope
+      var endLine = allLines[lastLine];
+      this.addSymbol(
+        endLabel,
+        endLine,
+        new ExpressionValue(this.getCurrentAssemblyAddress())
+      );
+    }
+
+    // --- Clean up the hanging label
+    this._overflowLabelLine = null;
+
+    // --- Fixup the temporary scope over the iteration scope, if there is any
+    const topScope = this.getTopLocalScope();
+    if (topScope !== macroScope && topScope.isTemporaryScope) {
+      this.fixupSymbols(topScope, false);
+      this._currentModule.localScopes.pop();
+    }
+
+    // --- Fixup the symbols locally
+    this.fixupSymbols(macroScope, false);
+
+    // --- Remove the macro's scope
+    this._currentModule.localScopes.pop();
   }
 
   /**
@@ -2658,7 +2910,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (macroLine.macroParams) {
         for (const param of macroLine.macroParams) {
           const findParam = macro.parameters.find(
-            (p) => p.name.toLowerCase() === param.identifier.name
+            (p) => p.name.toLowerCase() === param.identifier.name.toLowerCase()
           );
           if (findParam) {
             continue;

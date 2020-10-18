@@ -1,11 +1,14 @@
 import { ErrorCodes } from "../errors";
 import {
   BinaryExpression,
+  BooleanLiteral,
+  BuiltInFunctionInvocation,
   ConditionalExpression,
   Expression,
   FunctionInvocation,
   IdentifierNode,
   NodePosition,
+  OperandType,
   PartialZ80AssemblyLine,
   Symbol,
   UnaryExpression,
@@ -338,13 +341,11 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
           return new ExpressionValue(this.getCurrentAddress());
         case "CurrentCounterLiteral":
           return this.getLoopCounterValue();
-          break;
         case "MacroParameter":
           // TODO: Implement this
           break;
         case "BuiltInFunctionInvocation":
-          // TODO: Implement this
-          break;
+          return evalBuiltInFunctionInvocationValue(this, expr);
         case "FunctionInvocation":
           return evalFunctionInvocationValue(this, expr);
         default:
@@ -1776,4 +1777,117 @@ export function evalFunctionInvocationValue(
       `Function value cannot be evaluated: '${funcExpr.functionName.name}': ${err.message}`
     );
   }
+}
+
+export function evalBuiltInFunctionInvocationValue(
+  context: EvaluationContext,
+  funcExpr: BuiltInFunctionInvocation
+): ExpressionValue {
+  switch (funcExpr.functionName.toLowerCase()) {
+    case "def":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType !== OperandType.NoneArg
+        )
+      );
+    case "isreg8":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          (funcExpr.operand.operandType === OperandType.Reg8 ||
+            funcExpr.operand.operandType === OperandType.Reg8Spec ||
+            funcExpr.operand.operandType === OperandType.Reg8Idx)
+        )
+      );
+    case "iscport":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand && funcExpr.operand.operandType === OperandType.CPort
+        )
+      );
+    case "iscondition":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType === OperandType.Condition
+        )
+      );
+    case "iscondition":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          (funcExpr.operand.operandType === OperandType.Condition ||
+            funcExpr.operand?.register === "c")
+        )
+      );
+    case "isexpression":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType === OperandType.Expression
+        )
+      );
+    case "isindexedaddr":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType === OperandType.IndexedIndirect
+        )
+      );
+    case "isreg16":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          (funcExpr.operand.operandType === OperandType.Reg16 ||
+            funcExpr.operand.operandType === OperandType.Reg16Spec ||
+            funcExpr.operand.operandType === OperandType.Reg16Idx)
+        )
+      );
+    case "isreg16idx":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType === OperandType.Reg16Idx
+        )
+      );
+    case "isreg16std":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg16
+        )
+      );
+    case "isreg8idx":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType === OperandType.Reg8Idx
+        )
+      );
+    case "isreg8spec":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType === OperandType.Reg8Spec
+        )
+      );
+    case "isreg8std":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand && funcExpr.operand.operandType === OperandType.Reg8
+        )
+      );
+    case "isregindirect":
+      return new ExpressionValue(
+        !!(
+          funcExpr.operand &&
+          funcExpr.operand.operandType === OperandType.RegIndirect
+        )
+      );
+    case "isrega":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "a")
+      );
+  }
+  throw new Error("Not implemented yet");
 }

@@ -157,7 +157,7 @@ describe("Parser - miscellaneous", () => {
     const parser = createParser(source);
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1016").toBe(true);
+    expect(parser.errors[0].code === "Z1014").toBe(true);
   });
 
   it("macro invocation #6", () => {
@@ -238,7 +238,7 @@ describe("Parser - miscellaneous", () => {
   ];
   builtIns.forEach((func) => {
     it(`${func} #1`, () => {
-      const source = `equ ${func}(arg)`;
+      const source = `equ ${func}({{arg}})`;
       const parser = createParser(source);
       const parsed = parser.parseProgram();
       expect(parser.hasErrors).toBe(false);
