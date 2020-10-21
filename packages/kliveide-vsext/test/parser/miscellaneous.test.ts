@@ -5,12 +5,14 @@ import { InputStream } from "../../src/z80lang/parser/input-stream";
 import { TokenStream } from "../../src/z80lang/parser/token-stream";
 import { Z80AsmParser } from "../../src/z80lang/parser/z80-asm-parser";
 import {
-  BuiltInFunctionInvocation,
+  MacroTimeFunctionInvocation,
   ByteEmittingPragma,
   EquPragma,
   FieldAssignment,
   FunctionInvocation,
   MacroOrStructInvocation,
+  OperandType,
+  StringLiteral,
   Z80AssemblyLine,
 } from "../../src/z80lang/parser/tree-nodes";
 
@@ -246,8 +248,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
+      expect(instr.value.type === "MacroTimeFunctionInvocation").toBe(true);
+      const invocation = (instr.value as unknown) as MacroTimeFunctionInvocation;
       expect(invocation.operand).toBeDefined();
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
@@ -361,13 +363,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("textof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBe(mne.toLowerCase());
-      expect(invocation.regsOrConds).toBeUndefined();
-      expect(invocation.macroParam).toBeUndefined();
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(mne.toUpperCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -379,7 +376,7 @@ describe("Parser - miscellaneous", () => {
     });
 
     it(`TEXTOF ${mne.toUpperCase()} #1`, () => {
-      const source = `equ TEXTOF(${mne.toUpperCase()})`;
+      const source = `equ TEXTOF(${mne})`;
       const parser = createParser(source);
       const parsed = parser.parseProgram();
       expect(parser.hasErrors).toBe(false);
@@ -387,13 +384,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("textof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBe(mne.toLowerCase());
-      expect(invocation.regsOrConds).toBeUndefined();
-      expect(invocation.macroParam).toBeUndefined();
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(mne.toUpperCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -413,14 +405,9 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("ltextof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBe(mne.toLowerCase());
-      expect(invocation.regsOrConds).toBeUndefined();
-      expect(invocation.macroParam).toBeUndefined();
-
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(mne.toLowerCase());
+      
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -439,13 +426,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("ltextof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBe(mne.toLowerCase());
-      expect(invocation.regsOrConds).toBeUndefined();
-      expect(invocation.macroParam).toBeUndefined();
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(mne.toLowerCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -501,13 +483,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("textof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBeUndefined();
-      expect(invocation.regsOrConds).toBe(reg);
-      expect(invocation.macroParam).toBeUndefined();
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(reg.toUpperCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -527,13 +504,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("textof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBeUndefined();
-      expect(invocation.regsOrConds).toBe(reg);
-      expect(invocation.macroParam).toBeUndefined();
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(reg.toUpperCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -553,13 +525,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("ltextof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBeUndefined();
-      expect(invocation.regsOrConds).toBe(reg);
-      expect(invocation.macroParam).toBeUndefined();
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(reg.toLowerCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -579,13 +546,8 @@ describe("Parser - miscellaneous", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-      expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-      const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-      expect(invocation.functionName).toBe("ltextof");
-      expect(invocation.operand).toBeUndefined();
-      expect(invocation.mnemonic).toBeUndefined();
-      expect(invocation.regsOrConds).toBe(reg);
-      expect(invocation.macroParam).toBeUndefined();
+      expect(instr.value.type === "StringLiteral").toBe(true);
+      expect((instr.value as StringLiteral).value).toBe(reg.toLowerCase());
 
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
@@ -605,14 +567,6 @@ describe("Parser - miscellaneous", () => {
     expect(parsed).not.toBeNull();
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
-    const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-    expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-    const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-    expect(invocation.functionName).toBe("textof");
-    expect(invocation.operand).toBeUndefined();
-    expect(invocation.mnemonic).toBeUndefined();
-    expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);
@@ -631,14 +585,6 @@ describe("Parser - miscellaneous", () => {
     expect(parsed).not.toBeNull();
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
-    const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-    expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-    const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-    expect(invocation.functionName).toBe("textof");
-    expect(invocation.operand).toBeUndefined();
-    expect(invocation.mnemonic).toBeUndefined();
-    expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);
@@ -657,14 +603,6 @@ describe("Parser - miscellaneous", () => {
     expect(parsed).not.toBeNull();
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
-    const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-    expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-    const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-    expect(invocation.functionName).toBe("ltextof");
-    expect(invocation.operand).toBeUndefined();
-    expect(invocation.mnemonic).toBeUndefined();
-    expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);
@@ -683,14 +621,6 @@ describe("Parser - miscellaneous", () => {
     expect(parsed).not.toBeNull();
     expect(parsed.assemblyLines.length).toBe(1);
     expect(parsed.assemblyLines[0].type === "EquPragma").toBe(true);
-    const instr = (parsed.assemblyLines[0] as unknown) as EquPragma;
-    expect(instr.value.type === "BuiltInFunctionInvocation").toBe(true);
-    const invocation = (instr.value as unknown) as BuiltInFunctionInvocation;
-    expect(invocation.functionName).toBe("ltextof");
-    expect(invocation.operand).toBeUndefined();
-    expect(invocation.mnemonic).toBeUndefined();
-    expect(invocation.regsOrConds).toBeUndefined();
-    expect(invocation.macroParam.name).toBe("abc");
 
     const line = parsed.assemblyLines[0] as Z80AssemblyLine;
     expect(line.label).toBe(null);

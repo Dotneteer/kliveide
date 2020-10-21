@@ -183,22 +183,47 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("def fails out of macro", () => {
-    codeRaisesError(
-      `
-      ld a,def(a)
-      `,
-      "Z2089"
-    );
+  const failCases = [
+    "def",
+    "isreg8",
+    "isreg8spec",
+    "isreg8idx",
+    "isreg16",
+    "isreg16idx",
+    "isregindirect",
+    "iscport",
+    "isindexedaddr",
+    "iscondition",
+    "isexpr",
+    "isrega",
+    "isregb",
+    "isregc",
+    "isregd",
+    "isrege",
+    "isregh",
+    "isregl",
+    "isregi",
+    "isregr",
+    "isregbc",
+    "isregde",
+    "isreghl",
+    "isregsp",
+    "isregxh",
+    "isregxl",
+    "isregyh",
+    "isregyl",
+    "isregix",
+    "isregiy",
+    "isregaf",
+  ];
+  failCases.forEach(fc => {
+    it(`${fc} fails out of macro`, () => {
+      codeRaisesError(
+        `
+        ld a,${fc}(a)
+        `,
+        "Z2089"
+      );
+      });
   });
-
-  it("isreg8 fails out of macro", () => {
-    codeRaisesError(
-      `
-      ld a,isreg8(a)
-      `,
-      "Z2089"
-    );
-  });
-
 });

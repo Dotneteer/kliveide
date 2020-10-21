@@ -129,7 +129,7 @@ import {
   FieldAssignment,
   MacroOrStructInvocation,
   MacroParameter,
-  BuiltInFunctionInvocation,
+  MacroTimeFunctionInvocation,
   FunctionInvocation,
   IdentifierNode,
   Expression,
@@ -139,9 +139,6 @@ import { ParserErrorMessage, errorMessages, ErrorCodes } from "../errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
 import { convertSpectrumString } from "../utils";
-import { start } from "repl";
-import { threadId } from "worker_threads";
-import { OpenDialogOptions } from "vscode";
 
 /**
  * This class implements the Z80 assembly parser
@@ -842,75 +839,32 @@ export class Z80AsmParser {
         return oneOrTwoOperands<CpInstruction>("CpInstruction");
 
       case TokenType.Djnz:
-        const djnzTarget = this.getExpression();
+        const djnzTarget = this.getOperand();
         return <DjnzInstruction>{
           type: "DjnzInstruction",
           target: djnzTarget,
         };
 
       case TokenType.Jr:
-        const jrNext = this.tokens.peek();
-        const jrTrait = getTokenTraits(jrNext.type);
-        let jrCondition: string | undefined = undefined;
-        if (jrTrait.condition) {
-          jrCondition = jrNext.text.toLowerCase();
-          this.tokens.get();
-          this.expectToken(TokenType.Comma, "Z1007");
-        }
-        return <JrInstruction>{
-          type: "JrInstruction",
-          condition: jrCondition,
-          target: this.getExpression(),
-        };
+        return oneOrTwoOperands<JrInstruction>("JrInstruction");
 
       case TokenType.Jp:
-        const jpNext = this.tokens.peek();
-        const jpTrait = getTokenTraits(jpNext.type);
-        let condition: string | undefined;
-        if (jpTrait.condition) {
-          condition = jpNext.text.toLowerCase();
-          this.tokens.get();
-          this.expectToken(TokenType.Comma, "Z1007");
-        }
-        return <JpInstruction>{
-          type: "JpInstruction",
-          condition,
-          target: this.getOperand(),
-        };
+        return oneOrTwoOperands<JpInstruction>("JpInstruction");
 
       case TokenType.Call:
-        const callNext = this.tokens.peek();
-        const callTrait = getTokenTraits(callNext.type);
-        let callCondition: string | undefined = undefined;
-        if (callTrait.condition) {
-          callCondition = callNext.text.toLowerCase();
-          this.tokens.get();
-          this.expectToken(TokenType.Comma, "Z1007");
-        }
-        return <CallInstruction>{
-          type: "CallInstruction",
-          condition: callCondition,
-          target: this.getExpression(),
-        };
+        return oneOrTwoOperands<CallInstruction>("CallInstruction");
 
       case TokenType.Ret:
-        const retNext = this.tokens.peek();
-        const retTrait = getTokenTraits(retNext.type);
-        let retCondition: string | undefined = undefined;
-        if (retTrait.condition) {
-          retCondition = retNext.text.toLowerCase();
-          this.tokens.get();
-        }
+        let retCondition: Operand = this.parseOperand();
         return <RetInstruction>{
           type: "RetInstruction",
           condition: retCondition,
         };
 
       case TokenType.Rst:
-        const rstTarget = this.getExpression();
         return <RstInstruction>{
           type: "RstInstruction",
-          target: rstTarget,
+          target: this.getOperand(),
         };
 
       case TokenType.Push:
@@ -926,10 +880,9 @@ export class Z80AsmParser {
         return oneOrTwoOperands<OutInstruction>("OutInstruction");
 
       case TokenType.Im:
-        const mode = this.getExpression();
         return <ImInstruction>{
           type: "ImInstruction",
-          mode,
+          mode: this.getOperand(),
         };
 
       case TokenType.Rlc:
@@ -982,21 +935,7 @@ export class Z80AsmParser {
         };
 
       case TokenType.NextReg:
-        const nextReg = this.getExpression();
-        let nextRegValue = null;
-        if (this.skipToken(TokenType.Comma)) {
-          const valueToken = this.tokens.peek();
-          if (valueToken.type === TokenType.A) {
-            this.tokens.get();
-          } else {
-            nextRegValue = this.getExpression();
-          }
-        }
-        return <NextRegInstruction>{
-          type: "NextRegInstruction",
-          register: nextReg,
-          value: nextRegValue,
-        };
+        return twoOperands<NextRegInstruction>("NextRegInstruction");
 
       case TokenType.Test:
         return <TestInstruction>{
@@ -1212,13 +1151,95 @@ export class Z80AsmParser {
         operandType = OperandType.Reg16Idx;
       } else if (traits.reg16Spec) {
         operandType = OperandType.Reg16Spec;
-      } else if (traits.condition) {
-        operandType = OperandType.Condition;
       }
       return <Operand>{
         type: "Operand",
         operandType,
         register,
+      };
+    }
+
+    // --- Check LREG
+    if (start.type === TokenType.LReg) {
+      this.tokens.get();
+      this.expectToken(TokenType.LPar, "Z1013");
+      const reg = this.tokens.peek();
+      if (reg.type === TokenType.LDBrac) {
+        // --- Handle macro parameters
+        this.parseMacroParam();
+        this.expectToken(TokenType.RPar, "Z1014");
+        return <Operand>{
+          type: "Operand",
+          operandType: OperandType.NoneArg
+        };
+      }
+      let register: string | undefined;
+      let operandType = OperandType.Reg8Idx;
+      switch (reg.text) {
+        case "bc":
+        case "de":
+        case "hl":
+            register = reg.text[1];
+            operandType = OperandType.Reg8;
+          break;
+        case "ix":
+          register = "xl";
+          break;
+        case "iy":
+          register = "yl";
+          break;
+        default:
+          this.reportError("Z1024");
+          return;
+      }
+      this.tokens.get();
+      this.expectToken(TokenType.RPar, "Z1014");
+      return <Operand>{
+        type: "Operand",
+        operandType,
+        register
+      };
+    }
+
+    // --- Check HREG
+    if (start.type === TokenType.HReg) {
+      this.tokens.get();
+      this.expectToken(TokenType.LPar, "Z1013");
+      const reg = this.tokens.peek();
+      if (reg.type === TokenType.LDBrac) {
+        // --- Handle macro parameters
+        this.parseMacroParam();
+        this.expectToken(TokenType.RPar, "Z1014");
+        return <Operand>{
+          type: "Operand",
+          operandType: OperandType.NoneArg
+        };
+      }
+      let register: string | undefined;
+      let operandType = OperandType.Reg8Idx;
+      switch (reg.text) {
+        case "bc":
+        case "de":
+        case "hl":
+            register = reg.text[0];
+            operandType = OperandType.Reg8;
+          break;
+        case "ix":
+          register = "xh";
+          break;
+        case "iy":
+          register = "yh";
+          break;
+        default:
+          this.reportError("Z1024");
+          return;
+      }
+      this.tokens.get();
+      this.expectToken(TokenType.RPar, "Z1014");
+      return <Operand>{
+        type: "Operand",
+        operandType,
+        register
       };
     }
 
@@ -1228,33 +1249,6 @@ export class Z80AsmParser {
       return <Operand>{
         type: "Operand",
         operandType: OperandType.NoneArg,
-      };
-    }
-
-    // --- Check for HREG/LREG operation
-    if (start.type === TokenType.HReg || start.type === TokenType.LReg) {
-      this.tokens.get();
-      const regOperation = start.text.toLowerCase();
-      this.expectToken(TokenType.LPar, "Z1013");
-      const argToken = this.tokens.peek();
-      const traits = getTokenTraits(argToken.type);
-      let register: string | undefined = undefined;
-      let macroParam: MacroParameter | undefined = undefined;
-      if (argToken.type === TokenType.LDBrac) {
-        // Macro parameter
-        macroParam = this.parseMacroParam();
-      } else if (traits.reg16 || traits.reg16Idx) {
-        // 16-bit register
-        this.tokens.get();
-        register = argToken.text.toLowerCase();
-      }
-      this.expectToken(TokenType.RPar, "Z1014");
-      return <Operand>{
-        type: "Operand",
-        operandType: OperandType.RegOperation,
-        regOperation,
-        register,
-        macroParam,
       };
     }
 
@@ -1319,6 +1313,16 @@ export class Z80AsmParser {
           expr,
         };
       }
+    }
+
+    // --- Check for a condition
+    if (traits.condition) {
+      this.tokens.get();
+      return <Operand>{
+        type: "Operand",
+        operandType: OperandType.Condition,
+        register: start.text,
+      };
     }
 
     // --- Check for an expression
@@ -2149,8 +2153,13 @@ export class Z80AsmParser {
         );
       }
     }
-    if (traits.builtInFunction) {
-      const funcInvocation = this.parseBuiltInFuncInvocation(parsePoint);
+
+    if (traits.parseTimeFunction) {
+      return this.parseParseTimeFunctionInvocation(parsePoint);
+    }
+
+    if (traits.macroTimeFunction) {
+      const funcInvocation = this.parseMacroTimeFuncInvocation(parsePoint);
       const operand = funcInvocation.operand;
       if (
         !this.macroEmitPhase &&
@@ -2185,60 +2194,18 @@ export class Z80AsmParser {
   }
 
   /**
-   *
-   * @param parsePoint
+   * Parses macro-time function invocations
    */
-  private parseBuiltInFuncInvocation(
+  private parseMacroTimeFuncInvocation(
     parsePoint: ParsePoint
-  ): BuiltInFunctionInvocation | null {
+  ): MacroTimeFunctionInvocation | null {
     const { start } = parsePoint;
     this.tokens.get();
-    if (start.type === TokenType.TextOf || start.type === TokenType.LTextOf) {
-      this.expectToken(TokenType.LPar, "Z1013");
-      const argToken = this.tokens.peek();
-      const traits = getTokenTraits(argToken.type);
-      let mnemonic: string | undefined;
-      let regsOrConds: string | undefined;
-      let macroParam: IdentifierNode | undefined;
-      if (traits.instruction) {
-        mnemonic = argToken.text.toLowerCase();
-        this.tokens.get();
-      } else if (traits.reg || traits.condition) {
-        regsOrConds = argToken.text.toLowerCase();
-        this.tokens.get();
-      } else if (argToken.type === TokenType.LDBrac) {
-        const param = this.parseMacroParam();
-        macroParam = param.identifier;
-      } else if (argToken.type === TokenType.LPar) {
-        this.tokens.get();
-        const reg16 = this.tokens.peek();
-        const reg16Traits = getTokenTraits(reg16.type);
-        if (reg16Traits.reg16) {
-          this.tokens.get();
-          regsOrConds = `(${reg16.text.toLowerCase()})`;
-        } else {
-          this.reportError("Z1022");
-        }
-        this.expectToken(TokenType.RPar, "Z1014");
-      }
-      this.expectToken(TokenType.RPar, "Z1014");
-      return this.createExpressionNode<BuiltInFunctionInvocation>(
-        "BuiltInFunctionInvocation",
-        {
-          functionName: start.text.toLowerCase(),
-          mnemonic,
-          regsOrConds,
-          macroParam,
-        },
-        start,
-        this.tokens.peek()
-      );
-    }
     this.expectToken(TokenType.LPar, "Z1013");
     const operand = this.parseOperand();
     this.expectToken(TokenType.RPar, "Z1014");
-    return this.createExpressionNode<BuiltInFunctionInvocation>(
-      "BuiltInFunctionInvocation",
+    return this.createExpressionNode<MacroTimeFunctionInvocation>(
+      "MacroTimeFunctionInvocation",
       {
         functionName: start.text.toLowerCase(),
         operand,
@@ -2246,6 +2213,58 @@ export class Z80AsmParser {
       start,
       this.tokens.peek()
     );
+  }
+
+  /**
+   * Parses parse-time function invocations
+   */
+  private parseParseTimeFunctionInvocation(parsePoint: ParsePoint): Expression {
+    const { start } = parsePoint;
+    this.tokens.get();
+    this.expectToken(TokenType.LPar, "Z1013");
+    const argToken = this.tokens.peek();
+    const traits = getTokenTraits(argToken.type);
+    if (traits.instruction || traits.reg || traits.condition) {
+      this.tokens.get();
+      this.expectToken(TokenType.RPar, "Z1014");
+      return <StringLiteral>{
+        type: "StringLiteral",
+        value:
+          start.type === TokenType.LTextOf
+            ? argToken.text.toLowerCase()
+            : argToken.text.toUpperCase(),
+      };
+    } 
+    if (argToken.type === TokenType.LPar) {
+      this.tokens.get();
+      const reg16 = this.tokens.peek();
+      const reg16Traits = getTokenTraits(reg16.type);
+      if (!reg16Traits.reg16) {
+        this.reportError("Z1022");
+        return;
+      }
+      this.tokens.get();
+      this.expectToken(TokenType.RPar, "Z1014");
+      this.expectToken(TokenType.RPar, "Z1014");
+      return <StringLiteral>{
+        type: "StringLiteral",
+        value: `(${
+          start.type === TokenType.LTextOf
+            ? reg16.text.toLowerCase()
+            : reg16.text.toUpperCase()
+        })`,
+      };
+    }
+
+    if (!this.macroEmitPhase) {
+      // --- Accept macro parameters in this phase
+      if (argToken.type === TokenType.LDBrac) {
+        const macroParam = this.parseMacroParam();
+        this.expectToken(TokenType.RPar, "Z1014");
+        return macroParam;
+      }
+    }
+    this.reportError("Z1023");
   }
 
   /**

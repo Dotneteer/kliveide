@@ -2,7 +2,7 @@ import { ErrorCodes } from "../errors";
 import {
   BinaryExpression,
   BooleanLiteral,
-  BuiltInFunctionInvocation,
+  MacroTimeFunctionInvocation,
   ConditionalExpression,
   Expression,
   FunctionInvocation,
@@ -341,11 +341,8 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
           return new ExpressionValue(this.getCurrentAddress());
         case "CurrentCounterLiteral":
           return this.getLoopCounterValue();
-        case "MacroParameter":
-          // TODO: Implement this
-          break;
-        case "BuiltInFunctionInvocation":
-          return evalBuiltInFunctionInvocationValue(this, expr);
+        case "MacroTimeFunctionInvocation":
+          return evalMacroTimeFunctionInvocationValue(this, expr);
         case "FunctionInvocation":
           return evalFunctionInvocationValue(this, expr);
         default:
@@ -1779,9 +1776,15 @@ export function evalFunctionInvocationValue(
   }
 }
 
-export function evalBuiltInFunctionInvocationValue(
+/**
+ * Evaluates a built-in function invocation
+ * @param context Evaluation context
+ * @param expr Unary expression
+ * @returns The value of the evaluated expression
+ */
+export function evalMacroTimeFunctionInvocationValue(
   context: EvaluationContext,
-  funcExpr: BuiltInFunctionInvocation
+  funcExpr: MacroTimeFunctionInvocation
 ): ExpressionValue {
   switch (funcExpr.functionName.toLowerCase()) {
     case "def":
@@ -1810,18 +1813,11 @@ export function evalBuiltInFunctionInvocationValue(
       return new ExpressionValue(
         !!(
           funcExpr.operand &&
-          funcExpr.operand.operandType === OperandType.Condition
-        )
-      );
-    case "iscondition":
-      return new ExpressionValue(
-        !!(
-          funcExpr.operand &&
           (funcExpr.operand.operandType === OperandType.Condition ||
             funcExpr.operand?.register === "c")
         )
       );
-    case "isexpression":
+    case "isexpr":
       return new ExpressionValue(
         !!(
           funcExpr.operand &&
@@ -1888,6 +1884,127 @@ export function evalBuiltInFunctionInvocationValue(
       return new ExpressionValue(
         !!(funcExpr.operand && funcExpr.operand?.register === "a")
       );
+    case "isregb":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "b")
+      );
+    case "isregc":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "c")
+      );
+    case "isregd":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "d")
+      );
+    case "isrege":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "e")
+      );
+    case "isregh":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "h")
+      );
+    case "isregl":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "l")
+      );
+    case "isregi":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "i")
+      );
+    case "isregr":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "r")
+      );
+    case "isregbc":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "bc")
+      );
+    case "isregde":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "de")
+      );
+    case "isreghl":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "hl")
+      );
+    case "isregsp":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "sp")
+      );
+    case "isregxh":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("xh") >= 0)
+      );
+    case "isregxl":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("xl") >= 0)
+      );
+    case "isregyh":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("yh") >= 0)
+      );
+    case "isregyl":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register.indexOf("yl") >= 0)
+      );
+    case "isregix":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "ix")
+      );
+    case "isregiy":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "iy")
+      );
+    case "isregaf":
+      return new ExpressionValue(
+        !!(funcExpr.operand && funcExpr.operand?.register === "af")
+      );
+    case "hreg": {
+      let op: string | undefined;
+      switch (funcExpr.operand.register) {
+        case "af":
+          op = "a";
+        case "bc":
+          op = "b";
+        case "de":
+          op = "d";
+        case "hl":
+          op = "h";
+        case "ix":
+          op = "xh";
+        case "iy":
+          op = "yh";
+      }
+      if (op) {
+        return new ExpressionValue(op);
+      }
+      break;
+    }
+    case "lreg": {
+      let op: string | undefined;
+      switch (funcExpr.operand.register) {
+        case "bc":
+          op = "c";
+        case "de":
+          op = "e";
+        case "hl":
+          op = "l";
+        case "ix":
+          op = "xl";
+        case "iy":
+          op = "yl";
+      }
+      if (op) {
+        return new ExpressionValue(op);
+      }
+      break;
+    }
   }
-  throw new Error("Not implemented yet");
+  context.reportEvaluationError(
+    "Z3001",
+    funcExpr,
+    null,
+    `Cannot evaluate ${funcExpr.functionName}(${funcExpr.operand.register})`
+  );
 }

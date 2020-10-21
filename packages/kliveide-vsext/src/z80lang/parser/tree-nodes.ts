@@ -78,7 +78,7 @@ export type Expression =
   | CurrentAddressLiteral
   | CurrentCounterLiteral
   | MacroParameter
-  | BuiltInFunctionInvocation
+  | MacroTimeFunctionInvocation
   | FunctionInvocation;
 
 export type Directive =
@@ -473,13 +473,10 @@ export interface MacroParameter extends ExpressionNode, NodePosition {
 /**
  * Represents a built-in function invocation
  */
-export interface BuiltInFunctionInvocation extends ExpressionNode {
-  type: "BuiltInFunctionInvocation";
+export interface MacroTimeFunctionInvocation extends ExpressionNode {
+  type: "MacroTimeFunctionInvocation";
   functionName: string;
   operand?: Operand;
-  mnemonic?: string;
-  regsOrConds?: string;
-  macroParam?: IdentifierNode;
 }
 
 /**
@@ -518,10 +515,8 @@ export interface TestInstruction extends Z80Instruction {
 /**
  * Represents a NEXTREG Z80 instruction
  */
-export interface NextRegInstruction extends Z80Instruction {
+export interface NextRegInstruction extends Z80InstructionWithTwoOperands {
   type: "NextRegInstruction";
-  register: Expression;
-  value: Expression | null;
 }
 
 /**
@@ -543,7 +538,7 @@ export interface MulInstruction extends Z80Instruction {
  */
 export interface DjnzInstruction extends Z80Instruction {
   type: "DjnzInstruction";
-  target: Expression;
+  target: Operand;
 }
 
 /**
@@ -551,7 +546,7 @@ export interface DjnzInstruction extends Z80Instruction {
  */
 export interface RstInstruction extends Z80Instruction {
   type: "RstInstruction";
-  target: Expression;
+  target: Operand;
 }
 
 /**
@@ -559,34 +554,28 @@ export interface RstInstruction extends Z80Instruction {
  */
 export interface ImInstruction extends Z80Instruction {
   type: "ImInstruction";
-  mode: Expression;
+  mode: Operand;
 }
 
 /**
  * Represents a JR Z80 instruction
  */
-export interface JrInstruction extends Z80Instruction {
+export interface JrInstruction extends Z80InstructionWithOneOrTwoOperands {
   type: "JrInstruction";
-  condition?: string;
-  target: Expression;
 }
 
 /**
  * Represents a JP Z80 instruction
  */
-export interface JpInstruction extends Z80Instruction {
+export interface JpInstruction extends Z80InstructionWithOneOrTwoOperands {
   type: "JpInstruction";
-  condition?: string;
-  target: Operand;
 }
 
 /**
  * Represents a CALL Z80 instruction
  */
-export interface CallInstruction extends Z80Instruction {
+export interface CallInstruction extends Z80InstructionWithOneOrTwoOperands {
   type: "CallInstruction";
-  condition?: string;
-  target: Expression;
 }
 
 /**
@@ -594,7 +583,7 @@ export interface CallInstruction extends Z80Instruction {
  */
 export interface RetInstruction extends Z80Instruction {
   type: "RetInstruction";
-  condition?: string;
+  condition?: Operand;
 }
 
 /**
@@ -830,7 +819,6 @@ export interface Operand extends BaseNode {
   register?: string;
   expr?: Expression;
   offsetSign?: string;
-  regOperation?: string;
   macroParam?: MacroParameter;
 }
 
@@ -849,7 +837,6 @@ export enum OperandType {
   MemIndirect,
   CPort,
   Expression,
-  RegOperation,
   Condition,
   NoneArg,
 }

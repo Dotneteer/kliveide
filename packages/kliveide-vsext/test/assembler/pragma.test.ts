@@ -2,7 +2,7 @@ import "mocha";
 import * as expect from "expect";
 
 import { Z80Assembler } from "../../src/z80lang/assembler/assembler";
-import { testCodeEmit } from "./test-helpers";
+import { testCodeEmit, codeRaisesError } from "./test-helpers";
 
 describe("Assembler - pragmas", () => {
   it("org - existing segment", () => {
@@ -20,6 +20,30 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBeUndefined();
   });
 
+  it("org - sets label", () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      MySymbol .org #6789
+      ld a,b
+    `;
+
+    const output = compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.getSymbol("MySymbol").value.value).toBe(0x6789);
+  });
+
+  it("org - fails with duplicated labed", () => {
+    codeRaisesError(
+      `
+      MySymbol .equ #100
+      MySymbol .org #6789
+        ld a,b
+      `,
+      "Z2017"
+    );
+  });
+
   it("equ - immediate evaluation", () => {
     const compiler = new Z80Assembler();
     const source = `
@@ -32,6 +56,39 @@ describe("Assembler - pragmas", () => {
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
     expect(output.getSymbol("MySymbol").value.value).toBe(200);
+  });
+
+  it("equ - fails with duplicated labed", () => {
+    codeRaisesError(
+      `
+      MySymbol .equ #100
+      MySymbol .equ #6789
+        ld a,b
+      `,
+      "Z2017"
+    );
+  });
+
+  it("var - fails with equ label", () => {
+    codeRaisesError(
+      `
+      MySymbol .equ #100
+      MySymbol .var #6789
+        ld a,b
+      `,
+      "Z2027"
+    );
+  });
+
+  it("var - fails with duplicated label", () => {
+    codeRaisesError(
+      `
+      MySymbol: nop
+      MySymbol .var #6789
+        ld a,b
+      `,
+      "Z2027"
+    );
   });
 
   it("bank - existing segment #1", () => {
@@ -215,11 +272,30 @@ describe("Assembler - pragmas", () => {
   });
 
   it("bank - maximum length works", () => {
-    // TODO: Implement this test
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .bank 4
+      .defs 0x4000, 0x34
+    `;
+
+    const output = compiler.compile(source);
+    expect(output.errorCount).toBe(0);
   });
 
   it("bank - maximum length overflows", () => {
-    // TODO: Implement this test
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .bank 4
+      .org #8000
+      .defs 0x4000, 0x34
+      .defb 0x00
+    `;
+
+    const output = compiler.compile(source);
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z2001").toBe(true);
   });
 
   it("bank - offseted bank with existing segment #1", () => {
@@ -426,11 +502,31 @@ describe("Assembler - pragmas", () => {
   });
 
   it("bank - maximum offseted bank length", () => {
-    // TODO: Implement this test
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .bank 4, #1000
+      .defs 0x3000, 0x34
+    `;
+
+    const output = compiler.compile(source);
+    expect(output.errorCount).toBe(0);
   });
 
   it("bank - maximum offseted bank length overflows", () => {
-    // TODO: Implement this test
+    const compiler = new Z80Assembler();
+    const source = `
+      .model Spectrum128
+      .bank 4, #1000
+      .org #8000
+      .defs 0x3000, 0x34
+      .defb 0x00
+    `;
+
+    const output = compiler.compile(source);
+
+    expect(output.errorCount).toBe(1);
+    expect(output.errors[0].errorCode === "Z2001").toBe(true);
   });
 
   it("xorg - negative value", () => {
@@ -529,6 +625,21 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].startAddress).toBe(0x6400);
   });
 
+  it("ent - late binding", () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    .org #6789
+    .ent MyStart
+      nop
+    MyStart: ld a,b
+    `;
+
+    const output = compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.entryAddress).toBe(0x678a);
+  });
+
   it("ent - multiple pragma", () => {
     const compiler = new Z80Assembler();
     const source = `
@@ -577,6 +688,21 @@ describe("Assembler - pragmas", () => {
     expect(output.segments.length).toBe(1);
     expect(output.exportEntryAddress).toBe(0x6400);
     expect(output.segments[0].startAddress).toBe(0x6400);
+  });
+
+  it("xent - late binding", () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    .org #6789
+    .xent MyStart
+      nop
+    MyStart: ld a,b
+    `;
+
+    const output = compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.exportEntryAddress).toBe(0x678a);
   });
 
   it("xent - multiple pragma", () => {
@@ -659,6 +785,122 @@ describe("Assembler - pragmas", () => {
     expect(output.segments.length).toBe(1);
     expect(output.segments[0].startAddress).toBe(0x6400);
     expect(output.segments[0].displacement).toBe(0x0000);
+  });
+
+  it("disp - emits displaced code #1", () => {
+    testCodeEmit(
+      `
+      .org #8000
+      .disp #20
+      nop
+      call Test
+      halt
+      Test: ret
+    `,
+      0x00,
+      0xcd,
+      0x25,
+      0x80,
+      0x76,
+      0xc9
+    );
+  });
+
+  it("disp - emits displaced code #2", () => {
+    testCodeEmit(
+      `
+      .org #8000
+      .disp -#20
+      nop
+      call Test
+      halt
+      Test: ret
+    `,
+      0x00,
+      0xcd,
+      0xe5,
+      0x7f,
+      0x76,
+      0xc9
+    );
+  });
+
+  it("disp - handles address shift #1", () => {
+    testCodeEmit(
+      `
+      .org #8000
+      nop
+      .disp #100
+      This: ld bc, this
+      call Test
+      halt
+      Test: ret
+    `,
+      0x00,
+      0x01,
+      0x01,
+      0x81,
+      0xcd,
+      0x08,
+      0x81,
+      0x76,
+      0xc9
+    );
+  });
+
+  it("disp - handles address shift #2", () => {
+    testCodeEmit(
+      `
+      .org #8000
+      nop
+      This: ld bc, this
+      .disp #100
+      call Test
+      halt
+      Test: ret
+    `,
+      0x00,
+      0x01,
+      0x01,
+      0x80,
+      0xcd,
+      0x08,
+      0x81,
+      0x76,
+      0xc9
+    );
+  });
+
+  it("disp - handles address shift #3", () => {
+    testCodeEmit(
+      `
+      .org #8000
+      nop
+      .disp #100
+      This: jr Test
+      halt
+      Test: ret
+    `,
+      0x00,
+      0x18,
+      0x01,
+      0x76,
+      0xc9
+    );
+  });
+
+  it("disp - handles address shift #4", () => {
+    codeRaisesError(
+      `
+      .org #8000
+      nop
+      This: jr Test
+      .disp #100
+      halt
+      Test: ret
+    `,
+      "Z2045"
+    );
   });
 
   const varPragmas = [".var", "=", ":="];
@@ -1158,17 +1400,16 @@ describe("Assembler - pragmas", () => {
     { source: '.dgx " ....OOOO"', expected: [0x0f] },
     { source: '.dgx " .... OOOO "', expected: [0x0f] },
 
-    { source: ".dgx \"....OOOO ..OO\"", expected: [0x0f, 0x30] },
-    { source: ".dgx \"....OOOO ..OOO\"", expected: [0x0f, 0x38] },
-    { source: ".dgx \"....OOOO ..OOOO\"", expected: [0x0f, 0x3c] },
-    { source: ".dgx \">....OOOO ..OO\"", expected: [0x00, 0xF3] },
-    { source: ".dgx \">....O OOO..OOO\"", expected: [0x01, 0xE7] },
-    { source: ".dgx \">....OO OO..OOOO\"", expected: [0x03, 0xCF] },
+    { source: '.dgx "....OOOO ..OO"', expected: [0x0f, 0x30] },
+    { source: '.dgx "....OOOO ..OOO"', expected: [0x0f, 0x38] },
+    { source: '.dgx "....OOOO ..OOOO"', expected: [0x0f, 0x3c] },
+    { source: '.dgx ">....OOOO ..OO"', expected: [0x00, 0xf3] },
+    { source: '.dgx ">....O OOO..OOO"', expected: [0x01, 0xe7] },
+    { source: '.dgx ">....OO OO..OOOO"', expected: [0x03, 0xcf] },
   ];
   dgxCases.forEach((dgxc) =>
-  it(`.defg: ${dgxc.source}`, () => {
-    testCodeEmit(dgxc.source, ...dgxc.expected);
-  })
-);
-
+    it(`.defg: ${dgxc.source}`, () => {
+      testCodeEmit(dgxc.source, ...dgxc.expected);
+    })
+  );
 });
