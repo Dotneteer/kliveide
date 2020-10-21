@@ -159,7 +159,7 @@ export class SymbolScope implements ISymbolScope {
    * Tests if this context is a macro context
    */
   get isMacroContext(): boolean {
-    return !this.macroArguments;
+    return !!this.macroArguments;
   }
 
   /**

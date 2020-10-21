@@ -6,6 +6,7 @@ import {
   Z80AssemblyLine,
   TestInstruction,
   NextRegInstruction,
+  OperandType,
 } from "../../src/z80lang/parser/tree-nodes";
 import { InputStream } from "../../src/z80lang/parser/input-stream";
 import { TokenStream } from "../../src/z80lang/parser/token-stream";
@@ -106,8 +107,8 @@ describe("Parser - Next Z80 instructions", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "NextRegInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as NextRegInstruction;
-      expect(instr.register.type === "IntegerLiteral").toBe(true);
-      expect(instr.value.type === "IntegerLiteral").toBe(true);
+      expect(instr.operand1.operandType === OperandType.Expression).toBe(true);
+      expect(instr.operand2.operandType === OperandType.Expression).toBe(true);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -125,8 +126,8 @@ describe("Parser - Next Z80 instructions", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "NextRegInstruction").toBe(true);
       const instr = (parsed.assemblyLines[0] as unknown) as NextRegInstruction;
-      expect(instr.register.type === "IntegerLiteral").toBe(true);
-      expect(instr.value).toBe(null);
+      expect(instr.operand1.operandType === OperandType.Expression).toBe(true);
+      expect(instr.operand2.operandType === OperandType.Reg8).toBe(true);
       const line = parsed.assemblyLines[0] as Z80AssemblyLine;
       expect(line.label).toBe(null);
       expect(line.startPosition).toBe(0);
@@ -140,7 +141,7 @@ describe("Parser - Next Z80 instructions", () => {
       const parser = createParser(inst);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z1016").toBe(true);
     });
   });
 

@@ -4,7 +4,6 @@ import * as path from "path";
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { InputStream } from "../parser/input-stream";
 import { TokenStream } from "../parser/token-stream";
-import { getTokenTraits } from "../parser/token-traits";
 
 import {
   AdcInstruction,
@@ -40,9 +39,6 @@ import {
   FillwPragma,
   ForStatement,
   IfLikeStatement,
-  IfNUsedStatement,
-  IfStatement,
-  IfUsedStatement,
   ImInstruction,
   IncBinPragma,
   IncInstruction,
@@ -1036,9 +1032,6 @@ export class Z80Assembler extends ExpressionEvaluator {
       codeLength: 0,
     };
 
-    // --- Report any parse-time function issue
-    // TODO: Implement this feature
-
     // --- No parse-time issue, process the line
     if (
       asmLine.type === "LabelOnlyLine" ||
@@ -1193,8 +1186,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Now, it's time to deal with the assembly line
       if (asmLine.type.endsWith("Pragma")) {
         // --- Process a pragma
-        // TODO: Check if ensureCodeSegment() is enough
-        this.getCurrentAddress();
+        this.ensureCodeSegment();
         this._currentSegment.currentInstructionOffset = this._currentSegment.emittedCode.length;
         this.applyPragma(asmLine as Pragma, currentLabel);
         emitListItem();
@@ -1342,6 +1334,9 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param symbol Symbol to check
    */
   private symbolExists(symbol: string): boolean {
+    if (!this.isCaseSensitive) {
+      symbol = symbol.toLowerCase();
+    }
     let lookup = this._currentModule.symbols;
     if (this._currentModule.localScopes.length > 0) {
       const localScopes = this._currentModule.localScopes;
@@ -1684,7 +1679,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     ) {
       this.reportAssemblyError("Z2025", pragma, null, ".ent");
     }
-    const value = this.evaluateExprImmediate(pragma.address);
+    const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
       this.recordFixup(
         (pragma as unknown) as Z80AssemblyLine,
@@ -1707,7 +1702,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     ) {
       this.reportAssemblyError("Z2025", pragma, null, ".xent");
     }
-    const value = this.evaluateExprImmediate(pragma.address);
+    const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
       this.recordFixup(
         (pragma as unknown) as Z80AssemblyLine,
@@ -2453,8 +2448,10 @@ export class Z80Assembler extends ExpressionEvaluator {
         case OperandType.Reg16:
         case OperandType.Reg16Idx:
         case OperandType.Reg16Spec:
-        case OperandType.RegIndirect:
           argValue = new ExpressionValue(op.register);
+          break;
+        case OperandType.RegIndirect:
+          argValue = new ExpressionValue(`(${op.register})`);
           break;
         case OperandType.Expression:
           argValue = this.evaluateExpr(op.expr);
@@ -2498,7 +2495,11 @@ export class Z80Assembler extends ExpressionEvaluator {
         continue;
       }
 
-      macroArgs[macroDef.argNames[i].name] = argValue;
+      let macroName = macroDef.argNames[i].name;
+      if (!this.isCaseSensitive) {
+        macroName = macroName.toLowerCase();
+      }
+      macroArgs[macroName] = argValue;
     }
     if (errorFound) {
       return;
@@ -2547,7 +2548,10 @@ export class Z80Assembler extends ExpressionEvaluator {
       let matches: RegExpExecArray;
       while ((matches = regExpr.exec(lineText)) !== null) {
         const toReplace = matches[0];
-        const argName = matches[1];
+        let argName = matches[1];
+        if (!this.isCaseSensitive) {
+          argName = argName.toLowerCase();
+        }
         if (macroArgs[argName]) {
           newText = newText.replace(toReplace, macroArgs[argName].asString());
         }
@@ -2563,7 +2567,6 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- Now we have the source text to compile
-    // TODO: Sign that we're processing macros
     const inputStream = new InputStream(macroSource);
     const tokenStream = new TokenStream(inputStream);
     const macroParser = new Z80AsmParser(tokenStream, 0, true);
@@ -2900,17 +2903,23 @@ export class Z80Assembler extends ExpressionEvaluator {
     for (let i = firstLine + 1; i < currentLineIndex.index; i++) {
       var macroLine = allLines[i];
 
-      // TODO: Check for parse-time function parameters (they can have only macro parameter arguments)
+      // --- Check for parse-time function parameters
+      // --- (they can have only macro parameter arguments)
       if (macroLine.type === "MacroStatement") {
         this.reportAssemblyError("Z2079", macroLine);
         errorFound = true;
         continue;
       }
 
+      const isCaseSensitive = this.isCaseSensitive;
       if (macroLine.macroParams) {
         for (const param of macroLine.macroParams) {
           const findParam = macro.parameters.find(
-            (p) => p.name.toLowerCase() === param.identifier.name.toLowerCase()
+            (p) =>
+              (isCaseSensitive ? p.name : p.name.toLowerCase()) ===
+              (isCaseSensitive
+                ? param.identifier.name
+                : param.identifier.name.toLowerCase())
           );
           if (findParam) {
             continue;
@@ -4338,13 +4347,22 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (this.invalidNextInst(op)) {
       return;
     }
-    if (op.value !== null) {
+    if (op.operand1.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    if (op.operand2.operandType === OperandType.Expression) {
       this.emitOpCode(0xed91);
-      this.emitNumericExpr(op, op.register, FixupType.Bit8);
-      this.emitNumericExpr(op, op.value, FixupType.Bit8);
-    } else {
+      this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
+      this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit8);
+    } else if (
+      op.operand2.operandType === OperandType.Reg8 &&
+      op.operand2.register === "a"
+    ) {
       this.emitOpCode(0xed92);
-      this.emitNumericExpr(op, op.register, FixupType.Bit8);
+      this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
+    } else {
+      this.reportAssemblyError("Z2043", op);
     }
   }
 
@@ -4386,13 +4404,34 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    */
   private processCallInst(op: CallInstruction): void {
-    if (op.condition) {
-      const order = conditionOrder[op.condition] ?? 0;
-      this.emitOpCode(0xc4 + order * 8);
-    } else {
+    if (!op.operand2) {
+      if (op.operand1.operandType !== OperandType.Expression) {
+        this.reportAssemblyError("Z2043", op);
+        return;
+      }
       this.emitOpCode(0xcd);
+      this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit16);
+      return;
     }
-    this.emitNumericExpr(op, op.target, FixupType.Bit16);
+    let condition: string;
+    if (op.operand1.operandType === OperandType.Condition) {
+      condition = op.operand1.register;
+    } else if (
+      op.operand1.operandType === OperandType.Reg8 &&
+      op.operand1.register === "c"
+    ) {
+      condition = "c";
+    } else {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    const order = conditionOrder[condition] ?? 0;
+    this.emitOpCode(0xc4 + order * 8);
+    if (op.operand2.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
   }
 
   /**
@@ -4400,48 +4439,61 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    */
   private processJpInst(op: JpInstruction): void {
-    if (op.condition) {
-      const order = conditionOrder[op.condition] ?? 0;
-      if (op.target.operandType !== OperandType.Expression) {
-        this.reportAssemblyError("Z1003", op);
-        return;
-      }
-      this.emitOpCode(0xc2 + order * 8);
-      this.emitNumericExpr(op, op.target.expr, FixupType.Bit16);
-    } else {
-      switch (op.target.operandType) {
+    if (!op.operand2) {
+      switch (op.operand1.operandType) {
         case OperandType.CPort:
           this.emitOpCode(0xed98);
           return;
         case OperandType.Reg16:
         case OperandType.RegIndirect:
-          if (op.target.register !== "hl") {
+          if (op.operand1.register !== "hl") {
             break;
           }
           this.emitOpCode(0xe9);
           return;
         case OperandType.IndexedIndirect:
-          if (op.target.offsetSign) {
+          if (op.operand1.offsetSign) {
             break;
           }
         // --- Flow to the next label is intentional
         case OperandType.Reg16Idx:
-          if (op.target.register === "ix") {
+          if (op.operand1.register === "ix") {
             this.emitOpCode(0xdde9);
             return;
           }
-          if (op.target.register === "iy") {
+          if (op.operand1.register === "iy") {
             this.emitOpCode(0xfde9);
             return;
           }
           break;
         case OperandType.Expression:
           this.emitOpCode(0xc3);
-          this.emitNumericExpr(op, op.target.expr, FixupType.Bit16);
+          this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit16);
           return;
       }
       this.reportAssemblyError("Z2043", op);
+      return;
     }
+
+    let condition: string;
+    if (op.operand1.operandType === OperandType.Condition) {
+      condition = op.operand1.register;
+    } else if (
+      op.operand1.operandType === OperandType.Reg8 &&
+      op.operand1.register === "c"
+    ) {
+      condition = "c";
+    } else {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    const order = conditionOrder[condition] ?? 0;
+    if (op.operand2.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z1003", op);
+      return;
+    }
+    this.emitOpCode(0xc2 + order * 8);
+    this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
   }
 
   /**
@@ -4449,16 +4501,36 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    */
   private processJrInst(op: JrInstruction): void {
-    let opCode = 0x18;
-    if (op.condition) {
-      const order = conditionOrder[op.condition] ?? 0;
-      if (order >= 4) {
-        this.reportAssemblyError("Z2044", op);
+    if (!op.operand2) {
+      if (op.operand1.operandType !== OperandType.Expression) {
+        this.reportAssemblyError("Z2043", op);
         return;
       }
-      opCode = 0x20 + order * 8;
+      this.emitJumpRelativeOp(op, op.operand1, 0x18);
+      return;
     }
-    this.emitJumpRelativeOp(op, op.target, opCode);
+    let condition: string;
+    if (op.operand1.operandType === OperandType.Condition) {
+      condition = op.operand1.register;
+    } else if (
+      op.operand1.operandType === OperandType.Reg8 &&
+      op.operand1.register === "c"
+    ) {
+      condition = "c";
+    } else {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    const order = conditionOrder[condition] ?? 0;
+    if (order >= 4) {
+      this.reportAssemblyError("Z2044", op);
+      return;
+    }
+    if (op.operand2.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    this.emitJumpRelativeOp(op, op.operand2, 0x20 + order * 8);
   }
 
   /**
@@ -4466,8 +4538,20 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    */
   private processRetInst(op: RetInstruction): void {
+    let condition: string;
     if (op.condition) {
-      const order = conditionOrder[op.condition] ?? 0;
+      if (op.condition.operandType === OperandType.Condition) {
+        condition = op.condition.register;
+      } else if (
+        op.condition.operandType === OperandType.Reg8 &&
+        op.condition.register === "c"
+      ) {
+        condition = "c";
+      } else {
+        this.reportAssemblyError("Z2043", op);
+        return;
+      }
+      const order = conditionOrder[condition] ?? 0;
       this.emitByte(0xc0 + order * 8);
       return;
     }
@@ -4479,7 +4563,11 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    */
   private processRstInst(op: RstInstruction): void {
-    const value = this.evaluateExprImmediate(op.target).value;
+    if (op.target.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    const value = this.evaluateExprImmediate(op.target.expr).value;
     if (value > 0x38 || value % 8 !== 0) {
       this.reportAssemblyError("Z2046", op, null, value);
       return;
@@ -4492,7 +4580,11 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param op Instruction
    */
   private processImInst(op: ImInstruction): void {
-    const value = this.evaluateExprImmediate(op.mode).value;
+    if (op.mode.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z2043", op);
+      return;
+    }
+    const value = this.evaluateExprImmediate(op.mode.expr).value;
     if (value < 0 || value > 2) {
       this.reportAssemblyError("Z2047", op, null, value);
       return;
@@ -5268,14 +5360,18 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private emitJumpRelativeOp(
     instr: Instruction,
-    target: Expression,
+    target: Operand,
     opCode: number
   ) {
-    const value = this.evaluateExpr(target);
-    let dist = 0;
     const opLine = (instr as unknown) as Z80AssemblyLine;
+    if (target.operandType !== OperandType.Expression) {
+      this.reportAssemblyError("Z2043", opLine);
+      return;
+    }
+    const value = this.evaluateExpr(target.expr);
+    let dist = 0;
     if (value.isNonEvaluated) {
-      this.recordFixup(opLine, FixupType.Jr, target);
+      this.recordFixup(opLine, FixupType.Jr, target.expr);
     } else {
       dist = value.value - (this.getCurrentAssemblyAddress() + 2);
       if (dist < -128 || dist > 127) {

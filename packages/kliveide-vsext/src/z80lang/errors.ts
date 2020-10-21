@@ -37,6 +37,9 @@ export type ErrorCodes =
   | "Z1020"
   | "Z1021"
   | "Z1022"
+  | "Z1023"
+  | "Z1024"
+
   | "Z2000"
   | "Z2001"
   | "Z2002"
@@ -162,6 +165,8 @@ export const errorMessages: ErrorText = {
   Z1020: "'to' expected",
   Z1021: "A byte-emitting pragma expected",
   Z1022: "BC, DE, HL, or SP expected",
+  Z1023: "A mnemonic, a register, or a register indirection expression expected.",
+  Z1024: "The lreg and hreg functions accept only a bc, de, hl, ix, or iy as their argument.",
 
   Z2000: "The current assembly address overflew $FFFF",
   Z2001: "The emitted code overflows the segment/bank.",
