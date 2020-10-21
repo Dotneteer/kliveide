@@ -17,13 +17,22 @@ export class TokenStream {
   private _prefetchedColumn: number | null = null;
 
   // --- The last end-of-line comment
-  private _lastComment: string | null = null ;
+  private _lastComment: string | null = null;
 
   /**
    * Initializes the tokenizer with the input stream
    * @param input Input source code stream
    */
   constructor(public readonly input: InputStream) {}
+
+  /**
+   * Gets the specified part of the source code
+   * @param start Start position
+   * @param end End position
+   */
+  getSourceSpan(start: number, end: number): string {
+    return this.input.getSourceSpan(start, end);
+  }
 
   /**
    * Resets the last comment
@@ -81,7 +90,7 @@ export class TokenStream {
     if (this._ahead.length > 0) {
       const token = this._ahead.shift();
       if (!token) {
-        throw new Error("Token expected")
+        throw new Error("Token expected");
       }
       return token;
     }
@@ -477,7 +486,7 @@ export class TokenStream {
             if (
               text === "defg" ||
               text === "DEFG" ||
-              text == "dg" ||
+              text === "dg" ||
               text === "DG"
             ) {
               phase = LexerPhase.DefgTail;
@@ -497,7 +506,7 @@ export class TokenStream {
             if (
               text === ".defg" ||
               text === ".DEFG" ||
-              text == ".dg" ||
+              text === ".dg" ||
               text === ".DG"
             ) {
               phase = LexerPhase.DefgTail;
@@ -512,7 +521,9 @@ export class TokenStream {
         // --- Wait for the completion of hexadecimal number of preprocessor directive
         case LexerPhase.DirectiveOrHexLiteral:
           if (isLetterOrDigit(ch)) {
-            if (input.peek() !== null) break;
+            if (input.peek() !== null) {
+              break;
+            }
             appendTokenChar();
           }
           if (
@@ -535,11 +546,14 @@ export class TokenStream {
             break;
           }
           if (isLetterOrDigit(ch)) {
-            if (input.peek() !== null) break;
+            if (input.peek() !== null) {
+              break;
+            }
             appendTokenChar();
           }
           if (
             text.length <= 5 &&
+            text.length >= 2 &&
             text
               .substr(1)
               .split("")
@@ -623,9 +637,10 @@ export class TokenStream {
 
         // --- This previous case intentionally flows to this label
         case LexerPhase.NumericLiteral1_9:
-          if (ch === " " || ch === "\t") {
+          if (isLiteralBreakingChar(ch)) {
             return makeToken();
           }
+
           // --- Octal, decimal, or suffixed hexadecimal
           if (isHexaSuffix(ch)) {
             return completeToken(TokenType.HexadecimalLiteral);
@@ -636,28 +651,48 @@ export class TokenStream {
               ? completeToken(TokenType.OctalLiteral)
               : completeToken(TokenType.Unknown);
           }
-          const nextCh = input.peek();
-          if (startIsOctal && nextCh && isOctalSuffix(nextCh)) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (nextCh && isHexaSuffix(nextCh)) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(1))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isHexaSuffix(input.ahead(1))) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(2))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isHexaSuffix(input.ahead(2))) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(3))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isHexaSuffix(input.ahead(3))) {
-            phase = LexerPhase.HexaLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(4))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (startIsOctal && isOctalSuffix(input.ahead(5))) {
-            phase = LexerPhase.OctalLiteralSuffix;
-          } else if (isDecimalDigit(ch)) {
+          // --- Test the next 4 characters for octal or hexa prefix
+          let phaseSet = false;
+          let breakFound = false;
+          for (let i = 0; i < 4; i++) {
+            const nextCh = input.ahead(i);
+            if (!nextCh || isLiteralBreakingChar(nextCh)) {
+              breakFound = true;
+              break;
+            }
+            if (startIsOctal && isOctalSuffix(nextCh)) {
+              phase = LexerPhase.OctalLiteralSuffix;
+              phaseSet = true;
+              break;
+            }
+            if (isHexaSuffix(nextCh)) {
+              phase = LexerPhase.HexaLiteralSuffix;
+              phaseSet = true;
+              break;
+            }
+          }
+          if (phaseSet) {
+            break;
+          }
+
+          if (!breakFound) {
+            // --- Test char 5 and 6 for octal prefix
+            for (let i = 4; i < 6; i++) {
+              const nextCh = input.ahead(i);
+              if (isLiteralBreakingChar(nextCh)) {
+                break;
+              }
+              if (startIsOctal && isOctalSuffix(nextCh)) {
+                phase = LexerPhase.OctalLiteralSuffix;
+                phaseSet = true;
+                break;
+              }
+            }
+          }
+          if (phaseSet) {
+            break;
+          }
+          if (isDecimalDigit(ch)) {
             phase = LexerPhase.DecimalOrReal;
             tokenType = TokenType.DecimalLiteral;
           } else if (ch === "e" || ch === "E") {
@@ -668,6 +703,7 @@ export class TokenStream {
           } else {
             return makeToken();
           }
+
           break;
 
         // --- Wait for the completion of hexadecimal literal
@@ -1541,6 +1577,7 @@ function isIdContinuation(ch: string): boolean {
     ch === "!" ||
     ch === "?" ||
     ch === "#" ||
+    ch === "." ||
     isLetterOrDigit(ch)
   );
 }
@@ -1572,6 +1609,18 @@ function isRestrictedInString(ch: string): boolean {
     ch === "\u0085" ||
     ch === "\u2028" ||
     ch === "\u2029"
+  );
+}
+
+// --- Tests for a breaking char
+function isLiteralBreakingChar(ch: string): boolean {
+  return (
+    !isHexadecimalDigit(ch) &&
+    !isHexaSuffix(ch) &&
+    !isOctalSuffix(ch) &&
+    ch !== "." //&&
+    //ch !== "+" &&
+    //ch !== "-"
   );
 }
 
@@ -2083,7 +2132,7 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".elif": TokenType.Elif,
   ".ELIF": TokenType.Elif,
-  
+
   ".else": TokenType.Else,
   ".ELSE": TokenType.Else,
 
@@ -2152,10 +2201,9 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".local": TokenType.Local,
   ".LOCAL": TokenType.Local,
-  "local": TokenType.Local,
-  "LOCAL": TokenType.Local,
-  "Local": TokenType.Local,
-
+  local: TokenType.Local,
+  LOCAL: TokenType.Local,
+  Local: TokenType.Local,
 
   textof: TokenType.TextOf,
   TEXTOF: TokenType.TextOf,
@@ -2275,4 +2323,6 @@ const resolverHash: { [key: string]: TokenType } = {
   "#ifmod": TokenType.IfModDir,
   "#ifnmod": TokenType.IfNModDir,
   "#line": TokenType.LineDir,
+
+  $: TokenType.CurAddress,
 };

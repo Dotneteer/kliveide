@@ -18,6 +18,15 @@ export class InputStream {
   constructor(public readonly source: string) {}
 
   /**
+   * Gets the specified part of the source code
+   * @param start Start position
+   * @param end End position
+   */
+  getSourceSpan(start: number, end: number): string {
+    return this.source.substring(start, end);
+  }
+
+  /**
    * Gets the current position in the stream. Starts from 0.
    */
   get position(): number {
