@@ -2524,11 +2524,11 @@ export class Z80AsmParser {
    * Parses a character literal
    *
    */
-  private parseCharLiteral(text: string): CharLiteral | null {
-    text = text.substr(1, text.length - 2);
-    return <CharLiteral>{
-      type: "CharLiteral",
-      value: convertSpectrumString(text),
+  private parseCharLiteral(text: string): IntegerLiteral | null {
+    text = convertSpectrumString(text.substr(1, text.length - 2));
+    return <IntegerLiteral>{
+      type: "IntegerLiteral",
+      value: text.length > 0 ? text.charCodeAt(0) : 0x00
     };
   }
 

@@ -1,4 +1,3 @@
-import { Position } from "vscode";
 import {
   createConnection,
   TextDocuments,
@@ -14,6 +13,7 @@ import {
   InitializeResult,
 } from "vscode-languageserver";
 import { TextDocument } from "vscode-languageserver-textdocument";
+import { Z80Assembler } from "../assembler/assembler";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -125,8 +125,8 @@ function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
 
 // Only keep settings for open documents
 documents.onDidClose((e) => {
-    console.log("Server: onDidClose");
-    documentSettings.delete(e.document.uri);
+  console.log("Server: onDidClose");
+  documentSettings.delete(e.document.uri);
 });
 
 // The content of a text document has changed. This event is emitted
@@ -141,14 +141,24 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   // In this simple example we get the settings for every validate run.
   let diagnostics: Diagnostic[] = [];
 
-  diagnostics.push({
-      range: { 
-        start: textDocument.positionAt(1),
-        end: textDocument.positionAt(3)
+  // --- Compile the code
+  const start = Date.now();
+  const compiler = new Z80Assembler();
+  const output = compiler.compile(textDocument.getText());
+  const end = Date.now() - start;
+  console.log(`Compilation time: ${end}`);
+
+  for (const errInfo of output.errors) {
+    console.log(JSON.stringify(errInfo));
+    diagnostics.push({
+      range: {
+        start: textDocument.positionAt(errInfo.startPosition),
+        end: textDocument.positionAt(errInfo.endPosition ?? errInfo.startPosition + 1),
       },
-      severity: DiagnosticSeverity.Warning,
-      message: "Sample message"
-  });
+      severity: DiagnosticSeverity.Error,
+      message: errInfo.message,
+    });
+  }
 
   // Send the computed diagnostics to VSCode.
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
