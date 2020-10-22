@@ -521,9 +521,9 @@ function testCharLiteral(source: string, char: number | string): void {
   const parsed = parser.parseExpr();
   expect(parser.hasErrors).toBe(false);
   expect(parsed).not.toBeNull();
-  expect(parsed.type === "CharLiteral").toBe(true);
+  expect(parsed.type === "IntegerLiteral").toBe(true);
   const literal = parsed as StringLiteral;
-  const code = literal.value.charCodeAt(0);
+  const code = literal.value;
   if (typeof char === "string") {
     expect((char as string).charCodeAt(0)).toBe(code);
   } else {
