@@ -9,7 +9,7 @@ describe("Assembler - .break", () => {
       ld a,b
       .break
     `,
-      "Z2059"
+      "Z0707"
     );
   });
 
@@ -21,7 +21,7 @@ describe("Assembler - .break", () => {
       .break
     .endif
     `,
-      "Z2059"
+      "Z0707"
     );
   });
 

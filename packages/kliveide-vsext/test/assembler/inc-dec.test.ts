@@ -89,16 +89,16 @@ describe("Assembler - inc/dec operations", () => {
   });
 
   it("inc: fails with invalid operand", () => {
-    codeRaisesError("inc 123", "Z2043");
-    codeRaisesError("inc (de)", "Z2043");
-    codeRaisesError("inc af", "Z2043");
-    codeRaisesError("inc i", "Z2043");
-    codeRaisesError("inc (#1234)", "Z2043");
-    codeRaisesError("dec 123", "Z2043");
-    codeRaisesError("dec (de)", "Z2043");
-    codeRaisesError("dec af", "Z2043");
-    codeRaisesError("dec i", "Z2043");
-    codeRaisesError("dec (#1234)", "Z2043");
+    codeRaisesError("inc 123", "Z0604");
+    codeRaisesError("inc (de)", "Z0604");
+    codeRaisesError("inc af", "Z0604");
+    codeRaisesError("inc i", "Z0604");
+    codeRaisesError("inc (#1234)", "Z0604");
+    codeRaisesError("dec 123", "Z0604");
+    codeRaisesError("dec (de)", "Z0604");
+    codeRaisesError("dec af", "Z0604");
+    codeRaisesError("dec i", "Z0604");
+    codeRaisesError("dec (#1234)", "Z0604");
   });
 
 });

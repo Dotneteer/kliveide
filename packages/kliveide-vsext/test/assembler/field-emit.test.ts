@@ -249,7 +249,7 @@ describe("Assembler - struct invocation", () => {
       -> .defb #00
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -628,7 +628,7 @@ describe("Assembler - struct invocation", () => {
       -> .defb #00
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -745,7 +745,7 @@ describe("Assembler - struct invocation", () => {
       -> .defm "Hi"
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -870,7 +870,7 @@ describe("Assembler - struct invocation", () => {
       -> .defn "Hi"
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -987,7 +987,7 @@ describe("Assembler - struct invocation", () => {
       -> .defc "Hi"
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -1101,7 +1101,7 @@ describe("Assembler - struct invocation", () => {
       -> .defh "E4"
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -1220,7 +1220,7 @@ describe("Assembler - struct invocation", () => {
       -> .defs 4
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -1339,7 +1339,7 @@ describe("Assembler - struct invocation", () => {
       -> .fillb 4, #13
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -1465,7 +1465,7 @@ describe("Assembler - struct invocation", () => {
       -> .fillw 4, #13
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -1581,7 +1581,7 @@ describe("Assembler - struct invocation", () => {
       -> .defg ----OOOO xxxx....
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 
@@ -1695,7 +1695,7 @@ describe("Assembler - struct invocation", () => {
       -> .defgx "----OOOO xxxx...."
     Next:
       `,
-      "Z2013"
+      "Z0801"
     );
   });
 

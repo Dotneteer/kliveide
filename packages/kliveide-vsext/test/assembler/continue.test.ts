@@ -9,7 +9,7 @@ describe("Assembler - .continue", () => {
       ld a,b
       .continue
     `,
-      "Z2060"
+      "Z0708"
     );
   });
 
@@ -21,7 +21,7 @@ describe("Assembler - .continue", () => {
       .continue
     .endif
     `,
-      "Z2060"
+      "Z0708"
     );
   });
 

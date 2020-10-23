@@ -41,7 +41,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 
@@ -69,7 +69,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 
@@ -97,7 +97,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 
@@ -126,7 +126,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} z #1`, () => {
@@ -152,7 +152,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} z,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} nz #1`, () => {
@@ -178,7 +178,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nz,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} c #1`, () => {
@@ -204,7 +204,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} c,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} nc #1`, () => {
@@ -230,7 +230,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nc,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 
@@ -259,7 +259,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} z #1`, () => {
@@ -285,7 +285,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} z,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} nz #1`, () => {
@@ -311,7 +311,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nz,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} c #1`, () => {
@@ -337,7 +337,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} c,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} nc #1`, () => {
@@ -363,7 +363,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nc,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} po #1`, () => {
@@ -389,7 +389,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} po,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} pe #1`, () => {
@@ -415,7 +415,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} pe,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} m #1`, () => {
@@ -441,7 +441,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} m,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} p #1`, () => {
@@ -489,7 +489,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} z #1`, () => {
@@ -515,7 +515,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} z,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} nz #1`, () => {
@@ -541,7 +541,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nz,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} c #1`, () => {
@@ -567,7 +567,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} c,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} nc #1`, () => {
@@ -593,7 +593,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} nc,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} po #1`, () => {
@@ -619,7 +619,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} po,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} pe #1`, () => {
@@ -645,7 +645,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} pe,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} m #1`, () => {
@@ -671,7 +671,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} m,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} p #1`, () => {
@@ -697,7 +697,7 @@ describe("Parser - control flow instructions", () => {
       const parser = createParser(`${inst} p,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 

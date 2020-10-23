@@ -15,7 +15,7 @@ describe("Assembler - macro parameter emit", () => {
       `
       {{MyParam}}
       `,
-      "Z2091"
+      "Z1011"
     );
   });
 
@@ -26,7 +26,7 @@ describe("Assembler - macro parameter emit", () => {
       {{MyParam}}
       .endl
       `,
-      "Z2091"
+      "Z1011"
     );
   });
 
@@ -88,8 +88,8 @@ describe("Assembler - macro parameter emit", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(2);
-    expect(output.errors[0].errorCode === "Z2080").toBe(true);
-    expect(output.errors[1].errorCode === "Z2087").toBe(true);
+    expect(output.errors[0].errorCode === "Z1006").toBe(true);
+    expect(output.errors[1].errorCode === "Z1007").toBe(true);
   });
 
   const reg8Cases = [
@@ -178,7 +178,7 @@ describe("Assembler - macro parameter emit", () => {
       .endm
       MyMacro("MyLabel: jp MyLabel")
       `,
-      "Z1013"
+      "Z1012", "Z0004"
     );
   });
 

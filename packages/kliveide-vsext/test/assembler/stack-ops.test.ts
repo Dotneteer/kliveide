@@ -25,21 +25,21 @@ describe("Assembler - stack operations", () => {
   });
 
   it("push/pop: invalid operand", () => {
-    codeRaisesError("pop af'", "Z5002");
-    codeRaisesError("push af'", "Z5002");
-    codeRaisesError("pop a", "Z5002");
-    codeRaisesError("push a", "Z5002");
-    codeRaisesError("pop xl", "Z5002");
-    codeRaisesError("push yh", "Z5002");
-    codeRaisesError("pop (bc)", "Z5002");
-    codeRaisesError("push (bc)", "Z5002");
-    codeRaisesError("pop (#A234)", "Z5002");
-    codeRaisesError("push (#A234)", "Z5002");
-    codeRaisesError("pop (c)", "Z5002");
-    codeRaisesError("push (c)", "Z5002");
-    codeRaisesError("pop (ix+3)", "Z5002");
-    codeRaisesError("push (iy-4)", "Z5002");
-    codeRaisesError("pop #123", "Z5000");
-    codeRaisesError("push #123", "Z5001");
+    codeRaisesError("pop af'", "Z0413");
+    codeRaisesError("push af'", "Z0413");
+    codeRaisesError("pop a", "Z0413");
+    codeRaisesError("push a", "Z0413");
+    codeRaisesError("pop xl", "Z0413");
+    codeRaisesError("push yh", "Z0413");
+    codeRaisesError("pop (bc)", "Z0413");
+    codeRaisesError("push (bc)", "Z0413");
+    codeRaisesError("pop (#A234)", "Z0413");
+    codeRaisesError("push (#A234)", "Z0413");
+    codeRaisesError("pop (c)", "Z0413");
+    codeRaisesError("push (c)", "Z0413");
+    codeRaisesError("pop (ix+3)", "Z0413");
+    codeRaisesError("push (iy-4)", "Z0413");
+    codeRaisesError("pop #123", "Z0412");
+    codeRaisesError("push #123", "Z0414");
   });
 });

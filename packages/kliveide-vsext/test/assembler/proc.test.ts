@@ -17,7 +17,7 @@ describe("Assembler - .proc", () => {
     .ent #8000;
     .endp
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
@@ -28,19 +28,19 @@ describe("Assembler - .proc", () => {
     .xent #8000;
     .endp
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
   it(".endp - fails without proc", () => {
-    codeRaisesError(".endp", "Z2055");
-    codeRaisesError(".ENDP", "Z2055");
-    codeRaisesError("endp", "Z2055");
-    codeRaisesError("ENDP", "Z2055");
-    codeRaisesError(".pend", "Z2055");
-    codeRaisesError(".PEND", "Z2055");
-    codeRaisesError("pend", "Z2055");
-    codeRaisesError("PEND", "Z2055");
+    codeRaisesError(".endp", "Z0704");
+    codeRaisesError(".ENDP", "Z0704");
+    codeRaisesError("endp", "Z0704");
+    codeRaisesError("ENDP", "Z0704");
+    codeRaisesError(".pend", "Z0704");
+    codeRaisesError(".PEND", "Z0704");
+    codeRaisesError("pend", "Z0704");
+    codeRaisesError("PEND", "Z0704");
   });
 
   it("proc - missing proc end", () => {
@@ -49,7 +49,7 @@ describe("Assembler - .proc", () => {
       .proc
       ld a,b
     `,
-      "Z2052"
+      "Z0701"
     );
   });
 

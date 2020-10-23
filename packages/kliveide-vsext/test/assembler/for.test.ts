@@ -13,7 +13,7 @@ describe("Assembler - .for", () => {
       .ent #8000;
       .next
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
@@ -24,15 +24,15 @@ describe("Assembler - .for", () => {
       .xent #8000;
       .next
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
   it("next - fails without for", () => {
-    codeRaisesError(".next", "Z2055");
-    codeRaisesError(".NEXT", "Z2055");
-    codeRaisesError("next", "Z2055");
-    codeRaisesError("NEXT", "Z2055");
+    codeRaisesError(".next", "Z0704");
+    codeRaisesError(".NEXT", "Z0704");
+    codeRaisesError("next", "Z0704");
+    codeRaisesError("NEXT", "Z0704");
   });
 
   it("for - missing loop end", () => {
@@ -41,7 +41,7 @@ describe("Assembler - .for", () => {
     .for _i = 1 to 3
     ld a,b
     `,
-      "Z2052"
+      "Z0701"
     );
   });
 
@@ -52,7 +52,7 @@ describe("Assembler - .for", () => {
     .for _i = 1 .to 3
     .next
     `,
-      "Z2058"
+      "Z0502"
     );
   });
 
@@ -65,7 +65,7 @@ describe("Assembler - .for", () => {
         .next
     .next
     `,
-      "Z2058"
+      "Z0502"
     );
   });
 
@@ -75,7 +75,7 @@ describe("Assembler - .for", () => {
       .for _i = "hello" .to 3
       .next
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -85,7 +85,7 @@ describe("Assembler - .for", () => {
       .for _i = 3 .to "hello"
       .next
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -95,7 +95,7 @@ describe("Assembler - .for", () => {
       .for _i = 3 .to 10 .step "hello"
       .next
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -170,7 +170,7 @@ describe("Assembler - .for", () => {
     .for _i = 3+unknown to 5
     .next
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -180,7 +180,7 @@ describe("Assembler - .for", () => {
     .for _i = 3 to 5+unknown
     .next
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -190,7 +190,7 @@ describe("Assembler - .for", () => {
     .for _i = 3 to 5 step 1+unknown
     .next
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -200,7 +200,7 @@ describe("Assembler - .for", () => {
     .for _i = 3 to 5 step 0
     .next
     `,
-      "Z2057"
+      "Z0706"
     );
   });
 
@@ -210,7 +210,7 @@ describe("Assembler - .for", () => {
     .for _i = 3 to 5 step 0.0
     .next
     `,
-      "Z2057"
+      "Z0706"
     );
   });
 
@@ -221,7 +221,7 @@ describe("Assembler - .for", () => {
     .next
     later: .equ 5
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -232,7 +232,7 @@ describe("Assembler - .for", () => {
     .next
     later: .equ 5
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -243,7 +243,7 @@ describe("Assembler - .for", () => {
     .next
     later: .equ 5
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -283,7 +283,7 @@ describe("Assembler - .for", () => {
     .for _i = 0.0 to 100.0 step 0.00001
     .next
     `,
-      "Z2053"
+      "Z0702"
     );
   });
 
@@ -446,7 +446,7 @@ describe("Assembler - .for", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
-    expect(output.errors[3].errorCode === "Z2054").toBe(true);
+    expect(output.errors[3].errorCode === "Z0703").toBe(true);
   });
 
   it("emit - nested loop, no label", () => {

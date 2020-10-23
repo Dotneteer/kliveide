@@ -40,7 +40,7 @@ describe("Assembler - pragmas", () => {
       MySymbol .org #6789
         ld a,b
       `,
-      "Z2017"
+      "Z0501"
     );
   });
 
@@ -65,7 +65,7 @@ describe("Assembler - pragmas", () => {
       MySymbol .equ #6789
         ld a,b
       `,
-      "Z2017"
+      "Z0501"
     );
   });
 
@@ -76,7 +76,7 @@ describe("Assembler - pragmas", () => {
       MySymbol .var #6789
         ld a,b
       `,
-      "Z2027"
+      "Z0312"
     );
   });
 
@@ -87,7 +87,7 @@ describe("Assembler - pragmas", () => {
       MySymbol .var #6789
         ld a,b
       `,
-      "Z2027"
+      "Z0312"
     );
   });
 
@@ -201,7 +201,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2021").toBe(true);
+    expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
   it("bank - with invalid model #2", () => {
@@ -214,7 +214,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2021").toBe(true);
+    expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
   it("bank - with label", () => {
@@ -227,7 +227,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2018").toBe(true);
+    expect(output.errors[0].errorCode === "Z0305").toBe(true);
   });
 
   it("bank - invalid value #1", () => {
@@ -240,7 +240,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2019").toBe(true);
+    expect(output.errors[0].errorCode === "Z0306").toBe(true);
   });
 
   it("bank - invalid value #2", () => {
@@ -253,7 +253,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2019").toBe(true);
+    expect(output.errors[0].errorCode === "Z0306").toBe(true);
   });
 
   it("bank - reuse bank", () => {
@@ -268,7 +268,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2022").toBe(true);
+    expect(output.errors[0].errorCode === "Z0309").toBe(true);
   });
 
   it("bank - maximum length works", () => {
@@ -295,7 +295,7 @@ describe("Assembler - pragmas", () => {
 
     const output = compiler.compile(source);
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2001").toBe(true);
+    expect(output.errors[0].errorCode === "Z0411").toBe(true);
   });
 
   it("bank - offseted bank with existing segment #1", () => {
@@ -446,7 +446,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2021").toBe(true);
+    expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
   it("bank - offseted with invalid model #2", () => {
@@ -459,7 +459,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2021").toBe(true);
+    expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
   it("bank - offseted with invalid value #1", () => {
@@ -472,7 +472,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2020").toBe(true);
+    expect(output.errors[0].errorCode === "Z0307").toBe(true);
   });
 
   it("bank - offseted with invalid value #2", () => {
@@ -485,7 +485,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2020").toBe(true);
+    expect(output.errors[0].errorCode === "Z0307").toBe(true);
   });
 
   it("bank - offseted with invalid value #3", () => {
@@ -498,7 +498,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2020").toBe(true);
+    expect(output.errors[0].errorCode === "Z0307").toBe(true);
   });
 
   it("bank - maximum offseted bank length", () => {
@@ -526,7 +526,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2001").toBe(true);
+    expect(output.errors[0].errorCode === "Z0411").toBe(true);
   });
 
   it("xorg - negative value", () => {
@@ -590,7 +590,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2024").toBe(true);
+    expect(output.errors[0].errorCode === "Z0314").toBe(true);
   });
 
   it("xorg - multiple in separate segments", () => {
@@ -899,7 +899,7 @@ describe("Assembler - pragmas", () => {
       halt
       Test: ret
     `,
-      "Z2045"
+      "Z0403"
     );
   });
 
@@ -943,7 +943,7 @@ describe("Assembler - pragmas", () => {
       const output = compiler.compile(source);
 
       expect(output.errorCount).toBe(1);
-      expect(output.errors[0].errorCode === "Z2026").toBe(true);
+      expect(output.errors[0].errorCode === "Z0311").toBe(true);
     });
 
     it(`var - local label (${varPragma})`, () => {
@@ -975,7 +975,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2028").toBe(true);
+    expect(output.errors[0].errorCode === "Z0313").toBe(true);
   });
 
   it("skip - non-immediate value", () => {
@@ -985,7 +985,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3000").toBe(true);
+    expect(output.errors[0].errorCode === "Z0605").toBe(true);
   });
 
   it("skip - non-immediate value and fill", () => {
@@ -995,7 +995,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3000").toBe(true);
+    expect(output.errors[0].errorCode === "Z0605").toBe(true);
   });
 
   it("defb - immediate evaluation", () => {
@@ -1010,7 +1010,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2029").toBe(true);
+    expect(output.errors[0].errorCode === "Z0601").toBe(true);
   });
 
   it("defb - flexible mode", () => {
@@ -1034,7 +1034,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2029").toBe(true);
+    expect(output.errors[0].errorCode === "Z0601").toBe(true);
   });
 
   it("defw - with function", () => {
@@ -1049,7 +1049,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3001").toBe(true);
+    expect(output.errors[0].errorCode === "Z0606").toBe(true);
   });
 
   it("defm - immediate evaluation", () => {
@@ -1064,7 +1064,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2030").toBe(true);
+    expect(output.errors[0].errorCode === "Z0315").toBe(true);
   });
 
   it("defm - flexible mode", () => {
@@ -1088,7 +1088,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2030").toBe(true);
+    expect(output.errors[0].errorCode === "Z0315").toBe(true);
   });
 
   it("defn - flexible mode", () => {
@@ -1112,7 +1112,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2030").toBe(true);
+    expect(output.errors[0].errorCode === "Z0315").toBe(true);
   });
 
   it("defc - flexible mode", () => {
@@ -1141,7 +1141,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2031").toBe(true);
+    expect(output.errors[0].errorCode === "Z0316").toBe(true);
   });
 
   it("defh - fails with odd length", () => {
@@ -1151,7 +1151,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2032").toBe(true);
+    expect(output.errors[0].errorCode === "Z0317").toBe(true);
   });
 
   it("defh - fails with non-hexa char", () => {
@@ -1161,7 +1161,7 @@ describe("Assembler - pragmas", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2032").toBe(true);
+    expect(output.errors[0].errorCode === "Z0317").toBe(true);
   });
 
   it("defs - immediate evaluation #1", () => {
@@ -1334,7 +1334,7 @@ describe("Assembler - pragmas", () => {
       const compiler = new Z80Assembler();
       const output = compiler.compile(ec.source);
       expect(output.errorCount).toBe(1);
-      expect(output.errors[0].errorCode === "Z4000").toBe(true);
+      expect(output.errors[0].errorCode === "Z2000").toBe(true);
       expect(output.errors[0].message).toBe(ec.expected);
     });
   });

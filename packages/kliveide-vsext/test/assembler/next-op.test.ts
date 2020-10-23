@@ -40,16 +40,16 @@ describe("Assembler - NEXT operations", () => {
   });
 
   it("next ops in non-next mode", () => {
-    codeRaisesError("mul d,e", "Z5001");
-    codeRaisesError("test #1234", "Z5001");
-    codeRaisesError("nextreg #12, #34", "Z5001");
-    codeRaisesError("nextreg #12, a", "Z5001");
-    codeRaisesError("mirror a", "Z5001");
-    codeRaisesError("bsla de,b", "Z5001");
-    codeRaisesError("bsra de,b", "Z5001");
-    codeRaisesError("bsrl de,b", "Z5001");
-    codeRaisesError("bsrf de,b", "Z5001");
-    codeRaisesError("brlc de,b", "Z5001");
+    codeRaisesError("mul d,e", "Z0414");
+    codeRaisesError("test #1234", "Z0414");
+    codeRaisesError("nextreg #12, #34", "Z0414");
+    codeRaisesError("nextreg #12, a", "Z0414");
+    codeRaisesError("mirror a", "Z0414");
+    codeRaisesError("bsla de,b", "Z0414");
+    codeRaisesError("bsra de,b", "Z0414");
+    codeRaisesError("bsrl de,b", "Z0414");
+    codeRaisesError("bsrf de,b", "Z0414");
+    codeRaisesError("brlc de,b", "Z0414");
   });
 });
 

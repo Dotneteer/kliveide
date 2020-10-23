@@ -349,7 +349,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
           return ExpressionValue.Error;
       }
     } catch (err) {
-      this.reportEvaluationError("Z3001", null, (err as Error).message);
+      this.reportEvaluationError("Z0606", expr, (err as Error).message);
       return ExpressionValue.Error;
     }
 
@@ -369,7 +369,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
         }
         return valueInfo.value;
       }
-      context.reportEvaluationError("Z3000", expr, expr.name);
+      context.reportEvaluationError("Z0605", expr, expr.name);
       return ExpressionValue.NonEvaluated;
     }
 
@@ -393,7 +393,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
         return valueInfo.value;
       }
       context.reportEvaluationError(
-        "Z3000",
+        "Z0605",
         expr.identifier,
         expr.identifier.name
       );
@@ -2002,7 +2002,7 @@ export function evalMacroTimeFunctionInvocationValue(
     }
   }
   context.reportEvaluationError(
-    "Z3001",
+    "Z0606",
     funcExpr,
     null,
     `Cannot evaluate ${funcExpr.functionName}(${funcExpr.operand.register})`

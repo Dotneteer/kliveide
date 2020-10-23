@@ -168,14 +168,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${inst} #3`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -211,14 +211,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${inst} #3`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -254,14 +254,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${inst} #3`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -297,14 +297,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${inst} #3`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -340,14 +340,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${inst} #3`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -383,14 +383,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${inst} #3`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -449,7 +449,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -508,7 +508,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -567,7 +567,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -626,7 +626,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -685,7 +685,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -744,7 +744,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -803,7 +803,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -862,7 +862,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -921,7 +921,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -980,7 +980,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -1039,7 +1039,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -1098,7 +1098,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -1157,7 +1157,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -1216,7 +1216,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -1275,7 +1275,7 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
   });
@@ -1340,14 +1340,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,hl,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} #4`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 
@@ -1411,14 +1411,14 @@ describe("Parser - instructions with operands", () => {
       const parser = createParser(`${inst} #4000,hl,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
 
     it(`${inst} #4`, () => {
       const parser = createParser(`${inst} #4000,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 });

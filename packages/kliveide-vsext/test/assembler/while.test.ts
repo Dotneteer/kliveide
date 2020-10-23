@@ -15,7 +15,7 @@ describe("Assembler - .while", () => {
       counter = counter + 1
       .wend
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
@@ -28,19 +28,19 @@ describe("Assembler - .while", () => {
       counter = counter + 1
       .wend
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
   it(".endw - fails without while", () => {
-    codeRaisesError(".endw", "Z2055");
-    codeRaisesError(".ENDW", "Z2055");
-    codeRaisesError("endw", "Z2055");
-    codeRaisesError("ENDW", "Z2055");
-    codeRaisesError(".wend", "Z2055");
-    codeRaisesError(".WEND", "Z2055");
-    codeRaisesError("wend", "Z2055");
-    codeRaisesError("WEND", "Z2055");
+    codeRaisesError(".endw", "Z0704");
+    codeRaisesError(".ENDW", "Z0704");
+    codeRaisesError("endw", "Z0704");
+    codeRaisesError("ENDW", "Z0704");
+    codeRaisesError(".wend", "Z0704");
+    codeRaisesError(".WEND", "Z0704");
+    codeRaisesError("wend", "Z0704");
+    codeRaisesError("WEND", "Z0704");
   });
 
   it("while - missing loop end", () => {
@@ -49,7 +49,7 @@ describe("Assembler - .while", () => {
       .while true
       ld a,b
     `,
-      "Z2052"
+      "Z0701"
     );
   });
 
@@ -60,7 +60,7 @@ describe("Assembler - .while", () => {
       ld a,b
       .endw
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -70,7 +70,7 @@ describe("Assembler - .while", () => {
       .while true
       .endw
     `,
-      "Z2053"
+      "Z0702"
     );
   });
 
@@ -89,7 +89,7 @@ describe("Assembler - .while", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
-    expect(output.errors[3].errorCode === "Z2054").toBe(true);
+    expect(output.errors[3].errorCode === "Z0703").toBe(true);
   });
 
   it("while - empty body", () => {
@@ -181,7 +181,7 @@ describe("Assembler - .while", () => {
       .while 3+unknown
       .wend
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 

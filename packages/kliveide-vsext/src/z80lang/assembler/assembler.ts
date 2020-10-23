@@ -183,6 +183,9 @@ export class Z80Assembler extends ExpressionEvaluator {
   // --- The current list item being processed
   private _currentListFileItem: ListFileItem | null;
 
+  // --- The stack of macro invocations
+  private _macroInvocations: MacroOrStructInvocation[] = [];
+
   /**
    * The condition symbols
    */
@@ -349,7 +352,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       switch (line.type) {
         case "ZxBasicPragma": {
           if (anyProcessed) {
-            this.reportAssemblyError("Z2002", line);
+            this.reportAssemblyError("Z0301", line);
             break;
           }
 
@@ -414,7 +417,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Check if all #if and #ifdef has a closing #endif tag
     if (ifdefStack.length > 0 && visitedLines.length > 0) {
-      this.reportAssemblyError("Z2003", visitedLines[visitedLines.length - 1]);
+      this.reportAssemblyError("Z0205", visitedLines[visitedLines.length - 1]);
     }
 
     // --- Done
@@ -453,7 +456,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Check for structure size
       if (this._currentStructOffset > this._currentStructInvocation.size) {
         this.reportAssemblyError(
-          "Z2013",
+          "Z0801",
           this._currentStructLine,
           null,
           this._currentStructInvocation.structName,
@@ -506,7 +509,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
 
       if (fileNameValue.type !== ExpressionValueType.String) {
-        this.reportAssemblyError("Z2081", pragma);
+        this.reportAssemblyError("Z0326", pragma);
         continue;
       }
 
@@ -515,12 +518,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (pragma.offset) {
         const offsValue = this.evaluateExprImmediate(pragma.offset);
         if (offsValue.type !== ExpressionValueType.Integer) {
-          this.reportAssemblyError("Z2042", pragma);
+          this.reportAssemblyError("Z0603", pragma);
           continue;
         }
         offset = offsValue.asLong();
         if (offset < 0) {
-          this.reportAssemblyError("Z2082", pragma);
+          this.reportAssemblyError("Z0327", pragma);
           continue;
         }
       }
@@ -530,12 +533,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (pragma.length) {
         const lengthValue = this.evaluateExprImmediate(pragma.length);
         if (lengthValue.type !== ExpressionValueType.Integer) {
-          this.reportAssemblyError("Z2042", pragma);
+          this.reportAssemblyError("Z0603", pragma);
           continue;
         }
         length = lengthValue.asLong();
         if (length < 0) {
-          this.reportAssemblyError("Z2083", pragma);
+          this.reportAssemblyError("Z0328", pragma);
           continue;
         }
       }
@@ -551,13 +554,13 @@ export class Z80Assembler extends ExpressionEvaluator {
       try {
         contents = fs.readFileSync(filename);
       } catch (err) {
-        this.reportAssemblyError("Z2084", pragma, null, filename, err.message);
+        this.reportAssemblyError("Z0329", pragma, null, filename, err.message);
         continue;
       }
 
       // --- Check content segment
       if (offset >= contents.length) {
-        this.reportAssemblyError("Z2082", pragma);
+        this.reportAssemblyError("Z0327", pragma);
         continue;
       }
 
@@ -567,7 +570,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       // --- Check length
       if (offset + length > contents.length) {
-        this.reportAssemblyError("Z2082", pragma);
+        this.reportAssemblyError("Z0327", pragma);
         continue;
       }
 
@@ -575,7 +578,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       var segment = binInfo.segment;
       if (!segment) {
         this.reportAssemblyError(
-          "Z2085",
+          "Z0330",
           pragma,
           null,
           "No output segment to compare."
@@ -586,7 +589,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Check current segment length
       if (binInfo.segmentLength > length) {
         this.reportAssemblyError(
-          "Z2085",
+          "Z0330",
           pragma,
           null,
           `Current binary length is only ${length} while segment length to check is ${binInfo.segmentLength}`
@@ -601,7 +604,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           continue;
         }
         this.reportAssemblyError(
-          "Z2085",
+          "Z0330",
           pragma,
           null,
           `Output segment at offset ${i} is ${segmData}, but in binary it is ${binData}`
@@ -651,20 +654,20 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Check for file existence
     if (!fs.existsSync(filename)) {
-      this.reportAssemblyError("Z2004", includeDir, null, filename);
+      this.reportAssemblyError("Z0201", includeDir, null, filename);
       return { success: false };
     }
 
     // --- Check for repetition
     var childItem = new SourceFileItem(filename);
     if (sourceItem.containsInIncludeList(childItem)) {
-      this.reportAssemblyError("Z2005", includeDir, null, filename);
+      this.reportAssemblyError("Z0202", includeDir, null, filename);
       return { success: false };
     }
 
     // --- Check for circular reference
     if (!sourceItem.include(childItem)) {
-      this.reportAssemblyError("Z2006", includeDir, null, filename);
+      this.reportAssemblyError("Z0203", includeDir, null, filename);
       return { success: false };
     }
 
@@ -677,7 +680,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       sourceText = readSourceFile(filename);
     } catch (err) {
       this.reportAssemblyError(
-        "Z2007",
+        "Z0204",
         includeDir,
         null,
         filename,
@@ -738,7 +741,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             if (
               VALID_MODELS.indexOf(directive.identifier.name.toUpperCase()) < 0
             ) {
-              this.reportAssemblyError("Z2008", directive);
+              this.reportAssemblyError("Z0206", directive);
               processOps.ops = false;
             } else {
               const refModel =
@@ -762,7 +765,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       case "ElseDirective":
         if (ifdefStack.length === 0) {
-          this.reportAssemblyError("Z2009", directive);
+          this.reportAssemblyError("Z0207", directive);
         } else {
           const peekVal = ifdefStack.pop();
           if (peekVal !== null) {
@@ -776,7 +779,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       case "EndIfDirective":
         if (ifdefStack.length === 0) {
-          this.reportAssemblyError("Z2010", directive);
+          this.reportAssemblyError("Z0208", directive);
         } else {
           ifdefStack.pop();
           processOps.ops =
@@ -799,7 +802,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   processModelPragma(pragma: ModelPragma): void {
     if (this._output.modelType) {
-      this.reportAssemblyError("Z2011", pragma);
+      this.reportAssemblyError("Z0302", pragma);
       return;
     }
 
@@ -818,7 +821,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         modelType = SpectrumModelType.Next;
         break;
       default:
-        this.reportAssemblyError("Z2012", pragma);
+        this.reportAssemblyError("Z0303", pragma);
         return;
     }
     this._output.modelType = modelType;
@@ -882,13 +885,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   getLoopCounterValue(): ExpressionValue {
     if (this.isInGlobalScope) {
-      this.reportAssemblyError("Z2056", this._currentSourceLine);
+      this.reportAssemblyError("Z0705", this._currentSourceLine);
       return ExpressionValue.Error;
     }
 
     const scope = this.getTopLocalScope();
     if (!scope.isLoopScope) {
-      this.reportAssemblyError("Z2056", this._currentSourceLine);
+      this.reportAssemblyError("Z0705", this._currentSourceLine);
       return ExpressionValue.Error;
     }
     return new ExpressionValue(scope.loopCounter);
@@ -1103,18 +1106,18 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Let's handle assembly lines with macro parameters
       if (asmLine.macroParams && asmLine.macroParams.length > 0) {
         if (fromMacroEmit) {
-          this.reportAssemblyError("Z2090", asmLine);
+          this.reportAssemblyError("Z1010", asmLine);
           return;
         }
         if (this.isInGlobalScope) {
-          this.reportAssemblyError("Z2091", asmLine);
+          this.reportAssemblyError("Z1011", asmLine);
         } else {
           const topScope = this.getTopLocalScope();
           if (topScope.isMacroContext) {
             return;
           }
-          if (this.shouldReportErrorInCurrentScope("Z2091")) {
-            this.reportAssemblyError("Z2091", asmLine);
+          if (this.shouldReportErrorInCurrentScope("Z1011")) {
+            this.reportAssemblyError("Z1011", asmLine);
           }
         }
         return;
@@ -1133,7 +1136,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           // --- Check for structure size
           if (this._currentStructOffset > this._currentStructInvocation.size) {
             this.reportAssemblyError(
-              "Z2013",
+              "Z0801",
               this._currentStructLine,
               null,
               this._currentStructInvocation.structName,
@@ -1161,7 +1164,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             );
             if (!fieldDefinition) {
               this.reportAssemblyError(
-                "Z2014",
+                "Z0802",
                 asmLine,
                 null,
                 this._currentStructInvocation.structName,
@@ -1178,7 +1181,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         // --- We are outside of a .struct invocation...
         if (isFieldAssignment) {
           // --- so field assignment is invalid here
-          this.reportAssemblyError("Z2015", asmLine);
+          this.reportAssemblyError("Z0803", asmLine);
           return;
         }
       }
@@ -1313,7 +1316,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Check for already defined symbols
     const symbolInfo = lookup[symbol];
     if (symbolInfo && symbolInfo.type === SymbolType.Label) {
-      this.reportAssemblyError("Z2017", line, null, symbol);
+      this.reportAssemblyError("Z0501", line, null, symbol);
       return;
     }
 
@@ -1589,7 +1592,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   processBankPragma(pragma: BankPragma, label: string | null): void {
     if (label) {
       // --- No label is allowed
-      this.reportAssemblyError("Z2018", pragma);
+      this.reportAssemblyError("Z0305", pragma);
       return;
     }
 
@@ -1599,7 +1602,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
     if (value.asWord() > 7) {
-      this.reportAssemblyError("Z2019", pragma);
+      this.reportAssemblyError("Z0306", pragma);
       return;
     }
 
@@ -1612,7 +1615,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
       offset = offsetValue.asWord();
       if (offset > 0x3fff) {
-        this.reportAssemblyError("Z2020", pragma);
+        this.reportAssemblyError("Z0307", pragma);
         return;
       }
     }
@@ -1622,7 +1625,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this._output.modelType === undefined ||
       this._output.modelType === SpectrumModelType.Spectrum48
     ) {
-      this.reportAssemblyError("Z2021", pragma);
+      this.reportAssemblyError("Z0308", pragma);
       return;
     }
 
@@ -1638,7 +1641,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
     if (this._output.segments.some((s) => s.bank === value.value)) {
       // --- A bank can be used only once
-      this.reportAssemblyError("Z2022", pragma, null, value.value);
+      this.reportAssemblyError("Z0309", pragma, null, value.value);
       return;
     }
     this._currentSegment.startAddress = (0xc000 + offset) & 0xffff;
@@ -1662,7 +1665,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this._currentSegment.currentOffset &&
       this._currentSegment.xorgValue !== undefined
     ) {
-      this.reportAssemblyError("Z2024", pragma);
+      this.reportAssemblyError("Z0314", pragma);
     } else {
       this._currentSegment.xorgValue = value.value;
     }
@@ -1675,9 +1678,9 @@ export class Z80Assembler extends ExpressionEvaluator {
   processEntPragma(pragma: EntPragma): void {
     if (
       !this.isInGlobalScope &&
-      this.shouldReportErrorInCurrentScope("Z2025")
+      this.shouldReportErrorInCurrentScope("Z0310")
     ) {
-      this.reportAssemblyError("Z2025", pragma, null, ".ent");
+      this.reportAssemblyError("Z0310", pragma, null, ".ent");
     }
     const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
@@ -1698,9 +1701,9 @@ export class Z80Assembler extends ExpressionEvaluator {
   processXentPragma(pragma: XentPragma): void {
     if (
       !this.isInGlobalScope &&
-      this.shouldReportErrorInCurrentScope("Z2025")
+      this.shouldReportErrorInCurrentScope("Z0310")
     ) {
-      this.reportAssemblyError("Z2025", pragma, null, ".xent");
+      this.reportAssemblyError("Z0310", pragma, null, ".xent");
     }
     const value = this.evaluateExpr(pragma.address);
     if (value.isNonEvaluated) {
@@ -1737,14 +1740,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private processEquPragma(pragma: EquPragma, label: string | null): void {
     if (!label) {
-      this.reportAssemblyError("Z2016", pragma);
+      this.reportAssemblyError("Z0304", pragma);
       return;
     }
     this.fixupTemporaryScope();
 
     // --- Do not allow duplicate labels
     if (this.symbolExists(label)) {
-      this.reportAssemblyError("Z2017", pragma, null, label);
+      this.reportAssemblyError("Z0501", pragma, null, label);
       return;
     }
 
@@ -1765,7 +1768,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   processVarPragma(pragma: VarPragma, label: string | null): void {
     if (!label) {
-      this.reportAssemblyError("Z2026", pragma);
+      this.reportAssemblyError("Z0311", pragma);
       return;
     }
     this.fixupTemporaryScope();
@@ -1777,7 +1780,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Do not allow reusing a symbol already declared
     if (this.symbolExists(label)) {
-      this.reportAssemblyError("Z2027", pragma);
+      this.reportAssemblyError("Z0312", pragma);
       return;
     }
     this.setVariable(label, value);
@@ -1795,7 +1798,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     let currentAddr = this.getCurrentAssemblyAddress();
     if (skipAddr.value < currentAddr) {
-      this.reportAssemblyError("Z2028", pragma, null, skipAddr, currentAddr);
+      this.reportAssemblyError("Z0313", pragma, null, skipAddr, currentAddr);
       return;
     }
     var fillByte = 0xff;
@@ -1832,7 +1835,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             this.emitString(value, false, false, emitAction);
           } else {
             // --- ...otherwise, we accept only numeric values
-            this.reportAssemblyError("Z2029", pragma);
+            this.reportAssemblyError("Z0601", pragma);
           }
         } else {
           emit(value.value & 0xff);
@@ -1877,7 +1880,7 @@ export class Z80Assembler extends ExpressionEvaluator {
             this.emitString(value, false, false, emitAction);
           } else {
             // --- ...otherwise, we accept only numeric values
-            this.reportAssemblyError("Z2029", pragma);
+            this.reportAssemblyError("Z0601", pragma);
           }
         } else {
           emit(value.value & 0xffff);
@@ -1933,7 +1936,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         }
       } else {
         // --- otherwise, only string is accepted.
-        this.reportAssemblyError("Z2030", pragma);
+        this.reportAssemblyError("Z0315", pragma);
       }
     } else {
       this.emitString(
@@ -1957,12 +1960,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     const assembler = this;
     const byteVector = this.evaluateExprImmediate(pragma.value);
     if (byteVector.isValid && byteVector.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z2031", pragma);
+      this.reportAssemblyError("Z0316", pragma);
     }
 
     const bytesString = byteVector.asString();
     if (bytesString.length % 2 !== 0) {
-      this.reportAssemblyError("Z2032", pragma);
+      this.reportAssemblyError("Z0317", pragma);
       return;
     }
 
@@ -1972,7 +1975,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const char1 = bytesString[i];
       const char2 = bytesString[i + 1];
       if (hexaChars.indexOf(char1) < 0 || hexaChars.indexOf(char2) < 0) {
-        this.reportAssemblyError("Z2032", pragma);
+        this.reportAssemblyError("Z0317", pragma);
         return;
       }
       emit(parseInt(bytesString.substr(i, 2), 16));
@@ -2071,7 +2074,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const alignValue = this.evaluateExprImmediate(pragma.alignExpr);
       alignment = alignValue.value;
       if (alignment < 1 || alignment > 0x4000) {
-        this.reportAssemblyError("Z2033", pragma, null, alignment);
+        this.reportAssemblyError("Z0318", pragma, null, alignment);
         return;
       }
     }
@@ -2150,7 +2153,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   processErrorPragma(pragma: ErrorPragma): void {
     const errorValue = this.evaluateExprImmediate(pragma.message);
-    this.reportAssemblyError("Z4000", pragma, null, errorValue.asString());
+    this.reportAssemblyError("Z2000", pragma, null, errorValue.asString());
   }
 
   /**
@@ -2161,7 +2164,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Obtain the file name
     const fileNameValue = this.evaluateExprImmediate(pragma.filename);
     if (fileNameValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z2034", pragma);
+      this.reportAssemblyError("Z0319", pragma);
       return;
     }
 
@@ -2170,12 +2173,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (pragma.offset) {
       const offsValue = this.evaluateExprImmediate(pragma.offset);
       if (offsValue.type !== ExpressionValueType.Integer) {
-        this.reportAssemblyError("Z2035", pragma);
+        this.reportAssemblyError("Z0602", pragma);
         return;
       }
       offset = offsValue.asLong();
       if (offset < 0) {
-        this.reportAssemblyError("Z2036", pragma);
+        this.reportAssemblyError("Z0320", pragma);
         return;
       }
     }
@@ -2185,12 +2188,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (pragma.length) {
       const lengthValue = this.evaluateExprImmediate(pragma.length);
       if (lengthValue.type !== ExpressionValueType.Integer) {
-        this.reportAssemblyError("Z2035", pragma);
+        this.reportAssemblyError("Z0602", pragma);
         return;
       }
       length = lengthValue.asLong();
       if (length < 0) {
-        this.reportAssemblyError("Z2037", pragma);
+        this.reportAssemblyError("Z0321", pragma);
         return;
       }
     }
@@ -2206,13 +2209,13 @@ export class Z80Assembler extends ExpressionEvaluator {
     try {
       contents = fs.readFileSync(filename);
     } catch (err) {
-      this.reportAssemblyError("Z2038", pragma, null, err.message);
+      this.reportAssemblyError("Z0322", pragma, null, err.message);
       return;
     }
 
     // --- Check content segment
     if (offset >= contents.length) {
-      this.reportAssemblyError("Z2036", pragma);
+      this.reportAssemblyError("Z0320", pragma);
       return;
     }
 
@@ -2222,7 +2225,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Check length
     if (offset + length > contents.length) {
-      this.reportAssemblyError("Z2037", pragma);
+      this.reportAssemblyError("Z0321", pragma);
       return;
     }
 
@@ -2231,7 +2234,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this.getCurrentAssemblyAddress() + length >=
       this._currentSegment.maxCodeLength
     ) {
-      this.reportAssemblyError("Z2038", pragma);
+      this.reportAssemblyError("Z0322", pragma);
       return;
     }
 
@@ -2249,7 +2252,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Obtain the file name
     const fileNameValue = this.evaluateExprImmediate(pragma.filename);
     if (fileNameValue.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z2034", pragma);
+      this.reportAssemblyError("Z0319", pragma);
       return;
     }
 
@@ -2300,7 +2303,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): void {
     const value = this.evaluateExprImmediate(pragma.pattern);
     if (value.type !== ExpressionValueType.String) {
-      this.reportAssemblyError("Z2040", pragma);
+      this.reportAssemblyError("Z0324", pragma);
       return;
     }
     var pattern = value.asString().trim();
@@ -2335,7 +2338,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
     }
     if (!pattern) {
-      this.reportAssemblyError("Z2041", line);
+      this.reportAssemblyError("Z0325", line);
       return;
     }
 
@@ -2413,14 +2416,14 @@ export class Z80Assembler extends ExpressionEvaluator {
     const macroName = macroOrStructStmt.identifier.name;
     const macroDef = this._currentModule.getMacro(macroName);
     if (!macroDef) {
-      this.reportAssemblyError("Z2087", macroOrStructStmt, null, macroName);
+      this.reportAssemblyError("Z1007", macroOrStructStmt, null, macroName);
       return;
     }
 
     // --- Match parameters
     if (macroDef.argNames.length < macroOrStructStmt.operands.length) {
       this.reportAssemblyError(
-        "Z2088",
+        "Z1008",
         macroOrStructStmt,
         null,
         macroDef.macroName,
@@ -2429,6 +2432,13 @@ export class Z80Assembler extends ExpressionEvaluator {
       );
       return;
     }
+
+    // --- Save the current state of macro error stack
+    const macroStackDepth = this._macroInvocations.length;
+    const assembler = this;
+
+    // --- Push the invocation line to the stack
+    this._macroInvocations.push(macroOrStructStmt);
 
     // --- Evaluate arguments
     const macroArgs: { [key: string]: ExpressionValue } = {};
@@ -2502,6 +2512,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       macroArgs[macroName] = argValue;
     }
     if (errorFound) {
+      restoreMacroStack();
       return;
     }
 
@@ -2530,12 +2541,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       asmLine.line,
       currentAddress
     );
-    const fileLine = { fileIndex: asmLine.fileIndex, line: asmLine.line };
+    const fileLine = { fileIndex: asmLine.fileIndex, line: asmLine.line - 1 };
     this._output.sourceMap[currentAddress] = fileLine;
 
     // --- We store the original source file information to
     // --- assign it later with the re-parsed macro code
-    const sourceInfo: FileLine[] = [fileLine];
+    const sourceInfo: number[] = [];
 
     // --- Setup the macro source
     let macroSource = "";
@@ -2560,7 +2571,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Store the source information for the currently processed macro line
       var newLines = newText.split("\r\n").length;
       for (let i = 0; i < newLines; i++) {
-        sourceInfo.push({ fileIndex: curLine.fileIndex, line: curLine.line });
+        sourceInfo.push(lineIndex.index);
       }
       macroSource += newText;
       lineIndex.index++;
@@ -2573,30 +2584,35 @@ export class Z80Assembler extends ExpressionEvaluator {
     const macroProgram = macroParser.parseProgram();
 
     // --- Collect syntax errors
-    for (const error of macroParser.errors) {
-      // --- Translate the syntax error location
-      if (error.line > 0 && error.line < sourceInfo.length) {
-        const fileInfo = sourceInfo[error.line - 1];
-        error.line = fileInfo.line;
-        const errorInfo = AssemblerErrorInfo.fromParserError(
-          this._output.sourceFileList[fileInfo.fileIndex],
-          error
+    if (macroParser.hasErrors) {
+      this.reportMacroInvocationErrors();
+      for (const error of macroParser.errors) {
+        // --- Translate the syntax error location
+        const origLine = allLines[sourceInfo[error.line - 1]];
+        let errorPrefix = "";
+        if (this._macroInvocations.length > 0) {
+          const lines = this._macroInvocations
+            .map((mi) => ((mi as unknown) as Z80AssemblyLine).line + 1)
+            .join(" -> ");
+          errorPrefix = `(from macro invocation through line ${lines}) `;
+        }
+        const errorInfo = new AssemblerErrorInfo(
+          error.code,
+          this._output.sourceFileList[origLine.fileIndex].filename,
+          origLine.startPosition,
+          origLine.endPosition,
+          errorPrefix + error.text,
+          true
         );
         this._output.errors.push(errorInfo);
         this.reportScopeError(errorInfo.errorCode);
-      } else {
-        const errorInfo = AssemblerErrorInfo.fromParserError(
-          this._output.sourceItem,
-          error
-        );
-        this._output.errors.push(errorInfo);
-        this.reportScopeError(errorInfo.errorCode);
+        errorFound = true;
       }
-      errorFound = true;
     }
 
     if (errorFound) {
       // --- Stop compilation, if macro contains error
+      restoreMacroStack();
       return;
     }
 
@@ -2604,10 +2620,10 @@ export class Z80Assembler extends ExpressionEvaluator {
     const visitedLines = macroProgram.assemblyLines;
     for (let i = 0; i < sourceInfo.length; i++) {
       if (i < visitedLines.length) {
-        var lineInfo = sourceInfo[i];
-        var line = visitedLines[i];
-        line.fileIndex = lineInfo.fileIndex;
-        line.line = lineInfo.line;
+        const line = visitedLines[i];
+        const origLine = allLines[sourceInfo[i]];
+        line.fileIndex = origLine.fileIndex;
+        line.line = origLine.line;
       }
     }
 
@@ -2648,6 +2664,16 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Remove the macro's scope
     this._currentModule.localScopes.pop();
+
+    // --- Restore the original depth of macro stack
+    restoreMacroStack();
+
+    /**
+     * Restores the original depth of the macro stack
+     */
+    function restoreMacroStack() {
+      assembler._macroInvocations.length = macroStackDepth;
+    }
   }
 
   /**
@@ -2663,7 +2689,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): void {
     if (structStmt.operands.length > 0) {
       this.reportAssemblyError(
-        "Z2086",
+        "Z0809",
         structStmt,
         null,
         structStmt.identifier.name
@@ -2717,7 +2743,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
       case "MacroEndStatement":
         this.reportAssemblyError(
-          "Z2055",
+          "Z0704",
           stmt,
           null,
           ".endm/.mend",
@@ -2728,7 +2754,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processLoopStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "LoopEndStatement":
-        this.reportAssemblyError("Z2055", stmt, null, ".endl/.lend", ".loop");
+        this.reportAssemblyError("Z0704", stmt, null, ".endl/.lend", ".loop");
         break;
       case "WhileStatement":
         this.processWhileStatement(
@@ -2739,7 +2765,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         );
         break;
       case "WhileEndStatement":
-        this.reportAssemblyError("Z2055", stmt, null, ".endw/.wend", ".while");
+        this.reportAssemblyError("Z0704", stmt, null, ".endw/.wend", ".while");
         break;
       case "RepeatStatement":
         this.processRepeatStatement(
@@ -2750,13 +2776,13 @@ export class Z80Assembler extends ExpressionEvaluator {
         );
         break;
       case "UntilStatement":
-        this.reportAssemblyError("Z2055", stmt, null, ".until", ".repeat");
+        this.reportAssemblyError("Z0704", stmt, null, ".until", ".repeat");
         break;
       case "ProcStatement":
         this.processProcStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "ProcEndStatement":
-        this.reportAssemblyError("Z2055", stmt, null, ".endp/.pend", ".proc");
+        this.reportAssemblyError("Z0704", stmt, null, ".endp/.pend", ".proc");
         break;
       case "IfStatement":
         this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
@@ -2769,7 +2795,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
       case "ElseStatement":
         this.reportAssemblyError(
-          "Z2055",
+          "Z0704",
           stmt,
           null,
           ".else",
@@ -2778,7 +2804,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
       case "ElseIfStatement":
         this.reportAssemblyError(
-          "Z2055",
+          "Z0704",
           stmt,
           null,
           ".elseif",
@@ -2787,7 +2813,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
       case "EndIfStatement":
         this.reportAssemblyError(
-          "Z2055",
+          "Z0704",
           stmt,
           null,
           ".endif",
@@ -2811,7 +2837,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
       case "ModuleEndStatement":
         this.reportAssemblyError(
-          "Z2055",
+          "Z0704",
           stmt,
           null,
           ".endmodule/.moduleend",
@@ -2822,13 +2848,13 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.collectStructDefinition(stmt, label, allLines, currentLineIndex);
         break;
       case "StructEndStatement":
-        this.reportAssemblyError("Z2055", stmt, null, ".ends", ".struct");
+        this.reportAssemblyError("Z0704", stmt, null, ".ends", ".struct");
         break;
       case "LocalStatement":
         this.processLocalStatement(stmt);
         break;
       case "NextStatement":
-        this.reportAssemblyError("Z2055", stmt, null, ".next", ".for");
+        this.reportAssemblyError("Z0704", stmt, null, ".next", ".for");
         break;
       case "ForStatement":
         this.processForStatement(stmt, allLines, scopeLines, currentLineIndex);
@@ -2855,7 +2881,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     for (const macroArg of macro.parameters) {
       const argName = macroArg.name.toLowerCase();
       if (args.has(argName)) {
-        this.reportAssemblyError("Z2075", macro, null, macroArg.name);
+        this.reportAssemblyError("Z1001", macro, null, macroArg.name);
         errorFound = true;
       }
       args.add(argName);
@@ -2864,10 +2890,10 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Check if the macro name is correct
     if (!label) {
       errorFound = true;
-      this.reportAssemblyError("Z2076", macro);
+      this.reportAssemblyError("Z1002", macro);
     } else if (label.startsWith("`")) {
       errorFound = true;
-      this.reportAssemblyError("Z2077", macro, null, label);
+      this.reportAssemblyError("Z1003", macro, null, label);
     } else if (
       this._currentModule.containsMacro(label) ||
       this._currentModule.containsSymbol(label) ||
@@ -2875,7 +2901,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this._currentModule.containsStruct(label)
     ) {
       errorFound = true;
-      this.reportAssemblyError("Z2078", macro, null, label);
+      this.reportAssemblyError("Z1004", macro, null, label);
     }
 
     // --- Search for the end of the macro
@@ -2906,7 +2932,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Check for parse-time function parameters
       // --- (they can have only macro parameter arguments)
       if (macroLine.type === "MacroStatement") {
-        this.reportAssemblyError("Z2079", macroLine);
+        this.reportAssemblyError("Z1005", macroLine);
         errorFound = true;
         continue;
       }
@@ -2927,7 +2953,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
           errorFound = true;
           this.reportAssemblyError(
-            "Z2080",
+            "Z1006",
             macroLine,
             null,
             param.identifier.name
@@ -2960,10 +2986,10 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Check if the structure name is correct
     if (!label) {
       errorFound = true;
-      this.reportAssemblyError("Z2069", structStmt);
+      this.reportAssemblyError("Z0804", structStmt);
     } else if (label.startsWith("`")) {
       errorFound = true;
-      this.reportAssemblyError("Z2070", structStmt, null, label);
+      this.reportAssemblyError("Z0805", structStmt, null, label);
     } else if (
       this._currentModule.containsMacro(label) ||
       this._currentModule.containsSymbol(label) ||
@@ -2971,7 +2997,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this._currentModule.containsStruct(label)
     ) {
       errorFound = true;
-      this.reportAssemblyError("Z2071", structStmt, null, label);
+      this.reportAssemblyError("Z0806", structStmt, null, label);
     }
 
     // --- Search for the end of the structure
@@ -2987,7 +3013,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     if (searchResult.label) {
       errorFound = true;
-      this.reportAssemblyError("Z2072", structStmt);
+      this.reportAssemblyError("Z0807", structStmt);
     }
 
     // --- Create structure definition
@@ -3008,7 +3034,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         structLine.type !== "CommentOnlyLine" &&
         structLine.type !== "LabelOnlyLine"
       ) {
-        this.reportAssemblyError("Z2073", structLine);
+        this.reportAssemblyError("Z0808", structLine);
         errorFound = true;
         structErrors++;
         if (structErrors > 16) {
@@ -3020,7 +3046,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (structLine.label) {
         const fieldLabel = structLine.label.name;
         if (structDef.containsField(fieldLabel)) {
-          this.reportAssemblyError("Z2074", structLine, null, fieldLabel);
+          this.reportAssemblyError("Z0810", structLine, null, fieldLabel);
           errorFound = true;
         } else {
           structDef.addField(fieldLabel, new FieldDefinition(structOffset));
@@ -3137,7 +3163,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         return;
       }
       if (loopCondition.type === ExpressionValueType.String) {
-        this.reportAssemblyError("Z2042", whileStmt);
+        this.reportAssemblyError("Z0603", whileStmt);
         return;
       }
 
@@ -3188,14 +3214,14 @@ export class Z80Assembler extends ExpressionEvaluator {
         this._output.errorCount - errorsBefore >=
         this._options.maxLoopErrorsToReport
       ) {
-        this.reportAssemblyError("Z2054", whileStmt);
+        this.reportAssemblyError("Z0703", whileStmt);
         break;
       }
 
       // --- Increment counter, check loop safety
       loopCount++;
       if (loopCount >= 0xffff) {
-        this.reportAssemblyError("Z2053", whileStmt);
+        this.reportAssemblyError("Z0702", whileStmt);
         break;
       }
 
@@ -3242,14 +3268,14 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
     if (loopCounter.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z2042", loop);
+      this.reportAssemblyError("Z0603", loop);
       return;
     }
 
     // --- Check the loop counter
     var counter = loopCounter.asLong();
     if (counter >= 0x10000) {
-      this.reportAssemblyError("Z2053", loop);
+      this.reportAssemblyError("Z0702", loop);
       counter = 1;
     }
 
@@ -3306,7 +3332,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this._output.errorCount - errorsBefore >=
         this._options.maxLoopErrorsToReport
       ) {
-        this.reportAssemblyError("Z2054", loop);
+        this.reportAssemblyError("Z0703", loop);
         break;
       }
 
@@ -3401,7 +3427,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this._output.errorCount - errorsBefore >=
         this._options.maxLoopErrorsToReport
       ) {
-        this.reportAssemblyError("Z2054", repeatStmt);
+        this.reportAssemblyError("Z0703", repeatStmt);
         break;
       }
 
@@ -3411,7 +3437,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         return;
       }
       if (loopExitCondition.type === ExpressionValueType.String) {
-        this.reportAssemblyError("Z2042", untilStmt);
+        this.reportAssemblyError("Z0603", untilStmt);
         return;
       }
       condition = loopExitCondition.asBool();
@@ -3419,7 +3445,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Increment counter, check loop safety
       loopCount++;
       if (loopCount >= 0xffff) {
-        this.reportAssemblyError("Z2053", repeatStmt);
+        this.reportAssemblyError("Z0702", repeatStmt);
         break;
       }
 
@@ -3469,7 +3495,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
     if (fromValue.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z2042", forStmt);
+      this.reportAssemblyError("Z0603", forStmt);
       return;
     }
 
@@ -3478,7 +3504,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
     if (toValue.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z2042", forStmt);
+      this.reportAssemblyError("Z0603", forStmt);
       return;
     }
 
@@ -3489,11 +3515,11 @@ export class Z80Assembler extends ExpressionEvaluator {
         return;
       }
       if (stepValue.type === ExpressionValueType.String) {
-        this.reportAssemblyError("Z2042", forStmt);
+        this.reportAssemblyError("Z0603", forStmt);
         return;
       }
       if (Math.abs(stepValue.asReal()) < Number.EPSILON) {
-        this.reportAssemblyError("Z2057", forStmt);
+        this.reportAssemblyError("Z0706", forStmt);
         return;
       }
     }
@@ -3501,7 +3527,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Check the FOR variable
     const forVariable = forStmt.identifier.name;
     if (this.variableExists(forVariable)) {
-      this.reportAssemblyError("Z2058", forStmt, null, forVariable);
+      this.reportAssemblyError("Z0502", forStmt, null, forVariable);
       return;
     }
 
@@ -3553,7 +3579,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Increment counter, check loop safety
       loopCount++;
       if (loopCount >= 0xffff) {
-        this.reportAssemblyError("Z2053", forStmt);
+        this.reportAssemblyError("Z0702", forStmt);
         break;
       }
 
@@ -3605,7 +3631,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this._output.errorCount - errorsBefore >=
         this._options.maxLoopErrorsToReport
       ) {
-        this.reportAssemblyError("Z2054", forStmt);
+        this.reportAssemblyError("Z0703", forStmt);
         break;
       }
 
@@ -3638,7 +3664,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private processBreakStatement(breakStmt: BreakStatement): void {
     if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
-      this.reportAssemblyError("Z2059", breakStmt);
+      this.reportAssemblyError("Z0707", breakStmt);
       return;
     }
     this.getTopLocalScope().breakReached = true;
@@ -3650,7 +3676,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private processContinueStatement(continueStmt: ContinueStatement): void {
     if (this.isInGlobalScope || !this.getTopLocalScope().isLoopScope) {
-      this.reportAssemblyError("Z2060", continueStmt);
+      this.reportAssemblyError("Z0708", continueStmt);
       return;
     }
     this.getTopLocalScope().continueReached = true;
@@ -3715,7 +3741,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         continue;
       }
       if (conditionValue.type === ExpressionValueType.String) {
-        this.reportAssemblyError("Z2042", ifSection.ifStatement);
+        this.reportAssemblyError("Z0603", ifSection.ifStatement);
         continue;
       }
 
@@ -3818,11 +3844,11 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (curLine.type === "ElseIfStatement") {
         endLabel = curLine.label ? curLine.label.name : endLabel;
         if (endLabel) {
-          this.reportAssemblyError("Z2061", sectionStmt, null, ".elif");
+          this.reportAssemblyError("Z0503", sectionStmt, null, ".elif");
         }
         if (elseDetected) {
           errorDetected = true;
-          this.reportAssemblyError("Z2062", sectionStmt, null, ".elif");
+          this.reportAssemblyError("Z0709", sectionStmt, null, ".elif");
         } else {
           // --- Store the previous section
           ifDef.ifSections.push(
@@ -3837,11 +3863,11 @@ export class Z80Assembler extends ExpressionEvaluator {
       else if (curLine.type === "ElseStatement") {
         endLabel = curLine.label ? curLine.label.name : endLabel;
         if (endLabel) {
-          this.reportAssemblyError("Z2061", sectionStmt, null, ".else");
+          this.reportAssemblyError("Z0503", sectionStmt, null, ".else");
         }
         if (elseDetected) {
           errorDetected = true;
-          this.reportAssemblyError("Z2062", sectionStmt, null, ".else");
+          this.reportAssemblyError("Z0709", sectionStmt, null, ".else");
         } else {
           // --- Store the previous section
           ifDef.ifSections.push(
@@ -3869,7 +3895,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           );
           if (!searchResult.found) {
             this.reportAssemblyError(
-              "Z2052",
+              "Z0701",
               lines[firstLine],
               null,
               ".if/.ifused/.ifnused"
@@ -3881,7 +3907,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       currentLineIndex.index++;
     }
     this.reportAssemblyError(
-      "Z2052",
+      "Z0701",
       lines[firstLine],
       null,
       ".if/.ifused/.ifnused"
@@ -3932,10 +3958,10 @@ export class Z80Assembler extends ExpressionEvaluator {
       for (const symbol of ((localLine as unknown) as LocalStatement)
         .identifiers) {
         if (symbol.name.startsWith("`")) {
-          this.reportAssemblyError("Z2063", localLine, null, symbol.name);
+          this.reportAssemblyError("Z0504", localLine, null, symbol.name);
         }
         if (procScope.containsLocalBooking(symbol.name)) {
-          this.reportAssemblyError("Z2064", localLine, null, symbol.name);
+          this.reportAssemblyError("Z0505", localLine, null, symbol.name);
         }
         procScope.addLocalBooking(symbol.name);
       }
@@ -3983,7 +4009,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private processLocalStatement(localStmt: LocalStatement): void {
     if (this.isInGlobalScope) {
-      this.reportAssemblyError("Z2065", localStmt);
+      this.reportAssemblyError("Z0710", localStmt);
       return;
     }
 
@@ -3997,7 +4023,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     if (!scope || !scope.isProcScope) {
-      this.reportAssemblyError("Z2065", localStmt);
+      this.reportAssemblyError("Z0710", localStmt);
     }
   }
 
@@ -4035,15 +4061,15 @@ export class Z80Assembler extends ExpressionEvaluator {
       ? moduleStmt.identifier.name
       : label;
     if (!moduleName) {
-      this.reportAssemblyError("Z2066", moduleStmt);
+      this.reportAssemblyError("Z0901", moduleStmt);
       return;
     }
     if (moduleName.startsWith("`")) {
-      this.reportAssemblyError("Z2067", moduleStmt, null, moduleName);
+      this.reportAssemblyError("Z0902", moduleStmt, null, moduleName);
       return;
     }
     if (this._currentModule.containsNestedModule(moduleName)) {
-      this.reportAssemblyError("Z2068", moduleStmt, null, moduleName);
+      this.reportAssemblyError("Z0903", moduleStmt, null, moduleName);
       return;
     }
 
@@ -4151,14 +4177,14 @@ export class Z80Assembler extends ExpressionEvaluator {
             currentLineIndex
           );
           if (!nestedSearch.found) {
-            this.reportAssemblyError("Z2052", startLine, null, endDisplayName);
+            this.reportAssemblyError("Z0701", startLine, null, endDisplayName);
             return { found: false };
           }
         }
       }
       currentLineIndex.index++;
     }
-    this.reportAssemblyError("Z2052", startLine, null, endDisplayName);
+    this.reportAssemblyError("Z0701", startLine, null, endDisplayName);
     return { found: false };
   }
 
@@ -4244,12 +4270,12 @@ export class Z80Assembler extends ExpressionEvaluator {
         nextInstructionCodes[mnemonic] !== undefined &&
         this._output.modelType !== SpectrumModelType.Next
       ) {
-        this.reportAssemblyError("Z5001", opLine);
+        this.reportAssemblyError("Z0414", opLine);
         return;
       }
       const opCodes = simpleInstructionCodes[mnemonic];
       if (opCodes === undefined) {
-        this.reportEvaluationError("Z2023", opLine, null, mnemonic);
+        this.reportEvaluationError("Z0401", opLine, null, mnemonic);
       }
 
       // --- Emit the opcode(s);
@@ -4348,7 +4374,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
     if (op.operand1.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     if (op.operand2.operandType === OperandType.Expression) {
@@ -4362,7 +4388,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       this.emitOpCode(0xed92);
       this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit8);
     } else {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
     }
   }
 
@@ -4375,7 +4401,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       case OperandType.Expression:
         // --- PUSH NNNN operation
         if (op.type === "PopInstruction") {
-          this.reportAssemblyError("Z5000", op);
+          this.reportAssemblyError("Z0412", op);
           return;
         }
         if (this.invalidNextInst(op)) {
@@ -4396,7 +4422,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           return;
         }
     }
-    this.reportAssemblyError("Z5002", op);
+    this.reportAssemblyError("Z0413", op);
   }
 
   /**
@@ -4406,7 +4432,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   private processCallInst(op: CallInstruction): void {
     if (!op.operand2) {
       if (op.operand1.operandType !== OperandType.Expression) {
-        this.reportAssemblyError("Z2043", op);
+        this.reportAssemblyError("Z0604", op);
         return;
       }
       this.emitOpCode(0xcd);
@@ -4422,13 +4448,13 @@ export class Z80Assembler extends ExpressionEvaluator {
     ) {
       condition = "c";
     } else {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     const order = conditionOrder[condition] ?? 0;
     this.emitOpCode(0xc4 + order * 8);
     if (op.operand2.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     this.emitNumericExpr(op, op.operand2.expr, FixupType.Bit16);
@@ -4471,7 +4497,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.emitNumericExpr(op, op.operand1.expr, FixupType.Bit16);
           return;
       }
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
 
@@ -4484,12 +4510,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     ) {
       condition = "c";
     } else {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     const order = conditionOrder[condition] ?? 0;
     if (op.operand2.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z1003", op);
+      this.reportAssemblyError("Z0111", op);
       return;
     }
     this.emitOpCode(0xc2 + order * 8);
@@ -4503,7 +4529,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   private processJrInst(op: JrInstruction): void {
     if (!op.operand2) {
       if (op.operand1.operandType !== OperandType.Expression) {
-        this.reportAssemblyError("Z2043", op);
+        this.reportAssemblyError("Z0604", op);
         return;
       }
       this.emitJumpRelativeOp(op, op.operand1, 0x18);
@@ -4518,16 +4544,16 @@ export class Z80Assembler extends ExpressionEvaluator {
     ) {
       condition = "c";
     } else {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     const order = conditionOrder[condition] ?? 0;
     if (order >= 4) {
-      this.reportAssemblyError("Z2044", op);
+      this.reportAssemblyError("Z0402", op);
       return;
     }
     if (op.operand2.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     this.emitJumpRelativeOp(op, op.operand2, 0x20 + order * 8);
@@ -4548,7 +4574,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       ) {
         condition = "c";
       } else {
-        this.reportAssemblyError("Z2043", op);
+        this.reportAssemblyError("Z0604", op);
         return;
       }
       const order = conditionOrder[condition] ?? 0;
@@ -4564,12 +4590,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private processRstInst(op: RstInstruction): void {
     if (op.target.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     const value = this.evaluateExprImmediate(op.target.expr).value;
     if (value > 0x38 || value % 8 !== 0) {
-      this.reportAssemblyError("Z2046", op, null, value);
+      this.reportAssemblyError("Z0404", op, null, value);
       return;
     }
     this.emitOpCode(0xc7 + value);
@@ -4581,12 +4607,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private processImInst(op: ImInstruction): void {
     if (op.mode.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     const value = this.evaluateExprImmediate(op.mode.expr).value;
     if (value < 0 || value > 2) {
-      this.reportAssemblyError("Z2047", op, null, value);
+      this.reportAssemblyError("Z0405", op, null, value);
       return;
     }
     this.emitOpCode([0xed46, 0xed56, 0xed5e][value]);
@@ -4627,7 +4653,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         }
         break;
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -4663,7 +4689,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.emitOpCode(0xed40 + 8 * reg8Order[op.operand1.register]);
         return;
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -4695,13 +4721,13 @@ export class Z80Assembler extends ExpressionEvaluator {
         }
         const value = this.evaluateExprImmediate(op.operand2.expr).value;
         if (value !== 0) {
-          this.reportAssemblyError("Z2048", op);
+          this.reportAssemblyError("Z0406", op);
         } else {
           this.emitOpCode(0xed71);
         }
         return;
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -4714,12 +4740,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     opByte: number
   ): void {
     if (op.operand1.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
       return;
     }
     const bitIndex = this.evaluateExprImmediate(op.operand1.expr).value;
     if (bitIndex < 0 || bitIndex > 7) {
-      this.reportAssemblyError("Z2049", op, null, bitIndex);
+      this.reportAssemblyError("Z0407", op, null, bitIndex);
       return;
     }
     switch (op.operand2.operandType) {
@@ -4730,7 +4756,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           } else if (op.operand3.operandType === OperandType.Reg8) {
             opByte |= reg8Order[op.operand3.register];
           } else {
-            this.reportAssemblyError("Z2043", op);
+            this.reportAssemblyError("Z0604", op);
             return;
           }
         } else {
@@ -4758,7 +4784,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.emitByte((opByte | 0x06) + 8 * bitIndex);
         return;
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -4807,7 +4833,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
     }
     if (error) {
-      this.reportAssemblyError("Z2043", op);
+      this.reportAssemblyError("Z0604", op);
     } else {
       this.emitByte(0xcb);
       this.emitByte(opCode);
@@ -4849,7 +4875,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         );
         return;
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -4863,7 +4889,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     switch (op.operand1.operandType) {
       case OperandType.Reg8:
         if (op.operand1.register !== "a") {
-          this.reportAssemblyError("Z2051", op);
+          this.reportAssemblyError("Z0409", op);
           return;
         }
         switch (op.operand2.operandType) {
@@ -4969,7 +4995,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         }
         break;
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -4991,7 +5017,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Check for alternative syntax (A register as the first operand)
     if (op.operand2) {
       if (opType !== OperandType.Reg8 || opReg !== "a") {
-        this.reportAssemblyError("Z2050", op);
+        this.reportAssemblyError("Z0408", op);
         return;
       }
       operand = op.operand2;
@@ -5026,7 +5052,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         );
         return;
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -5291,7 +5317,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         break;
       }
     }
-    this.reportAssemblyError("Z2043", op);
+    this.reportAssemblyError("Z0604", op);
   }
 
   /**
@@ -5313,7 +5339,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private invalidNextInst(op: Instruction): boolean {
     if (this._output.modelType !== SpectrumModelType.Next) {
-      this.reportAssemblyError("Z5001", op);
+      this.reportAssemblyError("Z0414", op);
       return true;
     }
     return false;
@@ -5333,11 +5359,14 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): void {
     const opLine = (instr as unknown) as Z80AssemblyLine;
     let value = this.evaluateExpr(expr);
+    if (value.type === ExpressionValueType.Error) {
+      return;
+    }
     if (value.isNonEvaluated) {
       this.recordFixup(opLine, type, expr);
     }
     if (value.isValid && value.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z2042", opLine);
+      this.reportAssemblyError("Z0603", opLine);
       value = new ExpressionValue(0);
     }
     const fixupValue = value.value;
@@ -5365,7 +5394,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ) {
     const opLine = (instr as unknown) as Z80AssemblyLine;
     if (target.operandType !== OperandType.Expression) {
-      this.reportAssemblyError("Z2043", opLine);
+      this.reportAssemblyError("Z0604", opLine);
       return;
     }
     const value = this.evaluateExpr(target.expr);
@@ -5375,7 +5404,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     } else {
       dist = value.value - (this.getCurrentAssemblyAddress() + 2);
       if (dist < -128 || dist > 127) {
-        this.reportAssemblyError("Z2045", opLine, null, dist);
+        this.reportAssemblyError("Z0403", opLine, null, dist);
         return;
       }
     }
@@ -5613,7 +5642,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return { success: false, value: ExpressionValue.Error };
     }
     if (numericOnly && exprValue.type === ExpressionValueType.String) {
-      this.reportAssemblyError("Z2042", fixup.getSourceLine());
+      this.reportAssemblyError("Z0603", fixup.getSourceLine());
       return { success: false, value: ExpressionValue.Error };
     }
 
@@ -5696,7 +5725,7 @@ export class Z80Assembler extends ExpressionEvaluator {
               fixup.offset;
             var dist = evalResult.value.asWord() - (currentAssemblyAddress + 2);
             if (dist < -128 || dist > 127) {
-              this.reportAssemblyError("Z2045", fixup.sourceLine, null, dist);
+              this.reportAssemblyError("Z0403", fixup.sourceLine, null, dist);
               success = false;
               break;
             }
@@ -5793,11 +5822,32 @@ export class Z80Assembler extends ExpressionEvaluator {
       error.code,
       sourceItem.filename,
       error.position,
-      null,
+      error.position + 1,
       error.text
     );
     this._output.errors.push(errorInfo);
     this.reportScopeError(error.code);
+  }
+
+  /**
+   * Reports macro invocation errors
+   */
+  private reportMacroInvocationErrors(): void {
+    // --- Report macro invocation errors
+    for (let i = this._macroInvocations.length - 1; i >= 0; i--) {
+      const errorLine = (this._macroInvocations[
+        i
+      ] as unknown) as Z80AssemblyLine;
+      const sourceItem = this._output.sourceFileList[errorLine.fileIndex];
+      const errorInfo = new AssemblerErrorInfo(
+        "Z1012",
+        sourceItem.filename,
+        errorLine.startPosition,
+        errorLine.endPosition,
+        `Error in macro invocation${i > 0 ? " (level" + i + ")" : ""}`
+      );
+      this._output.errors.push(errorInfo);
+    }
   }
 
   /**
@@ -5815,6 +5865,9 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (!(sourceLine as any).fileIndex === undefined) {
       return;
     }
+
+    this.reportMacroInvocationErrors();
+
     const line = sourceLine as Z80AssemblyLine;
     const sourceItem = this._output.sourceFileList[line.fileIndex];
     let errorText: string = errorMessages[code] ?? "Unkonwn error";
@@ -5828,6 +5881,14 @@ export class Z80Assembler extends ExpressionEvaluator {
           ))
       );
     }
+
+    if (this._macroInvocations.length > 0) {
+      const lines = this._macroInvocations
+        .map((mi) => ((mi as unknown) as Z80AssemblyLine).line)
+        .join(", ");
+      errorText = `(from macro invocation through ${lines})` + errorText;
+    }
+
     const errorInfo = new AssemblerErrorInfo(
       code,
       sourceItem.filename,

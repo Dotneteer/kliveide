@@ -13,7 +13,7 @@ describe("Assembler - .includebin", () => {
   });
 
   it("fails with non-existing file", () => {
-    compileFileFails("IncludeBinNotExists.z80asm", "Z2038");
+    compileFileFails("IncludeBinNotExists.z80asm", "Z0322");
   });
 
   it("works with zero offset", () => {
@@ -47,11 +47,11 @@ describe("Assembler - .includebin", () => {
   });
 
   it("fails with negative offset", () => {
-    compileFileFails("IncludeBinWithNegativeOffset.z80asm", "Z2036");
+    compileFileFails("IncludeBinWithNegativeOffset.z80asm", "Z0320");
   });
 
   it("fails with too long offset", () => {
-    compileFileFails("IncludeBinWithTooLongOffset.z80asm", "Z2036");
+    compileFileFails("IncludeBinWithTooLongOffset.z80asm", "Z0320");
   });
 
   it("works with tight offset", () => {
@@ -62,11 +62,11 @@ describe("Assembler - .includebin", () => {
   });
 
   it("fails with negative length", () => {
-    compileFileFails("IncludeBinWithNegativeLength.z80asm", "Z2037");
+    compileFileFails("IncludeBinWithNegativeLength.z80asm", "Z0321");
   });
 
   it("fails with too long segment", () => {
-    compileFileFails("IncludeBinWithTooLongSegment.z80asm", "Z2037");
+    compileFileFails("IncludeBinWithTooLongSegment.z80asm", "Z0321");
   });
 
   it("works with tight segment", () => {

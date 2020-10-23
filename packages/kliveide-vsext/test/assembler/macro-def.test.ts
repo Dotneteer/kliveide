@@ -11,7 +11,7 @@ describe("Assembler - macro definition", () => {
       .macro()
       .endm
       `,
-      "Z2076"
+      "Z1002"
     );
   });
 
@@ -21,7 +21,7 @@ describe("Assembler - macro definition", () => {
       \`local .macro()
       .endm
       `,
-      "Z2077"
+      "Z1003"
     );
   });
 
@@ -69,7 +69,7 @@ describe("Assembler - macro definition", () => {
       MyMacro: .macro()
         .endm
       `,
-      "Z2078"
+      "Z1004"
     );
   });
 
@@ -102,7 +102,7 @@ describe("Assembler - macro definition", () => {
         .endm
         .endm
       `,
-      "Z2079"
+      "Z1005"
     );
   });
 
@@ -131,9 +131,9 @@ describe("Assembler - macro definition", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
-    expect(output.errors[0].errorCode === "Z2080").toBe(true);
-    expect(output.errors[1].errorCode === "Z2080").toBe(true);
-    expect(output.errors[2].errorCode === "Z2080").toBe(true);
+    expect(output.errors[0].errorCode === "Z1006").toBe(true);
+    expect(output.errors[1].errorCode === "Z1006").toBe(true);
+    expect(output.errors[2].errorCode === "Z1006").toBe(true);
   });
 
   it("fails with no end", () => {
@@ -142,19 +142,19 @@ describe("Assembler - macro definition", () => {
       MyMacro: .macro(first, second)
         ld a,b
       `,
-      "Z2052"
+      "Z0701"
     );
   });
 
   it("fails with orphan ends", () => {
-    codeRaisesError(".endm", "Z2055");
-    codeRaisesError(".ENDM", "Z2055");
-    codeRaisesError("endm", "Z2055");
-    codeRaisesError("ENDM", "Z2055");
-    codeRaisesError(".mend", "Z2055");
-    codeRaisesError(".MEND", "Z2055");
-    codeRaisesError("mend", "Z2055");
-    codeRaisesError("MEND", "Z2055");
+    codeRaisesError(".endm", "Z0704");
+    codeRaisesError(".ENDM", "Z0704");
+    codeRaisesError("endm", "Z0704");
+    codeRaisesError("ENDM", "Z0704");
+    codeRaisesError(".mend", "Z0704");
+    codeRaisesError(".MEND", "Z0704");
+    codeRaisesError("mend", "Z0704");
+    codeRaisesError("MEND", "Z0704");
   });
 
   it("fails with duplicated argument", () => {
@@ -163,7 +163,7 @@ describe("Assembler - macro definition", () => {
       MyMacro: .macro(first, second, first)
         .endm
       `,
-      "Z2075"
+      "Z1001"
     );
   });
 
@@ -179,7 +179,7 @@ describe("Assembler - macro definition", () => {
         .endif
       .endm
       `,
-      "Z2089"
+      "Z1009"
     );
   });
 
@@ -222,7 +222,7 @@ describe("Assembler - macro definition", () => {
         `
         ld a,${fc}(a)
         `,
-        "Z2089"
+        "Z1009"
       );
       });
   });

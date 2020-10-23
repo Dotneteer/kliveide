@@ -16,7 +16,7 @@ describe("Assembler - .local", () => {
       .local \`myLocal 
     .endp
     `,
-      "Z2063"
+      "Z0504"
     );
   });
 
@@ -25,7 +25,7 @@ describe("Assembler - .local", () => {
       `
     .local myLocal 
     `,
-      "Z2065"
+      "Z0710"
     );
   });
 
@@ -36,7 +36,7 @@ describe("Assembler - .local", () => {
       .local myLocal
       .local myLocal
     .endp    `,
-      "Z2064"
+      "Z0505"
     );
   });
 
@@ -86,7 +86,7 @@ describe("Assembler - .local", () => {
     .endp
     ld bc,nonpublished
    `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -103,7 +103,7 @@ describe("Assembler - .local", () => {
     ld bc,nonpublished
    `,
       options,
-      "Z3000"
+      "Z0605"
     );
   });
 

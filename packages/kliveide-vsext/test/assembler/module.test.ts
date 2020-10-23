@@ -31,7 +31,7 @@ describe("Assembler - .module", () => {
       ld a,b
     .endmodule
     `,
-      "Z2066"
+      "Z0901"
     );
   });
 
@@ -43,7 +43,7 @@ describe("Assembler - .module", () => {
       ld a,b
     .endmodule
     `,
-      "Z2067"
+      "Z0902"
     );
   });
 
@@ -55,7 +55,7 @@ describe("Assembler - .module", () => {
       ld a,b
     .endmodule
     `,
-      "Z2067"
+      "Z0902"
     );
   });
 
@@ -89,8 +89,8 @@ describe("Assembler - .module", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(2);
-    expect(output.errors[0].errorCode === "Z2017").toBe(true);
-    expect(output.errors[1].errorCode === "Z2068").toBe(true);
+    expect(output.errors[0].errorCode === "Z0501").toBe(true);
+    expect(output.errors[1].errorCode === "Z0903").toBe(true);
   });
 
   it("fails with duplicated name #2", () => {
@@ -109,7 +109,7 @@ describe("Assembler - .module", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2068").toBe(true);
+    expect(output.errors[0].errorCode === "Z0903").toBe(true);
   });
 
   it("fails with duplicated name #3", () => {
@@ -128,7 +128,7 @@ describe("Assembler - .module", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2068").toBe(true);
+    expect(output.errors[0].errorCode === "Z0903").toBe(true);
   });
 
   it("fails with duplicated name #4", () => {
@@ -147,7 +147,7 @@ describe("Assembler - .module", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2068").toBe(true);
+    expect(output.errors[0].errorCode === "Z0903").toBe(true);
   });
 
   it("fails without module end", () => {
@@ -157,7 +157,7 @@ describe("Assembler - .module", () => {
     .module
     ld a,b
     `,
-      "Z2052"
+      "Z0701"
     );
   });
 
@@ -167,7 +167,7 @@ describe("Assembler - .module", () => {
     .org #6000
     .endmodule
     `,
-      "Z2055"
+      "Z0704"
     );
   });
 
@@ -463,7 +463,7 @@ describe("Assembler - .module", () => {
     .endmodule
     ld hl,t1
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -1375,7 +1375,7 @@ describe("Assembler - .module", () => {
       .endmodule
     ld hl,OtherModule.t1
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -1392,7 +1392,7 @@ describe("Assembler - .module", () => {
       .endmodule
       ld hl,::OtherModule.t1
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -1436,7 +1436,7 @@ describe("Assembler - .module", () => {
       .endmodule
     ld hl,MyModule.@Nested.Inner
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -1456,7 +1456,7 @@ describe("Assembler - .module", () => {
       .endmodule
       ld hl,@MyModule.@Nested.Inner
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -1476,7 +1476,7 @@ describe("Assembler - .module", () => {
       .endmodule
       ld hl,MyModule.Nested.@Inner
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
