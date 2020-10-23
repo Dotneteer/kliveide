@@ -183,6 +183,9 @@ export class Z80Assembler extends ExpressionEvaluator {
   // --- The current list item being processed
   private _currentListFileItem: ListFileItem | null;
 
+  // --- The stack of macro invocations
+  private _macroInvocations: MacroOrStructInvocation[] = [];
+
   /**
    * The condition symbols
    */
@@ -2430,6 +2433,13 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
 
+    // --- Save the current state of macro error stack
+    const macroStackDepth = this._macroInvocations.length;
+    const assembler = this;
+
+    // --- Push the invocation line to the stack
+    this._macroInvocations.push(macroOrStructStmt);
+
     // --- Evaluate arguments
     const macroArgs: { [key: string]: ExpressionValue } = {};
     let errorFound = false;
@@ -2502,6 +2512,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       macroArgs[macroName] = argValue;
     }
     if (errorFound) {
+      restoreMacroStack();
       return;
     }
 
@@ -2573,30 +2584,34 @@ export class Z80Assembler extends ExpressionEvaluator {
     const macroProgram = macroParser.parseProgram();
 
     // --- Collect syntax errors
-    for (const error of macroParser.errors) {
-      // --- Translate the syntax error location
-      if (error.line > 0 && error.line < sourceInfo.length) {
-        const fileInfo = sourceInfo[error.line - 1];
-        error.line = fileInfo.line;
-        const errorInfo = AssemblerErrorInfo.fromParserError(
-          this._output.sourceFileList[fileInfo.fileIndex],
-          error
-        );
-        this._output.errors.push(errorInfo);
-        this.reportScopeError(errorInfo.errorCode);
-      } else {
-        const errorInfo = AssemblerErrorInfo.fromParserError(
-          this._output.sourceItem,
-          error
-        );
-        this._output.errors.push(errorInfo);
-        this.reportScopeError(errorInfo.errorCode);
+    if (macroParser.hasErrors) {
+      this.reportMacroInvocationErrors();
+      for (const error of macroParser.errors) {
+        // --- Translate the syntax error location
+        if (error.line > 0 && error.line < sourceInfo.length) {
+          const fileInfo = sourceInfo[error.line - 1];
+          error.line = fileInfo.line;
+          const errorInfo = AssemblerErrorInfo.fromParserError(
+            this._output.sourceFileList[fileInfo.fileIndex],
+            error
+          );
+          this._output.errors.push(errorInfo);
+          this.reportScopeError(errorInfo.errorCode);
+        } else {
+          const errorInfo = AssemblerErrorInfo.fromParserError(
+            this._output.sourceItem,
+            error
+          );
+          this._output.errors.push(errorInfo);
+          this.reportScopeError(errorInfo.errorCode);
+        }
+        errorFound = true;
       }
-      errorFound = true;
     }
 
     if (errorFound) {
       // --- Stop compilation, if macro contains error
+      restoreMacroStack();
       return;
     }
 
@@ -2648,6 +2663,16 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Remove the macro's scope
     this._currentModule.localScopes.pop();
+
+    // --- Restore the original depth of macro stack
+    restoreMacroStack();
+
+    /**
+     * Restores the original depth of the macro stack
+     */
+    function restoreMacroStack() {
+      assembler._macroInvocations.length = macroStackDepth;
+    }
   }
 
   /**
@@ -5333,6 +5358,9 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): void {
     const opLine = (instr as unknown) as Z80AssemblyLine;
     let value = this.evaluateExpr(expr);
+    if (value.type === ExpressionValueType.Error) {
+      return;
+    }
     if (value.isNonEvaluated) {
       this.recordFixup(opLine, type, expr);
     }
@@ -5793,11 +5821,32 @@ export class Z80Assembler extends ExpressionEvaluator {
       error.code,
       sourceItem.filename,
       error.position,
-      null,
+      error.position + 1,
       error.text
     );
     this._output.errors.push(errorInfo);
     this.reportScopeError(error.code);
+  }
+
+  /**
+   * Reports macro invocation errors
+   */
+  private reportMacroInvocationErrors(): void {
+    // --- Report macro invocation errors
+    for (let i = this._macroInvocations.length - 1; i >= 0; i--) {
+      const errorLine = (this._macroInvocations[
+        i
+      ] as unknown) as Z80AssemblyLine;
+      const sourceItem = this._output.sourceFileList[errorLine.fileIndex];
+      const errorInfo = new AssemblerErrorInfo(
+        "Z4001",
+        sourceItem.filename,
+        errorLine.startPosition,
+        errorLine.endPosition,
+        `Error in macro invocation${i > 0 ? " (level" + i + ")" : ""}`
+      );
+      this._output.errors.push(errorInfo);
+    }
   }
 
   /**
@@ -5815,6 +5864,9 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (!(sourceLine as any).fileIndex === undefined) {
       return;
     }
+
+    this.reportMacroInvocationErrors();
+
     const line = sourceLine as Z80AssemblyLine;
     const sourceItem = this._output.sourceFileList[line.fileIndex];
     let errorText: string = errorMessages[code] ?? "Unkonwn error";

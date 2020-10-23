@@ -156,7 +156,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
         end: textDocument.positionAt(errInfo.endPosition ?? errInfo.startPosition + 1),
       },
       severity: DiagnosticSeverity.Error,
-      message: errInfo.message,
+      message: `${errInfo.errorCode}: ${errInfo.message}`,
     });
   }
 

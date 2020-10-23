@@ -375,7 +375,7 @@ describe("Parser - operands", () => {
       const parser = createParser(`inc ${opr.src.substr(0, opr.src.length - 1)}`);
       const parsed = parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1014").toBe(true);
+      expect(parser.errors[0].code === "Z0005").toBe(true);
     });
 
   });

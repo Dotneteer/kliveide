@@ -624,7 +624,7 @@ describe("Parser - pragmas", () => {
       const parser = createParser(pragma + " #4000");
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${pragma} #3`, () => {
@@ -666,7 +666,7 @@ describe("Parser - pragmas", () => {
       const parser = createParser(pragma + " #4000");
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1007").toBe(true);
+      expect(parser.errors[0].code === "Z0003").toBe(true);
     });
 
     it(`${pragma} #3`, () => {

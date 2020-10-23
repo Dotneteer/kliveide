@@ -178,7 +178,7 @@ describe("Assembler - macro parameter emit", () => {
       .endm
       MyMacro("MyLabel: jp MyLabel")
       `,
-      "Z1013"
+      "Z0004"
     );
   });
 

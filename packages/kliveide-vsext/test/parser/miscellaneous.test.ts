@@ -159,7 +159,7 @@ describe("Parser - miscellaneous", () => {
     const parser = createParser(source);
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1014").toBe(true);
+    expect(parser.errors[0].code === "Z0005").toBe(true);
   });
 
   it("macro invocation #6", () => {
@@ -167,7 +167,7 @@ describe("Parser - miscellaneous", () => {
     const parser = createParser(source);
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1014").toBe(true);
+    expect(parser.errors[0].code === "Z0005").toBe(true);
   });
 
   const builtIns = [

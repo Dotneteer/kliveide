@@ -15,28 +15,28 @@ export interface ParserErrorMessage {
 }
 
 export type ErrorCodes =
-  | "Z1001"
-  | "Z1002"
+  | "Z0001"
+  | "Z0002"
+  | "Z0003"
+
   | "Z1003"
   | "Z1004"
   | "Z1005"
   | "Z1006"
-  | "Z1007"
-  | "Z1008"
-  | "Z1009"
-  | "Z1010"
-  | "Z1011"
-  | "Z1012"
-  | "Z1013"
-  | "Z1014"
-  | "Z1015"
+  | "Z0103"
+  | "Z0102"
+  | "Z0101"
+  | "Z0104"
+  | "Z0105"
+  | "Z0004"
+  | "Z0005"
+  | "Z0006"
   | "Z1016"
-  | "Z1017"
   | "Z1018"
-  | "Z1019"
-  | "Z1020"
+  | "Z0007"
+  | "Z0008"
   | "Z1021"
-  | "Z1022"
+  | "Z0106"
   | "Z1023"
   | "Z1024"
 
@@ -137,34 +137,38 @@ export type ErrorCodes =
   | "Z3001"
 
   | "Z4000"
+  | "Z4001"
 
   | "Z5000"
   | "Z5001"
   | "Z5002";
 
 export const errorMessages: ErrorText = {
-  Z1001: "Invalid token at the end of the line: {0}",
-  Z1002: "A line cannot start with this token: {0}",
+  // --- Missing or faulty tokens
+  Z0001: "Invalid token at the end of the line: {0}",
+  Z0002: "A line cannot start with this token: {0}",
+  Z0003: "A comma expected",
+  Z0004: "'(' expected",
+  Z0005: "')' expected",
+  Z0006: "'}}' expected",
+  Z0007: "'=' expected",
+  Z0008: "'to' expected",
+
+  // --- Missing or faulty language elements
+  Z0101: "Register A expected",
+  Z0102: "Register B expected",
+  Z0103: "Register DE expected",
+  Z0104: "Register D expected",
+  Z0105: "Register E expected",
+  Z0106: "BC, DE, HL, or SP expected",
+
   Z1003: "An expression expected",
   Z1004: "An identifier expected",
   Z1005: "Cannot parse an integer literal",
   Z1006: "A string literal expected",
-  Z1007: "A comma expected",
-  Z1008: "DE register expected",
-  Z1009: "B register expected",
-  Z1010: "A register expected",
-  Z1011: "D register expected",
-  Z1012: "E register expected",
-  Z1013: "'(' expected",
-  Z1014: "')' expected",
-  Z1015: "'}}' expected",
   Z1016: "Operand expected",
-  Z1017: "Invalid token at the start of the line: {0}",
   Z1018: "An identifier or symbol expected",
-  Z1019: "'=' expected",
-  Z1020: "'to' expected",
   Z1021: "A byte-emitting pragma expected",
-  Z1022: "BC, DE, HL, or SP expected",
   Z1023: "A mnemonic, a register, or a register indirection expression expected.",
   Z1024: "The lreg and hreg functions accept only a bc, de, hl, ix, or iy as their argument.",
 
@@ -264,6 +268,8 @@ export const errorMessages: ErrorText = {
   Z3000: "Identifier '{0}' is not defined yet.",
   Z3001: "Expression evaluation error: {0}",
   Z4000: "ERROR: {0}",
+
+  Z4001: "Error in macro invocation",
 
   Z5000: "The pop instruction cannot be used with an expression operand",
   Z5001: "To use this Spectrum Next-specific instruction, you need to set .model type to NEXT explicitly.",

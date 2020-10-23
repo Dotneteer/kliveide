@@ -349,7 +349,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
           return ExpressionValue.Error;
       }
     } catch (err) {
-      this.reportEvaluationError("Z3001", null, (err as Error).message);
+      this.reportEvaluationError("Z3001", expr, (err as Error).message);
       return ExpressionValue.Error;
     }
 
