@@ -51,7 +51,7 @@ describe("Assembler - labels", () => {
         ld bc,labelonly
     `,
       options,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -99,7 +99,7 @@ describe("Assembler - labels", () => {
         ld bc,label.only
     `,
       options,
-      "Z3000"
+      "Z0605"
     );
   });
 

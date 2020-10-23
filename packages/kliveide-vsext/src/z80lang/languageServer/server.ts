@@ -153,9 +153,13 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     diagnostics.push({
       range: {
         start: textDocument.positionAt(errInfo.startPosition),
-        end: textDocument.positionAt(errInfo.endPosition ?? errInfo.startPosition + 1),
+        end: textDocument.positionAt(
+          errInfo.endPosition ?? errInfo.startPosition + 1
+        ),
       },
-      severity: DiagnosticSeverity.Error,
+      severity: errInfo.isWarning
+        ? DiagnosticSeverity.Warning
+        : DiagnosticSeverity.Error,
       message: `${errInfo.errorCode}: ${errInfo.message}`,
     });
   }

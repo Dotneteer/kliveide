@@ -10,7 +10,7 @@ describe("Assembler - macro emit", () => {
       `
       MyMacro()
       `,
-      "Z2087"
+      "Z1007"
     );
   });
 
@@ -70,7 +70,7 @@ describe("Assembler - macro emit", () => {
         .endm
       MyMacro(12, 13)
       `,
-      "Z2088"
+      "Z1008"
     );
   });
 
@@ -109,7 +109,7 @@ describe("Assembler - macro emit", () => {
       value .equ 0
       MyMacro(1/value)
       `,
-      "Z3001"
+      "Z1012", "Z0606"
     );
   });
 
@@ -1502,7 +1502,7 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple()
       `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -1643,7 +1643,7 @@ describe("Assembler - macro emit", () => {
       .endm
       Simple(c, "ld a,{{arg1}}")
       `,
-      "Z2090"
+      "Z1012", "Z1010"
     );
   });
 

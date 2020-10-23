@@ -9,8 +9,8 @@ describe("Assembler - miscellaneous operations", () => {
   });
 
   it("im: fails with invalid operand", () => {
-    codeRaisesError("im 3", "Z2047");
-    codeRaisesError("im -1", "Z2047");
+    codeRaisesError("im 3", "Z0405");
+    codeRaisesError("im -1", "Z0405");
   });
 
   it("ex", () => {
@@ -22,10 +22,10 @@ describe("Assembler - miscellaneous operations", () => {
   });
 
   it("ex: fails with invalid operand", () => {
-    codeRaisesError("ex hl, bc", "Z2043");
-    codeRaisesError("ex af, bc", "Z2043");
-    codeRaisesError("ex de, 123", "Z2043");
-    codeRaisesError("ex (sp), bc", "Z2043");
+    codeRaisesError("ex hl, bc", "Z0604");
+    codeRaisesError("ex af, bc", "Z0604");
+    codeRaisesError("ex de, 123", "Z0604");
+    codeRaisesError("ex (sp), bc", "Z0604");
   });
 
   it("in", () => {
@@ -41,13 +41,13 @@ describe("Assembler - miscellaneous operations", () => {
   });
 
   it("in: fails with invalid operand", () => {
-    codeRaisesError("in (c), a", "Z2043");
-    codeRaisesError("in b,(#fe)", "Z2043");
-    codeRaisesError("in c,(#fe)", "Z2043");
-    codeRaisesError("in d,(#fe)", "Z2043");
-    codeRaisesError("in e,(#fe)", "Z2043");
-    codeRaisesError("in h,(#fe)", "Z2043");
-    codeRaisesError("in l,(#fe)", "Z2043");
+    codeRaisesError("in (c), a", "Z0604");
+    codeRaisesError("in b,(#fe)", "Z0604");
+    codeRaisesError("in c,(#fe)", "Z0604");
+    codeRaisesError("in d,(#fe)", "Z0604");
+    codeRaisesError("in e,(#fe)", "Z0604");
+    codeRaisesError("in h,(#fe)", "Z0604");
+    codeRaisesError("in l,(#fe)", "Z0604");
   });
 
   it("out", () => {
@@ -63,12 +63,12 @@ describe("Assembler - miscellaneous operations", () => {
   });
 
   it("out: fails with invalid operand", () => {
-    codeRaisesError("out (#fe),b", "Z2043");
-    codeRaisesError("out (#fe),c", "Z2043");
-    codeRaisesError("out (#fe),d", "Z2043");
-    codeRaisesError("out (#fe),e", "Z2043");
-    codeRaisesError("out (#fe),h", "Z2043");
-    codeRaisesError("out (#fe),l", "Z2043");
-    codeRaisesError("out (c),1", "Z2048");
+    codeRaisesError("out (#fe),b", "Z0604");
+    codeRaisesError("out (#fe),c", "Z0604");
+    codeRaisesError("out (#fe),d", "Z0604");
+    codeRaisesError("out (#fe),e", "Z0604");
+    codeRaisesError("out (#fe),h", "Z0604");
+    codeRaisesError("out (#fe),l", "Z0604");
+    codeRaisesError("out (c),1", "Z0406");
   });
 });

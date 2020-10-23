@@ -36,7 +36,7 @@ function testUnary(operator: string): void {
   } catch {
     expect(parser.hasErrors).toBe(true);
     expect(parser.errors.length).toBe(1);
-    expect(parser.errors[0].code === "Z1003").toBe(true);
+    expect(parser.errors[0].code === "Z0111").toBe(true);
   }
 
   parser = createParser(operator + "swapnib");
@@ -46,7 +46,7 @@ function testUnary(operator: string): void {
   } catch {
     expect(parser.hasErrors).toBe(true);
     expect(parser.errors.length).toBe(1);
-    expect(parser.errors[0].code === "Z1003").toBe(true);
+    expect(parser.errors[0].code === "Z0111").toBe(true);
   }
 }
 

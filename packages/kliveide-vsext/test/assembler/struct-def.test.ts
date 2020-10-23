@@ -16,7 +16,7 @@ describe("Assembler - struct definition", () => {
       .struct
       .ends
       `,
-      "Z2069"
+      "Z0804"
     );
   });
 
@@ -26,7 +26,7 @@ describe("Assembler - struct definition", () => {
       \`local .struct
       .ends
       `,
-      "Z2070"
+      "Z0805"
     );
   });
 
@@ -36,7 +36,7 @@ describe("Assembler - struct definition", () => {
       MyStruct .struct
       MyEnd .ends
       `,
-      "Z2072"
+      "Z0807"
     );
   });
 
@@ -47,7 +47,7 @@ describe("Assembler - struct definition", () => {
       MyEnd
         .ends
       `,
-      "Z2072"
+      "Z0807"
     );
   });
 
@@ -95,7 +95,7 @@ describe("Assembler - struct definition", () => {
       MyStruct .struct
         .ends
       `,
-      "Z2071"
+      "Z0806"
     );
   });
 
@@ -109,7 +109,7 @@ describe("Assembler - struct definition", () => {
         .ends
       `,
       options,
-      "Z2071"
+      "Z0806"
     );
   });
 
@@ -137,7 +137,7 @@ describe("Assembler - struct definition", () => {
         .ends
       `,
       options,
-      "Z2071"
+      "Z0806"
     );
   });
 
@@ -147,15 +147,15 @@ describe("Assembler - struct definition", () => {
       MyStruct .struct
         .defb 0x00
       `,
-      "Z2052"
+      "Z0701"
     );
   });
 
   it("fails with orphan ends", () => {
-    codeRaisesError(".ends", "Z2055");
-    codeRaisesError(".ENDS", "Z2055");
-    codeRaisesError("ends", "Z2055");
-    codeRaisesError("ENDS", "Z2055");
+    codeRaisesError(".ends", "Z0704");
+    codeRaisesError(".ENDS", "Z0704");
+    codeRaisesError("ends", "Z0704");
+    codeRaisesError("ENDS", "Z0704");
   });
 
   it("fails with invalid instruction", () => {
@@ -165,7 +165,7 @@ describe("Assembler - struct definition", () => {
         ld a,b
       .ends
       `,
-      "Z2073"
+      "Z0808"
     );
   });
 
@@ -521,7 +521,7 @@ describe("Assembler - struct definition", () => {
           .defw #FEDC
       .ends
       `,
-      "Z2074"
+      "Z0810"
     );
   });
 
@@ -540,7 +540,7 @@ describe("Assembler - struct definition", () => {
       .ends
       `,
       options,
-      "Z2074"
+      "Z0810"
     );
   });
 
@@ -559,7 +559,7 @@ describe("Assembler - struct definition", () => {
       .ends
       `,
       options,
-      "Z2074"
+      "Z0810"
     );
   });
 
@@ -596,8 +596,8 @@ describe("Assembler - struct definition", () => {
 
     const output = compiler.compile(source);
     expect(output.errorCount).toBe(2);
-    expect(output.errors[0].errorCode === "Z2074").toBe(true);
-    expect(output.errors[1].errorCode === "Z2074").toBe(true);
+    expect(output.errors[0].errorCode === "Z0810").toBe(true);
+    expect(output.errors[1].errorCode === "Z0810").toBe(true);
   });
 
   it("struct labels show length", () => {

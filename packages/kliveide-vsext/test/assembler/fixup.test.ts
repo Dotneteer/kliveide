@@ -35,8 +35,8 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(2);
-    expect(output.errors[0].errorCode === "Z3000").toBe(true);
-    expect(output.errors[1].errorCode === "Z3000").toBe(true);
+    expect(output.errors[0].errorCode === "Z0605").toBe(true);
+    expect(output.errors[1].errorCode === "Z0605").toBe(true);
   });
 
   it("equ: evaluation error", () => {
@@ -51,7 +51,7 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3001").toBe(true);
+    expect(output.errors[0].errorCode === "Z0606").toBe(true);
   });
 
   it("equ: Bit8 fixup ", () => {
@@ -77,9 +77,9 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
-    expect(output.errors[0].errorCode === "Z3000").toBe(true);
-    expect(output.errors[1].errorCode === "Z3000").toBe(true);
-    expect(output.errors[2].errorCode === "Z3000").toBe(true);
+    expect(output.errors[0].errorCode === "Z0605").toBe(true);
+    expect(output.errors[1].errorCode === "Z0605").toBe(true);
+    expect(output.errors[2].errorCode === "Z0605").toBe(true);
   });
 
   it("equ: Bit16 fixup ", () => {
@@ -106,9 +106,9 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
-    expect(output.errors[0].errorCode === "Z3000").toBe(true);
-    expect(output.errors[1].errorCode === "Z3000").toBe(true);
-    expect(output.errors[2].errorCode === "Z3000").toBe(true);
+    expect(output.errors[0].errorCode === "Z0605").toBe(true);
+    expect(output.errors[1].errorCode === "Z0605").toBe(true);
+    expect(output.errors[2].errorCode === "Z0605").toBe(true);
   });
 
   it("equ: Bit16 fixup evaluation error", () => {
@@ -122,7 +122,7 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3001").toBe(true);
+    expect(output.errors[0].errorCode === "Z0606").toBe(true);
   });
 
   it("jr: forward fixup", () => {
@@ -169,7 +169,7 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2045").toBe(true);
+    expect(output.errors[0].errorCode === "Z0403").toBe(true);
   });
 
   it("jr: fails with far backward jump", () => {
@@ -185,7 +185,7 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2045").toBe(true);
+    expect(output.errors[0].errorCode === "Z0403").toBe(true);
   });
 
   it("equ: string fixup", () => {
@@ -215,7 +215,7 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2042").toBe(true);
+    expect(output.errors[0].errorCode === "Z0603").toBe(true);
   });
 
   it("equ: Bit16 fixup string", () => {
@@ -229,7 +229,7 @@ describe("Assembler - fixups", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2042").toBe(true);
+    expect(output.errors[0].errorCode === "Z0603").toBe(true);
     expect(output.getSymbol("Symbol1").value.asString()).toBe("helloyou");
     expect(output.getSymbol("Symbol1").value.type).toBe(ExpressionValueType.String);
     expect(output.getSymbol("Symbol2").value.asString()).toBe("you");

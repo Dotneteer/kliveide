@@ -8,7 +8,7 @@ describe("Assembler - .comparebin", () => {
   });
 
   it("fails with non-existing file", () => {
-    compileFileFails("CompareBinNotExists.z80asm", "Z2084");
+    compileFileFails("CompareBinNotExists.z80asm", "Z0329");
   });
 
   it("works with zero offset", () => {
@@ -28,11 +28,11 @@ describe("Assembler - .comparebin", () => {
   });
 
   it("fails with negative offset", () => {
-    compileFileFails("CompareBinWithNegativeOffset.z80asm", "Z2082");
+    compileFileFails("CompareBinWithNegativeOffset.z80asm", "Z0327");
   });
 
   it("fails with too long offset", () => {
-    compileFileFails("CompareBinWithTooLongOffset.z80asm", "Z2082");
+    compileFileFails("CompareBinWithTooLongOffset.z80asm", "Z0327");
   });
 
   it("works with tight offset", () => {
@@ -40,10 +40,10 @@ describe("Assembler - .comparebin", () => {
   });
 
   it("fails with negative length", () => {
-    compileFileFails("CompareBinWithNegativeLength.z80asm", "Z2083");
+    compileFileFails("CompareBinWithNegativeLength.z80asm", "Z0328");
   });
 
   it("fails with too long segment", () => {
-    compileFileFails("CompareBinWithTooLongSegment.z80asm", "Z2085");
+    compileFileFails("CompareBinWithTooLongSegment.z80asm", "Z0330");
   });
 });

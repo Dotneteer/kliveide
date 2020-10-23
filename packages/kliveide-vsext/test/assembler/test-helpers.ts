@@ -67,12 +67,12 @@ export function expressionFails(
 
   if (params.length === 0) {
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z3001").toBe(true);
+    expect(output.errors[0].errorCode === "Z0606").toBe(true);
   } else {
     expect(output.errorCount).toBe(params.length);
     for (let i = 0; i < params.length; i++) {
       const entry = params[i];
-      const code: ErrorCodes = entry[0] ?? "Z3001";
+      const code: ErrorCodes = entry[0] ?? "Z0606";
       expect(output.errors[i].errorCode === code).toBe(true);
       if (entry[1]) {
         expect(
@@ -111,12 +111,14 @@ export function testCodeEmitWithOptions(
   }
 }
 
-export function codeRaisesError(source: string, code: ErrorCodes): void {
+export function codeRaisesError(source: string, ...code: ErrorCodes[]): void {
   const compiler = new Z80Assembler();
 
   const output = compiler.compile(source);
-  expect(output.errorCount).toBe(1);
-  expect(output.errors[0].errorCode === code).toBe(true);
+  expect(output.errorCount).toBe(code.length);
+  for (let i = 0; i < code.length; i++) {
+    expect(output.errors[i].errorCode === code[i]).toBe(true);
+  }
 }
 
 export function codeRaisesErrorWithOptions(

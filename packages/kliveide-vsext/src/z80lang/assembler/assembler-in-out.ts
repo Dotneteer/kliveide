@@ -172,14 +172,14 @@ export class BinarySegment {
       !this.overflowDetected
     ) {
       this.overflowDetected = true;
-      return "Z2000";
+      return "Z0410";
     }
     if (
       this.emittedCode.length > this.maxCodeLength &&
       !this.overflowDetected
     ) {
       this.overflowDetected = true;
-      return "Z2001";
+      return "Z0411";
     }
     return null;
   }

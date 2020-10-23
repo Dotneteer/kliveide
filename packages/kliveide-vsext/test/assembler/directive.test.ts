@@ -270,8 +270,8 @@ describe("Assembler - directives", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(2);
-    expect(output.errors[0].errorCode === "Z2009").toBe(true);
-    expect(output.errors[1].errorCode === "Z2009").toBe(true);
+    expect(output.errors[0].errorCode === "Z0207").toBe(true);
+    expect(output.errors[1].errorCode === "Z0207").toBe(true);
   });
 
   it("unexpected #endif raises error", () => {
@@ -291,8 +291,8 @@ describe("Assembler - directives", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(2);
-    expect(output.errors[0].errorCode === "Z2010").toBe(true);
-    expect(output.errors[1].errorCode === "Z2010").toBe(true);
+    expect(output.errors[0].errorCode === "Z0208").toBe(true);
+    expect(output.errors[1].errorCode === "Z0208").toBe(true);
   });
 
   it("nested #ifdef true-true works", () => {
@@ -1178,7 +1178,7 @@ describe("Assembler - directives", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2008").toBe(true);
+    expect(output.errors[0].errorCode === "Z0206").toBe(true);
   });
 
   it("#ifnmod with invalid mode", () => {
@@ -1198,7 +1198,7 @@ describe("Assembler - directives", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z2008").toBe(true);
+    expect(output.errors[0].errorCode === "Z0206").toBe(true);
   });
 
 });

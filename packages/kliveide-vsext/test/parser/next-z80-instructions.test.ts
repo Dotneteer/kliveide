@@ -93,7 +93,7 @@ describe("Parser - Next Z80 instructions", () => {
       const parser = createParser(inst);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
   });
 
@@ -141,7 +141,7 @@ describe("Parser - Next Z80 instructions", () => {
       const parser = createParser(inst);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1016").toBe(true);
+      expect(parser.errors[0].code === "Z0113").toBe(true);
     });
   });
 

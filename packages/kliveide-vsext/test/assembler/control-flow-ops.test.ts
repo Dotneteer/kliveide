@@ -49,17 +49,17 @@ describe("Assembler - control flow operations", () => {
   });
 
   it("jp fails", () => {
-    codeRaisesError("jp bc", "Z2043");
-    codeRaisesError("jp de", "Z2043");
-    codeRaisesError("jp af", "Z2043");
-    codeRaisesError("jp sp", "Z2043");
-    codeRaisesError("jp (bc)", "Z2043");
-    codeRaisesError("jp (de)", "Z2043");
-    codeRaisesError("jp (sp)", "Z2043");
-    codeRaisesError("jp (ix+1)", "Z2043");
-    codeRaisesError("jp (ix-21)", "Z2043");
-    codeRaisesError("jp (iy+1)", "Z2043");
-    codeRaisesError("jp (iy-21)", "Z2043");
+    codeRaisesError("jp bc", "Z0604");
+    codeRaisesError("jp de", "Z0604");
+    codeRaisesError("jp af", "Z0604");
+    codeRaisesError("jp sp", "Z0604");
+    codeRaisesError("jp (bc)", "Z0604");
+    codeRaisesError("jp (de)", "Z0604");
+    codeRaisesError("jp (sp)", "Z0604");
+    codeRaisesError("jp (ix+1)", "Z0604");
+    codeRaisesError("jp (ix-21)", "Z0604");
+    codeRaisesError("jp (iy+1)", "Z0604");
+    codeRaisesError("jp (iy-21)", "Z0604");
   });
 
   it("jr", () => {
@@ -97,38 +97,38 @@ describe("Assembler - control flow operations", () => {
 
   it("jr: fails with far address", () => {
     // --- Start address is #8000
-    codeRaisesError("jr #8082", "Z2045");
-    codeRaisesError("jr #8100", "Z2045");
-    codeRaisesError("jr #7F81", "Z2045");
-    codeRaisesError("jr #7F00", "Z2045");
+    codeRaisesError("jr #8082", "Z0403");
+    codeRaisesError("jr #8100", "Z0403");
+    codeRaisesError("jr #7F81", "Z0403");
+    codeRaisesError("jr #7F00", "Z0403");
 
-    codeRaisesError("jr nz,#8082", "Z2045");
-    codeRaisesError("jr nz,#8100", "Z2045");
-    codeRaisesError("jr nz,#7F81", "Z2045");
-    codeRaisesError("jr nz,#7F00", "Z2045");
+    codeRaisesError("jr nz,#8082", "Z0403");
+    codeRaisesError("jr nz,#8100", "Z0403");
+    codeRaisesError("jr nz,#7F81", "Z0403");
+    codeRaisesError("jr nz,#7F00", "Z0403");
 
-    codeRaisesError("jr z,#8082", "Z2045");
-    codeRaisesError("jr z,#8100", "Z2045");
-    codeRaisesError("jr z,#7F81", "Z2045");
-    codeRaisesError("jr z,#7F00", "Z2045");
+    codeRaisesError("jr z,#8082", "Z0403");
+    codeRaisesError("jr z,#8100", "Z0403");
+    codeRaisesError("jr z,#7F81", "Z0403");
+    codeRaisesError("jr z,#7F00", "Z0403");
 
-    codeRaisesError("jr nc,#8082", "Z2045");
-    codeRaisesError("jr nc,#8100", "Z2045");
-    codeRaisesError("jr nc,#7F81", "Z2045");
-    codeRaisesError("jr nc,#7F00", "Z2045");
+    codeRaisesError("jr nc,#8082", "Z0403");
+    codeRaisesError("jr nc,#8100", "Z0403");
+    codeRaisesError("jr nc,#7F81", "Z0403");
+    codeRaisesError("jr nc,#7F00", "Z0403");
 
-    codeRaisesError("jr c,#8082", "Z2045");
-    codeRaisesError("jr c,#8100", "Z2045");
-    codeRaisesError("jr c,#7F81", "Z2045");
-    codeRaisesError("jr c,#7F00", "Z2045");
+    codeRaisesError("jr c,#8082", "Z0403");
+    codeRaisesError("jr c,#8100", "Z0403");
+    codeRaisesError("jr c,#7F81", "Z0403");
+    codeRaisesError("jr c,#7F00", "Z0403");
   });
 
   it("jr: fails with invalid condition", () => {
     // --- Start address is #8000
-    codeRaisesError("jr po,$", "Z2044");
-    codeRaisesError("jr pe,$", "Z2044");
-    codeRaisesError("jr p,$", "Z2044");
-    codeRaisesError("jr m,$", "Z2044");
+    codeRaisesError("jr po,$", "Z0402");
+    codeRaisesError("jr pe,$", "Z0402");
+    codeRaisesError("jr p,$", "Z0402");
+    codeRaisesError("jr m,$", "Z0402");
   });
 
   it("rst", () => {
@@ -146,8 +146,8 @@ describe("Assembler - control flow operations", () => {
   });
 
   it("rst: fails with invalid target", () => {
-    codeRaisesError("rst 2", "Z2046");
-    codeRaisesError("rst #40", "Z2046");
+    codeRaisesError("rst 2", "Z0404");
+    codeRaisesError("rst #40", "Z0404");
   });
 
   it("djnz", () => {
@@ -161,10 +161,10 @@ describe("Assembler - control flow operations", () => {
 
   it("djnz: fails with far address", () => {
     // --- Start address is #8000!
-    codeRaisesError("djnz #8082", "Z2045");
-    codeRaisesError("djnz #8100", "Z2045");
-    codeRaisesError("djnz #7F81", "Z2045");
-    codeRaisesError("djnz #7F00", "Z2045");
+    codeRaisesError("djnz #8082", "Z0403");
+    codeRaisesError("djnz #8100", "Z0403");
+    codeRaisesError("djnz #7F81", "Z0403");
+    codeRaisesError("djnz #7F00", "Z0403");
   });
 
 });

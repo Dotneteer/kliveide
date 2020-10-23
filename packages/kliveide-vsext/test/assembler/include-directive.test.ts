@@ -45,11 +45,11 @@ describe("Assembler - include directive", () => {
   });
 
   it("fails with repetition", () => {
-    compileFileFails("RepetitionInclude.z80asm", "Z2005");
+    compileFileFails("RepetitionInclude.z80asm", "Z0202");
   });
 
   it("fails with single circularity", () => {
-    compileFileFails("SingleCircular.z80asm", "Z2006");
+    compileFileFails("SingleCircular.z80asm", "Z0203");
   });
 
   it("nested include works", () => {
@@ -74,19 +74,19 @@ describe("Assembler - include directive", () => {
   });
 
   it("missing endif detected #1", () => {
-    compileFileFails("MissingEndIf1.z80asm", "Z2003");
+    compileFileFails("MissingEndIf1.z80asm", "Z0205");
   });
 
   it("missing endif detected #2", () => {
-    compileFileFails("MissingEndIf2.z80asm", "Z2003");
+    compileFileFails("MissingEndIf2.z80asm", "Z0205");
   });
 
   it("missing endif detected #3", () => {
-    compileFileFails("MissingEndIf3.z80asm", "Z2003");
+    compileFileFails("MissingEndIf3.z80asm", "Z0205");
   });
 
   it("missing endif detected #4", () => {
-    compileFileFails("MissingEndIf4.z80asm", "Z2003");
+    compileFileFails("MissingEndIf4.z80asm", "Z0205");
   });
 
   it("scenario works #1", () => {

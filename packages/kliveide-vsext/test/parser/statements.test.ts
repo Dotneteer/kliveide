@@ -110,7 +110,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt} (abc,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1004").toBe(true);
+      expect(parser.errors[0].code === "Z0107").toBe(true);
     });
 
     it(`${stmt} #6`, () => {
@@ -182,7 +182,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
   });
 
@@ -240,7 +240,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
   });
 
@@ -318,7 +318,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
   });
 
@@ -396,7 +396,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
   });
 
@@ -425,7 +425,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1004").toBe(true);
+      expect(parser.errors[0].code === "Z0107").toBe(true);
     });
   });
 
@@ -454,7 +454,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1004").toBe(true);
+      expect(parser.errors[0].code === "Z0107").toBe(true);
     });
   });
 
@@ -523,7 +523,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
   });
 
@@ -741,14 +741,14 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1004").toBe(true);
+      expect(parser.errors[0].code === "Z0107").toBe(true);
     });
 
     it(`${stmt} #4`, () => {
       const parser = createParser(`${stmt} myId,`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1004").toBe(true);
+      expect(parser.errors[0].code === "Z0107").toBe(true);
     });
   });
 
@@ -802,7 +802,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt}`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1004").toBe(true);
+      expect(parser.errors[0].code === "Z0107").toBe(true);
     });
 
     it(`${stmt} #4`, () => {
@@ -816,7 +816,7 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt} abc = `);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
 
     it(`${stmt} #6`, () => {
@@ -830,14 +830,14 @@ describe("Parser - statements", () => {
       const parser = createParser(`${stmt} abc = 0 to`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
 
     it(`${stmt} #8`, () => {
       const parser = createParser(`${stmt} abc = 0 to 2 step`);
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
-      expect(parser.errors[0].code === "Z1003").toBe(true);
+      expect(parser.errors[0].code === "Z0111").toBe(true);
     });
 
   });

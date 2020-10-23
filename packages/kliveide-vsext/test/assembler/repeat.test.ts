@@ -13,7 +13,7 @@ describe("Assembler - .repeat", () => {
       .ent #8000
       .until true
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
@@ -24,15 +24,15 @@ describe("Assembler - .repeat", () => {
       .xent #8000
       .until true
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
   it(".until - fails without repeat", () => {
-    codeRaisesError(".until true", "Z2055");
-    codeRaisesError(".UNTIL true", "Z2055");
-    codeRaisesError("until true", "Z2055");
-    codeRaisesError("UNTIL true", "Z2055");
+    codeRaisesError(".until true", "Z0704");
+    codeRaisesError(".UNTIL true", "Z0704");
+    codeRaisesError("until true", "Z0704");
+    codeRaisesError("UNTIL true", "Z0704");
   });
 
   it("repeat - missing until", () => {
@@ -41,7 +41,7 @@ describe("Assembler - .repeat", () => {
       .repeat
       ld a,b
     `,
-      "Z2052"
+      "Z0701"
     );
   });
 
@@ -52,7 +52,7 @@ describe("Assembler - .repeat", () => {
       .until "Hello"
 
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -62,7 +62,7 @@ describe("Assembler - .repeat", () => {
       .repeat 
       .until false
     `,
-      "Z2053"
+      "Z0702"
     );
   });
 
@@ -81,7 +81,7 @@ describe("Assembler - .repeat", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
-    expect(output.errors[3].errorCode === "Z2054").toBe(true);
+    expect(output.errors[3].errorCode === "Z0703").toBe(true);
   });
 
   it("repeat - empty body", () => {
@@ -174,7 +174,7 @@ describe("Assembler - .repeat", () => {
       .repeat
       .until 3+unknown
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -186,7 +186,7 @@ describe("Assembler - .repeat", () => {
         count = count + 1
     .until count > later
     later: .equ 5      `,
-      "Z3000"
+      "Z0605"
     );
   });
 

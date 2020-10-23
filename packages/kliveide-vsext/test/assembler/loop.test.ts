@@ -13,7 +13,7 @@ describe("Assembler - .loop", () => {
       .ent #8000;
       .endl
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
@@ -24,19 +24,19 @@ describe("Assembler - .loop", () => {
       .xent #8000;
       .endl
     `,
-      "Z2025"
+      "Z0310"
     );
   });
 
   it(".endl - fails without loop", () => {
-    codeRaisesError(".endl", "Z2055");
-    codeRaisesError(".ENDL", "Z2055");
-    codeRaisesError("endl", "Z2055");
-    codeRaisesError("ENDL", "Z2055");
-    codeRaisesError(".lend", "Z2055");
-    codeRaisesError(".LEND", "Z2055");
-    codeRaisesError("lend", "Z2055");
-    codeRaisesError("LEND", "Z2055");
+    codeRaisesError(".endl", "Z0704");
+    codeRaisesError(".ENDL", "Z0704");
+    codeRaisesError("endl", "Z0704");
+    codeRaisesError("ENDL", "Z0704");
+    codeRaisesError(".lend", "Z0704");
+    codeRaisesError(".LEND", "Z0704");
+    codeRaisesError("lend", "Z0704");
+    codeRaisesError("LEND", "Z0704");
   });
 
   it("loop - missing loop end", () => {
@@ -45,7 +45,7 @@ describe("Assembler - .loop", () => {
       .loop 3
       ld a,b
     `,
-      "Z2052"
+      "Z0701"
     );
   });
 
@@ -56,7 +56,7 @@ describe("Assembler - .loop", () => {
       ld a,b
       .endl
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -96,7 +96,7 @@ describe("Assembler - .loop", () => {
     MyLoop: .loop 3
       .endl
     `,
-      "Z2017"
+      "Z0501"
     );
   });
 
@@ -125,7 +125,7 @@ describe("Assembler - .loop", () => {
       .loop 3+unknown
       .endl
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -136,7 +136,7 @@ describe("Assembler - .loop", () => {
       .endl
     later: .equ 5
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 
@@ -156,7 +156,7 @@ describe("Assembler - .loop", () => {
       .loop #FFFF + 1
       .endl
     `,
-      "Z2053"
+      "Z0702"
     );
   });
 
@@ -301,7 +301,7 @@ describe("Assembler - .loop", () => {
     const output = compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
-    expect(output.errors[3].errorCode === "Z2054").toBe(true);
+    expect(output.errors[3].errorCode === "Z0703").toBe(true);
   });
 
   it("emit - nested loop, no label", () => {

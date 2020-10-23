@@ -302,40 +302,40 @@ describe("Assembler - ld operations", () => {
   });
 
   it("ld: fails with invalid operand", () => {
-    codeRaisesError("ld (hl),(hl)", "Z2043");
+    codeRaisesError("ld (hl),(hl)", "Z0604");
 
-    codeRaisesError("ld xh,h", "Z2043");
-    codeRaisesError("ld xh,l", "Z2043");
-    codeRaisesError("ld xh,(hl)", "Z2043");
-    codeRaisesError("ld xl,h", "Z2043");
-    codeRaisesError("ld xl,l", "Z2043");
-    codeRaisesError("ld xl,(hl)", "Z2043");
+    codeRaisesError("ld xh,h", "Z0604");
+    codeRaisesError("ld xh,l", "Z0604");
+    codeRaisesError("ld xh,(hl)", "Z0604");
+    codeRaisesError("ld xl,h", "Z0604");
+    codeRaisesError("ld xl,l", "Z0604");
+    codeRaisesError("ld xl,(hl)", "Z0604");
 
-    codeRaisesError("ld yh,h", "Z2043");
-    codeRaisesError("ld yh,l", "Z2043");
-    codeRaisesError("ld yh,(hl)", "Z2043");
-    codeRaisesError("ld yl,h", "Z2043");
-    codeRaisesError("ld yl,l", "Z2043");
-    codeRaisesError("ld yl,(hl)", "Z2043");
+    codeRaisesError("ld yh,h", "Z0604");
+    codeRaisesError("ld yh,l", "Z0604");
+    codeRaisesError("ld yh,(hl)", "Z0604");
+    codeRaisesError("ld yl,h", "Z0604");
+    codeRaisesError("ld yl,l", "Z0604");
+    codeRaisesError("ld yl,(hl)", "Z0604");
 
-    codeRaisesError("ld xh,yh", "Z2043");
-    codeRaisesError("ld xh,yl", "Z2043");
-    codeRaisesError("ld yh,xh", "Z2043");
-    codeRaisesError("ld yh,xl", "Z2043");
+    codeRaisesError("ld xh,yh", "Z0604");
+    codeRaisesError("ld xh,yl", "Z0604");
+    codeRaisesError("ld yh,xh", "Z0604");
+    codeRaisesError("ld yh,xl", "Z0604");
 
-    codeRaisesError("ld h,xh", "Z2043");
-    codeRaisesError("ld l,xh", "Z2043");
-    codeRaisesError("ld (hl),xh", "Z2043");
-    codeRaisesError("ld h,xl", "Z2043");
-    codeRaisesError("ld l,xl", "Z2043");
-    codeRaisesError("ld (hl),xl", "Z2043");
+    codeRaisesError("ld h,xh", "Z0604");
+    codeRaisesError("ld l,xh", "Z0604");
+    codeRaisesError("ld (hl),xh", "Z0604");
+    codeRaisesError("ld h,xl", "Z0604");
+    codeRaisesError("ld l,xl", "Z0604");
+    codeRaisesError("ld (hl),xl", "Z0604");
 
-    codeRaisesError("ld h,yh", "Z2043");
-    codeRaisesError("ld l,yh", "Z2043");
-    codeRaisesError("ld (hl),yh", "Z2043");
-    codeRaisesError("ld h,yl", "Z2043");
-    codeRaisesError("ld l,yl", "Z2043");
-    codeRaisesError("ld (hl),yl", "Z2043");
+    codeRaisesError("ld h,yh", "Z0604");
+    codeRaisesError("ld l,yh", "Z0604");
+    codeRaisesError("ld (hl),yh", "Z0604");
+    codeRaisesError("ld h,yl", "Z0604");
+    codeRaisesError("ld l,yl", "Z0604");
+    codeRaisesError("ld (hl),yl", "Z0604");
 });
 
 

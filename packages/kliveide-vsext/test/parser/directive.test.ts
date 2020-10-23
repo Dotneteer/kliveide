@@ -39,7 +39,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#ifdef");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1004").toBe(true);
+    expect(parser.errors[0].code === "Z0107").toBe(true);
   });
 
   it("#ifndef #1", () => {
@@ -63,7 +63,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#ifndef");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1004").toBe(true);
+    expect(parser.errors[0].code === "Z0107").toBe(true);
   });
 
   it("#undef #1", () => {
@@ -87,7 +87,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#undef");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1004").toBe(true);
+    expect(parser.errors[0].code === "Z0107").toBe(true);
   });
 
   it("#ifmod #1", () => {
@@ -111,7 +111,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#ifmod");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1004").toBe(true);
+    expect(parser.errors[0].code === "Z0107").toBe(true);
   });
 
   it("#ifnmod #1", () => {
@@ -135,7 +135,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#ifnmod");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1004").toBe(true);
+    expect(parser.errors[0].code === "Z0107").toBe(true);
   });
 
   it("#endif", () => {
@@ -189,7 +189,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#if");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1003").toBe(true);
+    expect(parser.errors[0].code === "Z0111").toBe(true);
   });
 
   it("#line #1", () => {
@@ -214,7 +214,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#line");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1003").toBe(true);
+    expect(parser.errors[0].code === "Z0111").toBe(true);
   });
 
   it("#line #3", () => {
@@ -239,7 +239,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#line 123,");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1006").toBe(true);
+    expect(parser.errors[0].code === "Z0108").toBe(true);
   });
 
   it("#include #1", () => {
@@ -263,7 +263,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#include");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1006").toBe(true);
+    expect(parser.errors[0].code === "Z0108").toBe(true);
   });
 
   it("#define #1", () => {
@@ -287,7 +287,7 @@ describe("Parser - directives", () => {
     const parser = createParser("#define");
     parser.parseProgram();
     expect(parser.hasErrors).toBe(true);
-    expect(parser.errors[0].code === "Z1004").toBe(true);
+    expect(parser.errors[0].code === "Z0107").toBe(true);
   });
 });
 

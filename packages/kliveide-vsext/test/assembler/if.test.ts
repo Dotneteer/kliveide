@@ -89,7 +89,7 @@ describe("Assembler - .if", () => {
     Label: .elif true
     .endif
     `,
-      "Z2061"
+      "Z0503"
     );
   });
 
@@ -101,7 +101,7 @@ describe("Assembler - .if", () => {
       .elif true
     .endif
     `,
-      "Z2061"
+      "Z0503"
     );
   });
 
@@ -112,7 +112,7 @@ describe("Assembler - .if", () => {
     Label: .else
     .endif
     `,
-      "Z2061"
+      "Z0503"
     );
   });
 
@@ -124,7 +124,7 @@ describe("Assembler - .if", () => {
       .else
     .endif
     `,
-      "Z2061"
+      "Z0503"
     );
   });
 
@@ -136,7 +136,7 @@ describe("Assembler - .if", () => {
     .else
     .endif
     `,
-      "Z2061"
+      "Z0503"
     );
   });
 
@@ -149,7 +149,7 @@ describe("Assembler - .if", () => {
     .else
     .endif
     `,
-      "Z2061"
+      "Z0503"
     );
   });
 
@@ -168,9 +168,9 @@ describe("Assembler - .if", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
-    expect(output.errors[0].errorCode === "Z2061").toBe(true);
-    expect(output.errors[1].errorCode === "Z2061").toBe(true);
-    expect(output.errors[2].errorCode === "Z2061").toBe(true);
+    expect(output.errors[0].errorCode === "Z0503").toBe(true);
+    expect(output.errors[1].errorCode === "Z0503").toBe(true);
+    expect(output.errors[2].errorCode === "Z0503").toBe(true);
   });
 
   it("elif - after else fails", () => {
@@ -181,7 +181,7 @@ describe("Assembler - .if", () => {
     .elif true
     .endif
     `,
-      "Z2062"
+      "Z0709"
     );
   });
 
@@ -193,7 +193,7 @@ describe("Assembler - .if", () => {
     .else
     .endif
     `,
-      "Z2062"
+      "Z0709"
     );
   });
 
@@ -210,8 +210,8 @@ describe("Assembler - .if", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(2);
-    expect(output.errors[0].errorCode === "Z2062").toBe(true);
-    expect(output.errors[1].errorCode === "Z2062").toBe(true);
+    expect(output.errors[0].errorCode === "Z0709").toBe(true);
+    expect(output.errors[1].errorCode === "Z0709").toBe(true);
   });
 
   it("multiple elif and else after else", () => {
@@ -230,10 +230,10 @@ describe("Assembler - .if", () => {
     const output = compiler.compile(source);
 
     expect(output.errorCount).toBe(4);
-    expect(output.errors[0].errorCode === "Z2062").toBe(true);
-    expect(output.errors[1].errorCode === "Z2062").toBe(true);
-    expect(output.errors[2].errorCode === "Z2062").toBe(true);
-    expect(output.errors[3].errorCode === "Z2062").toBe(true);
+    expect(output.errors[0].errorCode === "Z0709").toBe(true);
+    expect(output.errors[1].errorCode === "Z0709").toBe(true);
+    expect(output.errors[2].errorCode === "Z0709").toBe(true);
+    expect(output.errors[3].errorCode === "Z0709").toBe(true);
   });
 
   it("if with string condition fails", () => {
@@ -243,7 +243,7 @@ describe("Assembler - .if", () => {
     nop
     .endif
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -256,7 +256,7 @@ describe("Assembler - .if", () => {
       nop
     .endif
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -271,7 +271,7 @@ describe("Assembler - .if", () => {
       nop
     .endif
     `,
-      "Z2042"
+      "Z0603"
     );
   });
 
@@ -614,7 +614,7 @@ describe("Assembler - .if", () => {
     .endif
     ld hl,value
     `,
-      "Z3000"
+      "Z0605"
     );
   });
 

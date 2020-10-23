@@ -77,8 +77,8 @@ describe("Assembler - bit operations", () => {
   });
 
   it("bit: fails with invalid operand", () => {
-    codeRaisesError("bit -1,b", "Z2049");
-    codeRaisesError("bit 8,b", "Z2049");
+    codeRaisesError("bit -1,b", "Z0407");
+    codeRaisesError("bit 8,b", "Z0407");
   });
 
   it("bit: indexed instructions", () => {
@@ -207,8 +207,8 @@ describe("Assembler - bit operations", () => {
   });
 
   it("res: fails with invalid operand", () => {
-    codeRaisesError("res -1,b", "Z2049");
-    codeRaisesError("res 8,b", "Z2049");
+    codeRaisesError("res -1,b", "Z0407");
+    codeRaisesError("res 8,b", "Z0407");
   });
 
   it("res: indexed instructions", () => {
@@ -688,8 +688,8 @@ describe("Assembler - bit operations", () => {
   });
 
   it("set: fails with invalid operand", () => {
-    codeRaisesError("set -1,b", "Z2049");
-    codeRaisesError("set 8,b", "Z2049");
+    codeRaisesError("set -1,b", "Z0407");
+    codeRaisesError("set 8,b", "Z0407");
   });
 
   it("set: indexed instructions", () => {
@@ -1949,37 +1949,37 @@ describe("Assembler - bit operations", () => {
   });
 
   it("shift/rotate: fails with invalid operand", () => {
-    codeRaisesError("rlc a,b", "Z2043");
-    codeRaisesError("rlc (de)", "Z2043");
-    codeRaisesError("rlc -1,b", "Z2043");
-    codeRaisesError("rlc (ix),bc", "Z2043");
-    codeRaisesError("rrc a,b", "Z2043");
-    codeRaisesError("rrc (de)", "Z2043");
-    codeRaisesError("rrc -1,b", "Z2043");
-    codeRaisesError("rrc (ix),bc", "Z2043");
-    codeRaisesError("rl a,b", "Z2043");
-    codeRaisesError("rl (de)", "Z2043");
-    codeRaisesError("rl -1,b", "Z2043");
-    codeRaisesError("rl (ix),bc", "Z2043");
-    codeRaisesError("rr a,b", "Z2043");
-    codeRaisesError("rr (de)", "Z2043");
-    codeRaisesError("rr -1,b", "Z2043");
-    codeRaisesError("rr (ix),bc", "Z2043");
-    codeRaisesError("sla a,b", "Z2043");
-    codeRaisesError("sla (de)", "Z2043");
-    codeRaisesError("sla -1,b", "Z2043");
-    codeRaisesError("sla (ix),bc", "Z2043");
-    codeRaisesError("sra a,b", "Z2043");
-    codeRaisesError("sra (de)", "Z2043");
-    codeRaisesError("sra -1,b", "Z2043");
-    codeRaisesError("sra (ix),bc", "Z2043");
-    codeRaisesError("sll a,b", "Z2043");
-    codeRaisesError("sll (de)", "Z2043");
-    codeRaisesError("sll -1,b", "Z2043");
-    codeRaisesError("sll (ix),bc", "Z2043");
-    codeRaisesError("srl a,b", "Z2043");
-    codeRaisesError("srl (de)", "Z2043");
-    codeRaisesError("srl -1,b", "Z2043");
-    codeRaisesError("srl (ix),bc", "Z2043");
+    codeRaisesError("rlc a,b", "Z0604");
+    codeRaisesError("rlc (de)", "Z0604");
+    codeRaisesError("rlc -1,b", "Z0604");
+    codeRaisesError("rlc (ix),bc", "Z0604");
+    codeRaisesError("rrc a,b", "Z0604");
+    codeRaisesError("rrc (de)", "Z0604");
+    codeRaisesError("rrc -1,b", "Z0604");
+    codeRaisesError("rrc (ix),bc", "Z0604");
+    codeRaisesError("rl a,b", "Z0604");
+    codeRaisesError("rl (de)", "Z0604");
+    codeRaisesError("rl -1,b", "Z0604");
+    codeRaisesError("rl (ix),bc", "Z0604");
+    codeRaisesError("rr a,b", "Z0604");
+    codeRaisesError("rr (de)", "Z0604");
+    codeRaisesError("rr -1,b", "Z0604");
+    codeRaisesError("rr (ix),bc", "Z0604");
+    codeRaisesError("sla a,b", "Z0604");
+    codeRaisesError("sla (de)", "Z0604");
+    codeRaisesError("sla -1,b", "Z0604");
+    codeRaisesError("sla (ix),bc", "Z0604");
+    codeRaisesError("sra a,b", "Z0604");
+    codeRaisesError("sra (de)", "Z0604");
+    codeRaisesError("sra -1,b", "Z0604");
+    codeRaisesError("sra (ix),bc", "Z0604");
+    codeRaisesError("sll a,b", "Z0604");
+    codeRaisesError("sll (de)", "Z0604");
+    codeRaisesError("sll -1,b", "Z0604");
+    codeRaisesError("sll (ix),bc", "Z0604");
+    codeRaisesError("srl a,b", "Z0604");
+    codeRaisesError("srl (de)", "Z0604");
+    codeRaisesError("srl -1,b", "Z0604");
+    codeRaisesError("srl (ix),bc", "Z0604");
   });
 });
