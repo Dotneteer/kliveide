@@ -1,5 +1,5 @@
-import { RegisterData } from "../spectrum/api-data";
-import { IdeConfiguration, MemoryCommand } from "./AppState";
+import { CodeToInject, RegisterData } from "../spectrum/api-data";
+import { IdeConfiguration } from "./AppState";
 
 /**
  * This interface represents the shape of the payload
@@ -37,4 +37,7 @@ export interface Payload {
   memoryCommandResult?: Uint8Array;
   seqNo?: number;
   panelMessage?: string;
+  codeToInject?: CodeToInject;
+  success?: boolean;
+  errorCode?: string;
 }

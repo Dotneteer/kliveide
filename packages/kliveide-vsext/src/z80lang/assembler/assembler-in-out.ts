@@ -192,24 +192,12 @@ export class AssemblerErrorInfo {
   constructor(
     public readonly errorCode: ErrorCodes,
     public readonly fileName: string,
+    public readonly line: number,
     public readonly startPosition: number,
     public readonly endPosition: number | null,
     public readonly message: string,
     public isWarning?: boolean
   ) {}
-
-  static fromParserError(
-    sourceItem: SourceFileItem,
-    syntaxErrorInfo: ParserErrorMessage
-  ): AssemblerErrorInfo {
-    return new AssemblerErrorInfo(
-      syntaxErrorInfo.code,
-      sourceItem.filename,
-      syntaxErrorInfo.position,
-      null,
-      syntaxErrorInfo.text
-    );
-  }
 }
 
 /**

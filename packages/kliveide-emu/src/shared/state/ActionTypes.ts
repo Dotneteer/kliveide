@@ -63,6 +63,10 @@ export interface ActionTypes {
   IDE_CONNECTS: null;
   IDE_DISCONNECTS: null;
 
+  // --- Code injection related commands
+  CODE_INJECT: null;
+  CODE_INJECT_RESULT: null;
+
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;
   MINIMIZE_APP_WINDOW: null;

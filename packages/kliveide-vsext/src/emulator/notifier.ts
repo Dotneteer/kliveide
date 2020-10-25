@@ -89,7 +89,7 @@ export async function startNotifier(): Promise<void> {
   if (started) {
     return;
   }
-  vscode.commands.executeCommand("setContext", "kliveEmuConnected", true);
+  vscode.commands.executeCommand("setContext", "kliveEmuConnected", false);
 
   cancelled = false;
   onConnectionStateChanged((state) => {

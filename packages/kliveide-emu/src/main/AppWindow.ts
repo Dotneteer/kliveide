@@ -334,7 +334,7 @@ export class AppWindow {
           label: "Learn More",
           click: async () => {
             const { shell } = require("electron");
-            await shell.openExternal("https://electronjs.org");
+            await shell.openExternal("https://dotneteer.github.io/kliveide/");
           },
         },
       ],

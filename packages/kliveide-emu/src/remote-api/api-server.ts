@@ -444,6 +444,13 @@ export function startApiServer() {
     res.sendStatus(204);
   });
 
+  /**
+   * Injects code into the ZX Spectrum virtual machine
+   */
+  app.post("/inject-code", (req, res) => {
+
+  });
+
   // --- Start the API server on the configured port
   const port = appConfiguration?.port ?? 3000;
   app.listen(port, () =>

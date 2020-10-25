@@ -25,6 +25,10 @@ import {
   ServerOptions,
   TransportKind,
 } from "vscode-languageclient";
+import { injectCode } from "./commands/inject-code";
+import { compileCode } from "./commands/compile-code";
+import { runCode } from "./commands/run-code";
+import { debugCode } from "./commands/debug-code";
 
 let client: LanguageClient;
 
@@ -32,7 +36,8 @@ export async function activate(context: vscode.ExtensionContext) {
   // --- We use the context in several places, save it
   setExtensionContext(context);
 
-  console.log(context.asAbsolutePath("out/z80lang/server/server.js"));
+  // --- Let's setup the output channels
+  const z80CompilerOutput = vscode.window.createOutputChannel("Klive - Z80 Assembler");
 
   // --- Helper shortcuts
   const register = vscode.commands.registerCommand;
@@ -47,7 +52,11 @@ export async function activate(context: vscode.ExtensionContext) {
     register("kliveide.updateKliveProject", () => updateKliveProject(context)),
     register("kliveide.goToAddress", () => goToAddress()),
     register("kliveide.sendTape", (uri: vscode.Uri) => sendTapeFile(uri)),
-    register("kliveide.refreshView", () => refreshView())
+    register("kliveide.refreshView", () => refreshView()),
+    register("kliveide.compileCode", async (uri: vscode.Uri) => await compileCode(uri, z80CompilerOutput)),
+    register("kliveide.injectCode", () => injectCode(z80CompilerOutput)),
+    register("kliveide.runCode", () => runCode(z80CompilerOutput)),
+    register("kliveide.debugCode", () => debugCode(z80CompilerOutput)),
   );
 
   // --- Tree provider to display Z80 registers

@@ -8,6 +8,7 @@ import { breakpointsStateReducer } from "./redux-breakpoint-state";
 import { ideConfigStateReducer } from "./redux-ide-config-state";
 import { ideConnectionStateReducer } from "./redux-ide-connection.state";
 import { memoryCommandStateReducer } from "./redux-memory-command-state";
+import { injectCodeCommandStateReducer } from "./redux-code-command-state";
 
 /**
  * The set of reducers we use within this application
@@ -21,7 +22,8 @@ export const appReducers = {
   breakpoints: breakpointsStateReducer,
   ideConfiguration: ideConfigStateReducer,
   ideConnection: ideConnectionStateReducer,
-  memoryCommand: memoryCommandStateReducer
+  memoryCommand: memoryCommandStateReducer,
+  injectCommand: injectCodeCommandStateReducer,
 };
 
 /**
@@ -36,4 +38,3 @@ export let appWindow: AppWindow;
 export function setAppWindow(window: AppWindow) {
   appWindow = window;
 }
-
