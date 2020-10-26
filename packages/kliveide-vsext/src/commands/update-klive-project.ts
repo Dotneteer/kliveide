@@ -23,7 +23,7 @@ import { communicatorInstance } from "../emulator/communicator";
  * Creates the basic structure of a Klive project
  * @param context VS Code extension context
  */
-export async function updateKliveProject(
+export async function updateKliveProjectCommand(
   context: vscode.ExtensionContext
 ): Promise<void> {
   const folders = vscode.workspace.workspaceFolders;

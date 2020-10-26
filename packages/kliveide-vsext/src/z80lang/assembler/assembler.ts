@@ -2592,13 +2592,14 @@ export class Z80Assembler extends ExpressionEvaluator {
         let errorPrefix = "";
         if (this._macroInvocations.length > 0) {
           const lines = this._macroInvocations
-            .map((mi) => ((mi as unknown) as Z80AssemblyLine).line + 1)
+            .map((mi) => ((mi as unknown) as Z80AssemblyLine).line)
             .join(" -> ");
           errorPrefix = `(from macro invocation through line ${lines}) `;
         }
         const errorInfo = new AssemblerErrorInfo(
           error.code,
           this._output.sourceFileList[origLine.fileIndex].filename,
+          origLine.line,
           origLine.startPosition,
           origLine.endPosition,
           errorPrefix + error.text,
@@ -5821,6 +5822,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const errorInfo = new AssemblerErrorInfo(
       error.code,
       sourceItem.filename,
+      error.line,
       error.position,
       error.position + 1,
       error.text
@@ -5842,6 +5844,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const errorInfo = new AssemblerErrorInfo(
         "Z1012",
         sourceItem.filename,
+        errorLine.line,
         errorLine.startPosition,
         errorLine.endPosition,
         `Error in macro invocation${i > 0 ? " (level" + i + ")" : ""}`
@@ -5892,6 +5895,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const errorInfo = new AssemblerErrorInfo(
       code,
       sourceItem.filename,
+      line.line - 1,
       nodePosition ? nodePosition.startPosition : line.startPosition,
       nodePosition ? nodePosition.endPosition : line.endPosition,
       errorText

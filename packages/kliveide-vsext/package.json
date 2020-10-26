@@ -84,6 +84,42 @@
           "light": "assets/icons/refresh.svg",
           "dark": "assets/icons/refresh_dark.svg"
         }
+      },
+      {
+        "command": "kliveide.compileCode",
+        "title": "Compile Program",
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/compile.svg",
+          "dark": "assets/icons/compile_dark.svg"
+        }
+      },
+      {
+        "command": "kliveide.injectCode",
+        "title": "Inject Program",
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/inject.svg",
+          "dark": "assets/icons/inject_dark.svg"
+        }
+      },
+      {
+        "command": "kliveide.debugCode",
+        "title": "Debug Program in the Emulator",
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/debug-code.svg",
+          "dark": "assets/icons/debug-code_dark.svg"
+        }
+      },
+      {
+        "command": "kliveide.runCode",
+        "title": "Run Program in the Emulator",
+        "enablement": "kliveEmuConnected",
+        "icon": {
+          "light": "assets/icons/run-code.svg",
+          "dark": "assets/icons/run-code_dark.svg"
+        }
       }
     ],
     "menus": {
@@ -103,6 +139,26 @@
           "command": "kliveide.goToAddress",
           "when": "resourceFilename == view.disassembly || resourceFilename == view.memory",
           "group": "navigation"
+        },
+        {
+          "command": "kliveide.compileCode",
+          "when": "resourceExtname == .z80asm",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kliveide.injectCode",
+          "when": "resourceExtname == .z80asm",
+          "group": "navigation@2"
+        },
+        {
+          "command": "kliveide.debugCode",
+          "when": "resourceExtname == .z80asm",
+          "group": "navigation@3"
+        },
+        {
+          "command": "kliveide.runCode",
+          "when": "resourceExtname == .z80asm",
+          "group": "navigation@4"
         }
       ]
     },
@@ -204,6 +260,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "chalk": "^4.1.0",
     "node-fetch": "^2.6.1",
     "node-ipc": "^9.1.1",
     "vscode-languageclient": "^6.1.3",

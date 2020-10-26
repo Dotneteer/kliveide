@@ -39,7 +39,7 @@ import {
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
 import { TapReader } from "../../shared/tape/tap-file";
-import { RegisterData } from "../../shared/spectrum/api-data";
+import { CodeToInject, RegisterData } from "../../shared/spectrum/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import {
   MEMWRITE_MAP,
@@ -836,5 +836,29 @@ export class SpectrumEngine {
     }
     const mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
     return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
+  }
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  async injectCode(codeToInject: CodeToInject): Promise<string> {
+    for (const segment of codeToInject.segments) {
+      if (segment.bank !== undefined) {
+        // TODO: Implement this
+      } else {
+        const addr = segment.startAddress;
+        for (let i = 0; i < segment.emittedCode.length; i++) {
+          this.spectrum.writeMemory(addr + i, segment.emittedCode[i]);
+        }
+      }
+    }
+
+    // --- Prepare the run mode
+    if (codeToInject.options.cursork) {
+      // --- Set the keyboard in "L" mode
+      this.spectrum.writeMemory(0x5c3b, this.spectrum.readMemory(0x5c3b) | 0x08);
+    }
+    return "";
   }
 }

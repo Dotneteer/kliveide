@@ -12,8 +12,9 @@ import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
 import { ZxSpectrumBase } from "../native/api/ZxSpectrumBase";
 import { getMachineTypeIdFromName } from "../shared/spectrum/machine-types";
-import { MemoryCommand } from "../shared/state/AppState";
+import { InjectCommand, MemoryCommand } from "../shared/state/AppState";
 import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
+import { codeInjectResultAction } from "../shared/state/redux-code-command-state";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -39,6 +40,11 @@ let lastEmulatorCommand = "";
  * Last emulator command requested
  */
 let lastMemoryCommand: MemoryCommand | undefined;
+
+/**
+ * last code injection command requested
+ */
+let lastInjectCommand: InjectCommand | undefined;
 
 /**
  * Indicates that the engine is processing a state change
@@ -102,6 +108,20 @@ stateAware.stateChanged.on(async (state) => {
       stateAware.dispatch(memorySetResultAction(lastMemoryCommand.seqNo, contents)())
     }
   }
+
+  // --- Process code injection commands
+  if (lastInjectCommand !== state.injectCommand) {
+    lastInjectCommand = state.injectCommand;
+    if (lastInjectCommand && lastInjectCommand.codeToInject) {
+      const result = await spectrumEngine.injectCode(lastInjectCommand.codeToInject);
+      if (result) {
+        stateAware.dispatch(codeInjectResultAction(result)());
+      } else {
+        stateAware.dispatch(codeInjectResultAction("")());
+      }
+    }
+  }
+
   processingChange = false;
 });
 

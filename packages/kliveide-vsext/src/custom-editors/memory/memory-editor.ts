@@ -11,6 +11,7 @@ import {
   RegisterData,
 } from "../../emulator/communicator";
 import { getAssetsFileResource } from "../../extension-paths";
+import { onCodeInjected } from "../../commands/code-related";
 
 export class MemoryEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.memoryEditor";
@@ -66,25 +67,25 @@ export class MemoryEditorProvider extends EditorProviderBase {
   ): Promise<void> {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
 
+    const editor = this;
     let refreshCounter = 0;
     let refreshing = false;
+
     this.toDispose(
       webviewPanel,
       onFrameInfoChanged(async () => {
         refreshCounter++;
-        if (refreshCounter % 10 !== 0) {
-          return;
-        }
-        try {
-          if (!refreshing) {
-            refreshing = true;
-            this.refreshViewPort(webviewPanel);
-          }
-        } finally {
-          refreshing = false;
+        if (refreshCounter % 10 === 0) {
+          refresh();
         }
       })
     );
+
+    this.toDispose(
+      webviewPanel,
+      onCodeInjected(async () => refresh())
+    );
+
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
@@ -96,6 +97,19 @@ export class MemoryEditorProvider extends EditorProviderBase {
       }
     });
 
+    /**
+     * Refresh the current view port
+     */
+    function refresh(): void {
+      try {
+        if (!refreshing) {
+          refreshing = true;
+          editor.refreshViewPort(webviewPanel);
+        }
+      } finally {
+        refreshing = false;
+      }
+    }
   }
 
   /**
@@ -140,10 +154,10 @@ export class MemoryEditorProvider extends EditorProviderBase {
       panel.webview.postMessage({
         viewNotification: "refreshViewPort",
         itemIndex,
-        fullRefresh: true
+        fullRefresh: true,
       });
     } catch (err) {
-      // --- This exception in intentionally ignored
+      // --- This exception is intentionally ignored
     }
   }
 }

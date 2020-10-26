@@ -18,3 +18,23 @@ export interface RegisterData {
   r: number;
   wz: number;
 }
+
+/**
+ * A single segment of the code compilation
+ */
+export interface BinarySegment {
+  startAddress: number;
+  bank?: number;
+  bankOffset: number;
+  emittedCode: number[];
+}
+
+/**
+ * The code to inject into the virtual machine
+ */
+export interface CodeToInject {
+  model: string,
+  segments: BinarySegment[];
+  options: { [key: string]: boolean};
+}
+

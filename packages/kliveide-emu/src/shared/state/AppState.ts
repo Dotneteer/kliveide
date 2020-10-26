@@ -1,4 +1,4 @@
-import { RegisterData } from "../spectrum/api-data";
+import { CodeToInject, RegisterData } from "../spectrum/api-data";
 
 /**
  * Represents the state of the application
@@ -43,6 +43,11 @@ export interface AppState {
    * Memory command to execute
    */
   memoryCommand?: MemoryCommand;
+
+  /**
+   * Code inject command to execute
+   */
+  injectCommand?: InjectCommand;
 }
 
 /**
@@ -140,6 +145,18 @@ export interface MemoryCommand {
  * Available memory command types
  */
 export type MemoryCommandType = "" | "rom" | "bank";
+
+/**
+ * Represents a code injection command
+ */
+export interface InjectCommand {
+  /**
+   * The code to inject into the memory
+   */
+  codeToInject?: CodeToInject;
+  errorCode?: string;
+}
+
 
 /**
  * Gets the default application state

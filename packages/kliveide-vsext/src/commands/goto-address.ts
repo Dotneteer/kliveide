@@ -6,7 +6,7 @@ let lastLocation = "0";
 /**
  * Goes to the specified view location
  */
-export async function goToAddress(): Promise<void> {
+export async function goToAddressCommand(): Promise<void> {
   // --- Is there any active editor?
   const activeEditor = getActiveEditor();
   if (!activeEditor) {
