@@ -260,6 +260,7 @@
     "webpack-cli": "^3.3.12"
   },
   "dependencies": {
+    "chalk": "^4.1.0",
     "node-fetch": "^2.6.1",
     "node-ipc": "^9.1.1",
     "vscode-languageclient": "^6.1.3",

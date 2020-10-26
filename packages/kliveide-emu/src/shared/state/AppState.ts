@@ -154,7 +154,6 @@ export interface InjectCommand {
    * The code to inject into the memory
    */
   codeToInject?: CodeToInject;
-  success?: boolean;
   errorCode?: string;
 }
 

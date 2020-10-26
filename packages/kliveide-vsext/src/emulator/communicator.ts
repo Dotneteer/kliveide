@@ -81,7 +81,7 @@ class Communicator {
    * @param address Breakpoint address
    */
   async setBreakpoint(address: number): Promise<void> {
-    await this.post("/breakpoints", { breakpoints: [ address ]});
+    await this.post("/breakpoints", { breakpoints: [address] });
   }
 
   /**
@@ -89,7 +89,7 @@ class Communicator {
    * @param address Breakpoint address
    */
   async removeBreakpoint(address: number): Promise<void> {
-    await this.post("/delete-breakpoints", { breakpoints: [ address ]});
+    await this.post("/delete-breakpoints", { breakpoints: [address] });
   }
 
   /**
@@ -102,7 +102,7 @@ class Communicator {
     const kliveConfig = vscode.workspace.getConfiguration(KLIVEIDE);
     const ideConfig: IdeConfiguration = {
       projectFolder,
-      saveFolder: kliveConfig.get(SAVE_FOLDER) ?? ""
+      saveFolder: kliveConfig.get(SAVE_FOLDER) ?? "",
     };
     await this.post("/ide-config", ideConfig);
   }
@@ -112,7 +112,7 @@ class Communicator {
    * @param filename File name to send to the emulator
    */
   async setTapeFile(filename: string): Promise<boolean> {
-    const response = await this.post("/tape-contents", { tapeFile: filename});
+    const response = await this.post("/tape-contents", { tapeFile: filename });
     return response.ok;
   }
 
@@ -121,7 +121,22 @@ class Communicator {
    * @param typeId Machine type ID
    */
   async setMachineType(typeId: string): Promise<void> {
-    await this.post("/machine-type", { type: typeId});
+    await this.post("/machine-type", { type: typeId });
+  }
+
+  /**
+   * Sends code to the ZX Spectrum to inject
+   * @param codeToInject
+   */
+  async injectCode(codeToInject: CodeToInject): Promise<void> {
+    await this.post("/inject-code", codeToInject);
+  }
+
+  /**
+   * Stops the ZX Spectrum machine
+   */
+  async stopMachine(): Promise<void> {
+    await this.post("/stop", {});
   }
 
   /**
@@ -174,7 +189,7 @@ class Communicator {
     throw new Error(`Unexpected response for ${command}: ${response.status}`);
   }
 
-    /**
+  /**
    * Invokes a GET command for a generic response
    * @param command Command string
    * @param requestInit Optional request initialization
@@ -188,8 +203,8 @@ class Communicator {
       requestInit = {
         method: "POST",
         timeout: 1000,
-        headers: { "Content-Type": "application/json"},
-        body: JSON.stringify(body)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       };
     }
     return await fetch(`${this.url()}${command}`, requestInit);
@@ -215,9 +230,9 @@ export interface FrameInfo {
  * Represents the information about execution state change
  */
 export interface ExecutionState {
-  state: string,
-  pc?: number,
-  runsInDebug?: boolean
+  state: string;
+  pc?: number;
+  runsInDebug?: boolean;
 }
 
 /**
@@ -269,6 +284,25 @@ export interface MemoryPageInfo {
    * Selected upper memory bank
    */
   selectedBank: number;
+}
+
+/**
+ * A single segment of the code compilation
+ */
+export interface BinarySegment {
+  startAddress: number;
+  bank?: number;
+  bankOffset: number;
+  emittedCode: number[];
+}
+
+/**
+ * The code to inject into the virtual machine
+ */
+export interface CodeToInject {
+  model: string;
+  segments: BinarySegment[];
+  options: { [key: string]: boolean };
 }
 
 /**

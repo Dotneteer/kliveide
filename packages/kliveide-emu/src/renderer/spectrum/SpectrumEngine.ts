@@ -843,6 +843,22 @@ export class SpectrumEngine {
    * @param codeToInject Code to inject into the machine
    */
   async injectCode(codeToInject: CodeToInject): Promise<string> {
+    for (const segment of codeToInject.segments) {
+      if (segment.bank !== undefined) {
+        // TODO: Implement this
+      } else {
+        const addr = segment.startAddress;
+        for (let i = 0; i < segment.emittedCode.length; i++) {
+          this.spectrum.writeMemory(addr + i, segment.emittedCode[i]);
+        }
+      }
+    }
+
+    // --- Prepare the run mode
+    if (codeToInject.options.cursork) {
+      // --- Set the keyboard in "L" mode
+      this.spectrum.writeMemory(0x5c3b, this.spectrum.readMemory(0x5c3b) | 0x08);
+    }
     return "";
   }
 }

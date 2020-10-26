@@ -37,6 +37,7 @@ import { appConfiguration } from "../main/klive-configuration";
 import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 import { memorySetCommandAction } from "../shared/state/redux-memory-command-state";
 import { SpectNetAction } from "../shared/state/redux-core";
+import { codeInjectAction } from "../shared/state/redux-code-command-state";
 
 /**
  * Sequence number of the latest memory request
@@ -447,8 +448,62 @@ export function startApiServer() {
   /**
    * Injects code into the ZX Spectrum virtual machine
    */
-  app.post("/inject-code", (req, res) => {
+  app.post("/inject-code", async (req, res) => {
+    const stateAware = createMainProcessStateAware();
+    try {
+      // --- Declare the promise for the communication between
+      // --- the api-server and the renderer process
+      const promise = new Promise<string>(async (resolve, reject) => {
+        try {
+          try {
+            // --- Initiate the status watch
+            let lastInjectCommand = mainProcessStore.getState().injectCommand;
 
+            // --- Catch status changes
+            let result: string | undefined;
+            stateAware.stateChanged.on((state) => {
+              if (state && state.injectCommand === lastInjectCommand) {
+                // --- No change in memory command state
+                return;
+              }
+
+              lastInjectCommand = state.injectCommand;
+              if (
+                state.injectCommand &&
+                !state.injectCommand.codeToInject
+              ) {
+                // --- We just received a result, store it
+                if (state.injectCommand.errorCode !== undefined) {
+                  result = state.injectCommand.errorCode;
+                }
+              }
+            });
+
+            // --- Initiate the code injection command execution
+            stateAware.dispatch(codeInjectAction(req.body)());
+
+            // --- Wait for resolve/reject
+            const startTime = Date.now();
+            while (Date.now() - startTime < 15000) {
+              if (result !== undefined) {
+                resolve(result);
+              }
+              await new Promise((r) => setTimeout(r, 100));
+            }
+            throw new Error("Code inject request timeout");
+          } catch (err) {
+            reject(err);
+          }
+        } finally {
+          // --- Do not watch changes anymore
+          stateAware.dispose();
+        }
+      });
+      const result = await promise;
+      res.send(Buffer.from(result).toString("base64"));
+    } catch (err) {
+      res.status(500).send(err.toString());
+    }
   });
 
   // --- Start the API server on the configured port

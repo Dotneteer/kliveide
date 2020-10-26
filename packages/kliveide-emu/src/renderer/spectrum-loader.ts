@@ -115,9 +115,9 @@ stateAware.stateChanged.on(async (state) => {
     if (lastInjectCommand && lastInjectCommand.codeToInject) {
       const result = await spectrumEngine.injectCode(lastInjectCommand.codeToInject);
       if (result) {
-        stateAware.dispatch(codeInjectResultAction(false, result)());
+        stateAware.dispatch(codeInjectResultAction(result)());
       } else {
-        stateAware.dispatch(codeInjectResultAction(true)());
+        stateAware.dispatch(codeInjectResultAction("")());
       }
     }
   }

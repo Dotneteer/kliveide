@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import { startEmulator } from "./commands/start-emu";
+import { startEmulatorCommand } from "./commands/start-emu";
 import { Z80RegistersProvider } from "./views/z80-registers";
 import { setZ80RegisterProvider } from "./providers";
 import { startNotifier, stopNotifier } from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
 import { createVmStateStatusBarItem } from "./views/statusbar";
-import { updateKliveProject } from "./commands/update-klive-project";
+import { updateKliveProjectCommand } from "./commands/update-klive-project";
 import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-editor";
-import { goToAddress } from "./commands/goto-address";
-import { sendTapeFile } from "./commands/send-tape-file";
-import { refreshView } from "./commands/refresh-view";
+import { goToAddressCommand } from "./commands/goto-address";
+import { sendTapeFileCommand } from "./commands/send-tape-file";
+import { refreshViewCommand } from "./commands/refresh-view";
 import { spectrumConfigurationInstance } from "./emulator/machine-config";
 import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 import { KLIVEIDE, SAVE_FOLDER } from "./config/sections";
@@ -25,10 +25,11 @@ import {
   ServerOptions,
   TransportKind,
 } from "vscode-languageclient";
-import { injectCode } from "./commands/inject-code";
-import { compileCode } from "./commands/compile-code";
-import { runCode } from "./commands/run-code";
-import { debugCode } from "./commands/debug-code";
+import {
+  compileCodeCommand,
+  injectCodeCommand,
+  runCodeCommand,
+} from "./commands/code-related";
 
 let client: LanguageClient;
 
@@ -37,7 +38,9 @@ export async function activate(context: vscode.ExtensionContext) {
   setExtensionContext(context);
 
   // --- Let's setup the output channels
-  const z80CompilerOutput = vscode.window.createOutputChannel("Klive - Z80 Assembler");
+  const z80CompilerOutput = vscode.window.createOutputChannel(
+    "Klive - Z80 Assembler"
+  );
 
   // --- Helper shortcuts
   const register = vscode.commands.registerCommand;
@@ -48,15 +51,32 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // --- Register extension commands
   subs.push(
-    register("kliveide.startEmu", async () => await startEmulator()),
-    register("kliveide.updateKliveProject", () => updateKliveProject(context)),
-    register("kliveide.goToAddress", () => goToAddress()),
-    register("kliveide.sendTape", (uri: vscode.Uri) => sendTapeFile(uri)),
-    register("kliveide.refreshView", () => refreshView()),
-    register("kliveide.compileCode", async (uri: vscode.Uri) => await compileCode(uri, z80CompilerOutput)),
-    register("kliveide.injectCode", () => injectCode(z80CompilerOutput)),
-    register("kliveide.runCode", () => runCode(z80CompilerOutput)),
-    register("kliveide.debugCode", () => debugCode(z80CompilerOutput)),
+    register("kliveide.startEmu", async () => await startEmulatorCommand()),
+    register("kliveide.updateKliveProject", () =>
+      updateKliveProjectCommand(context)
+    ),
+    register("kliveide.goToAddress", () => goToAddressCommand()),
+    register("kliveide.sendTape", (uri: vscode.Uri) =>
+      sendTapeFileCommand(uri)
+    ),
+    register("kliveide.refreshView", () => refreshViewCommand()),
+    register(
+      "kliveide.compileCode",
+      async (uri: vscode.Uri) =>
+        await compileCodeCommand(uri, z80CompilerOutput)
+    ),
+    register(
+      "kliveide.injectCode",
+      async (uri: vscode.Uri) => await injectCodeCommand(uri, z80CompilerOutput)
+    ),
+    register(
+      "kliveide.runCode",
+      async (uri: vscode.Uri) => await runCodeCommand(uri, z80CompilerOutput)
+    ),
+    register(
+      "kliveide.debugCode",
+      async (uri: vscode.Uri) => await runCodeCommand(uri, z80CompilerOutput)
+    )
   );
 
   // --- Tree provider to display Z80 registers
@@ -105,7 +125,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
 function setupZ80AsmLanguageClient(context: vscode.ExtensionContext): void {
   // The server is implemented in node
-  let serverModule = context.asAbsolutePath("./out/z80lang/languageServer/server.js");
+  let serverModule = context.asAbsolutePath(
+    "./out/z80lang/languageServer/server.js"
+  );
 
   // The debug options for the server
   // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging

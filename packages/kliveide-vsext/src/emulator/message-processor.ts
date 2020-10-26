@@ -11,7 +11,6 @@ import {
 } from "../custom-editors/messaging/message-types";
 import { communicatorInstance } from "./communicator";
 import { getLastConnectedState, getLastExecutionState } from "./notifier";
-import { exec } from "child_process";
 
 /**
  * This class processes messages on thw WevView side

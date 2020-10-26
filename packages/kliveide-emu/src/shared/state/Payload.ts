@@ -38,6 +38,5 @@ export interface Payload {
   seqNo?: number;
   panelMessage?: string;
   codeToInject?: CodeToInject;
-  success?: boolean;
   errorCode?: string;
 }

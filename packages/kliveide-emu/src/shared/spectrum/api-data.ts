@@ -23,6 +23,7 @@ export interface RegisterData {
  * A single segment of the code compilation
  */
 export interface BinarySegment {
+  startAddress: number;
   bank?: number;
   bankOffset: number;
   emittedCode: number[];
@@ -34,6 +35,6 @@ export interface BinarySegment {
 export interface CodeToInject {
   model: string,
   segments: BinarySegment[];
-  options: string[];
+  options: { [key: string]: boolean};
 }
 

@@ -321,6 +321,17 @@ export abstract class ZxSpectrumBase {
   }
 
   /**
+   * Reads a byte from the memory
+   * @param addr Memory address
+   */
+  readMemory(addr: number): number {
+    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
+    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
+    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
+    return mem[addr & 0x3fff];
+  }
+
+  /**
    * Writes a byte into the memory
    * @param addr Memory address
    * @param value Value to write

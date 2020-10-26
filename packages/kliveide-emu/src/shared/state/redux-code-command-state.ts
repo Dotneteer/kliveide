@@ -6,8 +6,8 @@ export function codeInjectAction(codeToInject: CodeToInject) {
   return createAction("CODE_INJECT", { codeToInject });
 }
 
-export function codeInjectResultAction(success: boolean, errorCode?: string) {
-  return createAction("CODE_INJECT", { success, errorCode });
+export function codeInjectResultAction(errorCode: string) {
+  return createAction("CODE_INJECT_RESULT", { errorCode });
 }
 
 /**
@@ -26,7 +26,6 @@ export function injectCodeCommandStateReducer(
       };
     case "CODE_INJECT_RESULT":
       return {
-        success: payload.success,
         errorCode: payload.errorCode,
       };
   }

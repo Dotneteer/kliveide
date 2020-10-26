@@ -4,7 +4,7 @@ import { getActiveEditor, postRefreshViewMessage } from "../custom-editors/edito
  * Sends a refresh request for the active editor view
  * @param panel 
  */
-export function refreshView(): void {
+export function refreshViewCommand(): void {
   const activeEditor = getActiveEditor();
   if (activeEditor) {
     postRefreshViewMessage(activeEditor);
