@@ -6,6 +6,9 @@ import { KLIVEIDE, EMU_PORT, SAVE_FOLDER } from "../config/sections";
  * This class is responsible for communicating with the Klive Emulator
  */
 class Communicator {
+  // --- Temporary timeout for the next call
+  private _tempTimeout: number | null = null;
+
   /**
    * Gets the base URL used to communicate with Klive Emulator
    */
@@ -128,8 +131,24 @@ class Communicator {
    * Sends code to the ZX Spectrum to inject
    * @param codeToInject
    */
-  async injectCode(codeToInject: CodeToInject): Promise<void> {
-    await this.post("/inject-code", codeToInject);
+  async injectCode(codeToInject: CodeToInject): Promise<string> {
+    this._tempTimeout = 2000;
+    const response = await this.post("/inject-code", codeToInject);
+    if (response.ok) {
+      return response.text();
+    }
+  }
+
+  /**
+   * Sends code to the ZX Spectrum to execute
+   * @param codeToInject
+   */
+  async runCode(codeToInject: CodeToInject, debug: boolean): Promise<string> {
+    this._tempTimeout = 10_000;
+    const response = await this.post("/run-code", { codeToInject, debug });
+    if (response.ok) {
+      return response.text();
+    }
   }
 
   /**
@@ -151,7 +170,7 @@ class Communicator {
     if (!requestInit) {
       requestInit = {
         method: "GET",
-        timeout: 1000,
+        timeout: this.timeoutValue,
       };
     }
     return await fetch(`${this.url()}${command}`, requestInit);
@@ -202,12 +221,24 @@ class Communicator {
     if (!requestInit) {
       requestInit = {
         method: "POST",
-        timeout: 1000,
+        timeout: this.timeoutValue,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       };
     }
     return await fetch(`${this.url()}${command}`, requestInit);
+  }
+
+  /** 
+   * Gets the timeout value to use with a request
+   */
+  private get timeoutValue(): number {
+    if (!this._tempTimeout) {
+      return 1000;
+    }
+    const tmp = this._tempTimeout;
+    this._tempTimeout = null;
+    return tmp;
   }
 }
 
@@ -301,6 +332,7 @@ export interface BinarySegment {
  */
 export interface CodeToInject {
   model: string;
+  entryAddress?: number;
   segments: BinarySegment[];
   options: { [key: string]: boolean };
 }

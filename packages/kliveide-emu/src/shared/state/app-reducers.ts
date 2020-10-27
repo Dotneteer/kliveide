@@ -9,6 +9,7 @@ import { ideConfigStateReducer } from "./redux-ide-config-state";
 import { ideConnectionStateReducer } from "./redux-ide-connection.state";
 import { memoryCommandStateReducer } from "./redux-memory-command-state";
 import { injectCodeCommandStateReducer } from "./redux-code-command-state";
+import { runCodeCommandStateReducer } from "./redux-run-code-state";
 
 /**
  * The set of reducers we use within this application
@@ -24,6 +25,7 @@ export const appReducers = {
   ideConnection: ideConnectionStateReducer,
   memoryCommand: memoryCommandStateReducer,
   injectCommand: injectCodeCommandStateReducer,
+  runCommand: runCodeCommandStateReducer
 };
 
 /**

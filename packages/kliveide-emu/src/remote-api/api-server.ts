@@ -38,6 +38,7 @@ import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 import { memorySetCommandAction } from "../shared/state/redux-memory-command-state";
 import { SpectNetAction } from "../shared/state/redux-core";
 import { codeInjectAction } from "../shared/state/redux-code-command-state";
+import { codeRunAction } from "../shared/state/redux-run-code-state";
 
 /**
  * Sequence number of the latest memory request
@@ -53,8 +54,6 @@ let memoryResults = new Map<number, Uint8Array>();
  * Starts the web server that provides an API to manage the Klive emulator
  */
 export function startApiServer() {
-  let lastMemWriteMap = new Uint8Array(0x2000);
-
   const app = express();
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
@@ -468,10 +467,7 @@ export function startApiServer() {
               }
 
               lastInjectCommand = state.injectCommand;
-              if (
-                state.injectCommand &&
-                !state.injectCommand.codeToInject
-              ) {
+              if (state.injectCommand && !state.injectCommand.codeToInject) {
                 // --- We just received a result, store it
                 if (state.injectCommand.errorCode !== undefined) {
                   result = state.injectCommand.errorCode;
@@ -500,7 +496,64 @@ export function startApiServer() {
         }
       });
       const result = await promise;
-      res.send(Buffer.from(result).toString("base64"));
+      res.send(result);
+    } catch (err) {
+      res.status(500).send(err.toString());
+    }
+  });
+
+  app.post("/run-code", async (req, res) => {
+    const stateAware = createMainProcessStateAware();
+    try {
+      // --- Declare the promise for the communication between
+      // --- the api-server and the renderer process
+      const promise = new Promise<string>(async (resolve, reject) => {
+        try {
+          try {
+            // --- Initiate the status watch
+            let lastRunCommand = mainProcessStore.getState().runCommand;
+
+            // --- Catch status changes
+            let result: string | undefined;
+            stateAware.stateChanged.on((state) => {
+              if (state && state.runCommand === lastRunCommand) {
+                // --- No change in memory command state
+                return;
+              }
+
+              lastRunCommand = state.runCommand;
+              if (state.runCommand && !state.runCommand.codeToInject) {
+                // --- We just received a result, store it
+                if (state.runCommand.errorCode !== undefined) {
+                  result = state.runCommand.errorCode;
+                }
+              }
+            });
+
+            // --- Initiate the code injection command execution
+            stateAware.dispatch(
+              codeRunAction(req.body.codeToInject, req.body.debug)()
+            );
+
+            // --- Wait for resolve/reject
+            const startTime = Date.now();
+            while (Date.now() - startTime < 15000) {
+              if (result !== undefined) {
+                resolve(result);
+              }
+              await new Promise((r) => setTimeout(r, 100));
+            }
+            throw new Error("Run program request timeout");
+          } catch (err) {
+            reject(err);
+          }
+        } finally {
+          // --- Do not watch changes anymore
+          stateAware.dispose();
+        }
+      });
+      const result = await promise;
+      res.send(result);
     } catch (err) {
       res.status(500).send(err.toString());
     }

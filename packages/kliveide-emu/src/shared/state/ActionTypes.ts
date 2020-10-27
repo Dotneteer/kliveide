@@ -66,6 +66,8 @@ export interface ActionTypes {
   // --- Code injection related commands
   CODE_INJECT: null;
   CODE_INJECT_RESULT: null;
+  CODE_RUN: null;
+  CODE_RUN_RESULT: null;
 
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;
