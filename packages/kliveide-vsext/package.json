@@ -88,7 +88,7 @@
       {
         "command": "kliveide.compileCode",
         "title": "Compile Program",
-        "enablement": "kliveEmuConnected",
+        "enablement": "kliveEmuConnected && !codeAction",
         "icon": {
           "light": "assets/icons/compile.svg",
           "dark": "assets/icons/compile_dark.svg"
@@ -97,7 +97,7 @@
       {
         "command": "kliveide.injectCode",
         "title": "Inject Program",
-        "enablement": "kliveEmuConnected",
+        "enablement": "kliveEmuConnected && !codeAction",
         "icon": {
           "light": "assets/icons/inject.svg",
           "dark": "assets/icons/inject_dark.svg"
@@ -106,7 +106,7 @@
       {
         "command": "kliveide.debugCode",
         "title": "Debug Program in the Emulator",
-        "enablement": "kliveEmuConnected",
+        "enablement": "kliveEmuConnected && !codeAction",
         "icon": {
           "light": "assets/icons/debug-code.svg",
           "dark": "assets/icons/debug-code_dark.svg"
@@ -115,7 +115,7 @@
       {
         "command": "kliveide.runCode",
         "title": "Run Program in the Emulator",
-        "enablement": "kliveEmuConnected",
+        "enablement": "kliveEmuConnected && !codeAction",
         "icon": {
           "light": "assets/icons/run-code.svg",
           "dark": "assets/icons/run-code_dark.svg"

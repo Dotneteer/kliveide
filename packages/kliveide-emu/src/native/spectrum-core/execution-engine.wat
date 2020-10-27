@@ -371,6 +371,21 @@
     ;; Render the screen
     (call $renderScreen (get_local $currentUlaTact))
 
+    ;; Check termination point
+    (i32.eq (get_global $emulationMode) (i32.const 4))
+    if
+      ;; Stop at termination point
+      (i32.eq (get_global $memorySelectedRom) (get_global $terminationRom))
+      if
+        ;; Termination ROM matches
+        (i32.eq (get_global $PC) (get_global $terminationPoint)) 
+        if
+          i32.const 1 set_global $executionCompletionReason ;; Reason: Termination point reached
+          return
+        end
+      end
+    end
+
     ;; Check breakpoints
     (i32.eq (get_global $debugStepMode) (i32.const 1))
     if

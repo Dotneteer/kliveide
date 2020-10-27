@@ -12,9 +12,14 @@ import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
 import { ZxSpectrumBase } from "../native/api/ZxSpectrumBase";
 import { getMachineTypeIdFromName } from "../shared/spectrum/machine-types";
-import { InjectCommand, MemoryCommand } from "../shared/state/AppState";
+import {
+  InjectProgramCommand,
+  MemoryCommand,
+  RunProgramCommand,
+} from "../shared/state/AppState";
 import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
 import { codeInjectResultAction } from "../shared/state/redux-code-command-state";
+import { codeRunResultAction } from "../shared/state/redux-run-code-state";
 
 /**
  * Store the ZX Spectrum engine instance
@@ -42,9 +47,14 @@ let lastEmulatorCommand = "";
 let lastMemoryCommand: MemoryCommand | undefined;
 
 /**
- * last code injection command requested
+ * Last code injection command requested
  */
-let lastInjectCommand: InjectCommand | undefined;
+let lastInjectCommand: InjectProgramCommand | undefined;
+
+/**
+ * Last run program command requested
+ */
+let lastRunCommand: RunProgramCommand | undefined;
 
 /**
  * Indicates that the engine is processing a state change
@@ -99,13 +109,15 @@ stateAware.stateChanged.on(async (state) => {
       let contents = new Uint8Array(0);
       switch (lastMemoryCommand.command) {
         case "rom":
-          contents = spectrumEngine.getRomPage(lastMemoryCommand.index ?? 0)
+          contents = spectrumEngine.getRomPage(lastMemoryCommand.index ?? 0);
           break;
         case "bank":
-          contents = spectrumEngine.getBankPage(lastMemoryCommand.index ?? 0)
+          contents = spectrumEngine.getBankPage(lastMemoryCommand.index ?? 0);
           break;
       }
-      stateAware.dispatch(memorySetResultAction(lastMemoryCommand.seqNo, contents)())
+      stateAware.dispatch(
+        memorySetResultAction(lastMemoryCommand.seqNo, contents)()
+      );
     }
   }
 
@@ -113,11 +125,30 @@ stateAware.stateChanged.on(async (state) => {
   if (lastInjectCommand !== state.injectCommand) {
     lastInjectCommand = state.injectCommand;
     if (lastInjectCommand && lastInjectCommand.codeToInject) {
-      const result = await spectrumEngine.injectCode(lastInjectCommand.codeToInject);
+      const result = await spectrumEngine.injectCode(
+        lastInjectCommand.codeToInject
+      );
       if (result) {
         stateAware.dispatch(codeInjectResultAction(result)());
       } else {
         stateAware.dispatch(codeInjectResultAction("")());
+      }
+    }
+  }
+
+  // --- Process run program commands
+  if (lastRunCommand !== state.runCommand) {
+    lastRunCommand = state.runCommand;
+    if (lastRunCommand && lastRunCommand.codeToInject) {
+      console.log("Executing the run command");
+      const result = await spectrumEngine.runCode(
+        lastRunCommand.codeToInject,
+        lastRunCommand.debug
+      );
+      if (result) {
+        stateAware.dispatch(codeRunResultAction(result)());
+      } else {
+        stateAware.dispatch(codeRunResultAction("")());
       }
     }
   }
@@ -176,7 +207,7 @@ export async function createSpectrumEngine(
       break;
     case 3:
       spectrum = new ZxSpectrum128(machineApi);
-    break;
+      break;
     default:
       spectrum = new ZxSpectrum48(machineApi);
       break;

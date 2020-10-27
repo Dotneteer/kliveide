@@ -47,7 +47,12 @@ export interface AppState {
   /**
    * Code inject command to execute
    */
-  injectCommand?: InjectCommand;
+  injectCommand?: InjectProgramCommand;
+
+  /**
+   * Run program command to execute
+   */
+  runCommand?: RunProgramCommand;
 }
 
 /**
@@ -149,11 +154,35 @@ export type MemoryCommandType = "" | "rom" | "bank";
 /**
  * Represents a code injection command
  */
-export interface InjectCommand {
+export interface InjectProgramCommand {
   /**
    * The code to inject into the memory
    */
   codeToInject?: CodeToInject;
+
+  /**
+   * Execution error code
+   */
+  errorCode?: string;
+}
+
+/**
+ * Represents a code injection command
+ */
+export interface RunProgramCommand {
+  /**
+   * The code to inject into the memory
+   */
+  codeToInject?: CodeToInject;
+
+  /**
+   * Use debug mode?
+   */
+  debug?: boolean;
+
+  /**
+   * Execution error code
+   */
   errorCode?: string;
 }
 

@@ -39,4 +39,5 @@ export interface Payload {
   panelMessage?: string;
   codeToInject?: CodeToInject;
   errorCode?: string;
+  debug?: boolean;
 }

@@ -27,6 +27,8 @@ import {
 } from "vscode-languageclient";
 import {
   compileCodeCommand,
+  debugCodeCommand,
+  executeCodeAction,
   injectCodeCommand,
   runCodeCommand,
 } from "./commands/code-related";
@@ -67,15 +69,18 @@ export async function activate(context: vscode.ExtensionContext) {
     ),
     register(
       "kliveide.injectCode",
-      async (uri: vscode.Uri) => await injectCodeCommand(uri, z80CompilerOutput)
+      async (uri: vscode.Uri) =>
+        await executeCodeAction(() => injectCodeCommand(uri, z80CompilerOutput))
     ),
     register(
       "kliveide.runCode",
-      async (uri: vscode.Uri) => await runCodeCommand(uri, z80CompilerOutput)
+      async (uri: vscode.Uri) =>
+        await executeCodeAction(() => runCodeCommand(uri, z80CompilerOutput))
     ),
     register(
       "kliveide.debugCode",
-      async (uri: vscode.Uri) => await runCodeCommand(uri, z80CompilerOutput)
+      async (uri: vscode.Uri) =>
+        await executeCodeAction(() => debugCodeCommand(uri, z80CompilerOutput))
     )
   );
 

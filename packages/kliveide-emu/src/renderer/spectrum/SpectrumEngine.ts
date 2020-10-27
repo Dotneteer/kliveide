@@ -649,21 +649,6 @@ export class SpectrumEngine {
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
     }
-
-    /**
-     * Delay for the specified amount of milliseconds
-     * @param milliseconds Amount of milliseconds to delay
-     */
-    function delay(milliseconds: number): Promise<void> {
-      return new Promise<void>((resolve) => {
-        if (milliseconds < 0) {
-          milliseconds = 0;
-        }
-        setTimeout(() => {
-          resolve();
-        }, milliseconds);
-      });
-    }
   }
 
   /**
@@ -857,8 +842,145 @@ export class SpectrumEngine {
     // --- Prepare the run mode
     if (codeToInject.options.cursork) {
       // --- Set the keyboard in "L" mode
-      this.spectrum.writeMemory(0x5c3b, this.spectrum.readMemory(0x5c3b) | 0x08);
+      this.spectrum.writeMemory(
+        0x5c3b,
+        this.spectrum.readMemory(0x5c3b) | 0x08
+      );
     }
     return "";
   }
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine and runs it
+   * @param codeToInject Code to inject into the machine
+   * @param debug Start in debug mode?
+   */
+  async runCode(codeToInject: CodeToInject, debug?: boolean): Promise<string> {
+    // --- Stop the running machine
+    await this.stop();
+
+    // --- Start the machine and run it while it reaches the injection point
+    const machine = this;
+    switch (this.spectrum.type) {
+      case 0:
+        // --- ZX Spectrum 48
+        await this.run(
+          new ExecuteCycleOptions(
+            EmulationMode.UntilExecutionPoint,
+            DebugStepMode.None,
+            true,
+            0,
+            0x12ac
+          )
+        );
+        await waitForTerminationPoint();
+        break;
+      case 1:
+        // --- ZX Spectrum 128
+        await this.run(
+          new ExecuteCycleOptions(
+            EmulationMode.UntilExecutionPoint,
+            DebugStepMode.None,
+            true,
+            0,
+            0x2653
+          )
+        );
+        await waitForTerminationPoint();
+        if (codeToInject.model !== "48") {
+          await this.run(
+            new ExecuteCycleOptions(
+              EmulationMode.UntilExecutionPoint,
+              DebugStepMode.None,
+              true,
+              0,
+              0x2604
+            )
+          );
+          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
+          await this.delayKey(SpectrumKeyCode.Enter);
+          await waitForTerminationPoint();
+        } else {
+          await this.run(
+            new ExecuteCycleOptions(
+              EmulationMode.UntilExecutionPoint,
+              DebugStepMode.None,
+              true,
+              1,
+              0x12ac
+            )
+          );
+          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
+          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
+          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
+          await this.delayKey(SpectrumKeyCode.Enter);
+          await waitForTerminationPoint();
+        }
+        break;
+      case 2:
+        // --- ZX Spectrum +3
+        break;
+      case 3:
+        // --- ZX Spectrum Next
+        break;
+    }
+
+    // --- Inject to code
+    this.injectCode(codeToInject);
+
+    // --- Set the continuation point
+    const startPoint =
+      codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
+    this.spectrum.api.setPC(startPoint);
+
+    if (debug) {
+      await this.startDebug();
+    } else {
+      await this.start();
+    }
+
+    return "";
+
+    /**
+     * Waits for the current termination point
+     */
+    async function waitForTerminationPoint(): Promise<boolean> {
+      await machine._completionTask;
+      machine._completionTask = null;
+      return true;
+    }
+  }
+
+  /**
+   * Puts a keystroke into the queue of emulated keystrokes and delays it
+   * @param primary Primary key
+   * @param secodary Optional secondary key
+   */
+  async delayKey(
+    primaryKey: SpectrumKeyCode,
+    secondaryKey?: SpectrumKeyCode
+  ): Promise<void> {
+    this.queueKeyStroke(
+      this.spectrum.getMachineState().frameCount,
+      3,
+      primaryKey,
+      secondaryKey
+    );
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
+/**
+ * Delay for the specified amount of milliseconds
+ * @param milliseconds Amount of milliseconds to delay
+ */
+function delay(milliseconds: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (milliseconds < 0) {
+      milliseconds = 0;
+    }
+    setTimeout(() => {
+      resolve();
+    }, milliseconds);
+  });
 }

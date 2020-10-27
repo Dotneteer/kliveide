@@ -1,6 +1,6 @@
 import { createAction, SpectNetAction } from "./redux-core";
 import { CodeToInject } from "../spectrum/api-data";
-import { InjectCommand } from "./AppState";
+import { InjectProgramCommand } from "./AppState";
 
 export function codeInjectAction(codeToInject: CodeToInject) {
   return createAction("CODE_INJECT", { codeToInject });
@@ -16,9 +16,9 @@ export function codeInjectResultAction(errorCode: string) {
  * @param action Action executed
  */
 export function injectCodeCommandStateReducer(
-  state: InjectCommand = {},
+  state: InjectProgramCommand = {},
   { type, payload }: SpectNetAction
-): InjectCommand {
+): InjectProgramCommand {
   switch (type) {
     case "CODE_INJECT":
       return {

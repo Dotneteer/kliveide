@@ -3,7 +3,14 @@ import {
   AssemblerOutput,
   SpectrumModelType,
 } from "../z80lang/assembler/assembler-in-out";
-import { OutputChannel, Uri, window, Event, EventEmitter } from "vscode";
+import {
+  OutputChannel,
+  Uri,
+  window,
+  Event,
+  EventEmitter,
+  commands,
+} from "vscode";
 import {
   getLastConnectedState,
   getLastExecutionState,
@@ -11,9 +18,7 @@ import {
 } from "../emulator/notifier";
 import { CodeToInject, communicatorInstance } from "../emulator/communicator";
 
-let codeInjected: EventEmitter<CodeToInject> = new EventEmitter<
-  CodeToInject
->();
+let codeInjected: EventEmitter<CodeToInject> = new EventEmitter<CodeToInject>();
 
 /**
  * Fires when code has been injected
@@ -64,7 +69,7 @@ export async function compileCodeCommand(
 export async function injectCodeCommand(
   uri: Uri,
   output: OutputChannel,
-  isInInjectMode: boolean = true
+  codeAction?: (codeToInject: CodeToInject) => Promise<string>
 ): Promise<boolean> {
   const compilerOutput = await compileCodeCommand(uri, output);
 
@@ -93,7 +98,7 @@ export async function injectCodeCommand(
   }
 
   // --- Put the machine into the appropriate state for injection
-  if (isInInjectMode) {
+  if (!codeAction) {
     const isPaused =
       getLastConnectedState() && getLastExecutionState().state === "paused";
     if (!isPaused) {
@@ -102,31 +107,34 @@ export async function injectCodeCommand(
       );
       return false;
     }
-  } else {
-    await communicatorInstance.stopMachine();
   }
 
-  // TODO: Start the machine
+  // --- Create the code to inject into the emulator
+  const codeToInject: CodeToInject = {
+    model: modelTypeToMachineType(compilerOutput.modelType),
+    entryAddress: compilerOutput.entryAddress,
+    segments: compilerOutput.segments.map((s) => ({
+      startAddress: s.startAddress,
+      bank: s.bank,
+      bankOffset: s.bankOffset,
+      emittedCode: s.emittedCode,
+    })),
+    options: compilerOutput.injectOptions,
+  };
 
-  // --- Inject the code in the emulator
-  if (isInInjectMode) {
-    const codeToInject: CodeToInject = {
-      model: modelTypeToMachineType(compilerOutput.modelType),
-      segments: compilerOutput.segments.map((s) => ({
-        startAddress: s.startAddress,
-        bank: s.bank,
-        bankOffset: s.bankOffset,
-        emittedCode: s.emittedCode,
-      })),
-      options: compilerOutput.injectOptions,
-    };
-    communicatorInstance.injectCode(codeToInject);
+  // --- Execute the injection action
+  const injectionResult = codeAction
+    ? await codeAction(codeToInject)
+    : await communicatorInstance.injectCode(codeToInject);
+
+  if (injectionResult) {
+    window.showErrorMessage(injectionResult);
+    return false;
   }
-
   window.showInformationMessage(
     "Code successfully injected into the ZX Spectrum emulator."
   );
-  return false;
+  return true;
 
   function modelTypeToMachineType(model: SpectrumModelType): string {
     switch (model) {
@@ -151,7 +159,11 @@ export async function runCodeCommand(
   uri: Uri,
   output: OutputChannel
 ): Promise<void> {
-  await injectCodeCommand(uri, output, false);
+  await injectCodeCommand(
+    uri,
+    output,
+    async (code) => await communicatorInstance.runCode(code, false)
+  );
 }
 
 /**
@@ -164,7 +176,30 @@ export async function debugCodeCommand(
   uri: Uri,
   output: OutputChannel
 ): Promise<void> {
-  await injectCodeCommand(uri, output, false);
+  try {
+    await injectCodeCommand(
+      uri,
+      output,
+      async (code) => await communicatorInstance.runCode(code, true)
+    );
+  } catch (err) {
+    console.log(err.stack);
+  }
+}
+
+/**
+ * Executes the specified code action
+ * @param action Code action to execute
+ */
+export async function executeCodeAction<T>(
+  action: () => Promise<T>
+): Promise<T> {
+  commands.executeCommand("setContext", "codeAction", true);
+  try {
+    return await action();
+  } finally {
+    commands.executeCommand("setContext", "codeAction", false);
+  }
 }
 
 /**

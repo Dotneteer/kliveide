@@ -52,7 +52,6 @@
       }
     }
     htmlText += '<span class="memory-string">' + item.charContents + "</span>";
-    console.log(htmlText);
   }
 
   // --- Create the tooltip for the specified (i) position using the
