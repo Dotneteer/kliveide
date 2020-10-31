@@ -29,7 +29,7 @@ describe("Parser - token: literals", () => {
   });
 
   it("get: hexadecimal literal #3", () => {
-    testToken("0x12acd", TokenType.Unknown);
+    testToken("0x12acd", TokenType.HexadecimalLiteral);
     testToken("0x0", TokenType.HexadecimalLiteral);
     testToken("0xabcd", TokenType.HexadecimalLiteral);
     testToken("0x12ac", TokenType.HexadecimalLiteral);
@@ -49,6 +49,7 @@ describe("Parser - token: literals", () => {
     testToken("01cH", TokenType.HexadecimalLiteral);
     testToken("012aH", TokenType.HexadecimalLiteral);
     testToken("012acH", TokenType.HexadecimalLiteral);
+    testToken("0BFh", TokenType.HexadecimalLiteral);
   });
 
   it("get: binary literal #1", () => {

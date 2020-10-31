@@ -40,8 +40,8 @@ export async function activate(context: vscode.ExtensionContext) {
   setExtensionContext(context);
 
   // --- Let's setup the output channels
-  const z80CompilerOutput = vscode.window.createOutputChannel(
-    "Klive - Z80 Assembler"
+  const kliveCompilerOutput = vscode.window.createOutputChannel(
+    "Klive Compiler"
   );
 
   // --- Helper shortcuts
@@ -65,22 +65,22 @@ export async function activate(context: vscode.ExtensionContext) {
     register(
       "kliveide.compileCode",
       async (uri: vscode.Uri) =>
-        await compileCodeCommand(uri, z80CompilerOutput)
+        await compileCodeCommand(uri, kliveCompilerOutput)
     ),
     register(
       "kliveide.injectCode",
       async (uri: vscode.Uri) =>
-        await executeCodeAction(() => injectCodeCommand(uri, z80CompilerOutput))
+        await executeCodeAction(() => injectCodeCommand(uri, kliveCompilerOutput))
     ),
     register(
       "kliveide.runCode",
       async (uri: vscode.Uri) =>
-        await executeCodeAction(() => runCodeCommand(uri, z80CompilerOutput))
+        await executeCodeAction(() => runCodeCommand(uri, kliveCompilerOutput))
     ),
     register(
       "kliveide.debugCode",
       async (uri: vscode.Uri) =>
-        await executeCodeAction(() => debugCodeCommand(uri, z80CompilerOutput))
+        await executeCodeAction(() => debugCodeCommand(uri, kliveCompilerOutput))
     )
   );
 

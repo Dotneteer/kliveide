@@ -59,7 +59,12 @@ export function createZxbCommandLineArgs(
   return (argRoot + additional).trim();
 }
 
-export async function execZxb(cmdArgs: string): Promise<void> {
+/**
+ * Executes the ZXB command
+ * @param cmdArgs Commad-line arguments
+ * @param outChannel Output channel
+ */
+export async function execZxb(cmdArgs: string, outChannel: vscode.OutputChannel): Promise<string | null> {
   const config = vscode.workspace.getConfiguration(KLIVEIDE);
   const execPath = config.get(ZXB_EXECUTABLE_PATH) as string;
   if (execPath.trim() === "") {
@@ -68,14 +73,14 @@ export async function execZxb(cmdArgs: string): Promise<void> {
   }
 
   const cmd = `${execPath} ${cmdArgs}`;
-
-  return new Promise<void>((resolve, reject) => {
-    const processInfo = exec(cmd, (error, stdout, stderr) => {
+  outChannel.appendLine(`Executing ${cmd}`);
+  return new Promise<string | null>((resolve, reject) => {
+    exec(cmd, (error, _stdout, stderr) => {
       if (error) {
-        reject(error);
+        reject(stderr);
         return;
       }
-      resolve();
+      resolve(null);
     });
   });
 }

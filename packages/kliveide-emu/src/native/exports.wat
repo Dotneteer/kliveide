@@ -28,6 +28,7 @@
 (export "setKeyStatus" (func $setKeyStatus))
 (export "getKeyStatus" (func $getKeyStatus))
 (export "setPC" (func $setPC))
+(export "setSP" (func $setSP))
 (export "setInterruptTact" (func $setInterruptTact))
 (export "checkForInterrupt" (func $checkForInterrupt))
 (export "setBeeperSampleRate" (func $setBeeperSampleRate))

@@ -49,6 +49,13 @@ import {
 } from "../../native/api/memory-map";
 
 /**
+ * ZX Spectrum 48 main execution cycle entry point
+ */
+export const SP48_MAIN_ENTRY = 0x12ac;
+export const SP128_MENU = 0x2653;
+export const SP128_EDITOR = 0x2604;
+
+/**
  * This class represents the engine of the ZX Spectrum,
  * which runs within the main process.
  */
@@ -870,7 +877,7 @@ export class SpectrumEngine {
             DebugStepMode.None,
             true,
             0,
-            0x12ac
+            SP48_MAIN_ENTRY
           )
         );
         await waitForTerminationPoint();
@@ -883,7 +890,7 @@ export class SpectrumEngine {
             DebugStepMode.None,
             true,
             0,
-            0x2653
+            SP128_MENU
           )
         );
         await waitForTerminationPoint();
@@ -894,7 +901,7 @@ export class SpectrumEngine {
               DebugStepMode.None,
               true,
               0,
-              0x2604
+              SP128_EDITOR
             )
           );
           await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
@@ -907,7 +914,7 @@ export class SpectrumEngine {
               DebugStepMode.None,
               true,
               1,
-              0x12ac
+              SP48_MAIN_ENTRY
             )
           );
           await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
@@ -932,6 +939,15 @@ export class SpectrumEngine {
     const startPoint =
       codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
     this.spectrum.api.setPC(startPoint);
+
+    // --- Handle subroutine calls
+    if (codeToInject.subroutine) {
+      const spValue = this.spectrum.getMachineState().sp;
+      const mainExec = SP48_MAIN_ENTRY;
+      this.spectrum.writeMemory(spValue - 1, mainExec >> 8);
+      this.spectrum.writeMemory(spValue - 2, mainExec & 0xff);
+      this.spectrum.api.setSP(spValue - 2);
+    }
 
     if (debug) {
       await this.startDebug();
