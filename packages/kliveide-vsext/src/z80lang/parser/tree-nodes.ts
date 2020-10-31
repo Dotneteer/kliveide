@@ -935,7 +935,7 @@ export interface LineDirective extends PartialZ80AssemblyLine {
   /**
    * Optional line comment
    */
-  lineComment?: string;
+  filename?: string;
 }
 
 // ============================================================================

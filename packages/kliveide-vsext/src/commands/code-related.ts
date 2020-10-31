@@ -1,3 +1,5 @@
+import * as path from "path";
+import * as fs from "fs";
 import { Z80Assembler } from "../z80lang/assembler/assembler";
 import {
   AssemblerOutput,
@@ -17,6 +19,12 @@ import {
   getLastMachineType,
 } from "../emulator/notifier";
 import { CodeToInject, communicatorInstance } from "../emulator/communicator";
+import {
+  createZxbCommandLineArgs,
+  execZxb,
+} from "../zxblang/compiler/zxb-runner";
+import { obtainInlineOptions } from "../zxblang/compiler/utils";
+import { readTextFile } from "../utils/file-utils";
 
 let codeInjected: EventEmitter<CodeToInject> = new EventEmitter<CodeToInject>();
 
@@ -35,15 +43,50 @@ export async function compileCodeCommand(
   uri: Uri,
   outChannel: OutputChannel
 ): Promise<AssemblerOutput | null> {
+  // --- Prepare compilation
   const start = Date.now();
-  const filename = uri.fsPath;
-  outChannel.appendLine(`Compiling ${filename}...`);
+  let filename = uri.fsPath;
+  outChannel.appendLine(`Compiling ${filename}`);
+
+  // --- Do the compilation
+  let compilationOutput: AssemblerOutput | null = null;
+  const fileExt = path.extname(filename);
+  switch (fileExt) {
+    case ".zxbas":
+    case ".bor":
+    case ".zxb":
+      // --- Calculate the output file name
+      const outputName = filename + ".z80asm";
+      const source = readTextFile(filename);
+      const options = obtainInlineOptions(source);
+      const cmdArgs = createZxbCommandLineArgs(filename, outputName, options);
+      const zxbStart = Date.now();
+      try {
+        await execZxb(cmdArgs, outChannel);
+      } catch (err) {
+        outChannel.appendLine(err);
+        break;
+      }
+      const zxbTime = Date.now() - zxbStart;
+      outChannel.appendLine(`ZXB execution time: ${zxbTime} ms`);
+
+      // --- Add the .zxbasic pragma
+      const output = "\t.zxbasic\r\n" + readTextFile(outputName);
+      fs.writeFileSync(outputName, output);
+
+      // --- Compile the ASM file
+      filename = outputName;
+      break;
+  }
+
+  // --- Call the Z80 Assembler
+  outChannel.appendLine("Invoking the Klive Z80 Assembler");
   const compiler = new Z80Assembler();
-  let compilationOutput: AssemblerOutput | null = compiler.compileFile(
-    uri.fsPath
-  );
+  compilationOutput = compiler.compileFile(filename);
+
+  // --- Evaluate the result of compilation
   const compilationTime = Date.now() - start;
-  if (compilationOutput.errorCount > 0) {
+  if (!compilationOutput || compilationOutput.errorCount > 0) {
     outChannel.appendLine(`Compilation failed.`);
     for (const errorInfo of compilationOutput.errors) {
       outChannel.appendLine(
@@ -113,6 +156,7 @@ export async function injectCodeCommand(
   const codeToInject: CodeToInject = {
     model: modelTypeToMachineType(compilerOutput.modelType),
     entryAddress: compilerOutput.entryAddress,
+    subroutine: compilerOutput.sourceType === "zxbasic",
     segments: compilerOutput.segments.map((s) => ({
       startAddress: s.startAddress,
       bank: s.bank,
@@ -209,8 +253,11 @@ export async function executeCodeAction<T>(
  */
 export function isModelCompatibleWith(
   modelName: string,
-  modelType: SpectrumModelType
+  modelType?: SpectrumModelType
 ): boolean {
+  if (modelType === undefined) {
+    return true;
+  }
   switch (modelType) {
     case SpectrumModelType.Next:
       return modelName === "next";

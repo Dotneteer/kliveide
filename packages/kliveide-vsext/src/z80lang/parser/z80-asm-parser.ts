@@ -15,7 +15,6 @@ import {
   CurrentCounterLiteral,
   RealLiteral,
   StringLiteral,
-  CharLiteral,
   EndIfDirective,
   ElseDirective,
   IfDefDirective,
@@ -266,12 +265,22 @@ export class Z80AsmParser {
     let label: IdentifierNode | null = null;
 
     // --- Does the line start with a label?
-    if (start.type === TokenType.Identifier && !keywordLikeIDs[start.text]) {
-      label = this.parseLabel(parsePoint);
+    if (start.type === TokenType.Identifier) {
+      const ahead = this.tokens.ahead(1);
+      if (
+        !keywordLikeIDs[start.text] ||
+        ahead.type === TokenType.Colon ||
+        this.startsLineBody(ahead)
+      ) {
+        label = this.parseLabel(parsePoint);
+      }
     }
 
     const mainToken = this.tokens.peek();
-    if (mainToken.type === TokenType.NewLine || mainToken.type === TokenType.Eof) {
+    if (
+      mainToken.type === TokenType.NewLine ||
+      mainToken.type === TokenType.Eof
+    ) {
       asmLine = <LabelOnlyLine>{
         type: "LabelOnlyLine",
         label,
@@ -408,6 +417,12 @@ export class Z80AsmParser {
           type: "ProcEndStatement",
         };
       }
+      if (text === "endm" || text === "mend") {
+        this.tokens.get();
+        return <MacroEndStatement>{
+          type: "MacroEndStatement",
+        };
+      }
       if (text === "else") {
         this.tokens.get();
         return <ElseStatement>{
@@ -417,6 +432,12 @@ export class Z80AsmParser {
       if (text === "elif") {
         this.tokens.get();
         return this.parseElseIfStatement();
+      }
+      if (text === "endif") {
+        this.tokens.get();
+        return <EndIfStatement>{
+          type: "EndIfStatement",
+        };
       }
       if (text === "break") {
         this.tokens.get();
@@ -1111,21 +1132,22 @@ export class Z80AsmParser {
       const expr = parser.getExpression();
 
       let stringValue: string | null = null;
-      let token = parser.skipToken(TokenType.Comma);
-      if (token) {
-        token = parser.skipToken(TokenType.StringLiteral);
-        if (token) {
-          const literal = parser.parseStringLiteral(token.text);
-          stringValue = literal.value;
-        } else {
-          parser.reportError("Z0108");
-          return null;
-        }
+      let token = parser.tokens.peek();
+      if (token.type === TokenType.StringLiteral) {
+        const literal = parser.parseStringLiteral(token.text);
+        parser.tokens.get();
+        stringValue = literal.value;
+      } else if (
+        token.type !== TokenType.NewLine &&
+        token.type !== TokenType.Eof
+      ) {
+        parser.reportError("Z0108");
+        return null;
       }
       return <LineDirective>{
         type: "LineDirective",
         lineNumber: expr,
-        lineComment: stringValue,
+        filename: stringValue,
       };
     }
   }
@@ -2431,8 +2453,8 @@ export class Z80AsmParser {
   private parseBinaryLiteral(text: string): IntegerLiteral | null {
     if (text.startsWith("%")) {
       text = text.substr(1);
-    } else if (text.startsWith("0b")) {
-      text = text.substr(2);
+    } else if (text.endsWith("b")) {
+      text = text.substr(0, text.length - 1);
     }
     while (text.includes("_")) {
       text = text.replace("_", "");

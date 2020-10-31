@@ -856,12 +856,8 @@ describe("Parser - token: keyword-like", () => {
   it("get: end macro statement", () => {
     testToken(".endm", TokenType.Endm);
     testToken(".ENDM", TokenType.Endm);
-    testToken("endm", TokenType.Endm);
-    testToken("ENDM", TokenType.Endm);
-    testToken("mend", TokenType.Endm);
-    testToken("MEND", TokenType.Endm);
-    testToken("mend", TokenType.Endm);
-    testToken("MEND", TokenType.Endm);
+    testToken(".mend", TokenType.Endm);
+    testToken(".MEND", TokenType.Endm);
   });
 
   it("get: proc statement", () => {
@@ -944,8 +940,6 @@ describe("Parser - token: keyword-like", () => {
   it("get: endif statement", () => {
     testToken(".endif", TokenType.Endif);
     testToken(".ENDIF", TokenType.Endif);
-    testToken("endif", TokenType.Endif);
-    testToken("ENDIF", TokenType.Endif);
   });
 
   it("get: for statement", () => {

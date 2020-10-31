@@ -20,6 +20,7 @@ export interface CpuApi {
   runTestCode(): void;
   restMachineType(): void;
   setPC(pc: number): void;
+  setSP(sp: number): void;
   setInterruptTact(tact: number): void;
   checkForInterrupt(tact: number): void;
 }

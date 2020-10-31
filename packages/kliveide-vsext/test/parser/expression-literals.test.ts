@@ -13,6 +13,10 @@ describe("Parser - expression literals", () => {
     { source: "%1111_0000", expected: 0xf0 },
     { source: "%_1111_0000", expected: 0xf0 },
     { source: "%0000_0111_1111_0000", expected: 0x07f0 },
+    { source: "0b", expected: 0 },
+    { source: "1b", expected: 1 },
+    { source: "11110000b", expected: 0xf0 },
+    { source: "0000011111110000b", expected: 0x07f0 },
   ];
 
   binaryLiterals.forEach(({ source, expected }) => {
@@ -66,6 +70,7 @@ describe("Parser - expression literals", () => {
   });
 
   const hexadecimalLiterals = [
+    { source: "0Bh", expected: 0x0b },
     { source: "#0", expected: 0 },
     { source: "#1", expected: 1 },
     { source: "#9", expected: 9 },
@@ -110,6 +115,7 @@ describe("Parser - expression literals", () => {
   });
 
   const realLiterals = [
+    { source: ".0e0", expected: 0.0 },
     { source: "0e0", expected: 0 },
     { source: "0e+0", expected: 0 },
     { source: "0e-0", expected: 0 },
@@ -146,7 +152,6 @@ describe("Parser - expression literals", () => {
     { source: "451.3e+12", expected: 451.3e12 },
     { source: "561.4e-23", expected: 561.4e-23 },
     { source: "671.023e0", expected: 671.023 },
-    { source: ".0e0", expected: 0.0 },
     { source: ".1e+0", expected: 0.1 },
     { source: ".2e-0", expected: 0.2 },
     { source: ".3e+12", expected: 0.3e12 },

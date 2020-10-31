@@ -35,6 +35,7 @@ export interface BinarySegment {
 export interface CodeToInject {
   model: string,
   entryAddress?: number;
+  subroutine?: boolean;
   segments: BinarySegment[];
   options: { [key: string]: boolean};
 }

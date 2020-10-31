@@ -193,7 +193,7 @@ describe("Parser - directives", () => {
   });
 
   it("#line #1", () => {
-    const parser = createParser('#line 123,"myComment"');
+    const parser = createParser('#line 123 "myComment"');
     const parsed = parser.parseProgram();
     expect(parser.hasErrors).toBe(false);
     expect(parsed).not.toBeNull();
@@ -201,7 +201,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines[0].type === "LineDirective").toBe(true);
     const lineDir = (parsed.assemblyLines[0] as unknown) as LineDirective;
     expect(lineDir.lineNumber.type === "IntegerLiteral").toBe(true);
-    expect(lineDir.lineComment).toBe("myComment");
+    expect(lineDir.filename).toBe("myComment");
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(21);
@@ -226,7 +226,7 @@ describe("Parser - directives", () => {
     expect(parsed.assemblyLines[0].type === "LineDirective").toBe(true);
     const lineDir = (parsed.assemblyLines[0] as unknown) as LineDirective;
     expect(lineDir.lineNumber.type === "IntegerLiteral").toBe(true);
-    expect(lineDir.lineComment).toBeNull();
+    expect(lineDir.filename).toBeNull();
     const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
     expect(line.startPosition).toBe(0);
     expect(line.endPosition).toBe(9);
