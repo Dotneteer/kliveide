@@ -949,6 +949,11 @@ export class SpectrumEngine {
       this.spectrum.api.setSP(spValue - 2);
     }
 
+    // --- Clear the screen before run
+    for (let i = 0x4000; i < 0x5800; i++) {
+      this.spectrum.writeMemory(i, 0x00);
+    }
+
     if (debug) {
       await this.startDebug();
     } else {

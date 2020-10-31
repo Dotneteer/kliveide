@@ -70,6 +70,7 @@ describe("Parser - expression literals", () => {
   });
 
   const hexadecimalLiterals = [
+    { source: "0Bh", expected: 0x0b },
     { source: "#0", expected: 0 },
     { source: "#1", expected: 1 },
     { source: "#9", expected: 9 },

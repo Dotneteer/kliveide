@@ -1586,7 +1586,10 @@ function isIdContinuation(ch: string): boolean {
  *
  */
 function isBinarySuffix(ch: string | null, ra: string | null): boolean {
-  return (ch === "b" || ch === "B") && (!ra || !isHexadecimalDigit(ra));
+  return (
+    (ch === "b" || ch === "B") &&
+    (!ra || (!isHexadecimalDigit(ra) && ra !== "h" && ra !== "H"))
+  );
 }
 
 /**
