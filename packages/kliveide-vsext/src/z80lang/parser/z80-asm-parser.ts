@@ -271,7 +271,10 @@ export class Z80AsmParser {
     }
 
     const mainToken = this.tokens.peek();
-    if (mainToken.type === TokenType.NewLine || mainToken.type === TokenType.Eof) {
+    if (
+      mainToken.type === TokenType.NewLine ||
+      mainToken.type === TokenType.Eof
+    ) {
       asmLine = <LabelOnlyLine>{
         type: "LabelOnlyLine",
         label,
@@ -1111,21 +1114,19 @@ export class Z80AsmParser {
       const expr = parser.getExpression();
 
       let stringValue: string | null = null;
-      let token = parser.skipToken(TokenType.Comma);
-      if (token) {
-        token = parser.skipToken(TokenType.StringLiteral);
-        if (token) {
-          const literal = parser.parseStringLiteral(token.text);
-          stringValue = literal.value;
-        } else {
-          parser.reportError("Z0108");
-          return null;
-        }
+      let token = parser.tokens.peek();
+      if (token.type === TokenType.StringLiteral) {
+        const literal = parser.parseStringLiteral(token.text);
+        parser.tokens.get();
+        stringValue = literal.value;
+      } else if (token.type !== TokenType.NewLine && token.type !== TokenType.Eof) {
+        parser.reportError("Z0108");
+        return null;
       }
       return <LineDirective>{
         type: "LineDirective",
         lineNumber: expr,
-        lineComment: stringValue,
+        filename: stringValue,
       };
     }
   }

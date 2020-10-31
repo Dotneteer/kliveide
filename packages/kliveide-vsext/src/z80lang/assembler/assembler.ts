@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { readTextFile } from "../../utils/file-utils";
 
 import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
 import { InputStream } from "../parser/input-stream";
@@ -214,7 +215,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @returns Output of the compilation
    */
   compileFile(filename: string, options?: AssemblerOptions): AssemblerOutput {
-    const sourceText = readSourceFile(filename);
+    const sourceText = readTextFile(filename);
     return this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
 
@@ -677,7 +678,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Read the include file
     let sourceText: string;
     try {
-      sourceText = readSourceFile(filename);
+      sourceText = readTextFile(filename);
     } catch (err) {
       this.reportAssemblyError(
         "Z0204",
@@ -6180,17 +6181,4 @@ function isByteEmittingPragma(asmLine: Z80AssemblyLine): boolean {
     default:
       return false;
   }
-}
-
-/**
- * Reads the source code text of the specified file
- * @param filename File name
- * @param Handles UTF-8 with and without BOM header
- */
-function readSourceFile(filename: string): string {
-  const sourceText = fs.readFileSync(filename, "utf8");
-  if (sourceText.length < 4) {
-    return sourceText;
-  }
-  return sourceText.charCodeAt(0) >= 0xbf00 ? sourceText.substr(1) : sourceText;
 }

@@ -42,6 +42,82 @@
           "type": "string",
           "default": "tape",
           "description": "The folder for SAVEd files"
+        },
+        "kliveIde.zxbExecutablePath": {
+          "type": "string",
+          "default": "",
+          "description": "The full path to the ZXB executable"
+        },
+        "kliveIde.zxbOptimizationLevel": {
+          "type": "number",
+          "default": 2,
+          "description": "The optimization level to use with the --optimize option of ZXB",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "kliveIde.zxbMachineCodeOrigin": {
+          "type": "number",
+          "default": 32768,
+          "description": "The machine code origin value to use with the --org option of ZXB",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "kliveIde.zxbSinclair": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --sinclair option of ZXB"
+        },
+        "kliveIde.zxbOneAsArrayBaseIndex": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --array-base option of ZXB"
+        },
+        "kliveIde.zxbOneAsStringBaseIndex": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --string-base option of ZXB"
+        },
+        "kliveIde.zxbHeapSize": {
+          "type": "number",
+          "default": 4096,
+          "description": "The --heap-size option of ZXB",
+          "minimum": 0,
+          "maximum": 49152
+        },
+        "kliveIde.zxbDebugMemory": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --debug-memory option of ZXB"
+        },
+        "kliveIde.zxbDebugArray": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --debug-array option of ZXB"
+        },
+        "kliveIde.zxbEnableBreak": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --enable-break option of ZXB"
+        },
+        "kliveIde.zxbExplicitVariables": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --explicit option of ZXB"
+        },
+        "kliveIde.zxbStrictBoolean": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --strict-bool option of ZXB"
+        },
+        "kliveIde.zxbStrictMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "The --strict option of ZXB"
+        },
+        "kliveIde.zxbStoreGeneratedAsm": {
+          "type": "boolean",
+          "default": false,
+          "description": "When compiling a ZX BASIC files, store the generated .z80asm file with the source."
         }
       }
     },
@@ -142,22 +218,22 @@
         },
         {
           "command": "kliveide.compileCode",
-          "when": "resourceExtname == .z80asm",
+          "when": "resourceExtname == .z80asm || resourceExtname == .zxbas || resourceExtname == .bor || resourceExtname == .zxb",
           "group": "navigation@1"
         },
         {
           "command": "kliveide.injectCode",
-          "when": "resourceExtname == .z80asm",
+          "when": "resourceExtname == .z80asm || resourceExtname == .zxbas || resourceExtname == .bor || resourceExtname == .zxb",
           "group": "navigation@2"
         },
         {
           "command": "kliveide.debugCode",
-          "when": "resourceExtname == .z80asm",
+          "when": "resourceExtname == .z80asm || resourceExtname == .zxbas || resourceExtname == .bor || resourceExtname == .zxb",
           "group": "navigation@3"
         },
         {
           "command": "kliveide.runCode",
-          "when": "resourceExtname == .z80asm",
+          "when": "resourceExtname == .z80asm || resourceExtname == .zxbas || resourceExtname == .bor || resourceExtname == .zxb",
           "group": "navigation@4"
         }
       ]
@@ -209,13 +285,85 @@
           "Z80 Assembly"
         ],
         "configuration": "./src/z80lang/z80asm-configuration.json"
+      },
+      {
+        "id": "zxbasic",
+        "extensions": [
+          ".zxbas",
+          ".bor",
+          ".zxb"
+        ],
+        "aliases": [
+          "Boriel's Basic"
+        ],
+        "configuration": "./src/zxblang/zxbas-configuration.json"
       }
     ],
     "grammars": [
       {
         "language": "z80asm",
-        "scopeName": "source.asm.klivez80",
+        "scopeName": "source.z80asm.klive",
         "path": "./src/z80lang/klivez80.tmGrammar.json"
+      },
+      {
+        "language": "zxbasic",
+        "scopeName": "source.zxbas.klive",
+        "path": "./src/zxblang/klivezxb.tmGrammar.json",
+        "embeddedLanguages": {
+          "source.z80asm.klive": "z80asm"
+        }
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "z80asm"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "klive-z80",
+        "label": "Klive Z80 Debugger",
+        "program": "./out/z80lang/debugger/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to a text file.",
+                "default": "${file}"
+              },
+              "trace": {
+                "type": "boolean",
+                "description": "Enable logging of the Debug Adapter Protocol.",
+                "default": true
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "klive-z80",
+            "request": "launch",
+            "name": "Debug Z80 Code",
+            "program": "${file}"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Klive Z80: Launch",
+            "description": "A new configuration for debugging the current .z80asm file.",
+            "body": {
+              "type": "klive-z80",
+              "request": "launch",
+              "name": "Debug Z80 Code",
+              "program": "^\"\\${file}/\""
+            }
+          }
+        ]
       }
     ]
   },
@@ -255,6 +403,7 @@
     "ts-mocha": "^7.0.0",
     "ts-node": "^8.10.2",
     "typescript": "^3.8.3",
+    "vscode-debugadapter-testsupport": "^1.42.0",
     "vscode-test": "^1.3.0",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12"
@@ -263,6 +412,7 @@
     "chalk": "^4.1.0",
     "node-fetch": "^2.6.1",
     "node-ipc": "^9.1.1",
+    "vscode-debugadapter": "^1.42.1",
     "vscode-languageclient": "^6.1.3",
     "vscode-languageserver": "^6.1.1",
     "vscode-languageserver-textdocument": "^1.0.1"

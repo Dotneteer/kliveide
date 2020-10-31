@@ -1,0 +1,77 @@
+{
+  "scopeName": "source.zxbas.klive",
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ZX-Basic",
+  "patterns": [
+    {
+      "begin": "(^\\s*(?i:asm)\\s*$)",
+      "beginCaptures": {
+        "1": { "name": "entity.name.type.class.klive" }
+      },
+      "end": "((?i:end\\s+asm))",
+      "endCaptures": {
+        "1": { "name": "entity.name.type.class.klive" }
+      },
+      "patterns": [
+        {
+          "contentName": "source.z80asm.klive",
+          "begin": "(?=.)",
+          "end": "(?=end)",
+          "patterns": [
+            {
+              "include": "source.z80asm.klive"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keyword.control.zxbasic",
+      "match": "(?i:\\b(end|AS|BEEP|BIN|BORDER|BRIGHT|CAT|CIRCLE|CLEAR|CLOSE#|CLS|CONTINUE|COPY|DATA|DEF FN|DIM|DRAW|ERASE|FLASH|FORMAT|FOR|GO SUB|GO TO|IF|INK|INPUT|INVERSE|LET|LIST|LLIST|LOAD|LPRINT|MERGE|MOVE|NEW|NEXT|ON|OUT|OVER|PAPER|PAUSE|PLOT|POKE|PRINT|RANDOMIZE|READ|RESTORE|RETURN|RUN|SAVE|VERIFY|AT|LINE|STEP|TAB|THEN|TO|STOP|DO|ELSE|ELSEIF|EXIT|FUNCTION|GOTO|GOSUB|LOOP|WEND|WHILE|BOLD|ByRef|ByVal|CONST|DECLARE|FastCall|ITALIC|StdCall|SUB|UNTIL|BANK|LAYER|PALETTE|SPRITE|TILE|TO|REMOUNT|PWD|CD|MKDIR|RMDIR)\\b)"
+    },
+    {
+      "name": "keyword.operator.logical.zxbasic",
+      "match": "(?i:\\b(AND|NOT|OR|bAND|bNOT|bOR|bXOR|MOD|SHL|SHR|XOR)\\b)"
+    },
+    {
+      "name": "entity.name.function.zxbasic",
+      "match": "(?i:\\b(ABS|ACS|ASN|ATN|ATTR|CHR$|CODE|COS|EXP|FN|INKEY$|INT|IN|LEN|LN|PEEK|PI|POINT|RND|SCREEN$|SGN|SIN|SQR|STR$|TAN|USR|VAL$|VAL|ASC|CAST|CHR|CSRLIN|HEX|HEX16|GetKey|MultiKeys|GetKeyScanCode|LBOUND|LCase|STR|POS|SCREEN|UCase)\\b)"
+    },
+    {
+      "name": "entity.name.type.zxbasic",
+      "match": "(?i:\\b(byte|ubyte|integer|uinteger|long|ulong|string|fixed|float)\\b)"
+    },
+    {
+      "name": "comment.line.zxbasic",
+      "match": "(?i:(\\bREM\\b|').*)"
+    },
+    {
+      "name": "comment.block.zxbasic",
+      "begin": "/'",
+      "end": "'/"
+    },
+    {
+      "name": "variable.name.zxbasic",
+      "match": "\\b[A-Za-z](\\$|[A-Za-z0-9]*)"
+    },
+    {
+      "name": "constant.numeric.zxbasic",
+      "match": "-?\\b((([0-9]+\\.?[0-9]*)|(\\.[0-9]+))((e|E)(\\+|-)?[0-9]+)?)(L|l|UL|ul|u|U|F|f)?|(\\$[a-zA-Z0-9]+)|(@[0|1]+)\\b"
+    },
+    {
+      "match": "&|\\*|\\-|\\+|=|<>|<|>|\\|\\^|<<|>>|~",
+      "name": "keyword.operator.arithmetic.zxbasic"
+    },
+    {
+      "name": "string.quoted.double.zxbasic",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.zxbasic",
+          "match": "\\\\."
+        }
+      ]
+    }
+  ]
+}

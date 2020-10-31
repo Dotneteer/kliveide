@@ -1,3 +1,5 @@
+import * as path from "path";
+import * as fs from "fs";
 import { Z80Assembler } from "../z80lang/assembler/assembler";
 import {
   AssemblerOutput,
@@ -17,6 +19,9 @@ import {
   getLastMachineType,
 } from "../emulator/notifier";
 import { CodeToInject, communicatorInstance } from "../emulator/communicator";
+import { createZxbCommandLineArgs, execZxb } from "../zxblang/compiler/zxb-runner";
+import { obtainInlineOptions } from "../zxblang/compiler/utils";
+import { readTextFile } from "../utils/file-utils";
 
 let codeInjected: EventEmitter<CodeToInject> = new EventEmitter<CodeToInject>();
 
@@ -35,13 +40,34 @@ export async function compileCodeCommand(
   uri: Uri,
   outChannel: OutputChannel
 ): Promise<AssemblerOutput | null> {
+  // --- Prepare compilation
   const start = Date.now();
   const filename = uri.fsPath;
   outChannel.appendLine(`Compiling ${filename}...`);
-  const compiler = new Z80Assembler();
-  let compilationOutput: AssemblerOutput | null = compiler.compileFile(
-    uri.fsPath
-  );
+
+  // --- Do the compilation
+  let compilationOutput: AssemblerOutput | null = null;
+  const fileExt = path.extname(filename);
+  switch (fileExt) {
+    case ".z80asm":
+      const compiler = new Z80Assembler();
+      compilationOutput = compiler.compileFile(filename);
+      break;
+
+    case ".zxbas":
+    case ".bor":
+    case ".zxb":
+      // --- Calculate the output file name
+      const outputName = filename + ".z80asm";
+      const source = readTextFile(filename);
+      const options = obtainInlineOptions(source);
+      const cmdArgs = createZxbCommandLineArgs(filename, outputName, options);
+      execZxb(cmdArgs);
+      return;
+      break;
+  }
+
+  // --- Evaluate the result of compilation
   const compilationTime = Date.now() - start;
   if (compilationOutput.errorCount > 0) {
     outChannel.appendLine(`Compilation failed.`);
