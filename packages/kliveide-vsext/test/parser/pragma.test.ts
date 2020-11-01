@@ -1229,7 +1229,7 @@ describe("Parser - pragmas", () => {
       expect(parsed.assemblyLines.length).toBe(1);
       expect(parsed.assemblyLines[0].type === "InjectOptPragma").toBe(true);
       const prg = (parsed.assemblyLines[0] as unknown) as InjectOptPragma;
-      expect(prg.identifier.name).toBe("option");
+      expect(prg.identifiers[0].name).toBe("option");
       const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
       expect(line.startPosition).toBe(0);
       expect(line.endPosition).toBe(pragma.length + 7);
@@ -1243,6 +1243,25 @@ describe("Parser - pragmas", () => {
       parser.parseProgram();
       expect(parser.hasErrors).toBe(true);
       expect(parser.errors[0].code === "Z0107").toBe(true);
+    });
+
+    it(`${pragma} #3`, () => {
+      const parser = createParser(pragma + " option, other");
+      const parsed = parser.parseProgram();
+      expect(parser.hasErrors).toBe(false);
+      expect(parsed).not.toBeNull();
+      expect(parsed.assemblyLines.length).toBe(1);
+      expect(parsed.assemblyLines[0].type === "InjectOptPragma").toBe(true);
+      const prg = (parsed.assemblyLines[0] as unknown) as InjectOptPragma;
+      expect(prg.identifiers.length).toBe(2);
+      expect(prg.identifiers[0].name).toBe("option");
+      expect(prg.identifiers[1].name).toBe("other");
+      const line = (parsed.assemblyLines[0] as unknown) as Z80AssemblyLine;
+      expect(line.startPosition).toBe(0);
+      expect(line.endPosition).toBe(pragma.length + 14);
+      expect(line.line).toBe(1);
+      expect(line.startColumn).toBe(0);
+      expect(line.endColumn).toBe(pragma.length + 14);
     });
   });
 

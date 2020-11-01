@@ -156,7 +156,7 @@ export async function injectCodeCommand(
   const codeToInject: CodeToInject = {
     model: modelTypeToMachineType(compilerOutput.modelType),
     entryAddress: compilerOutput.entryAddress,
-    subroutine: compilerOutput.sourceType === "zxbasic",
+    subroutine: compilerOutput.sourceType === "zxbasic" || compilerOutput.injectOptions["subroutine"],
     segments: compilerOutput.segments.map((s) => ({
       startAddress: s.startAddress,
       bank: s.bank,
