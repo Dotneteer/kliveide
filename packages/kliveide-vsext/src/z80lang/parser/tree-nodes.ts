@@ -1248,7 +1248,7 @@ export interface InjectOptPragma extends PartialZ80AssemblyLine {
   /**
    * Option identifier
    */
-  identifier: IdentifierNode;
+  identifiers: IdentifierNode[];
 }
 
 // ============================================================================

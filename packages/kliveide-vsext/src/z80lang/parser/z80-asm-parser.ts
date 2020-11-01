@@ -732,10 +732,10 @@ export class Z80AsmParser {
           type: "ZxBasicPragma",
         };
       case TokenType.InjectOptPragma:
-        const optId = this.getIdentifier();
+        const optIds = this.getIdentifierNodeList(true);
         return <InjectOptPragma>{
           type: "InjectOptPragma",
-          identifier: optId,
+          identifiers: optIds,
         };
     }
     return null;
@@ -2811,7 +2811,7 @@ export class Z80AsmParser {
   /**
    * Gets a list of identifiers
    */
-  private getIdentifierNodeList(): IdentifierNode[] {
+  private getIdentifierNodeList(needsOne: boolean = false): IdentifierNode[] {
     const expressions: IdentifierNode[] = [];
     if (this.tokens.peek().type === TokenType.Identifier) {
       const first = this.getIdentifier();
@@ -2824,6 +2824,9 @@ export class Z80AsmParser {
           expressions.push(next);
         }
       }
+    } else if (needsOne) {
+      this.reportError("Z0107");
+      return;
     }
     return expressions;
   }

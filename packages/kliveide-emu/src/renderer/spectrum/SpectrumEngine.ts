@@ -868,6 +868,7 @@ export class SpectrumEngine {
 
     // --- Start the machine and run it while it reaches the injection point
     const machine = this;
+    let mainExec = SP48_MAIN_ENTRY;
     switch (this.spectrum.type) {
       case 0:
         // --- ZX Spectrum 48
@@ -895,6 +896,7 @@ export class SpectrumEngine {
         );
         await waitForTerminationPoint();
         if (codeToInject.model !== "48") {
+          mainExec = SP128_EDITOR;
           await this.run(
             new ExecuteCycleOptions(
               EmulationMode.UntilExecutionPoint,
@@ -943,15 +945,16 @@ export class SpectrumEngine {
     // --- Handle subroutine calls
     if (codeToInject.subroutine) {
       const spValue = this.spectrum.getMachineState().sp;
-      const mainExec = SP48_MAIN_ENTRY;
       this.spectrum.writeMemory(spValue - 1, mainExec >> 8);
       this.spectrum.writeMemory(spValue - 2, mainExec & 0xff);
       this.spectrum.api.setSP(spValue - 2);
     }
 
-    // --- Clear the screen before run
-    for (let i = 0x4000; i < 0x5800; i++) {
-      this.spectrum.writeMemory(i, 0x00);
+    // --- Clear the screen before run on ZX Spectrum 48
+    if (!this.spectrum.type || codeToInject.model === "48") {
+      for (let i = 0x4000; i < 0x5800; i++) {
+        this.spectrum.writeMemory(i, 0x00);
+      }
     }
 
     if (debug) {

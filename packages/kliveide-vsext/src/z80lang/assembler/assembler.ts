@@ -2272,8 +2272,9 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    */
   processInjectOptPragma(pragma: InjectOptPragma): void {
-    // --- Obtain the file name
-    this._output.injectOptions[pragma.identifier.name] = true;
+    for (const id of pragma.identifiers) {
+      this._output.injectOptions[id.name.toLowerCase()] = true;
+    }
   }
 
   /**
