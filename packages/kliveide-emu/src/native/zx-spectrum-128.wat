@@ -5,6 +5,8 @@
 ;; $addr: port address
 ;; Returns: value read from port
 (func $readPortSp128 (param $addr i32) (result i32)
+  (local $tactAddr i32)
+  (local $phase i32)
   (call $applyIOContentionDelay (get_local $addr))
   (i32.and (get_local $addr) (i32.const 0x0001))
   (i32.eq (i32.const 0))
@@ -30,7 +32,32 @@
     return
   end
 
-  ;; TODO: Implement floating port handling
+  ;; Floating port handling
+  ;; Get rendering table entry of the current ULA tact
+  (i32.add
+    (get_global $RENDERING_TACT_TABLE)
+    (i32.mul 
+      (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
+      (i32.const 5)
+    )
+  )
+  tee_local $tactAddr
+
+  ;; Check phase
+  i32.load8_u tee_local $phase
+  (i32.and (i32.const 0x03))
+  (i32.eq (i32.const 0x02))
+  if 
+    ;; Fetch the attribute value of the current tact
+    (i32.add 
+      (get_global $memoryScreenOffset)
+      (i32.load16_u offset=3 (get_local $tactAddr))
+    )
+    i32.load8_u
+    return
+  end
+
+  ;; Return the default port value
   i32.const 0xff
 )
 
