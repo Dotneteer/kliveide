@@ -21,7 +21,7 @@ import {
 import { CodeToInject, communicatorInstance } from "../emulator/communicator";
 import {
   createZxbCommandLineArgs,
-  execZxb,
+  execZxbc,
 } from "../zxblang/compiler/zxb-runner";
 import { obtainInlineOptions } from "../zxblang/compiler/utils";
 import { readTextFile } from "../utils/file-utils";
@@ -62,7 +62,7 @@ export async function compileCodeCommand(
       const cmdArgs = createZxbCommandLineArgs(filename, outputName, options);
       const zxbStart = Date.now();
       try {
-        await execZxb(cmdArgs, outChannel);
+        await execZxbc(cmdArgs, outChannel);
       } catch (err) {
         outChannel.appendLine(err);
         break;

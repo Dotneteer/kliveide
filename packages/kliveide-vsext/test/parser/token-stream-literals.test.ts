@@ -170,8 +170,6 @@ describe("Parser - token: literals", () => {
     testToken("0e-", TokenType.Unknown);
     testToken("911.356e+", TokenType.Unknown);
     testToken("121.467e-", TokenType.Unknown);
-    testToken(".e+0", TokenType.Unknown, ".e");
-    testToken(".e-0", TokenType.Unknown, ".e");
   });
 
   it("get: character literal #1", () => {
