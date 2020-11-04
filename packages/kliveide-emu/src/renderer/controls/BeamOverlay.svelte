@@ -3,7 +3,7 @@
   // Displays the beam position overlay
 
   import { onMount, tick } from "svelte";
-  import { getSpectrumEngine } from "../spectrum-loader";
+  import { getSpectrumEngine } from "../machine-loader";
 
   export let panelRectangle;
   export let screenRectangle;

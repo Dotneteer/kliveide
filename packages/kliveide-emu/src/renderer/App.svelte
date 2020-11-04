@@ -11,7 +11,7 @@
   import { themeStore } from "./stores/theme-store";
   import { darkTheme } from "./themes/dark-theme";
 
-  import { getSpectrumEngine, changeSpectrumEngine } from "./spectrum-loader";
+  import { getSpectrumEngine, changeSpectrumEngine } from "./machine-loader";
   import { createRendererProcessStateAware } from "./rendererProcessStore";
   import { emulatorSetupTypeAction } from "../shared/state/redux-emulator-state";
 
