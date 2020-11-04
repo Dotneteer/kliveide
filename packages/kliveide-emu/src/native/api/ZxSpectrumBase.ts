@@ -1,29 +1,32 @@
 import { MachineApi } from "./api";
 import {
-  SpectrumMachineState,
+  MachineState,
   MemoryContentionType,
   EmulationMode,
   DebugStepMode,
   ExecutionCompletionReason,
   ExecuteCycleOptions,
+  SpectrumMachineStateBase,
 } from "./machine-state";
 import { MemoryHelper } from "./memory-helpers";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
-import { REG_AREA_INDEX, STATE_TRANSFER_BUFF, COLORIZATION_BUFFER, PAGE_INDEX_16 } from "./memory-map";
+import {
+  REG_AREA_INDEX,
+  STATE_TRANSFER_BUFF,
+  COLORIZATION_BUFFER,
+  PAGE_INDEX_16,
+} from "./memory-map";
 
 /**
- * This class is intended to be the base class of all ZX Spectrum
- * machine types
+ * This class is intended to be the base class of all Z80 machine
  */
-export abstract class ZxSpectrumBase {
+export abstract class Z80MachineBase {
   /**
-   * Creates a new instance of the ZX Spectrum machine
+   * Creates a new instance of the Z80 machine
    * @param api Machine API to access WA
    * @param type Machine type
    */
-  constructor(public api: MachineApi, public type: number) {
-    api.initZxSpectrum(type);
-  }
+  constructor(public api: MachineApi, public type: number) {}
 
   /**
    * Turns on the machine
@@ -37,6 +40,84 @@ export abstract class ZxSpectrumBase {
    */
   reset(): void {
     this.api.resetMachine();
+  }
+
+  /**
+   * Override this method to represent the appropriate machine state
+   */
+  abstract createMachineState(): MachineState;
+
+  /**
+   * Initializes the machine with the specified code
+   * @param runMode Machine run mode
+   * @param code Intial code
+   */
+  injectCode(
+    code: number[],
+    codeAddress = 0x8000,
+    startAddress = 0x8000
+  ): void {
+    for (let i = 0; i < code.length; i++) {
+      this.writeMemory(codeAddress++, code[i]);
+    }
+
+    let ptr = codeAddress;
+    while (ptr < 0x10000) {
+      this.writeMemory(ptr++, 0);
+    }
+
+    // --- Init code execution
+    this.reset();
+    this.api.setPC(startAddress);
+  }
+
+  /**
+   * Reads a byte from the memory
+   * @param addr Memory address
+   */
+  abstract readMemory(addr: number): number;
+
+  /**
+   * Writes a byte into the memory
+   * @param addr Memory address
+   * @param value Value to write
+   */
+  abstract writeMemory(addr: number, value: number): void;
+}
+
+/**
+ * Represents a Z80 machine that uses execution frames (generally bound to screen rendering)
+ */
+export abstract class FrameBoundZ80Machine extends Z80MachineBase {
+  /**
+   * Creates a new instance of the frame-bound Z80 machine
+   * @param api Machine API to access WA
+   * @param type Machine type
+   */
+  constructor(public api: MachineApi, public type: number) {
+    super(api, type);
+  }
+
+  /**
+   * Executes the machine cycle
+   * @param options Execution options
+   */
+  abstract executeCycle(options: ExecuteCycleOptions): void;
+}
+
+/**
+ * This class is intended to be the base class of all ZX Spectrum
+ * machine types
+ */
+export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
+  /**
+   * Creates a new instance of the ZX Spectrum machine
+   * @param api Machine API to access WA
+   * @param type Machine type
+   */
+  constructor(public api: MachineApi, public type: number) {
+    super(api, type);
+    api.initZxSpectrum(type);
   }
 
   /**
@@ -58,8 +139,8 @@ export abstract class ZxSpectrumBase {
   /**
    * Gets the current state of the ZX Spectrum machine
    */
-  getMachineState(): SpectrumMachineState {
-    const s = this.createMachineState();
+  getMachineState(): SpectrumMachineStateBase {
+    const s = this.createMachineState() as SpectrumMachineStateBase;
     this.api.getMachineState();
 
     // --- Get register data from the memory
@@ -238,7 +319,7 @@ export abstract class ZxSpectrumBase {
     const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
     for (let i = 0; i < 4; i++) {
       const offs = i * 0x4000;
-      const pageStart = mh.readUint32(i*6);
+      const pageStart = mh.readUint32(i * 6);
       const source = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
       for (let j = 0; j < 0x4000; j++) {
         result[offs + j] = source[j];
@@ -246,11 +327,6 @@ export abstract class ZxSpectrumBase {
     }
     return result;
   }
-
-  /**
-   * Override this method to represent the appropriate machine state
-   */
-  abstract createMachineState(): SpectrumMachineState;
 
   /**
    * Gets the memory address of the first ROM page of the machine
@@ -261,7 +337,7 @@ export abstract class ZxSpectrumBase {
    * Executes the machine cycle
    * @param options Execution options
    */
-  executeCycle(options: ExecuteCycleOptions) {
+  executeCycle(options: ExecuteCycleOptions): void {
     // --- Copy execution options
     const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
     mh.writeByte(0, options.emulationMode);
@@ -297,30 +373,6 @@ export abstract class ZxSpectrumBase {
   }
 
   /**
-   * Initializes the machine with the specified code
-   * @param runMode Machine run mode
-   * @param code Intial code
-   */
-  injectCode(
-    code: number[],
-    codeAddress = 0x8000,
-    startAddress = 0x8000
-  ): void {
-    for (let i = 0; i < code.length; i++) {
-      this.writeMemory(codeAddress++, code[i]);
-    }
-
-    let ptr = codeAddress;
-    while (ptr < 0x10000) {
-      this.writeMemory(ptr++, 0);
-    }
-
-    // --- Init code execution
-    this.reset();
-    this.api.setPC(startAddress);
-  }
-
-  /**
    * Reads a byte from the memory
    * @param addr Memory address
    */
@@ -347,14 +399,11 @@ export abstract class ZxSpectrumBase {
    * Gets the screen data of the ZX Spectrum machine
    */
   getScreenData(): Uint32Array {
-    const state = this.getMachineState();
+    const state = this.getMachineState() as SpectrumMachineStateBase;
     const buffer = this.api.memory.buffer as ArrayBuffer;
     const length = state.screenLines * state.screenWidth;
     const screenData = new Uint32Array(
-      buffer.slice(
-        COLORIZATION_BUFFER,
-        COLORIZATION_BUFFER + 4*length
-      )
+      buffer.slice(COLORIZATION_BUFFER, COLORIZATION_BUFFER + 4 * length)
     );
     return screenData;
   }

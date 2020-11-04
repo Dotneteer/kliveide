@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import Sp48Key from "./Sp48Key.svelte";
 
-  import { getSpectrumEngine } from "../spectrum-loader";
+  import { getSpectrumEngine } from "../machine-loader";
 
   export let clientWidth;
   export let clientHeight;

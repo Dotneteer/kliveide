@@ -9,7 +9,7 @@ import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import {
   ExecuteCycleOptions,
   ExecutionCompletionReason,
-  SpectrumMachineState,
+  MachineState,
   EmulationMode,
   DebugStepMode,
   SpectrumMachineStateBase,
@@ -75,7 +75,7 @@ export class SpectrumEngine {
   private _completionTask: Promise<void> | null = null;
 
   // --- The last loaded machine state
-  private _loadedState: SpectrumMachineState;
+  private _loadedState: SpectrumMachineStateBase;
 
   // --- Keyboard emulation
   private _keyStrokeQueue: EmulatedKeyStroke[] = [];
@@ -241,7 +241,7 @@ export class SpectrumEngine {
   /**
    * Gets the state of the ZX Spectrum machine
    */
-  getMachineState(): SpectrumMachineState {
+  getMachineState(): MachineState {
     return this._loadedState;
   }
 
@@ -522,7 +522,7 @@ export class SpectrumEngine {
     machine: SpectrumEngine,
     options: ExecuteCycleOptions
   ): Promise<void> {
-    const state = machine.spectrum.getMachineState();
+    const state = machine.spectrum.getMachineState() as SpectrumMachineStateBase;
     // --- Store the start time of the frame
     //const clockFreq = state.baseClockFrequency * state.clockMultiplier;
     const nextFrameGap = (state.tactsInFrame / state.baseClockFrequency) * 1000;

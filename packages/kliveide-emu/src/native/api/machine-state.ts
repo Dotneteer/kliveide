@@ -1,12 +1,14 @@
 import { Z80CpuState } from "./cpu-helpers";
 
+export abstract class Z80MachineStateBase extends Z80CpuState {
+  // --- Type discriminator
+  type: MachineState["type"];
+}
+
 /**
  * Represents the state of the ZX Spectrum machine
  */
-export abstract class SpectrumMachineStateBase extends Z80CpuState {
-  // --- Type discriminator
-  type: SpectrumMachineState["type"];
-
+export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
   // --- CPU configuration
   baseClockFrequency: number;
   clockMultiplier: number;
@@ -142,9 +144,10 @@ export abstract class SpectrumMachineStateBase extends Z80CpuState {
 /**
  * This type represents ZX Spectrum machine states
  */
-export type SpectrumMachineState =
+export type MachineState =
   | Spectrum48MachineState
-  | Spectrum128MachineState;
+  | Spectrum128MachineState
+  | CambridgeZ88MachineState;
 
 /**
  * Represents the state of a ZX Spectrum 48 machine
@@ -158,6 +161,13 @@ export class Spectrum48MachineState extends SpectrumMachineStateBase {
  */
 export class Spectrum128MachineState extends SpectrumMachineStateBase {
   type: "128";
+}
+
+/**
+ * Represents the state of a Cambridge Z88 machine
+ */
+export class CambridgeZ88MachineState extends Z80MachineStateBase {
+  type: "cz88";
 }
 
 /**

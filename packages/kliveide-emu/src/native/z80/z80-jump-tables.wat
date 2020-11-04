@@ -12,6 +12,7 @@
 ;; 0x02: ZX Spectrum +3
 ;; 0x03: ZX Spectrum Next
 ;; 0x04: Z80 Test machine
+;; 0x05: Cambridge Z88 machine
 (global $MACHINE_TYPE (mut i32) (i32.const 0x00))
 
 ;; Number of dispatchable functions per machine types
@@ -21,32 +22,32 @@
 ;; Jump table start indices
 
 ;; Z80 standard instructions
-(global $STANDARD_JT i32 (i32.const 100))
+(global $STANDARD_JT i32 (i32.const 120))
 
 ;; Z80 indexed instructions
-(global $INDEXED_JT i32 (i32.const 356))
+(global $INDEXED_JT i32 (i32.const 376))
 
 ;; Z80 extended instructions
-(global $EXTENDED_JT i32 (i32.const 612))
+(global $EXTENDED_JT i32 (i32.const 632))
 
 ;; Z80 bit instructions
-(global $BIT_JT i32 (i32.const 868))
+(global $BIT_JT i32 (i32.const 888))
 
 ;; Z80 indexed bit instructions
-(global $INDEXED_BIT_JT i32 (i32.const 1124))
+(global $INDEXED_BIT_JT i32 (i32.const 1144))
 
 ;; ALU bit manipulation operations table
-(global $BOP_JT i32 (i32.const 1380))
+(global $BOP_JT i32 (i32.const 1400))
 
 ;; This table stores all dispatchable functions
-;; 100: 5 machine types (20 function for each)
+;; 120: 6 machine types (20 function for each)
 ;; 256: Standard operations
 ;; 256: Indexed operations
 ;; 256: Extended operations
 ;; 256: Bit operations
 ;; 256: Indexed bit operations
 ;; 8: ALU bit operations
-(table $dispatch 1388 anyfunc)
+(table $dispatch 1408 anyfunc)
 
 ;; ----------------------------------------------------------------------------
 ;; Table of machine-type specific functions
@@ -172,10 +173,32 @@
   $NOOP                         ;; 17
   $NOOP                         ;; 18
   $NOOP                         ;; 19
+
+  ;; Index 100: Cambridge Z88 Machine (type #5)
+  $readCz88Memory               ;; 0
+  $writeCz88Memory              ;; 1
+  $readPortCz88                 ;; 2
+  $writePortCz88                ;; 3
+  $NOOP                         ;; 4
+  $NOOP                         ;; 5
+  $setupCz88                    ;; 6
+  $getCz88MachineState          ;; 7
+  $NOOP                         ;; 8
+  $NOOP                         ;; 9
+  $NOOP                         ;; 10
+  $NOOP                         ;; 11
+  $NOOP                         ;; 12
+  $NOOP                         ;; 13
+  $NOOP                         ;; 14
+  $NOOP                         ;; 15
+  $NOOP                         ;; 16
+  $NOOP                         ;; 17
+  $NOOP                         ;; 18
+  $NOOP                         ;; 19
 )
 
 ;; Table of standard instructions
-(elem (i32.const 100)
+(elem (i32.const 120)
   ;; 0x00-0x07
   $NOOP     $LdBCNN   $LdBCiA   $IncBC    $IncB     $DecB     $LdBN     $Rlca
   ;; 0x08-0x0f
@@ -243,7 +266,7 @@
 )
 
 ;; Table of indexed instructions
-(elem (i32.const 356)
+(elem (i32.const 376)
   ;; 0x00-0x07
   $NOOP     $LdBCNN   $LdBCiA   $IncBC    $IncB     $DecB     $LdBN     $Rlca
   ;; 0x08-0x0f
@@ -311,7 +334,7 @@
 )
 
 ;; Table of extended instructions
-(elem (i32.const 612)
+(elem (i32.const 632)
   ;; 0x00-0x07
   $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0x08-0x0f
@@ -379,7 +402,7 @@
 )
 
 ;; Table of bit instructions
-(elem (i32.const 868)
+(elem (i32.const 888)
   ;; 0x00-0x07
   $BopQ     $BopQ     $BopQ     $BopQ     $BopQ     $BopQ     $BopHLi   $BopQ
   ;; 0x08-0x0f
@@ -447,7 +470,7 @@
 )
 
 ;; Table of indexed bit instructions
-(elem (i32.const 1124)
+(elem (i32.const 1144)
   ;; 0x00-0x07
   $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ
   ;; 0x08-0x0f
@@ -515,7 +538,7 @@
 )
 
 ;; Table of bit operations
-(elem (i32.const 1380)
+(elem (i32.const 1400)
   $Rlc
   $Rrc
   $Rl

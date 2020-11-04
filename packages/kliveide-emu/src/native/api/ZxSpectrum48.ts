@@ -1,6 +1,6 @@
 import { ZxSpectrumBase } from "./ZxSpectrumBase";
 import { MachineApi } from "./api";
-import { Spectrum48MachineState, SpectrumMachineState } from "./machine-state";
+import { Spectrum48MachineState, MachineState } from "./machine-state";
 import { ROM_48_OFFS } from "./memory-map";
 
 /**
@@ -19,7 +19,7 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
   /**
    * Retrieves a ZX Spectrum 48 machine state object
    */
-  createMachineState(): SpectrumMachineState {
+  createMachineState(): MachineState {
     return new Spectrum48MachineState()
   }
 
