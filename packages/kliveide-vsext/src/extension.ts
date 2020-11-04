@@ -33,6 +33,7 @@ import {
   runCodeCommand,
 } from "./commands/code-related";
 import { initKliveIcons } from "./commands/init-icons";
+import { exportCode } from "./commands/export-code";
 
 let client: LanguageClient;
 
@@ -54,7 +55,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // --- Register extension commands
   subs.push(
-    register("kliveide.initIcons", async() => initKliveIcons(context)),
+    register("kliveide.initIcons", async () => initKliveIcons(context)),
     register("kliveide.startEmu", async () => await startEmulatorCommand()),
     register("kliveide.updateKliveProject", () =>
       updateKliveProjectCommand(context)
@@ -72,7 +73,9 @@ export async function activate(context: vscode.ExtensionContext) {
     register(
       "kliveide.injectCode",
       async (uri: vscode.Uri) =>
-        await executeCodeAction(() => injectCodeCommand(uri, kliveCompilerOutput))
+        await executeCodeAction(() =>
+          injectCodeCommand(uri, kliveCompilerOutput)
+        )
     ),
     register(
       "kliveide.runCode",
@@ -82,8 +85,11 @@ export async function activate(context: vscode.ExtensionContext) {
     register(
       "kliveide.debugCode",
       async (uri: vscode.Uri) =>
-        await executeCodeAction(() => debugCodeCommand(uri, kliveCompilerOutput))
-    )
+        await executeCodeAction(() =>
+          debugCodeCommand(uri, kliveCompilerOutput)
+        )
+    ),
+    register("kliveide.exportCode", async () => await exportCode())
   );
 
   // --- Tree provider to display Z80 registers

@@ -200,6 +200,15 @@
           "light": "assets/icons/run-code.svg",
           "dark": "assets/icons/run-code_dark.svg"
         }
+      },
+      {
+        "command": "kliveide.exportCode",
+        "title": "Export Program",
+        "enablement": "kliveEmuConnected && !codeAction",
+        "icon": {
+          "light": "assets/icons/export.svg",
+          "dark": "assets/icons/export_dark.svg"
+        }
       }
     ],
     "menus": {
@@ -239,6 +248,11 @@
           "command": "kliveide.runCode",
           "when": "resourceExtname == .z80asm || resourceExtname == .zxbas || resourceExtname == .bor || resourceExtname == .zxb",
           "group": "navigation@4"
+        },
+        {
+          "command": "kliveide.exportCode",
+          "when": "resourceExtname == .z80asm || resourceExtname == .zxbas || resourceExtname == .bor || resourceExtname == .zxb",
+          "group": "navigation@5"
         }
       ]
     },
