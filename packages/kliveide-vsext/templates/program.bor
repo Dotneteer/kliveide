@@ -1,0 +1,3 @@
+rem Sample code
+print at 10,5; bright 1; ink 1; "Hello, from Klive IDE!"
+print at 11,5; bright 1; ink 2; "   (Boriel's Basic)   "

@@ -13,11 +13,13 @@ import {
   CODE_FOLDER,
   CODE_FILE,
   JETSET_TAPE,
-  JUNGLE_TAPE,
   PACMAN_TAPE,
   SpectrumConfig,
+  CODE_BAS_FILE,
 } from "../emulator/machine-config";
 import { communicatorInstance } from "../emulator/communicator";
+import { initKliveIcons } from "./init-icons";
+import { getLastConnectedState } from "../emulator/notifier";
 
 /**
  * Creates the basic structure of a Klive project
@@ -115,15 +117,15 @@ export async function updateKliveProjectCommand(
     copyFile(path.join(templateFolder, CODE_FILE), codeFile);
     filesCreated++;
   }
+  const codeBasFile = path.join(codeFolder, CODE_BAS_FILE);
+  if (!fs.existsSync(codeBasFile)) {
+    copyFile(path.join(templateFolder, CODE_BAS_FILE), codeBasFile);
+    filesCreated++;
+  }
 
   const jetSetFile = path.join(tapeFolder, JETSET_TAPE);
   if (!fs.existsSync(jetSetFile)) {
     copyFile(path.join(templateFolder, JETSET_TAPE), jetSetFile);
-    filesCreated++;
-  }
-  const jungleFile = path.join(tapeFolder, JUNGLE_TAPE);
-  if (!fs.existsSync(jungleFile)) {
-    copyFile(path.join(templateFolder, JUNGLE_TAPE), jungleFile);
     filesCreated++;
   }
   const pacManFile = path.join(tapeFolder, PACMAN_TAPE);
@@ -142,8 +144,10 @@ export async function updateKliveProjectCommand(
   }
   vscode.window.showInformationMessage(message);
 
+  await initKliveIcons(context);
+
   // --- Configure the newly created machine from file
-  if (machineFileJustCreated) {
+  if (machineFileJustCreated && getLastConnectedState()) {
     spectrumConfigurationInstance.initialize();
     await communicatorInstance.setMachineType(
       spectrumConfigurationInstance.configuration.type

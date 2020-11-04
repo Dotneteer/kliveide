@@ -32,6 +32,7 @@ import {
   injectCodeCommand,
   runCodeCommand,
 } from "./commands/code-related";
+import { initKliveIcons } from "./commands/init-icons";
 
 let client: LanguageClient;
 
@@ -53,6 +54,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // --- Register extension commands
   subs.push(
+    register("kliveide.initIcons", async() => initKliveIcons(context)),
     register("kliveide.startEmu", async () => await startEmulatorCommand()),
     register("kliveide.updateKliveProject", () =>
       updateKliveProjectCommand(context)

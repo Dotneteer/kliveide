@@ -39,7 +39,7 @@ export function createZxbCommandLineArgs(
     const orgValue = config.get(ZXB_MACHINE_CODE_ORIGIN) as number;
     additional += `--org ${orgValue ?? 0x8000} `;
     const heapSize = config.get(ZXB_HEAP_SIZE) as number;
-    additional += `--heap-size ${heapSize ?? 4096}`;
+    additional += `--heap-size ${heapSize ?? 4096} `;
     const sinclair = config.get(ZXB_SINCLAIR) as boolean;
     additional += sinclair ? "--sinclair " : "";
     const stringBaseOne = config.get(ZXB_ONE_AS_STRING_BASE_INDEX) as boolean;
