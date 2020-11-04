@@ -58,6 +58,21 @@ describe("Assembler - pragmas", () => {
     expect(output.getSymbol("MySymbol").value.value).toBe(200);
   });
 
+  it("equ - label with dot", () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    .__LABEL__.ZXBASIC_USER_DATA_LEN EQU 200
+      nop
+    `;
+
+    const output = compiler.compile(source);
+
+    expect(output.errorCount).toBe(0);
+    expect(output.segments.length).toBe(1);
+    expect(output.getSymbol("__LABEL__.ZXBASIC_USER_DATA_LEN").value.value).toBe(200);
+  });
+
+
   it("equ - fails with duplicated labed", () => {
     codeRaisesError(
       `

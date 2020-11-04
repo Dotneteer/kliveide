@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { exec } from "child_process";
 import {
   KLIVEIDE,
@@ -38,7 +39,7 @@ export function createZxbCommandLineArgs(
     const orgValue = config.get(ZXB_MACHINE_CODE_ORIGIN) as number;
     additional += `--org ${orgValue ?? 0x8000} `;
     const heapSize = config.get(ZXB_HEAP_SIZE) as number;
-    additional += `--heap-size ${heapSize ?? 4096}`;
+    additional += `--heap-size ${heapSize ?? 4096} `;
     const sinclair = config.get(ZXB_SINCLAIR) as boolean;
     additional += sinclair ? "--sinclair " : "";
     const stringBaseOne = config.get(ZXB_ONE_AS_STRING_BASE_INDEX) as boolean;
@@ -64,23 +65,36 @@ export function createZxbCommandLineArgs(
  * @param cmdArgs Commad-line arguments
  * @param outChannel Output channel
  */
-export async function execZxb(cmdArgs: string, outChannel: vscode.OutputChannel): Promise<string | null> {
+export async function execZxbc(
+  cmdArgs: string,
+  outChannel: vscode.OutputChannel
+): Promise<string | null> {
   const config = vscode.workspace.getConfiguration(KLIVEIDE);
   const execPath = config.get(ZXB_EXECUTABLE_PATH) as string;
   if (execPath.trim() === "") {
-    vscode.window.showErrorMessage("ZXB executable path is not set, cannot start the compiler.");
+    vscode.window.showErrorMessage(
+      "ZXB executable path is not set, cannot start the compiler."
+    );
     return;
   }
 
-  const cmd = `${execPath} ${cmdArgs}`;
+  const workdir = path.dirname(execPath);
+  const execFile = path.basename(execPath);
+  const cmd = `${execFile} ${cmdArgs.split("\\").join("/")}`;
   outChannel.appendLine(`Executing ${cmd}`);
   return new Promise<string | null>((resolve, reject) => {
-    exec(cmd, (error, _stdout, stderr) => {
-      if (error) {
-        reject(stderr);
-        return;
+    exec(
+      cmd,
+      {
+        cwd: workdir,
+      },
+      (error, _stdout, stderr) => {
+        if (error) {
+          reject(stderr);
+          return;
+        }
+        resolve(null);
       }
-      resolve(null);
-    });
+    );
   });
 }

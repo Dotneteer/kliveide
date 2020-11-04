@@ -482,8 +482,8 @@ export class TokenStream {
 
         // --- ".", keyword-like, real-number
         case LexerPhase.Dot:
-          if (isLetter(ch)) {
-            phase = LexerPhase.KeywordLike;
+          if (isIdStart(ch)) {
+            phase = LexerPhase.IdTail;
           } else if (isDecimalDigit(ch)) {
             phase = LexerPhase.LitRfrac2;
             tokenType = TokenType.RealLiteral;
@@ -497,6 +497,7 @@ export class TokenStream {
 
         // --- Wait for the completion of an identifier
         case LexerPhase.IdTail:
+          useResolver = true;
           if (ch === "'") {
             return completeToken(TokenType.Identifier);
           } else if (!isIdContinuation(ch)) {
@@ -505,23 +506,7 @@ export class TokenStream {
               text === "defg" ||
               text === "DEFG" ||
               text === "dg" ||
-              text === "DG"
-            ) {
-              phase = LexerPhase.DefgTail;
-              useResolver = false;
-              tokenType = TokenType.DefgPragma;
-              break;
-            }
-            return makeToken();
-          }
-          break;
-
-        // --- Wait for the completion of a keyword-like character
-        case LexerPhase.KeywordLike:
-          useResolver = true;
-          if (!isLetterOrDigit(ch) && ch !== "_") {
-            // --- Special case: DEFG pragma
-            if (
+              text === "DG" ||
               text === ".defg" ||
               text === ".DEFG" ||
               text === ".dg" ||
@@ -535,6 +520,26 @@ export class TokenStream {
             return makeToken();
           }
           break;
+
+        // // --- Wait for the completion of a keyword-like character
+        // case LexerPhase.KeywordLike:
+        //   useResolver = true;
+        //   if (!isLetterOrDigit(ch) && ch !== "_") {
+        //     // --- Special case: DEFG pragma
+        //     if (
+        //       text === ".defg" ||
+        //       text === ".DEFG" ||
+        //       text === ".dg" ||
+        //       text === ".DG"
+        //     ) {
+        //       phase = LexerPhase.DefgTail;
+        //       useResolver = false;
+        //       tokenType = TokenType.DefgPragma;
+        //       break;
+        //     }
+        //     return makeToken();
+        //   }
+        //   break;
 
         // --- Wait for the completion of hexadecimal number of preprocessor directive
         case LexerPhase.DirectiveOrHexLiteral:
@@ -1556,6 +1561,7 @@ function isHexadecimalDigit(ch: string): boolean {
  */
 function isIdStart(ch: string): boolean {
   return (
+    ch === "." ||
     ch === "_" ||
     ch === "@" ||
     ch === "`" ||

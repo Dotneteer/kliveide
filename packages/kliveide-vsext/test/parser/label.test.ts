@@ -88,6 +88,17 @@ describe("Parser - labels", () => {
     });
   });
 
+  it("dot can start an identifier", () => {
+    const parser = createParser(`.myLabel`);
+    const parsed = parser.parseProgram();
+    expect(parser.hasErrors).toBe(false);
+    expect(parsed).not.toBeNull();
+    expect(parsed.assemblyLines.length).toBe(1);
+    expect(parsed.assemblyLines[0].type === "LabelOnlyLine").toBe(true);
+    const line = parsed.assemblyLines[0] as Z80AssemblyLine;
+    expect(line.label.name).toBe(".myLabel");
+  });
+
 });
 
 function createParser(source: string): Z80AsmParser {

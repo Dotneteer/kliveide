@@ -1263,12 +1263,24 @@ export class Z80Assembler extends ExpressionEvaluator {
     value: ExpressionValue
   ): void {
     const assembler = this;
+
+    // --- Handle case-sensitivity
+    if (!this._options.useCaseSensitiveSymbols) {
+      symbol = symbol.toLowerCase();
+    }
+
+    if (symbol.startsWith(".")) {
+      symbol = symbol.substr(1);
+      this._output.symbols[symbol] = AssemblySymbolInfo.createLabel(
+        symbol,
+        value
+      );
+      return;
+    }
+
     let currentScopeIsTemporary = false;
     if (this._currentModule.localScopes.length > 0) {
       currentScopeIsTemporary = this.getTopLocalScope().isTemporaryScope;
-    }
-    if (!this._options.useCaseSensitiveSymbols) {
-      symbol = symbol.toLowerCase();
     }
     const symbolIsTemporary = symbol.startsWith("`");
 

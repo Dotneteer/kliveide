@@ -82,7 +82,7 @@
     },
     {
       "name": "support.function.klive",
-      "match": "[_@`a-zA-Z][_@!?\\.0-9A-Za-z]*"
+      "match": "[\\._@`a-zA-Z][_@!?\\.0-9A-Za-z]*"
     }
   ]
 }

@@ -131,6 +131,10 @@
     ],
     "commands": [
       {
+        "command": "kliveide.initIcons",
+        "title": "Init Klive icons"
+      },
+      {
         "command": "kliveide.startEmu",
         "title": "Start Klive Emulator"
       },
