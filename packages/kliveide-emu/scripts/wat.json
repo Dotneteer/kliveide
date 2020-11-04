@@ -32,6 +32,7 @@
     "spectrum-core/keyboard-device.wat",
     "spectrum-core/tape-device.wat",
     "spectrum-core/spectrum-helpers.wat",
+    "cambridge-z88.wat",
     "zx-spectrum-48.wat",
     "zx-spectrum-128.wat"
   ],
