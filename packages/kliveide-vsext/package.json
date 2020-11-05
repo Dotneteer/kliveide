@@ -43,78 +43,78 @@
           "default": "tape",
           "description": "The folder for SAVEd files"
         },
-        "kliveIde.zxbExecutablePath": {
+        "kliveIde.zxbcExecutablePath": {
           "type": "string",
           "default": "",
-          "description": "The full path to the ZXB executable"
+          "description": "The full path to the ZXBC executable"
         },
-        "kliveIde.zxbOptimizationLevel": {
+        "kliveIde.zxbcOptimizationLevel": {
           "type": "number",
           "default": 2,
-          "description": "The optimization level to use with the --optimize option of ZXB",
+          "description": "The optimization level to use with the --optimize option of ZXBC",
           "minimum": 0,
           "maximum": 3
         },
-        "kliveIde.zxbMachineCodeOrigin": {
+        "kliveIde.zxbcMachineCodeOrigin": {
           "type": "number",
           "default": 32768,
-          "description": "The machine code origin value to use with the --org option of ZXB",
+          "description": "The machine code origin value to use with the --org option of ZXBC",
           "minimum": 0,
           "maximum": 65535
         },
-        "kliveIde.zxbSinclair": {
+        "kliveIde.zxbcSinclair": {
           "type": "boolean",
           "default": false,
-          "description": "The --sinclair option of ZXB"
+          "description": "The --sinclair option of ZXBC"
         },
-        "kliveIde.zxbOneAsArrayBaseIndex": {
+        "kliveIde.zxbcOneAsArrayBaseIndex": {
           "type": "boolean",
           "default": false,
-          "description": "The --array-base option of ZXB"
+          "description": "The --array-base option of ZXBC"
         },
-        "kliveIde.zxbOneAsStringBaseIndex": {
+        "kliveIde.zxbcOneAsStringBaseIndex": {
           "type": "boolean",
           "default": false,
-          "description": "The --string-base option of ZXB"
+          "description": "The --string-base option of ZXBC"
         },
-        "kliveIde.zxbHeapSize": {
+        "kliveIde.zxbcHeapSize": {
           "type": "number",
           "default": 4096,
-          "description": "The --heap-size option of ZXB",
+          "description": "The --heap-size option of ZXBC",
           "minimum": 0,
           "maximum": 49152
         },
-        "kliveIde.zxbDebugMemory": {
+        "kliveIde.zxbcDebugMemory": {
           "type": "boolean",
           "default": false,
-          "description": "The --debug-memory option of ZXB"
+          "description": "The --debug-memory option of ZXBC"
         },
-        "kliveIde.zxbDebugArray": {
+        "kliveIde.zxbcDebugArray": {
           "type": "boolean",
           "default": false,
-          "description": "The --debug-array option of ZXB"
+          "description": "The --debug-array option of ZXBC"
         },
-        "kliveIde.zxbEnableBreak": {
+        "kliveIde.zxbcEnableBreak": {
           "type": "boolean",
           "default": false,
-          "description": "The --enable-break option of ZXB"
+          "description": "The --enable-break option of ZXBC"
         },
-        "kliveIde.zxbExplicitVariables": {
+        "kliveIde.zxbcExplicitVariables": {
           "type": "boolean",
           "default": false,
-          "description": "The --explicit option of ZXB"
+          "description": "The --explicit option of ZXBC"
         },
-        "kliveIde.zxbStrictBoolean": {
+        "kliveIde.zxbcStrictBoolean": {
           "type": "boolean",
           "default": false,
-          "description": "The --strict-bool option of ZXB"
+          "description": "The --strict-bool option of ZXBC"
         },
-        "kliveIde.zxbStrictMode": {
+        "kliveIde.zxbcStrictMode": {
           "type": "boolean",
           "default": false,
-          "description": "The --strict option of ZXB"
+          "description": "The --strict option of ZXBC"
         },
-        "kliveIde.zxbStoreGeneratedAsm": {
+        "kliveIde.zxbcStoreGeneratedAsm": {
           "type": "boolean",
           "default": false,
           "description": "When compiling a ZX BASIC files, store the generated .z80asm file with the source."
@@ -302,7 +302,7 @@
         "aliases": [
           "Z80 Assembly"
         ],
-        "configuration": "./src/z80lang/z80asm-configuration.json"
+        "configuration": "./z80asm-configuration.json"
       },
       {
         "id": "zxbasic",
@@ -314,19 +314,19 @@
         "aliases": [
           "Boriel's Basic"
         ],
-        "configuration": "./src/zxblang/zxbas-configuration.json"
+        "configuration": "./zxbas-configuration.json"
       }
     ],
     "grammars": [
       {
         "language": "z80asm",
         "scopeName": "source.z80asm.klive",
-        "path": "./src/z80lang/klivez80.tmGrammar.json"
+        "path": "./klivez80.tmGrammar.json"
       },
       {
         "language": "zxbasic",
         "scopeName": "source.zxbas.klive",
-        "path": "./src/zxblang/klivezxb.tmGrammar.json",
+        "path": "./klivezxb.tmGrammar.json",
         "embeddedLanguages": {
           "source.z80asm.klive": "z80asm"
         }

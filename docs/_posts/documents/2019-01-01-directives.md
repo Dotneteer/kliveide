@@ -116,9 +116,9 @@ the source file that holds the __#INCLUDE__ directive.
 Assume that this code is in the `C:\Work` folder:
 
 ```
-#include "Symbol.z80Asm"
-#include "./MyRules.z80Asm"
-#include "/Common/scroll.z80Asm"
+#include "Symbol.z80asm"
+#include "./MyRules.z80asm"
+#include "/Common/scroll.z80asm"
 ```
 
 The compiler will check the ```C:\Work``` folder for the first two include filem and

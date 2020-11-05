@@ -1,3 +1,0 @@
-﻿ld bc,#2345
-#include "./Scenario2.inc21.z80Asm"
-ld hl,#3456
