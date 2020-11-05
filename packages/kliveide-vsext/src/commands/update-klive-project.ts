@@ -168,7 +168,7 @@ async function pickMachineType(): Promise<MachineTypeItem | null> {
     input.placeholder = "Select the machine type";
     input.items = [
       new MachineTypeItem("48", "ZX Spectrum 48K", true),
-      new MachineTypeItem("128", "ZX Spectrum 128K (*)"),
+      new MachineTypeItem("128", "ZX Spectrum 128K"),
       new MachineTypeItem("p3", "ZX Spectrum +3E (*)"),
       new MachineTypeItem("next", "ZX Spectrum Next (*)"),
     ];

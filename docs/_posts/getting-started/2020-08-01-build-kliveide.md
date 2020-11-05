@@ -4,10 +4,12 @@ categories:
   - "Setup"
 title:  "Build Klive IDE"
 alias: build-kliveide
-seqno: 20
+seqno: 30
 selector: tutorial
 permalink: "getting-started/build-kliveide"
 ---
+
+*(This article is obsolete)*
 
 If you want to try the latest source code version of Klive, follow these steps:
 
