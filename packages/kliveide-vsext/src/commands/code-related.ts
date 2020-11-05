@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { Z80Assembler } from "../z80lang/assembler/assembler";
@@ -25,6 +26,7 @@ import {
 } from "../zxblang/compiler/zxb-runner";
 import { obtainInlineOptions } from "../zxblang/compiler/utils";
 import { readTextFile } from "../utils/file-utils";
+import { KLIVEIDE, ZXBC_STORE_GENERATED_ASM } from "../config/sections";
 
 let codeInjected: EventEmitter<CodeToInject> = new EventEmitter<CodeToInject>();
 
@@ -40,6 +42,7 @@ export const onCodeInjected: Event<CodeToInject> = codeInjected.event;
  * @returns True, if compilation successful; otherwise, false
  */
 export async function compileCodeCommand(
+  context: vscode.ExtensionContext,
   uri: Uri,
   outChannel: OutputChannel
 ): Promise<AssemblerOutput | null> {
@@ -56,7 +59,19 @@ export async function compileCodeCommand(
     case ".bor":
     case ".zxb":
       // --- Calculate the output file name
-      const outputName = filename + ".z80asm";
+      const config = vscode.workspace.getConfiguration(KLIVEIDE);
+      const storeOption = config.get(ZXBC_STORE_GENERATED_ASM) as boolean;
+      let outputName = filename + ".z80asm";
+      if (storeOption) {
+        const folders = vscode.workspace.workspaceFolders;
+        const outFolder = path.join(folders ? folders[0].uri.fsPath : path.dirname(filename), ".generated");
+        if (!fs.existsSync(outFolder)) {
+          fs.mkdirSync(outFolder, { recursive: true });
+        }
+        outputName = path.join(outFolder, path.basename(filename) + ".z80asm");
+      }
+
+      // --- Prepare the compilation
       const source = readTextFile(filename);
       const options = obtainInlineOptions(source);
       const cmdArgs = createZxbCommandLineArgs(filename, outputName, options);
@@ -110,11 +125,12 @@ export async function compileCodeCommand(
  * @returns True, if compilation successful; otherwise, false
  */
 export async function injectCodeCommand(
+  context: vscode.ExtensionContext,
   uri: Uri,
   output: OutputChannel,
   codeAction?: (codeToInject: CodeToInject) => Promise<string>
 ): Promise<boolean> {
-  const compilerOutput = await compileCodeCommand(uri, output);
+  const compilerOutput = await compileCodeCommand(context, uri, output);
 
   if (!compilerOutput || compilerOutput.errorCount > 0) {
     window.showErrorMessage("Code compilation failed, no program to inject.");
@@ -200,10 +216,12 @@ export async function injectCodeCommand(
  * @param outChannel Output channel for messages
  */
 export async function runCodeCommand(
+  context: vscode.ExtensionContext,
   uri: Uri,
   output: OutputChannel
 ): Promise<void> {
   await injectCodeCommand(
+    context,
     uri,
     output,
     async (code) => await communicatorInstance.runCode(code, false)
@@ -217,11 +235,13 @@ export async function runCodeCommand(
  * @param outChannel Output channel for messages
  */
 export async function debugCodeCommand(
+  context: vscode.ExtensionContext,
   uri: Uri,
   output: OutputChannel
 ): Promise<void> {
   try {
     await injectCodeCommand(
+      context,
       uri,
       output,
       async (code) => await communicatorInstance.runCode(code, true)

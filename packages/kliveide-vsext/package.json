@@ -302,7 +302,7 @@
         "aliases": [
           "Z80 Assembly"
         ],
-        "configuration": "./src/z80lang/z80asm-configuration.json"
+        "configuration": "./z80asm-configuration.json"
       },
       {
         "id": "zxbasic",
@@ -314,19 +314,19 @@
         "aliases": [
           "Boriel's Basic"
         ],
-        "configuration": "./src/zxblang/zxbas-configuration.json"
+        "configuration": "./zxbas-configuration.json"
       }
     ],
     "grammars": [
       {
         "language": "z80asm",
         "scopeName": "source.z80asm.klive",
-        "path": "./src/z80lang/klivez80.tmGrammar.json"
+        "path": "./klivez80.tmGrammar.json"
       },
       {
         "language": "zxbasic",
         "scopeName": "source.zxbas.klive",
-        "path": "./src/zxblang/klivezxb.tmGrammar.json",
+        "path": "./klivezxb.tmGrammar.json",
         "embeddedLanguages": {
           "source.z80asm.klive": "z80asm"
         }

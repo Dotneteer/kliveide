@@ -68,25 +68,27 @@ export async function activate(context: vscode.ExtensionContext) {
     register(
       "kliveide.compileCode",
       async (uri: vscode.Uri) =>
-        await compileCodeCommand(uri, kliveCompilerOutput)
+        await compileCodeCommand(context, uri, kliveCompilerOutput)
     ),
     register(
       "kliveide.injectCode",
       async (uri: vscode.Uri) =>
         await executeCodeAction(() =>
-          injectCodeCommand(uri, kliveCompilerOutput)
+          injectCodeCommand(context, uri, kliveCompilerOutput)
         )
     ),
     register(
       "kliveide.runCode",
       async (uri: vscode.Uri) =>
-        await executeCodeAction(() => runCodeCommand(uri, kliveCompilerOutput))
+        await executeCodeAction(() =>
+          runCodeCommand(context, uri, kliveCompilerOutput)
+        )
     ),
     register(
       "kliveide.debugCode",
       async (uri: vscode.Uri) =>
         await executeCodeAction(() =>
-          debugCodeCommand(uri, kliveCompilerOutput)
+          debugCodeCommand(context, uri, kliveCompilerOutput)
         )
     ),
     register("kliveide.exportCode", async () => await exportCode())
