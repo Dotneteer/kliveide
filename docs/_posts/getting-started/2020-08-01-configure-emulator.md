@@ -4,7 +4,7 @@ categories:
   - "Setup"
 title:  "Configure the Emulator"
 alias: configure-emulator
-seqno: 30
+seqno: 20
 selector: tutorial
 permalink: "getting-started/configure-emulator"
 ---
