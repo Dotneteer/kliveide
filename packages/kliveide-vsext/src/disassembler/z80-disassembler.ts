@@ -3,13 +3,13 @@ import {
   OperationMap,
   extendedInstructions,
   bitInstructions,
-  standardInstructions,
   indexedInstructions,
   indexedBitInstructions,
   q8Regs,
   q16Regs,
   r16Regs,
   calcOps,
+  standardStumps,
 } from "./instruction-tables";
 import {
   DisassemblyItem,
@@ -111,7 +111,7 @@ export class Z80Disassembler {
     startAddress = 0x0000,
     endAddress = 0xffff,
     batchPause?: number,
-    cancellationToken?: CancellationToken,
+    cancellationToken?: CancellationToken
   ): Promise<DisassemblyOutput | null> {
     this._cancellationToken = cancellationToken ?? null;
     this._batchPause = batchPause ?? 0;
@@ -293,7 +293,7 @@ export class Z80Disassembler {
     this._currentOpCodes = "";
     this._displacement = undefined;
     this._indexMode = 0; // No index
-    let decodeInfo: OperationMap | undefined;
+    let decodeInfo: OperationMap | string | undefined;
     const address = this._offset & 0xffff;
 
     // --- We should generate a normal instruction disassembly
@@ -320,7 +320,7 @@ export class Z80Disassembler {
       this._opCode = this._fetch();
       decodeInfo = this._disassembleIndexedOperation();
     } else {
-      decodeInfo = standardInstructions.getInstruction(this._opCode);
+      decodeInfo = standardStumps[this._opCode];
     }
     return this._decodeInstruction(address, decodeInfo);
   }
@@ -328,16 +328,21 @@ export class Z80Disassembler {
   /**
    * Gets the operation map for an indexed operation
    */
-  private _disassembleIndexedOperation(): OperationMap | undefined {
+  private _disassembleIndexedOperation(): OperationMap | string | undefined {
     if (this._opCode !== 0xcb) {
-      let decodeInfo = indexedInstructions.getInstruction(this._opCode);
+      let decodeInfo:
+        | OperationMap
+        | string
+        | null = indexedInstructions.getInstruction(this._opCode);
       if (!decodeInfo) {
-        return standardInstructions.getInstruction(this._opCode);
+          decodeInfo = standardStumps[this._opCode];
       }
-      if (
-        decodeInfo.instructionPattern &&
-        decodeInfo.instructionPattern.indexOf("^D") >= 0
-      ) {
+
+      const pattern =
+        typeof decodeInfo === "string"
+          ? decodeInfo
+          : decodeInfo.instructionPattern;
+      if (pattern && pattern.indexOf("^D") >= 0) {
         // --- The instruction used displacement, get it
         this._displacement = this._fetch();
       }
@@ -377,7 +382,7 @@ export class Z80Disassembler {
    */
   private _decodeInstruction(
     address: number,
-    opInfo: OperationMap | undefined
+    opInfo: OperationMap | string | undefined
   ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
@@ -386,13 +391,18 @@ export class Z80Disassembler {
       instruction: "nop",
     };
 
-    if (!opInfo || !opInfo.instructionPattern) {
+    let pattern = "";
+    if (typeof opInfo === "string") {
+      pattern = opInfo;
+    } else if (!opInfo || !opInfo.instructionPattern) {
       return disassemblyItem;
+    } else {
+      pattern = opInfo.instructionPattern;
     }
 
     // --- We have a real operation, it's time to decode it
     let pragmaCount = 0;
-    disassemblyItem.instruction = opInfo.instructionPattern;
+    disassemblyItem.instruction = pattern;
     if (disassemblyItem.instruction) {
       do {
         const pragmaIndex = disassemblyItem.instruction.indexOf("^");
@@ -823,7 +833,7 @@ export class Z80Disassembler {
       result.item = <DisassemblyItem>{
         address,
         lastAddress: (this._offset - 1) & 0xffff,
-        instruction: `.defw #${intToX4(callAddress)}`
+        instruction: `.defw #${intToX4(callAddress)}`,
       };
     }
 
