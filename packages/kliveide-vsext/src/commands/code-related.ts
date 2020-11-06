@@ -62,7 +62,7 @@ export async function compileCodeCommand(
       const config = vscode.workspace.getConfiguration(KLIVEIDE);
       const storeOption = config.get(ZXBC_STORE_GENERATED_ASM) as boolean;
       let outputName = filename + ".z80asm";
-      if (storeOption) {
+      if (!storeOption) {
         const folders = vscode.workspace.workspaceFolders;
         const outFolder = path.join(folders ? folders[0].uri.fsPath : path.dirname(filename), ".generated");
         if (!fs.existsSync(outFolder)) {
