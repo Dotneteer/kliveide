@@ -19,7 +19,7 @@ import {
 } from "../../config/sections";
 
 /**
- * Generates the command-line arguments to run ZXB.EXE
+ * Generates the command-line arguments to run ZXBC.EXE
  * @param outputFile Output file to generate
  * @param rawArgs Raw arguments from the code
  */
@@ -61,7 +61,7 @@ export function createZxbCommandLineArgs(
 }
 
 /**
- * Executes the ZXB command
+ * Executes the ZXBC command
  * @param cmdArgs Commad-line arguments
  * @param outChannel Output channel
  */
@@ -73,7 +73,7 @@ export async function execZxbc(
   const execPath = config.get(ZXBC_EXECUTABLE_PATH) as string;
   if (execPath.trim() === "") {
     vscode.window.showErrorMessage(
-      "ZXB executable path is not set, cannot start the compiler."
+      "ZXBC executable path is not set, cannot start the compiler."
     );
     return;
   }

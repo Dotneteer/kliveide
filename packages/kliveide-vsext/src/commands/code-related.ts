@@ -83,7 +83,7 @@ export async function compileCodeCommand(
         break;
       }
       const zxbTime = Date.now() - zxbStart;
-      outChannel.appendLine(`ZXB execution time: ${zxbTime} ms`);
+      outChannel.appendLine(`ZXBC execution time: ${zxbTime} ms`);
 
       // --- Add the .zxbasic pragma
       const output = "\t.zxbasic\r\n" + readTextFile(outputName);
