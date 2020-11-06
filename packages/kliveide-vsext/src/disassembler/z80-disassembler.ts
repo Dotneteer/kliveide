@@ -1,14 +1,15 @@
 import {
   SpectrumSpecificMode,
   OperationMap,
-  extendedInstructions,
   indexedInstructions,
   indexedBitInstructions,
   q8Regs,
   q16Regs,
   r16Regs,
   calcOps,
-  standardStumps,
+  standardStumps as standardInstructions,
+  z80NextSet,
+  extendedStumps,
 } from "./instruction-tables";
 import {
   DisassemblyItem,
@@ -298,16 +299,16 @@ export class Z80Disassembler {
     // --- We should generate a normal instruction disassembly
     this._opCode = this._fetch();
     if (this._opCode === 0xed) {
+      // --- Decode extended instruction set
+
       this._opCode = this._fetch();
-      decodeInfo = extendedInstructions.getInstruction(this._opCode);
-      if (
-        decodeInfo &&
-        decodeInfo.extendedSet &&
-        !this.extendedInstructionsAllowed
-      ) {
-        decodeInfo = undefined;
-      }
+      decodeInfo =
+        !this.extendedInstructionsAllowed && z80NextSet[this._opCode]
+          ? "nop"
+          : extendedStumps[this._opCode] ?? "nop";
     } else if (this._opCode === 0xcb) {
+      // --- Decode bit operations
+
       this._opCode = this._fetch();
       if (this._opCode < 0x40) {
         switch (this._opCode >> 3) {
@@ -343,17 +344,21 @@ export class Z80Disassembler {
       } else {
         decodeInfo = "set ^b,^s";
       }
-      //decodeInfo = bitInstructions.getInstruction(this._opCode);
     } else if (this._opCode === 0xdd) {
+      // --- Decode IX-indexed operations
+
       this._indexMode = 1; // IX
       this._opCode = this._fetch();
       decodeInfo = this._disassembleIndexedOperation();
     } else if (this._opCode === 0xfd) {
+      // --- Decode IY-indexed operations
+
       this._indexMode = 2; // IY
       this._opCode = this._fetch();
       decodeInfo = this._disassembleIndexedOperation();
     } else {
-      decodeInfo = standardStumps[this._opCode];
+      // --- Decode standard operations
+      decodeInfo = standardInstructions[this._opCode];
     }
     return this._decodeInstruction(address, decodeInfo);
   }
@@ -368,7 +373,7 @@ export class Z80Disassembler {
         | string
         | null = indexedInstructions.getInstruction(this._opCode);
       if (!decodeInfo) {
-        decodeInfo = standardStumps[this._opCode];
+        decodeInfo = standardInstructions[this._opCode];
       }
 
       const pattern =

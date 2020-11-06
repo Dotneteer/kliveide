@@ -9,13 +9,25 @@ describe("Disassembler - extended instructions", () => {
     await Z80Tester.TestExt("mirror a", 0xed, 0x24);
     await Z80Tester.Test("nop", 0xed, 0x24);
 
-    await Z80Tester.TestExt("mirror de", 0xed, 0x26);
-    await Z80Tester.Test("nop", 0xed, 0x26);
-
     await Z80Tester.TestExt("test #C4", 0xed, 0x27, 0xc4);
     await Z80Tester.Test("nop", 0xed, 0x27);
 
-    await Z80Tester.TestExt("mul", 0xed, 0x30);
+    await Z80Tester.TestExt("bsla de,b", 0xed, 0x28);
+    await Z80Tester.Test("nop", 0xed, 0x28);
+
+    await Z80Tester.TestExt("bsra de,b", 0xed, 0x29);
+    await Z80Tester.Test("nop", 0xed, 0x29);
+
+    await Z80Tester.TestExt("bsrl de,b", 0xed, 0x2a);
+    await Z80Tester.Test("nop", 0xed, 0x2a);
+
+    await Z80Tester.TestExt("bsrf de,b", 0xed, 0x2b);
+    await Z80Tester.Test("nop", 0xed, 0x2b);
+
+    await Z80Tester.TestExt("brlc de,b", 0xed, 0x2c);
+    await Z80Tester.Test("nop", 0xed, 0x2c);
+
+    await Z80Tester.TestExt("mul d,e", 0xed, 0x30);
     await Z80Tester.Test("nop", 0xed, 0x30);
 
     await Z80Tester.TestExt("add hl,a", 0xed, 0x31);
@@ -57,8 +69,14 @@ describe("Disassembler - extended instructions", () => {
     await Z80Tester.TestExt("setae", 0xed, 0x95);
     await Z80Tester.Test("nop", 0xed, 0x95);
 
+    await Z80Tester.TestExt("jp (c)", 0xed, 0x98);
+    await Z80Tester.Test("nop", 0xed, 0x98);
+
     await Z80Tester.TestExt("ldix", 0xed, 0xa4);
     await Z80Tester.Test("nop", 0xed, 0xa4);
+
+    await Z80Tester.TestExt("ldws", 0xed, 0xa5);
+    await Z80Tester.Test("nop", 0xed, 0xa5);
 
     await Z80Tester.TestExt("lddx", 0xed, 0xac);
     await Z80Tester.Test("nop", 0xed, 0xac);
@@ -66,14 +84,11 @@ describe("Disassembler - extended instructions", () => {
     await Z80Tester.TestExt("ldirx", 0xed, 0xb4);
     await Z80Tester.Test("nop", 0xed, 0xb4);
 
-    await Z80Tester.TestExt("lddrx", 0xed, 0xbc);
-    await Z80Tester.Test("nop", 0xed, 0xbc);
-
     await Z80Tester.TestExt("ldpirx", 0xed, 0xb7);
     await Z80Tester.Test("nop", 0xed, 0xb7);
 
-    await Z80Tester.TestExt("ldirscale", 0xed, 0xb6);
-    await Z80Tester.Test("nop", 0xed, 0xb6);
+    await Z80Tester.TestExt("lddrx", 0xed, 0xbc);
+    await Z80Tester.Test("nop", 0xed, 0xbc);
   });
 
   it("Extended instructions 0x40-0x4F work as expected", async () => {
