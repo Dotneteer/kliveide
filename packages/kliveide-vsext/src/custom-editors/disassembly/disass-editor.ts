@@ -12,6 +12,7 @@ import {
   getLastBreakpoints,
   onFrameInfoChanged,
   onMachineTypeChanged,
+  onConnectionStateChanged,
 } from "../../emulator/notifier";
 import { FrameInfo, communicatorInstance } from "../../emulator/communicator";
 import { DisassemblyAnnotation } from "../../disassembler/annotations";
@@ -19,17 +20,35 @@ import {
   spectrumConfigurationInstance,
   DISASS_ANN_FILE,
 } from "../../emulator/machine-config";
-import { getAssetsFileName, getAssetsFileResource } from "../../extension-paths";
-import { getFullDisassembly } from "./background-disassembly";
+import {
+  getAssetsFileName,
+  getAssetsFileResource,
+} from "../../extension-paths";
+import { machineTypes } from "../../emulator/machine-info";
+import {
+  DisassemblyItem,
+  DisassemblyOutput,
+  intToX4,
+  MemorySection,
+  MemorySectionType,
+} from "../../disassembler/disassembly-helper";
+import { Z80Disassembler } from "../../disassembler/z80-disassembler";
+
+/**
+ * The annotation for the current machine
+ */
+const romAnnotations: (DisassemblyAnnotation | null)[] = [];
+
+/**
+ * Full annotations with a particular rom page
+ */
+const fullAnnotations: (DisassemblyAnnotation | null)[] = [];
 
 /**
  * This provide implements the functionality of the Disassembly Editor
  */
 export class DisassemblyEditorProvider extends EditorProviderBase {
   private static readonly viewType = "kliveide.disassemblyEditor";
-
-  // --- This map stores the annotations for a particular webview
-  private _annotations = new Map<vscode.WebviewPanel, DisassemblyAnnotation>();
 
   /**
    * Registers this editor provider
@@ -81,10 +100,9 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   ): Promise<void> {
     super.resolveCustomTextEditor(document, webviewPanel, _token);
 
-    // --- Get the annotation for the view
-    const annotations = this.getAnnotation();
-    if (annotations) {
-      this._annotations.set(webviewPanel, annotations);
+    // --- Take care that initial annotations are read
+    if (romAnnotations.length === 0) {
+      await readRomAnnotations();
     }
 
     // --- Watch for breakpoint changes
@@ -116,33 +134,26 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     // --- Refresh annotations whenever machine type changes
     this.toDispose(
       webviewPanel,
-      onMachineTypeChanged(() => {
-        const annotations = this.getAnnotation();
-        if (annotations) {
-          this._annotations.set(webviewPanel, annotations);
-        } else {
-          this._annotations.delete(webviewPanel);
-        }
+      onMachineTypeChanged(async () => {
+        await readRomAnnotations();
         this.refreshView(webviewPanel);
+        this.refreshViewport(webviewPanel, Date.now());
       })
     );
 
-    let refreshCounter = 0;
+    // --- Refresh the view whenever connection restores
     this.toDispose(
       webviewPanel,
-      onFrameInfoChanged(async () => {
-        refreshCounter++;
-        if (refreshCounter % 100 !== 0) {
-          return;
+      onConnectionStateChanged(async (connected: boolean) => {
+        if (connected) {
+          this.refreshViewport(webviewPanel, Date.now());
         }
-        this.refreshViewport(webviewPanel, Date.now());
       })
     );
 
     // --- Make sure we get rid of the listener when our editor is closed.
     webviewPanel.onDidDispose(() => {
       super.disposePanel(webviewPanel);
-      this._annotations.delete(webviewPanel);
     });
   }
 
@@ -192,68 +203,184 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   }
 
   /**
-   * Gets the annotation for the current machine
-   * @param rom Optional ROM page
-   * @param bank Optional RAM bank
-   */
-  getAnnotation(rom?: number, bank?: number): DisassemblyAnnotation | null {
-    // --- Let's assume on open project folder
-    const folders = vscode.workspace.workspaceFolders;
-    const projFolder = folders ? folders[0].uri.fsPath : null;
-    if (!projFolder) {
-      return null;
-    }
-
-    rom = rom ?? 0;
-    try {
-      // --- Obtain the file for the annotations
-      const annotations =
-        spectrumConfigurationInstance.configuration?.annotations;
-      if (!annotations) {
-        return null;
-      }
-
-      let romAnnotationFile = annotations[rom];
-      if (romAnnotationFile.startsWith("#")) {
-        romAnnotationFile = getAssetsFileName(
-          path.join("annotations", romAnnotationFile.substr(1))
-        );
-      } else {
-        romAnnotationFile = path.join(projFolder, romAnnotationFile);
-      }
-
-      // --- Get root annotations from the file
-      const contents = fs.readFileSync(romAnnotationFile, "utf8");
-      const annotation = DisassemblyAnnotation.deserialize(contents);
-
-      // --- Get view annotation
-      const viewFilePath = path.join(projFolder, DISASS_ANN_FILE);
-      const viewContents = fs.readFileSync(viewFilePath, "utf8");
-      const viewAnnotation = DisassemblyAnnotation.deserialize(viewContents);
-      if (annotation && viewAnnotation) {
-        annotation.merge(viewAnnotation);
-      }
-      return annotation;
-    } catch (err) {
-      console.log(err);
-    }
-    return null;
-  }
-
-    /**
    * Refresh the viewport of the specified panel
    * @param panel Panel to refresh
    */
-  async refreshViewport(panel: vscode.WebviewPanel, start: number): Promise<void> {
+  async refreshViewport(
+    panel: vscode.WebviewPanel,
+    start: number
+  ): Promise<void> {
     try {
-      const fullView = await getFullDisassembly();
+      const memContents = await communicatorInstance.getMemory(0x0000, 0xffff);
+      const bytes = new Uint8Array(Buffer.from(memContents, "base64"));
+      const disassemblyOut = await disassembly(
+        bytes,
+        0x0000,
+        0xffff,
+        fullAnnotations[0]
+      );
+
+      // const fullView = await getFullDisassembly();
       panel.webview.postMessage({
         viewNotification: "refreshViewport",
-        fullView: JSON.stringify(fullView),
-        start
+        fullView: JSON.stringify(disassemblyOut.outputItems),
+        start,
       });
     } catch (err) {
       // --- This exception in intentionally ignored
     }
   }
+}
+
+/**
+ * Reads the ROM annotations of the specified machine type
+ * @param machineType
+ */
+async function readRomAnnotations(): Promise<void> {
+  // --- We need machine configuration to carry on
+  const machineType = spectrumConfigurationInstance.configuration.type;
+  const config = machineTypes[machineType];
+  if (!config) {
+    return;
+  }
+
+  // --- Number of ROM disassemblies to cache
+  const roms = config.paging.supportsPaging ? config.paging.roms : 1;
+  for (let i = 0; i < roms; i++) {
+    if (romAnnotations[i] === undefined) {
+      const romAnn = (romAnnotations[i] = getRomAnnotation(i));
+      const fullAnnotation = getFullAnnotation();
+      if (romAnn && fullAnnotation) {
+        fullAnnotation.merge(romAnn);
+        fullAnnotations[i] = fullAnnotation;
+      } else {
+        fullAnnotations[i] = romAnn;
+      }
+    }
+  }
+}
+
+/**
+ * Gets the annotation of the specified ROM page
+ * @param rom ROM page number
+ */
+function getRomAnnotation(rom: number): DisassemblyAnnotation | null {
+  // --- Let's assume on open project folder
+  const folders = vscode.workspace.workspaceFolders;
+  const projFolder = folders ? folders[0].uri.fsPath : null;
+  if (!projFolder) {
+    return null;
+  }
+
+  rom = rom ?? 0;
+  try {
+    // --- Obtain the file for the annotations
+    const annotations =
+      spectrumConfigurationInstance.configuration?.annotations;
+    if (!annotations) {
+      return null;
+    }
+
+    let romAnnotationFile = annotations[rom];
+    if (romAnnotationFile.startsWith("#")) {
+      romAnnotationFile = getAssetsFileName(
+        path.join("annotations", romAnnotationFile.substr(1))
+      );
+    } else {
+      romAnnotationFile = path.join(projFolder, romAnnotationFile);
+    }
+
+    // --- Get root annotations from the file
+    const contents = fs.readFileSync(romAnnotationFile, "utf8");
+    const annotation = DisassemblyAnnotation.deserialize(contents);
+    return annotation;
+  } catch (err) {
+    console.log(err);
+  }
+  return null;
+}
+
+/**
+ * Gets the full annotation merged with the specified ROM page
+ */
+function getFullAnnotation(): DisassemblyAnnotation | null {
+  try {
+    const folders = vscode.workspace.workspaceFolders;
+    const projFolder = folders ? folders[0].uri.fsPath : null;
+    if (!projFolder) {
+      return null;
+    }
+    const viewFilePath = path.join(projFolder, DISASS_ANN_FILE);
+    const viewContents = fs.readFileSync(viewFilePath, "utf8");
+    return DisassemblyAnnotation.deserialize(viewContents);
+  } catch (err) {
+    console.log(err);
+  }
+  return null;
+}
+
+/**
+ * Gets the disassembly for the specified memory range
+ * @param from Start address
+ * @param to End address
+ */
+async function disassembly(
+  bytes: Uint8Array,
+  from: number,
+  to: number,
+  annotations?: DisassemblyAnnotation | null
+): Promise<DisassemblyOutput | null> {
+  // --- Use the memory sections in the annotations
+  const sections: MemorySection[] = annotations?.memoryMap?.sections ?? [
+    new MemorySection(from, to, MemorySectionType.Disassemble),
+  ];
+
+  // --- Do the disassembly
+  const disassembler = new Z80Disassembler(sections, bytes);
+  const rawItems = await disassembler.disassemble(from, to);
+  if (!rawItems) {
+    return rawItems;
+  }
+
+  // --- Compose annotations
+  const updatedItems: DisassemblyItem[] = [];
+  for (const item of rawItems.outputItems) {
+    const prefixComment = annotations?.prefixComments.get(item.address);
+    if (prefixComment) {
+      const prefixItem: DisassemblyItem = {
+        address: item.address,
+        isPrefixItem: true,
+        prefixComment,
+      };
+      updatedItems.push(prefixItem);
+    }
+    const formattedLabel = annotations?.labels.get(item.address);
+    item.formattedLabel =
+      formattedLabel ?? (item.hasLabel ? "L" + intToX4(item.address) : "");
+    item.formattedComment = item.hardComment ? item.hardComment + " " : "";
+    const comment = annotations?.comments.get(item.address);
+    if (comment) {
+      item.formattedComment += comment;
+    }
+    if (annotations && item.tokenLength && item.tokenLength > 0) {
+      let symbol: string | undefined;
+      if (item.hasLabelSymbol && item.symbolValue) {
+        const label = annotations.labels.get(item.symbolValue);
+        if (label) {
+          symbol = label;
+        }
+      } else {
+        symbol = annotations.literalReplacements.get(item.address);
+      }
+      if (symbol && item.instruction && item.tokenPosition) {
+        item.instruction =
+          item.instruction.substr(0, item.tokenPosition) +
+          symbol +
+          item.instruction.substr(item.tokenPosition + item.tokenLength);
+      }
+    }
+    updatedItems.push(item);
+  }
+  rawItems.replaceOutputItems(updatedItems);
+  return rawItems;
 }
