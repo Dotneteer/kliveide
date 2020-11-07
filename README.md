@@ -2,11 +2,9 @@
 
 This project aims to build a full-fledged ZX Spectrum IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+), Klive IDE intends to be an attractive development platform for [ZX Spectrum Next](https://www.specnext.com/).
 
-**The current public release (v0.5.0) is released on September 27, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
+**The current public release (v0.6.0) is released on November 7, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
 
 - [You can immediately try it](https://dotneteer.github.io/kliveide/getting-started/install-kliveide)
-- [You can build the binaries from the latest commit](https://dotneteer.github.io/kliveide/getting-started/build-kliveide)
-- [Discover the IDE with creating a Klive project](https://dotneteer.github.io/kliveide/getting-started/create-klive-project)
 
 ## Approach
 
@@ -33,7 +31,7 @@ I've been working for more than three years on [SpectNetIDE](https://github.com/
 Klive IDE targets Linux, Mac, and Windows. To use the IDE, you need these three pieces of software:
 - [**Visual Studio Code**](https://code.visualstudio.com/). The widely known and popular coding IDE that is available on multiple platforms.
 - **The Klive ZX Spectrum Emulator**. An Electron-Shell based ZX Spectrum emulator written in TypeScript and _native_ WebAssembly to be the host of your development projects. The emulator is designed especially for _integration_ with development tools.
-- **The Klive IDE VS Code Extension**. The extension that binds VS Code and the Klive emulator to provide seamless development and debug experience.
+- **The VS Code Extension for Klive IDE**. The extension that binds VS Code and the Klive emulator to provide seamless development and debug experience.
 
 ## Roadmap
 
@@ -43,16 +41,16 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
     - Using web technologies to create a decent UI with a powerful emulator that provides space for excessive hardware emulation (ZX Spectrum Next) (&check;)
     - Ability to measure how WebAssembly plays its role on this area. (_Note_: So far measures show that the native WA implementation is about three times faster than the tuned JavaScript implementation.) (&check;)
     - An easy to use API to support integration with external apps, main focus on VS Code. (&check;)
-2. A series of POC-pieces to find out which VS Code extensibility tools suit the best for particular pieces of the IDE:
+2. (**Close to accomplishment**) A series of POC-pieces to find out which VS Code extensibility tools suit the best for particular pieces of the IDE:
     - Z80 Disassembly (&check;)
     - ZX Spectrum live memory map (&check;)
+    - Z80 Assembly/Boriel's BASIC source code development experience (&check;)
+    - Compilation (Z80 Assembler, Boriel's BASIC integration) &mdash; using/implementing an excellent Z80 Assembler (&check;)
+    - Tape handling experience (&check;)
     - Z80/Boriel's BASIC source code/Z80 Disassembly debugging experience (breakpoints, stepping modes, watching register and symbol values, etc.)
-    - Z80 Assembly/Boriel's BASIC source code development experience
-    - Compilation (Z80 Assembler, Boriel's BASIC integration) &mdash; using/implementing an excellent Z80 Assembler
-    - Tape handling experience
 3. The first public version of the Klive IDE with these features:
     - Running and debugging ZX Spectrum 48 code with the three software components working in orchestration.
-    - Z80 Assembly integration (syntax highlighting and compilation)
+    - Z80 Assembly integration (syntax highlighting and compilation) (&check;)
 4. A Klive IDE version that provides feature-parity with SpectNetIDE
 5. Moving toward ZX Spectrum Next
 

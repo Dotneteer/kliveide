@@ -1,5 +1,41 @@
 # Klive IDE Changelog
 
+## 0.6.0-alpha.6
+
+### Klive Emulator
+
+#### Known Issues
+
+- There still might be sound lag issues on Mac. It's likely some strange issue (or bug) in Electron.
+
+#### Features
+
+- Now, ZX Spectrum 48/128 floating port is implemented.
+- You can inject machine code from the IDE and run it within the Emulator.
+
+### Klive IDE
+
+#### Known Issues
+
+- Disassembly View does not refresh automatically when the selected ROM or Bank changes.
+
+#### Features
+
+- `.z80asm` files with syntax highlighting and immediate syntax check
+- `.bor`, `.zxbas`, `.zxb` files with Boriel's Basic syntax highlighting (with embedded Z80 Assembly)
+- The IDE has its integrated Z80 Assembler
+- The IDE runs Boriel's Basic compiler, provided you install and configure this feature
+- New command available form Z80 assembly and Boriel's Basic files: **Compile**, **Inject Code**, **Run Program in the Emulator**
+
+#### Fixes
+
+- A few annoying issues have been fixed in the disassembly view; disassembly generation is now about five times faster.
+
+#### Others
+
+- You can find new Getting Started articles here: [https://dotneteer.github.io/kliveide/getting-started/install-kliveide.html](https://dotneteer.github.io/kliveide/getting-started/install-kliveide.html)
+
+
 ## 0.5.0-alpha.5
 
 ### Klive Emulator
