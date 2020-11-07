@@ -66,7 +66,7 @@ describe("Disassembler - IX-related instructions", () => {
     await Z80Tester.Test("ld (ix+#3D),e", 0xdd, 0x73, 0x3d);
     await Z80Tester.Test("ld (ix+#3D),h", 0xdd, 0x74, 0x3d);
     await Z80Tester.Test("ld (ix+#3D),l", 0xdd, 0x75, 0x3d);
-    await Z80Tester.Test("nop", 0xdd, 0x76);
+    await Z80Tester.Test("halt", 0xdd, 0x76);
     await Z80Tester.Test("ld (ix+#3D),a", 0xdd, 0x77, 0x3d);
     await Z80Tester.Test("ld a,xh", 0xdd, 0x7c);
     await Z80Tester.Test("ld a,xl", 0xdd, 0x7d);

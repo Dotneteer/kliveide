@@ -1,15 +1,14 @@
 import {
   SpectrumSpecificMode,
   OperationMap,
-  indexedInstructions,
-  indexedBitInstructions,
   q8Regs,
   q16Regs,
   r16Regs,
   calcOps,
-  standardStumps as standardInstructions,
+  standardInstructions,
   z80NextSet,
-  extendedStumps,
+  extendedInstructions,
+  indexedInstrcutions,
 } from "./instruction-tables";
 import {
   DisassemblyItem,
@@ -56,7 +55,6 @@ export class Z80Disassembler {
   private _lineCount = 0;
 
   private _cancellationToken: CancellationToken | null = null;
-  private _batchPause = 0;
 
   /**
    * Gets the contents of the memory
@@ -114,8 +112,6 @@ export class Z80Disassembler {
     cancellationToken?: CancellationToken
   ): Promise<DisassemblyOutput | null> {
     this._cancellationToken = cancellationToken ?? null;
-    this._batchPause = batchPause ?? 0;
-
     this._output = new DisassemblyOutput();
     if (endAddress > this.memoryContents.length) {
       endAddress = this.memoryContents.length - 1;
@@ -305,7 +301,7 @@ export class Z80Disassembler {
       decodeInfo =
         !this.extendedInstructionsAllowed && z80NextSet[this._opCode]
           ? "nop"
-          : extendedStumps[this._opCode] ?? "nop";
+          : extendedInstructions[this._opCode] ?? "nop";
     } else if (this._opCode === 0xcb) {
       // --- Decode bit operations
 
@@ -368,19 +364,9 @@ export class Z80Disassembler {
    */
   private _disassembleIndexedOperation(): OperationMap | string | undefined {
     if (this._opCode !== 0xcb) {
-      let decodeInfo:
-        | OperationMap
-        | string
-        | null = indexedInstructions.getInstruction(this._opCode);
-      if (!decodeInfo) {
-        decodeInfo = standardInstructions[this._opCode];
-      }
-
-      const pattern =
-        typeof decodeInfo === "string"
-          ? decodeInfo
-          : decodeInfo.instructionPattern;
-      if (pattern && pattern.indexOf("^D") >= 0) {
+      let decodeInfo =
+        indexedInstrcutions[this._opCode] ?? standardInstructions[this._opCode];
+      if (decodeInfo && decodeInfo.indexOf("^D") >= 0) {
         // --- The instruction used displacement, get it
         this._displacement = this._fetch();
       }
@@ -388,7 +374,49 @@ export class Z80Disassembler {
     }
     this._displacement = this._fetch();
     this._opCode = this._fetch();
-    return indexedBitInstructions.getInstruction(this._opCode);
+
+    if (this._opCode < 0x40) {
+      let pattern = "";
+      switch (this._opCode >> 3) {
+        case 0x00:
+          pattern = "rlc (^X^D)";
+          break;
+        case 0x01:
+          pattern = "rrc (^X^D)";
+          break;
+        case 0x02:
+          pattern = "rl (^X^D)";
+          break;
+        case 0x03:
+          pattern = "rr (^X^D)";
+          break;
+        case 0x04:
+          pattern = "sla (^X^D)";
+          break;
+        case 0x05:
+          pattern = "sra (^X^D)";
+          break;
+        case 0x06:
+          pattern = "sll (^X^D)";
+          break;
+        case 0x07:
+          pattern = "srl (^X^D)";
+          break;
+      }
+      if ((this._opCode & 0x07) !== 0x06) {
+        pattern += ",^s";
+      }
+      return pattern;
+    } else if (this._opCode < 0x80) {
+      return "bit ^b,(^X^D)";
+    } else if (this._opCode < 0xc0) {
+      return (this._opCode & 0x07) === 0x06
+        ? "res ^b,(^X^D)"
+        : "res ^b,(^X^D),^s";
+    }
+    return (this._opCode & 0x07) === 0x06
+      ? "set ^b,(^X^D)"
+      : "set ^b,(^X^D),^s";
   }
 
   /**
