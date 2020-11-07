@@ -139,6 +139,7 @@
     // --- No, the component is initialized, notify the Webview
     // --- and ask it to refresh this view
     vscodeApi.postMessage({ command: "requestRefresh" });
+    vscodeApi.postMessage({ command: "requestViewportRefresh" });        
   });
 
   $: {

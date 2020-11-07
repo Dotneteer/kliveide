@@ -13,10 +13,6 @@ import { refreshViewCommand } from "./commands/refresh-view";
 import { spectrumConfigurationInstance } from "./emulator/machine-config";
 import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 import { KLIVEIDE, SAVE_FOLDER } from "./config/sections";
-import {
-  startBackgroundDisassembly,
-  stopBackgroundDisassembly,
-} from "./custom-editors/disassembly/background-disassembly";
 import { setExtensionContext } from "./extension-paths";
 import { BasicEditorProvider } from "./custom-editors/basic/basic-editor";
 import {
@@ -129,9 +125,6 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // --- Start disassembly and caching
-  startBackgroundDisassembly();
-
   // --- Start the notification mechanism
   startNotifier();
 
@@ -186,5 +179,4 @@ function setupZ80AsmLanguageClient(context: vscode.ExtensionContext): void {
  */
 export async function deactivate() {
   stopNotifier();
-  await stopBackgroundDisassembly();
 }
