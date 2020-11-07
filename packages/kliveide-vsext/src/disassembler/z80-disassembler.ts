@@ -1,15 +1,14 @@
 import {
   SpectrumSpecificMode,
   OperationMap,
-  extendedInstructions,
-  bitInstructions,
-  standardInstructions,
-  indexedInstructions,
-  indexedBitInstructions,
   q8Regs,
   q16Regs,
   r16Regs,
   calcOps,
+  standardInstructions,
+  z80NextSet,
+  extendedInstructions,
+  indexedInstrcutions,
 } from "./instruction-tables";
 import {
   DisassemblyItem,
@@ -29,7 +28,7 @@ import { CancellationToken } from "../utils/cancellation";
  * Number of disassembler items to process in a batch before
  * allowing the event loop
  */
-const DISASSEMBLER_BATCH = 100;
+const DISASSEMBLER_BATCH = 200;
 
 /**
  * Spectrum disassembly item
@@ -56,7 +55,6 @@ export class Z80Disassembler {
   private _lineCount = 0;
 
   private _cancellationToken: CancellationToken | null = null;
-  private _batchPause = 0;
 
   /**
    * Gets the contents of the memory
@@ -111,11 +109,9 @@ export class Z80Disassembler {
     startAddress = 0x0000,
     endAddress = 0xffff,
     batchPause?: number,
-    cancellationToken?: CancellationToken,
+    cancellationToken?: CancellationToken
   ): Promise<DisassemblyOutput | null> {
     this._cancellationToken = cancellationToken ?? null;
-    this._batchPause = batchPause ?? 0;
-
     this._output = new DisassemblyOutput();
     if (endAddress > this.memoryContents.length) {
       endAddress = this.memoryContents.length - 1;
@@ -293,34 +289,72 @@ export class Z80Disassembler {
     this._currentOpCodes = "";
     this._displacement = undefined;
     this._indexMode = 0; // No index
-    let decodeInfo: OperationMap | undefined;
+    let decodeInfo: OperationMap | string | undefined;
     const address = this._offset & 0xffff;
 
     // --- We should generate a normal instruction disassembly
     this._opCode = this._fetch();
     if (this._opCode === 0xed) {
+      // --- Decode extended instruction set
+
       this._opCode = this._fetch();
-      decodeInfo = extendedInstructions.getInstruction(this._opCode);
-      if (
-        decodeInfo &&
-        decodeInfo.extendedSet &&
-        !this.extendedInstructionsAllowed
-      ) {
-        decodeInfo = undefined;
-      }
+      decodeInfo =
+        !this.extendedInstructionsAllowed && z80NextSet[this._opCode]
+          ? "nop"
+          : extendedInstructions[this._opCode] ?? "nop";
     } else if (this._opCode === 0xcb) {
+      // --- Decode bit operations
+
       this._opCode = this._fetch();
-      decodeInfo = bitInstructions.getInstruction(this._opCode);
+      if (this._opCode < 0x40) {
+        switch (this._opCode >> 3) {
+          case 0x00:
+            decodeInfo = "rlc ^s";
+            break;
+          case 0x01:
+            decodeInfo = "rrc ^s";
+            break;
+          case 0x02:
+            decodeInfo = "rl ^s";
+            break;
+          case 0x03:
+            decodeInfo = "rr ^s";
+            break;
+          case 0x04:
+            decodeInfo = "sla ^s";
+            break;
+          case 0x05:
+            decodeInfo = "sra ^s";
+            break;
+          case 0x06:
+            decodeInfo = "sll ^s";
+            break;
+          case 0x07:
+            decodeInfo = "srl ^s";
+            break;
+        }
+      } else if (this._opCode < 0x80) {
+        decodeInfo = "bit ^b,^s";
+      } else if (this._opCode < 0xc0) {
+        decodeInfo = "res ^b,^s";
+      } else {
+        decodeInfo = "set ^b,^s";
+      }
     } else if (this._opCode === 0xdd) {
+      // --- Decode IX-indexed operations
+
       this._indexMode = 1; // IX
       this._opCode = this._fetch();
       decodeInfo = this._disassembleIndexedOperation();
     } else if (this._opCode === 0xfd) {
+      // --- Decode IY-indexed operations
+
       this._indexMode = 2; // IY
       this._opCode = this._fetch();
       decodeInfo = this._disassembleIndexedOperation();
     } else {
-      decodeInfo = standardInstructions.getInstruction(this._opCode);
+      // --- Decode standard operations
+      decodeInfo = standardInstructions[this._opCode];
     }
     return this._decodeInstruction(address, decodeInfo);
   }
@@ -328,16 +362,11 @@ export class Z80Disassembler {
   /**
    * Gets the operation map for an indexed operation
    */
-  private _disassembleIndexedOperation(): OperationMap | undefined {
+  private _disassembleIndexedOperation(): OperationMap | string | undefined {
     if (this._opCode !== 0xcb) {
-      let decodeInfo = indexedInstructions.getInstruction(this._opCode);
-      if (!decodeInfo) {
-        return standardInstructions.getInstruction(this._opCode);
-      }
-      if (
-        decodeInfo.instructionPattern &&
-        decodeInfo.instructionPattern.indexOf("^D") >= 0
-      ) {
+      let decodeInfo =
+        indexedInstrcutions[this._opCode] ?? standardInstructions[this._opCode];
+      if (decodeInfo && decodeInfo.indexOf("^D") >= 0) {
         // --- The instruction used displacement, get it
         this._displacement = this._fetch();
       }
@@ -345,7 +374,49 @@ export class Z80Disassembler {
     }
     this._displacement = this._fetch();
     this._opCode = this._fetch();
-    return indexedBitInstructions.getInstruction(this._opCode);
+
+    if (this._opCode < 0x40) {
+      let pattern = "";
+      switch (this._opCode >> 3) {
+        case 0x00:
+          pattern = "rlc (^X^D)";
+          break;
+        case 0x01:
+          pattern = "rrc (^X^D)";
+          break;
+        case 0x02:
+          pattern = "rl (^X^D)";
+          break;
+        case 0x03:
+          pattern = "rr (^X^D)";
+          break;
+        case 0x04:
+          pattern = "sla (^X^D)";
+          break;
+        case 0x05:
+          pattern = "sra (^X^D)";
+          break;
+        case 0x06:
+          pattern = "sll (^X^D)";
+          break;
+        case 0x07:
+          pattern = "srl (^X^D)";
+          break;
+      }
+      if ((this._opCode & 0x07) !== 0x06) {
+        pattern += ",^s";
+      }
+      return pattern;
+    } else if (this._opCode < 0x80) {
+      return "bit ^b,(^X^D)";
+    } else if (this._opCode < 0xc0) {
+      return (this._opCode & 0x07) === 0x06
+        ? "res ^b,(^X^D)"
+        : "res ^b,(^X^D),^s";
+    }
+    return (this._opCode & 0x07) === 0x06
+      ? "set ^b,(^X^D)"
+      : "set ^b,(^X^D),^s";
   }
 
   /**
@@ -377,7 +448,7 @@ export class Z80Disassembler {
    */
   private _decodeInstruction(
     address: number,
-    opInfo: OperationMap | undefined
+    opInfo: OperationMap | string | undefined
   ): DisassemblyItem {
     // --- By default, unknown codes are NOP operations
     const disassemblyItem: DisassemblyItem = {
@@ -386,13 +457,18 @@ export class Z80Disassembler {
       instruction: "nop",
     };
 
-    if (!opInfo || !opInfo.instructionPattern) {
+    let pattern = "";
+    if (typeof opInfo === "string") {
+      pattern = opInfo;
+    } else if (!opInfo || !opInfo.instructionPattern) {
       return disassemblyItem;
+    } else {
+      pattern = opInfo.instructionPattern;
     }
 
     // --- We have a real operation, it's time to decode it
     let pragmaCount = 0;
-    disassemblyItem.instruction = opInfo.instructionPattern;
+    disassemblyItem.instruction = pattern;
     if (disassemblyItem.instruction) {
       do {
         const pragmaIndex = disassemblyItem.instruction.indexOf("^");
@@ -643,9 +719,9 @@ export class Z80Disassembler {
         result.item.instruction = `.defb #${intToX2(calcCode)}, #${intToX2(
           jump
         )}`;
-        result.item.hardComment = `(${calcOps.get(
-          calcCode
-        )}: ${this._getLabelName(jumpAddr)})`;
+        result.item.hardComment = `(${calcOps[calcCode]}: ${this._getLabelName(
+          jumpAddr
+        )})`;
         result.carryOn = calcCode !== 0x33;
         break;
 
@@ -696,9 +772,7 @@ export class Z80Disassembler {
         break;
 
       default:
-        const comment = calcOps.has(calcCode)
-          ? calcOps.get(calcCode)
-          : `calc code: #${intToX2(calcCode)}`;
+        const comment = calcOps[calcCode] ?? `calc code: #${intToX2(calcCode)}`;
         result.item.hardComment = `(${comment})`;
         break;
     }
@@ -711,13 +785,11 @@ export class Z80Disassembler {
    * @param index operation index
    */
   private _getIndexedCalcOp(opCode: number, index: number): string {
-    if (calcOps.has(opCode)) {
-      var ops = calcOps.get(opCode);
-      if (ops) {
-        const values = ops.split("|");
-        if (index >= 0 && values.length > index) {
-          return `(${values[index]})`;
-        }
+    const ops = calcOps[opCode];
+    if (ops) {
+      const values = ops.split("|");
+      if (index >= 0 && values.length > index) {
+        return `(${values[index]})`;
       }
     }
     return `calc code: ${opCode}/${index}`;
@@ -823,7 +895,7 @@ export class Z80Disassembler {
       result.item = <DisassemblyItem>{
         address,
         lastAddress: (this._offset - 1) & 0xffff,
-        instruction: `.defw #${intToX4(callAddress)}`
+        instruction: `.defw #${intToX4(callAddress)}`,
       };
     }
 
