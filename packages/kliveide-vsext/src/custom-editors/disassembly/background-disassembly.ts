@@ -206,9 +206,7 @@ async function doBackroundDisassembly(
         bytes,
         0x0000,
         0xffff,
-        fullAnnotations[0],
-        undefined,
-        disassemblyCount ? 0 : 50
+        fullAnnotations[0]
       );
       if (disassemblyOut) {
         fullDisassemblyCache = disassemblyOut;
@@ -296,9 +294,7 @@ async function disassembly(
   bytes: Uint8Array,
   from: number,
   to: number,
-  annotations?: DisassemblyAnnotation | null,
-  cancellation?: CancellationToken,
-  batchPause?: number
+  annotations?: DisassemblyAnnotation | null
 ): Promise<DisassemblyOutput | null> {
   // --- Use the memory sections in the annotations
   const sections: MemorySection[] = annotations?.memoryMap?.sections ?? [
@@ -307,7 +303,7 @@ async function disassembly(
 
   // --- Do the disassembly
   const disassembler = new Z80Disassembler(sections, bytes);
-  const rawItems = await disassembler.disassemble(from, to, batchPause);
+  const rawItems = await disassembler.disassemble(from, to);
   if (!rawItems) {
     return rawItems;
   }
