@@ -39,7 +39,7 @@ export abstract class Z80MachineBase {
    * Resets the machine
    */
   reset(): void {
-    this.api.resetMachine();
+    this.api.turnOnMachine();
   }
 
   /**

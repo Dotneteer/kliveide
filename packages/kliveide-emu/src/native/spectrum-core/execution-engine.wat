@@ -4,15 +4,6 @@
 ;; ----------------------------------------------------------------------------
 ;; ZX Spectrum engine configuration
 
-;; Base CPU clock frequency
-(global $baseClockFrequency (mut i32) (i32.const 0x0000))
-
-;; Clock frequency multiplier
-(global $clockMultiplier (mut i32) (i32.const 0x0000))
-
-;; Supports ZX Spectrrum Next operations?
-(global $supportsNextOperation (mut i32) (i32.const 0x0000))
-
 ;; Number of ROMs
 (global $numberOfRoms (mut i32) (i32.const 0x0000))
 
@@ -126,12 +117,6 @@
 ;; The last rendered ULA tact
 (global $lastRenderedUlaTact (mut i32) (i32.const 0x0000))
 
-;; Number of frames rendered
-(global $frameCount (mut i32) (i32.const 0x0000))
-
-;; Indicates that a screen frame has just completed
-(global $frameCompleted (mut i32) (i32.const 0x0000))
-
 ;; Gets or sets the value of the contention accummulated since the start
 ;; of the machine
 (global $contentionAccummulated (mut i32) (i32.const 0x0000))
@@ -216,8 +201,7 @@
 )
 
 ;; Resets the ZX Spectrum machine
-(func $resetMachine
-  call $resetCpu
+(func $resetSpectrumMachine
 
   ;; Reset engine state variables
   i32.const 0 set_global $lastRenderedUlaTact
@@ -305,7 +289,7 @@
 )
 
 ;; Executes the ZX Spectrum machine cycle
-(func $executeMachineCycle
+(func $executeSpectrumMachineCycle
   (local $currentUlaTact i32)
   (local $nextOpCode i32)
   (local $length i32)

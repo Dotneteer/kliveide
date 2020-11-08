@@ -62,7 +62,8 @@
 ;; 6: Setup machine (func)
 ;; 7: Get machine state (func)
 ;; 8: Colorize (func)
-;; 9-19: Unused
+;; 9: Execute machine cycle
+;; 10-19: Unused
 (elem (i32.const 0)
   ;; Index 0: Machine type #0 (ZX Spectrum 48K)
   $readPagedMemory16            ;; 0
@@ -74,7 +75,7 @@
   $setupSpectrum48              ;; 6
   $getSpectrum48MachineState    ;; 7
   $colorizeSp48                 ;; 8
-  $NOOP                         ;; 9
+  $executeSpectrumMachineCycle  ;; 9
   $NOOP                         ;; 10
   $NOOP                         ;; 11
   $NOOP                         ;; 12
@@ -96,7 +97,7 @@
   $setupSpectrum128             ;; 6
   $getSpectrum128MachineState   ;; 7
   $colorizeSp48                 ;; 8
-  $NOOP                         ;; 9
+  $executeSpectrumMachineCycle  ;; 9
   $NOOP                         ;; 10
   $NOOP                         ;; 11
   $NOOP                         ;; 12
@@ -184,7 +185,7 @@
   $setupCz88                    ;; 6
   $getCz88MachineState          ;; 7
   $NOOP                         ;; 8
-  $NOOP                         ;; 9
+  $executeZ88MachineCycle       ;; 9
   $NOOP                         ;; 10
   $NOOP                         ;; 11
   $NOOP                         ;; 12

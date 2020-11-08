@@ -20,7 +20,6 @@
 ;; ZX Spectrum machine exports
 (export "initZxSpectrum" (func $initZxSpectrum))
 (export "turnOnMachine" (func $turnOnMachine))
-(export "resetMachine" (func $resetMachine))
 (export "setUlaIssue" (func $setUlaIssue))
 (export "getMachineState" (func $getMachineState))
 (export "setExecutionOptions" (func $setExecutionOptions))
