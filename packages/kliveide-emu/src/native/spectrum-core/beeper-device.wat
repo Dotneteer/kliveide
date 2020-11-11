@@ -2,6 +2,10 @@
 ;; Implements the ZX Spectrum beeper device
 
 ;; ----------------------------------------------------------------------------
+;; Beeper constants
+;; $GATE_DIVIDER# = 100000
+
+;; ----------------------------------------------------------------------------
 ;; Beeper device state
 
 ;; Sample rate of the beeper audio
@@ -52,9 +56,9 @@
       (get_local $sampleLength) 
       (f32.convert_u/i32 (get_global $audioSampleLength))
     )
-    (f32.const 100_000)
+    (f32.const $GATE_DIVIDER#)
   )
   i32.trunc_u/f32
   set_global $audioLowerGate
-  i32.const 100_000 set_global $audioUpperGate
+  i32.const $GATE_DIVIDER# set_global $audioUpperGate
 )

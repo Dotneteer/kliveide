@@ -1211,7 +1211,7 @@
 ;; halt (0x76)
 (func $Halt
   ;; Set the HLT flag
-  (i32.or (get_global $stateFlags) (i32.const 0x08 (; HLT signal ;)))
+  (i32.or (get_global $stateFlags) (i32.const $SIG_HLT#))
   set_global $stateFlags
 
   ;; Decrement PC
@@ -1751,7 +1751,7 @@
 
 ;; CB prefix
 (func $SignCB
-  i32.const 2 set_global $prefixMode
+  i32.const $PREF_BIT# set_global $prefixMode
   i32.const 1 set_global $isInOpExecution
   i32.const 1 set_global $isInterruptBlocked
 )
@@ -1986,7 +1986,7 @@
 
 ;; DD prefix
 (func $SignDD
-  i32.const 1 set_global $indexMode
+  i32.const $IND_IX# set_global $indexMode
   i32.const 1 set_global $isInOpExecution
   i32.const 1 set_global $isInterruptBlocked
 )
@@ -2181,7 +2181,7 @@
 
 ;; ED prefix
 (func  $SignED
-  i32.const 1 set_global $prefixMode
+  i32.const $PREF_EXT# set_global $prefixMode
   i32.const 1 set_global $isInOpExecution
   i32.const 1 set_global $isInterruptBlocked
 )
@@ -2328,7 +2328,7 @@
 
 ;; FD prefix
 (func $SignFD
-  i32.const 2 set_global $indexMode
+  i32.const $IND_IY# set_global $indexMode
   i32.const 1 set_global $isInOpExecution
   i32.const 1 set_global $isInterruptBlocked
 )

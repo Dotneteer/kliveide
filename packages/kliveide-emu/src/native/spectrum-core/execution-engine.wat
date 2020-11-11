@@ -2,16 +2,34 @@
 ;; Implementation of the ZX Spectrum execution engine
 
 ;; ----------------------------------------------------------------------------
+;; Execution engine constants
+;;
+;; $MEMCONT_NONE# = 0   // No contention
+;; $MEMCONT_ULA# = 1    // ULA
+;; $MEMCONT_GATEARR = 2 // Gate array
+;; $MEMCONT_NEXT = 3    // ZX Spectrum Next
+;;
+;; $EMU_CONT# = 0        // Continuous
+;; $EMU_HALT# = 1        // Until HALT
+;; $EMU_CPU_FRAME# = 2   // Until CPU frame ends
+;; $EMU_ULA_FRAME# = 3   // Until ULA frame ends
+;; $EMU_TERM_POINT# = 4  // Until terminatio point
+;;
+;; $DEB_NONE# = 0        // None
+;; $DEB_STOP_BR# = 1     // Stop at breakpoints
+;; $DEB_INTO# = 2        // Step-into
+;; $DEB_OVER# = 3        // Step-over
+;; $DEB_OUT# = 4         // Step-out
+;;
+;; $EX_REA_EXEC# = 0       // The machine is still executing
+;; $EX_REA_TERM# = 1       // Termination point reached
+;; $EX_REA_BREAK# = 2      // Breakpoint reached
+;; $EX_REA_HALT# = 3       // Halted
+;; $EX_REA_CPU# = 4        // CPU frame completed
+;; $EX_REA_ULA# = 5        // Screen rendering frame/ULA frame completed
+
+;; ----------------------------------------------------------------------------
 ;; ZX Spectrum engine configuration
-
-;; Base CPU clock frequency
-(global $baseClockFrequency (mut i32) (i32.const 0x0000))
-
-;; Clock frequency multiplier
-(global $clockMultiplier (mut i32) (i32.const 0x0000))
-
-;; Supports ZX Spectrrum Next operations?
-(global $supportsNextOperation (mut i32) (i32.const 0x0000))
 
 ;; Number of ROMs
 (global $numberOfRoms (mut i32) (i32.const 0x0000))
@@ -126,12 +144,6 @@
 ;; The last rendered ULA tact
 (global $lastRenderedUlaTact (mut i32) (i32.const 0x0000))
 
-;; Number of frames rendered
-(global $frameCount (mut i32) (i32.const 0x0000))
-
-;; Indicates that a screen frame has just completed
-(global $frameCompleted (mut i32) (i32.const 0x0000))
-
 ;; Gets or sets the value of the contention accummulated since the start
 ;; of the machine
 (global $contentionAccummulated (mut i32) (i32.const 0x0000))
@@ -150,10 +162,11 @@
 
 ;; The debug step mode to use with the execution cycle
 ;; (only when $emulationMode is Debugger)
-;; 0: StopAtBreakPoints
-;; 1: StepInto
-;; 2: StepOver
-;; 3: StepOut
+;; 0: None
+;; 1: StopAtBreakPoints
+;; 2: StepInto
+;; 3: StepOver
+;; 4: StepOut
 (global $debugStepMode (mut i32) (i32.const 0x0000))
 
 ;; Indicates if fast tape mode is allowed
@@ -190,34 +203,8 @@
 ;; ----------------------------------------------------------------------------
 ;; Public functions to manage a ZX Spectrum machine
 
-;; Initializes a ZX Spectrum machine with the specified type
-;; $type: Machine type
-;;   0: ZX Spectrum 48K
-;;   1: ZX Spectrum 128K
-;;   2: ZX Spectrum 3+
-;;   3: ZX Spectrum Next
-;; $edition: Machine edition (ignored, as of now)
-(func $initZxSpectrum (param $type i32) (param $edition i32)
-  ;; Store machine type
-  (i32.gt_u (get_local $type) (i32.const 3))
-  if (result i32)
-    i32.const 0
-  else
-    get_local $type
-  end
-  set_global $MACHINE_TYPE
-
-  call $setupMachine
-)
-
-;; Turns on the ZX Spectrum machine
-(func $turnOnMachine
-  call $setupMachine
-)
-
 ;; Resets the ZX Spectrum machine
-(func $resetMachine
-  call $resetCpu
+(func $resetSpectrumMachine
 
   ;; Reset engine state variables
   i32.const 0 set_global $lastRenderedUlaTact
@@ -226,14 +213,14 @@
   i32.const 1 set_global $frameCompleted
   i32.const 0 set_global $contentionAccummulated
   i32.const 0 set_global $lastExecutionContentionValue
-  i32.const 0 set_global $emulationMode
-  i32.const 0 set_global $debugStepMode
+  i32.const $EMU_CONT# set_global $emulationMode
+  i32.const $DEB_NONE# set_global $debugStepMode
   i32.const 0 set_global $fastTapeMode
   i32.const -1 set_global $terminationRom
   i32.const -1 set_global $terminationPoint
   i32.const 0 set_global $fastVmMode
   i32.const 0 set_global $disableScreenRendering
-  i32.const 0 set_global $executionCompletionReason
+  i32.const $EX_REA_EXEC# set_global $executionCompletionReason
   i32.const 0 set_global $stepOverBreakpoint
 
   ;; Reset keyboard line status
@@ -305,13 +292,13 @@
 )
 
 ;; Executes the ZX Spectrum machine cycle
-(func $executeMachineCycle
+(func $executeSpectrumMachineCycle
   (local $currentUlaTact i32)
   (local $nextOpCode i32)
   (local $length i32)
 
   ;; Initialize the execution cycle
-  i32.const 0 set_global $executionCompletionReason
+  i32.const $EX_REA_EXEC# set_global $executionCompletionReason
   get_global $contentionAccummulated set_global $lastExecutionContentionValue
 
   ;; The physical frame cycle that goes on while CPU and ULA
@@ -372,7 +359,7 @@
     (call $renderScreen (get_local $currentUlaTact))
 
     ;; Check termination point
-    (i32.eq (get_global $emulationMode) (i32.const 4))
+    (i32.eq (get_global $emulationMode) (i32.const $EMU_TERM_POINT#))
     if
       ;; Stop at termination point
       (i32.eq (get_global $memorySelectedRom) (get_global $terminationRom))
@@ -380,39 +367,39 @@
         ;; Termination ROM matches
         (i32.eq (get_global $PC) (get_global $terminationPoint)) 
         if
-          i32.const 1 set_global $executionCompletionReason ;; Reason: Termination point reached
+          i32.const $EX_REA_TERM# set_global $executionCompletionReason ;; Reason: Termination point reached
           return
         end
       end
     end
 
     ;; Check breakpoints
-    (i32.eq (get_global $debugStepMode) (i32.const 1))
+    (i32.eq (get_global $debugStepMode) (i32.const $DEB_STOP_BR#))
     if
       ;; Stop at breakpoints mode
       (call $testBreakpoint (get_global $PC))
       if
-        i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+        i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
         return
       end
     else
       ;; Check step-into mode
-      (i32.eq (get_global $debugStepMode) (i32.const 2))
+      (i32.eq (get_global $debugStepMode) (i32.const $DEB_INTO#))
       if
-        i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+        i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
         return
       else
         ;; Check step-over mode
-        (i32.eq (get_global $debugStepMode) (i32.const 3))
+        (i32.eq (get_global $debugStepMode) (i32.const $DEB_OVER#))
         if
           (i32.eq (get_global $PC) (get_global $stepOverBreakpoint))
           if
-            i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+            i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
             return
           end
         else
           ;; Check step-out mode
-          (i32.eq (get_global $debugStepMode) (i32.const 4))
+          (i32.eq (get_global $debugStepMode) (i32.const $DEB_OUT#))
           if
             get_global $retExecuted
             if
@@ -428,7 +415,7 @@
                   ;; Some invalid code is used, clear the step over stack
                   call $resetStepOverStack
                 end
-                i32.const 2 set_global $executionCompletionReason ;; Reason: Break
+                i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
                 return
               end
             end
@@ -438,11 +425,11 @@
     end 
 
     ;; Exit if halted and execution mode is UntilHalted
-    (i32.eq (get_global $emulationMode) (i32.const 1))
+    (i32.eq (get_global $emulationMode) (i32.const $EMU_HALT#))
     if
-      (i32.and (get_global $stateFlags) (i32.const 0x08)) ;; HLT signal set?
+      (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
       if
-        i32.const 3 set_global $executionCompletionReason ;; Reason: halted
+        i32.const $EX_REA_HALT# set_global $executionCompletionReason ;; Reason: halted
         return
       end
     end     
@@ -541,7 +528,7 @@
   set_global $frameCount
 
   ;; Sign frame completion
-  i32.const 5 set_global $executionCompletionReason ;; Reason: frame completed
+  i32.const $EX_REA_ULA# set_global $executionCompletionReason ;; Reason: frame completed
 )
 
 (func $preparePsgSamples

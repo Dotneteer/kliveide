@@ -88,7 +88,7 @@
     if
       ;; Stop if HLT flag set
       (i32.ne
-        (i32.and (get_global $stateFlags) (i32.const 0x08 (; HLT signal ;)))
+        (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
         (i32.const 0)
       )
       if

@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { ZxSpectrumBase } from "../../native/api/ZxSpectrumBase";
+import { ZxSpectrumBase } from "../../native/api/Z80VmBase";
 import {
   ExecutionState,
   ExecutionStateChangedArgs,
@@ -241,7 +241,7 @@ export class SpectrumEngine {
   /**
    * Gets the state of the ZX Spectrum machine
    */
-  getMachineState(): MachineState {
+  getMachineState(): SpectrumMachineStateBase {
     return this._loadedState;
   }
 

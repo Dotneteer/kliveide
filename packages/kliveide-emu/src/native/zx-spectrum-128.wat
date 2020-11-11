@@ -162,10 +162,14 @@
 ;; Handles writes to the PSG value port
 ;; Sets up the ZX Spectrum 48 machine
 (func $setupSpectrum128
+  ;; Let's use ULA issue 3 by default
+  i32.const 3 set_global $ulaIssue
+
   ;; CPU configuration
   i32.const 3_546_900 set_global $baseClockFrequency
   i32.const 1 set_global $clockMultiplier
   i32.const 0 set_global $supportsNextOperation
+  call $resetCpu
   
   ;; Memory configuration
   i32.const 2 set_global $numberOfRoms
@@ -181,6 +185,9 @@
   (call $setMemoryPageIndex (i32.const 1) (get_global $BANK_5_OFFS) (i32.const 1) (i32.const 0))
   (call $setMemoryPageIndex (i32.const 2) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
   (call $setMemoryPageIndex (i32.const 3) (get_global $BANK_0_OFFS) (i32.const 0) (i32.const 0))
+
+  ;; Set the initial state of a ZX Spectrum machine
+  call $resetSpectrumMachine
 
   ;; Screen frame configuration
   i32.const 14 set_global $interruptTact

@@ -67,16 +67,20 @@
 
 ;; Sets up the ZX Spectrum 48 machine
 (func $setupSpectrum48
+  ;; Let's use ULA issue 3 by default
+  i32.const 3 set_global $ulaIssue
+
   ;; CPU configuration
   i32.const 3_500_000 set_global $baseClockFrequency
   i32.const 1 set_global $clockMultiplier
   i32.const 0 set_global $supportsNextOperation
+  call $resetCpu
   
   ;; Memory configuration
   i32.const 1 set_global $numberOfRoms
   get_global $ROM_48_OFFS set_global $romContentsAddress
   i32.const 0 set_global $spectrum48RomIndex
-  i32.const 1 set_global $contentionType
+  i32.const $MEMCONT_ULA# set_global $contentionType
   i32.const 0 set_global $ramBanks
   i32.const 0 set_global $nextMemorySize
   get_global $BANK_0_OFFS set_global $memoryScreenOffset
@@ -86,6 +90,9 @@
   (call $setMemoryPageIndex (i32.const 1) (get_global $BANK_0_OFFS) (i32.const 1) (i32.const 0))
   (call $setMemoryPageIndex (i32.const 2) (get_global $BANK_1_OFFS) (i32.const 0) (i32.const 0))
   (call $setMemoryPageIndex (i32.const 3) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
+
+  ;; Set the initial state of a ZX Spectrum machine
+  call $resetSpectrumMachine
 
   ;; Screen frame configuration
   i32.const 11 set_global $interruptTact

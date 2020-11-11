@@ -19,6 +19,7 @@
   "scripts": {
     "start": "electron ./dist/main.bundle.js",
     "build": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --progress --colors",
+    "build:emu": "npm run build",
     "dev": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --colors",
     "tscbuild": "tsc",
     "mergewat": "node ./scripts/mergewat.js",

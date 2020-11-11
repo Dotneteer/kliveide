@@ -2,6 +2,10 @@
 ;; Implements the ZX Spectrum interrupt device
 
 ;; ----------------------------------------------------------------------------
+;; Interrupt constants
+;; $LONGEST_OP# = 23 // The length of the longest operation
+
+;; ----------------------------------------------------------------------------
 ;; Interrupt device state
 
 ;; Signs that an interrupt has been raised in the current frame.
@@ -26,12 +30,12 @@
   ;; Are we over the longest op after the interrupt tact?
   (i32.gt_u 
     (get_local $currentUlaTact)
-    (i32.add (get_global $interruptTact) (i32.const 23)) ;; tacts of the longest op
+    (i32.add (get_global $interruptTact) (i32.const $LONGEST_OP#)) ;; tacts of the longest op
   )
   if
     ;; Let's revoke the INT signal
     i32.const 1 set_global $interruptRevoked
-    (i32.and (get_global $stateFlags) (i32.const 0xfe))
+    (i32.and (get_global $stateFlags) (i32.const $SIG_INT_MASK#))
     set_global $stateFlags ;; Reset the interrupt signal
     return
   end
@@ -46,7 +50,7 @@
 
   ;; It is time to raise the interrupt
   i32.const 1 set_global $interruptRaised
-  (i32.or (get_global $stateFlags) (i32.const 0x01))
+  (i32.or (get_global $stateFlags) (i32.const $SIG_INT#))
   set_global $stateFlags ;; Set the interrupt signal
 )
 

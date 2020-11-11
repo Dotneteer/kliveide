@@ -30,9 +30,8 @@ export interface CpuApi {
  */
 export interface MachineApi extends CpuApi {
   // --- ZX Spectrum machine methods
-  initZxSpectrum(type: number): void;
+  initMachine(type: number): void;
   turnOnMachine(): void;
-  resetMachine(): void;
   setUlaIssue(ula: number): void;
   getMachineState(): void;
   setExecutionOptions(): void;
@@ -52,4 +51,14 @@ export interface MachineApi extends CpuApi {
   markStepOverStack(): void;
   eraseMemoryWriteMap(): void;
   setMemoryWritePoint(point: number): void;
+
+  // --- Z88 machine methods
+  testIncZ88Rtc(inc: number): void;
+  testSetRtcRegs(
+    tim0: number,
+    tim1: number,
+    tim2: number,
+    tim3: number,
+    tim4: number
+  ): void;
 }

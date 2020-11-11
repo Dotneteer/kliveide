@@ -2,6 +2,25 @@
 ;; This file contains the core of the Z80 engine
 
 ;; --------------------------------------------------------------------------
+;; CPU State signal flags
+;;
+;; $SIG_NONE# = 0x00      // No signal
+;; $SIG_INT# = 0x01       // Interrupt
+;; $SIG_NMI# = 0x02       // Non-maskable interrupt
+;; $SIG_RST# = 0x04       // Reset
+;; $SIG_HLT# = 0x08       // Halt
+;; $SIG_INT_MASK# = 0xfe  // Halt mask
+;; $SIG_HLT_MASK# = 0xf7  // Halt mask
+;;
+;; $PREF_NONE# = 0        // No prefix
+;; $PREF_EXT# = 1         // Extended mode (0xED prefix)
+;; $PREF_BIT# = 2         // Bit mode (0xCB prefix)
+;;
+;; $IND_NONE# = 0         // No index
+;; $IND_IX# = 1            // IX (0xDD prefix)
+;; $IND_IY# = 2            // IY (0xFD prefix)
+;;
+;; --------------------------------------------------------------------------
 ;; Z80 CPU state
 
 ;; CPU registers
@@ -510,9 +529,9 @@
 
 ;; Gets the value of the index register according to the current indexing mode
 (func $getIndexReg (result i32)
-  get_global $indexMode
-  i32.const 1
-  i32.eq
+  
+  
+  (i32.eq (get_global $indexMode) (i32.const $IND_IX#))
   if (result i32)
     get_global $REG_AREA_INDEX i32.load16_u offset=22 ;; IX
   else
@@ -523,9 +542,9 @@
 ;; Sets the value of the index register according to the current indexing mode
 ;; $v: 16-bit index register value
 (func $setIndexReg (param $v i32)
-  get_global $indexMode
-  i32.const 1
-  i32.eq
+  
+  
+  (i32.eq (get_global $indexMode) (i32.const $IND_IX#))
   if
     (i32.store16 offset=22 (get_global $REG_AREA_INDEX) (get_local $v)) ;; IX
   else
@@ -567,15 +586,15 @@
   (i32.store16 offset=24 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
   (i32.store16 offset=26 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
   i32.const 0x0000 set_global $tacts
-  i32.const 0x0000 set_global $stateFlags
+  i32.const $SIG_NONE# set_global $stateFlags
   i32.const 0x0000 set_global $useGateArrayContention
   i32.const 0x0000 set_global $iff1
   i32.const 0x0000 set_global $iff2
   i32.const 0x0000 set_global $interruptMode
   i32.const 0x0000 set_global $isInterruptBlocked
   i32.const 0x0000 set_global $isInOpExecution
-  i32.const 0x0000 set_global $prefixMode
-  i32.const 0x0000 set_global $indexMode
+  i32.const $PREF_NONE# set_global $prefixMode
+  i32.const $IND_NONE# set_global $indexMode
   i32.const 0x0000 set_global $maskableInterruptModeEntered
   i32.const 0x0000 set_global $opCode
 )
@@ -593,7 +612,7 @@
 ;; Executes the CPU's processing cycle
 (func $executeCpuCycle
   ;; Is there any CPU signal raised?
-  (i32.ne (get_global $stateFlags) (i32.const 0))
+  (get_global $stateFlags)
   if
     ;; Yes, process them
     (i32.ne (call $processCpuSignals) (i32.const 0))
@@ -612,15 +631,15 @@
   i32.const 0 set_global $retExecuted
 
   ;; Test for no prefix
-  (i32.eq (get_global $prefixMode) (i32.const 0))
+  (i32.eqz (get_global $prefixMode))
   if
     ;; Execute the current operation
     i32.const 0 set_global $isInterruptBlocked
     call $processStandardOrIndexedOperations
     (i32.eq (get_global $isInterruptBlocked) (i32.const 0))
     if
-      i32.const 0 set_global $indexMode
-      i32.const 0 set_global $prefixMode
+      i32.const $IND_NONE# set_global $indexMode
+      i32.const $PREF_NONE# set_global $prefixMode
       i32.const 0 set_global $isInOpExecution
     end
     return
@@ -628,24 +647,24 @@
 
   ;; Branch according to prefix modes
   ;; Test for extended mode
-  (i32.eq (get_global $prefixMode) (i32.const 1))
+  (i32.eq (get_global $prefixMode) (i32.const $PREF_EXT#))
   if
     i32.const 0 set_global $isInterruptBlocked
     call $processExtendedOperations
-    i32.const 0 set_global $indexMode
-    i32.const 0 set_global $prefixMode
+    i32.const $IND_NONE# set_global $indexMode
+    i32.const $PREF_NONE# set_global $prefixMode
     i32.const 0 set_global $isInOpExecution
     return
   end
 
   ;; Branch according to prefix modes
   ;; Test for bit mode
-  (i32.eq (get_global $prefixMode) (i32.const 2))
+  (i32.eq (get_global $prefixMode) (i32.const $PREF_BIT#))
   if
     i32.const 0 set_global $isInterruptBlocked
     call $processBitOperations
-    i32.const 0 set_global $indexMode
-    i32.const 0 set_global $prefixMode
+    i32.const $IND_NONE# set_global $indexMode
+    i32.const $PREF_NONE# set_global $prefixMode
     i32.const 0 set_global $isInOpExecution
     return
   end
@@ -655,7 +674,7 @@
 ;; Returns true, if the signal has been processed; otherwise, false
 (func $processCpuSignals (result i32)
   ;; Test for INT
-  (i32.and (get_global $stateFlags) (i32.const 0x01 (; INT signal ;)))
+  (i32.and (get_global $stateFlags) (i32.const $SIG_INT#))
   if
     ;; Test for unblocked interrupt
     (i32.eq (get_global $isInterruptBlocked) (i32.const 0))
@@ -670,7 +689,7 @@
   end
 
   ;; Test for NMI
-  (i32.and (get_global $stateFlags) (i32.const 0x02 (; NMI signal ;)))
+  (i32.and (get_global $stateFlags) (i32.const $SIG_NMI#))
   if
     call $executeNMI
     i32.const 1
@@ -678,7 +697,7 @@
   end
 
   ;; Test for HLT
-  (i32.and (get_global $stateFlags) (i32.const 0x08 (; HLT signal ;)))
+  (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
   if
     (call $incTacts (i32.const 3))
     call $refreshMemory
@@ -687,7 +706,7 @@
   end
 
   ;; Test for RST
-  (i32.and (get_global $stateFlags) (i32.const 0x04 (; RST signal ;)))
+  (i32.and (get_global $stateFlags) (i32.const $SIG_RST#))
   if
     call $resetCpu
     i32.const 1
@@ -722,9 +741,9 @@
   i32.const 0 set_global $iff2
   i32.const 0 set_global $interruptMode
   i32.const 0 set_global $isInterruptBlocked
-  i32.const 0 set_global $stateFlags
-  i32.const 0 set_global $prefixMode
-  i32.const 0 set_global $indexMode
+  i32.const $SIG_NONE# set_global $stateFlags
+  i32.const $PREF_NONE# set_global $prefixMode
+  i32.const $IND_NONE# set_global $indexMode
   (call $setPC (i32.const 0))
   (call $setI (i32.const 0))
   (call $setR (i32.const 0))
@@ -735,12 +754,12 @@
 ;; Executes the NMI request
 (func $executeNMI
     ;; Test for HLT
-  (i32.and (get_global $stateFlags) (i32.const 0x08 (; HLT signal ;) ))
+  (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
   if
     (set_global $PC 
       (i32.and (i32.add (get_global $PC) (i32.const 1)) (i32.const 0xffff)) 
     )
-    (i32.and (get_global $stateFlags) (i32.const 0xf7 (; ~HLT mask ;) ))
+    (i32.and (get_global $stateFlags) (i32.const $SIG_HLT_MASK#))
     set_global $stateFlags
   end
   get_global $iff1 set_global $iff2
@@ -763,12 +782,12 @@
   get_global $PC set_local $oldPc
 
   ;; Test for HLT
-  (i32.and (get_global $stateFlags) (i32.const 0x08 (; HLT signal ;) ))
+  (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
   if
     (set_global $PC 
       (i32.and (i32.add (get_global $PC) (i32.const 1)) (i32.const 0xffff)) 
     )
-    (i32.and (get_global $stateFlags) (i32.const 0xf7 (; ~HLT mask ;) ))
+    (i32.and (get_global $stateFlags) (i32.const $SIG_HLT_MASK#))
     set_global $stateFlags
   end
 
@@ -819,8 +838,8 @@
 ;; Processes standard or indexed operations
 (func $processStandardOrIndexedOperations
   ;; Diagnostics
-  get_global $INDEXED_JT
-  get_global $STANDARD_JT
+  i32.const $INDEXED_JT#
+  i32.const $STANDARD_JT#
   get_global $indexMode
   select
   get_global $opCode
@@ -853,7 +872,7 @@
     call $getWZ ;; The address to use with the indexed bit operation
 
     ;; Get operation function
-    get_global $INDEXED_BIT_JT
+    i32.const $INDEXED_BIT_JT#
     call $readCodeMemory
     set_global $opCode
     get_global $opCode
@@ -861,14 +880,14 @@
     call_indirect (type $IndexedBitFunc)
   else
     ;; Normal bit operations
-    (i32.add (get_global $BIT_JT) (get_global $opCode))
+    (i32.add (i32.const $BIT_JT#) (get_global $opCode))
     call_indirect (type $OpFunc)
   end
 )
 
 ;; Processes extended operations
 (func $processExtendedOperations
-  get_global $EXTENDED_JT
+  i32.const $EXTENDED_JT#
   get_global $opCode
   i32.add
   call_indirect (type $OpFunc)

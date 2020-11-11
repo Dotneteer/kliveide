@@ -162,7 +162,7 @@
   call $getReg8
 
   ;; Call the bit operation
-  get_global $BOP_JT
+  i32.const $BOP_JT#
   (i32.shr_u
     (i32.and (get_global $opCode) (i32.const 0x38))
     (i32.const 3)
@@ -188,7 +188,7 @@
   end
 
   ;; Call the bit operation
-  get_global $BOP_JT
+  i32.const $BOP_JT#
   (i32.shr_u
     (i32.and (get_global $opCode) (i32.const 0x38))
     (i32.const 3)

@@ -1,6 +1,5 @@
-const FRAMES_BUFFERED = 400;
+const FRAMES_BUFFERED = 100;
 const FRAMES_DELAYED = 2;
-const AUDIO_BUFFER_SIZE = 4096;
 
 let waveBuffer;
 let writeIndex = 0;
