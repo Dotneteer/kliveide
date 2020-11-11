@@ -10,9 +10,9 @@
 ;; 0x04: Z80 Test machine
 ;; 0x05: Cambridge Z88 machine
 ;; $edition: Machine edition (ignored, as of now)
-(func $initZxSpectrum (param $type i32) (param $edition i32)
+(func $initMachine (param $type i32) (param $edition i32)
   ;; Store machine type
-  (i32.gt_u (get_local $type) (i32.const 3))
+  (i32.gt_u (get_local $type) (i32.const 5))
   if (result i32)
     i32.const 0
   else

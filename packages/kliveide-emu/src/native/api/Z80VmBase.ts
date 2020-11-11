@@ -7,6 +7,7 @@ import {
   ExecutionCompletionReason,
   ExecuteCycleOptions,
   SpectrumMachineStateBase,
+  Z80MachineStateBase,
 } from "./machine-state";
 import { MemoryHelper } from "./memory-helpers";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
@@ -83,6 +84,49 @@ export abstract class Z80MachineBase {
    * @param value Value to write
    */
   abstract writeMemory(addr: number, value: number): void;
+
+  /**
+   * Obtains the Z80 CPU's state
+   * @param s State to put the Z80 machine state
+   */
+  protected obtainZ80CpuState(s: Z80MachineStateBase): void {
+    // --- Get register data from the memory
+    let mh = new MemoryHelper(this.api, REG_AREA_INDEX);
+
+    s.bc = mh.readUint16(2);
+    s.de = mh.readUint16(4);
+    s.hl = mh.readUint16(6);
+    s._af_ = mh.readUint16(8);
+    s._bc_ = mh.readUint16(10);
+    s._de_ = mh.readUint16(12);
+    s._hl_ = mh.readUint16(14);
+    s.i = mh.readByte(16);
+    s.r = mh.readByte(17);
+    s.ix = mh.readUint16(22);
+    s.iy = mh.readUint16(24);
+    s.wz = mh.readUint16(26);
+
+    mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+
+    s.af = mh.readUint16(0);
+    s.pc = mh.readUint16(18);
+    s.sp = mh.readUint16(20);
+
+    s.tactsInFrame = mh.readUint32(28);
+    s.allowExtendedSet = mh.readBool(32);
+    s.tacts = mh.readUint32(33);
+    s.stateFlags = mh.readByte(37);
+    s.useGateArrayContention = mh.readBool(38);
+    s.iff1 = mh.readBool(39);
+    s.iff2 = mh.readBool(40);
+    s.interruptMode = mh.readByte(41);
+    s.isInterruptBlocked = mh.readBool(42);
+    s.isInOpExecution = mh.readBool(43);
+    s.prefixMode = mh.readByte(44);
+    s.indexMode = mh.readByte(45);
+    s.maskableInterruptModeEntered = mh.readBool(46);
+    s.opCode = mh.readByte(47);
+  }
 }
 
 /**
@@ -96,6 +140,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    */
   constructor(public api: MachineApi, public type: number) {
     super(api, type);
+    api.initMachine(type);
   }
 
   /**
@@ -155,7 +200,6 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   constructor(public api: MachineApi, public type: number) {
     super(api, type);
-    api.initZxSpectrum(type);
   }
 
   /**
@@ -180,44 +224,9 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   getMachineState(): SpectrumMachineStateBase {
     const s = this.createMachineState() as SpectrumMachineStateBase;
     this.api.getMachineState();
+    this.obtainZ80CpuState(s);
 
-    // --- Get register data from the memory
-    let mh = new MemoryHelper(this.api, REG_AREA_INDEX);
-
-    s.bc = mh.readUint16(2);
-    s.de = mh.readUint16(4);
-    s.hl = mh.readUint16(6);
-    s._af_ = mh.readUint16(8);
-    s._bc_ = mh.readUint16(10);
-    s._de_ = mh.readUint16(12);
-    s._hl_ = mh.readUint16(14);
-    s.i = mh.readByte(16);
-    s.r = mh.readByte(17);
-    s.ix = mh.readUint16(22);
-    s.iy = mh.readUint16(24);
-    s.wz = mh.readUint16(26);
-
-    // --- Get state data
-    mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
-
-    s.af = mh.readUint16(0);
-    s.pc = mh.readUint16(18);
-    s.sp = mh.readUint16(20);
-
-    s.tactsInFrame = mh.readUint32(28);
-    s.allowExtendedSet = mh.readBool(32);
-    s.tacts = mh.readUint32(33);
-    s.stateFlags = mh.readByte(37);
-    s.useGateArrayContention = mh.readBool(38);
-    s.iff1 = mh.readBool(39);
-    s.iff2 = mh.readBool(40);
-    s.interruptMode = mh.readByte(41);
-    s.isInterruptBlocked = mh.readBool(42);
-    s.isInOpExecution = mh.readBool(43);
-    s.prefixMode = mh.readByte(44);
-    s.indexMode = mh.readByte(45);
-    s.maskableInterruptModeEntered = mh.readBool(46);
-    s.opCode = mh.readByte(47);
+    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
 
     // --- Get CPU configuration data
     s.baseClockFrequency = mh.readUint32(48);

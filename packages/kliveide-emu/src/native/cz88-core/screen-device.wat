@@ -36,9 +36,9 @@
 
 ;; Resets the Z88 Screen device
 (func $resetZ88Screen
-  i32.const 0x98 set_global $z88PB0
-  i32.const 0x98 set_global $z88PB1
-  i32.const 0x98 set_global $z88PB2
-  i32.const 0x98 set_global $z88PB3
-  i32.const 0x98 set_global $z88SBR
+  i32.const 0x00 set_global $z88PB0
+  i32.const 0x00 set_global $z88PB1
+  i32.const 0x00 set_global $z88PB2
+  i32.const 0x00 set_global $z88PB3
+  i32.const 0x00 set_global $z88SBR
 )

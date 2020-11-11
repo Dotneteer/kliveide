@@ -18,7 +18,7 @@
 (export "resetMachineType" (func $resetMachineType))
 
 ;; ZX Spectrum machine exports
-(export "initZxSpectrum" (func $initZxSpectrum))
+(export "initMachine" (func $initMachine))
 (export "turnOnMachine" (func $turnOnMachine))
 (export "setUlaIssue" (func $setUlaIssue))
 (export "getMachineState" (func $getMachineState))
@@ -43,3 +43,7 @@
 (export "markStepOverStack" (func $markStepOverStack))
 (export "eraseMemoryWriteMap" (func $eraseMemoryWriteMap))
 (export "setMemoryWritePoint" (func $setMemoryWritePoint))
+
+;; Cambridge Z88 exports
+(export "testIncZ88Rtc" (func $testIncZ88Rtc))
+(export "testSetRtcRegs" (func $testSetRtcRegs))

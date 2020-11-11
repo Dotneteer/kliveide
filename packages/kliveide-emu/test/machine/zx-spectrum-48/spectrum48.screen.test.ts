@@ -73,7 +73,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #1", () => {
-    machine.api.initZxSpectrum(0);
+    machine.api.initMachine(0);
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -128,7 +128,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #2", () => {
-    machine.api.initZxSpectrum(0);
+    machine.api.initMachine(0);
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -186,7 +186,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #3", () => {
-    machine.api.initZxSpectrum(0);
+    machine.api.initMachine(0);
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -253,7 +253,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Border + empty pixels", () => {
-    machine.api.initZxSpectrum(0);
+    machine.api.initMachine(0);
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -333,7 +333,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Rendering with pattern #1", () => {
-    machine.api.initZxSpectrum(0);
+    machine.api.initMachine(0);
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -424,7 +424,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Rendering until frame ends", () => {
-    machine.api.initZxSpectrum(0);
+    machine.api.initMachine(0);
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -514,7 +514,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Colorize border + empty pixels", () => {
-    machine.api.initZxSpectrum(0);
+    machine.api.initMachine(0);
     machine.injectCode([
       0xf3, // DI
       0x3e,

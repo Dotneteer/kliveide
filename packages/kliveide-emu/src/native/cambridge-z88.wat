@@ -35,7 +35,16 @@
 
 ;; Sets up the Cambridge Z88 machine
 (func $setupCz88
-  ;; TODO: Implement this method
+  ;; CPU configuration
+  i32.const 3_276_800 set_global $baseClockFrequency
+  i32.const 1 set_global $clockMultiplier
+  i32.const 0 set_global $supportsNextOperation
+  call $resetCpu
+
+  ;; Blink initial setup
+  call $resetZ88Blink
+  call $resetZ88Rtc
+  call $resetZ88Screen
 )
 
 ;; Gets the Cambridge Z88 machine state
