@@ -80,7 +80,7 @@
   i32.const 1 set_global $numberOfRoms
   get_global $ROM_48_OFFS set_global $romContentsAddress
   i32.const 0 set_global $spectrum48RomIndex
-  i32.const 1 set_global $contentionType
+  i32.const $MEMCONT_ULA# set_global $contentionType
   i32.const 0 set_global $ramBanks
   i32.const 0 set_global $nextMemorySize
   get_global $BANK_0_OFFS set_global $memoryScreenOffset

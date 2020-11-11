@@ -1,6 +1,33 @@
 ;; ==========================================================================
 ;; Helper functions to manage a ZX Spectrum machine
 
+;; Initializes a ZX Spectrum machine with the specified type
+;; $type: Machine type
+;; 0x00: ZX Spectrum 48K
+;; 0x01: ZX Spectrum 128K
+;; 0x02: ZX Spectrum +3
+;; 0x03: ZX Spectrum Next
+;; 0x04: Z80 Test machine
+;; 0x05: Cambridge Z88 machine
+;; $edition: Machine edition (ignored, as of now)
+(func $initZxSpectrum (param $type i32) (param $edition i32)
+  ;; Store machine type
+  (i32.gt_u (get_local $type) (i32.const 3))
+  if (result i32)
+    i32.const 0
+  else
+    get_local $type
+  end
+  set_global $MACHINE_TYPE
+
+  call $setupMachine
+)
+
+;; Turns on the ZX Spectrum machine
+(func $turnOnMachine
+  call $setupMachine
+)
+
 ;; ----------------------------------------------------------------------------
 ;; Z80 Memory access
 

@@ -241,7 +241,7 @@ export class SpectrumEngine {
   /**
    * Gets the state of the ZX Spectrum machine
    */
-  getMachineState(): MachineState {
+  getMachineState(): SpectrumMachineStateBase {
     return this._loadedState;
   }
 

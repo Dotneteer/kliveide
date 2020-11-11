@@ -2,6 +2,19 @@
 ;; Implements the ZX Spectrum screen device
 
 ;; ----------------------------------------------------------------------------
+;; Screen device constants
+;; $RT_NONE# = 0x00
+;; $RT_Border# = 0x04
+;; $RT_BorderFetchPixel# = 0x05
+;; $RT_BorderFetchAttr# = 0x06
+;; $RT_DisplayB1# = 0x08
+;; $RT_DisplayB1FetchB2# = 0x09
+;; $RT_DisplayB1FetchA2# = 0x0a
+;; $RT_DisplayB2# = 0x10
+;; $RT_DisplayB2FetchB1# = 0x11
+;; $RT_DisplayB2FetchA1# = 0x12
+
+;; ----------------------------------------------------------------------------
 ;; Screen device state
 
 ;; The current border color
@@ -171,7 +184,7 @@
     (i32.lt_u (get_local $tact) (get_global $tactsInFrame))
     if
       ;; Init the current tact
-      i32.const 0 set_local $phase
+      i32.const $RT_NONE# set_local $phase
       i32.const 0 set_local $contentionDelay
       i32.const 0 set_local $pixelAddr
       i32.const 0 set_local $attrAddr
@@ -227,7 +240,7 @@
           (i32.eq (tee_local $pixelTact) (i32.const 0))
           if
             ;; Pixel tact 0
-            i32.const 0x09 set_local $phase ;; DisplayB1FetchB2
+            i32.const $RT_DisplayB1FetchB2# set_local $phase
             (call $calcPixelAddr 
               (get_local $line)
               (i32.add (get_local $tactInLine) (i32.const 4))
@@ -235,14 +248,14 @@
             set_local $pixelAddr
             i32.const 5
             i32.const 0
-            (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+            (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
             select
             set_local $contentionDelay
           else
             (i32.eq (get_local $pixelTact) (i32.const 1))
             if
               ;; Pixel tact 1
-              i32.const 0x0a set_local $phase ;; DisplayB1FetchA2
+              i32.const $RT_DisplayB1FetchA2# set_local $phase
               (call $calcAttrAddr 
                 (get_local $line)
                 (i32.add (get_local $tactInLine) (i32.const 3))
@@ -250,47 +263,47 @@
               set_local $attrAddr
               i32.const 4
               i32.const 7
-              (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+              (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
               select
               set_local $contentionDelay
             else
               (i32.eq (get_local $pixelTact) (i32.const 2))
               if
                 ;; Pixel tact 2
-                i32.const 0x08 set_local $phase ;; DisplayB1
+                i32.const $RT_DisplayB1# set_local $phase
                 i32.const 3
                 i32.const 6
-                (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                 select
                 set_local $contentionDelay
               else
                 (i32.eq (get_local $pixelTact) (i32.const 3))
                 if
                   ;; Pixel tact 3
-                  i32.const 0x08 set_local $phase ;; DisplayB1
+                  i32.const $RT_DisplayB1# set_local $phase
                   i32.const 2
                   i32.const 5
-                  (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                  (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                   select
                   set_local $contentionDelay
                 else
                   (i32.eq (get_local $pixelTact) (i32.const 4))
                   if
                     ;; Pixel tact 4
-                    i32.const 0x10 set_local $phase ;; DisplayB2
+                    i32.const $RT_DisplayB2# set_local $phase
                     i32.const 1
                     i32.const 4
-                    (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                    (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                     select
                     set_local $contentionDelay
                   else
                     (i32.eq (get_local $pixelTact) (i32.const 5))
                     if
                       ;; Pixel tact 5
-                      i32.const 0x10 set_local $phase ;; DisplayB2
+                      i32.const $RT_DisplayB2# set_local $phase
                       i32.const 0
                       i32.const 3
-                      (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                      (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                       select
                       set_local $contentionDelay
                     else
@@ -307,7 +320,7 @@
                         )
                         if
                           ;; Yes, there are still more bytes
-                          i32.const 0x11 set_local $phase ;; DisplayB2FetchB1
+                          i32.const $RT_DisplayB2FetchB1# set_local $phase
                           (call $calcPixelAddr 
                             (get_local $line)
                             (i32.add (get_local $tactInLine) (get_global $pixelDataPrefetchTime))
@@ -315,12 +328,12 @@
                           set_local $pixelAddr
                           i32.const 0
                           i32.const 2
-                          (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                          (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                           select
                           set_local $contentionDelay
                         else
                           ;; Last byte in this line
-                          i32.const 0x10 set_local $phase ;; DisplayB2
+                          i32.const $RT_DisplayB2# set_local $phase
                         end
                       else
                         ;; Pixel tact 7
@@ -334,7 +347,7 @@
                         )
                         if
                           ;; Yes, there are still more bytes
-                          i32.const 0x12 set_local $phase ;; DisplayB2FetchA1
+                          i32.const $RT_DisplayB2FetchA1# set_local $phase
                           (call $calcAttrAddr 
                             (get_local $line)
                             (i32.add (get_local $tactInLine) (get_global $attributeDataPrefetchTime))
@@ -342,12 +355,12 @@
                           set_local $attrAddr
                           i32.const 6
                           i32.const 1
-                          (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                          (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                           select
                           set_local $contentionDelay
                         else
                           ;; Last byte in this line
-                          i32.const 0x10 set_local $phase ;; DisplayB2
+                          i32.const $RT_DisplayB2# set_local $phase
                         end
                       end
                     end
@@ -358,7 +371,7 @@
           end
         else
           ;; No, it is the border area
-          i32.const 0x04 set_local $phase
+          i32.const $RT_Border# set_local $phase
 
           ;; Is it left or right border?
           (i32.ge_u (get_local $line) (get_global $firstDisplayLine))
@@ -370,7 +383,7 @@
               (i32.eq (get_local $tactInLine) (get_local $borderPixelFetchTact))
               if
                 ;; Yes, prefetch pixel data
-                i32.const 0x05 set_local $phase ;; BorderFetchPixel
+                i32.const $RT_BorderFetchPixel# set_local $phase
                 (call $calcPixelAddr 
                   (get_local $line)
                   (i32.add (get_local $tactInLine) (get_global $pixelDataPrefetchTime))
@@ -378,7 +391,7 @@
                 set_local $pixelAddr
                 i32.const 0
                 i32.const 2
-                (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                 select
                 set_local $contentionDelay
               else
@@ -386,7 +399,7 @@
                 (i32.eq (get_local $tactInLine) (get_local $borderAttrFetchTact))
                 if
                   ;; Yes, prefetch attribute data
-                  i32.const 0x06 set_local $phase ;; BorderFetchAttr
+                  i32.const $RT_BorderFetchAttr# set_local $phase
                   (call $calcAttrAddr 
                     (get_local $line)
                     (i32.add (get_local $tactInLine) (get_global $attributeDataPrefetchTime))
@@ -394,7 +407,7 @@
                   set_local $attrAddr
                   i32.const 6
                   i32.const 1
-                  (i32.eq (get_global $contentionType) (i32.const 1)) ;; ULA contention?
+                  (i32.eq (get_global $contentionType) (i32.const $MEMCONT_ULA#))
                   select
                   set_local $contentionDelay
                 end
@@ -534,7 +547,7 @@
       (i32.gt_u (tee_local $phase) (i32.const 0))
       if
         ;; Test for border procesing
-        (i32.and (get_local $phase) (i32.const 0x04))
+        (i32.and (get_local $phase) (i32.const $RT_Border#))
         if
           ;; Store border pixels
           (i32.store8 offset=0 (get_global $pixelBufferPtr) (get_global $borderColor))
@@ -556,7 +569,7 @@
           end
         else
           ;; Test for Byte1 processing
-          (i32.and (get_local $phase) (i32.const 0x08))
+          (i32.and (get_local $phase) (i32.const $RT_DisplayB1#))
           if
             ;; Process Byte1 pixels
             get_global $pixelBufferPtr
