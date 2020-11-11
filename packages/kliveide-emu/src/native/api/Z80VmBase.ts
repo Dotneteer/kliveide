@@ -67,7 +67,7 @@ export abstract class Z80MachineBase {
     }
 
     // --- Init code execution
-    this.reset();
+    this.api.resetCpu();
     this.api.setPC(startAddress);
   }
 
@@ -102,7 +102,45 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * Executes the machine cycle
    * @param options Execution options
    */
-  abstract executeCycle(options: ExecuteCycleOptions): void;
+  executeCycle(options: ExecuteCycleOptions): void {
+    // --- Copy execution options
+    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+    mh.writeByte(0, options.emulationMode);
+    mh.writeByte(1, options.debugStepMode);
+    mh.writeBool(2, options.fastTapeMode);
+    mh.writeByte(3, options.terminationRom);
+    mh.writeUint16(4, options.terminationPoint);
+    mh.writeBool(6, options.fastVmMode);
+    mh.writeBool(7, options.disableScreenRendering);
+    mh.writeUint32(8, options.stepOverBreakpoint);
+    this.api.setExecutionOptions();
+
+    // --- Run the cycle and retrieve state
+    this.api.executeMachineCycle();
+  }
+
+  /**
+   * Reads a byte from the memory
+   * @param addr Memory address
+   */
+  readMemory(addr: number): number {
+    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
+    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
+    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
+    return mem[addr & 0x3fff];
+  }
+
+  /**
+   * Writes a byte into the memory
+   * @param addr Memory address
+   * @param value Value to write
+   */
+  writeMemory(addr: number, value: number): void {
+    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
+    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
+    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
+    mem[addr & 0x3fff] = value;
+  }
 }
 
 /**
@@ -334,27 +372,6 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   abstract getRomPageBaseAddress(): number;
 
   /**
-   * Executes the machine cycle
-   * @param options Execution options
-   */
-  executeCycle(options: ExecuteCycleOptions): void {
-    // --- Copy execution options
-    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
-    mh.writeByte(0, options.emulationMode);
-    mh.writeByte(1, options.debugStepMode);
-    mh.writeBool(2, options.fastTapeMode);
-    mh.writeByte(3, options.terminationRom);
-    mh.writeUint16(4, options.terminationPoint);
-    mh.writeBool(6, options.fastVmMode);
-    mh.writeBool(7, options.disableScreenRendering);
-    mh.writeUint32(8, options.stepOverBreakpoint);
-    this.api.setExecutionOptions();
-
-    // --- Run the cycle and retrieve state
-    this.api.executeMachineCycle();
-  }
-
-  /**
    * Sets the status of the specified key
    * @param key Key to set
    * @param isDown Status value
@@ -370,29 +387,6 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   getKeyStatus(key: SpectrumKeyCode): boolean {
     return this.api.getKeyStatus(key) !== 0;
-  }
-
-  /**
-   * Reads a byte from the memory
-   * @param addr Memory address
-   */
-  readMemory(addr: number): number {
-    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
-    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
-    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
-    return mem[addr & 0x3fff];
-  }
-
-  /**
-   * Writes a byte into the memory
-   * @param addr Memory address
-   * @param value Value to write
-   */
-  writeMemory(addr: number, value: number): void {
-    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
-    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
-    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
-    mem[addr & 0x3fff] = value;
   }
 
   /**

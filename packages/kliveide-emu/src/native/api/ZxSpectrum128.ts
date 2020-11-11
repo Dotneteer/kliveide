@@ -1,4 +1,4 @@
-import { ZxSpectrumBase } from "./ZxSpectrumBase";
+import { ZxSpectrumBase } from "./Z80VmBase";
 import { MachineApi } from "./api";
 import { Spectrum128MachineState, MachineState } from "./machine-state";
 import { ROM_128_0_OFFS } from "./memory-map";

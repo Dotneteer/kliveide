@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { ZxSpectrumBase } from "../../native/api/ZxSpectrumBase";
+import { ZxSpectrumBase } from "../../native/api/Z80VmBase";
 import {
   ExecutionState,
   ExecutionStateChangedArgs,

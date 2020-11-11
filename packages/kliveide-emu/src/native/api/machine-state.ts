@@ -1,5 +1,14 @@
 import { Z80CpuState } from "./cpu-helpers";
 
+/**
+ * This type represents ZX Spectrum machine states
+ */
+export type MachineState =
+  | Spectrum48MachineState
+  | Spectrum128MachineState
+  | CambridgeZ88MachineState;
+
+
 export abstract class Z80MachineStateBase extends Z80CpuState {
   // --- Type discriminator
   type: MachineState["type"];
@@ -142,14 +151,6 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
 }
 
 /**
- * This type represents ZX Spectrum machine states
- */
-export type MachineState =
-  | Spectrum48MachineState
-  | Spectrum128MachineState
-  | CambridgeZ88MachineState;
-
-/**
  * Represents the state of a ZX Spectrum 48 machine
  */
 export class Spectrum48MachineState extends SpectrumMachineStateBase {
@@ -168,6 +169,34 @@ export class Spectrum128MachineState extends SpectrumMachineStateBase {
  */
 export class CambridgeZ88MachineState extends Z80MachineStateBase {
   type: "cz88";
+
+  // --- CPU configuration
+  baseClockFrequency: number;
+  clockMultiplier: number;
+  supportsNextOperations: boolean;
+
+  // --- BLINK Device
+  INT: number;
+  STA: number;
+  COM: number;
+
+  // --- RTC device
+  TIM0: number;
+  TIM1: number;
+  TIM2: number;
+  TIM3: number;
+  TIM4: number;
+  TSTA: number;
+  TMK: number;
+
+  // --- Screen device
+  PB0: number;
+  PB1: number;
+  PB2: number;
+  PB3: number;
+  SBR: number;
+  SCW: number;
+  SCH: number;
 }
 
 /**

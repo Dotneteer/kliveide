@@ -1,4 +1,4 @@
-import { ZxSpectrumBase } from "./ZxSpectrumBase";
+import { ZxSpectrumBase } from "./Z80VmBase";
 import { MachineApi } from "./api";
 import { Spectrum48MachineState, MachineState } from "./machine-state";
 import { ROM_48_OFFS } from "./memory-map";
@@ -30,3 +30,4 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
     return ROM_48_OFFS;
   }
 }
+

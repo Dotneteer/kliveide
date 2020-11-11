@@ -819,8 +819,8 @@
 ;; Processes standard or indexed operations
 (func $processStandardOrIndexedOperations
   ;; Diagnostics
-  get_global $INDEXED_JT
-  get_global $STANDARD_JT
+  i32.const $INDEXED_JT#
+  i32.const $STANDARD_JT#
   get_global $indexMode
   select
   get_global $opCode
@@ -853,7 +853,7 @@
     call $getWZ ;; The address to use with the indexed bit operation
 
     ;; Get operation function
-    get_global $INDEXED_BIT_JT
+    i32.const $INDEXED_BIT_JT#
     call $readCodeMemory
     set_global $opCode
     get_global $opCode
@@ -861,14 +861,14 @@
     call_indirect (type $IndexedBitFunc)
   else
     ;; Normal bit operations
-    (i32.add (get_global $BIT_JT) (get_global $opCode))
+    (i32.add (i32.const $BIT_JT#) (get_global $opCode))
     call_indirect (type $OpFunc)
   end
 )
 
 ;; Processes extended operations
 (func $processExtendedOperations
-  get_global $EXTENDED_JT
+  i32.const $EXTENDED_JT#
   get_global $opCode
   i32.add
   call_indirect (type $OpFunc)

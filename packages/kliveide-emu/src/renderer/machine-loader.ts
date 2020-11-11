@@ -10,7 +10,7 @@ import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command
 import { MemoryHelper } from "../native/api/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
-import { ZxSpectrumBase } from "../native/api/ZxSpectrumBase";
+import { ZxSpectrumBase } from "../native/api/Z80VmBase";
 import { getMachineTypeIdFromName } from "../shared/spectrum/machine-types";
 import {
   InjectProgramCommand,

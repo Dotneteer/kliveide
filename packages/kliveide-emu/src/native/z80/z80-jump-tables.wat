@@ -22,22 +22,25 @@
 ;; Jump table start indices
 
 ;; Z80 standard instructions
-(global $STANDARD_JT i32 (i32.const 120))
+;; $STANDARD_JT# = 120
 
 ;; Z80 indexed instructions
-(global $INDEXED_JT i32 (i32.const 376))
+;; $INDEXED_JT# = 376
 
 ;; Z80 extended instructions
-(global $EXTENDED_JT i32 (i32.const 632))
+;; $EXTENDED_JT# = 632
 
 ;; Z80 bit instructions
-(global $BIT_JT i32 (i32.const 888))
+;; $BIT_JT# = 888
 
 ;; Z80 indexed bit instructions
-(global $INDEXED_BIT_JT i32 (i32.const 1144))
+;; $INDEXED_BIT_JT# = 1144
 
 ;; ALU bit manipulation operations table
-(global $BOP_JT i32 (i32.const 1400))
+;; $BOP_JT# = 1400
+
+;; Total number of dispatchable functions
+;; $TOTAL_DISPATCH# = 1408
 
 ;; This table stores all dispatchable functions
 ;; 120: 6 machine types (20 function for each)
@@ -47,7 +50,7 @@
 ;; 256: Bit operations
 ;; 256: Indexed bit operations
 ;; 8: ALU bit operations
-(table $dispatch 1408 anyfunc)
+(table $dispatch $TOTAL_DISPATCH# anyfunc)
 
 ;; ----------------------------------------------------------------------------
 ;; Table of machine-type specific functions
@@ -199,7 +202,7 @@
 )
 
 ;; Table of standard instructions
-(elem (i32.const 120)
+(elem (i32.const $STANDARD_JT#)
   ;; 0x00-0x07
   $NOOP     $LdBCNN   $LdBCiA   $IncBC    $IncB     $DecB     $LdBN     $Rlca
   ;; 0x08-0x0f
@@ -267,7 +270,7 @@
 )
 
 ;; Table of indexed instructions
-(elem (i32.const 376)
+(elem (i32.const $INDEXED_JT#)
   ;; 0x00-0x07
   $NOOP     $LdBCNN   $LdBCiA   $IncBC    $IncB     $DecB     $LdBN     $Rlca
   ;; 0x08-0x0f
@@ -335,7 +338,7 @@
 )
 
 ;; Table of extended instructions
-(elem (i32.const 632)
+(elem (i32.const $EXTENDED_JT#)
   ;; 0x00-0x07
   $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0x08-0x0f
@@ -403,7 +406,7 @@
 )
 
 ;; Table of bit instructions
-(elem (i32.const 888)
+(elem (i32.const $BIT_JT#)
   ;; 0x00-0x07
   $BopQ     $BopQ     $BopQ     $BopQ     $BopQ     $BopQ     $BopHLi   $BopQ
   ;; 0x08-0x0f
@@ -471,7 +474,7 @@
 )
 
 ;; Table of indexed bit instructions
-(elem (i32.const 1144)
+(elem (i32.const $INDEXED_BIT_JT#)
   ;; 0x00-0x07
   $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ    $XBopQ
   ;; 0x08-0x0f
@@ -539,7 +542,7 @@
 )
 
 ;; Table of bit operations
-(elem (i32.const 1400)
+(elem (i32.const $BOP_JT#)
   $Rlc
   $Rrc
   $Rl
