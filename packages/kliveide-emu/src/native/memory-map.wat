@@ -1,7 +1,7 @@
 ;; ============================================================================
 ;; Memory structure
 ;; We keep 2048 KB of memory
-(memory (export "memory") 40)
+(memory (export "memory") 80)
 
 ;; ==========================================================================
 ;; New memory map structure
@@ -221,4 +221,17 @@
 ;; PSG volumes (16 words)
 (global $PSG_VOLUME_TABLE i32 (i32.const 0x23_3800))
 
-;; Next free slot: 0x23_3900
+;; ----------------------------------------------------------------------------
+;; Cambridge Z88 Memory
+
+;; Memory extension registers area(20 bytes)
+;; 0x00-0x03: Memory extension registers SR0-SR3
+;; 0x04-0x0B: Size of the memory slot (according to A21-A19 address values of SRs)
+;; 0x0C-0x14: ROM nature of the slot (according to A21-A19 address values of SRs)
+(global $Z88_MEMEXT_REGS i32 (i32.const 0x23_3900))
+
+;; Z88 ROMS (512 KBytes)
+(global $Z88_ROMS i32 (i32.const 0x23_4000))
+
+;; Next free slot: 0x2b_3800
+

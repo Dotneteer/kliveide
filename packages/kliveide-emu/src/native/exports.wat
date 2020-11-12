@@ -47,3 +47,6 @@
 ;; Cambridge Z88 exports
 (export "testIncZ88Rtc" (func $testIncZ88Rtc))
 (export "testSetRtcRegs" (func $testSetRtcRegs))
+(export "testSetZ88INT" (func $testSetZ88INT))
+(export "testSetZ88STA" (func $testSetZ88STA))
+(export "testSetZ88COM" (func $testSetZ88COM))

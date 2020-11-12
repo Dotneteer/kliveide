@@ -61,4 +61,7 @@ export interface MachineApi extends CpuApi {
     tim3: number,
     tim4: number
   ): void;
+  testSetZ88INT(value: number): void;
+  testSetZ88STA(value: number): void;
+  testSetZ88COM(value: number): void;
 }

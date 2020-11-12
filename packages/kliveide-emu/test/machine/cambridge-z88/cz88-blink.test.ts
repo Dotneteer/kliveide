@@ -167,4 +167,25 @@ describe("Cambridge Z88 - Blink", () => {
     expect(s.TIM4).toBe(0);
     expect(s.TSTA).toBe(0);
   });
+
+  it("RTC reset requested", () => {
+    machine.api.testIncZ88Rtc(100);
+    machine.api.testSetZ88COM(0x10);
+    machine.api.testIncZ88Rtc(1);
+
+    const s = machine.getMachineState();
+
+    expect(s.INT).toBe(0);
+    expect(s.STA).toBe(0);
+    expect(s.COM).toBe(0x10);
+
+    expect(s.TIM0).toBe(0x98);
+    expect(s.TIM1).toBe(0);
+    expect(s.TIM2).toBe(0);
+    expect(s.TIM3).toBe(0);
+    expect(s.TIM4).toBe(0);
+    expect(s.TSTA).toBe(0);
+  });
+
+
 });

@@ -89,8 +89,6 @@
       (i32.add (get_global $z88TIM1) (i32.const 1))
       set_global $z88TIM1
 
-      ;; TODO Update Mhz menu ???
-    
       ;; signal interrupt only if the flap is closed (the Blink doesn't emit RTC interrupts while the flap is open,
       ;; even if INT.TIME is enabled)
       (i32.and (get_global $z88STA) (i32.const $BM_STAFLAPOPEN#))
