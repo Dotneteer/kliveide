@@ -227,7 +227,7 @@
 ;; Memory extension registers area, SR0-SR3 (4 bytes)
 (global $Z88_SR i32 (i32.const 0x23_3900))
 
-;; Card slot masks describing the slot size 
+;; Card slot masks describing the slot size (5 bytes)
 ;; 0: Internal RAM size
 ;; 1: Card Slot 1 size
 ;; 2: Card Slot 2 size
@@ -235,6 +235,9 @@
 ;; 4: Internal ROM size
 ;; 5: Is Card Slot 3 ROM?
 (global $Z88_SLMASKS i32 (i32.const 0x23_3904))
+
+;; Pointers for the address slots (16 byte)
+(global $Z88_PAGE_PTRS i32 (i32.const 0x23_3910))
 
 ;; Z88 Memory (4 MBytes)
 (global $Z88_MEM_AREA i32 (i32.const 0x23_4000))

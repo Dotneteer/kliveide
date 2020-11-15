@@ -320,9 +320,9 @@
   (i32.store8 offset=71 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCH))
 
   ;; Memory device
-  (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_MEMEXT_REGS)))
-  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load offset=4 (get_global $Z88_MEMEXT_REGS)))
-  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=8 (get_global $Z88_MEMEXT_REGS)))
+  (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
+  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SLMASKS)))
+  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_SLMASKS)))
 
   ;; TODO: Get other state values
 )

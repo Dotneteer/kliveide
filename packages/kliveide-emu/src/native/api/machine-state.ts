@@ -208,10 +208,10 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   slotMask2: number;
   slotMask3: number;
   slotMask0Rom: number;
-  slot0Offset: number;
-  slot1Offset: number;
-  slot2Offset: number;
-  slot3Offset: number;
+  s0Offset: number;
+  s1Offset: number;
+  s2Offset: number;
+  s3Offset: number;
 }
 
 /**

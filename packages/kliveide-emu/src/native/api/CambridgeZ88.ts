@@ -1,7 +1,7 @@
 import { MachineApi } from "./api";
 import { CambridgeZ88MachineState, MachineState } from "./machine-state";
 import { MemoryHelper } from "./memory-helpers";
-import { PAGE_INDEX_16, STATE_TRANSFER_BUFF, Z88_MEM_AREA } from "./memory-map";
+import { PAGE_INDEX_16, STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
 import { FrameBoundZ80Machine } from "./Z80VmBase";
 
 /**
@@ -72,11 +72,11 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.slotMask3 = mh.readByte(79);
     s.slotMask0Rom = mh.readByte(80);
 
-    const slotMh = new MemoryHelper(this.api, PAGE_INDEX_16);
-    s.slot0Offset = slotMh.readUint32(0) - Z88_MEM_AREA;
-    s.slot1Offset = slotMh.readUint32(6) - Z88_MEM_AREA;
-    s.slot2Offset = slotMh.readUint32(12) - Z88_MEM_AREA;
-    s.slot3Offset = slotMh.readUint32(18) - Z88_MEM_AREA;
+    const slotMh = new MemoryHelper(this.api, Z88_PAGE_PTRS);
+    s.s0Offset = slotMh.readUint32(0) - Z88_MEM_AREA;
+    s.s1Offset = slotMh.readUint32(4) - Z88_MEM_AREA;
+    s.s2Offset = slotMh.readUint32(8) - Z88_MEM_AREA;
+    s.s3Offset = slotMh.readUint32(12) - Z88_MEM_AREA;
     return s;
   }
 }

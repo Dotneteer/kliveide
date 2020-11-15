@@ -4,14 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/native/api/api";
 import { importObject } from "../../import-object";
-import {
-  CambridgeZ88,
-  IntFlags,
-  TmkFlags,
-  TstaFlags,
-} from "../../../src/native/api/CambridgeZ88";
-import { MemoryHelper } from "../../../src/native/api/memory-helpers";
-import { PAGE_INDEX_16 } from "../../../src/native/api/memory-map";
+import { CambridgeZ88 } from "../../../src/native/api/CambridgeZ88";
 
 const buffer = fs.readFileSync(
   path.join(__dirname, "../../../build/spectrum.wasm")
@@ -36,7 +29,7 @@ describe("Cambridge Z88 - Memory", function () {
     machine.api.setSlotMask(1, 0x3f); // Slot 1 RAM 1M
     machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
     machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
-    machine.api.setSlotMask(4, 0x1f); // Slot 1 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
 
     const s = machine.getMachineState();
 
@@ -46,31 +39,353 @@ describe("Cambridge Z88 - Memory", function () {
     expect(s.slotMask3).toBe(0x3f);
     expect(s.slotMask0Rom).toBe(0x1f);
 
-    expect(s.slot0Offset).toBe(0x00_0000);
-    expect(s.slot1Offset).toBe(0x10_0000);
-    expect(s.slot2Offset).toBe(0x20_0000);
-    expect(s.slot3Offset).toBe(0x30_0000);
+    expect(s.s0Offset).toBe(0x00_0000);
+    expect(s.s1Offset).toBe(0x00_0000);
+    expect(s.s2Offset).toBe(0x00_0000);
+    expect(s.s3Offset).toBe(0x00_0000);
   });
 
-  it("SR0 write (512K, 1M, 1M, 1M", () => {
+  it("Set SR0 (128K, 1M, 1M, 1M, 512K)", () => {
+    machine.reset();
+    machine.api.setSlotMask(0, 0x07); // Slot 0 RAM 128K
+    machine.api.setSlotMask(1, 0x3f); // Slot 1 RAM 1M
+    machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
+    machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
+
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 8; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd0, repeat * 0x08 + maskedBank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(maskedBank * 0x4000);
+        expect(s.s1Offset).toBe(0x00_0000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $40-$ff
+    for (let maskedBank = 0x40; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd0, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(maskedBank * 0x4000);
+      expect(s.s1Offset).toBe(0x00_0000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
+    }
+  });
+
+  it("Set SR0 (512K, 1M, 1M, 1M, 512K)", () => {
     machine.reset();
     machine.api.setSlotMask(0, 0x1f); // Slot 0 RAM 512K
     machine.api.setSlotMask(1, 0x3f); // Slot 1 RAM 1M
     machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
     machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
-    machine.api.setSlotMask(4, 0x1f); // Slot 1 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
 
-    for (let j = 0; j < 4; j++) {
-      for (let i = 0; i < 32; i++) {
-        machine.api.writePortCz88(0xd0, j * 32 + i);
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 2; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x20; maskedBank++) {
+        machine.api.writePortCz88(0xd0, repeat * 0x20 + maskedBank);
 
         const s = machine.getMachineState();
 
-        expect(s.slot0Offset).toBe(i * 0x4000);
-        expect(s.slot1Offset).toBe(0x10_0000);
-        expect(s.slot2Offset).toBe(0x20_0000);
-        expect(s.slot3Offset).toBe(0x30_0000);
+        expect(s.s0Offset).toBe(maskedBank * 0x4000);
+        expect(s.s1Offset).toBe(0x00_0000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
       }
+    }
+
+    // Banks $40-$ff
+    for (let maskedBank = 0x40; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd0, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(maskedBank * 0x4000);
+      expect(s.s1Offset).toBe(0x00_0000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
+    }
+  });
+
+  it("Set SR1 (128K, 1M, 1M, 1M, 512K)", () => {
+    machine.reset();
+    machine.api.setSlotMask(0, 0x07); // Slot 0 RAM 128K
+    machine.api.setSlotMask(1, 0x3f); // Slot 1 RAM 1M
+    machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
+    machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
+
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 8; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x08 + maskedBank);
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $40-$ff
+    for (let maskedBank = 0x40; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd1, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(0x00_0000);
+      expect(s.s1Offset).toBe(maskedBank * 0x4000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
+    }
+  });
+
+  it("Set SR1 (128K, 512K, 1M, 1M, 512K)", () => {
+    machine.reset();
+    machine.api.setSlotMask(0, 0x07); // Slot 0 RAM 128K
+    machine.api.setSlotMask(1, 0x1f); // Slot 1 RAM 512K
+    machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
+    machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
+
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 8; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x08 + maskedBank);
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $40-$7f
+    for (let repeat = 0; repeat < 0x02; repeat++) {
+      for (let maskedBank = 0x40; maskedBank < 0x40; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x02 + maskedBank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $80-$ff
+    for (let maskedBank = 0x80; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd1, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(0x00_0000);
+      expect(s.s1Offset).toBe(maskedBank * 0x4000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
+    }
+  });
+
+  it("Set SR1 (128K, 256K, 1M, 1M, 512K)", () => {
+    machine.reset();
+    machine.api.setSlotMask(0, 0x07); // Slot 0 RAM 128K
+    machine.api.setSlotMask(1, 0x0f); // Slot 1 RAM 256K
+    machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
+    machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
+
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 8; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x08 + maskedBank);
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $40-$7f
+    for (let repeat = 0; repeat < 0x04; repeat++) {
+      for (let maskedBank = 0x40; maskedBank < 0x20; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x04 + maskedBank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $80-$ff
+    for (let maskedBank = 0x80; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd1, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(0x00_0000);
+      expect(s.s1Offset).toBe(maskedBank * 0x4000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
+    }
+  });
+
+  it("Set SR1 (128K, 128K, 1M, 1M, 512K)", () => {
+    machine.reset();
+    machine.api.setSlotMask(0, 0x07); // Slot 0 RAM 128K
+    machine.api.setSlotMask(1, 0x07); // Slot 1 RAM 128K
+    machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
+    machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
+
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 8; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x08 + maskedBank);
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $40-$7f
+    for (let repeat = 0; repeat < 0x08; repeat++) {
+      for (let maskedBank = 0x40; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x08 + maskedBank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $80-$ff
+    for (let maskedBank = 0x80; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd1, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(0x00_0000);
+      expect(s.s1Offset).toBe(maskedBank * 0x4000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
+    }
+  });
+
+  it("Set SR1 (128K, 64K, 1M, 1M, 512K)", () => {
+    machine.reset();
+    machine.api.setSlotMask(0, 0x07); // Slot 0 RAM 128K
+    machine.api.setSlotMask(1, 0x03); // Slot 1 RAM 64K
+    machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
+    machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
+
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 8; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x08 + maskedBank);
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $40-$7f
+    for (let repeat = 0; repeat < 0x10; repeat++) {
+      for (let maskedBank = 0x40; maskedBank < 0x04; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x10 + maskedBank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $80-$ff
+    for (let maskedBank = 0x80; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd1, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(0x00_0000);
+      expect(s.s1Offset).toBe(maskedBank * 0x4000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
+    }
+  });
+
+  it("Set SR1 (128K, 32K, 1M, 1M, 512K)", () => {
+    machine.reset();
+    machine.api.setSlotMask(0, 0x07); // Slot 0 RAM 128K
+    machine.api.setSlotMask(1, 0x01); // Slot 1 RAM 32K
+    machine.api.setSlotMask(2, 0x3f); // Slot 2 RAM 1M
+    machine.api.setSlotMask(3, 0x3f); // Slot 3 RAM 1M
+    machine.api.setSlotMask(4, 0x1f); // Slot 4 ROM 512K
+
+    // Banks $00-$3f
+    for (let repeat = 0; repeat < 8; repeat++) {
+      for (let maskedBank = 0x00; maskedBank < 0x08; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x08 + maskedBank);
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $40-$7f
+    for (let repeat = 0; repeat < 0x20; repeat++) {
+      for (let maskedBank = 0x40; maskedBank < 0x02; maskedBank++) {
+        machine.api.writePortCz88(0xd1, repeat * 0x20 + maskedBank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0Offset).toBe(0x00_0000);
+        expect(s.s1Offset).toBe(maskedBank * 0x4000);
+        expect(s.s2Offset).toBe(0x00_0000);
+        expect(s.s3Offset).toBe(0x00_0000);
+      }
+    }
+
+    // Banks $80-$ff
+    for (let maskedBank = 0x80; maskedBank < 0x100; maskedBank++) {
+      machine.api.writePortCz88(0xd1, maskedBank);
+
+      const s = machine.getMachineState();
+
+      expect(s.s0Offset).toBe(0x00_0000);
+      expect(s.s1Offset).toBe(maskedBank * 0x4000);
+      expect(s.s2Offset).toBe(0x00_0000);
+      expect(s.s3Offset).toBe(0x00_0000);
     }
   });
 });
