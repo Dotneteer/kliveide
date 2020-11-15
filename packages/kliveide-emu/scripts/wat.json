@@ -27,6 +27,7 @@
     "cz88-core/execution-engine.wat",
     "cz88-core/blink-device.wat",
     "cz88-core/rtc-device.wat",
+    "cz88-core/memory-device.wat",
     "cz88-core/screen-device.wat",
     "spectrum-core/execution-engine.wat",
     "spectrum-core/memory-device.wat",

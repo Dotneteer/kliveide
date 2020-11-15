@@ -1,7 +1,7 @@
 ;; ============================================================================
 ;; Memory structure
 ;; We keep 2048 KB of memory
-(memory (export "memory") 80)
+(memory (export "memory") 128)
 
 ;; ==========================================================================
 ;; New memory map structure
@@ -9,7 +9,7 @@
 ;; ----------------------------------------------------------------------------
 ;; RAM banks
 
-;; 128K RAM. These are the RAM banks of ZS Spectrum 123/+3
+;; 128K RAM. These are the RAM banks of ZS Spectrum 128/+3
 ;; Also, the first 3 banks are used as the RAM of ZX Spectrum 48K
 (global $BANK_0_OFFS i32 (i32.const 0x00_0000))
 (global $BANK_1_OFFS i32 (i32.const 0x00_4000))
@@ -224,14 +224,20 @@
 ;; ----------------------------------------------------------------------------
 ;; Cambridge Z88 Memory
 
-;; Memory extension registers area(20 bytes)
-;; 0x00-0x03: Memory extension registers SR0-SR3
-;; 0x04-0x0B: Size of the memory slot (according to A21-A19 address values of SRs)
-;; 0x0C-0x14: ROM nature of the slot (according to A21-A19 address values of SRs)
-(global $Z88_MEMEXT_REGS i32 (i32.const 0x23_3900))
+;; Memory extension registers area, SR0-SR3 (4 bytes)
+(global $Z88_SR i32 (i32.const 0x23_3900))
 
-;; Z88 ROMS (512 KBytes)
-(global $Z88_ROMS i32 (i32.const 0x23_4000))
+;; Card slot masks describing the slot size 
+;; 0: Internal RAM size
+;; 1: Card Slot 1 size
+;; 2: Card Slot 2 size
+;; 3: Card Slot 3 size
+;; 4: Internal ROM size
+;; 5: Is Card Slot 3 ROM?
+(global $Z88_SLMASKS i32 (i32.const 0x23_3904))
 
-;; Next free slot: 0x2b_3800
+;; Z88 Memory (4 MBytes)
+(global $Z88_MEM_AREA i32 (i32.const 0x23_4000))
+
+;; Next free slot: 0x63_4000
 

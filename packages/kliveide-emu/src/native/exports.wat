@@ -50,3 +50,6 @@
 (export "testSetZ88INT" (func $testSetZ88INT))
 (export "testSetZ88STA" (func $testSetZ88STA))
 (export "testSetZ88COM" (func $testSetZ88COM))
+(export "testSetZ88TMK" (func $testSetZ88TMK))
+(export "setSlotMask" (func $setSlotMask))
+(export "writePortCz88" (func $writePortCz88))

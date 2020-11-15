@@ -187,38 +187,24 @@
   end
 
   ;; Dispatch according to the 8-bit address
-  (i32.eq (get_local $addr8) (i32.const 0xd0))
+  (i32.ge_u (get_local $addr8) (i32.const 0xd0))
   if
-    ;; SR0, Segment register 0
-    ;; TODO
-    return
-  end
-
-  (i32.eq (get_local $addr8) (i32.const 0xd1))
-  if
-    ;; SR1, Segment register 1
-    ;; TODO
-    return
-  end
-
-  (i32.eq (get_local $addr8) (i32.const 0xd2))
-  if
-    ;; SR2, Segment register 2
-    ;; TODO
-    return
-  end
-
-  (i32.eq (get_local $addr8) (i32.const 0xd3))
-  if
-    ;; SR3, Segment register 3
-    ;; TODO
-    return
+    (i32.le_u (get_local $addr8) (i32.const 0xd3))
+    if
+      (call $setZ88MemorySegment 
+        (i32.and (get_local $addr8) (i32.const 0x03))
+        (get_local $v)
+      )
+      return
+    end
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb0))
   if
     ;; COM, Set Command Register
     get_local $v set_global $z88COM
+
+
     return
   end
 
@@ -299,6 +285,7 @@
   ;; Blink initial setup
   call $resetZ88Blink
   call $resetZ88Rtc
+  call $resetZ88Memory
   call $resetZ88Screen
 )
 
@@ -331,6 +318,11 @@
   (i32.store16 offset=68 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SBR))
   (i32.store8 offset=70 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCW))
   (i32.store8 offset=71 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCH))
+
+  ;; Memory device
+  (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_MEMEXT_REGS)))
+  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load offset=4 (get_global $Z88_MEMEXT_REGS)))
+  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=8 (get_global $Z88_MEMEXT_REGS)))
 
   ;; TODO: Get other state values
 )
