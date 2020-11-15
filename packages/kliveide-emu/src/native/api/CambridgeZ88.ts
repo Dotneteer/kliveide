@@ -1,7 +1,7 @@
 import { MachineApi } from "./api";
 import { CambridgeZ88MachineState, MachineState } from "./machine-state";
 import { MemoryHelper } from "./memory-helpers";
-import { STATE_TRANSFER_BUFF } from "./memory-map";
+import { PAGE_INDEX_16, STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
 import { FrameBoundZ80Machine } from "./Z80VmBase";
 
 /**
@@ -61,6 +61,54 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.SCW = mh.readByte(70);
     s.SCH = mh.readByte(71);
 
+    // --- Memory device
+    s.SR0 = mh.readByte(72);
+    s.SR1 = mh.readByte(73);
+    s.SR2 = mh.readByte(74);
+    s.SR3 = mh.readByte(75);
+    s.slotMask0 = mh.readByte(76);
+    s.slotMask1 = mh.readByte(77);
+    s.slotMask2 = mh.readByte(78);
+    s.slotMask3 = mh.readByte(79);
+    s.slotMask0Rom = mh.readByte(80);
+
+    const slotMh = new MemoryHelper(this.api, Z88_PAGE_PTRS);
+    s.s0Offset = slotMh.readUint32(0) - Z88_MEM_AREA;
+    s.s1Offset = slotMh.readUint32(4) - Z88_MEM_AREA;
+    s.s2Offset = slotMh.readUint32(8) - Z88_MEM_AREA;
+    s.s3Offset = slotMh.readUint32(12) - Z88_MEM_AREA;
     return s;
   }
+}
+
+/**
+ * Z88 INT flag values
+ */
+export enum IntFlags {
+  BM_INTKWAIT = 0x80,
+  BM_INTA19 = 0x40,
+  BM_INTFLAP = 0x20,
+  BM_INTUART = 0x10,
+  BM_INTBTL = 0x08,
+  BM_INTKEY = 0x04,
+  BM_INTTIME = 0x02,
+  BM_INTGINT = 0x01,
+}
+
+/**
+ * Z88 TSTA flag values
+ */
+export enum TstaFlags {
+  BM_TSTATICK = 0x01,
+  BM_TSTASEC = 0x02,
+  BM_TSTAMIN = 0x04,
+}
+
+/**
+ * Z88 TMK flag values
+ */
+export enum TmkFlags {
+  BM_TMKTICK = 0x01,
+  BM_TMKSEC = 0x02,
+  BM_TMKMIN = 0x04,
 }

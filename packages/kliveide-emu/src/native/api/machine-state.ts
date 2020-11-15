@@ -197,6 +197,21 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   SBR: number;
   SCW: number;
   SCH: number;
+
+  // --- Memory device
+  SR0: number;
+  SR1: number;
+  SR2: number;
+  SR3: number;
+  slotMask0: number;
+  slotMask1: number;
+  slotMask2: number;
+  slotMask3: number;
+  slotMask0Rom: number;
+  s0Offset: number;
+  s1Offset: number;
+  s2Offset: number;
+  s3Offset: number;
 }
 
 /**

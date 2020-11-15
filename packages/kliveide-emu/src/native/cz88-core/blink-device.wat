@@ -36,6 +36,16 @@
 ;; $BM_COMLCDON# = 0x01   // Bit 0, LCDON
 (global $z88COM (mut i32) (i32.const 0x0000))
 
+;; EPR, Eprom Programming Register
+(global $z88EPR (mut i32) (i32.const 0x0000))
+
+;; TACK, Set Timer Interrupt Acknowledge
+(global $z88TACK (mut i32) (i32.const 0x0000))
+
+;; ACK, Acknowledge INT Interrupts
+(global $z88ACK (mut i32) (i32.const 0x0000))
+
+
 ;; ============================================================================
 ;; Blink methods
 
@@ -44,4 +54,19 @@
   i32.const 0x00 set_global $z88INT
   i32.const 0x00 set_global $z88STA
   i32.const 0x00 set_global $z88COM
+)
+
+;; ============================================================================
+;; Blink test methods
+
+(func $testSetZ88INT (param $value i32)
+  get_local $value set_global $z88INT
+)
+
+(func $testSetZ88STA (param $value i32)
+  get_local $value set_global $z88STA
+)
+
+(func $testSetZ88COM (param $value i32)
+  get_local $value set_global $z88COM
 )

@@ -74,40 +74,38 @@
     end
   end
 
+  ;; Increment TIM0
+  (i32.add (get_global $z88TIM0) (i32.const 1))
+  set_global $z88TIM0
+
   ;; Handle TIM0
   (i32.gt_u (get_global $z88TIM0) (i32.const 199))
   if
     i32.const 0 set_global $z88TIM0
-  else
-    ;; Increment TIM0
-    (i32.add (get_global $z88TIM0) (i32.const 1))
-    set_global $z88TIM0
+  end
 
-    (i32.eq (get_global $z88TIM0) (i32.const 0x81))
+  (i32.eq (get_global $z88TIM0) (i32.const 0x80))
+  if
+    ;; Increment TIM1
+    (i32.add (get_global $z88TIM1) (i32.const 1))
+    set_global $z88TIM1
+
+    ;; signal interrupt only if the flap is closed (the Blink doesn't emit RTC interrupts while the flap is open,
+    ;; even if INT.TIME is enabled)
+    (i32.and (get_global $z88STA) (i32.const $BM_STAFLAPOPEN#))
+    (i32.eqz)
     if
-      ;; Increment TIM1
-      (i32.add (get_global $z88TIM1) (i32.const 1))
-      set_global $z88TIM1
-
-      ;; TODO Update Mhz menu ???
-    
-      ;; signal interrupt only if the flap is closed (the Blink doesn't emit RTC interrupts while the flap is open,
-      ;; even if INT.TIME is enabled)
-      (i32.and (get_global $z88STA) (i32.const $BM_STAFLAPOPEN#))
-      (i32.eqz)
+      (i32.and (get_global $z88TMK) (i32.const $BM_TMKSEC#))
       if
-        (i32.and (get_global $z88TMK) (i32.const $BM_TMKSEC#))
+        (i32.and (get_global $z88TSTA) (i32.const $BM_TSTASEC#))
+        i32.eqz
         if
-          (i32.and (get_global $z88TSTA) (i32.const $BM_TSTASEC#))
-          i32.eqz
+          (i32.and (get_global $z88INT) (i32.const $BM_INTTIME#))
           if
-            (i32.and (get_global $z88INT) (i32.const $BM_INTTIME#))
-            if
-              ;; INT.TIME interrupts are enabled, and Blink may signal it
-              ;; TMK.TICK interrupts are enabled, signal that a tick occurred
-              (i32.or (get_global $z88TSTA) (i32.const $BM_TSTASEC#))
-              set_global $z88TSTA
-            end
+            ;; INT.TIME interrupts are enabled, and Blink may signal it
+            ;; TMK.TICK interrupts are enabled, signal that a tick occurred
+            (i32.or (get_global $z88TSTA) (i32.const $BM_TSTASEC#))
+            set_global $z88TSTA
           end
         end
       end
@@ -214,4 +212,9 @@
   set_global $z88TIM3
   (i32.and (get_local $tim4) (i32.const 0xff))
   set_global $z88TIM4
+)
+
+;; Sets the TMK register of Z88
+(func $testSetZ88TMK (param $value i32)
+  get_local $value set_global $z88TMK
 )
