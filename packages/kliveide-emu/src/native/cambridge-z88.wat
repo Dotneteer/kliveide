@@ -186,25 +186,41 @@
     return
   end
 
-  ;; Dispatch according to the 8-bit address
-  (i32.ge_u (get_local $addr8) (i32.const 0xd0))
+  (i32.eq (get_local $addr8) (i32.const 0xd0))
   if
-    (i32.le_u (get_local $addr8) (i32.const 0xd3))
-    if
-      (call $setZ88MemorySegment 
-        (i32.and (get_local $addr8) (i32.const 0x03))
-        (get_local $v)
-      )
-      return
-    end
-  end
+    ;; SR0
+    (call $setZ88SR0 (get_local $v))
+    return
+  end 
+
+  (i32.eq (get_local $addr8) (i32.const 0xd1))
+  if
+    ;; SR1
+    (call $setZ88SR1 (get_local $v))
+    return
+  end 
+
+  (i32.eq (get_local $addr8) (i32.const 0xd2))
+  if
+    ;; SR2
+    (call $setZ88SR2 (get_local $v))
+    return
+  end 
+
+  (i32.eq (get_local $addr8) (i32.const 0xd3))
+  if
+    ;; SR3
+    (call $setZ88SR3 (get_local $v))
+    return
+  end 
 
   (i32.eq (get_local $addr8) (i32.const 0xb0))
   if
     ;; COM, Set Command Register
     get_local $v set_global $z88COM
 
-
+    ;; RAMS flag may change, se emulate setting SR0 again
+    (call $setZ88SR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
     return
   end
 
@@ -321,8 +337,8 @@
 
   ;; Memory device
   (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
-  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SLMASKS)))
-  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_SLMASKS)))
+  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
+  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
 
   ;; TODO: Get other state values
 )
