@@ -200,16 +200,18 @@ export async function createSpectrumEngine(
   let spectrum: ZxSpectrumBase;
   switch (type) {
     case 1:
-      spectrum = new ZxSpectrum128(machineApi);
-      break;
     case 2:
-      spectrum = new ZxSpectrum128(machineApi);
-      break;
     case 3:
-      spectrum = new ZxSpectrum128(machineApi);
+      const rom0 = await fetch("./roms/sp128-0.rom");
+      const buffer0 = Buffer.from((await rom0.body.getReader().read()).value);
+      const rom1 = await fetch("./roms/sp128-1.rom");
+      const buffer1 = Buffer.from((await rom1.body.getReader().read()).value);
+      spectrum = new ZxSpectrum128(machineApi, [buffer0, buffer1]);
       break;
     default:
-      spectrum = new ZxSpectrum48(machineApi);
+      const rom = await fetch("./roms/sp48.rom");
+      const buffer = Buffer.from((await rom.body.getReader().read()).value);
+      spectrum = new ZxSpectrum48(machineApi, [buffer]);
       break;
   }
   spectrum.setUlaIssue(3);

@@ -4,7 +4,82 @@
 (memory (export "memory") 128)
 
 ;; ==========================================================================
-;; New memory map structure
+;; Common mappings for all machine types
+
+;; Memory area reserved for all Sinclair machines (4MB)
+(global $SINCLAIR_MEM i32 (i32.const 0x00_0000))
+
+;; ----------------------------------------------------------------------------
+;; Z80 ALU Helper tables
+
+;; INC flags table (256 bytes)
+(global $INC_FLAGS i32 (i32.const 0x40_0000))
+
+;; DEC flags table (256 bytes)
+(global $DEC_FLAGS i32 (i32.const 0x40_0100))
+
+;; Logic operations flags table (256 bytes)
+(global $LOG_FLAGS i32 (i32.const 0x40_0200))
+
+;; RLC flags table (256 bytes)
+(global $RLC_FLAGS i32 (i32.const 0x40_0300))
+
+;; RRC flags table (256 bytes)
+(global $RRC_FLAGS i32 (i32.const 0x40_0400))
+
+;; RL flags (no carry) table (256 bytes)
+(global $RL0_FLAGS i32 (i32.const 0x40_0500))
+
+;; RL flags (carry set) table (256 bytes)
+(global $RL1_FLAGS i32 (i32.const 0x40_0600))
+
+;; RR flags (no carry) table (256 bytes)
+(global $RR0_FLAGS i32 (i32.const 0x40_0700))
+
+;; RR flags (carry set) table (256 bytes)
+(global $RR1_FLAGS i32 (i32.const 0x40_0800))
+
+;; SRA flags table (256 bytes)
+(global $SRA_FLAGS i32 (i32.const 0x40_0900))
+
+;; ----------------------------------------------------------------------------
+;; Z80 CPU + State transfer area
+
+;; Z80 registers (32 byte)
+;; The index of the register area (length: 0x1c)
+(global $REG_AREA_INDEX i32 (i32.const 0x40_0A00))
+
+;; Z80 8-bit register index conversion table (8 bytes)
+(global $REG8_TAB_OFFS i32 (i32.const 0x40_0A20))
+
+;; Z80 16-bit register index conversion table (4 bytes)
+(global $REG16_TAB_OFFS i32 (i32.const 0x40_0A30))
+
+;; Page index table for addressing memory (24 bytes)
+(global $PAGE_INDEX_16 i32 (i32.const 0x40_0A40))
+
+;; State transfer buffer between WA and JS (0x380 bytes)
+(global $STATE_TRANSFER_BUFF i32 (i32.const 0x40_0A80))
+
+;; ----------------------------------------------------------------------------
+;; Z80 test machine buffers
+
+;; Test I/O input buffer (256 bytes)
+(global $TEST_INPUT_OFFS i32 (i32.const 0x40_1000))
+
+;; Test memory access log (0x400 bytes)
+(global $TEST_MEM_LOG_OFFS i32 (i32.const 0x40_1100))
+
+;; Test I/O access log (0x400 bytes)
+(global $TEST_IO_LOG_OFFS i32 (i32.const 0x40_1500))
+
+;; Test TbBlue access log (0x400 bytes)
+(global $TEST_TBBLUE_LOG_OFFS i32 (i32.const 0x40_1900))
+
+;; Start of machine specific area: 0x41_0000
+
+;; ==========================================================================
+;; ZX Spectrum specific contents
 
 ;; ----------------------------------------------------------------------------
 ;; RAM banks
@@ -45,83 +120,13 @@
 (global $ROM_P3_3_OFFS i32 (i32.const 0x03_8000))
 
 ;; ----------------------------------------------------------------------------
-;; ALU Helper tables
-
-;; INC flags table (256 bytes)
-(global $INC_FLAGS i32 (i32.const 0x03_C000))
-
-;; DEC flags table (256 bytes)
-(global $DEC_FLAGS i32 (i32.const 0x03_C100))
-
-;; Logic operations flags table (256 bytes)
-(global $LOG_FLAGS i32 (i32.const 0x03_C200))
-
-;; RLC flags table (256 bytes)
-(global $RLC_FLAGS i32 (i32.const 0x03_C300))
-
-;; RRC flags table (256 bytes)
-(global $RRC_FLAGS i32 (i32.const 0x03_C400))
-
-;; RL flags (no carry) table (256 bytes)
-(global $RL0_FLAGS i32 (i32.const 0x03_C500))
-
-;; RL flags (carry set) table (256 bytes)
-(global $RL1_FLAGS i32 (i32.const 0x03_C600))
-
-;; RR flags (no carry) table (256 bytes)
-(global $RR0_FLAGS i32 (i32.const 0x03_C700))
-
-;; RR flags (carry set) table (256 bytes)
-(global $RR1_FLAGS i32 (i32.const 0x03_C800))
-
-;; SRA flags table (256 bytes)
-(global $SRA_FLAGS i32 (i32.const 0x03_C900))
-
-;; DAA flags table (0x800 bytes)
-(global $DAA_FLAGS i32 (i32.const 0x03_CA00))
-
-;; ----------------------------------------------------------------------------
-;; Z80 CPU + State transfer area
-
-;; Z80 registers (32 byte)
-;; The index of the register area (length: 0x1c)
-(global $REG_AREA_INDEX i32 (i32.const 0x03_D200))
-
-;; Z80 8-bit register index conversion table
-(global $REG8_TAB_OFFS i32 (i32.const 0x03_D220))
-
-;; Z80 16-bit register index conversion table
-(global $REG16_TAB_OFFS i32 (i32.const 0x03_D228))
-
-;; Page index table for addressing memory
-(global $PAGE_INDEX_16 i32 (i32.const 0x03_D240))
-
-;; State transfer buffer between WA and JS (0x380 bytes)
-(global $STATE_TRANSFER_BUFF i32 (i32.const 0x03_D280))
-
-;; ----------------------------------------------------------------------------
-;; Test machine buffers
-
-;; Test I/O input buffer (256 bytes)
-(global $TEST_INPUT_OFFS i32 (i32.const 0x03_D600))
-
-;; Test memory access log (0x400 bytes)
-(global $TEST_MEM_LOG_OFFS i32 (i32.const 0x03_DA00))
-
-;; Test I/O access log (0x400 bytes)
-(global $TEST_IO_LOG_OFFS i32 (i32.const 0x03_DE00))
-
-;; Test TbBlue access log (0x400 bytes)
-(global $TEST_TBBLUE_LOG_OFFS i32 (i32.const 0x03_E200))
-
-;; ----------------------------------------------------------------------------
 ;; ZX Spectrum buffers
 
 ;; ZX Spectrum execution cyle options (256 bytes)
-(global $EXEC_OPTIONS_BUFF i32 (i32.const 0x03_E600))
+(global $EXEC_OPTIONS_BUFF i32 (i32.const 0x41_0000))
 
 ;; Keyboard line status (256 bytes)
-(global $KEYBOARD_LINES i32 (i32.const 0x03_E700))
+(global $KEYBOARD_LINES i32 (i32.const 0x41_0100))
 
 ;; Rendering tact table (0x6_0000 bytes)
 ;; Each table entry has 5 bytes:
@@ -159,73 +164,73 @@
 ;;   Bit 7..5: Tact contention value
 ;; Byte 1..2: Pixel address
 ;; Byte 3..4: Attribute address
-(global $RENDERING_TACT_TABLE i32 (i32.const 0x03_E800))
+(global $RENDERING_TACT_TABLE i32 (i32.const 0x41_0200))
 
 ;; Contention value table (0x1_4000 bytes)
-(global $CONTENTION_TABLE i32 (i32.const 0x09_E800))
+(global $CONTENTION_TABLE i32 (i32.const 0x47_0200))
 
 ;; Paper color bytes, flash off (256 bytes)
-(global $PAPER_COLORS_OFF_TABLE i32 (i32.const 0x0B_2800))
+(global $PAPER_COLORS_OFF_TABLE i32 (i32.const 0x48_4200))
 
 ;; Ink color bytes, flash off (256 bytes)
-(global $INK_COLORS_OFF_TABLE i32 (i32.const 0x0B_2900))
+(global $INK_COLORS_OFF_TABLE i32 (i32.const 0x48_4300))
 
 ;; Paper color bytes, flash on (256 bytes)
-(global $PAPER_COLORS_ON_TABLE i32 (i32.const 0x0B_2A00))
+(global $PAPER_COLORS_ON_TABLE i32 (i32.const 0x48_4400))
 
 ;; Ink color bytes, flash on (256 bytes)
-(global $INK_COLORS_ON_TABLE i32 (i32.const 0x0B_2B00))
+(global $INK_COLORS_ON_TABLE i32 (i32.const 0x48_4500))
 
 ;; ZX Spectrum 48 palette (256 byte)
-(global $SPECTRUM_PALETTE i32 (i32.const 0x0B_2C00))
+(global $SPECTRUM_PALETTE i32 (i32.const 0x48_4600))
 
 ;; Pixel rendering buffer (0x2_8000 bytes)
-(global $PIXEL_RENDERING_BUFFER i32 (i32.const 0x0B_2D00))
+(global $PIXEL_RENDERING_BUFFER i32 (i32.const 0x48_4700))
 
 ;; Buffer for pixel colorization (0xA_0000 bytes)
-(global $COLORIZATION_BUFFER i32 (i32.const 0x0D_AD00))
+(global $COLORIZATION_BUFFER i32 (i32.const 0x4A_C700))
 
 ;; Beeper sample rendering buffer (0x2000 bytes)
-(global $BEEPER_SAMPLE_BUFFER i32 (i32.const 0x17_AD00))
+(global $BEEPER_SAMPLE_BUFFER i32 (i32.const 0x54_C700))
 
 ;; Sound sample rendering buffer (0x2000 bytes)
-(global $PSG_SAMPLE_BUFFER i32 (i32.const 0x17_CD00))
+(global $PSG_SAMPLE_BUFFER i32 (i32.const 0x54_E700))
 
 ;; Tape block buffer (0xA_0000 bytes)
-(global $TAPE_DATA_BUFFER i32 (i32.const 0x17_ED00))
+(global $TAPE_DATA_BUFFER i32 (i32.const 0x55_0700))
 
 ;; Tape save buffer (0x1_0000 bytes)
-(global $TAPE_SAVE_BUFFER i32 (i32.const 0x21_ED00))
+(global $TAPE_SAVE_BUFFER i32 (i32.const 0x5F_0700))
 
 ;; ----------------------------------------------------------------------------
 ;; ZX Spectrun debug support maps
 
 ;; Breakpoints map (0x2000 bytes)
-(global $BREAKPOINT_MAP i32 (i32.const 0x22_ED00))
+(global $BREAKPOINT_MAP i32 (i32.const 0x60_0700))
 
 ;; Memory write map map (0x2000 bytes)
-(global $MEMWRITE_MAP i32 (i32.const 0x23_0D00))
+(global $MEMWRITE_MAP i32 (i32.const 0x60_2700))
 
-;; Step-out stack (512 bytes)
-(global $STEP_OUT_STACK i32 (i32.const 0x23_2D00))
+;; Step-out stack (1024 bytes)
+(global $STEP_OUT_STACK i32 (i32.const 0x60_4700))
 
 ;; ----------------------------------------------------------------------------
 ;; Sound generation
 
 ;; PSG Register area: 0x23_2F00 (256 bytes)
-(global $PSG_REGS i32 (i32.const 0x23_2F00))
+(global $PSG_REGS i32 (i32.const 0x60_4B00))
 
 ;; Envelop tables for PSG sound generation (0x800 bytes)
-(global $PSG_ENVELOP_TABLE i32 (i32.const 0x23_3000))
+(global $PSG_ENVELOP_TABLE i32 (i32.const 0x60_4C00))
 
 ;; PSG volumes (16 words)
-(global $PSG_VOLUME_TABLE i32 (i32.const 0x23_3800))
+(global $PSG_VOLUME_TABLE i32 (i32.const 0x60_5300))
 
-;; ----------------------------------------------------------------------------
-;; Cambridge Z88 Memory
+;; ==========================================================================
+;; Cambridge Z88 specific contents
 
 ;; Memory extension registers area, SR0-SR3 (4 bytes)
-(global $Z88_SR i32 (i32.const 0x23_3900))
+(global $Z88_SR i32 (i32.const 0x41_0000))
 
 ;; Chip size masks describing the chip size (5 bytes)
 ;; 0: Internal ROM size
@@ -234,16 +239,14 @@
 ;; 3: Card Slot 2 size
 ;; 4: Card Slot 3 size
 ;; 5: Is Card Slot 3 ROM?
-(global $Z88_CHIP_MASKS i32 (i32.const 0x23_3910))
+(global $Z88_CHIP_MASKS i32 (i32.const 0x41_0010))
 
 ;; Pointers for the address slots (40 byte)
-(global $Z88_PAGE_PTRS i32 (i32.const 0x23_3920))
+(global $Z88_PAGE_PTRS i32 (i32.const 0x41_0020))
 
 ;; Pointers for the address slots (256 byte)
-(global $Z88_ROM_INFO i32 (i32.const 0x23_3a00))
+(global $Z88_ROM_INFO i32 (i32.const 0x41_0100))
 
 ;; Z88 Memory (4 MBytes)
-(global $Z88_MEM_AREA i32 (i32.const 0x23_4000))
-
-;; Next free slot: 0x63_4000
+(global $Z88_MEM_AREA i32 (i32.const 0x00_0000))
 

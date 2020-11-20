@@ -10,10 +10,10 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
   /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
-   * @param type Machine type
+   * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi) {
-    super(api, 0);
+  constructor(public api: MachineApi, roms?: Buffer[]) {
+    super(api, 0, roms);
   }
 
   /**

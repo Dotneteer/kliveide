@@ -11,6 +11,10 @@ import { BREAKPOINT_MAP } from "../../src/native/api/memory-map";
 const buffer = fs.readFileSync(
   path.join(__dirname, "../../build/spectrum.wasm")
 );
+const romBuffer = fs.readFileSync(
+  path.join(__dirname, "../../roms/sp48/sp48.rom")
+);
+
 let api: MachineApi;
 let machine: ZxSpectrum48;
 
@@ -18,7 +22,7 @@ describe("ZX Spectrum - Breakpoints", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as MachineApi;
-    machine = new ZxSpectrum48(api);
+    machine = new ZxSpectrum48(api, [romBuffer]);
   });
 
   beforeEach(() => {
