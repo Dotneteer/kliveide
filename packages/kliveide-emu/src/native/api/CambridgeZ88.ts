@@ -1,7 +1,12 @@
 import { MachineApi } from "./api";
 import { CambridgeZ88MachineState, MachineState } from "./machine-state";
 import { MemoryHelper } from "./memory-helpers";
-import { PAGE_INDEX_16, STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
+import {
+  PAGE_INDEX_16,
+  STATE_TRANSFER_BUFF,
+  Z88_MEM_AREA,
+  Z88_PAGE_PTRS,
+} from "./memory-map";
 import { FrameBoundZ80Machine } from "./Z80VmBase";
 
 /**
@@ -22,6 +27,13 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    */
   createMachineState(): MachineState {
     return new CambridgeZ88MachineState();
+  }
+
+  /**
+   * Gets the memory address of the first ROM page of the machine
+   */
+  getRomPageBaseAddress(): number {
+    return 0x00_0000;
   }
 
   /**

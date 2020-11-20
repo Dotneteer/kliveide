@@ -137,11 +137,35 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * Creates a new instance of the frame-bound Z80 machine
    * @param api Machine API to access WA
    * @param type Machine type
+   * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi, public type: number) {
+  constructor(public api: MachineApi, public type: number, roms?: Buffer[]) {
     super(api, type);
     api.initMachine(type);
+    this.initRoms(roms);
   }
+
+  /**
+   * Initializes the specified ROMs
+   * @param roms Optional buffers with ROM contents
+   */
+  initRoms(roms?: Buffer[]): void {
+    if (!roms) {
+      return;
+    }
+    const mh = new MemoryHelper(this.api, this.getRomPageBaseAddress());
+    for (let i = 0; i < roms.length; i++) {
+      const rom = roms[i];
+      for (let j = 0; j < rom.length; j++) {
+        mh.writeByte(0x4000 * i + j, rom[j]);
+      }
+    }
+  }
+
+  /**
+   * Gets the WA memory address of the first ROM page of the machine
+   */
+  abstract getRomPageBaseAddress(): number;
 
   /**
    * Executes the machine cycle
@@ -197,9 +221,10 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
    * @param type Machine type
+   * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi, public type: number) {
-    super(api, type);
+  constructor(public api: MachineApi, public type: number, roms?: Buffer[]) {
+    super(api, type, roms);
   }
 
   /**
@@ -374,11 +399,6 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     }
     return result;
   }
-
-  /**
-   * Gets the memory address of the first ROM page of the machine
-   */
-  abstract getRomPageBaseAddress(): number;
 
   /**
    * Sets the status of the specified key
