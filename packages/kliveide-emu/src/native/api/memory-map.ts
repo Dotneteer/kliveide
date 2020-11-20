@@ -39,5 +39,5 @@ export const MEMWRITE_MAP = 0x23_0D00;
 export const STEP_OUT_STACK = 0x23_2D00;
 export const PSG_ENVELOP_TABLE = 0x23_3000;
 
-export const Z88_PAGE_PTRS = 0x23_3910;
+export const Z88_PAGE_PTRS = 0x23_3920;
 export const Z88_MEM_AREA = 0x23_4000;

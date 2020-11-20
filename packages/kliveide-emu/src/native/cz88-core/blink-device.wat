@@ -45,7 +45,6 @@
 ;; ACK, Acknowledge INT Interrupts
 (global $z88ACK (mut i32) (i32.const 0x0000))
 
-
 ;; ============================================================================
 ;; Blink methods
 

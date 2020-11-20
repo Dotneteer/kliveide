@@ -5,13 +5,34 @@
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
 (func $readCz88Memory (param $addr i32) (result i32)
-  i32.const 0xff
+  (i32.eq
+    (call $z88GetRomInfoForAddress (get_local $addr))
+    (i32.const 0xff)
+  )
+  if
+    ;; Empty memory slot
+    call $generateRandomByte
+    return
+  end
+
+  ;; Load the byte from the memory
+  (call $calcZ88MemoryAddress (get_local $addr))
+  i32.load8_u
 )
 
 ;; Writes the memory of the Cambridge Z88 machibe
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
 (func $writeCz88Memory (param $addr i32) (param $v i32)
+  (i32.eqz (call $z88GetRomInfoForAddress (get_local $addr)))
+  if
+    ;; RAM, so can be written
+    (i32.store8
+      (call $calcZ88MemoryAddress (get_local $addr))
+      (get_local $v)
+    )
+    return
+  end
 )
 
 ;; Reads a port of the Cambridge Z88 machine
@@ -186,25 +207,41 @@
     return
   end
 
-  ;; Dispatch according to the 8-bit address
-  (i32.ge_u (get_local $addr8) (i32.const 0xd0))
+  (i32.eq (get_local $addr8) (i32.const 0xd0))
   if
-    (i32.le_u (get_local $addr8) (i32.const 0xd3))
-    if
-      (call $setZ88MemorySegment 
-        (i32.and (get_local $addr8) (i32.const 0x03))
-        (get_local $v)
-      )
-      return
-    end
-  end
+    ;; SR0
+    (call $setZ88SR0 (get_local $v))
+    return
+  end 
+
+  (i32.eq (get_local $addr8) (i32.const 0xd1))
+  if
+    ;; SR1
+    (call $setZ88SR1 (get_local $v))
+    return
+  end 
+
+  (i32.eq (get_local $addr8) (i32.const 0xd2))
+  if
+    ;; SR2
+    (call $setZ88SR2 (get_local $v))
+    return
+  end 
+
+  (i32.eq (get_local $addr8) (i32.const 0xd3))
+  if
+    ;; SR3
+    (call $setZ88SR3 (get_local $v))
+    return
+  end 
 
   (i32.eq (get_local $addr8) (i32.const 0xb0))
   if
     ;; COM, Set Command Register
     get_local $v set_global $z88COM
 
-
+    ;; RAMS flag may change, se emulate setting SR0 again
+    (call $setZ88SR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
     return
   end
 
@@ -321,8 +358,19 @@
 
   ;; Memory device
   (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
-  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SLMASKS)))
-  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_SLMASKS)))
+  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
+  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
 
   ;; TODO: Get other state values
+)
+
+;; ============================================================================
+;; Test methods
+
+(func $testReadCz88Memory (param $addr i32) (result i32)
+  (call $readCz88Memory (get_local $addr))
+)
+
+(func $testWriteCz88Memory (param $addr i32) (param $v i32)
+  (call $writeCz88Memory (get_local $addr) (get_local $v))
 )
