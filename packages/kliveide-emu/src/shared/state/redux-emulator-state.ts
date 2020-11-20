@@ -102,6 +102,10 @@ export function emulatorSetPanelMessageAction(panelMessage: string) {
   return createAction("EMULATOR_SET_MESSAGE", { panelMessage });
 }
 
+export function emulatorSetSoundLevelAction(soundLevel: number) {
+  return createAction("EMULATOR_SET_SOUND_LEVEL", { soundLevel });
+}
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -195,6 +199,8 @@ export function emulatorStateReducer(
       return { ...state, isLoading: payload.isLoading };
     case "EMULATOR_SET_MESSAGE":
       return { ...state, panelMessage: payload.panelMessage };
+    case "EMULATOR_SET_SOUND_LEVEL":
+      return { ...state, soundLevel: payload.soundLevel };
   }
   return state;
 }
