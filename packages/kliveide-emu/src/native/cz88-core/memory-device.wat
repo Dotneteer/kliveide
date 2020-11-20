@@ -93,6 +93,9 @@
 
 ;; Initial setup of Z88 memory
 (func $resetZ88Memory
+  (local $counter i32)
+  (local $ptr i32)
+
   (call $setZ88SR0 (i32.const 0))
   (call $setZ88SR1 (i32.const 0))
   (call $setZ88SR2 (i32.const 0))
@@ -111,6 +114,28 @@
 
   ;; Card 3 is RAM
   (call $setZ88Card3Rom (i32.const 0))
+
+  ;; Fill up memory area with zeros
+  (set_local $counter (i32.const 0))
+  (set_local $ptr (get_global $Z88_MEM_AREA))
+  loop $resetLoop
+   (i32.lt_u (get_local $counter) (i32.const 0x8_0000))
+   if
+      ;; Store 8 bytes of zero
+      (i64.store (get_local $ptr) (i64.const 0))
+
+      ;; Increment counter
+      (i32.add (get_local $counter) (i32.const 1))
+      set_local $counter
+
+      ;; Increment pointer
+      (i32.add (get_local $ptr) (i32.const 8))
+      set_local $ptr
+
+      ;; Next iteration
+      br $resetLoop
+   end
+  end
 )
 
 ;; Sets SR0 and updates the address page table
@@ -269,50 +294,9 @@
 
 ;; Calculates ROM information for the specified bank and size
 (func $z88GetRomInfo (param $bank i32) (result i32)
-  (i32.le_u (get_local $bank) (i32.const 0x1f))
-  if
-    ;; Internal ROM
-    i32.const 1
-    return
-  end
-
-  (i32.le_u (get_local $bank) (i32.const 0x3f))
-  if
-    ;; Internal RAM
-    i32.const 0
-    return
-  end
-
-  (i32.le_u (get_local $bank) (i32.const 0x7f))
-  if
-    ;; Card Slot 1 RAM
-    i32.const 0    ;; RAM
-    i32.const 0xff ;; Empty
-    (i32.load8_u offset=2 (get_global $Z88_CHIP_MASKS))
-    select
-    return
-  end
-
-  (i32.le_u (get_local $bank) (i32.const 0xbf))
-  if
-    ;; Card Slot 2 RAM
-    i32.const 0    ;; RAM
-    i32.const 0xff ;; Empty
-    (i32.load8_u offset=3 (get_global $Z88_CHIP_MASKS))
-    select
-    return
-  end
-
-  ;; Card Slot 3 RAM/EPROM
-  (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS))
-  if
-    ;; Mask determins EPROM/RAM behavior
-    (i32.load8_u offset=5 (get_global $Z88_CHIP_MASKS))
-    return
-  end
-
-  ;; Card 3 is empty
-  i32.const 0xff ;; Empty
+  (i32.load8_u 
+    (i32.add (get_global $Z88_ROM_INFO) (get_local $bank))
+  )
 )
 
 ;; Calculates the absolute Z88 memory address from the specified 16-bit address
@@ -338,9 +322,34 @@
   )
 )
 
+;; Gets ROM information for the specified address
+(func $z88GetRomInfoForAddress (param $addr i32) (result i32)
+  ;; Get bank value
+  (i32.le_u (get_local $addr) (i32.const 0x1fff))
+  if
+    ;; Lower 8K of SR 0
+    (select
+      (i32.const 0x20)
+      (i32.const 0x00)
+      (i32.and (get_global $z88COM) (i32.const $BM_COMRAMS#))
+    )
+    call $z88GetRomInfo
+    return
+  end
+
+  (i32.load8_u 
+    (i32.add 
+      (get_global $Z88_SR) 
+      (i32.shr_u (get_local $addr) (i32.const 14))
+    )
+  )
+  call $z88GetRomInfo
+)
+
 ;; Sets the value of the specified slot mask
 (func $setZ88ChipMask (param $chip i32) (param $mask i32)
   (local $segment i32)
+
   ;; Clamp the slot index
   (i32.gt_u (get_local $chip) (i32.const 4))
   if
@@ -358,11 +367,122 @@
   (call $setZ88SR1 (i32.load8_u offset=1 (get_global $Z88_SR)))
   (call $setZ88SR2 (i32.load8_u offset=2 (get_global $Z88_SR)))
   (call $setZ88SR3 (i32.load8_u offset=3 (get_global $Z88_SR)))
+
+  ;; Create ROM information
+  call $z88RecalculateRomInfo
 )
 
 ;; Sets the ROM flag for Card 3
 (func $setZ88Card3Rom (param $isRom i32)
   (i32.store8 offset=5 (get_global $Z88_CHIP_MASKS) (get_local $isRom))
+  call $z88RecalculateRomInfo
+)
+
+;; Recalculates ROM information
+(func $z88RecalculateRomInfo
+  (local $bank i32)
+  (local $romInfoPtr i32)
+
+    ;; Calculate ROM information
+  (set_local $bank (i32.const 0))
+  (set_local $romInfoPtr (get_global $Z88_ROM_INFO))
+  loop $romInfo
+    (i32.le_u (get_local $bank) (i32.const 0xff))
+    if
+      ;; We will store the ROM info to this address
+      get_local $romInfoPtr
+
+      ;; Calculate ROM information
+      (i32.le_u (get_local $bank) (i32.const 0x1f))
+      if (result i32)
+        ;; Internal ROM
+        i32.const 1
+      else 
+        (i32.le_u (get_local $bank) (i32.const 0x3f))
+        if (result i32)
+          ;; Internal RAM
+          i32.const 0
+        else
+          (i32.le_u (get_local $bank) (i32.const 0x7f))
+          if (result i32)
+            ;; Card Slot 1 RAM
+            i32.const 0    ;; RAM
+            i32.const 0xff ;; Empty
+            (i32.load8_u offset=2 (get_global $Z88_CHIP_MASKS))
+            select
+          else
+            (i32.le_u (get_local $bank) (i32.const 0xbf))
+            if (result i32)
+              ;; Card Slot 2 RAM
+              i32.const 0    ;; RAM
+              i32.const 0xff ;; Empty
+              (i32.load8_u offset=3 (get_global $Z88_CHIP_MASKS))
+              select
+            else
+              ;; Card Slot 3 RAM/EPROM
+              (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS))
+              if (result i32)
+                ;; Mask determins EPROM/RAM behavior
+                (i32.load8_u offset=5 (get_global $Z88_CHIP_MASKS))
+              else
+                i32.const 0xff ;; Empty
+              end
+            end
+          end
+        end
+      end
+
+      ;; Store ROM information
+      i32.store8
+
+      ;; Increment counter
+      (i32.add (get_local $bank) (i32.const 1))
+      set_local $bank
+
+      ;; Increment pointer
+      (i32.add (get_local $romInfoPtr) (i32.const 1))
+      set_local $romInfoPtr
+      br $romInfo
+    end
+  end
+)
+
+;; Random seed value
+(global $z88RndSeed (mut i32) (i32.const 0xac23))
+
+;; Sets the random seed value
+(func $setZ88RndSeed (param $seed i32)
+  (i32.eqz (get_local $seed))
+  if (result i32)
+    i32.const 0xac23
+  else
+    get_local $seed
+  end
+  (i32.and (i32.const 0xffff))
+  set_global $z88RndSeed
+)
+
+;; Generates a random byte. Used when empty memory is read
+(func $generateRandomByte (result i32)
+  (local $carry i32)
+  
+  ;; Calculate carry
+  (i32.and (get_global $z88RndSeed) (i32.const 0x0001)) ;; [ carry ]
+  set_local $carry
+  
+  ;; Calculate the new seed
+  (i32.shr_u (get_global $z88RndSeed) (i32.const 1))
+  (set_global $z88RndSeed)
+  (select 
+    (i32.const 0xb4b8) 
+    (i32.const 0x00b8)
+    (get_local $carry)
+  )
+  (i32.xor (get_global $z88RndSeed))
+  set_global $z88RndSeed
+
+  ;; Return the random value out of seed
+  (i32.shr_u (get_global $z88RndSeed) (i32.const 8))
 )
 
 ;; ============================================================================

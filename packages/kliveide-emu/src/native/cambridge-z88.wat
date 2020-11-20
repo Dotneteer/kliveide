@@ -5,13 +5,34 @@
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
 (func $readCz88Memory (param $addr i32) (result i32)
-  i32.const 0xff
+  (i32.eq
+    (call $z88GetRomInfoForAddress (get_local $addr))
+    (i32.const 0xff)
+  )
+  if
+    ;; Empty memory slot
+    call $generateRandomByte
+    return
+  end
+
+  ;; Load the byte from the memory
+  (call $calcZ88MemoryAddress (get_local $addr))
+  i32.load8_u
 )
 
 ;; Writes the memory of the Cambridge Z88 machibe
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
 (func $writeCz88Memory (param $addr i32) (param $v i32)
+  (i32.eqz (call $z88GetRomInfoForAddress (get_local $addr)))
+  if
+    ;; RAM, so can be written
+    (i32.store8
+      (call $calcZ88MemoryAddress (get_local $addr))
+      (get_local $v)
+    )
+    return
+  end
 )
 
 ;; Reads a port of the Cambridge Z88 machine
@@ -341,4 +362,15 @@
   (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
 
   ;; TODO: Get other state values
+)
+
+;; ============================================================================
+;; Test methods
+
+(func $testReadCz88Memory (param $addr i32) (result i32)
+  (call $readCz88Memory (get_local $addr))
+)
+
+(func $testWriteCz88Memory (param $addr i32) (param $v i32)
+  (call $writeCz88Memory (get_local $addr) (get_local $v))
 )

@@ -13,7 +13,7 @@ const buffer = fs.readFileSync(
 let api: MachineApi;
 let machine: CambridgeZ88;
 
-describe("Cambridge Z88 - Memory", function () {
+describe("Cambridge Z88 - Memory paging", function () {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as MachineApi;
@@ -151,11 +151,12 @@ describe("Cambridge Z88 - Memory", function () {
 
     // (128K, 512K, 1M, 1M, 512K: RAM)
     { c0: 0x07, c1: 0x1f, c2: 0x3f, c3: 0x3f, c4: 0x1f, c3Rom: true },
-
   ];
 
   memConfigPatterns.forEach((pat) => {
-    it(`Set SR0 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${pat.c3Rom ? "c3: ROM": ""}`, () => {
+    it(`Set SR0 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${
+      pat.c3Rom ? "c3: ROM" : ""
+    }`, () => {
       machine.reset();
       machine.api.setZ88ChipMask(0, pat.c0); // Chip 0 ROM 128K
       machine.api.setZ88ChipMask(1, pat.c1); // Chip 1 RAM 512K
@@ -304,7 +305,9 @@ describe("Cambridge Z88 - Memory", function () {
   });
 
   memConfigPatterns.forEach((pat) => {
-    it(`Set SR1 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${pat.c3Rom ? "c3: ROM": ""}`, () => {
+    it(`Set SR1 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${
+      pat.c3Rom ? "c3: ROM" : ""
+    }`, () => {
       machine.reset();
       machine.api.setZ88ChipMask(0, pat.c0); // Chip 0 ROM 128K
       machine.api.setZ88ChipMask(1, pat.c1); // Chip 1 RAM 512K
@@ -328,7 +331,7 @@ describe("Cambridge Z88 - Memory", function () {
         const s = machine.getMachineState();
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(maskedBank * 0x4000);
         expect(s.s1FlagL).toBe(1);
@@ -352,7 +355,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(maskedBank * 0x4000);
         expect(s.s1FlagL).toBe(0);
@@ -376,7 +379,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(maskedBank * 0x4000);
         expect(s.s1FlagL).toBe(0);
@@ -400,7 +403,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(maskedBank * 0x4000);
         expect(s.s1FlagL).toBe(0);
@@ -424,7 +427,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(maskedBank * 0x4000);
         expect(s.s1FlagL).toBe(pat.c3Rom ? 1 : 0);
@@ -443,7 +446,9 @@ describe("Cambridge Z88 - Memory", function () {
   });
 
   memConfigPatterns.forEach((pat) => {
-    it(`Set SR2 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${pat.c3Rom ? "c3: ROM": ""}`, () => {
+    it(`Set SR2 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${
+      pat.c3Rom ? "c3: ROM" : ""
+    }`, () => {
       machine.reset();
       machine.api.setZ88ChipMask(0, pat.c0); // Chip 0 ROM 128K
       machine.api.setZ88ChipMask(1, pat.c1); // Chip 1 RAM 512K
@@ -467,7 +472,7 @@ describe("Cambridge Z88 - Memory", function () {
         const s = machine.getMachineState();
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -491,7 +496,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -515,7 +520,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -539,7 +544,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -563,7 +568,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -582,7 +587,9 @@ describe("Cambridge Z88 - Memory", function () {
   });
 
   memConfigPatterns.forEach((pat) => {
-    it(`Set SR3 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${pat.c3Rom ? "c3: ROM": ""}`, () => {
+    it(`Set SR3 (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${
+      pat.c3Rom ? "c3: ROM" : ""
+    }`, () => {
       machine.reset();
       machine.api.setZ88ChipMask(0, pat.c0); // Chip 0 ROM 128K
       machine.api.setZ88ChipMask(1, pat.c1); // Chip 1 RAM 512K
@@ -606,7 +613,7 @@ describe("Cambridge Z88 - Memory", function () {
         const s = machine.getMachineState();
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -630,7 +637,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -654,7 +661,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -678,7 +685,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -702,7 +709,7 @@ describe("Cambridge Z88 - Memory", function () {
 
         expect(s.s0OffsetL).toBe(0x00_0000);
         expect(s.s0FlagL).toBe(1);
-        expect(s.s0OffsetH).toBe(0x00_0000)
+        expect(s.s0OffsetH).toBe(0x00_0000);
         expect(s.s0FlagH).toBe(1);
         expect(s.s1OffsetL).toBe(0x00_0000);
         expect(s.s1FlagL).toBe(1);
@@ -720,4 +727,145 @@ describe("Cambridge Z88 - Memory", function () {
     });
   });
 
+  memConfigPatterns.forEach((pat) => {
+    it(`Set SR3 with RAMS (${pat.c0}/${pat.c1}/${pat.c2}/${pat.c3}/${pat.c4}) ${
+      pat.c3Rom ? "c3: ROM" : ""
+    }`, () => {
+      machine.reset();
+      machine.api.setZ88ChipMask(0, pat.c0); // Chip 0 ROM 128K
+      machine.api.setZ88ChipMask(1, pat.c1); // Chip 1 RAM 512K
+      machine.api.setZ88ChipMask(2, pat.c2); // Chip 2 RAM 1M
+      machine.api.setZ88ChipMask(3, pat.c3); // Chip 3 RAM 1M
+      machine.api.setZ88ChipMask(4, pat.c4); // Chip 4 RAM 1M
+      machine.api.setZ88Card3Rom(pat.c3Rom); // Is Chip 4 ROM?
+      machine.api.writePortCz88(0xb0, 0x04); // Set COM.RAMS
+
+      const s = machine.getMachineState();
+
+      expect(s.chipMask0).toBe(pat.c0);
+      expect(s.chipMask1).toBe(pat.c1);
+      expect(s.chipMask2).toBe(pat.c2);
+      expect(s.chipMask3).toBe(pat.c3);
+      expect(s.chipMask4).toBe(pat.c4);
+
+      for (let bank = 0x00; bank < 0x20; bank++) {
+        const maskedBank = (bank & 0xc0) | (bank & pat.c0);
+        machine.api.writePortCz88(0xd3, bank);
+
+        const s = machine.getMachineState();
+        expect(s.s0OffsetL).toBe(0x08_0000);
+        expect(s.s0FlagL).toBe(0);
+        expect(s.s0OffsetH).toBe(0x00_0000);
+        expect(s.s0FlagH).toBe(1);
+        expect(s.s1OffsetL).toBe(0x00_0000);
+        expect(s.s1FlagL).toBe(1);
+        expect(s.s1OffsetH).toBe(0x00_2000);
+        expect(s.s1FlagH).toBe(1);
+        expect(s.s2OffsetL).toBe(0x00_0000);
+        expect(s.s2FlagL).toBe(1);
+        expect(s.s2OffsetH).toBe(0x00_2000);
+        expect(s.s2FlagH).toBe(1);
+        expect(s.s3OffsetL).toBe(maskedBank * 0x4000);
+        expect(s.s3FlagL).toBe(1);
+        expect(s.s3OffsetH).toBe(maskedBank * 0x4000 + 0x2000);
+        expect(s.s3FlagH).toBe(1);
+      }
+
+      for (let bank = 0x20; bank < 0x40; bank++) {
+        const maskedBank = (bank & 0xc0) | (bank & pat.c1);
+        machine.api.writePortCz88(0xd3, bank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0OffsetL).toBe(0x08_0000);
+        expect(s.s0FlagL).toBe(0);
+        expect(s.s0OffsetH).toBe(0x00_0000);
+        expect(s.s0FlagH).toBe(1);
+        expect(s.s1OffsetL).toBe(0x00_0000);
+        expect(s.s1FlagL).toBe(1);
+        expect(s.s1OffsetH).toBe(0x00_2000);
+        expect(s.s1FlagH).toBe(1);
+        expect(s.s2OffsetL).toBe(0x00_0000);
+        expect(s.s2FlagL).toBe(1);
+        expect(s.s2OffsetH).toBe(0x00_2000);
+        expect(s.s2FlagH).toBe(1);
+        expect(s.s3OffsetL).toBe(maskedBank * 0x4000);
+        expect(s.s3FlagL).toBe(0);
+        expect(s.s3OffsetH).toBe(maskedBank * 0x4000 + 0x2000);
+        expect(s.s3FlagH).toBe(0);
+      }
+
+      for (let bank = 0x40; bank < 0x80; bank++) {
+        const maskedBank = (bank & 0xc0) | (bank & pat.c2);
+        machine.api.writePortCz88(0xd3, bank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0OffsetL).toBe(0x08_0000);
+        expect(s.s0FlagL).toBe(0);
+        expect(s.s0OffsetH).toBe(0x00_0000);
+        expect(s.s0FlagH).toBe(1);
+        expect(s.s1OffsetL).toBe(0x00_0000);
+        expect(s.s1FlagL).toBe(1);
+        expect(s.s1OffsetH).toBe(0x00_2000);
+        expect(s.s1FlagH).toBe(1);
+        expect(s.s2OffsetL).toBe(0x00_0000);
+        expect(s.s2FlagL).toBe(1);
+        expect(s.s2OffsetH).toBe(0x00_2000);
+        expect(s.s2FlagH).toBe(1);
+        expect(s.s3OffsetL).toBe(maskedBank * 0x4000);
+        expect(s.s3FlagL).toBe(0);
+        expect(s.s3OffsetH).toBe(maskedBank * 0x4000 + 0x2000);
+        expect(s.s3FlagH).toBe(0);
+      }
+
+      for (let bank = 0x80; bank < 0xc0; bank++) {
+        const maskedBank = (bank & 0xc0) | (bank & pat.c3);
+        machine.api.writePortCz88(0xd3, bank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0OffsetL).toBe(0x08_0000);
+        expect(s.s0FlagL).toBe(0);
+        expect(s.s0OffsetH).toBe(0x00_0000);
+        expect(s.s0FlagH).toBe(1);
+        expect(s.s1OffsetL).toBe(0x00_0000);
+        expect(s.s1FlagL).toBe(1);
+        expect(s.s1OffsetH).toBe(0x00_2000);
+        expect(s.s1FlagH).toBe(1);
+        expect(s.s2OffsetL).toBe(0x00_0000);
+        expect(s.s2FlagL).toBe(1);
+        expect(s.s2OffsetH).toBe(0x00_2000);
+        expect(s.s2FlagH).toBe(1);
+        expect(s.s3OffsetL).toBe(maskedBank * 0x4000);
+        expect(s.s3FlagL).toBe(0);
+        expect(s.s3OffsetH).toBe(maskedBank * 0x4000 + 0x2000);
+        expect(s.s3FlagH).toBe(0);
+      }
+
+      for (let bank = 0xc0; bank < 0x100; bank++) {
+        const maskedBank = (bank & 0xc0) | (bank & pat.c4);
+        machine.api.writePortCz88(0xd3, bank);
+
+        const s = machine.getMachineState();
+
+        expect(s.s0OffsetL).toBe(0x08_0000);
+        expect(s.s0FlagL).toBe(0);
+        expect(s.s0OffsetH).toBe(0x00_0000);
+        expect(s.s0FlagH).toBe(1);
+        expect(s.s1OffsetL).toBe(0x00_0000);
+        expect(s.s1FlagL).toBe(1);
+        expect(s.s1OffsetH).toBe(0x00_2000);
+        expect(s.s1FlagH).toBe(1);
+        expect(s.s2OffsetL).toBe(0x00_0000);
+        expect(s.s2FlagL).toBe(1);
+        expect(s.s2OffsetH).toBe(0x00_2000);
+        expect(s.s2FlagH).toBe(1);
+        expect(s.s3OffsetL).toBe(maskedBank * 0x4000);
+        expect(s.s3FlagL).toBe(pat.c3Rom ? 1 : 0);
+        expect(s.s3OffsetH).toBe(maskedBank * 0x4000 + 0x2000);
+        expect(s.s3FlagH).toBe(pat.c3Rom ? 1 : 0);
+      }
+    });
+  });
 });

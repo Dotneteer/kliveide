@@ -239,6 +239,9 @@
 ;; Pointers for the address slots (40 byte)
 (global $Z88_PAGE_PTRS i32 (i32.const 0x23_3920))
 
+;; Pointers for the address slots (256 byte)
+(global $Z88_ROM_INFO i32 (i32.const 0x23_3a00))
+
 ;; Z88 Memory (4 MBytes)
 (global $Z88_MEM_AREA i32 (i32.const 0x23_4000))
 
