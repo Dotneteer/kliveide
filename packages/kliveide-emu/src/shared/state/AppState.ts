@@ -74,6 +74,7 @@ export interface EmulatorPanelState {
   startCount?: number;
   frameCount?: number;
   muted?: boolean;
+  soundLevel?: number;
   memoryContents?: Uint8Array;
   memWriteMap?: Uint8Array;
   savedData?: Uint8Array;
@@ -207,6 +208,8 @@ export function getDefaultAppState(): AppState {
       selectedRom: 0,
       selectedBank: 0,
       panelMessage: "",
+      muted: false,
+      soundLevel: 0.5
     },
     emulatorCommand: "",
     breakpoints: [],

@@ -40,6 +40,7 @@ export interface ActionTypes {
   EMULATOR_SELECT_BANK: null;
   EMULATOR_LOAD_MODE: null;
   EMULATOR_SET_MESSAGE: null;
+  EMULATOR_SET_SOUND_LEVEL: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;

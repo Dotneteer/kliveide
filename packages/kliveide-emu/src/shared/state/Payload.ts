@@ -40,4 +40,5 @@ export interface Payload {
   codeToInject?: CodeToInject;
   errorCode?: string;
   debug?: boolean;
+  soundLevel?: number;
 }

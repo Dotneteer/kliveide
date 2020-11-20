@@ -43,6 +43,9 @@ import {
   emulatorSetSavedDataAction,
   emulatorRequestTypeAction,
   emulatorSetTapeContenstAction,
+  emulatorSetSoundLevelAction,
+  emulatorMuteAction,
+  emulatorUnmuteAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
@@ -71,6 +74,12 @@ export class AppWindow {
 
   // --- Last machine type used
   private _lastMachineType: string | null = null;
+
+  // --- Last sound level used
+  private _lastSoundLevel: number | null = null;
+
+  // --- Last muted value
+  private _lastMuted: boolean | null = null;
 
   // --- Indicates that the main window watches for IDE notifications
   private _watchingIde = false;
@@ -304,9 +313,52 @@ export class AppWindow {
           checked: false,
           click: (mi) => this.requestMachineType(mi.id),
         },
-        { type: "separator" },
         {
           id: MACHINE_MENU_ITEMS[4],
+          label: "Cambridge Z88",
+          type: "radio",
+          checked: false,
+          click: (mi) => this.requestMachineType(mi.id),
+        },
+        { type: "separator" },
+        {
+          id: SOUND_MENU_ITEMS[0].id,
+          label: "Mute sound",
+          type: "radio",
+          checked: false,
+          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[0].level),
+        },
+        {
+          id: SOUND_MENU_ITEMS[1].id,
+          label: "Sound: Low ",
+          type: "radio",
+          checked: false,
+          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[1].level),
+        },
+        {
+          id: SOUND_MENU_ITEMS[2].id,
+          label: "Sound: Medium",
+          type: "radio",
+          checked: false,
+          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[2].level),
+        },
+        {
+          id: SOUND_MENU_ITEMS[3].id,
+          label: "Sound: High",
+          type: "radio",
+          checked: true,
+          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[3].level),
+        },
+        {
+          id: SOUND_MENU_ITEMS[4].id,
+          label: "Sound: Highest",
+          type: "radio",
+          checked: false,
+          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[4].level),
+        },
+        { type: "separator" },
+        {
+          id: MACHINE_MENU_ITEMS[5],
           label: "Set tape file...",
           click: async () => await this.selectTapeFile(),
         },
@@ -392,6 +444,50 @@ export class AppWindow {
   }
 
   /**
+   * Sets the sound menu with the specified level
+   * @param level Sound level
+   */
+  setSoundLevelMenu(muted: boolean, level: number): void {
+    for (const menuItem of SOUND_MENU_ITEMS) {
+      const item = Menu.getApplicationMenu().getMenuItemById(menuItem.id);
+      item.checked = false;
+    }
+    if (muted) {
+      const soundItem = Menu.getApplicationMenu().getMenuItemById(
+        SOUND_MENU_ITEMS[0].id
+      );
+      if (soundItem) {
+        soundItem.checked = true;
+      }
+    } else {
+      for (let i = 0; i < SOUND_MENU_ITEMS.length; i++) {
+        if (level < SOUND_MENU_ITEMS[i].level + 0.02) {
+          const soundItem = Menu.getApplicationMenu().getMenuItemById(
+            SOUND_MENU_ITEMS[i].id
+          );
+          if (soundItem) {
+            soundItem.checked = true;
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  /**
+   * Sets the specified sound level
+   * @param level Sound level (between 0.0 and 1.0)
+   */
+  setSoundLevel(level: number): void {
+    if (level === 0) {
+      mainProcessStore.dispatch(emulatorMuteAction());
+    } else {
+      mainProcessStore.dispatch(emulatorUnmuteAction());
+      mainProcessStore.dispatch(emulatorSetSoundLevelAction(level)());
+    }
+  }
+
+  /**
    * Processes emulator data changes
    * @param state Emulator state
    */
@@ -400,6 +496,16 @@ export class AppWindow {
       // --- Current machine types has changed
       this._lastMachineType = state.currentType;
       this.setMachineTypeMenu(this._lastMachineType);
+    }
+
+    if (
+      this._lastSoundLevel !== state.soundLevel ||
+      this._lastMuted !== state.muted
+    ) {
+      // --- Sound level has changed
+      this._lastSoundLevel = state.soundLevel;
+      this._lastMuted = state.muted;
+      this.setSoundLevelMenu(this._lastMuted, this._lastSoundLevel);
     }
 
     if (state?.savedData && state.savedData.length > 0) {
@@ -511,5 +617,17 @@ const MACHINE_MENU_ITEMS = [
   "machine_128",
   "machine_p3e",
   "machine_next",
+  "cambridge_z88",
   "set_tape",
+];
+
+/**
+ * The list of sound menu items
+ */
+const SOUND_MENU_ITEMS: { id: string; level: number }[] = [
+  { id: "mute_sound", level: 0.0 },
+  { id: "sound_level_low", level: 0.13 },
+  { id: "sound_level_medium", level: 0.25 },
+  { id: "sound_level_high", level: 0.5 },
+  { id: "sound_level_highest", level: 1.0 },
 ];
