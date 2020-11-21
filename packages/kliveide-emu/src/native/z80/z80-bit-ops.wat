@@ -131,17 +131,18 @@
 
   ;; Z and PV
   if (result i32) ;; (Z|PV|S)
-    i32.const 0x80
-    i32.const 0x00
-    (i32.eq (get_local $n) (i32.const 7))
-    select
+    (i32.and (get_local $val) (i32.const 0x80))
   else
     i32.const 0x44
   end
 
   ;; Keep C
   (i32.and (call $getF) (i32.const 0x01))
+
+  ;; Keep R3 and R5
   (i32.and (get_local $val) (i32.const 0x28)) ;; (Z|PV|S, C, R3|R5)
+
+  ;; Set H
   i32.const 0x10 ;; (Z|PV|S, C, R3|R5, H)
 
   ;; Merge flags
@@ -220,6 +221,15 @@
     (i32.const 3)
   )
   call $Bit
+
+  ;; Correct R3 and R5 flags
+  (i32.and (call $getF) (i32.const 0xd7))   ;; Clear R3 and R5
+  (i32.and 
+    (i32.shr_u (call $getWZ) (i32.const 8)) ;; Get R3 and R5 from WZH
+    (i32.const 0x28)
+  )
+  i32.or
+  call $setF
 
   (i32.eq (get_global $useGateArrayContention) (i32.const 0))
   if

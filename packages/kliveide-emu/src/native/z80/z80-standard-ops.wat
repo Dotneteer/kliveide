@@ -89,9 +89,11 @@
   get_local $res
   i32.or
   (call $setA (i32.and (i32.const 0xff)))
-  call $getF
-  i32.const 0xc4 ;; S, Z, PV flags mask
-  i32.and
+  (i32.and (call $getF) (i32.const 0xc4))      ;; S, Z, PV flags mask
+  (i32.and (get_local $res) (i32.const 0x28)) ;; R3 and R5 from result
+  i32.or
+
+  ;; Combine Carry into the result
   get_local $newC
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
@@ -174,16 +176,15 @@
   (i32.shr_u (call $getA) (i32.const 1))
 
   ;; Combine with C flag
-  get_local $newC
-  i32.const 7
-  i32.shl
+  (i32.shl (get_local $newC) (i32.const 7))
   i32.or
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calc the new F
-  call $getF
-  i32.const 0xC4 ;; Keep S, Z, PV
-  i32.and
+  (i32.and (call $getF) (i32.const 0xc4)) ;; Keep S, Z, PV
+  (i32.and (call $getA) (i32.const 0x28)) ;; Keey R3 and R5
+  i32.or
+  
   get_local $newC
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
@@ -271,9 +272,10 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calculate new C Flag
-  call $getF
-  i32.const 0xc4 ;; Keep S, Z, PV
-  i32.and
+  (i32.and (call $getF) (i32.const 0xc4)) ;; Keep S, Z, PV
+  (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
+  i32.or
+
   get_local $newC
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
@@ -358,9 +360,10 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calculate new C Flag
-  call $getF
-  i32.const 0xc4 ;; Keep S, Z, PV
-  i32.and
+  (i32.and (call $getF) (i32.const 0xc4)) ;; Keep S, Z, PV
+  (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
+  i32.or
+
   get_local $newC
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
@@ -745,9 +748,10 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; New F
-  call $getF
-  i32.const 0xed ;; Keep S, Z, R3, R3, PV, C
-  i32.and
+  (i32.and (call $getF) (i32.const 0xc5)) ;; Keep S, Z, PV, C
+  (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
+  i32.or
+  
   i32.const 0x12 ;; Set H and N
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
@@ -958,12 +962,18 @@
 
 ;; ccf (0x3f)
 (func $Ccf
+  (local $cFlag i32)
   (i32.and (call $getA) (i32.const 0x28)) ;; Mask for R5, R3
   (i32.and (call $getF) (i32.const 0xc4)) ;; Mask for S, Z, PV
   i32.or
+  
   (i32.and (call $getF) (i32.const 0x01)) ;; Mask for C flag
+  tee_local $cFlag
   i32.const 0x01 ;; Complement C flag
   i32.xor
+  i32.or
+
+  (i32.shl (get_local $cFlag) (i32.const 4)) ;; Set H to the previous C
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
 )
