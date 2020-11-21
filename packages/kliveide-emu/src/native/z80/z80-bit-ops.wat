@@ -130,7 +130,7 @@
   tee_local $val
 
   ;; Z and PV
-  if (result i32) ;; (Z|PV|S)
+  if (result i32) ;; (S|Z|PV)
     (i32.and (get_local $val) (i32.const 0x80))
   else
     i32.const 0x44
@@ -138,17 +138,16 @@
 
   ;; Keep C
   (i32.and (call $getF) (i32.const 0x01))
+  i32.or
 
   ;; Keep R3 and R5
   (i32.and (get_local $val) (i32.const 0x28)) ;; (Z|PV|S, C, R3|R5)
+  i32.or
 
   ;; Set H
   i32.const 0x10 ;; (Z|PV|S, C, R3|R5, H)
+  i32.or
 
-  ;; Merge flags
-  i32.or
-  i32.or
-  i32.or
   (call $setF (i32.and (i32.const 0xff)))
 )
 
