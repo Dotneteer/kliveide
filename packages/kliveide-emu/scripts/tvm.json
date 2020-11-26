@@ -36,5 +36,5 @@
     "zx-spectrum-48.wat",
     "zx-spectrum-128.wat"
   ],
-  "outFile": "../build/spectrum.wat"
+  "outFile": "../build/tvm.wat"
 }

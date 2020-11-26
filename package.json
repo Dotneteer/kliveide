@@ -18,7 +18,7 @@
     "build:emu": "cd packages/kliveide-emu && npm run build",
     "test": "lerna run test",
     "dev": "cd packages/kliveide-emu && npm run dev",
-    "spbuild": "cd packages/kliveide-emu && npm run spbuild",
+    "vmbuild": "cd packages/kliveide-emu && npm run vmbuild",
     "start": "cd packages/kliveide-emu && npm start",
     "bump": "lerna version --no-push --no-git-tag-version",
     "build:win": "cd packages/kliveide-emu && npm run build:win",

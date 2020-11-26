@@ -23,11 +23,15 @@
     "dev": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --colors",
     "tscbuild": "tsc",
     "mergewat": "node ./scripts/mergewat.js",
-    "spbuild": "npm run mergewat && wat2wasm ./build/spectrum.wat -o ./build/spectrum.wasm",
+    "build:sp48": "npm run mergewat -- sp48.json && wat2wasm ./build/sp48.wat -o ./build/spectrum.wasm",
+    "build:sp128": "npm run mergewat -- sp128.json && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",
+    "build:cz88": "npm run mergewat -- cz88.json && wat2wasm ./build/cz88.wat -o ./build/cz88.wasm",
+    "build:tvm": "npm run mergewat -- tvm.json && wat2wasm ./build/tvm.wat -o ./build/tvm.wasm",
     "test": "ts-mocha -p ./tsconfig.json ./test/**/*.test.ts",
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
-    "build:linux": "npm run build && electron-builder build --linux --x64"
+    "build:linux": "npm run build && electron-builder build --linux --x64",
+    "vmbuild": "npm run build:sp48 && npm run build:sp128 && npm run build:cz88"
   },
   "build": {
     "appId": "dotneteer.klive",

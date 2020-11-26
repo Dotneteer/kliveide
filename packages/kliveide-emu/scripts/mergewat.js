@@ -1,29 +1,42 @@
 const path = require("path");
 const fs = require("fs");
 
-const PROJECT_FILE = path.join(__dirname, "wat.json");
-
-// --- Load project file
-const projectContents = fs.readFileSync(PROJECT_FILE, "utf8");
-const project = JSON.parse(projectContents);
-
-// --- Get project properties
-const sourceDir = project.sourceDir;
-const outFileName = path.join(__dirname, project.outFile);
-
-// --- Merge the associated files
-let mergedContents = "(module \r\n";
-for (const file of project.files) {
-  const filename = path.join(__dirname, sourceDir, file);
-  mergedContents += fs.readFileSync(filename, "utf8") + "\r\n";
+// --- Extract the project build file
+for (let i = 2; i < process.argv.length; i++) {
+  mergeWatFile(process.argv[i]);
 }
-mergedContents += "\r\n)\r\n";
 
-const constantDefs = collectConstants(mergedContents);
-mergedContents = replaceConstants(mergedContents, constantDefs);
+/**
+ * Merges the files described in the specified project file
+ * @param filename Relative path to the project file
+ */
+function mergeWatFile(filename) {
+  const projectFile = path.join(__dirname, filename);
+  console.log(`Processing ${projectFile}`);
 
-// --- Write output
-fs.writeFileSync(outFileName, mergedContents);
+  // --- Load project file
+  const projectContents = fs.readFileSync(projectFile, "utf8");
+  const project = JSON.parse(projectContents);
+
+  // --- Get project properties
+  const sourceDir = project.sourceDir;
+  const outFilename = path.join(__dirname, project.outFile);
+
+  // --- Merge the associated files
+  let mergedContents = "(module \r\n";
+  for (const file of project.files) {
+    const filename = path.join(__dirname, sourceDir, file);
+    mergedContents += fs.readFileSync(filename, "utf8") + "\r\n";
+  }
+  mergedContents += "\r\n)\r\n";
+
+  const constantDefs = collectConstants(mergedContents);
+  mergedContents = replaceConstants(mergedContents, constantDefs);
+
+  // --- Write output
+  fs.writeFileSync(outFilename, mergedContents);
+  console.log(`Merged file written to ${outFilename}`)
+}
 
 // --- Collect constant values from comments
 function collectConstants(source) {
