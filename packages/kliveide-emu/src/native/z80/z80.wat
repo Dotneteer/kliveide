@@ -66,7 +66,7 @@
 (global $tacts (mut i32) (i32.const 0x0000))
 
 ;; Various Z80 state flags
-(global $stateFlags (mut i32) (i32.const 0x00))
+(global $cpuSignalFlags (mut i32) (i32.const 0x00))
 
 ;; Should use ZX Spectrum +3 gate array contention?
 (global $useGateArrayContention (mut i32) (i32.const 0x0000))
@@ -176,7 +176,7 @@
   (i32.store offset=28 (get_global $STATE_TRANSFER_BUFF) (get_global $tactsInFrame))
   (i32.store8 offset=32 (get_global $STATE_TRANSFER_BUFF) (get_global $allowExtendedSet))
   (i32.store offset=33 (get_global $STATE_TRANSFER_BUFF) (get_global $tacts))
-  (i32.store8 offset=37 (get_global $STATE_TRANSFER_BUFF) (get_global $stateFlags))
+  (i32.store8 offset=37 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuSignalFlags))
   (i32.store8 offset=38 (get_global $STATE_TRANSFER_BUFF) (get_global $useGateArrayContention))
   (i32.store8 offset=39 (get_global $STATE_TRANSFER_BUFF) (get_global $iff1))
   (i32.store8 offset=40 (get_global $STATE_TRANSFER_BUFF) (get_global $iff2))
@@ -204,7 +204,7 @@
   (set_global $tactsInFrame (get_global $STATE_TRANSFER_BUFF) (i32.load offset=28))
   (set_global $allowExtendedSet (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=32))
   (set_global $tacts (get_global $STATE_TRANSFER_BUFF) (i32.load offset=33))
-  (set_global $stateFlags (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=37))
+  (set_global $cpuSignalFlags (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=37))
   (set_global $useGateArrayContention (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=38))
   (set_global $iff1 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=39))
   (set_global $iff2 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=40))
@@ -622,7 +622,7 @@
   (i32.store16 offset=24 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
   (i32.store16 offset=26 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
   i32.const 0x0000 set_global $tacts
-  i32.const $SIG_NONE# set_global $stateFlags
+  i32.const $SIG_NONE# set_global $cpuSignalFlags
   i32.const 0x0000 set_global $useGateArrayContention
   i32.const 0x0000 set_global $iff1
   i32.const 0x0000 set_global $iff2
@@ -648,7 +648,7 @@
 ;; Executes the CPU's processing cycle
 (func $executeCpuCycle
   ;; Is there any CPU signal raised?
-  (get_global $stateFlags)
+  (get_global $cpuSignalFlags)
   if
     ;; Yes, process them
     (i32.ne (call $processCpuSignals) (i32.const 0))
@@ -709,13 +709,20 @@
 ;; Process the CPU signals
 ;; Returns true, if the signal has been processed; otherwise, false
 (func $processCpuSignals (result i32)
+  ;; No signal -- nothing to process
+  (i32.eqz (get_global $cpuSignalFlags))
+  if 
+    i32.const 0
+    return
+  end
+
   ;; Test for INT
-  (i32.and (get_global $stateFlags) (i32.const $SIG_INT#))
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_INT#))
   if
     ;; Test for unblocked interrupt
-    (i32.eq (get_global $isInterruptBlocked) (i32.const 0))
+    (i32.eqz (get_global $isInterruptBlocked))
     if
-      (i32.ne (get_global $iff1) (i32.const 0))
+      get_global $iff1
       if
         call $executeInterrupt
         i32.const 1
@@ -725,7 +732,7 @@
   end
 
   ;; Test for NMI
-  (i32.and (get_global $stateFlags) (i32.const $SIG_NMI#))
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_NMI#))
   if
     call $executeNMI
     i32.const 1
@@ -733,7 +740,7 @@
   end
 
   ;; Test for HLT
-  (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
   if
     (call $incTacts (i32.const 3))
     call $refreshMemory
@@ -742,7 +749,7 @@
   end
 
   ;; Test for RST
-  (i32.and (get_global $stateFlags) (i32.const $SIG_RST#))
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_RST#))
   if
     call $resetCpu
     i32.const 1
@@ -777,7 +784,7 @@
   i32.const 0 set_global $iff2
   i32.const 0 set_global $interruptMode
   i32.const 0 set_global $isInterruptBlocked
-  i32.const $SIG_NONE# set_global $stateFlags
+  i32.const $SIG_NONE# set_global $cpuSignalFlags
   i32.const $PREF_NONE# set_global $prefixMode
   i32.const $IND_NONE# set_global $indexMode
   (call $setAF (i32.const 0xffff))
@@ -793,13 +800,13 @@
 ;; Executes the NMI request
 (func $executeNMI
     ;; Test for HLT
-  (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
   if
     (set_global $PC 
       (i32.and (i32.add (get_global $PC) (i32.const 1)) (i32.const 0xffff)) 
     )
-    (i32.and (get_global $stateFlags) (i32.const $SIG_HLT_MASK#))
-    set_global $stateFlags
+    (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT_MASK#))
+    set_global $cpuSignalFlags
   end
   get_global $iff1 set_global $iff2
   i32.const 0 set_global $iff1
@@ -821,13 +828,13 @@
   get_global $PC set_local $oldPc
 
   ;; Test for HLT
-  (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
   if
     (set_global $PC 
       (i32.and (i32.add (get_global $PC) (i32.const 1)) (i32.const 0xffff)) 
     )
-    (i32.and (get_global $stateFlags) (i32.const $SIG_HLT_MASK#))
-    set_global $stateFlags
+    (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT_MASK#))
+    set_global $cpuSignalFlags
   end
 
   i32.const 0 set_global $iff1
