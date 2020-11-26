@@ -591,7 +591,7 @@ describe("Standard ops 00-3f", () => {
 
     expect(s.b).toBe(0x00);
     expect(s.pc).toBe(0x0002);
-    expect(s.wz).toBe(0xffff);
+    expect(s.wz).toBe(0x0000);
     expect(s.tacts).toBe(8);
   });
 

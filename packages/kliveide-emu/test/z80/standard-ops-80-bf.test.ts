@@ -158,10 +158,10 @@ describe("Standard ops 80-bf", () => {
       testMachine.shouldKeepMemory();
       if (q !== 7) {
         expect(s.a).toBe(0x00);
-        expect(s.f & FlagsSetMask.S).toBeFalsy();
         expect(s.f & FlagsSetMask.Z).toBeTruthy();
-        expect(s.f & FlagsSetMask.PV).toBeFalsy();
         expect(s.f & FlagsSetMask.C).toBeTruthy();
+        expect(s.f & FlagsSetMask.S).toBeFalsy();
+        expect(s.f & FlagsSetMask.PV).toBeFalsy();
       } else {
         expect(s.a).toBe(0xfc);
         expect(s.f & FlagsSetMask.S).toBeTruthy();

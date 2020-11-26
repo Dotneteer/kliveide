@@ -167,7 +167,7 @@
   (i32.eq (get_global $allowExtendedSet) (i32.const 0))
   if return end    
 
-  (i32.add (call $getHL) (call $readAddrFromCode))
+  (i32.add (call $getHL) (call $readCode16))
   call $setHL
   (call $incTacts (i32.const 2))
 )
@@ -177,7 +177,7 @@
   (i32.eq (get_global $allowExtendedSet) (i32.const 0))
   if return end    
 
-  (i32.add (call $getDE) (call $readAddrFromCode))
+  (i32.add (call $getDE) (call $readCode16))
   call $setDE
   (call $incTacts (i32.const 2))
 )
@@ -187,7 +187,7 @@
   (i32.eq (get_global $allowExtendedSet) (i32.const 0))
   if return end    
 
-  (i32.add (call $getBC) (call $readAddrFromCode))
+  (i32.add (call $getBC) (call $readCode16))
   call $setBC
   (call $incTacts (i32.const 2))
 )
@@ -195,11 +195,11 @@
 ;; in b,(c) (0x40)
 (func $InBC
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
-  tee_local $pval
-  call $setB
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read and store port value
+  (call $setB (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
@@ -211,8 +211,8 @@
 
 ;; out (c),b (0x41)
 (func $OutCB
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (call $getB))
 )
 
@@ -226,7 +226,7 @@
 ;; ld (NN),bc (0x43)
 (func $LdNNiBC
   (local $addr i32)
-  call $readAddrFromCode
+  call $readCode16
   (i32.add (tee_local $addr) (i32.const 1))
   call $setWZ
   get_local $addr
@@ -238,11 +238,11 @@
 ;; in c,(c) (0x48)
 (func $InCC
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
-  tee_local $pval
-  call $setC
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read and store port value
+  (call $setC (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
@@ -254,19 +254,19 @@
 
 ;; out (c),c (0x49)
 (func $OutCC
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (call $getC))
 )
 
 ;; in d,(c) (0x50)
 (func $InDC
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
-  tee_local $pval
-  call $setD
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read and store port value
+  (call $setD (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
@@ -278,19 +278,19 @@
 
 ;; out (c),d (0x51)
 (func $OutCD
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (call $getD))
 )
 
 ;; in e,(c) (0x58)
 (func $InEC
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
-  tee_local $pval
-  call $setE
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read and store port value
+  (call $setE (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
@@ -302,19 +302,20 @@
 
 ;; out (c),e (0x59)
 (func $OutCE
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (call $getE))
 )
 
 ;; in h,(c) (0x60)
 (func $InHC
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
-  tee_local $pval
-  call $setH
+
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read and store port value
+  (call $setH (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
@@ -326,19 +327,20 @@
 
 ;; out (c),h (0x61)
 (func $OutCH
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (call $getH))
 )
 
 ;; in l,(c) (0x68)
 (func $InLC
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
-  tee_local $pval
-  call $setL
+
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read and store port value
+  (call $setL (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
@@ -350,17 +352,19 @@
 
 ;; out (c),l (0x69)
 (func $OutCL
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (call $getL))
 )
 
 ;; in (c) (0x70)
 (func $In0C
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read port value
+  (call $readPort (call $getBC)) 
   set_local $pval
   
   ;; Adjust flags
@@ -373,19 +377,19 @@
 
 ;; out (c),0 (0x71)
 (func $OutC0
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (i32.const 0))
 )
 
 ;; in a,(c) (0x78)
 (func $InAC
   (local $pval i32)
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
-  (call $readPort (call $getBC))
-  tee_local $pval
-  call $setA
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
+  
+  ;; Read and store port value
+  (call $setA (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
@@ -397,8 +401,8 @@
 
 ;; out (c),a (0x79)
 (func $OutCA
-  (i32.add (call $getBC) (i32.const 1))
-  call $setWZ
+  ;; WZ = BC + 1
+  (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   (call $writePort (call $getBC) (call $getA))
 )
 
@@ -408,7 +412,7 @@
   (local $addr i32)
 
   ;; Obtain address
-  call $readAddrFromCode
+  call $readCode16
   (i32.add (tee_local $addr) (i32.const 1))
   call $setWZ
 
@@ -534,7 +538,7 @@
 ;; ld bc,(NN) (0x4b)
 (func $LdBCNNi
   (local $addr i32)
-  call $readAddrFromCode
+  call $readCode16
   (call $setWZ (i32.add (tee_local $addr) (i32.const 1)))
   (call $setC (call $readMemory (get_local $addr)))
   (call $setB (call $readMemory (call $getWZ)))
@@ -557,7 +561,7 @@
 ;; ld (NN),de (0x53)
 (func $LdNNiDE
   (local $addr i32)
-  call $readAddrFromCode
+  call $readCode16
   (i32.add (tee_local $addr) (i32.const 1))
   call $setWZ
   get_local $addr
@@ -596,7 +600,8 @@
   i32.or
   i32.or
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
   (call $incTacts (i32.const 1))
 )
 
@@ -610,7 +615,7 @@
 ;; ld de,(NN) (0x5b)
 (func $LdDENNi
   (local $addr i32)
-  call $readAddrFromCode
+  call $readCode16
   (call $setWZ (i32.add (tee_local $addr) (i32.const 1)))
   (call $setE (call $readMemory (get_local $addr)))
   (call $setD (call $readMemory (call $getWZ)))
@@ -742,7 +747,7 @@
 ;; ld (NN),sp (0x73)
 (func $LdNNiSP
   (local $addr i32)
-  call $readAddrFromCode
+  call $readCode16
   (i32.add (tee_local $addr) (i32.const 1))
   call $setWZ
   get_local $addr
@@ -761,7 +766,7 @@
 ;; ld sp,(NN) (0x7b)
 (func $LdSPNNi
   (local $addr i32)
-  call $readAddrFromCode
+  call $readCode16
   (call $setWZ (i32.add (tee_local $addr) (i32.const 1)))
   (call $readMemory (get_local $addr))
   (call $readMemory (call $getWZ))
@@ -777,7 +782,7 @@
   (i32.eq (get_global $allowExtendedSet) (i32.const 0))
   if return end    
 
-  call $readAddrFromCode
+  call $readCode16
   set_local $v
   call $decSP
   get_global $SP
@@ -809,6 +814,9 @@
   ;; Increment HL
   (i32.add (get_local $hl) (i32.const 1))
   call $setHL
+
+  (i32.add (call $getBC) (i32.const 1))
+  call $setWZ
 )
 
 ;; nextreg (0x91)
@@ -949,7 +957,7 @@
   (local $de i32)
   (local $hl i32)
   (local $memVal i32)
-  
+
   ;; (DE) := (HL)
   call $getDE
   tee_local $de
@@ -1068,7 +1076,9 @@
   (local $hl i32)
   (call $incTacts (i32.const 1))
   call $getBC
-  (i32.add (tee_local $bc) (i32.const 1))
+
+  ;; Increment or decrement WZ
+  (i32.add (tee_local $bc) (get_local $step))
   call $setWZ
 
   ;; (HL) := in(BC)
@@ -1141,8 +1151,8 @@
   (i32.add (get_local $hl) (get_local $step))
   call $setHL
 
-  ;; WZ := BC + 1
-  (i32.add (get_local $b) (i32.const 1))
+  ;; WZ := BC +/- 1
+  (i32.add (get_local $b) (get_local $step))
   call $setWZ
 )
 
@@ -1208,7 +1218,8 @@
 )
 
 ;; Tail of the cpir/cpdr operations
-(func $CprTail
+(func $CprTail (param $step i32)
+
   (local $f i32)
   (local $pc i32)
   call $getBC
@@ -1234,6 +1245,11 @@
 
       ;; WZ := PC + 1
       (i32.add (get_local $pc) (i32.const 1))
+      call $setWZ
+
+    else
+      ;; WZ++/WZ--
+      (i32.add (call $getWZ) (get_local $step))
       call $setWZ
     end
   end
@@ -1323,9 +1339,11 @@
 
   ;; Merge flags
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 
-  call $getHL
+  ;; WZ++
+  (i32.add (call $getWZ) (i32.const 1))
   call $setWZ
 )
 
@@ -1404,7 +1422,7 @@
   ;; Merge flags
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
-  call $getHL
+  (i32.sub (call $getWZ) (i32.const 1))
   call $setWZ
 )
 
@@ -1437,6 +1455,7 @@
 (func $Cpir
   (call $CpBase (i32.const 1))
   (call $setF (i32.and (i32.const 0xff)))
+  i32.const 1
   call $CprTail
 )
 
@@ -1507,6 +1526,7 @@
 (func $Cpdr
   (call $CpBase (i32.const -1))
   (call $setF (i32.and (i32.const 0xff)))
+  i32.const -1
   call $CprTail
 )
 

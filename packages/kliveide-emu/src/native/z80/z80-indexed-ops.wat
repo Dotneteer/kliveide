@@ -3,31 +3,19 @@
 
 ;; add ix,bc (0x09)
 (func $AddIXBC
-  (local $qq i32)
-  (local $indReg i32)
-  call $getIndexReg
-  tee_local $indReg
-  (call $setWZ (i32.add (i32.const 1)))
-  (call $AluAddHL (get_local $indReg) (call $getBC))
+  (call $AluAdd16 (call $getIndexReg) (call $getBC))
   call $setIndexReg
-  (call $incTacts (i32.const 7))
 )
 
 ;; add ix,de (0x19)
 (func $AddIXDE
-  (local $qq i32)
-  (local $indReg i32)
-  call $getIndexReg
-  tee_local $indReg
-  (call $setWZ (i32.add (i32.const 1)))
-  (call $AluAddHL (get_local $indReg) (call $getDE))
+  (call $AluAdd16 (call $getIndexReg) (call $getDE))
   call $setIndexReg
-  (call $incTacts (i32.const 7))
 )
 
 ;; ld ix,NN (0x21)
 (func $LdIXNN
-  call $readAddrFromCode
+  call $readCode16
   call $setIndexReg
 )
 
@@ -35,14 +23,11 @@
   (local $addr i32)
   (local $ix i32)
   ;; Obtain the address to store HL
-  call $readAddrFromCode
-  tee_local $addr
-
+  (tee_local $addr (call $readCode16))
+  
   ;; Set WZ to addr + 1
-  i32.const 1
-  i32.add
-  call $setWZ
-
+  (call $setWZ (i32.add (i32.const 1)))
+  
   ;; Store IX
   get_local $addr
   call $getIndexReg
@@ -85,7 +70,8 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; dec xh (0x25)
@@ -113,7 +99,8 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; ld xh,N (0x26)
@@ -126,27 +113,19 @@
 
 ;; add ix,ix (0x29)
 (func $AddIXIX
-  (local $qq i32)
   (local $indReg i32)
-  call $getIndexReg
-  tee_local $indReg
-  (call $setWZ (i32.add (i32.const 1)))
-  (call $AluAddHL (get_local $indReg) (get_local $indReg))
+  (call $AluAdd16 (call $getIndexReg) (call $getIndexReg))
   call $setIndexReg
-  (call $incTacts (i32.const 7))
 )
 
 ;; ld ix,(NN) (0x2a)
 (func $LdIXNNi
   (local $addr i32)
   ;; Read the address
-  call $readAddrFromCode
-  tee_local $addr
-
+  (tee_local $addr (call $readCode16))
+  
   ;; Set WZ to addr + 1
-  i32.const 1
-  i32.add
-  call $setWZ
+  (call $setWZ (i32.add (i32.const 1)))
 
   ;; Read HL from memory
   get_local $addr
@@ -189,7 +168,8 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; dec xl (0x2d)
@@ -215,7 +195,8 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; ld xl,N (0x2e)
@@ -246,7 +227,11 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
   ;; dec (ix+d) (0x35)
@@ -270,12 +255,19 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld (ix+d),B (0x36)
 (func $LdIXiN
+  (local $addr i32)
+
   call $getIndexedAddress
+  tee_local $addr
   call $readCodeMemory
 
   ;; Adjust tacts
@@ -291,18 +283,15 @@
 
   ;; Store value
   call $writeMemory
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; add ix,sp (0x39)
 (func $AddIXSP
-  (local $qq i32)
-  (local $indReg i32)
-  call $getIndexReg
-  tee_local $indReg
-  (call $setWZ (i32.add (i32.const 1)))
-  (call $AluAddHL (get_local $indReg) (get_global $SP))
+  (call $AluAdd16 (call $getIndexReg) (get_global $SP))
   call $setIndexReg
-  (call $incTacts (i32.const 7))
 )
 
 ;; ld b,xh (0x44)
@@ -319,8 +308,13 @@
 
 ;; ld b,(ix+d) (0x46)
 (func $LdBIXi
-  (call $AdjustPcTact5 (call $getIndexedAddress))
+  (local $addr i32)
+  call $getIndexedAddress
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $setB (call $readMemory))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld c,xh (0x4c)
@@ -337,8 +331,13 @@
 
 ;; ld c,(ix+d) (0x4e)
 (func $LdCIXi
-  (call $AdjustPcTact5 (call $getIndexedAddress))
+  (local $addr i32)
+  call $getIndexedAddress
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $setC (call $readMemory))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld d,xh (0x54)
@@ -355,8 +354,13 @@
 
 ;; ld d,(ix+d) (0x56)
 (func $LdDIXi
-  (call $AdjustPcTact5 (call $getIndexedAddress))
+  (local $addr i32)
+  call $getIndexedAddress
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $setD (call $readMemory))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld e,xh (0x5c)
@@ -373,8 +377,13 @@
 
 ;; ld e,(ix+d) (0x5e)
 (func $LdEIXi
-  (call $AdjustPcTact5 (call $getIndexedAddress))
+  (local $addr i32)
+  call $getIndexedAddress
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $setE (call $readMemory))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld xh,b (0x60)
@@ -419,8 +428,13 @@
 
 ;; ld h,(ix+d) (0x66)
 (func $LdHIXi
-  (call $AdjustPcTact5 (call $getIndexedAddress))
+  (local $addr i32)
+  call $getIndexedAddress
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $setH (call $readMemory))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld xh,e (0x67)
@@ -479,8 +493,13 @@
 
 ;; ld l,(ix+d) (0x6e)
 (func $LdLIXi
-  (call $AdjustPcTact5 (call $getIndexedAddress))
+  (local $addr i32)
+  call $getIndexedAddress
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $setL (call $readMemory))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld xl,a (0x6f)
@@ -494,51 +513,79 @@
 
 ;; ld (ix+d),b (0x70)
 (func $LdIXiB
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $writeMemory (call $getB))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld (ix+d),c (0x71)
 (func $LdIXiC
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $writeMemory (call $getC))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld (ix+d),d (0x72)
 (func $LdIXiD
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $writeMemory (call $getD))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld (ix+d),e (0x73)
 (func $LdIXiE
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $writeMemory (call $getE))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld (ix+d),h (0x74)
 (func $LdIXiH
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $writeMemory (call $getH))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld (ix+d),l (0x75)
 (func $LdIXiL
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $writeMemory (call $getL))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
-;; ld (ix+d),b (0x77)
+;; ld (ix+d),a (0x77)
 (func $LdIXiA
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $writeMemory (call $getA))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; ld a,xh (0x7c)
@@ -553,10 +600,15 @@
   call $setA
 )
 
-;; ld b,(ix+d) (0x7e)
+;; ld a,(ix+d) (0x7e)
 (func $LdAIXi
-  (call $AdjustPcTact5 (call $getIndexedAddress))
+  (local $addr i32)
+  call $getIndexedAddress
+  (call $AdjustPcTact5 (tee_local $addr))
   (call $setA (call $readMemory))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; add a,xh (0x84)
@@ -575,11 +627,15 @@
 
 ;; add a,(ix+d) (0x86)
 (func $AddAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   i32.const 0
   call $AluAdd
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; adc a,xh (0x8c)
@@ -598,11 +654,15 @@
 
 ;; adc a,(ix+d) (0x8e)
 (func $AdcAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   (i32.and (call $getF) (i32.const 1))
   call $AluAdd
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; sub a,xh (0x94)
@@ -621,11 +681,15 @@
 
 ;; sub a,(ix+d) (0x96)
 (func $SubAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   i32.const 0
   call $AluSub
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; sbc a,xh (0x9c)
@@ -644,11 +708,15 @@
 
 ;; sub a,(ix+d) (0x9e)
 (func $SbcAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   (i32.and (call $getF) (i32.const 1))
   call $AluSub
+
+    ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; and a,xh (0xa4)
@@ -663,12 +731,16 @@
   call $AluAnd
 )
 
-;; and a,(ix+d) (0x9e)
+;; and a,(ix+d) (0xa6)
 (func $AndAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   call $AluAnd
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; xor a,xh (0xac)
@@ -685,10 +757,14 @@
 
 ;; xor a,(ix+d) (0xae)
 (func $XorAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   call $AluXor
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; or a,xh (0xb4)
@@ -705,10 +781,14 @@
 
 ;; or a,(ix+d) (0xb6)
 (func $OrAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   call $AluOr
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; cp xh (0xbc)
@@ -725,10 +805,14 @@
 
 ;; cp (ix+d) (0xbe)
 (func $CpAIXi
+  (local $addr i32)
   call $getIndexedAddress
-  call $AdjustPcTact5
+  (call $AdjustPcTact5 (tee_local $addr))
   call $readMemory
   call $AluCp
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
 )
 
 ;; pop ix (0xe1)

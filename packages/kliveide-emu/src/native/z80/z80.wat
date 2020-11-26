@@ -50,6 +50,9 @@
 ;; 22: IX
 ;; 24: IY
 ;; 26: WZ
+;; 28: Q: internal register where Z80 assembles the new content of the
+;;        F register, before moving it back to F. The behaviour is 
+;;        deterministic in Zilog Z80 and nondeterministic in NEC Z80.
 
 ;; Number of tacts within one screen rendering frame. This value indicates the
 ;; number of clock cycles with normal CPU speed.
@@ -131,14 +134,32 @@
 ;; SRA flags table
 (data (i32.const 0x40_0900) "\44\45\00\01\00\01\04\05\00\01\04\05\04\05\00\01\08\09\0c\0d\0c\0d\08\09\0c\0d\08\09\08\09\0c\0d\00\01\04\05\04\05\00\01\04\05\00\01\00\01\04\05\0c\0d\08\09\08\09\0c\0d\08\09\0c\0d\0c\0d\08\09\20\21\24\25\24\25\20\21\24\25\20\21\20\21\24\25\2c\2d\28\29\28\29\2c\2d\28\29\2c\2d\2c\2d\28\29\24\25\20\21\20\21\24\25\20\21\24\25\24\25\20\21\28\29\2c\2d\2c\2d\28\29\2c\2d\28\29\28\29\2c\2d\84\85\80\81\80\81\84\85\80\81\84\85\84\85\80\81\88\89\8c\8d\8c\8d\88\89\8c\8d\88\89\88\89\8c\8d\80\81\84\85\84\85\80\81\84\85\80\81\80\81\84\85\8c\8d\88\89\88\89\8c\8d\88\89\8c\8d\8c\8d\88\89\a0\a1\a4\a5\a4\a5\a0\a1\a4\a5\a0\a1\a0\a1\a4\a5\ac\ad\a8\a9\a8\a9\ac\ad\a8\a9\ac\ad\ac\ad\a8\a9\a4\a5\a0\a1\a0\a1\a4\a5\a0\a1\a4\a5\a4\a5\a0\a1\a8\a9\ac\ad\ac\ad\a8\a9\ac\ad\a8\a9\a8\a9\ac\ad")
 
+;; SZ53 flags table (256 bytes)
+(data (i32.const 0x40_0A00) "\40\00\00\00\00\00\00\00\08\08\08\08\08\08\08\08\00\00\00\00\00\00\00\00\08\08\08\08\08\08\08\08\20\20\20\20\20\20\20\20\28\28\28\28\28\28\28\28\20\20\20\20\20\20\20\20\28\28\28\28\28\28\28\28\00\00\00\00\00\00\00\00\08\08\08\08\08\08\08\08\00\00\00\00\00\00\00\00\08\08\08\08\08\08\08\08\20\20\20\20\20\20\20\20\28\28\28\28\28\28\28\28\20\20\20\20\20\20\20\20\28\28\28\28\28\28\28\28\80\80\80\80\80\80\80\80\88\88\88\88\88\88\88\88\80\80\80\80\80\80\80\80\88\88\88\88\88\88\88\88\a0\a0\a0\a0\a0\a0\a0\a0\a8\a8\a8\a8\a8\a8\a8\a8\a0\a0\a0\a0\a0\a0\a0\a0\a8\a8\a8\a8\a8\a8\a8\a8\80\80\80\80\80\80\80\80\88\88\88\88\88\88\88\88\80\80\80\80\80\80\80\80\88\88\88\88\88\88\88\88\a0\a0\a0\a0\a0\a0\a0\a0\a8\a8\a8\a8\a8\a8\a8\a8\a0\a0\a0\a0\a0\a0\a0\a0\a8\a8\a8\a8\a8\a8\a8\a8")
+
+;; SZ53P flags table (256 bytes)
+(data (i32.const 0x40_0B00) "\44\00\00\04\00\04\04\00\08\0c\0c\08\0c\08\08\0c\00\04\04\00\04\00\00\04\0c\08\08\0c\08\0c\0c\08\20\24\24\20\24\20\20\24\2c\28\28\2c\28\2c\2c\28\24\20\20\24\20\24\24\20\28\2c\2c\28\2c\28\28\2c\00\04\04\00\04\00\00\04\0c\08\08\0c\08\0c\0c\08\04\00\00\04\00\04\04\00\08\0c\0c\08\0c\08\08\0c\24\20\20\24\20\24\24\20\28\2c\2c\28\2c\28\28\2c\20\24\24\20\24\20\20\24\2c\28\28\2c\28\2c\2c\28\80\84\84\80\84\80\80\84\8c\88\88\8c\88\8c\8c\88\84\80\80\84\80\84\84\80\88\8c\8c\88\8c\88\88\8c\a4\a0\a0\a4\a0\a4\a4\a0\a8\ac\ac\a8\ac\a8\a8\ac\a0\a4\a4\a0\a4\a0\a0\a4\ac\a8\a8\ac\a8\ac\ac\a8\84\80\80\84\80\84\84\80\88\8c\8c\88\8c\88\88\8c\80\84\84\80\84\80\80\84\8c\88\88\8c\88\8c\8c\88\a0\a4\a4\a0\a4\a0\a0\a4\ac\a8\a8\ac\a8\ac\ac\a8\a4\a0\a0\a4\a0\a4\a4\a0\a8\ac\ac\a8\ac\a8\a8\ac")
+
+;; Overflow ADD table (8 bytes)
+(data (i32.const 0x40_0C00) "\00\00\00\04\04\00\00\00")
+
+;; Overflow SUB table (8 bytes)
+(data (i32.const 0x40_0C10) "\00\04\00\00\00\00\04\00")
+
+;; Half-carry ADD table (8 bytes)
+(data (i32.const 0x40_0C20) "\00\10\10\10\00\00\00\10")
+
+;; Half-carry SUB table (8 bytes)
+(data (i32.const 0x40_0C30) "\00\00\10\00\10\00\10\10")
+
 ;; ----------------------------------------------------------------------------
 ;; Register index conversion tables
 
 ;; Z80 8-bit register index conversion table
-(data (i32.const 0x40_0A20) "\03\02\05\04\07\06\00\01")
+(data (i32.const 0x40_0D20) "\03\02\05\04\07\06\00\01")
 
 ;; Z80 16-bit register index conversion table
-(data (i32.const 0x40_0A30) "\02\04\06\14")
+(data (i32.const 0x40_0D30) "\02\04\06\14")
 
 ;; Writes the CPU state to the transfer area so that the JavaScript code
 ;; can read it. This method copies only the registers that are stored in global
@@ -339,6 +360,11 @@
   (i32.store8 offset=17 (get_global $REG_AREA_INDEX) (get_local $v))
 )
 
+;; Gets the value of IR
+(func $getIR (result i32)
+  get_global $REG_AREA_INDEX i32.load16_u offset=16
+)
+
 ;; Sets the value of PC
 (func $setPC (param $v i32)
   (set_global $PC (i32.and (get_local $v) (i32.const 0xffff)))
@@ -437,6 +463,16 @@
 ;; Sets the value of WZ
 (func $setWZ (param $v i32)
   (i32.store16 offset=26 (get_global $REG_AREA_INDEX) (get_local $v))
+)
+
+;; Gets the value of Q
+(func $getQ (result i32)
+  get_global $REG_AREA_INDEX i32.load8_u offset=28
+)
+
+;; Sets the value of Q
+(func $setQ (param $v i32)
+  (i32.store8 offset=28 (get_global $REG_AREA_INDEX) (get_local $v))
 )
 
 ;; Gets the specified 8-bit register
@@ -744,6 +780,9 @@
   i32.const $SIG_NONE# set_global $stateFlags
   i32.const $PREF_NONE# set_global $prefixMode
   i32.const $IND_NONE# set_global $indexMode
+  (call $setAF (i32.const 0xffff))
+  (call $setWZ (i32.const 0x0000))
+  (call $setSP (i32.const 0xffff))
   (call $setPC (i32.const 0))
   (call $setI (i32.const 0))
   (call $setR (i32.const 0))
@@ -853,13 +892,13 @@
   if
     ;; indexed bit operations
     ;; WZ := IX + opCode
-    call $getIndexReg
-    get_global $opCode
-    i32.const 24
-    i32.shl
-    i32.const 24
-    i32.shr_s
-    i32.add
+    (i32.add 
+      (call $getIndexReg)
+      (i32.shr_s 
+        (i32.shl (get_global $opCode) (i32.const 24))
+        (i32.const 24)
+      )
+    )
     call $setWZ
 
     ;; Adjust tacts
@@ -895,6 +934,36 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Instruction helpers
+
+;; Adjust flags after an 8-bit INC statement
+;; $v: The value **before** the INC operation
+(func $adjustIncFlags (param $v i32)
+  (i32.or
+    ;; Get flag from the table
+    (i32.load8_u (i32.add (get_global $INC_FLAGS) (get_local $v)))
+    
+    ;; Keep the current C flag
+    (i32.and (call $getF) (i32.const 0x01))
+  )
+  ;; Set F through Q
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
+)
+
+;; Adjust flags after an 8-bit DEC statement
+;; $v: The value **before** the DEC operation
+(func $adjustDecFlags (param $v i32)
+  (i32.or
+    ;; Get flag from the table
+    (i32.load8_u (i32.add (get_global $DEC_FLAGS) (get_local $v)))
+
+    ;; Keep C flag  
+    (i32.and (call $getF) (i32.const 0x01))
+  )
+  ;; Set F through Q
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
+)
 
 ;; Decrements the value of SP
 (func $decSP
@@ -944,19 +1013,23 @@
 )
 
 ;; Add two 16-bit values following the add hl,NN logic
-(func $AluAddHL (param $regHL i32) (param $other i32) (result i32)
+(func $AluAdd16 (param $reg i32) (param $other i32) (result i32)
   (local $f i32)
   (local $res i32)
 
-  ;; Keep S, Z, and PV from F
-  call $getF
-  i32.const 0xc4 ;; Mask for preserving S, Z, PV
-  i32.and
-  set_local $f
+  ;; Calculate WZ
+  (i32.add (get_local $reg) (i32.const 1))
+  call $setWZ
 
+  ;; Adjust tacts
+  (call $incTacts (i32.const 7))
+
+  ;; Keep S, Z, and PV from F
+  (set_local $f (i32.and (call $getF) (i32.const 0xc4)))
+  
   ;; Calc the value of H flag
   (i32.add
-    (i32.and (get_local $regHL) (i32.const 0x0fff))
+    (i32.and (get_local $reg) (i32.const 0x0fff))
     (i32.and (get_local $other) (i32.const 0x0fff))
   )
   i32.const 0x08
@@ -970,7 +1043,7 @@
   set_local $f
 
   ;; Calculate result
-  (i32.add (get_local $regHL) (get_local $other))
+  (i32.add (get_local $reg) (get_local $other))
   tee_local $res
 
   ;; Test for C flag
@@ -990,7 +1063,8 @@
   ;; Combine them with F
   get_local $f
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 
   ;; Fetch the result
   get_local $res
@@ -1001,6 +1075,10 @@
   (local $res i32)
   (local $f i32)
   (local $signed i32)
+
+  ;; WZ = HL + 1
+  (i32.add (call $getHL) (i32.const 1))
+  call $setWZ
 
   ;; Calculate result
   (i32.add (call $getHL) (get_local $other))
@@ -1075,7 +1153,8 @@
   i32.or
   i32.or
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; Subtract two 16-bit values following the sbc hl,NN logic
@@ -1083,6 +1162,10 @@
   (local $res i32)
   (local $f i32)
   (local $signed i32)
+
+  ;; WZ = HL + 1;
+  (i32.add (call $getHL) (i32.const 1))
+  call $setWZ
 
   ;; Calculate result
   (i32.sub (call $getHL) (get_local $other))
@@ -1161,7 +1244,8 @@
   i32.or
   i32.or
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; Carries out a relative jump
@@ -1221,88 +1305,97 @@
   i32.add
 )
 
+;; Gets the entry from the SZ53_FLAGS table
+(func $getSZ53 (param $arg i32) (result i32)
+  (i32.add
+    (get_global $SZ53_FLAGS)
+    (i32.and (get_local $arg) (i32.const 0xff))
+  )
+  i32.load8_u
+)
+
+;; Gets the entry from the SZ53_FLAGS table
+(func $getSZ53P (param $arg i32) (result i32)
+  (i32.add
+    (get_global $SZ53P_FLAGS)
+    (i32.and (get_local $arg) (i32.const 0xff))
+  )
+  i32.load8_u
+)
+
+;; Gets the r12 lookup value for flags
+(func $getR12Lookup
+  (param $r i32)
+  (param $1 i32)
+  (param $2 i32)
+  (result i32)
+  (i32.shr_u 
+    (i32.and (get_local $1) (i32.const 0x88))
+    (i32.const 3)
+  )
+  (i32.shr_u 
+    (i32.and (get_local $2) (i32.const 0x88))
+    (i32.const 2)
+  )
+  (i32.shr_u 
+    (i32.and (get_local $r) (i32.const 0x88))
+    (i32.const 1)
+  )
+  i32.or
+  i32.or
+)
+
 ;; Executes ALU addition; sets A and F
 ;; $arg: other argument
 ;; $c: Value of the C flag
 (func $AluAdd (param $arg i32) (param $c i32)
   (local $a i32)
   (local $res i32)
-  (local $pv i32)
+  (local $r12 i32)
+
   ;; Add values (+carry) and store in A
-  call $getA
-  tee_local $a
-  get_local $arg
-  i32.add
-  get_local $c
-  i32.add
+  (tee_local $a (call $getA))
+  (i32.add (get_local $arg))
+  (i32.add (get_local $c))
   tee_local $res
   (call $setA (i32.and (i32.const 0xff)))
 
-  ;; Put Z on stack
-  i32.const 0x00 ;; NZ
-  i32.const 0x40 ;; Z
-  (i32.and (get_local $res) (i32.const 0xff))
-  select         ;; Z
-
-  ;; Get S, R5, and R3 from result
-  get_local $res
-  i32.const 0xa8
-  i32.and        ;; Z, S|R5|R3
-
   ;; Get C flag
-  get_local $res
-  i32.const 0x100
-  i32.and
-  i32.const 8
-  i32.shr_u      ;; Z, S|R5|R3, C
-
-  ;; Calculate H flag
-  i32.const 0x10
-  i32.const 0x00
-  (i32.and (get_local $a) (i32.const 0x0f))
-  (i32.and (get_local $arg) (i32.const 0x0f))
-  i32.add
-  get_local $c
-  (i32.and (i32.add) (i32.const 0x10))
-  select        ;; Z, S|R5|R3, C, H
-
-  ;; <i32>$arg + <i32>$a + C
-  (i32.shr_s 
-    (i32.shl (get_local $a) (i32.const 24))
-    (i32.const 24)
+  (i32.shr_u 
+    (i32.and (get_local $res) (i32.const 0x100))
+    (i32.const 8)
   )
-  tee_local $pv
-  (i32.shr_s 
-    (i32.shl (get_local $arg) (i32.const 24))
-    (i32.const 24)
+
+  ;; Combine with SZ53 flags
+  (i32.or (call $getSZ53 (get_local $res)))
+
+  ;; Lookup value
+  (call $getR12Lookup (get_local $res) (get_local $a) (get_local $arg))
+  set_local $r12
+
+  ;; Combine with half-carry add
+  (i32.or
+    (i32.load8_u
+      (i32.add
+        (get_global $HC_ADD)
+        (i32.and (get_local $r12) (i32.const 0x07))
+      )
+    )
   )
-  i32.add
-  get_local $c
-  i32.add
-  tee_local $pv
 
-  ;; Calculate PV flag
-  i32.const 0x80
-  i32.ge_s
-  if (result i32)
-    i32.const 0x04
-  else
-    get_local $pv
-    i32.const -0x81
-    i32.le_s
-    if (result i32)
-      i32.const 0x04
-    else
-      i32.const 0x00
-    end
-  end
+  ;; Combine with overflow add
+  (i32.or
+    (i32.load8_u
+      (i32.add
+        (get_global $OVF_ADD)
+        (i32.shr_u (get_local $r12) (i32.const 4))
+      )
+    )
+  )
 
-  ;; Merge flags
-  i32.or
-  i32.or
-  i32.or
-  i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  ;; Done
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; Executes ALU subtraction; sets A and F
@@ -1311,88 +1404,54 @@
 (func $AluSub (param $arg i32) (param $c i32)
   (local $a i32)
   (local $res i32)
-  (local $pv i32)
+  (local $r12 i32)
+
   ;; Subtract values (-carry) and store in A
-  call $getA
-  tee_local $a
-  get_local $arg
-  i32.sub
-  get_local $c
-  i32.sub
+  (tee_local $a (call $getA))
+  (i32.sub (get_local $arg))
+  (i32.sub (get_local $c))
   tee_local $res
   (call $setA (i32.and (i32.const 0xff)))
 
-  ;; Put Z on stack
-  i32.const 0x00 ;; NZ
-  i32.const 0x40 ;; Z
-  (i32.and (get_local $res) (i32.const 0xff))
-  select         ;; Z
-
-  ;; Get S, R5, and R3 from result
-  get_local $res
-  i32.const 0xa8
-  i32.and        ;; Z, S|R5|R3
-
   ;; Get C flag
-  get_local $res
-  i32.const 0x100
-  i32.and
-  i32.const 8
-  i32.shr_u      ;; Z, S|R5|R3, C
-
-  ;; Calculate H flag
-  i32.const 0x10
-  i32.const 0x00
-  (i32.and (get_local $a) (i32.const 0x0f))
-  (i32.and (get_local $arg) (i32.const 0x0f))
-  i32.sub
-  get_local $c
-  i32.sub
-  i32.const 0x10
-  i32.and
-  select        ;; Z, S|R5|R3, C, H
-
-  ;; <i32>$a - <i32>$arg - C
-  (i32.shr_s 
-    (i32.shl (get_local $a) (i32.const 24))
-    (i32.const 24)
+  (i32.shr_u 
+    (i32.and (get_local $res) (i32.const 0x100))
+    (i32.const 8)
   )
-  tee_local $pv
-  (i32.shr_s 
-    (i32.shl (get_local $arg) (i32.const 24))
-    (i32.const 24)
-  )
-  i32.sub
-  get_local $c
-  i32.sub
-  tee_local $pv
-
-  ;; Calculate PV flag
-  i32.const 0x80
-  i32.ge_s
-  if (result i32)
-    i32.const 0x04
-  else
-    get_local $pv
-    i32.const -0x81
-    i32.le_s
-    if (result i32)
-      i32.const 0x04
-    else
-      i32.const 0x00
-    end
-  end
-
-  ;; Merge flags
-  i32.or
-  i32.or
-  i32.or
-  i32.or
 
   ;; Set N
-  i32.const 0x02 ;; N flag mask
-  i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.or (i32.const 0x02))
+
+  ;; Combine with SZ53 flags
+  (i32.or (call $getSZ53 (get_local $res)))
+
+  ;; Lookup value
+  (call $getR12Lookup (get_local $res) (get_local $a) (get_local $arg))
+  set_local $r12
+
+  ;; Combine with half-carry sub
+  (i32.or
+    (i32.load8_u
+      (i32.add
+        (get_global $HC_SUB)
+        (i32.and (get_local $r12) (i32.const 0x07))
+      )
+    )
+  )
+
+  ;; Combine with overflow sub
+  (i32.or
+    (i32.load8_u
+      (i32.add
+        (get_global $OVF_SUB)
+        (i32.shr_u (get_local $r12) (i32.const 4))
+      )
+    )
+  )
+
+  ;; Done
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; Executes ALU AND operations; sets A and F
@@ -1439,130 +1498,111 @@
 ;; $arg: other argument
 (func $AluCp (param $arg i32)
   (local $res i32)
-  (local $signed i32)
+  (local $r12 i32)
 
   ;; Subtract values
-  call $getA
-  get_local $arg
-  i32.sub
+  (i32.sub (call $getA) (get_local $arg))
   set_local $res
   
-  ;; Signed substract
-  (i32.shl (call $getA) (i32.const 24))
-  (i32.shr_s (i32.const 24))
-  (i32.shl (get_local $arg) (i32.const 24))
-  (i32.shr_s (i32.const 24))
-  i32.sub
-  set_local $signed
+  ;; Get C flag
+  (i32.shr_u 
+    (i32.and (get_local $res) (i32.const 0x100))
+    (i32.const 8)
+  )
 
-  ;; Calculate N flag (set)
-  i32.const 0x02 ;; [N]
+  ;; Combine with Z flag
+  (i32.or
+    (select
+      (i32.const 0x00)
+      (i32.const 0x40)
+      (get_local $res)
+    )
+  )
 
-  ;; Calculate H flag
-  (i32.and (call $getA) (i32.const 0x0f))
-  (i32.and (get_local $arg) (i32.const 0x0f))
-  i32.sub
-  (i32.and (i32.const 0x10)) ;; [N, H] 
+  ;; Set N
+  (i32.or (i32.const 0x02))
 
-  ;; Keep S, R3, and R5 from result
-  (i32.and (get_local $res) (i32.const 0xa8)) ;; [N, H, S|R3|R5]
+  ;; Lookup value
+  (call $getR12Lookup (get_local $res) (call $getA) (get_local $arg))
+  set_local $r12
 
-  ;; Calculate Z flag
-  i32.const 0x00
-  i32.const 0x40
-  (i32.and (get_local $res) (i32.const 0xff))
-  select ;; [N, H, S|R3|R5, Z]
+  ;; Combine with half-carry sub
+  (i32.or
+    (i32.load8_u
+      (i32.add
+        (get_global $HC_SUB)
+        (i32.and (get_local $r12) (i32.const 0x07))
+      )
+    )
+  )
 
-  ;; Calculate C
-  i32.const 0x01
-  i32.const 0x00
-  (i32.and (get_local $res) (i32.const 0x10000))
-  select ;; [N, H, S|R3|R5, Z, C]
+  ;; Combine with overflow sub
+  (i32.or
+    (i32.load8_u
+      (i32.add
+        (get_global $OVF_SUB)
+        (i32.shr_u (get_local $r12) (i32.const 4))
+      )
+    )
+  )
 
-  ;; Calculate PV
-  (i32.ge_s (get_local $signed) (i32.const 0x80))
-  if (result i32)
-    i32.const 0x04
-  else
-    (i32.le_s (get_local $signed) (i32.const -0x81))
-    if (result i32)
-      i32.const 0x04
-    else
-      i32.const 0x00
-    end
-  end
+  ;; Combine with S
+  (i32.or
+    (i32.and (get_local $res) (i32.const 0x80))
+  )
 
-  ;; Merge flags and store them
-  i32.or
-  i32.or
-  i32.or
-  i32.or
-  i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  ;; Combine with R5 and R3
+  (i32.or
+    (i32.and (get_local $arg) (i32.const 0x28))
+  )
+
+  ;; Done
+  (call $setQ (i32.and (i32.const 0xff)))
+  (call $setF (call $getQ))
 )
 
 ;; Tests the Z condition
 (func $testZ (result i32)
-  (i32.ne 
-    (i32.and (call $getF) (i32.const 0x40))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x40))
 )
 
 ;; Tests the NZ condition
 (func $testNZ (result i32)
-  (i32.eq
-    (i32.and (call $getF) (i32.const 0x40))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x40))
+  i32.eqz
 )
 
 ;; Tests the C condition
 (func $testC (result i32)
-  (i32.ne
-    (i32.and (call $getF) (i32.const 0x01))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x01))
 )
 
 ;; Tests the NC condition
 (func $testNC (result i32)
-  (i32.eq
-    (i32.and (call $getF) (i32.const 0x01))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x01))
+  i32.eqz
 )
 
 ;; Tests the PE condition
 (func $testPE (result i32)
-  (i32.ne
-    (i32.and (call $getF) (i32.const 0x04))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x04))
 )
 
 ;; Tests the PO condition
 (func $testPO (result i32)
-  (i32.eq
-    (i32.and (call $getF) (i32.const 0x04))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x04))
+  i32.eqz
 )
 
 ;; Tests the M condition
 (func $testM (result i32)
-  (i32.ne
-    (i32.and (call $getF) (i32.const 0x80))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x80))
 )
 
 ;; Tests the P condition
 (func $testP (result i32)
-  (i32.eq
-    (i32.and (call $getF) (i32.const 0x80))
-    (i32.const 0)
-  )
+  (i32.and (call $getF) (i32.const 0x80))
+  i32.eqz
 )
 
 ;; Read address to WZ
@@ -1575,12 +1615,19 @@
   call $setWZ
 )
 
-;; Read address from code
-(func $readAddrFromCode (result i32)
-  call $readCodeMemory
-  call $readCodeMemory
-  i32.const 8
-  i32.shl
-  i32.or
+;; Read 16 bits from the code
+(func $readCode16 (result i32)
+  ;; Combine LSB and MSB
+  (i32.or
+    ;; Next code byte
+    (call $readCodeMemory)
+    ;; Next code byte << 8
+    (i32.shl (call $readCodeMemory) (i32.const 8))
+  )
 )
+
+;; ----------------------------------------------------------------------------
+;; Contention methods
+
+
 
