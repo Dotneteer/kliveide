@@ -23,7 +23,7 @@
     "dev": "npm run vmbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --colors",
     "tscbuild": "tsc",
     "mergewat": "node ./scripts/mergewat.js",
-    "build:sp48": "npm run mergewat -- sp48.json && wat2wasm ./build/sp48.wat -o ./build/spectrum.wasm",
+    "build:sp48": "npm run mergewat -- sp48.json && wat2wasm ./build/sp48.wat -o ./build/sp48.wasm",
     "build:sp128": "npm run mergewat -- sp128.json && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",
     "build:cz88": "npm run mergewat -- cz88.json && wat2wasm ./build/cz88.wat -o ./build/cz88.wasm",
     "build:tvm": "npm run mergewat -- tvm.json && wat2wasm ./build/tvm.wat -o ./build/tvm.wasm",

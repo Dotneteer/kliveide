@@ -31,6 +31,9 @@
 ;; 256: Indexed bit operations
 ;; 8: ALU bit operations
 
+;; Represents a no-operation function
+(func $NOOP)
+
 ;; ----------------------------------------------------------------------------
 ;; Table of machine-type specific functions
 

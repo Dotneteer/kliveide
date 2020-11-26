@@ -5,10 +5,9 @@ import * as path from "path";
 import { MachineApi } from "../../../src/native/api/api";
 import { importObject } from "../../import-object";
 import { CambridgeZ88 } from "../../../src/native/api/CambridgeZ88";
-import { Z88_MEM_AREA } from "../../../src/native/api/memory-map";
 
 const buffer = fs.readFileSync(
-  path.join(__dirname, "../../../build/spectrum.wasm")
+  path.join(__dirname, "../../../build/cz88.wasm")
 );
 let api: MachineApi;
 let machine: CambridgeZ88;

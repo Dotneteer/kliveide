@@ -1,9 +1,6 @@
 ;; ==========================================================================
 ;; Helper functions to manage a ZX Spectrum machine
 
-;; Represents a no-operation function
-(func $NOOP)
-
 ;; Machine type discriminator. This variable shows the type of ZX Spectrum
 ;; machine the engine uses. Dynamic operations just as memory read/write 
 ;; (and all the others) are dispatched according machine type.

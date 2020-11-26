@@ -28,7 +28,6 @@ export interface CpuApi {
  */
 export interface MachineApi extends CpuApi {
   // --- ZX Spectrum machine methods
-  initMachine(type: number): void;
   turnOnMachine(): void;
   setUlaIssue(ula: number): void;
   getMachineState(): void;

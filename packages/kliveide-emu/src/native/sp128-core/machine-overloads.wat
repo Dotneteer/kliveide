@@ -1,10 +1,10 @@
-;; ==========================================================================
-;; ZX Spectrum 128K functions
+;; ----------------------------------------------------------------------------
+;; Z80 I/O access
 
-;; Reads a port of the ZX Spectrum 48 machine
-;; $addr: port address
-;; Returns: value read from port
-(func $readPortSp128 (param $addr i32) (result i32)
+;; Reads the specified I/O port of the current machine type
+;; $addr: 16-bit port address
+;; returns: Port value
+(func $readPort (param $addr i32) (result i32)
   (local $tactAddr i32)
   (local $phase i32)
   (call $applyIOContentionDelay (get_local $addr))
@@ -61,10 +61,10 @@
   i32.const 0xff
 )
 
-;; Writes a port of the ZX Spectrum 48 machine
-;; $addr: port address
-;; $v: Port value
-(func $writePortSp128 (param $addr i32) (param $v i32)
+;; Writes the specified port of the current machine type
+;; $addr: 16-bit port address
+;; $v: 8-bit value to write
+(func $writePort (param $addr i32) (param $v i32)
   (call $applyIOContentionDelay (get_local $addr))
   (i32.and (get_local $addr) (i32.const 0x0001))
   (i32.eq (i32.const 0))
@@ -159,9 +159,15 @@
   set_global $memoryPagingEnabled
 )
 
-;; Handles writes to the PSG value port
-;; Sets up the ZX Spectrum 48 machine
-(func $setupSpectrum128
+;; Writes the ZX Spectrum machine state to the transfer area
+(func $getMachineState
+  ;; Start with CPU state
+  call $getCpuState
+  call $getCommonSpectrumMachineState
+)
+
+;; Sets up the ZX Spectrum machine
+(func $setupMachine 
   ;; Let's use ULA issue 3 by default
   i32.const 3 set_global $ulaIssue
 
@@ -218,8 +224,4 @@
   i32.const 0x056b set_global $tapeLoadBytesInvalidHeader
   i32.const 0x05e2 set_global $tapeLoadBytesResume
   i32.const 0x04c2 set_global $tapeSaveBytesRoutine
-)
-
-;; Gets the ZX Spectrum 48 machine state
-(func $getSpectrum128MachineState
 )

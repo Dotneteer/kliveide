@@ -7,7 +7,7 @@ import { importObject } from "../../import-object";
 import { CambridgeZ88 } from "../../../src/native/api/CambridgeZ88";
 
 const buffer = fs.readFileSync(
-  path.join(__dirname, "../../../build/spectrum.wasm")
+  path.join(__dirname, "../../../build/cz88.wasm")
 );
 let api: MachineApi;
 let machine: CambridgeZ88;

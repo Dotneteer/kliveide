@@ -9,7 +9,7 @@ import { importObject } from "../import-object";
 import { BREAKPOINT_MAP } from "../../src/native/api/memory-map";
 
 const buffer = fs.readFileSync(
-  path.join(__dirname, "../../build/spectrum.wasm")
+  path.join(__dirname, "../../build/sp48.wasm")
 );
 const romBuffer = fs.readFileSync(
   path.join(__dirname, "../../roms/sp48/sp48.rom")

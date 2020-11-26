@@ -12,7 +12,7 @@ import {
 import { importObject } from "../../import-object";
 
 const buffer = fs.readFileSync(
-  path.join(__dirname, "../../../build/spectrum.wasm")
+  path.join(__dirname, "../../../build/sp48.wasm")
 );
 const romBuffer = fs.readFileSync(
   path.join(__dirname, "../../../roms/sp48/sp48.rom")

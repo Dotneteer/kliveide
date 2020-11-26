@@ -1,12 +1,5 @@
-;; Gets the current cursor mode
-(func $getCursorMode (result i32)
-  ;; Get the value of the MODE ZX Spectrum system variable
-  (i32.add (get_global $BANK_0_OFFS) (i32.const 0x5c41))
-  i32.load8_u
-)
-
-;; ----------------------------------------------------------------------------
-;; Breakpoint management
+;; ============================================================================
+;; Helpers for debugging
 
 ;; Erases all breakpoints
 (func $eraseBreakPoints

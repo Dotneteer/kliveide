@@ -1,87 +1,6 @@
-;; Initializes a ZX Spectrum machine with the specified type
-;; $type: Machine type
-;; 0x00: ZX Spectrum 48K
-;; 0x01: ZX Spectrum 128K
-;; 0x02: ZX Spectrum +3
-;; 0x03: ZX Spectrum Next
-;; 0x04: Z80 Test machine
-;; 0x05: Cambridge Z88 machine
-;; $edition: Machine edition (ignored, as of now)
-(func $initMachine (param $type i32) (param $edition i32)
-  ;; Store machine type
-  (i32.gt_u (get_local $type) (i32.const 5))
-  if (result i32)
-    i32.const 0
-  else
-    get_local $type
-  end
-  set_global $MACHINE_TYPE
-
-  call $setupMachine
-)
-
 ;; Turns on the ZX Spectrum machine
 (func $turnOnMachine
   call $setupMachine
-)
-
-;; Sets up the ZX Spectrum machine
-(func $setupMachine 
-  ;; Invoke machine type specific setup
-  (i32.add
-    (i32.add
-      (i32.const $MACHINES_TABLE#)
-      (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    )
-    (i32.const 6)
-  )
-  call_indirect (type $ActionFunc)
-)
-
-;; Default memory read operation
-;; $addr: 16-bit memory address
-;; returns: Memory contents
-(func $defaultRead (param $addr i32) (result i32)
-  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
-  i32.load8_u
-)
-
-;; Default memory write operation
-;; $addr: 16-bit memory address
-;; $v: 8-bit value to write
-(func $defaultWrite (param $addr i32) (param $v i32)
-  (i32.add (get_local $addr) (get_global $BANK_0_OFFS))
-  get_local $v
-  i32.store8
-)
-
-;; Default I/O read operation
-;; $addr: 16-bit memory address
-;; returns: Memory contents
-(func $defaultIoRead (param $addr i32) (result i32)
-  i32.const 0xff
-)
-
-;; Default I/O write operation
-;; $addr: 16-bit memory address
-;; $v: 8-bit value to write
-(func $defaultIoWrite (param $addr i32) (param $v i32)
-  (call $incTacts (i32.const 4))
-)
-
-;; Writes the ZX Spectrum machine state to the transfer area
-(func $getMachineState
-  ;; Start with CPU state
-  call $getCpuState
-  call $getCommonSpectrumMachineState
-  (i32.add
-    (i32.add
-      (i32.const $MACHINES_TABLE#)
-      (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    )
-    (i32.const 7)
-  )
-  call_indirect (type $ActionFunc)
 )
 
 ;; Gets the ZX Spectrum 48 machine state
@@ -208,28 +127,4 @@
   (i32.store8 offset=277 (get_global $STATE_TRANSFER_BUFF) (get_global $memorySelectedBank))
   (i32.store8 offset=278 (get_global $STATE_TRANSFER_BUFF) (get_global $memoryUseShadowScreen))
   (i32.store16 offset=279 (get_global $STATE_TRANSFER_BUFF) (get_global $memoryScreenOffset))
-)
-
-;; Colorizes the data in pixel buffer
-(func $colorize
-  (i32.add
-    (i32.add
-      (i32.const $MACHINES_TABLE#)
-      (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    )
-    (i32.const 8)
-  )
-  call_indirect (type $ActionFunc)
-)
-
-;; Colorizes the data in pixel buffer
-(func $executeMachineCycle
-  (i32.add
-    (i32.add
-      (i32.const $MACHINES_TABLE#)
-      (i32.mul (get_global $MACHINE_TYPE) (get_global $MACHINE_FUNC_COUNT))
-    )
-    (i32.const 9)
-  )
-  call_indirect (type $ActionFunc)
 )

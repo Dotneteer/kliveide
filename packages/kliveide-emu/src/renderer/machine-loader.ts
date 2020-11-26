@@ -194,7 +194,7 @@ export async function createSpectrumEngine(
   type: number
 ): Promise<SpectrumEngine> {
   if (!waInstance) {
-    waInstance = await createWaInstance();
+    waInstance = await createWaInstance(type);
   }
   const machineApi = (waInstance.exports as unknown) as MachineApi;
   let spectrum: ZxSpectrumBase;
@@ -221,8 +221,9 @@ export async function createSpectrumEngine(
 
 /**
  * Creates a WebAssembly instance with the ZX Spectrum Emulator core
+ * @param type Machine type identifier
  */
-async function createWaInstance(): Promise<WebAssembly.Instance> {
+async function createWaInstance(type: number): Promise<WebAssembly.Instance> {
   const importObject = {
     imports: {
       trace: (arg: number) => console.log(arg),
@@ -231,7 +232,21 @@ async function createWaInstance(): Promise<WebAssembly.Instance> {
       },
     },
   };
-  const response = await fetch("./wasm/spectrum.wasm");
+  let wasmFile = "";
+  switch (type) {
+    case 0:
+      wasmFile = "sp48.wasm";
+      break;
+    case 1: 
+    case 2: 
+    case 3: 
+      wasmFile = "sp128.wasm";
+      break;
+    default:
+      wasmFile = "sp48.wasm";
+      break;
+  }
+  const response = await fetch("./wasm/" + wasmFile);
   return (
     await WebAssembly.instantiate(await response.arrayBuffer(), importObject)
   ).instance;

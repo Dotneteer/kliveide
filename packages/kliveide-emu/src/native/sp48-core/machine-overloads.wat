@@ -1,17 +1,19 @@
-;; ==========================================================================
-;; ZX Spectrum 48K functions
+;; ----------------------------------------------------------------------------
+;; Z80 I/O access
 
-;; Reads a port of the ZX Spectrum 48 machine
-;; $addr: port address
-;; Returns: value read from port
-(func $readPortSp48 (param $addr i32) (result i32)
+;; Reads the specified I/O port of the current machine type
+;; $addr: 16-bit port address
+;; returns: Port value
+(func $readPort (param $addr i32) (result i32)
   (local $tactAddr i32)
   (call $applyIOContentionDelay (get_local $addr))
+
   (i32.and (get_local $addr) (i32.const 0x0001))
   (i32.eq (i32.const 0))
   if
     ;; Handle the 0xfe port
     (call $readPort$FE (get_local $addr))
+    (call $incTacts (i32.const 4))
     return
   end
 
@@ -20,6 +22,7 @@
   if
     ;; Handle the Kempston port
     i32.const 0xff
+    (call $incTacts (i32.const 4))
     return
   end
 
@@ -44,17 +47,19 @@
       (i32.load16_u offset=3 (get_local $tactAddr))
     )
     i32.load8_u
+    (call $incTacts (i32.const 4))
     return
   end
 
   ;; Return the default port value
   i32.const 0xff
+  (call $incTacts (i32.const 4))
 )
 
-;; Writes a port of the ZX Spectrum 48 machine
-;; $addr: port address
-;; $v: Port value
-(func $writePortSp48 (param $addr i32) (param $v i32)
+;; Writes the specified port of the current machine type
+;; $addr: 16-bit port address
+;; $v: 8-bit value to write
+(func $writePort (param $addr i32) (param $v i32)
   (call $applyIOContentionDelay (get_local $addr))
   (i32.and (get_local $addr) (i32.const 0x0001))
   (i32.eq (i32.const 0))
@@ -65,8 +70,15 @@
   end
 )
 
-;; Sets up the ZX Spectrum 48 machine
-(func $setupSpectrum48
+;; Writes the ZX Spectrum machine state to the transfer area
+(func $getMachineState
+  ;; Start with CPU state
+  call $getCpuState
+  call $getCommonSpectrumMachineState
+)
+
+;; Sets up the ZX Spectrum machine
+(func $setupMachine 
   ;; Let's use ULA issue 3 by default
   i32.const 3 set_global $ulaIssue
 
@@ -122,53 +134,3 @@
   i32.const 0x05e2 set_global $tapeLoadBytesResume
   i32.const 0x04c2 set_global $tapeSaveBytesRoutine
 )
-
-;; Gets the ZX Spectrum 48 machine state
-(func $getSpectrum48MachineState
-)
-
-;; Colotizes the pixel data of ZX Spectrum 48
-(func $colorizeSp48
-  (local $sourcePtr i32)
-  (local $destPtr i32)
-  (local $counter i32)
-
-  ;; Calculate the counter
-  (i32.mul (get_global $screenLines) (get_global $screenWidth))
-  set_local $counter
-
-  ;; Reset the pointers
-  get_global $PIXEL_RENDERING_BUFFER set_local $sourcePtr
-  get_global $COLORIZATION_BUFFER set_local $destPtr
-
-  loop $colorizeLoop
-    get_local $counter
-    if
-      get_local $destPtr ;; [destPtr]
-      get_global $SPECTRUM_PALETTE ;; [destPtr, palette]
-
-      ;; Get the pixel information
-      get_local $sourcePtr
-      i32.load8_u
-      (i32.and (i32.const 0x0f))
-      (i32.shl (i32.const 2)) ;; [destPtr, palette, pixelPalOffset]
-      i32.add  ;; [destPtr, paletteAddr]
-      i32.load ;; [destPtr, color]
-      i32.store
-
-      ;; Increment pointers
-      (i32.add (get_local $sourcePtr) (i32.const 1))
-      set_local $sourcePtr
-      (i32.add (get_local $destPtr) (i32.const 4))
-      set_local $destPtr
-
-      ;; Decrement counter
-      (i32.sub (get_local $counter) (i32.const 1))
-      set_local $counter
-
-      ;; Next loop
-      br $colorizeLoop
-    end
-  end
-)
-

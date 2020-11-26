@@ -141,7 +141,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    */
   constructor(public api: MachineApi, public type: number, roms?: Buffer[]) {
     super(api, type);
-    api.initMachine(type);
+    api.turnOnMachine();
     this.initRoms(roms);
   }
 

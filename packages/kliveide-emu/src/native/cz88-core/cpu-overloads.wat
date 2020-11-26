@@ -1,10 +1,13 @@
 ;; ==========================================================================
-;; Cambridge Z88 functions
+;; Helper functions to manage a Cambridge Z88 machine
 
-;; Reads the memory of the Cambridge Z88 machibe
+;; ----------------------------------------------------------------------------
+;; Z80 Memory access
+
+;; Reads the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
-(func $readCz88Memory (param $addr i32) (result i32)
+(func $readMemory (param $addr i32) (result i32)
   (i32.eq
     (call $z88GetRomInfoForAddress (get_local $addr))
     (i32.const 0xff)
@@ -20,25 +23,35 @@
   i32.load8_u
 )
 
-;; Writes the memory of the Cambridge Z88 machibe
+;; Emulates the contention of the specified memory location
+;; $addr: 16-bit memory address
+(func $memoryDelay (param $addr i32)
+  (call $readMemory (get_local $addr))
+  drop
+)
+
+;; Writes the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
-(func $writeCz88Memory (param $addr i32) (param $v i32)
+(func $writeMemory (param $addr i32) (param $value i32)
   (i32.eqz (call $z88GetRomInfoForAddress (get_local $addr)))
   if
     ;; RAM, so can be written
     (i32.store8
       (call $calcZ88MemoryAddress (get_local $addr))
-      (get_local $v)
+      (get_local $value)
     )
     return
   end
 )
 
-;; Reads a port of the Cambridge Z88 machine
-;; $addr: port address
-;; Returns: value read from port
-(func $readPortCz88 (param $addr i32) (result i32)
+;; ----------------------------------------------------------------------------
+;; Z80 I/O access
+
+;; Reads the specified I/O port of the current machine type
+;; $addr: 16-bit port address
+;; returns: Port value
+(func $readPort (param $addr i32) (result i32)
   (local $addr8 i32)
   (local $screenRegVal i32)
 
@@ -152,10 +165,10 @@
   i32.const 0xff
 )
 
-;; Writes a port of the Cambridge Z88 machine
-;; $addr: port address
-;; $v: Port value
-(func $writePortCz88 (param $addr i32) (param $v i32)
+;; Writes the specified port of the current machine type
+;; $addr: 16-bit port address
+;; $v: 8-bit value to write
+(func $writePort (param $addr i32) (param $v i32)
   (local $addr8 i32)
   (local $screenRegVal i32)
 
@@ -311,66 +324,17 @@
   end
 )
 
-;; Sets up the Cambridge Z88 machine
-(func $setupCz88
-  ;; CPU configuration
-  i32.const 3_276_800 set_global $baseClockFrequency
-  i32.const 1 set_global $clockMultiplier
-  i32.const 0 set_global $supportsNextOperation
-  call $resetCpu
+;; ----------------------------------------------------------------------------
+;; Z80 I/O access
 
-  ;; Blink initial setup
-  call $resetZ88Blink
-  call $resetZ88Rtc
-  call $resetZ88Memory
-  call $resetZ88Screen
+;; Writes the specified TBBLUE index of the current machine type
+;; $idx: 8-bit index register value
+(func $writeTbBlueIndex (param $idx i32)
+  ;; NOOP
 )
 
-;; Gets the Cambridge Z88 machine state
-(func $getCz88MachineState
-  ;; CPU configuration
-  (i32.store offset=48 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))
-  (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))
-  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $supportsNextOperation))
-
-  ;; BLINK device
-  (i32.store8 offset=54 (get_global $STATE_TRANSFER_BUFF) (get_global $z88INT))
-  (i32.store8 offset=55 (get_global $STATE_TRANSFER_BUFF) (get_global $z88STA))
-  (i32.store8 offset=56 (get_global $STATE_TRANSFER_BUFF) (get_global $z88COM))
-
-  ;; RTC device
-  (i32.store8 offset=57 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM0))
-  (i32.store8 offset=58 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM1))
-  (i32.store8 offset=59 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM2))
-  (i32.store8 offset=60 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM3))
-  (i32.store8 offset=61 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM4))
-  (i32.store8 offset=62 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TSTA))
-  (i32.store8 offset=63 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TMK))
-
-  ;; Screen device
-  (i32.store8 offset=64 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB0))
-  (i32.store8 offset=65 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB1))
-  (i32.store8 offset=66 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB2))
-  (i32.store8 offset=67 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB3))
-  (i32.store16 offset=68 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SBR))
-  (i32.store8 offset=70 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCW))
-  (i32.store8 offset=71 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCH))
-
-  ;; Memory device
-  (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
-  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
-  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
-
-  ;; TODO: Get other state values
-)
-
-;; ============================================================================
-;; Test methods
-
-(func $testReadCz88Memory (param $addr i32) (result i32)
-  (call $readMemory (get_local $addr))
-)
-
-(func $testWriteCz88Memory (param $addr i32) (param $v i32)
-  (call $writeMemory (get_local $addr) (get_local $v))
+;; Writes the specified TBBLUE value of the current machine type
+;; $idx: 8-bit index register value
+(func $writeTbBlueValue (param $idx i32)
+  ;; NOOP
 )

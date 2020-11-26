@@ -13,7 +13,7 @@ import { importObject } from "../../import-object";
 import { PIXEL_RENDERING_BUFFER, COLORIZATION_BUFFER } from "../../../src/native/api/memory-map";
 
 const buffer = fs.readFileSync(
-  path.join(__dirname, "../../../build/spectrum.wasm")
+  path.join(__dirname, "../../../build/sp48.wasm")
 );
 const romBuffer = fs.readFileSync(
   path.join(__dirname, "../../../roms/sp48/sp48.rom")
@@ -79,7 +79,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #1", () => {
-    machine.api.initMachine(0);
+    machine.api.turnOnMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -134,7 +134,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #2", () => {
-    machine.api.initMachine(0);
+    machine.api.turnOnMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -192,7 +192,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #3", () => {
-    machine.api.initMachine(0);
+    machine.api.turnOnMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -259,7 +259,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Border + empty pixels", () => {
-    machine.api.initMachine(0);
+    machine.api.turnOnMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -339,7 +339,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Rendering with pattern #1", () => {
-    machine.api.initMachine(0);
+    machine.api.turnOnMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -430,7 +430,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Rendering until frame ends", () => {
-    machine.api.initMachine(0);
+    machine.api.turnOnMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -520,7 +520,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Colorize border + empty pixels", () => {
-    machine.api.initMachine(0);
+    machine.api.turnOnMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
