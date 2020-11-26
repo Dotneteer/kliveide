@@ -83,6 +83,7 @@ export interface EmulatorPanelState {
   selectedRom?: number;
   selectedBank?: number;
   panelMessage?: string;
+  statusbar?: boolean;
 }
 
 /**
@@ -209,7 +210,8 @@ export function getDefaultAppState(): AppState {
       selectedBank: 0,
       panelMessage: "",
       muted: false,
-      soundLevel: 0.5
+      soundLevel: 0.5,
+      statusbar: true
     },
     emulatorCommand: "",
     breakpoints: [],

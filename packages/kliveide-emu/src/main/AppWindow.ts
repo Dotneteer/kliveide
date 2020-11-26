@@ -46,6 +46,8 @@ import {
   emulatorSetSoundLevelAction,
   emulatorMuteAction,
   emulatorUnmuteAction,
+  emulatorShowStatusbarAction,
+  emulatorHideStatusbarAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
@@ -278,6 +280,20 @@ export class AppWindow {
           { role: "zoomOut" },
           { type: "separator" },
           { role: "togglefullscreen" },
+          { type: "separator" },
+          {
+            id: "toggle_statusbar",
+            label: "Show statusbar",
+            type: "checkbox",
+            checked: true,
+            click: (mi) => {
+              if (mi.checked) {
+                mainProcessStore.dispatch(emulatorShowStatusbarAction()); 
+              } else {
+                mainProcessStore.dispatch(emulatorHideStatusbarAction()); 
+              }
+            },
+          },
         ],
       }
     );
