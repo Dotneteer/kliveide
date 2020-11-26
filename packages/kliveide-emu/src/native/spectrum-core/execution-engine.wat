@@ -427,7 +427,7 @@
     ;; Exit if halted and execution mode is UntilHalted
     (i32.eq (get_global $emulationMode) (i32.const $EMU_HALT#))
     if
-      (i32.and (get_global $stateFlags) (i32.const $SIG_HLT#))
+      (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
       if
         i32.const $EX_REA_HALT# set_global $executionCompletionReason ;; Reason: halted
         return

@@ -35,8 +35,8 @@
   if
     ;; Let's revoke the INT signal
     i32.const 1 set_global $interruptRevoked
-    (i32.and (get_global $stateFlags) (i32.const $SIG_INT_MASK#))
-    set_global $stateFlags ;; Reset the interrupt signal
+    (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_INT_MASK#))
+    set_global $cpuSignalFlags ;; Reset the interrupt signal
     return
   end
 
@@ -50,8 +50,8 @@
 
   ;; It is time to raise the interrupt
   i32.const 1 set_global $interruptRaised
-  (i32.or (get_global $stateFlags) (i32.const $SIG_INT#))
-  set_global $stateFlags ;; Set the interrupt signal
+  (i32.or (get_global $cpuSignalFlags) (i32.const $SIG_INT#))
+  set_global $cpuSignalFlags ;; Set the interrupt signal
 )
 
 ;; Sets the interrupt tact for test purposes

@@ -1103,8 +1103,8 @@
 ;; halt (0x76)
 (func $Halt
   ;; Set the HLT flag
-  (i32.or (get_global $stateFlags) (i32.const $SIG_HLT#))
-  set_global $stateFlags
+  (i32.or (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
+  set_global $cpuSignalFlags
 
   ;; Decrement PC
   (i32.sub (get_global $PC) (i32.const 1))
