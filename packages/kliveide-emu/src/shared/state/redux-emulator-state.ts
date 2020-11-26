@@ -106,6 +106,13 @@ export function emulatorSetSoundLevelAction(soundLevel: number) {
   return createAction("EMULATOR_SET_SOUND_LEVEL", { soundLevel });
 }
 
+export const emulatorShowStatusbarAction = createAction(
+  "EMULATOR_SHOW_STATUSBAR"
+);
+export const emulatorHideStatusbarAction = createAction(
+  "EMULATOR_HIDE_STATUSBAR"
+);
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -201,6 +208,10 @@ export function emulatorStateReducer(
       return { ...state, panelMessage: payload.panelMessage };
     case "EMULATOR_SET_SOUND_LEVEL":
       return { ...state, soundLevel: payload.soundLevel };
+    case "EMULATOR_SHOW_STATUSBAR":
+      return { ...state, statusbar: true };
+    case "EMULATOR_HIDE_STATUSBAR":
+      return { ...state, statusbar: false };
   }
   return state;
 }

@@ -41,6 +41,8 @@ export interface ActionTypes {
   EMULATOR_LOAD_MODE: null;
   EMULATOR_SET_MESSAGE: null;
   EMULATOR_SET_SOUND_LEVEL: null;
+  EMULATOR_SHOW_STATUSBAR: null;
+  EMULATOR_HIDE_STATUSBAR: null;
 
   // --- Emulator command actions
   EMULATOR_COMMAND: null;

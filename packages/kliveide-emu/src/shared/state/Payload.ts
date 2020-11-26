@@ -41,4 +41,5 @@ export interface Payload {
   errorCode?: string;
   debug?: boolean;
   soundLevel?: number;
+  statusbar?: boolean;
 }

@@ -19,6 +19,7 @@
   let themeStyle = "";
   let themeClass = "";
   let updatingMachineType;
+  let statusbarVisible;
 
   // --- Respond to theme changes
   const unsubscribe = themeStore.subscribe((theme) => {
@@ -64,6 +65,7 @@
         updatingMachineType = false;
       }
     }
+    statusbarVisible = emuUi.statusbar;
   });
 </script>
 
@@ -85,5 +87,7 @@
 <main style={themeStyle} class={themeClass} tabindex="0">
   <Toolbar {spectrum} />
   <MainCanvas {spectrum} />
-  <Statusbar {spectrum} />
+  {#if statusbarVisible}
+    <Statusbar {spectrum} />
+  {/if}
 </main>
