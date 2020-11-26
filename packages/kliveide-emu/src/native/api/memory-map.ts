@@ -5,9 +5,9 @@
 export const BANK_0_OFFS = 0x00_0000;
 export const ROM_48_OFFS = 0x02_0000;
 export const ROM_128_0_OFFS = 0x02_4000;
-export const REG_AREA_INDEX = 0x40_0A00;
-export const PAGE_INDEX_16 = 0x40_0A40;
-export const STATE_TRANSFER_BUFF = 0x40_0A80;
+export const REG_AREA_INDEX = 0x40_0B00;
+export const PAGE_INDEX_16 = 0x40_0B40;
+export const STATE_TRANSFER_BUFF = 0x40_0B80;
 export const TEST_INPUT_OFFS = 0x40_1000;
 export const TEST_MEM_LOG_OFFS = 0x40_1100;
 export const TEST_IO_LOG_OFFS = 0x40_1500;
