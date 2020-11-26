@@ -629,7 +629,7 @@ export class SpectrumEngine {
       const psgSamples = mh
         .readWords(0, resultState.audioSampleCount)
         .map((smp) =>
-          emuState.muted ? 0 : (smp / 65535) * (emuState.soundLevel ?? 0)
+          emuState.muted ? 0 : (smp / 32768) * (emuState.soundLevel ?? 0)
         );
       this._psgRenderer.storeSamples(psgSamples);
 
