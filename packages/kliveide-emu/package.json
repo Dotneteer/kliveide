@@ -20,7 +20,7 @@
     "start": "electron ./dist/main.bundle.js",
     "build": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --progress --colors",
     "build:emu": "npm run build",
-    "dev": "npm run spbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --colors",
+    "dev": "npm run vmbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --colors",
     "tscbuild": "tsc",
     "mergewat": "node ./scripts/mergewat.js",
     "build:sp48": "npm run mergewat -- sp48.json && wat2wasm ./build/sp48.wat -o ./build/spectrum.wasm",
@@ -31,7 +31,7 @@
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
     "build:linux": "npm run build && electron-builder build --linux --x64",
-    "vmbuild": "npm run build:sp48 && npm run build:sp128 && npm run build:cz88"
+    "vmbuild": "npm run build:sp48 && npm run build:sp128 && npm run build:cz88 && npm run build:tvm"
   },
   "build": {
     "appId": "dotneteer.klive",

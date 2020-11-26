@@ -1,6 +1,5 @@
 import {
   Z80CpuState,
-  MemoryOp,
   IoOp,
   TbBlueOp,
   FlagsSetMask,

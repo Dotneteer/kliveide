@@ -12,17 +12,15 @@ export interface CpuApi {
   getCpuState(): void;
   updateCpuState(): void;
   enableExtendedInstructions(f: boolean): void;
+
   prepareTest(mode: RunMode, codeEnds: number): void;
   setTestInputLength(length: number): void;
   getMemLogLength(): number;
   getIoLogLength(): number;
   getTbBlueLogLength(): number;
   runTestCode(): void;
-  restMachineType(): void;
   setPC(pc: number): void;
   setSP(sp: number): void;
-  setInterruptTact(tact: number): void;
-  checkForInterrupt(tact: number): void;
 }
 
 /**
@@ -36,6 +34,8 @@ export interface MachineApi extends CpuApi {
   getMachineState(): void;
   setExecutionOptions(): void;
   executeMachineCycle(): void;
+  setInterruptTact(tact: number): void;
+  checkForInterrupt(tact: number): void;
   setKeyStatus(key: SpectrumKeyCode, isDown: boolean): void;
   getKeyStatus(key: SpectrumKeyCode): number;
   setBeeperSampleRate(rate: number): void;

@@ -8,7 +8,7 @@ import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
 import { RunMode } from "../../src/native/api/RunMode";
 import { importObject } from "../import-object";
 
-const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
+const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
 let api: CpuApi;
 let testMachine: TestZ80Machine;
 

@@ -1,5 +1,4 @@
 ;; ============================================================================
-;; Imported functions
+;; Imported functions used in ZX Spectrum machines
 
-(func $trace (import "imports" "trace") (param i32))
 (func $saveModeLeft (import "imports" "saveModeLeft") (param i32))

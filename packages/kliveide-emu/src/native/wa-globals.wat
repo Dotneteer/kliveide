@@ -1,3 +1,12 @@
+;; ============================================================================
+;; Global settings for all machine types
+
+;; We keep 8192 KB of memory
+(memory (export "memory") 128)
+
+;; Total number of dispatchable functions: 2000
+(table $dispatch 2000 anyfunc)
+
 ;; ==========================================================================
 ;; Function signatures
 
