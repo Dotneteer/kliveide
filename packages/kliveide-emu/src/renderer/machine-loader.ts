@@ -198,6 +198,8 @@ export async function createVmEngine(
     waInstance = await createWaInstance(type);
   }
   const machineApi = (waInstance.exports as unknown) as MachineApi;
+
+  // --- Instantiate the requested machine
   let machine: FrameBoundZ80Machine;
   switch (type) {
     case 1:
@@ -215,8 +217,16 @@ export async function createVmEngine(
       machine = new ZxSpectrum48(machineApi, [buffer]);
       break;
   }
+
+  // --- Create the engine and bind it with the machine
+  const engine = new VmEngine(machine);
+  machine.vmEngineController = engine;
+
+  // --- Turn on the machine to intialize it, however, do not start
   machine.turnOnMachine();
-  return new VmEngine(machine);
+
+  // --- Done
+  return engine;
 }
 
 /**

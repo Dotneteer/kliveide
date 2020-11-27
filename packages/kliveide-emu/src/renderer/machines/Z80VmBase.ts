@@ -17,17 +17,39 @@ import {
   COLORIZATION_BUFFER,
   PAGE_INDEX_16,
 } from "../../native/api/memory-map";
+import { IVmEngineController } from "./IVmEngineController";
+import { themeStore } from "../stores/theme-store";
 
 /**
  * This class is intended to be the base class of all Z80 machine
  */
 export abstract class Z80MachineBase {
+  // --- The engine controlles this machine can use
+  private _vmEngineController: IVmEngineController | undefined;
+
   /**
    * Creates a new instance of the Z80 machine
    * @param api Machine API to access WA
    * @param type Machine type
    */
   constructor(public api: MachineApi, public type: number) {}
+
+  /**
+   * Gets the associated controller instance
+   */
+  get vmEngineController(): IVmEngineController {
+    if (!this._vmEngineController) {
+      throw new Error("The controller of the virtual machine has not been set yet.")
+    }
+    return this._vmEngineController;
+  }
+
+  /**
+   * Sets the associated controller instance
+   */
+  set vmEngineController(controller: IVmEngineController) {
+    this._vmEngineController = controller;
+  }
 
   /**
    * Turns on the machine
@@ -187,6 +209,12 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param rate Sample rate
    */
   abstract setAudioSampleRate(rate: number): void;
+
+  /**
+   * Prepares the engine for code injection
+   * @param model Model to run in the virtual machine
+   */
+  abstract prepareForInjection(model: string): Promise<number>;
 
   /**
    * Sets the status of the specified key

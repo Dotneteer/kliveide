@@ -1,8 +1,5 @@
 import { MachineApi } from "../../native/api/api";
-import {
-  CambridgeZ88MachineState,
-  MachineState,
-} from "./machine-state";
+import { CambridgeZ88MachineState, MachineState } from "./machine-state";
 import { MemoryHelper } from "../../native/api/memory-helpers";
 import {
   STATE_TRANSFER_BUFF,
@@ -127,6 +124,15 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * @param rate Sample rate
    */
   setAudioSampleRate(rate: number): void {
+    // TODO: Implement this method
+    throw new Error("Not implemented yet");
+  }
+
+  /**
+   * Prepares the engine for code injection
+   * @param model Model to run in the virtual machine
+   */
+  prepareForInjection(model: string): Promise<number> {
     // TODO: Implement this method
     throw new Error("Not implemented yet");
   }

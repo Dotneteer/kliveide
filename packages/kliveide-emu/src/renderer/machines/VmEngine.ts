@@ -47,19 +47,13 @@ import {
   BANK_0_OFFS,
 } from "../../native/api/memory-map";
 import { VmKeyCode } from "../../native/api/api";
-
-/**
- * ZX Spectrum 48 main execution cycle entry point
- */
-export const SP48_MAIN_ENTRY = 0x12ac;
-export const SP128_MENU = 0x2653;
-export const SP128_EDITOR = 0x2604;
+import { IVmEngineController } from "./IVmEngineController";
 
 /**
  * This class represents the engine that controls and runs the
  * selected virtual machine in the renderer process.
  */
-export class VmEngine {
+export class VmEngine implements IVmEngineController {
   // --- The current execution state of the machine
   private _vmState: ExecutionState = ExecutionState.None;
 
@@ -127,7 +121,7 @@ export class VmEngine {
       emulatorSetMemoryContentsAction(memContents)()
     );
     rendererProcessStore.dispatch(engineInitializedAction());
-    
+
     // --- Watch for breakpoint changes
     const breakpointStateAware = createRendererProcessStateAware("breakpoints");
     breakpointStateAware.stateChanged.on((state) => {
@@ -865,72 +859,7 @@ export class VmEngine {
     await this.stop();
 
     // --- Start the machine and run it while it reaches the injection point
-    const machine = this;
-    let mainExec = SP48_MAIN_ENTRY;
-    switch (this.z80Machine.type) {
-      case 0:
-        // --- ZX Spectrum 48
-        await this.run(
-          new ExecuteCycleOptions(
-            EmulationMode.UntilExecutionPoint,
-            DebugStepMode.None,
-            true,
-            0,
-            SP48_MAIN_ENTRY
-          )
-        );
-        await waitForTerminationPoint();
-        break;
-      case 1:
-        // --- ZX Spectrum 128
-        await this.run(
-          new ExecuteCycleOptions(
-            EmulationMode.UntilExecutionPoint,
-            DebugStepMode.None,
-            true,
-            0,
-            SP128_MENU
-          )
-        );
-        await waitForTerminationPoint();
-        if (codeToInject.model !== "48") {
-          mainExec = SP128_EDITOR;
-          await this.run(
-            new ExecuteCycleOptions(
-              EmulationMode.UntilExecutionPoint,
-              DebugStepMode.None,
-              true,
-              0,
-              SP128_EDITOR
-            )
-          );
-          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-          await this.delayKey(SpectrumKeyCode.Enter);
-          await waitForTerminationPoint();
-        } else {
-          await this.run(
-            new ExecuteCycleOptions(
-              EmulationMode.UntilExecutionPoint,
-              DebugStepMode.None,
-              true,
-              1,
-              SP48_MAIN_ENTRY
-            )
-          );
-          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-          await this.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-          await this.delayKey(SpectrumKeyCode.Enter);
-          await waitForTerminationPoint();
-        }
-        break;
-      case 2:
-        // --- ZX Spectrum +3
-        break;
-      case 3:
-        // --- ZX Spectrum Next
-        break;
-    }
+    let mainExec = await this.z80Machine.prepareForInjection(codeToInject.model);
 
     // --- Inject to code
     this.injectCode(codeToInject);
@@ -962,15 +891,15 @@ export class VmEngine {
     }
 
     return "";
+  }
 
-    /**
-     * Waits for the current termination point
-     */
-    async function waitForTerminationPoint(): Promise<boolean> {
-      await machine._completionTask;
-      machine._completionTask = null;
-      return true;
-    }
+  /**
+   * Waits for the current termination point
+   */
+  async waitForCycleTermination(): Promise<boolean> {
+    await this._completionTask;
+    this._completionTask = null;
+    return true;
   }
 
   /**
