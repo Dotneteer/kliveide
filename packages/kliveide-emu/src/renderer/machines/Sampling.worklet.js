@@ -65,5 +65,3 @@ class SamplingGenerator extends AudioWorkletProcessor {
 }
 
 registerProcessor("sampling-generator", SamplingGenerator);
-
-export function intializeBuffer() {}

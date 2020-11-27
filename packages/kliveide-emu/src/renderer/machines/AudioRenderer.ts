@@ -1,3 +1,5 @@
+import { IAudioRenderer } from "./IAudioRenderer";
+
 /**
  * Right now, we cannot use AudioWorkletProcessor from TypeScript,
  * so we need to create the worklet in vanilla JavaScript.
@@ -8,7 +10,7 @@ const samplingWorklet = require("./Sampling.worklet.js");
  * This class renders audio samples in the browser
  * through Web Audio Api
  */
-export class AudioRenderer {
+export class AudioRenderer implements IAudioRenderer {
   private _ctx: AudioContext | undefined;
   private _workletNode: AudioWorkletNode;
 
@@ -37,7 +39,7 @@ export class AudioRenderer {
    * Stores the samples to render
    * @param samples Next batch of samples to store
    */
-  storeSamples(samples: number[]) {
+  storeSamples(samples: number[]): void {
     if (this._workletNode) {
       this._workletNode.port.postMessage({samples});
     }

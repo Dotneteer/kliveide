@@ -1,4 +1,4 @@
-import { ZxSpectrumBase } from "./Z80VmBase";
+import { ZxSpectrumBase } from "./ZxSpectrumBase";
 import { MachineApi } from "../../native/api/api";
 import {
   Spectrum48MachineState,

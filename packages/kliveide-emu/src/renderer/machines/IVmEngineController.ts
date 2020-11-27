@@ -13,6 +13,11 @@ export interface IVmEngineController {
   run(options: ExecuteCycleOptions): Promise<void>;
 
   /**
+   * Signs that the screen has been refreshed
+   */
+  signScreenRefreshed(): void;
+
+  /**
    * Waits while the execution cycle terminates
    */
   waitForCycleTermination(): Promise<boolean>;

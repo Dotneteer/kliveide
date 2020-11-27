@@ -10,7 +10,7 @@ import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command
 import { MemoryHelper } from "../native/api/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
-import { FrameBoundZ80Machine } from "./machines/Z80VmBase";
+import { FrameBoundZ80Machine } from "./machines/FrameBoundZ80Machine";
 import { getMachineTypeIdFromName } from "../shared/machines/machine-types";
 import {
   InjectProgramCommand,
@@ -20,6 +20,8 @@ import {
 import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
 import { codeInjectResultAction } from "../shared/state/redux-code-command-state";
 import { codeRunResultAction } from "../shared/state/redux-run-code-state";
+import { AudioRenderer } from "./machines/AudioRenderer";
+import { ZxSpectrumBaseStateManager } from "./machines/ZxSpectrumBaseStateManager";
 
 /**
  * Store the virtual machine engine instance
@@ -209,12 +211,18 @@ export async function createVmEngine(
       const buffer0 = Buffer.from((await rom0.body.getReader().read()).value);
       const rom1 = await fetch("./roms/sp128-1.rom");
       const buffer1 = Buffer.from((await rom1.body.getReader().read()).value);
-      machine = new ZxSpectrum128(machineApi, [buffer0, buffer1]);
+      const sp128 = new ZxSpectrum128(machineApi, [buffer0, buffer1]);
+      sp128.setAudioRendererFactory((sampleRate: number) => new AudioRenderer(sampleRate));
+      sp128.setStateManager(new ZxSpectrumBaseStateManager());
+      machine = sp128;
       break;
     default:
       const rom = await fetch("./roms/sp48.rom");
       const buffer = Buffer.from((await rom.body.getReader().read()).value);
-      machine = new ZxSpectrum48(machineApi, [buffer]);
+      const sp48 = new ZxSpectrum48(machineApi, [buffer]);
+      sp48.setAudioRendererFactory((sampleRate: number) => new AudioRenderer(sampleRate));
+      sp48.setStateManager(new ZxSpectrumBaseStateManager());
+      machine = sp48;
       break;
   }
 

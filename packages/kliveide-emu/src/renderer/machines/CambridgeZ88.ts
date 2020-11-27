@@ -6,7 +6,7 @@ import {
   Z88_MEM_AREA,
   Z88_PAGE_PTRS,
 } from "../../native/api/memory-map";
-import { FrameBoundZ80Machine } from "./Z80VmBase";
+import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
 
 /**
  * This class implements the Cambride Z88 machine

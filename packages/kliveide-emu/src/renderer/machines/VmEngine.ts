@@ -1,6 +1,4 @@
-import * as path from "path";
-import * as fs from "fs";
-import { FrameBoundZ80Machine } from "./Z80VmBase";
+import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
 import {
   ExecutionState,
   ExecutionStateChangedArgs,
@@ -13,7 +11,6 @@ import {
   DebugStepMode,
   Z80MachineStateBase,
 } from "./machine-state";
-import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
 import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "../../native/api/memory-helpers";
 import { AudioRenderer } from "./AudioRenderer";
@@ -23,17 +20,12 @@ import {
 } from "../rendererProcessStore";
 import {
   emulatorSetExecStateAction,
-  emulatorSetTapeContenstAction,
   emulatorSetFrameIdAction,
   emulatorSetMemoryContentsAction,
   engineInitializedAction,
   emulatorSetDebugAction,
-  emulatorSetMemWriteMapAction,
   emulatorLoadTapeAction,
-  emulatorSelectRomAction,
-  emulatorSelectBankAction,
   emulatorSetLoadModeAction,
-  emulatorSetPanelMessageAction,
 } from "../../shared/state/redux-emulator-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
@@ -41,7 +33,6 @@ import { TapReader } from "../../shared/tape/tap-file";
 import { CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import {
-  MEMWRITE_MAP,
   BEEPER_SAMPLE_BUFFER,
   PSG_SAMPLE_BUFFER,
   BANK_0_OFFS,
@@ -143,6 +134,13 @@ export class VmEngine implements IVmEngineController {
       }
       this._oldBrpoints = brpoints;
     });
+  }
+
+  /**
+   * Signs that the screen has been refreshed
+   */
+  signScreenRefreshed(): void {
+    this._screenRefreshed.fire();
   }
 
   /**
@@ -287,6 +285,7 @@ export class VmEngine implements IVmEngineController {
    */
   async start(): Promise<void> {
     await this.run(new ExecuteCycleOptions());
+    await this.z80Machine.onStarted(false, this._isFirstStart);
   }
 
   /**
@@ -299,6 +298,7 @@ export class VmEngine implements IVmEngineController {
         DebugStepMode.StopAtBreakpoint
       )
     );
+    await this.z80Machine.onStarted(true, this._isFirstStart);
   }
 
   /**
@@ -324,8 +324,8 @@ export class VmEngine implements IVmEngineController {
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();
 
-      // --- Rewind the tape
-      this.initTapeContents();
+      // --- Allow th machine execute a custom action on first start
+      await this.z80Machine.beforeFirstStart();
 
       // --- Set breakpoints
       this.z80Machine.api.eraseBreakpoints();
@@ -370,7 +370,7 @@ export class VmEngine implements IVmEngineController {
       !this._completionTask
     ) {
       // --- Nothing to pause
-      await this.cleanupAudio();
+      await this.z80Machine.onPaused(false);
       return;
     }
 
@@ -379,6 +379,7 @@ export class VmEngine implements IVmEngineController {
     this._isFirstPause = this._isFirstStart;
     await this.cancelRun();
     this.executionState = ExecutionState.Paused;
+    await this.z80Machine.onPaused(this._isFirstPause);
   }
 
   /**
@@ -389,14 +390,12 @@ export class VmEngine implements IVmEngineController {
     switch (this._vmState) {
       case ExecutionState.None:
       case ExecutionState.Stopped:
-        await this.cleanupAudio();
-        return;
+        break;
 
       case ExecutionState.Paused:
         // --- The machine is paused, it can be quicky stopped
         this.executionState = ExecutionState.Stopping;
         this.executionState = ExecutionState.Stopped;
-        await this.cleanupAudio();
         break;
 
       default:
@@ -406,6 +405,7 @@ export class VmEngine implements IVmEngineController {
         this.executionState = ExecutionState.Stopped;
         break;
     }
+    await this.z80Machine.onStopped();
   }
 
   /**
@@ -420,6 +420,7 @@ export class VmEngine implements IVmEngineController {
    * Starts the virtual machine in step-into mode
    */
   async stepInto(): Promise<void> {
+    await this.z80Machine.beforeStepInto();
     await this.run(
       new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepInto)
     );
@@ -429,6 +430,8 @@ export class VmEngine implements IVmEngineController {
    * Starts the virtual machine in step-over mode
    */
   async stepOver(): Promise<void> {
+    await this.z80Machine.beforeStepOver();
+
     // --- Calculate the location of the step-over breakpoint
     const memContents = this.z80Machine.getMemoryContents();
     const pc = this.getMachineState().pc;
@@ -476,6 +479,7 @@ export class VmEngine implements IVmEngineController {
    * Starts the virtual machine in step-out mode
    */
   async stepOut(): Promise<void> {
+    await this.z80Machine.beforeStepOut();
     await this.run(
       new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOut)
     );
@@ -488,21 +492,6 @@ export class VmEngine implements IVmEngineController {
     this._cancelled = true;
     await this._completionTask;
     this._completionTask = null;
-    await this.cleanupAudio();
-  }
-
-  /**
-   * Cleans up audio
-   */
-  async cleanupAudio(): Promise<void> {
-    if (this._beeperRenderer) {
-      await this._beeperRenderer.closeAudio();
-      this._beeperRenderer = null;
-    }
-    if (this._psgRenderer) {
-      await this._psgRenderer.closeAudio();
-      this._psgRenderer = null;
-    }
   }
 
   /**
@@ -524,7 +513,6 @@ export class VmEngine implements IVmEngineController {
     while (true) {
       // --- Prepare the execution cycle
       const frameStartTime = performance.now();
-      this.z80Machine.api.eraseMemoryWriteMap();
 
       // --- Now run the cycle
       machine.z80Machine.executeCycle(options);
@@ -540,17 +528,9 @@ export class VmEngine implements IVmEngineController {
       // --- Check for user cancellation
       if (this._cancelled) return;
 
-      const reason = resultState.executionCompletionReason;
-
       // --- Set data frequently queried
       rendererProcessStore.dispatch(
         emulatorSetFrameIdAction(this._startCount, resultState.frameCount)()
-      );
-      rendererProcessStore.dispatch(
-        emulatorSelectRomAction(resultState.memorySelectedRom)()
-      );
-      rendererProcessStore.dispatch(
-        emulatorSelectBankAction(resultState.memorySelectedBank)()
       );
       rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
@@ -559,13 +539,12 @@ export class VmEngine implements IVmEngineController {
       rendererProcessStore.dispatch(
         emulatorSetMemoryContentsAction(memContents)()
       );
-      let mh = new MemoryHelper(this.z80Machine.api, MEMWRITE_MAP);
-      const memWriteMap = new Uint8Array(mh.readBytes(0, 0x2000));
-      rendererProcessStore.dispatch(
-        emulatorSetMemWriteMapAction(memWriteMap)()
-      );
+
+      // --- Get data
+      await this.z80Machine.beforeEvalLoopCompletion(resultState);
 
       // --- Branch according the completion reason
+      const reason = resultState.executionCompletionReason;
       if (reason !== ExecutionCompletionReason.UlaFrameCompleted) {
         // --- No more frame to execute
         if (
@@ -576,66 +555,15 @@ export class VmEngine implements IVmEngineController {
         }
 
         // --- Stop audio
-        await this.cleanupAudio();
+        await this.z80Machine.onExecutionCycleCompleted(resultState);
         return;
       }
 
       // --- Handle key strokes
       this.emulateKeyStroke(resultState.frameCount);
 
-      // --- At this point we have not completed the execution yet
-      // --- Initiate the refresh of the screen
-      machine.z80Machine.api.colorize();
-      machine._screenRefreshed.fire();
-
-      // --- Update load state
-      const emuState = rendererProcessStore.getState().emulatorPanelState;
-      rendererProcessStore.dispatch(
-        emulatorSetLoadModeAction(resultState.tapeMode === 1)()
-      );
-      this.z80Machine.api.setFastLoad(emuState.fastLoad);
-
-      // --- Obtain beeper samples
-      if (!this._beeperRenderer) {
-        this._beeperRenderer = new AudioRenderer(
-          resultState.tactsInFrame / resultState.audioSampleLength
-        );
-        await this._beeperRenderer.initializeAudio();
-      }
-      mh = new MemoryHelper(this.z80Machine.api, BEEPER_SAMPLE_BUFFER);
-      const beeperSamples = mh
-        .readBytes(0, resultState.audioSampleCount)
-        .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
-      this._beeperRenderer.storeSamples(beeperSamples);
-
-      // --- Obtain psg samples
-      if (!this._psgRenderer) {
-        this._psgRenderer = new AudioRenderer(
-          resultState.tactsInFrame / resultState.audioSampleLength
-        );
-        await this._psgRenderer.initializeAudio();
-      }
-      mh = new MemoryHelper(this.z80Machine.api, PSG_SAMPLE_BUFFER);
-      const psgSamples = mh
-        .readWords(0, resultState.audioSampleCount)
-        .map((smp) =>
-          emuState.muted ? 0 : (smp / 32768) * (emuState.soundLevel ?? 0)
-        );
-      this._psgRenderer.storeSamples(psgSamples);
-
-      // --- Check if a tape should be loaded
-      if (
-        resultState.tapeMode === 0 &&
-        !emuState.tapeLoaded &&
-        emuState.tapeContents &&
-        emuState.tapeContents.length > 0
-      ) {
-        // --- The tape is in passive mode, and we have a new one we can load, so let's load it
-        this._defaultTapeSet = emuState.tapeContents;
-        const binaryReader = new BinaryReader(this._defaultTapeSet);
-        this.initTape(binaryReader);
-        rendererProcessStore.dispatch(emulatorLoadTapeAction());
-      }
+      // --- Let the machine complete the frame
+      await machine.z80Machine.onFrameCompleted(resultState);
 
       // --- Frame time information
       const curTime = performance.now();
@@ -733,63 +661,6 @@ export class VmEngine implements IVmEngineController {
     };
   }
 
-  initTapeContents(message?: string): void {
-    const state = rendererProcessStore.getState();
-    const emuState = state.emulatorPanelState;
-
-    // --- Set tape contents
-    if (!emuState.tapeContents || emuState.tapeContents.length === 0) {
-      let contents = new Uint8Array(0);
-      try {
-        contents = fs.readFileSync(path.join(__dirname, "./tapes/Pac-Man.tzx"));
-      } catch (err) {}
-      rendererProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
-      this._defaultTapeSet = contents;
-    } else {
-      this._defaultTapeSet = emuState.tapeContents;
-    }
-
-    const binaryReader = new BinaryReader(this._defaultTapeSet);
-    this.initTape(binaryReader);
-
-    if (message) {
-      (async () => {
-        rendererProcessStore.dispatch(emulatorSetPanelMessageAction(message)());
-        await new Promise((r) => setTimeout(r, 3000));
-        rendererProcessStore.dispatch(emulatorSetPanelMessageAction("")());
-      })();
-    }
-  }
-
-  /**
-   * Initializes the tape from the specified binary reader
-   * @param reader Reader to use
-   */
-  private initTape(reader: BinaryReader): boolean {
-    const tzxReader = new TzxReader(reader);
-    if (tzxReader.readContents()) {
-      const blocks = tzxReader.sendTapeFileToEngine(this.z80Machine.api);
-      this.z80Machine.api.initTape(blocks);
-      return true;
-    }
-
-    reader.seek(0);
-    const tapReader = new TapReader(reader);
-    if (tapReader.readContents()) {
-      const blocks = tapReader.sendTapeFileToEngine(this.z80Machine.api);
-      this.z80Machine.api.initTape(blocks);
-      return true;
-    }
-    return false;
-  }
-
-  /**
-   * Colorize the currently rendered screen
-   */
-  colorize(): void {
-    this.z80Machine.api.colorize();
-  }
-
   // ==========================================================================
   // Memory commands
 
@@ -859,7 +730,9 @@ export class VmEngine implements IVmEngineController {
     await this.stop();
 
     // --- Start the machine and run it while it reaches the injection point
-    let mainExec = await this.z80Machine.prepareForInjection(codeToInject.model);
+    let mainExec = await this.z80Machine.prepareForInjection(
+      codeToInject.model
+    );
 
     // --- Inject to code
     this.injectCode(codeToInject);
