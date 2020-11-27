@@ -3,17 +3,17 @@ import {
   IoOp,
   TbBlueOp,
   FlagsSetMask,
-} from "./cpu-helpers";
-import { CpuApi } from "./api";
-import { MemoryHelper } from "./memory-helpers";
-import { RunMode } from "./RunMode";
+} from "../../native/api/cpu-helpers";
+import { CpuApi } from "../../native/api/api";
+import { MemoryHelper } from "../../native/api/memory-helpers";
+import { RunMode } from "../../native/api/RunMode";
 import {
   TEST_INPUT_OFFS,
   REG_AREA_INDEX,
   STATE_TRANSFER_BUFF,
   TEST_IO_LOG_OFFS,
-  TEST_TBBLUE_LOG_OFFS
-} from "./memory-map";
+  TEST_TBBLUE_LOG_OFFS,
+} from "../../native/api/memory-map";
 
 /**
  * This class represents a test machine that can be used for testing the WA machine

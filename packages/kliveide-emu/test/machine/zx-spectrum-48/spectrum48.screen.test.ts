@@ -3,11 +3,12 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/native/api/api";
-import { ZxSpectrum48 } from "../../../src/native/api/ZxSpectrum48";
+import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
 import {
   ExecuteCycleOptions,
   EmulationMode,
-} from "../../../src/native/api/machine-state";
+  SpectrumMachineStateBase,
+} from "../../../src/renderer/machines/machine-state";
 import { MemoryHelper } from "../../../src/native/api/memory-helpers";
 import { importObject } from "../../import-object";
 import { PIXEL_RENDERING_BUFFER, COLORIZATION_BUFFER } from "../../../src/native/api/memory-map";
@@ -34,12 +35,12 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("ULA frame tact is OK", () => {
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.tactsInFrame).toBe(69888);
   });
 
   it("Flash toggle rate is OK", () => {
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.flashFrames).toBe(25);
   });
 
@@ -99,7 +100,7 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     fillPixelBuffer(0xff);
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
     expect(s.tacts).toBe(3697);
     expect(s.frameCompleted).toBe(false);
@@ -154,7 +155,7 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     fillPixelBuffer(0xff);
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
     expect(s.tacts).toBe(14331);
     expect(s.frameCompleted).toBe(false);
@@ -213,7 +214,7 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     fillPixelBuffer(0xff);
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800e);
     expect(s.tacts).toBe(14413);
     expect(s.frameCompleted).toBe(false);
@@ -279,7 +280,7 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     fillPixelBuffer(0xff);
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
@@ -368,7 +369,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
@@ -459,7 +460,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilUlaFrameEnds));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
     expect(s.frameCompleted).toBe(true);
     expect(s.borderColor).toBe(0x05);
@@ -541,7 +542,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     fillPixelBuffer(0xff);
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     machine.api.colorize();
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
     expect(s.tacts).toBe(69633);
     expect(s.frameCompleted).toBe(false);
@@ -567,7 +568,7 @@ describe("ZX Spectrum 48 - Screen", () => {
  * @param data Pixel buffer data
  */
 function fillPixelBuffer(data: number): void {
-  const s = machine.getMachineState();
+  const s = machine.getMachineState() as SpectrumMachineStateBase;
   const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
   const visibleLines =
     s.screenLines - s.nonVisibleBorderTopLines - s.nonVisibleBorderTopLines;

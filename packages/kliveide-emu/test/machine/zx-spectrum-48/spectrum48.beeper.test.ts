@@ -3,11 +3,12 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/native/api/api";
-import { ZxSpectrum48 } from "../../../src/native/api/ZxSpectrum48";
+import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
 import {
   ExecuteCycleOptions,
   EmulationMode,
-} from "../../../src/native/api/machine-state";
+  SpectrumMachineStateBase,
+} from "../../../src/renderer/machines/machine-state";
 import { MemoryHelper } from "../../../src/native/api/memory-helpers";
 import { importObject } from "../../import-object";
 import { BEEPER_SAMPLE_BUFFER } from "../../../src/native/api/memory-map";
@@ -35,7 +36,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
 
   it("setAudioSampleRate #1", () => {
     machine.setAudioSampleRate(44_100);
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
 
     expect(s.audioSampleRate).toBe(44_100);
     expect(s.audioSampleLength).toBe(79);
@@ -45,7 +46,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
 
   it("setAudioSampleRate #2", () => {
     machine.setAudioSampleRate(25_000);
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
 
     expect(s.audioSampleRate).toBe(25_000);
     expect(s.audioSampleLength).toBe(140);

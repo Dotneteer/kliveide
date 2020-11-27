@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { FrameBoundZ80Machine } from "../../native/api/Z80VmBase";
+import { FrameBoundZ80Machine } from "./Z80VmBase";
 import {
   ExecutionState,
   ExecutionStateChangedArgs,
@@ -11,9 +11,8 @@ import {
   ExecutionCompletionReason,
   EmulationMode,
   DebugStepMode,
-  SpectrumMachineStateBase,
   Z80MachineStateBase,
-} from "../../native/api/machine-state";
+} from "./machine-state";
 import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
 import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "../../native/api/memory-helpers";
@@ -182,9 +181,13 @@ export class VmEngine {
   set executionState(newState: ExecutionState) {
     const oldState = this._vmState;
     this._vmState = newState;
+
+    // --- Notify the UI
     this._executionStateChanged.fire(
       new ExecutionStateChangedArgs(oldState, newState, this._isDebugging)
     );
+
+    // --- State the new execution state
     rendererProcessStore.dispatch(emulatorSetExecStateAction(this._vmState)());
   }
 
@@ -517,7 +520,7 @@ export class VmEngine {
     machine: VmEngine,
     options: ExecuteCycleOptions
   ): Promise<void> {
-    const state = machine.z80Machine.getMachineState() as SpectrumMachineStateBase;
+    const state = machine.z80Machine.getMachineState();
     // --- Store the start time of the frame
     //const clockFreq = state.baseClockFrequency * state.clockMultiplier;
     const nextFrameGap = (state.tactsInFrame / state.baseClockFrequency) * 1000;
@@ -525,8 +528,6 @@ export class VmEngine {
 
     // --- Execute the cycle until completed
     while (true) {
-      // --- Update fast load mode
-
       // --- Prepare the execution cycle
       const frameStartTime = performance.now();
       this.z80Machine.api.eraseMemoryWriteMap();

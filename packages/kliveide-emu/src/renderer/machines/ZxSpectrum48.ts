@@ -1,7 +1,10 @@
 import { ZxSpectrumBase } from "./Z80VmBase";
-import { MachineApi } from "./api";
-import { Spectrum48MachineState, MachineState } from "./machine-state";
-import { ROM_48_OFFS } from "./memory-map";
+import { MachineApi } from "../../native/api/api";
+import {
+  Spectrum48MachineState,
+  MachineState,
+} from "./machine-state";
+import { ROM_48_OFFS } from "../../native/api/memory-map";
 
 /**
  * This class represents a ZX Spectrum 48 machine
@@ -20,7 +23,7 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
    * Retrieves a ZX Spectrum 48 machine state object
    */
   createMachineState(): MachineState {
-    return new Spectrum48MachineState()
+    return new Spectrum48MachineState();
   }
 
   /**
@@ -30,4 +33,3 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
     return ROM_48_OFFS;
   }
 }
-

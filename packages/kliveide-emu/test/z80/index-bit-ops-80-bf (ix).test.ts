@@ -3,7 +3,7 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { CpuApi } from "../../src/native/api/api";
-import { TestZ80Machine } from "../../src/native/api/TestZ80Machine";
+import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
 import { Z80CpuState } from "../../src/native/api/cpu-helpers";
 import { importObject } from "../import-object";
 

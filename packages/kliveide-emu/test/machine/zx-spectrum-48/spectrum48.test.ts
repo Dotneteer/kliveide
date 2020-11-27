@@ -3,12 +3,13 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/native/api/api";
-import { ZxSpectrum48 } from "../../../src/native/api/ZxSpectrum48";
+import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
 import {
   MemoryContentionType,
   ExecuteCycleOptions,
   EmulationMode,
-} from "../../../src/native/api/machine-state";
+  SpectrumMachineStateBase,
+} from "../../../src/renderer/machines/machine-state";
 import { importObject } from "../../import-object";
 
 const buffer = fs.readFileSync(
@@ -37,18 +38,18 @@ describe("ZX Spectrum 48", () => {
   });
 
   it("Default ULA issue to 3", () => {
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.ulaIssue).toBe(3);
   });
 
   it("Set ULA issue to 2", () => {
     machine.setUlaIssue(2);
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.ulaIssue).toBe(2);
   });
 
   it("Machine configured", () => {
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.baseClockFrequency).toBe(3_500_000);
     expect(s.clockMultiplier).toBe(1);
     expect(s.supportsNextOperations).toBeFalsy();

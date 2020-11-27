@@ -1,4 +1,4 @@
-import { MachineApi, VmKeyCode } from "./api";
+import { MachineApi, VmKeyCode } from "../../native/api/api";
 import {
   MachineState,
   MemoryContentionType,
@@ -9,14 +9,14 @@ import {
   SpectrumMachineStateBase,
   Z80MachineStateBase,
 } from "./machine-state";
-import { MemoryHelper } from "./memory-helpers";
-import { SpectrumKeyCode } from "./SpectrumKeyCode";
+import { MemoryHelper } from "../../native/api/memory-helpers";
+import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
 import {
   REG_AREA_INDEX,
   STATE_TRANSFER_BUFF,
   COLORIZATION_BUFFER,
   PAGE_INDEX_16,
-} from "./memory-map";
+} from "../../native/api/memory-map";
 
 /**
  * This class is intended to be the base class of all Z80 machine
@@ -285,7 +285,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   /**
    * Gets the current state of the ZX Spectrum machine
    */
-  getMachineState(): SpectrumMachineStateBase {
+  getMachineState(): Z80MachineStateBase {
     const s = this.createMachineState() as SpectrumMachineStateBase;
     this.api.getMachineState();
     this.obtainZ80CpuState(s);
@@ -443,7 +443,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * Gets the screen data of the ZX Spectrum machine
    */
   getScreenData(): Uint32Array {
-    const state = this.getMachineState() as SpectrumMachineStateBase;
+    const state = this.getMachineState();
     const buffer = this.api.memory.buffer as ArrayBuffer;
     const length = state.screenLines * state.screenWidth;
     const screenData = new Uint32Array(

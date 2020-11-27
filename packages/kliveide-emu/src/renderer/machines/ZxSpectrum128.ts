@@ -1,7 +1,10 @@
 import { ZxSpectrumBase } from "./Z80VmBase";
-import { MachineApi } from "./api";
-import { Spectrum128MachineState, MachineState } from "./machine-state";
-import { ROM_128_0_OFFS } from "./memory-map";
+import { MachineApi } from "../../native/api/api";
+import {
+  Spectrum128MachineState,
+  MachineState,
+} from "./machine-state";
+import { ROM_128_0_OFFS } from "../../native/api/memory-map";
 
 /**
  * This class represents a ZX Spectrum 48 machine

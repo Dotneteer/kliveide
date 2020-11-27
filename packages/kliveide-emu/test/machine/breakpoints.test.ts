@@ -3,7 +3,7 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../src/native/api/api";
-import { ZxSpectrum48 } from "../../src/native/api/ZxSpectrum48";
+import { ZxSpectrum48 } from "../../src/renderer/machines/ZxSpectrum48";
 import { MemoryHelper } from "../../src/native/api/memory-helpers";
 import { importObject } from "../import-object";
 import { BREAKPOINT_MAP } from "../../src/native/api/memory-map";

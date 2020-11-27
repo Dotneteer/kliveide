@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import Sp48Key from "./Sp48Key.svelte";
 
-  import { getSpectrumEngine } from "../machine-loader";
+  import { getVmEngine } from "../machine-loader";
 
   export let clientWidth;
   export let clientHeight;
@@ -17,7 +17,7 @@
 
   onMount(async () => {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
-    spectrum = await getSpectrumEngine();
+    spectrum = await getVmEngine();
   });
 
   // --- Respond to panel size changes

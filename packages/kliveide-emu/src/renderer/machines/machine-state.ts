@@ -1,4 +1,4 @@
-import { Z80CpuState } from "./cpu-helpers";
+import { Z80CpuState } from "../../native/api/cpu-helpers";
 
 /**
  * This type represents ZX Spectrum machine states

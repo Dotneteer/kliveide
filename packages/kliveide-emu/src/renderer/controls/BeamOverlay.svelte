@@ -3,7 +3,7 @@
   // Displays the beam position overlay
 
   import { onMount, tick } from "svelte";
-  import { getSpectrumEngine } from "../machine-loader";
+  import { getVmEngine } from "../machine-loader";
 
   export let panelRectangle;
   export let screenRectangle;
@@ -36,7 +36,7 @@
   // --- Obtain screen parameters when component is mounted
   onMount(async () => {
     // --- Access the spectrum engine
-    spectrum = await getSpectrumEngine();
+    spectrum = await getVmEngine();
     const state = spectrum.getMachineState();
     verticalSyncLines = state.verticalSyncLines;
     nonVisibleBorderTopLines = state.nonVisibleBorderTopLines;

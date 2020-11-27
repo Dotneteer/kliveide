@@ -3,11 +3,12 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/native/api/api";
-import { ZxSpectrum48 } from "../../../src/native/api/ZxSpectrum48";
+import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
 import {
   ExecuteCycleOptions,
   EmulationMode,
-} from "../../../src/native/api/machine-state";
+  SpectrumMachineStateBase,
+} from "../../../src/renderer/machines/machine-state";
 import { importObject } from "../../import-object";
 
 const buffer = fs.readFileSync(
@@ -89,7 +90,7 @@ describe("ZX Spectrum 48 - Interrupt", () => {
     machine.api.setInterruptTact(TEST_INT_TACT);
     for (let tact = 0; tact < TEST_INT_TACT; tact++) {
       machine.api.checkForInterrupt(tact);
-      const s = machine.getMachineState();
+      const s = machine.getMachineState() as SpectrumMachineStateBase;
       expect(s.interruptRaised).toBe(false);
       expect(s.interruptRevoked).toBe(false);
       expect(s.stateFlags & 0x01).toBe(0x00);
@@ -102,7 +103,7 @@ describe("ZX Spectrum 48 - Interrupt", () => {
     machine.api.setInterruptTact(TEST_INT_TACT);
     for (let tact = LATE_TACT; tact < LATE_TACT + 10; tact++) {
       machine.api.checkForInterrupt(tact);
-      const s = machine.getMachineState();
+      const s = machine.getMachineState() as SpectrumMachineStateBase;
       expect(s.interruptRaised).toBe(false);
       expect(s.interruptRevoked).toBe(true);
       expect(s.stateFlags & 0x01).toBe(0x00);
@@ -115,7 +116,7 @@ describe("ZX Spectrum 48 - Interrupt", () => {
     machine.api.setInterruptTact(TEST_INT_TACT);
     for (let tact = TEST_INT_TACT; tact <= LATE_TACT; tact++) {
       machine.api.checkForInterrupt(tact);
-      const s = machine.getMachineState();
+      const s = machine.getMachineState() as SpectrumMachineStateBase;
       expect(s.interruptRaised).toBe(true);
       expect(s.interruptRevoked).toBe(false);
       expect(s.stateFlags & 0x01).toBe(0x01);

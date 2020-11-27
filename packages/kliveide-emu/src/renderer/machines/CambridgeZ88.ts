@@ -1,12 +1,14 @@
-import { MachineApi } from "./api";
-import { CambridgeZ88MachineState, MachineState } from "./machine-state";
-import { MemoryHelper } from "./memory-helpers";
+import { MachineApi } from "../../native/api/api";
 import {
-  PAGE_INDEX_16,
+  CambridgeZ88MachineState,
+  MachineState,
+} from "./machine-state";
+import { MemoryHelper } from "../../native/api/memory-helpers";
+import {
   STATE_TRANSFER_BUFF,
   Z88_MEM_AREA,
   Z88_PAGE_PTRS,
-} from "./memory-map";
+} from "../../native/api/memory-map";
 import { FrameBoundZ80Machine } from "./Z80VmBase";
 
 /**
@@ -104,7 +106,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     return s;
   }
 
-    /**
+  /**
    * Gets the addressable Z80 memory contents from the machine
    */
   getMemoryContents(): Uint8Array {
