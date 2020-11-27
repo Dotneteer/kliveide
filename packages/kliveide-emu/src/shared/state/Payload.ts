@@ -1,4 +1,4 @@
-import { CodeToInject, RegisterData } from "../spectrum/api-data";
+import { CodeToInject, RegisterData } from "../machines/api-data";
 import { IdeConfiguration } from "./AppState";
 
 /**

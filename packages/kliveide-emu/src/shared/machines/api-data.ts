@@ -39,4 +39,3 @@ export interface CodeToInject {
   segments: BinarySegment[];
   options: { [key: string]: boolean};
 }
-

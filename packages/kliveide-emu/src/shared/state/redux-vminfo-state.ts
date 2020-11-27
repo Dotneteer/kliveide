@@ -1,5 +1,5 @@
 import { createAction, SpectNetAction } from "./redux-core";
-import { RegisterData } from "../spectrum/api-data";
+import { RegisterData } from "../machines/api-data";
 import { VmInfo } from "./AppState";
 
 export function vmSetRegistersAction(registers: RegisterData) {

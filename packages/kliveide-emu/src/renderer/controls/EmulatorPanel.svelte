@@ -4,7 +4,7 @@
 
   import { afterUpdate } from "svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
-  import { pcKeyNames, currentKeyMappings } from "../spectrum/spectrum-keys";
+  import { pcKeyNames, currentKeyMappings } from "../machines/spectrum-keys";
 
   import ExecutionStateOverlay from "./ExecutionStateOverlay.svelte";
   import BeamOverlay from "./BeamOverlay.svelte";
@@ -95,6 +95,7 @@
 
     // --- Change the execution state overlay text on change
     spectrum.executionStateChanged.on((arg) => {
+      console.log("Execution state changed.")
       execState = arg.newState;
       switch (arg.newState) {
         case 1:

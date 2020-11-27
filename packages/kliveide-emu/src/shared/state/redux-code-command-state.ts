@@ -1,5 +1,5 @@
 import { createAction, SpectNetAction } from "./redux-core";
-import { CodeToInject } from "../spectrum/api-data";
+import { CodeToInject } from "../machines/api-data";
 import { InjectProgramCommand } from "./AppState";
 
 export function codeInjectAction(codeToInject: CodeToInject) {

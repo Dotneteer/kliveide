@@ -12,23 +12,46 @@ export type MachineState =
 export abstract class Z80MachineStateBase extends Z80CpuState {
   // --- Type discriminator
   type: MachineState["type"];
+
+  // --- CPU configuration
+  baseClockFrequency: number;
+  clockMultiplier: number;
+  supportsNextOperations: boolean;
+
+  // --- Common screen configuration
+  screenWidth: number;
+  screenLines: number;
+
+  // --- Engine state
+  frameCount: number;
+  frameCompleted: boolean;
+  executionCompletionReason: number;
+  stepOverBreakPoint: number;
+
+
+  // --- Temporary state properties, move them to spectrum
+  numberOfRoms: number;
+  ramBanks: number;
+
+  memorySelectedRom: number;
+  memorySelectedBank: number;
+  memoryPagingEnabled: boolean;
+
+  tapeMode: number;
+
+  audioSampleLength: number;
+  audioSampleCount: number;
+
 }
 
 /**
  * Represents the state of the ZX Spectrum machine
  */
 export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
-  // --- CPU configuration
-  baseClockFrequency: number;
-  clockMultiplier: number;
-  supportsNextOperations: boolean;
-
   // --- Memory configuration
-  numberOfRoms: number;
   romContentsAddress: number;
   spectrum48RomIndex: number;
   contentionType: MemoryContentionType;
-  ramBanks: number;
   nextMemorySize: number;
 
   // --- Screen frame configuration
@@ -46,13 +69,11 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
   nonVisibleBorderRightTime: number;
   pixelDataPrefetchTime: number;
   attributeDataPrefetchTime: number;
-  screenLines: number;
   firstDisplayLine: number;
   lastDisplayLine: number;
   borderLeftPixels: number;
   displayWidth: number;
   borderRightPixels: number;
-  screenWidth: number;
   screenLineTime: number;
   firstDisplayPixelTact: number;
   firstScreenPixelTact: number;
@@ -61,8 +82,6 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
   // --- Engine state
   ulaIssue: number;
   lastRenderedUlaTact: number;
-  frameCount: number;
-  frameCompleted: boolean;
   contentionAccummulated: number;
   lastExecutionContentionValue: number;
   emulationMode: EmulationMode;
@@ -72,8 +91,6 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
   terminationPoint: number;
   fastVmMode: boolean;
   disableScreenRendering: boolean;
-  executionCompletionReason: number;
-  stepOverBreakPoint: number;
 
   // --- Keyboard state
   keyboardLines: number[];
@@ -101,13 +118,11 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
 
   // --- Beeper state
   audioSampleRate: number;
-  audioSampleLength: number;
   audioLowerGate: number;
   audioUpperGate: number;
   audioGateValue: number;
   audioNextSampleTact: number;
   beeperLastEarBit: boolean;
-  audioSampleCount: number;
 
   // --- Sound state
   psgSupportsSound: boolean;
@@ -118,7 +133,6 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
   psgOrphanSum: number;
 
   // --- Tape state
-  tapeMode: number;
   tapeLoadBytesRoutine: number;
   tapeLoadBytesResume: number;
   tapeLoadBytesInvalidHeader: number;
@@ -143,9 +157,6 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
   tapeDataByte: number;
 
   // --- Memory paging info
-  memorySelectedRom: number;
-  memoryPagingEnabled: boolean;
-  memorySelectedBank: number;
   memoryUseShadowScreen: boolean;
   memoryScreenOffset: number;
 }

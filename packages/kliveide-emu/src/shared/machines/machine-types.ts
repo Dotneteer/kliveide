@@ -10,6 +10,8 @@ export function getMachineTypeIdFromName(name: string): number {
       return 2;
     case "next":
       return 3;
+    case "cz88":
+      return 4;
     default:
       return 0;
   }
@@ -23,6 +25,8 @@ export function getMachineTypeNameFromId(id: number): string {
       return "ZX Spectrum +3E";
     case 3:
       return "ZX Spectrum Next";
+    case 4:
+      return "Cambridge Z88";
     default:
       return "ZX Spectrum 48K";
   }

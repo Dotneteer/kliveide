@@ -1,4 +1,4 @@
-import { MachineApi } from "./api";
+import { MachineApi, VmKeyCode } from "./api";
 import {
   MachineState,
   MemoryContentionType,
@@ -168,6 +168,45 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   abstract getRomPageBaseAddress(): number;
 
   /**
+   * Gets the addressable Z80 memory contents from the machine
+   */
+  abstract getMemoryContents(): Uint8Array;
+
+  /**
+   * Retrieves the current state of the machine
+   */
+  abstract getMachineState(): Z80MachineStateBase;
+
+  /**
+   * Gets the screen data of the virtual machine
+   */
+  abstract getScreenData(): Uint32Array;
+
+  /**
+   * Sets the audio sample rate
+   * @param rate Sample rate
+   */
+  abstract setAudioSampleRate(rate: number): void;
+
+  /**
+   * Sets the status of the specified key
+   * @param key Key to set
+   * @param isDown Status value
+   */
+  setKeyStatus(key: VmKeyCode, isDown: boolean): void {
+    this.api.setKeyStatus(key, isDown);
+  }
+
+  /**
+   * Gets the status of the specified key
+   * @param key Key to get
+   * @returns True, if key is pressed; otherwise, false
+   */
+  getKeyStatus(key: SpectrumKeyCode): boolean {
+    return this.api.getKeyStatus(key) !== 0;
+  }
+
+  /**
    * Executes the machine cycle
    * @param options Execution options
    */
@@ -236,7 +275,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   }
 
   /**
-   * Sets the beeper's sample rate
+   * Sets the audio sample rate
    * @param rate Sample rate
    */
   setAudioSampleRate(rate: number): void {
@@ -398,24 +437,6 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       }
     }
     return result;
-  }
-
-  /**
-   * Sets the status of the specified key
-   * @param key Key to set
-   * @param isDown Status value
-   */
-  setKeyStatus(key: SpectrumKeyCode, isDown: boolean): void {
-    this.api.setKeyStatus(key, isDown);
-  }
-
-  /**
-   * Gets the status of the specified key
-   * @param key Key to get
-   * @returns True, if key is pressed; otherwise, false
-   */
-  getKeyStatus(key: SpectrumKeyCode): boolean {
-    return this.api.getKeyStatus(key) !== 0;
   }
 
   /**

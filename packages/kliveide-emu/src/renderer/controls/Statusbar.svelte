@@ -3,12 +3,11 @@
   // The coomponent that displays the emulator's status bar
 
   import { getVersion } from "../../version";
-  import { onMount } from "svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
 
   import SvgIcon from "./SvgIcon.svelte";
   import { themeStore } from "../stores/theme-store";
-  import { getMachineTypeNameFromId } from "../../shared/spectrum/machine-types";
+  import { getMachineTypeNameFromId } from "../../shared/machines/machine-types";
 
   // --- The ZX Spectrum engine instance
   export let spectrum;
@@ -138,7 +137,7 @@
   {/if}
   {#if spectrum}
   <div class="section">
-    <span class="label">{getMachineTypeNameFromId(spectrum.spectrum.type)}</span>
+    <span class="label">{getMachineTypeNameFromId(spectrum.z80Machine.type)}</span>
   </div>
   {/if}
   <div class="section">

@@ -103,6 +103,31 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.s3FlagH = slotMh.readByte(39);
     return s;
   }
+
+    /**
+   * Gets the addressable Z80 memory contents from the machine
+   */
+  getMemoryContents(): Uint8Array {
+    // TODO: Implement this method
+    throw new Error("Not implemented yet");
+  }
+
+  /**
+   * Gets the screen data of the virtual machine
+   */
+  getScreenData(): Uint32Array {
+    // TODO: Implement this method
+    throw new Error("Not implemented yet");
+  }
+
+  /**
+   * Sets the audio sample rate
+   * @param rate Sample rate
+   */
+  setAudioSampleRate(rate: number): void {
+    // TODO: Implement this method
+    throw new Error("Not implemented yet");
+  }
 }
 
 /**

@@ -1,4 +1,4 @@
-import { SpectrumEngine } from "./spectrum/SpectrumEngine";
+import { VmEngine } from "./machines/VmEngine";
 import { MachineApi } from "../native/api/api";
 import { ZxSpectrum48 } from "../native/api/ZxSpectrum48";
 import { ZxSpectrum128 } from "../native/api/ZxSpectrum128";
@@ -11,7 +11,7 @@ import { MemoryHelper } from "../native/api/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
 import { ZxSpectrumBase } from "../native/api/Z80VmBase";
-import { getMachineTypeIdFromName } from "../shared/spectrum/machine-types";
+import { getMachineTypeIdFromName } from "../shared/machines/machine-types";
 import {
   InjectProgramCommand,
   MemoryCommand,
@@ -24,7 +24,7 @@ import { codeRunResultAction } from "../shared/state/redux-run-code-state";
 /**
  * Store the ZX Spectrum engine instance
  */
-let spectrumEngine: SpectrumEngine | null = null;
+let spectrumEngine: VmEngine | null = null;
 
 /**
  * The WebAssembly instance with the ZX Spectrum core
@@ -34,7 +34,7 @@ let waInstance: WebAssembly.Instance | null = null;
 /**
  * Loader promise
  */
-let loader: Promise<SpectrumEngine> | null = null;
+let loader: Promise<VmEngine> | null = null;
 
 /**
  * Last emulator command requested
@@ -159,7 +159,7 @@ stateAware.stateChanged.on(async (state) => {
 /**
  * Get the initialized ZX Spectrum engine
  */
-export async function getSpectrumEngine(): Promise<SpectrumEngine> {
+export async function getSpectrumEngine(): Promise<VmEngine> {
   if (!spectrumEngine) {
     if (!loader) {
       loader = createSpectrumEngine(0);
@@ -179,6 +179,7 @@ export async function changeSpectrumEngine(name: string) {
   }
 
   // --- Create the new engine
+  waInstance = null;
   const typeId = getMachineTypeIdFromName(name);
   const newEngine = await createSpectrumEngine(typeId);
 
@@ -192,7 +193,7 @@ export async function changeSpectrumEngine(name: string) {
  */
 export async function createSpectrumEngine(
   type: number
-): Promise<SpectrumEngine> {
+): Promise<VmEngine> {
   if (!waInstance) {
     waInstance = await createWaInstance(type);
   }
@@ -216,7 +217,7 @@ export async function createSpectrumEngine(
   }
   spectrum.setUlaIssue(3);
   spectrum.turnOnMachine();
-  return new SpectrumEngine(spectrum);
+  return new VmEngine(spectrum);
 }
 
 /**
@@ -261,7 +262,7 @@ function storeSavedDataInState(length: number): void {
     return;
   }
 
-  const mh = new MemoryHelper(spectrumEngine.spectrum.api, TAPE_SAVE_BUFFER);
+  const mh = new MemoryHelper(spectrumEngine.z80Machine.api, TAPE_SAVE_BUFFER);
   const savedData = new Uint8Array(mh.readBytes(0, length));
   rendererProcessStore.dispatch(emulatorSetSavedDataAction(savedData)());
 }

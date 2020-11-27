@@ -1,21 +1,21 @@
 import * as path from "path";
 import * as fs from "fs";
-import { ZxSpectrumBase } from "../../native/api/Z80VmBase";
+import { FrameBoundZ80Machine } from "../../native/api/Z80VmBase";
 import {
   ExecutionState,
   ExecutionStateChangedArgs,
-} from "../../shared/spectrum/execution-state";
+} from "../../shared/machines/execution-state";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import {
   ExecuteCycleOptions,
   ExecutionCompletionReason,
-  MachineState,
   EmulationMode,
   DebugStepMode,
   SpectrumMachineStateBase,
+  Z80MachineStateBase,
 } from "../../native/api/machine-state";
 import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
-import { EmulatedKeyStroke } from "./spectrum-keys";
+import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "../../native/api/memory-helpers";
 import { AudioRenderer } from "./AudioRenderer";
 import {
@@ -39,7 +39,7 @@ import {
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
 import { TapReader } from "../../shared/tape/tap-file";
-import { CodeToInject, RegisterData } from "../../shared/spectrum/api-data";
+import { CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import {
   MEMWRITE_MAP,
@@ -47,6 +47,7 @@ import {
   PSG_SAMPLE_BUFFER,
   BANK_0_OFFS,
 } from "../../native/api/memory-map";
+import { VmKeyCode } from "../../native/api/api";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -56,26 +57,36 @@ export const SP128_MENU = 0x2653;
 export const SP128_EDITOR = 0x2604;
 
 /**
- * This class represents the engine of the ZX Spectrum,
- * which runs within the main process.
+ * This class represents the engine that controls and runs the
+ * selected virtual machine in the renderer process.
  */
-export class SpectrumEngine {
+export class VmEngine {
+  // --- The current execution state of the machine
   private _vmState: ExecutionState = ExecutionState.None;
+
+  // --- Indicates if the machine has started from stopped state
   private _isFirstStart: boolean = false;
+
+  // --- Indicates that this is the first pause of the machine
   private _isFirstPause: boolean = false;
+
+  // --- Signs that the machine runs in debug mode
   private _isDebugging: boolean = false;
-  private _executionCycleError: Error | undefined;
+
+  // --- Signs that the exacution cycle has been cancelled
   private _cancelled: boolean = false;
-  private _justRestoredState: boolean = false;
 
+  // --- Raise when the execution state of the machine has been changed
   private _executionStateChanged = new LiteEvent<ExecutionStateChangedArgs>();
-  private _screenRefreshed = new LiteEvent<void>();
-  private _vmStoppedWithError = new LiteEvent<void>();
 
+  // --- Raise when it's time to refresh the screen
+  private _screenRefreshed = new LiteEvent<void>();
+
+  // --- Represents the task of the machine's execution cycle
   private _completionTask: Promise<void> | null = null;
 
   // --- The last loaded machine state
-  private _loadedState: SpectrumMachineStateBase;
+  private _loadedState: Z80MachineStateBase;
 
   // --- Keyboard emulation
   private _keyStrokeQueue: EmulatedKeyStroke[] = [];
@@ -101,22 +112,27 @@ export class SpectrumEngine {
   private _avgEngineTime = 0.0;
   private _renderedFrames = 0;
 
-  // --- State changes
-  private _stateAware = createRendererProcessStateAware("breakpoints");
+  // --- The last known list of breakpoints
   private _oldBrpoints: number[] = [];
 
   /**
-   * Initializes the engine with the specified ZX Spectrum instance
-   * @param spectrum Spectrum VM to use
+   * Initializes the engine with the specified virtual machine instance
+   * @param z80Machine Z80-based virtual machine to use
    */
-  constructor(public spectrum: ZxSpectrumBase) {
-    this._loadedState = spectrum.getMachineState();
-    const memContents = this.spectrum.getMemoryContents();
+  constructor(public z80Machine: FrameBoundZ80Machine) {
+    // --- Obtain the state of the machine, including memory contents
+    this._loadedState = z80Machine.getMachineState();
+    const memContents = this.z80Machine.getMemoryContents();
+    // --- Notify the UI about the new state
     rendererProcessStore.dispatch(
       emulatorSetMemoryContentsAction(memContents)()
     );
     rendererProcessStore.dispatch(engineInitializedAction());
-    this._stateAware.stateChanged.on((state) => {
+    
+    // --- Watch for breakpoint changes
+    const breakpointStateAware = createRendererProcessStateAware("breakpoints");
+    breakpointStateAware.stateChanged.on((state) => {
+      // --- Whenever breakpoints change, notify the WA engine
       const brpoints = state as number[];
       if (!brpoints) {
         return;
@@ -127,9 +143,9 @@ export class SpectrumEngine {
         oldBreaks.some((item) => !brpoints.includes(item))
       ) {
         // --- Breakpoints changed, update them
-        this.spectrum.api.eraseBreakpoints();
+        this.z80Machine.api.eraseBreakpoints();
         for (const brpoint of Array.from(brpoints)) {
-          this.spectrum.api.setBreakpoint(brpoint);
+          this.z80Machine.api.setBreakpoint(brpoint);
         }
       }
       this._oldBrpoints = brpoints;
@@ -189,24 +205,10 @@ export class SpectrumEngine {
   }
 
   /**
-   * Exception that has been raised during the execution
-   */
-  get executionCycleError(): Error | undefined {
-    return this._executionCycleError;
-  }
-
-  /**
    * Has the execution been cancelled?
    */
   get cancelled(): boolean {
     return this._cancelled;
-  }
-
-  /**
-   * Indicates if machine state has just been restored.
-   */
-  get justRestoredState(): boolean {
-    return this._justRestoredState;
   }
 
   /**
@@ -225,13 +227,6 @@ export class SpectrumEngine {
   }
 
   /**
-   * This event is raised when the engine stops because of an exception
-   */
-  get stoppedWithError(): ILiteEvent<void> {
-    return this._vmStoppedWithError.expose();
-  }
-
-  /**
    * Gets the promise that represents completion
    */
   get completionTask(): Promise<void> | undefined {
@@ -241,7 +236,7 @@ export class SpectrumEngine {
   /**
    * Gets the state of the ZX Spectrum machine
    */
-  getMachineState(): SpectrumMachineStateBase {
+  getMachineState(): Z80MachineStateBase {
     return this._loadedState;
   }
 
@@ -250,8 +245,8 @@ export class SpectrumEngine {
    * @param key Code of the key
    * @param isDown Pressed/released status of the key
    */
-  setKeyStatus(key: SpectrumKeyCode, isDown: boolean): void {
-    this.spectrum.setKeyStatus(key, isDown);
+  setKeyStatus(key: VmKeyCode, isDown: boolean): void {
+    this.z80Machine.setKeyStatus(key, isDown);
   }
 
   /**
@@ -259,14 +254,14 @@ export class SpectrumEngine {
    * @param rate Audio sampe rate to use
    */
   setAudioSampleRate(rate: number): void {
-    this.spectrum.setAudioSampleRate(rate);
+    this.z80Machine.setAudioSampleRate(rate);
   }
 
   /**
    * Gets the screen pixels data to display
    */
   getScreenData(): Uint32Array {
-    return this.spectrum.getScreenData();
+    return this.z80Machine.getScreenData();
   }
 
   /**
@@ -279,8 +274,8 @@ export class SpectrumEngine {
   queueKeyStroke(
     startFrame: number,
     frames: number,
-    primaryKey: SpectrumKeyCode,
-    secondaryKey?: SpectrumKeyCode
+    primaryKey: VmKeyCode,
+    secondaryKey?: VmKeyCode
   ): void {
     this._keyStrokeQueue.push({
       startFrame,
@@ -327,7 +322,7 @@ export class SpectrumEngine {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      this.spectrum.turnOnMachine();
+      this.z80Machine.turnOnMachine();
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();
@@ -336,9 +331,9 @@ export class SpectrumEngine {
       this.initTapeContents();
 
       // --- Set breakpoints
-      this.spectrum.api.eraseBreakpoints();
+      this.z80Machine.api.eraseBreakpoints();
       for (const brpoint of Array.from(state.breakpoints)) {
-        this.spectrum.api.setBreakpoint(brpoint);
+        this.z80Machine.api.setBreakpoint(brpoint);
       }
 
       // --- Reset time information
@@ -351,11 +346,11 @@ export class SpectrumEngine {
       this._renderedFrames = 0;
 
       // --- Clear debug information
-      this.spectrum.api.resetStepOverStack();
+      this.z80Machine.api.resetStepOverStack();
     }
 
     // --- Initialize debug info before run
-    this.spectrum.api.markStepOverStack();
+    this.z80Machine.api.markStepOverStack();
 
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
@@ -438,7 +433,7 @@ export class SpectrumEngine {
    */
   async stepOver(): Promise<void> {
     // --- Calculate the location of the step-over breakpoint
-    const memContents = this.spectrum.getMemoryContents();
+    const memContents = this.z80Machine.getMemoryContents();
     const pc = this.getMachineState().pc;
     const opCode = memContents[pc];
     let length = 0;
@@ -519,10 +514,10 @@ export class SpectrumEngine {
    * @param options Execution options
    */
   async executeCycle(
-    machine: SpectrumEngine,
+    machine: VmEngine,
     options: ExecuteCycleOptions
   ): Promise<void> {
-    const state = machine.spectrum.getMachineState() as SpectrumMachineStateBase;
+    const state = machine.z80Machine.getMachineState() as SpectrumMachineStateBase;
     // --- Store the start time of the frame
     //const clockFreq = state.baseClockFrequency * state.clockMultiplier;
     const nextFrameGap = (state.tactsInFrame / state.baseClockFrequency) * 1000;
@@ -534,10 +529,10 @@ export class SpectrumEngine {
 
       // --- Prepare the execution cycle
       const frameStartTime = performance.now();
-      this.spectrum.api.eraseMemoryWriteMap();
+      this.z80Machine.api.eraseMemoryWriteMap();
 
       // --- Now run the cycle
-      machine.spectrum.executeCycle(options);
+      machine.z80Machine.executeCycle(options);
 
       // --- Engine time information
       this._renderedFrames++;
@@ -545,7 +540,7 @@ export class SpectrumEngine {
       this._sumEngineTime += this._lastEngineTime;
       this._avgEngineTime = this._sumEngineTime / this._renderedFrames;
 
-      const resultState = (this._loadedState = machine.spectrum.getMachineState());
+      const resultState = (this._loadedState = machine.z80Machine.getMachineState());
 
       // --- Check for user cancellation
       if (this._cancelled) return;
@@ -565,11 +560,11 @@ export class SpectrumEngine {
       rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
       );
-      const memContents = this.spectrum.getMemoryContents();
+      const memContents = this.z80Machine.getMemoryContents();
       rendererProcessStore.dispatch(
         emulatorSetMemoryContentsAction(memContents)()
       );
-      let mh = new MemoryHelper(this.spectrum.api, MEMWRITE_MAP);
+      let mh = new MemoryHelper(this.z80Machine.api, MEMWRITE_MAP);
       const memWriteMap = new Uint8Array(mh.readBytes(0, 0x2000));
       rendererProcessStore.dispatch(
         emulatorSetMemWriteMapAction(memWriteMap)()
@@ -595,7 +590,7 @@ export class SpectrumEngine {
 
       // --- At this point we have not completed the execution yet
       // --- Initiate the refresh of the screen
-      machine.spectrum.api.colorize();
+      machine.z80Machine.api.colorize();
       machine._screenRefreshed.fire();
 
       // --- Update load state
@@ -603,7 +598,7 @@ export class SpectrumEngine {
       rendererProcessStore.dispatch(
         emulatorSetLoadModeAction(resultState.tapeMode === 1)()
       );
-      this.spectrum.api.setFastLoad(emuState.fastLoad);
+      this.z80Machine.api.setFastLoad(emuState.fastLoad);
 
       // --- Obtain beeper samples
       if (!this._beeperRenderer) {
@@ -612,7 +607,7 @@ export class SpectrumEngine {
         );
         await this._beeperRenderer.initializeAudio();
       }
-      mh = new MemoryHelper(this.spectrum.api, BEEPER_SAMPLE_BUFFER);
+      mh = new MemoryHelper(this.z80Machine.api, BEEPER_SAMPLE_BUFFER);
       const beeperSamples = mh
         .readBytes(0, resultState.audioSampleCount)
         .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
@@ -625,7 +620,7 @@ export class SpectrumEngine {
         );
         await this._psgRenderer.initializeAudio();
       }
-      mh = new MemoryHelper(this.spectrum.api, PSG_SAMPLE_BUFFER);
+      mh = new MemoryHelper(this.z80Machine.api, PSG_SAMPLE_BUFFER);
       const psgSamples = mh
         .readWords(0, resultState.audioSampleCount)
         .map((smp) =>
@@ -691,7 +686,7 @@ export class SpectrumEngine {
    * Gets the cursor mode of ZX Spectrum
    */
   getCursorMode(): number {
-    return this.spectrum.api.getCursorMode();
+    return this.z80Machine.api.getCursorMode();
   }
 
   /**
@@ -704,7 +699,7 @@ export class SpectrumEngine {
   /**
    * Gets the current Z80 register values
    */
-  getRegisterData(s: SpectrumMachineStateBase): RegisterData {
+  getRegisterData(s: Z80MachineStateBase): RegisterData {
     return {
       af: s.af,
       bc: s.bc,
@@ -778,16 +773,16 @@ export class SpectrumEngine {
   private initTape(reader: BinaryReader): boolean {
     const tzxReader = new TzxReader(reader);
     if (tzxReader.readContents()) {
-      const blocks = tzxReader.sendTapeFileToEngine(this.spectrum.api);
-      this.spectrum.api.initTape(blocks);
+      const blocks = tzxReader.sendTapeFileToEngine(this.z80Machine.api);
+      this.z80Machine.api.initTape(blocks);
       return true;
     }
 
     reader.seek(0);
     const tapReader = new TapReader(reader);
     if (tapReader.readContents()) {
-      const blocks = tapReader.sendTapeFileToEngine(this.spectrum.api);
-      this.spectrum.api.initTape(blocks);
+      const blocks = tapReader.sendTapeFileToEngine(this.z80Machine.api);
+      this.z80Machine.api.initTape(blocks);
       return true;
     }
     return false;
@@ -797,7 +792,7 @@ export class SpectrumEngine {
    * Colorize the currently rendered screen
    */
   colorize(): void {
-    this.spectrum.api.colorize();
+    this.z80Machine.api.colorize();
   }
 
   // ==========================================================================
@@ -808,13 +803,13 @@ export class SpectrumEngine {
    * @param page Page index
    */
   getRomPage(page: number): Uint8Array {
-    const state = this.spectrum.getMachineState();
+    const state = this.z80Machine.getMachineState();
     if (!state.memoryPagingEnabled || page < 0 || page > state.numberOfRoms) {
       return new Uint8Array(0);
     }
     const mh = new MemoryHelper(
-      this.spectrum.api,
-      this.spectrum.getRomPageBaseAddress()
+      this.z80Machine.api,
+      this.z80Machine.getRomPageBaseAddress()
     );
     return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
@@ -824,11 +819,11 @@ export class SpectrumEngine {
    * @param page Page index
    */
   getBankPage(page: number): Uint8Array {
-    const state = this.spectrum.getMachineState();
+    const state = this.z80Machine.getMachineState();
     if (!state.memoryPagingEnabled || page < 0 || page > state.ramBanks) {
       return new Uint8Array(0);
     }
-    const mh = new MemoryHelper(this.spectrum.api, BANK_0_OFFS);
+    const mh = new MemoryHelper(this.z80Machine.api, BANK_0_OFFS);
     return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
 
@@ -843,7 +838,7 @@ export class SpectrumEngine {
       } else {
         const addr = segment.startAddress;
         for (let i = 0; i < segment.emittedCode.length; i++) {
-          this.spectrum.writeMemory(addr + i, segment.emittedCode[i]);
+          this.z80Machine.writeMemory(addr + i, segment.emittedCode[i]);
         }
       }
     }
@@ -851,9 +846,9 @@ export class SpectrumEngine {
     // --- Prepare the run mode
     if (codeToInject.options.cursork) {
       // --- Set the keyboard in "L" mode
-      this.spectrum.writeMemory(
+      this.z80Machine.writeMemory(
         0x5c3b,
-        this.spectrum.readMemory(0x5c3b) | 0x08
+        this.z80Machine.readMemory(0x5c3b) | 0x08
       );
     }
     return "";
@@ -871,7 +866,7 @@ export class SpectrumEngine {
     // --- Start the machine and run it while it reaches the injection point
     const machine = this;
     let mainExec = SP48_MAIN_ENTRY;
-    switch (this.spectrum.type) {
+    switch (this.z80Machine.type) {
       case 0:
         // --- ZX Spectrum 48
         await this.run(
@@ -942,20 +937,20 @@ export class SpectrumEngine {
     // --- Set the continuation point
     const startPoint =
       codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
-    this.spectrum.api.setPC(startPoint);
+    this.z80Machine.api.setPC(startPoint);
 
     // --- Handle subroutine calls
     if (codeToInject.subroutine) {
-      const spValue = this.spectrum.getMachineState().sp;
-      this.spectrum.writeMemory(spValue - 1, mainExec >> 8);
-      this.spectrum.writeMemory(spValue - 2, mainExec & 0xff);
-      this.spectrum.api.setSP(spValue - 2);
+      const spValue = this.z80Machine.getMachineState().sp;
+      this.z80Machine.writeMemory(spValue - 1, mainExec >> 8);
+      this.z80Machine.writeMemory(spValue - 2, mainExec & 0xff);
+      this.z80Machine.api.setSP(spValue - 2);
     }
 
     // --- Clear the screen before run on ZX Spectrum 48
-    if (!this.spectrum.type || codeToInject.model === "48") {
+    if (!this.z80Machine.type || codeToInject.model === "48") {
       for (let i = 0x4000; i < 0x5800; i++) {
-        this.spectrum.writeMemory(i, 0x00);
+        this.z80Machine.writeMemory(i, 0x00);
       }
     }
 
@@ -983,11 +978,11 @@ export class SpectrumEngine {
    * @param secodary Optional secondary key
    */
   async delayKey(
-    primaryKey: SpectrumKeyCode,
-    secondaryKey?: SpectrumKeyCode
+    primaryKey: VmKeyCode,
+    secondaryKey?: VmKeyCode
   ): Promise<void> {
     this.queueKeyStroke(
-      this.spectrum.getMachineState().frameCount,
+      this.z80Machine.getMachineState().frameCount,
       3,
       primaryKey,
       secondaryKey
