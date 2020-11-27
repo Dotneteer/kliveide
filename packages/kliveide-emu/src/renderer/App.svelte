@@ -11,7 +11,7 @@
   import { themeStore } from "./stores/theme-store";
   import { darkTheme } from "./themes/dark-theme";
 
-  import { getSpectrumEngine, changeSpectrumEngine } from "./machine-loader";
+  import { getVmEngine, changeVmEngine } from "./machine-loader";
   import { createRendererProcessStateAware } from "./rendererProcessStore";
   import { emulatorSetupTypeAction } from "../shared/state/redux-emulator-state";
 
@@ -31,10 +31,10 @@
     themeClass = `${theme.name}-theme`;
   });
 
-  // --- The ZX Spectrum machine
-  let spectrum;
+  // --- The virtual machine instance
+  let vmEngine;
   onMount(async () => {
-    spectrum = await getSpectrumEngine();
+    vmEngine = await getVmEngine();
   });
 
   // --- Cleanup subscriptions
@@ -56,11 +56,11 @@
       updatingMachineType = true;
       try {
         // --- Update the machine type
-        await changeSpectrumEngine(emuUi.requestedType);
+        await changeVmEngine(emuUi.requestedType);
         stateAware.dispatch(emulatorSetupTypeAction(emuUi.requestedType)());
         // --- Allow redux message cycle to loop back to the renderer
         await new Promise((r) => setTimeout(r, 100));
-        spectrum = await getSpectrumEngine();
+        vmEngine = await getVmEngine();
       } finally {
         updatingMachineType = false;
       }
@@ -85,9 +85,9 @@
 </style>
 
 <main style={themeStyle} class={themeClass} tabindex="0">
-  <Toolbar {spectrum} />
-  <MainCanvas {spectrum} />
+  <Toolbar {vmEngine} />
+  <MainCanvas {vmEngine} />
   {#if statusbarVisible}
-    <Statusbar {spectrum} />
+    <Statusbar {vmEngine} />
   {/if}
 </main>

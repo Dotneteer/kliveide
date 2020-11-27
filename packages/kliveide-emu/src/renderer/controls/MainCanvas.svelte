@@ -5,8 +5,8 @@
   import KeyboardPanel from "./KeyboardPanel.svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
 
-  // --- The ZX Spectrum engine
-  export let spectrum;
+  // --- The virtual machine instance
+  export let vmEngine;
 
   let keyboardVisible = false;
   let delayIsOver = true;
@@ -44,7 +44,7 @@
     on:moved={async () => {
       initialHeight = keyboardHeight;
     }}>
-    <EmulatorPanel {spectrum} />
+    <EmulatorPanel {vmEngine} />
     {#if keyboardVisible}
       <KeyboardPanel
         showPanel={delayIsOver}

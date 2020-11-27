@@ -3,15 +3,15 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/native/api/api";
-import { ZxSpectrum48 } from "../../../src/native/api/ZxSpectrum48";
+import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
 import {
   ExecuteCycleOptions,
   EmulationMode,
-} from "../../../src/native/api/machine-state";
+} from "../../../src/renderer/machines/machine-state";
 import { importObject } from "../../import-object";
 
 const buffer = fs.readFileSync(
-  path.join(__dirname, "../../../build/spectrum.wasm")
+  path.join(__dirname, "../../../build/sp48.wasm")
 );
 const romBuffer = fs.readFileSync(
   path.join(__dirname, "../../../roms/sp48/sp48.rom")

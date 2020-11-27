@@ -368,9 +368,9 @@
 ;; Test methods
 
 (func $testReadCz88Memory (param $addr i32) (result i32)
-  (call $readCz88Memory (get_local $addr))
+  (call $readMemory (get_local $addr))
 )
 
 (func $testWriteCz88Memory (param $addr i32) (param $v i32)
-  (call $writeCz88Memory (get_local $addr) (get_local $v))
+  (call $writeMemory (get_local $addr) (get_local $v))
 )

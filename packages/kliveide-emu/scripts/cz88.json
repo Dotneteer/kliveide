@@ -1,0 +1,31 @@
+{
+  "sourceDir": "../src/native",
+  "files": [
+    "global-imports.wat",
+    "spectrum-imports.wat",
+    "wa-globals.wat",
+    "global-exports.wat",
+    "memory-map.wat",
+    "common-core.wat",
+    "debug-helpers.wat",
+    "z80/z80.wat",
+    "z80/z80-jump-tables.wat",
+    "z80/z80-standard-ops.wat",
+    "z80/z80-extended-ops.wat",
+    "z80/z80-indexed-ops.wat",
+    "z80/z80-bit-ops.wat",
+    "z80/z80-indexed-bit-ops.wat",
+    "z80/z80-test-helper.wat",
+    "z80/z80-step-over.wat",
+    "z80/memory-write-map.wat",
+    "cz88-core/exports.wat",
+    "cz88-core/cpu-overloads.wat",
+    "cz88-core/machine.wat",
+    "cz88-core/execution-engine.wat",
+    "cz88-core/blink-device.wat",
+    "cz88-core/rtc-device.wat",
+    "cz88-core/memory-device.wat",
+    "cz88-core/screen-device.wat"
+  ],
+  "outFile": "../build/cz88.wat"
+}

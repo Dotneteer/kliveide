@@ -1,3 +1,4 @@
+import { Cz88KeyCode } from "./Cz88KeyCode";
 import { RunMode } from "./RunMode";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
 
@@ -12,17 +13,15 @@ export interface CpuApi {
   getCpuState(): void;
   updateCpuState(): void;
   enableExtendedInstructions(f: boolean): void;
+
   prepareTest(mode: RunMode, codeEnds: number): void;
   setTestInputLength(length: number): void;
   getMemLogLength(): number;
   getIoLogLength(): number;
   getTbBlueLogLength(): number;
   runTestCode(): void;
-  restMachineType(): void;
   setPC(pc: number): void;
   setSP(sp: number): void;
-  setInterruptTact(tact: number): void;
-  checkForInterrupt(tact: number): void;
 }
 
 /**
@@ -30,14 +29,15 @@ export interface CpuApi {
  */
 export interface MachineApi extends CpuApi {
   // --- ZX Spectrum machine methods
-  initMachine(type: number): void;
   turnOnMachine(): void;
   setUlaIssue(ula: number): void;
   getMachineState(): void;
   setExecutionOptions(): void;
   executeMachineCycle(): void;
-  setKeyStatus(key: SpectrumKeyCode, isDown: boolean): void;
-  getKeyStatus(key: SpectrumKeyCode): number;
+  setInterruptTact(tact: number): void;
+  checkForInterrupt(tact: number): void;
+  setKeyStatus(key: VmKeyCode, isDown: boolean): void;
+  getKeyStatus(key: VmKeyCode): number;
   setBeeperSampleRate(rate: number): void;
   colorize(): void;
   getCursorMode(): number;
@@ -72,3 +72,8 @@ export interface MachineApi extends CpuApi {
   setZ88RndSeed(seed: number): void;
   writePortCz88(addr: number, value: number): void;
 }
+
+/**
+ * This type represents the available key codes
+ */
+export type VmKeyCode = SpectrumKeyCode | Cz88KeyCode;

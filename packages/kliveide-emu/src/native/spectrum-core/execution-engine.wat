@@ -292,7 +292,7 @@
 )
 
 ;; Executes the ZX Spectrum machine cycle
-(func $executeSpectrumMachineCycle
+(func $executeMachineCycle
   (local $currentUlaTact i32)
   (local $nextOpCode i32)
   (local $length i32)

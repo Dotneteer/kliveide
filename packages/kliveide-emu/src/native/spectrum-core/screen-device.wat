@@ -690,3 +690,48 @@
   )
   i32.load8_u
 )
+
+;; Colorizes the data in pixel buffer
+(func $colorize
+  (local $sourcePtr i32)
+  (local $destPtr i32)
+  (local $counter i32)
+
+  ;; Calculate the counter
+  (i32.mul (get_global $screenLines) (get_global $screenWidth))
+  set_local $counter
+
+  ;; Reset the pointers
+  get_global $PIXEL_RENDERING_BUFFER set_local $sourcePtr
+  get_global $COLORIZATION_BUFFER set_local $destPtr
+
+  loop $colorizeLoop
+    get_local $counter
+    if
+      get_local $destPtr ;; [destPtr]
+      get_global $SPECTRUM_PALETTE ;; [destPtr, palette]
+
+      ;; Get the pixel information
+      get_local $sourcePtr
+      i32.load8_u
+      (i32.and (i32.const 0x0f))
+      (i32.shl (i32.const 2)) ;; [destPtr, palette, pixelPalOffset]
+      i32.add  ;; [destPtr, paletteAddr]
+      i32.load ;; [destPtr, color]
+      i32.store
+
+      ;; Increment pointers
+      (i32.add (get_local $sourcePtr) (i32.const 1))
+      set_local $sourcePtr
+      (i32.add (get_local $destPtr) (i32.const 4))
+      set_local $destPtr
+
+      ;; Decrement counter
+      (i32.sub (get_local $counter) (i32.const 1))
+      set_local $counter
+
+      ;; Next loop
+      br $colorizeLoop
+    end
+  end
+)

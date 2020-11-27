@@ -3,12 +3,12 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { CpuApi } from "../../src/native/api/api";
-import { TestZ80Machine } from "../../src/native/api/TestZ80Machine";
+import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
 import { Z80StateFlags } from "../../src/native/api/cpu-helpers";
 import { RunMode } from "../../src/native/api/RunMode";
 import { importObject } from "../import-object";
 
-const buffer = fs.readFileSync(path.join(__dirname, "../../build/spectrum.wasm"));
+const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
 let api: CpuApi;
 let testMachine: TestZ80Machine;
 

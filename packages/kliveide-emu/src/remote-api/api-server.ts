@@ -25,7 +25,7 @@ import {
   emulatorRequestTypeAction,
 } from "../shared/state/redux-emulator-state";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
-import { RegisterData } from "../shared/spectrum/api-data";
+import { RegisterData } from "../shared/machines/api-data";
 import { breakpointSetAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state";

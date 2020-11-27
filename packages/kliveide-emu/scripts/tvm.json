@@ -1,0 +1,22 @@
+{
+  "sourceDir": "../src/native",
+  "files": [
+    "global-imports.wat",
+    "wa-globals.wat",
+    "global-exports.wat",
+    "memory-map.wat",
+    "common-core.wat",
+    "z80/z80.wat",
+    "z80/z80-jump-tables.wat",
+    "z80/z80-standard-ops.wat",
+    "z80/z80-extended-ops.wat",
+    "z80/z80-indexed-ops.wat",
+    "z80/z80-bit-ops.wat",
+    "z80/z80-indexed-bit-ops.wat",
+    "z80/z80-step-over.wat",
+    "tvm-core/cpu-test-exports.wat",
+    "tvm-core/cpu-overloads.wat",
+    "tvm-core/test-helpers.wat"
+  ],
+  "outFile": "../build/tvm.wat"
+}

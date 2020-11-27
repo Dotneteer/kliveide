@@ -19,8 +19,8 @@
     emulatorUnmuteAction,
   } from "../../shared/state/redux-emulator-state";
 
-  // --- The ZX Spectrum engine instance
-  export let spectrum;
+  // --- The virtual machine instance
+  export let vmEngine;
 
   // --- We change Titlebar colors as the app focus changes
   let backgroundColor;
@@ -50,10 +50,10 @@
     calculateColors(state.appHasFocus);
   });
 
-  // --- Watch the execution state changed of the ZX Spectrum engine
+  // --- Watch the execution state change of the virtual machine
   $: {
-    if (spectrum) {
-      spectrum.executionStateChanged.on(({ newState }) => {
+    if (vmEngine) {
+      vmEngine.executionStateChanged.on(({ newState }) => {
         executionState = newState;
       });
     }
@@ -84,26 +84,26 @@
   }
 </style>
 
-{#if spectrum}
+{#if vmEngine}
   <div class="toolbar" style="background-color:{backgroundColor}">
     <ToolbarIconButton
       iconName="play"
       fill="lightgreen"
       title="Start"
       enable={executionState === 0 || executionState === 3 || executionState === 5}
-      on:clicked={async () => await spectrum.start()} />
+      on:clicked={async () => await vmEngine.start()} />
     <ToolbarIconButton
       iconName="pause"
       fill="lightblue"
       title="Stop"
       enable={executionState === 1}
-      on:clicked={async () => await spectrum.pause()} />
+      on:clicked={async () => await vmEngine.pause()} />
     <ToolbarIconButton
       iconName="stop"
       fill="orangered"
       title="Pause"
       enable={executionState === 1 || executionState === 3}
-      on:clicked={async () => await spectrum.stop()} />
+      on:clicked={async () => await vmEngine.stop()} />
     <ToolbarIconButton
       iconName="restart"
       fill="lightgreen"
@@ -111,7 +111,7 @@
       size="22"
       highlightSize="26"
       enable={executionState === 1 || executionState === 3}
-      on:clicked={async () => await spectrum.restart()} />
+      on:clicked={async () => await vmEngine.restart()} />
     <ToolbarSeparator />
     <ToolbarIconButton
       iconName="debug"
@@ -120,25 +120,25 @@
       size="20"
       highlightSize="24"
       enable={executionState === 0 || executionState === 3 || executionState === 5}
-      on:clicked={async () => await spectrum.startDebug()} />
+      on:clicked={async () => await vmEngine.startDebug()} />
     <ToolbarIconButton
       iconName="step-into"
       fill="lightblue"
       title="Step into"
       enable={executionState === 3}
-      on:clicked={async () => await spectrum.stepInto()} />
+      on:clicked={async () => await vmEngine.stepInto()} />
     <ToolbarIconButton
       iconName="step-over"
       fill="lightblue"
       title="Step over"
       enable={executionState === 3}
-      on:clicked={async () => await spectrum.stepOver()} />
+      on:clicked={async () => await vmEngine.stepOver()} />
     <ToolbarIconButton
       iconName="step-out"
       fill="lightblue"
       title="Step out"
       enable={executionState === 3}
-      on:clicked={async () => await spectrum.stepOut()} />
+      on:clicked={async () => await vmEngine.stepOut()} />
     <ToolbarSeparator />
     <ToolbarIconButton
       iconName="keyboard"
@@ -192,6 +192,6 @@
       iconName="reverse-tape"
       title="Rewind the tape"
       enable={!isLoading}
-      on:clicked={() => spectrum.initTapeContents("Tape rewound")} />
+      on:clicked={() => vmEngine.initTapeContents("Tape rewound")} />
   </div>
 {/if}

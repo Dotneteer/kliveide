@@ -1,16 +1,16 @@
 <script>
   // ==========================================================================
-  // The panel that displays the ZX Spectrum emulator with its overlays
+  // The panel that displays the virtual machine emulator with its overlays
 
   import { afterUpdate } from "svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
-  import { pcKeyNames, currentKeyMappings } from "../spectrum/spectrum-keys";
+  import { pcKeyNames, currentKeyMappings } from "../machines/spectrum-keys";
 
   import ExecutionStateOverlay from "./ExecutionStateOverlay.svelte";
   import BeamOverlay from "./BeamOverlay.svelte";
 
-  // --- The ZX Spectrum engine
-  export let spectrum;
+  // --- The virtual machine instance
+  export let vmEngine;
 
   // --- We need to be aware of state changes
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
@@ -20,11 +20,11 @@
   let screenEl;
   let shadowScreenEl;
 
-  // --- ZX Spectrum screen dimensions
+  // --- Screen dimensions
   let screenWidth = 256;
   let screenHeight = 192;
 
-  // --- Dimensions of the canvas displaying the ZX Spectrum screen
+  // --- Dimensions of the canvas displaying the screen
   let canvasWidth;
   let canvasHeight;
 
@@ -38,7 +38,7 @@
   let pixelData;
 
   // --- Text and visibility of execution status overlay
-  let overlay = "No ZX Spectrum virtual machine type set";
+  let overlay = "No virtual machine type set";
   let overlayHidden = false;
 
   // --- Current execution state
@@ -63,9 +63,9 @@
     panelMessage = state.panelMessage;
   });
 
-  // --- Set up the component when the ZX Spectrum engine changes
+  // --- Set up the component when the virtual machine engine changes
   $: {
-    if (spectrum) {
+    if (vmEngine) {
       setupEmulator();
     }
   }
@@ -85,16 +85,17 @@
     }
   });
 
-  // --- Set up the emulator according to the current ZX Spectrum machine
+  // --- Set up the emulator according to the current virtual machine
   async function setupEmulator() {
     overlay = "Not started yet";
     hideDisplayData();
 
     // --- Refresh the screen when there's a new frame
-    spectrum.screenRefreshed.on(() => displayScreenData());
+    vmEngine.screenRefreshed.on(() => displayScreenData());
 
     // --- Change the execution state overlay text on change
-    spectrum.executionStateChanged.on((arg) => {
+    vmEngine.executionStateChanged.on((arg) => {
+      console.log("Execution state changed.")
       execState = arg.newState;
       switch (arg.newState) {
         case 1:
@@ -102,7 +103,7 @@
           break;
         case 3:
           overlay = "Paused";
-          const state = spectrum.getMachineState();
+          const state = vmEngine.getMachineState();
           tactsInFrame = state.tactsInFrame;
           tactToDisplay = state.lastRenderedUlaTact % tactsInFrame;
           displayScreenData();
@@ -117,8 +118,8 @@
     });
 
     // --- Calculate the initial dimensions
-    screenWidth = spectrum.screenWidth;
-    screenHeight = spectrum.screenHeight;
+    screenWidth = vmEngine.screenWidth;
+    screenHeight = vmEngine.screenHeight;
     calculateDimensions(clientWidth, clientHeight, screenWidth, screenHeight);
     calculateBoundariesForBeam();
 
@@ -148,12 +149,12 @@
     const audioCtx = new AudioContext();
     const sampleRate = audioCtx.sampleRate;
     audioCtx.close();
-    if (spectrum) {
-      spectrum.setAudioSampleRate(sampleRate);
+    if (vmEngine) {
+      vmEngine.setAudioSampleRate(sampleRate);
     }
   }
 
-  // --- Calculate the dimensions so that the ZX Spectrum display fits the screen
+  // --- Calculate the dimensions so that the virtual machine display fits the screen
   function calculateDimensions(clientWidth, clientHeight, width, height) {
     let widthRatio = Math.floor((clientWidth - 8) / width);
     if (widthRatio < 1) widthRatio = 1;
@@ -178,7 +179,7 @@
     }
   }
 
-  // --- Displays the ZX Spectrum screen
+  // --- Displays the screen
   function displayScreenData() {
     // --- Do not refresh after stopped state
     if (!execState || execState === 5) return;
@@ -194,7 +195,7 @@
     const screenCtx = screenEl.getContext("2d");
     let j = 0;
 
-    const screenData = spectrum.getScreenData();
+    const screenData = vmEngine.getScreenData();
     for (let i = 0; i < screenWidth * screenHeight; i++) {
       pixelData[j++] = screenData[i];
     }
@@ -232,9 +233,9 @@
     if (!key) return;
     const mapping = currentKeyMappings.get(key);
     if (mapping) {
-      spectrum.setKeyStatus(mapping.zxPrimary, status);
+      vmEngine.setKeyStatus(mapping.zxPrimary, status);
       if (mapping.zxSecondary) {
-        spectrum.setKeyStatus(mapping.zxSecondary, status);
+        vmEngine.setKeyStatus(mapping.zxSecondary, status);
       }
     }
   }

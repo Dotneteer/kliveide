@@ -30,9 +30,6 @@
   i32.const 0 set_global $memLogLength
   i32.const 0 set_global $ioLogLength
   i32.const 0 set_global $tbBlueLogLength
-
-  ;; Set the machine type to Z80 CPU test machine
-  i32.const 4 set_global $MACHINE_TYPE
 )
 
 ;; Sets the length of the test input
@@ -106,11 +103,6 @@
     ;; Go on with code execution
     br $codeExec
   end
-)
-
-;; Sets the machine type to the default Z80 machine
-(func $resetMachineType
-  i32.const 0 set_global $MACHINE_TYPE
 )
 
 ;; Test machine memory read operation; logs the memory access

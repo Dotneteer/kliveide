@@ -1,46 +1,26 @@
 ;; ============================================================================
 ;; Z80 jump tables used
 
-;; Represents a no-operation function
-(func $NOOP)
-
-;; Machine type discriminator. This variable shows the type of ZX Spectrum
-;; machine the engine uses. Dynamic operations just as memory read/write 
-;; (and all the others) are dispatched according machine type.
-;; 0x00: ZX Spectrum 48K
-;; 0x01: ZX Spectrum 128K
-;; 0x02: ZX Spectrum +3
-;; 0x03: ZX Spectrum Next
-;; 0x04: Z80 Test machine
-;; 0x05: Cambridge Z88 machine
-(global $MACHINE_TYPE (mut i32) (i32.const 0x00))
-
-;; Number of dispatchable functions per machine types
-(global $MACHINE_FUNC_COUNT i32 (i32.const 20))
-
 ;; ----------------------------------------------------------------------------
 ;; Jump table start indices
 
 ;; Z80 standard instructions
-;; $STANDARD_JT# = 120
+;; $STANDARD_JT# = 0
 
 ;; Z80 indexed instructions
-;; $INDEXED_JT# = 376
+;; $INDEXED_JT# = 256
 
 ;; Z80 extended instructions
-;; $EXTENDED_JT# = 632
+;; $EXTENDED_JT# = 512
 
 ;; Z80 bit instructions
-;; $BIT_JT# = 888
+;; $BIT_JT# = 768
 
 ;; Z80 indexed bit instructions
-;; $INDEXED_BIT_JT# = 1144
+;; $INDEXED_BIT_JT# = 1024
 
 ;; ALU bit manipulation operations table
-;; $BOP_JT# = 1400
-
-;; Total number of dispatchable functions
-;; $TOTAL_DISPATCH# = 1408
+;; $BOP_JT# = 1280
 
 ;; This table stores all dispatchable functions
 ;; 120: 6 machine types (20 function for each)
@@ -50,156 +30,12 @@
 ;; 256: Bit operations
 ;; 256: Indexed bit operations
 ;; 8: ALU bit operations
-(table $dispatch $TOTAL_DISPATCH# anyfunc)
+
+;; Represents a no-operation function
+(func $NOOP)
 
 ;; ----------------------------------------------------------------------------
 ;; Table of machine-type specific functions
-
-;; Function indexes
-;; 0: Read memory (func (param $addr i32) (result i32)))
-;; 1: Write memory (func (param $addr i32) (param $v i32)))
-;; 2: Read port (func (param $addr i32) (result i32)))
-;; 3: Write port (func (param $addr i32) (param $v i32)))
-;; 4: Write TbBlue register index (func (param $addr i32)))
-;; 5: Write TbBlue register value (func (param $addr i32)))
-;; 6: Setup machine (func)
-;; 7: Get machine state (func)
-;; 8: Colorize (func)
-;; 9: Execute machine cycle
-;; 10-19: Unused
-(elem (i32.const 0)
-  ;; Index 0: Machine type #0 (ZX Spectrum 48K)
-  $readPagedMemory16            ;; 0
-  $writePagedMemory16           ;; 1
-  $readPortSp48                 ;; 2
-  $writePortSp48                ;; 3
-  $NOOP                         ;; 4
-  $NOOP                         ;; 5
-  $setupSpectrum48              ;; 6
-  $getSpectrum48MachineState    ;; 7
-  $colorizeSp48                 ;; 8
-  $executeSpectrumMachineCycle  ;; 9
-  $NOOP                         ;; 10
-  $NOOP                         ;; 11
-  $NOOP                         ;; 12
-  $NOOP                         ;; 13
-  $NOOP                         ;; 14
-  $NOOP                         ;; 15
-  $NOOP                         ;; 16
-  $NOOP                         ;; 17
-  $NOOP                         ;; 18
-  $NOOP                         ;; 19
-
-  ;; Index 20: Machine type #1 (ZX Spectrum 128K)
-  $readPagedMemory16            ;; 0
-  $writePagedMemory16           ;; 1
-  $readPortSp128                ;; 2
-  $writePortSp128               ;; 3
-  $NOOP                         ;; 4
-  $NOOP                         ;; 5
-  $setupSpectrum128             ;; 6
-  $getSpectrum128MachineState   ;; 7
-  $colorizeSp48                 ;; 8
-  $executeSpectrumMachineCycle  ;; 9
-  $NOOP                         ;; 10
-  $NOOP                         ;; 11
-  $NOOP                         ;; 12
-  $NOOP                         ;; 13
-  $NOOP                         ;; 14
-  $NOOP                         ;; 15
-  $NOOP                         ;; 16
-  $NOOP                         ;; 17
-  $NOOP                         ;; 18
-  $NOOP                         ;; 19
-
-  ;; Index 40: Machine type #2 (ZX Spectrum +3)
-  $defaultRead                  ;; 0
-  $defaultWrite                 ;; 1
-  $defaultIoRead                ;; 2
-  $defaultIoWrite               ;; 3
-  $NOOP                         ;; 4
-  $NOOP                         ;; 5
-  $NOOP                         ;; 6
-  $NOOP                         ;; 7
-  $NOOP                         ;; 8
-  $NOOP                         ;; 9
-  $NOOP                         ;; 10
-  $NOOP                         ;; 11
-  $NOOP                         ;; 12
-  $NOOP                         ;; 13
-  $NOOP                         ;; 14
-  $NOOP                         ;; 15
-  $NOOP                         ;; 16
-  $NOOP                         ;; 17
-  $NOOP                         ;; 18
-  $NOOP                         ;; 19
-
-  ;; Index 60: Machine type #3 (ZX Spectrum Next)
-  $defaultRead                  ;; 0
-  $defaultWrite                 ;; 1
-  $defaultIoRead                ;; 2
-  $defaultIoWrite               ;; 3
-  $NOOP                         ;; 4
-  $NOOP                         ;; 5
-  $NOOP                         ;; 6
-  $NOOP                         ;; 7
-  $NOOP                         ;; 8
-  $NOOP                         ;; 9
-  $NOOP                         ;; 10
-  $NOOP                         ;; 11
-  $NOOP                         ;; 12
-  $NOOP                         ;; 13
-  $NOOP                         ;; 14
-  $NOOP                         ;; 15
-  $NOOP                         ;; 16
-  $NOOP                         ;; 17
-  $NOOP                         ;; 18
-  $NOOP                         ;; 19
-
-  ;; Index 80: Test Z80 CPU Machine (type #4)
-  $testMachineRead              ;; 0
-  $testMachineWrite             ;; 1
-  $testMachineIoRead            ;; 2
-  $testMachineIoWrite           ;; 3
-  $testMachineTbBlueIndexWrite  ;; 4
-  $testMachineTbBlueValueWrite  ;; 5
-  $NOOP                         ;; 6
-  $NOOP                         ;; 7
-  $NOOP                         ;; 8
-  $NOOP                         ;; 9
-  $NOOP                         ;; 10
-  $NOOP                         ;; 11
-  $NOOP                         ;; 12
-  $NOOP                         ;; 13
-  $NOOP                         ;; 14
-  $NOOP                         ;; 15
-  $NOOP                         ;; 16
-  $NOOP                         ;; 17
-  $NOOP                         ;; 18
-  $NOOP                         ;; 19
-
-  ;; Index 100: Cambridge Z88 Machine (type #5)
-  $readCz88Memory               ;; 0
-  $writeCz88Memory              ;; 1
-  $readPortCz88                 ;; 2
-  $writePortCz88                ;; 3
-  $NOOP                         ;; 4
-  $NOOP                         ;; 5
-  $setupCz88                    ;; 6
-  $getCz88MachineState          ;; 7
-  $NOOP                         ;; 8
-  $executeZ88MachineCycle       ;; 9
-  $NOOP                         ;; 10
-  $NOOP                         ;; 11
-  $NOOP                         ;; 12
-  $NOOP                         ;; 13
-  $NOOP                         ;; 14
-  $NOOP                         ;; 15
-  $NOOP                         ;; 16
-  $NOOP                         ;; 17
-  $NOOP                         ;; 18
-  $NOOP                         ;; 19
-)
 
 ;; Table of standard instructions
 (elem (i32.const $STANDARD_JT#)

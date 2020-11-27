@@ -3,15 +3,14 @@
   // The coomponent that displays the emulator's status bar
 
   import { getVersion } from "../../version";
-  import { onMount } from "svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
 
   import SvgIcon from "./SvgIcon.svelte";
   import { themeStore } from "../stores/theme-store";
-  import { getMachineTypeNameFromId } from "../../shared/spectrum/machine-types";
+  import { getMachineTypeNameFromId } from "../../shared/machines/machine-types";
 
-  // --- The ZX Spectrum engine instance
-  export let spectrum;
+  // --- The virtual machine instance
+  export let vmEngine;
 
   // --- We need to be aware of state changes
   const stateAware = createRendererProcessStateAware("ideConnection");
@@ -27,8 +26,8 @@
 
   // --- Connect to the virtual machine whenever that changes
   $: {
-    if (spectrum) {
-      spectrum.screenRefreshed.on(onScreenRefreshed);
+    if (vmEngine) {
+      vmEngine.screenRefreshed.on(onScreenRefreshed);
     }
   }
 
@@ -52,7 +51,7 @@
       lastFrameTime,
       avgFrameTime,
       renderedFrames,
-    } = spectrum.getFrameTimes();
+    } = vmEngine.getFrameTimes();
     lastEngineTimeStr = lastEngineTime.toLocaleString(undefined, {
       minimumFractionDigits: 4,
       maximumFractionDigits: 4,
@@ -114,19 +113,19 @@
 <div class="statusbar">
   <div class="section" title="Engine time per frame (average/last)">
     <SvgIcon iconName="vm-running" width="16" height="16" fill={fillValue} />
-    {#if spectrum}
+    {#if vmEngine}
       <span class="label">{avgEngineTimeStr} / {lastEngineTimeStr}</span>
     {/if}
   </div>
   <div class="section" title="Total time per frame (average/last)">
     <SvgIcon iconName="vm" width="16" height="16" fill={fillValue} />
-    {#if spectrum}
+    {#if vmEngine}
       <span class="label">{avgFrameTimeStr} / {lastFrameTimeStr}</span>
     {/if}
   </div>
   <div class="section" title="# of frames rendered since start">
     <SvgIcon iconName="window" width="16" height="16" fill={fillValue} />
-    {#if spectrum}
+    {#if vmEngine}
       <span class="label">{renderedFramesStr}</span>
     {/if}
   </div>
@@ -136,9 +135,9 @@
     <span class="label">IDE connected</span>
   </div>
   {/if}
-  {#if spectrum}
+  {#if vmEngine}
   <div class="section">
-    <span class="label">{getMachineTypeNameFromId(spectrum.spectrum.type)}</span>
+    <span class="label">{getMachineTypeNameFromId(vmEngine.z80Machine.type)}</span>
   </div>
   {/if}
   <div class="section">
