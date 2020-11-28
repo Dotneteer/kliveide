@@ -712,11 +712,7 @@
   set_local $v
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    (call $memoryDelay (call $getHL))
-  end
-  (call $incTacts (i32.const 1))
+  (call $contendRead (call $getHL) (i32.const 1))
 
   ;; Increment value
   call $getHL
@@ -744,12 +740,7 @@
   set_local $v
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    call $getHL
-    call $memoryDelay
-  end
-  (call $incTacts (i32.const 1))
+  (call $contendRead (call $getHL) (i32.const 1))
 
   ;; Increment value
   call $getHL
@@ -1565,11 +1556,7 @@
   if return end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -1656,11 +1643,7 @@
   if return  end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -1678,11 +1661,7 @@
   call $readAddrToWZ
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -1754,11 +1733,7 @@
   if return end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -1862,11 +1837,7 @@
   if return end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -1936,14 +1907,7 @@
   call $setWZ
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 1))
-    
-  else
-    (call $memoryDelay (get_local $tmpSp))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendRead (get_local $tmpSp) (i32.const 1))
 
   ;; Write H to stack
   get_local $tmpSp
@@ -1957,15 +1921,8 @@
   call $writeMemory
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 2))
-  else
-    (call $memoryDelay (get_local $tmpSp))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $tmpSp))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendWrite (get_local $tmpSp) (i32.const 1))
+  (call $contendWrite (get_local $tmpSp) (i32.const 1))
 
   ;; Copy WZ to HL
   call $getWZ
@@ -1980,11 +1937,7 @@
   if return end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -2057,11 +2010,7 @@
   if return end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -2130,11 +2079,7 @@
   if return end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC
@@ -2204,11 +2149,7 @@
   if return end
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    get_global $PC
-    call $memoryDelay
-  end
+  (call $contendRead (get_global $PC) (i32.const 0))
 
   get_global $PC
   tee_local $oldPC

@@ -4,6 +4,24 @@
 ;; ----------------------------------------------------------------------------
 ;; Z80 Memory access
 
+;; Memory contention on read operation
+(func $contendRead (param $addr i32) (param $delay i32)
+  (i32.eqz (get_global $useGateArrayContention))
+  if
+    (call $memoryDelay (get_local $addr))
+  end
+  (call $incTacts (get_local $delay))
+)
+
+;; Memory contention on write operation
+(func $contendWrite (param $addr i32) (param $delay i32)
+  (i32.eqz (get_global $useGateArrayContention))
+  if
+    (call $memoryDelay (get_local $addr))
+  end
+  (call $incTacts (get_local $delay))
+)
+
 ;; Reads the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
