@@ -17,9 +17,18 @@ export abstract class Z80MachineBase {
   /**
    * Creates a new instance of the Z80 machine
    * @param api Machine API to access WA
-   * @param type Machine type
    */
-  constructor(public api: MachineApi, public type: number) {}
+  constructor(public api: MachineApi) {}
+
+  /**
+   * The type identifier of the machine
+   */
+  abstract readonly typeId: string;
+
+  /**
+   * Friendly name to display
+   */
+  abstract readonly displayName: string;
 
   /**
    * Gets the associated controller instance

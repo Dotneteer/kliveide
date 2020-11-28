@@ -13,12 +13,21 @@ import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
  */
 export class CambridgeZ88 extends FrameBoundZ80Machine {
   /**
+   * The type identifier of the machine
+   */
+  readonly typeId = "cz88";
+
+  /**
+   * Friendly name to display
+   */
+  readonly displayName = "Cambridge Z88"
+
+  /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
-   * @param type Machine type
    */
   constructor(public api: MachineApi) {
-    super(api, 5);
+    super(api);
   }
 
   /**

@@ -8,6 +8,7 @@ import {
   DebugStepMode,
 } from "./machine-state";
 import { ROM_48_OFFS } from "../../native/api/memory-map";
+import { CodeToInject } from "../../shared/machines/api-data";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -19,12 +20,22 @@ const SP48_MAIN_ENTRY = 0x12ac;
  */
 export class ZxSpectrum48 extends ZxSpectrumBase {
   /**
+   * The type identifier of the machine
+   */
+  readonly typeId = "sp48";
+
+  /**
+   * Friendly name to display
+   */
+  readonly displayName = "ZX Spectrum 48K";
+
+  /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
    * @param roms Optional buffers with ROMs
    */
   constructor(public api: MachineApi, roms?: Buffer[]) {
-    super(api, 0, roms);
+    super(api, roms);
   }
 
   /**
@@ -58,5 +69,20 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
     );
     await controller.waitForCycleTermination();
     return SP48_MAIN_ENTRY;
+  }
+
+  /**
+   * Clears the screen before starting the injected code
+   */
+  async beforeRunInjected(
+    codeToInject: CodeToInject,
+    _debug?: boolean
+  ): Promise<void> {
+    // --- Clear the screen before run on ZX Spectrum 48
+    if (codeToInject.model === "48") {
+      for (let i = 0x4000; i < 0x5800; i++) {
+        this.writeMemory(i, 0x00);
+      }
+    }
   }
 }

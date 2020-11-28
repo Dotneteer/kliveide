@@ -49,11 +49,10 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
-   * @param type Machine type
    * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi, public type: number, roms?: Buffer[]) {
-    super(api, type, roms);
+  constructor(public api: MachineApi, roms?: Buffer[]) {
+    super(api, roms);
   }
 
   /**

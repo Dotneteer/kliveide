@@ -30,12 +30,22 @@ const SP128_EDITOR = 0x2604;
  */
 export class ZxSpectrum128 extends ZxSpectrumBase {
   /**
+   * The type identifier of the machine
+   */
+  readonly typeId = "sp128"
+
+  /**
+   * Friendly name to display
+   */
+  readonly displayName = "ZX Spectrum 128K"
+
+  /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
    * @param roms Optional buffers with ROMs
    */
   constructor(public api: MachineApi, roms?: Buffer[]) {
-    super(api, 1, roms);
+    super(api, roms);
   }
 
   /**

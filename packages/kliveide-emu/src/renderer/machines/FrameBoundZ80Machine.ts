@@ -10,6 +10,7 @@ import {
   PAGE_INDEX_16,
   STATE_TRANSFER_BUFF,
 } from "../../native/api/memory-map";
+import { CodeToInject } from "../../shared/machines/api-data";
 
 /**
  * Represents a Z80 machine that uses execution frames (generally bound to screen rendering)
@@ -18,11 +19,10 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   /**
    * Creates a new instance of the frame-bound Z80 machine
    * @param api Machine API to access WA
-   * @param type Machine type
    * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi, public type: number, roms?: Buffer[]) {
-    super(api, type);
+  constructor(public api: MachineApi, roms?: Buffer[]) {
+    super(api);
     api.turnOnMachine();
     this.initRoms(roms);
   }
@@ -211,4 +211,12 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param _resultState Machine state on frame completion
    */
   async onFrameCompleted(_resultState: Z80MachineStateBase): Promise<void> {}
+
+  /**
+   * Override this method to define an action to run before the injected
+   * code is started
+   * @param _codeToInject The injected code
+   * @param _debug Start in debug mode?
+   */
+  async beforeRunInjected(_codeToInject: CodeToInject, _debug?: boolean): Promise<void> {}
 }

@@ -750,12 +750,7 @@ export class VmEngine implements IVmEngineController {
       this.z80Machine.api.setSP(spValue - 2);
     }
 
-    // --- Clear the screen before run on ZX Spectrum 48
-    if (!this.z80Machine.type || codeToInject.model === "48") {
-      for (let i = 0x4000; i < 0x5800; i++) {
-        this.z80Machine.writeMemory(i, 0x00);
-      }
-    }
+    this.z80Machine.beforeRunInjected(codeToInject, debug);
 
     if (debug) {
       await this.startDebug();

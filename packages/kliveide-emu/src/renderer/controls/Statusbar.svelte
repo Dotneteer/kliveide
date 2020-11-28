@@ -7,7 +7,6 @@
 
   import SvgIcon from "./SvgIcon.svelte";
   import { themeStore } from "../stores/theme-store";
-  import { getMachineTypeNameFromId } from "../../shared/machines/machine-types";
 
   // --- The virtual machine instance
   export let vmEngine;
@@ -137,7 +136,7 @@
   {/if}
   {#if vmEngine}
   <div class="section">
-    <span class="label">{getMachineTypeNameFromId(vmEngine.z80Machine.type)}</span>
+    <span class="label">{vmEngine.z80Machine.displayName}</span>
   </div>
   {/if}
   <div class="section">
