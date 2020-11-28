@@ -219,8 +219,11 @@
   ;; Increment value
   get_local $addr
   (i32.add (get_local $v) (i32.const 1))
+
+  ;; Adjust WZ
+  (call $setWZ (get_local $addr))
+  (call $contendRead (get_local $addr) (i32.const 1))
   call $writeMemory
-  (call $incTacts (i32.const 1))
 
   ;; Adjust flags
   (i32.add (get_global $INC_FLAGS) (get_local $v))
@@ -230,8 +233,6 @@
   (call $setQ (i32.and (i32.const 0xff)))
   (call $setF (call $getQ))
 
-  ;; Adjust WZ
-  (call $setWZ (get_local $addr))
 )
 
   ;; dec (ix+d) (0x35)
@@ -247,8 +248,8 @@
   ;; Increment value
   get_local $addr
   (i32.sub (get_local $v) (i32.const 1))
+  (call $contendRead (get_local $addr) (i32.const 1))
   call $writeMemory
-  (call $incTacts (i32.const 1))
 
   ;; Adjust flags
   (i32.add (get_global $DEC_FLAGS) (get_local $v))
@@ -271,15 +272,8 @@
   call $readCodeMemory
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 2))
-  else
-    (call $memoryDelay (get_global $PC))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_global $PC))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendRead (get_local $addr) (i32.const 1))
+  (call $contendRead (get_local $addr) (i32.const 1))
 
   ;; Store value
   call $writeMemory
@@ -834,13 +828,8 @@
   call $setWZ
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 1))
-  else
-    (call $memoryDelay (get_local $tmpSp))
-    (call $incTacts (i32.const 1))
-  end
+  ;; Adjust tacts
+  (call $contendRead (get_local $tmpSp) (i32.const 1))
 
   ;; Write H to stack
   get_local $tmpSp
@@ -854,15 +843,8 @@
   call $writeMemory
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 2))
-  else
-    (call $memoryDelay (get_local $tmpSp))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $tmpSp))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendWrite (get_local $tmpSp) (i32.const 1))
+  (call $contendWrite (get_local $tmpSp) (i32.const 1))
 
   ;; Copy WZ to IX
   call $getWZ

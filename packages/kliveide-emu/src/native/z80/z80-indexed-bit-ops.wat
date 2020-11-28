@@ -13,12 +13,7 @@
   call $readMemory
 
   ;; Adjust tacts
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    (call $memoryDelay (get_local $addr))
-  end
-  (call $incTacts (i32.const 1))
-  
+  (call $contendRead (get_local $addr) (i32.const 1))
 
   ;; Get the type of operation
   i32.const $BOP_JT#
@@ -61,11 +56,8 @@
   i32.or
   call $setF
 
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    (call $memoryDelay (call $getHL))
-  end
-  (call $incTacts (i32.const 1))
+  ;; Adjust tacts
+  (call $contendRead (call $getHL) (i32.const 1))
 )
 
 ;; res (ix+d),Q
@@ -75,7 +67,10 @@
   get_local $addr
   get_local $addr
   call $readMemory
-  
+
+  ;; Adjust tacts
+  (call $contendRead (call $getHL) (i32.const 1))
+
   (i32.shl 
     (i32.const 1)
     (i32.shr_u
@@ -88,14 +83,6 @@
   i32.and
   tee_local $res
   call $writeMemory
-  
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 1))
-  else
-    (call $memoryDelay (call $getHL))
-    (call $incTacts (i32.const 1))
-  end
 
   (i32.and (get_global $opCode) (i32.const 0x07))
   (i32.ne (tee_local $q) (i32.const 6))
@@ -111,6 +98,10 @@
   get_local $addr
   get_local $addr
   call $readMemory
+
+  ;; Adjust tacts
+  (call $contendRead (call $getHL) (i32.const 1))
+
   (i32.shl 
     (i32.const 1)
     (i32.shr_u
@@ -121,13 +112,6 @@
   i32.or
   tee_local $res
   call $writeMemory
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 1))
-  else
-    (call $memoryDelay (call $getHL))
-    (call $incTacts (i32.const 1))
-  end
 
   (i32.and (get_global $opCode) (i32.const 0x07))
   (i32.ne (tee_local $q) (i32.const 6))

@@ -638,19 +638,10 @@
   set_local $tmp
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 4))
-  else
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendRead (get_local $hl) (i32.const 1))
+  (call $contendRead (get_local $hl) (i32.const 1))
+  (call $contendRead (get_local $hl) (i32.const 1))
+  (call $contendRead (get_local $hl) (i32.const 1))
 
   ;; WZ := HL + 1
   (i32.add (get_local $hl) (i32.const 1))
@@ -696,19 +687,10 @@
   set_local $tmp
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 4))
-  else
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $hl))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendRead (get_local $hl) (i32.const 1))
+  (call $contendRead (get_local $hl) (i32.const 1))
+  (call $contendRead (get_local $hl) (i32.const 1))
+  (call $contendRead (get_local $hl) (i32.const 1))
 
   ;; WZ := HL + 1
   (i32.add (get_local $hl) (i32.const 1))
@@ -972,15 +954,8 @@
   call $setHL
 
   ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 2))
-  else
-    (call $memoryDelay (get_local $de))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $de))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendRead (get_local $de) (i32.const 1))
+  (call $contendRead (get_local $de) (i32.const 1))
 
   ;; Increment/decrement DE
   (i32.add (get_local $de) (get_local $step))
@@ -1290,8 +1265,7 @@
     call $setPC
 
     ;; Adjust tacts
-    call $getBC
-    call $Adjust5Tacts
+    (call $Adjust5Tacts (call $getBC))
   else
     ;; Reset PV
     (i32.and (call $getF) (i32.const 0xfb))

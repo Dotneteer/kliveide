@@ -909,13 +909,10 @@
     call $setWZ
 
     ;; Adjust tacts
-    (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-    if
-      get_global $PC
-      call $memoryDelay
-    end
-    (call $incTacts (i32.const 1))
-    call $getWZ ;; The address to use with the indexed bit operation
+    (call $contendRead (get_global $PC) (i32.const 1))
+
+    ;; The address to use with the indexed bit operation
+    call $getWZ 
 
     ;; Get operation function
     i32.const $INDEXED_BIT_JT#
@@ -1284,22 +1281,11 @@
 
 ;; Adjust tacts for IX-indirect addressing
 (func $Adjust5Tacts (param $addr i32)
-  ;; Adjust tacts
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 5))
-  else
-    (call $memoryDelay (get_local $addr))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $addr))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $addr))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $addr))
-    (call $incTacts (i32.const 1))
-    (call $memoryDelay (get_local $addr))
-    (call $incTacts (i32.const 1))
-  end
+  (call $contendRead (get_local $addr) (i32.const 1))
+  (call $contendRead (get_local $addr) (i32.const 1))
+  (call $contendRead (get_local $addr) (i32.const 1))
+  (call $contendRead (get_local $addr) (i32.const 1))
+  (call $contendRead (get_local $addr) (i32.const 1))
 )
 
 ;; Gets the index address for an operation

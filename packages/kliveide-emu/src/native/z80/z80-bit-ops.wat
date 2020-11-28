@@ -188,13 +188,9 @@
   call $getHL
   call $getHL
   call $readMemory
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 1))
-  else
-    (call $memoryDelay (call $getHL))
-    (call $incTacts (i32.const 1))
-  end
+
+  ;; Adjust tacts
+  (call $contendRead (call $getHL) (i32.const 1))
 
   ;; Call the bit operation
   i32.const $BOP_JT#
@@ -236,11 +232,9 @@
   i32.or
   call $setQ
   (call $setF (call $getQ))
-  (i32.eq (get_global $useGateArrayContention) (i32.const 0))
-  if
-    (call $memoryDelay (call $getHL))
-  end
-  (call $incTacts (i32.const 1))
+
+  ;; Adjust tacts
+  (call $contendRead (call $getHL) (i32.const 1))
 )
 
 ;; res N,Q (0x80-bf)
@@ -270,6 +264,9 @@
   call $getHL
   call $readMemory
 
+  ;; Adjust tacts
+  (call $contendRead (call $getHL) (i32.const 1))
+
   (i32.shl 
     (i32.const 1)
     (i32.shr_u
@@ -281,14 +278,6 @@
   i32.xor
   i32.and
   call $writeMemory
-
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 1))
-  else
-    (call $memoryDelay (call $getHL))
-    (call $incTacts (i32.const 1))
-  end
 )
 
 ;; set N,Q (0xc0-ff)
@@ -316,6 +305,9 @@
   call $getHL
   call $readMemory
 
+  ;; Adjust tacts
+  (call $contendRead (call $getHL) (i32.const 1))
+
   (i32.shl 
     (i32.const 1)
     (i32.shr_u
@@ -325,12 +317,4 @@
   )
   i32.or
   call $writeMemory
-
-  get_global $useGateArrayContention
-  if
-    (call $incTacts (i32.const 1))
-  else
-    (call $memoryDelay (call $getHL))
-    (call $incTacts (i32.const 1))
-  end
 )
