@@ -11,6 +11,11 @@
   i32.const 0 set_global $supportsNextOperation
   call $resetCpu
 
+  ;; Screen configuration
+  i32.const 64 set_global $screenLines
+  i32.const 640 set_global $screenWidth
+  i32.const 16384 set_global $tactsInFrame
+
   ;; Blink initial setup
   call $resetZ88Blink
   call $resetZ88Rtc
@@ -20,38 +25,36 @@
 
 ;; Writes the Cambridge Z88 machine state to the transfer area
 (func $getMachineState
-  ;; CPU configuration
-  (i32.store offset=48 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))
-  (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))
-  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $supportsNextOperation))
+  call $getCpuState
+  call $getExecutionEngineState
 
   ;; BLINK device
-  (i32.store8 offset=54 (get_global $STATE_TRANSFER_BUFF) (get_global $z88INT))
-  (i32.store8 offset=55 (get_global $STATE_TRANSFER_BUFF) (get_global $z88STA))
-  (i32.store8 offset=56 (get_global $STATE_TRANSFER_BUFF) (get_global $z88COM))
+  (i32.store8 offset=160 (get_global $STATE_TRANSFER_BUFF) (get_global $z88INT))
+  (i32.store8 offset=161 (get_global $STATE_TRANSFER_BUFF) (get_global $z88STA))
+  (i32.store8 offset=162 (get_global $STATE_TRANSFER_BUFF) (get_global $z88COM))
 
   ;; RTC device
-  (i32.store8 offset=57 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM0))
-  (i32.store8 offset=58 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM1))
-  (i32.store8 offset=59 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM2))
-  (i32.store8 offset=60 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM3))
-  (i32.store8 offset=61 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM4))
-  (i32.store8 offset=62 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TSTA))
-  (i32.store8 offset=63 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TMK))
+  (i32.store8 offset=163 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM0))
+  (i32.store8 offset=164 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM1))
+  (i32.store8 offset=165 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM2))
+  (i32.store8 offset=166 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM3))
+  (i32.store8 offset=167 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM4))
+  (i32.store8 offset=168 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TSTA))
+  (i32.store8 offset=169 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TMK))
 
   ;; Screen device
-  (i32.store8 offset=64 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB0))
-  (i32.store8 offset=65 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB1))
-  (i32.store8 offset=66 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB2))
-  (i32.store8 offset=67 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB3))
-  (i32.store16 offset=68 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SBR))
-  (i32.store8 offset=70 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCW))
-  (i32.store8 offset=71 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCH))
+  (i32.store8 offset=170 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB0))
+  (i32.store8 offset=171 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB1))
+  (i32.store8 offset=172 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB2))
+  (i32.store8 offset=173 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB3))
+  (i32.store16 offset=174 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SBR))
+  (i32.store8 offset=176 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCW))
+  (i32.store8 offset=177 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCH))
 
   ;; Memory device
-  (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
-  (i32.store offset=76 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
-  (i32.store8 offset=80 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
+  (i32.store offset=178 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
+  (i32.store offset=182 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
+  (i32.store8 offset=186 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
 
   ;; TODO: Get other state values
 )

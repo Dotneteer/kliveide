@@ -8,7 +8,6 @@ export type MachineState =
   | Spectrum128MachineState
   | CambridgeZ88MachineState;
 
-
 export abstract class Z80MachineStateBase extends Z80CpuState {
   // --- Type discriminator
   type: MachineState["type"];
@@ -28,7 +27,6 @@ export abstract class Z80MachineStateBase extends Z80CpuState {
   executionCompletionReason: number;
   stepOverBreakPoint: number;
 
-
   // --- Temporary state properties, move them to spectrum
   numberOfRoms: number;
   ramBanks: number;
@@ -41,13 +39,24 @@ export abstract class Z80MachineStateBase extends Z80CpuState {
 
   audioSampleLength: number;
   audioSampleCount: number;
+}
 
+/**
+ * Represents the state of a frame-bound Z80 machine
+ */
+export class FrameBoundZ80MachineState extends Z80MachineStateBase {
+  lastRenderedFrameTact: number;
+  contentionAccummulated: number;
+  lastExecutionContentionValue: number;
+  emulationMode: EmulationMode;
+  debugStepMode: DebugStepMode;
+  disableScreenRendering: boolean;
 }
 
 /**
  * Represents the state of the ZX Spectrum machine
  */
-export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
+export abstract class SpectrumMachineStateBase extends FrameBoundZ80MachineState {
   // --- Memory configuration
   romContentsAddress: number;
   spectrum48RomIndex: number;
@@ -81,16 +90,10 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
 
   // --- Engine state
   ulaIssue: number;
-  lastRenderedUlaTact: number;
-  contentionAccummulated: number;
-  lastExecutionContentionValue: number;
-  emulationMode: EmulationMode;
-  debugStepMode: DebugStepMode;
   fastTapeMode: boolean;
   terminationRom: number;
   terminationPoint: number;
   fastVmMode: boolean;
-  disableScreenRendering: boolean;
 
   // --- Keyboard state
   keyboardLines: number[];

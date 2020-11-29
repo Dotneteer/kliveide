@@ -161,8 +161,8 @@
 
 ;; Writes the ZX Spectrum machine state to the transfer area
 (func $getMachineState
-  ;; Start with CPU state
   call $getCpuState
+  call $getExecutionEngineState
   call $getCommonSpectrumMachineState
 )
 

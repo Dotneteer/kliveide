@@ -95,7 +95,6 @@
 
     // --- Change the execution state overlay text on change
     vmEngine.executionStateChanged.on((arg) => {
-      console.log("Execution state changed.")
       execState = arg.newState;
       switch (arg.newState) {
         case 1:

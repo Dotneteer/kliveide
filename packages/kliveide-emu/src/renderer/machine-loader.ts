@@ -11,7 +11,6 @@ import { MemoryHelper } from "../native/api/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
 import { FrameBoundZ80Machine } from "./machines/FrameBoundZ80Machine";
-import { getMachineTypeIdFromName } from "../shared/machines/machine-types";
 import {
   InjectProgramCommand,
   MemoryCommand,
@@ -22,6 +21,7 @@ import { codeInjectResultAction } from "../shared/state/redux-code-command-state
 import { codeRunResultAction } from "../shared/state/redux-run-code-state";
 import { AudioRenderer } from "./machines/AudioRenderer";
 import { ZxSpectrumBaseStateManager } from "./machines/ZxSpectrumBaseStateManager";
+import { CambridgeZ88 } from "./machines/CambridgeZ88";
 
 /**
  * Store the virtual machine engine instance
@@ -164,14 +164,14 @@ stateAware.stateChanged.on(async (state) => {
 export async function getVmEngine(): Promise<VmEngine> {
   if (!vmEngine) {
     if (!loader) {
-      loader = createVmEngine(0);
+      loader = createVmEngine("sp48");
     }
     vmEngine = await loader;
   }
   return vmEngine;
 }
 
-export async function changeVmEngine(name: string) {
+export async function changeVmEngine(typeId: string) {
   // --- Stop the engine
   if (vmEngine) {
     await vmEngine.stop();
@@ -182,7 +182,6 @@ export async function changeVmEngine(name: string) {
 
   // --- Create the new engine
   waInstance = null;
-  const typeId = getMachineTypeIdFromName(name);
   const newEngine = await createVmEngine(typeId);
 
   // --- Store it
@@ -194,19 +193,17 @@ export async function changeVmEngine(name: string) {
  * @param type virtual machine engine type
  */
 export async function createVmEngine(
-  type: number
+  typeId: string
 ): Promise<VmEngine> {
   if (!waInstance) {
-    waInstance = await createWaInstance(type);
+    waInstance = await createWaInstance(typeId);
   }
   const machineApi = (waInstance.exports as unknown) as MachineApi;
 
   // --- Instantiate the requested machine
   let machine: FrameBoundZ80Machine;
-  switch (type) {
-    case 1:
-    case 2:
-    case 3:
+  switch (typeId) {
+    case "sp128":
       const rom0 = await fetch("./roms/sp128-0.rom");
       const buffer0 = Buffer.from((await rom0.body.getReader().read()).value);
       const rom1 = await fetch("./roms/sp128-1.rom");
@@ -215,6 +212,9 @@ export async function createVmEngine(
       sp128.setAudioRendererFactory((sampleRate: number) => new AudioRenderer(sampleRate));
       sp128.setStateManager(new ZxSpectrumBaseStateManager());
       machine = sp128;
+      break;
+    case "cz88":
+      machine = new CambridgeZ88(machineApi);
       break;
     default:
       const rom = await fetch("./roms/sp48.rom");
@@ -241,7 +241,7 @@ export async function createVmEngine(
  * Creates a WebAssembly instance with the virtual machine core
  * @param type Machine type identifier
  */
-async function createWaInstance(type: number): Promise<WebAssembly.Instance> {
+async function createWaInstance(typeId: string): Promise<WebAssembly.Instance> {
   const importObject = {
     imports: {
       trace: (arg: number) => console.log(arg),
@@ -251,14 +251,15 @@ async function createWaInstance(type: number): Promise<WebAssembly.Instance> {
     },
   };
   let wasmFile = "";
-  switch (type) {
-    case 0:
+  switch (typeId) {
+    case "sp48":
       wasmFile = "sp48.wasm";
       break;
-    case 1: 
-    case 2: 
-    case 3: 
+    case "sp128": 
       wasmFile = "sp128.wasm";
+      break;
+    case "cz88": 
+      wasmFile = "cz88.wasm";
       break;
     default:
       wasmFile = "sp48.wasm";

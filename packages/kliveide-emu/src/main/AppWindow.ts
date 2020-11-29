@@ -629,11 +629,11 @@ export class AppWindow {
  * The list of machine menu items
  */
 const MACHINE_MENU_ITEMS = [
-  "machine_48",
-  "machine_128",
+  "machine_sp48",
+  "machine_sp128",
   "machine_p3e",
   "machine_next",
-  "cambridge_z88",
+  "cambridge_cz88",
   "set_tape",
 ];
 

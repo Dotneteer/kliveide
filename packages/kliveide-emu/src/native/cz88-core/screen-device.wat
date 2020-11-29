@@ -41,4 +41,5 @@
   i32.const 0x00 set_global $z88PB2
   i32.const 0x00 set_global $z88PB3
   i32.const 0x00 set_global $z88SBR
+  i32.const 40 set_global $z88SCH
 )

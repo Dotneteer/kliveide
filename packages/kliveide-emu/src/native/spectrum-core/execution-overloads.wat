@@ -75,9 +75,6 @@
 ;; Given in Z80 clock cycles.
 (global $attributeDataPrefetchTime (mut i32) (i32.const 0x0000))
 
-;; Total number of screen lines
-(global $screenLines (mut i32) (i32.const 0x0000))
-
 ;; First visible display line
 (global $firstDisplayLine (mut i32) (i32.const 0x0000))
 
@@ -92,9 +89,6 @@
 
 ;; Width of display in pixels
 (global $displayWidth (mut i32) (i32.const 0x0000))
-
-;; Total width of the screen
-(global $screenWidth (mut i32) (i32.const 0x0000))
 
 ;; Total time of a screen line
 (global $screenLineTime (mut i32) (i32.const 0x0000))
@@ -121,7 +115,7 @@
 (func $resetSpectrumMachine
 
   ;; Reset engine state variables
-  i32.const 0 set_global $lastRenderedUlaTact
+  i32.const 0 set_global $lastRenderedFrameTact
   i32.const 0 set_global $frameCount
   i32.const 0 set_global $tacts
   i32.const 1 set_global $frameCompleted
@@ -202,7 +196,7 @@
   ;; Reset pointers used for screen rendering
   (i32.add
     (get_global $RENDERING_TACT_TABLE)
-    (i32.mul (get_global $lastRenderedUlaTact) (i32.const 5))
+    (i32.mul (get_global $lastRenderedFrameTact) (i32.const 5))
   )
   set_global $renderingTablePtr
 

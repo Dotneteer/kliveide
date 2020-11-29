@@ -187,6 +187,11 @@
   (i32.store8 offset=45 (get_global $STATE_TRANSFER_BUFF) (get_global $indexMode))
   (i32.store8 offset=46 (get_global $STATE_TRANSFER_BUFF) (get_global $maskableInterruptModeEntered))
   (i32.store8 offset=47 (get_global $STATE_TRANSFER_BUFF) (get_global $opCode))
+
+  ;; CPU configuration
+  (i32.store offset=48 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))      
+  (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))      
+  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $supportsNextOperation))      
 )
 
 ;; Restores the CPU state from the transfer area. This method copies register values

@@ -2,7 +2,7 @@
 ;; Implements the Z88 keyboard device (Blink)
 
 ;; Sets the status of the specified key
-(func $setZ88KeyStatus (param $keyCode i32) (param $isDown i32)
+(func $setKeyStatus (param $keyCode i32) (param $isDown i32)
   (local $line i32)
   (local $mask i32)
 
@@ -44,7 +44,7 @@
 )
 
 ;; Gets the status of the specified key
-(func $getZ88KeyStatus (param $keyCode i32) (result i32)
+(func $getKeyStatus (param $keyCode i32) (result i32)
   ;; Ignore invalid key codes
   (i32.gt_u (get_local $keyCode) (i32.const 63))
   if 

@@ -14,6 +14,15 @@
 (global $supportsNextOperation (mut i32) (i32.const 0x0000))
 
 ;; ----------------------------------------------------------------------------
+;; Screen related
+
+;; Total width of the screen
+(global $screenWidth (mut i32) (i32.const 0x0000))
+
+;; Total number of screen lines
+(global $screenLines (mut i32) (i32.const 0x0000))
+
+;; ----------------------------------------------------------------------------
 ;; Execution engine constants
 ;;
 ;; $MEMCONT_NONE# = 0   // No contention
@@ -44,7 +53,7 @@
 ;; Execution cycle variables
 
 ;; The last rendered ULA tact
-(global $lastRenderedUlaTact (mut i32) (i32.const 0x0000))
+(global $lastRenderedFrameTact (mut i32) (i32.const 0x0000))
 
 ;; Gets or sets the value of the contention accummulated since the start
 ;; of the machine
