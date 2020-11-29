@@ -1,5 +1,5 @@
 import { MachineApi } from "../../native/api/api";
-import { MachineState, Z80MachineStateBase } from "./machine-state";
+import { MachineState } from "./machine-state";
 import { MemoryHelper } from "../../native/api/memory-helpers";
 import {
   REG_AREA_INDEX,
@@ -69,47 +69,12 @@ export abstract class Z80MachineBase {
   abstract createMachineState(): MachineState;
 
   /**
-   * Initializes the machine with the specified code
-   * @param runMode Machine run mode
-   * @param code Intial code
+   * Override this method to obtain machine state
    */
-  injectCode(
-    code: number[],
-    codeAddress = 0x8000,
-    startAddress = 0x8000
-  ): void {
-    for (let i = 0; i < code.length; i++) {
-      this.writeMemory(codeAddress++, code[i]);
-    }
+  getMachineState(): MachineState {
+    const s = this.createMachineState();
+    this.api.getMachineState();
 
-    let ptr = codeAddress;
-    while (ptr < 0x10000) {
-      this.writeMemory(ptr++, 0);
-    }
-
-    // --- Init code execution
-    this.api.resetCpu();
-    this.api.setPC(startAddress);
-  }
-
-  /**
-   * Reads a byte from the memory
-   * @param addr Memory address
-   */
-  abstract readMemory(addr: number): number;
-
-  /**
-   * Writes a byte into the memory
-   * @param addr Memory address
-   * @param value Value to write
-   */
-  abstract writeMemory(addr: number, value: number): void;
-
-  /**
-   * Obtains the Z80 CPU's state
-   * @param s State to put the Z80 machine state
-   */
-  protected obtainZ80CpuState(s: Z80MachineStateBase): void {
     // --- Get register data from the memory
     let mh = new MemoryHelper(this.api, REG_AREA_INDEX);
 
@@ -146,5 +111,49 @@ export abstract class Z80MachineBase {
     s.indexMode = mh.readByte(45);
     s.maskableInterruptModeEntered = mh.readBool(46);
     s.opCode = mh.readByte(47);
+
+    // --- Get CPU configuration data
+    s.baseClockFrequency = mh.readUint32(48);
+    s.clockMultiplier = mh.readByte(52);
+    s.supportsNextOperations = mh.readBool(53);
+
+    return s;
   }
+
+  /**
+   * Initializes the machine with the specified code
+   * @param runMode Machine run mode
+   * @param code Intial code
+   */
+  injectCode(
+    code: number[],
+    codeAddress = 0x8000,
+    startAddress = 0x8000
+  ): void {
+    for (let i = 0; i < code.length; i++) {
+      this.writeMemory(codeAddress++, code[i]);
+    }
+
+    let ptr = codeAddress;
+    while (ptr < 0x10000) {
+      this.writeMemory(ptr++, 0);
+    }
+
+    // --- Init code execution
+    this.api.resetCpu();
+    this.api.setPC(startAddress);
+  }
+
+  /**
+   * Reads a byte from the memory
+   * @param addr Memory address
+   */
+  abstract readMemory(addr: number): number;
+
+  /**
+   * Writes a byte into the memory
+   * @param addr Memory address
+   * @param value Value to write
+   */
+  abstract writeMemory(addr: number, value: number): void;
 }

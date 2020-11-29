@@ -74,6 +74,7 @@
 (func $getMachineState
   ;; Start with CPU state
   call $getCpuState
+  call $getExecutionEngineState
   call $getCommonSpectrumMachineState
 )
 

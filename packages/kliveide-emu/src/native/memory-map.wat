@@ -71,7 +71,7 @@
 ;; Page index table for addressing memory (24 bytes)
 (global $PAGE_INDEX_16 i32 (i32.const 0x40_0D40))
 
-;; State transfer buffer between WA and JS (0x380 bytes)
+;; State transfer buffer between WA and JS (0x672 bytes)
 (global $STATE_TRANSFER_BUFF i32 (i32.const 0x40_0D60))
 
 ;; ----------------------------------------------------------------------------

@@ -1,5 +1,9 @@
 import { MachineApi } from "../../native/api/api";
-import { CambridgeZ88MachineState, MachineState } from "./machine-state";
+import {
+  CambridgeZ88MachineState,
+  MachineState,
+  Z80MachineStateBase,
+} from "./machine-state";
 import { MemoryHelper } from "../../native/api/memory-helpers";
 import {
   STATE_TRANSFER_BUFF,
@@ -20,7 +24,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   /**
    * Friendly name to display
    */
-  readonly displayName = "Cambridge Z88"
+  readonly displayName = "Cambridge Z88";
 
   /**
    * Creates a new instance of the ZX Spectrum machine
@@ -29,6 +33,12 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   constructor(public api: MachineApi) {
     super(api);
   }
+
+  /**
+   * Override this property to apply multiple engine loops before
+   * Refreshing the UI
+   */
+  readonly engineLoops = 4;
 
   /**
    * Retrieves a ZX Spectrum 48 machine state object
@@ -48,52 +58,55 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Gets the current state of the ZX Spectrum machine
    */
   getMachineState(): CambridgeZ88MachineState {
-    const s = this.createMachineState() as CambridgeZ88MachineState;
-    this.api.getMachineState();
-
+    const s = super.getMachineState() as CambridgeZ88MachineState;
     const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
 
-    // --- Get CPU configuration data
-    s.baseClockFrequency = mh.readUint32(48);
-    s.clockMultiplier = mh.readByte(52);
-    s.supportsNextOperations = mh.readBool(53);
-
     // --- Blink device data
-    s.INT = mh.readByte(54);
-    s.STA = mh.readByte(55);
-    s.COM = mh.readByte(56);
+    s.INT = mh.readByte(160);
+    s.STA = mh.readByte(161);
+    s.COM = mh.readByte(162);
 
     // --- RTC device
-    s.TIM0 = mh.readByte(57);
-    s.TIM1 = mh.readByte(58);
-    s.TIM2 = mh.readByte(59);
-    s.TIM3 = mh.readByte(60);
-    s.TIM4 = mh.readByte(61);
-    s.TSTA = mh.readByte(62);
-    s.TMK = mh.readByte(63);
+    s.TIM0 = mh.readByte(163);
+    s.TIM1 = mh.readByte(164);
+    s.TIM2 = mh.readByte(165);
+    s.TIM3 = mh.readByte(166);
+    s.TIM4 = mh.readByte(167);
+    s.TSTA = mh.readByte(168);
+    s.TMK = mh.readByte(169);
 
     // --- Screen device
-    s.PB0 = mh.readByte(64);
-    s.PB1 = mh.readByte(65);
-    s.PB2 = mh.readByte(66);
-    s.PB3 = mh.readByte(67);
-    s.SBR = mh.readByte(68);
-    s.SCW = mh.readByte(70);
-    s.SCH = mh.readByte(71);
+    s.PB0 = mh.readByte(170);
+    s.PB1 = mh.readByte(171);
+    s.PB2 = mh.readByte(172);
+    s.PB3 = mh.readByte(173);
+    s.SBR = mh.readByte(174);
+    s.SCW = mh.readByte(176);
+    s.SCH = mh.readByte(177);
 
-    s.screenWidth = 640;
-    s.screenLines = 64;
+    // --- Setup screen size
+    s.screenWidth = s.SCW === 100 ? 800 : 640;
+    switch (s.SCH) {
+      case 40:
+        s.screenLines = 320;
+        break;
+      case 60:
+        s.screenLines = 480;
+      default:
+        s.screenLines = 64;
+        break;
+    }
 
     // --- Memory device
-    s.SR0 = mh.readByte(72);
-    s.SR1 = mh.readByte(73);
-    s.SR2 = mh.readByte(74);
-    s.SR3 = mh.readByte(75);
-    s.chipMask0 = mh.readByte(76);
-    s.chipMask1 = mh.readByte(77);
-    s.chipMask2 = mh.readByte(78);
-    s.chipMask3 = mh.readByte(79);
-    s.chipMask4 = mh.readByte(80);
+    s.SR0 = mh.readByte(178);
+    s.SR1 = mh.readByte(179);
+    s.SR2 = mh.readByte(180);
+    s.SR3 = mh.readByte(181);
+    s.chipMask0 = mh.readByte(182);
+    s.chipMask1 = mh.readByte(183);
+    s.chipMask2 = mh.readByte(184);
+    s.chipMask3 = mh.readByte(185);
+    s.chipMask4 = mh.readByte(186);
 
     const slotMh = new MemoryHelper(this.api, Z88_PAGE_PTRS);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
@@ -149,7 +162,6 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     return screenData;
   }
 
-
   /**
    * Sets the audio sample rate
    * @param rate Sample rate
@@ -165,6 +177,22 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   async prepareForInjection(_model: string): Promise<number> {
     // TODO: Implement this method
     return 0;
+  }
+
+  /**
+   * Takes care that the screen and the audio gets refreshed as a frame
+   * completes
+   * @param resultState Machine state on frame completion
+   */
+  async onFrameCompleted(
+    _resultState: Z80MachineStateBase,
+    toWait: number
+  ): Promise<void> {
+    if (toWait >= 0) {
+      this.vmEngineController.signScreenRefreshed();
+    }
+    // --- At this point we have not completed the execution yet
+    // --- Initiate the refresh of the screen
   }
 }
 

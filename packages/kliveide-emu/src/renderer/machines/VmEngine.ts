@@ -505,9 +505,15 @@ export class VmEngine implements IVmEngineController {
   ): Promise<void> {
     const state = machine.z80Machine.getMachineState();
     // --- Store the start time of the frame
-    //const clockFreq = state.baseClockFrequency * state.clockMultiplier;
-    const nextFrameGap = (state.tactsInFrame / state.baseClockFrequency) * 1000;
+    const nextFrameGap =
+      (state.tactsInFrame / state.baseClockFrequency) *
+      1000 *
+      machine.z80Machine.engineLoops;
     let nextFrameTime = performance.now() + nextFrameGap;
+    let toWait = 0;
+
+    // let gaps: [number, number, number][] = [];
+    // let counter = 0;
 
     // --- Execute the cycle until completed
     while (true) {
@@ -515,7 +521,17 @@ export class VmEngine implements IVmEngineController {
       const frameStartTime = performance.now();
 
       // --- Now run the cycle
-      machine.z80Machine.executeCycle(options);
+      for (let i = 0; i < machine.z80Machine.engineLoops; i++) {
+        machine.z80Machine.executeCycle(options);
+        const resultState = (this._loadedState = machine.z80Machine.getMachineState());
+        machine.z80Machine.onEngineCycleCompletion(resultState);
+        if (
+          resultState.executionCompletionReason !==
+          ExecutionCompletionReason.UlaFrameCompleted
+        ) {
+          break;
+        }
+      }
 
       // --- Engine time information
       this._renderedFrames++;
@@ -554,7 +570,7 @@ export class VmEngine implements IVmEngineController {
           machine.executionState = ExecutionState.Paused;
         }
 
-        // --- Stop audio
+        // --- Complete the cycle
         await this.z80Machine.onExecutionCycleCompleted(resultState);
         return;
       }
@@ -563,18 +579,28 @@ export class VmEngine implements IVmEngineController {
       this.emulateKeyStroke(resultState.frameCount);
 
       // --- Let the machine complete the frame
-      await machine.z80Machine.onFrameCompleted(resultState);
+      await machine.z80Machine.onFrameCompleted(resultState, toWait);
 
       // --- Frame time information
       const curTime = performance.now();
-      this._lastFrameTime = performance.now() - frameStartTime;
+      this._lastFrameTime = curTime - frameStartTime;
       this._sumFrameTime += this._lastFrameTime;
       this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
+      toWait = Math.floor(nextFrameTime - curTime);
 
       // --- Wait for the next screen frame
-      const toWait = Math.floor(nextFrameTime - curTime);
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
+      // gaps.push([
+      //   performance.now() - frameStartTime,
+      //   this._lastFrameTime,
+      //   toWait,
+      // ]);
+      // counter++;
+      // if (counter % 100 === 0) {
+      //   console.log(gaps);
+      //   gaps = [];
+      // }
     }
   }
 

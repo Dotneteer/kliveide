@@ -1,6 +1,21 @@
 ;; ============================================================================
 ;; Core routines for the machine execution cycle
 
+;; Gets the execution engine state
+(func $getExecutionEngineState
+  ;; ZX Spectrum engine state
+  (i32.store offset=80 (get_global $STATE_TRANSFER_BUFF) (get_global $lastRenderedFrameTact))
+  (i32.store offset=84 (get_global $STATE_TRANSFER_BUFF) (get_global $frameCount))
+  (i32.store8 offset=88 (get_global $STATE_TRANSFER_BUFF) (get_global $frameCompleted))
+  (i32.store offset=89 (get_global $STATE_TRANSFER_BUFF) (get_global $contentionAccummulated))
+  (i32.store offset=93 (get_global $STATE_TRANSFER_BUFF) (get_global $lastExecutionContentionValue))
+  (i32.store8 offset=97 (get_global $STATE_TRANSFER_BUFF) (get_global $emulationMode))
+  (i32.store8 offset=98 (get_global $STATE_TRANSFER_BUFF) (get_global $debugStepMode))
+  (i32.store8 offset=99 (get_global $STATE_TRANSFER_BUFF) (get_global $disableScreenRendering))
+  (i32.store8 offset=100 (get_global $STATE_TRANSFER_BUFF) (get_global $executionCompletionReason))
+  (i32.store16 offset=101 (get_global $STATE_TRANSFER_BUFF) (get_global $stepOverBreakpoint))
+)
+
 ;; Copies execution options from the transfer area
 (func $setExecutionOptions
   (i32.load8_u offset=0 (get_global $STATE_TRANSFER_BUFF)) set_global $emulationMode
