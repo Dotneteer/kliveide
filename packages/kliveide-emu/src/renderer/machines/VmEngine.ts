@@ -24,19 +24,10 @@ import {
   emulatorSetMemoryContentsAction,
   engineInitializedAction,
   emulatorSetDebugAction,
-  emulatorLoadTapeAction,
-  emulatorSetLoadModeAction,
 } from "../../shared/state/redux-emulator-state";
-import { BinaryReader } from "../../shared/utils/BinaryReader";
-import { TzxReader } from "../../shared/tape/tzx-file";
-import { TapReader } from "../../shared/tape/tap-file";
 import { CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
-import {
-  BEEPER_SAMPLE_BUFFER,
-  PSG_SAMPLE_BUFFER,
-  BANK_0_OFFS,
-} from "../../native/api/memory-map";
+import { BANK_0_OFFS } from "../../native/api/memory-map";
 import { VmKeyCode } from "../../native/api/api";
 import { IVmEngineController } from "./IVmEngineController";
 
@@ -162,6 +153,13 @@ export class VmEngine implements IVmEngineController {
    */
   get screenHeight(): number {
     return this._loadedState.screenLines;
+  }
+
+  /**
+   * Get the type of the keyboard to display
+   */
+  get keyboardType(): string {
+    return this.z80Machine.keyboardType;
   }
 
   /**

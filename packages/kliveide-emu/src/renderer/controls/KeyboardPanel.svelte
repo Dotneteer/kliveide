@@ -1,10 +1,25 @@
 <script>
   import Sp48Keyboard from "./Sp48Keyboard.svelte";
+  import Cz88Keyboard from "./Cz88Keyboard.svelte";
+
+  export let type = "";
   export let visible = true;
   export let initialHeight;
   export let sizedWidth;
   export let sizedHeight;
   export let showPanel = true;
+
+  let component = Sp48Keyboard;
+
+  // --- Display the keybord for the selected virtual machine
+  $: switch (type) {
+    case "cz88":
+      component = Cz88Keyboard;
+      break;
+    default:
+      component = Sp48Keyboard;
+      break;
+  }
 </script>
 
 <style>
@@ -28,9 +43,12 @@
     class="keyboard-panel"
     data-initial-size={initialHeight}
     bind:clientWidth={sizedWidth}
-    bind:clientHeight={sizedHeight} >
+    bind:clientHeight={sizedHeight}>
     {#if showPanel}
-      <Sp48Keyboard clientWidth={sizedWidth} clientHeight={sizedHeight} />
+      <svelte:component
+        this={component}
+        clientWidth={sizedWidth}
+        clientHeight={sizedHeight} />
     {/if}
   </div>
 {/if}

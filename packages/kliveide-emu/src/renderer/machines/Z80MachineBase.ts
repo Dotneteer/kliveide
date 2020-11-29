@@ -64,6 +64,11 @@ export abstract class Z80MachineBase {
   }
 
   /**
+   * The default keyboard type
+   */
+  readonly keyboardType: string = "";
+
+  /**
    * Override this method to represent the appropriate machine state
    */
   abstract createMachineState(): MachineState;
