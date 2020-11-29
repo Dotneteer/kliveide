@@ -8,6 +8,19 @@
 (export "setPC" (func $setPC))
 (export "setSP" (func $setSP))
 
+(export "eraseBreakpoints" (func $eraseBreakPoints))
+(export "setBreakpoint" (func $setBreakpoint))
+(export "removeBreakpoint" (func $removeBreakpoint))
+(export "testBreakpoint" (func $testBreakpoint))
+(export "resetStepOverStack" (func $resetStepOverStack))
+(export "markStepOverStack" (func $markStepOverStack))
+(export "eraseMemoryWriteMap" (func $eraseMemoryWriteMap))
+(export "setMemoryWritePoint" (func $setMemoryWritePoint))
+(export "setExecutionOptions" (func $setExecutionOptions))
+(export "executeMachineCycle" (func $executeMachineCycle))
+(export "setKeyStatus" (func $setKeyStatus))
+(export "getKeyStatus" (func $getKeyStatus))
+
 ;; Cambridge Z88 exports
 (export "turnOnMachine" (func $turnOnMachine))
 (export "getMachineState" (func $getMachineState))

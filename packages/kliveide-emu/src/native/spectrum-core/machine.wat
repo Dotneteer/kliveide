@@ -49,7 +49,7 @@
 
   ;; ZX Spectrum engine state
   (i32.store8 offset=135 (get_global $STATE_TRANSFER_BUFF) (get_global $ulaIssue))
-  (i32.store offset=136 (get_global $STATE_TRANSFER_BUFF) (get_global $lastRenderedUlaTact))
+  (i32.store offset=136 (get_global $STATE_TRANSFER_BUFF) (get_global $lastRenderedFrameTact))
   (i32.store offset=140 (get_global $STATE_TRANSFER_BUFF) (get_global $frameCount))
   (i32.store8 offset=144 (get_global $STATE_TRANSFER_BUFF) (get_global $frameCompleted))
   (i32.store offset=145 (get_global $STATE_TRANSFER_BUFF) (get_global $contentionAccummulated))

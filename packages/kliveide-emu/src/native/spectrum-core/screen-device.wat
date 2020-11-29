@@ -533,7 +533,7 @@
   (local $phase i32)
   (local $tmp i32)
 
-  get_global $lastRenderedUlaTact
+  get_global $lastRenderedFrameTact
   set_local $tact
 
   ;; Iterate through tacts
@@ -654,7 +654,7 @@
       ;; continue
       br $tactLoop
     end
-    get_local $tact set_global $lastRenderedUlaTact
+    get_local $tact set_global $lastRenderedFrameTact
   end
 )
 

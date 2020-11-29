@@ -143,7 +143,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
 
     // --- Get engine state
     s.ulaIssue = mh.readByte(135);
-    s.lastRenderedUlaTact = mh.readUint32(136);
+    s.lastRenderedFrameTact = mh.readUint32(136);
     s.frameCount = mh.readUint32(140);
     s.frameCompleted = mh.readBool(144);
     s.contentionAccummulated = mh.readUint32(145);

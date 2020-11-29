@@ -81,7 +81,7 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
 
   // --- Engine state
   ulaIssue: number;
-  lastRenderedUlaTact: number;
+  lastRenderedFrameTact: number;
   contentionAccummulated: number;
   lastExecutionContentionValue: number;
   emulationMode: EmulationMode;

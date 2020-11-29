@@ -81,6 +81,9 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.SCW = mh.readByte(70);
     s.SCH = mh.readByte(71);
 
+    s.screenWidth = 640;
+    s.screenLines = 64;
+
     // --- Memory device
     s.SR0 = mh.readByte(72);
     s.SR1 = mh.readByte(73);
@@ -116,17 +119,36 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Gets the addressable Z80 memory contents from the machine
    */
   getMemoryContents(): Uint8Array {
-    // TODO: Implement this method
-    throw new Error("Not implemented yet");
+    const result = new Uint8Array(0x10000);
+    const mh = new MemoryHelper(this.api, Z88_PAGE_PTRS);
+    for (let i = 0; i < 8; i++) {
+      const offs = i * 0x2000;
+      const pageStart = mh.readUint32(i * 5);
+      const source = new Uint8Array(this.api.memory.buffer, pageStart, 0x2000);
+      for (let j = 0; j < 0x2000; j++) {
+        result[offs + j] = source[j];
+      }
+    }
+    return result;
   }
 
   /**
    * Gets the screen data of the virtual machine
    */
+  /**
+   * Gets the screen data of the ZX Spectrum machine
+   */
   getScreenData(): Uint32Array {
-    // TODO: Implement this method
-    throw new Error("Not implemented yet");
+    const state = this.getMachineState();
+    const length = state.screenLines * state.screenWidth;
+    const screenData = new Uint32Array(length);
+    const pixel = state.frameCount & 0xff;
+    for (let i = 0; i < length; i++) {
+      screenData[i] = 0xff000000 | (pixel << 24) | (pixel << 16) | (pixel << 8);
+    }
+    return screenData;
   }
+
 
   /**
    * Sets the audio sample rate
@@ -134,16 +156,15 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    */
   setAudioSampleRate(rate: number): void {
     // TODO: Implement this method
-    throw new Error("Not implemented yet");
   }
 
   /**
    * Prepares the engine for code injection
    * @param model Model to run in the virtual machine
    */
-  prepareForInjection(model: string): Promise<number> {
+  async prepareForInjection(_model: string): Promise<number> {
     // TODO: Implement this method
-    throw new Error("Not implemented yet");
+    return 0;
   }
 }
 

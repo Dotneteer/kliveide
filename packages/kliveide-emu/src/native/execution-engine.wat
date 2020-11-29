@@ -31,7 +31,7 @@
     if
       ;; Reset frame information
       (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
-      set_global $lastRenderedUlaTact
+      set_global $lastRenderedFrameTact
 
       call $execOnInitNewFrame
     end
