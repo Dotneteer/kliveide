@@ -8,6 +8,7 @@
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
 (func $readMemory (param $addr i32) (result i32)
+  (local $tmp i32)
   (i32.eq
     (call $z88GetRomInfoForAddress (get_local $addr))
     (i32.const 0xff)

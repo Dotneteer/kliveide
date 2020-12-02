@@ -73,6 +73,20 @@
     padding: 0px 0px;
     margin: 0;
     display: flex;
+    font-weight: bold;
+  }
+
+  .key-row-2-3 {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .enter {
+    background-color: green;
+    width: 100%;
+    height: 100%;
+    flex-grow: 0;
+    flex-shrink: 0;
   }
 </style>
 
@@ -94,46 +108,54 @@
     <Cz88Key {zoom} code={15} on:clicked={handleKey} key="\" symbol="|" />
     <Cz88Key {zoom} code={15} on:clicked={handleKey} keyword="DEL" />
   </div>
-  <div class="key-row">
-    <Cz88Key
-      {zoom}
-      code={15}
-      on:clicked={handleKey}
-      keyword="TAB"
-      xwidth="140" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="Q" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="W" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="E" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="R" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="T" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="Y" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="U" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="I" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="O" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="P" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="[" symbol={'{'} />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="]" symbol={'}'} />
-  </div>
-  <div class="key-row">
-    <Cz88Key
-      {zoom}
-      code={15}
-      on:clicked={handleKey}
-      keyword={"\u25c7"}
-      fontSize="48"
-      xwidth="180" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="A" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="S" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="D" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="F" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="G" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="H" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="J" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="K" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="L" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key=";" symbol=":" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="'" symbol={'"'} />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} key="Ł" symbol="~" />
+  <div class=key-row-2-3>
+    <div>
+    <div class="key-row">
+      <Cz88Key
+        {zoom}
+        code={15}
+        on:clicked={handleKey}
+        keyword="TAB"
+        xwidth="140" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="Q" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="W" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="E" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="R" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="T" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="Y" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="U" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="I" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="O" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="P" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="[" symbol={'{'} />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="]" symbol={'}'} />
+    </div>
+    <div class="key-row">
+      <Cz88Key
+        {zoom}
+        code={15}
+        on:clicked={handleKey}
+        keyword={'\u25c7'}
+        vshift={8}
+        fontSize={60}
+        xwidth="180" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="A" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="S" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="D" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="F" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="G" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="H" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="J" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="K" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="L" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key=";" symbol=":" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="'" symbol={'"'} />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="Ł" symbol="~" />
+    </div>
+    </div>
+    <div class="enter">
+
+    </div>
   </div>
   <div class="key-row">
     <Cz88Key
@@ -163,13 +185,20 @@
       code={15}
       on:clicked={handleKey}
       keyword={'\u21e7'}
-      fontSize={40} />
+      vshift={8}
+      fontSize={60} />
   </div>
   <div class="key-row">
     <Cz88Key {zoom} code={15} on:clicked={handleKey} keyword="INDEX" />
     <Cz88Key {zoom} code={15} on:clicked={handleKey} keyword="MENU" />
     <Cz88Key {zoom} code={15} on:clicked={handleKey} keyword="HELP" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} keyword={"\u25fb"} fontSize="44" />
+    <Cz88Key
+      {zoom}
+      code={15}
+      on:clicked={handleKey}
+      keyword={'\u25fb'}
+      vshift={8}
+      fontSize={60} />
     <Cz88Key
       {zoom}
       code={15}
@@ -182,18 +211,21 @@
       code={15}
       on:clicked={handleKey}
       keyword={'\u21e6'}
-      fontSize={40} />
+      fontSize={60}
+      vshift={8} />
     <Cz88Key
       {zoom}
       code={15}
       on:clicked={handleKey}
       keyword={'\u21e8'}
-      fontSize={40} />
+      vshift={8}
+      fontSize={60} />
     <Cz88Key
       {zoom}
       code={15}
       on:clicked={handleKey}
       keyword={'\u21e9'}
-      fontSize={40} />
+      vshift={8}
+      fontSize={60} />
   </div>
 </div>

@@ -66,15 +66,6 @@ export class VmEngine implements IVmEngineController {
   // --- Keyboard emulation
   private _keyStrokeQueue: EmulatedKeyStroke[] = [];
 
-  // --- Beeper emulation
-  private _beeperRenderer: AudioRenderer | null = null;
-
-  // --- PSG emulation
-  private _psgRenderer: AudioRenderer | null = null;
-
-  // --- Tape emulation
-  private _defaultTapeSet = new Uint8Array(0);
-
   // --- FrameID information
   private _startCount = 0;
 

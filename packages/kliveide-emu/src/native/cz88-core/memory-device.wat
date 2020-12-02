@@ -115,27 +115,27 @@
   ;; Card 3 is RAM
   (call $setZ88Card3Rom (i32.const 0))
 
-  ;; Fill up memory area with zeros
-  (set_local $counter (i32.const 0))
-  (set_local $ptr (get_global $Z88_MEM_AREA))
-  loop $resetLoop
-   (i32.lt_u (get_local $counter) (i32.const 0x8_0000))
-   if
-      ;; Store 8 bytes of zero
-      (i64.store (get_local $ptr) (i64.const 0))
+  ;; ;; Fill up memory area with zeros
+  ;; (set_local $counter (i32.const 0))
+  ;; (set_local $ptr (get_global $Z88_MEM_AREA))
+  ;; loop $resetLoop
+  ;;  (i32.lt_u (get_local $counter) (i32.const 0x8_0000))
+  ;;  if
+  ;;     ;; Store 8 bytes of zero
+  ;;     (i64.store (get_local $ptr) (i64.const 0))
 
-      ;; Increment counter
-      (i32.add (get_local $counter) (i32.const 1))
-      set_local $counter
+  ;;     ;; Increment counter
+  ;;     (i32.add (get_local $counter) (i32.const 1))
+  ;;     set_local $counter
 
-      ;; Increment pointer
-      (i32.add (get_local $ptr) (i32.const 8))
-      set_local $ptr
+  ;;     ;; Increment pointer
+  ;;     (i32.add (get_local $ptr) (i32.const 8))
+  ;;     set_local $ptr
 
-      ;; Next iteration
-      br $resetLoop
-   end
-  end
+  ;;     ;; Next iteration
+  ;;     br $resetLoop
+  ;;  end
+  ;; end
 )
 
 ;; Sets SR0 and updates the address page table

@@ -29,6 +29,9 @@
   // --- Extra width to use instead of the default
   export let xwidth;
 
+  // --- Extra verical shift;
+  export let vshift;
+
   // --- Extra font size for keywords
   export let fontSize;
 
@@ -139,7 +142,7 @@
   {#if keyword}
     <text
       x={(xwidth || 100) / 2}
-      y={62}
+      y={62+(vshift || 0)}
       font-size={fontSize ? fontSize : 28}
       text-anchor="middle"
       fill={mainFillColor}

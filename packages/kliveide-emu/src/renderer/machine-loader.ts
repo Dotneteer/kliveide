@@ -1,7 +1,7 @@
 import { VmEngine } from "./machines/VmEngine";
 import { MachineApi } from "../native/api/api";
-import { ZxSpectrum48 } from "./machines/ZxSpectrum48"
-import { ZxSpectrum128 } from "./machines/ZxSpectrum128"
+import { ZxSpectrum48 } from "./machines/ZxSpectrum48";
+import { ZxSpectrum128 } from "./machines/ZxSpectrum128";
 import {
   createRendererProcessStateAware,
   rendererProcessStore,
@@ -127,9 +127,7 @@ stateAware.stateChanged.on(async (state) => {
   if (lastInjectCommand !== state.injectCommand) {
     lastInjectCommand = state.injectCommand;
     if (lastInjectCommand && lastInjectCommand.codeToInject) {
-      const result = await vmEngine.injectCode(
-        lastInjectCommand.codeToInject
-      );
+      const result = await vmEngine.injectCode(lastInjectCommand.codeToInject);
       if (result) {
         stateAware.dispatch(codeInjectResultAction(result)());
       } else {
@@ -192,9 +190,7 @@ export async function changeVmEngine(typeId: string) {
  * Creates a new virtual machine engine with the provided type
  * @param type virtual machine engine type
  */
-export async function createVmEngine(
-  typeId: string
-): Promise<VmEngine> {
+export async function createVmEngine(typeId: string): Promise<VmEngine> {
   if (!waInstance) {
     waInstance = await createWaInstance(typeId);
   }
@@ -203,27 +199,31 @@ export async function createVmEngine(
   // --- Instantiate the requested machine
   let machine: FrameBoundZ80Machine;
   switch (typeId) {
-    case "sp128":
-      const rom0 = await fetch("./roms/sp128-0.rom");
-      const buffer0 = Buffer.from((await rom0.body.getReader().read()).value);
-      const rom1 = await fetch("./roms/sp128-1.rom");
-      const buffer1 = Buffer.from((await rom1.body.getReader().read()).value);
+    case "sp128": {
+      const buffer0 = await readFromStream("./roms/sp128-0.rom");
+      const buffer1 = await readFromStream("./roms/sp128-1.rom");
       const sp128 = new ZxSpectrum128(machineApi, [buffer0, buffer1]);
-      sp128.setAudioRendererFactory((sampleRate: number) => new AudioRenderer(sampleRate));
+      sp128.setAudioRendererFactory(
+        (sampleRate: number) => new AudioRenderer(sampleRate)
+      );
       sp128.setStateManager(new ZxSpectrumBaseStateManager());
       machine = sp128;
       break;
-    case "cz88":
+    }
+    case "cz88": {
       machine = new CambridgeZ88(machineApi);
       break;
-    default:
-      const rom = await fetch("./roms/sp48.rom");
-      const buffer = Buffer.from((await rom.body.getReader().read()).value);
+    }
+    default: {
+      const buffer = await readFromStream("./roms/sp48.rom");
       const sp48 = new ZxSpectrum48(machineApi, [buffer]);
-      sp48.setAudioRendererFactory((sampleRate: number) => new AudioRenderer(sampleRate));
+      sp48.setAudioRendererFactory(
+        (sampleRate: number) => new AudioRenderer(sampleRate)
+      );
       sp48.setStateManager(new ZxSpectrumBaseStateManager());
       machine = sp48;
       break;
+    }
   }
 
   // --- Create the engine and bind it with the machine
@@ -255,10 +255,10 @@ async function createWaInstance(typeId: string): Promise<WebAssembly.Instance> {
     case "sp48":
       wasmFile = "sp48.wasm";
       break;
-    case "sp128": 
+    case "sp128":
       wasmFile = "sp128.wasm";
       break;
-    case "cz88": 
+    case "cz88":
       wasmFile = "cz88.wasm";
       break;
     default:
@@ -283,4 +283,24 @@ function storeSavedDataInState(length: number): void {
   const mh = new MemoryHelper(vmEngine.z80Machine.api, TAPE_SAVE_BUFFER);
   const savedData = new Uint8Array(mh.readBytes(0, length));
   rendererProcessStore.dispatch(emulatorSetSavedDataAction(savedData)());
+}
+
+/**
+ * Read data from the specified URI
+ * @param uri URI to read form
+ */
+async function readFromStream(uri: string): Promise<Buffer> {
+  const buffers: Buffer[] = [];
+  const data = await fetch(uri);
+  let done = false;
+  const reader = data.body.getReader();
+  do {
+    const read = await reader.read();
+    if (read.value) {
+      buffers.push(Buffer.from(read.value));
+    }
+    done = read.done;
+  }
+  while (!done);
+  return Buffer.concat(buffers);
 }

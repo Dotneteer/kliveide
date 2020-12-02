@@ -35,8 +35,8 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
    */
-  constructor(public api: MachineApi) {
-    super(api);
+  constructor(public api: MachineApi, roms?: Buffer[]) {
+    super(api, roms);
   }
 
   /**

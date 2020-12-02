@@ -12,7 +12,8 @@
   export let vmEngine;
 
   // --- We need to be aware of state changes
-  const stateAware = createRendererProcessStateAware("ideConnection");
+  const ideConnectStateAware = createRendererProcessStateAware("ideConnection");
+  const stateAware = createRendererProcessStateAware();
 
   // --- Apply theme
   const fillValue = themeStore.getProperty("--statusbar-foreground-color");
@@ -23,6 +24,9 @@
   // --- Indicates if the IDE is connected
   let ideConnected = false;
 
+  // --- The value of PC
+  let PC = 0;
+
   // --- Connect to the virtual machine whenever that changes
   $: {
     if (vmEngine) {
@@ -31,8 +35,17 @@
   }
 
   // --- Catch the state of IDE connection changes
-  stateAware.stateChanged.on((state) => {
+  ideConnectStateAware.stateChanged.on((state) => {
     ideConnected = state.connected;
+  });
+
+  // --- Catch the emulator state changes
+  stateAware.stateChanged.on(async (state) => {
+    // --- Change the UI according to state change
+    const emuUi = state.emulatorPanelState;
+    if (emuUi) {
+      PC = vmEngine.z80Machine.getMachineState().pc;
+    }
   });
 
   // --- Initialize frame counters
@@ -44,6 +57,7 @@
 
   // --- Calculate counters on every screen refresh
   function onScreenRefreshed() {
+    PC = vmEngine.z80Machine.getMachineState().pc;
     const {
       lastEngineTime,
       avgEngineTime,
@@ -124,22 +138,19 @@
   </div>
   <div class="section" title="# of frames rendered since start">
     <SvgIcon iconName="window" width="16" height="16" fill={fillValue} />
-    {#if vmEngine}
-      <span class="label">{renderedFramesStr}</span>
-    {/if}
+    {#if vmEngine}<span class="label">{renderedFramesStr}</span>{/if}
   </div>
-  <div class="placeholder"></div>
-  {#if ideConnected} 
-  <div class="section">
-    <span class="label">IDE connected</span>
+  <div class="section" title="The value of Program Counter">
+    <span class="label">PC: ${PC.toString(16).toUpperCase().padStart(4, '0')}</span>
   </div>
+  <div class="placeholder" />
+  {#if ideConnected}
+    <div class="section"><span class="label">IDE connected</span></div>
   {/if}
   {#if vmEngine}
-  <div class="section">
-    <span class="label">{vmEngine.z80Machine.displayName}</span>
-  </div>
+    <div class="section">
+      <span class="label">{vmEngine.z80Machine.displayName}</span>
+    </div>
   {/if}
-  <div class="section">
-    <span class="label">Klive v{version}</span>
-  </div>
+  <div class="section"><span class="label">Klive v{version}</span></div>
 </div>
