@@ -308,7 +308,7 @@ export class VmEngine implements IVmEngineController {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      this.z80Machine.turnOnMachine();
+      this.z80Machine.reset();
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();

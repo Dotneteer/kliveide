@@ -211,7 +211,9 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
       break;
     }
     case "cz88": {
-      machine = new CambridgeZ88(machineApi);
+      const buffer = await readFromStream("./roms/Z88OZ47.rom");
+      machine = new CambridgeZ88(machineApi, [buffer]);
+      console.log("Z88 loaded.");
       break;
     }
     default: {
@@ -229,9 +231,6 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
   // --- Create the engine and bind it with the machine
   const engine = new VmEngine(machine);
   machine.vmEngineController = engine;
-
-  // --- Turn on the machine to intialize it, however, do not start
-  machine.turnOnMachine();
 
   // --- Done
   return engine;

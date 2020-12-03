@@ -29,11 +29,16 @@
   // --- Extra width to use instead of the default
   export let xwidth;
 
+  // --- Extra height to use instead of the default
+  export let xheight;
+
   // --- Extra verical shift;
   export let vshift;
 
   // --- Extra font size for keywords
   export let fontSize;
+
+  export let isEnter = false;
 
   // --- Dimensions
   const normalWidth = 100;
@@ -52,7 +57,7 @@
   // --- Reactive expressions for button dimensions
   $: normalHeight = 100;
   $: currentWidth = zoom * (xwidth || normalWidth);
-  $: currentHeight = zoom * normalHeight;
+  $: currentHeight = zoom * (xheight || normalHeight);
   $: mainFillColor = mouseOverKey ? highlightKeyColor : mainKeyColor;
   $: mainStrokeColor = mouseOverKey ? highlightKeyColor : "transparent";
   $: symbolFillColor = mouseOverSymbol ? highlightKeyColor : symbolKeyColor;
@@ -77,7 +82,7 @@
 <svg
   width={currentWidth}
   height={currentHeight}
-  viewBox="0 0 {parseInt(xwidth || normalWidth) + 20} {normalHeight + 20}"
+  viewBox="0 0 {parseInt(xwidth || normalWidth) + 20} {parseInt(xheight || normalHeight) + 20}"
   style="margin:0"
   preserveAspectRatio="none"
   xmlns="http://www.w3.org/2000/svg">
@@ -87,7 +92,7 @@
     rx="12"
     ry="12"
     width={xwidth || normalWidth}
-    height={normalHeight}
+    height={xheight || normalHeight}
     fill={keyBackground}
     stroke={keyStrokeColor}
     stroke-width="4"
@@ -157,8 +162,8 @@
   {#if top}
     <text
       x={(xwidth || 100) / 2}
-      y={62}
-      font-size="20"
+      y={48}
+      font-size="28"
       text-anchor="middle"
       fill={mainFillColor}
       stroke={mainStrokeColor}
@@ -172,8 +177,8 @@
   {#if bottom}
     <text
       x={(xwidth || 100) / 2}
-      y={84}
-      font-size="20"
+      y={76}
+      font-size="28"
       text-anchor="middle"
       fill={mainFillColor}
       stroke={mainStrokeColor}
@@ -182,6 +187,73 @@
       on:mouseleave={() => (mouseOverKey = false)}
       on:mousedown={(e) => raiseClicked(e, code, 'main')}>
       {bottom}
+    </text>
+  {/if}
+  {#if isEnter}
+    <text
+      x={(xwidth || 100) / 2 - 6}
+      y={54}
+      font-size="28"
+      text-anchor="left"
+      fill={mainFillColor}
+      stroke={mainStrokeColor}
+      {cursor}
+      on:mouseenter={() => (mouseOverKey = true)}
+      on:mouseleave={() => (mouseOverKey = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      E
+    </text>
+    <text
+      x={(xwidth || 100) / 2 - 6}
+      y={84}
+      font-size="28"
+      text-anchor="left"
+      fill={mainFillColor}
+      stroke={mainStrokeColor}
+      {cursor}
+      on:mouseenter={() => (mouseOverKey = true)}
+      on:mouseleave={() => (mouseOverKey = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      N
+    </text>
+    <text
+      x={(xwidth || 100) / 2 - 6}
+      y={114}
+      font-size="28"
+      text-anchor="left"
+      fill={mainFillColor}
+      stroke={mainStrokeColor}
+      {cursor}
+      on:mouseenter={() => (mouseOverKey = true)}
+      on:mouseleave={() => (mouseOverKey = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      T
+    </text>
+    <text
+      x={(xwidth || 100) / 2 - 6}
+      y={144}
+      font-size="28"
+      text-anchor="left"
+      fill={mainFillColor}
+      stroke={mainStrokeColor}
+      {cursor}
+      on:mouseenter={() => (mouseOverKey = true)}
+      on:mouseleave={() => (mouseOverKey = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      E
+    </text>
+    <text
+      x={(xwidth || 100) / 2 - 6}
+      y={174}
+      font-size="28"
+      text-anchor="left"
+      fill={mainFillColor}
+      stroke={mainStrokeColor}
+      {cursor}
+      on:mouseenter={() => (mouseOverKey = true)}
+      on:mouseleave={() => (mouseOverKey = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      R
     </text>
   {/if}
 </svg>

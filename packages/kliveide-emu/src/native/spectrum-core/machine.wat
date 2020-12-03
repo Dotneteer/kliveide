@@ -3,6 +3,11 @@
   call $setupMachine
 )
 
+;; Resets the machine
+(func $resetMachine
+  call $setupMachine
+)
+
 ;; Gets the ZX Spectrum 48 machine state
 (func $getCommonSpectrumMachineState
   ;; Spectrum-specific machine state

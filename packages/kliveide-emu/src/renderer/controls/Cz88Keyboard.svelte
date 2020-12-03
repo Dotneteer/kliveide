@@ -10,8 +10,6 @@
   let zoom = 1.0;
   const defaultWidth = 15 * 108 + 200 + 48;
   const defaultHeight = 5 * (100 + 8) + 48;
-  let row1Shift;
-  let row2Shift;
 
   let spectrum;
 
@@ -30,8 +28,6 @@
     let widthRatio = (clientWidth - 24) / width;
     let heightRatio = (clientHeight - 32) / height;
     zoom = Math.min(widthRatio, heightRatio);
-    row1Shift = 80 * zoom;
-    row2Shift = 110 * zoom;
   }
 
   function handleKey(e) {
@@ -82,11 +78,7 @@
   }
 
   .enter {
-    background-color: green;
-    width: 100%;
-    height: 100%;
-    flex-grow: 0;
-    flex-shrink: 0;
+    font-weight: bold;
   }
 </style>
 
@@ -150,11 +142,11 @@
       <Cz88Key {zoom} code={15} on:clicked={handleKey} key="L" />
       <Cz88Key {zoom} code={15} on:clicked={handleKey} key=";" symbol=":" />
       <Cz88Key {zoom} code={15} on:clicked={handleKey} key="'" symbol={'"'} />
-      <Cz88Key {zoom} code={15} on:clicked={handleKey} key="Ł" symbol="~" />
+      <Cz88Key {zoom} code={15} on:clicked={handleKey} key={'\u00a3'} symbol="~" />
     </div>
     </div>
     <div class="enter">
-
+    <Cz88Key {zoom} code={15} on:clicked={handleKey} isEnter={true} xwidth={122} xheight={200} />
     </div>
   </div>
   <div class="key-row">
@@ -205,7 +197,7 @@
       on:clicked={handleKey}
       keyword="SPACE"
       xwidth="702" />
-    <Cz88Key {zoom} code={15} on:clicked={handleKey} keyword="CAPS" />
+    <Cz88Key {zoom} code={15} on:clicked={handleKey} top="CAPS" bottom="LOCK" />
     <Cz88Key
       {zoom}
       code={15}

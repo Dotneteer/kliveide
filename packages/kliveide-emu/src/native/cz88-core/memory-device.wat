@@ -93,9 +93,6 @@
 
 ;; Initial setup of Z88 memory
 (func $resetZ88Memory
-  (local $counter i32)
-  (local $ptr i32)
-
   (call $setZ88SR0 (i32.const 0))
   (call $setZ88SR1 (i32.const 0))
   (call $setZ88SR2 (i32.const 0))
@@ -114,28 +111,34 @@
 
   ;; Card 3 is RAM
   (call $setZ88Card3Rom (i32.const 0))
+)
 
-  ;; ;; Fill up memory area with zeros
-  ;; (set_local $counter (i32.const 0))
-  ;; (set_local $ptr (get_global $Z88_MEM_AREA))
-  ;; loop $resetLoop
-  ;;  (i32.lt_u (get_local $counter) (i32.const 0x8_0000))
-  ;;  if
-  ;;     ;; Store 8 bytes of zero
-  ;;     (i64.store (get_local $ptr) (i64.const 0))
+;; Clears the contents of the memory
+(func $clearMemory
+  (local $counter i32)
+  (local $ptr i32)
 
-  ;;     ;; Increment counter
-  ;;     (i32.add (get_local $counter) (i32.const 1))
-  ;;     set_local $counter
+  ;; Fill up memory area with zeros
+  (set_local $counter (i32.const 0))
+  (set_local $ptr (get_global $Z88_MEM_AREA))
+  loop $resetLoop
+   (i32.lt_u (get_local $counter) (i32.const 0x8_0000))
+   if
+      ;; Store 8 bytes of zero
+      (i64.store (get_local $ptr) (i64.const 0))
 
-  ;;     ;; Increment pointer
-  ;;     (i32.add (get_local $ptr) (i32.const 8))
-  ;;     set_local $ptr
+      ;; Increment counter
+      (i32.add (get_local $counter) (i32.const 1))
+      set_local $counter
 
-  ;;     ;; Next iteration
-  ;;     br $resetLoop
-  ;;  end
-  ;; end
+      ;; Increment pointer
+      (i32.add (get_local $ptr) (i32.const 8))
+      set_local $ptr
+
+      ;; Next iteration
+      br $resetLoop
+   end
+  end
 )
 
 ;; Sets SR0 and updates the address page table

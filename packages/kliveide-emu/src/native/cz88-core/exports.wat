@@ -23,6 +23,7 @@
 
 ;; Cambridge Z88 exports
 (export "turnOnMachine" (func $turnOnMachine))
+(export "resetMachine" (func $resetMachine))
 (export "getMachineState" (func $getMachineState))
 (export "testIncZ88Rtc" (func $testIncZ88Rtc))
 (export "testSetRtcRegs" (func $testSetRtcRegs))

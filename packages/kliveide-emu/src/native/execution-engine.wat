@@ -28,7 +28,7 @@
   (i32.load offset=8 (get_global $STATE_TRANSFER_BUFF)) set_global $stepOverBreakpoint
 )
 
-;; Executes the ZX Spectrum machine cycle
+;; Executes the virtual machine cycle
 (func $executeMachineCycle
   (local $currentUlaTact i32)
   (local $nextOpCode i32)
