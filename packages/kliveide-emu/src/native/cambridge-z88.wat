@@ -6,7 +6,7 @@
 ;; returns: Memory contents
 (func $readCz88Memory (param $addr i32) (result i32)
   (i32.eq
-    (call $z88GetRomInfoForAddress (get_local $addr))
+    (call $getRomInfoForAddress (get_local $addr))
     (i32.const 0xff)
   )
   if
@@ -16,7 +16,7 @@
   end
 
   ;; Load the byte from the memory
-  (call $calcZ88MemoryAddress (get_local $addr))
+  (call $calcMemoryAddress (get_local $addr))
   i32.load8_u
 )
 
@@ -24,11 +24,11 @@
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
 (func $writeCz88Memory (param $addr i32) (param $v i32)
-  (i32.eqz (call $z88GetRomInfoForAddress (get_local $addr)))
+  (i32.eqz (call $getRomInfoForAddress (get_local $addr)))
   if
     ;; RAM, so can be written
     (i32.store8
-      (call $calcZ88MemoryAddress (get_local $addr))
+      (call $calcMemoryAddress (get_local $addr))
       (get_local $v)
     )
     return
@@ -59,7 +59,7 @@
   (i32.eq (get_local $addr8) (i32.const 0xb1))
   if
     ;; STA, Main Blink Interrupt Status
-    get_global $z88STA
+    get_global $STA
     return
   end
 
@@ -74,56 +74,56 @@
   (i32.eq (get_local $addr8) (i32.const 0xb5))
   if
     ;; TSTA, which RTC interrupt occurred...
-    get_global $z88TSTA
+    get_global $TSTA
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd0))
   if
     ;; TIM0, 5ms period, counts to 199
-    get_global $z88TIM0
+    get_global $TIM0
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd1))
   if
     ;; TIM1, 1 second period, counts to 59
-    get_global $z88TIM1
+    get_global $TIM1
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd2))
   if
     ;; TIM2, 1 minute period, counts to 255
-    get_global $z88TIM2
+    get_global $TIM2
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd3))
   if
     ;; TIM3, 256 minutes period, counts to 255
-    get_global $z88TIM3
+    get_global $TIM3
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd4))
   if
     ;; TIM4, 64K minutes Period, counts to 31
-    get_global $z88TIM4
+    get_global $TIM4
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0x70))
   if
     ;; SCW, get screen width in pixels / 8
-    get_global $z88SCW
+    get_global $SCW
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0x71))
   if
     ;; SCH, get screen height in pixels / 8
-    get_global $z88SCH
+    get_global $SCH
     return
   end
 
@@ -181,28 +181,28 @@
     (i32.eq (get_local $addr8) (i32.const 0x70))
     if 
       ;; PB0, Pixel Base Register 0 (Screen)
-      get_local $screenRegVal set_global $z88PB0
+      get_local $screenRegVal set_global $PB0
       return
     end
     (i32.eq (get_local $addr8) (i32.const 0x71))
     if
       ;; PB1, Pixel Base Register 1 (Screen)
-      get_local $screenRegVal set_global $z88PB1
+      get_local $screenRegVal set_global $PB1
       return
     end
     (i32.eq (get_local $addr8) (i32.const 0x72))
     if
       ;; PB2, Pixel Base Register 2 (Screen)
-      get_local $screenRegVal set_global $z88PB2
+      get_local $screenRegVal set_global $PB2
       return
     end
     (i32.eq (get_local $addr8) (i32.const 0x73))
     if
       ;; PB3, Pixel Base Register 3 (Screen)
-      get_local $screenRegVal set_global $z88PB3
+      get_local $screenRegVal set_global $PB3
     else
       ;; 0x74: SBR, Screen Base Register
-      get_local $screenRegVal set_global $z88SBR
+      get_local $screenRegVal set_global $SBR
     end
     return
   end
@@ -210,73 +210,73 @@
   (i32.eq (get_local $addr8) (i32.const 0xd0))
   if
     ;; SR0
-    (call $setZ88SR0 (get_local $v))
+    (call $setSR0 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xd1))
   if
     ;; SR1
-    (call $setZ88SR1 (get_local $v))
+    (call $setSR1 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xd2))
   if
     ;; SR2
-    (call $setZ88SR2 (get_local $v))
+    (call $setSR2 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xd3))
   if
     ;; SR3
-    (call $setZ88SR3 (get_local $v))
+    (call $setSR3 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xb0))
   if
     ;; COM, Set Command Register
-    get_local $v set_global $z88COM
+    get_local $v set_global $COM
 
     ;; RAMS flag may change, se emulate setting SR0 again
-    (call $setZ88SR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
+    (call $setSR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb1))
   if
     ;; INT, Set Main Blink Interrupts
-    get_local $v set_global $z88INT
+    get_local $v set_global $INT
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb3))
   if
     ;; EPR, Eprom Programming Register
-    get_local $v set_global $z88EPR
+    get_local $v set_global $EPR
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb4))
   if
     ;; TACK, Set Timer Interrupt Acknowledge
-    get_local $v set_global $z88TACK
+    get_local $v set_global $TACK
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb5))
   if
     ;; TMK, Set Timer interrupt Mask
-    get_local $v set_global $z88TMK
+    get_local $v set_global $TMK
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb6))
   if
     ;; TMK, Set Timer interrupt Mask
-    get_local $v set_global $z88ACK
+    get_local $v set_global $ACK
     return
   end
 
@@ -320,9 +320,9 @@
   call $resetCpu
 
   ;; Blink initial setup
-  call $resetZ88Blink
-  call $resetZ88Rtc
-  call $resetZ88Memory
+  call $resetBlink
+  call $resetRtc
+  call $resetMemory
   call $resetZ88Screen
 )
 
@@ -334,27 +334,27 @@
   (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $supportsNextOperation))
 
   ;; BLINK device
-  (i32.store8 offset=54 (get_global $STATE_TRANSFER_BUFF) (get_global $z88INT))
-  (i32.store8 offset=55 (get_global $STATE_TRANSFER_BUFF) (get_global $z88STA))
-  (i32.store8 offset=56 (get_global $STATE_TRANSFER_BUFF) (get_global $z88COM))
+  (i32.store8 offset=54 (get_global $STATE_TRANSFER_BUFF) (get_global $INT))
+  (i32.store8 offset=55 (get_global $STATE_TRANSFER_BUFF) (get_global $STA))
+  (i32.store8 offset=56 (get_global $STATE_TRANSFER_BUFF) (get_global $COM))
 
   ;; RTC device
-  (i32.store8 offset=57 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM0))
-  (i32.store8 offset=58 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM1))
-  (i32.store8 offset=59 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM2))
-  (i32.store8 offset=60 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM3))
-  (i32.store8 offset=61 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TIM4))
-  (i32.store8 offset=62 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TSTA))
-  (i32.store8 offset=63 (get_global $STATE_TRANSFER_BUFF) (get_global $z88TMK))
+  (i32.store8 offset=57 (get_global $STATE_TRANSFER_BUFF) (get_global $TIM0))
+  (i32.store8 offset=58 (get_global $STATE_TRANSFER_BUFF) (get_global $TIM1))
+  (i32.store8 offset=59 (get_global $STATE_TRANSFER_BUFF) (get_global $TIM2))
+  (i32.store8 offset=60 (get_global $STATE_TRANSFER_BUFF) (get_global $TIM3))
+  (i32.store8 offset=61 (get_global $STATE_TRANSFER_BUFF) (get_global $TIM4))
+  (i32.store8 offset=62 (get_global $STATE_TRANSFER_BUFF) (get_global $TSTA))
+  (i32.store8 offset=63 (get_global $STATE_TRANSFER_BUFF) (get_global $TMK))
 
   ;; Screen device
-  (i32.store8 offset=64 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB0))
-  (i32.store8 offset=65 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB1))
-  (i32.store8 offset=66 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB2))
-  (i32.store8 offset=67 (get_global $STATE_TRANSFER_BUFF) (get_global $z88PB3))
-  (i32.store16 offset=68 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SBR))
-  (i32.store8 offset=70 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCW))
-  (i32.store8 offset=71 (get_global $STATE_TRANSFER_BUFF) (get_global $z88SCH))
+  (i32.store8 offset=64 (get_global $STATE_TRANSFER_BUFF) (get_global $PB0))
+  (i32.store8 offset=65 (get_global $STATE_TRANSFER_BUFF) (get_global $PB1))
+  (i32.store8 offset=66 (get_global $STATE_TRANSFER_BUFF) (get_global $PB2))
+  (i32.store8 offset=67 (get_global $STATE_TRANSFER_BUFF) (get_global $PB3))
+  (i32.store16 offset=68 (get_global $STATE_TRANSFER_BUFF) (get_global $SBR))
+  (i32.store8 offset=70 (get_global $STATE_TRANSFER_BUFF) (get_global $SCW))
+  (i32.store8 offset=71 (get_global $STATE_TRANSFER_BUFF) (get_global $SCH))
 
   ;; Memory device
   (i32.store offset=72 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))

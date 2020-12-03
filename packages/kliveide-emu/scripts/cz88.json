@@ -25,6 +25,7 @@
     "cz88-core/machine.wat",
     "cz88-core/execution-overloads.wat",
     "cz88-core/blink-device.wat",
+    "cz88-core/interrupt-device.wat",
     "cz88-core/rtc-device.wat",
     "cz88-core/memory-device.wat",
     "cz88-core/keyboard-device.wat",

@@ -92,14 +92,14 @@
 ;; 0x27: Indicates if range $e000-$ffff is ROM (always 0)
 
 ;; Initial setup of Z88 memory
-(func $resetZ88Memory
+(func $resetMemory
   (local $counter i32)
   (local $ptr i32)
 
-  (call $setZ88SR0 (i32.const 0))
-  (call $setZ88SR1 (i32.const 0))
-  (call $setZ88SR2 (i32.const 0))
-  (call $setZ88SR3 (i32.const 0))
+  (call $setSR0 (i32.const 0))
+  (call $setSR1 (i32.const 0))
+  (call $setSR2 (i32.const 0))
+  (call $setSR3 (i32.const 0))
 
   ;; 512K internal ROM
   (call $setZ88ChipMask (i32.const 0) (i32.const 0x1f))
@@ -139,11 +139,11 @@
 )
 
 ;; Sets SR0 and updates the address page table
-(func $setZ88SR0 (param $bank i32)
+(func $setSR0 (param $bank i32)
   (i32.store8 offset=0 (get_global $Z88_SR) (get_local $bank))
 
   ;; Lower 8K of SR0
-  (i32.and (get_global $z88COM) (i32.const $BM_COMRAMS#))
+  (i32.and (get_global $COM) (i32.const $BM_COMRAMS#))
   if 
     ;; Bank $20, RAM
     (i32.store offset=0
@@ -172,7 +172,7 @@
   get_global $Z88_PAGE_PTRS
 
   ;; Calculate bank offset
-  (call $z88CalculatePageOffset 
+  (call $calculatePageOffset 
     (i32.and (get_local $bank) (i32.const 0xfe))
   )
   i32.const 0x2000
@@ -187,19 +187,19 @@
   ;; Obtain ROM info
   (i32.store8 offset=9 
     (get_global $Z88_PAGE_PTRS)
-    (call $z88GetRomInfo (get_local $bank))
+    (call $getRomInfo (get_local $bank))
   )
 )
 
 ;; Sets SR1 and updates the address page table
-(func $setZ88SR1 (param $bank i32)
+(func $setSR1 (param $bank i32)
   (local $ptr i32)
   (local $romInfo i32)
   (i32.store8 offset=1 (get_global $Z88_SR) (get_local $bank))
 
-  (call $z88CalculatePageOffset (get_local $bank))
+  (call $calculatePageOffset (get_local $bank))
   set_local $ptr
-  (call $z88GetRomInfo (get_local $bank))
+  (call $getRomInfo (get_local $bank))
   set_local $romInfo
 
   ;; Offset for 0x4000-0x5fff
@@ -215,14 +215,14 @@
 )
 
 ;; Sets SR2 and updates the address page table
-(func $setZ88SR2 (param $bank i32)
+(func $setSR2 (param $bank i32)
   (local $ptr i32)
   (local $romInfo i32)
   (i32.store8 offset=2 (get_global $Z88_SR) (get_local $bank))
 
-  (call $z88CalculatePageOffset (get_local $bank))
+  (call $calculatePageOffset (get_local $bank))
   set_local $ptr
-  (call $z88GetRomInfo (get_local $bank))
+  (call $getRomInfo (get_local $bank))
   set_local $romInfo
 
   ;; Offset for 0x8000-0x9fff
@@ -238,14 +238,14 @@
 )
 
 ;; Sets SR3 and updates the address page table
-(func $setZ88SR3 (param $bank i32)
+(func $setSR3 (param $bank i32)
   (local $ptr i32)
   (local $romInfo i32)
   (i32.store8 offset=3 (get_global $Z88_SR) (get_local $bank))
 
-  (call $z88CalculatePageOffset (get_local $bank))
+  (call $calculatePageOffset (get_local $bank))
   set_local $ptr
-  (call $z88GetRomInfo (get_local $bank))
+  (call $getRomInfo (get_local $bank))
   set_local $romInfo
 
   ;; Offset for 0xc000-0xdfff
@@ -262,7 +262,7 @@
 
 ;; Calculates the offset within the 4MB memory for the specified $bank
 ;; and chip size mask
-(func $z88CalculatePageOffset (param $bank i32) (result i32)
+(func $calculatePageOffset (param $bank i32) (result i32)
   (local $sizeMask i32)
 
   ;; Calculate size mask
@@ -293,14 +293,14 @@
 )
 
 ;; Calculates ROM information for the specified bank and size
-(func $z88GetRomInfo (param $bank i32) (result i32)
+(func $getRomInfo (param $bank i32) (result i32)
   (i32.load8_u 
     (i32.add (get_global $Z88_ROM_INFO) (get_local $bank))
   )
 )
 
 ;; Calculates the absolute Z88 memory address from the specified 16-bit address
-(func $calcZ88MemoryAddress (param $addr i32) (result i32)
+(func $calcMemoryAddress (param $addr i32) (result i32)
   (i32.or
     ;; Get the address page offset
     (i32.load
@@ -323,7 +323,7 @@
 )
 
 ;; Gets ROM information for the specified address
-(func $z88GetRomInfoForAddress (param $addr i32) (result i32)
+(func $getRomInfoForAddress (param $addr i32) (result i32)
   ;; Get bank value
   (i32.le_u (get_local $addr) (i32.const 0x1fff))
   if
@@ -331,9 +331,9 @@
     (select
       (i32.const 0x20)
       (i32.const 0x00)
-      (i32.and (get_global $z88COM) (i32.const $BM_COMRAMS#))
+      (i32.and (get_global $COM) (i32.const $BM_COMRAMS#))
     )
-    call $z88GetRomInfo
+    call $getRomInfo
     return
   end
 
@@ -343,7 +343,7 @@
       (i32.shr_u (get_local $addr) (i32.const 14))
     )
   )
-  call $z88GetRomInfo
+  call $getRomInfo
 )
 
 ;; Sets the value of the specified slot mask
@@ -363,23 +363,23 @@
   )
 
   ;; Recalculate all page indexes
-  (call $setZ88SR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
-  (call $setZ88SR1 (i32.load8_u offset=1 (get_global $Z88_SR)))
-  (call $setZ88SR2 (i32.load8_u offset=2 (get_global $Z88_SR)))
-  (call $setZ88SR3 (i32.load8_u offset=3 (get_global $Z88_SR)))
+  (call $setSR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
+  (call $setSR1 (i32.load8_u offset=1 (get_global $Z88_SR)))
+  (call $setSR2 (i32.load8_u offset=2 (get_global $Z88_SR)))
+  (call $setSR3 (i32.load8_u offset=3 (get_global $Z88_SR)))
 
   ;; Create ROM information
-  call $z88RecalculateRomInfo
+  call $recalculateRomInfo
 )
 
 ;; Sets the ROM flag for Card 3
 (func $setZ88Card3Rom (param $isRom i32)
   (i32.store8 offset=5 (get_global $Z88_CHIP_MASKS) (get_local $isRom))
-  call $z88RecalculateRomInfo
+  call $recalculateRomInfo
 )
 
 ;; Recalculates ROM information
-(func $z88RecalculateRomInfo
+(func $recalculateRomInfo
   (local $bank i32)
   (local $romInfoPtr i32)
 
@@ -490,5 +490,5 @@
 
 ;; Use this method to test Z88 address calculation
 (func $testZ88MemoryAddress (param $addr i32) (result i32)
-  (call $calcZ88MemoryAddress (get_local $addr))
+  (call $calcMemoryAddress (get_local $addr))
 )
