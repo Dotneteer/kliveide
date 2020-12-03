@@ -8,6 +8,7 @@
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
 (func $readMemory (param $addr i32) (result i32)
+  (local $tmp i32)
   (i32.eq
     (call $getRomInfoForAddress (get_local $addr))
     (i32.const 0xff)
@@ -250,11 +251,7 @@
 
   (i32.eq (get_local $addr8) (i32.const 0xb0))
   if
-    ;; COM, Set Command Register
-    get_local $v set_global $COM
-
-    ;; RAMS flag may change, se emulate setting SR0 again
-    (call $setSR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
+    (call $setCOM (get_local $v))
     return
   end
 
@@ -275,7 +272,7 @@
   (i32.eq (get_local $addr8) (i32.const 0xb4))
   if
     ;; TACK, Set Timer Interrupt Acknowledge
-    get_local $v set_global $TACK
+    (call $setTACK (get_local $v))
     return
   end
 
@@ -289,7 +286,7 @@
   (i32.eq (get_local $addr8) (i32.const 0xb6))
   if
     ;; TMK, Set Timer interrupt Mask
-    get_local $v set_global $ACK
+    (call $setACK (get_local $v))
     return
   end
 

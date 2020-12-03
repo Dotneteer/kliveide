@@ -8,10 +8,11 @@
   // --- The virtual machine instance
   export let vmEngine;
 
+  let keyboardType = "";
   let keyboardVisible = false;
   let delayIsOver = true;
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
-  stateAware.stateChanged.on(async state => {
+  stateAware.stateChanged.on(async (state) => {
     if (keyboardVisible !== state.keyboardPanel) {
       delayIsOver = false;
       keyboardVisible = state.keyboardPanel;
@@ -23,6 +24,8 @@
   let keyboardHeight;
   let initialHeight;
   let splitterIsMoving = false;
+
+  $: keyboardType = vmEngine ? vmEngine.keyboardType : "";
 </script>
 
 <style>
@@ -47,6 +50,7 @@
     <EmulatorPanel {vmEngine} />
     {#if keyboardVisible}
       <KeyboardPanel
+        type={keyboardType}
         showPanel={delayIsOver}
         visible={keyboardVisible}
         {initialHeight}

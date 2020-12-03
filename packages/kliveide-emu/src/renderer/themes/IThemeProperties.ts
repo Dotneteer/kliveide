@@ -26,4 +26,9 @@ export interface IThemeProperties {
   "--key-above-color": string;
   "--key-below-color": string;
   "--key-highlight-color": string;
+
+  "--key-cz88-background-color": string;
+  "--key-cz88-stroke-color": string;
+  "--key-cz88-main-color": string;
+  "--key-cz88-highlight-color": string;
 }

@@ -30,3 +30,47 @@
 ;; TACK, Set Timer Interrupt Acknowledge
 (global $TACK (mut i32) (i32.const 0x0000))
 
+;; Tests if the maskable interrupt has been requested
+(func $isMaskableInterruptRequested (result i32)
+  ;; Is the BM_INTGINT flag set?
+  (i32.and (get_global $INT) (i32.const $BM_INTGINT#))
+  if
+    (select
+      (i32.const $SIG_INT#)
+      (i32.const 0)
+      (i32.and (get_global $INT) (get_global $STA))
+    )
+    return
+  end
+  i32.const 0
+)
+
+;; Sets the value of the TACK register
+(func $setTACK (param $v i32)
+  get_local $v set_global $TACK
+  (i32.and 
+    (get_global $TSTA)
+    ;; Create bit mask
+    (i32.xor
+      ;; 8-bit LSB
+      (i32.and (get_local $v) (i32.const 0xff))
+      (i32.const 0xff)
+    )
+  )
+  set_global $TSTA
+)
+
+;; Set the value of the ACK register
+(func $setACK (param $v i32)
+  get_local $v set_global $ACK
+  (i32.and 
+    (get_global $STA)
+    ;; Create bit mask
+    (i32.xor
+      ;; 8-bit LSB
+      (i32.and (get_local $v) (i32.const 0xff))
+      (i32.const 0xff)
+    )
+  )
+  set_global $STA
+)

@@ -24,19 +24,10 @@ import {
   emulatorSetMemoryContentsAction,
   engineInitializedAction,
   emulatorSetDebugAction,
-  emulatorLoadTapeAction,
-  emulatorSetLoadModeAction,
 } from "../../shared/state/redux-emulator-state";
-import { BinaryReader } from "../../shared/utils/BinaryReader";
-import { TzxReader } from "../../shared/tape/tzx-file";
-import { TapReader } from "../../shared/tape/tap-file";
 import { CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
-import {
-  BEEPER_SAMPLE_BUFFER,
-  PSG_SAMPLE_BUFFER,
-  BANK_0_OFFS,
-} from "../../native/api/memory-map";
+import { BANK_0_OFFS } from "../../native/api/memory-map";
 import { VmKeyCode } from "../../native/api/api";
 import { IVmEngineController } from "./IVmEngineController";
 
@@ -74,15 +65,6 @@ export class VmEngine implements IVmEngineController {
 
   // --- Keyboard emulation
   private _keyStrokeQueue: EmulatedKeyStroke[] = [];
-
-  // --- Beeper emulation
-  private _beeperRenderer: AudioRenderer | null = null;
-
-  // --- PSG emulation
-  private _psgRenderer: AudioRenderer | null = null;
-
-  // --- Tape emulation
-  private _defaultTapeSet = new Uint8Array(0);
 
   // --- FrameID information
   private _startCount = 0;
@@ -162,6 +144,13 @@ export class VmEngine implements IVmEngineController {
    */
   get screenHeight(): number {
     return this._loadedState.screenLines;
+  }
+
+  /**
+   * Get the type of the keyboard to display
+   */
+  get keyboardType(): string {
+    return this.z80Machine.keyboardType;
   }
 
   /**
@@ -319,7 +308,7 @@ export class VmEngine implements IVmEngineController {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      this.z80Machine.turnOnMachine();
+      this.z80Machine.reset();
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();

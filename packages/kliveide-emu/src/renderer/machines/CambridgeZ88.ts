@@ -27,11 +27,16 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   readonly displayName = "Cambridge Z88";
 
   /**
+   * The default keyboard type
+   */
+  readonly keyboardType: string = "cz88";
+
+  /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
    */
-  constructor(public api: MachineApi) {
-    super(api);
+  constructor(public api: MachineApi, roms?: Buffer[]) {
+    super(api, roms);
   }
 
   /**

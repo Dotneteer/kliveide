@@ -27,6 +27,28 @@
 )
 
 ;; ============================================================================
+;; Register setter functions
+
+;; Sets the value of COM
+(func $setCOM (param $v i32)
+  (local $com i32)
+
+  ;; Se tthe register value
+  (i32.and (get_local $v) (i32.const 0xff))
+  tee_local $com
+  set_global $COM
+
+  ;; Reset the timer when requested
+  (i32.and (get_local $v) (i32.const $BM_COMRESTIM#))
+  if
+    call $resetRtc
+  end
+
+  ;; RAMS flag may change, se emulate setting SR0 again
+  (call $setSR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
+)
+
+;; ============================================================================
 ;; Blink test methods
 
 (func $testSetZ88INT (param $value i32)
