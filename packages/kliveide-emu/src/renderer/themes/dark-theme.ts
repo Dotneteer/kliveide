@@ -25,7 +25,11 @@ export const darkTheme: ITheme = {
     "--key-symbol-color": "#c00000",
     "--key-above-color": "#00a000",
     "--key-below-color": "#d02000",
- 
-    "--key-highlight-color": "#0048c0"
-  },
+    "--key-highlight-color": "#0048c0",
+
+     "--key-cz88-background-color": "#404040",
+     "--key-cz88-stroke-color": "#a0a0a0",
+     "--key-cz88-main-color": "white",
+     "--key-cz88-highlight-color": "#0088e0",
+    },
 };

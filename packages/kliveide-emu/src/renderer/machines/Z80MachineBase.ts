@@ -60,8 +60,13 @@ export abstract class Z80MachineBase {
    * Resets the machine
    */
   reset(): void {
-    this.api.turnOnMachine();
+    this.api.resetMachine();
   }
+
+  /**
+   * The default keyboard type
+   */
+  readonly keyboardType: string = "";
 
   /**
    * Override this method to represent the appropriate machine state

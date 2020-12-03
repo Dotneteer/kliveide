@@ -28,8 +28,9 @@ export interface CpuApi {
  * Represents the Machine API
  */
 export interface MachineApi extends CpuApi {
-  // --- ZX Spectrum machine methods
+  // --- Virtual machine methods
   turnOnMachine(): void;
+  resetMachine(): void;
   setUlaIssue(ula: number): void;
   getMachineState(): void;
   setExecutionOptions(): void;

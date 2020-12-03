@@ -25,7 +25,7 @@ describe("Cambridge Z88 - Memory write", function () {
   });
 
   beforeEach(() => {
-    machine.reset();
+    machine.turnOnMachine();
   });
 
   const addresses: number[] = [

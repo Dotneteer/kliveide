@@ -1,6 +1,12 @@
 ;; Turns on the Cambridge Z88 machine
 (func $turnOnMachine
   call $setupMachine
+  call $clearMemory
+)
+
+;; Resets the machine
+(func $resetMachine
+  call $setupMachine
 )
 
 ;; Sets up the Cambridge Z88 machine

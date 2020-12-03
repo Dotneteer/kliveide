@@ -93,9 +93,6 @@
 
 ;; Initial setup of Z88 memory
 (func $resetZ88Memory
-  (local $counter i32)
-  (local $ptr i32)
-
   (call $setZ88SR0 (i32.const 0))
   (call $setZ88SR1 (i32.const 0))
   (call $setZ88SR2 (i32.const 0))
@@ -114,6 +111,12 @@
 
   ;; Card 3 is RAM
   (call $setZ88Card3Rom (i32.const 0))
+)
+
+;; Clears the contents of the memory
+(func $clearMemory
+  (local $counter i32)
+  (local $ptr i32)
 
   ;; Fill up memory area with zeros
   (set_local $counter (i32.const 0))
