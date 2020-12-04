@@ -1,5 +1,7 @@
+// @ts-nocheck
 import * as vscode from "vscode";
 import { RegisterData } from "../emulator/communicator";
+import { getLastMachineType } from "../emulator/notifier";
 
 export class Z80RegistersProvider
   implements vscode.TreeDataProvider<RegisterItem | FlagItem> {
@@ -66,6 +68,11 @@ export class Z80RegistersProvider
         ]),
         new RegisterItem("regWZ", "WZ", r.wz),
       ];
+
+      const machineType = getLastMachineType();
+      if (machineType === "cz88") {
+        
+      }
       this._onDidChangeTreeData.fire();
     })();
   }

@@ -73,7 +73,7 @@
 ;; specified byte as the highest 8 bits of the address line
 ;; $line: The highest 8 bits of the address line
 ;; Returns the status value to be received when querying the I/O
-(func $getZ88KeyLineStatus (param $line i32) (result i32)
+(func $getKeyLineStatus (param $line i32) (result i32)
   (local $status i32)
   (local $lineIndex i32)
   ;; Init query loop

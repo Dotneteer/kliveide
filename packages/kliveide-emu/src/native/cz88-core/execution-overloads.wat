@@ -5,7 +5,16 @@
 
 ;; The execution engine is about to execute a CPU cycle
 (func $execBeforeCpuCycle (param $frameTact i32)
-  ;; TODO: Implement this method
+  ;; Check for interrupt
+  (call $isMaskableInterruptRequested)
+  if (result i32)
+    ;; Set the interrupt signal
+    (i32.or (get_global $cpuSignalFlags) (i32.const $SIG_INT#))
+  else
+    ;; Remove the interrupt signal
+    (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_INT_MASK#))
+  end
+  set_global $cpuSignalFlags
 )
 
 ;; The execution engine is about to execute a CPU cycle
@@ -31,5 +40,7 @@
 
 ;; The execution engine has just completed the current frame
 (func $execOnFrameCompleted
+  ;; 5ms frame completed, update the real time clock
+  call $incRtcCounter
   ;; TODO: Implement this method
 )

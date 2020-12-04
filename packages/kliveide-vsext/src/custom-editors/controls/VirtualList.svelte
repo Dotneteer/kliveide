@@ -122,7 +122,7 @@
       items.length - 1
     );
     calculateVirtualContents();
-    dispatch("scrolled");
+    dispatch("scrolled", { index: toDisplay.length > 0 ? toDisplay[0].index : -1 });
   }
 
   // --- Calculates the bottom position given the top position

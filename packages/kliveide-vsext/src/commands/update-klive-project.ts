@@ -171,6 +171,7 @@ async function pickMachineType(): Promise<MachineTypeItem | null> {
       new MachineTypeItem("128", "ZX Spectrum 128K"),
       new MachineTypeItem("p3", "ZX Spectrum +3E (*)"),
       new MachineTypeItem("next", "ZX Spectrum Next (*)"),
+      new MachineTypeItem("cz88", "Cambridge Z88"),
     ];
     input.onDidChangeSelection((selection) => {
       if (selection[0]) {

@@ -10,7 +10,7 @@
 (func $readMemory (param $addr i32) (result i32)
   (local $tmp i32)
   (i32.eq
-    (call $z88GetRomInfoForAddress (get_local $addr))
+    (call $getRomInfoForAddress (get_local $addr))
     (i32.const 0xff)
   )
   if
@@ -20,7 +20,7 @@
   end
 
   ;; Load the byte from the memory
-  (call $calcZ88MemoryAddress (get_local $addr))
+  (call $calcMemoryAddress (get_local $addr))
   i32.load8_u
 )
 
@@ -35,11 +35,11 @@
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
 (func $writeMemory (param $addr i32) (param $value i32)
-  (i32.eqz (call $z88GetRomInfoForAddress (get_local $addr)))
+  (i32.eqz (call $getRomInfoForAddress (get_local $addr)))
   if
     ;; RAM, so can be written
     (i32.store8
-      (call $calcZ88MemoryAddress (get_local $addr))
+      (call $calcMemoryAddress (get_local $addr))
       (get_local $value)
     )
     return
@@ -73,7 +73,7 @@
   (i32.eq (get_local $addr8) (i32.const 0xb1))
   if
     ;; STA, Main Blink Interrupt Status
-    get_global $z88STA
+    get_global $STA
     return
   end
 
@@ -88,56 +88,56 @@
   (i32.eq (get_local $addr8) (i32.const 0xb5))
   if
     ;; TSTA, which RTC interrupt occurred...
-    get_global $z88TSTA
+    get_global $TSTA
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd0))
   if
     ;; TIM0, 5ms period, counts to 199
-    get_global $z88TIM0
+    get_global $TIM0
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd1))
   if
     ;; TIM1, 1 second period, counts to 59
-    get_global $z88TIM1
+    get_global $TIM1
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd2))
   if
     ;; TIM2, 1 minute period, counts to 255
-    get_global $z88TIM2
+    get_global $TIM2
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd3))
   if
     ;; TIM3, 256 minutes period, counts to 255
-    get_global $z88TIM3
+    get_global $TIM3
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xd4))
   if
     ;; TIM4, 64K minutes Period, counts to 31
-    get_global $z88TIM4
+    get_global $TIM4
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0x70))
   if
     ;; SCW, get screen width in pixels / 8
-    get_global $z88SCW
+    get_global $SCW
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0x71))
   if
     ;; SCH, get screen height in pixels / 8
-    get_global $z88SCH
+    get_global $SCH
     return
   end
 
@@ -195,28 +195,28 @@
     (i32.eq (get_local $addr8) (i32.const 0x70))
     if 
       ;; PB0, Pixel Base Register 0 (Screen)
-      get_local $screenRegVal set_global $z88PB0
+      get_local $screenRegVal set_global $PB0
       return
     end
     (i32.eq (get_local $addr8) (i32.const 0x71))
     if
       ;; PB1, Pixel Base Register 1 (Screen)
-      get_local $screenRegVal set_global $z88PB1
+      get_local $screenRegVal set_global $PB1
       return
     end
     (i32.eq (get_local $addr8) (i32.const 0x72))
     if
       ;; PB2, Pixel Base Register 2 (Screen)
-      get_local $screenRegVal set_global $z88PB2
+      get_local $screenRegVal set_global $PB2
       return
     end
     (i32.eq (get_local $addr8) (i32.const 0x73))
     if
       ;; PB3, Pixel Base Register 3 (Screen)
-      get_local $screenRegVal set_global $z88PB3
+      get_local $screenRegVal set_global $PB3
     else
       ;; 0x74: SBR, Screen Base Register
-      get_local $screenRegVal set_global $z88SBR
+      get_local $screenRegVal set_global $SBR
     end
     return
   end
@@ -224,73 +224,69 @@
   (i32.eq (get_local $addr8) (i32.const 0xd0))
   if
     ;; SR0
-    (call $setZ88SR0 (get_local $v))
+    (call $setSR0 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xd1))
   if
     ;; SR1
-    (call $setZ88SR1 (get_local $v))
+    (call $setSR1 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xd2))
   if
     ;; SR2
-    (call $setZ88SR2 (get_local $v))
+    (call $setSR2 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xd3))
   if
     ;; SR3
-    (call $setZ88SR3 (get_local $v))
+    (call $setSR3 (get_local $v))
     return
   end 
 
   (i32.eq (get_local $addr8) (i32.const 0xb0))
   if
-    ;; COM, Set Command Register
-    get_local $v set_global $z88COM
-
-    ;; RAMS flag may change, se emulate setting SR0 again
-    (call $setZ88SR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
+    (call $setCOM (get_local $v))
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb1))
   if
     ;; INT, Set Main Blink Interrupts
-    get_local $v set_global $z88INT
+    get_local $v set_global $INT
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb3))
   if
     ;; EPR, Eprom Programming Register
-    get_local $v set_global $z88EPR
+    get_local $v set_global $EPR
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb4))
   if
     ;; TACK, Set Timer Interrupt Acknowledge
-    get_local $v set_global $z88TACK
+    (call $setTACK (get_local $v))
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb5))
   if
     ;; TMK, Set Timer interrupt Mask
-    get_local $v set_global $z88TMK
+    get_local $v set_global $TMK
     return
   end
 
   (i32.eq (get_local $addr8) (i32.const 0xb6))
   if
     ;; TMK, Set Timer interrupt Mask
-    get_local $v set_global $z88ACK
+    (call $setACK (get_local $v))
     return
   end
 

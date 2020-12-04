@@ -53,7 +53,6 @@ describe("Cambridge Z88 - RTC", function () {
     expect(s.PB3).toBe(0);
     expect(s.SBR).toBe(0);
     expect(s.SCW).toBe(0xff);
-    expect(s.SCH).toBe(40);
   });
 
   const tickSamples = [
