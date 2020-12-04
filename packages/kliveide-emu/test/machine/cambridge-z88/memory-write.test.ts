@@ -262,11 +262,12 @@ describe("Cambridge Z88 - Memory write", function () {
         machine.api.setZ88RndSeed(0);
         machine.api.setZ88ChipMask(0, 0x1f); // Slot 0 ROM 512K
         machine.api.setZ88ChipMask(1, 0x1f); // Slot 1 RAM 512K
-        machine.api.setZ88ChipMask(2, size); // Slot 2 RAM 1M
+        machine.api.setZ88ChipMask(2, size); // Passed size
         machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
         machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
 
         // Even pages
+        console.log("Start");
         for (let i = 0x40; i < 0x80; i += size + 1) {
           machine.api.writePortCz88(0xd1, i);
           machine.api.testWriteCz88Memory(addr, 0x23);
@@ -274,6 +275,7 @@ describe("Cambridge Z88 - Memory write", function () {
           expect(value).toBe(0x23);
           for (let j = 0x40 + (size + 1); j < 0x80; j += size + 1) {
             machine.api.writePortCz88(0xd1, j);
+            console.log(i, j);
             const value = machine.api.testReadCz88Memory(addr);
             expect(value).toBe(0x23);
             for (let k = j + 2; k < j + size + 1; k += 2) {

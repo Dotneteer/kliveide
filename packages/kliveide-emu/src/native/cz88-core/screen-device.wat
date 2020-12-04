@@ -41,5 +41,6 @@
   i32.const 0x00 set_global $PB2
   i32.const 0x00 set_global $PB3
   i32.const 0x00 set_global $SBR
-  i32.const 40 set_global $SCH
+  i32.const 8 set_global $SCH
 )
+

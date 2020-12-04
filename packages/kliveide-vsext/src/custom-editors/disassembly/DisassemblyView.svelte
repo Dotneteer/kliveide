@@ -51,9 +51,12 @@
   let viewMode;
   let displayedRom;
   let displayedBank;
+  let prevState;
 
   // --- Handle the event when the component is initialized
   onMount(() => {
+    prevState = vscodeApi.getState();
+    console.log(`OnMount: ${JSON.stringify(prevState)}`);
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", async (ev) => {
       if (ev.data.viewNotification) {
@@ -65,6 +68,11 @@
             refreshed = true;
             await new Promise((r) => setTimeout(r, 100));
             await virtualListApi.refreshContents();
+            if (prevState && prevState.address !== undefined) {
+              await scrollToAddress(prevState.address, 0);
+              vscodeApi.setState({ address: prevState.address })
+              prevState = undefined;
+            }
             break;
           case "connectionState":
             // --- Refresh after reconnection
@@ -130,7 +138,7 @@
             }
             // --- Sign that a refresh is require
             refreshed = false;
-            vscodeApi.postMessage({ command: "requestViewportRefresh" });        
+            vscodeApi.postMessage({ command: "requestViewportRefresh" });
             break;
         }
       }
@@ -139,7 +147,7 @@
     // --- No, the component is initialized, notify the Webview
     // --- and ask it to refresh this view
     vscodeApi.postMessage({ command: "requestRefresh" });
-    vscodeApi.postMessage({ command: "requestViewportRefresh" });        
+    vscodeApi.postMessage({ command: "requestViewportRefresh" });
   });
 
   $: {
@@ -151,6 +159,7 @@
   // --- Scroll to the specified address
   async function scrollToAddress(address, scrollGap = 0) {
     if (virtualListApi) {
+      vscodeApi.setState({ address });
       let found = items.findIndex((it) => it.address >= address);
       found = Math.max(0, found - scrollGap);
       virtualListApi.scrollToItem(found);
@@ -158,6 +167,12 @@
       await virtualListApi.refreshContents();
     }
   }
+
+  function onScrolled(ev) {
+    const address = items[ev.detail.index + 1].address
+    vscodeApi.setState({ address })
+  }
+  
 </script>
 
 <style>
@@ -181,7 +196,9 @@
       <RefreshPanel text="Refreshing Z80 Disassembly view..." />
     {/if}
     {#if pageInfo && pageInfo.supportsPaging}
-      <MemoryPagingInfo displayedRom={pageInfo.selectedRom} displayedBank={pageInfo.selectedBank}/>
+      <MemoryPagingInfo
+        displayedRom={pageInfo.selectedRom}
+        displayedBank={pageInfo.selectedBank} />
     {/if}
     <HeaderShadow />
     <VirtualList
@@ -189,7 +206,8 @@
       itemHeight={20}
       let:item
       bind:api={virtualListApi}
-      bind:start={startItemIndex}>
+      bind:start={startItemIndex}
+      on:scrolled={onScrolled}>
       <DisassemblyEntry
         {item}
         hasBreakpoint={breakpoints.has(item.address)}

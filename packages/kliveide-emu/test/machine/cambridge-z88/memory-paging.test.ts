@@ -173,7 +173,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       expect(s.chipMask4).toBe(pat.c4);
 
       for (let bank = 0x00; bank < 0x20; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c0);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c0);
         machine.api.writePortCz88(0xd0, bank);
 
         const s = machine.getMachineState();
@@ -198,7 +198,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       }
 
       for (let bank = 0x20; bank < 0x40; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c1);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c1);
         machine.api.writePortCz88(0xd0, bank);
 
         const s = machine.getMachineState();
@@ -324,7 +324,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       expect(s.chipMask4).toBe(pat.c4);
 
       for (let bank = 0x00; bank < 0x20; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c0);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c0);
         machine.api.writePortCz88(0xd1, bank);
 
         const s = machine.getMachineState();
@@ -347,7 +347,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       }
 
       for (let bank = 0x20; bank < 0x40; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c1);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c1);
         machine.api.writePortCz88(0xd1, bank);
 
         const s = machine.getMachineState();
@@ -465,7 +465,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       expect(s.chipMask4).toBe(pat.c4);
 
       for (let bank = 0x00; bank < 0x20; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c0);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c0);
         machine.api.writePortCz88(0xd2, bank);
 
         const s = machine.getMachineState();
@@ -488,7 +488,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       }
 
       for (let bank = 0x20; bank < 0x40; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c1);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c1);
         machine.api.writePortCz88(0xd2, bank);
 
         const s = machine.getMachineState();
@@ -606,7 +606,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       expect(s.chipMask4).toBe(pat.c4);
 
       for (let bank = 0x00; bank < 0x20; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c0);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c0);
         machine.api.writePortCz88(0xd3, bank);
 
         const s = machine.getMachineState();
@@ -629,7 +629,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       }
 
       for (let bank = 0x20; bank < 0x40; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c1);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c1);
         machine.api.writePortCz88(0xd3, bank);
 
         const s = machine.getMachineState();
@@ -748,7 +748,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       expect(s.chipMask4).toBe(pat.c4);
 
       for (let bank = 0x00; bank < 0x20; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c0);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c0);
         machine.api.writePortCz88(0xd3, bank);
 
         const s = machine.getMachineState();
@@ -771,7 +771,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       }
 
       for (let bank = 0x20; bank < 0x40; bank++) {
-        const maskedBank = (bank & 0xc0) | (bank & pat.c1);
+        const maskedBank = (bank & 0xe0) | (bank & pat.c1);
         machine.api.writePortCz88(0xd3, bank);
 
         const s = machine.getMachineState();

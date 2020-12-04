@@ -45,7 +45,7 @@
 )
 
 ;; Increments the Z88 Real-Time Clock (in every 5 ms)
-(func $incZ88Rtc
+(func $incRtcCounter
   (i32.and (get_global $COM) (i32.const $BM_COMRESTIM#))
   if
     ;; Stop Real Time Clock (RESTIM = 1) and reset counters
@@ -185,7 +185,7 @@
   loop $incCycle
     (get_local $ticks)
     if
-      call $incZ88Rtc
+      call $incRtcCounter
 
       (i32.sub (get_local $ticks) (i32.const 1))
       set_local $ticks

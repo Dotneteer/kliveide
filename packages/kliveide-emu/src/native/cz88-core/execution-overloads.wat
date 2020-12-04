@@ -40,5 +40,7 @@
 
 ;; The execution engine has just completed the current frame
 (func $execOnFrameCompleted
+  ;; 5ms frame completed, update the real time clock
+  call $incRtcCounter
   ;; TODO: Implement this method
 )
