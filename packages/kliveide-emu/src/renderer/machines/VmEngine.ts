@@ -24,6 +24,7 @@ import {
   emulatorSetMemoryContentsAction,
   engineInitializedAction,
   emulatorSetDebugAction,
+  emulatorSetInternalStateAction,
 } from "../../shared/state/redux-emulator-state";
 import { CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
@@ -529,6 +530,11 @@ export class VmEngine implements IVmEngineController {
       this._avgEngineTime = this._sumEngineTime / this._renderedFrames;
 
       const resultState = (this._loadedState = machine.z80Machine.getMachineState());
+
+      // --- Save the internal state
+      rendererProcessStore.dispatch(
+        emulatorSetInternalStateAction(resultState)()
+      );
 
       // --- Check for user cancellation
       if (this._cancelled) return;

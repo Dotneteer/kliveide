@@ -113,6 +113,11 @@ export const emulatorHideStatusbarAction = createAction(
   "EMULATOR_HIDE_STATUSBAR"
 );
 
+export function emulatorSetInternalStateAction(internalState: Record<string, any>) {
+  return createAction("EMULATOR_SET_INTERNAL_STATE", { internalState });
+}
+
+
 /**
  * This reducer manages keyboard panel state changes
  * @param state Input state
@@ -212,6 +217,8 @@ export function emulatorStateReducer(
       return { ...state, statusbar: true };
     case "EMULATOR_HIDE_STATUSBAR":
       return { ...state, statusbar: false };
-  }
+    case "EMULATOR_SET_INTERNAL_STATE":
+        return { ...state, internalState: payload.internalState };
+    }
   return state;
 }
