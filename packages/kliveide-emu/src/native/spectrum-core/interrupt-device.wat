@@ -18,18 +18,18 @@
 ;; Interrupt device routines
 
 ;; Checks and executes interrupt, if it's time
-(func $checkForInterrupt (param $currentUlaTact i32)
+(func $checkForInterrupt (param $currentFrameTact i32)
   ;; We've already handled the interrupt
   get_global $interruptRevoked
   if return end
 
   ;; Is it too early to raise the interrupt?
-  (i32.lt_u (get_local $currentUlaTact) (get_global $interruptTact))
+  (i32.lt_u (get_local $currentFrameTact) (get_global $interruptTact))
   if return end
 
   ;; Are we over the longest op after the interrupt tact?
   (i32.gt_u 
-    (get_local $currentUlaTact)
+    (get_local $currentFrameTact)
     (i32.add (get_global $interruptTact) (i32.const $LONGEST_OP#)) ;; tacts of the longest op
   )
   if

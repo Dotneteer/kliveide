@@ -326,18 +326,18 @@
 
 ;; Prepares samples for PSG emulation
 (func $preparePsgSamples
-  (local $currentUlaTact i32)
+  (local $currentFrameTact i32)
   (i32.eqz (get_global $psgSupportsSound))
   if return end
 
   (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
-  (i32.ge_u (tee_local $currentUlaTact) (get_global $psgNextClockTact))
+  (i32.ge_u (tee_local $currentFrameTact) (get_global $psgNextClockTact))
   if
     call $generatePsgOutputValue
     loop $nextClock
       (i32.add (get_global $psgNextClockTact) (get_global $psgClockStep))
       set_global $psgNextClockTact
-      (i32.ge_u (get_local $currentUlaTact) (get_global $psgNextClockTact))
+      (i32.ge_u (get_local $currentFrameTact) (get_global $psgNextClockTact))
       if
         call $generatePsgOutputValue
         br $nextClock

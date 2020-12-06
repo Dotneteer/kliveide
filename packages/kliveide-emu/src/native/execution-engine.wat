@@ -30,7 +30,7 @@
 
 ;; Executes the virtual machine cycle
 (func $executeMachineCycle
-  (local $currentUlaTact i32)
+  (local $currentFrameTact i32)
   (local $nextOpCode i32)
   (local $length i32)
 
@@ -53,24 +53,24 @@
 
     ;; Calculate the current frame tact
     (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
-    set_local $currentUlaTact
+    set_local $currentFrameTact
 
     ;; Execute an entire instruction
-    (call $execBeforeCpuCycle (get_local $currentUlaTact))
+    (call $execBeforeCpuCycle (get_local $currentFrameTact))
     call $executeCpuCycle
-    (call $execAfterCpuCycle (get_local $currentUlaTact))
+    (call $execAfterCpuCycle (get_local $currentFrameTact))
     
     loop $instructionLoop
       get_global $isInOpExecution
       if
-        (call $execBeforeCpuCycle (get_local $currentUlaTact))
+        (call $execBeforeCpuCycle (get_local $currentFrameTact))
         call $executeCpuCycle
-        (call $execAfterCpuCycle (get_local $currentUlaTact))
+        (call $execAfterCpuCycle (get_local $currentFrameTact))
         br $instructionLoop
       end
     end 
 
-    (call $execBeforeTerminationCheck (get_local $currentUlaTact))
+    (call $execBeforeTerminationCheck (get_local $currentFrameTact))
 
     ;; Check termination point
     call $execTestIfTerminationPointReached
@@ -143,7 +143,7 @@
     call $execAfterTerminationCheck
 
     ;; Test frame completion
-    (i32.ge_u (get_local $currentUlaTact) (get_global $tactsInFrame))
+    (i32.ge_u (get_local $currentFrameTact) (get_global $tactsInFrame))
     set_global $frameCompleted
     (br_if $frameCycle (i32.eqz (get_global $frameCompleted)))
   end

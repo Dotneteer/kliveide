@@ -21,7 +21,7 @@ Klive intends to provide these services to build emulation and IDE for such mach
 Klive uses the Electron shell to support the toolset on Mac, Linux, and Windows. For the sake of performance, it implements the core of the virtual machines in native WebAssembly. Currently, it can run a ZX Spectrum 48 emulator with a 56 MHz CPU.
 Klive uses TypeScript (JavaScript) to implement the emulator UI and supporting functions for the virtual machines (for example, breakpoint management).
 
-The IDE part is a VS Code extension that communicates with the emulator. The IDE implementation uses TypeScript and Svelte. The emulator provides a webserver that the IDE can use for controlling the emulator.
+The IDE part is a VS Code extension that communicates with the emulator. The IDE implementation uses TypeScript and Svelte. The emulator provides a web server that the IDE can use for controlling the emulator.
 
 ## The Z80 CPU
 
@@ -31,14 +31,14 @@ Klive implements a Z80 CPU that handles the initially and later documented Z80 i
 
 ### Registers
 
-The Klive implementation contains all the registers available with the instrcution set. It also includes an internal register called `WZ` (some call it MEMPTR) that has important role in memory contention and determining the values of Bit 3 and 5 of the Z80 flags.
+The Klive implementation contains all the registers available with the instruction set. It also includes an internal register called `WZ` (some call it MEMPTR), which influences Bit 3 and 5 of the Z80 flags in many operations.
 
 ### Diagnostics capabilites
 
 The Z80 CPU implementation allows some special diagnostic features:
 - Signing memory read and write events (for the use of the Z80 virtual machine)
 - Signing I/O read and write events (for the use of the Z80 virtual machine)
-- Running in diagnostics mode, when it provides hooks that can call any JavaScript method used for logging and advanced diagnostics.
+- Running in diagnostics mode provides hooks that can call any JavaScript method used for logging and advanced diagnostics.
 
 ### CPU operation
 
@@ -55,6 +55,74 @@ However, step 4 processes the argument bytes of a particular instruction. For ex
 
 ### Timing
 
+Timing is the cornerstone of the CPU's operation. Without it, you cannot create virtual machines that emulate real hardware accurately and with high fidelity.
+
+The CPU implementation counts the clock cycles while executing the instructions precisely according to the official Z80 specification. Memory and I/O operations may contend with other hardware devices. The Klive Z80 CPU implementation allows virtual machines to override memory read and write and I/O handling. So virtual machines can implement their contention schemes.
+
+To support the frame-bound execution cycle, Klive uses these state variables for accurate timing:
+
+- `$baseClockFrequency`: The clock frequency of the CPU, in another way, the number of clock cycles per second.
+- `$clockMultiplier`: The base frequency can be multiplied by setting this value (defaults to 1).
+- `$tactsInFrame`: The number of tacts in a single frame when the CPU runs with regular clock frequency.
+- `$tacts`: The number of CPU clock cycles executed since the beginning of the current frame.
+- `$lastRenderedFrameTact`: The tact index within a frame after performing the last CPU cycle.
+- `$frameCount`: The number of completed frames.
+
+> *Note*: With this abstraction, the CPU's clock can be handled separately from the _master clock_ that determines the frame timing. For example, for a ZX Spectrum implementation, you can increase the CPU frequency while the screen rendering uses the original timing.
+
+When a virtual machine is initialized, it should specify constant values for `$baseClockFrequency`, and `$tactsInFrame`. Optionally, it can specify a different `$clockMultiplier` (integer). Let's see a few examples!
+
+For ZX Spectrum 48K:
+
+```javascript
+$baseClockFrequency = 3_500_000;
+$tactsInFrame       = 69_888; // 50.08 frames per second
+```
+
+For Cambridge Z88:
+
+```javascript
+$baseClockFrequency = 3_276_800;
+$tactsInFrame       = 16_384; // 200 frames per second
+```
+
+While executing a virtual machine frame, the engine updates the `$lastRenderedFrameTact` variable after each executed CPU instruction (and not after each CPU cycle):
+
+```javascript
+$lastRenderedFrameTact = $tacts/$clockMultiplier;
+```
+
+Whenever a frame completes (`$lastRenderedFrameTact` >= `$tactsInFrame`), the engine starts a new frame with updating the state variables:
+
+```javascript
+$framecount++;
+$tacts = $tacts - $tactsInFrame * $clockMultiplier;
+$lastRenderedFrameTact = $tacts/$clockMultiplier
+```
+
+In a few places in the code (for example, when emulating tape), the engine needs to know the number of clock cycles elapsed since starting the virtual machine. This value (64-bit integer) can be calculated like this:
+
+```javascript
+clockCycles = $framecount * $tactInFrame * $clockMultiplier + $tacts
+```
+
+### Internal CPU state
+
+The Z80 CPU implementation uses a few state variables to keep track of the current execution cycle state:
+
+- `$cpuSignalFlags`: A variable that represents the signal flags (INT, NMI, HLT, and RST) of the CPU. The zero value indicates that there is no signal to process.
+- `$iff1`, `$iff2`: The internal IFF1 and IFF2 flip-flops of the Z80 CPU to manage interrupt state.
+- `$interruptMode`: The current interrupt mode as set by the `IM 0`, `IM 1`, and `IM 2` Z80 instructions.
+- `$isInterruptBlocked`: Flag that disables interrupt in the middle of an instruction's execution.
+- `$prefixMode`: Signs the current prefix mode:
+    - $00: Standard instrcutions
+    - $01: $CB prefix, bit instructions
+    - $02: $ED prefix, extended instructions
+- `$indexMode`: Index register-related operation
+    - $00: No index register use
+    - $01: Use IX
+    - $02: Use IY
+- `$opCode`: The last fetched operation code byte
 
 ## Memory
 
