@@ -33,13 +33,6 @@ Klive implements a Z80 CPU that handles the initially and later documented Z80 i
 
 The Klive implementation contains all the registers available with the instruction set. It also includes an internal register called `WZ` (some call it MEMPTR), which influences Bit 3 and 5 of the Z80 flags in many operations.
 
-### Diagnostics capabilites
-
-The Z80 CPU implementation allows some special diagnostic features:
-- Signing memory read and write events (for the use of the Z80 virtual machine)
-- Signing I/O read and write events (for the use of the Z80 virtual machine)
-- Running in diagnostics mode provides hooks that can call any JavaScript method used for logging and advanced diagnostics.
-
 ### CPU operation
 
 The CPU implementation uses a single execution flow (CPU cycle) that contains these steps:
@@ -108,14 +101,15 @@ clockCycles = $framecount * $tactInFrame * $clockMultiplier + $tacts
 
 ### Internal CPU state
 
-The Z80 CPU implementation uses a few state variables to keep track of the current execution cycle state:
+Beside registers and CPU clock state, the CPU engine uses a few additional state variables to keep track of the current execution cycle state:
 
-- `$cpuSignalFlags`: A variable that represents the signal flags (INT, NMI, HLT, and RST) of the CPU. The zero value indicates that there is no signal to process.
-- `$iff1`, `$iff2`: The internal IFF1 and IFF2 flip-flops of the Z80 CPU to manage interrupt state.
-- `$interruptMode`: The current interrupt mode as set by the `IM 0`, `IM 1`, and `IM 2` Z80 instructions.
-- `$isInterruptBlocked`: Flag that disables interrupt in the middle of an instruction's execution.
+- `$cpuSignalFlags`: A variable representing the signal flags (INT, NMI, HLT, and RST) of the CPU. The zero value indicates that there is no signal to process.
+- `$iff1`, `$iff2`: The internal IFF1 and IFF2 flip-flops of the Z80 CPU to manage interrupt state
+- `$interruptMode`: The current interrupt mode as set by the `IM 0`, `IM 1`, and `IM 2` Z80 instructions
+- `$isInterruptBlocked`: Flag that blocks the interrupt while an instruction is being executed
+- `$isInOpExecution`: Indicates that the CPU is in the middle of executing an instruction
 - `$prefixMode`: Signs the current prefix mode:
-    - $00: Standard instrcutions
+    - $00: Standard instructions
     - $01: $CB prefix, bit instructions
     - $02: $ED prefix, extended instructions
 - `$indexMode`: Index register-related operation
@@ -123,6 +117,42 @@ The Z80 CPU implementation uses a few state variables to keep track of the curre
     - $01: Use IX
     - $02: Use IY
 - `$opCode`: The last fetched operation code byte
+
+### Instruction execution
+
+The instruction engine uses five jump tables (each with 256 entries) to handle the processing of a particular instruction. Each entry represents the action to execute for an 8-bit operation code:
+
+- `$STANDARD_JT#`: Jump table for standard operations
+- `$INDEXED_JT#`: Jump table for indexed (IX, and IY) operations ($dd and $fd prefix)
+- `$EXTENDED_JT#`: Jump table for extended operations ($ed prefix)
+- `$BIT_JT#`: Jump table for bit operations ($cb prefix)
+- `$INDEXED_BIT_JT#`: Jump table for indexed bit operations ($dd, $cb, and $fd, $cp prefix pairs)
+
+For the sake of performance, Klive accelerates the flag value calculations of ALU instructions, `INC`, and `DEC` operations with helper tables.
+
+### Diagnostics capabilites
+
+The Z80 CPU implementation allows using diagnostics hooks, which are JavaScript functions called from WebAssembly. Using these methods, you can respond to a particular CPU event.
+
+Each hook can be enabled or disabled separately with the flags of the `$cpuDiagnostics` variable:
+
+- `opCodeFetched`, Bit 0: Invoked when the CPU fetches an operation code. It sends back the fetched opcode and the value of PC _after_ the fetch operation.
+- `standardOpExecuted`, Bit 1: Invoked when the CPU has completed a standard instruction. It sends back the fetched opcode and the value of PC _after_ the fetch operation.
+- `extendedOpExecuted`, Bit 2: Invoked when the CPU has completed an extended instruction. It sends back the fetched opcode after the $ed prefix and the value of PC _after_ the fetch operation.
+- `extendedIxOpExecuted`, Bit 3: Invoked when the CPU has completed an IX-indexed instruction. It sends back the fetched opcode after the $dd prefix and the value of PC _after_ the fetch operation.
+- `extendedIyOpExecuted`, Bit 4: Invoked when the CPU has completed an IY-indexed instruction. It sends back the fetched opcode after the $fd prefix and the value of PC _after_ the fetch operation.
+- `bitOpExecuted`, Bit 5: Invoked when the CPU has completed a bit instruction. It sends back the fetched opcode after the $cb prefix and the value of PC _after_ the fetch operation.
+- `ixBitOpExecuted`, Bit 6: Invoked when the CPU has completed an IX-indexed bit instruction. It sends back the fetched opcode after the $dd-$cb prefix pair and the value of PC _after_ the fetch operation.
+- `iyBitOpExecuted`, Bit 7: Invoked when the CPU has completed an IY-indexed bit instruction. It sends back the fetched opcode after the $dd-$cb prefix pair and the value of PC _after_ the fetch operation.
+- `intExecuted`, Bit 8: Invoked when a maskable interrupt is about to be executed. It sends back the PC that points to the beginning of the interrupt routine.
+- `nmiExecuted`, Bit 9: Invoked when a non-maskable interrupt is about to be executed.
+- `halted`, Bit 10: Invoked when the CPU has been halted. It sends back the PC that points to the HALT statement.
+- `memoryRead`, Bit 11: Invoked when the CPU reads memory while processing a statement. This event is not fired when an opcode is fetched. It sends back the memory address, and the value read.
+- `memoryWritten`, Bit 12: Invoked when the CPU writes memory while processing a statement. It sends back the memory address and the value written.
+- `ioRead`, Bit 13: Invoked when the CPU reads from an I/O port. It sends back the port address, and the value read.
+- `ioWritten`, Bit 14: Invoked when the CPU writes to an I/O port. It sends back the port address and the value written.
+
+> *Note*: CPU diagnostics may slow the emulation drastically, so you should use these methods accordingly.
 
 ## Memory
 
@@ -244,7 +274,86 @@ MEM_WR_MAP             MEM_RD_MAP             INSTR_RD_MAP
 
 When the CPU executes any of the three types of memory access listed above, it increments the 16-bit entry addressed within the corresponding operation map. The engine provides methods to reset the contents of these maps.
 
-## Breakpoints
+## The execution engine
+
+The key of the virtual machine implementation is the execution engine loop that handles execution frames and debugging.
+
+By default, the execution engine loop runs the virtual machine so that it can complete an entire execution frame. However, with execution options, you can finish the execution earlier as a result of an event, like reaching a breakpoint.
+
+The execution loop is the key to emulate real time behavior. Klive uses this approach:
+
+1. Not the start time
+2. Invoke the machine's execution loop
+3. Has the user paused or stop the machine? If so, respond accordingly, and exit from this loop.
+4. Has the entire frame completed? If not, it is a special completion event (like reaching a breakpoint, etc.). Pause the machine and exit this loop.
+5. Calculate the start time of the next frame from the value stored in step 1, and sleep while reaching that point in time.
+6. Continue on step 2.
+
+> *Note*: So, while the virtual machine runs, it uses two nested loops. The outer (UI loop) uses the algorithm discussed here. The inner loop that executes the CPU instructions and emulates other hardware components is invoked in step 2. Soon, you will learn how that loop works.
+
+### Execution options
+
+The machine's execution loop accepts these options:
+
+- Emulation mode:
+    - `Debugger`: Enable debugging
+    - `UntilHalt`: Stop when a `HALT` instruction has been reached. Klive uses this option mostly for automatic tests.
+    - `UntilExecutionPoint`: Stop when a predefined execution point is reached
+    - `UntilFrameEnds`: Execute the entire frame
+- Debug step mode (when the emulation mode is debugging):
+    - `StopAtBreakPoint`: Stop when a breakpoint has been reached
+    - `StepInto`: Stop when the next Z80 instruction has been executed
+    - `StepOver`: Stop when the next `CALL`, `RST`, `HALT`, or block instruction (like `LDIR`) has been entirely executed
+    - `StopOut`: Stop at the code point where the current stack frame (a `RET` statement in the current subroutine) returns
+- Temination point: designates the termination point for the `UntilExecutionPoint` emulation option.
+
+### Completion reasons
+
+When the machine's execution loop completes, you can query the reason of completion. This is the value the UI loop uses in step 4:
+
+- `TerminationPointReached`: The execution has just reached the termination point defined in the `UntilExecutionPoint` emulation mode
+- `BreakpointReached`: The execution reached a breakpoint where the execution should be paused
+- `Halted`: The CPU has just been halted
+- `FrameCompleted`: The entire frame completed
+
+### The machine execution loop details
+
+The machine's execution loop typically starts from the beginning of a new frame and finishes when that completes. However, there are a few things that may disturb this specific behavior:
+- After a pause or a breakpoint, the frame should continue from the point it has been stopped.
+- The loop executes an entire Z80 instruction. That instruction may start near the end of the frame and completes only at the beginning of the next frame.
+
+The machine's execution loop contains these steps:
+
+1. Set up the current execution loop
+2. Has the previous frame just completed?
+    - If so, initialize the new frame
+    - Invoke the `$onInitNewFrame` hook
+3. Execute an entire instruction
+    - execute the `$beforeCpyCycle` hook
+    - execute the CPU cycle
+    - execute the `$afterCpuCycle` hook
+    - loop within step 3 untile the entire instruction is completed
+4. Execute the `$beforeTerminationCheck` hook
+5. Check if the loop reached a termination point (use the `$testIfTerminationPointReached` hook). If so, exit.
+6. Check if the loop reached a CPU Halted point. If so, exit.
+7. Check if the loop reached a breakpoint. If so, exit.
+8. Execute the `$afterTerminationCheck` hook.
+9. Has the current frame completed? If not, go back to step 3.
+10. Invoke the `$onFrameCompleted` hook.
+11. Done, exit the loop.
+
+### Execution loop hooks
+
+During its operation, the machine execution loop invokes several hooks. Virtual machine implementations can use them to implement their behavior. These hook methods must be implemented in WebAssembly.
+
+- `$onInitNewFrame`: Defines the initialization steps for a new frame. For example, the ZX Spectrum implementations use this event to prepare for generating a new screen frame and emptying the buffer of frame-generated sound samples.
+- `$beforeCpuCycle`, `$afterCpuCycle`: This hook can be used for carrying out mandatory dances related to instructions. For example, the ZX Spectrum and Cambridge Z88 implementations use the `$beforeCpuCycle` to prepare the INT signal. The ZX Spectrum 128 implementation uses the `$afterCpuCycle` loop to prepare PSG sound samples.
+- `$beforeTerminationCheck`: Use this hook to execute any logic that needs to run before checking loop termination conditions. For example, the ZX Spectrum implementations use this event to render the small piece of the screen that the ULA displays during the execution of a CPU instruction.
+- `$testIfTerminationPointReached`: A virtual machine can use this event to check if any of the predefined termination points has been reached.
+- `$afterTerminationCheck`: Use this hook to execute any logic that needs to run after checking loop termination conditions. For example, the ZX Spectrum implementations use this event to render sound samples.
+- `$onFrameCompleted`: Execute any cleanup activity when the current frame has been completed. For example, the ZX Spectrum implementations handle this event to clean up sound sample generation.
+
+## Debugging
 
 The Klive virtual machine allows defining breakpoints for these scenarios:
 
@@ -418,7 +527,7 @@ IO_INDEX_MAP
 
 When a byte in this array is $ff, the associated I/O port has no breakpoint. Otherwise, the value contains the index of the corresponding breakpoint entry in `IO_BREAKPOINTS`.
 
-## I/O breakpoints manipulation
+### I/O breakpoints manipulation
 
 The `IO_BREAKPOINTS` list initially holds 32 free slots (having its `FLAGS` value set to 0). Whenever a new I/O breakpoint is defined, the related entry goes into the first available slot (the one with the lowest index value). Removing an I/O breakpoint sets its `FLAGS` value to 0 and so if frees the associated entry in `IO_BREAKPOINTS`.
 

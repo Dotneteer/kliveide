@@ -98,8 +98,11 @@
 ;; 2: IY (0xFD prefix)
 (global $indexMode (mut i32) (i32.const 0x00)) 
 
-(global $maskableInterruptModeEntered (mut i32) (i32.const 0x00)) ;; Signs that CPU entered into maskable interrupt mode
-(global $opCode (mut i32) (i32.const 0x00)) ;; Operation code being processed
+;; Signs that CPU entered into maskable interrupt mode
+(global $maskableInterruptModeEntered (mut i32) (i32.const 0x00))
+
+;; Operation code being processed
+(global $opCode (mut i32) (i32.const 0x00))
 
 ;; ----------------------------------------------------------------------------
 ;; ALU helper tables
