@@ -200,7 +200,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
       0x76, // HALT
     ]);
 
-    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilUlaFrameEnds));
+    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
     const s = machine.getMachineState();
     expect(s.pc).toBe(0x8020);
     expect(s.tacts).toBe(10);
@@ -255,8 +255,8 @@ describe("ZX Spectrum 48 - Beeper", () => {
       0x76, // HALT
     ]);
 
-    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilUlaFrameEnds));
-    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilUlaFrameEnds));
+    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
+    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
     const s = machine.getMachineState();
     expect(s.pc).toBe(0x800b);
     expect(s.tacts).toBe(8);

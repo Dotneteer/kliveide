@@ -104,7 +104,7 @@
           overlay = "Paused";
           const state = vmEngine.getMachineState();
           tactsInFrame = state.tactsInFrame;
-          tactToDisplay = state.lastRenderedUlaTact % tactsInFrame;
+          tactToDisplay = state.lastRenderedFrameTact % tactsInFrame;
           displayScreenData();
           break;
         case 5:

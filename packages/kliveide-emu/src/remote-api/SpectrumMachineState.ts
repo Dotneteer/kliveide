@@ -94,7 +94,7 @@ export class ScreenConfig {
 export class ExecutionCycleState {
   lastExecutionStartFrameCount: number;
   lastExecutionStartFrameTacts: number;
-  lastRenderedUlaTact: number;
+  lastRenderedFrameTact: number;
   frameCompleted: boolean;
   overflow: number;
   contentionAccummulated: number;
@@ -207,7 +207,7 @@ export function readExecutionCycleState(
   const s = new ExecutionCycleState();
   s.lastExecutionStartFrameCount = r.readUint32();
   s.lastExecutionStartFrameTacts = r.readUint32();
-  s.lastRenderedUlaTact = r.readUint32();
+  s.lastRenderedFrameTact = r.readUint32();
   s.frameCompleted = r.readByte() !== 0;
   s.overflow = r.readUint32();
   s.contentionAccummulated = r.readUint32();

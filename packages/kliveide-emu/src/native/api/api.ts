@@ -34,7 +34,7 @@ export interface MachineApi extends CpuApi {
   setUlaIssue(ula: number): void;
   getMachineState(): void;
   setExecutionOptions(): void;
-  executeMachineCycle(): void;
+  executeMachineLoop(): void;
   setInterruptTact(tact: number): void;
   checkForInterrupt(tact: number): void;
   setKeyStatus(key: VmKeyCode, isDown: boolean): void;

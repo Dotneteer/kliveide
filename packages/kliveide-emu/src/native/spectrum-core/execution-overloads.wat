@@ -188,7 +188,7 @@
 )
 
 ;; The execution engine starts a new frame
-(func $execOnInitNewFrame
+(func $onInitNewFrame
   ;; Reset interrupt information
   i32.const 0 set_global $interruptRevoked
   i32.const 0 set_global $interruptRaised
@@ -216,22 +216,22 @@
 )
 
 ;; The execution engine is about to execute a CPU cycle
-(func $execBeforeCpuCycle (param $frameTact i32)
+(func $beforeCpuCycle (param $frameTact i32)
   (call $checkForInterrupt (get_local $frameTact))
 )
 
 ;; The execution engine is about to execute a CPU cycle
-(func $execAfterCpuCycle (param $frameTact i32)
+(func $afterCpuCycle (param $frameTact i32)
   call $preparePsgSamples
 )
 
 ;; The execution engine is before checking loop termination
-(func $execBeforeTerminationCheck  (param $frameTact i32)
+(func $beforeTerminationCheck  (param $frameTact i32)
   (call $renderScreen (get_local $frameTact))
 )
 
 ;; Tests if the execution cycle reached the termination point
-(func $execTestIfTerminationPointReached (result i32)
+(func $testIfTerminationPointReached (result i32)
   (i32.eq (get_global $memorySelectedRom) (get_global $terminationRom))
   if
     ;; Termination ROM matches
@@ -242,7 +242,7 @@
 )
 
 ;; The execution engine is after checking loop termination
-(func $execAfterTerminationCheck
+(func $afterTerminationCheck
   ;; Notify the tape device to check tape hooks
   call $checkTapeHooks
 
@@ -301,7 +301,7 @@
 )
 
 ;; The execution engine has just completed the current frame
-(func $execOnFrameCompleted
+(func $onFrameCompleted
   ;; The current screen rendering frame completed
   ;; Prepare for the next PSG tact that may overflow to the next frame
   (i32.gt_u (get_global $psgNextClockTact) (get_global $tactsInFrame))

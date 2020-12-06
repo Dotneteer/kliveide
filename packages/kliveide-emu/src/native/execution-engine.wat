@@ -29,7 +29,7 @@
 )
 
 ;; Executes the virtual machine cycle
-(func $executeMachineCycle
+(func $executeMachineLoop
   (local $currentFrameTact i32)
   (local $nextOpCode i32)
   (local $length i32)
@@ -48,7 +48,7 @@
       (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
       set_global $lastRenderedFrameTact
 
-      call $execOnInitNewFrame
+      call $onInitNewFrame
     end
 
     ;; Calculate the current frame tact
@@ -56,24 +56,24 @@
     set_local $currentFrameTact
 
     ;; Execute an entire instruction
-    (call $execBeforeCpuCycle (get_local $currentFrameTact))
+    (call $beforeCpuCycle (get_local $currentFrameTact))
     call $executeCpuCycle
-    (call $execAfterCpuCycle (get_local $currentFrameTact))
+    (call $afterCpuCycle (get_local $currentFrameTact))
     
     loop $instructionLoop
       get_global $isInOpExecution
       if
-        (call $execBeforeCpuCycle (get_local $currentFrameTact))
+        (call $beforeCpuCycle (get_local $currentFrameTact))
         call $executeCpuCycle
-        (call $execAfterCpuCycle (get_local $currentFrameTact))
+        (call $afterCpuCycle (get_local $currentFrameTact))
         br $instructionLoop
       end
     end 
 
-    (call $execBeforeTerminationCheck (get_local $currentFrameTact))
+    (call $beforeTerminationCheck (get_local $currentFrameTact))
 
     ;; Check termination point
-    call $execTestIfTerminationPointReached
+    call $testIfTerminationPointReached
     if
       i32.const $EX_REA_TERM# set_global $executionCompletionReason ;; Reason: Termination point reached
       return
@@ -140,7 +140,7 @@
       end
     end     
 
-    call $execAfterTerminationCheck
+    call $afterTerminationCheck
 
     ;; Test frame completion
     (i32.ge_u (get_local $currentFrameTact) (get_global $tactsInFrame))
@@ -148,7 +148,7 @@
     (br_if $frameCycle (i32.eqz (get_global $frameCompleted)))
   end
 
-  call $execOnFrameCompleted
+  call $onFrameCompleted
 
   ;; Adjust tacts
   (i32.sub 
@@ -161,5 +161,5 @@
   set_global $frameCount
 
   ;; Sign frame completion
-  i32.const $EX_REA_ULA# set_global $executionCompletionReason ;; Reason: frame completed
+  i32.const $EX_REA_FRAME# set_global $executionCompletionReason ;; Reason: frame completed
 )

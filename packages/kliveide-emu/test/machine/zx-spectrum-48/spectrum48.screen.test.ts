@@ -459,7 +459,7 @@ describe("ZX Spectrum 48 - Screen", () => {
       machine.writeMemory(addr, 0x51)
     }
 
-    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilUlaFrameEnds));
+    machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
     expect(s.frameCompleted).toBe(true);

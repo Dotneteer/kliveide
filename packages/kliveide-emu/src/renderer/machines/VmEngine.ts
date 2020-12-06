@@ -517,7 +517,7 @@ export class VmEngine implements IVmEngineController {
         machine.z80Machine.onEngineCycleCompletion(resultState);
         if (
           resultState.executionCompletionReason !==
-          ExecutionCompletionReason.UlaFrameCompleted
+          ExecutionCompletionReason.FrameCompleted
         ) {
           break;
         }
@@ -556,7 +556,7 @@ export class VmEngine implements IVmEngineController {
 
       // --- Branch according the completion reason
       const reason = resultState.executionCompletionReason;
-      if (reason !== ExecutionCompletionReason.UlaFrameCompleted) {
+      if (reason !== ExecutionCompletionReason.FrameCompleted) {
         // --- No more frame to execute
         if (
           reason === ExecutionCompletionReason.BreakpointReached ||
