@@ -278,23 +278,23 @@ export enum EmulationMode {
   /**
    * Run the VM until the CPU is halted
    */
-  UntilHalt,
+  UntilHalt = 1,
 
   /**
    * Run the CPU until the current CPU rendering frame ends
    */
-  UntilCpuFrameEnds,
+  UntilCpuFrameEnds = 2,
 
   /**
    * Run the CPU until the current ULA rendering frame ends
    * by the ULA clock
    */
-  UntilUlaFrameEnds,
+  UntilFrameEnds = 3,
 
   /**
    * Run the CPU until a specified value of the PC register is reached
    */
-  UntilExecutionPoint,
+  UntilExecutionPoint = 4,
 }
 
 /**
@@ -335,7 +335,7 @@ export enum DebugStepMode {
  */
 export class ExecuteCycleOptions {
   constructor(
-    public emulationMode: EmulationMode = EmulationMode.UntilUlaFrameEnds,
+    public emulationMode: EmulationMode = EmulationMode.UntilFrameEnds,
     public debugStepMode: DebugStepMode = DebugStepMode.None,
     public fastTapeMode: boolean = false,
     public terminationRom: number = -1,
@@ -359,25 +359,20 @@ export enum ExecutionCompletionReason {
   /**
    * CPU reached the specified termination point
    */
-  TerminationPointReached,
+  TerminationPointReached = 1,
 
   /**
    * CPU reached any of the specified breakpoints
    */
-  BreakpointReached,
+  BreakpointReached = 2,
 
   /**
    * CPU reached a HALT instrution
    */
-  Halted,
-
-  /**
-   * The current CPU frame has been completed
-   */
-  CpuFrameCompleted,
+  Halted = 3,
 
   /**
    * The current screen rendering frame has been completed
    */
-  UlaFrameCompleted,
+  FrameCompleted = 4,
 }

@@ -42,12 +42,11 @@
 ;; $DEB_OVER# = 3        // Step-over
 ;; $DEB_OUT# = 4         // Step-out
 ;;
-;; $EX_REA_EXEC# = 0       // The machine is still executing
-;; $EX_REA_TERM# = 1       // Termination point reached
-;; $EX_REA_BREAK# = 2      // Breakpoint reached
-;; $EX_REA_HALT# = 3       // Halted
-;; $EX_REA_CPU# = 4        // CPU frame completed
-;; $EX_REA_ULA# = 5        // Screen rendering frame/ULA frame completed
+;; $EX_REA_EXEC# = 0     // The machine is still executing
+;; $EX_REA_TERM# = 1     // Termination point reached
+;; $EX_REA_BREAK# = 2    // Breakpoint reached
+;; $EX_REA_HALT# = 3     // Halted
+;; $EX_REA_FRAME# = 4    // Screen rendering frame/ULA frame completed
 
 ;; ----------------------------------------------------------------------------
 ;; Execution cycle variables
@@ -73,7 +72,7 @@
 ;; 0: Debugger
 ;; 1: UntilHalt
 ;; 2: UntilCpuFrameEnds
-;; 3: UntilUlaFrameEnds
+;; 3: UntilFrameEnds
 ;; 4: UntilExecutionPoint
 (global $emulationMode (mut i32) (i32.const 0x0000))
 
@@ -110,8 +109,7 @@
 ;; 1: Termination point reached
 ;; 2: Breakpoint reached
 ;; 3: Halted
-;; 4: CPU frame completed
-;; 5: Screen rendering frame/ULA frame completed
+;; 4: Screen rendering frame/ULA frame completed
 (global $executionCompletionReason (mut i32) (i32.const 0x0000))
 
 ;; The step-over breakpoint

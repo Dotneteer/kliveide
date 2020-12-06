@@ -140,7 +140,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
     this.api.setExecutionOptions();
 
     // --- Run the cycle and retrieve state
-    this.api.executeMachineCycle();
+    this.api.executeMachineLoop();
   }
 
   /**

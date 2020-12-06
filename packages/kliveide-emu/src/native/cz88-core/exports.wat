@@ -17,7 +17,7 @@
 (export "eraseMemoryWriteMap" (func $eraseMemoryWriteMap))
 (export "setMemoryWritePoint" (func $setMemoryWritePoint))
 (export "setExecutionOptions" (func $setExecutionOptions))
-(export "executeMachineCycle" (func $executeMachineCycle))
+(export "executeMachineLoop" (func $executeMachineLoop))
 (export "setKeyStatus" (func $setKeyStatus))
 (export "getKeyStatus" (func $getKeyStatus))
 
