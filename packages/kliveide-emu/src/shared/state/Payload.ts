@@ -42,4 +42,5 @@ export interface Payload {
   debug?: boolean;
   soundLevel?: number;
   statusbar?: boolean;
+  internalState?: Record<string, any>;
 }

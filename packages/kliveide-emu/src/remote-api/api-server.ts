@@ -73,7 +73,6 @@ export function startApiServer() {
    * Gets frame information
    */
   app.get("/frame-info", (_req, res) => {
-    const resp = res;
     const state = mainProcessStore.getState();
     const emuState = state.emulatorPanelState;
     const vmInfo = state.vmInfo;
@@ -87,6 +86,7 @@ export function startApiServer() {
       machineType: emuState.currentType,
       selectedRom: emuState.selectedRom,
       selectedBank: emuState.selectedBank,
+      internalState: emuState.internalState
     });
     mainProcessStore.dispatch(ideConnectsAction());
   });

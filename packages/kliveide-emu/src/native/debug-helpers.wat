@@ -20,7 +20,7 @@
   end
 )
 
-;; Sets the specified breakpoint
+;; Sets the specified 24 bit breakpoint
 (func $setBreakpoint (param $brpoint i32)
   (local $addr i32)
   get_global $BREAKPOINT_MAP

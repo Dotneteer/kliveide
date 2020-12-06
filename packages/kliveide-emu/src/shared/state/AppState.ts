@@ -84,6 +84,7 @@ export interface EmulatorPanelState {
   selectedBank?: number;
   panelMessage?: string;
   statusbar?: boolean;
+  internalState?: Record<string, any>;
 }
 
 /**
@@ -211,7 +212,8 @@ export function getDefaultAppState(): AppState {
       panelMessage: "",
       muted: false,
       soundLevel: 0.5,
-      statusbar: true
+      statusbar: true,
+      internalState: {}
     },
     emulatorCommand: "",
     breakpoints: [],

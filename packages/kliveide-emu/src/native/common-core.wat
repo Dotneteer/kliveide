@@ -52,7 +52,7 @@
 ;; ----------------------------------------------------------------------------
 ;; Execution cycle variables
 
-;; The last rendered ULA tact
+;; The last rendered frame tact
 (global $lastRenderedFrameTact (mut i32) (i32.const 0x0000))
 
 ;; Gets or sets the value of the contention accummulated since the start
