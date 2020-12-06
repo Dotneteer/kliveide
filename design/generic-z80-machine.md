@@ -139,18 +139,16 @@ Each hook can be enabled or disabled separately with the flags of the `$cpuDiagn
 - `opCodeFetched`, Bit 0: Invoked when the CPU fetches an operation code. It sends back the fetched opcode and the value of PC _after_ the fetch operation.
 - `standardOpExecuted`, Bit 1: Invoked when the CPU has completed a standard instruction. It sends back the fetched opcode and the value of PC _after_ the fetch operation.
 - `extendedOpExecuted`, Bit 2: Invoked when the CPU has completed an extended instruction. It sends back the fetched opcode after the $ed prefix and the value of PC _after_ the fetch operation.
-- `extendedIxOpExecuted`, Bit 3: Invoked when the CPU has completed an IX-indexed instruction. It sends back the fetched opcode after the $dd prefix and the value of PC _after_ the fetch operation.
-- `extendedIyOpExecuted`, Bit 4: Invoked when the CPU has completed an IY-indexed instruction. It sends back the fetched opcode after the $fd prefix and the value of PC _after_ the fetch operation.
-- `bitOpExecuted`, Bit 5: Invoked when the CPU has completed a bit instruction. It sends back the fetched opcode after the $cb prefix and the value of PC _after_ the fetch operation.
-- `ixBitOpExecuted`, Bit 6: Invoked when the CPU has completed an IX-indexed bit instruction. It sends back the fetched opcode after the $dd-$cb prefix pair and the value of PC _after_ the fetch operation.
-- `iyBitOpExecuted`, Bit 7: Invoked when the CPU has completed an IY-indexed bit instruction. It sends back the fetched opcode after the $dd-$cb prefix pair and the value of PC _after_ the fetch operation.
-- `intExecuted`, Bit 8: Invoked when a maskable interrupt is about to be executed. It sends back the PC that points to the beginning of the interrupt routine.
-- `nmiExecuted`, Bit 9: Invoked when a non-maskable interrupt is about to be executed.
-- `halted`, Bit 10: Invoked when the CPU has been halted. It sends back the PC that points to the HALT statement.
-- `memoryRead`, Bit 11: Invoked when the CPU reads memory while processing a statement. This event is not fired when an opcode is fetched. It sends back the memory address, and the value read.
-- `memoryWritten`, Bit 12: Invoked when the CPU writes memory while processing a statement. It sends back the memory address and the value written.
-- `ioRead`, Bit 13: Invoked when the CPU reads from an I/O port. It sends back the port address, and the value read.
-- `ioWritten`, Bit 14: Invoked when the CPU writes to an I/O port. It sends back the port address and the value written.
+- `indexedOpExecuted`, Bit 3: Invoked when the CPU has completed an indexed instruction. It sends back the fetched opcode after the $dd/$fd prefix, the index mode (IX or IY), and the value of PC _after_ the fetch operation.
+- `bitOpExecuted`, Bit 4: Invoked when the CPU has completed a bit instruction. It sends back the fetched opcode after the $cb prefix and the value of PC _after_ the fetch operation.
+- `indexedBitOpExecuted`, Bit 5: Invoked when the CPU has completed an indexed bit instruction. It sends back the fetched opcode after the $dd-$cb prefix pair, the index mode (IX or IY), and the value of PC _after_ the fetch operation.
+- `intExecuted`, Bit 6: Invoked when a maskable interrupt is about to be executed. It sends back the PC that points to the beginning of the interrupt routine.
+- `nmiExecuted`, Bit 7: Invoked when a non-maskable interrupt is about to be executed.
+- `halted`, Bit 8: Invoked when the CPU has been halted. It sends back the PC that points to the HALT statement.
+- `memoryRead`, Bit 9: Invoked when the CPU reads memory while processing a statement. This event is not fired when an opcode is fetched. It sends back the memory address, and the value read.
+- `memoryWritten`, Bit 10: Invoked when the CPU writes memory while processing a statement. It sends back the memory address and the value written.
+- `ioRead`, Bit 11: Invoked when the CPU reads from an I/O port. It sends back the port address, and the value read.
+- `ioWritten`, Bit 12: Invoked when the CPU writes to an I/O port. It sends back the port address and the value written.
 
 > *Note*: CPU diagnostics may slow the emulation drastically, so you should use these methods accordingly.
 

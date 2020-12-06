@@ -74,6 +74,99 @@ export abstract class Z80MachineBase {
   abstract createMachineState(): MachineState;
 
   /**
+   * CPU hook. Invoked when the CPU fetches an operation code
+   * @param _opCode The fetched operation code
+   * @param _pcAfter The value of PC after the fetch operation
+   */
+  opCodeFetched(_opCode: number, _pcAfter: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed a standard instruction
+   * @param _opCode The fetched operation code
+   * @param _pcAfter The value of PC after the operation
+   */
+  standardOpExecuted(_opCode: number, _pcAfter: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed an extended instruction
+   * @param _opCode The fetched operation code
+   * @param _pcAfter The value of PC after the operation
+   */
+  extendedOpExecuted(_opCode: number, _pcAfter: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed an indexed instruction
+   * @param _opCode The fetched operation code
+   * @param _indexMode The index mode: IX=0, IY=1
+   * @param _pcAfter The value of PC after the operation
+   */
+  indexedOpExecuted(_opCode: number, _indexMode: number, _pcAfter: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed a bit instruction
+   * @param _opCode The fetched operation code
+   * @param _pcAfter The value of PC after the operation
+   */
+  bitOpExecuted(_opCode: number, _pcAfter: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed an IX-indexed bit
+   * instruction
+   * @param _opCode The fetched operation code
+   * @param _indexMode The index mode: IX=0, IY=1
+   * @param _pcAfter The value of PC after the operation
+   */
+  indexedBitOpExecuted(_opCode: number, _indexMode: number, _pcAfter: number) : void {}
+
+  /**
+   * CPU hook. Invoked when a maskable interrupt is about to be executed
+   * @param _pcInt The value of PC that points to the beginning of the
+   * interrupt routine
+   */
+  intExecuted(_pcInt: number) : void {}
+
+  /**
+   * CPU hook. Invoked when a non-maskable interrupt is about to be executed
+   * interrupt routine
+   */
+  nmiExecuted() : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has been halted.
+   * @param _pcHalt The value of PC that points to the HALT statement
+   * interrupt routine
+   */
+  halted(_pcHalt: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU reads memory while processing a statement
+   * @param _address The memory address read
+   * @param _value The memory value read
+   */
+  memoryRead(_address: number, _value: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU writes memory while processing a statement
+   * @param _address The memory address read
+   * @param _value The memory value read
+   */
+  memoryWritten(_address: number, _value: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU reads from an I/O port
+   * @param _address The memory address read
+   * @param _value The memory value read
+   */
+  ioRead(_address: number, _value: number) : void {}
+
+  /**
+   * CPU hook. Invoked when the CPU writes to an I/O port
+   * @param _address The memory address read
+   * @param _value The memory value read
+   */
+  ioWritten(_address: number, _value: number) : void {}
+
+  /**
    * Override this method to obtain machine state
    */
   getMachineState(): MachineState {
@@ -121,6 +214,9 @@ export abstract class Z80MachineBase {
     s.baseClockFrequency = mh.readUint32(48);
     s.clockMultiplier = mh.readByte(52);
     s.supportsNextOperations = mh.readBool(53);
+
+    // --- Other CPU-realted information
+    s.cpuDiagnostics = mh.readUint16(54);
 
     return s;
   }
