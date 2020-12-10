@@ -1,8 +1,4 @@
 import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
-import {
-  ExecutionState,
-  ExecutionStateChangedArgs,
-} from "../../shared/machines/execution-state";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import {
   ExecuteCycleOptions,
@@ -37,7 +33,7 @@ import { IVmEngineController } from "./IVmEngineController";
  */
 export class VmEngine implements IVmEngineController {
   // --- The current execution state of the machine
-  private _vmState: ExecutionState = ExecutionState.None;
+  private _vmState: VmState = VmState.None;
 
   // --- Indicates if the machine has started from stopped state
   private _isFirstStart: boolean = false;
@@ -52,7 +48,7 @@ export class VmEngine implements IVmEngineController {
   private _cancelled: boolean = false;
 
   // --- Raise when the execution state of the machine has been changed
-  private _executionStateChanged = new LiteEvent<ExecutionStateChangedArgs>();
+  private _executionStateChanged = new LiteEvent<VmStateChangedArgs>();
 
   // --- Raise when it's time to refresh the screen
   private _screenRefreshed = new LiteEvent<void>();
@@ -156,16 +152,16 @@ export class VmEngine implements IVmEngineController {
   /**
    * The current state of the virtual machine
    */
-  get executionState(): ExecutionState {
+  get executionState(): VmState {
     return this._vmState;
   }
-  set executionState(newState: ExecutionState) {
+  set executionState(newState: VmState) {
     const oldState = this._vmState;
     this._vmState = newState;
 
     // --- Notify the UI
     this._executionStateChanged.fire(
-      new ExecutionStateChangedArgs(oldState, newState, this._isDebugging)
+      new VmStateChangedArgs(oldState, newState, this._isDebugging)
     );
 
     // --- State the new execution state
@@ -198,7 +194,7 @@ export class VmEngine implements IVmEngineController {
   /**
    * This event is raised whenever the state of the virtual machine changes
    */
-  get executionStateChanged(): ILiteEvent<ExecutionStateChangedArgs> {
+  get executionStateChanged(): ILiteEvent<VmStateChangedArgs> {
     return this._executionStateChanged.expose();
   }
 
@@ -295,7 +291,7 @@ export class VmEngine implements IVmEngineController {
    * @param options Execution options
    */
   async run(options: ExecuteCycleOptions): Promise<void> {
-    if (this.executionState === ExecutionState.Running) {
+    if (this.executionState === VmState.Running) {
       return;
     }
 
@@ -303,8 +299,8 @@ export class VmEngine implements IVmEngineController {
 
     // --- Prepare the machine to run
     this._isFirstStart =
-      this.executionState === ExecutionState.None ||
-      this.executionState === ExecutionState.Stopped;
+      this.executionState === VmState.None ||
+      this.executionState === VmState.Stopped;
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
@@ -343,7 +339,7 @@ export class VmEngine implements IVmEngineController {
     rendererProcessStore.dispatch(emulatorSetDebugAction(this._isDebugging)());
 
     // --- Execute a single cycle
-    this.executionState = ExecutionState.Running;
+    this.executionState = VmState.Running;
     this._cancelled = false;
     this._completionTask = this.executeCycle(this, options);
   }
@@ -353,9 +349,9 @@ export class VmEngine implements IVmEngineController {
    */
   async pause(): Promise<void> {
     if (
-      this.executionState === ExecutionState.None ||
-      this.executionState === ExecutionState.Stopped ||
-      this.executionState === ExecutionState.Paused ||
+      this.executionState === VmState.None ||
+      this.executionState === VmState.Stopped ||
+      this.executionState === VmState.Paused ||
       !this._completionTask
     ) {
       // --- Nothing to pause
@@ -364,10 +360,10 @@ export class VmEngine implements IVmEngineController {
     }
 
     // --- Prepare the machine to pause
-    this.executionState = ExecutionState.Pausing;
+    this.executionState = VmState.Pausing;
     this._isFirstPause = this._isFirstStart;
     await this.cancelRun();
-    this.executionState = ExecutionState.Paused;
+    this.executionState = VmState.Paused;
     await this.z80Machine.onPaused(this._isFirstPause);
   }
 
@@ -377,21 +373,21 @@ export class VmEngine implements IVmEngineController {
   async stop(): Promise<void> {
     // --- Stop only running machine
     switch (this._vmState) {
-      case ExecutionState.None:
-      case ExecutionState.Stopped:
+      case VmState.None:
+      case VmState.Stopped:
         break;
 
-      case ExecutionState.Paused:
+      case VmState.Paused:
         // --- The machine is paused, it can be quicky stopped
-        this.executionState = ExecutionState.Stopping;
-        this.executionState = ExecutionState.Stopped;
+        this.executionState = VmState.Stopping;
+        this.executionState = VmState.Stopped;
         break;
 
       default:
         // --- Initiate stop
-        this.executionState = ExecutionState.Stopping;
+        this.executionState = VmState.Stopping;
         await this.cancelRun();
-        this.executionState = ExecutionState.Stopped;
+        this.executionState = VmState.Stopped;
         break;
     }
     await this.z80Machine.onStopped();
@@ -561,7 +557,7 @@ export class VmEngine implements IVmEngineController {
           reason === ExecutionCompletionReason.BreakpointReached ||
           reason === ExecutionCompletionReason.TerminationPointReached
         ) {
-          machine.executionState = ExecutionState.Paused;
+          machine.executionState = VmState.Paused;
         }
 
         // --- Complete the cycle
@@ -822,4 +818,57 @@ function delay(milliseconds: number): Promise<void> {
       resolve();
     }, milliseconds);
   });
+}
+
+/**
+ * This class represents the states of the virtual machine as
+ * managed by the SpectrumVmController
+ */
+enum VmState {
+  /**
+   * The virtual machine has just been created, but has not run yet
+   */
+  None = 0,
+
+  /**
+   * The virtual machine is successfully started
+   */
+  Running = 1,
+
+  /**
+   * The virtual machine is being paused
+   */
+  Pausing = 2,
+
+  /**
+   * The virtual machine has been paused
+   */
+  Paused = 3,
+
+  /**
+   * The virtual machine is being stopped
+   */
+  Stopping = 4,
+
+  /**
+   * The virtual machine has been stopped
+   */
+  Stopped = 5,
+}
+
+/**
+ * This class represents the arguments of the event that signs that
+ * the state of the virtual machine changes
+ */
+class VmStateChangedArgs {
+  /**
+   * Initializes the event arguments
+   * @param oldState Old virtual machine state
+   * @param newState New virtual machione state
+   */
+  constructor(
+    public oldState: VmState,
+    public newState: VmState,
+    public isDebug: boolean
+  ) {}
 }

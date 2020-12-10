@@ -1,5 +1,5 @@
 {
-  "sourceDir": "../src/native",
+  "sourceDir": "../src/webassembly",
   "files": [
     "global-imports.wat",
     "spectrum-core/spectrum-imports.wat",
