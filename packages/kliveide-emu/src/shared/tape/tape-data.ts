@@ -1,8 +1,8 @@
 import { BinaryReader } from "../utils/BinaryReader";
 import { BinaryWriter } from "../utils/BinaryWriter";
-import { MachineApi } from "../../native/api/api";
-import { MemoryHelper } from "../../native/api/memory-helpers";
-import { TAPE_DATA_BUFFER } from "../../native/api/memory-map";
+import { MachineApi } from "../../renderer/machines/wa-api";
+import { MemoryHelper } from "../../renderer/machines/memory-helpers";
+import { TAPE_DATA_BUFFER } from "../../renderer/machines/memory-map";
 
 /**
  * Defines the serialization operations of a TZX record
@@ -76,7 +76,7 @@ export abstract class TapeFileReader {
    * @param api API instance to communicate with the machine
    * @returns The number of data blocks sent
    */
-  sendTapeFileToEngine(api: MachineApi ): number {
+  sendTapeFileToEngine(api: MachineApi): number {
     const mh = new MemoryHelper(api, TAPE_DATA_BUFFER);
     let offset = 0;
     let count = 0;

@@ -2,10 +2,10 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { Z80StateFlags } from "../../src/native/api/cpu-helpers";
-import { RunMode } from "../../src/native/api/RunMode";
+import { Z80SignalStateFlags } from "../../src/shared/machines/z80-helpers";
+import { RunMode } from "../../src/renderer/machines/RunMode";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -177,7 +177,7 @@ describe("Standard ops 40-7f", () => {
 
     testMachine.shouldKeepRegisters();
     testMachine.shouldKeepMemory();
-    expect(s.stateFlags & Z80StateFlags.Halted).toBeTruthy();
+    expect(s.stateFlags & Z80SignalStateFlags.Halted).toBeTruthy();
     expect(s.pc).toBe(0x0000);
     expect(s.tacts).toBe(4);
   });

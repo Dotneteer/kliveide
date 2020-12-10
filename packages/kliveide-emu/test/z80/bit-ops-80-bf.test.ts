@@ -2,15 +2,14 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { Z80CpuState } from "../../src/native/api/cpu-helpers";
+import { Z80CpuState } from "../../src/shared/machines/z80-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
 let api: CpuApi;
 let testMachine: TestZ80Machine;
-
 
 describe("Bit ops 80-bf", () => {
   before(async () => {

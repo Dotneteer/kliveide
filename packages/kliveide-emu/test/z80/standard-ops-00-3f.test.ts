@@ -2,10 +2,10 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
-import { RunMode } from "../../src/native/api/RunMode";
+import { FlagsSetMask } from "../../src/shared/machines/z80-helpers";
+import { RunMode } from "../../src/renderer/machines/RunMode";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -1410,7 +1410,7 @@ describe("Standard ops 00-3f", () => {
     new DaaSample(0x1b, true, false, true, 0x8195),
     new DaaSample(0xaa, false, false, false, 0x1011),
     new DaaSample(0xaa, true, false, false, 0x1011),
-    new DaaSample(0xc6, true, false, false, 0x2c29)
+    new DaaSample(0xc6, true, false, false, 0x2c29),
   ];
   daaSamples.forEach((sm, index) => {
     it(`27: daa #${index + 1}`, () => {
@@ -1918,7 +1918,6 @@ describe("Standard ops 00-3f", () => {
     expect(s.tacts).toBe(13);
   });
 
-
   it("3b: dec sp #1", () => {
     let s = testMachine.initCode([0x3b]);
 
@@ -2126,6 +2125,4 @@ describe("Standard ops 00-3f", () => {
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.tacts).toBe(4);
   });
-
 });
-

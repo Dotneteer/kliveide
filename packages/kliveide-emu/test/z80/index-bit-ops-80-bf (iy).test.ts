@@ -2,9 +2,9 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { Z80CpuState } from "../../src/native/api/cpu-helpers";
+import { Z80CpuState } from "../../src/shared/machines/z80-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -34,10 +34,10 @@ describe("Indexed bit ops 80-bf (iy)", () => {
         s.iy = 0x1000;
         m[s.iy + OFFS] = 0xff;
         s.f &= 0xfe;
-  
+
         s = testMachine.run(s, m);
         m = testMachine.memory;
-  
+
         expect(m[s.iy + OFFS]).toBe(0xff & ~(1 << n));
         if (q !== 6) {
           expect(getReg8(s, q)).toBe(m[s.iy + OFFS]);
@@ -56,10 +56,10 @@ describe("Indexed bit ops 80-bf (iy)", () => {
         s.iy = 0x1000;
         m[s.iy + OFFS] = 0xaa;
         s.f &= 0xfe;
-  
+
         s = testMachine.run(s, m);
         m = testMachine.memory;
-  
+
         expect(m[s.iy + OFFS]).toBe(0xaa & ~(1 << n));
         if (q !== 6) {
           expect(getReg8(s, q)).toBe(m[s.iy + OFFS]);

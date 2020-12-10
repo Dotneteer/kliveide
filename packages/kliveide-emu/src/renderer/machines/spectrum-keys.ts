@@ -1,4 +1,4 @@
-import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
+import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { KeyCode } from "./keyboard";
 
 /**

@@ -1,10 +1,7 @@
-import { MachineApi } from "../../native/api/api";
-import { MachineState } from "./machine-state";
-import { MemoryHelper } from "../../native/api/memory-helpers";
-import {
-  REG_AREA_INDEX,
-  STATE_TRANSFER_BUFF,
-} from "../../native/api/memory-map";
+import { MachineApi } from "./wa-api";
+import { MachineState } from "../../shared/machines/machine-state";
+import { MemoryHelper } from "./memory-helpers";
+import { REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 
 /**
@@ -78,21 +75,21 @@ export abstract class Z80MachineBase {
    * @param _opCode The fetched operation code
    * @param _pcAfter The value of PC after the fetch operation
    */
-  opCodeFetched(_opCode: number, _pcAfter: number) : void {}
+  opCodeFetched(_opCode: number, _pcAfter: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU has completed a standard instruction
    * @param _opCode The fetched operation code
    * @param _pcAfter The value of PC after the operation
    */
-  standardOpExecuted(_opCode: number, _pcAfter: number) : void {}
+  standardOpExecuted(_opCode: number, _pcAfter: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU has completed an extended instruction
    * @param _opCode The fetched operation code
    * @param _pcAfter The value of PC after the operation
    */
-  extendedOpExecuted(_opCode: number, _pcAfter: number) : void {}
+  extendedOpExecuted(_opCode: number, _pcAfter: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU has completed an indexed instruction
@@ -100,14 +97,18 @@ export abstract class Z80MachineBase {
    * @param _indexMode The index mode: IX=0, IY=1
    * @param _pcAfter The value of PC after the operation
    */
-  indexedOpExecuted(_opCode: number, _indexMode: number, _pcAfter: number) : void {}
+  indexedOpExecuted(
+    _opCode: number,
+    _indexMode: number,
+    _pcAfter: number
+  ): void {}
 
   /**
    * CPU hook. Invoked when the CPU has completed a bit instruction
    * @param _opCode The fetched operation code
    * @param _pcAfter The value of PC after the operation
    */
-  bitOpExecuted(_opCode: number, _pcAfter: number) : void {}
+  bitOpExecuted(_opCode: number, _pcAfter: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU has completed an IX-indexed bit
@@ -116,55 +117,59 @@ export abstract class Z80MachineBase {
    * @param _indexMode The index mode: IX=0, IY=1
    * @param _pcAfter The value of PC after the operation
    */
-  indexedBitOpExecuted(_opCode: number, _indexMode: number, _pcAfter: number) : void {}
+  indexedBitOpExecuted(
+    _opCode: number,
+    _indexMode: number,
+    _pcAfter: number
+  ): void {}
 
   /**
    * CPU hook. Invoked when a maskable interrupt is about to be executed
    * @param _pcInt The value of PC that points to the beginning of the
    * interrupt routine
    */
-  intExecuted(_pcInt: number) : void {}
+  intExecuted(_pcInt: number): void {}
 
   /**
    * CPU hook. Invoked when a non-maskable interrupt is about to be executed
    * interrupt routine
    */
-  nmiExecuted() : void {}
+  nmiExecuted(): void {}
 
   /**
    * CPU hook. Invoked when the CPU has been halted.
    * @param _pcHalt The value of PC that points to the HALT statement
    * interrupt routine
    */
-  halted(_pcHalt: number) : void {}
+  halted(_pcHalt: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU reads memory while processing a statement
    * @param _address The memory address read
    * @param _value The memory value read
    */
-  memoryRead(_address: number, _value: number) : void {}
+  memoryRead(_address: number, _value: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU writes memory while processing a statement
    * @param _address The memory address read
    * @param _value The memory value read
    */
-  memoryWritten(_address: number, _value: number) : void {}
+  memoryWritten(_address: number, _value: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU reads from an I/O port
    * @param _address The memory address read
    * @param _value The memory value read
    */
-  ioRead(_address: number, _value: number) : void {}
+  ioRead(_address: number, _value: number): void {}
 
   /**
    * CPU hook. Invoked when the CPU writes to an I/O port
    * @param _address The memory address read
    * @param _value The memory value read
    */
-  ioWritten(_address: number, _value: number) : void {}
+  ioWritten(_address: number, _value: number): void {}
 
   /**
    * Override this method to obtain machine state

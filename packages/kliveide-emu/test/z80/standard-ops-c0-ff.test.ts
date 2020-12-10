@@ -2,10 +2,10 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
-import { RunMode } from "../../src/native/api/RunMode";
+import { FlagsSetMask } from "../../src/shared/machines/z80-helpers";
+import { RunMode } from "../../src/renderer/machines/RunMode";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -22,7 +22,6 @@ describe("Standard ops c0-ff", () => {
   beforeEach(() => {
     testMachine.reset();
   });
-
 
   it("c0: ret nz #1", () => {
     let s = testMachine.initCode(

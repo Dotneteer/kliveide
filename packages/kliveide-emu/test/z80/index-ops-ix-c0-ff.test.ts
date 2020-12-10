@@ -2,10 +2,10 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
-import { RunMode } from "../../src/native/api/RunMode";
+import { FlagsSetMask } from "../../src/shared/machines/z80-helpers";
+import { RunMode } from "../../src/renderer/machines/RunMode";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -33,7 +33,8 @@ describe("Indexed ops (ix) c0-ff", () => {
         0x00, // CALL #0006
         0x76, // HALT
         0xb7, // OR A
-        0xdd, 0xc0, // RET NZ
+        0xdd,
+        0xc0, // RET NZ
         0x3e,
         0x24, // LD A,#24
         0xc9, // RET

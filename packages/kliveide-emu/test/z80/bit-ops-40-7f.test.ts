@@ -2,9 +2,12 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask, Z80StateFlags, Z80CpuState } from "../../src/native/api/cpu-helpers";
+import {
+  FlagsSetMask,
+  Z80CpuState,
+} from "../../src/shared/machines/z80-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -80,10 +83,10 @@ describe("Bit ops 40-7f", () => {
       let s = testMachine.initCode([0xcb, opCode]);
       let m = testMachine.memory;
       s.hl = 0x1000;
-      m[s.hl] =  ~(0x01 << n);
+      m[s.hl] = ~(0x01 << n);
       s.f &= 0xfe;
       s = testMachine.run(s, m);
-      m = testMachine.memory
+      m = testMachine.memory;
 
       expect(s.f & FlagsSetMask.S).toBeFalsy();
       expect(s.f & FlagsSetMask.Z).toBeTruthy();

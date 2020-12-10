@@ -1,19 +1,14 @@
-import {
-  Z80CpuState,
-  IoOp,
-  TbBlueOp,
-  FlagsSetMask,
-} from "../../native/api/cpu-helpers";
-import { CpuApi } from "../../native/api/api";
-import { MemoryHelper } from "../../native/api/memory-helpers";
-import { RunMode } from "../../native/api/RunMode";
+import { CpuApi } from "./wa-api";
+import { MemoryHelper } from "./memory-helpers";
+import { RunMode } from "./RunMode";
 import {
   TEST_INPUT_OFFS,
   REG_AREA_INDEX,
   STATE_TRANSFER_BUFF,
   TEST_IO_LOG_OFFS,
   TEST_TBBLUE_LOG_OFFS,
-} from "../../native/api/memory-map";
+} from "./memory-map";
+import { FlagsSetMask, Z80CpuState } from "../../shared/machines/z80-helpers";
 
 /**
  * This class represents a test machine that can be used for testing the WA machine
@@ -532,4 +527,21 @@ export class TestZ80Machine {
       );
     }
   }
+}
+
+/**
+ * Represents data in a particular I/O operation
+ */
+class IoOp {
+  address: number;
+  value: number;
+  isOutput: boolean;
+}
+
+/**
+ * Represents information for a TBBlue operation
+ */
+class TbBlueOp {
+  isIndex: boolean;
+  data: number;
 }

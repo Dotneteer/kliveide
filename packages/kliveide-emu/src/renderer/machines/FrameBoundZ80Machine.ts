@@ -1,6 +1,6 @@
 import { Z80MachineBase } from "./Z80MachineBase";
-import { MachineApi, VmKeyCode } from "../../native/api/api";
-import { MemoryHelper } from "../../native/api/memory-helpers";
+import { MachineApi, VmKeyCode } from "./wa-api";
+import { MemoryHelper } from "./memory-helpers";
 import {
   DebugStepMode,
   EmulationMode,
@@ -9,11 +9,8 @@ import {
   FrameBoundZ80MachineState,
   MachineState,
   Z80MachineStateBase,
-} from "./machine-state";
-import {
-  PAGE_INDEX_16,
-  STATE_TRANSFER_BUFF,
-} from "../../native/api/memory-map";
+} from "../../shared/machines/machine-state";
+import { PAGE_INDEX_16, STATE_TRANSFER_BUFF } from "./memory-map";
 import { CodeToInject } from "../../shared/machines/api-data";
 
 /**
@@ -225,7 +222,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
 
   /**
    * Override this method in derived classes to define an action when
-   * the UI loop waits for loop state evaluations (whether to continue the 
+   * the UI loop waits for loop state evaluations (whether to continue the
    * cycle of not).
    * @param _resultState Machine state on loop completion
    */

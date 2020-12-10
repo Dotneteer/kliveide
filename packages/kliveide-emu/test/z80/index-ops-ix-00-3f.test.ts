@@ -2,9 +2,9 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
+import { FlagsSetMask } from "../../src/shared/machines/z80-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -881,7 +881,6 @@ describe("Indexed ops (ix) 00-3f", () => {
     expect(s.tacts).toBe(15);
   });
 
-
   it("1a: ld a,(de)", () => {
     let s = testMachine.initCode([0xdd, 0x1a]);
     s.de = 0x1000;
@@ -1122,7 +1121,7 @@ describe("Indexed ops (ix) 00-3f", () => {
   });
 
   it("20: jr nz #2", () => {
-    let s = testMachine.initCode([0xdd,0x20, 0x04]);
+    let s = testMachine.initCode([0xdd, 0x20, 0x04]);
     s.f &= ~FlagsSetMask.Z;
     s = testMachine.run(s);
 
@@ -1342,7 +1341,7 @@ describe("Indexed ops (ix) 00-3f", () => {
     new DaaSample(0x1b, true, false, true, 0x8195),
     new DaaSample(0xaa, false, false, false, 0x1011),
     new DaaSample(0xaa, true, false, false, 0x1011),
-    new DaaSample(0xc6, true, false, false, 0x2c29)
+    new DaaSample(0xc6, true, false, false, 0x2c29),
   ];
   daaSamples.forEach((sm, index) => {
     it(`27: daa #${index + 1}`, () => {
@@ -1876,7 +1875,6 @@ describe("Indexed ops (ix) 00-3f", () => {
     expect(s.tacts).toBe(17);
   });
 
-
   it("3b: dec sp #1", () => {
     let s = testMachine.initCode([0xdd, 0x3b]);
 
@@ -2071,5 +2069,4 @@ describe("Indexed ops (ix) 00-3f", () => {
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(8);
   });
-
 });

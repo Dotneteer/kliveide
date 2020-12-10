@@ -1,14 +1,14 @@
 import { ZxSpectrumBase } from "./ZxSpectrumBase";
-import { MachineApi } from "../../native/api/api";
+import { MachineApi } from "./wa-api";
 import {
   Spectrum128MachineState,
   MachineState,
   ExecuteCycleOptions,
   EmulationMode,
   DebugStepMode,
-} from "./machine-state";
-import { ROM_128_0_OFFS } from "../../native/api/memory-map";
-import { SpectrumKeyCode } from "../../native/api/SpectrumKeyCode";
+} from "../../shared/machines/machine-state";
+import { ROM_128_0_OFFS } from "./memory-map";
+import { SpectrumKeyCode } from "./SpectrumKeyCode";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -32,12 +32,12 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
   /**
    * The type identifier of the machine
    */
-  readonly typeId = "sp128"
+  readonly typeId = "sp128";
 
   /**
    * Friendly name to display
    */
-  readonly displayName = "ZX Spectrum 128K"
+  readonly displayName = "ZX Spectrum 128K";
 
   /**
    * Creates a new instance of the ZX Spectrum machine
@@ -78,7 +78,7 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
       )
     );
     await controller.waitForCycleTermination();
-    
+
     if (model !== "48") {
       // --- Use ZX Spectrum 128
       await controller.run(

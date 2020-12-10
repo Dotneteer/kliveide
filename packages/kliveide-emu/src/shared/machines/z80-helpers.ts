@@ -1,26 +1,7 @@
-export enum OpPrefixMode {
-  // No operation prefix
-  None = 0,
-
-  // Extended mode (0xED prefix)
-  Extended,
-
-  // Bit operations mode (0xCB prefix)
-  Bit
-}
-
-export enum OpIndexMode {
-  // Indexed address mode is not used</summary>
-  None = 0,
-
-  // <summary>Indexed address with IX register</summary>
-  IX,
-
-  // <summary>Indexed address with IY register</summary>
-  IY
-}
-
-export enum Z80StateFlags {
+/**
+ * Represents the Z80 signal states
+ */
+export enum Z80SignalStateFlags {
   // No signal is set
   None = 0,
 
@@ -46,9 +27,13 @@ export enum Z80StateFlags {
   InvReset = 0xff - Reset,
 
   // Reset mask for HALT
-  InvHalted = 0xff - Halted
+  InvHalted = 0xff - Halted,
 }
 
+/**
+ * Represents individual masks for individual flags, and group of
+ * flags within the F register
+ */
 export enum FlagsSetMask {
   S = 0x80,
   Z = 0x40,
@@ -60,7 +45,7 @@ export enum FlagsSetMask {
   C = 0x01,
   SZPV = S | Z | PV,
   NH = N | H,
-  R3R5 = R3 | R5
+  R3R5 = R3 | R5,
 }
 
 /**
@@ -274,7 +259,7 @@ export class Z80CpuState {
   tactsInFrame: number;
   allowExtendedSet: boolean;
   tacts: number;
-  stateFlags: Z80StateFlags;
+  stateFlags: Z80SignalStateFlags;
   useGateArrayContention: boolean;
   iff1: boolean;
   iff2: boolean;
@@ -287,29 +272,24 @@ export class Z80CpuState {
   opCode: number;
 }
 
-/**
- * Represents data in a particular memory operation
- */
-export class MemoryOp {
-  address: number;
-  value: number;
-  isWrite: boolean;
+enum OpPrefixMode {
+  // No operation prefix
+  None = 0,
+
+  // Extended mode (0xED prefix)
+  Extended,
+
+  // Bit operations mode (0xCB prefix)
+  Bit,
 }
 
-/**
- * Represents data in a particular I/O operation
- */
-export class IoOp {
-  address: number;
-  value: number;
-  isOutput: boolean;
-}
+enum OpIndexMode {
+  // Indexed address mode is not used</summary>
+  None = 0,
 
-/**
- * Represents information for a TBBlue operation
- */
-export class TbBlueOp {
-  isIndex: boolean;
-  data: number;  
-}
+  // <summary>Indexed address with IX register</summary>
+  IX,
 
+  // <summary>Indexed address with IY register</summary>
+  IY,
+}

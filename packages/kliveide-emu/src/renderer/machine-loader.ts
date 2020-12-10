@@ -1,5 +1,5 @@
 import { VmEngine } from "./machines/VmEngine";
-import { MachineApi } from "../native/api/api";
+import { MachineApi } from "./machines/wa-api";
 import { ZxSpectrum48 } from "./machines/ZxSpectrum48";
 import { ZxSpectrum128 } from "./machines/ZxSpectrum128";
 import {
@@ -7,9 +7,9 @@ import {
   rendererProcessStore,
 } from "./rendererProcessStore";
 import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
-import { MemoryHelper } from "../native/api/memory-helpers";
+import { MemoryHelper } from "./machines/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
-import { TAPE_SAVE_BUFFER } from "../native/api/memory-map";
+import { TAPE_SAVE_BUFFER } from "./machines/memory-map";
 import { FrameBoundZ80Machine } from "./machines/FrameBoundZ80Machine";
 import {
   InjectProgramCommand,
@@ -259,7 +259,7 @@ async function createWaInstance(typeId: string): Promise<WebAssembly.Instance> {
       memoryRead,
       memoryWritten,
       ioRead,
-      ioWritten
+      ioWritten,
     },
   };
   let wasmFile = "";
@@ -352,7 +352,11 @@ function extendedOpExecuted(opCode: number, pcAfter: number): void {
  * @param indexMode The index mode: IX=0, IY=1
  * @param pcAfter The value of PC after the operation
  */
-function indexedOpExecuted(opCode: number, indexMode: number, pcAfter: number): void {
+function indexedOpExecuted(
+  opCode: number,
+  indexMode: number,
+  pcAfter: number
+): void {
   vmEngine.z80Machine.indexedOpExecuted(opCode, indexMode, pcAfter);
 }
 
@@ -372,7 +376,11 @@ function bitOpExecuted(opCode: number, pcAfter: number): void {
  * @param indexMode The index mode: IX=0, IY=1
  * @param pcAfter The value of PC after the operation
  */
-function indexedBitOpExecuted(opCode: number, indexMode: number, pcAfter: number): void {
+function indexedBitOpExecuted(
+  opCode: number,
+  indexMode: number,
+  pcAfter: number
+): void {
   vmEngine.z80Machine.indexedBitOpExecuted(opCode, indexMode, pcAfter);
 }
 

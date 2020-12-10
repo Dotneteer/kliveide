@@ -1,22 +1,22 @@
 import * as path from "path";
 import * as fs from "fs";
 
-import { MemoryHelper } from "../../native/api/memory-helpers";
+import { MemoryHelper } from "./memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
   COLORIZATION_BUFFER,
   PAGE_INDEX_16,
   PSG_SAMPLE_BUFFER,
   STATE_TRANSFER_BUFF,
-} from "../../native/api/memory-map";
-import { MachineApi } from "../../native/api/api";
+} from "./memory-map";
+import { MachineApi } from "./wa-api";
 import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
 import {
   MachineState,
   MemoryContentionType,
   SpectrumMachineStateBase,
   Z80MachineStateBase,
-} from "./machine-state";
+} from "../../shared/machines/machine-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
 import { TapReader } from "../../shared/tape/tap-file";

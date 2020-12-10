@@ -2,12 +2,12 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { MachineApi } from "../../../src/native/api/api";
+import { MachineApi } from "../../../src/renderer/machines/wa-api";
 import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
 import {
   ExecuteCycleOptions,
   EmulationMode,
-} from "../../../src/renderer/machines/machine-state";
+} from "../../../src/shared/machines/machine-state";
 import { importObject } from "../../import-object";
 
 const buffer = fs.readFileSync(
@@ -197,7 +197,6 @@ describe("ZX Spectrum 48 - Ports", () => {
       machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
       const s = machine.getMachineState();
       expect(s.a).toBe(c.exp);
- 
     });
   });
 });

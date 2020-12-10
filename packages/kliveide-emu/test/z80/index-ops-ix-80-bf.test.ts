@@ -2,9 +2,9 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
+import { FlagsSetMask } from "../../src/shared/machines/z80-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -2050,7 +2050,7 @@ describe("Indexed ops (ix) 80-bf", () => {
   it("9e: sbc a,(ix+D) #2", () => {
     let s = testMachine.initCode([0xdd, 0x9e, 0xfe]);
     s.a = 0x40;
-    s.f |= FlagsSetMask.C
+    s.f |= FlagsSetMask.C;
     s.ix = 0x1000;
     const m = testMachine.memory;
     m[s.ix - 2] = 0x60;
@@ -2073,7 +2073,7 @@ describe("Indexed ops (ix) 80-bf", () => {
   it("9e: sbc a,(ix+D) #3", () => {
     let s = testMachine.initCode([0xdd, 0x9e, 0x52]);
     s.a = 0x40;
-    s.f |= FlagsSetMask.C
+    s.f |= FlagsSetMask.C;
     s.ix = 0x1000;
     const m = testMachine.memory;
     m[s.ix + 0x52] = 0x3f;
@@ -3539,7 +3539,7 @@ describe("Indexed ops (ix) 80-bf", () => {
     if (q >= 4 && q <= 6) continue;
     const opCode = 0xb8 + q;
     it(`${opCode.toString(16)}: cp ${reg8[q]} #1`, () => {
-      let s = testMachine.initCode([0xdd,opCode]);
+      let s = testMachine.initCode([0xdd, opCode]);
       s.a = 0x36;
       s.f |= 0x80;
       const l = 0x24;

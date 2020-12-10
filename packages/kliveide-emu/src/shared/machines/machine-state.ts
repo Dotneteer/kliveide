@@ -1,8 +1,5 @@
-import { Z80CpuState } from "../../native/api/cpu-helpers";
+import { Z80CpuState } from "./z80-helpers";
 
-/**
- * This type represents ZX Spectrum machine states
- */
 export type MachineState =
   | Spectrum48MachineState
   | Spectrum128MachineState

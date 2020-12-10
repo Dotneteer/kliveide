@@ -2,15 +2,13 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { MachineApi } from "../../src/native/api/api";
+import { MachineApi } from "../../src/renderer/machines/wa-api";
 import { ZxSpectrum48 } from "../../src/renderer/machines/ZxSpectrum48";
-import { MemoryHelper } from "../../src/native/api/memory-helpers";
+import { MemoryHelper } from "../../src/renderer/machines/memory-helpers";
 import { importObject } from "../import-object";
-import { MEMWRITE_MAP } from "../../src/native/api/memory-map";
+import { MEMWRITE_MAP } from "../../src/renderer/machines/memory-map";
 
-const buffer = fs.readFileSync(
-  path.join(__dirname, "../../build/sp48.wasm")
-);
+const buffer = fs.readFileSync(path.join(__dirname, "../../build/sp48.wasm"));
 const romBuffer = fs.readFileSync(
   path.join(__dirname, "../../roms/sp48/sp48.rom")
 );
@@ -63,5 +61,4 @@ describe("ZX Spectrum - Memory write map", () => {
     }
     expect(sum).toBe(850);
   });
-
 });

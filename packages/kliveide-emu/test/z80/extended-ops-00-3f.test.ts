@@ -2,7 +2,7 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
 import { importObject } from "../import-object";
 
@@ -22,11 +22,11 @@ describe("Extended ops 00-3f", () => {
   });
 
   for (let i = 0x00; i <= 0x22; i++) {
-    it(`${i < 16 ? "0"+i.toString(16) : i.toString(16)}: nop`, () => {
+    it(`${i < 16 ? "0" + i.toString(16) : i.toString(16)}: nop`, () => {
       let s = testMachine.initCode([0xed, i]);
-  
+
       s = testMachine.run();
-  
+
       testMachine.shouldKeepRegisters();
       testMachine.shouldKeepMemory();
       expect(s.pc).toBe(0x0002);
@@ -404,9 +404,9 @@ describe("Extended ops 00-3f", () => {
   for (let i = 0x2d; i <= 0x2f; i++) {
     it(`${i.toString(16)}: nop`, () => {
       let s = testMachine.initCode([0xed, i]);
-  
+
       s = testMachine.run();
-  
+
       testMachine.shouldKeepRegisters();
       testMachine.shouldKeepMemory();
       expect(s.pc).toBe(0x0002);
@@ -421,7 +421,7 @@ describe("Extended ops 00-3f", () => {
     s.e = 0x34;
     s = testMachine.run(s);
 
-    expect(s.de).toBe((0x12*0x34) & 0xffff);
+    expect(s.de).toBe((0x12 * 0x34) & 0xffff);
     testMachine.shouldKeepRegisters("DE");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -435,7 +435,7 @@ describe("Extended ops 00-3f", () => {
     s.e = 0x24;
     s = testMachine.run(s);
 
-    expect(s.de).toBe((0x82*0x24) & 0xffff);
+    expect(s.de).toBe((0x82 * 0x24) & 0xffff);
     testMachine.shouldKeepRegisters("DE");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -458,7 +458,7 @@ describe("Extended ops 00-3f", () => {
     s.a = 0xa4;
     s = testMachine.run(s);
 
-    expect(s.hl).toBe((0x8765+0xa4) & 0xffff);
+    expect(s.hl).toBe((0x8765 + 0xa4) & 0xffff);
     testMachine.shouldKeepRegisters("HL");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -472,7 +472,7 @@ describe("Extended ops 00-3f", () => {
     s.a = 0xa4;
     s = testMachine.run(s);
 
-    expect(s.hl).toBe((0xffa9+0xa4) & 0xffff);
+    expect(s.hl).toBe((0xffa9 + 0xa4) & 0xffff);
     testMachine.shouldKeepRegisters("HL");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -495,7 +495,7 @@ describe("Extended ops 00-3f", () => {
     s.a = 0xa4;
     s = testMachine.run(s);
 
-    expect(s.de).toBe((0x8765+0xa4) & 0xffff);
+    expect(s.de).toBe((0x8765 + 0xa4) & 0xffff);
     testMachine.shouldKeepRegisters("DE");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -509,7 +509,7 @@ describe("Extended ops 00-3f", () => {
     s.a = 0xa4;
     s = testMachine.run(s);
 
-    expect(s.de).toBe((0xffa9+0xa4) & 0xffff);
+    expect(s.de).toBe((0xffa9 + 0xa4) & 0xffff);
     testMachine.shouldKeepRegisters("DE");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -532,7 +532,7 @@ describe("Extended ops 00-3f", () => {
     s.a = 0xa4;
     s = testMachine.run(s);
 
-    expect(s.bc).toBe((0x8765+0xa4) & 0xffff);
+    expect(s.bc).toBe((0x8765 + 0xa4) & 0xffff);
     testMachine.shouldKeepRegisters("BC");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -546,7 +546,7 @@ describe("Extended ops 00-3f", () => {
     s.a = 0xa4;
     s = testMachine.run(s);
 
-    expect(s.bc).toBe((0xffa9+0xa4) & 0xffff);
+    expect(s.bc).toBe((0xffa9 + 0xa4) & 0xffff);
     testMachine.shouldKeepRegisters("BC");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0002);
@@ -568,7 +568,7 @@ describe("Extended ops 00-3f", () => {
     s.hl = 0x8765;
     s = testMachine.run(s);
 
-    expect(s.hl).toBe((0x8765+0x3412) & 0xffff);
+    expect(s.hl).toBe((0x8765 + 0x3412) & 0xffff);
     testMachine.shouldKeepRegisters("HL");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0004);
@@ -581,13 +581,12 @@ describe("Extended ops 00-3f", () => {
     s.hl = 0x8765;
     s = testMachine.run(s);
 
-    expect(s.hl).toBe((0x8765+0x9712) & 0xffff);
+    expect(s.hl).toBe((0x8765 + 0x9712) & 0xffff);
     testMachine.shouldKeepRegisters("HL");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0004);
     expect(s.tacts).toBe(16);
   });
-
 
   it("34: add hl,NN need extset", () => {
     let s = testMachine.initCode([0xed, 0x34]);
@@ -604,7 +603,7 @@ describe("Extended ops 00-3f", () => {
     s.de = 0x8765;
     s = testMachine.run(s);
 
-    expect(s.de).toBe((0x8765+0x3412) & 0xffff);
+    expect(s.de).toBe((0x8765 + 0x3412) & 0xffff);
     testMachine.shouldKeepRegisters("DE");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0004);
@@ -617,13 +616,12 @@ describe("Extended ops 00-3f", () => {
     s.de = 0x8765;
     s = testMachine.run(s);
 
-    expect(s.de).toBe((0x8765+0x9712) & 0xffff);
+    expect(s.de).toBe((0x8765 + 0x9712) & 0xffff);
     testMachine.shouldKeepRegisters("DE");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0004);
     expect(s.tacts).toBe(16);
   });
-
 
   it("35: add de,NN need extset", () => {
     let s = testMachine.initCode([0xed, 0x35]);
@@ -640,7 +638,7 @@ describe("Extended ops 00-3f", () => {
     s.bc = 0x8765;
     s = testMachine.run(s);
 
-    expect(s.bc).toBe((0x8765+0x3412) & 0xffff);
+    expect(s.bc).toBe((0x8765 + 0x3412) & 0xffff);
     testMachine.shouldKeepRegisters("BC");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0004);
@@ -653,13 +651,12 @@ describe("Extended ops 00-3f", () => {
     s.bc = 0x8765;
     s = testMachine.run(s);
 
-    expect(s.bc).toBe((0x8765+0x9712) & 0xffff);
+    expect(s.bc).toBe((0x8765 + 0x9712) & 0xffff);
     testMachine.shouldKeepRegisters("BC");
     testMachine.shouldKeepMemory();
     expect(s.pc).toBe(0x0004);
     expect(s.tacts).toBe(16);
   });
-
 
   it("36: add bc,NN need extset", () => {
     let s = testMachine.initCode([0xed, 0x36]);
@@ -673,9 +670,9 @@ describe("Extended ops 00-3f", () => {
   for (let i = 0x37; i <= 0x3f; i++) {
     it(`${i.toString(16)}: nop`, () => {
       let s = testMachine.initCode([0xed, i]);
-  
+
       s = testMachine.run();
-  
+
       testMachine.shouldKeepRegisters();
       testMachine.shouldKeepMemory();
       expect(s.pc).toBe(0x0002);
