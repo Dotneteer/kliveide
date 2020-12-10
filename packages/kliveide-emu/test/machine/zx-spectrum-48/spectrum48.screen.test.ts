@@ -2,16 +2,19 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { MachineApi } from "../../../src/native/api/api";
+import { MachineApi } from "../../../src/renderer/machines/wa-api";
 import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
 import {
   ExecuteCycleOptions,
   EmulationMode,
   SpectrumMachineStateBase,
 } from "../../../src/renderer/machines/machine-state";
-import { MemoryHelper } from "../../../src/native/api/memory-helpers";
+import { MemoryHelper } from "../../../src/renderer/machines/memory-helpers";
 import { importObject } from "../../import-object";
-import { PIXEL_RENDERING_BUFFER, COLORIZATION_BUFFER } from "../../../src/native/api/memory-map";
+import {
+  PIXEL_RENDERING_BUFFER,
+  COLORIZATION_BUFFER,
+} from "../../../src/renderer/machines/memory-map";
 
 const buffer = fs.readFileSync(
   path.join(__dirname, "../../../build/sp48.wasm")
@@ -315,14 +318,22 @@ describe("ZX Spectrum 48 - Screen", () => {
       expect(sum).toBe(0x05 * s.borderLeftPixels);
 
       sum = 0x00;
-      for (let col = s.borderLeftPixels; col < s.screenWidth - s.borderRightPixels; col++) {
+      for (
+        let col = s.borderLeftPixels;
+        col < s.screenWidth - s.borderRightPixels;
+        col++
+      ) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
       }
       expect(sum).toBe(0x00);
 
       sum = 0x00;
-      for (let col = s.screenWidth - s.borderRightPixels; col < s.screenWidth;  col++) {
+      for (
+        let col = s.screenWidth - s.borderRightPixels;
+        col < s.screenWidth;
+        col++
+      ) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
       }
@@ -330,7 +341,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     }
 
     sum = 0;
-    for (let row = 48 + 192 ; row < s.screenLines; row++) {
+    for (let row = 48 + 192; row < s.screenLines; row++) {
       for (let col = 0; col < s.screenWidth; col++) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
@@ -362,10 +373,10 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     let mh = new MemoryHelper(api, 0);
     for (let addr = 0x4000; addr < 0x5800; addr++) {
-      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55)
+      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55);
     }
     for (let addr = 0x5800; addr < 0x5b00; addr++) {
-      machine.writeMemory(addr, 0x51)
+      machine.writeMemory(addr, 0x51);
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
@@ -405,15 +416,23 @@ describe("ZX Spectrum 48 - Screen", () => {
 
       sum = 0x00;
       let expectedSum = 0x00;
-      for (let col = s.borderLeftPixels; col < s.screenWidth - s.borderRightPixels; col++) {
+      for (
+        let col = s.borderLeftPixels;
+        col < s.screenWidth - s.borderRightPixels;
+        col++
+      ) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
-        expectedSum += (row + col) % 2 ? 0x09 : 0x0a
+        expectedSum += (row + col) % 2 ? 0x09 : 0x0a;
       }
       expect(sum).toBe(expectedSum);
 
       sum = 0x00;
-      for (let col = s.screenWidth - s.borderRightPixels; col < s.screenWidth;  col++) {
+      for (
+        let col = s.screenWidth - s.borderRightPixels;
+        col < s.screenWidth;
+        col++
+      ) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
       }
@@ -421,7 +440,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     }
 
     sum = 0;
-    for (let row = 48 + 192 ; row < s.screenLines; row++) {
+    for (let row = 48 + 192; row < s.screenLines; row++) {
       for (let col = 0; col < s.screenWidth; col++) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
@@ -453,10 +472,10 @@ describe("ZX Spectrum 48 - Screen", () => {
 
     let mh = new MemoryHelper(api, 0);
     for (let addr = 0x4000; addr < 0x5800; addr++) {
-      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55)
+      machine.writeMemory(addr, addr & 0x0100 ? 0xaa : 0x55);
     }
     for (let addr = 0x5800; addr < 0x5b00; addr++) {
-      machine.writeMemory(addr, 0x51)
+      machine.writeMemory(addr, 0x51);
     }
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
@@ -495,15 +514,23 @@ describe("ZX Spectrum 48 - Screen", () => {
 
       sum = 0x00;
       let expectedSum = 0x00;
-      for (let col = s.borderLeftPixels; col < s.screenWidth - s.borderRightPixels; col++) {
+      for (
+        let col = s.borderLeftPixels;
+        col < s.screenWidth - s.borderRightPixels;
+        col++
+      ) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
-        expectedSum += (row + col) % 2 ? 0x09 : 0x0a
+        expectedSum += (row + col) % 2 ? 0x09 : 0x0a;
       }
       expect(sum).toBe(expectedSum);
 
       sum = 0x00;
-      for (let col = s.screenWidth - s.borderRightPixels; col < s.screenWidth;  col++) {
+      for (
+        let col = s.screenWidth - s.borderRightPixels;
+        col < s.screenWidth;
+        col++
+      ) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
       }
@@ -511,7 +538,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     }
 
     sum = 0;
-    for (let row = 48 + 192 ; row < s.screenLines; row++) {
+    for (let row = 48 + 192; row < s.screenLines; row++) {
       for (let col = 0; col < s.screenWidth; col++) {
         const pixel = mh.readByte(row * s.screenWidth + col);
         sum += pixel;
@@ -554,13 +581,12 @@ describe("ZX Spectrum 48 - Screen", () => {
     for (let row = 0; row < 48; row++) {
       for (let col = 0; col < s.screenWidth; col++) {
         const pixel = mh.readUint32((row * s.screenWidth + col) * 4);
-        if (pixel === (0xffaaaa00 - 0x100000000)) {
+        if (pixel === 0xffaaaa00 - 0x100000000) {
           sum++;
         }
       }
     }
   });
-
 });
 
 /**

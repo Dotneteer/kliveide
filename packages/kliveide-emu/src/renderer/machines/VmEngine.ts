@@ -12,8 +12,7 @@ import {
   Z80MachineStateBase,
 } from "./machine-state";
 import { EmulatedKeyStroke } from "./keyboard";
-import { MemoryHelper } from "../../native/api/memory-helpers";
-import { AudioRenderer } from "./AudioRenderer";
+import { MemoryHelper } from "./memory-helpers";
 import {
   rendererProcessStore,
   createRendererProcessStateAware,
@@ -28,8 +27,8 @@ import {
 } from "../../shared/state/redux-emulator-state";
 import { CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
-import { BANK_0_OFFS } from "../../native/api/memory-map";
-import { VmKeyCode } from "../../native/api/api";
+import { BANK_0_OFFS } from "./memory-map";
+import { VmKeyCode } from "./wa-api";
 import { IVmEngineController } from "./IVmEngineController";
 
 /**

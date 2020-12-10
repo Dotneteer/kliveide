@@ -2,7 +2,6 @@
   // ==========================================================================
   // The singleton toolbar of the application
 
-  import { onMount } from "svelte";
   import ToolbarIconButton from "./ToolbarIconButton.svelte";
   import ToolbarSeparator from "./ToolbarSeparator.svelte";
 

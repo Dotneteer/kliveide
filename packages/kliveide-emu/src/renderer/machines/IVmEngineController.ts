@@ -1,4 +1,4 @@
-import { VmKeyCode } from "../../native/api/api";
+import { VmKeyCode } from "./wa-api";
 import { ExecuteCycleOptions } from "./machine-state";
 
 /**

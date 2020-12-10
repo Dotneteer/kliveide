@@ -1,5 +1,5 @@
 import { BinaryReader } from "../shared/utils/BinaryReader";
-import { OpIndexMode, OpPrefixMode, Z80StateFlags } from "../native/api/cpu-helpers";
+import { OpIndexMode, OpPrefixMode, Z80StateFlags } from "../renderer/machines/cpu-helpers";
 import { ExecutionCompletionReason } from "../renderer/machines/machine-state";
 
 /**

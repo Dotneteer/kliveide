@@ -1,5 +1,5 @@
 import { ZxSpectrumBase } from "./ZxSpectrumBase";
-import { MachineApi } from "../../native/api/api";
+import { MachineApi } from "./wa-api";
 import {
   Spectrum48MachineState,
   MachineState,
@@ -7,7 +7,7 @@ import {
   EmulationMode,
   DebugStepMode,
 } from "./machine-state";
-import { ROM_48_OFFS } from "../../native/api/memory-map";
+import { ROM_48_OFFS } from "./memory-map";
 import { CodeToInject } from "../../shared/machines/api-data";
 
 /**

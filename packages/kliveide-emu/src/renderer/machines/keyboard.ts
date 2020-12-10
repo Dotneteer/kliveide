@@ -1,4 +1,4 @@
-import { VmKeyCode } from "../../native/api/api";
+import { VmKeyCode } from "./wa-api";
 
 /**
  * Provides an association between JavaScript key codes and keys

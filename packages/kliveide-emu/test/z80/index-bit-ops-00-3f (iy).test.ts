@@ -2,9 +2,12 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask, Z80CpuState } from "../../src/native/api/cpu-helpers";
+import {
+  FlagsSetMask,
+  Z80CpuState,
+} from "../../src/renderer/machines/cpu-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -310,9 +313,7 @@ describe("Indexed bit ops 00-3f (iy)", () => {
 
   for (let q = 0; q <= 7; q++) {
     const opCode = 0x10 + q;
-    it(`${q.toString(16)}: rl (iy+D)${
-      q === 6 ? "" : "," + reg8[q]
-    } #1`, () => {
+    it(`${q.toString(16)}: rl (iy+D)${q === 6 ? "" : "," + reg8[q]} #1`, () => {
       const OFFS = 0x32;
       let s = testMachine.initCode([0xfd, 0xcb, OFFS, opCode]);
       let m = testMachine.memory;
@@ -437,9 +438,7 @@ describe("Indexed bit ops 00-3f (iy)", () => {
 
   for (let q = 0; q <= 7; q++) {
     const opCode = 0x18 + q;
-    it(`${q.toString(16)}: rr (iy+D)${
-      q === 6 ? "" : "," + reg8[q]
-    } #1`, () => {
+    it(`${q.toString(16)}: rr (iy+D)${q === 6 ? "" : "," + reg8[q]} #1`, () => {
       const OFFS = 0x32;
       let s = testMachine.initCode([0xfd, 0xcb, OFFS, opCode]);
       let m = testMachine.memory;

@@ -4,8 +4,6 @@
   import SvgIcon from "./SvgIcon.svelte";
   import { createEventDispatcher } from "svelte";
 
-  import { themeStore } from "../stores/theme-store";
-
   // ==========================================================================
   // Component parameters
 

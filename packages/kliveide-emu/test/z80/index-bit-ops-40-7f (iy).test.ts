@@ -2,9 +2,9 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
+import { FlagsSetMask } from "../../src/renderer/machines/cpu-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -34,10 +34,10 @@ describe("Indexed bit ops 40-7f (iy)", () => {
         s.iy = 0x1000;
         m[s.iy + OFFS] = ~(0x01 << n);
         s.f &= 0xfe;
-  
+
         s = testMachine.run(s, m);
         m = testMachine.memory;
-  
+
         expect(s.f & FlagsSetMask.S).toBeFalsy();
         expect(s.f & FlagsSetMask.Z).toBeTruthy();
         expect(s.f & FlagsSetMask.H).toBeTruthy();
@@ -59,10 +59,10 @@ describe("Indexed bit ops 40-7f (iy)", () => {
         s.iy = 0x1000;
         m[s.iy + OFFS] = 0x01 << n;
         s.f &= 0xfe;
-  
+
         s = testMachine.run(s, m);
         m = testMachine.memory;
-  
+
         if (n === 7) {
           expect(s.f & FlagsSetMask.S).toBeTruthy();
         } else {
@@ -73,7 +73,7 @@ describe("Indexed bit ops 40-7f (iy)", () => {
         expect(s.f & FlagsSetMask.PV).toBeFalsy();
         expect(s.f & FlagsSetMask.N).toBeFalsy();
         expect(s.f & FlagsSetMask.C).toBeFalsy();
-  
+
         testMachine.shouldKeepRegisters(`F, ${reg8[q]}`);
         testMachine.shouldKeepMemory();
 

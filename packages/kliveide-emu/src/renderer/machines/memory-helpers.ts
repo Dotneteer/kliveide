@@ -1,4 +1,4 @@
-import { CpuApi } from "./api";
+import { CpuApi } from "./wa-api";
 
 /**
  * This class provides operations to work with

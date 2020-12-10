@@ -2,15 +2,14 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { Z80CpuState } from "../../src/native/api/cpu-helpers";
+import { Z80CpuState } from "../../src/renderer/machines/cpu-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
 let api: CpuApi;
 let testMachine: TestZ80Machine;
-
 
 describe("Bit ops c0-ff", () => {
   before(async () => {
@@ -49,7 +48,7 @@ describe("Bit ops c0-ff", () => {
         s.f &= 0xfe;
         s = testMachine.run(s);
 
-        expect(getReg8(s, q)).toBe(0x55 | 1 << n);
+        expect(getReg8(s, q)).toBe(0x55 | (1 << n));
 
         testMachine.shouldKeepRegisters(`${reg8[q]}`);
         testMachine.shouldKeepMemory();
@@ -89,7 +88,7 @@ describe("Bit ops c0-ff", () => {
       s = testMachine.run(s, m);
       m = testMachine.memory;
 
-      expect(m[0x1000]).toBe(0x55 | 1 << n);
+      expect(m[0x1000]).toBe(0x55 | (1 << n));
 
       testMachine.shouldKeepRegisters("F");
       testMachine.shouldKeepMemory("1000");

@@ -2,9 +2,9 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/native/api/api";
+import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/native/api/cpu-helpers";
+import { FlagsSetMask } from "../../src/renderer/machines/cpu-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
@@ -1667,5 +1667,4 @@ describe("Extended ops 80-bf", () => {
       expect(s.tacts).toBe(8);
     });
   }
-
 });
