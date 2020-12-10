@@ -6,7 +6,7 @@ import {
   ExecuteCycleOptions,
   EmulationMode,
   DebugStepMode,
-} from "./machine-state";
+} from "../../shared/machines/machine-state";
 import { ROM_48_OFFS } from "./memory-map";
 import { CodeToInject } from "../../shared/machines/api-data";
 

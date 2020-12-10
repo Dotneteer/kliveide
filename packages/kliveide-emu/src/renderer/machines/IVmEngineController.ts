@@ -1,5 +1,5 @@
 import { VmKeyCode } from "./wa-api";
-import { ExecuteCycleOptions } from "./machine-state";
+import { ExecuteCycleOptions } from "../../shared/machines/machine-state";
 
 /**
  * Defines the services of a virtual machine engine controller.

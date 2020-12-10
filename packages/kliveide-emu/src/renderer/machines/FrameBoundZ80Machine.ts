@@ -9,7 +9,7 @@ import {
   FrameBoundZ80MachineState,
   MachineState,
   Z80MachineStateBase,
-} from "./machine-state";
+} from "../../shared/machines/machine-state";
 import { PAGE_INDEX_16, STATE_TRANSFER_BUFF } from "./memory-map";
 import { CodeToInject } from "../../shared/machines/api-data";
 

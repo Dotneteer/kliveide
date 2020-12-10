@@ -1,5 +1,5 @@
 import { MachineApi } from "./wa-api";
-import { MachineState } from "./machine-state";
+import { MachineState } from "../../shared/machines/machine-state";
 import { MemoryHelper } from "./memory-helpers";
 import { REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";

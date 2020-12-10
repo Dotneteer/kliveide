@@ -6,7 +6,7 @@ import {
   ExecuteCycleOptions,
   EmulationMode,
   DebugStepMode,
-} from "./machine-state";
+} from "../../shared/machines/machine-state";
 import { ROM_128_0_OFFS } from "./memory-map";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
 

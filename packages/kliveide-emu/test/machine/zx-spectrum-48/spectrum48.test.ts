@@ -9,7 +9,7 @@ import {
   ExecuteCycleOptions,
   EmulationMode,
   SpectrumMachineStateBase,
-} from "../../../src/renderer/machines/machine-state";
+} from "../../../src/shared/machines/machine-state";
 import { importObject } from "../../import-object";
 
 const buffer = fs.readFileSync(

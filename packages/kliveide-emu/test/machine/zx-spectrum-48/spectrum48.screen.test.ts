@@ -8,7 +8,7 @@ import {
   ExecuteCycleOptions,
   EmulationMode,
   SpectrumMachineStateBase,
-} from "../../../src/renderer/machines/machine-state";
+} from "../../../src/shared/machines/machine-state";
 import { MemoryHelper } from "../../../src/renderer/machines/memory-helpers";
 import { importObject } from "../../import-object";
 import {

@@ -1,12 +1,12 @@
 import { MachineApi } from "./wa-api";
+import { MemoryHelper } from "./memory-helpers";
+import { STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
+import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
 import {
   CambridgeZ88MachineState,
   MachineState,
   Z80MachineStateBase,
-} from "./machine-state";
-import { MemoryHelper } from "./memory-helpers";
-import { STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
-import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
+} from "../../shared/machines/machine-state";
 
 /**
  * This class implements the Cambride Z88 machine

@@ -16,7 +16,7 @@ import {
   MemoryContentionType,
   SpectrumMachineStateBase,
   Z80MachineStateBase,
-} from "./machine-state";
+} from "../../shared/machines/machine-state";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { TzxReader } from "../../shared/tape/tzx-file";
 import { TapReader } from "../../shared/tape/tap-file";

@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { CpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { FlagsSetMask } from "../../src/renderer/machines/cpu-helpers";
+import { FlagsSetMask } from "../../src/shared/machines/z80-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));

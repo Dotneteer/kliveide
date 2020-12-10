@@ -6,7 +6,7 @@ import {
   EmulationMode,
   DebugStepMode,
   Z80MachineStateBase,
-} from "./machine-state";
+} from "../../shared/machines/machine-state";
 import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
 import {

@@ -1,4 +1,3 @@
-import { Z80CpuState, IoOp, TbBlueOp, FlagsSetMask } from "./cpu-helpers";
 import { CpuApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
 import { RunMode } from "./RunMode";
@@ -9,6 +8,7 @@ import {
   TEST_IO_LOG_OFFS,
   TEST_TBBLUE_LOG_OFFS,
 } from "./memory-map";
+import { FlagsSetMask, Z80CpuState } from "../../shared/machines/z80-helpers";
 
 /**
  * This class represents a test machine that can be used for testing the WA machine
@@ -527,4 +527,21 @@ export class TestZ80Machine {
       );
     }
   }
+}
+
+/**
+ * Represents data in a particular I/O operation
+ */
+class IoOp {
+  address: number;
+  value: number;
+  isOutput: boolean;
+}
+
+/**
+ * Represents information for a TBBlue operation
+ */
+class TbBlueOp {
+  isIndex: boolean;
+  data: number;
 }

@@ -7,7 +7,7 @@ import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
 import {
   FlagsSetMask,
   Z80CpuState,
-} from "../../src/renderer/machines/cpu-helpers";
+} from "../../src/shared/machines/z80-helpers";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
