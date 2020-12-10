@@ -79,33 +79,36 @@
 ;; SZ53P flags table (256 bytes)
 (global $SZ53P_FLAGS i32 (i32.const 0x0120_0B00))
 
+;; Parity table (256 bytes)
+(global $PAR_FLAGS i32 (i32.const 0x0120_0C00))
+
 ;; Overflow ADD table (8 bytes)
-(global $OVF_ADD i32 (i32.const 0x0120_0C00))
+(global $OVF_ADD i32 (i32.const 0x0120_0D00))
 
 ;; Overflow SUB table (8 bytes)
-(global $OVF_SUB i32 (i32.const 0x0120_0C10))
+(global $OVF_SUB i32 (i32.const 0x0120_0D10))
 
 ;; Half-carry ADD table (8 bytes)
-(global $HC_ADD i32 (i32.const 0x0120_0C20))
+(global $HC_ADD i32 (i32.const 0x0120_0D20))
 
 ;; Half-carry SUB table (8 bytes)
-(global $HC_SUB i32 (i32.const 0x0120_0C30))
+(global $HC_SUB i32 (i32.const 0x0120_0D30))
 
 ;; ----------------------------------------------------------------------------
 ;; Z80 CPU + State transfer area
 
 ;; Z80 registers (32 byte)
 ;; The index of the register area (length: 0x1c)
-(global $REG_AREA_INDEX i32 (i32.const 0x0120_0D00))
+(global $REG_AREA_INDEX i32 (i32.const 0x0120_0E00))
 
 ;; Z80 8-bit register index conversion table (8 bytes)
-(global $REG8_TAB_OFFS i32 (i32.const 0x0120_0D20))
+(global $REG8_TAB_OFFS i32 (i32.const 0x0120_0E20))
 
 ;; Z80 16-bit register index conversion table (4 bytes)
-(global $REG16_TAB_OFFS i32 (i32.const 0x0120_0D30))
+(global $REG16_TAB_OFFS i32 (i32.const 0x0120_0E30))
 
 ;; State transfer buffer between WA and JS (0x672 bytes)
-(global $STATE_TRANSFER_BUFF i32 (i32.const 0x0120_0D60))
+(global $STATE_TRANSFER_BUFF i32 (i32.const 0x0120_0E60))
 
 ;; ----------------------------------------------------------------------------
 ;; Engine infrastructure

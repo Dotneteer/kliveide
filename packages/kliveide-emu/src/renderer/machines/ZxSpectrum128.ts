@@ -9,6 +9,7 @@ import {
 } from "../../shared/machines/machine-state";
 import { ROM_128_0_OFFS } from "./memory-map";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
+import { runInThisContext } from "vm";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -46,6 +47,8 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    */
   constructor(public api: MachineApi, roms?: Buffer[]) {
     super(api, roms);
+    // --- Turn on hooks for all instruction-related events
+    api.setCpuDiagnostics(0x3f);
   }
 
   /**
@@ -112,5 +115,94 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
     await controller.delayKey(SpectrumKeyCode.Enter);
     await controller.waitForCycleTermination();
     return SP48_MAIN_ENTRY;
+  }
+
+  // ==========================================================================
+  // CPU diagnostics
+
+  private ops: Record<string, number> = {};
+  private pcs: number[] = [];
+
+  /**
+   * CPU hook. Invoked when the CPU fetches an operation code
+   * @param _opCode The fetched operation code
+   * @param _pcAfter The value of PC after the fetch operation
+   */
+  opCodeFetched(_opCode: number, _pcAfter: number): void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed a standard instruction
+   * @param _opCode The fetched operation code
+   * @param _pcAfter The value of PC after the operation
+   */
+  standardOpExecuted(_opCode: number, _pcAfter: number): void {
+  }
+
+  /**
+   * CPU hook. Invoked when the CPU has completed an extended instruction
+   * @param opCode The fetched operation code
+   * @param pcAfter The value of PC after the operation
+   */
+  extendedOpExecuted(opCode: number, pcAfter: number): void {
+    const instr = opCode.toString(16).padStart(2, "0");
+    const counter = this.ops[instr];
+    if (counter === undefined) {
+      this.ops[instr] = 1;
+    } else {
+      this.ops[instr] = counter + 1;
+    }
+  }
+
+  /**
+   * CPU hook. Invoked when the CPU has completed an indexed instruction
+   * @param _opCode The fetched operation code
+   * @param _indexMode The index mode: IX=0, IY=1
+   * @param _pcAfter The value of PC after the operation
+   */
+  indexedOpExecuted(
+    _opCode: number,
+    _indexMode: number,
+    _pcAfter: number
+  ): void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed a bit instruction
+   * @param _opCode The fetched operation code
+   * @param _pcAfter The value of PC after the operation
+   */
+  bitOpExecuted(_opCode: number, _pcAfter: number): void {}
+
+  /**
+   * CPU hook. Invoked when the CPU has completed an IX-indexed bit
+   * instruction
+   * @param _opCode The fetched operation code
+   * @param _indexMode The index mode: IX=0, IY=1
+   * @param _pcAfter The value of PC after the operation
+   */
+  indexedBitOpExecuted(
+    _opCode: number,
+    _indexMode: number,
+    _pcAfter: number
+  ): void {}
+
+    /**
+   * Override this method to define an action when the virtual machine has
+   * started.
+   * @param _debugging Is started in debug mode?
+   * @param _isFirstStart Is the machine started from stopped state?
+   */
+  async onStarted(_debugging: boolean, _isFirstStart: boolean): Promise<void> {
+    this.ops = {};
+  }
+
+  /**
+   * Override this action to define an action when the virtual machine
+   * has paused.
+   * @param _isFirstPause Is the machine paused the first time?
+   */
+  async onPaused(_isFirstPause: boolean): Promise<void> {
+    await super.onPaused(_isFirstPause);
+    console.log(JSON.stringify(this.ops, null, 2));
+    console.log(JSON.stringify(this.pcs, null, 2));
   }
 }

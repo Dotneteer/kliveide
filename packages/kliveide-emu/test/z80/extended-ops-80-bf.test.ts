@@ -587,7 +587,7 @@ describe("Extended ops 80-bf", () => {
     expect(s.hl).toBe(0x1001);
 
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
@@ -617,7 +617,7 @@ describe("Extended ops 80-bf", () => {
     expect(s.hl).toBe(0x1001);
 
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
@@ -976,8 +976,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.hl).toBe(0x0fff);
 
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory();
@@ -1006,8 +1006,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.hl).toBe(0x0fff);
 
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory();
@@ -1259,7 +1259,7 @@ describe("Extended ops 80-bf", () => {
     expect(s.hl).toBe(0x1003);
 
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
@@ -1566,7 +1566,7 @@ describe("Extended ops 80-bf", () => {
     expect(s.hl).toBe(0x0fff);
 
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");

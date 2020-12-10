@@ -61,4 +61,19 @@ describe("ZX Spectrum - Memory write map", () => {
     }
     expect(sum).toBe(850);
   });
+
+  it("Parity table", () => {
+    let result = '(data (i32.const 0x0120_0C00) "';
+    for (let i = 0; i < 0x100; i++) {
+      let j = i;
+      let parity = 0;
+      for (let k = 0; k < 8; k++) {
+        parity ^= j & 1;
+        j >>= 1;
+      }
+      result += parity ? "\\04" : "\\00";
+    }
+    result += '")';
+    console.log(result);
+  });
 });
