@@ -7,6 +7,7 @@
     "memory-map.wat",
     "common-core.wat",
     "z80/z80.wat",
+    "z80/z80-cpu-hooks.wat",
     "z80/z80-jump-tables.wat",
     "z80/z80-contention.wat",
     "z80/z80-standard-ops.wat",

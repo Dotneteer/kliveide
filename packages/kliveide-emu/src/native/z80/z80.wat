@@ -104,6 +104,9 @@
 ;; Operation code being processed
 (global $opCode (mut i32) (i32.const 0x00))
 
+;; CPU diagnostics flags
+(global $cpuDiagnostics (mut i32) (i32.const 0x00))
+
 ;; ----------------------------------------------------------------------------
 ;; ALU helper tables
 
@@ -194,7 +197,10 @@
   ;; CPU configuration
   (i32.store offset=48 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))      
   (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))      
-  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $supportsNextOperation))      
+  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $supportsNextOperation))  
+
+  ;; Other CPU-related information    
+  (i32.store8 offset=54 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuDiagnostics))      
 )
 
 ;; Restores the CPU state from the transfer area. This method copies register values
@@ -223,6 +229,11 @@
   (set_global $indexMode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=45))
   (set_global $maskableInterruptModeEntered (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=46))
   (set_global $opCode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=47))
+)
+
+;; Sets the CPU diagnostics flags
+(func $setCpuDiagnostics (param $flags i32)
+  (set_global $cpuDiagnostics (get_local $flags))
 )
 
 ;; ----------------------------------------------------------------------------
@@ -573,8 +584,6 @@
 
 ;; Gets the value of the index register according to the current indexing mode
 (func $getIndexReg (result i32)
-  
-  
   (i32.eq (get_global $indexMode) (i32.const $IND_IX#))
   if (result i32)
     get_global $REG_AREA_INDEX i32.load16_u offset=22 ;; IX
@@ -586,8 +595,6 @@
 ;; Sets the value of the index register according to the current indexing mode
 ;; $v: 16-bit index register value
 (func $setIndexReg (param $v i32)
-  
-  
   (i32.eq (get_global $indexMode) (i32.const $IND_IX#))
   if
     (i32.store16 offset=22 (get_global $REG_AREA_INDEX) (get_local $v)) ;; IX
@@ -662,6 +669,7 @@
   ;; Read it from PC and store in opCode
   call $readCodeMemory
   set_global $opCode
+  call $hookOpCodeFetched
 
   ;; Execute a memory refresh
   call $refreshMemory
@@ -734,6 +742,7 @@
   if
     (call $incTacts (i32.const 3))
     call $refreshMemory
+    call $hookHalted
   end
 
   ;; Test for NMI
@@ -784,6 +793,7 @@
   (call $setR (i32.const 0))
   i32.const 0x0000 set_global $isInOpExecution
   i32.const 0x0000 set_global $tacts
+  i32.const 0x0000 set_global $cpuDiagnostics
 )
 
 ;; Executes the NMI request
@@ -806,6 +816,8 @@
 
   ;; Set NMI routione address
   (call $setPC (i32.const 0x0066))
+  
+  call $hookNmiExecuted
 )
 
 ;; Executes the NMI request
@@ -867,19 +879,23 @@
   call $setPC
 
   ;; Support step-over debugging
-  (call $pushToStepOver (get_local $oldPc))  
+  (call $pushToStepOver (get_local $oldPc))
+
+  call $hookIntExecuted
 )
 
 ;; Processes standard or indexed operations
 (func $processStandardOrIndexedOperations
-  ;; Diagnostics
-  i32.const $INDEXED_JT#
-  i32.const $STANDARD_JT#
   get_global $indexMode
-  select
-  get_global $opCode
-  i32.add
-  call_indirect (type $OpFunc)
+  if
+    (i32.add (i32.const $INDEXED_JT#) (get_global $opCode))
+    call_indirect (type $OpFunc)
+    call $hookIndexedOpExecuted
+  else
+    (i32.add (i32.const $STANDARD_JT#) (get_global $opCode))
+    call_indirect (type $OpFunc)
+    call $hookStandardOpExecuted
+  end
 )
 
 ;; Processes bit operations
@@ -910,19 +926,20 @@
     get_global $opCode
     i32.add
     call_indirect (type $IndexedBitFunc)
+    call $hookIndexedBitOpExecuted
   else
     ;; Normal bit operations
     (i32.add (i32.const $BIT_JT#) (get_global $opCode))
     call_indirect (type $OpFunc)
+    call $hookBitOpExecuted
   end
 )
 
 ;; Processes extended operations
 (func $processExtendedOperations
-  i32.const $EXTENDED_JT#
-  get_global $opCode
-  i32.add
+  (i32.add (i32.const $EXTENDED_JT#) (get_global $opCode))
   call_indirect (type $OpFunc)
+  call $hookExtendedOpExecuted
 )
 
 ;; ----------------------------------------------------------------------------

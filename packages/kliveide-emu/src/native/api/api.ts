@@ -12,6 +12,7 @@ export interface CpuApi {
   resetCpu(): void;
   getCpuState(): void;
   updateCpuState(): void;
+  setCpuDiagnostics(flags: number): void;
   enableExtendedInstructions(f: boolean): void;
 
   prepareTest(mode: RunMode, codeEnds: number): void;

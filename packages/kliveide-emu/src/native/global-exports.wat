@@ -6,5 +6,6 @@
 (export "resetCpu" (func $resetCpu))
 (export "getCpuState" (func $getCpuState))
 (export "updateCpuState" (func $updateCpuState))
+(export "setCpuDiagnostics" (func $setCpuDiagnostics))
 (export "enableExtendedInstructions" (func $enableExtendedInstructions))
 
