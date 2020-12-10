@@ -10,6 +10,10 @@
 ;; $HK_INT_EXEC#        = 0x40
 ;; $HK_NMI_EXEC#        = 0x80
 ;; $HK_HALTED#          = 0x100
+;; $HK_MEM_READ#        = 0x200
+;; $HK_MEM_WRITTEN#     = 0x400
+;; $HK_IO_READ#         = 0x800
+;; $HK_IO_WRITTEN#      = 0x1000
 
 ;; Invokes the $opCodeFetched diagnostics hook method
 (func $hookOpCodeFetched
@@ -91,3 +95,34 @@
   end
 )
 
+;; Invokes the $memoryRead diagnostics hook method
+(func $hookMemoryRead (param $address i32) (param $value i32)
+  (i32.and (get_global $cpuDiagnostics) (i32.const $HK_MEM_READ#))
+  if
+    (call $memoryRead (get_local $address) (get_local $value))
+  end
+)
+
+;; Invokes the $memoryWritten diagnostics hook method
+(func $hookMemoryWritten (param $address i32) (param $value i32)
+  (i32.and (get_global $cpuDiagnostics) (i32.const $HK_MEM_WRITTEN#))
+  if
+    (call $memoryWritten (get_local $address) (get_local $value))
+  end
+)
+
+;; Invokes the $ioRead diagnostics hook method
+(func $hookIoRead (param $address i32) (param $value i32)
+  (i32.and (get_global $cpuDiagnostics) (i32.const $HK_IO_READ#))
+  if
+    (call $ioRead (get_local $address) (get_local $value))
+  end
+)
+
+;; Invokes the $ioWritten diagnostics hook method
+(func $hookIoWritten (param $address i32) (param $value i32)
+  (i32.and (get_global $cpuDiagnostics) (i32.const $HK_IO_WRITTEN#))
+  if
+    (call $ioWritten (get_local $address) (get_local $value))
+  end
+)
