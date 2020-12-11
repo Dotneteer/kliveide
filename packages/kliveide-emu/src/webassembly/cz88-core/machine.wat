@@ -14,7 +14,6 @@
   ;; CPU configuration
   i32.const 3_276_800 set_global $baseClockFrequency
   i32.const 1 set_global $clockMultiplier
-  i32.const 0 set_global $supportsNextOperation
   call $resetCpu
 
   ;; Screen configuration

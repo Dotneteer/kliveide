@@ -257,7 +257,6 @@ export class Z80CpuState {
   }
 
   tactsInFrame: number;
-  allowExtendedSet: boolean;
   tacts: number;
   stateFlags: Z80SignalStateFlags;
   useGateArrayContention: boolean;

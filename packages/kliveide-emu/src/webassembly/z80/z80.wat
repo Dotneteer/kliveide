@@ -58,9 +58,6 @@
 ;; number of clock cycles with normal CPU speed.
 (global $tactsInFrame (mut i32) (i32.const 1_000_000))
 
-;; Indicates if ZX Spectrum Next extended Z80 operation set is enabled
-(global $allowExtendedSet (mut i32) (i32.const 0x00))  ;; 
-
 ;; CPU tacts since starting the last screen rendering frame. So this variable is reset
 ;; at the beginning of each screen rendering frame.
 (global $tacts (mut i32) (i32.const 0x0000))
@@ -183,27 +180,23 @@
 
   ;; Other CPU state variables
   (i32.store offset=28 (get_global $STATE_TRANSFER_BUFF) (get_global $tactsInFrame))
-  (i32.store8 offset=32 (get_global $STATE_TRANSFER_BUFF) (get_global $allowExtendedSet))
-  (i32.store offset=33 (get_global $STATE_TRANSFER_BUFF) (get_global $tacts))
-  (i32.store8 offset=37 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuSignalFlags))
-  (i32.store8 offset=38 (get_global $STATE_TRANSFER_BUFF) (get_global $useGateArrayContention))
-  (i32.store8 offset=39 (get_global $STATE_TRANSFER_BUFF) (get_global $iff1))
-  (i32.store8 offset=40 (get_global $STATE_TRANSFER_BUFF) (get_global $iff2))
-  (i32.store8 offset=41 (get_global $STATE_TRANSFER_BUFF) (get_global $interruptMode))
-  (i32.store8 offset=42 (get_global $STATE_TRANSFER_BUFF) (get_global $isInterruptBlocked))
-  (i32.store8 offset=43 (get_global $STATE_TRANSFER_BUFF) (get_global $isInOpExecution))
-  (i32.store8 offset=44 (get_global $STATE_TRANSFER_BUFF) (get_global $prefixMode))
-  (i32.store8 offset=45 (get_global $STATE_TRANSFER_BUFF) (get_global $indexMode))
-  (i32.store8 offset=46 (get_global $STATE_TRANSFER_BUFF) (get_global $maskableInterruptModeEntered))
-  (i32.store8 offset=47 (get_global $STATE_TRANSFER_BUFF) (get_global $opCode))
+  (i32.store offset=32 (get_global $STATE_TRANSFER_BUFF) (get_global $tacts))
+  (i32.store8 offset=36 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuSignalFlags))
+  (i32.store8 offset=37 (get_global $STATE_TRANSFER_BUFF) (get_global $useGateArrayContention))
+  (i32.store8 offset=38 (get_global $STATE_TRANSFER_BUFF) (get_global $iff1))
+  (i32.store8 offset=39 (get_global $STATE_TRANSFER_BUFF) (get_global $iff2))
+  (i32.store8 offset=40 (get_global $STATE_TRANSFER_BUFF) (get_global $interruptMode))
+  (i32.store8 offset=41 (get_global $STATE_TRANSFER_BUFF) (get_global $isInterruptBlocked))
+  (i32.store8 offset=42 (get_global $STATE_TRANSFER_BUFF) (get_global $isInOpExecution))
+  (i32.store8 offset=43 (get_global $STATE_TRANSFER_BUFF) (get_global $prefixMode))
+  (i32.store8 offset=44 (get_global $STATE_TRANSFER_BUFF) (get_global $indexMode))
+  (i32.store8 offset=45 (get_global $STATE_TRANSFER_BUFF) (get_global $maskableInterruptModeEntered))
+  (i32.store8 offset=46 (get_global $STATE_TRANSFER_BUFF) (get_global $opCode))
 
   ;; CPU configuration
-  (i32.store offset=48 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))      
-  (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))      
-  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $supportsNextOperation))  
-
-  ;; Other CPU-related information    
-  (i32.store8 offset=54 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuDiagnostics))      
+  (i32.store offset=47 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))      
+  (i32.store8 offset=51 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))      
+  (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuDiagnostics))      
 )
 
 ;; Restores the CPU state from the transfer area. This method copies register values
@@ -219,19 +212,18 @@
 
   ;; Other CPU state variables
   (set_global $tactsInFrame (get_global $STATE_TRANSFER_BUFF) (i32.load offset=28))
-  (set_global $allowExtendedSet (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=32))
-  (set_global $tacts (get_global $STATE_TRANSFER_BUFF) (i32.load offset=33))
-  (set_global $cpuSignalFlags (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=37))
-  (set_global $useGateArrayContention (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=38))
-  (set_global $iff1 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=39))
-  (set_global $iff2 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=40))
-  (set_global $interruptMode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=41))
-  (set_global $isInterruptBlocked (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=42))
-  (set_global $isInOpExecution (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=43))
-  (set_global $prefixMode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=44))
-  (set_global $indexMode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=45))
-  (set_global $maskableInterruptModeEntered (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=46))
-  (set_global $opCode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=47))
+  (set_global $tacts (get_global $STATE_TRANSFER_BUFF) (i32.load offset=32))
+  (set_global $cpuSignalFlags (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=36))
+  (set_global $useGateArrayContention (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=37))
+  (set_global $iff1 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=38))
+  (set_global $iff2 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=39))
+  (set_global $interruptMode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=40))
+  (set_global $isInterruptBlocked (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=41))
+  (set_global $isInOpExecution (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=42))
+  (set_global $prefixMode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=43))
+  (set_global $indexMode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=44))
+  (set_global $maskableInterruptModeEntered (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=45))
+  (set_global $opCode (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=46))
 )
 
 ;; Sets the CPU diagnostics flags
@@ -651,13 +643,6 @@
   i32.const $IND_NONE# set_global $indexMode
   i32.const 0x0000 set_global $maskableInterruptModeEntered
   i32.const 0x0000 set_global $opCode
-)
-
-;; Enables/disables extended instruction set
-;; $f: True, enable; false, disable
-(func $enableExtendedInstructions (param $f i32)
-  get_local $f
-  set_global $allowExtendedSet
 )
 
 ;; ----------------------------------------------------------------------------
