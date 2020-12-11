@@ -201,27 +201,23 @@ export abstract class Z80MachineBase {
     s.sp = mh.readUint16(20);
 
     s.tactsInFrame = mh.readUint32(28);
-    s.allowExtendedSet = mh.readBool(32);
-    s.tacts = mh.readUint32(33);
-    s.stateFlags = mh.readByte(37);
-    s.useGateArrayContention = mh.readBool(38);
-    s.iff1 = mh.readBool(39);
-    s.iff2 = mh.readBool(40);
-    s.interruptMode = mh.readByte(41);
-    s.isInterruptBlocked = mh.readBool(42);
-    s.isInOpExecution = mh.readBool(43);
-    s.prefixMode = mh.readByte(44);
-    s.indexMode = mh.readByte(45);
-    s.maskableInterruptModeEntered = mh.readBool(46);
-    s.opCode = mh.readByte(47);
+    s.tacts = mh.readUint32(32);
+    s.stateFlags = mh.readByte(36);
+    s.useGateArrayContention = mh.readBool(37);
+    s.iff1 = mh.readBool(38);
+    s.iff2 = mh.readBool(39);
+    s.interruptMode = mh.readByte(40);
+    s.isInterruptBlocked = mh.readBool(41);
+    s.isInOpExecution = mh.readBool(42);
+    s.prefixMode = mh.readByte(43);
+    s.indexMode = mh.readByte(44);
+    s.maskableInterruptModeEntered = mh.readBool(45);
+    s.opCode = mh.readByte(46);
 
     // --- Get CPU configuration data
-    s.baseClockFrequency = mh.readUint32(48);
-    s.clockMultiplier = mh.readByte(52);
-    s.supportsNextOperations = mh.readBool(53);
-
-    // --- Other CPU-realted information
-    s.cpuDiagnostics = mh.readUint16(54);
+    s.baseClockFrequency = mh.readUint32(47);
+    s.clockMultiplier = mh.readByte(51);
+    s.cpuDiagnostics = mh.readUint16(52);
 
     return s;
   }

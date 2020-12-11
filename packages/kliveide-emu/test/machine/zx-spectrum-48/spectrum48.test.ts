@@ -52,7 +52,6 @@ describe("ZX Spectrum 48", () => {
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.baseClockFrequency).toBe(3_500_000);
     expect(s.clockMultiplier).toBe(1);
-    expect(s.supportsNextOperations).toBeFalsy();
 
     expect(s.numberOfRoms).toBe(1);
     expect(s.romContentsAddress).toBe(0x02_0000);

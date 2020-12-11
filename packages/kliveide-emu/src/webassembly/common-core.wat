@@ -10,9 +10,6 @@
 ;; Clock frequency multiplier
 (global $clockMultiplier (mut i32) (i32.const 0x0000))
 
-;; Supports the Z80 CPU the ZX Spectrum Next operations?
-(global $supportsNextOperation (mut i32) (i32.const 0x0000))
-
 ;; ----------------------------------------------------------------------------
 ;; Screen related
 

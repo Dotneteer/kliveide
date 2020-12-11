@@ -6,7 +6,7 @@ import { TestCpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
 import { importObject } from "../import-object";
 
-const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
+const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 

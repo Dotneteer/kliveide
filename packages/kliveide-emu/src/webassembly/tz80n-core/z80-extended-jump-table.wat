@@ -9,11 +9,11 @@
   ;; 0x18-0x1f
   $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0x20-0x27
-  $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
+  $NOOP     $NOOP     $NOOP     $SwapNib  $Mirror   $NOOP     $NOOP     $TestN
   ;; 0x28-0x2f
-  $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
+  $Bsla     $Bsra     $Bsrl     $Bsrf     $Brlc     $NOOP     $NOOP     $NOOP
   ;; 0x30-0x37
-  $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
+  $Mul      $AddHLA   $AddDEA   $AddBCA   $AddHLNN  $AddDENN  $AddBCNN  $NOOP
   ;; 0x38-0x3f
   $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0x40-0x47
@@ -35,19 +35,19 @@
   ;; 0x80-0x87
   $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0x88-0x8f
-  $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
+  $NOOP     $NOOP     $PushNN   $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0x90-0x97
-  $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
+  $OutInB   $NextReg  $NextRegA $PixelDn  $PixelAd  $SetAE    $NOOP     $NOOP
   ;; 0x98-0x9f
-  $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
+  $JpInC    $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0xa0-0xa7
-  $Ldi      $Cpi      $Ini      $Outi     $NOOP     $NOOP     $NOOP     $NOOP
+  $Ldi      $Cpi      $Ini      $Outi     $Ldix     $Ldws     $NOOP     $NOOP
   ;; 0xa8-0xaf
-  $Ldd      $Cpd      $Ind      $Outd     $NOOP     $NOOP     $NOOP     $NOOP
+  $Ldd      $Cpd      $Ind      $Outd     $Lddx     $NOOP     $NOOP     $NOOP
   ;; 0xb0-0xb7
-  $Ldir     $Cpir     $Inir     $Otir     $NOOP     $NOOP     $NOOP     $NOOP
+  $Ldir     $Cpir     $Inir     $Otir     $Ldirx    $NOOP     $NOOP     $Ldpirx
   ;; 0xb8-0xbf
-  $Lddr     $Cpdr     $Indr     $Otdr     $NOOP    $NOOP     $NOOP     $NOOP
+  $Lddr     $Cpdr     $Indr     $Otdr     $Lddrx    $NOOP     $NOOP     $NOOP
   ;; 0xc0-0xc7
   $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP     $NOOP
   ;; 0xc8-0xcf

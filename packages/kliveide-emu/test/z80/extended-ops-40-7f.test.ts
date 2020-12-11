@@ -8,7 +8,7 @@ import { FlagsSetMask } from "../../src/shared/machines/z80-helpers";
 import { RunMode } from "../../src/renderer/machines/RunMode";
 import { importObject } from "../import-object";
 
-const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
+const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 
