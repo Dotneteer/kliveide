@@ -213,7 +213,9 @@
 (func $OutCB
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getB))
+
+  ;; Write
+  (call $writeIo (call $getBC) (call $getB))
 )
 
 ;; sbc hl,bc (0x42)
@@ -256,7 +258,7 @@
 (func $OutCC
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getC))
+  (call $writeIo (call $getBC) (call $getC))
 )
 
 ;; in d,(c) (0x50)
@@ -280,7 +282,7 @@
 (func $OutCD
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getD))
+  (call $writeIo (call $getBC) (call $getD))
 )
 
 ;; in e,(c) (0x58)
@@ -304,7 +306,7 @@
 (func $OutCE
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getE))
+  (call $writeIo (call $getBC) (call $getE))
 )
 
 ;; in h,(c) (0x60)
@@ -329,7 +331,7 @@
 (func $OutCH
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getH))
+  (call $writeIo (call $getBC) (call $getH))
 )
 
 ;; in l,(c) (0x68)
@@ -354,7 +356,7 @@
 (func $OutCL
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getL))
+  (call $writeIo (call $getBC) (call $getL))
 )
 
 ;; in (c) (0x70)
@@ -379,7 +381,7 @@
 (func $OutC0
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (i32.const 0))
+  (call $writeIo (call $getBC) (i32.const 0))
 )
 
 ;; in a,(c) (0x78)
@@ -403,7 +405,7 @@
 (func $OutCA
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getA))
+  (call $writeIo (call $getBC) (call $getA))
 )
 
 ;; ld (NN),QQ 
@@ -791,7 +793,7 @@
   call $getHL
   tee_local $hl
   call $readMemory
-  call $writePort
+  call $writeIo
 
   ;; Increment HL
   (i32.add (get_local $hl) (i32.const 1))
@@ -1109,7 +1111,7 @@
   call $setWZ
 
   ;; Now, write to the port
-  (call $writePort (call $getBC) (get_local $v))
+  (call $writeIo (call $getBC) (get_local $v))
 
   ;; Increment/decrement HL
   (i32.add (call $getHL) (get_local $step))
@@ -1161,36 +1163,6 @@
   ;; Store the flags
   call $setQ
   (call $setF (call $getQ))
-
-  ;; ;; Set N
-  ;; (i32.const 0x02 (call $getF) (tee_local $f))
-  ;; i32.or
-  ;; set_local $f
-
-  ;; ;; Decrement B
-  ;; (i32.sub (call $getB) (i32.const 1))
-  ;; tee_local $b
-  ;; call $setB
-  ;; get_local $b
-
-  ;; ;; Set or reset Z
-  ;; i32.const 0
-  ;; i32.eq
-  ;; if (result i32)
-  ;;   (i32.or (get_local $f) (i32.const 0x40))
-  ;; else
-  ;;   (i32.and (get_local $f) (i32.const 0xbf))
-  ;; end
-  ;; (call $setF (i32.and (i32.const 0xff)))
-
-  ;; ;; Write port
-  ;; call $getBC
-  ;; tee_local $b
-  ;; call $getHL
-  ;; tee_local $hl
-  ;; call $readMemory
-  ;; call $writePort
-
 )
 
 ;; Base of the ldix/lddx operations

@@ -47,7 +47,7 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
   constructor(public api: MachineApi, roms?: Buffer[]) {
     super(api, roms);
     // --- Turn on hooks for all instruction-related events
-    api.setCpuDiagnostics(0x3f);
+    api.setCpuDiagnostics(0x0000);
   }
 
   /**
@@ -115,4 +115,43 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
     await controller.waitForCycleTermination();
     return SP48_MAIN_ENTRY;
   }
+
+  private ioLog: [string, string][] = [];
+
+  /**
+   * Override this method to define an action when the virtual machine has
+   * started.
+   * @param _debugging Is started in debug mode?
+   * @param _isFirstStart Is the machine started from stopped state?
+   */
+  async onStarted(_debugging: boolean, _isFirstStart: boolean): Promise<void> {
+    this.ioLog = [];
+  }
+
+  /**
+   * Override this action to define an action when the virtual machine
+   * has paused.
+   * @param _isFirstPause Is the machine paused the first time?
+   */
+  async onPaused(_isFirstPause: boolean): Promise<void> {
+    super.onPaused(_isFirstPause);
+    console.log(JSON.stringify(this.ioLog, null, 2));
+  }
+
+  /**
+   * CPU hook. Invoked when the CPU writes to an I/O port
+   * @param address The memory address read
+   * @param value The memory value read
+   */
+  ioWritten(address: number, value: number): void {
+    this.ioLog.push([
+      address.toString(16),
+      value.toString(16).padStart(2, "0"),
+    ]);
+  }
+}
+
+interface IoInfo {
+  port: string;
+  value: string;
 }

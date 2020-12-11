@@ -1626,3 +1626,9 @@
     (i32.shl (call $readCodeMemory) (i32.const 8))
   )
 )
+
+;; Writes port value with an event hook
+(func $writeIo (param $port i32) (param $value i32)
+  (call $writePort (get_local $port) (get_local $value))
+  (call $hookIoWritten (get_local $port) (get_local $value))
+)

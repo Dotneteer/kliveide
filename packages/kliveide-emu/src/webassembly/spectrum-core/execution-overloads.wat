@@ -189,19 +189,19 @@
 
 ;; The execution engine starts a new frame
 (func $onInitNewFrame
+  (local $overflow i32)
+
   ;; Reset interrupt information
   i32.const 0 set_global $interruptRevoked
   i32.const 0 set_global $interruptRaised
 
   ;; Reset pointers used for screen rendering
-  (i32.add
-    (get_global $RENDERING_TACT_TABLE)
-    (i32.mul (get_global $lastRenderedFrameTact) (i32.const 5))
-  )
-  set_global $renderingTablePtr
-
-  get_global $PIXEL_RENDERING_BUFFER set_global $pixelBufferPtr
+  (set_local $overflow (get_global $lastRenderedFrameTact))
+  (set_global $renderingTablePtr (get_global $RENDERING_TACT_TABLE))
+  (set_global $pixelBufferPtr (get_global $PIXEL_RENDERING_BUFFER))
   i32.const 0 set_global $frameCompleted
+
+  (call $renderScreen (get_local $overflow))
 
   ;; Calculate flash phase
   (i32.rem_u (get_global $frameCount) (get_global $flashFrames))
