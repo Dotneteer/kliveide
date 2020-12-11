@@ -213,7 +213,9 @@
 (func $OutCB
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getB))
+
+  ;; Write
+  (call $writeIo (call $getBC) (call $getB))
 )
 
 ;; sbc hl,bc (0x42)
@@ -256,7 +258,7 @@
 (func $OutCC
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getC))
+  (call $writeIo (call $getBC) (call $getC))
 )
 
 ;; in d,(c) (0x50)
@@ -280,7 +282,7 @@
 (func $OutCD
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getD))
+  (call $writeIo (call $getBC) (call $getD))
 )
 
 ;; in e,(c) (0x58)
@@ -304,7 +306,7 @@
 (func $OutCE
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getE))
+  (call $writeIo (call $getBC) (call $getE))
 )
 
 ;; in h,(c) (0x60)
@@ -329,7 +331,7 @@
 (func $OutCH
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getH))
+  (call $writeIo (call $getBC) (call $getH))
 )
 
 ;; in l,(c) (0x68)
@@ -354,7 +356,7 @@
 (func $OutCL
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getL))
+  (call $writeIo (call $getBC) (call $getL))
 )
 
 ;; in (c) (0x70)
@@ -379,7 +381,7 @@
 (func $OutC0
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (i32.const 0))
+  (call $writeIo (call $getBC) (i32.const 0))
 )
 
 ;; in a,(c) (0x78)
@@ -403,7 +405,7 @@
 (func $OutCA
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getA))
+  (call $writeIo (call $getBC) (call $getA))
 )
 
 ;; ld (NN),QQ 
@@ -791,7 +793,7 @@
   call $getHL
   tee_local $hl
   call $readMemory
-  call $writePort
+  call $writeIo
 
   ;; Increment HL
   (i32.add (get_local $hl) (i32.const 1))
@@ -1088,47 +1090,79 @@
 
 ;; Base of outi/outd/otir/otdr operations
 (func $OutBase (param $step i32)
+  (local $v i32)
+  (local $v2 i32)
   (local $f i32)
-  (local $b i32)
-  (local $hl i32)
+
+  ;; Delay
   (call $incTacts (i32.const 1))
 
-  ;; Set N
-  (i32.const 0x02 (call $getF) (tee_local $f))
-  i32.or
-  set_local $f
+  ;; Read the value from memory
+  call $getHL
+  call $readMemory
+  set_local $v
 
   ;; Decrement B
   (i32.sub (call $getB) (i32.const 1))
-  tee_local $b
   call $setB
-  get_local $b
-
-  ;; Set or reset Z
-  i32.const 0
-  i32.eq
-  if (result i32)
-    (i32.or (get_local $f) (i32.const 0x40))
-  else
-    (i32.and (get_local $f) (i32.const 0xbf))
-  end
-  (call $setF (i32.and (i32.const 0xff)))
-
-  ;; Write port
-  call $getBC
-  tee_local $b
-  call $getHL
-  tee_local $hl
-  call $readMemory
-  call $writePort
-
-  ;; Increment/decrement HL
-  (i32.add (get_local $hl) (get_local $step))
-  call $setHL
 
   ;; WZ := BC +/- 1
-  (i32.add (get_local $b) (get_local $step))
+  (i32.add (call $getBC) (get_local $step))
   call $setWZ
+
+  ;; Now, write to the port
+  (call $writeIo (call $getBC) (get_local $v))
+
+  ;; Increment/decrement HL
+  (i32.add (call $getHL) (get_local $step))
+  call $setHL
+
+  ;; Calculate $v2
+  (i32.and
+    (i32.add (get_local $v) (call $getL))
+    (i32.const 0xff)
+  )
+  set_local $v2
+
+  ;; Calculate flag N 
+  (i32.shr_u
+    (i32.and (get_local $v) (i32.const 0x80))
+    (i32.const 6)
+  )
+  set_local $f
+
+  ;; Calculate flag H and flag C
+  (i32.lt_u (get_local $v2) (get_local $v))
+  if
+    (i32.or (get_local $f) (i32.const 0x11))
+    set_local $f
+  end
+
+  ;; Calculate flag P
+  (i32.load8_u
+    (i32.add
+      (get_global $PAR_FLAGS)
+      (i32.xor
+        (i32.and (get_local $v2) (i32.const 0x07))
+        (call $getB)
+      )
+    )
+  )
+  (i32.or (get_local $f))
+  set_local $f
+
+  ;; Get R3 and R5
+  (i32.load8_u
+    (i32.add
+      (get_global $SZ53_FLAGS)
+      (call $getB)
+    )
+  )
+  (i32.or (get_local $f))
+
+  ;; Store the flags
+  call $setQ
+  (call $setF (call $getQ))
 )
 
 ;; Base of the ldix/lddx operations

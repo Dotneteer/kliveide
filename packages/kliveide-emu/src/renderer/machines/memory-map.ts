@@ -10,10 +10,10 @@ export const VM_MEMORY = 0x00_0000
 // Z80-specific memory map
 
 // --- Register area
-export const REG_AREA_INDEX = 0x0120_0D00;
+export const REG_AREA_INDEX = 0x0120_0E00;
 
 // --- Machine state trasnfer buffer
-export const STATE_TRANSFER_BUFF = 0x0120_0D60;
+export const STATE_TRANSFER_BUFF = 0x0120_0E60;
 
 // ============================================================================
 // Generic virtual machine engine memory map

@@ -199,7 +199,7 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
   // --- Instantiate the requested machine
   let machine: FrameBoundZ80Machine;
   switch (typeId) {
-    case "sp128": {
+    case "128": {
       const buffer0 = await readFromStream("./roms/sp128-0.rom");
       const buffer1 = await readFromStream("./roms/sp128-1.rom");
       const sp128 = new ZxSpectrum128(machineApi, [buffer0, buffer1]);
@@ -264,10 +264,10 @@ async function createWaInstance(typeId: string): Promise<WebAssembly.Instance> {
   };
   let wasmFile = "";
   switch (typeId) {
-    case "sp48":
+    case "48":
       wasmFile = "sp48.wasm";
       break;
-    case "sp128":
+    case "128":
       wasmFile = "sp128.wasm";
       break;
     case "cz88":

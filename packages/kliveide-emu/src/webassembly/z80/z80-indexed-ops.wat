@@ -263,7 +263,7 @@
   (call $setWZ (get_local $addr))
 )
 
-;; ld (ix+d),B (0x36)
+;; ld (ix+d),N (0x36)
 (func $LdIXiN
   (local $addr i32)
 

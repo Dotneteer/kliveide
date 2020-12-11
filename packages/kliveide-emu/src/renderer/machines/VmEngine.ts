@@ -558,6 +558,7 @@ export class VmEngine implements IVmEngineController {
           reason === ExecutionCompletionReason.TerminationPointReached
         ) {
           machine.executionState = VmState.Paused;
+          machine.z80Machine.onPaused(this._isFirstPause);
         }
 
         // --- Complete the cycle

@@ -151,7 +151,7 @@
   call $onFrameCompleted
 
   ;; Adjust tacts
-  (i32.sub 
+  (i32.rem_u 
     (get_global $tacts)
     (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier))
   )
