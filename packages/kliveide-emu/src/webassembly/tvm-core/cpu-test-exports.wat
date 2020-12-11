@@ -5,5 +5,3 @@
 (export "getIoLogLength" (func $getIoLogLength))
 (export "getTbBlueLogLength" (func $getTbBlueLogLength))
 (export "runTestCode" (func $runTestCode))
-(export "setPC" (func $setPC))
-(export "setSP" (func $setSP))

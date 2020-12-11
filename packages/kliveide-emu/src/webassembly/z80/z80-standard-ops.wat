@@ -1718,7 +1718,7 @@
   i32.add
   tee_local $port
   call $getA
-  call $writeIo
+  call $writePort
 
   ;; Update WZ
   (call $setWL (i32.add (get_local $port) (i32.const 1)))

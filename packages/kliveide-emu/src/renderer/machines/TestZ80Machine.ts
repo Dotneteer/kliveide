@@ -1,4 +1,4 @@
-import { CpuApi } from "./wa-api";
+import { TestCpuApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
 import { RunMode } from "./RunMode";
 import {
@@ -21,7 +21,7 @@ export class TestZ80Machine {
    * Initializes a test machine
    * @param cpuApi Module API obtained by the loader
    */
-  constructor(public cpuApi: CpuApi) {
+  constructor(public cpuApi: TestCpuApi) {
     this.cpuApi.turnOnCpu();
   }
 

@@ -1,11 +1,3 @@
-;; Test Z80 CPU machine exports
-(export "prepareTest" (func $prepareTest))
-(export "setTestInputLength" (func $setTestInputLength))
-(export "getMemLogLength" (func $getMemLogLength))
-(export "getIoLogLength" (func $getIoLogLength))
-(export "getTbBlueLogLength" (func $getTbBlueLogLength))
-(export "runTestCode" (func $runTestCode))
-
 ;; ZX Spectrum machine exports
 (export "turnOnMachine" (func $turnOnMachine))
 (export "resetMachine" (func $resetMachine))
@@ -15,8 +7,6 @@
 (export "executeMachineLoop" (func $executeMachineLoop))
 (export "setKeyStatus" (func $setKeyStatus))
 (export "getKeyStatus" (func $getKeyStatus))
-(export "setPC" (func $setPC))
-(export "setSP" (func $setSP))
 (export "setInterruptTact" (func $setInterruptTact))
 (export "checkForInterrupt" (func $checkForInterrupt))
 (export "setBeeperSampleRate" (func $setBeeperSampleRate))

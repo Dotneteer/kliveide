@@ -25,7 +25,7 @@
 ;; Reads the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
-(func $readMemory (param $addr i32) (result i32)
+(func $readMemoryInternal (param $addr i32) (result i32)
   (local $indexAddr i32)
 
   ;; Calculate the index table address
@@ -73,7 +73,7 @@
 ;; Writes the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
-(func $writeMemory (param $addr i32) (param $value i32)
+(func $writeMemoryInternal (param $addr i32) (param $value i32)
   (local $indexAddr i32)
 
   ;; Calculate the index table address

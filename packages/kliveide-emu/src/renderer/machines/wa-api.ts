@@ -6,7 +6,6 @@ import { SpectrumKeyCode } from "./SpectrumKeyCode";
  * Represents the CPU API
  */
 export interface CpuApi {
-  // --- Test Z80 machine methods
   memory: any;
   turnOnCpu(): void;
   resetCpu(): void;
@@ -14,15 +13,20 @@ export interface CpuApi {
   updateCpuState(): void;
   setCpuDiagnostics(flags: number): void;
   enableExtendedInstructions(f: boolean): void;
+  setPC(pc: number): void;
+  setSP(sp: number): void;
+}
 
+/**
+ * Represents the API for CPU tests
+ */
+export interface TestCpuApi extends CpuApi {
   prepareTest(mode: RunMode, codeEnds: number): void;
   setTestInputLength(length: number): void;
   getMemLogLength(): number;
   getIoLogLength(): number;
   getTbBlueLogLength(): number;
   runTestCode(): void;
-  setPC(pc: number): void;
-  setSP(sp: number): void;
 }
 
 /**

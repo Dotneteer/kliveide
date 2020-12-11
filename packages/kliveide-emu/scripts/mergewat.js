@@ -2,15 +2,16 @@ const path = require("path");
 const fs = require("fs");
 
 // --- Extract the project build file
-for (let i = 2; i < process.argv.length; i++) {
-  mergeWatFile(process.argv[i]);
-}
+const projectFile = process.argv[2];
+const symbols = process.argv.slice(3);
+
+mergeWatFile(projectFile, symbols)
 
 /**
  * Merges the files described in the specified project file
  * @param filename Relative path to the project file
  */
-function mergeWatFile(filename) {
+function mergeWatFile(filename, symbols) {
   const projectFile = path.join(__dirname, filename);
   console.log(`Processing ${projectFile}`);
 

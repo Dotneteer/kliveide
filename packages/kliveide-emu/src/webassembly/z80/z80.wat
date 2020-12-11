@@ -1627,8 +1627,32 @@
   )
 )
 
+;; Reads memory value with an event hook
+(func $readMemory (param $port i32) (result i32)
+  (local $v i32)
+  (call $readMemoryInternal (get_local $port))
+  set_local $v
+  (call $hookMemoryRead (get_local $port) (get_local $v))
+  get_local $v
+)
+
 ;; Writes port value with an event hook
-(func $writeIo (param $port i32) (param $value i32)
-  (call $writePort (get_local $port) (get_local $value))
+(func $writeMemory (param $port i32) (param $value i32)
+  (call $writeMemoryInternal (get_local $port) (get_local $value))
+  (call $hookMemoryWritten (get_local $port) (get_local $value))
+)
+
+;; Writes port value with an event hook
+(func $writePort (param $port i32) (param $value i32)
+  (call $writePortInternal (get_local $port) (get_local $value))
   (call $hookIoWritten (get_local $port) (get_local $value))
+)
+
+;; Reads port value with an event hook
+(func $readPort (param $port i32) (result i32)
+  (local $v i32)
+  (call $readPortInternal (get_local $port))
+  set_local $v
+  (call $hookIoRead (get_local $port) (get_local $v))
+  get_local $v
 )

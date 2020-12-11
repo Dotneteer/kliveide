@@ -215,7 +215,7 @@
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
 
   ;; Write
-  (call $writeIo (call $getBC) (call $getB))
+  (call $writePort (call $getBC) (call $getB))
 )
 
 ;; sbc hl,bc (0x42)
@@ -258,7 +258,7 @@
 (func $OutCC
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writeIo (call $getBC) (call $getC))
+  (call $writePort (call $getBC) (call $getC))
 )
 
 ;; in d,(c) (0x50)
@@ -282,7 +282,7 @@
 (func $OutCD
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writeIo (call $getBC) (call $getD))
+  (call $writePort (call $getBC) (call $getD))
 )
 
 ;; in e,(c) (0x58)
@@ -306,7 +306,7 @@
 (func $OutCE
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writeIo (call $getBC) (call $getE))
+  (call $writePort (call $getBC) (call $getE))
 )
 
 ;; in h,(c) (0x60)
@@ -331,7 +331,7 @@
 (func $OutCH
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writeIo (call $getBC) (call $getH))
+  (call $writePort (call $getBC) (call $getH))
 )
 
 ;; in l,(c) (0x68)
@@ -356,7 +356,7 @@
 (func $OutCL
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writeIo (call $getBC) (call $getL))
+  (call $writePort (call $getBC) (call $getL))
 )
 
 ;; in (c) (0x70)
@@ -381,7 +381,7 @@
 (func $OutC0
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writeIo (call $getBC) (i32.const 0))
+  (call $writePort (call $getBC) (i32.const 0))
 )
 
 ;; in a,(c) (0x78)
@@ -405,7 +405,7 @@
 (func $OutCA
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writeIo (call $getBC) (call $getA))
+  (call $writePort (call $getBC) (call $getA))
 )
 
 ;; ld (NN),QQ 
@@ -793,7 +793,7 @@
   call $getHL
   tee_local $hl
   call $readMemory
-  call $writeIo
+  call $writePort
 
   ;; Increment HL
   (i32.add (get_local $hl) (i32.const 1))
@@ -1111,7 +1111,7 @@
   call $setWZ
 
   ;; Now, write to the port
-  (call $writeIo (call $getBC) (get_local $v))
+  (call $writePort (call $getBC) (get_local $v))
 
   ;; Increment/decrement HL
   (i32.add (call $getHL) (get_local $step))
