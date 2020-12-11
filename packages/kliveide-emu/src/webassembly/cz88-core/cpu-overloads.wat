@@ -7,7 +7,7 @@
 ;; Reads the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
-(func $readMemory (param $addr i32) (result i32)
+(func $readMemoryInternal (param $addr i32) (result i32)
   (local $tmp i32)
   (i32.eq
     (call $getRomInfoForAddress (get_local $addr))
@@ -34,7 +34,7 @@
 ;; Writes the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
-(func $writeMemory (param $addr i32) (param $value i32)
+(func $writeMemoryInternal (param $addr i32) (param $value i32)
   (i32.eqz (call $getRomInfoForAddress (get_local $addr)))
   if
     ;; RAM, so can be written
@@ -52,7 +52,7 @@
 ;; Reads the specified I/O port of the current machine type
 ;; $addr: 16-bit port address
 ;; returns: Port value
-(func $readPort (param $addr i32) (result i32)
+(func $readPortInternal (param $addr i32) (result i32)
   (local $addr8 i32)
   (local $screenRegVal i32)
 
@@ -169,7 +169,7 @@
 ;; Writes the specified port of the current machine type
 ;; $addr: 16-bit port address
 ;; $v: 8-bit value to write
-(func $writePort (param $addr i32) (param $v i32)
+(func $writePortInternal (param $addr i32) (param $v i32)
   (local $addr8 i32)
   (local $screenRegVal i32)
 

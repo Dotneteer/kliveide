@@ -21,7 +21,7 @@
 ;; Reads the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
-(func $readMemory (param $addr i32) (result i32)
+(func $readMemoryInternal (param $addr i32) (result i32)
   (local $value i32)
   (local $logAddr i32)
   
@@ -65,7 +65,7 @@
 ;; Writes the specified memory location of the current machine type
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
-(func $writeMemory (param $addr i32) (param $v i32)
+(func $writeMemoryInternal (param $addr i32) (param $v i32)
   (local $logAddr i32)
 
   ;; Write the memory value
@@ -102,7 +102,7 @@
 ;; Reads the specified I/O port of the current machine type
 ;; $addr: 16-bit port address
 ;; returns: Port value
-(func $readPort (param $addr i32) (result i32)
+(func $readPortInternal (param $addr i32) (result i32)
   (local $value i32)
   (local $logAddr i32)
 
@@ -150,7 +150,7 @@
 ;; Writes the specified port of the current machine type
 ;; $addr: 16-bit port address
 ;; $v: 8-bit value to write
-(func $writePort (param $addr i32) (param $v i32)
+(func $writePortInternal (param $addr i32) (param $v i32)
   (local $logAddr i32)
   ;; Default delay
 

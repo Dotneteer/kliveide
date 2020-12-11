@@ -4,7 +4,7 @@
 ;; Reads the specified I/O port of the current machine type
 ;; $addr: 16-bit port address
 ;; returns: Port value
-(func $readPort (param $addr i32) (result i32)
+(func $readPortInternal (param $addr i32) (result i32)
   (local $tactAddr i32)
   (local $phase i32)
   (call $applyIOContentionDelay (get_local $addr))
@@ -64,7 +64,7 @@
 ;; Writes the specified port of the current machine type
 ;; $addr: 16-bit port address
 ;; $v: 8-bit value to write
-(func $writePort (param $addr i32) (param $v i32)
+(func $writePortInternal (param $addr i32) (param $v i32)
   (call $applyIOContentionDelay (get_local $addr))
   (i32.and (get_local $addr) (i32.const 0x0001))
   (i32.eq (i32.const 0))

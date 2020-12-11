@@ -21,6 +21,7 @@
     "z80/z80-step-over.wat",
     "z80/memory-write-map.wat",
     "spectrum-core/spectrum-exports.wat",
+    "spectrum-core/memory-map.wat",
     "spectrum-core/cpu-overloads.wat",
     "spectrum-core/machine.wat",
     "spectrum-core/execution-overloads.wat",

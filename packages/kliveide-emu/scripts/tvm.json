@@ -17,6 +17,7 @@
     "z80/z80-indexed-bit-ops.wat",
     "z80/z80-step-over.wat",
     "tvm-core/cpu-test-exports.wat",
+    "tvm-core/memory-map.wat",
     "tvm-core/cpu-overloads.wat",
     "tvm-core/test-helpers.wat"
   ],
