@@ -12,6 +12,7 @@
     "z80/z80.wat",
     "z80/z80-cpu-hooks.wat",
     "z80/z80-jump-tables.wat",
+    "z80/z80-extended-jump-table.wat",
     "z80/z80-standard-ops.wat",
     "z80/z80-extended-ops.wat",
     "z80/z80-indexed-ops.wat",

@@ -2,18 +2,18 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { CpuApi } from "../../src/renderer/machines/wa-api";
+import { TestCpuApi } from "../../src/renderer/machines/wa-api";
 import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
 import { importObject } from "../import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tvm.wasm"));
-let api: CpuApi;
+let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 
 describe("Extended ops 00-3f", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
-    api = (wasm.instance.exports as unknown) as CpuApi;
+    api = (wasm.instance.exports as unknown) as TestCpuApi;
     testMachine = new TestZ80Machine(api);
   });
 
