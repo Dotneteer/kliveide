@@ -22,6 +22,19 @@ import { codeRunResultAction } from "../shared/state/redux-run-code-state";
 import { AudioRenderer } from "./machines/AudioRenderer";
 import { ZxSpectrumBaseStateManager } from "./machines/ZxSpectrumBaseStateManager";
 import { CambridgeZ88 } from "./machines/CambridgeZ88";
+import { KliveConfiguration } from "../shared/messaging/emu-configurations";
+
+/**
+ * The configuration of the emulator app
+ */
+export let emulatorAppConfig: KliveConfiguration | null = null;
+
+/**
+ * Set the emulator configuration
+ */
+export function setEmulatorAppConfig(config: KliveConfiguration): void {
+  emulatorAppConfig = config;
+}
 
 /**
  * Store the virtual machine engine instance

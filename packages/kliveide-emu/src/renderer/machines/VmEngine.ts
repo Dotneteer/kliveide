@@ -26,7 +26,7 @@ import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import { BANK_0_OFFS } from "./memory-map";
 import { VmKeyCode } from "./wa-api";
 import { IVmEngineController } from "./IVmEngineController";
-
+import { emulatorAppConfig } from "../machine-loader";
 /**
  * This class represents the engine that controls and runs the
  * selected virtual machine in the renderer process.
@@ -497,9 +497,6 @@ export class VmEngine implements IVmEngineController {
     let nextFrameTime = performance.now() + nextFrameGap;
     let toWait = 0;
 
-    // let gaps: [number, number, number][] = [];
-    // let counter = 0;
-
     // --- Execute the cycle until completed
     while (true) {
       // --- Prepare the execution cycle
@@ -580,18 +577,11 @@ export class VmEngine implements IVmEngineController {
       toWait = Math.floor(nextFrameTime - curTime);
 
       // --- Wait for the next screen frame
+      if (emulatorAppConfig?.diagnostics?.longFrameInfo && toWait < 2) {
+        console.log(`Frame gap is too low: ${toWait}`);
+      }
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
-      // gaps.push([
-      //   performance.now() - frameStartTime,
-      //   this._lastFrameTime,
-      //   toWait,
-      // ]);
-      // counter++;
-      // if (counter % 100 === 0) {
-      //   console.log(gaps);
-      //   gaps = [];
-      // }
     }
   }
 

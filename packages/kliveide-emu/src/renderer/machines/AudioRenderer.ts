@@ -1,3 +1,4 @@
+import { emulatorAppConfig } from "../machine-loader";
 import { IAudioRenderer } from "./IAudioRenderer";
 
 /**
@@ -33,6 +34,11 @@ export class AudioRenderer implements IAudioRenderer {
     );
     this._workletNode.port.postMessage({ initialize: this._samplesPerFrame })
     this._workletNode.connect(this._ctx.destination);
+    this._workletNode.port.onmessage = (msg) => {
+      const starving = msg.data?.diff;
+      if (emulatorAppConfig?.diagnostics?.soundBufferUnderflow && starving < 0)
+      console.log(`Sound buffer underflow: ${starving}`);
+    }
   }
 
   /**

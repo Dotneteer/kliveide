@@ -328,7 +328,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     resultState: Z80MachineStateBase,
     toWait: number
   ): Promise<void> {
-    if (toWait > 0) {
+    if (!this.executionOptions.disableScreenRendering && toWait > 0) {
       this.api.colorize();
       this.vmEngineController.signScreenRefreshed();
     }

@@ -1,4 +1,5 @@
 import { CodeToInject, RegisterData } from "../machines/api-data";
+import { KliveConfiguration } from "../messaging/emu-configurations";
 import { IdeConfiguration } from "./AppState";
 
 /**

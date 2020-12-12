@@ -135,7 +135,6 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    */
   async onPaused(_isFirstPause: boolean): Promise<void> {
     super.onPaused(_isFirstPause);
-    console.log(JSON.stringify(this.ioLog, null, 2));
   }
 
   /**
@@ -149,9 +148,4 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
       value.toString(16).padStart(2, "0"),
     ]);
   }
-}
-
-interface IoInfo {
-  port: string;
-  value: string;
 }

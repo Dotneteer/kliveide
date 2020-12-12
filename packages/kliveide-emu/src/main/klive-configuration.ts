@@ -1,18 +1,11 @@
 import * as path from "path";
 import * as fs from "fs";
+import { KliveConfiguration } from "../shared/messaging/emu-configurations";
 
 /**
  * The file that stores the Klive Emulator configuration
  */
 export const CONFIG_FILE_PATH = "Klive/klive.config";
-
-/**
- * Represents the Klive configuration that is read during startup
- */
-export interface KliveConfiguration {
-  port?: number;
-  machineType?: string;
-}
 
 /**
  * Gets the configuration of Klive Emulator from the user folder
@@ -36,4 +29,4 @@ function getConfiguration(): KliveConfiguration | null {
 /**
  * The application configuration instance
  */
-export const appConfiguration: KliveConfiguration | null = getConfiguration();
+export const appConfiguration: KliveConfiguration | null = getConfiguration();;

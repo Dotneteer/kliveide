@@ -1,24 +1,21 @@
+import { KliveConfiguration } from "./emu-configurations";
+
 export interface MessageBase {
   type: AnyMessage["type"];
   correlationId?: number;
 }
 
 /**
- * Gets the default tape set
+ * This message sings that the renderer has started
  */
-export interface GetDefaultTapeSet extends MessageBase {
-  type: "getDefaultTapeSet";
-}
-
-export interface SetZ80Memory extends MessageBase {
-  type: "setZ80Memory";
-  contents: string;
+export interface SignRendererStartedMessage extends MessageBase {
+  type: "rendererStarted";
 }
 
 /**
  * The messages a renderer process can send to the main process
  */
-export type RendererMessage = GetDefaultTapeSet | SetZ80Memory;
+export type RendererMessage = SignRendererStartedMessage;
 
 /**
  * Default response for actions
@@ -27,17 +24,17 @@ export interface DefaultResponse extends MessageBase {
   type: "ack";
 }
 
-/**
- * Response for the GetDefaultTapeSet message
- */
-export interface GetDefaultTapeSetResponse extends MessageBase {
-  type: "ackGetDefaultTapeSet";
-  bytes: Uint8Array;
+export interface AppConfigResponse extends MessageBase {
+  type: "appConfigResponse";
+  config: KliveConfiguration | null;
 }
 
 /**
  * The messages the main process can send as an acknowledgement
  */
-export type MainMessage = DefaultResponse | GetDefaultTapeSetResponse;
+export type MainMessage = DefaultResponse | AppConfigResponse;
 
+/**
+ * All messages between renderer and main
+ */
 export type AnyMessage = RendererMessage | MainMessage;

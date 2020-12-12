@@ -29,6 +29,11 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   }
 
   /**
+   * The currently set execution options
+   */
+  executionOptions: ExecuteCycleOptions | null;
+
+  /**
    * Initializes the specified ROMs
    * @param roms Optional buffers with ROM contents
    */
@@ -124,6 +129,8 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param options Execution options
    */
   executeCycle(options: ExecuteCycleOptions): void {
+    this.executionOptions = options;
+
     // --- Copy execution options
     const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
     mh.writeByte(0, options.emulationMode);
