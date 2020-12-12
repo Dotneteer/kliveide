@@ -29,6 +29,11 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   }
 
   /**
+   * The currently set execution options
+   */
+  executionOptions: ExecuteCycleOptions | null;
+
+  /**
    * Initializes the specified ROMs
    * @param roms Optional buffers with ROM contents
    */
@@ -124,6 +129,8 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param options Execution options
    */
   executeCycle(options: ExecuteCycleOptions): void {
+    this.executionOptions = options;
+
     // --- Copy execution options
     const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
     mh.writeByte(0, options.emulationMode);
@@ -173,12 +180,19 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   async beforeFirstStart(): Promise<void> {}
 
   /**
-   * Override this method to define an action when the virtual machine has
+   * Override this method to define an action before the virtual machine has
+   * started.
+   * @param _debugging Is started in debug mode?
+   */
+  async beforeStarted(_debugging: boolean): Promise<void> {}
+
+  /**
+   * Override this method to define an action after the virtual machine has
    * started.
    * @param _debugging Is started in debug mode?
    * @param _isFirstStart Is the machine started from stopped state?
    */
-  async onStarted(_debugging: boolean, _isFirstStart: boolean): Promise<void> {}
+  async afterStarted(_debugging: boolean): Promise<void> {}
 
   /**
    * Override this action to define an action when the virtual machine

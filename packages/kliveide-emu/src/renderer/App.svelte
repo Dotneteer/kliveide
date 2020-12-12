@@ -11,9 +11,10 @@
   import { themeStore } from "./stores/theme-store";
   import { darkTheme } from "./themes/dark-theme";
 
-  import { getVmEngine, changeVmEngine } from "./machine-loader";
+  import { getVmEngine, changeVmEngine, setEmulatorAppConfig } from "./machine-loader";
   import { createRendererProcessStateAware } from "./rendererProcessStore";
   import { emulatorSetupTypeAction } from "../shared/state/redux-emulator-state";
+  import { sendMessageToMain } from "../shared/messaging/messaging-core";
 
   // --- Manage themes and theme changes
   let themeStyle = "";
@@ -34,7 +35,13 @@
   // --- The virtual machine instance
   let vmEngine;
   onMount(async () => {
+    // --- Create the virtual machine engine
     vmEngine = await getVmEngine();
+
+    // --- Sign that the rendered has been started. The response
+    // --- contains the application configuration, save it
+    const configResponse = await sendMessageToMain({ type: "rendererStarted" });
+    setEmulatorAppConfig(configResponse.config);
   });
 
   // --- Cleanup subscriptions
@@ -44,6 +51,7 @@
   themeStore.registerTheme(darkTheme);
   themeStore.setTheme("dark");
 
+  // --- Prepare to watch application state changes
   const stateAware = createRendererProcessStateAware();
   stateAware.stateChanged.on(async (state) => {
     // --- Change the UI according to state change

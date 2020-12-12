@@ -26,7 +26,7 @@ import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import { BANK_0_OFFS } from "./memory-map";
 import { VmKeyCode } from "./wa-api";
 import { IVmEngineController } from "./IVmEngineController";
-
+import { emulatorAppConfig } from "../machine-loader";
 /**
  * This class represents the engine that controls and runs the
  * selected virtual machine in the renderer process.
@@ -269,21 +269,48 @@ export class VmEngine implements IVmEngineController {
    * Starts the virtual machine and keeps it running
    */
   async start(): Promise<void> {
+    await this.z80Machine.beforeStarted(false);
+
+    // --- Prepare the machine to run
+    this._isFirstStart =
+      this.executionState === VmState.None ||
+      this.executionState === VmState.Stopped;
+
+    if (this._isFirstStart) {
+      // --- Warm up to avoid sound delays
+      this.z80Machine.reset();
+      this._completionTask = this.executeCycle(
+        this,
+        new ExecuteCycleOptions(
+          EmulationMode.UntilFrameEnds,
+          DebugStepMode.None,
+          false,
+          undefined,
+          undefined,
+          true,
+          true
+        )
+      );
+      await new Promise((r) => setTimeout(r, 200));
+      await this.cancelRun();
+    }
+
     await this.run(new ExecuteCycleOptions());
-    await this.z80Machine.onStarted(false, this._isFirstStart);
+    await this.z80Machine.afterStarted(false);
   }
 
   /**
    * Starts the virtual machine in debugging mode
    */
   async startDebug(): Promise<void> {
+    await this.z80Machine.beforeStarted(true);
     await this.run(
       new ExecuteCycleOptions(
         EmulationMode.Debugger,
         DebugStepMode.StopAtBreakpoint
       )
     );
-    await this.z80Machine.onStarted(true, this._isFirstStart);
+    await this.z80Machine.afterStarted(true);
   }
 
   /**
@@ -297,19 +324,15 @@ export class VmEngine implements IVmEngineController {
 
     this._startCount++;
 
-    // --- Prepare the machine to run
-    this._isFirstStart =
-      this.executionState === VmState.None ||
-      this.executionState === VmState.Stopped;
-
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
+      // --- Now, do the real start
       this.z80Machine.reset();
 
       // --- Get the current emulator state
       const state = rendererProcessStore.getState();
 
-      // --- Allow th machine execute a custom action on first start
+      // --- Allow the machine execute a custom action on first start
       await this.z80Machine.beforeFirstStart();
 
       // --- Set breakpoints
@@ -406,9 +429,11 @@ export class VmEngine implements IVmEngineController {
    */
   async stepInto(): Promise<void> {
     await this.z80Machine.beforeStepInto();
+    await this.z80Machine.beforeStarted(false);
     await this.run(
       new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepInto)
     );
+    await this.z80Machine.afterStarted(false);
   }
 
   /**
@@ -457,7 +482,9 @@ export class VmEngine implements IVmEngineController {
         DebugStepMode.StepInto
       );
     }
+    await this.z80Machine.beforeStarted(false);
     await this.run(options);
+    await this.z80Machine.afterStarted(false);
   }
 
   /**
@@ -465,9 +492,11 @@ export class VmEngine implements IVmEngineController {
    */
   async stepOut(): Promise<void> {
     await this.z80Machine.beforeStepOut();
+    await this.z80Machine.beforeStarted(false);
     await this.run(
       new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOut)
     );
+    await this.z80Machine.afterStarted(false);
   }
 
   /**
@@ -496,9 +525,6 @@ export class VmEngine implements IVmEngineController {
       machine.z80Machine.engineLoops;
     let nextFrameTime = performance.now() + nextFrameGap;
     let toWait = 0;
-
-    // let gaps: [number, number, number][] = [];
-    // let counter = 0;
 
     // --- Execute the cycle until completed
     while (true) {
@@ -580,18 +606,11 @@ export class VmEngine implements IVmEngineController {
       toWait = Math.floor(nextFrameTime - curTime);
 
       // --- Wait for the next screen frame
+      if (emulatorAppConfig?.diagnostics?.longFrameInfo && toWait < 2) {
+        console.log(`Frame gap is too low: ${toWait}`);
+      }
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
-      // gaps.push([
-      //   performance.now() - frameStartTime,
-      //   this._lastFrameTime,
-      //   toWait,
-      // ]);
-      // counter++;
-      // if (counter % 100 === 0) {
-      //   console.log(gaps);
-      //   gaps = [];
-      // }
     }
   }
 

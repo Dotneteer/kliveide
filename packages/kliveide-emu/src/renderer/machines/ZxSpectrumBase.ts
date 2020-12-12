@@ -289,14 +289,39 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * Read the default tape contents before the first start
    */
   async beforeFirstStart(): Promise<void> {
+    super.beforeFirstStart();
+
+    // --- Take care of tape contents
     this.initTapeContents();
   }
 
   /**
-   * Stops audio when the machine has paused
-   * @param _isFirstPause Is the machine paused the first time?
+   * Override this method to define an action when the virtual machine has
+   * started.
+   * @param debugging Is started in debug mode?
    */
-  async onPaused(_isFirstPause: boolean): Promise<void> {
+  async beforeStarted(debugging: boolean): Promise<void> {
+    await super.beforeStarted(debugging);
+    // --- Init audio renderers
+    const state = this.getMachineState();
+    this._beeperRenderer = this._audioRendererFactory(
+      state.tactsInFrame / state.audioSampleLength
+    );
+    this._beeperRenderer.suspend();
+    await this._beeperRenderer.initializeAudio();
+    this._psgRenderer = this._audioRendererFactory(
+      state.tactsInFrame / state.audioSampleLength
+    );
+    this._psgRenderer.suspend();
+    await this._psgRenderer.initializeAudio();
+  }
+
+  /**
+   * Stops audio when the machine has paused
+   * @param isFirstPause Is the machine paused the first time?
+   */
+  async onPaused(isFirstPause: boolean): Promise<void> {
+    await super.onPaused(isFirstPause);
     this.cleanupAudio();
   }
 
@@ -304,6 +329,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * Stops audio when the machine has stopped
    */
   async onStopped(): Promise<void> {
+    await super.onStopped();
     this.cleanupAudio();
   }
 
@@ -328,7 +354,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     resultState: Z80MachineStateBase,
     toWait: number
   ): Promise<void> {
-    if (toWait > 0) {
+    if (!this.executionOptions.disableScreenRendering && toWait > 0) {
       this.api.colorize();
       this.vmEngineController.signScreenRefreshed();
     }
@@ -341,33 +367,25 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     this._stateManager.setLoadMode(resultState.tapeMode === 1);
     this.api.setFastLoad(emuState.fastLoad);
 
-    // --- Obtain beeper samples
-    if (!this._beeperRenderer) {
-      this._beeperRenderer = this._audioRendererFactory(
-        resultState.tactsInFrame / resultState.audioSampleLength
-      );
-      await this._beeperRenderer.initializeAudio();
-    }
-    let mh = new MemoryHelper(this.api, BEEPER_SAMPLE_BUFFER);
-    const beeperSamples = mh
-      .readBytes(0, resultState.audioSampleCount)
-      .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
-    this._beeperRenderer.storeSamples(beeperSamples);
+    if (!this.executionOptions.disableScreenRendering) {
+      // --- Obtain beeper samples
+      let mh = new MemoryHelper(this.api, BEEPER_SAMPLE_BUFFER);
+      const beeperSamples = mh
+        .readBytes(0, resultState.audioSampleCount)
+        .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
+      this._beeperRenderer.storeSamples(beeperSamples);
+      this._beeperRenderer.resume();
 
-    // --- Obtain psg samples
-    if (!this._psgRenderer) {
-      this._psgRenderer = this._audioRendererFactory(
-        resultState.tactsInFrame / resultState.audioSampleLength
-      );
-      await this._psgRenderer.initializeAudio();
+      // --- Obtain psg samples
+      mh = new MemoryHelper(this.api, PSG_SAMPLE_BUFFER);
+      const psgSamples = mh
+        .readWords(0, resultState.audioSampleCount)
+        .map((smp) =>
+          emuState.muted ? 0 : (smp / 32768) * (emuState.soundLevel ?? 0)
+        );
+      this._psgRenderer.storeSamples(psgSamples);
+      this._psgRenderer.resume();
     }
-    mh = new MemoryHelper(this.api, PSG_SAMPLE_BUFFER);
-    const psgSamples = mh
-      .readWords(0, resultState.audioSampleCount)
-      .map((smp) =>
-        emuState.muted ? 0 : (smp / 32768) * (emuState.soundLevel ?? 0)
-      );
-    this._psgRenderer.storeSamples(psgSamples);
 
     // --- Check if a tape should be loaded
     if (
@@ -416,6 +434,8 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
 class SilentAudioRenderer implements IAudioRenderer {
   async initializeAudio(): Promise<void> {}
   storeSamples(_samples: number[]): void {}
+  suspend(): void {}
+  resume(): void {}
   async closeAudio(): Promise<void> {}
 }
 
