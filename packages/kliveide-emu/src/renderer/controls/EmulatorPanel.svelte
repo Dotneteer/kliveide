@@ -55,7 +55,7 @@
   let panelMessage;
 
   // --- Store the last key event to play back
-  let lastKeyEvent;
+  let pressedKeys = {};
 
   // --- Catch the state of beam position indicator visibility
   stateAware.stateChanged.on((state) => {
@@ -223,20 +223,35 @@
   }
 
   // --- Handles key presses
-  function handleKey(e, status) {
+  function handleKey(e, isDown) {
     if (!e) return;
-    if (!e.altKey && status) {
-      lastKeyEvent = e;
+    handleMappedKey(e.code, isDown);
+    if (isDown) {
+      pressedKeys[e.code.toString()] = true;
+    } else {
+      delete pressedKeys[e.code.toString()];
     }
-    const key = pcKeyNames.get(e.code);
+  }
+
+  // --- Hamdle mapped key codes
+  function handleMappedKey(code, isDown) {
+    const key = pcKeyNames.get(code);
     if (!key) return;
     const mapping = currentKeyMappings.get(key);
     if (mapping) {
-      vmEngine.setKeyStatus(mapping.zxPrimary, status);
+      vmEngine.setKeyStatus(mapping.zxPrimary, isDown);
       if (mapping.zxSecondary) {
-        vmEngine.setKeyStatus(mapping.zxSecondary, status);
+        vmEngine.setKeyStatus(mapping.zxSecondary, isDown);
       }
     }
+  }
+
+  // --- Release all keys that remained pressed
+  function erasePressedKeys() {
+    for (let code in pressedKeys) {
+      handleMappedKey(code, false);
+    }
+    pressedKeys = {};
   }
 </script>
 
@@ -264,7 +279,7 @@
 <svelte:window
   on:keydown={(e) => handleKey(e, true)}
   on:keyup={(e) => handleKey(e, false)}
-  on:blur={() => handleKey(lastKeyEvent, false)} />
+  on:blur={erasePressedKeys} />
 <div
   tabindex="-1"
   class="emulator-panel"
