@@ -8,6 +8,16 @@ export interface IAudioRenderer {
   initializeAudio(): Promise<void>;
 
   /**
+   * Suspends the sound
+   */
+  suspend(): void;
+
+  /**
+   * Resumes the sound
+   */
+  resume(): void;
+
+  /**
    * Stores the samples to render
    * @param samples Next batch of samples to store
    */

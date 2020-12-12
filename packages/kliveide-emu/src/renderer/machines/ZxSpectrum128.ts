@@ -121,20 +121,20 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
   /**
    * Override this method to define an action when the virtual machine has
    * started.
-   * @param _debugging Is started in debug mode?
-   * @param _isFirstStart Is the machine started from stopped state?
+   * @param debugging Is started in debug mode?
    */
-  async onStarted(_debugging: boolean, _isFirstStart: boolean): Promise<void> {
+  async beforeStarted(debugging: boolean): Promise<void> {
+    await super.beforeStarted(debugging);
     this.ioLog = [];
   }
 
   /**
    * Override this action to define an action when the virtual machine
    * has paused.
-   * @param _isFirstPause Is the machine paused the first time?
+   * @param isFirstPause Is the machine paused the first time?
    */
-  async onPaused(_isFirstPause: boolean): Promise<void> {
-    super.onPaused(_isFirstPause);
+  async onPaused(isFirstPause: boolean): Promise<void> {
+    await super.onPaused(isFirstPause);
   }
 
   /**

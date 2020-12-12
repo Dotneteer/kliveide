@@ -27,18 +27,33 @@ export class AudioRenderer implements IAudioRenderer {
   async initializeAudio(): Promise<void> {
     // --- Create and initialize the context and the buffers
     this._ctx = new AudioContext({ latencyHint: 0.01 });
+    this._ctx.suspend();
     await this._ctx.audioWorklet.addModule(samplingWorklet);
-    this._workletNode = new AudioWorkletNode(
-      this._ctx,
-      "sampling-generator"
-    );
-    this._workletNode.port.postMessage({ initialize: this._samplesPerFrame })
+    this._workletNode = new AudioWorkletNode(this._ctx, "sampling-generator");
+    this._workletNode.port.postMessage({ initialize: this._samplesPerFrame });
     this._workletNode.connect(this._ctx.destination);
     this._workletNode.port.onmessage = (msg) => {
       const starving = msg.data?.diff;
-      if (emulatorAppConfig?.diagnostics?.soundBufferUnderflow && starving < 0)
-      console.log(`Sound buffer underflow: ${starving}`);
-    }
+      if (
+        emulatorAppConfig?.diagnostics?.soundBufferUnderflow &&
+        starving < -6 * this._samplesPerFrame
+      )
+        console.log(`Sound buffer underflow: ${starving}`);
+    };
+  }
+
+  /**
+   * Suspends the sound
+   */
+  suspend(): void {
+    this._ctx?.suspend();
+  }
+
+  /**
+   * Resumes the sound
+   */
+  resume(): void {
+    this._ctx?.resume();
   }
 
   /**
@@ -47,7 +62,7 @@ export class AudioRenderer implements IAudioRenderer {
    */
   storeSamples(samples: number[]): void {
     if (this._workletNode) {
-      this._workletNode.port.postMessage({samples});
+      this._workletNode.port.postMessage({ samples });
     }
   }
 
