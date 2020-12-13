@@ -93,14 +93,9 @@ export async function sendMessageToMain<T extends MessageBase>(
  * @param from Start memory address
  * @param to End memory address
  */
-export async function getMemoryContents(
-  from: number,
-  to: number
-): Promise<GetMemoryContentsResponse> {
+export async function getMemoryContents(): Promise<GetMemoryContentsResponse> {
   return sendMessageToMain({
     type: "getMemoryContents",
-    from,
-    to,
   });
 }
 

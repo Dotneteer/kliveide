@@ -36,8 +36,6 @@ export interface MessageBase {
  */
 export interface GetMemoryContents extends MessageBase {
   type: "getMemoryContents";
-  from: number;
-  to: number;
 }
 
 /**

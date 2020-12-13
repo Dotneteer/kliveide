@@ -1,5 +1,4 @@
-import { CodeToInject, RegisterData } from "../machines/api-data";
-import { KliveConfiguration } from "../messaging/emu-configurations";
+import { RegisterData } from "../machines/api-data";
 import { IdeConfiguration } from "./AppState";
 
 /**
@@ -24,8 +23,6 @@ export interface Payload {
   registers?: RegisterData;
   from?: number;
   to?: number;
-  memoryContents?: Uint8Array;
-  memWriteMap?: Uint8Array;
   breakpoints?: number[];
   savedData?: Uint8Array;
   ideConfiguration?: IdeConfiguration;
@@ -38,9 +35,7 @@ export interface Payload {
   memoryCommandResult?: Uint8Array;
   seqNo?: number;
   panelMessage?: string;
-  codeToInject?: CodeToInject;
   errorCode?: string;
-  debug?: boolean;
   soundLevel?: number;
   statusbar?: boolean;
   internalState?: Record<string, any>;

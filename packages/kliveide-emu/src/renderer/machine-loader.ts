@@ -2,21 +2,11 @@ import { VmEngine } from "./machines/VmEngine";
 import { MachineApi } from "./machines/wa-api";
 import { ZxSpectrum48 } from "./machines/ZxSpectrum48";
 import { ZxSpectrum128 } from "./machines/ZxSpectrum128";
-import {
-  createRendererProcessStateAware,
-  rendererProcessStore,
-} from "./rendererProcessStore";
-import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
+import { rendererProcessStore } from "./rendererProcessStore";
 import { MemoryHelper } from "./machines/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "./machines/memory-map";
 import { FrameBoundZ80Machine } from "./machines/FrameBoundZ80Machine";
-import {
-  InjectProgramCommand,
-  MemoryCommand,
-  RunProgramCommand,
-} from "../shared/state/AppState";
-import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
 import { AudioRenderer } from "./machines/AudioRenderer";
 import { ZxSpectrumBaseStateManager } from "./machines/ZxSpectrumBaseStateManager";
 import { CambridgeZ88 } from "./machines/CambridgeZ88";
@@ -48,84 +38,6 @@ let waInstance: WebAssembly.Instance | null = null;
  * Loader promise
  */
 let loader: Promise<VmEngine> | null = null;
-
-/**
- * Last emulator command requested
- */
-let lastEmulatorCommand = "";
-
-/**
- * Last emulator command requested
- */
-let lastMemoryCommand: MemoryCommand | undefined;
-
-/**
- * Indicates that the engine is processing a state change
- */
-let processingChange = false;
-
-/**
- * Let's handle virtual machine commands
- */
-const stateAware = createRendererProcessStateAware();
-stateAware.stateChanged.on(async (state) => {
-  if (processingChange || !vmEngine) return;
-  processingChange = true;
-
-  // --- Process server-api execution state commands
-  if (lastEmulatorCommand !== state.emulatorCommand) {
-    lastEmulatorCommand = state.emulatorCommand;
-
-    switch (lastEmulatorCommand) {
-      case "start":
-        await vmEngine.start();
-        break;
-      case "pause":
-        await vmEngine.pause();
-        break;
-      case "stop":
-        await vmEngine.stop();
-        break;
-      case "restart":
-        await vmEngine.restart();
-        break;
-      case "start-debug":
-        await vmEngine.startDebug();
-        break;
-      case "step-into":
-        await vmEngine.stepInto();
-        break;
-      case "step-over":
-        await vmEngine.stepOver();
-        break;
-      case "step-out":
-        await vmEngine.stepOut();
-        break;
-    }
-    stateAware.dispatch(emulatorSetCommandAction("")());
-  }
-
-  // --- Process server-api memory commands
-  if (lastMemoryCommand !== state.memoryCommand) {
-    lastMemoryCommand = state.memoryCommand;
-    if (lastMemoryCommand && lastMemoryCommand.command) {
-      let contents = new Uint8Array(0);
-      switch (lastMemoryCommand.command) {
-        case "rom":
-          contents = vmEngine.getRomPage(lastMemoryCommand.index ?? 0);
-          break;
-        case "bank":
-          contents = vmEngine.getBankPage(lastMemoryCommand.index ?? 0);
-          break;
-      }
-      stateAware.dispatch(
-        memorySetResultAction(lastMemoryCommand.seqNo, contents)()
-      );
-    }
-  }
-
-  processingChange = false;
-});
 
 /**
  * Get the initialized virtual machine engine

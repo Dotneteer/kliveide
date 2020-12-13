@@ -2,10 +2,7 @@ import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as fs from "fs";
 
-import {
-  mainProcessStore,
-  createMainProcessStateAware,
-} from "../main/mainProcessStore";
+import { mainProcessStore } from "../main/mainProcessStore";
 import {
   emulatorSetTapeContenstAction,
   emulatorRequestTypeAction,
@@ -19,19 +16,8 @@ import { IdeConfiguration } from "../shared/state/AppState";
 import { ideConfigSetAction } from "../shared/state/redux-ide-config-state";
 import { appConfiguration } from "../main/klive-configuration";
 import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
-import { memorySetCommandAction } from "../shared/state/redux-memory-command-state";
-import { SpectNetAction } from "../shared/state/redux-core";
 import { AppWindow } from "../main/AppWindow";
-
-/**
- * Sequence number of the latest memory request
- */
-let memoryRequestSeqNo = 0;
-
-/**
- * Memory request results
- */
-let memoryResults = new Map<number, Uint8Array>();
+import { GetMemoryContentsResponse } from "../shared/messaging/message-types";
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -122,44 +108,20 @@ export function startApiServer() {
   /**
    * Gets the contents of the specified memory range
    */
-  app.get("/memory/:from/:to", (req, res) => {
-    let fromVal = parseInt(req.params.from);
-    let toVal = parseInt(req.params.to);
-    if (fromVal > toVal) {
-      let tmp = fromVal;
-      fromVal = toVal;
-      toVal = tmp;
+  app.get("/memory", async (req, res) => {
+    try {
+      const contents = (
+        await AppWindow.instance.sendMessageToRenderer<GetMemoryContentsResponse>(
+          {
+            type: "getMemoryContents",
+          }
+        )
+      ).contents;
+      res.send(Buffer.from(contents).toString("base64"));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(err.toString());
     }
-    const s = mainProcessStore.getState();
-    const m = s.emulatorPanelState?.memoryContents;
-    if (!m || isNaN(fromVal) || isNaN(toVal)) {
-      res.send("");
-    } else {
-      const memBuff = m.slice(fromVal, toVal + 1);
-      res.send(Buffer.from(memBuff).toString("base64"));
-    }
-  });
-
-  /**
-   * Gets the contents of the specified ROM page
-   */
-  app.get("/rom/:page", async (req, res) => {
-    let pageVal = parseInt(req.params.page);
-
-    executeMemoryCommand(res, (requestId) =>
-      memorySetCommandAction(requestId, "rom", pageVal)()
-    );
-  });
-
-  /**
-   * Gets the contents of the specified BANK page
-   */
-  app.get("/bank/:page", async (req, res) => {
-    let pageVal = parseInt(req.params.page);
-
-    executeMemoryCommand(res, (requestId) =>
-      memorySetCommandAction(requestId, "bank", pageVal)()
-    );
   });
 
   /**
@@ -254,80 +216,4 @@ export function startApiServer() {
   app.listen(port, () =>
     console.log(`Klive Emulator is listening on port ${port}...`)
   );
-}
-
-/**
- * Executes a memory command
- * @param res Response object
- * @param actionCreator Action creator object
- */
-async function executeMemoryCommand(
-  res: express.Response,
-  actionCreator: (requestId: number) => SpectNetAction
-): Promise<void> {
-  const stateAware = createMainProcessStateAware();
-  try {
-    // --- Declare the promise for the communication between
-    // --- the api-server and the renderer process
-    const promise = new Promise<Uint8Array>(async (resolve, reject) => {
-      try {
-        // --- The unique number of this request
-        const thisReqestNo = ++memoryRequestSeqNo;
-        try {
-          // --- Initiate the status watch
-          let lastMemoryCommand = mainProcessStore.getState().memoryCommand;
-
-          // --- Catch status changes
-          let result: Uint8Array | null = null;
-          stateAware.stateChanged.on((state) => {
-            if (state && state.memoryCommand === lastMemoryCommand) {
-              // --- No change in memory command state
-              return;
-            }
-
-            lastMemoryCommand = state.memoryCommand;
-            if (
-              state.memoryCommand.command === "" &&
-              state.memoryCommand.memoryCommandResult
-            ) {
-              // --- We just received a result, store it
-              memoryResults.set(
-                state.memoryCommand.seqNo,
-                state.memoryCommand.memoryCommandResult
-              );
-            }
-
-            // --- Check for the current request's result
-            const thisResult = memoryResults.get(thisReqestNo);
-            if (thisResult) {
-              memoryResults.delete(thisReqestNo);
-              result = thisResult;
-            }
-          });
-
-          // --- Initiate the memory command execution
-          stateAware.dispatch(actionCreator(thisReqestNo));
-
-          // --- Wait for resolve/reject
-          const startTime = Date.now();
-          while (Date.now() - startTime < 3000) {
-            if (result) {
-              resolve(result);
-            }
-            await new Promise((r) => setTimeout(r, 100));
-          }
-          throw new Error("Memory request timeout");
-        } catch (err) {
-          reject(err);
-        }
-      } finally {
-        // --- Do not watch changes anymore
-        stateAware.dispose();
-      }
-    });
-    const result = await promise;
-    res.send(Buffer.from(result).toString("base64"));
-  } catch (err) {
-    res.status(500).send(err.toString());
-  }
 }

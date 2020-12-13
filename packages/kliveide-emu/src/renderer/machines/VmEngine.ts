@@ -16,7 +16,6 @@ import {
 import {
   emulatorSetExecStateAction,
   emulatorSetFrameIdAction,
-  emulatorSetMemoryContentsAction,
   engineInitializedAction,
   emulatorSetDebugAction,
   emulatorSetInternalStateAction,
@@ -84,11 +83,6 @@ export class VmEngine implements IVmEngineController {
   constructor(public z80Machine: FrameBoundZ80Machine) {
     // --- Obtain the state of the machine, including memory contents
     this._loadedState = z80Machine.getMachineState();
-    const memContents = this.z80Machine.getMemoryContents();
-    // --- Notify the UI about the new state
-    rendererProcessStore.dispatch(
-      emulatorSetMemoryContentsAction(memContents)()
-    );
     rendererProcessStore.dispatch(engineInitializedAction());
 
     // --- Watch for breakpoint changes
@@ -565,10 +559,6 @@ export class VmEngine implements IVmEngineController {
       );
       rendererProcessStore.dispatch(
         vmSetRegistersAction(this.getRegisterData(resultState))()
-      );
-      const memContents = this.z80Machine.getMemoryContents();
-      rendererProcessStore.dispatch(
-        emulatorSetMemoryContentsAction(memContents)()
       );
 
       // --- Get data

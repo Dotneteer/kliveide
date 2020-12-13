@@ -59,8 +59,8 @@ class Communicator {
    * @param from Firts memory address
    * @param to Last memory address
    */
-  async getMemory(from: number, to: number): Promise<string> {
-    return this.getText(`/memory/${from}/${to}`);
+  async getMemory(): Promise<string> {
+    return this.getText(`/memory`);
   }
 
   /**

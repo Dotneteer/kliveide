@@ -35,12 +35,20 @@ export interface RunCodeMessage extends MessageBase {
 }
 
 /**
+ * Request the full 64K memory contents from the VM
+ */
+export interface GetMemoryContentsMessage extends MessageBase {
+  type: "getMemoryContents";
+}
+
+/**
  * The messages that are send as requests to a processing entity
  */
 export type RequestMessage =
   | SignRendererStartedMessage
   | InjectCodeMessage
-  | RunCodeMessage;
+  | RunCodeMessage
+  | GetMemoryContentsMessage;
 
 /**
  * Default response for actions
@@ -58,9 +66,20 @@ export interface AppConfigResponse extends MessageBase {
 }
 
 /**
+ * Response for GetMemoryContentsMessage
+ */
+export interface GetMemoryContentsResponse extends MessageBase {
+  type: "getMemoryContentsResponse";
+  contents: Uint8Array;
+}
+
+/**
  * The messages that are sent as responses
  */
-export type ResponseMessage = DefaultResponse | AppConfigResponse;
+export type ResponseMessage =
+  | DefaultResponse
+  | AppConfigResponse
+  | GetMemoryContentsResponse;
 
 /**
  * All messages between renderer and main
