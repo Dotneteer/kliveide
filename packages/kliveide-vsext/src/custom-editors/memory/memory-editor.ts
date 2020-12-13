@@ -145,10 +145,10 @@ export class MemoryEditorProvider extends EditorProviderBase {
     itemIndex?: number
   ): Promise<void> {
     try {
-      const regData = await communicatorInstance.getRegisters();
+      const regs = await communicatorInstance.getRegisters();
       panel.webview.postMessage({
         viewNotification: "registers",
-        registers: regData,
+        registers: regs,
       });
 
       panel.webview.postMessage({

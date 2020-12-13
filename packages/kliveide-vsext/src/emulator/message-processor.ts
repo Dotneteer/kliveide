@@ -29,10 +29,7 @@ export class MessageProcessor {
     try {
       switch (message.type) {
         case "getMemoryContents":
-          const memContents = await communicatorInstance.getMemory(
-            message.from,
-            message.to
-          );
+          const memContents = await communicatorInstance.getMemory();
           response = <GetMemoryContentsResponse>{
             type: "ackGetMemoryContents",
             bytes: memContents,

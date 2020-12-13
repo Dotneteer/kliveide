@@ -211,7 +211,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     start: number
   ): Promise<void> {
     try {
-      const memContents = await communicatorInstance.getMemory(0x0000, 0xffff);
+      const memContents = await communicatorInstance.getMemory();
       const bytes = new Uint8Array(Buffer.from(memContents, "base64"));
       const disassemblyOut = await disassembly(
         bytes,

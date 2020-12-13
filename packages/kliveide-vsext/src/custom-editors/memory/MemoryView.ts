@@ -30,7 +30,7 @@ export async function memory(
       memoryContents = (await getBankPage(displayedBank)).bytes;
       break;
     default:
-      memoryContents = (await getMemoryContents(from, to)).bytes;
+      memoryContents = (await getMemoryContents()).bytes;
       break;
   }
   const bytes = new Uint8Array(Buffer.from(memoryContents, "base64"));

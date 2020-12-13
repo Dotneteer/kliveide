@@ -2,23 +2,11 @@ import { VmEngine } from "./machines/VmEngine";
 import { MachineApi } from "./machines/wa-api";
 import { ZxSpectrum48 } from "./machines/ZxSpectrum48";
 import { ZxSpectrum128 } from "./machines/ZxSpectrum128";
-import {
-  createRendererProcessStateAware,
-  rendererProcessStore,
-} from "./rendererProcessStore";
-import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
+import { rendererProcessStore } from "./rendererProcessStore";
 import { MemoryHelper } from "./machines/memory-helpers";
 import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "./machines/memory-map";
 import { FrameBoundZ80Machine } from "./machines/FrameBoundZ80Machine";
-import {
-  InjectProgramCommand,
-  MemoryCommand,
-  RunProgramCommand,
-} from "../shared/state/AppState";
-import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
-import { codeInjectResultAction } from "../shared/state/redux-code-command-state";
-import { codeRunResultAction } from "../shared/state/redux-run-code-state";
 import { AudioRenderer } from "./machines/AudioRenderer";
 import { ZxSpectrumBaseStateManager } from "./machines/ZxSpectrumBaseStateManager";
 import { CambridgeZ88 } from "./machines/CambridgeZ88";
@@ -52,130 +40,12 @@ let waInstance: WebAssembly.Instance | null = null;
 let loader: Promise<VmEngine> | null = null;
 
 /**
- * Last emulator command requested
- */
-let lastEmulatorCommand = "";
-
-/**
- * Last emulator command requested
- */
-let lastMemoryCommand: MemoryCommand | undefined;
-
-/**
- * Last code injection command requested
- */
-let lastInjectCommand: InjectProgramCommand | undefined;
-
-/**
- * Last run program command requested
- */
-let lastRunCommand: RunProgramCommand | undefined;
-
-/**
- * Indicates that the engine is processing a state change
- */
-let processingChange = false;
-
-/**
- * Let's handle virtual machine commands
- */
-const stateAware = createRendererProcessStateAware();
-stateAware.stateChanged.on(async (state) => {
-  if (processingChange || !vmEngine) return;
-  processingChange = true;
-
-  // --- Process server-api execution state commands
-  if (lastEmulatorCommand !== state.emulatorCommand) {
-    lastEmulatorCommand = state.emulatorCommand;
-
-    switch (lastEmulatorCommand) {
-      case "start":
-        await vmEngine.start();
-        break;
-      case "pause":
-        await vmEngine.pause();
-        break;
-      case "stop":
-        await vmEngine.stop();
-        break;
-      case "restart":
-        await vmEngine.restart();
-        break;
-      case "start-debug":
-        await vmEngine.startDebug();
-        break;
-      case "step-into":
-        await vmEngine.stepInto();
-        break;
-      case "step-over":
-        await vmEngine.stepOver();
-        break;
-      case "step-out":
-        await vmEngine.stepOut();
-        break;
-    }
-    stateAware.dispatch(emulatorSetCommandAction("")());
-  }
-
-  // --- Process server-api memory commands
-  if (lastMemoryCommand !== state.memoryCommand) {
-    lastMemoryCommand = state.memoryCommand;
-    if (lastMemoryCommand && lastMemoryCommand.command) {
-      let contents = new Uint8Array(0);
-      switch (lastMemoryCommand.command) {
-        case "rom":
-          contents = vmEngine.getRomPage(lastMemoryCommand.index ?? 0);
-          break;
-        case "bank":
-          contents = vmEngine.getBankPage(lastMemoryCommand.index ?? 0);
-          break;
-      }
-      stateAware.dispatch(
-        memorySetResultAction(lastMemoryCommand.seqNo, contents)()
-      );
-    }
-  }
-
-  // --- Process code injection commands
-  if (lastInjectCommand !== state.injectCommand) {
-    lastInjectCommand = state.injectCommand;
-    if (lastInjectCommand && lastInjectCommand.codeToInject) {
-      const result = await vmEngine.injectCode(lastInjectCommand.codeToInject);
-      if (result) {
-        stateAware.dispatch(codeInjectResultAction(result)());
-      } else {
-        stateAware.dispatch(codeInjectResultAction("")());
-      }
-    }
-  }
-
-  // --- Process run program commands
-  if (lastRunCommand !== state.runCommand) {
-    lastRunCommand = state.runCommand;
-    if (lastRunCommand && lastRunCommand.codeToInject) {
-      console.log("Executing the run command");
-      const result = await vmEngine.runCode(
-        lastRunCommand.codeToInject,
-        lastRunCommand.debug
-      );
-      if (result) {
-        stateAware.dispatch(codeRunResultAction(result)());
-      } else {
-        stateAware.dispatch(codeRunResultAction("")());
-      }
-    }
-  }
-
-  processingChange = false;
-});
-
-/**
  * Get the initialized virtual machine engine
  */
 export async function getVmEngine(): Promise<VmEngine> {
   if (!vmEngine) {
     if (!loader) {
-      loader = createVmEngine("sp48");
+      loader = createVmEngine("48");
     }
     vmEngine = await loader;
   }

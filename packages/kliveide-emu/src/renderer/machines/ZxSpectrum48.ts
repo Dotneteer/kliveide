@@ -54,11 +54,11 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
 
   /**
    * Prepares the engine for code injection
-   * @param model Model to run in the virtual machine
+   * @param _model Model to run in the virtual machine
    */
-  async prepareForInjection(model: string): Promise<number> {
+  async prepareForInjection(_model: string): Promise<number> {
     const controller = this.vmEngineController;
-    await controller.run(
+    await controller.start(
       new ExecuteCycleOptions(
         EmulationMode.UntilExecutionPoint,
         DebugStepMode.None,

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import fetch, { RequestInit, Response } from "node-fetch";
 import { KLIVEIDE, EMU_PORT, SAVE_FOLDER } from "../config/sections";
+import { MachineState } from "../shared/machines/machine-state";
 
 /**
  * This class is responsible for communicating with the Klive Emulator
@@ -51,7 +52,25 @@ class Communicator {
    * Gets Z80 register information from the virtual machine
    */
   async getRegisters(): Promise<RegisterData> {
-    return this.getJson<RegisterData>("/z80-regs");
+    const s = await this.getJson<MachineState>("/machine-state");
+    const regs: RegisterData = {
+      af: s._af,
+      bc: s._bc,
+      de: s._de,
+      hl: s._hl,
+      af_: s._af_sec,
+      bc_: s._bc_sec,
+      de_: s._de_sec,
+      hl_: s._hl_sec,
+      i: s._i,
+      r: s._r,
+      pc: s._pc,
+      sp: s._sp,
+      ix: s._ix,
+      iy: s._iy,
+      wz: s._wz
+    };
+    return regs;
   }
 
   /**
@@ -59,8 +78,15 @@ class Communicator {
    * @param from Firts memory address
    * @param to Last memory address
    */
-  async getMemory(from: number, to: number): Promise<string> {
-    return this.getText(`/memory/${from}/${to}`);
+  async getMemory(): Promise<string> {
+    return this.getText(`/memory`);
+  }
+
+  /**
+   * Gets the diagnostics state of the virtual machine
+   */
+  async getMachineState(): Promise<MachineState> {
+    return this.getJson<MachineState>("/machine-state");
   }
 
   /**
@@ -149,13 +175,6 @@ class Communicator {
     if (response.ok) {
       return response.text();
     }
-  }
-
-  /**
-   * Stops the ZX Spectrum machine
-   */
-  async stopMachine(): Promise<void> {
-    await this.post("/stop", {});
   }
 
   /**

@@ -20,11 +20,6 @@ export interface AppState {
   vmInfo?: VmInfo;
 
   /**
-   * Emulator command to execute
-   */
-  emulatorCommand?: string;
-
-  /**
    * Breakpoints
    */
   breakpoints?: number[];
@@ -38,21 +33,6 @@ export interface AppState {
    * The current state of IDE connection
    */
   ideConnection?: IdeConnection;
-
-  /**
-   * Memory command to execute
-   */
-  memoryCommand?: MemoryCommand;
-
-  /**
-   * Code inject command to execute
-   */
-  injectCommand?: InjectProgramCommand;
-
-  /**
-   * Run program command to execute
-   */
-  runCommand?: RunProgramCommand;
 }
 
 /**
@@ -75,8 +55,6 @@ export interface EmulatorPanelState {
   frameCount?: number;
   muted?: boolean;
   soundLevel?: number;
-  memoryContents?: Uint8Array;
-  memWriteMap?: Uint8Array;
   savedData?: Uint8Array;
   requestedType?: string;
   currentType?: string;
@@ -123,36 +101,6 @@ export interface IdeConnection {
    */
   lastHeartBeat: number;
 }
-
-/**
- * Represents a memory command to execute
- */
-export interface MemoryCommand {
-  /**
-   * Command sequence number
-   */
-  seqNo: number;
-
-  /**
-   * Command type
-   */
-  command: MemoryCommandType;
-
-  /**
-   * Command index
-   */
-  index?: number;
-
-  /**
-   * The result of the memory command;
-   */
-  memoryCommandResult?: Uint8Array;
-}
-
-/**
- * Available memory command types
- */
-export type MemoryCommandType = "" | "rom" | "bank";
 
 /**
  * Represents a code injection command
@@ -215,7 +163,6 @@ export function getDefaultAppState(): AppState {
       statusbar: true,
       internalState: {}
     },
-    emulatorCommand: "",
     breakpoints: [],
     ideConfiguration: {
       projectFolder: "",

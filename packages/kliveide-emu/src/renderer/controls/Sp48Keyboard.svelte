@@ -85,7 +85,7 @@
           ev.code, 0);
         break;
       case "glyph":
-        if (spectrum.getCursorMode() & 0x02 !== 0) return;
+        if (spectrum.z80Machine.getCursorMode() & 0x02 !== 0) return;
         spectrum.queueKeyStroke(
           state.frameCount,
           2,

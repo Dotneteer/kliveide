@@ -145,16 +145,16 @@ export async function requestEmulatorInfo(): Promise<void> {
         pc: frameInfo.pc,
         runsInDebug: frameInfo.runsInDebug,
       });
-      signMemoryPageInfo(frameInfo);
+      //signMemoryPageInfo(frameInfo);
     }
 
-    // --- Handle changes in memory pages
-    if (
-      frameInfo.selectedRom !== lastFrameInfo?.selectedRom ||
-      frameInfo.selectedBank !== lastFrameInfo?.selectedBank
-    ) {
-      signMemoryPageInfo(frameInfo);
-    }
+    // // --- Handle changes in memory pages
+    // if (
+    //   frameInfo.selectedRom !== lastFrameInfo?.selectedRom ||
+    //   frameInfo.selectedBank !== lastFrameInfo?.selectedBank
+    // ) {
+    //   signMemoryPageInfo(frameInfo);
+    // }
 
     // --- Remember the last frame information
     lastFrameInfo = frameInfo;
@@ -180,7 +180,7 @@ export async function requestEmulatorInfo(): Promise<void> {
     if (frameInfo.machineType !== lastMachineType) {
       lastMachineType = frameInfo.machineType;
       machineTypeChanged.fire(lastMachineType ?? "");
-      signMemoryPageInfo(frameInfo);
+      //signMemoryPageInfo(frameInfo);
     }
   } catch (err) {
     // --- Handle changes in connection state
@@ -193,17 +193,17 @@ export async function requestEmulatorInfo(): Promise<void> {
     }
   }
 
-  // --- Sign the memory page info based on the frame
-  function signMemoryPageInfo(frameInfo: FrameInfo): void {
-    lastMemoryPageInfo = {
-      selectedRom: frameInfo.selectedRom ?? 0,
-      selectedBank: frameInfo.selectedBank ?? 0,
-    };
-    memoryPagingChanged.fire({
-      selectedRom: lastMemoryPageInfo.selectedRom,
-      selectedBank: lastMemoryPageInfo.selectedBank,
-    });
-  }
+  // // --- Sign the memory page info based on the frame
+  // function signMemoryPageInfo(frameInfo: FrameInfo): void {
+  //   lastMemoryPageInfo = {
+  //     selectedRom: frameInfo.selectedRom ?? 0,
+  //     selectedBank: frameInfo.selectedBank ?? 0,
+  //   };
+  //   memoryPagingChanged.fire({
+  //     selectedRom: lastMemoryPageInfo.selectedRom,
+  //     selectedBank: lastMemoryPageInfo.selectedBank,
+  //   });
+  // }
 }
 
 /**

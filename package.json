@@ -15,7 +15,7 @@
   "scripts": {
     "bootstrap": "npm install && lerna bootstrap",
     "build": "lerna run build",
-    "copyfiles": "copyfiles -a -u 4 ./packages/kliveide-emu/src/shared/**/*.* -F ./packages/kliveide-vsext/src/shared", 
+    "copyfiles": "copyfiles -a -u 4 ./packages/kliveide-emu/src/shared/machines/*.* -F ./packages/kliveide-vsext/src/shared", 
     "build:emu": "cd packages/kliveide-emu && npm run build",
     "test": "lerna run test",
     "dev": "cd packages/kliveide-emu && npm run dev",

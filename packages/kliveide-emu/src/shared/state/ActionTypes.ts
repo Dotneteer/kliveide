@@ -30,8 +30,6 @@ export interface ActionTypes {
   EMULATOR_SET_FRAME_ID: null;
   EMULATOR_MUTE: null;
   EMULATOR_UNMUTE: null;
-  EMULATOR_SET_MEMORY_CONTENTS: null;
-  EMULATOR_SET_MEMWRITE_MAP: null;
   EMULATOR_SET_DEBUG: null;
   EMULATOR_SET_SAVED_DATA: null;
   EMULATOR_REQUEST_TYPE: null;
@@ -44,13 +42,6 @@ export interface ActionTypes {
   EMULATOR_SHOW_STATUSBAR: null;
   EMULATOR_HIDE_STATUSBAR: null;
   EMULATOR_SET_INTERNAL_STATE: null;
-
-  // --- Emulator command actions
-  EMULATOR_COMMAND: null;
-  
-  // --- Nenory command actions
-  MEMORY_COMMAND: null;
-  MEMORY_COMMAND_RESULT: null;
 
   // --- Breakpoint command action
   BREAKPOINT_SET: null;
@@ -67,16 +58,8 @@ export interface ActionTypes {
   IDE_CONNECTS: null;
   IDE_DISCONNECTS: null;
 
-  // --- Code injection related commands
-  CODE_INJECT: null;
-  CODE_INJECT_RESULT: null;
-  CODE_RUN: null;
-  CODE_RUN_RESULT: null;
-
   // --- Main window state actions
   MAXIMIZE_APP_WINDOW: null;
   MINIMIZE_APP_WINDOW: null;
   RESTORE_APP_WINDOW: null;
-
-  
 }
