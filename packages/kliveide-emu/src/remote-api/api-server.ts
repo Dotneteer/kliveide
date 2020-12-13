@@ -7,7 +7,6 @@ import {
   emulatorSetTapeContenstAction,
   emulatorRequestTypeAction,
 } from "../shared/state/redux-emulator-state";
-import { RegisterData } from "../shared/machines/api-data";
 import { breakpointSetAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
 import { checkTapeFile } from "../shared/tape/readers";
@@ -17,7 +16,12 @@ import { ideConfigSetAction } from "../shared/state/redux-ide-config-state";
 import { appConfiguration } from "../main/klive-configuration";
 import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 import { AppWindow } from "../main/AppWindow";
-import { GetMachineStateMessage, GetMachineStateResponse, GetMemoryContentsResponse } from "../shared/messaging/message-types";
+import {
+  AddDiagnosticsFrameDataResponse,
+  GetMachineStateResponse,
+  GetMemoryContentsResponse,
+} from "../shared/messaging/message-types";
+import { DiagViewFrame } from "../shared/machines/diag-info";
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -41,22 +45,33 @@ export function startApiServer() {
   /**
    * Gets frame information
    */
-  app.get("/frame-info", (_req, res) => {
-    const state = mainProcessStore.getState();
-    const emuState = state.emulatorPanelState;
-    const vmInfo = state.vmInfo;
-    res.json({
-      startCount: emuState.startCount,
-      frameCount: emuState.frameCount,
-      executionState: emuState.executionState,
-      breakpoints: Array.from(state.breakpoints),
-      pc: vmInfo.registers?.pc ?? -1,
-      runsInDebug: emuState.runsInDebug,
-      machineType: emuState.currentType,
-      selectedRom: emuState.selectedRom,
-      selectedBank: emuState.selectedBank,
-      internalState: emuState.internalState,
-    });
+  app.get("/frame-info", async (_req, res) => {
+    try {
+      const state = mainProcessStore.getState();
+      const emuState = state.emulatorPanelState;
+      const vmInfo = state.vmInfo;
+      const diagData = <DiagViewFrame> {
+        startCount: emuState.startCount,
+        frameCount: emuState.frameCount,
+        executionState: emuState.executionState,
+        breakpoints: Array.from(state.breakpoints),
+        pc: vmInfo.registers?.pc ?? -1,
+        runsInDebug: emuState.runsInDebug,
+        machineType: emuState.currentType,
+      }
+        const frame = (
+        await AppWindow.instance.sendMessageToRenderer<AddDiagnosticsFrameDataResponse>(
+          {
+            type: "addDiagnosticsFrameData",
+            frame: diagData
+          }
+        )
+      ).frame;
+      res.json(frame);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(err.toString());
+    }
     mainProcessStore.dispatch(ideConnectsAction());
   });
 
@@ -76,33 +91,6 @@ export function startApiServer() {
       }
     } catch (err) {}
     res.sendStatus(success ? 200 : 403);
-  });
-
-  /**
-   * Gets the current values of Z80 registers
-   */
-  app.get("/z80-regs", (_req, res) => {
-    const s = mainProcessStore.getState().vmInfo;
-    const regs = s?.registers
-      ? s.registers
-      : <RegisterData>{
-          af: 0xffff,
-          bc: 0xffff,
-          de: 0xffff,
-          hl: 0xffff,
-          af_: 0xffff,
-          bc_: 0xffff,
-          de_: 0xffff,
-          hl_: 0xffff,
-          pc: 0xffff,
-          sp: 0xffff,
-          ix: 0xffff,
-          iy: 0xffff,
-          i: 0xff,
-          r: 0xff,
-          wz: 0xffff,
-        };
-    res.json(regs);
   });
 
   /**

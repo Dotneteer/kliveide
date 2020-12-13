@@ -278,7 +278,9 @@ export class AppWindow {
    * @param message Message contents
    */
   postMessageToRenderer(message: RequestMessage): void {
-    this._window.webContents.send(MAIN_REQUEST_CHANNEL, message);
+    if (this._window) {
+      this._window.webContents.send(MAIN_REQUEST_CHANNEL, message);
+    }
   }
 
   /**

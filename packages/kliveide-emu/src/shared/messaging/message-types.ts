@@ -1,4 +1,5 @@
 import { CodeToInject } from "../machines/api-data";
+import { DiagViewFrame } from "../machines/diag-info";
 import { MachineState } from "../machines/machine-state";
 import { KliveConfiguration } from "./emu-configurations";
 
@@ -49,6 +50,15 @@ export interface GetMachineStateMessage extends MessageBase {
   type: "getMachineState";
 }
 
+
+/**
+ * Request additional diagnostics frame data
+ */
+export interface AddDiagnosticsFrameDataMessage extends MessageBase {
+  type: "addDiagnosticsFrameData";
+  frame: DiagViewFrame
+}
+
 /**
  * The messages that are send as requests to a processing entity
  */
@@ -57,7 +67,8 @@ export type RequestMessage =
   | InjectCodeMessage
   | RunCodeMessage
   | GetMemoryContentsMessage
-  | GetMachineStateMessage;
+  | GetMachineStateMessage
+  | AddDiagnosticsFrameDataMessage;
 
 /**
  * Default response for actions
@@ -91,13 +102,22 @@ export interface GetMachineStateResponse extends MessageBase {
 }
 
 /**
+ * Response for AddDiagnosticsFrameDataMessage
+ */
+export interface AddDiagnosticsFrameDataResponse extends MessageBase {
+  type: "addDiagnosticsFrameDataResponse";
+  frame: DiagViewFrame
+}
+
+/**
  * The messages that are sent as responses
  */
 export type ResponseMessage =
   | DefaultResponse
   | AppConfigResponse
   | GetMemoryContentsResponse
-  | GetMachineStateResponse;
+  | GetMachineStateResponse
+  | AddDiagnosticsFrameDataResponse
 
 /**
  * All messages between renderer and main

@@ -12,6 +12,7 @@ import {
 } from "../../shared/machines/machine-state";
 import { PAGE_INDEX_16, STATE_TRANSFER_BUFF } from "./memory-map";
 import { CodeToInject } from "../../shared/machines/api-data";
+import { DiagViewFrame } from "../../shared/machines/diag-info";
 
 /**
  * Represents a Z80 machine that uses execution frames (generally bound to screen rendering)
@@ -82,6 +83,14 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param model Model to run in the virtual machine
    */
   abstract prepareForInjection(model: string): Promise<number>;
+
+  /**
+   * Override this method to add extra diagnostics frame data
+   * the machine wants to share
+   * @param _frame Diagnostics frame to extend
+   * @param _state Machine state to use when extending
+   */
+  addDiagnosticsFrameData(_frame: DiagViewFrame, _state: MachineState): void {}
 
   /**
    * Sets the status of the specified key

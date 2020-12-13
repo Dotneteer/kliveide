@@ -4,6 +4,7 @@ import {
   RENDERER_RESPONSE_CHANNEL,
 } from "../shared/utils/channel-ids";
 import {
+  AddDiagnosticsFrameDataResponse,
   DefaultResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
@@ -11,6 +12,7 @@ import {
   ResponseMessage,
 } from "../shared/messaging/message-types";
 import { getVmEngine } from "./machine-loader";
+import { MachineState } from "../shared/machines/machine-state";
 
 /**
  * Processes messages from the renderer process
@@ -25,10 +27,12 @@ export async function processMessageFromMain(
       await machine.injectCode(message.codeToInject);
       return <DefaultResponse>{ type: "ack" };
     }
+
     case "runCode": {
       await machine.runCode(message.codeToInject, message.debug);
       return <DefaultResponse>{ type: "ack" };
     }
+
     case "getMemoryContents": {
       const contents = machine.z80Machine.getMemoryContents();
       return <GetMemoryContentsResponse>{
@@ -36,6 +40,7 @@ export async function processMessageFromMain(
         contents,
       };
     }
+
     case "getMachineState": {
       const state = machine.z80Machine.getMachineState();
       return <GetMachineStateResponse>{
@@ -43,6 +48,18 @@ export async function processMessageFromMain(
         state,
       };
     }
+
+    case "addDiagnosticsFrameData": {
+      machine.z80Machine.addDiagnosticsFrameData(
+        message.frame,
+        machine.getMachineState() as MachineState
+      );
+      return <AddDiagnosticsFrameDataResponse>{
+        type: "addDiagnosticsFrameDataResponse",
+        frame: message.frame,
+      };
+    }
+
     default:
       return <DefaultResponse>{ type: "ack" };
   }
