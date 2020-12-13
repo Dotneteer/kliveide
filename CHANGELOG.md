@@ -1,5 +1,39 @@
 # Klive IDE Changelog
 
+## 0.7.0-alpha.7
+
+### Klive Emulator
+
+#### Known Issues
+
+- ZX Spectrum 128 memory view and disassembly view has some discrepancies
+
+#### Features
+
+- Cambridge Z88 Emulation is supported (the emulator is still in progress)
+- You can select sound level in the Emulator (from the Machine menu)
+
+#### Fixes
+- You can set the ZX BASIC optimization level between 0 and 4 (instead of 0 and 3)
+- Emulator screen refresh fixed
+- Sound lag fixed
+- Stuck key issue (when using Windows/Command key) fixed
+
+#### Others
+
+- The Emulator's internal architecture has been significantly refactored. Now, it's much easier to add new virtual machine types with their pecuiliarities. 
+    - The standard Z80 and the Z80 Next CPUs are separated
+    - Each virtual machine has its separate WebAssembly files
+    - Now, virtual machines are based on a generic Z80 machine model
+- The development of the ZX Spectrum Next model started
+
+### Klive IDE
+
+#### Known Issues
+
+- Disassembly View does not refresh automatically when the selected ROM or Bank changes.
+
+
 ## 0.6.0-alpha.6
 
 ### Klive Emulator
