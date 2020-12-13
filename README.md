@@ -2,7 +2,7 @@
 
 This project aims to build a full-fledged ZX Spectrum IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+), Klive IDE intends to be an attractive development platform for [ZX Spectrum Next](https://www.specnext.com/).
 
-**The current public release (v0.6.0) is released on November 7, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
+**The current public release (v0.7.0) is released on December 13, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
 
 - [You can immediately try it](https://dotneteer.github.io/kliveide/getting-started/install-kliveide)
 
@@ -52,7 +52,7 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
     - Running and debugging ZX Spectrum 48 code with the three software components working in orchestration.
     - Z80 Assembly integration (syntax highlighting and compilation) (&check;)
 4. A Klive IDE version that provides feature-parity with SpectNetIDE
-5. Moving toward ZX Spectrum Next
+5. Moving toward ZX Spectrum Next (_in progress_)
 
 ## Contact me
 
