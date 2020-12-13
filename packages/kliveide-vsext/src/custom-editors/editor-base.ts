@@ -42,6 +42,9 @@ export abstract class EditorProviderBase
   implements vscode.CustomTextEditorProvider {
   private _disposables = new Map<vscode.WebviewPanel, vscode.Disposable[]>();
 
+  private _panel: vscode.WebviewPanel | null;
+  private _displayed = false;
+
   /**
    * The title of the webview
    */
@@ -65,7 +68,16 @@ export abstract class EditorProviderBase
    * Instantiates the editor provider
    * @param context Extension context
    */
-  constructor(protected readonly context: vscode.ExtensionContext) {
+  constructor(protected readonly context: vscode.ExtensionContext) {}
+
+  /**
+   * Gets the host WebViewPanel of this editor
+   */
+  get panel(): vscode.WebviewPanel {
+    if (this._panel) {
+      return this._panel;
+    }
+    throw new Error("WebViewPanel nos set.");
   }
 
   /**
@@ -106,13 +118,13 @@ export abstract class EditorProviderBase
   /**
    * Resolve a custom editor for a given text resource.
    *
-   * @param document Document for the resource to resolve.
+   * @param _document Document for the resource to resolve.
    * @param webviewPanel The webview panel used to display the editor UI for this resource.
    * @param token A cancellation token that indicates the result is no longer needed.
    * @return Thenable indicating that the custom editor has been resolved.
    */
   async resolveCustomTextEditor(
-    document: vscode.TextDocument,
+    _document: vscode.TextDocument,
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
@@ -125,6 +137,20 @@ export abstract class EditorProviderBase
       enableScripts: true,
     };
     webviewPanel.webview.html = this.getHtmlContents(webviewPanel.webview);
+    this._displayed = webviewPanel.visible;
+    this._panel = webviewPanel;
+
+    // --- Notify about visibility changes
+    webviewPanel.onDidChangeViewState((e) => {
+      if (e.webviewPanel.visible !== this._displayed) {
+        this._displayed = e.webviewPanel.visible;
+        if (this._displayed) {
+          this.onShow();
+        } else {
+          this.onHidden();
+        }
+      }
+    });
 
     // --- Keep track of the active editor
     this.toDispose(
@@ -188,7 +214,7 @@ export abstract class EditorProviderBase
     webviewPanel.webview.onDidReceiveMessage(
       async (e: ViewCommand | RendererMessage) => {
         if ((e as ViewCommand).command !== undefined) {
-          await this.processViewCommand(webviewPanel, e as ViewCommand);
+          await this.processViewCommand(e as ViewCommand);
         } else {
           new MessageProcessor(webviewPanel.webview).processMessage(
             e as RendererMessage
@@ -203,11 +229,9 @@ export abstract class EditorProviderBase
 
   /**
    * Process view command
-   * @param _panel The WebviewPanel that should process a message from its view
    * @param _viewCommand Command notification to process
    */
   async processViewCommand(
-    _panel: vscode.WebviewPanel,
     _viewCommand: ViewCommand
   ): Promise<void> {}
 
@@ -243,16 +267,16 @@ export abstract class EditorProviderBase
   /**
    * Sends the current execution state to view
    */
-  protected sendInitialStateToView(panel: vscode.WebviewPanel): void {
+  protected sendInitialStateToView(): void {
     if (!getLastConnectedState()) {
-      panel.webview.postMessage({
+      this.panel.webview.postMessage({
         viewNotification: "connectionState",
         state: false,
       });
     }
     const machineType = getLastMachineType();
     if (machineType) {
-      panel.webview.postMessage({
+      this.panel.webview.postMessage({
         viewNotification: "machineType",
         type: machineType,
         config: machineTypes[machineType],
@@ -260,19 +284,31 @@ export abstract class EditorProviderBase
     }
     const pageInfo = getLastMemoryPagingInfo();
     if (pageInfo) {
-      panel.webview.postMessage({
+      this.panel.webview.postMessage({
         viewNotification: "memoryPaging",
         selectedRom: pageInfo.selectedRom,
         selectedBank: pageInfo.selectedBank,
       });
     }
     const execState = getLastExecutionState();
-    panel.webview.postMessage({
+    this.panel.webview.postMessage({
       viewNotification: "execState",
       state: execState.state,
       pc: execState.pc,
     });
   }
+
+  /**
+   * Override this method to handle the event when the webview
+   * is displayed
+   */
+  protected onShow(): void {}
+
+  /**
+   * Override this method to handle the event when the webview
+   * gets hidden
+   */
+  protected onHidden(): void {}
 }
 
 /**
@@ -323,4 +359,5 @@ export type ReplacementTuple = [string, string | vscode.Uri];
  */
 export interface ViewCommand {
   readonly command: string;
+  readonly data?: any
 }

@@ -136,8 +136,8 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       webviewPanel,
       onMachineTypeChanged(async () => {
         await readRomAnnotations();
-        this.refreshView(webviewPanel);
-        this.refreshViewport(webviewPanel, Date.now());
+        this.refreshView();
+        this.refreshViewport(Date.now());
       })
     );
 
@@ -146,7 +146,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       webviewPanel,
       onConnectionStateChanged(async (connected: boolean) => {
         if (connected) {
-          this.refreshViewport(webviewPanel, Date.now());
+          this.refreshViewport(Date.now());
         }
       })
     );
@@ -163,17 +163,16 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    * @param viewCommand Command notification to process
    */
   async processViewCommand(
-    panel: vscode.WebviewPanel,
     viewCommand: ViewCommand
   ): Promise<void> {
     switch (viewCommand.command) {
       case "requestRefresh":
         // --- Send the refresh command to the view
-        this.refreshView(panel);
-        this.refreshViewport(panel, Date.now());
+        this.refreshView();
+        this.refreshViewport(Date.now());
         break;
       case "requestViewportRefresh":
-        this.refreshViewport(panel, Date.now());
+        this.refreshViewport(Date.now());
         break;
       case "setBreakpoint":
         communicatorInstance.setBreakpoint((viewCommand as any).address);
@@ -187,8 +186,8 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   /**
    * Sends the current breakpoints to the webview
    */
-  protected sendBreakpointsToView(panel: vscode.WebviewPanel): void {
-    panel.webview.postMessage({
+  protected sendBreakpointsToView(): void {
+    this.panel.webview.postMessage({
       viewNotification: "breakpoints",
       breakpoints: getLastBreakpoints(),
     });
@@ -197,9 +196,9 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   /**
    * Sends messages to the view so that can refresh itself
    */
-  async refreshView(panel: vscode.WebviewPanel): Promise<void> {
-    this.sendInitialStateToView(panel);
-    this.sendBreakpointsToView(panel);
+  async refreshView(): Promise<void> {
+    this.sendInitialStateToView();
+    this.sendBreakpointsToView();
   }
 
   /**
@@ -207,7 +206,6 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    * @param panel Panel to refresh
    */
   async refreshViewport(
-    panel: vscode.WebviewPanel,
     start: number
   ): Promise<void> {
     try {
@@ -221,7 +219,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       );
 
       // const fullView = await getFullDisassembly();
-      panel.webview.postMessage({
+      this.panel.webview.postMessage({
         viewNotification: "refreshViewport",
         fullView: JSON.stringify(disassemblyOut.outputItems),
         start,

@@ -144,8 +144,6 @@ export async function updateKliveProjectCommand(
   }
   vscode.window.showInformationMessage(message);
 
-  await initKliveIcons(context);
-
   // --- Configure the newly created machine from file
   if (machineFileJustCreated && getLastConnectedState()) {
     spectrumConfigurationInstance.initialize();
@@ -153,6 +151,8 @@ export async function updateKliveProjectCommand(
       spectrumConfigurationInstance.configuration.type
     );
   }
+
+  await initKliveIcons(context);
 }
 
 export function copyFile(src: string, dest: string): void {
