@@ -17,7 +17,7 @@ import { ideConfigSetAction } from "../shared/state/redux-ide-config-state";
 import { appConfiguration } from "../main/klive-configuration";
 import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 import { AppWindow } from "../main/AppWindow";
-import { GetMemoryContentsResponse } from "../shared/messaging/message-types";
+import { GetMachineStateMessage, GetMachineStateResponse, GetMemoryContentsResponse } from "../shared/messaging/message-types";
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator
@@ -108,7 +108,7 @@ export function startApiServer() {
   /**
    * Gets the contents of the specified memory range
    */
-  app.get("/memory", async (req, res) => {
+  app.get("/memory", async (_req, res) => {
     try {
       const contents = (
         await AppWindow.instance.sendMessageToRenderer<GetMemoryContentsResponse>(
@@ -118,6 +118,25 @@ export function startApiServer() {
         )
       ).contents;
       res.send(Buffer.from(contents).toString("base64"));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(err.toString());
+    }
+  });
+
+  /**
+   * Gets the contents of the specified memory range
+   */
+  app.get("/machine-state", async (_req, res) => {
+    try {
+      const state = (
+        await AppWindow.instance.sendMessageToRenderer<GetMachineStateResponse>(
+          {
+            type: "getMachineState",
+          }
+        )
+      ).state;
+      res.json(state);
     } catch (err) {
       console.log(err);
       res.status(500).send(err.toString());

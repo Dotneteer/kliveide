@@ -1,4 +1,5 @@
 import { CodeToInject } from "../machines/api-data";
+import { MachineState } from "../machines/machine-state";
 import { KliveConfiguration } from "./emu-configurations";
 
 /**
@@ -42,13 +43,21 @@ export interface GetMemoryContentsMessage extends MessageBase {
 }
 
 /**
+ * Request the diagnostics state of the machine
+ */
+export interface GetMachineStateMessage extends MessageBase {
+  type: "getMachineState";
+}
+
+/**
  * The messages that are send as requests to a processing entity
  */
 export type RequestMessage =
   | SignRendererStartedMessage
   | InjectCodeMessage
   | RunCodeMessage
-  | GetMemoryContentsMessage;
+  | GetMemoryContentsMessage
+  | GetMachineStateMessage;
 
 /**
  * Default response for actions
@@ -74,12 +83,21 @@ export interface GetMemoryContentsResponse extends MessageBase {
 }
 
 /**
+ * Response for GetMachineStateMessage
+ */
+export interface GetMachineStateResponse extends MessageBase {
+  type: "getMachineStateResponse";
+  state: MachineState;
+}
+
+/**
  * The messages that are sent as responses
  */
 export type ResponseMessage =
   | DefaultResponse
   | AppConfigResponse
-  | GetMemoryContentsResponse;
+  | GetMemoryContentsResponse
+  | GetMachineStateResponse;
 
 /**
  * All messages between renderer and main
