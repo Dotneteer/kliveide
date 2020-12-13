@@ -117,11 +117,7 @@
               await refreshViewPort(bytes, ev.data.fullRefresh);
               let pos = ev.data.itemIndex;
               if (pos !== undefined) {
-                if (pos < 0) {
-                  pos = restoreViewState(ev.data);
-                } else {
-                  pos = items[pos] && items[pos].address;
-                }
+                pos = items[pos] && items[pos].address;
                 if (pos !== undefined) {
                   await tick();
                   await scrollToAddress(pos || 0);
@@ -179,7 +175,7 @@
       found = Math.max(0, found);
       scrolling = true;
       await virtualListApi.scrollToItem(found);
-      await saveViewState();
+      await saveTopAddress();
       scrolling = false;
       await new Promise((r) => setTimeout(r, 10));
       if (virtualListApi) {
@@ -189,18 +185,12 @@
   }
 
   // --- Save the current view state
-  async function saveViewState() {
+  async function saveTopAddress() {
     await tick();
     const item = items[startItemIndex];
     if (item) {
-      vscodeApi.setState({ scrollPos: item.address });
+      vscodeApi.postMessage({ command: "topPosition", data: item.address });
     }
-  }
-
-  // --- Restores the saved state
-  function restoreViewState() {
-    const state = vscodeApi.getState();
-    return state ? state.scrollPos : null;
   }
 </script>
 
@@ -245,7 +235,7 @@
       bind:bottomHemItemIndex
       on:scrolled={async () => {
         if (!scrolling) {
-          await saveViewState();
+          await saveTopAddress();
         }
         lastScrollTime = Date.now();
       }}>

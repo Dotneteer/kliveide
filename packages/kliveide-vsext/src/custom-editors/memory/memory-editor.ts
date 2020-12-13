@@ -6,10 +6,7 @@ import {
   ViewCommand,
 } from "../editor-base";
 import { onFrameInfoChanged } from "../../emulator/notifier";
-import {
-  communicatorInstance,
-  RegisterData,
-} from "../../emulator/communicator";
+import { communicatorInstance } from "../../emulator/communicator";
 import { getAssetsFileResource } from "../../extension-paths";
 import { onCodeInjected } from "../../commands/code-related";
 
@@ -25,10 +22,11 @@ export class MemoryEditorProvider extends EditorProviderBase {
     return providerRegistration;
   }
 
-  /**
-   * Signs that the view has been initialized
-   */
+  // --- Signs that the view has been initialized
   private _viewInitialized = false;
+
+  // --- Store the latest top position
+  private _lastTopPosition: number = 0;
 
   /**
    * Instantiates an editor provider
@@ -76,11 +74,6 @@ export class MemoryEditorProvider extends EditorProviderBase {
       onFrameInfoChanged(async () => {
         refreshCounter++;
         if (refreshCounter % 10 === 0) {
-          // const memory = await communicatorInstance.getMemory();
-          // webviewPanel.webview.postMessage({
-          //   viewNotification: "refresh2",
-          //   memory
-          // });
           refresh();
         }
       })
@@ -109,7 +102,7 @@ export class MemoryEditorProvider extends EditorProviderBase {
       try {
         if (!refreshing) {
           refreshing = true;
-          editor.refreshViewPort(webviewPanel);
+          editor.refreshViewPort();
         }
       } finally {
         refreshing = false;
@@ -122,21 +115,27 @@ export class MemoryEditorProvider extends EditorProviderBase {
    * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  async processViewCommand(
-    panel: vscode.WebviewPanel,
-    viewCommand: ViewCommand
-  ): Promise<void> {
+  async processViewCommand(viewCommand: ViewCommand): Promise<void> {
     switch (viewCommand.command) {
       case "refresh":
         // --- Send breakpoint info to the view
-        this.sendInitialStateToView(panel);
-        await this.refreshViewPort(panel, -1);
+        this.sendInitialStateToView();
+        await this.refreshViewPort(-1);
+        this.panel.webview.postMessage({
+          viewNotification: "goToAddress",
+          address: this._lastTopPosition,
+        });
         this._viewInitialized = true;
         break;
+
       case "changeView":
         if (this._viewInitialized) {
-          await this.refreshViewPort(panel, 0);
+          await this.refreshViewPort(0);
         }
+        break;
+
+      case "topPosition":
+        this._lastTopPosition = viewCommand.data ?? 0;
         break;
     }
   }
@@ -145,22 +144,19 @@ export class MemoryEditorProvider extends EditorProviderBase {
    * Refresh the viewport of the specified panel
    * @param panel Panel to refresh
    */
-  async refreshViewPort(
-    panel: vscode.WebviewPanel,
-    itemIndex?: number
-  ): Promise<void> {
+  async refreshViewPort(itemIndex?: number): Promise<void> {
     try {
       const memory = await communicatorInstance.getMemory();
       const regs = await communicatorInstance.getRegisters();
-      panel.webview.postMessage({
+      this.panel.webview.postMessage({
         viewNotification: "registers",
         registers: regs,
       });
 
-      panel.webview.postMessage({
+      this.panel.webview.postMessage({
         viewNotification: "refreshViewport",
         itemIndex,
-        memory
+        memory,
       });
     } catch (err) {
       // --- This exception is intentionally ignored
