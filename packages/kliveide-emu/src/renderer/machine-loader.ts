@@ -17,8 +17,6 @@ import {
   RunProgramCommand,
 } from "../shared/state/AppState";
 import { memorySetResultAction } from "../shared/state/redux-memory-command-state";
-import { codeInjectResultAction } from "../shared/state/redux-code-command-state";
-import { codeRunResultAction } from "../shared/state/redux-run-code-state";
 import { AudioRenderer } from "./machines/AudioRenderer";
 import { ZxSpectrumBaseStateManager } from "./machines/ZxSpectrumBaseStateManager";
 import { CambridgeZ88 } from "./machines/CambridgeZ88";
@@ -60,16 +58,6 @@ let lastEmulatorCommand = "";
  * Last emulator command requested
  */
 let lastMemoryCommand: MemoryCommand | undefined;
-
-/**
- * Last code injection command requested
- */
-let lastInjectCommand: InjectProgramCommand | undefined;
-
-/**
- * Last run program command requested
- */
-let lastRunCommand: RunProgramCommand | undefined;
 
 /**
  * Indicates that the engine is processing a state change
@@ -136,36 +124,6 @@ stateAware.stateChanged.on(async (state) => {
     }
   }
 
-  // --- Process code injection commands
-  if (lastInjectCommand !== state.injectCommand) {
-    lastInjectCommand = state.injectCommand;
-    if (lastInjectCommand && lastInjectCommand.codeToInject) {
-      const result = await vmEngine.injectCode(lastInjectCommand.codeToInject);
-      if (result) {
-        stateAware.dispatch(codeInjectResultAction(result)());
-      } else {
-        stateAware.dispatch(codeInjectResultAction("")());
-      }
-    }
-  }
-
-  // --- Process run program commands
-  if (lastRunCommand !== state.runCommand) {
-    lastRunCommand = state.runCommand;
-    if (lastRunCommand && lastRunCommand.codeToInject) {
-      console.log("Executing the run command");
-      const result = await vmEngine.runCode(
-        lastRunCommand.codeToInject,
-        lastRunCommand.debug
-      );
-      if (result) {
-        stateAware.dispatch(codeRunResultAction(result)());
-      } else {
-        stateAware.dispatch(codeRunResultAction("")());
-      }
-    }
-  }
-
   processingChange = false;
 });
 
@@ -175,7 +133,7 @@ stateAware.stateChanged.on(async (state) => {
 export async function getVmEngine(): Promise<VmEngine> {
   if (!vmEngine) {
     if (!loader) {
-      loader = createVmEngine("sp48");
+      loader = createVmEngine("48");
     }
     vmEngine = await loader;
   }

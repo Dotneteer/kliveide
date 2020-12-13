@@ -32,12 +32,17 @@ import {
   maximizeAppWindowAction,
   minimizeAppWindowAction,
 } from "../../src/shared/state/redux-window-state";
-import { RendererMessage } from "../shared/messaging/message-types";
 import {
-  RENDERER_MESSAGING_CHANNEL,
-  MAIN_MESSAGING_CHANNEL,
+  RequestMessage,
+  ResponseMessage,
+} from "../shared/messaging/message-types";
+import {
+  RENDERER_REQUEST_CHANNEL,
+  MAIN_RESPONSE_CHANNEL,
+  MAIN_REQUEST_CHANNEL,
+  RENDERER_RESPONSE_CHANNEL,
 } from "../../src/shared/utils/channel-ids";
-import { processRendererMessage } from "./mainMessageProcessor";
+import { processMessageFromRenderer } from "./mainMessageProcessor";
 import { EmulatorPanelState, IdeConnection } from "../shared/state/AppState";
 import {
   emulatorSetSavedDataAction,
@@ -85,6 +90,19 @@ export class AppWindow {
 
   // --- Indicates that the main window watches for IDE notifications
   private _watchingIde = false;
+
+  /**
+   * ID of the last message
+   */
+  private _mainMessageSeqNo = 0;
+
+  /**
+   * Message resolvers
+   */
+  private _mainMessageResolvers = new Map<
+    number,
+    (msg?: ResponseMessage | PromiseLike<ResponseMessage>) => void
+  >();
 
   // ==========================================================================
   // Static members
@@ -201,15 +219,30 @@ export class AppWindow {
 
     // --- Set up message processing
     ipcMain.on(
-      RENDERER_MESSAGING_CHANNEL,
-      (_ev: IpcMainEvent, message: RendererMessage) => {
-        const response = processRendererMessage(message);
+      RENDERER_REQUEST_CHANNEL,
+      (_ev: IpcMainEvent, message: RequestMessage) => {
+        const response = processMessageFromRenderer(message);
         response.correlationId = message.correlationId;
         const allWebContents = webContents.getAllWebContents();
         const pageContenst =
           webContents.length === 1 ? allWebContents[0] : webContents.fromId(1);
         if (!pageContenst) return;
-        pageContenst.send(MAIN_MESSAGING_CHANNEL, response);
+        pageContenst.send(MAIN_RESPONSE_CHANNEL, response);
+      }
+    );
+
+    // --- Process the results coming from the renderer process
+    ipcMain.on(
+      RENDERER_RESPONSE_CHANNEL,
+      (_ev: IpcMainEvent, response: ResponseMessage) => {
+        // --- Check for UI message
+        const resolver = this._mainMessageResolvers.get(response.correlationId);
+
+        // --- Resolve the message
+        if (resolver) {
+          resolver(response);
+          this._mainMessageResolvers.delete(response.correlationId);
+        }
       }
     );
 
@@ -238,6 +271,29 @@ export class AppWindow {
    */
   get window(): BrowserWindow | null {
     return this._window;
+  }
+
+  /**
+   * Posts a message from the renderer to the main
+   * @param message Message contents
+   */
+  postMessageToRenderer(message: RequestMessage): void {
+    this._window.webContents.send(MAIN_REQUEST_CHANNEL, message);
+  }
+
+  /**
+   * Sends an async message to the main process
+   * @param message Message to send
+   */
+  sendMessageToRenderer<TMessage extends ResponseMessage>(
+    message: RequestMessage
+  ): Promise<TMessage> {
+    message.correlationId = this._mainMessageSeqNo++;
+    const promise = new Promise<TMessage>((resolve) => {
+      this._mainMessageResolvers.set(message.correlationId, resolve);
+    });
+    this.postMessageToRenderer(message);
+    return promise;
   }
 
   /**
@@ -288,9 +344,9 @@ export class AppWindow {
             checked: true,
             click: (mi) => {
               if (mi.checked) {
-                mainProcessStore.dispatch(emulatorShowStatusbarAction()); 
+                mainProcessStore.dispatch(emulatorShowStatusbarAction());
               } else {
-                mainProcessStore.dispatch(emulatorHideStatusbarAction()); 
+                mainProcessStore.dispatch(emulatorHideStatusbarAction());
               }
             },
           },

@@ -8,27 +8,11 @@ import {
 } from "../main/mainProcessStore";
 import {
   emulatorSetTapeContenstAction,
-  emulatorShowKeyboardAction,
-  emulatorHideKeyboardAction,
-  emulatorToggleKeyboardAction,
-  emulatorShowShadowScreenAction,
-  emulatorHideShadowScreenAction,
-  emulatorToggleShadowScreenAction,
-  emulatorShowBeamPositionAction,
-  emulatorHideBeamPositionAction,
-  emulatorToggleBeamPositionAction,
-  emulatorEnableFastLoadAction,
-  emulatorDisableFastLoadAction,
-  emulatorToggleFastLoadAction,
-  emulatorMuteAction,
-  emulatorUnmuteAction,
   emulatorRequestTypeAction,
 } from "../shared/state/redux-emulator-state";
-import { emulatorSetCommandAction } from "../shared/state/redux-emulator-command-state";
 import { RegisterData } from "../shared/machines/api-data";
 import { breakpointSetAction } from "../shared/state/redux-breakpoint-state";
 import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
-import { breakpointEraseAllAction } from "../shared/state/redux-breakpoint-state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { IdeConfiguration } from "../shared/state/AppState";
@@ -37,8 +21,7 @@ import { appConfiguration } from "../main/klive-configuration";
 import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 import { memorySetCommandAction } from "../shared/state/redux-memory-command-state";
 import { SpectNetAction } from "../shared/state/redux-core";
-import { codeInjectAction } from "../shared/state/redux-code-command-state";
-import { codeRunAction } from "../shared/state/redux-run-code-state";
+import { AppWindow } from "../main/AppWindow";
 
 /**
  * Sequence number of the latest memory request
@@ -86,73 +69,9 @@ export function startApiServer() {
       machineType: emuState.currentType,
       selectedRom: emuState.selectedRom,
       selectedBank: emuState.selectedBank,
-      internalState: emuState.internalState
+      internalState: emuState.internalState,
     });
     mainProcessStore.dispatch(ideConnectsAction());
-  });
-
-  /**
-   * Starts the ZX Spectrum virtual machine
-   */
-  app.post("/start", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("start")());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Pauses the ZX Spectrum virtual machine
-   */
-  app.post("/pause", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("pause")());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Stops the ZX Spectrum virtual machine
-   */
-  app.post("/stop", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("stop")());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Restarts the ZX Spectrum virtual machine
-   */
-  app.post("/restart", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("restart")());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Starts the ZX Spectrum virtual machine in debug mode
-   */
-  app.post("/start-debug", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("start-debug")());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Executes the next Z80 statement in step-in mode
-   */
-  app.post("/step-into", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("step-into")());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Executes the next Z80 statement in step-over mode
-   */
-  app.post("/step-over", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("step-over")());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Executes the next Z80 statement in step-out mode
-   */
-  app.post("/step-out", (_req, res) => {
-    mainProcessStore.dispatch(emulatorSetCommandAction("step-out")());
-    res.sendStatus(204);
   });
 
   /**
@@ -171,118 +90,6 @@ export function startApiServer() {
       }
     } catch (err) {}
     res.sendStatus(success ? 200 : 403);
-  });
-
-  /**
-   * Instructs the emulator UI to display the keyboard panel
-   */
-  app.post("/show-keyboard", (_req, res) => {
-    mainProcessStore.dispatch(emulatorShowKeyboardAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to hide the keyboard panel
-   */
-  app.post("/hide-keyboard", (_req, res) => {
-    mainProcessStore.dispatch(emulatorHideKeyboardAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to toggle the visibility of the keyboard panel
-   */
-  app.post("/toggle-keyboard", (_req, res) => {
-    mainProcessStore.dispatch(emulatorToggleKeyboardAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to display the shadow screen
-   */
-  app.post("/show-shadow-screen", (_req, res) => {
-    mainProcessStore.dispatch(emulatorShowShadowScreenAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to hide the shadow screen
-   */
-  app.post("/hide-shadow-screen", (_req, res) => {
-    mainProcessStore.dispatch(emulatorHideShadowScreenAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to toggle the visibility of the shadow screen
-   */
-  app.post("/toggle-shadow-screen", (_req, res) => {
-    mainProcessStore.dispatch(emulatorToggleShadowScreenAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to display the beam position
-   */
-  app.post("/show-beam-position", (_req, res) => {
-    mainProcessStore.dispatch(emulatorShowBeamPositionAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to hide the beam position
-   */
-  app.post("/hide-beam-position", (_req, res) => {
-    mainProcessStore.dispatch(emulatorHideBeamPositionAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to toggle the visibility of the shadow screen
-   */
-  app.post("/toggle-beam-position", (_req, res) => {
-    mainProcessStore.dispatch(emulatorToggleBeamPositionAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to turn on fast load
-   */
-  app.post("/fast-load-on", (_req, res) => {
-    mainProcessStore.dispatch(emulatorEnableFastLoadAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to turn off fast load
-   */
-  app.post("/fast-load-off", (_req, res) => {
-    mainProcessStore.dispatch(emulatorDisableFastLoadAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to toggle the fast load mode
-   */
-  app.post("/toggle-fast-load", (_req, res) => {
-    mainProcessStore.dispatch(emulatorToggleFastLoadAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to mute sound
-   */
-  app.post("/mute", (_req, res) => {
-    mainProcessStore.dispatch(emulatorMuteAction());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Instructs the emulator UI to mute sound
-   */
-  app.post("/unmute", (_req, res) => {
-    mainProcessStore.dispatch(emulatorUnmuteAction());
-    res.sendStatus(204);
   });
 
   /**
@@ -330,28 +137,6 @@ export function startApiServer() {
     } else {
       const memBuff = m.slice(fromVal, toVal + 1);
       res.send(Buffer.from(memBuff).toString("base64"));
-    }
-  });
-
-  /**
-   * Tests if the specified range of memory was written
-   */
-  app.get("/test-memory-write/:from/:to", (req, res) => {
-    let fromVal = parseInt(req.params.from);
-    let toVal = parseInt(req.params.to);
-    if (fromVal > toVal) {
-      let tmp = fromVal;
-      fromVal = toVal;
-      toVal = tmp;
-    }
-    const s = mainProcessStore.getState();
-    const m = s.emulatorPanelState?.memWriteMap;
-    if (!m || isNaN(fromVal) || isNaN(toVal)) {
-      res.json({ written: false });
-    } else {
-      res.json({
-        written: m.slice(fromVal >> 3, toVal >> 3).some((b) => b !== 0),
-      });
     }
   });
 
@@ -404,14 +189,6 @@ export function startApiServer() {
   });
 
   /**
-   * Clear all breakpoints
-   */
-  app.delete("/all-breakpoints", (_req, res) => {
-    mainProcessStore.dispatch(breakpointEraseAllAction());
-    res.sendStatus(204);
-  });
-
-  /**
    * Set the ide configuration
    */
   app.post("/ide-config", (req, res) => {
@@ -448,112 +225,25 @@ export function startApiServer() {
    * Injects code into the ZX Spectrum virtual machine
    */
   app.post("/inject-code", async (req, res) => {
-    const stateAware = createMainProcessStateAware();
     try {
-      // --- Declare the promise for the communication between
-      // --- the api-server and the renderer process
-      const promise = new Promise<string>(async (resolve, reject) => {
-        try {
-          try {
-            // --- Initiate the status watch
-            let lastInjectCommand = mainProcessStore.getState().injectCommand;
-
-            // --- Catch status changes
-            let result: string | undefined;
-            stateAware.stateChanged.on((state) => {
-              if (state && state.injectCommand === lastInjectCommand) {
-                // --- No change in memory command state
-                return;
-              }
-
-              lastInjectCommand = state.injectCommand;
-              if (state.injectCommand && !state.injectCommand.codeToInject) {
-                // --- We just received a result, store it
-                if (state.injectCommand.errorCode !== undefined) {
-                  result = state.injectCommand.errorCode;
-                }
-              }
-            });
-
-            // --- Initiate the code injection command execution
-            stateAware.dispatch(codeInjectAction(req.body)());
-
-            // --- Wait for resolve/reject
-            const startTime = Date.now();
-            while (Date.now() - startTime < 15000) {
-              if (result !== undefined) {
-                resolve(result);
-              }
-              await new Promise((r) => setTimeout(r, 100));
-            }
-            throw new Error("Code inject request timeout");
-          } catch (err) {
-            reject(err);
-          }
-        } finally {
-          // --- Do not watch changes anymore
-          stateAware.dispose();
-        }
+      await AppWindow.instance.sendMessageToRenderer({
+        type: "injectCode",
+        codeToInject: req.body,
       });
-      const result = await promise;
-      res.send(result);
+      res.status(200).send("");
     } catch (err) {
       res.status(500).send(err.toString());
     }
   });
 
   app.post("/run-code", async (req, res) => {
-    const stateAware = createMainProcessStateAware();
     try {
-      // --- Declare the promise for the communication between
-      // --- the api-server and the renderer process
-      const promise = new Promise<string>(async (resolve, reject) => {
-        try {
-          try {
-            // --- Initiate the status watch
-            let lastRunCommand = mainProcessStore.getState().runCommand;
-
-            // --- Catch status changes
-            let result: string | undefined;
-            stateAware.stateChanged.on((state) => {
-              if (state && state.runCommand === lastRunCommand) {
-                // --- No change in memory command state
-                return;
-              }
-
-              lastRunCommand = state.runCommand;
-              if (state.runCommand && !state.runCommand.codeToInject) {
-                // --- We just received a result, store it
-                if (state.runCommand.errorCode !== undefined) {
-                  result = state.runCommand.errorCode;
-                }
-              }
-            });
-
-            // --- Initiate the code injection command execution
-            stateAware.dispatch(
-              codeRunAction(req.body.codeToInject, req.body.debug)()
-            );
-
-            // --- Wait for resolve/reject
-            const startTime = Date.now();
-            while (Date.now() - startTime < 15000) {
-              if (result !== undefined) {
-                resolve(result);
-              }
-              await new Promise((r) => setTimeout(r, 100));
-            }
-            throw new Error("Run program request timeout");
-          } catch (err) {
-            reject(err);
-          }
-        } finally {
-          // --- Do not watch changes anymore
-          stateAware.dispose();
-        }
+      await AppWindow.instance.sendMessageToRenderer({
+        type: "runCode",
+        codeToInject: req.body.codeToInject,
+        debug: req.body.debug,
       });
-      const result = await promise;
-      res.send(result);
+      res.status(200).send("");
     } catch (err) {
       res.status(500).send(err.toString());
     }

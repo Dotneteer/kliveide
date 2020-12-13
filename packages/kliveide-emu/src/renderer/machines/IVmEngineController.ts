@@ -10,7 +10,7 @@ export interface IVmEngineController {
    * Starts the virtual machine with the specified exeution options
    * @param options Execution options
    */
-  run(options: ExecuteCycleOptions): Promise<void>;
+  start(options?: ExecuteCycleOptions): Promise<void>;
 
   /**
    * Signs that the screen has been refreshed

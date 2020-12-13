@@ -122,13 +122,6 @@ export class VmEngine implements IVmEngineController {
   }
 
   /**
-   * Number of frame tacts
-   */
-  get tactsInFrame(): number {
-    return this._loadedState.tactsInFrame;
-  }
-
-  /**
    * Width of the screen
    */
   get screenWidth(): number {
@@ -267,9 +260,30 @@ export class VmEngine implements IVmEngineController {
 
   /**
    * Starts the virtual machine and keeps it running
+   * @param options Non-mandatory execution options
    */
-  async start(): Promise<void> {
-    await this.z80Machine.beforeStarted(false);
+  async start(options?: ExecuteCycleOptions): Promise<void> {
+    await this.internalStart(options ?? new ExecuteCycleOptions());
+  }
+
+  /**
+   * Starts the virtual machine in debugging mode
+   */
+  async startDebug(): Promise<void> {
+    await this.internalStart(
+      new ExecuteCycleOptions(
+        EmulationMode.Debugger,
+        DebugStepMode.StopAtBreakpoint
+      )
+    );
+  }
+
+  /**
+   * Starts the virtual machine and keeps it running
+   */
+  private async internalStart(options: ExecuteCycleOptions): Promise<void> {
+    const isDebug = options.debugStepMode !== DebugStepMode.None;
+    await this.z80Machine.beforeStarted(isDebug);
 
     // --- Prepare the machine to run
     this._isFirstStart =
@@ -295,34 +309,25 @@ export class VmEngine implements IVmEngineController {
       await this.cancelRun();
     }
 
-    await this.run(new ExecuteCycleOptions());
-    await this.z80Machine.afterStarted(false);
-  }
-
-  /**
-   * Starts the virtual machine in debugging mode
-   */
-  async startDebug(): Promise<void> {
-    await this.z80Machine.beforeStarted(true);
-    await this.run(
-      new ExecuteCycleOptions(
-        EmulationMode.Debugger,
-        DebugStepMode.StopAtBreakpoint
-      )
-    );
-    await this.z80Machine.afterStarted(true);
+    await this.internalRun(options);
+    await this.z80Machine.afterStarted(isDebug);
   }
 
   /**
    * Starts the virtual machine with the specified exeution options
    * @param options Execution options
    */
-  async run(options: ExecuteCycleOptions): Promise<void> {
+  private async internalRun(options: ExecuteCycleOptions): Promise<void> {
     if (this.executionState === VmState.Running) {
       return;
     }
 
     this._startCount++;
+
+    // --- Prepare the machine to run
+    this._isFirstStart =
+      this.executionState === VmState.None ||
+      this.executionState === VmState.Stopped;
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
@@ -429,11 +434,9 @@ export class VmEngine implements IVmEngineController {
    */
   async stepInto(): Promise<void> {
     await this.z80Machine.beforeStepInto();
-    await this.z80Machine.beforeStarted(false);
-    await this.run(
+    await this.start(
       new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepInto)
     );
-    await this.z80Machine.afterStarted(false);
   }
 
   /**
@@ -482,9 +485,7 @@ export class VmEngine implements IVmEngineController {
         DebugStepMode.StepInto
       );
     }
-    await this.z80Machine.beforeStarted(false);
-    await this.run(options);
-    await this.z80Machine.afterStarted(false);
+    await this.start(options);
   }
 
   /**
@@ -492,11 +493,9 @@ export class VmEngine implements IVmEngineController {
    */
   async stepOut(): Promise<void> {
     await this.z80Machine.beforeStepOut();
-    await this.z80Machine.beforeStarted(false);
-    await this.run(
+    await this.start(
       new ExecuteCycleOptions(EmulationMode.Debugger, DebugStepMode.StepOut)
     );
-    await this.z80Machine.afterStarted(false);
   }
 
   /**
@@ -642,13 +641,6 @@ export class VmEngine implements IVmEngineController {
   }
 
   /**
-   * Gets the cursor mode of ZX Spectrum
-   */
-  getCursorMode(): number {
-    return this.z80Machine.api.getCursorMode();
-  }
-
-  /**
    * Gets the length of the keyboard queue
    */
   getKeyQueueLength(): number {
@@ -771,7 +763,7 @@ export class VmEngine implements IVmEngineController {
     );
 
     // --- Inject to code
-    this.injectCode(codeToInject);
+    await this.injectCode(codeToInject);
 
     // --- Set the continuation point
     const startPoint =
@@ -786,14 +778,12 @@ export class VmEngine implements IVmEngineController {
       this.z80Machine.api.setSP(spValue - 2);
     }
 
-    this.z80Machine.beforeRunInjected(codeToInject, debug);
-
+    await this.z80Machine.beforeRunInjected(codeToInject, debug);
     if (debug) {
       await this.startDebug();
     } else {
       await this.start();
     }
-
     return "";
   }
 

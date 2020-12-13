@@ -152,13 +152,6 @@ class Communicator {
   }
 
   /**
-   * Stops the ZX Spectrum machine
-   */
-  async stopMachine(): Promise<void> {
-    await this.post("/stop", {});
-  }
-
-  /**
    * Invokes a GET command for a generic response
    * @param command Command string
    * @param requestInit Optional request initialization

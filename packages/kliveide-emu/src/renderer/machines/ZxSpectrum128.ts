@@ -70,7 +70,7 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    */
   async prepareForInjection(model: string): Promise<number> {
     const controller = this.vmEngineController;
-    await controller.run(
+    await controller.start(
       new ExecuteCycleOptions(
         EmulationMode.UntilExecutionPoint,
         DebugStepMode.None,
@@ -83,7 +83,7 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
 
     if (model !== "48") {
       // --- Use ZX Spectrum 128
-      await controller.run(
+      await controller.start(
         new ExecuteCycleOptions(
           EmulationMode.UntilExecutionPoint,
           DebugStepMode.None,
@@ -99,7 +99,7 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
     }
 
     // --- Use ZX Spectrum 48
-    await controller.run(
+    await controller.start(
       new ExecuteCycleOptions(
         EmulationMode.UntilExecutionPoint,
         DebugStepMode.None,
