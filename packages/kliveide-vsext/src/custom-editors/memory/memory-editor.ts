@@ -76,6 +76,11 @@ export class MemoryEditorProvider extends EditorProviderBase {
       onFrameInfoChanged(async () => {
         refreshCounter++;
         if (refreshCounter % 10 === 0) {
+          // const memory = await communicatorInstance.getMemory();
+          // webviewPanel.webview.postMessage({
+          //   viewNotification: "refresh2",
+          //   memory
+          // });
           refresh();
         }
       })
@@ -145,6 +150,7 @@ export class MemoryEditorProvider extends EditorProviderBase {
     itemIndex?: number
   ): Promise<void> {
     try {
+      const memory = await communicatorInstance.getMemory();
       const regs = await communicatorInstance.getRegisters();
       panel.webview.postMessage({
         viewNotification: "registers",
@@ -152,9 +158,9 @@ export class MemoryEditorProvider extends EditorProviderBase {
       });
 
       panel.webview.postMessage({
-        viewNotification: "refreshViewPort",
+        viewNotification: "refreshViewport",
         itemIndex,
-        fullRefresh: true,
+        memory
       });
     } catch (err) {
       // --- This exception is intentionally ignored

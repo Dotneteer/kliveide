@@ -10,7 +10,7 @@
   import VirtualList from "../controls/VirtualList.svelte";
   import MemoryPagingPanel from "../controls/MemoryPagingPanel.svelte";
   import MemoryEntry from "./MemoryEntry.svelte";
-  import { memory, LINE_SIZE } from "./MemoryView";
+  import { createMemoryLine, LINE_SIZE } from "./MemoryView";
 
   // --- Disassembly items to display
   let items = [];
@@ -95,21 +95,26 @@
               }
             }
             break;
+
           case "registers":
-            // --- Register values sent
             registers = ev.data.registers;
             break;
+
           case "goToAddress":
             await scrollToAddress(ev.data.address || 0);
             break;
-          case "refreshViewPort":
+
+          case "refreshViewport":
             if (isRefreshing) break;
             isRefreshing = true;
             try {
               if (lastScrollTime !== 0 && Date.now() - lastScrollTime < 500) {
                 break;
               }
-              await refreshViewPort(ev.data.fullRefresh);
+              const bytes = new Uint8Array(
+                Buffer.from(ev.data.memory, "base64")
+              );
+              await refreshViewPort(bytes, ev.data.fullRefresh);
               let pos = ev.data.itemIndex;
               if (pos !== undefined) {
                 if (pos < 0) {
@@ -143,17 +148,17 @@
   }
 
   // --- Refresh the specified part of the viewport
-  async function refreshViewPort(fullRefresh) {
+  async function refreshViewPort(bytes, fullRefresh) {
     try {
-      const viewportItems = await memory(viewMode, displayedRom, displayedBank);
-      if (!viewportItems) {
-        return;
-      }
       if (!items || items.length === 0 || fullRefresh) {
+        const viewportItems = [];
+        for (let i = 0; i < bytes.length / LINE_SIZE; i++) {
+          viewportItems.push(createMemoryLine(bytes, i));
+        }
         items = viewportItems;
       } else {
         for (let i = topHemItemIndex; i <= bottomHemItemIndex; i++) {
-          items[i] = viewportItems[i];
+          items[i] = createMemoryLine(bytes, i);
         }
       }
       if (virtualListApi) {
