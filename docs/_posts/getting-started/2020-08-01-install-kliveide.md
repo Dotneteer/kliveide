@@ -33,11 +33,11 @@ Visit the releases page of the [Klive IDE project](https://github.com/Dotneteer/
 
 ## Installing the Klive Emulator
 
-1. Install the standalone **Klive Emulator** by running `KliveSetup-{version}.{extension}` binary according to your operations system.
+1. Install the standalone **Klive Emulator** by running `KliveSetup-{version}.{extension}` binary according to your operating system. All Electron application release binaries are currently targeted for Intel X86_64 platform.
 
 > Note: Windows may display a security message about risks&mdash;ignore that and install the app.
 
-{:start="2"}
+
 2. Take a note on the installation folder, as you will need it later when setting up the VS Code Extension for Klive IDE.
 
 * On Windows: 
@@ -47,7 +47,15 @@ Visit the releases page of the [Klive IDE project](https://github.com/Dotneteer/
 
 * On Mac: Generally, after installation, you find reach your app here: `/Applications/Klive.app`, Nonetheless, if you specified another folder, take a not of that.
 
-{:start="3"}
+* On Linux: Before you can run an AppImage, you need to make it executable. This is a Linux security feature.
+  * Open your file manager and browse to the location of the AppImage
+  * Right-click on the AppImage and click the ‘Properties’ entry
+  * Switch to the Permissions tab and Click the ‘Allow executing file as program’ checkbox
+  * if you are using a Nautilus-based file manager (Files, Nemo, Caja), or click the ‘Is executable’ checkbox if you are using Dolphin, or change the ‘Execute’ drop down list to ‘Anyone’ if you are using PCManFM
+  * Close the dialog
+  * Unfortunately, the Electron application wrapped inside the AppImage executable container, it needs an additional parameter to run on Linux as non-root user, **--no-sandbox**.
+  * Open a terminal and change to the folder where the AppImage resides. Type `./KliveSetup-{version}.AppImage --no-sanbox`. 
+
 3. Make sure that the Klive Emulator starts after installation.
 
 > Note: The Klive Emulator uses port 3000, by default, to communicate with the VS Code Extension for Klive IDE. If you do not prefer the default port, you can change it after the installation.
