@@ -161,6 +161,11 @@ export abstract class SpectrumMachineStateBase extends FrameBoundZ80MachineState
   // --- Memory paging info
   memoryUseShadowScreen: boolean;
   memoryScreenOffset: number;
+
+  // --- Screen rendering tact
+  renderingPhase: number;
+  pixelAddr: number;
+  attrAddr: number;
 }
 
 /**

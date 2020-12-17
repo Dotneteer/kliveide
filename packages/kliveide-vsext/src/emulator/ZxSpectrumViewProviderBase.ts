@@ -43,7 +43,7 @@ export class ContentionRootItem
       new RegisterItem(
         "LCV",
         "Last contention",
-        state.lastExecutionContentionValue
+        state.contentionAccummulated - state.lastExecutionContentionValue
       ),
       new RegisterItem("TCV", "Total contention", state.contentionAccummulated),
     ];
@@ -86,7 +86,72 @@ export class UlaRootItem extends TreeItem implements TreeItemWithChildren {
         "Beam position",
         state.lastRenderedFrameTact % state.screenWidth
       ),
+      new RenderingPhaseItem(state.renderingPhase),
+      new RenderingAddressItem(
+        state.renderingPhase,
+        state.pixelAddr,
+        state.attrAddr
+      ),
     ];
+  }
+}
+
+/**
+ * Represents the current ULA rendering phase item
+ */
+export class RenderingPhaseItem extends TreeItem {
+  constructor(type: number) {
+    super("Phase", TreeItemCollapsibleState.None);
+    let phase = "None";
+    switch (type) {
+      case 0x04:
+        phase = "Border";
+        break;
+      case 0x05:
+        phase = "BorderFetchPixel";
+        break;
+      case 0x06:
+        phase = "BorderFetchAttr";
+        break;
+      case 0x08:
+        phase = "DisplayB1";
+        break;
+      case 0x09:
+        phase = "DisplayB1FetchB2";
+        break;
+      case 0x0a:
+        phase = "DisplayB1FetchA2";
+        break;
+      case 0x410:
+        phase = "DisplayB2";
+        break;
+      case 0x11:
+        phase = "DisplayB2FetchB1";
+        break;
+      case 0x12:
+        phase = "DisplayB2FetchA1";
+        break;
+    }
+    this.description = `${phase}`;
+    this.iconPath = new ThemeIcon("paintcan");
+  }
+}
+
+/**
+ * Represents the current ULA pixel/attr address
+ */
+export class RenderingAddressItem extends TreeItem {
+  constructor(type: number, pixelAddr: number, attrAddr: number) {
+    super("Address", TreeItemCollapsibleState.None);
+    let addr = "---";
+    if (type & 0x01) {
+      addr = `$${toHexa(pixelAddr, 4)} (${pixelAddr})`;
+    } else if (type & 0x02) {
+      addr = `$${toHexa(attrAddr, 4)} (${attrAddr})`;
+    }
+    this.description = addr;
+    this.tooltip = `Address ${addr}`;
+    this.iconPath = new ThemeIcon("symbol-variable");
   }
 }
 
