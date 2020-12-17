@@ -1,4 +1,4 @@
-import { Z80RegistersProvider } from "./views/z80-registers";
+import { HardwareRegistersProvider } from "./views/hw-registers";
 import {
   onFrameInfoChanged,
   onExecutionStateChanged,
@@ -8,13 +8,13 @@ import { communicatorInstance } from "./emulator/communicator";
 /**
  * Z80RegisterProvider singleton instance
  */
-let z80RegistersProvider: Z80RegistersProvider;
+let z80RegistersProvider: HardwareRegistersProvider;
 
 /**
  * Sets the singleton Z80 register provider object
  * @param provider Z80 register provider instance
  */
-export function setZ80RegisterProvider(provider: Z80RegistersProvider): void {
+export function setZ80RegisterProvider(provider: HardwareRegistersProvider): void {
   z80RegistersProvider = provider;
 
   // --- Notify entities about virtual machine frame information change
@@ -25,8 +25,8 @@ export function setZ80RegisterProvider(provider: Z80RegistersProvider): void {
       return;
     }
     try {
-      const regData = await communicatorInstance.getRegisters();
-      z80RegistersProvider.refresh(regData);
+      const machineState = await communicatorInstance.getMachineState();
+      z80RegistersProvider.refresh(machineState);
     } catch (err) {
       // --- This exception in intentionally ignored
     }
@@ -34,14 +34,14 @@ export function setZ80RegisterProvider(provider: Z80RegistersProvider): void {
 
   // --- Notify entities about virtual machine execution state changes
   onExecutionStateChanged(async () => {
-    const regData = await communicatorInstance.getRegisters();
-    z80RegistersProvider.refresh(regData);
-  });
+    const machineState = await communicatorInstance.getMachineState();
+    z80RegistersProvider.refresh(machineState);
+});
 }
 
 /**
  * Gets the Z80 Register provider object
  */
-export function getZ80RegisterProvider(): Z80RegistersProvider {
+export function getZ80RegisterProvider(): HardwareRegistersProvider {
   return z80RegistersProvider;
 }

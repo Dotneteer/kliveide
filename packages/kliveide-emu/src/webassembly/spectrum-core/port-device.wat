@@ -22,12 +22,17 @@
 ;; Applies memory contention delay according to the current
 ;; screen rendering tact
 (func $applyContentionDelay
+  (local $delay i32)
   (i32.add
     (get_global $CONTENTION_TABLE) 
     (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
   )
   i32.load8_u
+  tee_local $delay
   call $incTacts
+
+  (i32.add (get_global $contentionAccummulated) (get_local $delay))
+  set_global $contentionAccummulated
 )
 
 ;; Applies I/O contention wait

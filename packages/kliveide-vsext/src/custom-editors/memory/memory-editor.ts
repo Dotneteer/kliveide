@@ -147,10 +147,10 @@ export class MemoryEditorProvider extends EditorProviderBase {
   async refreshViewPort(itemIndex?: number): Promise<void> {
     try {
       const memory = await communicatorInstance.getMemory();
-      const regs = await communicatorInstance.getRegisters();
+      const machineState = await communicatorInstance.getMachineState();
       this.panel.webview.postMessage({
-        viewNotification: "registers",
-        registers: regs,
+        viewNotification: "machineState",
+        machineState,
       });
 
       this.panel.webview.postMessage({

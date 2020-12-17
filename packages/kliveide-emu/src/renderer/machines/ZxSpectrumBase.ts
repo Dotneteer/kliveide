@@ -7,6 +7,7 @@ import {
   COLORIZATION_BUFFER,
   PAGE_INDEX_16,
   PSG_SAMPLE_BUFFER,
+  RENDERING_TACT_TABLE,
   STATE_TRANSFER_BUFF,
 } from "./memory-map";
 import { MachineApi } from "./wa-api";
@@ -93,7 +94,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   getMachineState(): MachineState {
     const s = super.getMachineState() as SpectrumMachineStateBase;
 
-    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+    let mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
 
     // --- Get Spectrum-specific execution engine state
     s.ulaIssue = mh.readByte(160);
@@ -205,6 +206,13 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     s.memorySelectedBank = mh.readByte(397);
     s.memoryUseShadowScreen = mh.readBool(398);
     s.memoryScreenOffset = mh.readUint16(399);
+
+    // --- Screen rendering tact
+    mh = new MemoryHelper(this.api, RENDERING_TACT_TABLE);
+    const tactStart = 5 * s.lastRenderedFrameTact;
+    s.renderingPhase = mh.readByte(tactStart);
+    s.pixelAddr = mh.readUint16(tactStart + 1);
+    s.attrAddr = mh.readUint16(tactStart + 3);
 
     // --- Done.
     return s as MachineState;

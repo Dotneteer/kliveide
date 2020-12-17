@@ -14,7 +14,7 @@ import {
   onMachineTypeChanged,
   onConnectionStateChanged,
 } from "../../emulator/notifier";
-import { FrameInfo, communicatorInstance } from "../../emulator/communicator";
+import { communicatorInstance } from "../../emulator/communicator";
 import { DisassemblyAnnotation } from "../../disassembler/annotations";
 import {
   spectrumConfigurationInstance,
@@ -33,6 +33,7 @@ import {
   MemorySectionType,
 } from "../../disassembler/disassembly-helper";
 import { Z80Disassembler } from "../../disassembler/z80-disassembler";
+import { DiagViewFrame } from "../../shared/machines/diag-info";
 
 /**
  * The annotation for the current machine
@@ -120,7 +121,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
     let lastPc = -1;
     this.toDispose(
       webviewPanel,
-      onFrameInfoChanged((fi: FrameInfo) => {
+      onFrameInfoChanged((fi: DiagViewFrame) => {
         if (lastPc !== fi.pc && fi.pc !== undefined) {
           lastPc = fi.pc;
           webviewPanel.webview.postMessage({

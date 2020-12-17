@@ -43,7 +43,7 @@
   let scrolling = false;
 
   // --- Current value of registers
-  let registers;
+  let machineState;
 
   // --- Type of the current machine
   let machineType;
@@ -96,8 +96,8 @@
             }
             break;
 
-          case "registers":
-            registers = ev.data.registers;
+          case "machineState":
+            machineState = ev.data.machineState;
             break;
 
           case "goToAddress":
@@ -241,7 +241,7 @@
       }}>
       <MemoryEntry
         {item}
-        {registers}
+        {machineState}
         displayRegisters={!viewMode}
         {machineType}
         {viewMode} />

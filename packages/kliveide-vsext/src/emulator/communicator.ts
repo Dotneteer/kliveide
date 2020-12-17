@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import fetch, { RequestInit, Response } from "node-fetch";
 import { KLIVEIDE, EMU_PORT, SAVE_FOLDER } from "../config/sections";
 import { MachineState } from "../shared/machines/machine-state";
+import { DiagViewFrame } from "../shared/machines/diag-info";
 
 /**
  * This class is responsible for communicating with the Klive Emulator
@@ -44,33 +45,8 @@ class Communicator {
   /**
    * Gets frame information from the virtual machine
    */
-  async frameInfo(): Promise<FrameInfo> {
-    return this.getJson<FrameInfo>("/frame-info");
-  }
-
-  /**
-   * Gets Z80 register information from the virtual machine
-   */
-  async getRegisters(): Promise<RegisterData> {
-    const s = await this.getJson<MachineState>("/machine-state");
-    const regs: RegisterData = {
-      af: s._af,
-      bc: s._bc,
-      de: s._de,
-      hl: s._hl,
-      af_: s._af_sec,
-      bc_: s._bc_sec,
-      de_: s._de_sec,
-      hl_: s._hl_sec,
-      i: s._i,
-      r: s._r,
-      pc: s._pc,
-      sp: s._sp,
-      ix: s._ix,
-      iy: s._iy,
-      wz: s._wz
-    };
-    return regs;
+  async frameInfo(): Promise<DiagViewFrame> {
+    return this.getJson<DiagViewFrame>("/frame-info");
   }
 
   /**
@@ -262,48 +238,12 @@ class Communicator {
 }
 
 /**
- * Defines the response for a frameInfo request
- */
-export interface FrameInfo {
-  startCount?: number;
-  frameCount?: number;
-  executionState?: number;
-  breakpoints?: number[];
-  pc?: number;
-  runsInDebug?: boolean;
-  machineType?: string;
-  selectedRom?: number;
-  selectedBank?: number;
-}
-
-/**
  * Represents the information about execution state change
  */
 export interface ExecutionState {
   state: string;
   pc?: number;
   runsInDebug?: boolean;
-}
-
-/**
- * Represents Z80 Registers data
- */
-export interface RegisterData {
-  af: number;
-  bc: number;
-  de: number;
-  hl: number;
-  af_: number;
-  bc_: number;
-  de_: number;
-  hl_: number;
-  pc: number;
-  sp: number;
-  ix: number;
-  iy: number;
-  i: number;
-  r: number;
-  wz: number;
 }
 
 /**

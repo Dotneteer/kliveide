@@ -11,7 +11,7 @@
   export let item;
 
   // --- Current register values
-  export let registers;
+  export let machineState;
 
   // --- Enables/disables displaying register positions
   export let displayRegisters;
@@ -41,9 +41,9 @@
     for (let i = 0; i < item.contents.length; i++) {
       htmlText +=
         '<span class="memory-value ' +
-        (hasPointingRegs(i, registers) ? "memory-register" : "") +
+        (hasPointingRegs(i, machineState) ? "memory-register" : "") +
         '" title="' +
-        tooltip(i, registers) +
+        tooltip(i, machineState) +
         '">' +
         intToX2(item.contents[i]) +
         "</span>";
@@ -72,13 +72,13 @@
     if (regs && displayRegisters) {
       const address = item.address + i;
       return (
-        address === regs.bc ||
-        address === regs.de ||
-        address === regs.hl ||
-        address === regs.pc ||
-        address === regs.sp ||
-        address === regs.ix ||
-        address === regs.iy
+        address === regs._bc ||
+        address === regs._de ||
+        address === regs._hl ||
+        address === regs._pc ||
+        address === regs._sp ||
+        address === regs._ix ||
+        address === regs._iy
       );
     }
     return false;

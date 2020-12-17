@@ -84,6 +84,10 @@ export const TAPE_DATA_BUFFER = 0x0136_0700;
 // --- Tape SAVE buffer
 export const TAPE_SAVE_BUFFER = 0x0140_0700;
 
+// --- The beginning of the rendering tact table
+export const RENDERING_TACT_TABLE = 0x0122_0200;
+
+// --- The beginning of the PSG envelope table
 export const PSG_ENVELOP_TABLE = 0x0140_4C00;
 
 // ============================================================================
