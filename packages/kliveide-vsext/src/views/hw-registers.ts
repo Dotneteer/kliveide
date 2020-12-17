@@ -1,24 +1,33 @@
-// @ts-nocheck
-import * as vscode from "vscode";
-import { getLastMachineType } from "../emulator/notifier";
+import {
+  Event,
+  EventEmitter,
+  ThemeIcon,
+  TreeDataProvider,
+  TreeItem,
+  TreeItemCollapsibleState,
+} from "vscode";
 import { MachineState } from "../shared/machines/machine-state";
+import { getMachineViewProvider } from "../emulator/notifier";
+import { Z80SignalStateFlags } from "../shared/machines/z80-helpers";
 
-export class Z80RegistersProvider
-  implements vscode.TreeDataProvider<RegisterItem | FlagItem> {
+export /**
+ * This class represents a provider that displays the "Z80 CPU & Other Registers"
+ * view
+ */
+class HardwareRegistersProvider implements TreeDataProvider<TreeItem> {
   // --- Keeps register data
-  private _registers: RegisterItem[] = [];
-  private _onDidChangeTreeData: vscode.EventEmitter<
-    RegisterItem | FlagItem | undefined | void
-  > = new vscode.EventEmitter<RegisterItem | FlagItem | undefined | void>();
+  private _registers: TreeItem[] = [];
+  private _onDidChangeTreeData: EventEmitter<
+    TreeItem | undefined | void
+  > = new EventEmitter<TreeItem | undefined | void>();
 
   /**
    * An optional event to signal that an element or root has changed.
    * This will trigger the view to update the changed element/root and its children recursively (if shown).
    * To signal that root has changed, do not pass any argument or pass `undefined` or `null`.
    */
-  readonly onDidChangeTreeData: vscode.Event<
-    RegisterItem | FlagItem | undefined | void
-  > = this._onDidChangeTreeData.event;
+  readonly onDidChangeTreeData: Event<TreeItem | undefined | void> = this
+    ._onDidChangeTreeData.event;
 
   /**
    * Refreshes the display of register values
@@ -26,11 +35,12 @@ export class Z80RegistersProvider
    */
   refresh(r: MachineState): void {
     (async () => {
+      // --- Collect Z80 register values
       this._registers = [
         new RegisterItem("regAF", "AF", r._af, [
           new RegisterItem("regA", "A", r._af >> 8, [], 2),
           new FlagItem("flagS", "S", (r._af & 0x80) !== 0, "P", "M"),
-          new FlagItem("flagZ","Z", (r._af & 0x40) !== 0, "Z", "NZ"),
+          new FlagItem("flagZ", "Z", (r._af & 0x40) !== 0, "Z", "NZ"),
           new FlagItem("flag5", "5", (r._af & 0x20) !== 0, "", ""),
           new FlagItem("flagH", "H", (r._af & 0x10) !== 0, "", ""),
           new FlagItem("flag3", "3", (r._af & 0x08) !== 0, "", ""),
@@ -54,7 +64,7 @@ export class Z80RegistersProvider
         new RegisterItem("regBC_", "BC'", r._bc_sec),
         new RegisterItem("regDE_", "DE'", r._de_sec),
         new RegisterItem("regHL_", "HL'", r._hl_sec),
-        new RegisterItem("regPC","PC", r._pc),
+        new RegisterItem("regPC", "PC", r._pc),
         new RegisterItem("regSP", "SP", r._sp),
         new RegisterItem("regI", "I", r._i, [], 2),
         new RegisterItem("regR", "R", r._r, [], 2),
@@ -63,16 +73,33 @@ export class Z80RegistersProvider
           new RegisterItem("regXL", "IXL", r._ix & 0xff, [], 2),
         ]),
         new RegisterItem("regIY", "IY", r._iy, [
-          new RegisterItem("regYH","IYH", r._iy >> 8, [], 2),
+          new RegisterItem("regYH", "IYH", r._iy >> 8, [], 2),
           new RegisterItem("regYL", "IYL", r._iy & 0xff, [], 2),
         ]),
         new RegisterItem("regWZ", "WZ", r._wz),
+        new InterruptModeItem(r.interruptMode),
+        new FlagItem("iff1", "IFF1", r.iff1, "disabled", "enabled"),
+        new FlagItem("iff2", "IFF2", r.iff1, "disabled", "enabled"),
+        new FlagItem(
+          "halt",
+          "HALTED",
+          !!(r.stateFlags & Z80SignalStateFlags.Halted),
+          "no",
+          "yes"
+        ),
+        new TactsItem(
+          "Tacts",
+          "#of T-cycles since start",
+          r.tacts + r.frameCount * r.tactsInFrame
+        ),
       ];
 
-      const machineType = getLastMachineType();
-      if (machineType === "cz88") {
-        
+      const viewProvider = getMachineViewProvider();
+      if (viewProvider) {
+        const additionalRegs = await viewProvider.getHardwareRegisters(r);
+        this._registers.push(...additionalRegs);
       }
+
       this._onDidChangeTreeData.fire();
     })();
   }
@@ -82,7 +109,7 @@ export class Z80RegistersProvider
    * @param element The element for which [TreeItem](#TreeItem) representation is asked for.
    * @return [TreeItem](#TreeItem) representation of the element
    */
-  getTreeItem(element: RegisterItem): vscode.TreeItem {
+  getTreeItem(element: TreeItem): TreeItem {
     return element;
   }
 
@@ -91,56 +118,48 @@ export class Z80RegistersProvider
    * @param element The element from which the provider gets children. Can be `undefined`.
    * @return Children of `element` or root if no element is passed.
    */
-  getChildren(element?: RegisterItem): Thenable<(RegisterItem | FlagItem)[]> {
+  getChildren(element?: TreeItemWithChildren): Thenable<TreeItem[]> {
     return Promise.resolve(element ? element.children : this._registers);
   }
 }
 
+export interface TreeItemWithChildren extends TreeItem {
+  children: TreeItem[];
+}
+
 /**
- * Represents a register value
+ * Represents a Z80 register/other register value
  */
-class RegisterItem extends vscode.TreeItem {
+export class RegisterItem extends TreeItem implements TreeItemWithChildren {
   constructor(
     public readonly id: string,
     public readonly label: string,
     public value: number,
-    public children: (RegisterItem | FlagItem)[] = [],
+    public children: TreeItem[] = [],
     private readonly hexaDigits = 4,
     private readonly showDecimal = true
   ) {
     super(
       label,
       children.length > 0
-        ? vscode.TreeItemCollapsibleState.Collapsed
-        : vscode.TreeItemCollapsibleState.None
+        ? TreeItemCollapsibleState.Collapsed
+        : TreeItemCollapsibleState.None
     );
-  }
-
-  /**
-   * The tooltip text when you hover over this item.
-   */
-  get tooltip(): string {
-    return `${this.label} ${this.description} (0b${this.value.toString(2).padStart(4 * this.hexaDigits, "0")})`
-    ;
-  }
-
-  /**
-   * A human-readable string which is rendered less prominent.
-   * When `true`, it is derived from [resourceUri](#TreeItem.resourceUri) and when `falsy`, it is not shown.
-   */
-  get description(): string {
-    return `$${toHexa(this.value, this.hexaDigits)}${
+    this.id = id;
+    this.description = `$${toHexa(this.value, this.hexaDigits)}${
       this.showDecimal ? " (" + this.value.toString(10) + ")" : ""
     }`;
+    this.tooltip = `${this.label} ${this.description} (0b${this.value
+      .toString(2)
+      .padStart(4 * this.hexaDigits, "0")})`;
+    this.iconPath = new ThemeIcon("symbol-variable");
   }
-
-  iconPath = new vscode.ThemeIcon("symbol-variable");
 }
 
 /**
- * Represents a register value
+ * Represents a Z80/other register flag value
  */
-class FlagItem extends vscode.TreeItem {
+export class FlagItem extends TreeItem {
   constructor(
     public readonly id: string,
     public readonly label: string,
@@ -148,31 +167,42 @@ class FlagItem extends vscode.TreeItem {
     private falseVal: string,
     private trueVal: string
   ) {
-    super(label, vscode.TreeItemCollapsibleState.None);
-  }
-
-  /**
-   * The tooltip text when you hover over this item.
-   */
-  get tooltip(): string {
-    return `${this.label} ${this.description}`;
-  }
-
-  /**
-   * A human-readable string which is rendered less prominent.
-   * When `true`, it is derived from [resourceUri](#TreeItem.resourceUri) and when `falsy`, it is not shown.
-   */
-  get description(): string {
-    return `${this.value ? "1" : "0"} ${
+    super(label, TreeItemCollapsibleState.None);
+    this.id = id;
+    this.description = `${this.value ? "1" : "0"} ${
       this.falseVal && this.trueVal
-        ? "(" + (this.value
-          ? this.trueVal
-          : this.falseVal) + ")"
+        ? "(" + (this.value ? this.trueVal : this.falseVal) + ")"
         : ""
     }`;
+    this.tooltip = `${this.label} ${this.description}`;
+    this.iconPath = new ThemeIcon(
+      this.value ? "circle-filled" : "circle-outline"
+    );
   }
+}
 
-  iconPath = new vscode.ThemeIcon(this.value ? "circle-filled" : "circle-outline");
+/**
+ * Represent an interrupt mode item
+ */
+class InterruptModeItem extends TreeItem {
+  constructor(value: number) {
+    super("IM", TreeItemCollapsibleState.None);
+    this.description = `${value}`;
+    this.tooltip = `Interrupt mode: ${value}`;
+    this.iconPath = new ThemeIcon("symbol-variable");
+  }
+}
+
+/**
+ * Represent an interrupt mode item
+ */
+export class TactsItem extends TreeItem {
+  constructor(label: string, descLabel: string, value: number) {
+    super(label, TreeItemCollapsibleState.None);
+    this.description = `${value}`;
+    this.tooltip = `${descLabel}: ${value}`;
+    this.iconPath = new ThemeIcon("watch");
+  }
 }
 
 /**

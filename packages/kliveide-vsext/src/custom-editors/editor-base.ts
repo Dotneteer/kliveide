@@ -9,8 +9,6 @@ import {
   onMemoryPagingChanged,
   onMachineTypeChanged,
   getLastMachineType,
-  getLastMemoryPagingInfo,
-  requestEmulatorInfo,
 } from "../emulator/notifier";
 import { RendererMessage } from "./messaging/message-types";
 import { MessageProcessor } from "../emulator/message-processor";
@@ -282,14 +280,14 @@ export abstract class EditorProviderBase
         config: machineTypes[machineType],
       });
     }
-    const pageInfo = getLastMemoryPagingInfo();
-    if (pageInfo) {
-      this.panel.webview.postMessage({
-        viewNotification: "memoryPaging",
-        selectedRom: pageInfo.selectedRom,
-        selectedBank: pageInfo.selectedBank,
-      });
-    }
+    // const pageInfo = getLastMemoryPagingInfo();
+    // if (pageInfo) {
+    //   this.panel.webview.postMessage({
+    //     viewNotification: "memoryPaging",
+    //     selectedRom: pageInfo.selectedRom,
+    //     selectedBank: pageInfo.selectedBank,
+    //   });
+    // }
     const execState = getLastExecutionState();
     this.panel.webview.postMessage({
       viewNotification: "execState",

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { startEmulatorCommand } from "./commands/start-emu";
-import { Z80RegistersProvider } from "./views/z80-registers";
+import { HardwareRegistersProvider } from "./views/hw-registers";
 import { setZ80RegisterProvider } from "./providers";
 import { startNotifier, stopNotifier } from "./emulator/notifier";
 import { communicatorInstance } from "./emulator/communicator";
@@ -91,9 +91,9 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // --- Tree provider to display Z80 registers
-  const z80RegistersProvider = new Z80RegistersProvider();
+  const z80RegistersProvider = new HardwareRegistersProvider();
   setZ80RegisterProvider(z80RegistersProvider);
-  vscode.window.registerTreeDataProvider("z80Registers", z80RegistersProvider);
+  vscode.window.registerTreeDataProvider("hwRegisters", z80RegistersProvider);
 
   // --- Indicate the state of Klive Emulator in the status bar
   const vmStateItem = createVmStateStatusBarItem();

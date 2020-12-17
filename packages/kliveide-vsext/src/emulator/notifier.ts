@@ -6,6 +6,14 @@ import {
 } from "./communicator";
 import { spectrumConfigurationInstance } from "./machine-config";
 import { DiagViewFrame } from "../shared/machines/diag-info";
+import { createMachineViewProvider, MachineViewProvider } from "./machines";
+import { last } from "lodash";
+
+// ============================================================================
+// Module local variables
+
+// --- The current view provider
+let machineViewProvider : MachineViewProvider | null;
 
 // --- Communicator internal state
 let started = false;
@@ -21,30 +29,61 @@ let lastBreakpoints: number[] = [];
 // --- The last machine type
 let lastMachineType: string | undefined = "";
 
-// --- The last memory page info
-let lastMemoryPageInfo: MemoryPageInfo | undefined;
-
-let frameInfoChanged: vscode.EventEmitter<DiagViewFrame> = new vscode.EventEmitter<
-  DiagViewFrame
->();
-let executionStateChanged: vscode.EventEmitter<ExecutionState> = new vscode.EventEmitter<
-  ExecutionState
->();
-let connectionStateChanged: vscode.EventEmitter<boolean> = new vscode.EventEmitter<
-  boolean
->();
-
+// --- Event holder variables
+let frameInfoChanged: vscode.EventEmitter<DiagViewFrame> = new vscode.EventEmitter<DiagViewFrame>();
+let executionStateChanged: vscode.EventEmitter<ExecutionState> = new vscode.EventEmitter<ExecutionState>();
+let connectionStateChanged: vscode.EventEmitter<boolean> = new vscode.EventEmitter<boolean>();
 let breakpointsChanged: vscode.EventEmitter<number[]> = new vscode.EventEmitter<
   number[]
 >();
+let machineTypeChanged: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
+let memoryPagingChanged: vscode.EventEmitter<MemoryPageInfo> = new vscode.EventEmitter<MemoryPageInfo>();
 
-let machineTypeChanged: vscode.EventEmitter<string> = new vscode.EventEmitter<
-  string
->();
+// ============================================================================
+// Module initialization
 
-let memoryPagingChanged: vscode.EventEmitter<MemoryPageInfo> = new vscode.EventEmitter<
-  MemoryPageInfo
->();
+resetLastFrameInfo();
+
+// ============================================================================
+// Module interface
+
+/**
+ * Gets the current machine view provider
+ */
+export function getMachineViewProvider() : MachineViewProvider | null {
+  return machineViewProvider;
+}
+
+/**
+ * Gets the last connection state
+ */
+export function getLastConnectedState(): boolean {
+  return connected;
+}
+
+/**
+ * Gets the last connection state
+ */
+export function getLastExecutionState(): ExecutionState {
+  return {
+    state: getExecutionStateName(lastFrameInfo?.executionState),
+    pc: lastFrameInfo.pc,
+  };
+}
+
+/**
+ * Gets the latest set of breakpoints
+ */
+export function getLastBreakpoints(): number[] {
+  return lastBreakpoints;
+}
+
+/**
+ * Gets the latest machine type
+ */
+export function getLastMachineType(): string | undefined {
+  return lastMachineType;
+}
 
 /**
  * Fires when frame information has been changed
@@ -106,9 +145,20 @@ export async function startNotifier(): Promise<void> {
 }
 
 /**
+ * Stops the notification watcher task
+ */
+export function stopNotifier(): void {
+  cancelled = true;
+  started = false;
+}
+
+// ============================================================================
+// Module helpers
+
+/**
  * Tries to query information from the emulator
  */
-export async function requestEmulatorInfo(): Promise<void> {
+async function requestEmulatorInfo(): Promise<void> {
   try {
     if (!connected) {
       // --- Restore lost connection
@@ -145,16 +195,7 @@ export async function requestEmulatorInfo(): Promise<void> {
         pc: frameInfo.pc,
         runsInDebug: frameInfo.runsInDebug,
       });
-      //signMemoryPageInfo(frameInfo);
     }
-
-    // // --- Handle changes in memory pages
-    // if (
-    //   frameInfo.selectedRom !== lastFrameInfo?.selectedRom ||
-    //   frameInfo.selectedBank !== lastFrameInfo?.selectedBank
-    // ) {
-    //   signMemoryPageInfo(frameInfo);
-    // }
 
     // --- Remember the last frame information
     lastFrameInfo = frameInfo;
@@ -163,24 +204,21 @@ export async function requestEmulatorInfo(): Promise<void> {
     if (!frameInfo.breakpoints) {
       frameInfo.breakpoints = [];
     }
-    if (lastBreakpoints !== frameInfo.breakpoints) {
-      // --- Compare breakpoints
-      let differs = lastBreakpoints.length !== frameInfo.breakpoints.length;
-      if (
-        differs ||
-        frameInfo.breakpoints.some((item) => !lastBreakpoints.includes(item))
-      ) {
-        // --- Breakpoints changed
-        breakpointsChanged.fire(frameInfo.breakpoints);
-      }
-      lastBreakpoints = frameInfo.breakpoints;
+    // --- Compare breakpoints
+    if (
+      lastBreakpoints.length !== frameInfo.breakpoints.length ||
+      frameInfo.breakpoints.some((item) => !lastBreakpoints.includes(item))
+    ) {
+      // --- Breakpoints changed
+      breakpointsChanged.fire(frameInfo.breakpoints);
     }
+    lastBreakpoints = frameInfo.breakpoints;
 
     // --- Handle changes in machine type
     if (frameInfo.machineType !== lastMachineType) {
-      lastMachineType = frameInfo.machineType;
-      machineTypeChanged.fire(lastMachineType ?? "");
-      //signMemoryPageInfo(frameInfo);
+      lastMachineType = frameInfo.machineType ?? "";
+      machineViewProvider = createMachineViewProvider(lastMachineType);
+      machineTypeChanged.fire(lastMachineType);
     }
   } catch (err) {
     // --- Handle changes in connection state
@@ -192,64 +230,6 @@ export async function requestEmulatorInfo(): Promise<void> {
       connectionStateChanged.fire(connected);
     }
   }
-
-  // // --- Sign the memory page info based on the frame
-  // function signMemoryPageInfo(frameInfo: FrameInfo): void {
-  //   lastMemoryPageInfo = {
-  //     selectedRom: frameInfo.selectedRom ?? 0,
-  //     selectedBank: frameInfo.selectedBank ?? 0,
-  //   };
-  //   memoryPagingChanged.fire({
-  //     selectedRom: lastMemoryPageInfo.selectedRom,
-  //     selectedBank: lastMemoryPageInfo.selectedBank,
-  //   });
-  // }
-}
-
-/**
- * Stops the notification watcher task
- */
-export function stopNotifier(): void {
-  cancelled = true;
-  started = false;
-}
-
-/**
- * Gets the last connection state
- */
-export function getLastConnectedState(): boolean {
-  return connected;
-}
-
-/**
- * Gets the last connection state
- */
-export function getLastExecutionState(): ExecutionState {
-  return {
-    state: getExecutionStateName(lastFrameInfo?.executionState),
-    pc: lastFrameInfo.pc,
-  };
-}
-
-/**
- * Gets the latest set of breakpoints
- */
-export function getLastBreakpoints(): number[] {
-  return lastBreakpoints;
-}
-
-/**
- * Gets the latest machine type
- */
-export function getLastMachineType(): string | undefined {
-  return lastMachineType;
-}
-
-/**
- * Gets the latest memory page info
- */
-export function getLastMemoryPagingInfo(): MemoryPageInfo | undefined {
-  return lastMemoryPageInfo;
 }
 
 /**
@@ -290,5 +270,3 @@ function getExecutionStateName(id?: number): string {
   }
   return execState;
 }
-
-resetLastFrameInfo();

@@ -259,8 +259,8 @@
     "views": {
       "debug": [
         {
-          "id": "z80Registers",
-          "name": "Z80 Registers"
+          "id": "hwRegisters",
+          "name": "Z80 CPU & Other Registers"
         }
       ]
     },
