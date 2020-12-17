@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as vscode from "vscode";
-import { RegisterData } from "../emulator/communicator";
 import { getLastMachineType } from "../emulator/notifier";
+import { MachineState } from "../shared/machines/machine-state";
 
 export class Z80RegistersProvider
   implements vscode.TreeDataProvider<RegisterItem | FlagItem> {
@@ -24,49 +24,49 @@ export class Z80RegistersProvider
    * Refreshes the display of register values
    * @param r Register data to display
    */
-  refresh(r: RegisterData): void {
+  refresh(r: MachineState): void {
     (async () => {
       this._registers = [
-        new RegisterItem("regAF", "AF", r.af, [
-          new RegisterItem("regA", "A", r.af >> 8, [], 2),
-          new FlagItem("flagS", "S", (r.af & 0x80) !== 0, "P", "M"),
-          new FlagItem("flagZ","Z", (r.af & 0x40) !== 0, "Z", "NZ"),
-          new FlagItem("flag5", "5", (r.af & 0x20) !== 0, "", ""),
-          new FlagItem("flagH", "H", (r.af & 0x10) !== 0, "", ""),
-          new FlagItem("flag3", "3", (r.af & 0x08) !== 0, "", ""),
-          new FlagItem("flagPV", "PV", (r.af & 0x04) !== 0, "PO", "PE"),
-          new FlagItem("flagN", "N", (r.af & 0x02) !== 0, "", ""),
-          new FlagItem("flagC", "C", (r.af & 0x01) !== 0, "C", "NC"),
+        new RegisterItem("regAF", "AF", r._af, [
+          new RegisterItem("regA", "A", r._af >> 8, [], 2),
+          new FlagItem("flagS", "S", (r._af & 0x80) !== 0, "P", "M"),
+          new FlagItem("flagZ","Z", (r._af & 0x40) !== 0, "Z", "NZ"),
+          new FlagItem("flag5", "5", (r._af & 0x20) !== 0, "", ""),
+          new FlagItem("flagH", "H", (r._af & 0x10) !== 0, "", ""),
+          new FlagItem("flag3", "3", (r._af & 0x08) !== 0, "", ""),
+          new FlagItem("flagPV", "PV", (r._af & 0x04) !== 0, "PO", "PE"),
+          new FlagItem("flagN", "N", (r._af & 0x02) !== 0, "", ""),
+          new FlagItem("flagC", "C", (r._af & 0x01) !== 0, "C", "NC"),
         ]),
-        new RegisterItem("regBC", "BC", r.bc, [
-          new RegisterItem("regB", "B", r.bc >> 8, [], 2),
-          new RegisterItem("regC", "C", r.bc & 0xff, [], 2),
+        new RegisterItem("regBC", "BC", r._bc, [
+          new RegisterItem("regB", "B", r._bc >> 8, [], 2),
+          new RegisterItem("regC", "C", r._bc & 0xff, [], 2),
         ]),
-        new RegisterItem("regDE", "DE", r.de, [
-          new RegisterItem("regD", "D", r.de >> 8, [], 2),
-          new RegisterItem("regE", "E", r.de & 0xff, [], 2),
+        new RegisterItem("regDE", "DE", r._de, [
+          new RegisterItem("regD", "D", r._de >> 8, [], 2),
+          new RegisterItem("regE", "E", r._de & 0xff, [], 2),
         ]),
-        new RegisterItem("regHL", "HL", r.hl, [
-          new RegisterItem("regH", "H", r.hl >> 8, [], 2),
-          new RegisterItem("regL", "L", r.hl & 0xff, [], 2),
+        new RegisterItem("regHL", "HL", r._hl, [
+          new RegisterItem("regH", "H", r._hl >> 8, [], 2),
+          new RegisterItem("regL", "L", r._hl & 0xff, [], 2),
         ]),
-        new RegisterItem("regAF_", "AF'", r.af_),
-        new RegisterItem("regBC_", "BC'", r.bc_),
-        new RegisterItem("regDE_", "DE'", r.de_),
-        new RegisterItem("regHL_", "HL'", r.hl_),
-        new RegisterItem("regPC","PC", r.pc),
-        new RegisterItem("regSP", "SP", r.sp),
-        new RegisterItem("regI", "I", r.i, [], 2),
-        new RegisterItem("regR", "R", r.r, [], 2),
-        new RegisterItem("regIX", "IX", r.ix, [
-          new RegisterItem("regXH", "IXH", r.ix >> 8, [], 2),
-          new RegisterItem("regXL", "IXL", r.ix & 0xff, [], 2),
+        new RegisterItem("regAF_", "AF'", r._af_sec),
+        new RegisterItem("regBC_", "BC'", r._bc_sec),
+        new RegisterItem("regDE_", "DE'", r._de_sec),
+        new RegisterItem("regHL_", "HL'", r._hl_sec),
+        new RegisterItem("regPC","PC", r._pc),
+        new RegisterItem("regSP", "SP", r._sp),
+        new RegisterItem("regI", "I", r._i, [], 2),
+        new RegisterItem("regR", "R", r._r, [], 2),
+        new RegisterItem("regIX", "IX", r._ix, [
+          new RegisterItem("regXH", "IXH", r._ix >> 8, [], 2),
+          new RegisterItem("regXL", "IXL", r._ix & 0xff, [], 2),
         ]),
-        new RegisterItem("regIY", "IY", r.iy, [
-          new RegisterItem("regYH","IYH", r.iy >> 8, [], 2),
-          new RegisterItem("regYL", "IYL", r.iy & 0xff, [], 2),
+        new RegisterItem("regIY", "IY", r._iy, [
+          new RegisterItem("regYH","IYH", r._iy >> 8, [], 2),
+          new RegisterItem("regYL", "IYL", r._iy & 0xff, [], 2),
         ]),
-        new RegisterItem("regWZ", "WZ", r.wz),
+        new RegisterItem("regWZ", "WZ", r._wz),
       ];
 
       const machineType = getLastMachineType();

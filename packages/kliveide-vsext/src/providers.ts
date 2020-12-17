@@ -25,8 +25,8 @@ export function setZ80RegisterProvider(provider: Z80RegistersProvider): void {
       return;
     }
     try {
-      const regData = await communicatorInstance.getRegisters();
-      z80RegistersProvider.refresh(regData);
+      const machineState = await communicatorInstance.getMachineState();
+      z80RegistersProvider.refresh(machineState);
     } catch (err) {
       // --- This exception in intentionally ignored
     }
@@ -34,9 +34,9 @@ export function setZ80RegisterProvider(provider: Z80RegistersProvider): void {
 
   // --- Notify entities about virtual machine execution state changes
   onExecutionStateChanged(async () => {
-    const regData = await communicatorInstance.getRegisters();
-    z80RegistersProvider.refresh(regData);
-  });
+    const machineState = await communicatorInstance.getMachineState();
+    z80RegistersProvider.refresh(machineState);
+});
 }
 
 /**

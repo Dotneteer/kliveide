@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 import {
   communicatorInstance,
-  FrameInfo,
   ExecutionState,
   MemoryPageInfo,
 } from "./communicator";
 import { spectrumConfigurationInstance } from "./machine-config";
+import { DiagViewFrame } from "../shared/machines/diag-info";
 
 // --- Communicator internal state
 let started = false;
@@ -13,7 +13,7 @@ let cancelled = false;
 let connected = false;
 
 // --- The last frame information received
-let lastFrameInfo: FrameInfo;
+let lastFrameInfo: DiagViewFrame;
 
 // --- The last set of breakpoints received
 let lastBreakpoints: number[] = [];
@@ -24,8 +24,8 @@ let lastMachineType: string | undefined = "";
 // --- The last memory page info
 let lastMemoryPageInfo: MemoryPageInfo | undefined;
 
-let frameInfoChanged: vscode.EventEmitter<FrameInfo> = new vscode.EventEmitter<
-  FrameInfo
+let frameInfoChanged: vscode.EventEmitter<DiagViewFrame> = new vscode.EventEmitter<
+  DiagViewFrame
 >();
 let executionStateChanged: vscode.EventEmitter<ExecutionState> = new vscode.EventEmitter<
   ExecutionState
@@ -49,7 +49,7 @@ let memoryPagingChanged: vscode.EventEmitter<MemoryPageInfo> = new vscode.EventE
 /**
  * Fires when frame information has been changed
  */
-export const onFrameInfoChanged: vscode.Event<FrameInfo> =
+export const onFrameInfoChanged: vscode.Event<DiagViewFrame> =
   frameInfoChanged.event;
 
 /**
