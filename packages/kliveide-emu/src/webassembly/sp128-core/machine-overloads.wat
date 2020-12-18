@@ -164,6 +164,40 @@
   call $getCpuState
   call $getExecutionEngineState
   call $getCommonSpectrumMachineState
+
+  ;; Obtain PSG attributes
+  (i32.store16 offset=420 (get_global $STATE_TRANSFER_BUFF) (get_global $psgToneA))
+  (i32.store8 offset=422 (get_global $STATE_TRANSFER_BUFF) (get_global $psgToneAEnabled))
+  (i32.store8 offset=423 (get_global $STATE_TRANSFER_BUFF) (get_global $psgNoiseAEnabled))
+  (i32.store8 offset=424 (get_global $STATE_TRANSFER_BUFF) (get_global $psgVolA))
+  (i32.store8 offset=425 (get_global $STATE_TRANSFER_BUFF) (get_global $psgEnvA))
+  (i32.store16 offset=426 (get_global $STATE_TRANSFER_BUFF) (get_global $psgCntA))
+  (i32.store8 offset=428 (get_global $STATE_TRANSFER_BUFF) (get_global $psgBitA))
+
+  (i32.store16 offset=429 (get_global $STATE_TRANSFER_BUFF) (get_global $psgToneB))
+  (i32.store8 offset=431 (get_global $STATE_TRANSFER_BUFF) (get_global $psgToneBEnabled))
+  (i32.store8 offset=432 (get_global $STATE_TRANSFER_BUFF) (get_global $psgNoiseBEnabled))
+  (i32.store8 offset=433 (get_global $STATE_TRANSFER_BUFF) (get_global $psgVolB))
+  (i32.store8 offset=434 (get_global $STATE_TRANSFER_BUFF) (get_global $psgEnvB))
+  (i32.store16 offset=435 (get_global $STATE_TRANSFER_BUFF) (get_global $psgCntB))
+  (i32.store8 offset=437 (get_global $STATE_TRANSFER_BUFF) (get_global $psgBitB))
+
+  (i32.store16 offset=438 (get_global $STATE_TRANSFER_BUFF) (get_global $psgToneC))
+  (i32.store8 offset=440 (get_global $STATE_TRANSFER_BUFF) (get_global $psgToneCEnabled))
+  (i32.store8 offset=441 (get_global $STATE_TRANSFER_BUFF) (get_global $psgNoiseCEnabled))
+  (i32.store8 offset=442 (get_global $STATE_TRANSFER_BUFF) (get_global $psgVolC))
+  (i32.store8 offset=443 (get_global $STATE_TRANSFER_BUFF) (get_global $psgEnvC))
+  (i32.store16 offset=444 (get_global $STATE_TRANSFER_BUFF) (get_global $psgCntC))
+  (i32.store8 offset=446 (get_global $STATE_TRANSFER_BUFF) (get_global $psgBitC))
+
+  (i32.store16 offset=447 (get_global $STATE_TRANSFER_BUFF) (get_global $psgNoiseSeed))
+  (i32.store16 offset=449 (get_global $STATE_TRANSFER_BUFF) (get_global $psgNoiseFreq))
+  (i32.store16 offset=451 (get_global $STATE_TRANSFER_BUFF) (get_global $psgCntNoise))
+  (i32.store8 offset=453 (get_global $STATE_TRANSFER_BUFF) (get_global $psgBitNoise))
+  (i32.store16 offset=454 (get_global $STATE_TRANSFER_BUFF) (get_global $psgEnvFreq))
+  (i32.store8 offset=456 (get_global $STATE_TRANSFER_BUFF) (get_global $psgEnvStyle))
+  (i32.store16 offset=457 (get_global $STATE_TRANSFER_BUFF) (get_global $psgCntEnv))
+  (i32.store16 offset=459 (get_global $STATE_TRANSFER_BUFF) (get_global $psgPosEnv))
 )
 
 ;; Sets up the ZX Spectrum machine
