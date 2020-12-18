@@ -7,8 +7,9 @@ import {
   EmulationMode,
   DebugStepMode,
 } from "../../shared/machines/machine-state";
-import { ROM_128_0_OFFS } from "./memory-map";
+import { ROM_128_0_OFFS, STATE_TRANSFER_BUFF } from "./memory-map";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
+import { MemoryHelper } from "./memory-helpers";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -62,6 +63,52 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    */
   getRomPageBaseAddress(): number {
     return ROM_128_0_OFFS;
+  }
+
+  /**
+   * Gets the current state of the ZX Spectrum machine
+   */
+  getMachineState(): MachineState {
+    const s = super.getMachineState() as Spectrum128MachineState;
+
+    let mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+
+    // --- Get PSG state
+    s.psgToneA = mh.readUint16(420);
+    s.psgToneAEnabled = mh.readBool(422);
+    s.psgNoiseAEnabled = mh.readBool(423);
+    s.psgVolA = mh.readByte(424);
+    s.psgEnvA = mh.readBool(425);
+    s.psgCntA = mh.readUint16(426);
+    s.psgBitA = mh.readBool(428);
+
+    s.psgToneB = mh.readUint16(429);
+    s.psgToneBEnabled = mh.readBool(431);
+    s.psgNoiseBEnabled = mh.readBool(432);
+    s.psgVolB = mh.readByte(433);
+    s.psgEnvB = mh.readBool(434);
+    s.psgCntB = mh.readUint16(435);
+    s.psgBitB = mh.readBool(437);
+
+    s.psgToneC = mh.readUint16(438);
+    s.psgToneCEnabled = mh.readBool(440);
+    s.psgNoiseCEnabled = mh.readBool(441);
+    s.psgVolC = mh.readByte(442);
+    s.psgEnvC = mh.readBool(443);
+    s.psgCntC = mh.readUint16(444);
+    s.psgBitC = mh.readBool(446);
+
+    s.psgNoiseSeed = mh.readUint16(447);
+    s.psgNoiseFreq = mh.readUint16(449);
+    s.psgCntNoise = mh.readUint16(451);
+    s.psgBitNoise = mh.readBool(453);
+    s.psgEvnFreq = mh.readUint16(454);
+    s.psgEnvStyle = mh.readByte(456);
+    s.psgCntEnv = mh.readUint16(457);
+    s.psgPosEnv = mh.readUint16(459);
+
+    // --- Done.
+    return s as MachineState;
   }
 
   /**

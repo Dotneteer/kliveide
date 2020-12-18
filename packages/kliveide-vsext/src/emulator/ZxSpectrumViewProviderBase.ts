@@ -69,22 +69,23 @@ export class UlaRootItem extends TreeItem implements TreeItemWithChildren {
   constructor(state: SpectrumMachineStateBase) {
     super("ULA Diagnostics", TreeItemCollapsibleState.Collapsed);
     this.iconPath = new ThemeIcon("folder");
+    const tactInFrame = state.lastRenderedFrameTact % state.tactsInFrame;
     this.children = [
       new FrameCountItem(state.frameCount),
       new TactsItem(
         "ULA Tact",
         "Current tact within the ULA frame",
-        state.lastRenderedFrameTact
+        tactInFrame
       ),
       new RegisterItem(
         "BLINE",
         "Beam line",
-        Math.floor(state.lastRenderedFrameTact / state.screenWidth)
+        Math.floor(tactInFrame / state.screenWidth)
       ),
       new RegisterItem(
         "BPOS",
         "Beam position",
-        state.lastRenderedFrameTact % state.screenWidth
+        tactInFrame % state.screenWidth
       ),
       new RenderingPhaseItem(state.renderingPhase),
       new RenderingAddressItem(

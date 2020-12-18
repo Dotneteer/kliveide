@@ -81,8 +81,22 @@ class HardwareRegistersProvider implements TreeDataProvider<TreeItem> {
         new FlagItem("iff1", "IFF1", r.iff1, "disabled", "enabled"),
         new FlagItem("iff2", "IFF2", r.iff1, "disabled", "enabled"),
         new FlagItem(
+          "int",
+          "INT",
+          !!(r.stateFlags & Z80SignalStateFlags.Int),
+          "no",
+          "yes"
+        ),
+        new FlagItem(
+          "nmi",
+          "NMI",
+          !!(r.stateFlags & Z80SignalStateFlags.Nmi),
+          "no",
+          "yes"
+        ),
+        new FlagItem(
           "halt",
-          "HALTED",
+          "HLT",
           !!(r.stateFlags & Z80SignalStateFlags.Halted),
           "no",
           "yes"
