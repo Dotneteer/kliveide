@@ -7,15 +7,13 @@ import {
   Spectrum128MachineState,
 } from "../shared/machines/machine-state";
 import { ZxSpectrumViewProviderBase } from "./ZxSpectrumViewProviderBase";
-import { stat } from "fs";
 
 /**
  * This class implements a view provider for a ZX Spectrum 128 model
  */
 export class ZxSpectrum128ViewProvider extends ZxSpectrumViewProviderBase {
   /**
-   * Override this member to provide additional hardware register
-   * data
+   * Get ZX Spectrum 128 extra diagnostics information
    * @param state Current machine state
    */
   async getHardwareRegisters(state: MachineState): Promise<TreeItem[]> {
