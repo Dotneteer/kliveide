@@ -7,8 +7,12 @@ import {
   TreeItemCollapsibleState,
 } from "vscode";
 import { MachineState } from "../shared/machines/machine-state";
-import { getMachineViewProvider } from "../emulator/notifier";
+import {
+  getMachineViewProvider,
+  onMachineTypeChanged,
+} from "../emulator/notifier";
 import { Z80SignalStateFlags } from "../shared/machines/z80-helpers";
+import { communicatorInstance } from "../emulator/communicator";
 
 export /**
  * This class represents a provider that displays the "Z80 CPU & Other Registers"
@@ -20,6 +24,13 @@ class HardwareRegistersProvider implements TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData: EventEmitter<
     TreeItem | undefined | void
   > = new EventEmitter<TreeItem | undefined | void>();
+
+  constructor() {
+    onMachineTypeChanged(async (e) => {
+      const state = await communicatorInstance.getMachineState();
+      this.refresh(state);
+    });
+  }
 
   /**
    * An optional event to signal that an element or root has changed.
@@ -87,13 +98,7 @@ class HardwareRegistersProvider implements TreeDataProvider<TreeItem> {
           "no",
           "yes"
         ),
-        new FlagItem(
-          "intb",
-          "INT Blocked",
-          r.isInterruptBlocked,
-          "no",
-          "yes"
-        ),
+        new FlagItem("intb", "INT Blocked", r.isInterruptBlocked, "no", "yes"),
         new FlagItem(
           "nmi",
           "NMI",
