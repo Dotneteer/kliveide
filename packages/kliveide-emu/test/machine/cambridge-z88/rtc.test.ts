@@ -51,7 +51,7 @@ describe("Cambridge Z88 - RTC", function () {
     expect(s.PB1).toBe(0);
     expect(s.PB2).toBe(0);
     expect(s.PB3).toBe(0);
-    expect(s.SBR).toBe(0);
+    expect(s.SBF).toBe(0);
     expect(s.SCW).toBe(0xff);
   });
 

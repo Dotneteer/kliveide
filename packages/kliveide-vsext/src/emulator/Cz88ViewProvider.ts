@@ -21,14 +21,16 @@ export class Cz88ViewProvider extends Z80MachineViewProviderBase {
   async getHardwareRegisters(state: MachineState): Promise<TreeItem[]> {
     const cz88State = state as CambridgeZ88MachineState;
     const com = cz88State.COM;
+    const int = cz88State.INT;
+    const sta = cz88State.STA;
     const z80Items = await super.getHardwareRegisters(state);
     const cz88Items: TreeItem[] = [
       new PagingRootItem(cz88State),
       new RtcRootItem(cz88State),
       new ScreenRootItem(cz88State),
       new RegisterItem(
-        "BCMD",
-        "Blink CMD",
+        "BCOM",
+        "COM",
         com,
         [
           new FlagItem("SRUN", "SRUN", !!(com & 0x80), "clear", "set"),
@@ -39,6 +41,37 @@ export class Cz88ViewProvider extends Z80MachineViewProviderBase {
           new FlagItem("RAMS", "RAMS", !!(com & 0x04), "Bank 0", "Bank $20"),
           new FlagItem("VPPON", "VPPON", !!(com & 0x02), "off", "on"),
           new FlagItem("LCDON", "LCDON", !!(com & 0x01), "off", "on"),
+        ],
+        2
+      ),
+      new RegisterItem(
+        "BINT",
+        "INT",
+        com,
+        [
+          new FlagItem("KWAIT", "KWAIT", !!(int & 0x80), "clear", "set"),
+          new FlagItem("A19", "A19", !!(int & 0x40), "clear", "set"),
+          new FlagItem("FLAP", "FLAP", !!(int & 0x20), "disabled", "enabled"),
+          new FlagItem("UART", "UART", !!(int & 0x10), "disabled", "enabled"),
+          new FlagItem("BTL", "BTL", !!(int & 0x08), "disabled", "enabled"),
+          new FlagItem("KEY", "KEY", !!(int & 0x04), "disabled", "enabled"),
+          new FlagItem("TIME", "TIME", !!(int & 0x02), "disabled", "enabled"),
+          new FlagItem("GINT", "GINT", !!(int & 0x01), "disabled", "enabled"),
+        ],
+        2
+      ),
+      new RegisterItem(
+        "BSTA",
+        "STA",
+        com,
+        [
+          new FlagItem("FLAOPEN", "FLAOPEN", !!(sta & 0x80), "closed", "open"),
+          new FlagItem("SA19", "A19", !!(sta & 0x40), "clear", "set"),
+          new FlagItem("SFLAP", "FLAP", !!(sta & 0x20), "clear", "set"),
+          new FlagItem("SUART", "UART", !!(sta & 0x10), "clear", "set"),
+          new FlagItem("SBTL", "BTL", !!(sta & 0x08), "clear", "set"),
+          new FlagItem("SKEY", "KEY", !!(sta & 0x04), "clear", "set"),
+          new FlagItem("STIME", "TIME", !!(sta & 0x01), "passive", "active"),
         ],
         2
       ),
@@ -152,7 +185,7 @@ export class ScreenRootItem extends TreeItem implements TreeItemWithChildren {
       new RegisterItem("PB1", "PB1", state.PB1),
       new RegisterItem("PB2", "PB2", state.PB2),
       new RegisterItem("PB3", "PB3", state.PB3),
-      new RegisterItem("SBR", "SBR", state.SBR),
+      new RegisterItem("SBF", "SBF", state.SBF),
       new RegisterItem("SCW", "SCW", state.SCW),
       new RegisterItem("SCH", "SCH", state.SCH),
     ];

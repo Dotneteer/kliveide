@@ -58,17 +58,14 @@
     ;; Execute an entire instruction
     (call $beforeCpuCycle (get_local $currentFrameTact))
     call $executeCpuCycle
-    (call $afterCpuCycle (get_local $currentFrameTact))
-    
     loop $instructionLoop
       get_global $isInOpExecution
       if
-        (call $beforeCpuCycle (get_local $currentFrameTact))
         call $executeCpuCycle
-        (call $afterCpuCycle (get_local $currentFrameTact))
         br $instructionLoop
       end
     end 
+    (call $afterCpuCycle (get_local $currentFrameTact))
 
     (call $beforeTerminationCheck (get_local $currentFrameTact))
 

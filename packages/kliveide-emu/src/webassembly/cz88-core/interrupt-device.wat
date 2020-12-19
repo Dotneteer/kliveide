@@ -22,13 +22,9 @@
 ;; $BM_STABTL# = 0x08       // Bit 3, If set, battery low pin is active
 ;; $BM_STAKEY# = 0x04       // Bit 2, If set, a column has gone low in snooze (or coma)
 ;; $BM_STATIME# = 0x01      // Bit 0, If set, an enabled TSTA interrupt is active
+
+;; $BM_STATIME_MASK# = 0xfe // Bit 0 reset mask
 (global $STA (mut i32) (i32.const 0x0000))
-
-;; ACK, Acknowledge INT Interrupts
-(global $ACK (mut i32) (i32.const 0x0000))
-
-;; TACK, Set Timer Interrupt Acknowledge
-(global $TACK (mut i32) (i32.const 0x0000))
 
 ;; Tests if the maskable interrupt has been requested
 (func $isMaskableInterruptRequested (result i32)
@@ -47,7 +43,6 @@
 
 ;; Sets the value of the TACK register
 (func $setTACK (param $v i32)
-  get_local $v set_global $TACK
   (i32.and 
     (get_global $TSTA)
     ;; Create bit mask
@@ -58,11 +53,16 @@
     )
   )
   set_global $TSTA
+
+  (i32.eqz (get_global $TSTA))
+  if
+    (i32.and (get_global $STA) (i32.const $BM_STATIME_MASK#))
+    set_global $STA
+  end
 )
 
 ;; Set the value of the ACK register
 (func $setACK (param $v i32)
-  get_local $v set_global $ACK
   (i32.and 
     (get_global $STA)
     ;; Create bit mask

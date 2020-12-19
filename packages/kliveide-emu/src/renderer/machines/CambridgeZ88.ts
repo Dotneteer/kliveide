@@ -81,7 +81,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.PB1 = mh.readByte(171);
     s.PB2 = mh.readByte(172);
     s.PB3 = mh.readByte(173);
-    s.SBR = mh.readByte(174);
+    s.SBF = mh.readByte(174);
     s.SCW = mh.readByte(176);
     s.SCH = mh.readByte(177);
 

@@ -245,7 +245,7 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   PB1: number;
   PB2: number;
   PB3: number;
-  SBR: number;
+  SBF: number;
   SCW: number;
   SCH: number;
 
