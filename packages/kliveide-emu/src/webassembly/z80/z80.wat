@@ -652,6 +652,7 @@
 (func $executeCpuCycle
   ;; Is there any CPU signal raised?
   call $processCpuSignals
+  if return end
 
   ;; It's time to process the next op code
   ;; Read it from PC and store in opCode
@@ -707,10 +708,13 @@
 
 ;; Process the CPU signals
 ;; Returns true, if the signal has been processed; otherwise, false
-(func $processCpuSignals
+(func $processCpuSignals (result i32)
   ;; No signal -- nothing to process
   (i32.eqz (get_global $cpuSignalFlags))
-  if return end
+  if 
+    i32.const 0
+    return
+  end
 
   ;; Test for INT
   (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_INT#))
@@ -721,6 +725,8 @@
       get_global $iff1
       if
         call $executeInterrupt
+        i32.const 1
+        return
       end
     end
   end
@@ -731,19 +737,28 @@
     (call $incTacts (i32.const 3))
     call $refreshMemory
     call $hookHalted
+    i32.const 1
+    return
   end
 
   ;; Test for NMI
   (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_NMI#))
   if
     call $executeNMI
+    i32.const 1
+    return
   end
 
   ;; Test for RST
   (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_RST#))
   if
     call $resetCpu
+    i32.const 1
+    return
   end
+
+  i32.const 0
+  return
 )
 
 ;; Refreshes the memory

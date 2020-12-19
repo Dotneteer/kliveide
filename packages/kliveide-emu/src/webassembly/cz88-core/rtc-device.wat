@@ -172,7 +172,7 @@
   (get_global $TSTA)
   if
     ;; a combination of one or more time events has occurred
-    (i32.or (get_global $STA) (i32.const $BM_INTGINT#))
+    (i32.or (get_global $STA) (i32.const $BM_STATIME#))
     set_global $STA
   end
 )

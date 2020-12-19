@@ -5,6 +5,11 @@
 
 ;; The execution engine is about to execute a CPU cycle
 (func $beforeCpuCycle (param $frameTact i32)
+  ;; TODO: Implement this method
+)
+
+;; The execution engine is about to execute a CPU cycle
+(func $afterCpuCycle (param $frameTact i32)
   ;; Check for interrupt
   (call $isMaskableInterruptRequested)
   if (result i32)
@@ -15,11 +20,6 @@
     (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_INT_MASK#))
   end
   set_global $cpuSignalFlags
-)
-
-;; The execution engine is about to execute a CPU cycle
-(func $afterCpuCycle (param $frameTact i32)
-  ;; TODO: Implement this method
 )
 
 ;; The execution engine is before checking loop termination
