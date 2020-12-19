@@ -22,7 +22,7 @@
   "activationEvents": [
     "onCommand:kliveide.updateKliveProject",
     "onCommand:kliveide.startEmu",
-    "workspaceContains: **/.spectrum/spectrum.machine"
+    "workspaceContains: **/.klive/klive.machine"
   ],
   "contributes": {
     "configuration": {
