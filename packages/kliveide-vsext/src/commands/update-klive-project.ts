@@ -3,8 +3,8 @@ import * as path from "path";
 import * as fs from "fs";
 import {
   spectrumConfigurationInstance,
-  SPECTRUM_FOLDER,
-  SPECTRUM_CONFIG_FILE,
+  KLIVE_PROJ_FOLDER,
+  KLIVE_CONFIG_FILE,
   TEMPLATE_PATH,
   MEMORY_FILE,
   DISASSEMBLY_FILE,
@@ -67,17 +67,17 @@ export async function updateKliveProjectCommand(
   let machineFileJustCreated = false;
 
   // --- Create the .spectrum folder and its contents
-  const spectrumFolder = path.join(projFolder, SPECTRUM_FOLDER);
+  const spectrumFolder = path.join(projFolder, KLIVE_PROJ_FOLDER);
   if (!fs.existsSync(spectrumFolder)) {
     fs.mkdirSync(spectrumFolder, { recursive: true });
     foldersCreated++;
   }
-  const machineFile = path.join(spectrumFolder, SPECTRUM_CONFIG_FILE);
+  const machineFile = path.join(spectrumFolder, KLIVE_CONFIG_FILE);
   if (fs.existsSync(machineFile)) {
     fs.unlinkSync(machineFile);
   }
   fs.writeFileSync(
-    path.join(spectrumFolder, SPECTRUM_CONFIG_FILE),
+    path.join(spectrumFolder, KLIVE_CONFIG_FILE),
     JSON.stringify(spectrumConfig)
   );
   machineFileJustCreated = true;

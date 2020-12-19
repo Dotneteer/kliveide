@@ -6,9 +6,9 @@ import * as fs from "fs";
 // File and folder name constants
 
 // --- The location of spectrum system files
-export const SPECTRUM_FOLDER = ".spectrum";
-export const SPECTRUM_CONFIG_FILE = "spectrum.machine";
-export const SPECTRUM_CONFIG_FULL = path.join(SPECTRUM_FOLDER, SPECTRUM_CONFIG_FILE);
+export const KLIVE_PROJ_FOLDER = ".klive";
+export const KLIVE_CONFIG_FILE = "klive.machine";
+export const KLIVE_CONFIG_FULL = path.join(KLIVE_PROJ_FOLDER, KLIVE_CONFIG_FILE);
 export const TAPE_FOLDER = "tape";
 export const CODE_FOLDER = "code";
 export const CODE_FILE = "code.z80asm";
@@ -24,7 +24,7 @@ export const TEMPLATE_PATH = "out/templates";
 /**
  * Disassembly file name
  */
-export const DISASS_ANN_FILE = ".spectrum/view.disassembly";
+export const DISASS_ANN_FILE = ".klive/view.disassembly";
 
 /**
  * The default configuration file, if none is provided
@@ -61,7 +61,7 @@ class MachineConfiguration {
     }
 
     try {
-      const configFile = path.join(projFolder, SPECTRUM_CONFIG_FULL);
+      const configFile = path.join(projFolder, KLIVE_CONFIG_FULL);
       if (!fs.existsSync(configFile)) {
         // --- No config file, postpone the configuration
         return;
