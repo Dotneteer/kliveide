@@ -88,6 +88,13 @@ class HardwareRegistersProvider implements TreeDataProvider<TreeItem> {
           "yes"
         ),
         new FlagItem(
+          "intb",
+          "INT Blocked",
+          r.isInterruptBlocked,
+          "no",
+          "yes"
+        ),
+        new FlagItem(
           "nmi",
           "NMI",
           !!(r.stateFlags & Z80SignalStateFlags.Nmi),

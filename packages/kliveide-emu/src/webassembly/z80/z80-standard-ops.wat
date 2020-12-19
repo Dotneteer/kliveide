@@ -1096,6 +1096,7 @@
   ;; Set the HLT flag
   (i32.or (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
   set_global $cpuSignalFlags
+  call $hookHalted
 
   ;; Decrement PC
   (i32.sub (get_global $PC) (i32.const 1))
@@ -2139,6 +2140,7 @@
   i32.const 1 set_global $isInterruptBlocked
   i32.const 1 set_global $iff1
   i32.const 1 set_global $iff2
+  i32.const 3 set_global $backlogCount
 )
 
 ;; call m (0xfc)

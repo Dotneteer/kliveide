@@ -83,6 +83,9 @@
 ;; Is the CPU currently within processing an instruction?
 (global $isInOpExecution (mut i32) (i32.const 0x00))
 
+;; Number of instructions in the interrupt backlog
+(global $backlogCount (mut i32) (i32.const 0x00))
+
 ;; Current operation prefix mode
 ;; 0: No prefix
 ;; 1: Extended mode (0xED prefix)
@@ -709,6 +712,13 @@
 ;; Process the CPU signals
 ;; Returns true, if the signal has been processed; otherwise, false
 (func $processCpuSignals (result i32)
+  ;; Decrement the backlog counter
+  get_global $backlogCount
+  if
+    (i32.sub (get_global $backlogCount) (i32.const 1))
+    set_global $backlogCount
+  end
+
   ;; No signal -- nothing to process
   (i32.eqz (get_global $cpuSignalFlags))
   if 
@@ -716,17 +726,28 @@
     return
   end
 
-  ;; Test for INT
-  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_INT#))
+  (i32.eqz (get_global $backlogCount))
   if
-    ;; Test for unblocked interrupt
-    (i32.eqz (get_global $isInterruptBlocked))
+    ;; Test for NMI
+    (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_NMI#))
     if
-      get_global $iff1
+      call $executeNMI
+      i32.const 1
+      return
+    end
+
+    ;; Test for INT
+    (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_INT#))
+    if
+      ;; Test for unblocked interrupt
+      (i32.eqz (get_global $isInterruptBlocked))
       if
-        call $executeInterrupt
-        i32.const 1
-        return
+        get_global $iff1
+        if
+          call $executeInterrupt
+          i32.const 1
+          return
+        end
       end
     end
   end
@@ -736,15 +757,6 @@
   if
     (call $incTacts (i32.const 3))
     call $refreshMemory
-    call $hookHalted
-    i32.const 1
-    return
-  end
-
-  ;; Test for NMI
-  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_NMI#))
-  if
-    call $executeNMI
     i32.const 1
     return
   end
@@ -785,6 +797,7 @@
   i32.const 0 set_global $iff2
   i32.const 0 set_global $interruptMode
   i32.const 0 set_global $isInterruptBlocked
+  i32.const 0 set_global $backlogCount
   i32.const $SIG_NONE# set_global $cpuSignalFlags
   i32.const $PREF_NONE# set_global $prefixMode
   i32.const $IND_NONE# set_global $indexMode

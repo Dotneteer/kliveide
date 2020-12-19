@@ -272,20 +272,7 @@
   (i32.eq (get_local $addr8) (i32.const 0xb4))
   if
     ;; TACK, Set Timer Interrupt Acknowledge
-    i32.const 222222
-    call $trace
-    get_local $v
-    call $trace
-
     (call $setTACK (get_local $v))
-
-    get_global $TSTA
-    call $trace
-    get_global $STA
-    call $trace
-
-    get_global $PC
-    call $trace
     return
   end
 
