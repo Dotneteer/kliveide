@@ -87,7 +87,10 @@
 
   ;; Check for read-onliness
   i32.load8_u offset=5
-  if return end
+  if 
+    (call $incTacts (i32.const 3))
+    return
+  end
 
   ;; Get memory value from the offset
   (i32.load (get_local $indexAddr)) ;; New we have the page offset
