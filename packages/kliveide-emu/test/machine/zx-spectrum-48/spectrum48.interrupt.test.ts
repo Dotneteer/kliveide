@@ -99,7 +99,7 @@ describe("ZX Spectrum 48 - Interrupt", () => {
 
   it("Interrupt not raised too late", () => {
     const TEST_INT_TACT = 13;
-    const LATE_TACT = TEST_INT_TACT + 23 + 1;
+    const LATE_TACT = TEST_INT_TACT + 73 + 1;
     machine.api.setInterruptTact(TEST_INT_TACT);
     for (let tact = LATE_TACT; tact < LATE_TACT + 10; tact++) {
       machine.api.checkForInterrupt(tact);
@@ -112,7 +112,7 @@ describe("ZX Spectrum 48 - Interrupt", () => {
 
   it("Interrupt raised within allowed range", () => {
     const TEST_INT_TACT = 13;
-    const LATE_TACT = TEST_INT_TACT + 23;
+    const LATE_TACT = TEST_INT_TACT + 73;
     machine.api.setInterruptTact(TEST_INT_TACT);
     for (let tact = TEST_INT_TACT; tact <= LATE_TACT; tact++) {
       machine.api.checkForInterrupt(tact);
