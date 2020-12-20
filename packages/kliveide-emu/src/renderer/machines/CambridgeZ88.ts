@@ -1,6 +1,6 @@
 import { MachineApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
-import { STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
+import { PIXEL_BUFFER, STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
 import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
 import {
   CambridgeZ88MachineState,
@@ -39,7 +39,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Override this property to apply multiple engine loops before
    * Refreshing the UI
    */
-  readonly engineLoops = 4;
+  readonly engineLoops = 8;
 
   /**
    * Retrieves a ZX Spectrum 48 machine state object
@@ -153,13 +153,18 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Gets the screen data of the ZX Spectrum machine
    */
   getScreenData(): Uint32Array {
-    const state = this.getMachineState();
-    const length = state.screenLines * state.screenWidth;
-    const screenData = new Uint32Array(length);
-    const pixel = state.frameCount & 0xff;
-    for (let i = 0; i < length; i++) {
-      screenData[i] = 0xff000000 | (pixel << 24) | (pixel << 16) | (pixel << 8);
-    }
+    // const state = this.getMachineState();
+    // const length = state.screenLines * state.screenWidth;
+    // const screenData = new Uint32Array(length);
+    // const pixel = state.frameCount & 0xff;
+    // for (let i = 0; i < length; i++) {
+    //   screenData[i] = 0xff000000 | (pixel << 24) | (pixel << 16) | (pixel << 8);
+    // }
+    // return screenData;
+    const buffer = this.api.memory.buffer as ArrayBuffer;
+    const screenData = new Uint32Array(
+      buffer.slice(PIXEL_BUFFER, PIXEL_BUFFER + 4 * 640 * 64)
+    );
     return screenData;
   }
 

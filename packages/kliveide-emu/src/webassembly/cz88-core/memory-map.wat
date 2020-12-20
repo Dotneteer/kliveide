@@ -22,6 +22,11 @@
 ;; Keyboard line status (128 bytes)
 (global $KEYBOARD_LINES i32 (i32.const 0x0122_0200))
 
+;; PIXEL_BUFFER (0x13_8800)
+(global $PIXEL_BUFFER i32 (i32.const 0x0122_0300))
+
+;; Nets slot: 0x135_8B00
+
 ;; Z88 Memory (4 MBytes)
 (global $Z88_MEM_AREA i32 (i32.const 0x0000_0000))
 
