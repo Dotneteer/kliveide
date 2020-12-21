@@ -3,7 +3,7 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Interrupt constants
-;; $LONGEST_OP# = 23 // The length of the longest operation
+;; $INT_PULSE# = 73 // Interrupt pulse length
 
 ;; ----------------------------------------------------------------------------
 ;; Interrupt device state
@@ -30,7 +30,7 @@
   ;; Are we over the longest op after the interrupt tact?
   (i32.gt_u 
     (get_local $currentFrameTact)
-    (i32.add (get_global $interruptTact) (i32.const $LONGEST_OP#)) ;; tacts of the longest op
+    (i32.add (get_global $interruptTact) (i32.const $INT_PULSE#)) ;; tacts of the longest op
   )
   if
     ;; Let's revoke the INT signal
