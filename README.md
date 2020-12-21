@@ -1,6 +1,7 @@
 # Klive IDE
 
-This project aims to build a full-fledged ZX Spectrum IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+), Klive IDE intends to be an attractive development platform for [ZX Spectrum Next](https://www.specnext.com/).
+This project aims to build a full-fledged Z80 assembler IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+),
+Klive IDE intends to be an attractive development platform for [Cambridge Z88](https://en.wikipedia.org/wiki/Cambridge_Z88) and [ZX Spectrum Next](https://www.specnext.com/).
 
 **The current public release (v0.7.0) is released on December 13, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
 
@@ -8,7 +9,7 @@ This project aims to build a full-fledged ZX Spectrum IDE that you can easily us
 
 ## Approach
 
-You may ask why we need another ZX Spectrum Emulator and IDE, as we have dozens of them. More or less, you are right. Nonetheless, we have only a few with ZX Spectrum Next emulators that support the developer community:
+You may ask why we need another ZX Spectrum Emulator and IDE, as we have dozens of them. More or less, you are right. Nonetheless, we have only a few of ZX Spectrum Next emulators that support the developer community:
 
 - [ZEsarUX](https://github.com/chernandezba/zesarux) by _Cesar Hernandez Bano_
 - [CSpect](http://www.cspect.org/) by _Mike Dailly_
@@ -25,10 +26,10 @@ Cesar and Mike both did and still do a great job with their projects. There is a
 ![Klive intro](./intro/klive-intro.gif)
 
 I've been working for more than three years on [SpectNetIDE](https://github.com/Dotneteer/spectnetide), which is a Visual Studio 2019 extension that includes a ZX Spectrum emulator and development tools. Though I like this project and will still develop it, it requires more investment (utilizing my free time) than I'm happy to spend:
-- Visual Studio Extensibility is hard. Even if it's continuously getting easier, sometimes it still feels pain due to the lack of available samples and documentation.
+- Visual Studio Extensibility is hard. Even if it's continuously getting easier, sometimes it still feels painful due to the lack of available samples and documentation.
 - SpectNetIDE can be used only on Windows. No easy way to port it to Mac or Linux.
 
-Klive IDE targets Linux, Mac, and Windows. To use the IDE, you need these three pieces of software:
+Klive IDE, on the other hand, targets Linux, Mac, and Windows. To use the IDE, you need these three software components:
 - [**Visual Studio Code**](https://code.visualstudio.com/). The widely known and popular coding IDE that is available on multiple platforms.
 - **The Klive ZX Spectrum Emulator**. An Electron-Shell based ZX Spectrum emulator written in TypeScript and _native_ WebAssembly to be the host of your development projects. The emulator is designed especially for _integration_ with development tools.
 - **The VS Code Extension for Klive IDE**. The extension that binds VS Code and the Klive emulator to provide seamless development and debug experience.
@@ -41,7 +42,7 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
     - Using web technologies to create a decent UI with a powerful emulator that provides space for excessive hardware emulation (ZX Spectrum Next) (&check;)
     - Ability to measure how WebAssembly plays its role on this area. (_Note_: So far measures show that the native WA implementation is about three times faster than the tuned JavaScript implementation.) (&check;)
     - An easy to use API to support integration with external apps, main focus on VS Code. (&check;)
-2. (**Close to accomplishment**) A series of POC-pieces to find out which VS Code extensibility tools suit the best for particular pieces of the IDE:
+2. (**Close to accomplishment**) A series of POC-pieces to find out which VS Code extensibility tools is best suited for particular components of the IDE:
     - Z80 Disassembly (&check;)
     - ZX Spectrum live memory map (&check;)
     - Z80 Assembly/Boriel's BASIC source code development experience (&check;)
@@ -52,7 +53,8 @@ The project is in its initial phase when we uses proof-of-concept modells to cre
     - Running and debugging ZX Spectrum 48 code with the three software components working in orchestration.
     - Z80 Assembly integration (syntax highlighting and compilation) (&check;)
 4. A Klive IDE version that provides feature-parity with SpectNetIDE
-5. Moving toward ZX Spectrum Next (_in progress_)
+5. Implementing Cambridge Z88 emulator (_in progress_)
+6. Moving toward ZX Spectrum Next (_in progress_)
 
 ## Contact me
 

@@ -1,6 +1,6 @@
 ---
 layout: documents
-categories: 
+categories:
   - "Setup"
 title:  "Install Klive IDE"
 alias: install-kliveide
@@ -40,7 +40,7 @@ Visit the releases page of the [Klive IDE project](https://github.com/Dotneteer/
 
 2. Take a note on the installation folder, as you will need it later when setting up the VS Code Extension for Klive IDE.
 
-* On Windows: 
+* On Windows:
   * In the Windows search box, type `Klive`, and right-click the **Klive** app within the results.
   * From the context menu, select "Open File Location". Then, right-click the **Klive** shortcut, and open its properties. Copy the target file information (the entire path) from the dialog. On my machine, it looks like this: `C:\Users\dotne\AppData\Local\Programs\@dotneteerkliveide-emu\Klive.exe`. **On your machine, it will be different**.
   * Save this information, as you need to use it soon.
@@ -54,7 +54,7 @@ Visit the releases page of the [Klive IDE project](https://github.com/Dotneteer/
   * if you are using a Nautilus-based file manager (Files, Nemo, Caja), or click the ‘Is executable’ checkbox if you are using Dolphin, or change the ‘Execute’ drop down list to ‘Anyone’ if you are using PCManFM
   * Close the dialog
   * Unfortunately, the Electron application wrapped inside the AppImage executable container, it needs an additional parameter to run on Linux as non-root user, **--no-sandbox**.
-  * Open a terminal and change to the folder where the AppImage resides. Type `./KliveSetup-{version}.AppImage --no-sanbox`. 
+  * Open a terminal and change to the folder where the AppImage resides. Type `./KliveSetup-{version}.AppImage --no-sandbox`.
 
 3. Make sure that the Klive Emulator starts after installation.
 
