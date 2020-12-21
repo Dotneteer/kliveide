@@ -98,3 +98,6 @@ export const Z88_PAGE_PTRS =  0x0122_0020;
 
 // --- Z88 memory area
 export const Z88_MEM_AREA = 0x00_0000;
+
+// --- Z88 pixel buffer area
+export const PIXEL_BUFFER = 0x0122_0300;

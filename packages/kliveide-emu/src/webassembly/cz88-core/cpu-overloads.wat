@@ -16,12 +16,14 @@
   if
     ;; Empty memory slot
     call $generateRandomByte
+    (call $incTacts (i32.const 3))
     return
   end
 
   ;; Load the byte from the memory
   (call $calcMemoryAddress (get_local $addr))
   i32.load8_u
+  (call $incTacts (i32.const 3))
 )
 
 ;; Emulates the contention of the specified memory location
@@ -42,8 +44,8 @@
       (call $calcMemoryAddress (get_local $addr))
       (get_local $value)
     )
-    return
   end
+  (call $incTacts (i32.const 3))
 )
 
 ;; ----------------------------------------------------------------------------

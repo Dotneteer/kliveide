@@ -96,7 +96,6 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
     case "cz88": {
       const buffer = await readFromStream("./roms/Z88OZ47.rom");
       machine = new CambridgeZ88(machineApi, [buffer]);
-      console.log("Z88 loaded.");
       break;
     }
     default: {

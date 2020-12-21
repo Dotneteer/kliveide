@@ -42,5 +42,21 @@
 (func $onFrameCompleted
   ;; 5ms frame completed, update the real time clock
   call $incRtcCounter
-  ;; TODO: Implement this method
+
+  ;; Set flash phase
+  (i32.add (get_global $flashCount) (i32.const 1))
+  set_global $flashCount
+  (i32.ge_u (get_global $flashCount) (get_global $flashToggleCount))
+  if
+    (set_global $flashCount (i32.const 0))
+    (i32.xor (get_global $flashPhase) (i32.const 0x01))
+    set_global $flashPhase
+  end
+
+  ;; Refresh the screen for every 8th frame
+  (i32.and (get_global $frameCount) (i32.const 0x07))
+  i32.eqz
+  if
+    call $renderScreen
+  end
 )
