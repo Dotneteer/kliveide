@@ -151,9 +151,6 @@
   (local $char i32)
   (local $attr i32)
 
-  (local $count i32)
-  (local $ptr i32)
-
   ;; Test if LCD is ON
   (i32.eqz (i32.and (get_global $COM) (i32.const $BM_COMLCDON#)))
   if
@@ -163,8 +160,6 @@
 
   ;; Prepare rendering
   call $initRendering
-  (set_local $ptr (get_global $PIXEL_BUFFER))
-  (set_local $count (i32.const 40960))
 
   ;; Init coordinates and pointers
   (set_local $coordX (i32.const 0))
@@ -195,7 +190,7 @@
           (set_local $attr (i32.load8_u offset=1))
 
           ;; Render individual characters
-          (i32.and (get_local $attr) (i32.const $ATTR_HRS#))
+          (i32.eqz (get_local $attr) (i32.const $ATTR_HRS#))
           if
             ;; It is a LORES character
             (call $drawLoResChar 
@@ -218,7 +213,10 @@
               (i32.add (get_local $coordX) (i32.const 6))
               set_local $coordX
             else
-              (i32.and (get_local $attr) (i32.const $ATTR_NUL#))
+              (i32.ne
+                (i32.and (get_local $attr) (i32.const $ATTR_NUL#))
+                (i32.const $ATTR_NUL#)
+              )
               if
                 (call $drawHiResChar 
                   (get_local $coordX)
@@ -278,6 +276,12 @@
   (local $fontAddress i32)
   (local $charMask i32)
   (local $charPattern i32)
+
+  (i32.lt_u 
+    (get_global $screenWidth)
+    (i32.add (get_local $x) (i32.const 6))
+  )
+  if return end
 
   ;; Initialize the top-left position
   (call $calcPixelPtr (get_local $x) (get_local $y))
@@ -349,7 +353,7 @@
     ;; Standard character
     (i32.add
       (get_global $loRes1)
-      (i32.shl (get_local $char) (i32.const 3))
+      (i32.shl (get_local $fontOffset) (i32.const 3))
     )
     set_local $fontOffset
     (set_local $fontBank (get_global $loRes1Bank))
@@ -487,6 +491,30 @@
     (i32.mul (get_global $screenWidth) (i32.const 4))
   )
   set_local $pixelPtr
+
+  ;; Check for underline
+  (i32.and (get_local $attr) (i32.const $ATTR_UND#))
+  if
+    (i32.and (get_local $attr) (i32.const $ATTR_REV#))
+    if
+      ;; Reverse underscore
+      (call $drawLowResRow 
+        (get_local $pixelPtr)
+        (get_local $pixelColor)
+        (i32.const 0x00)
+      )
+    else
+      ;; Normal underscore
+      (call $drawLowResRow 
+        (get_local $pixelPtr)
+        (get_local $pixelColor)
+        (i32.const 0xff)
+      )
+    end
+    return
+  end
+
+  ;; No underscore, display the 8th row of the char font
   (i32.xor
     (i32.load8_u offset=7 (get_local $fontAddress))
     (get_local $charMask)
@@ -497,9 +525,9 @@
     (get_local $pixelColor)
     (get_local $charPattern)
   )
-
 )
 
+;; Draws a row of LoRes char
 (func $drawLowResRow
   (param $pixelPtr i32)
   (param $pixelColor i32)
@@ -561,7 +589,6 @@
   )
 )
 
-
 ;; Draws a LoRes cursor
 (func $drawLoResCursor
   (param $x i32)
@@ -570,7 +597,196 @@
   (param $attr i32)
 
   (local $pixelPtr i32)
+  (local $rowCount i32)
+  (local $fontOffset i32)
+  (local $fontBank i32)
+  (local $fontAddress i32)
+  (local $charMask i32)
+  (local $charPattern i32)
 
+  (i32.lt_u 
+    (get_global $screenWidth)
+    (i32.add (get_local $x) (i32.const 6))
+  )
+  if return end
+
+  ;; Initialize the top-left position
+  (call $calcPixelPtr (get_local $x) (get_local $y))
+  set_local $pixelPtr
+ 
+  ;; Calculate font offset
+  (i32.or
+    (i32.shl 
+      (i32.and (get_local $attr) (i32.const 0x01))
+      (i32.const 8)
+    )
+    (get_local $char)
+  )
+  tee_local $fontOffset
+  (i32.ge_u (i32.const 0x01c0))
+  if
+    ;; UDG
+    (i32.add
+      (get_global $loRes0)
+      (i32.shl
+       (i32.and (get_local $char) (i32.const 0x3f))
+       (i32.const 3)
+      )
+    )
+    set_local $fontOffset
+    (set_local $fontBank (get_global $loRes0Bank))
+  else
+    ;; Standard character
+    (i32.add
+      (get_global $loRes1)
+      (i32.shl (get_local $fontOffset) (i32.const 3))
+    )
+    set_local $fontOffset
+    (set_local $fontBank (get_global $loRes1Bank))
+  end
+
+  ;; Draw the bits sequentially
+  (call $getBankedMemoryAddress (get_local $fontBank) (get_local $fontOffset))
+  set_local $fontAddress
+
+  ;; Init character mask
+  (select
+    (i32.const 0xff)
+    (i32.const 0x00)
+    (i32.and (get_local $attr) (i32.const $ATTR_REV#))
+  )
+  set_local $charMask
+
+  ;; Line 0
+  (i32.xor
+    (i32.load8_u offset=0 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
+
+  ;; Line 1
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=1 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
+
+  ;; Line 2
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=2 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
+
+  ;; Line 3
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=3 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
+
+  ;; Line 4
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=4 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
+
+  ;; Line 5
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=5 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
+
+  ;; Line 6
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=6 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
+
+  ;; Line 7
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=7 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawLowResRow 
+    (get_local $pixelPtr)
+    (i32.const $PX_COL_ON#)
+    (get_local $charPattern)
+  )
 )
 
 ;; Draws a HiRes character
@@ -581,23 +797,317 @@
   (param $attr i32)
 
   (local $pixelPtr i32)
+  (local $rowCount i32)
+  (local $pixelColor i32)
+  (local $fontOffset i32)
+  (local $fontBank i32)
+  (local $fontAddress i32)
+  (local $charMask i32)
+  (local $charPattern i32)
 
-  ;; Calculate the address of the top-left pixel
-  (i32.add
-    (get_global $PIXEL_BUFFER)
-    (i32.mul
-      (i32.add
-        (i32.mul (get_local $y) (get_global $screenWidth))
-        (get_local $x)
-      )
-      (i32.const 4)
+  (i32.lt_u 
+    (get_global $screenWidth)
+    (i32.add (get_local $x) (i32.const 8))
+  )
+  if return end
+
+  ;; Initialize the top-left position
+  (call $calcPixelPtr (get_local $x) (get_local $y))
+  set_local $pixelPtr
+ 
+  ;; Check empty flash character
+  (i32.and (get_local $attr) (i32.const $ATTR_FLS#))
+  if
+    get_global $flashPhase
+    if
+      ;; Loop for 8 rows
+      (set_local $rowCount (i32.const 8))
+      loop $emptyRows
+        get_local $rowCount
+        if
+          ;; Store empty pixels
+          (i32.store offset=0 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+          (i32.store offset=4 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+          (i32.store offset=8 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+          (i32.store offset=12 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+          (i32.store offset=16 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+          (i32.store offset=20 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+          (i32.store offset=24 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+          (i32.store offset=28 (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+
+          ;; Next iteration
+          (i32.add
+            (get_local $pixelPtr)
+            (i32.mul (get_global $screenWidth) (i32.const 4))
+          )
+          set_local $pixelPtr
+          (i32.sub (get_local $rowCount) (i32.const 1))
+          set_local $rowCount
+          br $emptyRows
+        end
+      end
+      return
+    end
+  end
+
+  ;; Set pixel color
+  (select
+    (i32.const $PX_COL_GREY#)
+    (i32.const $PX_COL_ON#)
+    (i32.and (get_local $attr) (i32.const $ATTR_GRY#))
+  )
+  set_local $pixelColor
+
+  ;; Calculate font offset
+  (i32.or
+    (i32.shl 
+      (i32.and (get_local $attr) (i32.const 0x03))
+      (i32.const 8)
     )
+    (get_local $char)
+  )
+  tee_local $fontOffset
+  (i32.ge_u (i32.const 0x0300))
+  if
+    ;; OZ window font entries
+    (i32.add
+      (get_global $hiRes1)
+      (i32.shl (get_local $char) (i32.const 3))
+    )
+    set_local $fontOffset
+    (set_local $fontBank (get_global $hiRes1Bank))
+  else
+    ;; Pipedream map entries
+    (i32.add
+      (get_global $hiRes0)
+      (i32.shl (get_local $fontOffset) (i32.const 3))
+    )
+    set_local $fontOffset
+    (set_local $fontBank (get_global $hiRes0Bank))
+  end
+
+  ;; Draw the bits sequentially
+  (call $getBankedMemoryAddress (get_local $fontBank) (get_local $fontOffset))
+  set_local $fontAddress
+
+  ;; Init character mask
+  (select
+    (i32.const 0xff)
+    (i32.const 0x00)
+    (i32.and (get_local $attr) (i32.const $ATTR_REV#))
+  )
+  set_local $charMask
+
+  ;; Line 0
+  (i32.xor
+    (i32.load8_u offset=0 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+
+  ;; Line 1
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
   )
   set_local $pixelPtr
-  ;; (i32.store offset=0 (get_local $pixelPtr) (i32.const $PX_COL_ON#))
-  ;; (i32.store offset=4 (get_local $pixelPtr) (i32.const $PX_COL_ON#))
-  ;; (i32.store offset=8 (get_local $pixelPtr) (i32.const $PX_COL_ON#))
-  ;; (i32.store offset=12 (get_local $pixelPtr) (i32.const $PX_COL_ON#))
+  (i32.xor
+    (i32.load8_u offset=1 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+
+  ;; Line 2
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=2 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+
+  ;; Line 3
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=3 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+
+  ;; Line 4
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=4 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+
+  ;; Line 5
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=5 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+
+  ;; Line 6
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=6 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+
+  ;; Line 7
+  (i32.add 
+    (get_local $pixelPtr)
+    (i32.mul (get_global $screenWidth) (i32.const 4))
+  )
+  set_local $pixelPtr
+  (i32.xor
+    (i32.load8_u offset=7 (get_local $fontAddress))
+    (get_local $charMask)
+  )
+  set_local $charPattern
+  (call $drawHiResRow 
+    (get_local $pixelPtr)
+    (get_local $pixelColor)
+    (get_local $charPattern)
+  )
+)
+
+;; Draws a row of HiRes char
+(func $drawHiResRow
+  (param $pixelPtr i32)
+  (param $pixelColor i32)
+  (param $charPattern i32)
+
+  ;; Pixel 0
+  (i32.store offset=0
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x80))
+    )
+  )
+  ;; Pixel 1
+  (i32.store offset=4
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x40))
+    )
+  )
+  ;; Pixel 2
+  (i32.store offset=8
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x20))
+    )
+  )
+  ;; Pixel 3
+  (i32.store offset=12
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x10))
+    )
+  )
+  ;; Pixel 4
+  (i32.store offset=16
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x08))
+    )
+  )
+  ;; Pixel 5
+  (i32.store offset=20
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x04))
+    )
+  )
+  ;; Pixel 6
+  (i32.store offset=24
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x02))
+    )
+  )
+  ;; Pixel 7
+  (i32.store offset=28
+    (get_local $pixelPtr)
+    (select
+      (get_local $pixelColor)
+      (i32.const $PX_COL_OFF#)
+      (i32.and (get_local $charPattern) (i32.const 0x01))
+    )
+  )
 )
 
 ;; Calculates the pixel buffer position for the specified coordinates
