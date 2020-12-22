@@ -113,12 +113,6 @@
   i32.const 0 set_global $nextMemorySize
   get_global $BANK_0_OFFS set_global $memoryScreenOffset
 
-  ;; Set up memory pages
-  (call $setMemoryPageIndex (i32.const 0) (get_global $ROM_48_OFFS) (i32.const 0) (i32.const 1))
-  (call $setMemoryPageIndex (i32.const 1) (get_global $BANK_0_OFFS) (i32.const 1) (i32.const 0))
-  (call $setMemoryPageIndex (i32.const 2) (get_global $BANK_1_OFFS) (i32.const 0) (i32.const 0))
-  (call $setMemoryPageIndex (i32.const 3) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
-
   ;; Set up BLOCK_LOOKUP_TABLE
   (call $setMemoryBlockEntry (i32.const 0) (get_global $ROM_48_OFFS) (i32.const 0) (i32.const 1))
   (call $setMemoryBlockEntry (i32.const 1) (get_global $ROM_48_OFFS_H) (i32.const 0) (i32.const 1))

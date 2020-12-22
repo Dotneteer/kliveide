@@ -51,8 +51,16 @@
     )
     (get_global $BLOCK_LOOKUP_TABLE)
   )
+
+  ;; Store read pointer
   (i32.store (tee_local $indexAddr) (get_local $bankOffset))
-  (i32.store8 offset=4 (get_local $indexAddr) (get_local $bankOffset))
+
+  ;; Store write pointer
+  (i32.store offset=4 (get_local $indexAddr) (get_local $bankOffset))
+
+  ;; Store read RAM/ROM information
   (i32.store8 offset=8 (get_local $indexAddr) (get_local $readonly))
+  
+  ;; Store contention information
   (i32.store8 offset=9 (get_local $indexAddr) (get_local $contended))
 )

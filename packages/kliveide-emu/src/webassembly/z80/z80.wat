@@ -1682,29 +1682,3 @@
     )
   )
 )
-
-;; Calculates the memory address for a read operation
-(func $calculateReadAddress (param $addr i32) (result i32)
-  (call $calculateBlockLookupEntry (get_local $addr))
-  
-  ;; Obtain the read pointer
-  (i32.load offset=0)
-
-  ;; Add the address offset
-  (i32.add 
-    (i32.and (get_local $addr) (i32.const 0x1fff))
-  )
-)
-
-;; Calculates the memory address for a write operation
-(func $calculateWriteAddress (param $addr i32) (result i32)
-  (call $calculateBlockLookupEntry (get_local $addr))
-  
-  ;; Obtain the read pointer
-  (i32.load offset=4)
-
-  ;; Add the address offset
-  (i32.add 
-    (i32.and (get_local $addr) (i32.const 0x1fff))
-  )
-)

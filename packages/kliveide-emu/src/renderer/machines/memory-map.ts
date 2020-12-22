@@ -63,8 +63,8 @@ export const ROM_48_OFFS = 0x02_0000;
 // --- ZX Spectrum 128 ROM 0 offset
 export const ROM_128_0_OFFS = 0x02_4000;
 
-// --- 16K page indexes
-export const PAGE_INDEX_16 = 0x0122_0180;
+// --- 8K page indexes
+export const BLOCK_LOOKUP_TABLE = 0x0121_A400;
 
 // --- Pixel rendering buffer
 export const PIXEL_RENDERING_BUFFER = 0x0129_4700;
