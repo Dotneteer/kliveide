@@ -2667,7 +2667,7 @@ export class Z80AsmParser {
   }
 
   /**
-   *
+   * Reports the specified error
    * @param errorCode Error code
    * @param token Token that represents the error's position
    * @param options Error message options

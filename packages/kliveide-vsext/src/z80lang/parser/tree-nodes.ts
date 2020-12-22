@@ -1,5 +1,3 @@
-import { Func } from "mocha";
-
 /**
  * Aggregate type for all syntax nodes
  */

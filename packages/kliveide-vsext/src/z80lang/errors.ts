@@ -4,7 +4,7 @@
 type ErrorText = { [key: string]: string };
 
 /**
- * DEscribes the structure of error messages
+ * Describes the structure of error messages
  */
 export interface ParserErrorMessage {
   code: ErrorCodes;

@@ -1,3 +1,20 @@
+;; ============================================================================
+;; ZX Spectrum 128 Machine overloads
+
+;; ----------------------------------------------------------------------------
+;; BLOCK_LOOKUP_TABLE entry (for each 8K blocks)
+
+;; 0x00: RD_PTR: Read pointer (4 bytes)
+;; 0x04: WR_PTR: Write pointer (4 bytes)
+;; 0x08: BL_FLAGS: Flags for the type of memory behind that block
+;;       0x00: RAM, can be read and written
+;;       0x01: ROM, read-only
+;; 0x09: BL_CONT: Contention mode
+;;       0x00: Not contended
+;;       0x01: Contended
+;; 0x0A: Page index
+;; 0x0B: 5 bytes unused
+
 ;; ----------------------------------------------------------------------------
 ;; Z80 I/O access
 
@@ -126,12 +143,22 @@
     (i32.const 0)
   )
 
-  ;; $set up block #7 values
+  ;; Set up block #7 values
   (call $setMemoryBlockEntry
     (i32.const 7)
     (i32.add (get_local $pageOffset) (i32.const 0x2000))
     (get_local $contention)
     (i32.const 0)
+  )
+
+  ;; Set page indexes
+  (call $setMemoryPageIndex
+    (i32.const 6)
+    (i32.and (get_local $v) (i32.const 0x07))
+  )
+  (call $setMemoryPageIndex
+    (i32.const 7)
+    (i32.and (get_local $v) (i32.const 0x07))
   )
 
   ;; Handle shadow screen
@@ -239,13 +266,21 @@
 
   ;; Set up BLOCK_LOOKUP_TABLE
   (call $setMemoryBlockEntry (i32.const 0) (get_global $ROM_128_0_OFFS) (i32.const 0) (i32.const 1))
+  (call $setMemoryPageIndex (i32.const 0) (i32.const 0x10))
   (call $setMemoryBlockEntry (i32.const 1) (get_global $ROM_128_0_OFFS_H) (i32.const 0) (i32.const 1))
+  (call $setMemoryPageIndex (i32.const 1) (i32.const 0x10))
   (call $setMemoryBlockEntry (i32.const 2) (get_global $BANK_5_OFFS) (i32.const 1) (i32.const 0))
+  (call $setMemoryPageIndex (i32.const 2) (i32.const 5))
   (call $setMemoryBlockEntry (i32.const 3) (get_global $BANK_5_OFFS_H) (i32.const 1) (i32.const 0))
+  (call $setMemoryPageIndex (i32.const 3) (i32.const 5))
   (call $setMemoryBlockEntry (i32.const 4) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
+  (call $setMemoryPageIndex (i32.const 4) (i32.const 2))
   (call $setMemoryBlockEntry (i32.const 5) (get_global $BANK_2_OFFS_H) (i32.const 0) (i32.const 0))
+  (call $setMemoryPageIndex (i32.const 5) (i32.const 2))
   (call $setMemoryBlockEntry (i32.const 6) (get_global $BANK_0_OFFS) (i32.const 0) (i32.const 0))
+  (call $setMemoryPageIndex (i32.const 6) (i32.const 0))
   (call $setMemoryBlockEntry (i32.const 7) (get_global $BANK_0_OFFS_H) (i32.const 0) (i32.const 0))
+  (call $setMemoryPageIndex (i32.const 7) (i32.const 0))
 
   ;; Set the initial state of a ZX Spectrum machine
   call $resetSpectrumMachine
@@ -279,4 +314,16 @@
   i32.const 0x056b set_global $tapeLoadBytesInvalidHeader
   i32.const 0x05e2 set_global $tapeLoadBytesResume
   i32.const 0x04c2 set_global $tapeSaveBytesRoutine
+)
+
+;; Sets the memory page index for the specified block
+(func $setMemoryPageIndex (param $block i32) (param $index i32)
+  (i32.add
+    (get_global $BLOCK_LOOKUP_TABLE)
+    (i32.mul
+      (i32.and (get_local $block) (i32.const 0x07))
+      (i32.const 16)
+    )
+  )
+  (i32.store8 offset=10 (get_local $index))
 )
