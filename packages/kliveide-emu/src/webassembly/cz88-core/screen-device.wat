@@ -3,9 +3,9 @@
 
 ;; Pixel value constants
 ;;
-;; $PX_COL_ON#   = 0xff461B7D
-;; $PX_COL_OFF#  = 0xffD2E0B9
-;; $PX_COL_GREY# = 0xff90B0A7
+;; $PX_COL_ON#   = 0xff7D1B46
+;; $PX_COL_OFF#  = 0xffB9E0D2
+;; $PX_COL_GREY# = 0xffA7B090
 ;; $PX_SCR_OFF#  = 0xffE0E0E0
 ;;
 ;; Attribute constants

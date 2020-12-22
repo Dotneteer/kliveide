@@ -6,20 +6,25 @@
 
 ;; 128K RAM. These are the RAM banks of ZS Spectrum 128/+3
 ;; Also, the first 3 banks are used as the RAM of ZX Spectrum 48K
-(global $BANK_0_OFFS i32 (i32.const 0x00_0000))
-(global $BANK_1_OFFS i32 (i32.const 0x00_4000))
-(global $BANK_2_OFFS i32 (i32.const 0x00_8000))
-(global $BANK_3_OFFS i32 (i32.const 0x00_C000))
-(global $BANK_4_OFFS i32 (i32.const 0x01_0000))
-(global $BANK_5_OFFS i32 (i32.const 0x01_4000))
-(global $BANK_6_OFFS i32 (i32.const 0x01_8000))
-(global $BANK_7_OFFS i32 (i32.const 0x01_C000))
+(global $BANK_0_OFFS   i32 (i32.const 0x00_0000))
+(global $BANK_0_OFFS_H i32 (i32.const 0x00_2000))
+(global $BANK_1_OFFS   i32 (i32.const 0x00_4000))
+(global $BANK_1_OFFS_H i32 (i32.const 0x00_6000))
+(global $BANK_2_OFFS   i32 (i32.const 0x00_8000))
+(global $BANK_2_OFFS_H i32 (i32.const 0x00_A000))
+(global $BANK_3_OFFS   i32 (i32.const 0x00_C000))
+(global $BANK_3_OFFS_H i32 (i32.const 0x00_E000))
+(global $BANK_4_OFFS   i32 (i32.const 0x01_0000))
+(global $BANK_5_OFFS   i32 (i32.const 0x01_4000))
+(global $BANK_6_OFFS   i32 (i32.const 0x01_8000))
+(global $BANK_7_OFFS   i32 (i32.const 0x01_C000))
 
 ;; ----------------------------------------------------------------------------
 ;; ROM pages
 
 ;; ZX Spectrum 48K ROM (0x4000 bytes)
-(global $ROM_48_OFFS i32 (i32.const 0x02_0000))
+(global $ROM_48_OFFS i32   (i32.const 0x02_0000))
+(global $ROM_48_OFFS_H i32 (i32.const 0x02_2000))
 
 ;; ZX Spectrum 128 ROM 0 (0x4000 bytes)
 (global $ROM_128_0_OFFS i32 (i32.const 0x02_4000))

@@ -131,4 +131,7 @@
 ;; Step-out stack (1024 bytes)
 (global $STEP_OUT_STACK i32 (i32.const 0x0121_A000))
 
+;; Lookpu table for 8K memory blocks (128 bytes)
+(global $BLOCK_LOOKUP_TABLE i32 (i32.const 0x0121_A400))
+
 ;; Machine-specific memory: 0x0122_0000
