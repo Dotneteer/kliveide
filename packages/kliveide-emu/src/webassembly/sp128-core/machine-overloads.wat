@@ -103,29 +103,36 @@
 
 ;; Handles port writes to the memory paging port
 (func $handleMemoryPagingPort (param $v i32)
+  (local $pageOffset i32)
+  (local $contention i32)
+
   ;; Check if memory paging is enabled
   (i32.eqz (get_global $memoryPagingEnabled))
   if return end
 
-  ;; Update the current bank
-  ;; Get page index
-  i32.const 3
-
-  ;; Get page offset
-  (i32.add
-    (i32.shl 
-      (i32.and (get_local $v) (i32.const 0x07))
-      (i32.const 14)
+  ;; Set up block #6 values
+  (call $setMemoryBlockEntry
+    (i32.const 6)
+    (tee_local $pageOffset
+      (i32.add
+        (i32.shl 
+          (i32.and (get_local $v) (i32.const 0x07))
+          (i32.const 14)
+        )
+        (get_global $BANK_0_OFFS)
+      )
     )
-    (get_global $BANK_0_OFFS)
+    (tee_local $contention (i32.and (get_local $v) (i32.const 0x01)))
+    (i32.const 0)
   )
 
-  ;; Get contention information
-  (i32.and (get_local $v) (i32.const 0x01))
-
-  ;; Get read-only flag
-  i32.const 0
-  call $setMemoryPageIndex
+  ;; $set up block #7 values
+  (call $setMemoryBlockEntry
+    (i32.const 7)
+    (i32.add (get_local $pageOffset) (i32.const 0x2000))
+    (get_local $contention)
+    (i32.const 0)
+  )
 
   ;; Handle shadow screen
   (i32.and (get_local $v) (i32.const 0x08))
@@ -149,7 +156,18 @@
     i32.const 0 set_global $memorySelectedRom
     get_global $ROM_128_0_OFFS
   end
-  (call $setMemoryPageIndex (i32.const 0) (i32.const 1))
+  tee_local $pageOffset
+
+  ;; Set block #0
+  (call $setMemoryBlockEntry (i32.const 0) (i32.const 1))
+
+  ;; Set block #1
+  (call $setMemoryBlockEntry 
+    (i32.const 1)
+    (i32.add (get_local $pageOffset) (i32.const 0x2000))
+    (i32.const 0)
+    (i32.const 1)
+  )
 
   ;; Paging enabled flag
   (i32.xor
@@ -219,11 +237,15 @@
   i32.const 0 set_global $nextMemorySize
   get_global $BANK_5_OFFS set_global $memoryScreenOffset
 
-  ;; Set up memory pages
-  (call $setMemoryPageIndex (i32.const 0) (get_global $ROM_128_0_OFFS) (i32.const 0) (i32.const 1))
-  (call $setMemoryPageIndex (i32.const 1) (get_global $BANK_5_OFFS) (i32.const 1) (i32.const 0))
-  (call $setMemoryPageIndex (i32.const 2) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
-  (call $setMemoryPageIndex (i32.const 3) (get_global $BANK_0_OFFS) (i32.const 0) (i32.const 0))
+  ;; Set up BLOCK_LOOKUP_TABLE
+  (call $setMemoryBlockEntry (i32.const 0) (get_global $ROM_128_0_OFFS) (i32.const 0) (i32.const 1))
+  (call $setMemoryBlockEntry (i32.const 1) (get_global $ROM_128_0_OFFS_H) (i32.const 0) (i32.const 1))
+  (call $setMemoryBlockEntry (i32.const 2) (get_global $BANK_5_OFFS) (i32.const 1) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 3) (get_global $BANK_5_OFFS_H) (i32.const 1) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 4) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 5) (get_global $BANK_2_OFFS_H) (i32.const 0) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 6) (get_global $BANK_0_OFFS) (i32.const 0) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 7) (get_global $BANK_0_OFFS_H) (i32.const 0) (i32.const 0))
 
   ;; Set the initial state of a ZX Spectrum machine
   call $resetSpectrumMachine

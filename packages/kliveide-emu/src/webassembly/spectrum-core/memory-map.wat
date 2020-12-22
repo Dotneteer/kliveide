@@ -15,9 +15,13 @@
 (global $BANK_3_OFFS   i32 (i32.const 0x00_C000))
 (global $BANK_3_OFFS_H i32 (i32.const 0x00_E000))
 (global $BANK_4_OFFS   i32 (i32.const 0x01_0000))
+(global $BANK_4_OFFS_H i32 (i32.const 0x01_2000))
 (global $BANK_5_OFFS   i32 (i32.const 0x01_4000))
+(global $BANK_5_OFFS_H i32 (i32.const 0x01_6000))
 (global $BANK_6_OFFS   i32 (i32.const 0x01_8000))
+(global $BANK_6_OFFS_H i32 (i32.const 0x01_A000))
 (global $BANK_7_OFFS   i32 (i32.const 0x01_C000))
+(global $BANK_7_OFFS_H i32 (i32.const 0x01_E000))
 
 ;; ----------------------------------------------------------------------------
 ;; ROM pages
@@ -28,6 +32,7 @@
 
 ;; ZX Spectrum 128 ROM 0 (0x4000 bytes)
 (global $ROM_128_0_OFFS i32 (i32.const 0x02_4000))
+(global $ROM_128_0_OFFS_H i32 (i32.const 0x02_6000))
 
 ;; ZX Spectrum 128 ROM 1 (0x4000 bytes)
 (global $ROM_128_1_OFFS i32 (i32.const 0x02_8000))
