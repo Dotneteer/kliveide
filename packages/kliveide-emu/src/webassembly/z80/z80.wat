@@ -1669,3 +1669,16 @@
   (call $hookIoRead (get_local $port) (get_local $v))
   get_local $v
 )
+
+
+;; Calculates BLOCK_LOOKUP_TABLE entry
+(func $calculateBlockLookupEntry (param $addr i32) (result i32)
+  (i32.add
+    (get_global $BLOCK_LOOKUP_TABLE)
+    ;; Keep A15-A13 as the block index and multiply it with 8
+    (i32.shr_u
+      (i32.and (get_local $addr) (i32.const 0xe000))
+      (i32.const 9)
+    )
+  )
+)

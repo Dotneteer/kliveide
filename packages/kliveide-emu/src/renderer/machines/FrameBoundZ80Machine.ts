@@ -10,7 +10,7 @@ import {
   MachineState,
   Z80MachineStateBase,
 } from "../../shared/machines/machine-state";
-import { PAGE_INDEX_16, STATE_TRANSFER_BUFF } from "./memory-map";
+import { BLOCK_LOOKUP_TABLE, STATE_TRANSFER_BUFF } from "./memory-map";
 import { CodeToInject } from "../../shared/machines/api-data";
 import { DiagViewFrame } from "../../shared/machines/diag-info";
 
@@ -161,10 +161,10 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param addr Memory address
    */
   readMemory(addr: number): number {
-    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
-    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
-    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
-    return mem[addr & 0x3fff];
+    const mh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
+    const pageStart = mh.readUint32(((addr >> 13) & 0x07) * 16);
+    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x2000);
+    return mem[addr & 0x1fff];
   }
 
   /**
@@ -173,10 +173,10 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param value Value to write
    */
   writeMemory(addr: number, value: number): void {
-    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
-    const pageStart = mh.readUint32(((addr >> 14) & 0x03) * 6);
-    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
-    mem[addr & 0x3fff] = value;
+    const mh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
+    const pageStart = mh.readUint32(((addr >> 13) & 0x07) * 16);
+    const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x2000);
+    mem[addr & 0x1fff] = value;
   }
 
   // ==========================================================================

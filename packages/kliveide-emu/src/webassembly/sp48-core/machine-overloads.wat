@@ -1,3 +1,19 @@
+;; ============================================================================
+;; ZX Spectrum machine overload methods
+
+;; ----------------------------------------------------------------------------
+;; BLOCK_LOOKUP_TABLE entry (for each 8K blocks)
+
+;; 0x00: RD_PTR: Read pointer (4 bytes)
+;; 0x04: WR_PTR: Write pointer (4 bytes)
+;; 0x08: BL_FLAGS: Flags for the type of memory behind that block
+;;       0x00: RAM, can be read and written
+;;       0x01: ROM, read-only
+;; 0x09: BL_CONT: Contention mode
+;;       0x00: Not contended
+;;       0x01: Contended
+;; 0x0A: 6 bytes unused
+
 ;; ----------------------------------------------------------------------------
 ;; Z80 I/O access
 
@@ -97,11 +113,15 @@
   i32.const 0 set_global $nextMemorySize
   get_global $BANK_0_OFFS set_global $memoryScreenOffset
 
-  ;; Set up memory pages
-  (call $setMemoryPageIndex (i32.const 0) (get_global $ROM_48_OFFS) (i32.const 0) (i32.const 1))
-  (call $setMemoryPageIndex (i32.const 1) (get_global $BANK_0_OFFS) (i32.const 1) (i32.const 0))
-  (call $setMemoryPageIndex (i32.const 2) (get_global $BANK_1_OFFS) (i32.const 0) (i32.const 0))
-  (call $setMemoryPageIndex (i32.const 3) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
+  ;; Set up BLOCK_LOOKUP_TABLE
+  (call $setMemoryBlockEntry (i32.const 0) (get_global $ROM_48_OFFS) (i32.const 0) (i32.const 1))
+  (call $setMemoryBlockEntry (i32.const 1) (get_global $ROM_48_OFFS_H) (i32.const 0) (i32.const 1))
+  (call $setMemoryBlockEntry (i32.const 2) (get_global $BANK_0_OFFS) (i32.const 1) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 3) (get_global $BANK_0_OFFS_H) (i32.const 1) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 4) (get_global $BANK_1_OFFS) (i32.const 0) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 5) (get_global $BANK_1_OFFS_H) (i32.const 0) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 6) (get_global $BANK_2_OFFS) (i32.const 0) (i32.const 0))
+  (call $setMemoryBlockEntry (i32.const 7) (get_global $BANK_2_OFFS_H) (i32.const 0) (i32.const 0))
 
   ;; Set the initial state of a ZX Spectrum machine
   call $resetSpectrumMachine

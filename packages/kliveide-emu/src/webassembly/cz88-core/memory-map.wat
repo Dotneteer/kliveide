@@ -13,9 +13,6 @@
 ;; 5: Is Card Slot 3 ROM?
 (global $Z88_CHIP_MASKS i32 (i32.const 0x0122_0010))
 
-;; Pointers for the address slots (40 byte)
-(global $Z88_PAGE_PTRS i32 (i32.const 0x0122_0020))
-
 ;; Pointers for the address slots (256 byte)
 (global $Z88_ROM_INFO i32 (i32.const 0x0122_0100))
 

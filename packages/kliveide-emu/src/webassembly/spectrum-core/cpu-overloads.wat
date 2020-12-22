@@ -26,25 +26,25 @@
 ;; $addr: 16-bit memory address
 ;; returns: Memory contents
 (func $readMemoryInternal (param $addr i32) (result i32)
-  (local $indexAddr i32)
+  (local $lookupEntryAddr i32)
 
-  ;; Calculate the index table address
-  (i32.shr_u
-    (i32.and (get_local $addr) (i32.const 0xffff))  
-    (i32.const 14)
-  ) ;; Now, we have the page number
-  (i32.mul (i32.const 6)) ;; Offset in the index table
-  (i32.add (get_global $PAGE_INDEX_16))
-  tee_local $indexAddr ;; Index entry address
+  ;; We need the lookup entry for the block of $addr
+  (call $calculateBlockLookupEntry (get_local $addr))
+  tee_local $lookupEntryAddr
+
+  ;; Calculate the memory address
+  (i32.add 
+    ;; Get the read pointer
+    (i32.load offset=0)
+    ;; Add the block offset
+    (i32.and (get_local $addr) (i32.const 0x1fff))
+  )
 
   ;; Get memory value from the offset
-  i32.load ;; New we have the page offset
-  (i32.and (get_local $addr) (i32.const 0x3fff))
-  i32.add
-  i32.load8_u ;; (memory value)
+  i32.load8_u
 
   ;; Apply contention
-  (i32.load8_u offset=4 (get_local $indexAddr))
+  (i32.load8_u offset=9 (get_local $lookupEntryAddr))
   if
     call $applyContentionDelay
   end
@@ -55,16 +55,11 @@
 ;; Emulates the contention of the specified memory location
 ;; $addr: 16-bit memory address
 (func $memoryDelay (param $addr i32)
-  ;; Calculate the index table address
-  (i32.shr_u
-    (i32.and (get_local $addr) (i32.const 0xffff))  
-    (i32.const 14)
-  ) ;; Now, we have the page number
-  (i32.mul (i32.const 6)) ;; Offset in the index table
-  (i32.add (get_global $PAGE_INDEX_16))
+  ;; We need the lookup entry for the block of $addr
+  (call $calculateBlockLookupEntry (get_local $addr))
 
   ;; Apply contention
-  i32.load8_u offset=4
+  i32.load8_u offset=9
   if
     call $applyContentionDelay
   end
@@ -74,51 +69,37 @@
 ;; $addr: 16-bit memory address
 ;; $v: 8-bit value to write
 (func $writeMemoryInternal (param $addr i32) (param $value i32)
-  (local $indexAddr i32)
+  (local $lookupEntryAddr i32)
 
-  ;; Calculate the index table address
-  (i32.shr_u
-    (i32.and (get_local $addr) (i32.const 0xffff))  
-    (i32.const 14)
-  ) ;; Now, we have the page number
-  (i32.mul (i32.const 6)) ;; Offset in the index table
-  (i32.add (get_global $PAGE_INDEX_16))
-  tee_local $indexAddr ;; Index entry address
+  ;; We need the lookup entry for the block of $addr
+  (call $calculateBlockLookupEntry (get_local $addr))
+  tee_local $lookupEntryAddr
 
   ;; Check for read-onliness
-  i32.load8_u offset=5
+  i32.load8_u offset=8
   if 
+    ;; ROM, cannot be written
     (call $incTacts (i32.const 3))
     return
   end
 
-  ;; Get memory value from the offset
-  (i32.load (get_local $indexAddr)) ;; New we have the page offset
-  (i32.and (get_local $addr) (i32.const 0x3fff))
-  i32.add
-  (i32.store8 (get_local $value)) ;; (memory value)
+  ;; Calculate the memory address
+  (i32.add 
+    ;; Get the write pointer
+    (i32.load offset=4 (get_local $lookupEntryAddr))
+    ;; Add the block offset
+    (i32.and (get_local $addr) (i32.const 0x1fff))
+  )
+
+  ;; Store the value in the memory
+  (i32.store8 (get_local $value))
 
   ;; Apply contention
-  (i32.load8_u offset=4 (get_local $indexAddr))
+  (i32.load8_u offset=9 (get_local $lookupEntryAddr))
   if
     call $applyContentionDelay
   end
 
   (call $incTacts (i32.const 3))
   (call $setMemoryWritePoint (get_local $addr))
-)
-
-;; ----------------------------------------------------------------------------
-;; Z80 I/O access
-
-;; Writes the specified TBBLUE index of the current machine type
-;; $idx: 8-bit index register value
-(func $writeTbBlueIndex (param $idx i32)
-  ;; NOOP
-)
-
-;; Writes the specified TBBLUE value of the current machine type
-;; $idx: 8-bit index register value
-(func $writeTbBlueValue (param $idx i32)
-  ;; NOOP
 )

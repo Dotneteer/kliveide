@@ -5,7 +5,7 @@ import { MemoryHelper } from "./memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
   COLORIZATION_BUFFER,
-  PAGE_INDEX_16,
+  BLOCK_LOOKUP_TABLE,
   PSG_SAMPLE_BUFFER,
   RENDERING_TACT_TABLE,
   STATE_TRANSFER_BUFF,
@@ -223,12 +223,12 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   getMemoryContents(): Uint8Array {
     const result = new Uint8Array(0x10000);
-    const mh = new MemoryHelper(this.api, PAGE_INDEX_16);
-    for (let i = 0; i < 4; i++) {
-      const offs = i * 0x4000;
-      const pageStart = mh.readUint32(i * 6);
-      const source = new Uint8Array(this.api.memory.buffer, pageStart, 0x4000);
-      for (let j = 0; j < 0x4000; j++) {
+    const mh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
+    for (let i = 0; i < 8; i++) {
+      const offs = i * 0x2000;
+      const pageStart = mh.readUint32(i * 16);
+      const source = new Uint8Array(this.api.memory.buffer, pageStart, 0x2000);
+      for (let j = 0; j < 0x2000; j++) {
         result[offs + j] = source[j];
       }
     }
