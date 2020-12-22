@@ -1,6 +1,11 @@
 import { MachineApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
-import { PIXEL_BUFFER, STATE_TRANSFER_BUFF, Z88_MEM_AREA, Z88_PAGE_PTRS } from "./memory-map";
+import {
+  BLOCK_LOOKUP_TABLE,
+  PIXEL_BUFFER,
+  STATE_TRANSFER_BUFF,
+  Z88_MEM_AREA,
+} from "./memory-map";
 import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
 import {
   CambridgeZ88MachineState,
@@ -109,23 +114,23 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.chipMask3 = mh.readByte(185);
     s.chipMask4 = mh.readByte(186);
 
-    const slotMh = new MemoryHelper(this.api, Z88_PAGE_PTRS);
+    const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
-    s.s0FlagL = slotMh.readByte(4);
-    s.s0OffsetH = slotMh.readUint32(5) - Z88_MEM_AREA;
-    s.s0FlagH = slotMh.readByte(9);
-    s.s1OffsetL = slotMh.readUint32(10) - Z88_MEM_AREA;
-    s.s1FlagL = slotMh.readByte(14);
-    s.s1OffsetH = slotMh.readUint32(15) - Z88_MEM_AREA;
-    s.s1FlagH = slotMh.readByte(19);
-    s.s2OffsetL = slotMh.readUint32(20) - Z88_MEM_AREA;
-    s.s2FlagL = slotMh.readByte(24);
-    s.s2OffsetH = slotMh.readUint32(25) - Z88_MEM_AREA;
-    s.s2FlagH = slotMh.readByte(29);
-    s.s3OffsetL = slotMh.readUint32(30) - Z88_MEM_AREA;
-    s.s3FlagL = slotMh.readByte(34);
-    s.s3OffsetH = slotMh.readUint32(35) - Z88_MEM_AREA;
-    s.s3FlagH = slotMh.readByte(39);
+    s.s0FlagL = slotMh.readByte(8);
+    s.s0OffsetH = slotMh.readUint32(16) - Z88_MEM_AREA;
+    s.s0FlagH = slotMh.readByte(24);
+    s.s1OffsetL = slotMh.readUint32(32) - Z88_MEM_AREA;
+    s.s1FlagL = slotMh.readByte(40);
+    s.s1OffsetH = slotMh.readUint32(48) - Z88_MEM_AREA;
+    s.s1FlagH = slotMh.readByte(56);
+    s.s2OffsetL = slotMh.readUint32(64) - Z88_MEM_AREA;
+    s.s2FlagL = slotMh.readByte(72);
+    s.s2OffsetH = slotMh.readUint32(80) - Z88_MEM_AREA;
+    s.s2FlagH = slotMh.readByte(88);
+    s.s3OffsetL = slotMh.readUint32(96) - Z88_MEM_AREA;
+    s.s3FlagL = slotMh.readByte(104);
+    s.s3OffsetH = slotMh.readUint32(112) - Z88_MEM_AREA;
+    s.s3FlagH = slotMh.readByte(120);
     return s;
   }
 
@@ -134,10 +139,10 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    */
   getMemoryContents(): Uint8Array {
     const result = new Uint8Array(0x10000);
-    const mh = new MemoryHelper(this.api, Z88_PAGE_PTRS);
+    const mh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     for (let i = 0; i < 8; i++) {
       const offs = i * 0x2000;
-      const pageStart = mh.readUint32(i * 5);
+      const pageStart = mh.readUint32(i * 16);
       const source = new Uint8Array(this.api.memory.buffer, pageStart, 0x2000);
       for (let j = 0; j < 0x2000; j++) {
         result[offs + j] = source[j];

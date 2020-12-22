@@ -93,9 +93,6 @@ export const PSG_ENVELOP_TABLE = 0x0140_4C00;
 // ============================================================================
 // Cambridge Z88 memory map
 
-// --- Z88 8K page pointer area
-export const Z88_PAGE_PTRS =  0x0122_0020;
-
 // --- Z88 memory area
 export const Z88_MEM_AREA = 0x00_0000;
 

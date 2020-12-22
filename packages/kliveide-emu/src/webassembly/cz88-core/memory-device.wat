@@ -73,23 +73,13 @@
 ;; Address page table:
 ;;   Keeps offset values for each 8K virtual memory page for accelerating memory
 ;;   access. Besides, holds a flag that indicates ROM/RAM behavior
-;;   The table starts at $Z88_PAGE_PTRS.
-;; 0x00-0x03: Offset for range $0000-$1fff
-;; 0x04: Indicates if range $0000-$1fff is ROM
-;; 0x05-0x08: Offset for range $2000-$3fff
-;; 0x09: Indicates if range $2000-$3fff is ROM
-;; 0x0a-0x0d: Offset for range $4000-$5fff
-;; 0x0e: Indicates if range $4000-$5fff is ROM (always 0)
-;; 0x0f-0x12: Offset for range $6000-$7fff
-;; 0x13: Indicates if range $6000-$7fff is ROM (always 0)
-;; 0x14-0x17: Offset for range $8000-$9fff
-;; 0x18: Indicates if range $8000-$9fff is ROM (always 0)
-;; 0x19-0x1c: Offset for range $a000-$bfff
-;; 0x1d: Indicates if range $a000-$bfff is ROM (always 0)
-;; 0x1e-0x21: Offset for range $c000-$dfff
-;; 0x22: Indicates if range $c000-$dfff is ROM
-;; 0x23-0x26: Offset for range $e000-$ffff
-;; 0x27: Indicates if range $e000-$ffff is ROM (always 0)
+;;   The table starts at $BLOCK_LOOKUP_TABLE.
+;; BLOCK_LOOKUP_TABLE entry (for each 8K blocks)
+;; 0x00: RD_PTR: Read pointer (4 bytes)
+;; 0x04: WR_PTR: Write pointer (4 bytes)
+;; 0x08: BL_FLAGS: Flags for the type of memory behind that block
+;;       0x00: RAM, can be read and written
+;;       0x01: ROM, read-only
 
 ;; Initial setup of Z88 memory
 (func $resetMemory
@@ -146,36 +136,52 @@
 
 ;; Sets SR0 and updates the address page table
 (func $setSR0 (param $bank i32)
+  (local $pageOffset i32)
+
+  ;; Store SR0 value
   (i32.store8 offset=0 (get_global $Z88_SR) (get_local $bank))
 
   ;; Lower 8K of SR0
   (i32.and (get_global $COM) (i32.const $BM_COMRAMS#))
   if 
     ;; Bank $20, RAM
+    ;; Store read pointer
     (i32.store offset=0
-      (get_global $Z88_PAGE_PTRS)
-      (i32.add (get_global $Z88_MEM_AREA) (i32.const 0x08_0000))
+      (get_global $BLOCK_LOOKUP_TABLE)
+      (tee_local $pageOffset (i32.add (get_global $Z88_MEM_AREA) (i32.const 0x08_0000)))
     )
-    (i32.store8 offset=4
-      (get_global $Z88_PAGE_PTRS)
+    ;; Store write pointer
+    (i32.store offset=4
+      (get_global $BLOCK_LOOKUP_TABLE)
+      (get_local $pageOffset)
+    )
+    ;; Store RAM flag
+    (i32.store8 offset=8
+      (get_global $BLOCK_LOOKUP_TABLE)
       (i32.const 0x00) 
     )
   else
     ;; Bank $00, ROM
+    ;; Store read pointer
     (i32.store offset=0
-      (get_global $Z88_PAGE_PTRS)
+      (get_global $BLOCK_LOOKUP_TABLE)
       (get_global $Z88_MEM_AREA)
     )
-    (i32.store8 offset=4
-      (get_global $Z88_PAGE_PTRS)
+    ;; Store write pointer
+    (i32.store offset=4
+      (get_global $BLOCK_LOOKUP_TABLE)
+      (get_global $Z88_MEM_AREA)
+    )
+    ;; Store RAM flag
+    (i32.store8 offset=8
+      (get_global $BLOCK_LOOKUP_TABLE)
       (i32.const 0x01) 
     )
   end
 
   ;; Upper 8K of SR0
-
   ;; Prepare to store address offset
-  get_global $Z88_PAGE_PTRS
+  get_global $BLOCK_LOOKUP_TABLE
 
   ;; Calculate bank offset
   (call $calculatePageOffset 
@@ -186,13 +192,18 @@
   (i32.and (get_local $bank) (i32.const 1))
   select
   i32.add
+  tee_local $pageOffset
 
-  ;; Now, store offset
-  i32.store offset=5
-
-  ;; Obtain ROM info
-  (i32.store8 offset=9 
-    (get_global $Z88_PAGE_PTRS)
+  ;; Store read pointer
+  i32.store offset=16
+  ;; Store write pointer
+  (i32.store offset=20 
+    (get_global $BLOCK_LOOKUP_TABLE)
+    (get_local $pageOffset)
+  )
+  ;; Store RAM/ROM information
+  (i32.store8 offset=24 
+    (get_global $BLOCK_LOOKUP_TABLE)
     (call $getRomInfo (get_local $bank))
   )
 )
@@ -202,46 +213,70 @@
   (local $ptr i32)
   (local $romInfo i32)
 
+  ;; Store raw SR1 value
   (i32.store8 offset=1 (get_global $Z88_SR) (get_local $bank))
 
+  ;; Obtain block information
   (call $calculatePageOffset (get_local $bank))
   set_local $ptr
   (call $getRomInfo (get_local $bank))
   set_local $romInfo
 
   ;; Offset for 0x4000-0x5fff
-  (i32.store offset=10 (get_global $Z88_PAGE_PTRS) (get_local $ptr)) 
-  (i32.store8 offset=14 (get_global $Z88_PAGE_PTRS) (get_local $romInfo))
+  ;; Store read pointer
+  (i32.store offset=32 (get_global $BLOCK_LOOKUP_TABLE) (get_local $ptr)) 
+  ;; Store write pointer
+  (i32.store offset=36 (get_global $BLOCK_LOOKUP_TABLE) (get_local $ptr)) 
+  ;; Store RAM/ROM info
+  (i32.store8 offset=40 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
 
   ;; Offset for 0x6000-0x7fff
-  (i32.store offset=15 
-    (get_global $Z88_PAGE_PTRS) 
-    (i32.add (get_local $ptr) (i32.const 0x2000))
-  ) 
-  (i32.store8 offset=19 (get_global $Z88_PAGE_PTRS) (get_local $romInfo))
+  ;; Store read pointer
+  (i32.store offset=48 
+    (get_global $BLOCK_LOOKUP_TABLE) 
+    (tee_local $ptr (i32.add (get_local $ptr) (i32.const 0x2000)))
+  )
+  ;; Store write pointer
+  (i32.store offset=52 
+    (get_global $BLOCK_LOOKUP_TABLE) 
+    (get_local $ptr)
+  )
+  (i32.store8 offset=56 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
 )
 
 ;; Sets SR2 and updates the address page table
 (func $setSR2 (param $bank i32)
   (local $ptr i32)
   (local $romInfo i32)
+
+  ;; Store SR2 value
   (i32.store8 offset=2 (get_global $Z88_SR) (get_local $bank))
 
+  ;; Obtaibn block information
   (call $calculatePageOffset (get_local $bank))
   set_local $ptr
   (call $getRomInfo (get_local $bank))
   set_local $romInfo
 
   ;; Offset for 0x8000-0x9fff
-  (i32.store offset=20 (get_global $Z88_PAGE_PTRS) (get_local $ptr)) 
-  (i32.store8 offset=24 (get_global $Z88_PAGE_PTRS) (get_local $romInfo))
+  ;; Store read pointer
+  (i32.store offset=64 (get_global $BLOCK_LOOKUP_TABLE) (get_local $ptr)) 
+  ;; Store write pointer
+  (i32.store offset=68 (get_global $BLOCK_LOOKUP_TABLE) (get_local $ptr)) 
+  (i32.store8 offset=72 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
 
   ;; Offset for 0xa000-0xbfff
-  (i32.store offset=25 
-    (get_global $Z88_PAGE_PTRS) 
-    (i32.add (get_local $ptr) (i32.const 0x2000))
+  ;; Store read pointer
+  (i32.store offset=80 
+    (get_global $BLOCK_LOOKUP_TABLE) 
+    (tee_local $ptr (i32.add (get_local $ptr) (i32.const 0x2000)))
   ) 
-  (i32.store8 offset=29 (get_global $Z88_PAGE_PTRS) (get_local $romInfo))
+  ;; Store write pointer
+  (i32.store offset=84 
+    (get_global $BLOCK_LOOKUP_TABLE) 
+    (get_local $ptr)
+  ) 
+  (i32.store8 offset=88 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
 )
 
 ;; Sets SR3 and updates the address page table
@@ -249,23 +284,35 @@
   (local $ptr i32)
   (local $romInfo i32)
 
+  ;; Store SR3 value
   (i32.store8 offset=3 (get_global $Z88_SR) (get_local $bank))
 
+  ;; Obtain block information
   (call $calculatePageOffset (get_local $bank))
   set_local $ptr
   (call $getRomInfo (get_local $bank))
   set_local $romInfo
 
   ;; Offset for 0xc000-0xdfff
-  (i32.store offset=30 (get_global $Z88_PAGE_PTRS) (get_local $ptr)) 
-  (i32.store8 offset=34 (get_global $Z88_PAGE_PTRS) (get_local $romInfo))
+  ;; Store read pointer
+  (i32.store offset=96 (get_global $BLOCK_LOOKUP_TABLE) (get_local $ptr)) 
+  ;; Store write pointer
+  (i32.store offset=100 (get_global $BLOCK_LOOKUP_TABLE) (get_local $ptr)) 
+  ;; Store RAM/ROM information
+  (i32.store8 offset=104 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
 
   ;; Offset for 0xe000-0xffff
-  (i32.store offset=35 
-    (get_global $Z88_PAGE_PTRS) 
-    (i32.add (get_local $ptr) (i32.const 0x2000))
+  ;; Store read pointer
+  (i32.store offset=112 
+    (get_global $BLOCK_LOOKUP_TABLE) 
+    (tee_local $ptr (i32.add (get_local $ptr) (i32.const 0x2000)))
   ) 
-  (i32.store8 offset=39 (get_global $Z88_PAGE_PTRS) (get_local $romInfo))
+  ;; Store write pointer
+  (i32.store offset=116 
+    (get_global $BLOCK_LOOKUP_TABLE) 
+    (get_local $ptr)
+  ) 
+  (i32.store8 offset=120 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
 )
 
 ;; Calculates the offset within the 4MB memory for the specified $bank
@@ -323,13 +370,13 @@
       ;; Address table pointer value
       (i32.add
         ;; Index table start
-        (get_global $Z88_PAGE_PTRS)
+        (get_global $BLOCK_LOOKUP_TABLE)
         ;; Index entry offset
         (i32.mul
           ;; Page index: A15-A3 (3 bits)
           (i32.shr_u (get_local $addr) (i32.const 13))
           ;; Index entry size
-          (i32.const 5)
+          (i32.const 16)
         )
       )
     )
