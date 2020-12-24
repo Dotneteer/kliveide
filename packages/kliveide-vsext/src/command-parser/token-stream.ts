@@ -152,6 +152,7 @@ export class TokenStream {
             default:
               if (isIdStart(ch)) {
                 phase = LexerPhase.IdTail;
+                tokenType = TokenType.Identifier;
               }
               break;
           }

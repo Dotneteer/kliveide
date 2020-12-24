@@ -31,10 +31,14 @@ export interface ParserErrorMessage {
 
 export type ErrorCodes =
   // --- Missing or faulty tokens
-  "C01" | "C02";
+  "C01" | "C02" | "C03" | "C04" | "C05" | "C06";
 
 export const errorMessages: ErrorText = {
   // --- Missing or faulty tokens
   C01: "Missing command name",
-  C02: "...",
+  C02: "Unknown SB command modifier: {0}",
+  C03: "Decimal or hexadecimal literal expected",
+  C04: "Colon expected",
+  C05: "'hit' or 'val' expected",
+  C06: "Command ends with an unexpected token: {0}",
 };

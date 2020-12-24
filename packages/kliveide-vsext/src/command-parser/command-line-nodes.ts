@@ -4,7 +4,7 @@
 export type CmdNode =
   | SetBreakpointCmd
   | RemoveBreakpointCmd
-  | EraseAllBreakpointCmd;
+  | EraseAllBreakpointsCmd;
   
 /**
  * This class represents the root class of all syntax nodes
@@ -14,7 +14,6 @@ export interface BaseNode {
    * Node type discriminator
    */
   type: CmdNode["type"];
-  position: number;
 }
 
 /**
@@ -22,8 +21,11 @@ export interface BaseNode {
  */
 export interface SetBreakpointCmd extends BaseNode {
   type: "SetBreakpointCmd";
+  mode?: string;
   partition?: number;
   address: number;
+  hit?: number;
+  value?: number;
 }
 
 /**
@@ -31,13 +33,12 @@ export interface SetBreakpointCmd extends BaseNode {
  */
 export interface RemoveBreakpointCmd extends BaseNode {
   type: "RemoveBreakpointCmd";
-  partition?: number;
   address: number;
 }
 
 /**
  * Erase all breakpoints command
  */
-export interface EraseAllBreakpointCmd extends BaseNode {
-  type: "EraseAllBreakpointCmd";
+export interface EraseAllBreakpointsCmd extends BaseNode {
+  type: "EraseAllBreakpointsCmd";
 }
