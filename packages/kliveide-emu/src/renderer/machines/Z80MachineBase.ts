@@ -1,7 +1,7 @@
 import { MachineApi } from "./wa-api";
 import { MachineState } from "../../shared/machines/machine-state";
 import { MemoryHelper } from "./memory-helpers";
-import { REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
+import { BREAKPOINT_MAP, BREAKPOINT_PAGES_MAP, REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 import { BreakpointDefinition } from "../../shared/machines/api-data";
 
@@ -248,10 +248,15 @@ export abstract class Z80MachineBase {
   }
 
   /**
-   * Send the breakpoint definitions to the WA virtual machine
+   * Set the breakpoint definitions in the WA virtual machine
    * @param bps Breakpoint definitions
    */
   setBreakpoints(bps: BreakpointDefinition[]): void {
+    const mapMh = new MemoryHelper(this.api, BREAKPOINT_MAP);
+    const pagesMh = new MemoryHelper(this.api, BREAKPOINT_PAGES_MAP);
+    
+    // --- Check for removed breakpoints
+
   }
 
   /**

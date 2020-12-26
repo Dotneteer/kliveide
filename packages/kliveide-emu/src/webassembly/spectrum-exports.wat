@@ -16,14 +16,8 @@
 (export "getCursorMode" (func $getCursorMode))
 (export "initTape" (func $initTape))
 (export "setFastLoad" (func $setFastLoad))
-(export "eraseBreakpoints" (func $eraseBreakPoints))
-(export "setBreakpoint" (func $setBreakpoint))
-(export "removeBreakpoint" (func $removeBreakpoint))
-(export "testBreakpoint" (func $testBreakpoint))
 (export "resetStepOverStack" (func $resetStepOverStack))
 (export "markStepOverStack" (func $markStepOverStack))
-(export "eraseMemoryWriteMap" (func $eraseMemoryWriteMap))
-(export "setMemoryWritePoint" (func $setMemoryWritePoint))
 
 ;; Cambridge Z88 exports
 (export "testIncZ88Rtc" (func $testIncZ88Rtc))

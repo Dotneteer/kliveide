@@ -85,27 +85,28 @@ export class VmEngine implements IVmEngineController {
     this._loadedState = z80Machine.getMachineState();
     rendererProcessStore.dispatch(engineInitializedAction());
 
-    // --- Watch for breakpoint changes
-    const breakpointStateAware = createRendererProcessStateAware("breakpoints");
-    breakpointStateAware.stateChanged.on((state) => {
-      // --- Whenever breakpoints change, notify the WA engine
-      const brpoints = state as number[];
-      if (!brpoints) {
-        return;
-      }
-      const oldBreaks = this._oldBrpoints;
-      if (
-        oldBreaks.length !== brpoints.length ||
-        oldBreaks.some((item) => !brpoints.includes(item))
-      ) {
-        // --- Breakpoints changed, update them
-        this.z80Machine.api.eraseBreakpoints();
-        for (const brpoint of Array.from(brpoints)) {
-          this.z80Machine.api.setBreakpoint(brpoint);
-        }
-      }
-      this._oldBrpoints = brpoints;
-    });
+    // TODO: Update to the new breakpoint infrastructure
+    // // --- Watch for breakpoint changes
+    // const breakpointStateAware = createRendererProcessStateAware("breakpoints");
+    // breakpointStateAware.stateChanged.on((state) => {
+    //   // --- Whenever breakpoints change, notify the WA engine
+    //   const brpoints = state as number[];
+    //   if (!brpoints) {
+    //     return;
+    //   }
+    //   const oldBreaks = this._oldBrpoints;
+    //   if (
+    //     oldBreaks.length !== brpoints.length ||
+    //     oldBreaks.some((item) => !brpoints.includes(item))
+    //   ) {
+    //     // --- Breakpoints changed, update them
+    //     this.z80Machine.api.eraseBreakpoints();
+    //     for (const brpoint of Array.from(brpoints)) {
+    //       this.z80Machine.api.setBreakpoint(brpoint);
+    //     }
+    //   }
+    //   this._oldBrpoints = brpoints;
+    // });
   }
 
   /**
@@ -334,11 +335,12 @@ export class VmEngine implements IVmEngineController {
       // --- Allow the machine execute a custom action on first start
       await this.z80Machine.beforeFirstStart();
 
-      // --- Set breakpoints
-      this.z80Machine.api.eraseBreakpoints();
-      for (const brpoint of Array.from(state.breakpoints)) {
-        this.z80Machine.api.setBreakpoint(brpoint);
-      }
+      // TODO: Update to the new breakpoint infrastructure
+      // // --- Set breakpoints
+      // this.z80Machine.api.eraseBreakpoints();
+      // for (const brpoint of Array.from(state.breakpoints)) {
+      //   this.z80Machine.api.setBreakpoint(brpoint);
+      // }
 
       // --- Reset time information
       this._lastFrameTime = 0.0;

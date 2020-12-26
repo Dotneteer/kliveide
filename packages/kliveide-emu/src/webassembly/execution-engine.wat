@@ -79,12 +79,13 @@
     ;; Check breakpoints
     (i32.eq (get_global $debugStepMode) (i32.const $DEB_STOP_BR#))
     if
+      ;; TODO: Update it to the new breakpoint infrastructure
       ;; Stop at breakpoints mode
-      (call $testBreakpoint (get_global $PC))
-      if
-        i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
-        return
-      end
+      ;; (call $testBreakpoint (get_global $PC))
+      ;; if
+      ;;   i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
+      ;;   return
+      ;; end
     else
       ;; Check step-into mode
       (i32.eq (get_global $debugStepMode) (i32.const $DEB_INTO#))
