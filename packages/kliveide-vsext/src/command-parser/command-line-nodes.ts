@@ -1,11 +1,14 @@
+import { BreakpointType } from "../shared/machines/api-data";
+
 /**
  * Aggregate type for all Klive command nodes
  */
 export type CmdNode =
   | SetBreakpointCmd
   | RemoveBreakpointCmd
-  | EraseAllBreakpointsCmd;
-  
+  | EraseAllBreakpointsCmd
+  | ListBreakpointsCmd;
+
 /**
  * This class represents the root class of all syntax nodes
  */
@@ -21,7 +24,7 @@ export interface BaseNode {
  */
 export interface SetBreakpointCmd extends BaseNode {
   type: "SetBreakpointCmd";
-  mode?: string;
+  mode?: BreakpointType;
   partition?: number;
   address: number;
   hit?: number;
@@ -34,6 +37,7 @@ export interface SetBreakpointCmd extends BaseNode {
 export interface RemoveBreakpointCmd extends BaseNode {
   type: "RemoveBreakpointCmd";
   address: number;
+  mode?: BreakpointType;
 }
 
 /**
@@ -41,4 +45,11 @@ export interface RemoveBreakpointCmd extends BaseNode {
  */
 export interface EraseAllBreakpointsCmd extends BaseNode {
   type: "EraseAllBreakpointsCmd";
+}
+
+/**
+ * List breakpoints command
+ */
+export interface ListBreakpointsCmd extends BaseNode {
+  type: "ListBreakpointsCmd";
 }

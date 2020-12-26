@@ -10,7 +10,7 @@ import { DisassemblyEditorProvider } from "./custom-editors/disassembly/disass-e
 import { goToAddressCommand } from "./commands/goto-address";
 import { sendTapeFileCommand } from "./commands/send-tape-file";
 import { refreshViewCommand } from "./commands/refresh-view";
-import { spectrumConfigurationInstance } from "./emulator/machine-config";
+import { machineConfigurationInstance } from "./emulator/machine-config";
 import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 import { KLIVEIDE, SAVE_FOLDER } from "./config/sections";
 import { setExtensionContext } from "./extension-paths";
@@ -30,6 +30,8 @@ import {
 } from "./commands/code-related";
 import { initKliveIcons } from "./commands/init-icons";
 import { exportCode } from "./commands/export-code";
+import { setCommandHandlerOutput } from "./emulator/command-handler";
+import { executeKliveCommand } from "./commands/execute-command";
 
 let client: LanguageClient;
 
@@ -42,12 +44,17 @@ export async function activate(context: vscode.ExtensionContext) {
     "Klive Compiler"
   );
 
+  const cmdHandlerOutput = vscode.window.createOutputChannel(
+    "Klive Commands"
+  );
+  setCommandHandlerOutput(cmdHandlerOutput);
+
   // --- Helper shortcuts
   const register = vscode.commands.registerCommand;
   const subs = context.subscriptions;
 
   // --- Initialize the machine from configuration
-  spectrumConfigurationInstance.initialize();
+  machineConfigurationInstance.initialize();
 
   // --- Register extension commands
   subs.push(
@@ -56,6 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
     register("kliveide.updateKliveProject", () =>
       updateKliveProjectCommand(context)
     ),
+    register("kliveide.executeCommand", executeKliveCommand),
     register("kliveide.goToAddress", () => goToAddressCommand()),
     register("kliveide.sendTape", (uri: vscode.Uri) =>
       sendTapeFileCommand(uri)

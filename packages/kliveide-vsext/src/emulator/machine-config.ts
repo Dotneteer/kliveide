@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
+import { BreakpointDefinition } from "./breakpoints";
 
 // ============================================================================
 // File and folder name constants
@@ -29,7 +30,7 @@ export const DISASS_ANN_FILE = ".klive/view.disassembly";
 /**
  * The default configuration file, if none is provided
  */
-export const DEFAULT_SPECTRUM_CONFIG: SpectrumConfig = {
+export const DEFAULT_SPECTRUM_CONFIG: MachineConfigData = {
   type: "48",
   annotations: ["#spectrum48.disann"],
 };
@@ -38,12 +39,12 @@ export const DEFAULT_SPECTRUM_CONFIG: SpectrumConfig = {
  * This class represents the configuration of the current ZX Spectrum machine
  */
 class MachineConfiguration {
-  private _config: SpectrumConfig | null = null;
+  private _config: MachineConfigData | null = null;
 
   /**
    * Gets the current configuration
    */
-  get configuration(): SpectrumConfig {
+  get configuration(): MachineConfigData {
     return this._config ?? DEFAULT_SPECTRUM_CONFIG;
   }
 
@@ -89,14 +90,26 @@ class MachineConfiguration {
 }
 
 /**
- * This interface represents the configuration of the ZX Spectrum machine
+ * This interface represents the configuration of a Klive virtual machine
  */
-export interface SpectrumConfig {
+export interface MachineConfigData {
+  /**
+   * Virtual machine type identifier
+   */
   type: string;
+
+  /**
+   * Virtual machine disassembly annotations
+   */
   annotations?: string[];
+
+  /**
+   * Current breakpoint definitions
+   */
+  breakpoints?: BreakpointDefinition[]
 }
 
 /**
  * The singleton instance of the machine configuration
  */
-export const spectrumConfigurationInstance = new MachineConfiguration();
+export const machineConfigurationInstance = new MachineConfiguration();

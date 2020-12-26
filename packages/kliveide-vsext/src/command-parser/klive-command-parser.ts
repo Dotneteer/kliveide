@@ -1,4 +1,10 @@
-import { CmdNode, EraseAllBreakpointsCmd, RemoveBreakpointCmd, SetBreakpointCmd } from "./command-line-nodes";
+import {
+  CmdNode,
+  EraseAllBreakpointsCmd,
+  ListBreakpointsCmd,
+  RemoveBreakpointCmd,
+  SetBreakpointCmd,
+} from "./command-line-nodes";
 import {
   ErrorCodes,
   errorMessages,
@@ -53,15 +59,21 @@ export class KliveCommandParser {
         break;
 
       case "eab":
-        cmd = <EraseAllBreakpointsCmd> {
-          type: "EraseAllBreakpointsCmd"
+        cmd = <EraseAllBreakpointsCmd>{
+          type: "EraseAllBreakpointsCmd",
+        };
+        break;
+
+      case "lb":
+        cmd = <ListBreakpointsCmd>{
+          type: "ListBreakpointsCmd",
         };
         break;
 
       default:
         return null;
     }
-    
+
     // --- Test that no unparsed parts of the command left
     if (this.tokens.peek().type !== TokenType.Eof) {
       this.reportError("C06", token, token.text);
@@ -140,13 +152,32 @@ export class KliveCommandParser {
   }
 
   /**
-   * "rb" address
+   * "rb" ("mr" | "mw" | "ir" | "iw")? address
    */
   private parseRemoveBreakpointCommand(): RemoveBreakpointCmd | null {
     const cmd: RemoveBreakpointCmd = {
       type: "RemoveBreakpointCmd",
-      address: 0
+      address: 0,
     };
+
+    let next = this.tokens.peek();
+    if (next.type === TokenType.Identifier) {
+      // --- It must be one of the modes
+      const mode = next.text.toLowerCase();
+      switch (mode) {
+        case "mr":
+        case "mw":
+        case "ir":
+        case "iw":
+          cmd.mode = mode;
+          this.tokens.get();
+          break;
+        default:
+          this.reportError("C02", next, next.text);
+          return null;
+      }
+    }
+
     const address = this.getLiteral();
     if (address === null) {
       return null;
@@ -154,7 +185,6 @@ export class KliveCommandParser {
     cmd.address = address;
     return cmd;
   }
-
 
   /**
    * Get "hit" or "val" parameter

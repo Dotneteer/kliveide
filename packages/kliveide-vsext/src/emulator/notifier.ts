@@ -4,7 +4,7 @@ import {
   ExecutionState,
   MemoryPageInfo,
 } from "./communicator";
-import { spectrumConfigurationInstance } from "./machine-config";
+import { machineConfigurationInstance } from "./machine-config";
 import { DiagViewFrame } from "../shared/machines/diag-info";
 import { createMachineViewProvider, MachineViewProvider } from "./machines";
 import { last } from "lodash";
@@ -167,7 +167,7 @@ async function requestEmulatorInfo(): Promise<void> {
         connectionStateChanged.fire(connected);
         await communicatorInstance.signConfigurationChange();
         await communicatorInstance.setMachineType(
-          spectrumConfigurationInstance.configuration.type
+          machineConfigurationInstance.configuration.type
         );
       }
     }

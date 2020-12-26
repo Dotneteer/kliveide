@@ -17,7 +17,7 @@ import {
 import { communicatorInstance } from "../../emulator/communicator";
 import { DisassemblyAnnotation } from "../../disassembler/annotations";
 import {
-  spectrumConfigurationInstance,
+  machineConfigurationInstance,
   DISASS_ANN_FILE,
 } from "../../emulator/machine-config";
 import {
@@ -237,7 +237,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
  */
 async function readRomAnnotations(): Promise<void> {
   // --- We need machine configuration to carry on
-  const machineType = spectrumConfigurationInstance.configuration.type;
+  const machineType = machineConfigurationInstance.configuration.type;
   const config = machineTypes[machineType];
   if (!config) {
     return;
@@ -275,7 +275,7 @@ function getRomAnnotation(rom: number): DisassemblyAnnotation | null {
   try {
     // --- Obtain the file for the annotations
     const annotations =
-      spectrumConfigurationInstance.configuration?.annotations;
+      machineConfigurationInstance.configuration?.annotations;
     if (!annotations) {
       return null;
     }

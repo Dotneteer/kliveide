@@ -428,7 +428,7 @@ describe("Command parser - commands", () => {
     }
     expect(cmd).toBeNull();
     expect(cp.hasErrors).toBe(true);
-    expect(cp.error.code === "C03").toBe(true);
+    expect(cp.error.code === "C02").toBe(true);
   });
 
   it("rb with extra token", () => {
@@ -469,5 +469,91 @@ describe("Command parser - commands", () => {
     expect(cmd).toBeNull();
     expect(cp.hasErrors).toBe(true);
     expect(cp.error.code === "C06").toBe(true);
+  });
+
+  it("lb", () => {
+    const SOURCE = "lb";
+
+    const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
+    const cmd = cp.parseCommand();
+    expect(cmd).not.toBeNull();
+    if (cmd === null) {
+      return;
+    }
+    expect(cmd.type === "ListBreakpointsCmd");
+  });
+
+  it("lb with extra token", () => {
+    const SOURCE = "lb hi";
+
+    const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
+    let cmd: CmdNode | null = null;
+    try {
+      cmd = cp.parseCommand();
+    } catch {
+    }
+    expect(cmd).toBeNull();
+    expect(cp.hasErrors).toBe(true);
+    expect(cp.error.code === "C06").toBe(true);
+  });
+
+  it("rb memory read", () => {
+    const SOURCE = "rb mr $12ac";
+
+    const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
+    const cmd = cp.parseCommand();
+    expect(cmd).not.toBeNull();
+    if (cmd === null) {
+      return;
+    }
+    expect(cmd.type === "RemoveBreakpointCmd");
+    const sbc = cmd as RemoveBreakpointCmd;
+    expect(sbc.address).toBe(0x12ac);
+    expect(sbc.mode).toBe("mr");
+  });
+
+  it("rb memory write", () => {
+    const SOURCE = "rb mw $12ac";
+
+    const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
+    const cmd = cp.parseCommand();
+    expect(cmd).not.toBeNull();
+    if (cmd === null) {
+      return;
+    }
+    expect(cmd.type === "RemoveBreakpointCmd");
+    const sbc = cmd as RemoveBreakpointCmd;
+    expect(sbc.address).toBe(0x12ac);
+    expect(sbc.mode).toBe("mw");
+  });
+
+  it("rb I/O read", () => {
+    const SOURCE = "rb ir $12ac";
+
+    const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
+    const cmd = cp.parseCommand();
+    expect(cmd).not.toBeNull();
+    if (cmd === null) {
+      return;
+    }
+    expect(cmd.type === "RemoveBreakpointCmd");
+    const sbc = cmd as RemoveBreakpointCmd;
+    expect(sbc.address).toBe(0x12ac);
+    expect(sbc.mode).toBe("ir");
+  });
+
+  it("rb I/O write", () => {
+    const SOURCE = "rb iw $12ac";
+
+    const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
+    const cmd = cp.parseCommand();
+    expect(cmd).not.toBeNull();
+    if (cmd === null) {
+      return;
+    }
+    expect(cmd.type === "RemoveBreakpointCmd");
+    const sbc = cmd as RemoveBreakpointCmd;
+    expect(sbc.address).toBe(0x12ac);
+    expect(sbc.mode).toBe("iw");
   });
 });

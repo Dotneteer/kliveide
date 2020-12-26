@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import {
-  spectrumConfigurationInstance,
+  machineConfigurationInstance,
   KLIVE_PROJ_FOLDER,
   KLIVE_CONFIG_FILE,
   TEMPLATE_PATH,
@@ -14,7 +14,7 @@ import {
   CODE_FILE,
   JETSET_TAPE,
   PACMAN_TAPE,
-  SpectrumConfig,
+  MachineConfigData,
   CODE_BAS_FILE,
 } from "../emulator/machine-config";
 import { communicatorInstance } from "../emulator/communicator";
@@ -44,7 +44,7 @@ export async function updateKliveProjectCommand(
   }
 
   // --- Prepare the machine configuration
-  const spectrumConfig: SpectrumConfig = {
+  const spectrumConfig: MachineConfigData = {
     type: machineType.id,
   };
   switch (machineType.id) {
@@ -146,9 +146,9 @@ export async function updateKliveProjectCommand(
 
   // --- Configure the newly created machine from file
   if (machineFileJustCreated && getLastConnectedState()) {
-    spectrumConfigurationInstance.initialize();
+    machineConfigurationInstance.initialize();
     await communicatorInstance.setMachineType(
-      spectrumConfigurationInstance.configuration.type
+      machineConfigurationInstance.configuration.type
     );
   }
 
