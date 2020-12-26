@@ -29,6 +29,7 @@ export interface SetBreakpointCmd extends BaseNode {
   address: number;
   hit?: number;
   value?: number;
+  mask?: number;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { CodeToInject, RegisterData } from "../machines/api-data";
+import { BreakpointDefinition, CodeToInject, RegisterData } from "../machines/api-data";
 
 /**
  * Represents the state of the application
@@ -18,11 +18,6 @@ export interface AppState {
    * Data about the running virtual machine
    */
   vmInfo?: VmInfo;
-
-  /**
-   * Breakpoints
-   */
-  breakpoints?: number[];
 
   /**
    * The current IDE configuration
@@ -163,7 +158,6 @@ export function getDefaultAppState(): AppState {
       statusbar: true,
       internalState: {}
     },
-    breakpoints: [],
     ideConfiguration: {
       projectFolder: "",
       saveFolder: "",

@@ -1,4 +1,4 @@
-import { CodeToInject } from "../machines/api-data";
+import { BreakpointDefinition, CodeToInject } from "../machines/api-data";
 import { DiagViewFrame } from "../machines/diag-info";
 import { MachineState } from "../machines/machine-state";
 import { KliveConfiguration } from "./emu-configurations";
@@ -60,6 +60,14 @@ export interface AddDiagnosticsFrameDataMessage extends MessageBase {
 }
 
 /**
+ * Set breakpoints message
+ */
+export interface SetBreakpointsMessage extends MessageBase {
+  type: "setBreakpoints";
+  breakpoints: BreakpointDefinition[];
+}
+
+/**
  * The messages that are send as requests to a processing entity
  */
 export type RequestMessage =
@@ -68,7 +76,8 @@ export type RequestMessage =
   | RunCodeMessage
   | GetMemoryContentsMessage
   | GetMachineStateMessage
-  | AddDiagnosticsFrameDataMessage;
+  | AddDiagnosticsFrameDataMessage
+  | SetBreakpointsMessage;
 
 /**
  * Default response for actions

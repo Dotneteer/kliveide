@@ -7,8 +7,6 @@ import {
   emulatorSetTapeContenstAction,
   emulatorRequestTypeAction,
 } from "../shared/state/redux-emulator-state";
-import { breakpointSetAction } from "../shared/state/redux-breakpoint-state";
-import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { IdeConfiguration } from "../shared/state/AppState";
@@ -18,6 +16,7 @@ import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 import { AppWindow } from "../main/AppWindow";
 import {
   AddDiagnosticsFrameDataResponse,
+  DefaultResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
 } from "../shared/messaging/message-types";
@@ -54,7 +53,6 @@ export function startApiServer() {
         startCount: emuState.startCount,
         frameCount: emuState.frameCount,
         executionState: emuState.executionState,
-        breakpoints: Array.from(state.breakpoints),
         pc: vmInfo.registers?.pc ?? -1,
         runsInDebug: emuState.runsInDebug,
         machineType: emuState.currentType,
@@ -132,29 +130,23 @@ export function startApiServer() {
   });
 
   /**
-   * Gets the list of breakpoints
-   */
-  app.get("/breakpoints", (_req, res) => {
-    const state = mainProcessStore.getState();
-    res.json({ breakpoints: Array.from(state.breakpoints) });
-  });
-
-  /**
    * Set breakpoints
    */
-  app.post("/breakpoints", (req, res) => {
-    const breakpoints = req.body?.breakpoints as number[];
-    mainProcessStore.dispatch(breakpointSetAction(breakpoints)());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Delete breakpoints
-   */
-  app.post("/delete-breakpoints", (req, res) => {
-    const breakpoints = req.body?.breakpoints as number[];
-    mainProcessStore.dispatch(breakpointRemoveAction(breakpoints)());
-    res.sendStatus(204);
+  app.post("/breakpoints", async (req, res) => {
+    try {
+      const contents = (
+        await AppWindow.instance.sendMessageToRenderer<DefaultResponse>(
+          {
+            type: "setBreakpoints",
+            breakpoints: req.body.breakpoints 
+          }
+        )
+      );
+      res.sendStatus(204);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(err.toString());
+    }
   });
 
   /**

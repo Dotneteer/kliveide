@@ -3,6 +3,7 @@ import { MachineState } from "../../shared/machines/machine-state";
 import { MemoryHelper } from "./memory-helpers";
 import { REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
+import { BreakpointDefinition } from "../../shared/machines/api-data";
 
 /**
  * This class is intended to be the base class of all Z80 machine
@@ -244,6 +245,13 @@ export abstract class Z80MachineBase {
     // --- Init code execution
     this.api.resetCpu();
     this.api.setPC(startAddress);
+  }
+
+  /**
+   * Send the breakpoint definitions to the WA virtual machine
+   * @param bps Breakpoint definitions
+   */
+  setBreakpoints(bps: BreakpointDefinition[]): void {
   }
 
   /**

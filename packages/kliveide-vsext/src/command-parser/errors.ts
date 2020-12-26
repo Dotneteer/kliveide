@@ -31,7 +31,7 @@ export interface ParserErrorMessage {
 
 export type ErrorCodes =
   // --- Missing or faulty tokens
-  "C01" | "C02" | "C03" | "C04" | "C05" | "C06";
+  "C01" | "C02" | "C03" | "C04" | "C05" | "C06" | "C07" | "C08";
 
 export const errorMessages: ErrorText = {
   // --- Missing or faulty tokens
@@ -41,4 +41,6 @@ export const errorMessages: ErrorText = {
   C04: "Colon expected",
   C05: "'hit' or 'val' expected",
   C06: "Command ends with an unexpected token: {0}",
+  C07: "Only memory and I/O breakpoints may have 'hit', 'val' parameters",
+  C08: "Only I/O breakpoints may have 'mask' parameters"
 };

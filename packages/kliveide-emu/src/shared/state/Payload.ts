@@ -1,4 +1,4 @@
-import { RegisterData } from "../machines/api-data";
+import { BreakpointDefinition, RegisterData } from "../machines/api-data";
 import { IdeConfiguration } from "./AppState";
 
 /**
@@ -23,7 +23,6 @@ export interface Payload {
   registers?: RegisterData;
   from?: number;
   to?: number;
-  breakpoints?: number[];
   savedData?: Uint8Array;
   ideConfiguration?: IdeConfiguration;
   requestedType?: string;

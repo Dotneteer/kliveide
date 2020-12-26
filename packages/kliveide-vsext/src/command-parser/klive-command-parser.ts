@@ -83,9 +83,10 @@ export class KliveCommandParser {
   }
 
   /**
-   * "sb" ("mr" | "mw" | "ir" | "iw")? (partition ":")? address ("hit" ":" hitcount)? ("val" ":" value)?
+   * "sb" ("mr" | "mw" | "ir" | "iw")? (partition ":")? address ("mask" ":" mask)? ("hit" ":" hitcount)? ("val" ":" value)?
    */
   private parseSetBreakpointCmd(): SetBreakpointCmd | null {
+    const parser = this;
     const command: SetBreakpointCmd = {
       type: "SetBreakpointCmd",
       address: 0,
@@ -135,20 +136,54 @@ export class KliveCommandParser {
       return command;
     }
 
-    // --- Continuation can be "hit" or "count"
-    if (!this.getHitOrVal(command)) {
-      return command;
+    // --- Continuation can be "mask", "hit", or "count"
+    if (!this.getBreakpointParam(command)) {
+      return checkCommand();
     }
 
     // --- Is there any remaining part of the command?
     next = this.tokens.peek();
     if (next.type === TokenType.Eof) {
-      return command;
+      return checkCommand();
     }
 
-    // --- Continuation can be "hit" or "count"
-    this.getHitOrVal(command);
-    return command;
+    // --- Continuation can be "mask", "hit", or "count"
+    if (!this.getBreakpointParam(command)) {
+      return checkCommand();
+    }
+
+    // --- Is there any remaining part of the command?
+    next = this.tokens.peek();
+    if (next.type === TokenType.Eof) {
+      return checkCommand();
+    }
+
+    // --- Continuation can be "mask", "hit", or "count"
+    this.getBreakpointParam(command);
+    return checkCommand();
+
+    /**
+     * Checks the set breakpoint command rules
+     */
+    function checkCommand(): SetBreakpointCmd | null {
+      if (
+        command.mode === undefined &&
+        (command.hit !== undefined || command.value !== undefined)
+      ) {
+        parser.reportError("C07");
+        return null;
+      }
+
+      if (
+        (command.mode === undefined || command.mode.startsWith("m")) &&
+        command.mask !== undefined
+      ) {
+        parser.reportError("C08");
+        return null;
+      }
+
+      return command;
+    }
   }
 
   /**
@@ -190,7 +225,7 @@ export class KliveCommandParser {
    * Get "hit" or "val" parameter
    * @param command Command that uses "hit" or "count"
    */
-  private getHitOrVal(command: SetBreakpointCmd): boolean {
+  private getBreakpointParam(command: SetBreakpointCmd): boolean {
     const param = this.getParameter();
     if (!param) {
       return false;
@@ -202,6 +237,10 @@ export class KliveCommandParser {
     }
     if (paramName === "val") {
       command.value = param[1];
+      return true;
+    }
+    if (paramName === "mask") {
+      command.mask = param[1];
       return true;
     }
     this.reportError("C05");

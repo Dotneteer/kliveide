@@ -3,7 +3,6 @@ import { windowStateReducer } from "./redux-window-state";
 import { AppWindow } from "../../main/AppWindow";
 import { emulatorStateReducer } from "./redux-emulator-state";
 import { vmInfoStateReducer } from "./redux-vminfo-state";
-import { breakpointsStateReducer } from "./redux-breakpoint-state";
 import { ideConfigStateReducer } from "./redux-ide-config-state";
 import { ideConnectionStateReducer } from "./redux-ide-connection.state";
 
@@ -15,7 +14,6 @@ export const appReducers = {
   windowState: windowStateReducer,
   emulatorPanelState: emulatorStateReducer,
   vmInfo: vmInfoStateReducer,
-  breakpoints: breakpointsStateReducer,
   ideConfiguration: ideConfigStateReducer,
   ideConnection: ideConnectionStateReducer,
 };
