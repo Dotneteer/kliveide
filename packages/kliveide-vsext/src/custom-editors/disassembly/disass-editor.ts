@@ -33,6 +33,8 @@ import {
 import { Z80Disassembler } from "../../disassembler/z80-disassembler";
 import { DiagViewFrame } from "../../shared/machines/diag-info";
 import { breakpointDefinitions } from "../../emulator/breakpoints";
+import { onCommandExecuted } from "../../emulator/command-handler";
+import { CmdNode } from "../../command-parser/command-line-nodes";
 
 /**
  * The annotation for the current machine
@@ -119,6 +121,17 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
         }
       })
     );
+
+    // --- Watch for breakpoint commands
+    this.toDispose(
+      webviewPanel,
+      onCommandExecuted((cmd: CmdNode) => {
+        if (cmd.type.includes("Breakpoint")) {
+          this.sendBreakpointsToView();
+        }
+      })
+    );
+    
 
     // --- Refresh annotations whenever machine type changes
     this.toDispose(

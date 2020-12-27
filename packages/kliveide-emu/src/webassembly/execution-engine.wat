@@ -183,7 +183,39 @@
   if
     ;; An instruction breakpoint is set
     (i32.and (get_local $flags) (i32.const $BR_INSTR#))
-    return
+    if 
+      i32.const 1
+      return
+    end
+
+    ;; Test partition breakpoint
+    (i32.and (get_local $flags) (i32.const $BR_PART_INSTR#))
+    if
+      ;; Get the breakpoint partition
+      (i32.load16_u
+        (i32.add 
+          (get_global $BRP_PARTITION_MAP)
+          (i32.mul (get_global $PC) (i32.const 2))
+        )
+      )
+      
+      ;; Get current partition
+      (i32.add
+        (get_global $BLOCK_LOOKUP_TABLE)
+        (i32.mul 
+          (i32.shr_u (get_global $PC) (i32.const 13))
+          (i32.const 16)
+        )
+      )
+      i32.load16_u offset=0x0a
+
+      ;; Test if partitions are equal
+      i32.eq
+      return
+    else
+      i32.const 0
+      return
+    end
   end
 
   ;; Not a breakpoint 

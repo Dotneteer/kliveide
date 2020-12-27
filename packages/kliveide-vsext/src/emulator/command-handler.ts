@@ -1,12 +1,17 @@
 import * as vscode from "vscode";
 import { CmdNode } from "../command-parser/command-line-nodes";
 import { breakpointDefinitions } from "./breakpoints";
-import { BreakpointDefinition, BreakpointType } from "../shared/machines/api-data";
+import {
+  BreakpointDefinition,
+  BreakpointType,
+} from "../shared/machines/api-data";
+import { communicatorInstance } from "./communicator";
 
 /**
  * The output channel for the command handler
  */
 let commandHandlerOutput: vscode.OutputChannel | null;
+let commandExecuted: vscode.EventEmitter<CmdNode> = new vscode.EventEmitter<CmdNode>();
 
 /**
  * Sets the output channel of the commannd handler
@@ -15,6 +20,11 @@ let commandHandlerOutput: vscode.OutputChannel | null;
 export function setCommandHandlerOutput(channel: vscode.OutputChannel): void {
   commandHandlerOutput = channel;
 }
+
+/**
+ * Fires when a Klive command has been executed
+ */
+export const onCommandExecuted: vscode.Event<CmdNode> = commandExecuted.event;
 
 /**
  * This function handles the Klive text commands
@@ -32,12 +42,14 @@ export function handleKliveCommand(cmdText: string, cmd: CmdNode): void {
         value: cmd.value,
       };
       breakpointDefinitions.set(bp);
+      communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
       displayBreakpoint(bp);
       break;
     }
 
     case "RemoveBreakpointCmd": {
       breakpointDefinitions.remove(cmd.address, cmd.mode);
+      communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
       commandHandlerOutput?.appendLine(
         `Breakpoint at ${cmd.address
           .toString(16)
@@ -50,6 +62,7 @@ export function handleKliveCommand(cmdText: string, cmd: CmdNode): void {
 
     case "EraseAllBreakpointsCmd": {
       breakpointDefinitions.eraseAll();
+      communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
       commandHandlerOutput?.appendLine("All breakpoints deleted.");
       break;
     }
@@ -61,6 +74,9 @@ export function handleKliveCommand(cmdText: string, cmd: CmdNode): void {
       break;
     }
   }
+
+  // --- Notify subscribers about command execution
+  commandExecuted.fire(cmd);
 }
 
 /**

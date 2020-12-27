@@ -92,6 +92,8 @@
           case "breakpoints":
             // --- Receive breakpoints set in the emulator
             breakpoints = new Set(ev.data.breakpoints.map(bp => bp.address));
+            console.log(JSON.stringify(ev.data.breakpoints));
+            console.log(JSON.stringify(breakpoints));
             break;
           case "pc":
             currentPc = ev.data.pc;

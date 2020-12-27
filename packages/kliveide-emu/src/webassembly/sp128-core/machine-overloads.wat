@@ -12,8 +12,8 @@
 ;; 0x09: BL_CONT: Contention mode
 ;;       0x00: Not contended
 ;;       0x01: Contended
-;; 0x0A: Page index
-;; 0x0B: 5 bytes unused
+;; 0x0A: Page index, 2 bytes
+;; 0x0C: 4 bytes unused
 
 ;; ----------------------------------------------------------------------------
 ;; Z80 I/O access
@@ -122,6 +122,7 @@
 (func $handleMemoryPagingPort (param $v i32)
   (local $pageOffset i32)
   (local $contention i32)
+  (local $rom i32)
 
   ;; Check if memory paging is enabled
   (i32.eqz (get_global $memoryPagingEnabled))
@@ -177,9 +178,13 @@
   ;; Select ROM page
   (i32.and (get_local $v) (i32.const 0x10))
   if (result i32)
+    (call $setMemoryPageIndex (i32.const 0) (i32.const 0x11))
+    (call $setMemoryPageIndex (i32.const 1) (i32.const 0x11))
     i32.const 1 set_global $memorySelectedRom
     get_global $ROM_128_1_OFFS
   else
+    (call $setMemoryPageIndex (i32.const 0) (i32.const 0x10))
+    (call $setMemoryPageIndex (i32.const 1) (i32.const 0x10))
     i32.const 0 set_global $memorySelectedRom
     get_global $ROM_128_0_OFFS
   end
