@@ -7,7 +7,12 @@ import {
   EmulationMode,
   DebugStepMode,
 } from "../../shared/machines/machine-state";
-import { ROM_128_0_OFFS, STATE_TRANSFER_BUFF } from "./memory-map";
+import {
+  BANK_0_OFFS,
+  ROM_128_0_OFFS,
+  ROM_48_OFFS,
+  STATE_TRANSFER_BUFF,
+} from "./memory-map";
 import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { MemoryHelper } from "./memory-helpers";
 
@@ -63,6 +68,27 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    */
   getRomPageBaseAddress(): number {
     return ROM_128_0_OFFS;
+  }
+
+  /**
+   * Gets the specified memory partition
+   * @param partition Partition index
+   */
+  getMemoryPartition(partition: number): Uint8Array {
+    let offset = 0;
+    if (partition === 0x10) {
+      offset = ROM_128_0_OFFS;
+    } else if (partition === 0x11) {
+      offset = ROM_48_OFFS;
+    } else {
+      offset = BANK_0_OFFS + (partition & 0x07) * 0x4000;
+    }
+    const mh = new MemoryHelper(this.api, offset);
+    const result = new Uint8Array(0x4000);
+    for (let j = 0; j < 0x4000; j++) {
+      result[j] = mh.readByte(j);
+    }
+    return result;
   }
 
   /**

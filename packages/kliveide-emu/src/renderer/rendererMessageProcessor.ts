@@ -8,6 +8,7 @@ import {
   DefaultResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
+  GetMemoryPartitionResponse,
   RequestMessage,
   ResponseMessage,
 } from "../shared/messaging/message-types";
@@ -63,7 +64,15 @@ export async function processMessageFromMain(
     case "setBreakpoints": {
       machine.setBreakpoints(message.breakpoints);
       return <DefaultResponse>{
-        type: "ack"
+        type: "ack",
+      };
+    }
+
+    case "getMemoryPartition": {
+      const contents = machine.z80Machine.getMemoryPartition(message.partition);
+      return <GetMemoryPartitionResponse>{
+        type: "getMemoryPartitionResponse",
+        contents,
       };
     }
 

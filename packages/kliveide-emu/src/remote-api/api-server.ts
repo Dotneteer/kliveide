@@ -19,6 +19,7 @@ import {
   DefaultResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
+  GetMemoryPartitionResponse,
 } from "../shared/messaging/message-types";
 import { DiagViewFrame } from "../shared/machines/diag-info";
 
@@ -100,6 +101,27 @@ export function startApiServer() {
         await AppWindow.instance.sendMessageToRenderer<GetMemoryContentsResponse>(
           {
             type: "getMemoryContents",
+          }
+        )
+      ).contents;
+      res.send(Buffer.from(contents).toString("base64"));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(err.toString());
+    }
+  });
+
+  /**
+   * Gets the contents of the specified memory range
+   */
+  app.get("/memory-partition/:partition", async (req, res) => {
+    try {
+      const partition = parseInt(req.params.partition);
+      const contents = (
+        await AppWindow.instance.sendMessageToRenderer<GetMemoryPartitionResponse>(
+          {
+            type: "getMemoryPartition",
+            partition,
           }
         )
       ).contents;

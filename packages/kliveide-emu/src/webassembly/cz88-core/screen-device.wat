@@ -165,8 +165,10 @@
   (set_local $coordX (i32.const 0))
   (set_local $coordY (i32.const 0))
   (set_local $rowCount (get_global $SCH))
-  (set_local $rowSbrPtr (get_global $sbr))
-
+  (set_local $rowSbrPtr 
+    (call $getBankedMemoryAddress (get_global $sbrBank) (get_global $sbr))
+  )
+  
   ;; Row loop
   loop $rowLoop
     get_local $rowCount
@@ -177,20 +179,16 @@
 
       ;; Column loop
       loop $columnLoop
-        ;; get_local $columnCount
-        ;; call $trace
 
         get_local $columnCount
         if
           ;; Read the screen character and its attribute
-          (call $getBankedMemoryAddress (get_global $sbrBank) (get_local $sbrPtr))
-          tee_local $charAddr
-          (set_local $char (i32.load8_u offset=0))
-          get_local $charAddr
-          (set_local $attr (i32.load8_u offset=1))
+          (set_local $char (i32.load8_u offset=0 (get_local $sbrPtr)))
+          (set_local $attr (i32.load8_u offset=1 (get_local $sbrPtr)))
 
           ;; Render individual characters
-          (i32.eqz (get_local $attr) (i32.const $ATTR_HRS#))
+          (i32.and (get_local $attr) (i32.const $ATTR_HRS#))
+          i32.eqz
           if
             ;; It is a LORES character
             (call $drawLoResChar 

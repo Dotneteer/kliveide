@@ -30,7 +30,10 @@ export const onCommandExecuted: vscode.Event<CmdNode> = commandExecuted.event;
  * This function handles the Klive text commands
  * @param cmd Command to handle
  */
-export function handleKliveCommand(cmdText: string, cmd: CmdNode): void {
+export async function handleKliveCommand(
+  cmdText: string,
+  cmd: CmdNode
+): Promise<void> {
   commandHandlerOutput?.appendLine(`$ ${cmdText}`);
   switch (cmd.type) {
     case "SetBreakpointCmd": {
@@ -42,14 +45,18 @@ export function handleKliveCommand(cmdText: string, cmd: CmdNode): void {
         value: cmd.value,
       };
       breakpointDefinitions.set(bp);
-      communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
+      await communicatorInstance.setBreakpoints(
+        breakpointDefinitions.toArray()
+      );
       displayBreakpoint(bp);
       break;
     }
 
     case "RemoveBreakpointCmd": {
       breakpointDefinitions.remove(cmd.address, cmd.mode);
-      communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
+      await communicatorInstance.setBreakpoints(
+        breakpointDefinitions.toArray()
+      );
       commandHandlerOutput?.appendLine(
         `Breakpoint at ${cmd.address
           .toString(16)
@@ -62,7 +69,9 @@ export function handleKliveCommand(cmdText: string, cmd: CmdNode): void {
 
     case "EraseAllBreakpointsCmd": {
       breakpointDefinitions.eraseAll();
-      communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
+      await communicatorInstance.setBreakpoints(
+        breakpointDefinitions.toArray()
+      );
       commandHandlerOutput?.appendLine("All breakpoints deleted.");
       break;
     }
@@ -73,6 +82,25 @@ export function handleKliveCommand(cmdText: string, cmd: CmdNode): void {
         .forEach((brp) => displayBreakpoint(brp));
       break;
     }
+
+    case "DisplayMemoryCmd":
+      const contents = await communicatorInstance.getMemoryPartition(
+        cmd.address >>> 16
+      );
+      const bytes = new Uint8Array(Buffer.from(contents, "base64"));
+      const from = cmd.address & 0x3fff;
+      const to = Math.min(from + 1024, 0x3fff);
+      for (let i = from; i <= to; i += 16) {
+        let memLine = i.toString(16).padStart(4, "0") + ": ";
+        for (let j = 0; j < 16; j++) {
+          if (i + j > to) {
+            break;
+          }
+          memLine += bytes[i + j].toString(16).padStart(2, "0") + " ";
+        }
+        commandHandlerOutput?.appendLine(memLine);
+      }
+      break;
   }
 
   // --- Notify subscribers about command execution

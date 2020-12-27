@@ -50,13 +50,12 @@ export interface GetMachineStateMessage extends MessageBase {
   type: "getMachineState";
 }
 
-
 /**
  * Request additional diagnostics frame data
  */
 export interface AddDiagnosticsFrameDataMessage extends MessageBase {
   type: "addDiagnosticsFrameData";
-  frame: DiagViewFrame
+  frame: DiagViewFrame;
 }
 
 /**
@@ -65,6 +64,14 @@ export interface AddDiagnosticsFrameDataMessage extends MessageBase {
 export interface SetBreakpointsMessage extends MessageBase {
   type: "setBreakpoints";
   breakpoints: BreakpointDefinition[];
+}
+
+/**
+ * Gets the specified memory partition
+ */
+export interface GetMemoryPartitionMessage extends MessageBase {
+  type: "getMemoryPartition";
+  partition: number;
 }
 
 /**
@@ -77,7 +84,8 @@ export type RequestMessage =
   | GetMemoryContentsMessage
   | GetMachineStateMessage
   | AddDiagnosticsFrameDataMessage
-  | SetBreakpointsMessage;
+  | SetBreakpointsMessage
+  | GetMemoryPartitionMessage;
 
 /**
  * Default response for actions
@@ -115,7 +123,15 @@ export interface GetMachineStateResponse extends MessageBase {
  */
 export interface AddDiagnosticsFrameDataResponse extends MessageBase {
   type: "addDiagnosticsFrameDataResponse";
-  frame: DiagViewFrame
+  frame: DiagViewFrame;
+}
+
+/**
+ * Response for GetMemoryContentsMessage
+ */
+export interface GetMemoryPartitionResponse extends MessageBase {
+  type: "getMemoryPartitionResponse";
+  contents: Uint8Array;
 }
 
 /**
@@ -127,6 +143,7 @@ export type ResponseMessage =
   | GetMemoryContentsResponse
   | GetMachineStateResponse
   | AddDiagnosticsFrameDataResponse
+  | GetMemoryPartitionResponse;
 
 /**
  * All messages between renderer and main

@@ -1,5 +1,6 @@
 import {
   CmdNode,
+  DisplayMemoryCmd,
   EraseAllBreakpointsCmd,
   ListBreakpointsCmd,
   RemoveBreakpointCmd,
@@ -70,6 +71,10 @@ export class KliveCommandParser {
         };
         break;
 
+      case "m": 
+        cmd = this.parseDisplayMemoryCommand();
+        break;
+        
       default:
         return null;
     }
@@ -217,6 +222,23 @@ export class KliveCommandParser {
           return null;
       }
     }
+
+    const address = this.getLiteral();
+    if (address === null) {
+      return null;
+    }
+    cmd.address = address;
+    return cmd;
+  }
+
+    /**
+   * "rb" ("mr" | "mw" | "ir" | "iw")? address
+   */
+  private parseDisplayMemoryCommand(): DisplayMemoryCmd | null {
+    const cmd: DisplayMemoryCmd = {
+      type: "DisplayMemoryCmd",
+      address: 0,
+    };
 
     const address = this.getLiteral();
     if (address === null) {

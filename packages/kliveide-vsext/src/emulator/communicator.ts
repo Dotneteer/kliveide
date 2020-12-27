@@ -52,11 +52,18 @@ class Communicator {
 
   /**
    * Gets the contents of the specified memory segment
-   * @param from Firts memory address
-   * @param to Last memory address
    */
   async getMemory(): Promise<string> {
     return this.getText(`/memory`);
+  }
+
+  /**
+   * Gets the contents of the specified memory segment
+   * @param from Firts memory address
+   * @param to Last memory address
+   */
+  async getMemoryPartition(partition: number): Promise<string> {
+    return this.getText(`/memory-partition/${partition}`);
   }
 
   /**

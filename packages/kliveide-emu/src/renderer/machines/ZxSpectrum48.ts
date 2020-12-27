@@ -53,6 +53,14 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
   }
 
   /**
+   * Gets the specified memory partition
+   * @param partition Partition index
+   */
+  getMemoryPartition(partition: number): Uint8Array {
+    return new Uint8Array(0x4000);
+  }
+
+  /**
    * Prepares the engine for code injection
    * @param _model Model to run in the virtual machine
    */

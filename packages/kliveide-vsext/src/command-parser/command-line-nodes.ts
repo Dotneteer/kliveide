@@ -7,7 +7,8 @@ export type CmdNode =
   | SetBreakpointCmd
   | RemoveBreakpointCmd
   | EraseAllBreakpointsCmd
-  | ListBreakpointsCmd;
+  | ListBreakpointsCmd
+  | DisplayMemoryCmd;
 
 /**
  * This class represents the root class of all syntax nodes
@@ -53,4 +54,9 @@ export interface EraseAllBreakpointsCmd extends BaseNode {
  */
 export interface ListBreakpointsCmd extends BaseNode {
   type: "ListBreakpointsCmd";
+}
+
+export interface DisplayMemoryCmd extends BaseNode {
+  type: "DisplayMemoryCmd";
+  address: number;
 }
