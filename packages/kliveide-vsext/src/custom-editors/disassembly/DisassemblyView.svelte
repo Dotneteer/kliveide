@@ -29,6 +29,9 @@
   // --- Breakpoints set
   let breakpoints;
 
+  // --- Breakpoint types
+  let breakpointTypes;
+
   // --- The current value of the PC register
   let currentPc;
 
@@ -63,7 +66,7 @@
             await virtualListApi.refreshContents();
             if (prevState && prevState.address !== undefined) {
               await scrollToAddress(prevState.address, 0);
-              vscodeApi.setState({ address: prevState.address })
+              vscodeApi.setState({ address: prevState.address });
               prevState = undefined;
             }
             break;
@@ -91,9 +94,16 @@
             break;
           case "breakpoints":
             // --- Receive breakpoints set in the emulator
-            breakpoints = new Set(ev.data.breakpoints.map(bp => bp.address));
-            console.log(JSON.stringify(ev.data.breakpoints));
-            console.log(JSON.stringify(breakpoints));
+            breakpoints = new Set(ev.data.breakpoints.map((bp) => bp.address));
+            breakpointTypes = new Map();
+            ev.data.breakpoints.forEach((bp) => {
+              if (bp.partition !== undefined) {
+                breakpointTypes.set(bp.address, "part");
+              } else if (bp.mode !== undefined) {
+                breakpointTypes.set(bp.address, "event");
+              }
+            });
+            console.log(JSON.stringify(breakpointTypes));
             break;
           case "pc":
             currentPc = ev.data.pc;
@@ -145,10 +155,9 @@
   }
 
   function onScrolled(ev) {
-    const address = items[ev.detail.index + 1].address
-    vscodeApi.setState({ address })
+    const address = items[ev.detail.index + 1].address;
+    vscodeApi.setState({ address });
   }
-  
 </script>
 
 <style>
@@ -186,7 +195,8 @@
       on:scrolled={onScrolled}>
       <DisassemblyEntry
         {item}
-        hasBreakpoint={breakpoints && breakpoints.has(item.address) }
+        hasBreakpoint={breakpoints && breakpoints.has(item.address) && breakpointTypes && breakpointTypes.get(item.address) !== 'event'}
+        breakpointType={breakpointTypes && breakpointTypes.get(item.address)}
         isCurrentBreakpoint={currentPc === item.address}
         {execState}
         {runsInDebug} />
