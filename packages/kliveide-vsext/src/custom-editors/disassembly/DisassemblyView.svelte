@@ -38,12 +38,6 @@
   // --- The index of the visible item at the top
   let startItemIndex;
 
-  // --- Type of the current machine
-  let machineType;
-
-  // --- Configuration of the current machine
-  let machineConfig;
-
   // --- Memory page information
   let pageInfo;
 
@@ -56,7 +50,6 @@
   // --- Handle the event when the component is initialized
   onMount(() => {
     prevState = vscodeApi.getState();
-    console.log(`OnMount: ${JSON.stringify(prevState)}`);
     // --- Subscribe to the messages coming from the WebviewPanel
     window.addEventListener("message", async (ev) => {
       if (ev.data.viewNotification) {
@@ -96,28 +89,9 @@
             execState = ev.data.state;
             currentPc = ev.data.pc;
             break;
-          case "machineType":
-            machineType = ev.data.type;
-            machineConfig = ev.data.config;
-            viewMode = 0;
-          // --- This case intentionally flows to the next
-          case "memoryPaging":
-            if (machineConfig) {
-              const paging = machineConfig.paging;
-              if (paging) {
-                pageInfo = {
-                  supportsPaging: paging.supportsPaging,
-                  roms: paging.roms,
-                  banks: paging.banks,
-                  selectedRom: ev.data.selectedRom,
-                  selectedBank: ev.data.selectedBank,
-                };
-              }
-            }
-            break;
           case "breakpoints":
             // --- Receive breakpoints set in the emulator
-            breakpoints = new Set(ev.data.breakpoints);
+            breakpoints = new Set(ev.data.breakpoints.map(bp => bp.address));
             break;
           case "pc":
             currentPc = ev.data.pc;
@@ -210,7 +184,7 @@
       on:scrolled={onScrolled}>
       <DisassemblyEntry
         {item}
-        hasBreakpoint={breakpoints.has(item.address)}
+        hasBreakpoint={breakpoints && breakpoints.has(item.address) }
         isCurrentBreakpoint={currentPc === item.address}
         {execState}
         {runsInDebug} />

@@ -133,7 +133,7 @@ export class KliveCommandParser {
     // --- Is there any remaining part of the command?
     next = this.tokens.peek();
     if (next.type === TokenType.Eof) {
-      return command;
+      return checkCommand();
     }
 
     // --- Continuation can be "mask", "hit", or "count"
@@ -179,6 +179,11 @@ export class KliveCommandParser {
         command.mask !== undefined
       ) {
         parser.reportError("C08");
+        return null;
+      }
+
+      if (command.mode !== undefined && command.partition !== undefined) {
+        parser.reportError("C09");
         return null;
       }
 

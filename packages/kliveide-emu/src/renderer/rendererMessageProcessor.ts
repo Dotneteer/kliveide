@@ -13,7 +13,6 @@ import {
 } from "../shared/messaging/message-types";
 import { getVmEngine } from "./machine-loader";
 import { MachineState } from "../shared/machines/machine-state";
-import { setupBreakpoints } from "./machines/breakpoints";
 
 /**
  * Processes messages from the renderer process
@@ -62,7 +61,7 @@ export async function processMessageFromMain(
     }
 
     case "setBreakpoints": {
-      setupBreakpoints(message.breakpoints);
+      machine.setBreakpoints(message.breakpoints);
       return <DefaultResponse>{
         type: "ack"
       };

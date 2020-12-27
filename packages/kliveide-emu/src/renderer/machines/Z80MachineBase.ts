@@ -1,7 +1,7 @@
 import { MachineApi } from "./wa-api";
 import { MachineState } from "../../shared/machines/machine-state";
 import { MemoryHelper } from "./memory-helpers";
-import { BREAKPOINT_MAP, BREAKPOINT_PAGES_MAP, REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
+import { BREAKPOINTS_MAP, BRP_PARTITION_MAP, REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 import { BreakpointDefinition } from "../../shared/machines/api-data";
 
@@ -251,12 +251,46 @@ export abstract class Z80MachineBase {
    * Set the breakpoint definitions in the WA virtual machine
    * @param bps Breakpoint definitions
    */
-  setBreakpoints(bps: BreakpointDefinition[]): void {
-    const mapMh = new MemoryHelper(this.api, BREAKPOINT_MAP);
-    const pagesMh = new MemoryHelper(this.api, BREAKPOINT_PAGES_MAP);
-    
-    // --- Check for removed breakpoints
+  setupBreakpoints(bps: BreakpointDefinition[]): void {
+    const mapMh = new MemoryHelper(this.api, BREAKPOINTS_MAP);
+    const partMh = new MemoryHelper(this.api, BRP_PARTITION_MAP);
 
+    // --- Erase the breakpoint maps
+    for (let i = 0; i < 0x1_0000; i++) {
+      mapMh.writeByte(i, 0);
+      partMh.writeUint16(i * 2, 0xffff);
+    }
+
+    // --- Set up breakpoints
+    bps.forEach(bp => {
+      bp.address = bp.address & 0xffff;
+      switch (bp.mode) {
+        case "mr":
+        case "mw":
+        case "ir":
+        case "iw":
+          // TODO: Implement these breakpoint types
+          break;
+        default: {
+          let flags = mapMh.readByte(bp.address & 0xffff)
+          flags |= 0x01;
+          if (bp.partition) {
+            flags |= 0x02
+            partMh.writeUint16(bp.address * 2, bp.partition & 0xffff)
+          }
+          mapMh.writeByte(bp.address, flags);
+          break;
+        }
+      }
+    })
+  }
+
+  /**
+   * Updates the breakpoint definitions in the WA virtual machine
+   * @param bps Breakpoint definitions
+   */
+  updateBreakpoints(bps: BreakpointDefinition[]): void {
+      this.setupBreakpoints(bps);
   }
 
   /**

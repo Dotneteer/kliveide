@@ -113,9 +113,6 @@
 ;; ----------------------------------------------------------------------------
 ;; Engine infrastructure
 
-;; Breakpoints map (0x2000 bytes)
-(global $BREAKPOINT_MAP i32 (i32.const 0x0120_2000))
-
 ;; Step-out stack (1024 bytes)
 (global $STEP_OUT_STACK i32 (i32.const 0x0121_A000))
 

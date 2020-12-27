@@ -11,7 +11,6 @@ import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
 import {
   rendererProcessStore,
-  createRendererProcessStateAware,
 } from "../rendererProcessStore";
 import {
   emulatorSetExecStateAction,
@@ -20,7 +19,7 @@ import {
   emulatorSetDebugAction,
   emulatorSetInternalStateAction,
 } from "../../shared/state/redux-emulator-state";
-import { CodeToInject, RegisterData } from "../../shared/machines/api-data";
+import { BreakpointDefinition, CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import { BANK_0_OFFS } from "./memory-map";
 import { VmKeyCode } from "./wa-api";
@@ -64,6 +63,9 @@ export class VmEngine implements IVmEngineController {
   // --- FrameID information
   private _startCount = 0;
 
+  // --- Breakpoints to use
+  private _breakpoints: BreakpointDefinition[] = [];
+
   // --- Time monitoring
   private _sumFrameTime = 0.0;
   private _lastFrameTime = 0.0;
@@ -73,9 +75,6 @@ export class VmEngine implements IVmEngineController {
   private _avgEngineTime = 0.0;
   private _renderedFrames = 0;
 
-  // --- The last known list of breakpoints
-  private _oldBrpoints: number[] = [];
-
   /**
    * Initializes the engine with the specified virtual machine instance
    * @param z80Machine Z80-based virtual machine to use
@@ -84,29 +83,6 @@ export class VmEngine implements IVmEngineController {
     // --- Obtain the state of the machine, including memory contents
     this._loadedState = z80Machine.getMachineState();
     rendererProcessStore.dispatch(engineInitializedAction());
-
-    // TODO: Update to the new breakpoint infrastructure
-    // // --- Watch for breakpoint changes
-    // const breakpointStateAware = createRendererProcessStateAware("breakpoints");
-    // breakpointStateAware.stateChanged.on((state) => {
-    //   // --- Whenever breakpoints change, notify the WA engine
-    //   const brpoints = state as number[];
-    //   if (!brpoints) {
-    //     return;
-    //   }
-    //   const oldBreaks = this._oldBrpoints;
-    //   if (
-    //     oldBreaks.length !== brpoints.length ||
-    //     oldBreaks.some((item) => !brpoints.includes(item))
-    //   ) {
-    //     // --- Breakpoints changed, update them
-    //     this.z80Machine.api.eraseBreakpoints();
-    //     for (const brpoint of Array.from(brpoints)) {
-    //       this.z80Machine.api.setBreakpoint(brpoint);
-    //     }
-    //   }
-    //   this._oldBrpoints = brpoints;
-    // });
   }
 
   /**
@@ -154,6 +130,14 @@ export class VmEngine implements IVmEngineController {
 
     // --- State the new execution state
     rendererProcessStore.dispatch(emulatorSetExecStateAction(this._vmState)());
+  }
+
+  /**
+   * Sets the breakpoint definitions to use
+   * @param brps Breakpoint definitions
+   */
+  setBreakpoints(brps: BreakpointDefinition[]): void {
+    this._breakpoints = brps;
   }
 
   /**
@@ -329,18 +313,11 @@ export class VmEngine implements IVmEngineController {
       // --- Now, do the real start
       this.z80Machine.reset();
 
-      // --- Get the current emulator state
-      const state = rendererProcessStore.getState();
-
       // --- Allow the machine execute a custom action on first start
       await this.z80Machine.beforeFirstStart();
 
-      // TODO: Update to the new breakpoint infrastructure
-      // // --- Set breakpoints
-      // this.z80Machine.api.eraseBreakpoints();
-      // for (const brpoint of Array.from(state.breakpoints)) {
-      //   this.z80Machine.api.setBreakpoint(brpoint);
-      // }
+      // --- Prepare the breakpoints
+      this.z80Machine.setupBreakpoints(this._breakpoints);
 
       // --- Reset time information
       this._lastFrameTime = 0.0;
@@ -353,6 +330,9 @@ export class VmEngine implements IVmEngineController {
 
       // --- Clear debug information
       this.z80Machine.api.resetStepOverStack();
+    } else {
+      // --- Update existing breakpoints
+      this.z80Machine.updateBreakpoints(this._breakpoints);
     }
 
     // --- Initialize debug info before run

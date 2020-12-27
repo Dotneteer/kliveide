@@ -13,7 +13,6 @@ export interface DiagViewFrameBase {
   startCount?: number;
   frameCount?: number;
   executionState?: number;
-  breakpoints?: number[];
   pc?: number;
   runsInDebug?: boolean;
   machineType?: string;

@@ -7,7 +7,6 @@ import {
 import { machineConfigurationInstance } from "./machine-config";
 import { DiagViewFrame } from "../shared/machines/diag-info";
 import { createMachineViewProvider, MachineViewProvider } from "./machines";
-import { last } from "lodash";
 
 // ============================================================================
 // Module local variables
@@ -23,9 +22,6 @@ let connected = false;
 // --- The last frame information received
 let lastFrameInfo: DiagViewFrame;
 
-// --- The last set of breakpoints received
-let lastBreakpoints: number[] = [];
-
 // --- The last machine type
 let lastMachineType: string | undefined = "";
 
@@ -33,9 +29,6 @@ let lastMachineType: string | undefined = "";
 let frameInfoChanged: vscode.EventEmitter<DiagViewFrame> = new vscode.EventEmitter<DiagViewFrame>();
 let executionStateChanged: vscode.EventEmitter<ExecutionState> = new vscode.EventEmitter<ExecutionState>();
 let connectionStateChanged: vscode.EventEmitter<boolean> = new vscode.EventEmitter<boolean>();
-let breakpointsChanged: vscode.EventEmitter<number[]> = new vscode.EventEmitter<
-  number[]
->();
 let machineTypeChanged: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
 let memoryPagingChanged: vscode.EventEmitter<MemoryPageInfo> = new vscode.EventEmitter<MemoryPageInfo>();
 
@@ -72,13 +65,6 @@ export function getLastExecutionState(): ExecutionState {
 }
 
 /**
- * Gets the latest set of breakpoints
- */
-export function getLastBreakpoints(): number[] {
-  return lastBreakpoints;
-}
-
-/**
  * Gets the latest machine type
  */
 export function getLastMachineType(): string | undefined {
@@ -102,12 +88,6 @@ export const onExecutionStateChanged: vscode.Event<ExecutionState> =
  */
 export const onConnectionStateChanged: vscode.Event<boolean> =
   connectionStateChanged.event;
-
-/**
- * Fires when breakpoints has been changed
- */
-export const onBreakpointsChanged: vscode.Event<number[]> =
-  breakpointsChanged.event;
 
 /**
  * Fires when machine type has been changed
@@ -199,20 +179,6 @@ async function requestEmulatorInfo(): Promise<void> {
 
     // --- Remember the last frame information
     lastFrameInfo = frameInfo;
-
-    // --- Handle changes in breakpoint state
-    if (!frameInfo.breakpoints) {
-      frameInfo.breakpoints = [];
-    }
-    // --- Compare breakpoints
-    if (
-      lastBreakpoints.length !== frameInfo.breakpoints.length ||
-      frameInfo.breakpoints.some((item) => !lastBreakpoints.includes(item))
-    ) {
-      // --- Breakpoints changed
-      breakpointsChanged.fire(frameInfo.breakpoints);
-    }
-    lastBreakpoints = frameInfo.breakpoints;
 
     // --- Handle changes in machine type
     if (frameInfo.machineType !== lastMachineType) {

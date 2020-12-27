@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
-import { BreakpointType, CmdNode } from "../command-parser/command-line-nodes";
-import { BreakpointDefinition, breakpointDefinitions } from "./breakpoints";
+import { CmdNode } from "../command-parser/command-line-nodes";
+import { breakpointDefinitions } from "./breakpoints";
+import { BreakpointDefinition, BreakpointType } from "../shared/machines/api-data";
 
 /**
  * The output channel for the command handler

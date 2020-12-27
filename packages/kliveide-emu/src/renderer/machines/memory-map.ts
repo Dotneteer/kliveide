@@ -18,23 +18,23 @@ export const STATE_TRANSFER_BUFF = 0x0120_0E60;
 // ============================================================================
 // Generic virtual machine engine memory map
 
-// --- Map of breakpoints, 1 bit for each 16-bit address
-export const BREAKPOINT_MAP = 0x0120_2000;
+// --- Map of breakpoints, 1 byte for each 16-bit address
+export const BREAKPOINTS_MAP = 0x0106_0000;
 
-// --- Map of breakpoint pages, 8-bit for each 16-bit address
-export const BREAKPOINT_PAGES_MAP = 0x0120_4000;
+// --- Breakpoint partitions map, 2 bytes for each 16-bit address
+export const BRP_PARTITION_MAP = 0x0107_0000;
 
-// --- Map of memory write operations, 1 bit for each 16-bit address
-export const MEMWRITE_MAP = 0x0121_4000;
+// --- Memory read breakpoints conditions map, 5 bytes for each 16-bit address
+export const MEM_RD_CONDITIONS_MAP = 0x0109_0000;
 
-// --- Map of code read operations, 1 bit for each 16-bit address
-export const CODE_READ_MAP = 0x0121_6000;
+// --- Memory write breakpoints conditions map, 5 bytes for each 16-bit address
+export const MEM_WR_CONDITIONS_MAP = 0x010E_0000;
 
-// --- Map of memory read operations, 1 bit for each 16-bit address
-export const MEMREAD_MAP = 0x0121_8000;
+// --- I/O breakpoints condition map, 1 byte for each 16-bit address
+export const IO_INDEX_MAP = 0x0113_0000;
 
-// --- Step-out operation stack
-export const STEP_OUT_STACK = 0x0121_A000;
+// --- I/O breakpoints (32 x 15 bytes)
+export const IO_BREAKPOINTS = 0x0114_0000;
 
 // ============================================================================
 // Z80 test machine memory map

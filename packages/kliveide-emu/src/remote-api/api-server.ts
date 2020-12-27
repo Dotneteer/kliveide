@@ -49,19 +49,19 @@ export function startApiServer() {
       const state = mainProcessStore.getState();
       const emuState = state.emulatorPanelState;
       const vmInfo = state.vmInfo;
-      const diagData = <DiagViewFrame> {
+      const diagData = <DiagViewFrame>{
         startCount: emuState.startCount,
         frameCount: emuState.frameCount,
         executionState: emuState.executionState,
         pc: vmInfo.registers?.pc ?? -1,
         runsInDebug: emuState.runsInDebug,
         machineType: emuState.currentType,
-      }
-        const frame = (
+      };
+      const frame = (
         await AppWindow.instance.sendMessageToRenderer<AddDiagnosticsFrameDataResponse>(
           {
             type: "addDiagnosticsFrameData",
-            frame: diagData
+            frame: diagData,
           }
         )
       ).frame;
@@ -134,14 +134,10 @@ export function startApiServer() {
    */
   app.post("/breakpoints", async (req, res) => {
     try {
-      const contents = (
-        await AppWindow.instance.sendMessageToRenderer<DefaultResponse>(
-          {
-            type: "setBreakpoints",
-            breakpoints: req.body.breakpoints 
-          }
-        )
-      );
+      await AppWindow.instance.sendMessageToRenderer<DefaultResponse>({
+        type: "setBreakpoints",
+        breakpoints: req.body.breakpoints,
+      });
       res.sendStatus(204);
     } catch (err) {
       console.log(err);

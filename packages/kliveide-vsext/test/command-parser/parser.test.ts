@@ -164,7 +164,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb hit count #1", () => {
-    const SOURCE = "sb mr 123:$12ac hit:12";
+    const SOURCE = "sb mr $12ac hit:12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -175,7 +175,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("mr");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBe(12);
     expect(sbc.value).toBeUndefined();
@@ -183,7 +183,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb hit count #2", () => {
-    const SOURCE = "sb mw 123:$12ac hit:$12";
+    const SOURCE = "sb mw $12ac hit:$12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -194,7 +194,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("mw");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBe(0x12);
     expect(sbc.value).toBeUndefined();
@@ -202,7 +202,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb value condition #1", () => {
-    const SOURCE = "sb ir 123:$12ac val:12";
+    const SOURCE = "sb ir $12ac val:12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -213,7 +213,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("ir");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBeUndefined();
     expect(sbc.value).toBe(12);
@@ -221,7 +221,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb value condition #2", () => {
-    const SOURCE = "sb iw 123:$12ac val:$12";
+    const SOURCE = "sb iw $12ac val:$12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -232,7 +232,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("iw");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBeUndefined();
     expect(sbc.value).toBe(0x12);
@@ -240,7 +240,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb mask #1", () => {
-    const SOURCE = "sb ir 123:$12ac mask:12";
+    const SOURCE = "sb ir $12ac mask:12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -251,7 +251,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("ir");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBeUndefined();
     expect(sbc.value).toBeUndefined();
@@ -259,7 +259,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb mask #2", () => {
-    const SOURCE = "sb iw 123:$12ac mask:$12";
+    const SOURCE = "sb iw $12ac mask:$12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -270,7 +270,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("iw");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBeUndefined();
     expect(sbc.value).toBeUndefined();
@@ -278,7 +278,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb hit/val #1", () => {
-    const SOURCE = "sb mr 123:$12ac hit:4 val:12";
+    const SOURCE = "sb mr $12ac hit:4 val:12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -289,7 +289,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("mr");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBe(4);
     expect(sbc.value).toBe(12);
@@ -297,7 +297,7 @@ describe("Command parser - commands", () => {
   });
 
   it("sb hit/val #2", () => {
-    const SOURCE = "sb mr 123:$12ac val:4 hit:12";
+    const SOURCE = "sb mr $12ac val:4 hit:12";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
     const cmd = cp.parseCommand();
@@ -308,7 +308,7 @@ describe("Command parser - commands", () => {
     expect(cmd.type === "SetBreakpointCmd");
     const sbc = cmd as SetBreakpointCmd;
     expect(sbc.mode).toBe("mr");
-    expect(sbc.partition).toBe(123);
+    expect(sbc.partition).toBeUndefined();
     expect(sbc.address).toBe(0x12ac);
     expect(sbc.hit).toBe(12);
     expect(sbc.value).toBe(4);
@@ -399,7 +399,7 @@ describe("Command parser - commands", () => {
     expect(cp.error.code === "C08").toBe(true);
   });
 
-  it("sb invalid partition", () => {
+  it("sb invalid partition #1", () => {
     const SOURCE = "sb mr part:$1234";
 
     const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
@@ -411,6 +411,20 @@ describe("Command parser - commands", () => {
     expect(cmd).toBeNull();
     expect(cp.hasErrors).toBe(true);
     expect(cp.error.code === "C03").toBe(true);
+  });
+
+  it("sb invalid partition #2", () => {
+    const SOURCE = "sb mr 12:$1234";
+
+    const cp = new KliveCommandParser(new TokenStream(new InputStream(SOURCE)));
+    let cmd: CmdNode | null = null;
+    try {
+      cmd = cp.parseCommand();
+    } catch {
+    }
+    expect(cmd).toBeNull();
+    expect(cp.hasErrors).toBe(true);
+    expect(cp.error.code === "C09").toBe(true);
   });
 
   it("sb missing partition colon", () => {
