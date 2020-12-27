@@ -1,6 +1,11 @@
 ;; ============================================================================
 ;; Core routines for the machine execution cycle
 
+;; Execution engine constants
+;; $BR_INSTR# = 0x01
+;; $BR_PART_INSTR# = 0x02
+;; $BR_ANY_INSTR# = 0x03
+
 ;; Gets the execution engine state
 (func $getExecutionEngineState
   ;; ZX Spectrum engine state
@@ -79,13 +84,11 @@
     ;; Check breakpoints
     (i32.eq (get_global $debugStepMode) (i32.const $DEB_STOP_BR#))
     if
-      ;; TODO: Update it to the new breakpoint infrastructure
-      ;; Stop at breakpoints mode
-      ;; (call $testBreakpoint (get_global $PC))
-      ;; if
-      ;;   i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
-      ;;   return
-      ;; end
+      call $testInstructionBreakpoint
+      if
+        i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
+        return
+      end
     else
       ;; Check step-into mode
       (i32.eq (get_global $debugStepMode) (i32.const $DEB_INTO#))
@@ -160,4 +163,29 @@
 
   ;; Sign frame completion
   i32.const $EX_REA_FRAME# set_global $executionCompletionReason ;; Reason: frame completed
+)
+
+;; Tests if the execution reached an instruction breakpoint
+(func $testInstructionBreakpoint (result i32)
+  (local $flags i32)
+  
+  ;; Load the breakpoint flags for PC
+  (i32.load8_u
+    (i32.add 
+      (get_global $BREAKPOINTS_MAP)
+      (get_global $PC)
+    )
+  )
+
+  ;; Keep execution flags
+  (i32.and (i32.const $BR_ANY_INSTR#))
+  tee_local $flags
+  if
+    ;; An instruction breakpoint is set
+    (i32.and (get_local $flags) (i32.const $BR_INSTR#))
+    return
+  end
+
+  ;; Not a breakpoint 
+  i32.const 0
 )
