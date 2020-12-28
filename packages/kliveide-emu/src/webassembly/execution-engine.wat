@@ -1,6 +1,11 @@
 ;; ============================================================================
 ;; Core routines for the machine execution cycle
 
+;; Execution engine constants
+;; $BR_INSTR# = 0x01
+;; $BR_PART_INSTR# = 0x02
+;; $BR_ANY_INSTR# = 0x03
+
 ;; Gets the execution engine state
 (func $getExecutionEngineState
   ;; ZX Spectrum engine state
@@ -79,8 +84,7 @@
     ;; Check breakpoints
     (i32.eq (get_global $debugStepMode) (i32.const $DEB_STOP_BR#))
     if
-      ;; Stop at breakpoints mode
-      (call $testBreakpoint (get_global $PC))
+      call $testInstructionBreakpoint
       if
         i32.const $EX_REA_BREAK# set_global $executionCompletionReason ;; Reason: Break
         return
@@ -159,4 +163,61 @@
 
   ;; Sign frame completion
   i32.const $EX_REA_FRAME# set_global $executionCompletionReason ;; Reason: frame completed
+)
+
+;; Tests if the execution reached an instruction breakpoint
+(func $testInstructionBreakpoint (result i32)
+  (local $flags i32)
+  
+  ;; Load the breakpoint flags for PC
+  (i32.load8_u
+    (i32.add 
+      (get_global $BREAKPOINTS_MAP)
+      (get_global $PC)
+    )
+  )
+
+  ;; Keep execution flags
+  (i32.and (i32.const $BR_ANY_INSTR#))
+  tee_local $flags
+  if
+    ;; An instruction breakpoint is set
+    (i32.and (get_local $flags) (i32.const $BR_INSTR#))
+    if 
+      i32.const 1
+      return
+    end
+
+    ;; Test partition breakpoint
+    (i32.and (get_local $flags) (i32.const $BR_PART_INSTR#))
+    if
+      ;; Get the breakpoint partition
+      (i32.load16_u
+        (i32.add 
+          (get_global $BRP_PARTITION_MAP)
+          (i32.mul (get_global $PC) (i32.const 2))
+        )
+      )
+      
+      ;; Get current partition
+      (i32.add
+        (get_global $BLOCK_LOOKUP_TABLE)
+        (i32.mul 
+          (i32.shr_u (get_global $PC) (i32.const 13))
+          (i32.const 16)
+        )
+      )
+      i32.load16_u offset=0x0a
+
+      ;; Test if partitions are equal
+      i32.eq
+      return
+    else
+      i32.const 0
+      return
+    end
+  end
+
+  ;; Not a breakpoint 
+  i32.const 0
 )

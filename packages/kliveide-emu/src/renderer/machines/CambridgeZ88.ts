@@ -61,6 +61,19 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   }
 
   /**
+   * Gets the specified memory partition
+   * @param partition Partition index
+   */
+  getMemoryPartition(partition: number): Uint8Array {
+    const mh = new MemoryHelper(this.api, (partition & 0xff) * 0x4000);
+    const result = new Uint8Array(0x4000);
+    for (let j = 0; j < 0x4000; j++) {
+      result[j] = mh.readByte(j);
+    }
+    return result;
+  }
+
+  /**
    * Gets the current state of the ZX Spectrum machine
    */
   getMachineState(): CambridgeZ88MachineState {
@@ -82,13 +95,13 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.TMK = mh.readByte(169);
 
     // --- Screen device
-    s.PB0 = mh.readByte(170);
-    s.PB1 = mh.readByte(171);
-    s.PB2 = mh.readByte(172);
-    s.PB3 = mh.readByte(173);
-    s.SBF = mh.readByte(174);
-    s.SCW = mh.readByte(176);
-    s.SCH = mh.readByte(177);
+    s.PB0 = mh.readUint16(170);
+    s.PB1 = mh.readUint16(172);
+    s.PB2 = mh.readUint16(174);
+    s.PB3 = mh.readUint16(176);
+    s.SBF = mh.readUint16(178);
+    s.SCW = mh.readByte(180);
+    s.SCH = mh.readByte(181);
 
     // --- Setup screen size
     s.screenWidth = s.SCW === 100 ? 800 : 640;
@@ -104,15 +117,15 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     }
 
     // --- Memory device
-    s.SR0 = mh.readByte(178);
-    s.SR1 = mh.readByte(179);
-    s.SR2 = mh.readByte(180);
-    s.SR3 = mh.readByte(181);
-    s.chipMask0 = mh.readByte(182);
-    s.chipMask1 = mh.readByte(183);
-    s.chipMask2 = mh.readByte(184);
-    s.chipMask3 = mh.readByte(185);
-    s.chipMask4 = mh.readByte(186);
+    s.SR0 = mh.readByte(182);
+    s.SR1 = mh.readByte(183);
+    s.SR2 = mh.readByte(184);
+    s.SR3 = mh.readByte(185);
+    s.chipMask0 = mh.readByte(186);
+    s.chipMask1 = mh.readByte(187);
+    s.chipMask2 = mh.readByte(188);
+    s.chipMask3 = mh.readByte(189);
+    s.chipMask4 = mh.readByte(190);
 
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;

@@ -48,18 +48,18 @@
   (i32.store8 offset=169 (get_global $STATE_TRANSFER_BUFF) (get_global $TMK))
 
   ;; Screen device
-  (i32.store8 offset=170 (get_global $STATE_TRANSFER_BUFF) (get_global $PB0))
-  (i32.store8 offset=171 (get_global $STATE_TRANSFER_BUFF) (get_global $PB1))
-  (i32.store8 offset=172 (get_global $STATE_TRANSFER_BUFF) (get_global $PB2))
-  (i32.store8 offset=173 (get_global $STATE_TRANSFER_BUFF) (get_global $PB3))
-  (i32.store16 offset=174 (get_global $STATE_TRANSFER_BUFF) (get_global $SBR))
-  (i32.store8 offset=176 (get_global $STATE_TRANSFER_BUFF) (get_global $SCW))
-  (i32.store8 offset=177 (get_global $STATE_TRANSFER_BUFF) (get_global $SCH))
+  (i32.store16 offset=170 (get_global $STATE_TRANSFER_BUFF) (get_global $PB0))
+  (i32.store16 offset=172 (get_global $STATE_TRANSFER_BUFF) (get_global $PB1))
+  (i32.store16 offset=174 (get_global $STATE_TRANSFER_BUFF) (get_global $PB2))
+  (i32.store16 offset=176 (get_global $STATE_TRANSFER_BUFF) (get_global $PB3))
+  (i32.store16 offset=178 (get_global $STATE_TRANSFER_BUFF) (get_global $SBR))
+  (i32.store8 offset=180 (get_global $STATE_TRANSFER_BUFF) (get_global $SCW))
+  (i32.store8 offset=181 (get_global $STATE_TRANSFER_BUFF) (get_global $SCH))
 
   ;; Memory device
-  (i32.store offset=178 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
-  (i32.store offset=182 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
-  (i32.store8 offset=186 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
+  (i32.store offset=182 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_SR)))
+  (i32.store offset=186 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
+  (i32.store8 offset=190 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
 
   ;; TODO: Get other state values
 )

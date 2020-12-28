@@ -113,21 +113,6 @@
 ;; ----------------------------------------------------------------------------
 ;; Engine infrastructure
 
-;; Breakpoints map (0x2000 bytes)
-(global $BREAKPOINT_MAP i32 (i32.const 0x0120_2000))
-
-;; Breakpoint pages map (0x01_0000 bytes)
-(global $BREAKPOINT_PAGES_MAP i32 (i32.const 0x0120_4000))
-
-;; Memory write map (0x2000 bytes)
-(global $MEMWRITE_MAP i32 (i32.const 0x0121_4000))
-
-;; Code read map (0x2000 bytes)
-(global $CODE_READ_MAP i32 (i32.const 0x0121_6000))
-
-;; Memory read map (0x2000 bytes)
-(global $MEMREAD_MAP i32 (i32.const 0x0121_8000))
-
 ;; Step-out stack (1024 bytes)
 (global $STEP_OUT_STACK i32 (i32.const 0x0121_A000))
 

@@ -1,4 +1,4 @@
-import { CodeToInject } from "../machines/api-data";
+import { BreakpointDefinition, CodeToInject } from "../machines/api-data";
 import { DiagViewFrame } from "../machines/diag-info";
 import { MachineState } from "../machines/machine-state";
 import { KliveConfiguration } from "./emu-configurations";
@@ -50,13 +50,28 @@ export interface GetMachineStateMessage extends MessageBase {
   type: "getMachineState";
 }
 
-
 /**
  * Request additional diagnostics frame data
  */
 export interface AddDiagnosticsFrameDataMessage extends MessageBase {
   type: "addDiagnosticsFrameData";
-  frame: DiagViewFrame
+  frame: DiagViewFrame;
+}
+
+/**
+ * Set breakpoints message
+ */
+export interface SetBreakpointsMessage extends MessageBase {
+  type: "setBreakpoints";
+  breakpoints: BreakpointDefinition[];
+}
+
+/**
+ * Gets the specified memory partition
+ */
+export interface GetMemoryPartitionMessage extends MessageBase {
+  type: "getMemoryPartition";
+  partition: number;
 }
 
 /**
@@ -68,7 +83,9 @@ export type RequestMessage =
   | RunCodeMessage
   | GetMemoryContentsMessage
   | GetMachineStateMessage
-  | AddDiagnosticsFrameDataMessage;
+  | AddDiagnosticsFrameDataMessage
+  | SetBreakpointsMessage
+  | GetMemoryPartitionMessage;
 
 /**
  * Default response for actions
@@ -106,7 +123,15 @@ export interface GetMachineStateResponse extends MessageBase {
  */
 export interface AddDiagnosticsFrameDataResponse extends MessageBase {
   type: "addDiagnosticsFrameDataResponse";
-  frame: DiagViewFrame
+  frame: DiagViewFrame;
+}
+
+/**
+ * Response for GetMemoryContentsMessage
+ */
+export interface GetMemoryPartitionResponse extends MessageBase {
+  type: "getMemoryPartitionResponse";
+  contents: Uint8Array;
 }
 
 /**
@@ -118,6 +143,7 @@ export type ResponseMessage =
   | GetMemoryContentsResponse
   | GetMachineStateResponse
   | AddDiagnosticsFrameDataResponse
+  | GetMemoryPartitionResponse;
 
 /**
  * All messages between renderer and main

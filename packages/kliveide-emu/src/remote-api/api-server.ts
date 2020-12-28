@@ -7,8 +7,6 @@ import {
   emulatorSetTapeContenstAction,
   emulatorRequestTypeAction,
 } from "../shared/state/redux-emulator-state";
-import { breakpointSetAction } from "../shared/state/redux-breakpoint-state";
-import { breakpointRemoveAction } from "../shared/state/redux-breakpoint-state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { IdeConfiguration } from "../shared/state/AppState";
@@ -18,8 +16,10 @@ import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
 import { AppWindow } from "../main/AppWindow";
 import {
   AddDiagnosticsFrameDataResponse,
+  DefaultResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
+  GetMemoryPartitionResponse,
 } from "../shared/messaging/message-types";
 import { DiagViewFrame } from "../shared/machines/diag-info";
 
@@ -50,20 +50,19 @@ export function startApiServer() {
       const state = mainProcessStore.getState();
       const emuState = state.emulatorPanelState;
       const vmInfo = state.vmInfo;
-      const diagData = <DiagViewFrame> {
+      const diagData = <DiagViewFrame>{
         startCount: emuState.startCount,
         frameCount: emuState.frameCount,
         executionState: emuState.executionState,
-        breakpoints: Array.from(state.breakpoints),
         pc: vmInfo.registers?.pc ?? -1,
         runsInDebug: emuState.runsInDebug,
         machineType: emuState.currentType,
-      }
-        const frame = (
+      };
+      const frame = (
         await AppWindow.instance.sendMessageToRenderer<AddDiagnosticsFrameDataResponse>(
           {
             type: "addDiagnosticsFrameData",
-            frame: diagData
+            frame: diagData,
           }
         )
       ).frame;
@@ -115,6 +114,27 @@ export function startApiServer() {
   /**
    * Gets the contents of the specified memory range
    */
+  app.get("/memory-partition/:partition", async (req, res) => {
+    try {
+      const partition = parseInt(req.params.partition);
+      const contents = (
+        await AppWindow.instance.sendMessageToRenderer<GetMemoryPartitionResponse>(
+          {
+            type: "getMemoryPartition",
+            partition,
+          }
+        )
+      ).contents;
+      res.send(Buffer.from(contents).toString("base64"));
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(err.toString());
+    }
+  });
+
+  /**
+   * Gets the contents of the specified memory range
+   */
   app.get("/machine-state", async (_req, res) => {
     try {
       const state = (
@@ -132,29 +152,19 @@ export function startApiServer() {
   });
 
   /**
-   * Gets the list of breakpoints
-   */
-  app.get("/breakpoints", (_req, res) => {
-    const state = mainProcessStore.getState();
-    res.json({ breakpoints: Array.from(state.breakpoints) });
-  });
-
-  /**
    * Set breakpoints
    */
-  app.post("/breakpoints", (req, res) => {
-    const breakpoints = req.body?.breakpoints as number[];
-    mainProcessStore.dispatch(breakpointSetAction(breakpoints)());
-    res.sendStatus(204);
-  });
-
-  /**
-   * Delete breakpoints
-   */
-  app.post("/delete-breakpoints", (req, res) => {
-    const breakpoints = req.body?.breakpoints as number[];
-    mainProcessStore.dispatch(breakpointRemoveAction(breakpoints)());
-    res.sendStatus(204);
+  app.post("/breakpoints", async (req, res) => {
+    try {
+      await AppWindow.instance.sendMessageToRenderer<DefaultResponse>({
+        type: "setBreakpoints",
+        breakpoints: req.body.breakpoints,
+      });
+      res.sendStatus(204);
+    } catch (err) {
+      console.log(err);
+      res.status(500).send(err.toString());
+    }
   });
 
   /**

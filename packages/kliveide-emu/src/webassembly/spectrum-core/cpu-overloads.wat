@@ -101,5 +101,4 @@
   end
 
   (call $incTacts (i32.const 3))
-  (call $setMemoryWritePoint (get_local $addr))
 )

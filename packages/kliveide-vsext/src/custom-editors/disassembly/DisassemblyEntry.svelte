@@ -1,5 +1,5 @@
 <script>
-  import { afterUpdate, tick, createEventDispatcher } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import BreakPointPlaceholder from "./BreakPointPlaceholder.svelte";
   import { intToX4 } from "../../disassembler/disassembly-helper";
 
@@ -8,6 +8,7 @@
   export let isCurrentBreakpoint = true;
   export let execState;
   export let runsInDebug;
+  export let breakpointType;
 
   let referenceWidth = 0;
   let opCodesWidth = 0;
@@ -101,6 +102,7 @@
     {isCurrentBreakpoint}
     {execState}
     {runsInDebug}
+    {breakpointType}
     isPrefix={item.isPrefixItem} />
   {#if item.isPrefixItem}
     <span

@@ -80,6 +80,7 @@
 ;; 0x08: BL_FLAGS: Flags for the type of memory behind that block
 ;;       0x00: RAM, can be read and written
 ;;       0x01: ROM, read-only
+;; 0x0a: Partition
 
 ;; Initial setup of Z88 memory
 (func $resetMemory
@@ -160,6 +161,11 @@
       (get_global $BLOCK_LOOKUP_TABLE)
       (i32.const 0x00) 
     )
+    ;; Store bank
+    (i32.store16 offset=10
+      (get_global $BLOCK_LOOKUP_TABLE)
+      (i32.const 0x20) 
+    )
   else
     ;; Bank $00, ROM
     ;; Store read pointer
@@ -176,6 +182,11 @@
     (i32.store8 offset=8
       (get_global $BLOCK_LOOKUP_TABLE)
       (i32.const 0x01) 
+    )
+    ;; Store bank
+    (i32.store16 offset=10
+      (get_global $BLOCK_LOOKUP_TABLE)
+      (i32.const 0x00) 
     )
   end
 
@@ -205,6 +216,11 @@
   (i32.store8 offset=24 
     (get_global $BLOCK_LOOKUP_TABLE)
     (call $getRomInfo (get_local $bank))
+  )
+  ;; Store bank
+  (i32.store16 offset=26
+    (get_global $BLOCK_LOOKUP_TABLE)
+    (get_local $bank) 
   )
 )
 
@@ -241,7 +257,13 @@
     (get_global $BLOCK_LOOKUP_TABLE) 
     (get_local $ptr)
   )
+  ;; Store RAM/ROM information
   (i32.store8 offset=56 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
+  ;; Store bank
+  (i32.store16 offset=58
+    (get_global $BLOCK_LOOKUP_TABLE)
+    (get_local $bank) 
+  )
 )
 
 ;; Sets SR2 and updates the address page table
@@ -276,7 +298,13 @@
     (get_global $BLOCK_LOOKUP_TABLE) 
     (get_local $ptr)
   ) 
+  ;; Store RAM/ROM information
   (i32.store8 offset=88 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
+  ;; Store bank
+  (i32.store16 offset=90
+    (get_global $BLOCK_LOOKUP_TABLE)
+    (get_local $bank) 
+  )
 )
 
 ;; Sets SR3 and updates the address page table
@@ -312,7 +340,13 @@
     (get_global $BLOCK_LOOKUP_TABLE) 
     (get_local $ptr)
   ) 
+  ;; Store RAM/ROM information
   (i32.store8 offset=120 (get_global $BLOCK_LOOKUP_TABLE) (get_local $romInfo))
+  ;; Store bank
+  (i32.store16 offset=122
+    (get_global $BLOCK_LOOKUP_TABLE)
+    (get_local $bank) 
+  )
 )
 
 ;; Calculates the offset within the 4MB memory for the specified $bank

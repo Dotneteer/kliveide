@@ -24,7 +24,12 @@
 ;; $bankOffset: Offset in the 16MB virtual memory
 ;; $contended: Is that block contended?
 ;; $readonly: Is that blcok read-only?
-(func $setMemoryBlockEntry (param $block i32) (param $bankOffset i32) (param $contended i32) (param $readonly i32)
+(func $setMemoryBlockEntry 
+  (param $block i32) 
+  (param $bankOffset i32) 
+  (param $contended i32) 
+  (param $readonly i32)
+  
   (local $indexAddr i32)
   
   ;; Calculate the address within the index table

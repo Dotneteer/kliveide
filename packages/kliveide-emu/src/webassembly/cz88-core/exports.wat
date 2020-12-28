@@ -1,12 +1,6 @@
 ;; Test Z80 CPU machine exports
-(export "eraseBreakpoints" (func $eraseBreakPoints))
-(export "setBreakpoint" (func $setBreakpoint))
-(export "removeBreakpoint" (func $removeBreakpoint))
-(export "testBreakpoint" (func $testBreakpoint))
 (export "resetStepOverStack" (func $resetStepOverStack))
 (export "markStepOverStack" (func $markStepOverStack))
-(export "eraseMemoryWriteMap" (func $eraseMemoryWriteMap))
-(export "setMemoryWritePoint" (func $setMemoryWritePoint))
 (export "setExecutionOptions" (func $setExecutionOptions))
 (export "executeMachineLoop" (func $executeMachineLoop))
 (export "setKeyStatus" (func $setKeyStatus))

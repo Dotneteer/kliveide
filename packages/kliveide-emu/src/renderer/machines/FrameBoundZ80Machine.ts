@@ -68,6 +68,11 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   abstract getMemoryContents(): Uint8Array;
 
   /**
+   * Gets the specified memory partition
+   */
+  abstract getMemoryPartition(partition: number): Uint8Array;
+
+  /**
    * Gets the screen data of the virtual machine
    */
   abstract getScreenData(): Uint32Array;

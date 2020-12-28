@@ -8,8 +8,6 @@ import {
   ViewCommand,
 } from "../editor-base";
 import {
-  onBreakpointsChanged,
-  getLastBreakpoints,
   onFrameInfoChanged,
   onMachineTypeChanged,
   onConnectionStateChanged,
@@ -17,7 +15,7 @@ import {
 import { communicatorInstance } from "../../emulator/communicator";
 import { DisassemblyAnnotation } from "../../disassembler/annotations";
 import {
-  spectrumConfigurationInstance,
+  machineConfigurationInstance,
   DISASS_ANN_FILE,
 } from "../../emulator/machine-config";
 import {
@@ -34,6 +32,9 @@ import {
 } from "../../disassembler/disassembly-helper";
 import { Z80Disassembler } from "../../disassembler/z80-disassembler";
 import { DiagViewFrame } from "../../shared/machines/diag-info";
+import { breakpointDefinitions } from "../../emulator/breakpoints";
+import { onCommandExecuted } from "../../emulator/command-handler";
+import { CmdNode } from "../../command-parser/command-line-nodes";
 
 /**
  * The annotation for the current machine
@@ -106,17 +107,6 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
       await readRomAnnotations();
     }
 
-    // --- Watch for breakpoint changes
-    this.toDispose(
-      webviewPanel,
-      onBreakpointsChanged((breakpoints: number[]) => {
-        webviewPanel.webview.postMessage({
-          viewNotification: "breakpoints",
-          breakpoints,
-        });
-      })
-    );
-
     // --- Watch for PC changes
     let lastPc = -1;
     this.toDispose(
@@ -131,6 +121,17 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
         }
       })
     );
+
+    // --- Watch for breakpoint commands
+    this.toDispose(
+      webviewPanel,
+      onCommandExecuted((cmd: CmdNode) => {
+        if (cmd.type.includes("Breakpoint")) {
+          this.sendBreakpointsToView();
+        }
+      })
+    );
+    
 
     // --- Refresh annotations whenever machine type changes
     this.toDispose(
@@ -163,9 +164,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    * @param panel The WebviewPanel that should process a message from its view
    * @param viewCommand Command notification to process
    */
-  async processViewCommand(
-    viewCommand: ViewCommand
-  ): Promise<void> {
+  async processViewCommand(viewCommand: ViewCommand): Promise<void> {
     switch (viewCommand.command) {
       case "requestRefresh":
         // --- Send the refresh command to the view
@@ -176,10 +175,16 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
         this.refreshViewport(Date.now());
         break;
       case "setBreakpoint":
-        communicatorInstance.setBreakpoint((viewCommand as any).address);
+        breakpointDefinitions.set({
+          address: (viewCommand as any).address,
+        });
+        await communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
+        this.sendBreakpointsToView();
         break;
       case "removeBreakpoint":
-        communicatorInstance.removeBreakpoint((viewCommand as any).address);
+        breakpointDefinitions.remove((viewCommand as any).address);
+        await communicatorInstance.setBreakpoints(breakpointDefinitions.toArray());
+        this.sendBreakpointsToView();
         break;
     }
   }
@@ -190,7 +195,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
   protected sendBreakpointsToView(): void {
     this.panel.webview.postMessage({
       viewNotification: "breakpoints",
-      breakpoints: getLastBreakpoints(),
+      breakpoints: breakpointDefinitions.toArray(),
     });
   }
 
@@ -206,9 +211,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
    * Refresh the viewport of the specified panel
    * @param panel Panel to refresh
    */
-  async refreshViewport(
-    start: number
-  ): Promise<void> {
+  async refreshViewport(start: number): Promise<void> {
     try {
       const memContents = await communicatorInstance.getMemory();
       const bytes = new Uint8Array(Buffer.from(memContents, "base64"));
@@ -237,7 +240,7 @@ export class DisassemblyEditorProvider extends EditorProviderBase {
  */
 async function readRomAnnotations(): Promise<void> {
   // --- We need machine configuration to carry on
-  const machineType = spectrumConfigurationInstance.configuration.type;
+  const machineType = machineConfigurationInstance.configuration.type;
   const config = machineTypes[machineType];
   if (!config) {
     return;
@@ -274,8 +277,7 @@ function getRomAnnotation(rom: number): DisassemblyAnnotation | null {
   rom = rom ?? 0;
   try {
     // --- Obtain the file for the annotations
-    const annotations =
-      spectrumConfigurationInstance.configuration?.annotations;
+    const annotations = machineConfigurationInstance.configuration?.annotations;
     if (!annotations) {
       return null;
     }

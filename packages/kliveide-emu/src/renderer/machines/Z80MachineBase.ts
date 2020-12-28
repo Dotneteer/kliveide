@@ -1,8 +1,14 @@
 import { MachineApi } from "./wa-api";
 import { MachineState } from "../../shared/machines/machine-state";
 import { MemoryHelper } from "./memory-helpers";
-import { REG_AREA_INDEX, STATE_TRANSFER_BUFF } from "./memory-map";
+import {
+  BREAKPOINTS_MAP,
+  BRP_PARTITION_MAP,
+  REG_AREA_INDEX,
+  STATE_TRANSFER_BUFF,
+} from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
+import { BreakpointDefinition } from "../../shared/machines/api-data";
 
 /**
  * This class is intended to be the base class of all Z80 machine
@@ -244,6 +250,53 @@ export abstract class Z80MachineBase {
     // --- Init code execution
     this.api.resetCpu();
     this.api.setPC(startAddress);
+  }
+
+  /**
+   * Set the breakpoint definitions in the WA virtual machine
+   * @param bps Breakpoint definitions
+   */
+  setupBreakpoints(bps: BreakpointDefinition[]): void {
+    const mapMh = new MemoryHelper(this.api, BREAKPOINTS_MAP);
+    const partMh = new MemoryHelper(this.api, BRP_PARTITION_MAP);
+
+    // --- Erase the breakpoint maps
+    for (let i = 0; i < 0x1_0000; i++) {
+      mapMh.writeByte(i, 0);
+      partMh.writeUint16(i * 2, 0xffff);
+    }
+
+    // --- Set up breakpoints
+    bps.forEach((bp) => {
+      bp.address = bp.address & 0xffff;
+      switch (bp.mode) {
+        case "mr":
+        case "mw":
+        case "ir":
+        case "iw":
+          // TODO: Implement these breakpoint types
+          break;
+        default: {
+          let flags = mapMh.readByte(bp.address & 0xffff);
+          if (bp.partition !== undefined) {
+            flags |= 0x02;
+            partMh.writeUint16(bp.address * 2, bp.partition & 0xffff);
+          } else {
+            flags |= 0x01;
+          }
+          mapMh.writeByte(bp.address, flags);
+          break;
+        }
+      }
+    });
+  }
+
+  /**
+   * Updates the breakpoint definitions in the WA virtual machine
+   * @param bps Breakpoint definitions
+   */
+  updateBreakpoints(bps: BreakpointDefinition[]): void {
+    this.setupBreakpoints(bps);
   }
 
   /**

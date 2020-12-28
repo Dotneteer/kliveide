@@ -140,7 +140,11 @@
       },
       {
         "command": "kliveide.updateKliveProject",
-        "title": "Update Klive Project"
+        "title": "Update Klive project"
+      },
+      {
+        "command": "kliveide.executeCommand",
+        "title": "Execute Klive command"
       },
       {
         "command": "kliveide.goToAddress",
