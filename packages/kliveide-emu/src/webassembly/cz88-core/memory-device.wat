@@ -99,8 +99,8 @@
   (call $setZ88ChipMask (i32.const 1) (i32.const 0x1f))
 
   ;; No cards in any slot
-  (call $setZ88ChipMask (i32.const 2) (i32.const 0x3f))
-  (call $setZ88ChipMask (i32.const 3) (i32.const 0x3f))
+  (call $setZ88ChipMask (i32.const 2) (i32.const 0x00))
+  (call $setZ88ChipMask (i32.const 3) (i32.const 0x00))
   (call $setZ88ChipMask (i32.const 4) (i32.const 0x00))
 
   ;; Card 3 is RAM

@@ -47,7 +47,7 @@ export class Cz88ViewProvider extends Z80MachineViewProviderBase {
       new RegisterItem(
         "BINT",
         "INT",
-        com,
+        int,
         [
           new FlagItem("KWAIT", "KWAIT", !!(int & 0x80), "clear", "set"),
           new FlagItem("A19", "A19", !!(int & 0x40), "clear", "set"),
@@ -63,7 +63,7 @@ export class Cz88ViewProvider extends Z80MachineViewProviderBase {
       new RegisterItem(
         "BSTA",
         "STA",
-        com,
+        sta,
         [
           new FlagItem("FLAOPEN", "FLAOPEN", !!(sta & 0x80), "closed", "open"),
           new FlagItem("SA19", "A19", !!(sta & 0x40), "clear", "set"),
@@ -72,6 +72,14 @@ export class Cz88ViewProvider extends Z80MachineViewProviderBase {
           new FlagItem("SBTL", "BTL", !!(sta & 0x08), "clear", "set"),
           new FlagItem("SKEY", "KEY", !!(sta & 0x04), "clear", "set"),
           new FlagItem("STIME", "TIME", !!(sta & 0x01), "passive", "active"),
+        ],
+        2
+      ),
+      new RegisterItem(
+        "TSTA",
+        "TSTA",
+        cz88State.TSTA,
+        [
         ],
         2
       ),

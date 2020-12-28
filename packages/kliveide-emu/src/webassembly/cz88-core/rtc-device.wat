@@ -49,7 +49,11 @@
   (i32.and (get_global $COM) (i32.const $BM_COMRESTIM#))
   if
     ;; Stop Real Time Clock (RESTIM = 1) and reset counters
-    call $resetRtc
+    i32.const 0x98 set_global $TIM0
+    i32.const 0x00 set_global $TIM1
+    i32.const 0x00 set_global $TIM2
+    i32.const 0x00 set_global $TIM3
+    i32.const 0x00 set_global $TIM4
     return
   end
   

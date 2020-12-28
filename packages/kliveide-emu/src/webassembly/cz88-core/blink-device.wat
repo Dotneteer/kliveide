@@ -41,7 +41,11 @@
   ;; Reset the timer when requested
   (i32.and (get_local $v) (i32.const $BM_COMRESTIM#))
   if
-    call $resetRtc
+    i32.const 0x98 set_global $TIM0
+    i32.const 0x00 set_global $TIM1
+    i32.const 0x00 set_global $TIM2
+    i32.const 0x00 set_global $TIM3
+    i32.const 0x00 set_global $TIM4
   end
 
   ;; RAMS flag may change, se emulate setting SR0 again
