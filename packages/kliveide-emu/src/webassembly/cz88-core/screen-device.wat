@@ -656,7 +656,7 @@
   (select
     (i32.const 0xff)
     (i32.const 0x00)
-    (i32.and (get_local $attr) (i32.const $ATTR_REV#))
+    (get_global $flashPhase)
   )
   set_local $charMask
 
