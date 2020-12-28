@@ -175,7 +175,9 @@
     if
       ;; Initialize the row pointer and the column loop
       (set_local $sbrPtr (get_local $rowSbrPtr))      
-      (set_local $columnCount (get_global $ctrlCharsPerRow))
+      (set_local $columnCount 
+        (i32.add (get_global $ctrlCharsPerRow) (i32.const 1))
+      )
 
       ;; Column loop
       loop $columnLoop
@@ -200,7 +202,10 @@
             (i32.add (get_local $coordX) (i32.const 6))
             set_local $coordX
           else
-            (i32.and (get_local $attr) (i32.const $ATTR_CUR#))
+            (i32.eq
+              (i32.and (get_local $attr) (i32.const $ATTR_CUR#))
+              (i32.const $ATTR_CUR#)
+            )
             if
               (call $drawLoResCursor 
                 (get_local $coordX)

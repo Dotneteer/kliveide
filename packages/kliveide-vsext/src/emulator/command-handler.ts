@@ -90,7 +90,7 @@ export async function handleKliveCommand(
       const bytes = new Uint8Array(Buffer.from(contents, "base64"));
       const from = cmd.address & 0x3fff;
       const to = Math.min(from + 1024, 0x3fff);
-      for (let i = from; i <= to; i += 16) {
+      for (let i = from; i < to; i += 16) {
         let memLine = i.toString(16).padStart(4, "0") + ": ";
         for (let j = 0; j < 16; j++) {
           if (i + j > to) {
