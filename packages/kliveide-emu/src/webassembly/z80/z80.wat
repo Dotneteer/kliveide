@@ -802,11 +802,20 @@
   i32.const $PREF_NONE# set_global $prefixMode
   i32.const $IND_NONE# set_global $indexMode
   (call $setAF (i32.const 0xffff))
-  (call $setWZ (i32.const 0x0000))
+  (call $setBC (i32.const 0x0000))
+  (call $setDE (i32.const 0x0000))
+  (call $setHL (i32.const 0x0000))
+  (i32.store16 offset=8 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
+  (i32.store16 offset=10 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
+  (i32.store16 offset=12 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
+  (i32.store16 offset=14 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
+  (call $setIX (i32.const 0x0000))
+  (call $setIY (i32.const 0x0000))
   (call $setSP (i32.const 0xffff))
   (call $setPC (i32.const 0))
   (call $setI (i32.const 0))
   (call $setR (i32.const 0))
+  (call $setWZ (i32.const 0x0000))
   i32.const 0x0000 set_global $isInOpExecution
   i32.const 0x0000 set_global $tacts
 )

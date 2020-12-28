@@ -287,7 +287,7 @@
 
   (i32.eq (get_local $addr8) (i32.const 0xb6))
   if
-    ;; TMK, Set Timer interrupt Mask
+    ;; ACK, acknowledge interrupt
     (call $setACK (get_local $v))
     return
   end

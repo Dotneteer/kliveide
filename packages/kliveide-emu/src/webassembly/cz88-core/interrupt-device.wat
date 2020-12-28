@@ -53,7 +53,6 @@
     )
   )
   set_global $TSTA
-
   (i32.eqz (get_global $TSTA))
   if
     (i32.and (get_global $STA) (i32.const $BM_STATIME_MASK#))
