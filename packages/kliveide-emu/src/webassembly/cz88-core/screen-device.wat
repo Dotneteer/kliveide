@@ -112,7 +112,7 @@
   i32.const 0x00 set_global $SBR
   i32.const 8 set_global $SCH
   i32.const 0 set_global $screenFrameCount
-  i32.const 70 set_global $flashToggleCount
+  i32.const 140 set_global $flashToggleCount
   i32.const 0 set_global $flashPhase
   i32.const 0 set_global $flashCount
   i32.const 256 set_global $sbfRowWidth
