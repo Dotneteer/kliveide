@@ -4,7 +4,6 @@
 
   import { afterUpdate } from "svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
-  import { pcKeyNames, currentKeyMappings } from "../machines/spectrum-keys";
 
   import ExecutionStateOverlay from "./ExecutionStateOverlay.svelte";
   import BeamOverlay from "./BeamOverlay.svelte";
@@ -235,14 +234,8 @@
 
   // --- Hamdle mapped key codes
   function handleMappedKey(code, isDown) {
-    const key = pcKeyNames.get(code);
-    if (!key) return;
-    const mapping = currentKeyMappings.get(key);
-    if (mapping) {
-      vmEngine.setKeyStatus(mapping.zxPrimary, isDown);
-      if (mapping.zxSecondary) {
-        vmEngine.setKeyStatus(mapping.zxSecondary, isDown);
-      }
+    if (vmEngine) {
+      vmEngine.z80Machine.handlePhysicalKey(code, isDown);
     }
   }
 

@@ -12,6 +12,7 @@ import {
   MachineState,
   Z80MachineStateBase,
 } from "../../shared/machines/machine-state";
+import { KeyMapping } from "./keyboard";
 
 /**
  * This class implements the Cambride Z88 machine
@@ -45,6 +46,21 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Refreshing the UI
    */
   readonly engineLoops = 8;
+
+  /**
+   * Gets the key mapping used by the machine
+   */
+  getKeyMapping(): KeyMapping {
+    return {};
+  }
+
+  /**
+   * Resolves a string key code to a key number
+   * @param code Key code to resolve
+   */
+  resolveKeyCode(code: string): number | null {
+    return null;
+  }
 
   /**
    * Retrieves a ZX Spectrum 48 machine state object

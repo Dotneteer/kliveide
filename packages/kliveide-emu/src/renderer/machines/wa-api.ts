@@ -1,6 +1,4 @@
-import { Cz88KeyCode } from "./Cz88KeyCode";
 import { RunMode } from "./RunMode";
-import { SpectrumKeyCode } from "./SpectrumKeyCode";
 
 /**
  * Represents the CPU API

@@ -35,6 +35,35 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   executionOptions: ExecuteCycleOptions | null;
 
   /**
+   * Handles pressing or releasing a physical key on the keyboard
+   * @param keycode Virtual keycode
+   * @param isDown Is the key pressed down?
+   */
+  handlePhysicalKey(keycode: string, isDown: boolean): void {
+    const keyMapping = this.getKeyMapping();
+    const keySet = keyMapping[keycode];
+    if (!keySet) {
+      // --- No mapping for the specified physical key
+      return;
+    }
+
+    if (typeof keySet === "string") {
+      // --- Single key
+      const resolved = this.resolveKeyCode(keySet);
+      if (resolved !== null) {
+        this.setKeyStatus(resolved, isDown);
+      }
+    } else {
+      for (const key of keySet) {
+        const resolved = this.resolveKeyCode(key);
+        if (resolved !== null) {
+          this.setKeyStatus(resolved, isDown);
+        }
+      }
+    }
+  }
+
+  /**
    * Initializes the specified ROMs
    * @param roms Optional buffers with ROM contents
    */

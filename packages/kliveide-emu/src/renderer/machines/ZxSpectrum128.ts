@@ -13,8 +13,8 @@ import {
   ROM_48_OFFS,
   STATE_TRANSFER_BUFF,
 } from "./memory-map";
-import { SpectrumKeyCode } from "./SpectrumKeyCode";
 import { MemoryHelper } from "./memory-helpers";
+import { spectrumKeyCodes } from "./spectrum-keys";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
@@ -165,8 +165,8 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
           SP128_EDITOR
         )
       );
-      await controller.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-      await controller.delayKey(SpectrumKeyCode.Enter);
+      await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+      await controller.delayKey(spectrumKeyCodes.Enter);
       await controller.waitForCycleTermination();
       return SP128_EDITOR;
     }
@@ -181,10 +181,10 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
         SP48_MAIN_ENTRY
       )
     );
-    await controller.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-    await controller.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-    await controller.delayKey(SpectrumKeyCode.N6, SpectrumKeyCode.CShift);
-    await controller.delayKey(SpectrumKeyCode.Enter);
+    await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+    await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+    await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+    await controller.delayKey(spectrumKeyCodes.Enter);
     await controller.waitForCycleTermination();
     return SP48_MAIN_ENTRY;
   }
