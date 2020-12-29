@@ -23,6 +23,8 @@ import { TzxReader } from "../../shared/tape/tzx-file";
 import { TapReader } from "../../shared/tape/tap-file";
 import { IAudioRenderer } from "./IAudioRenderer";
 import { IZxSpectrumBaseStateManager } from "./IZxSpectrumBaseStateManager";
+import { KeyMapping } from "./keyboard";
+import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
 
 /**
  * This class is intended to be the base class of all ZX Spectrum
@@ -52,6 +54,21 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   constructor(public api: MachineApi, roms?: Buffer[]) {
     super(api, roms);
+  }
+
+  /**
+   * Gets the key mapping used by the machine
+   */
+  getKeyMapping(): KeyMapping {
+    return spectrumKeyMappings;
+  }
+
+  /**
+   * Resolves a string key code to a key number
+   * @param code Key code to resolve
+   */
+  resolveKeyCode(code: string): number | null {
+    return spectrumKeyCodes[code] ?? null;
   }
 
   /**

@@ -22,7 +22,6 @@ import {
 import { BreakpointDefinition, CodeToInject, RegisterData } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import { BANK_0_OFFS } from "./memory-map";
-import { VmKeyCode } from "./wa-api";
 import { IVmEngineController } from "./IVmEngineController";
 import { emulatorAppConfig } from "../machine-loader";
 /**
@@ -197,7 +196,7 @@ export class VmEngine implements IVmEngineController {
    * @param key Code of the key
    * @param isDown Pressed/released status of the key
    */
-  setKeyStatus(key: VmKeyCode, isDown: boolean): void {
+  setKeyStatus(key: number, isDown: boolean): void {
     this.z80Machine.setKeyStatus(key, isDown);
   }
 
@@ -226,8 +225,8 @@ export class VmEngine implements IVmEngineController {
   queueKeyStroke(
     startFrame: number,
     frames: number,
-    primaryKey: VmKeyCode,
-    secondaryKey?: VmKeyCode
+    primaryKey: number,
+    secondaryKey?: number
   ): void {
     this._keyStrokeQueue.push({
       startFrame,
@@ -774,8 +773,8 @@ export class VmEngine implements IVmEngineController {
    * @param secodary Optional secondary key
    */
   async delayKey(
-    primaryKey: VmKeyCode,
-    secondaryKey?: VmKeyCode
+    primaryKey: number,
+    secondaryKey?: number
   ): Promise<void> {
     this.queueKeyStroke(
       this.z80Machine.getMachineState().frameCount,

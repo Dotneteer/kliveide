@@ -1,6 +1,4 @@
-import { Cz88KeyCode } from "./Cz88KeyCode";
 import { RunMode } from "./RunMode";
-import { SpectrumKeyCode } from "./SpectrumKeyCode";
 
 /**
  * Represents the CPU API
@@ -41,8 +39,8 @@ export interface MachineApi extends CpuApi {
   executeMachineLoop(): void;
   setInterruptTact(tact: number): void;
   checkForInterrupt(tact: number): void;
-  setKeyStatus(key: VmKeyCode, isDown: boolean): void;
-  getKeyStatus(key: VmKeyCode): number;
+  setKeyStatus(key: number, isDown: boolean): void;
+  getKeyStatus(key: number): number;
   setBeeperSampleRate(rate: number): void;
   colorize(): void;
   getCursorMode(): number;
@@ -73,8 +71,3 @@ export interface MachineApi extends CpuApi {
   setZ88RndSeed(seed: number): void;
   writePortCz88(addr: number, value: number): void;
 }
-
-/**
- * This type represents the available key codes
- */
-export type VmKeyCode = SpectrumKeyCode | Cz88KeyCode;

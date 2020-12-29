@@ -9,6 +9,7 @@ import {
 } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 import { BreakpointDefinition } from "../../shared/machines/api-data";
+import { KeyMapping } from "./keyboard";
 
 /**
  * This class is intended to be the base class of all Z80 machine
@@ -32,6 +33,17 @@ export abstract class Z80MachineBase {
    * Friendly name to display
    */
   abstract readonly displayName: string;
+
+  /**
+   * Gets the key mapping used by the machine
+   */
+  abstract getKeyMapping(): KeyMapping;
+
+  /**
+   * Resolves a string key code to a key number
+   * @param code Key code to resolve
+   */
+  abstract resolveKeyCode(code: string): number | null;
 
   /**
    * Gets the associated controller instance

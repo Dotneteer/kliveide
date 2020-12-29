@@ -1,5 +1,5 @@
 import { Z80MachineBase } from "./Z80MachineBase";
-import { MachineApi, VmKeyCode } from "./wa-api";
+import { MachineApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
 import {
   DebugStepMode,
@@ -33,6 +33,35 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * The currently set execution options
    */
   executionOptions: ExecuteCycleOptions | null;
+
+  /**
+   * Handles pressing or releasing a physical key on the keyboard
+   * @param keycode Virtual keycode
+   * @param isDown Is the key pressed down?
+   */
+  handlePhysicalKey(keycode: string, isDown: boolean): void {
+    const keyMapping = this.getKeyMapping();
+    const keySet = keyMapping[keycode];
+    if (!keySet) {
+      // --- No mapping for the specified physical key
+      return;
+    }
+
+    if (typeof keySet === "string") {
+      // --- Single key
+      const resolved = this.resolveKeyCode(keySet);
+      if (resolved !== null) {
+        this.setKeyStatus(resolved, isDown);
+      }
+    } else {
+      for (const key of keySet) {
+        const resolved = this.resolveKeyCode(key);
+        if (resolved !== null) {
+          this.setKeyStatus(resolved, isDown);
+        }
+      }
+    }
+  }
 
   /**
    * Initializes the specified ROMs
@@ -102,7 +131,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param key Key to set
    * @param isDown Status value
    */
-  setKeyStatus(key: VmKeyCode, isDown: boolean): void {
+  setKeyStatus(key: number, isDown: boolean): void {
     this.api.setKeyStatus(key, isDown);
   }
 
@@ -111,7 +140,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param key Key to get
    * @returns True, if key is pressed; otherwise, false
    */
-  getKeyStatus(key: VmKeyCode): boolean {
+  getKeyStatus(key: number): boolean {
     return this.api.getKeyStatus(key) !== 0;
   }
 
