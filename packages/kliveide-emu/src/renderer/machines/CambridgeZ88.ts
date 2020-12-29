@@ -13,6 +13,7 @@ import {
   Z80MachineStateBase,
 } from "../../shared/machines/machine-state";
 import { KeyMapping } from "./keyboard";
+import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
 
 /**
  * This class implements the Cambride Z88 machine
@@ -51,7 +52,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Gets the key mapping used by the machine
    */
   getKeyMapping(): KeyMapping {
-    return {};
+    return cz88KeyMappings;
   }
 
   /**
@@ -59,7 +60,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * @param code Key code to resolve
    */
   resolveKeyCode(code: string): number | null {
-    return null;
+    return cz88KeyCodes[code] ?? null;
   }
 
   /**

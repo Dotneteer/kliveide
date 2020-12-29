@@ -83,7 +83,7 @@
   if
     ;; Keyboard
     ;; TODO: Implement keybord scan
-    i32.const 0xff
+    (call $getKeyLineStatus (i32.shr_u (get_local $addr) (i32.const 8)))
     return
   end
 
