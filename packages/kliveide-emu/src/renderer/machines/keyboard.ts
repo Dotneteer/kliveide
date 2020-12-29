@@ -1,5 +1,3 @@
-import { VmKeyCode } from "./wa-api";
-
 /**
  * Provides an association between JavaScript key codes and keys
  */
@@ -109,7 +107,7 @@ export class EmulatedKeyStroke {
   constructor(
     public startFrame: number,
     public endFrame: number,
-    public primaryKey: VmKeyCode,
-    public secondaryKey?: VmKeyCode
+    public primaryKey: number,
+    public secondaryKey?: number
   ) {}
 }

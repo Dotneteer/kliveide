@@ -1,5 +1,5 @@
 import { Z80MachineBase } from "./Z80MachineBase";
-import { MachineApi, VmKeyCode } from "./wa-api";
+import { MachineApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
 import {
   DebugStepMode,
@@ -102,7 +102,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param key Key to set
    * @param isDown Status value
    */
-  setKeyStatus(key: VmKeyCode, isDown: boolean): void {
+  setKeyStatus(key: number, isDown: boolean): void {
     this.api.setKeyStatus(key, isDown);
   }
 
@@ -111,7 +111,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param key Key to get
    * @returns True, if key is pressed; otherwise, false
    */
-  getKeyStatus(key: VmKeyCode): boolean {
+  getKeyStatus(key: number): boolean {
     return this.api.getKeyStatus(key) !== 0;
   }
 

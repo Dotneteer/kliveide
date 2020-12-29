@@ -1,4 +1,3 @@
-import { VmKeyCode } from "./wa-api";
 import { ExecuteCycleOptions } from "../../shared/machines/machine-state";
 
 /**
@@ -27,5 +26,5 @@ export interface IVmEngineController {
    * @param primary Primary key
    * @param secodary Optional secondary key
    */
-  delayKey(primaryKey: VmKeyCode, secondaryKey?: VmKeyCode): Promise<void>;
+  delayKey(primaryKey: number, secondaryKey?: number): Promise<void>;
 }
