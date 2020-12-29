@@ -65,6 +65,13 @@ export abstract class Z80MachineBase {
   }
 
   /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return [];
+  }
+
+  /**
    * Turns on the machine
    */
   turnOnMachine(): void {
@@ -324,3 +331,8 @@ export abstract class Z80MachineBase {
    */
   abstract writeMemory(addr: number, value: number): void;
 }
+
+/**
+ * Extra machine features supported by only a few machines
+ */
+export type ExtraMachineFeatures = "UlaDebug" | "Tape" | "Sound" ;

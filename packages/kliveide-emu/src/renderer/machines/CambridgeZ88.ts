@@ -14,6 +14,7 @@ import {
 } from "../../shared/machines/machine-state";
 import { KeyMapping } from "./keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
+import { ExtraMachineFeatures } from "./Z80MachineBase";
 
 /**
  * This class implements the Cambride Z88 machine
@@ -47,6 +48,13 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Refreshing the UI
    */
   readonly engineLoops = 8;
+
+  /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return [ "Sound" ];
+  }
 
   /**
    * Gets the key mapping used by the machine

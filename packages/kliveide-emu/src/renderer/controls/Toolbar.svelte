@@ -6,9 +6,7 @@
   import ToolbarSeparator from "./ToolbarSeparator.svelte";
 
   import { themeStore } from "../stores/theme-store";
-  import {
-    createRendererProcessStateAware,
-  } from "../rendererProcessStore";
+  import { createRendererProcessStateAware } from "../rendererProcessStore";
   import {
     emulatorToggleKeyboardAction,
     emulatorToggleShadowScreenAction,
@@ -29,6 +27,8 @@
   let fastLoadEnabled;
   let isLoading;
   let muted;
+  let extraFeatures = [];
+
   calculateColors(true); // --- Default: the app has the focus
 
   let executionState = 0;
@@ -52,6 +52,7 @@
   // --- Watch the execution state change of the virtual machine
   $: {
     if (vmEngine) {
+      extraFeatures = vmEngine.z80Machine.getExtraMachineFeatures();
       vmEngine.executionStateChanged.on(({ newState }) => {
         executionState = newState;
       });
@@ -148,6 +149,7 @@
         stateAware.dispatch(emulatorToggleKeyboardAction());
       }} />
     <ToolbarSeparator />
+    {#if extraFeatures.includes('UlaDebug')}
     <ToolbarIconButton
       iconName="shadow-screen"
       fill="#ff80ff"
@@ -165,32 +167,39 @@
         stateAware.dispatch(emulatorToggleBeamPositionAction());
       }} />
     <ToolbarSeparator />
-    <ToolbarIconButton
+    {/if}
+    {#if extraFeatures.includes('Sound')}
+      {#if muted}
+        <ToolbarIconButton
+          iconName="unmute"
+          title="Unmute sound"
+          on:clicked={() => {
+            stateAware.dispatch(emulatorUnmuteAction());
+          }} />
+      {:else}
+        <ToolbarIconButton
+          iconName="mute"
+          title="Mute sound"
+          on:clicked={() => {
+            stateAware.dispatch(emulatorMuteAction());
+          }} />
+      {/if}
+      <ToolbarSeparator />
+      {/if}
+    {#if extraFeatures.includes('Tape')}
+      <ToolbarIconButton
       iconName="rocket"
       title="Fast LOAD mode"
       selected={fastLoadEnabled}
       on:clicked={() => {
         stateAware.dispatch(emulatorToggleFastLoadAction());
       }} />
-    {#if muted}
-      <ToolbarIconButton
-        iconName="unmute"
-        title="Unmute sound"
-        on:clicked={() => {
-          stateAware.dispatch(emulatorUnmuteAction());
-        }} />
-    {:else}
-      <ToolbarIconButton
-        iconName="mute"
-        title="Mute sound"
-        on:clicked={() => {
-          stateAware.dispatch(emulatorMuteAction());
-        }} />
-    {/if}
     <ToolbarIconButton
       iconName="reverse-tape"
       title="Rewind the tape"
       enable={!isLoading}
-      on:clicked={() => vmEngine.initTapeContents("Tape rewound")} />
+      on:clicked={() => vmEngine.initTapeContents('Tape rewound')} />
+      <ToolbarSeparator />
+    {/if}
   </div>
 {/if}

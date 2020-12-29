@@ -25,6 +25,7 @@ import { IAudioRenderer } from "./IAudioRenderer";
 import { IZxSpectrumBaseStateManager } from "./IZxSpectrumBaseStateManager";
 import { KeyMapping } from "./keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
+import { ExtraMachineFeatures } from "./Z80MachineBase";
 
 /**
  * This class is intended to be the base class of all ZX Spectrum
@@ -54,6 +55,13 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   constructor(public api: MachineApi, roms?: Buffer[]) {
     super(api, roms);
+  }
+
+  /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return ["UlaDebug", "Tape", "Sound"];
   }
 
   /**
