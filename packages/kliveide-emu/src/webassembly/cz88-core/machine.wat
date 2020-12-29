@@ -26,6 +26,7 @@
   call $resetRtc
   call $resetMemory
   call $resetZ88Screen
+  call $resetKeyboard
 )
 
 ;; Writes the Cambridge Z88 machine state to the transfer area

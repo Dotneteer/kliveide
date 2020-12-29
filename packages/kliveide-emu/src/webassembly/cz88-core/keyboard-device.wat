@@ -1,6 +1,12 @@
 ;; ============================================================================
 ;; Implements the Z88 keyboard device (Blink)
 
+;; Resets the keyboard
+(func $resetKeyboard
+  (i32.store offset=0 (get_global $KEYBOARD_LINES) (i32.const 0x0000))
+  (i32.store offset=4 (get_global $KEYBOARD_LINES) (i32.const 0x0000))
+)
+
 ;; Sets the status of the specified key
 (func $setKeyStatus (param $keyCode i32) (param $isDown i32)
   (local $line i32)
