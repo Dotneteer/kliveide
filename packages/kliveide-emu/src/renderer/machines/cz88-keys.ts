@@ -131,7 +131,8 @@ const usMapping: KeyMapping = {
   KeyX: "X",
   KeyC: "C",
   KeyV: "V",
-  KeyB: "N",
+  KeyB: "B",
+  KeyN: "N",
   KeyM: "M",
   Comma: "Comma",
   Period: "Period",
@@ -149,6 +150,12 @@ const usMapping: KeyMapping = {
   ArrowDown: "Down",
   Enter: "Enter",
   NumpadEnter: "Enter",
+
+  F1: "Help",
+  F2: "Index",
+  F3: "Menu",
+  F4: "CapsLock",
+  F6: ["ShiftL", "ShiftR"]
 }
 
 /**
