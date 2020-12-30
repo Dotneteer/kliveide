@@ -224,7 +224,17 @@
   // --- Handles key presses
   function handleKey(e, isDown) {
     if (!e) return;
-    handleMappedKey(e.code, isDown);
+    // --- Special key: both Shift released
+    if (
+      (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
+      e.shiftKey === false &&
+      !isDown
+    ) {
+      handleMappedKey("ShiftLeft", false);
+      handleMappedKey("ShiftRight", false);
+    } else {
+      handleMappedKey(e.code, isDown);
+    }
     if (isDown) {
       pressedKeys[e.code.toString()] = true;
     } else {
@@ -233,16 +243,16 @@
   }
 
   // --- Hamdle mapped key codes
-  function handleMappedKey(code, isDown) {
+  function handleMappedKey(code, shift, isDown) {
     if (vmEngine) {
-      vmEngine.z80Machine.handlePhysicalKey(code, isDown);
+      vmEngine.z80Machine.handlePhysicalKey(code, shift, isDown);
     }
   }
 
   // --- Release all keys that remained pressed
   function erasePressedKeys() {
     for (let code in pressedKeys) {
-      handleMappedKey(code, false);
+      handleMappedKey(code, false, false);
     }
     pressedKeys = {};
   }

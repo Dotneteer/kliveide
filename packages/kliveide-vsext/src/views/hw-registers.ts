@@ -183,6 +183,26 @@ export class RegisterItem extends TreeItem implements TreeItemWithChildren {
 }
 
 /**
+ * Represents a Z80 register/other register value
+ */
+export class LineStatusItem extends TreeItem {
+  constructor(
+    public readonly id: string,
+    public readonly label: string,
+    public value: number,
+  ) {
+    super(
+      label,
+      TreeItemCollapsibleState.None
+    );
+    this.id = id;
+    this.description = `[${value.toString(2).padStart(8, "0")}]`;
+    this.tooltip = `${this.label} ${this.description}`;
+    this.iconPath = new ThemeIcon("list-flat");
+  }
+}
+
+/**
  * Represents a Z80/other register flag value
  */
 export class FlagItem extends TreeItem {

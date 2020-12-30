@@ -230,6 +230,7 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   INT: number;
   STA: number;
   COM: number;
+  SHFF: boolean;
 
   // --- RTC device
   TIM0: number;
@@ -275,6 +276,15 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   s3FlagL: number;
   s3OffsetH: number;
   s3FlagH: number;
+
+  KBLine0: number;
+  KBLine1: number;
+  KBLine2: number;
+  KBLine3: number;
+  KBLine4: number;
+  KBLine5: number;
+  KBLine6: number;
+  KBLine7: number;
 }
 
 /**

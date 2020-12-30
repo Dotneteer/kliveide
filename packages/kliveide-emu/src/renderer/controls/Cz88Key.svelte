@@ -147,7 +147,7 @@
   {#if keyword}
     <text
       x={(xwidth || 100) / 2}
-      y={62+(vshift || 0)}
+      y={62 + (vshift || 0)}
       font-size={fontSize ? fontSize : 28}
       text-anchor="middle"
       fill={mainFillColor}

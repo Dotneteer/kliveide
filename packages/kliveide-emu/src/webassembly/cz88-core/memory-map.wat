@@ -13,11 +13,11 @@
 ;; 5: Is Card Slot 3 ROM?
 (global $Z88_CHIP_MASKS i32 (i32.const 0x0122_0010))
 
-;; Pointers for the address slots (256 byte)
-(global $Z88_ROM_INFO i32 (i32.const 0x0122_0100))
-
 ;; Keyboard line status (128 bytes)
-(global $KEYBOARD_LINES i32 (i32.const 0x0122_0200))
+(global $KEYBOARD_LINES i32 (i32.const 0x0122_0100))
+
+;; Pointers for the address slots (256 byte)
+(global $Z88_ROM_INFO i32 (i32.const 0x0122_0200))
 
 ;; PIXEL_BUFFER (0x13_8800)
 (global $PIXEL_BUFFER i32 (i32.const 0x0122_0300))

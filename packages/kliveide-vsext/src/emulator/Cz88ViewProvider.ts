@@ -1,5 +1,6 @@
 import {
   FlagItem,
+  LineStatusItem,
   RegisterItem,
   TreeItemWithChildren,
 } from "../views/hw-registers";
@@ -83,6 +84,7 @@ export class Cz88ViewProvider extends Z80MachineViewProviderBase {
         ],
         2
       ),
+      new KeyboardLinesItem(cz88State),
     ];
     z80Items.push(...cz88Items);
     return z80Items;
@@ -117,6 +119,29 @@ export class PagingRootItem extends TreeItem implements TreeItemWithChildren {
         new FlagItem("SR3T", "SR3 Type", !!state.s3FlagL, "RAM", "ROM"),
       ]),
     ];
+  }
+}
+
+/**
+ * Represents the Cambridge Z88 memory paging state
+ */
+export class KeyboardLinesItem extends TreeItem implements TreeItemWithChildren {
+  children: TreeItem[] = [];
+  constructor(state: CambridgeZ88MachineState) {
+    super("Keyboard status", TreeItemCollapsibleState.Collapsed);
+    this.iconPath = new ThemeIcon("folder");
+    this.children = [
+      new LineStatusItem("KB7", "KB Line 7", state.KBLine7),
+      new LineStatusItem("KB6", "KB Line 6", state.KBLine6),
+      new LineStatusItem("KB5", "KB Line 5", state.KBLine5),
+      new LineStatusItem("KB4", "KB Line 4", state.KBLine4),
+      new LineStatusItem("KB3", "KB Line 3", state.KBLine3),
+      new LineStatusItem("KB2", "KB Line 2", state.KBLine2),
+      new LineStatusItem("KB1", "KB Line 1", state.KBLine1),
+      new LineStatusItem("KB0", "KB Line 0", state.KBLine0),
+      new FlagItem("SHFF", "SHFF", state.SHFF, "clear", "set"),
+    ];
+    console.log(state.SHFF);
   }
 }
 
