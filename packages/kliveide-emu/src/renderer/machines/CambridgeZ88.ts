@@ -152,6 +152,17 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.chipMask3 = mh.readByte(189);
     s.chipMask4 = mh.readByte(190);
 
+    // --- Others
+    s.SHFF = mh.readBool(191);
+    s.KBLine0 = mh.readByte(192);
+    s.KBLine1 = mh.readByte(193);
+    s.KBLine2 = mh.readByte(194);
+    s.KBLine3 = mh.readByte(195);
+    s.KBLine4 = mh.readByte(196);
+    s.KBLine5 = mh.readByte(197);
+    s.KBLine6 = mh.readByte(198);
+    s.KBLine7 = mh.readByte(199);
+
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
     s.s0FlagL = slotMh.readByte(8);
@@ -196,14 +207,6 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Gets the screen data of the ZX Spectrum machine
    */
   getScreenData(): Uint32Array {
-    // const state = this.getMachineState();
-    // const length = state.screenLines * state.screenWidth;
-    // const screenData = new Uint32Array(length);
-    // const pixel = state.frameCount & 0xff;
-    // for (let i = 0; i < length; i++) {
-    //   screenData[i] = 0xff000000 | (pixel << 24) | (pixel << 16) | (pixel << 8);
-    // }
-    // return screenData;
     const buffer = this.api.memory.buffer as ArrayBuffer;
     const screenData = new Uint32Array(
       buffer.slice(PIXEL_BUFFER, PIXEL_BUFFER + 4 * 640 * 64)

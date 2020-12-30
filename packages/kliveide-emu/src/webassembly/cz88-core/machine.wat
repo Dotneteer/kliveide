@@ -62,7 +62,10 @@
   (i32.store offset=186 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $Z88_CHIP_MASKS)))
   (i32.store8 offset=190 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=4 (get_global $Z88_CHIP_MASKS)))
 
-  ;; TODO: Get other state values
+  ;; Get other state values
+  (i32.store8 offset=191 (get_global $STATE_TRANSFER_BUFF) (get_global $shiftsReleased))
+  (i32.store offset=192 (get_global $STATE_TRANSFER_BUFF) (i32.load (get_global $KEYBOARD_LINES)))
+  (i32.store offset=196 (get_global $STATE_TRANSFER_BUFF) (i32.load offset=4 (get_global $KEYBOARD_LINES)))
 )
 
 ;; ============================================================================

@@ -93,7 +93,7 @@
   }
 </style>
 
-<main style={themeStyle} class={themeClass} tabindex="0">
+<main style={themeStyle} class={themeClass}>
   <Toolbar {vmEngine} />
   <MainCanvas {vmEngine} />
   {#if statusbarVisible}

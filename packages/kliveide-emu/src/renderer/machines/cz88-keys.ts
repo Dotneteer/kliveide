@@ -113,6 +113,8 @@ const usMapping: KeyMapping = {
   BracketRight: "SBracketR",
 
   ControlLeft: "Diamond",
+  ControlRight: "Diamond",
+  AltLeft: "Square",
   KeyA: "A",
   KeyS: "S",
   KeyD: "D",
@@ -141,7 +143,6 @@ const usMapping: KeyMapping = {
 
   Home: "Index",
   ContextMenu: "Menu",
-  AltRight: "Square",
   Space: "Space",
   CapsLock: "CapsLock",
   ArrowLeft: "Left",

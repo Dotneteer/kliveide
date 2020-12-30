@@ -26,18 +26,72 @@
 ;; $BM_STATIME_MASK# = 0xfe // Bit 0 reset mask
 (global $STA (mut i32) (i32.const 0x0000))
 
+;; Indicates that keys were released after the Z88 went to sleep
+(global $shiftsReleased (mut i32) (i32.const 0x0000))
+
 ;; Tests if the maskable interrupt has been requested
 (func $isMaskableInterruptRequested (result i32)
   ;; Is the BM_INTGINT flag set?
   (i32.and (get_global $INT) (i32.const $BM_INTGINT#))
   if
-    (select
-      (i32.const $SIG_INT#)
-      (i32.const 0)
-      (i32.and (get_global $INT) (get_global $STA))
-    )
-    return
+    (i32.and (get_global $INT) (get_global $STA))
+    if
+      i32.const 1
+      return
+    end
   end
+
+  ;; Check id the CPU is HALTed
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
+  if
+    ;; Check if I is 0x3F
+    (i32.eq (call $getI) (i32.const 0x3f))
+    if
+      get_global $shiftsReleased
+      if
+        ;; Test if both shift keys are pressed again
+        ;; Test right shift
+        (i32.and
+         (i32.load8_u offset=7 (get_global $KEYBOARD_LINES))
+         (i32.const 0x80)
+        )
+        if
+          ;; Test left shift
+          (i32.and
+           (i32.load8_u offset=6 (get_global $KEYBOARD_LINES))
+           (i32.const 0x40)
+          )
+          if
+            (set_global $shiftsReleased (i32.const 0))
+            i32.const 1
+            return
+          end
+        end
+      else
+        ;; Test if both shift keys are released
+        ;; Test right shift released
+        (i32.and
+         (i32.load8_u offset=7 (get_global $KEYBOARD_LINES))
+         (i32.const 0x80)
+        )
+        i32.eqz
+        if
+          ;; Test left shift released
+          (i32.and
+           (i32.load8_u offset=6 (get_global $KEYBOARD_LINES))
+           (i32.const 0x40)
+          )
+          i32.eqz
+          if
+            ;; Sign that both shift keys are released
+            (set_global $shiftsReleased (i32.const 1))
+          end
+        end
+      end
+    end
+  end
+
+  ;; No interrupt
   i32.const 0
 )
 
