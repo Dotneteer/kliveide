@@ -150,6 +150,8 @@
   (local $charAddr i32)
   (local $char i32)
   (local $attr i32)
+  (local $pixelPtr i32)
+  (local $orphanCount i32)
 
   ;; Test if LCD is ON
   (i32.eqz (i32.and (get_global $COM) (i32.const $BM_COMLCDON#)))
@@ -245,12 +247,47 @@
         end
       end
 
-      ;; TODO: Turn off the remaining pixels
+      ;; Turn off the remaining pixels
+      ;; Iterate through the pixel rows
+      (set_local $orphanCount (i32.const 8))
+      loop $orphanRows
+        get_local $orphanCount
+        if
+          ;; Calculate the top-left pixel address
+          (call $calcPixelPtr (get_local $coordX) (get_local $coordY))
+          set_local $pixelPtr
+
+          ;; Iterate through the orphaned pixels
+          (set_local $columnCount (get_local $coordX))
+          loop $orphanPixels
+            (i32.lt_u (get_local $columnCount) (get_global $screenWidth))
+            if
+              (i32.store (get_local $pixelPtr) (i32.const $PX_COL_OFF#))
+
+              ;; Next iteration
+              (i32.add (get_local $pixelPtr) (i32.const 4))
+              set_local $pixelPtr
+
+              (i32.add (get_local $columnCount) (i32.const 1))
+              set_local $columnCount
+              br $orphanPixels
+            end
+          end
+
+          ;; Decrement the counter
+          (i32.sub (get_local $orphanCount) (i32.const 1))
+          set_local $orphanCount
+
+          ;; Increment Y
+          (i32.add (get_local $coordY) (i32.const 1))
+          set_local $coordY
+
+          br $orphanRows
+        end
+      end
 
       ;; Prepare for next pixel row
       (set_local $coordX (i32.const 0))
-      (i32.add (get_local $coordY) (i32.const 8))
-      set_local $coordY
 
       ;; Decrement the counter
       (i32.sub (get_local $rowCount) (i32.const 1))
