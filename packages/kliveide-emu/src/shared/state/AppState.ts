@@ -157,7 +157,8 @@ export function getDefaultAppState(): AppState {
       muted: false,
       soundLevel: 0.5,
       statusbar: true,
-      internalState: {}
+      internalState: {},
+      clockMultiplier: 1
     },
     ideConfiguration: {
       projectFolder: "",

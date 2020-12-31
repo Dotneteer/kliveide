@@ -117,8 +117,6 @@
 
 ;; Sets the clock multiplier
 (func $setClockMultiplier (param $multiplier i32)
-  (local $mult i32)
   (i32.and (get_local $multiplier) (i32.const 0x1f))
-  (set_global $defaultClockMultiplier (tee_local $mult))
-  (set_global $clockMultiplier (get_local $mult))
+  set_global $defaultClockMultiplier
 )

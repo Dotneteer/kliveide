@@ -1,5 +1,10 @@
+;; Should CPU clock change be allowed?
+(func $allowCpuClockChange (result i32)
+  i32.const 1
+)
+
 ;; The execution engine starts a new frame
-(func $onInitNewFrame
+(func $onInitNewFrame (param $oldClockMultiplier i32)
   ;; TODO: Implement this method
 )
 

@@ -271,11 +271,6 @@ export class VmEngine implements IVmEngineController {
     if (this._isFirstStart) {
       this.z80Machine.reset();
       const emuState = rendererProcessStore.getState().emulatorPanelState;
-      this.z80Machine.api.setClockMultiplier(emuState.clockMultiplier ?? 1);
-      const audioCtx = new AudioContext();
-      const sampleRate = audioCtx.sampleRate;
-      audioCtx.close();
-      this.setAudioSampleRate(sampleRate);
 
       // --- Warm up to avoid sound delays
       this._completionTask = this.executeCycle(
@@ -316,9 +311,6 @@ export class VmEngine implements IVmEngineController {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      // --- Use the current clock multiplier
-      const emuState = rendererProcessStore.getState().emulatorPanelState;
-      
       // --- Now, do the real start
       this.z80Machine.reset();
 
@@ -350,7 +342,7 @@ export class VmEngine implements IVmEngineController {
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
     rendererProcessStore.dispatch(emulatorSetDebugAction(this._isDebugging)());
-    
+
     // --- Execute a single cycle
     this.executionState = VmState.Running;
     this._cancelled = false;
@@ -591,6 +583,10 @@ export class VmEngine implements IVmEngineController {
       }
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
+
+      // --- Use the current clock multiplier
+      const emuState = rendererProcessStore.getState().emulatorPanelState;
+      this.z80Machine.api.setClockMultiplier(emuState.clockMultiplier ?? 1);
     }
   }
 

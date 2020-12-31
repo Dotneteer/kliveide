@@ -484,9 +484,10 @@ export class AppWindow {
     const baseClockFrequency =
       this._machineMenuProvider?.getNormalCpuFrequency() ?? 1_000_000;
 
-    for (let i = 1; i <= 8; i++) {
+    for (let i = 1; i <= 16; i++) {
       (cpuClockSubmenu.submenu as MenuItemConstructorOptions[]).push({
         id: `clockMultiplier_${i}`,
+        type: "radio",
         label:
           (i > 1 ? `${i}x` : `Normal`) +
           ` (${((i * baseClockFrequency) / 1_000_000).toFixed(4)}MHz)`,
@@ -670,8 +671,16 @@ export class AppWindow {
         toggle_keyboard.checked = !!state.keyboardPanel;
       }
     }
+    const emuState = mainProcessStore.getState().emulatorPanelState;
+    if (emuState) {
+      const clockMultiplier = emuState.clockMultiplier ?? 1;
+      const cmItem = menu.getMenuItemById(`clockMultiplier_${clockMultiplier}`);
+      if (cmItem) {
+        cmItem.checked = false;
+      }
+    }
 
-    // --- Take care that custome machine menus are updated
+    // --- Take care that custom machine menus are updated
     this._machineMenuProvider?.updateMenuStatus(state);
 
     if (this._lastMachineType !== state.currentType) {

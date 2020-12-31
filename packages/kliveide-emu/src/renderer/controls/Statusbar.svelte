@@ -26,6 +26,7 @@
 
   // --- The value of PC
   let PC = 0;
+  let cpuFreq = 1;
 
   // --- Connect to the virtual machine whenever that changes
   $: {
@@ -44,7 +45,9 @@
     // --- Change the UI according to state change
     const emuUi = state.emulatorPanelState;
     if (emuUi) {
-      PC = vmEngine.z80Machine.getMachineState().pc;
+      const state = vmEngine.z80Machine.getMachineState();
+      PC = state.pc;
+      cpuFreq = (emuUi.clockMultiplier * state.baseClockFrequency / 1000000).toFixed(4);
     }
   });
 
@@ -141,7 +144,9 @@
     {#if vmEngine}<span class="label">{renderedFramesStr}</span>{/if}
   </div>
   <div class="section" title="The value of Program Counter">
-    <span class="label">PC: ${PC.toString(16).toUpperCase().padStart(4, '0')}</span>
+    <span class="label">PC: ${PC.toString(16)
+        .toUpperCase()
+        .padStart(4, '0')}</span>
   </div>
   <div class="placeholder" />
   {#if ideConnected}
@@ -150,6 +155,9 @@
   {#if vmEngine}
     <div class="section">
       <span class="label">{vmEngine.z80Machine.displayName}</span>
+    </div>
+    <div class="section">
+      <span class="label">CPU: {cpuFreq}Mhz</span>
     </div>
   {/if}
   <div class="section"><span class="label">Klive v{version}</span></div>
