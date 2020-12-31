@@ -151,14 +151,6 @@
     <ToolbarSeparator />
     {#if extraFeatures.includes('UlaDebug')}
     <ToolbarIconButton
-      iconName="shadow-screen"
-      fill="#ff80ff"
-      title="Toggle shadow screen"
-      selected={shadowScreenEnabled}
-      on:clicked={() => {
-        stateAware.dispatch(emulatorToggleShadowScreenAction());
-      }} />
-    <ToolbarIconButton
       iconName="beam-position"
       fill="#ff80ff"
       title="Show ULA position"

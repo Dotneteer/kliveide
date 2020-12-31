@@ -53,12 +53,16 @@ import {
   emulatorUnmuteAction,
   emulatorShowStatusbarAction,
   emulatorHideStatusbarAction,
+  emulatorShowKeyboardAction,
+  emulatorHideKeyboardAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
 import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
+import { MachineMenuProvider } from "./machine-menu";
+import { ZxSpectrumMenuProvider } from "./zx-spectrum-menu";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -66,10 +70,13 @@ import { BinaryReader } from "../shared/utils/BinaryReader";
 let windowStateKeeper: any | null = null;
 
 /**
- * Minimum application window dimesnions
+ * Minimum application window dimensions
  */
 const MIN_WIDTH = 960;
 const MIN_HEIGHT = 676;
+
+// --- Menu IDs
+const TOGGLE_KEYBOARD = "toggle_keyboard";
 
 /**
  * This class encapsulates the functionality of the application's window
@@ -81,6 +88,9 @@ export class AppWindow {
 
   // --- Last machine type used
   private _lastMachineType: string | null = null;
+
+  // --- Menu provider for the machine type
+  private _machineMenuProvider: MachineMenuProvider | null = null;
 
   // --- Last sound level used
   private _lastSoundLevel: number | null = null;
@@ -323,120 +333,151 @@ export class AppWindow {
         ],
       });
     }
-    template.push(
+
+    // --- Prepare the File menu
+    const fileMenu: MenuItemConstructorOptions = {
+      label: "File",
+      submenu: [__DARWIN__ ? { role: "close" } : { role: "quit" }],
+    };
+
+    // --- Preapre the view menu
+    const viewSubMenu: MenuItemConstructorOptions[] = [
+      { role: "toggleDevTools" },
+      { type: "separator" },
+      { role: "resetZoom" },
+      { role: "zoomIn" },
+      { role: "zoomOut" },
+      { type: "separator" },
+      { role: "togglefullscreen" },
+      { type: "separator" },
       {
-        label: "File",
-        submenu: [__DARWIN__ ? { role: "close" } : { role: "quit" }],
+        id: TOGGLE_KEYBOARD,
+        label: "Show keyboard",
+        type: "checkbox",
+        checked: false,
+        click: (mi) => {
+          if (mi.checked) {
+            mainProcessStore.dispatch(emulatorShowKeyboardAction());
+          } else {
+            mainProcessStore.dispatch(emulatorHideKeyboardAction());
+          }
+        },
+      },
+      { type: "separator" },
+    ];
+
+    let extraViewItems: MenuItemConstructorOptions[] =
+      this._machineMenuProvider?.provideViewMenuItems() ?? [];
+    if (extraViewItems.length > 0) {
+      extraViewItems.push({ type: "separator" });
+    }
+    viewSubMenu.push(...extraViewItems);
+
+    viewSubMenu.push({
+      id: "toggle_statusbar",
+      label: "Show statusbar",
+      type: "checkbox",
+      checked: true,
+      click: (mi) => {
+        if (mi.checked) {
+          mainProcessStore.dispatch(emulatorShowStatusbarAction());
+        } else {
+          mainProcessStore.dispatch(emulatorHideStatusbarAction());
+        }
+      },
+    });
+
+    // --- Add the file and view menu
+    template.push(fileMenu, {
+      label: "View",
+      submenu: viewSubMenu,
+    });
+
+    // --- Prepare the machine menu
+    const machineSubMenu: MenuItemConstructorOptions[] = [
+      {
+        id: MACHINE_MENU_ITEMS[0],
+        label: "ZX Spectrum 48",
+        type: "radio",
+        checked: true,
+        click: (mi) => this.requestMachineType(mi.id),
       },
       {
-        label: "View",
-        submenu: [
-          { role: "toggleDevTools" },
-          { type: "separator" },
-          { role: "resetZoom" },
-          { role: "zoomIn" },
-          { role: "zoomOut" },
-          { type: "separator" },
-          { role: "togglefullscreen" },
-          { type: "separator" },
-          {
-            id: "toggle_statusbar",
-            label: "Show statusbar",
-            type: "checkbox",
-            checked: true,
-            click: (mi) => {
-              if (mi.checked) {
-                mainProcessStore.dispatch(emulatorShowStatusbarAction());
-              } else {
-                mainProcessStore.dispatch(emulatorHideStatusbarAction());
-              }
-            },
-          },
-        ],
-      }
-    );
+        id: MACHINE_MENU_ITEMS[1],
+        label: "ZX Spectrum 128",
+        type: "radio",
+        checked: false,
+        click: (mi) => this.requestMachineType(mi.id),
+      },
+      {
+        id: MACHINE_MENU_ITEMS[2],
+        label: "ZX Spectrum +3E (not implemented)",
+        type: "radio",
+        checked: false,
+        click: (mi) => this.requestMachineType(mi.id),
+      },
+      {
+        id: MACHINE_MENU_ITEMS[3],
+        label: "ZX Spectrum Next (not implemented)",
+        type: "radio",
+        checked: false,
+        click: (mi) => this.requestMachineType(mi.id),
+      },
+      {
+        id: MACHINE_MENU_ITEMS[4],
+        label: "Cambridge Z88 (in progress)",
+        type: "radio",
+        checked: false,
+        click: (mi) => this.requestMachineType(mi.id),
+      },
+      { type: "separator" },
+      {
+        id: SOUND_MENU_ITEMS[0].id,
+        label: "Mute sound",
+        type: "radio",
+        checked: false,
+        click: () => this.setSoundLevel(SOUND_MENU_ITEMS[0].level),
+      },
+      {
+        id: SOUND_MENU_ITEMS[1].id,
+        label: "Sound: Low ",
+        type: "radio",
+        checked: false,
+        click: () => this.setSoundLevel(SOUND_MENU_ITEMS[1].level),
+      },
+      {
+        id: SOUND_MENU_ITEMS[2].id,
+        label: "Sound: Medium",
+        type: "radio",
+        checked: false,
+        click: () => this.setSoundLevel(SOUND_MENU_ITEMS[2].level),
+      },
+      {
+        id: SOUND_MENU_ITEMS[3].id,
+        label: "Sound: High",
+        type: "radio",
+        checked: true,
+        click: () => this.setSoundLevel(SOUND_MENU_ITEMS[3].level),
+      },
+      {
+        id: SOUND_MENU_ITEMS[4].id,
+        label: "Sound: Highest",
+        type: "radio",
+        checked: false,
+        click: () => this.setSoundLevel(SOUND_MENU_ITEMS[4].level),
+      },
+    ];
+
+    let extraMachineItems: MenuItemConstructorOptions[] =
+      this._machineMenuProvider?.provideMachineMenuItems() ?? [];
+    if (extraMachineItems.length > 0) {
+      machineSubMenu.push({ type: "separator" });
+      machineSubMenu.push(...extraMachineItems);
+    }
 
     template.push({
       label: "Machine",
-      submenu: [
-        {
-          id: MACHINE_MENU_ITEMS[0],
-          label: "ZX Spectrum 48",
-          type: "radio",
-          checked: true,
-          click: (mi) => this.requestMachineType(mi.id),
-        },
-        {
-          id: MACHINE_MENU_ITEMS[1],
-          label: "ZX Spectrum 128",
-          type: "radio",
-          checked: false,
-          click: (mi) => this.requestMachineType(mi.id),
-        },
-        {
-          id: MACHINE_MENU_ITEMS[2],
-          label: "ZX Spectrum +3E",
-          type: "radio",
-          checked: false,
-          click: (mi) => this.requestMachineType(mi.id),
-        },
-        {
-          id: MACHINE_MENU_ITEMS[3],
-          label: "ZX Spectrum Next",
-          type: "radio",
-          checked: false,
-          click: (mi) => this.requestMachineType(mi.id),
-        },
-        {
-          id: MACHINE_MENU_ITEMS[4],
-          label: "Cambridge Z88",
-          type: "radio",
-          checked: false,
-          click: (mi) => this.requestMachineType(mi.id),
-        },
-        { type: "separator" },
-        {
-          id: SOUND_MENU_ITEMS[0].id,
-          label: "Mute sound",
-          type: "radio",
-          checked: false,
-          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[0].level),
-        },
-        {
-          id: SOUND_MENU_ITEMS[1].id,
-          label: "Sound: Low ",
-          type: "radio",
-          checked: false,
-          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[1].level),
-        },
-        {
-          id: SOUND_MENU_ITEMS[2].id,
-          label: "Sound: Medium",
-          type: "radio",
-          checked: false,
-          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[2].level),
-        },
-        {
-          id: SOUND_MENU_ITEMS[3].id,
-          label: "Sound: High",
-          type: "radio",
-          checked: true,
-          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[3].level),
-        },
-        {
-          id: SOUND_MENU_ITEMS[4].id,
-          label: "Sound: Highest",
-          type: "radio",
-          checked: false,
-          click: () => this.setSoundLevel(SOUND_MENU_ITEMS[4].level),
-        },
-        { type: "separator" },
-        {
-          id: MACHINE_MENU_ITEMS[5],
-          label: "Set tape file...",
-          click: async () => await this.selectTapeFile(),
-        },
-      ],
+      submenu: machineSubMenu,
     });
 
     if (__DARWIN__) {
@@ -507,13 +548,33 @@ export class AppWindow {
 
   /**
    * Requests a machine type according to its menu ID
-   * @param id Menu ID of the machine type
+   * @param id Machine type, or menu ID of the machine type
    */
   requestMachineType(id: string): void {
     const parts = id.split("_");
-    if (parts.length > 1) {
-      const typeId = parts[1];
-      mainProcessStore.dispatch(emulatorRequestTypeAction(typeId)());
+    const typeId = parts.length > 1 ? parts[1] : id;
+
+    // --- Set the new machine type in the state vector
+    mainProcessStore.dispatch(emulatorRequestTypeAction(typeId)());
+
+    // --- Prepare the menu provider for the machine
+    switch (typeId) {
+      case "48":
+      case "128":
+        this._machineMenuProvider = new ZxSpectrumMenuProvider(this.window);
+        break;
+      default:
+        this._machineMenuProvider = null;
+    }
+
+    // --- Now, create the menu with the current machine type
+    this.setupMenu();
+    this.setMachineTypeMenu(typeId);
+
+    // --- Take care that the menu is updated according to the state
+    const emuState = mainProcessStore.getState().emulatorPanelState;
+    if (emuState) {
+      this._machineMenuProvider?.updateMenuStatus(emuState);
     }
   }
 
@@ -566,10 +627,22 @@ export class AppWindow {
    * @param state Emulator state
    */
   processStateChange(state: EmulatorPanelState): void {
+    // --- Update items in the view menu
+    const menu = Menu.getApplicationMenu();
+    if (menu) {
+      const toggle_keyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);
+      if (toggle_keyboard) {
+        toggle_keyboard.checked = !!state.keyboardPanel;
+      }
+    }
+
+    // --- Take care that custome machine menus are updated
+    this._machineMenuProvider?.updateMenuStatus(state);
+
     if (this._lastMachineType !== state.currentType) {
       // --- Current machine types has changed
       this._lastMachineType = state.currentType;
-      this.setMachineTypeMenu(this._lastMachineType);
+      this.requestMachineType(this._lastMachineType);
     }
 
     if (
@@ -582,6 +655,7 @@ export class AppWindow {
       this.setSoundLevelMenu(this._lastMuted, this._lastSoundLevel);
     }
 
+    // --- The engine has just saved a ZX Spectrum file
     if (state?.savedData && state.savedData.length > 0) {
       const data = state.savedData;
       const ideConfig = mainProcessStore.getState().ideConfiguration;
@@ -691,8 +765,7 @@ const MACHINE_MENU_ITEMS = [
   "machine_128",
   "machine_p3e",
   "machine_next",
-  "cambridge_cz88",
-  "set_tape",
+  "machine_cz88",
 ];
 
 /**
