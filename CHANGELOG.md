@@ -1,5 +1,32 @@
 # Klive IDE Changelog
 
+## 0.8.0-alpha.8
+
+### Klive Emulator
+
+#### Known Issues
+
+- ZX Spectrum 128 memory view and disassembly view has some discrepancies
+
+#### Features
+
+- Cambridge Z88 Emulation is now handles interrupts, keyboard, and screen rendering (the implementations is still in progress)
+
+#### Fixes
+- Timing issues with LDIR/LDDR operating on ROM fixed.
+- ZX Spectrum 48/128 interrupt signal is no longer (256 microsecond), as in the real hardware.
+
+### Klive IDE
+
+#### Features
+
+- Z80 & Other Registers view contains machine-specific diagnostics information for each machine type
+- The IDE contains Execute Klive command that you can use to set up absolute breakpoints, among the others
+
+#### Known Issues
+
+- Disassembly View does not refresh automatically when the selected ROM or Bank changes.
+
 ## 0.7.0-alpha.7
 
 ### Klive Emulator
@@ -32,7 +59,6 @@
 #### Known Issues
 
 - Disassembly View does not refresh automatically when the selected ROM or Bank changes.
-
 
 ## 0.6.0-alpha.6
 
