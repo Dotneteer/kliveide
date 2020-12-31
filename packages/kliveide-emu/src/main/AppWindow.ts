@@ -417,14 +417,14 @@ export class AppWindow {
       },
       {
         id: MACHINE_MENU_ITEMS[2],
-        label: "ZX Spectrum +3E (not implemented)",
+        label: "ZX Spectrum +3E (to be done)",
         type: "radio",
         checked: false,
         click: (mi) => this.requestMachineType(mi.id),
       },
       {
         id: MACHINE_MENU_ITEMS[3],
-        label: "ZX Spectrum Next (not implemented)",
+        label: "ZX Spectrum Next (to be done)",
         type: "radio",
         checked: false,
         click: (mi) => this.requestMachineType(mi.id),
