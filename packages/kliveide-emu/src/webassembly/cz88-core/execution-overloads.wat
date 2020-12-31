@@ -53,6 +53,16 @@
     set_global $flashPhase
   end
 
+  ;; Set text flash phase
+  (i32.add (get_global $textFlashCount) (i32.const 1))
+  set_global $textFlashCount
+  (i32.ge_u (get_global $textFlashCount) (get_global $textFlashToggleCount))
+  if
+    (set_global $textFlashCount (i32.const 0))
+    (i32.xor (get_global $textFlashPhase) (i32.const 0x01))
+    set_global $textFlashPhase
+  end
+
   ;; Refresh the screen for every 8th frame
   (i32.and (get_global $frameCount) (i32.const 0x07))
   i32.eqz

@@ -60,6 +60,15 @@
 ;; Current flash count
 (global $flashCount (mut i32) (i32.const 0x0000))
 
+;; Flash toggle counter
+(global $textFlashToggleCount (mut i32) (i32.const 0x0000))
+
+;; Current flash phase
+(global $textFlashPhase (mut i32) (i32.const 0x0000))
+
+;; Current flash count
+(global $textFlashCount (mut i32) (i32.const 0x0000))
+
 ;; LORES 0 address
 (global $loRes0 (mut i32) (i32.const 0x0000))
 
@@ -114,6 +123,8 @@
   i32.const 0 set_global $screenFrameCount
   i32.const 140 set_global $flashToggleCount
   i32.const 0 set_global $flashPhase
+  i32.const 200 set_global $textFlashToggleCount
+  i32.const 0 set_global $textFlashPhase
   i32.const 0 set_global $flashCount
   i32.const 256 set_global $sbfRowWidth
 
@@ -330,7 +341,7 @@
   ;; Check empty flash character
   (i32.and (get_local $attr) (i32.const $ATTR_FLS#))
   if
-    get_global $flashPhase
+    get_global $textFlashPhase
     if
       ;; Loop for 8 rows
       (set_local $rowCount (i32.const 8))
@@ -858,7 +869,7 @@
   ;; Check empty flash character
   (i32.and (get_local $attr) (i32.const $ATTR_FLS#))
   if
-    get_global $flashPhase
+    get_global $textFlashPhase
     if
       ;; Loop for 8 rows
       (set_local $rowCount (i32.const 8))
