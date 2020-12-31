@@ -100,18 +100,19 @@
   i32.const 3 set_global $ulaIssue
 
   ;; CPU configuration
-  i32.const 3_500_000 set_global $baseClockFrequency
-  i32.const 1 set_global $clockMultiplier
+  (set_global $baseClockFrequency (i32.const 3_500_000))
+  (set_global $clockMultiplier (get_global $defaultClockMultiplier))
+
   call $resetCpu
   
   ;; Memory configuration
-  i32.const 1 set_global $numberOfRoms
-  get_global $ROM_48_OFFS set_global $romContentsAddress
-  i32.const 0 set_global $spectrum48RomIndex
-  i32.const $MEMCONT_ULA# set_global $contentionType
-  i32.const 0 set_global $ramBanks
-  i32.const 0 set_global $nextMemorySize
-  get_global $BANK_0_OFFS set_global $memoryScreenOffset
+  (set_global $numberOfRoms (i32.const 1))
+  (set_global $romContentsAddress (get_global $ROM_48_OFFS))
+  (set_global $spectrum48RomIndex (i32.const 0))
+  (set_global $contentionType (i32.const $MEMCONT_ULA#))
+  (set_global $ramBanks (i32.const 0))
+  (set_global $nextMemorySize (i32.const 0))
+  (set_global $memoryScreenOffset (get_global $BANK_0_OFFS))
 
   ;; Set up BLOCK_LOOKUP_TABLE
   (call $setMemoryBlockEntry (i32.const 0) (get_global $ROM_48_OFFS) (i32.const 0) (i32.const 1))
@@ -127,30 +128,30 @@
   call $resetSpectrumMachine
 
   ;; Screen frame configuration
-  i32.const 11 set_global $interruptTact
-  i32.const 8 set_global $verticalSyncLines
-  i32.const 8 set_global $nonVisibleBorderTopLines
-  i32.const 48 set_global $borderTopLines
-  i32.const 48 set_global $borderBottomLines
-  i32.const 8 set_global $nonVisibleBorderBottomLines
-  i32.const 192 set_global $displayLines
-  i32.const 24 set_global $borderLeftTime
-  i32.const 24 set_global $borderRightTime
-  i32.const 128 set_global $displayLineTime
-  i32.const 40 set_global $horizontalBlankingTime
-  i32.const 8 set_global $nonVisibleBorderRightTime
-  i32.const 2 set_global $pixelDataPrefetchTime
-  i32.const 1 set_global $attributeDataPrefetchTime
+  (set_global $interruptTact (i32.const 11))
+  (set_global $verticalSyncLines (i32.const 8))
+  (set_global $nonVisibleBorderTopLines (i32.const 8))
+  (set_global $borderTopLines (i32.const 48))
+  (set_global $borderBottomLines (i32.const 48))
+  (set_global $nonVisibleBorderBottomLines (i32.const 8))
+  (set_global $displayLines (i32.const 192))
+  (set_global $borderLeftTime (i32.const 24))
+  (set_global $borderRightTime (i32.const 24))
+  (set_global $displayLineTime (i32.const 128))
+  (set_global $horizontalBlankingTime (i32.const 40))
+  (set_global $nonVisibleBorderRightTime (i32.const 8))
+  (set_global $pixelDataPrefetchTime (i32.const 2))
+  (set_global $attributeDataPrefetchTime (i32.const 1))
 
   call $calcScreenAttributes
   call $initRenderingTactTable
 
   ;; PSG sound configuration
-  i32.const 0 set_global $psgSupportsSound
+  (set_global $psgSupportsSound (i32.const 0))
 
   ;; Tape device data
-  i32.const 0x056c set_global $tapeLoadBytesRoutine
-  i32.const 0x056b set_global $tapeLoadBytesInvalidHeader
-  i32.const 0x05e2 set_global $tapeLoadBytesResume
-  i32.const 0x04c2 set_global $tapeSaveBytesRoutine
+  (set_global $tapeLoadBytesRoutine (i32.const 0x056c))
+  (set_global $tapeLoadBytesInvalidHeader (i32.const 0x056b))
+  (set_global $tapeLoadBytesResume (i32.const 0x05e2))
+  (set_global $tapeSaveBytesRoutine (i32.const 0x04c2))
 )

@@ -10,6 +10,9 @@
 ;; Clock frequency multiplier
 (global $clockMultiplier (mut i32) (i32.const 0x0000))
 
+;; Default clock frequency multiplier
+(global $defaultClockMultiplier (mut i32) (i32.const 1))
+
 ;; ----------------------------------------------------------------------------
 ;; Screen related
 
@@ -112,3 +115,10 @@
 ;; The step-over breakpoint
 (global $stepOverBreakpoint (mut i32) (i32.const 0x0000))
 
+;; Sets the clock multiplier
+(func $setClockMultiplier (param $multiplier i32)
+  (local $mult i32)
+  (i32.and (get_local $multiplier) (i32.const 0x1f))
+  (set_global $defaultClockMultiplier (tee_local $mult))
+  (set_global $clockMultiplier (get_local $mult))
+)

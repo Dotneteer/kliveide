@@ -50,6 +50,7 @@
     get_global $frameCompleted
     if
       ;; Reset frame information
+      (set_global $clockMultiplier (get_global $defaultClockMultiplier))
       (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
       set_global $lastRenderedFrameTact
 

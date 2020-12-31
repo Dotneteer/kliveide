@@ -37,6 +37,7 @@ export interface EmulatorPanelState {
   width?: number;
   height?: number;
   engineInitialized?: boolean;
+  clockMultiplier?: number;
   executionState?: number;
   runsInDebug?: boolean;
   tapeContents?: Uint8Array;

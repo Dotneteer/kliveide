@@ -24,4 +24,9 @@ export interface MachineMenuProvider {
    * When the application state changes, you can update the menus
    */
   updateMenuStatus(state: EmulatorPanelState): void;
+
+  /**
+   * The normal CPU frequency of the machine
+   */
+  getNormalCpuFrequency(): number;
 }

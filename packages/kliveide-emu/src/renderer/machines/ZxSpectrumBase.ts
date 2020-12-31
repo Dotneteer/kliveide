@@ -414,7 +414,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       const psgSamples = mh
         .readWords(0, resultState.audioSampleCount)
         .map((smp) =>
-          emuState.muted ? 0 : (smp / 32768) * (emuState.soundLevel ?? 0)
+          emuState.muted ? 0 : (smp / 8192) * (emuState.soundLevel ?? 0)
         );
       this._psgRenderer.storeSamples(psgSamples);
       this._psgRenderer.resume();

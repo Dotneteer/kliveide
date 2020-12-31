@@ -55,6 +55,7 @@ import {
   emulatorHideStatusbarAction,
   emulatorShowKeyboardAction,
   emulatorHideKeyboardAction,
+  emulatorSetClockMultiplierAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
@@ -62,7 +63,12 @@ import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { MachineMenuProvider } from "./machine-menu";
-import { ZxSpectrumMenuProvider } from "./zx-spectrum-menu";
+import {
+  ZxSpectrum128MenuProvider,
+  ZxSpectrum48MenuProvider,
+  ZxSpectrumMenuProviderBase,
+} from "./zx-spectrum-menu";
+import { Cz88MenuProvider } from "./cz-88-menu";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -468,6 +474,30 @@ export class AppWindow {
       },
     ];
 
+    const emuState = mainProcessStore.getState().emulatorPanelState;
+    emuState.internalState;
+    const cpuClockSubmenu: MenuItemConstructorOptions = {
+      type: "submenu",
+      label: "CPU clock multiplier",
+      submenu: [],
+    };
+    const baseClockFrequency =
+      this._machineMenuProvider?.getNormalCpuFrequency() ?? 1_000_000;
+
+    for (let i = 1; i <= 8; i++) {
+      (cpuClockSubmenu.submenu as MenuItemConstructorOptions[]).push({
+        id: `clockMultiplier_${i}`,
+        label:
+          (i > 1 ? `${i}x` : `Normal`) +
+          ` (${((i * baseClockFrequency) / 1_000_000).toFixed(4)}MHz)`,
+        click: () => {
+          mainProcessStore.dispatch(emulatorSetClockMultiplierAction(i)());
+        },
+      });
+    }
+    machineSubMenu.push({ type: "separator" });
+    machineSubMenu.push(cpuClockSubmenu);
+
     let extraMachineItems: MenuItemConstructorOptions[] =
       this._machineMenuProvider?.provideMachineMenuItems() ?? [];
     if (extraMachineItems.length > 0) {
@@ -560,8 +590,13 @@ export class AppWindow {
     // --- Prepare the menu provider for the machine
     switch (typeId) {
       case "48":
+        this._machineMenuProvider = new ZxSpectrum48MenuProvider(this.window);
+        break;
       case "128":
-        this._machineMenuProvider = new ZxSpectrumMenuProvider(this.window);
+        this._machineMenuProvider = new ZxSpectrum128MenuProvider(this.window);
+        break;
+      case "cz88":
+        this._machineMenuProvider = new Cz88MenuProvider(this.window);
         break;
       default:
         this._machineMenuProvider = null;

@@ -10,6 +10,7 @@ export interface CpuApi {
   getCpuState(): void;
   updateCpuState(): void;
   setCpuDiagnostics(flags: number): void;
+  setClockMultiplier(flags: number): void;
   setPC(pc: number): void;
   setSP(sp: number): void;
 }

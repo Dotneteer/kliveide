@@ -12,14 +12,14 @@
 ;; Sets up the Cambridge Z88 machine
 (func $setupMachine 
   ;; CPU configuration
-  i32.const 3_276_800 set_global $baseClockFrequency
-  i32.const 1 set_global $clockMultiplier
+  (set_global $baseClockFrequency (i32.const 3_276_800))
+  (set_global $clockMultiplier (get_global $defaultClockMultiplier))
   call $resetCpu
 
   ;; Screen configuration
-  i32.const 64 set_global $screenLines
-  i32.const 640 set_global $screenWidth
-  i32.const 16384 set_global $tactsInFrame
+  (set_global $screenLines (i32.const 64))
+  (set_global $screenWidth (i32.const 640))
+  (set_global $tactsInFrame (i32.const 16384))
 
   ;; Blink initial setup
   call $resetBlink

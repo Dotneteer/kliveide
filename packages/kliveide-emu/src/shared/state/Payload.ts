@@ -1,4 +1,4 @@
-import { BreakpointDefinition, RegisterData } from "../machines/api-data";
+import { RegisterData } from "../machines/api-data";
 import { IdeConfiguration } from "./AppState";
 
 /**
@@ -38,4 +38,5 @@ export interface Payload {
   soundLevel?: number;
   statusbar?: boolean;
   internalState?: Record<string, any>;
+  clockMultiplier?: number;
 }
