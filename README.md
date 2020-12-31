@@ -3,7 +3,7 @@
 This project aims to build a full-fledged Z80 assembler IDE that you can easily use on Linux, Mac, and Windows. Besides supporting the traditional ZX Spectrum models (48/128/2/2A/2+/3/3+),
 Klive IDE intends to be an attractive development platform for [Cambridge Z88](https://en.wikipedia.org/wiki/Cambridge_Z88) and [ZX Spectrum Next](https://www.specnext.com/).
 
-**The current public release (v0.7.0) is released on December 13, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
+**The current public release (v0.8.0) is released on December 31, 2020 [(changelog)](https://github.com/Dotneteer/kliveide/releases)**.
 
 - [You can immediately try it](https://dotneteer.github.io/kliveide/getting-started/install-kliveide)
 
