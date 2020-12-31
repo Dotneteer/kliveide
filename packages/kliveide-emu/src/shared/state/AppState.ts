@@ -37,6 +37,7 @@ export interface EmulatorPanelState {
   width?: number;
   height?: number;
   engineInitialized?: boolean;
+  clockMultiplier?: number;
   executionState?: number;
   runsInDebug?: boolean;
   tapeContents?: Uint8Array;
@@ -156,7 +157,8 @@ export function getDefaultAppState(): AppState {
       muted: false,
       soundLevel: 0.5,
       statusbar: true,
-      internalState: {}
+      internalState: {},
+      clockMultiplier: 1
     },
     ideConfiguration: {
       projectFolder: "",

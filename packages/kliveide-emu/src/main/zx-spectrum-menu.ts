@@ -24,7 +24,8 @@ const TOGGLE_BEAM = "sp_toggle_beam_position";
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
 
-export class ZxSpectrumMenuProvider implements MachineMenuProvider {
+export abstract class ZxSpectrumMenuProviderBase
+  implements MachineMenuProvider {
   /**
    * Instantiates the provider
    * @param window Bowser window this menu provider is associated with
@@ -101,9 +102,14 @@ export class ZxSpectrumMenuProvider implements MachineMenuProvider {
   }
 
   /**
+   * The normal CPU frequency of the machine
+   */
+  abstract getNormalCpuFrequency(): number;
+
+  /**
    * Select a tape file to use with the ZX Spectrum
    */
-  async selectTapeFile(): Promise<void> {
+  private async selectTapeFile(): Promise<void> {
     const result = await dialog.showOpenDialog(this.window, {
       title: "Open tape file",
       filters: [
@@ -138,5 +144,45 @@ export class ZxSpectrumMenuProvider implements MachineMenuProvider {
         });
       }
     }
+  }
+}
+
+/**
+ * Menu provider for the ZX Spectrum machine model
+ */
+export class ZxSpectrum48MenuProvider extends ZxSpectrumMenuProviderBase {
+  /**
+   * Instantiates the provider
+   * @param window Bowser window this menu provider is associated with
+   */
+  constructor(public window: BrowserWindow) {
+    super(window);
+  }
+
+  /**
+   * The normal CPU frequency of the machine
+   */
+  getNormalCpuFrequency(): number {
+    return 3_500_000;
+  }
+}
+
+/**
+ * Menu provider for the ZX Spectrum machine model
+ */
+export class ZxSpectrum128MenuProvider extends ZxSpectrumMenuProviderBase {
+  /**
+   * Instantiates the provider
+   * @param window Bowser window this menu provider is associated with
+   */
+  constructor(public window: BrowserWindow) {
+    super(window);
+  }
+
+  /**
+   * The normal CPU frequency of the machine
+   */
+  getNormalCpuFrequency(): number {
+    return 3_546_900;
   }
 }

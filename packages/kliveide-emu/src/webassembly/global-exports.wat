@@ -7,6 +7,7 @@
 (export "getCpuState" (func $getCpuState))
 (export "updateCpuState" (func $updateCpuState))
 (export "setCpuDiagnostics" (func $setCpuDiagnostics))
+(export "setClockMultiplier" (func $setClockMultiplier))
 (export "setPC" (func $setPC))
 (export "setSP" (func $setSP))
 

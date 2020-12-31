@@ -105,10 +105,15 @@ export const emulatorHideStatusbarAction = createAction(
   "EMULATOR_HIDE_STATUSBAR"
 );
 
-export function emulatorSetInternalStateAction(internalState: Record<string, any>) {
+export function emulatorSetInternalStateAction(
+  internalState: Record<string, any>
+) {
   return createAction("EMULATOR_SET_INTERNAL_STATE", { internalState });
 }
 
+export function emulatorSetClockMultiplierAction(clockMultiplier: number) {
+  return createAction("EMULATOR_SET_CLOCK_MULTIPLIER", { clockMultiplier });
+}
 
 /**
  * This reducer manages keyboard panel state changes
@@ -206,7 +211,9 @@ export function emulatorStateReducer(
     case "EMULATOR_HIDE_STATUSBAR":
       return { ...state, statusbar: false };
     case "EMULATOR_SET_INTERNAL_STATE":
-        return { ...state, internalState: payload.internalState };
-    }
+      return { ...state, internalState: payload.internalState };
+    case "EMULATOR_SET_CLOCK_MULTIPLIER":
+      return { ...state, clockMultiplier: payload.clockMultiplier };
+  }
   return state;
 }

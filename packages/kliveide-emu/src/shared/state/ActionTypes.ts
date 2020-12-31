@@ -42,6 +42,7 @@ export interface ActionTypes {
   EMULATOR_SHOW_STATUSBAR: null;
   EMULATOR_HIDE_STATUSBAR: null;
   EMULATOR_SET_INTERNAL_STATE: null;
+  EMULATOR_SET_CLOCK_MULTIPLIER: null;
 
   // --- VM information actions
   VM_SET_REGISTERS: null;

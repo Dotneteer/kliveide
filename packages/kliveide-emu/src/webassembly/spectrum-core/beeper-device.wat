@@ -39,7 +39,9 @@
 ;; $rate: New beeper sample rate
 (func $setBeeperSampleRate (param $rate i32)
   (local $sampleLength f32)
-  get_local $rate set_global $audioSampleRate
+
+  ;; Yes, update counters to the new sample rate
+  (set_global $audioSampleRate (get_local $rate))
 
   ;; Calculate the sample length
   (f32.div

@@ -200,6 +200,7 @@
   (i32.store offset=47 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))      
   (i32.store8 offset=51 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))      
   (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuDiagnostics))      
+  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $defaultClockMultiplier))      
 )
 
 ;; Restores the CPU state from the transfer area. This method copies register values

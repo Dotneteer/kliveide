@@ -38,6 +38,7 @@
   (local $currentFrameTact i32)
   (local $nextOpCode i32)
   (local $length i32)
+  (local $oldClockMultiplier i32)
 
   ;; Initialize the execution cycle
   i32.const $EX_REA_EXEC# set_global $executionCompletionReason
@@ -50,10 +51,15 @@
     get_global $frameCompleted
     if
       ;; Reset frame information
+      call $allowCpuClockChange
+      if
+        (set_local $oldClockMultiplier (get_global $clockMultiplier))
+        (set_global $clockMultiplier (get_global $defaultClockMultiplier))
+      end
       (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
       set_global $lastRenderedFrameTact
 
-      call $onInitNewFrame
+      (call $onInitNewFrame (get_local $oldClockMultiplier))
     end
 
     ;; Calculate the current frame tact

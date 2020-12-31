@@ -12,6 +12,7 @@ export abstract class Z80MachineStateBase extends Z80CpuState {
   // --- CPU configuration
   baseClockFrequency: number;
   clockMultiplier: number;
+  defaultClockMultiplier: number;
 
   // --- CPU diagnostics
   cpuDiagnostics: number;

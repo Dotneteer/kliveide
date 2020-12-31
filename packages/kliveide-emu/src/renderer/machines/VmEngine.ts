@@ -269,8 +269,10 @@ export class VmEngine implements IVmEngineController {
       this.executionState === VmState.Stopped;
 
     if (this._isFirstStart) {
-      // --- Warm up to avoid sound delays
       this.z80Machine.reset();
+      const emuState = rendererProcessStore.getState().emulatorPanelState;
+
+      // --- Warm up to avoid sound delays
       this._completionTask = this.executeCycle(
         this,
         new ExecuteCycleOptions(
@@ -581,6 +583,10 @@ export class VmEngine implements IVmEngineController {
       }
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
+
+      // --- Use the current clock multiplier
+      const emuState = rendererProcessStore.getState().emulatorPanelState;
+      this.z80Machine.api.setClockMultiplier(emuState.clockMultiplier ?? 1);
     }
   }
 

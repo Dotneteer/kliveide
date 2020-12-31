@@ -187,8 +187,14 @@
   set_global $ulaIssue
 )
 
+;; Should CPU clock change be allowed?
+(func $allowCpuClockChange (result i32)
+  (i32.eqz (get_global $tapeMode))
+)
+
+
 ;; The execution engine starts a new frame
-(func $onInitNewFrame
+(func $onInitNewFrame (param $oldClockMultiplier i32)
   (local $overflow i32)
 
   ;; Reset interrupt information
@@ -212,6 +218,10 @@
   end
 
   ;; Reset beeper frame state
+  (i32.ne (get_local $oldClockMultiplier) (get_global $clockMultiplier))
+  if
+    (call $setBeeperSampleRate (get_global $audioSampleRate))
+  end 
   i32.const 0 set_global $audioSampleCount
 )
 
