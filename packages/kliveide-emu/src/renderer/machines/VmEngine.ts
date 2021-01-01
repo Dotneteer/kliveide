@@ -10,6 +10,7 @@ import {
 import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
 import {
+  createRendererProcessStateAware,
   rendererProcessStore,
 } from "../rendererProcessStore";
 import {
@@ -19,16 +20,25 @@ import {
   emulatorSetDebugAction,
   emulatorSetInternalStateAction,
 } from "../../shared/state/redux-emulator-state";
-import { BreakpointDefinition, CodeToInject, RegisterData } from "../../shared/machines/api-data";
+import {
+  BreakpointDefinition,
+  CodeToInject,
+  RegisterData,
+} from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
 import { BANK_0_OFFS } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 import { emulatorAppConfig } from "../machine-loader";
+import { machineCommandAction } from "../../shared/state/redux-machine-command-state";
+import { StateAwareObject } from "../../shared/state/StateAwareObject";
 /**
  * This class represents the engine that controls and runs the
  * selected virtual machine in the renderer process.
  */
 export class VmEngine implements IVmEngineController {
+  // --- Object watching state changes
+  private _stateAware: StateAwareObject | null = null;
+
   // --- The current execution state of the machine
   private _vmState: VmState = VmState.None;
 
@@ -65,6 +75,9 @@ export class VmEngine implements IVmEngineController {
   // --- Breakpoints to use
   private _breakpoints: BreakpointDefinition[] = [];
 
+  // --- Last machine-specific command executed
+  private _lastCommand: string | null = null;
+
   // --- Time monitoring
   private _sumFrameTime = 0.0;
   private _lastFrameTime = 0.0;
@@ -82,6 +95,28 @@ export class VmEngine implements IVmEngineController {
     // --- Obtain the state of the machine, including memory contents
     this._loadedState = z80Machine.getMachineState();
     rendererProcessStore.dispatch(engineInitializedAction());
+    this._stateAware = createRendererProcessStateAware("machineCommand");
+    this._stateAware.stateChanged.on(
+      async (command) => {
+        if (command !== this._lastCommand) {
+          try {
+            this._lastCommand = command as string;
+            if (this._lastCommand) {
+              await this.z80Machine.executeMachineCommand(this._lastCommand, this);
+            }
+          } finally {
+            rendererProcessStore.dispatch(machineCommandAction()());
+          }
+        }
+      }
+    );
+  }
+
+  /**
+   * Disposes the engine instance
+   */
+  dispose(): void {
+    this._stateAware?.dispose();
   }
 
   /**
@@ -778,10 +813,7 @@ export class VmEngine implements IVmEngineController {
    * @param primary Primary key
    * @param secodary Optional secondary key
    */
-  async delayKey(
-    primaryKey: number,
-    secondaryKey?: number
-  ): Promise<void> {
+  async delayKey(primaryKey: number, secondaryKey?: number): Promise<void> {
     this.queueKeyStroke(
       this.z80Machine.getMachineState().frameCount,
       3,

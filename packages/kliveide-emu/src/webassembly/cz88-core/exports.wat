@@ -22,3 +22,4 @@
 (export "setZ88Card3Rom" (func $setZ88Card3Rom))
 (export "setZ88RndSeed" (func $setZ88RndSeed))
 (export "writePortCz88" (func $writePort))
+(export "clearMemory" (func $clearMemory))

@@ -11,7 +11,11 @@
   import { themeStore } from "./stores/theme-store";
   import { darkTheme } from "./themes/dark-theme";
 
-  import { getVmEngine, changeVmEngine, setEmulatorAppConfig } from "./machine-loader";
+  import {
+    getVmEngine,
+    changeVmEngine,
+    setEmulatorAppConfig,
+  } from "./machine-loader";
   import { createRendererProcessStateAware } from "./rendererProcessStore";
   import { emulatorSetupTypeAction } from "../shared/state/redux-emulator-state";
   import { sendMessageToMain } from "../shared/messaging/renderer-to-main-comm";
@@ -45,9 +49,6 @@
     setEmulatorAppConfig(configResponse.config);
   });
 
-  // --- Cleanup subscriptions
-  onDestroy(unsubscribe);
-
   // --- Start with the dark theme
   themeStore.registerTheme(darkTheme);
   themeStore.setTheme("dark");
@@ -75,6 +76,17 @@
       }
     }
     statusbarVisible = emuUi.statusbar;
+  });
+
+  // --- Cleanup subscriptions
+  onDestroy(() => {
+    unsubscribe();
+    if (stateAware) {
+      stateAware.dispose();
+    }
+    if (vmEngine) {
+      vmEngine.dispose();
+    }
   });
 </script>
 

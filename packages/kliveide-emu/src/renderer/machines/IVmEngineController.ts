@@ -12,6 +12,11 @@ export interface IVmEngineController {
   start(options?: ExecuteCycleOptions): Promise<void>;
 
   /**
+   * Stops the virtual machine
+   */
+  stop(): Promise<void>
+
+  /**
    * Signs that the screen has been refreshed
    */
   signScreenRefreshed(): void;

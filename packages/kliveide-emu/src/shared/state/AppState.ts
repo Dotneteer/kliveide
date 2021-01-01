@@ -1,4 +1,4 @@
-import { BreakpointDefinition, CodeToInject, RegisterData } from "../machines/api-data";
+import { CodeToInject, RegisterData } from "../machines/api-data";
 
 /**
  * Represents the state of the application
@@ -28,6 +28,11 @@ export interface AppState {
    * The current state of IDE connection
    */
   ideConnection?: IdeConnection;
+
+  /**
+   * Machine specific command to execute
+   */
+  machineCommand?: string;
 }
 
 /**

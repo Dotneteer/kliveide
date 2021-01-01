@@ -5,7 +5,7 @@ export const ideConnectsAction = createAction("IDE_CONNECTS");
 export const ideDisconnectsAction = createAction("IDE_DISCONNECTS");
 
 /**
- * This reducer manages application window state changes
+ * This reducer manages IDE connection state changes
  * @param state Input state
  * @param action Action executed
  */

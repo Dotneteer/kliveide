@@ -56,6 +56,8 @@ export async function changeVmEngine(typeId: string) {
   // --- Stop the engine
   if (vmEngine) {
     await vmEngine.stop();
+    vmEngine.dispose();
+    vmEngine = null;
 
     // --- Allow 100 ms for pending entities to update
     await new Promise((r) => setTimeout(r, 100));

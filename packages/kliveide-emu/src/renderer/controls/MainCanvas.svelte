@@ -1,5 +1,5 @@
 <script>
-  import { tick } from "svelte";
+  import { tick, onDestroy } from "svelte";
   import SplitContainer from "./SplitContainer.svelte";
   import EmulatorPanel from "./EmulatorPanel.svelte";
   import KeyboardPanel from "./KeyboardPanel.svelte";
@@ -26,6 +26,16 @@
   let splitterIsMoving = false;
 
   $: keyboardType = vmEngine ? vmEngine.keyboardType : "";
+
+  // --- Cleanup subscriptions
+  onDestroy(() => {
+    if (stateAware) {
+      stateAware.dispose();
+    }
+    if (vmEngine) {
+      vmEngine.dispose();
+    }
+  });
 </script>
 
 <style>

@@ -2,6 +2,7 @@
   // ==========================================================================
   // The singleton toolbar of the application
 
+  import { onDestroy } from "svelte";
   import ToolbarIconButton from "./ToolbarIconButton.svelte";
   import ToolbarSeparator from "./ToolbarSeparator.svelte";
 
@@ -9,7 +10,6 @@
   import { createRendererProcessStateAware } from "../rendererProcessStore";
   import {
     emulatorToggleKeyboardAction,
-    emulatorToggleShadowScreenAction,
     emulatorToggleBeamPositionAction,
     emulatorToggleFastLoadAction,
     emulatorMuteAction,
@@ -22,7 +22,6 @@
   // --- We change Titlebar colors as the app focus changes
   let backgroundColor;
   let keyboardDisplayed;
-  let shadowScreenEnabled;
   let beamPositionEnabled;
   let fastLoadEnabled;
   let isLoading;
@@ -40,7 +39,6 @@
     const emuUi = state.emulatorPanelState;
     if (emuUi) {
       keyboardDisplayed = emuUi.keyboardPanel;
-      shadowScreenEnabled = emuUi.shadowScreen;
       beamPositionEnabled = emuUi.beamPosition;
       fastLoadEnabled = emuUi.fastLoad;
       isLoading = emuUi.isLoading;
@@ -58,6 +56,16 @@
       });
     }
   }
+
+  // --- Cleanup subscriptions
+  onDestroy(() => {
+    if (stateAware) {
+      stateAware.dispose();
+    }
+    if (vmEngine) {
+      vmEngine.dispose();
+    }
+  });
 
   // --- Calculate colors according to focus state
   function calculateColors(focused) {
@@ -150,15 +158,15 @@
       }} />
     <ToolbarSeparator />
     {#if extraFeatures.includes('UlaDebug')}
-    <ToolbarIconButton
-      iconName="beam-position"
-      fill="#ff80ff"
-      title="Show ULA position"
-      selected={beamPositionEnabled}
-      on:clicked={() => {
-        stateAware.dispatch(emulatorToggleBeamPositionAction());
-      }} />
-    <ToolbarSeparator />
+      <ToolbarIconButton
+        iconName="beam-position"
+        fill="#ff80ff"
+        title="Show ULA position"
+        selected={beamPositionEnabled}
+        on:clicked={() => {
+          stateAware.dispatch(emulatorToggleBeamPositionAction());
+        }} />
+      <ToolbarSeparator />
     {/if}
     {#if extraFeatures.includes('Sound')}
       {#if muted}
@@ -177,20 +185,20 @@
           }} />
       {/if}
       <ToolbarSeparator />
-      {/if}
+    {/if}
     {#if extraFeatures.includes('Tape')}
       <ToolbarIconButton
-      iconName="rocket"
-      title="Fast LOAD mode"
-      selected={fastLoadEnabled}
-      on:clicked={() => {
-        stateAware.dispatch(emulatorToggleFastLoadAction());
-      }} />
-    <ToolbarIconButton
-      iconName="reverse-tape"
-      title="Rewind the tape"
-      enable={!isLoading}
-      on:clicked={() => vmEngine.initTapeContents('Tape rewound')} />
+        iconName="rocket"
+        title="Fast LOAD mode"
+        selected={fastLoadEnabled}
+        on:clicked={() => {
+          stateAware.dispatch(emulatorToggleFastLoadAction());
+        }} />
+      <ToolbarIconButton
+        iconName="reverse-tape"
+        title="Rewind the tape"
+        enable={!isLoading}
+        on:clicked={() => vmEngine.initTapeContents('Tape rewound')} />
       <ToolbarSeparator />
     {/if}
   </div>

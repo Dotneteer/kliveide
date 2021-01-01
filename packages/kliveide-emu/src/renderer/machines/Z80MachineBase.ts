@@ -72,6 +72,15 @@ export abstract class Z80MachineBase {
   }
 
   /**
+   * Executes a machine specific command. Override in a machine to
+   * respond to those commands
+   * @param _command Command to execute
+   * @param _controller Machine controller
+   */
+  async executeMachineCommand(_command: string, _controller: IVmEngineController): Promise<void> {
+  }
+
+  /**
    * Turns on the machine
    */
   turnOnMachine(): void {

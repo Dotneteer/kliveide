@@ -7,7 +7,7 @@ export function vmSetRegistersAction(registers: RegisterData) {
 }
 
 /**
- * This reducer manages application window state changes
+ * This reducer manages application virtual macine info changes
  * @param state Input state
  * @param action Action executed
  */

@@ -15,6 +15,11 @@ import {
 import { KeyMapping } from "./keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
 import { ExtraMachineFeatures } from "./Z80MachineBase";
+import {
+  CZ88_HARD_RESET,
+  CZ88_SOFT_RESET,
+} from "../../shared/machines/macine-commands";
+import { IVmEngineController } from "./IVmEngineController";
 
 /**
  * This class implements the Cambride Z88 machine
@@ -53,7 +58,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Get the list of machine features supported
    */
   getExtraMachineFeatures(): ExtraMachineFeatures[] {
-    return [ "Sound" ];
+    return ["Sound"];
   }
 
   /**
@@ -245,6 +250,29 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     }
     // --- At this point we have not completed the execution yet
     // --- Initiate the refresh of the screen
+  }
+
+  /**
+   * Executes a machine specific command.
+   * @param command Command to execute
+   * @param controller Machine controller
+   */
+  async executeMachineCommand(
+    command: string,
+    controller: IVmEngineController
+  ): Promise<void> {
+    switch (command) {
+      case CZ88_SOFT_RESET:
+        await controller.stop();
+        await controller.start();
+        break;
+      case CZ88_HARD_RESET:
+        await controller.stop();
+        this.api.turnOnMachine();
+        //this.api.clearMemory();
+        await controller.start();
+        break;
+    }
   }
 }
 

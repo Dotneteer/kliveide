@@ -39,4 +39,5 @@ export interface Payload {
   statusbar?: boolean;
   internalState?: Record<string, any>;
   clockMultiplier?: number;
+  machineCommand?: string;
 }

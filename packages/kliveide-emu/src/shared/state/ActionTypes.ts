@@ -44,6 +44,9 @@ export interface ActionTypes {
   EMULATOR_SET_INTERNAL_STATE: null;
   EMULATOR_SET_CLOCK_MULTIPLIER: null;
 
+  // --- Machine specific commands
+  MACHINE_COMMAND: null;
+  
   // --- VM information actions
   VM_SET_REGISTERS: null;
 
