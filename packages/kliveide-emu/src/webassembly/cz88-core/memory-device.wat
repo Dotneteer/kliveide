@@ -112,11 +112,16 @@
   (local $counter i32)
   (local $ptr i32)
 
-  ;; Fill up memory area with zeros
-  (set_local $counter (i32.const 0))
-  (set_local $ptr (get_global $Z88_MEM_AREA))
+  ;; Fill up the RAM (above 512K) area with zeros
+  (set_local $counter (i32.const 0x1_0000))
+  (set_local $ptr 
+    (i32.add 
+      (get_global $Z88_MEM_AREA)
+      (i32.const 0x8_0000)
+    )
+  )
   loop $resetLoop
-   (i32.lt_u (get_local $counter) (i32.const 0x8_0000))
+   (i32.lt_u (get_local $counter) (i32.const 0x7_0000))
    if
       ;; Store 8 bytes of zero
       (i64.store (get_local $ptr) (i64.const 0))

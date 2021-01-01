@@ -2,7 +2,8 @@
   // ==========================================================================
   // The panel that displays the virtual machine emulator with its overlays
 
-  import { afterUpdate } from "svelte";
+  import { afterUpdate, onDestroy } from "svelte";
+
   import { createRendererProcessStateAware } from "../rendererProcessStore";
 
   import ExecutionStateOverlay from "./ExecutionStateOverlay.svelte";
@@ -81,6 +82,16 @@
     }
     if (execState) {
       displayScreenData();
+    }
+  });
+
+  // --- Cleanup subscriptions
+  onDestroy(() => {
+    if (stateAware) {
+      stateAware.dispose();
+    }
+    if (vmEngine) {
+      vmEngine.dispose();
     }
   });
 

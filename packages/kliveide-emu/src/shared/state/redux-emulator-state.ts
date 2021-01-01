@@ -116,7 +116,7 @@ export function emulatorSetClockMultiplierAction(clockMultiplier: number) {
 }
 
 /**
- * This reducer manages keyboard panel state changes
+ * This reducer manages emulator panel state changes
  * @param state Input state
  * @param action Action executed
  */

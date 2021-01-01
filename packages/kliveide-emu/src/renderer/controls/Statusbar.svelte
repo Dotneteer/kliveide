@@ -2,6 +2,7 @@
   // ==========================================================================
   // The coomponent that displays the emulator's status bar
 
+  import { onDestroy } from "svelte";
   import { getVersion } from "../../version";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
 
@@ -47,7 +48,10 @@
     if (emuUi) {
       const state = vmEngine.z80Machine.getMachineState();
       PC = state.pc;
-      cpuFreq = (emuUi.clockMultiplier * state.baseClockFrequency / 1000000).toFixed(4);
+      cpuFreq = (
+        (emuUi.clockMultiplier * state.baseClockFrequency) /
+        1000000
+      ).toFixed(4);
     }
   });
 
@@ -57,6 +61,16 @@
   let lastFrameTimeStr = "---";
   let avgFrameTimeStr = "---";
   let renderedFramesStr = "---";
+
+  // --- Cleanup subscriptions
+  onDestroy(() => {
+    if (stateAware) {
+      stateAware.dispose();
+    }
+    if (vmEngine) {
+      vmEngine.dispose();
+    }
+  });
 
   // --- Calculate counters on every screen refresh
   function onScreenRefreshed() {
@@ -156,9 +170,7 @@
     <div class="section">
       <span class="label">{vmEngine.z80Machine.displayName}</span>
     </div>
-    <div class="section">
-      <span class="label">CPU: {cpuFreq}Mhz</span>
-    </div>
+    <div class="section"><span class="label">CPU: {cpuFreq}Mhz</span></div>
   {/if}
   <div class="section"><span class="label">Klive v{version}</span></div>
 </div>

@@ -5,6 +5,7 @@ import { emulatorStateReducer } from "./redux-emulator-state";
 import { vmInfoStateReducer } from "./redux-vminfo-state";
 import { ideConfigStateReducer } from "./redux-ide-config-state";
 import { ideConnectionStateReducer } from "./redux-ide-connection.state";
+import { machineCommandStateReducer } from "./redux-machine-command-state";
 
 /**
  * The set of reducers we use within this application
@@ -16,6 +17,7 @@ export const appReducers = {
   vmInfo: vmInfoStateReducer,
   ideConfiguration: ideConfigStateReducer,
   ideConnection: ideConnectionStateReducer,
+  machineCommand: machineCommandStateReducer,
 };
 
 /**

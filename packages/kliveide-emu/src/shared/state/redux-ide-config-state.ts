@@ -6,7 +6,7 @@ export function ideConfigSetAction(ideConfiguration: IdeConfiguration) {
 }
 
 /**
- * This reducer manages application window state changes
+ * This reducer manages IDE configuration state changes
  * @param state Input state
  * @param action Action executed
  */

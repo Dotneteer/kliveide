@@ -4,7 +4,7 @@ export const appGotFocusAction = createAction("APP_GOT_FOCUS");
 export const appLostFocusAction = createAction("APP_LOST_FOCUS");
 
 /**
- * This reducer manages application window state changes
+ * This reducer manages application focus state changes
  * @param state Input state
  * @param action Action executed
  */

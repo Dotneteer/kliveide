@@ -400,42 +400,56 @@ export class AppWindow {
     });
 
     // --- Prepare the machine menu
-    const machineSubMenu: MenuItemConstructorOptions[] = [
-      {
-        id: MACHINE_MENU_ITEMS[0],
-        label: "ZX Spectrum 48",
+    const machineSubMenu: MenuItemConstructorOptions[] = [];
+    for (let i = 0; i < MACHINE_MENU_ITEMS.length; i++) {
+      machineSubMenu.push({
+        id: MACHINE_MENU_ITEMS[i].id,
+        label: MACHINE_MENU_ITEMS[i].label,
         type: "radio",
-        checked: true,
+        checked: i ? false : true,
+        enabled: MACHINE_MENU_ITEMS[i].enabled,
         click: (mi) => this.requestMachineType(mi.id),
-      },
-      {
-        id: MACHINE_MENU_ITEMS[1],
-        label: "ZX Spectrum 128",
-        type: "radio",
-        checked: false,
-        click: (mi) => this.requestMachineType(mi.id),
-      },
-      {
-        id: MACHINE_MENU_ITEMS[2],
-        label: "ZX Spectrum +3E (to be done)",
-        type: "radio",
-        checked: false,
-        click: (mi) => this.requestMachineType(mi.id),
-      },
-      {
-        id: MACHINE_MENU_ITEMS[3],
-        label: "ZX Spectrum Next (to be done)",
-        type: "radio",
-        checked: false,
-        click: (mi) => this.requestMachineType(mi.id),
-      },
-      {
-        id: MACHINE_MENU_ITEMS[4],
-        label: "Cambridge Z88 (in progress)",
-        type: "radio",
-        checked: false,
-        click: (mi) => this.requestMachineType(mi.id),
-      },
+      });
+    }
+
+    // {
+    //   id: MACHINE_MENU_ITEMS[0],
+    //   label: "ZX Spectrum 48",
+    //   type: "radio",
+    //   checked: true,
+    //   click: (mi) => this.requestMachineType(mi.id),
+    // },
+    // {
+    //   id: MACHINE_MENU_ITEMS[1],
+    //   label: "ZX Spectrum 128",
+    //   type: "radio",
+    //   checked: false,
+    //   click: (mi) => this.requestMachineType(mi.id),
+    // },
+    // {
+    //   id: MACHINE_MENU_ITEMS[2],
+    //   label: "ZX Spectrum +3E (to be done)",
+    //   type: "radio",
+    //   checked: false,
+    //   enabled: false,
+    //   click: (mi) => this.requestMachineType(mi.id),
+    // },
+    // {
+    //   id: MACHINE_MENU_ITEMS[3],
+    //   label: "ZX Spectrum Next (to be done)",
+    //   type: "radio",
+    //   checked: false,
+    //   enabled: false,
+    //   click: (mi) => this.requestMachineType(mi.id),
+    // },
+    // {
+    //   id: MACHINE_MENU_ITEMS[4],
+    //   label: "Cambridge Z88 (in progress)",
+    //   type: "radio",
+    //   checked: false,
+    //   click: (mi) => this.requestMachineType(mi.id),
+    // },
+    machineSubMenu.push(
       { type: "separator" },
       {
         id: SOUND_MENU_ITEMS[0].id,
@@ -471,8 +485,8 @@ export class AppWindow {
         type: "radio",
         checked: false,
         click: () => this.setSoundLevel(SOUND_MENU_ITEMS[4].level),
-      },
-    ];
+      }
+    );
 
     const emuState = mainProcessStore.getState().emulatorPanelState;
     emuState.internalState;
@@ -545,8 +559,8 @@ export class AppWindow {
    * Disables all machine menu items
    */
   disableMachineMenu(): void {
-    for (const id of MACHINE_MENU_ITEMS) {
-      const menuItem = Menu.getApplicationMenu().getMenuItemById(id);
+    for (const item of MACHINE_MENU_ITEMS) {
+      const menuItem = Menu.getApplicationMenu().getMenuItemById(item.id);
       if (menuItem) {
         menuItem.enabled = false;
       }
@@ -557,10 +571,10 @@ export class AppWindow {
    * Disables all machine menu items
    */
   enableMachineMenu(): void {
-    for (const id of MACHINE_MENU_ITEMS) {
-      const menuItem = Menu.getApplicationMenu().getMenuItemById(id);
+    for (const item of MACHINE_MENU_ITEMS) {
+      const menuItem = Menu.getApplicationMenu().getMenuItemById(item.id);
       if (menuItem) {
-        menuItem.enabled = true;
+        menuItem.enabled = item.enabled;
       }
     }
   }
@@ -804,12 +818,16 @@ export class AppWindow {
 /**
  * The list of machine menu items
  */
-const MACHINE_MENU_ITEMS = [
-  "machine_48",
-  "machine_128",
-  "machine_p3e",
-  "machine_next",
-  "machine_cz88",
+const MACHINE_MENU_ITEMS: { id: string; label: string; enabled: boolean }[] = [
+  { id: "machine_48", label: "ZX Spectrum 48", enabled: true },
+  { id: "machine_128", label: "ZX Spectrum 128", enabled: true },
+  { id: "machine_p3e", label: "ZX Spectrum +3E (to be done)", enabled: false },
+  {
+    id: "machine_next",
+    label: "ZX Spectrum Next (to be done)",
+    enabled: false,
+  },
+  { id: "machine_cz88", label: "Cambridge Z88 (in progress)", enabled: true },
 ];
 
 /**
