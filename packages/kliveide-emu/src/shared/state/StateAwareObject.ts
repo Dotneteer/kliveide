@@ -18,6 +18,7 @@ export class StateAwareObject<TState = AppState> {
     this._unsubscribeFunc = store.subscribe(() => {
       this.evalState();
     });
+    this.evalState();
   }
 
   /**

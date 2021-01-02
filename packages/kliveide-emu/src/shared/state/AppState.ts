@@ -64,6 +64,7 @@ export interface EmulatorPanelState {
   panelMessage?: string;
   statusbar?: boolean;
   internalState?: Record<string, any>;
+  showFrames?: boolean;
 }
 
 /**
@@ -163,7 +164,8 @@ export function getDefaultAppState(): AppState {
       soundLevel: 0.5,
       statusbar: true,
       internalState: {},
-      clockMultiplier: 1
+      clockMultiplier: 1,
+      showFrames: true
     },
     ideConfiguration: {
       projectFolder: "",
