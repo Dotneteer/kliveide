@@ -152,7 +152,7 @@
     (i32.mul (get_global $SCW) (i32.const 8))
   end
   set_global $screenWidth
-
+  
   ;; Screen height
   (i32.mul (get_global $SCH) (i32.const 8))
   set_global $screenLines
@@ -193,7 +193,7 @@
   (set_local $rowSbrPtr 
     (call $getBankedMemoryAddress (get_global $sbrBank) (get_global $sbr))
   )
-  
+
   ;; Row loop
   loop $rowLoop
     get_local $rowCount

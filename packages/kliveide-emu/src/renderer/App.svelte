@@ -66,7 +66,6 @@
       updatingMachineType = true;
       try {
         // --- Update the machine type
-        console.log(`New machine ${emuUi.requestedType}`);
         await changeVmEngine(emuUi.requestedType);
         stateAware.dispatch(emulatorSetupTypeAction(emuUi.requestedType)());
         // --- Allow redux message cycle to loop back to the renderer

@@ -12,6 +12,7 @@ import { IAppWindow } from "./IAppWindows";
 // --- Menu identifier contants
 const SOFT_RESET = "cz88_soft_reset";
 const HARD_RESET = "cz88_hard_reset";
+const LCD_DIMS = "cz88_lcd_dims";
 
 // --- Machine type (by LCD resolution) constants
 const Z88_640_64 = "machine_cz88_255_8";
@@ -23,7 +24,6 @@ const Z88_800_480 = "machine_cz88_100_60";
 let lastLcdType = Z88_640_64;
 
 export class Cz88MenuProvider implements MachineMenuProvider {
-
   /**
    * Instantiates the provider
    * @param appWindow: AppWindow instance
@@ -43,6 +43,7 @@ export class Cz88MenuProvider implements MachineMenuProvider {
   provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
     return [
       {
+        id: LCD_DIMS,
         type: "submenu",
         label: "LCD resolution",
         submenu: [
@@ -113,6 +114,8 @@ export class Cz88MenuProvider implements MachineMenuProvider {
       // --- Soft reset is available only if the machine is started, paused, or stopped.
       softReset.enabled = state.executionState > 0;
     }
+
+    // --- Select the current LCD dimension
     const lcdType = menu.getMenuItemById(lastLcdType);
     if (lcdType) {
       lcdType.checked = true;

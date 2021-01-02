@@ -27,14 +27,19 @@
 
   // --- The value of PC
   let PC = 0;
-  let cpuFreq = 1;
+  let baseClockFrequency = 1;
+  let clockMultiplier = 1;
 
   // --- Connect to the virtual machine whenever that changes
   $: {
     if (vmEngine) {
       vmEngine.screenRefreshed.on(onScreenRefreshed);
+      const state = vmEngine.z80Machine.getMachineState();
+      baseClockFrequency = state.baseClockFrequency;
     }
   }
+
+  $: cpuFreq = ((clockMultiplier * baseClockFrequency) / 1000000).toFixed(4);
 
   // --- Catch the state of IDE connection changes
   ideConnectStateAware.stateChanged.on((state) => {
@@ -48,10 +53,7 @@
     if (emuUi) {
       const state = vmEngine.z80Machine.getMachineState();
       PC = state.pc;
-      cpuFreq = (
-        (emuUi.clockMultiplier * state.baseClockFrequency) /
-        1000000
-      ).toFixed(4);
+      clockMultiplier = emuUi.clockMultiplier;
     }
   });
 

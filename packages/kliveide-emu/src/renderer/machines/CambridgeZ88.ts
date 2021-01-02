@@ -40,18 +40,29 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    */
   readonly keyboardType: string = "cz88";
 
+  // --- Screen dimensions
+  private _screenWidth = 0;
+  private _screenHeight = 0;
+
   /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
    * @param scw Optional screen width
    * @param sch Optional screen height
    */
-  constructor(public api: MachineApi, scw?: number, sch?: number, roms?: Buffer[]) {
+  constructor(
+    public api: MachineApi,
+    scw?: number,
+    sch?: number,
+    roms?: Buffer[]
+  ) {
     super(api, roms);
-    console.log(`scw: ${scw}, sch: ${sch}`);
     api.setZ88ScreenSize(scw ?? 0xff, sch ?? 8);
     api.turnOnMachine();
     this.initRoms(roms);
+    const state = this.getMachineState();
+    this._screenWidth = state.screenWidth;
+    this._screenHeight = state.screenLines;
   }
 
   /**
@@ -141,16 +152,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
 
     // --- Setup screen size
     s.screenWidth = s.SCW === 100 ? 800 : 640;
-    switch (s.SCH) {
-      case 40:
-        s.screenLines = 320;
-        break;
-      case 60:
-        s.screenLines = 480;
-      default:
-        s.screenLines = 64;
-        break;
-    }
+    s.screenLines = s.SCH * 8;
 
     // --- Memory device
     s.SR0 = mh.readByte(182);
@@ -220,7 +222,10 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   getScreenData(): Uint32Array {
     const buffer = this.api.memory.buffer as ArrayBuffer;
     const screenData = new Uint32Array(
-      buffer.slice(PIXEL_BUFFER, PIXEL_BUFFER + 4 * 640 * 64)
+      buffer.slice(
+        PIXEL_BUFFER,
+        PIXEL_BUFFER + 4 * this._screenWidth * this._screenHeight
+      )
     );
     return screenData;
   }
