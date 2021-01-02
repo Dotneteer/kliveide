@@ -115,6 +115,9 @@ export function emulatorSetClockMultiplierAction(clockMultiplier: number) {
   return createAction("EMULATOR_SET_CLOCK_MULTIPLIER", { clockMultiplier });
 }
 
+export const emulatorShowFramesAction = createAction("EMULATOR_SHOW_FRAMES");
+export const emulatorHideFramesAction = createAction("EMULATOR_HIDE_FRAMES");
+
 /**
  * This reducer manages emulator panel state changes
  * @param state Input state
@@ -214,6 +217,10 @@ export function emulatorStateReducer(
       return { ...state, internalState: payload.internalState };
     case "EMULATOR_SET_CLOCK_MULTIPLIER":
       return { ...state, clockMultiplier: payload.clockMultiplier };
+    case "EMULATOR_SHOW_FRAMES":
+      return { ...state, showFrames: true };
+    case "EMULATOR_HIDE_FRAMES":
+      return { ...state, showFrames: false };
   }
   return state;
 }

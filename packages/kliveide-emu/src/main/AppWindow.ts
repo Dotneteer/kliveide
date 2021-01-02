@@ -56,6 +56,8 @@ import {
   emulatorShowKeyboardAction,
   emulatorHideKeyboardAction,
   emulatorSetClockMultiplierAction,
+  emulatorShowFramesAction,
+  emulatorHideFramesAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
@@ -83,6 +85,7 @@ const MIN_HEIGHT = 676;
 
 // --- Menu IDs
 const TOGGLE_KEYBOARD = "toggle_keyboard";
+const TOGGLE_FRAMES = "toggle_frames";
 
 /**
  * This class encapsulates the functionality of the application's window
@@ -392,6 +395,19 @@ export class AppWindow implements IAppWindow {
           mainProcessStore.dispatch(emulatorShowStatusbarAction());
         } else {
           mainProcessStore.dispatch(emulatorHideStatusbarAction());
+        }
+      },
+    },
+    {
+      id: TOGGLE_FRAMES,
+      label: "Show frame information",
+      type: "checkbox",
+      checked: true,
+      click: (mi) => {
+        if (mi.checked) {
+          mainProcessStore.dispatch(emulatorShowFramesAction());
+        } else {
+          mainProcessStore.dispatch(emulatorHideFramesAction());
         }
       },
     });

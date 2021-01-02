@@ -2,7 +2,7 @@
   // ==========================================================================
   // The coomponent that displays the emulator's status bar
 
-  import { onDestroy } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { getVersion } from "../../version";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
 
@@ -27,8 +27,13 @@
 
   // --- The value of PC
   let PC = 0;
+
+  // --- CPU clock information
   let baseClockFrequency = 1;
   let clockMultiplier = 1;
+
+  // --- Frame information
+  let showFrames;
 
   // --- Connect to the virtual machine whenever that changes
   $: {
@@ -54,6 +59,7 @@
       const state = vmEngine.z80Machine.getMachineState();
       PC = state.pc;
       clockMultiplier = emuUi.clockMultiplier;
+      showFrames = emuUi.showFrames;
     }
   });
 
@@ -63,6 +69,13 @@
   let lastFrameTimeStr = "---";
   let avgFrameTimeStr = "---";
   let renderedFramesStr = "---";
+
+  onMount(() => {
+    const emuUi = stateAware.state.emulatorPanelState;
+    if (emuUi) {
+      showFrames = emuUi.showFrames;
+    }
+  });
 
   // --- Cleanup subscriptions
   onDestroy(() => {
@@ -143,22 +156,24 @@
 </style>
 
 <div class="statusbar">
-  <div class="section" title="Engine time per frame (average/last)">
-    <SvgIcon iconName="vm-running" width="16" height="16" fill={fillValue} />
-    {#if vmEngine}
-      <span class="label">{avgEngineTimeStr} / {lastEngineTimeStr}</span>
-    {/if}
-  </div>
-  <div class="section" title="Total time per frame (average/last)">
-    <SvgIcon iconName="vm" width="16" height="16" fill={fillValue} />
-    {#if vmEngine}
-      <span class="label">{avgFrameTimeStr} / {lastFrameTimeStr}</span>
-    {/if}
-  </div>
-  <div class="section" title="# of frames rendered since start">
-    <SvgIcon iconName="window" width="16" height="16" fill={fillValue} />
-    {#if vmEngine}<span class="label">{renderedFramesStr}</span>{/if}
-  </div>
+  {#if showFrames}
+    <div class="section" title="Engine time per frame (average/last)">
+      <SvgIcon iconName="vm-running" width="16" height="16" fill={fillValue} />
+      {#if vmEngine}
+        <span class="label">{avgEngineTimeStr} / {lastEngineTimeStr}</span>
+      {/if}
+    </div>
+    <div class="section" title="Total time per frame (average/last)">
+      <SvgIcon iconName="vm" width="16" height="16" fill={fillValue} />
+      {#if vmEngine}
+        <span class="label">{avgFrameTimeStr} / {lastFrameTimeStr}</span>
+      {/if}
+    </div>
+    <div class="section" title="# of frames rendered since start">
+      <SvgIcon iconName="window" width="16" height="16" fill={fillValue} />
+      {#if vmEngine}<span class="label">{renderedFramesStr}</span>{/if}
+    </div>
+  {/if}
   <div class="section" title="The value of Program Counter">
     <span class="label">PC: ${PC.toString(16)
         .toUpperCase()

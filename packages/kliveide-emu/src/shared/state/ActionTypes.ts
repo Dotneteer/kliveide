@@ -43,6 +43,8 @@ export interface ActionTypes {
   EMULATOR_HIDE_STATUSBAR: null;
   EMULATOR_SET_INTERNAL_STATE: null;
   EMULATOR_SET_CLOCK_MULTIPLIER: null;
+  EMULATOR_SHOW_FRAMES: null;
+  EMULATOR_HIDE_FRAMES: null;
 
   // --- Machine specific commands
   MACHINE_COMMAND: null;
