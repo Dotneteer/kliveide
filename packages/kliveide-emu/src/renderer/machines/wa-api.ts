@@ -72,4 +72,5 @@ export interface MachineApi extends CpuApi {
   setZ88RndSeed(seed: number): void;
   writePortCz88(addr: number, value: number): void;
   clearMemory(): void;
+  setZ88ScreenSize(scw: number, sch: number): void;
 }

@@ -52,6 +52,10 @@ export async function getVmEngine(): Promise<VmEngine> {
   return vmEngine;
 }
 
+/**
+ * Changes the current machine type to a new one
+ * @param typeId 
+ */
 export async function changeVmEngine(typeId: string) {
   // --- Stop the engine
   if (vmEngine) {
@@ -76,14 +80,18 @@ export async function changeVmEngine(typeId: string) {
  * @param type virtual machine engine type
  */
 export async function createVmEngine(typeId: string): Promise<VmEngine> {
+  // --- Separate machine type and specification
+  const parts = typeId.split("_");
+  const machineType = parts[0];
+
   if (!waInstance) {
-    waInstance = await createWaInstance(typeId);
+    waInstance = await createWaInstance(machineType);
   }
   const machineApi = (waInstance.exports as unknown) as MachineApi;
 
   // --- Instantiate the requested machine
   let machine: FrameBoundZ80Machine;
-  switch (typeId) {
+  switch (machineType) {
     case "128": {
       const buffer0 = await readFromStream("./roms/sp128-0.rom");
       const buffer1 = await readFromStream("./roms/sp128-1.rom");
@@ -97,7 +105,9 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
     }
     case "cz88": {
       const buffer = await readFromStream("./roms/Z88OZ47.rom");
-      machine = new CambridgeZ88(machineApi, [buffer]);
+      const scw = parts[1] === undefined ? undefined : parseInt(parts[1]);
+      const sch = parts[2] === undefined ? undefined : parseInt(parts[2]);
+      machine = new CambridgeZ88(machineApi, scw, sch, [buffer]);
       break;
     }
     default: {

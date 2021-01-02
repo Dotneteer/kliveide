@@ -43,9 +43,15 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   /**
    * Creates a new instance of the ZX Spectrum machine
    * @param api Machine API to access WA
+   * @param scw Optional screen width
+   * @param sch Optional screen height
    */
-  constructor(public api: MachineApi, roms?: Buffer[]) {
+  constructor(public api: MachineApi, scw?: number, sch?: number, roms?: Buffer[]) {
     super(api, roms);
+    console.log(`scw: ${scw}, sch: ${sch}`);
+    api.setZ88ScreenSize(scw ?? 0xff, sch ?? 8);
+    api.turnOnMachine();
+    this.initRoms(roms);
   }
 
   /**

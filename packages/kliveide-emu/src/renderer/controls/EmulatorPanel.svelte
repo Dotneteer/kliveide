@@ -28,6 +28,10 @@
   let canvasWidth;
   let canvasHeight;
 
+  // --- Dimensions of the canvas holding the screen data
+  let shadowCanvasWidth;
+  let shadowCanvasHeight;
+
   // --- Dimensions of this panel
   let clientWidth;
   let clientHeight;
@@ -176,16 +180,8 @@
     if (!shadowScreenEl || !screenEl) return;
     shadowScreenEl.width = width;
     shadowScreenEl.height = height;
-    const shadowCtx = shadowScreenEl.getContext("2d");
-    if (shadowCtx) {
-      shadowCtx.canvas.width = width;
-      shadowCtx.canvas.height = height;
-    }
-    const screenCtx = screenEl.getContext("2d");
-    if (screenCtx) {
-      screenCtx.canvas.width = width * ratio;
-      screenCtx.canvas.height = height * ratio;
-    }
+    shadowCanvasWidth = width;
+    shadowCanvasHeight = height;
   }
 
   // --- Displays the screen
@@ -317,7 +313,11 @@
         text={panelMessage ? panelMessage : overlay}
         on:hide={() => (overlayHidden = true)} />
     {/if}
-    <canvas bind:this={screenEl} />
-    <canvas bind:this={shadowScreenEl} style="display:none" />
+    <canvas bind:this={screenEl} width={canvasWidth} height={canvasHeight} />
+    <canvas
+      bind:this={shadowScreenEl}
+      width={shadowCanvasWidth}
+      height={shadowCanvasHeight}
+      style="display:none" />
   </div>
 </div>
