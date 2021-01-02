@@ -23,3 +23,4 @@
 (export "setZ88RndSeed" (func $setZ88RndSeed))
 (export "writePortCz88" (func $writePort))
 (export "clearMemory" (func $clearMemory))
+(export "setZ88ScreenSize" (func $setZ88ScreenSize))

@@ -66,9 +66,9 @@ import { MachineMenuProvider } from "./machine-menu";
 import {
   ZxSpectrum128MenuProvider,
   ZxSpectrum48MenuProvider,
-  ZxSpectrumMenuProviderBase,
 } from "./zx-spectrum-menu";
 import { Cz88MenuProvider } from "./cz-88-menu";
+import { IAppWindow } from "./IAppWindows";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -88,7 +88,7 @@ const TOGGLE_KEYBOARD = "toggle_keyboard";
  * This class encapsulates the functionality of the application's window
  * at the main process side.
  */
-export class AppWindow {
+export class AppWindow implements IAppWindow {
   // --- The associated BrowserWindow instance
   private _window: BrowserWindow | null;
 
@@ -321,6 +321,9 @@ export class AppWindow {
     this._window.loadFile(path.join(__dirname, "index.html"));
   }
 
+  /**
+   * Sets up the application menu
+   */
   setupMenu(): void {
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
     if (__DARWIN__) {
@@ -403,52 +406,15 @@ export class AppWindow {
     const machineSubMenu: MenuItemConstructorOptions[] = [];
     for (let i = 0; i < MACHINE_MENU_ITEMS.length; i++) {
       machineSubMenu.push({
-        id: MACHINE_MENU_ITEMS[i].id,
+        id: `machine_${MACHINE_MENU_ITEMS[i].id}`,
         label: MACHINE_MENU_ITEMS[i].label,
         type: "radio",
         checked: i ? false : true,
         enabled: MACHINE_MENU_ITEMS[i].enabled,
-        click: (mi) => this.requestMachineType(mi.id),
+        click: (mi) => this.requestMachineType((mi.id.split("_"))[1]),
       });
     }
 
-    // {
-    //   id: MACHINE_MENU_ITEMS[0],
-    //   label: "ZX Spectrum 48",
-    //   type: "radio",
-    //   checked: true,
-    //   click: (mi) => this.requestMachineType(mi.id),
-    // },
-    // {
-    //   id: MACHINE_MENU_ITEMS[1],
-    //   label: "ZX Spectrum 128",
-    //   type: "radio",
-    //   checked: false,
-    //   click: (mi) => this.requestMachineType(mi.id),
-    // },
-    // {
-    //   id: MACHINE_MENU_ITEMS[2],
-    //   label: "ZX Spectrum +3E (to be done)",
-    //   type: "radio",
-    //   checked: false,
-    //   enabled: false,
-    //   click: (mi) => this.requestMachineType(mi.id),
-    // },
-    // {
-    //   id: MACHINE_MENU_ITEMS[3],
-    //   label: "ZX Spectrum Next (to be done)",
-    //   type: "radio",
-    //   checked: false,
-    //   enabled: false,
-    //   click: (mi) => this.requestMachineType(mi.id),
-    // },
-    // {
-    //   id: MACHINE_MENU_ITEMS[4],
-    //   label: "Cambridge Z88 (in progress)",
-    //   type: "radio",
-    //   checked: false,
-    //   click: (mi) => this.requestMachineType(mi.id),
-    // },
     machineSubMenu.push(
       { type: "separator" },
       {
@@ -597,21 +563,22 @@ export class AppWindow {
    */
   requestMachineType(id: string): void {
     const parts = id.split("_");
-    const typeId = parts.length > 1 ? parts[1] : id;
+    const typeId = parts[0];
+    const typeSpec = parts.length > 1 ? parts.slice(1).join("_") : "";
 
     // --- Set the new machine type in the state vector
-    mainProcessStore.dispatch(emulatorRequestTypeAction(typeId)());
+    mainProcessStore.dispatch(emulatorRequestTypeAction(id)());
 
     // --- Prepare the menu provider for the machine
     switch (typeId) {
       case "48":
-        this._machineMenuProvider = new ZxSpectrum48MenuProvider(this.window);
+        this._machineMenuProvider = new ZxSpectrum48MenuProvider(this);
         break;
       case "128":
-        this._machineMenuProvider = new ZxSpectrum128MenuProvider(this.window);
+        this._machineMenuProvider = new ZxSpectrum128MenuProvider(this);
         break;
       case "cz88":
-        this._machineMenuProvider = new Cz88MenuProvider(this.window);
+        this._machineMenuProvider = new Cz88MenuProvider(this);
         break;
       default:
         this._machineMenuProvider = null;
@@ -620,6 +587,7 @@ export class AppWindow {
     // --- Now, create the menu with the current machine type
     this.setupMenu();
     this.setMachineTypeMenu(typeId);
+    this.setMachineTypeMenu(id);
 
     // --- Take care that the menu is updated according to the state
     const emuState = mainProcessStore.getState().emulatorPanelState;
@@ -819,15 +787,15 @@ export class AppWindow {
  * The list of machine menu items
  */
 const MACHINE_MENU_ITEMS: { id: string; label: string; enabled: boolean }[] = [
-  { id: "machine_48", label: "ZX Spectrum 48", enabled: true },
-  { id: "machine_128", label: "ZX Spectrum 128", enabled: true },
-  { id: "machine_p3e", label: "ZX Spectrum +3E (to be done)", enabled: false },
+  { id: "48", label: "ZX Spectrum 48", enabled: true },
+  { id: "128", label: "ZX Spectrum 128", enabled: true },
+  { id: "p3e", label: "ZX Spectrum +3E (to be done)", enabled: false },
   {
-    id: "machine_next",
+    id: "next",
     label: "ZX Spectrum Next (to be done)",
     enabled: false,
   },
-  { id: "machine_cz88", label: "Cambridge Z88 (in progress)", enabled: true },
+  { id: "cz88", label: "Cambridge Z88 (in progress)", enabled: true },
 ];
 
 /**

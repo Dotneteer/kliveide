@@ -108,25 +108,37 @@
 ;; SBF size
 (global $ctrlCharsPerRow (mut i32) (i32.const 0x0000))
 
+;; Default SCH value
+(global $defaultSCH (mut i32) (i32.const 8))
+
+;; Default SCW value
+(global $defaultSCW (mut i32) (i32.const 0xff))
 
 ;; ============================================================================
 ;; Screen methods
 
+;; Sets the LCD size to use with Z88
+(func $setZ88ScreenSize (param $scw i32) (param $sch i32)
+  (set_global $defaultSCW (get_local $scw))
+  (set_global $defaultSCH (get_local $sch))
+)
+
 ;; Resets the Z88 Screen device
 (func $resetZ88Screen
-  i32.const 0x00 set_global $PB0
-  i32.const 0x00 set_global $PB1
-  i32.const 0x00 set_global $PB2
-  i32.const 0x00 set_global $PB3
-  i32.const 0x00 set_global $SBR
-  i32.const 8 set_global $SCH
-  i32.const 0 set_global $screenFrameCount
-  i32.const 140 set_global $flashToggleCount
-  i32.const 0 set_global $flashPhase
-  i32.const 200 set_global $textFlashToggleCount
-  i32.const 0 set_global $textFlashPhase
-  i32.const 0 set_global $flashCount
-  i32.const 256 set_global $sbfRowWidth
+  (set_global $PB0 (i32.const 0x00))
+  (set_global $PB1 (i32.const 0x00))
+  (set_global $PB2 (i32.const 0x00))
+  (set_global $PB3 (i32.const 0x00))
+  (set_global $SBR (i32.const 0x00))
+  (set_global $SCH (get_global $defaultSCH))
+  (set_global $SCW (get_global $defaultSCW))
+  (set_global $screenFrameCount (i32.const 0))
+  (set_global $flashToggleCount (i32.const 140))
+  (set_global $flashPhase (i32.const 0))
+  (set_global $textFlashToggleCount (i32.const 200))
+  (set_global $textFlashPhase (i32.const 0))
+  (set_global $flashCount (i32.const 0))
+  (set_global $sbfRowWidth (i32.const 256))
 
   ;; Calculate screen dimensions
   (i32.mul (get_global $sbfRowWidth) (get_global $SCH))
@@ -140,7 +152,7 @@
     (i32.mul (get_global $SCW) (i32.const 8))
   end
   set_global $screenWidth
-
+  
   ;; Screen height
   (i32.mul (get_global $SCH) (i32.const 8))
   set_global $screenLines
@@ -181,7 +193,7 @@
   (set_local $rowSbrPtr 
     (call $getBankedMemoryAddress (get_global $sbrBank) (get_global $sbr))
   )
-  
+
   ;; Row loop
   loop $rowLoop
     get_local $rowCount

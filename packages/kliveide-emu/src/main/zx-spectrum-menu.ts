@@ -18,6 +18,7 @@ import { emulatorShowBeamPositionAction } from "../shared/state/redux-emulator-s
 import { EmulatorPanelState } from "../shared/state/AppState";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { checkTapeFile } from "../shared/tape/readers";
+import { IAppWindow } from "./IAppWindows";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -28,9 +29,9 @@ export abstract class ZxSpectrumMenuProviderBase
   implements MachineMenuProvider {
   /**
    * Instantiates the provider
-   * @param window Bowser window this menu provider is associated with
+   * @param appWindow: AppWindow instance
    */
-  constructor(public window: BrowserWindow) {}
+  constructor(public appWindow: IAppWindow) {}
 
   /**
    * Items to add to the Show menu
@@ -110,7 +111,8 @@ export abstract class ZxSpectrumMenuProviderBase
    * Select a tape file to use with the ZX Spectrum
    */
   private async selectTapeFile(): Promise<void> {
-    const result = await dialog.showOpenDialog(this.window, {
+    const window = this.appWindow.window;
+    const result = await dialog.showOpenDialog(window, {
       title: "Open tape file",
       filters: [
         { name: "Tape files", extensions: ["tzx", "tap"] },
@@ -124,7 +126,7 @@ export abstract class ZxSpectrumMenuProviderBase
         const contents = fs.readFileSync(tapeFile);
         if (checkTapeFile(new BinaryReader(contents))) {
           mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
-          await dialog.showMessageBox(this.window, {
+          await dialog.showMessageBox(window, {
             title: `Tape file loaded`,
             message: `Tape file ${tapeFile} successfully loaded.`,
             type: "info",
@@ -134,7 +136,7 @@ export abstract class ZxSpectrumMenuProviderBase
         }
       } catch (err) {
         // --- This error is intentionally ignored
-        await dialog.showMessageBox(this.window, {
+        await dialog.showMessageBox(window, {
           title: `Error processing the tape file ${tapeFile}`,
           message: err.toString(),
           type: "error",
@@ -153,10 +155,10 @@ export abstract class ZxSpectrumMenuProviderBase
 export class ZxSpectrum48MenuProvider extends ZxSpectrumMenuProviderBase {
   /**
    * Instantiates the provider
-   * @param window Bowser window this menu provider is associated with
+   * @param appWindow: AppWindow instance
    */
-  constructor(public window: BrowserWindow) {
-    super(window);
+  constructor(public appWindow: IAppWindow) {
+    super(appWindow);
   }
 
   /**
@@ -173,10 +175,10 @@ export class ZxSpectrum48MenuProvider extends ZxSpectrumMenuProviderBase {
 export class ZxSpectrum128MenuProvider extends ZxSpectrumMenuProviderBase {
   /**
    * Instantiates the provider
-   * @param window Bowser window this menu provider is associated with
+   * @param appWindow: AppWindow instance
    */
-  constructor(public window: BrowserWindow) {
-    super(window);
+  constructor(public appWindow: IAppWindow) {
+    super(appWindow);
   }
 
   /**
