@@ -191,6 +191,11 @@
 
     const shadowCtx = shadowScreenEl.getContext("2d");
     if (!shadowCtx) return;
+
+    shadowCtx.imageSmoothingEnabled = false;
+    shadowCtx.mozImageSmoothingEnabled = false;
+    shadowCtx.webkitImageSmoothingEnabled = false;
+    shadowCtx.msImageSmoothingEnabled = false;
     const shadowImageData = shadowCtx.getImageData(
       0,
       0,
@@ -208,12 +213,15 @@
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
       screenCtx.imageSmoothingEnabled = false;
+      screenCtx.mozImageSmoothingEnabled = false;
+      screenCtx.webkitImageSmoothingEnabled = false;
+      screenCtx.msImageSmoothingEnabled = false;
       screenCtx.drawImage(
         shadowScreenEl,
         0,
         0,
-        screenEl.width,
-        screenEl.height
+        canvasWidth,
+        canvasHeight
       );
     }
   }

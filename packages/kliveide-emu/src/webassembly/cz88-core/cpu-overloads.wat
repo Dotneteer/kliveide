@@ -82,7 +82,6 @@
   (i32.eq (get_local $addr8) (i32.const 0xb2))
   if
     ;; Keyboard
-    ;; TODO: Implement keybord scan
     (call $getKeyLineStatus (i32.shr_u (get_local $addr) (i32.const 8)))
     return
   end
