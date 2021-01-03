@@ -586,14 +586,14 @@ export class AppWindow implements IAppWindow {
   /**
    * Requests a machine type according to its menu ID
    * @param id Machine type, or menu ID of the machine type
+   * @param options Machine construction options
    */
-  requestMachineType(id: string): void {
+  requestMachineType(id: string, options?: Record<string, any>): void {
     const parts = id.split("_");
     const typeId = parts[0];
-    const typeSpec = parts.length > 1 ? parts.slice(1).join("_") : "";
 
     // --- Set the new machine type in the state vector
-    mainProcessStore.dispatch(emulatorRequestTypeAction(id)());
+    mainProcessStore.dispatch(emulatorRequestTypeAction(id, options)());
 
     // --- Prepare the menu provider for the machine
     switch (typeId) {
@@ -610,7 +610,7 @@ export class AppWindow implements IAppWindow {
 
     // --- Now, create the menu with the current machine type
     this.setupMenu();
-    this.setMachineTypeMenu(typeId);
+    //this.setMachineTypeMenu(typeId);
     this.setMachineTypeMenu(id);
 
     // --- Take care that the menu is updated according to the state

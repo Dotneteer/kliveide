@@ -19,6 +19,7 @@ export interface IAppWindow {
   /**
    * Requests a machine type according to its menu ID
    * @param id Machine type, or menu ID of the machine type
+   * @param options Machine construction options
    */
-  requestMachineType(id: string): void;
+  requestMachineType(id: string, options?: Record<string, any>): void;
 }

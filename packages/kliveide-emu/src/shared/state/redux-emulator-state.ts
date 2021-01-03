@@ -70,8 +70,14 @@ export function emulatorSetSavedDataAction(savedData: Uint8Array) {
   return createAction("EMULATOR_SET_SAVED_DATA", { savedData });
 }
 
-export function emulatorRequestTypeAction(requestedType: string) {
-  return createAction("EMULATOR_REQUEST_TYPE", { requestedType });
+export function emulatorRequestTypeAction(
+  requestedType: string,
+  requestedOptions?: Record<string, any>
+) {
+  return createAction("EMULATOR_REQUEST_TYPE", {
+    requestedType,
+    requestedOptions,
+  });
 }
 
 export function emulatorSetupTypeAction(currentType: string) {
@@ -196,7 +202,11 @@ export function emulatorStateReducer(
     case "EMULATOR_SET_SAVED_DATA":
       return { ...state, savedData: payload.savedData };
     case "EMULATOR_REQUEST_TYPE":
-      return { ...state, requestedType: payload.requestedType };
+      return {
+        ...state,
+        requestedType: payload.requestedType,
+        requestedOptions: payload.requestedOptions,
+      };
     case "EMULATOR_SETUP_TYPE":
       return { ...state, currentType: payload.currentType, executionState: 0 };
     case "EMULATOR_SELECT_ROM":

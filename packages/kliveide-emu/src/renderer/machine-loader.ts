@@ -68,9 +68,9 @@ export function getVmEngineError(): string | null {
 
 /**
  * Changes the current machine type to a new one
- * @param typeId
+ * @param id Machine ID with machine type and specification
  */
-export async function changeVmEngine(typeId: string) {
+export async function changeVmEngine(id: string, options?: Record<string, any>) {
   // --- Stop the engine
   if (vmEngine) {
     await vmEngine.stop();
@@ -83,7 +83,7 @@ export async function changeVmEngine(typeId: string) {
 
   // --- Create the new engine
   waInstance = null;
-  const newEngine = await createVmEngine(typeId);
+  const newEngine = await createVmEngine(id, options);
 
   // --- Store it
   vmEngine = newEngine;
@@ -91,15 +91,14 @@ export async function changeVmEngine(typeId: string) {
 
 /**
  * Creates a new virtual machine engine with the provided type
- * @param type virtual machine engine type
+ * @param type Virtual machine engine type and specification
  */
-export async function createVmEngine(typeId: string): Promise<VmEngine> {
+export async function createVmEngine(id: string, options?: Record<string, any>): Promise<VmEngine> {
   // --- Separate machine type and specification
-  const parts = typeId.split("_");
-  const machineType = parts[0];
+  const typeId = id.split("_")[0];
 
   if (!waInstance) {
-    waInstance = await createWaInstance(machineType);
+    waInstance = await createWaInstance(typeId);
   }
   const machineApi = (waInstance.exports as unknown) as MachineApi;
 
@@ -121,7 +120,7 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
   }
 
   // --- Now, create machine instances
-  switch (machineType) {
+  switch (typeId) {
     case "128": {
       // --- Use the ZX Spectrum 128 engine
       machine = new ZxSpectrum128(machineApi, machineRoms);
@@ -137,9 +136,7 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
     }
 
     case "cz88": {
-      const scw = parts[1] === undefined ? undefined : parseInt(parts[1]);
-      const sch = parts[2] === undefined ? undefined : parseInt(parts[2]);
-      machine = new CambridgeZ88(machineApi, scw, sch, machineRoms);
+      machine = new CambridgeZ88(machineApi, options, machineRoms);
       break;
     }
 

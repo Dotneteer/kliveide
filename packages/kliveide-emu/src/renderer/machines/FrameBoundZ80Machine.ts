@@ -25,6 +25,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    */
   constructor(public api: MachineApi, roms?: Uint8Array[]) {
     super(api);
+    this.configureMachine();
     api.turnOnMachine();
     this.initRoms(roms);
   }
@@ -61,6 +62,12 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
         }
       }
     }
+  }
+
+  /**
+   * Override this method to configure the virtual machine before turning it on
+   */
+  configureMachine(): void {
   }
 
   /**

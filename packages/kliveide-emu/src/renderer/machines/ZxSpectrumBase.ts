@@ -334,7 +334,6 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * @param debugging Is started in debug mode?
    */
   async beforeStarted(debugging: boolean): Promise<void> {
-    console.log("before started...");
     await super.beforeStarted(debugging);
     
     // --- Init audio renderers

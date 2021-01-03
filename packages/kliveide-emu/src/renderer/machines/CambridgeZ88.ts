@@ -52,12 +52,11 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    */
   constructor(
     public api: MachineApi,
-    scw?: number,
-    sch?: number,
+    options?: Record<string, any>,
     roms?: Uint8Array[]
   ) {
     super(api, roms);
-    api.setZ88ScreenSize(scw ?? 0xff, sch ?? 8);
+    api.setZ88ScreenSize(options?.scw ?? 0xff, options?.sch ?? 8);
     api.turnOnMachine();
     this.initRoms(roms);
     const state = this.getMachineState();
@@ -70,6 +69,14 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Refreshing the UI
    */
   readonly engineLoops = 8;
+
+  /**
+   * Override this method to configure the virtual machine before turning it on
+   */
+  configureMachine(): void {
+  }
+
+
 
   /**
    * Get the list of machine features supported

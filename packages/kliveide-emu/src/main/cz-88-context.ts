@@ -24,6 +24,18 @@ const Z88_800_480 = "machine_cz88_100_60";
 
 let lastLcdType = Z88_640_64;
 
+/**
+ * Represents the construction options of Z88
+ */
+export interface Cz88ContructionOptions {
+  sch?: number;
+  scw?: number;
+  rom?: Uint8Array;
+}
+
+/**
+ * Context provider for the Cambridge Z88 machine model
+ */
 export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
    * Instantiates the provider
@@ -54,31 +66,31 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: Z88_640_64,
             type: "radio",
             label: "640 x 64",
-            click: () => this.setLcdType(Z88_640_64),
+            click: () => this.requestMachine(Z88_640_64, {scw: 0xff, sch: 8}),
           },
           {
             id: Z88_640_320,
             type: "radio",
             label: "640 x 320",
-            click: () => this.setLcdType(Z88_640_320),
+            click: () => this.requestMachine(Z88_640_320, {scw: 0xff, sch: 40}),
           },
           {
             id: Z88_640_480,
             type: "radio",
             label: "640 x 480",
-            click: () => this.setLcdType(Z88_640_480),
+            click: () => this.requestMachine(Z88_640_480, {scw: 0xff, sch: 60}),
           },
           {
             id: Z88_800_320,
             type: "radio",
             label: "800 x 320",
-            click: () => this.setLcdType(Z88_800_320),
+            click: () => this.requestMachine(Z88_800_320, {scw: 100, sch: 40}),
           },
           {
             id: Z88_800_480,
             type: "radio",
             label: "800 x 480",
-            click: () => this.setLcdType(Z88_800_480),
+            click: () => this.requestMachine(Z88_800_480, {scw: 100, sch: 60}),
           },
         ],
       },
@@ -101,7 +113,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       {
         id: SELECT_ROM_FILE,
         label: "Select ROM file...",
-        click: async () => {},
+        click: async () => this.selectRomFile(),
       },
     ];
   }
@@ -142,9 +154,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Sets the Z88 with the specified LCD type
    * @param typeId Machine type with LCD size specification
    */
-  private setLcdType(typeId: string): void {
-    const machineType = typeId.split("_").slice(1).join("_");
-    this.appWindow.requestMachineType(machineType);
+  private requestMachine(id: string, options: Cz88ContructionOptions): void {
+    const typeId = id.split("_").slice(1).join("_");
+    this.appWindow.requestMachineType(typeId, options);
     lastLcdType = typeId;
   }
 
