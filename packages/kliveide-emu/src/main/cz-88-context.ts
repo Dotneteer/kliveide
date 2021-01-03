@@ -1,6 +1,6 @@
-import { Menu, MenuItemConstructorOptions } from "electron";
+import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { EmulatorPanelState } from "../shared/state/AppState";
-import { MachineMenuProvider } from "./machine-menu";
+import { MachineContextProviderBase } from "./machine-context";
 import { mainProcessStore } from "./mainProcessStore";
 import { machineCommandAction } from "../shared/state/redux-machine-command-state";
 import {
@@ -13,6 +13,7 @@ import { IAppWindow } from "./IAppWindows";
 const SOFT_RESET = "cz88_soft_reset";
 const HARD_RESET = "cz88_hard_reset";
 const LCD_DIMS = "cz88_lcd_dims";
+const SELECT_ROM_FILE = "cz88_select_rom_file";
 
 // --- Machine type (by LCD resolution) constants
 const Z88_640_64 = "machine_cz88_255_8";
@@ -23,12 +24,14 @@ const Z88_800_480 = "machine_cz88_100_60";
 
 let lastLcdType = Z88_640_64;
 
-export class Cz88MenuProvider implements MachineMenuProvider {
+export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
    * Instantiates the provider
    * @param appWindow: AppWindow instance
    */
-  constructor(public appWindow: IAppWindow) {}
+  constructor(public appWindow: IAppWindow) {
+    super();
+  }
 
   /**
    * Items to add to the Show menu
@@ -94,14 +97,13 @@ export class Cz88MenuProvider implements MachineMenuProvider {
         click: () =>
           mainProcessStore.dispatch(machineCommandAction(CZ88_HARD_RESET)()),
       },
+      { type: "separator" },
+      {
+        id: SELECT_ROM_FILE,
+        label: "Select ROM file...",
+        click: async () => {},
+      },
     ];
-  }
-
-  /**
-   * Items to add to the main menu, right after the machine menu
-   */
-  provideMainMenuItem(): MenuItemConstructorOptions | null {
-    return null;
   }
 
   /**
@@ -130,6 +132,13 @@ export class Cz88MenuProvider implements MachineMenuProvider {
   }
 
   /**
+   * Gets the startup ROMs for the machine
+   */
+  getStartupRoms(): Uint8Array[] | string {
+    return this.loadRoms(["Z88OZ47.rom"], [0x2_0000, 0x4_0000, 0x8_0000]);
+  }
+
+  /**
    * Sets the Z88 with the specified LCD type
    * @param typeId Machine type with LCD size specification
    */
@@ -137,5 +146,36 @@ export class Cz88MenuProvider implements MachineMenuProvider {
     const machineType = typeId.split("_").slice(1).join("_");
     this.appWindow.requestMachineType(machineType);
     lastLcdType = typeId;
+  }
+
+  /**
+   * Select a ROM file to use with Z88
+   */
+  private async selectRomFile(): Promise<void> {
+    const window = this.appWindow.window;
+    const result = await dialog.showOpenDialog(window, {
+      title: "Open ROM file",
+      filters: [
+        { name: "ROM files", extensions: ["rom"] },
+        { name: "BIN files", extensions: ["bin"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    });
+    let tapeFile: string = "";
+    if (!result.canceled) {
+      try {
+        dialog.showMessageBox(window, {message: "ROM file loading has not been implemented yet" });
+      } catch (err) {
+        // --- This error is intentionally ignored
+        await dialog.showMessageBox(window, {
+          title: `Error processing the tape file ${tapeFile}`,
+          message: err.toString(),
+          type: "error",
+          detail:
+            "Please check if you have the appropriate access rights to read the files contents " +
+            "and the file is a valid .tap or .tzx file (note: 'dsk' format is not supported, yet).",
+        });
+      }
+    }
   }
 }

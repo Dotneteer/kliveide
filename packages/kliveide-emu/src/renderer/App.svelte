@@ -13,6 +13,7 @@
 
   import {
     getVmEngine,
+    getVmEngineError,
     changeVmEngine,
     setEmulatorAppConfig,
   } from "./machine-loader";
@@ -39,9 +40,12 @@
 
   // --- The virtual machine instance
   let vmEngine;
+  let vmEngineError;
+
   onMount(async () => {
     // --- Create the virtual machine engine
     vmEngine = await getVmEngine();
+    vmEngineError = getVmEngineError();
 
     // --- Sign that the rendered has been started. The response
     // --- contains the application configuration, save it
@@ -68,9 +72,11 @@
         // --- Update the machine type
         await changeVmEngine(emuUi.requestedType);
         stateAware.dispatch(emulatorSetupTypeAction(emuUi.requestedType)());
+        
         // --- Allow redux message cycle to loop back to the renderer
         await new Promise((r) => setTimeout(r, 100));
         vmEngine = await getVmEngine();
+        vmEngineError = getVmEngineError();
       } finally {
         updatingMachineType = false;
       }
@@ -106,9 +112,9 @@
 </style>
 
 <main style={themeStyle} class={themeClass}>
-  <Toolbar {vmEngine} />
-  <MainCanvas {vmEngine} />
+  <Toolbar {vmEngine} {vmEngineError} />
+  <MainCanvas {vmEngine} {vmEngineError} />
   {#if statusbarVisible}
-    <Statusbar {vmEngine} />
+    <Statusbar {vmEngine} {vmEngineError} />
   {/if}
 </main>

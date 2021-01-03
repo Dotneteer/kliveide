@@ -12,11 +12,25 @@ export interface MessageBase {
 }
 
 /**
- * This message sings that the rendered process has successfully
+ * This message signs that the rendered process has successfully
  * started its operation
  */
 export interface SignRendererStartedMessage extends MessageBase {
   type: "rendererStarted";
+}
+
+/**
+ * The renderer wants to read the ROM files of the current machine
+ */
+export interface GetMachineRomsMessage extends MessageBase {
+  type: "getMachineRoms";
+}
+
+/**
+ * This message signs the machine type the renderer uses
+ */
+export interface SetToDefaultMachineMessage extends MessageBase {
+  type: "setToDefaultMachine";
 }
 
 /**
@@ -79,6 +93,8 @@ export interface GetMemoryPartitionMessage extends MessageBase {
  */
 export type RequestMessage =
   | SignRendererStartedMessage
+  | GetMachineRomsMessage
+  | SetToDefaultMachineMessage
   | InjectCodeMessage
   | RunCodeMessage
   | GetMemoryContentsMessage
@@ -92,6 +108,14 @@ export type RequestMessage =
  */
 export interface DefaultResponse extends MessageBase {
   type: "ack";
+}
+
+/**
+ * Response for GetMachineRomsMessage
+ */
+export interface GetMachineRomsResponse extends MessageBase {
+  type: "getMachineRomsResponse";
+  roms: Uint8Array[] | string;
 }
 
 /**
@@ -139,6 +163,7 @@ export interface GetMemoryPartitionResponse extends MessageBase {
  */
 export type ResponseMessage =
   | DefaultResponse
+  | GetMachineRomsResponse
   | AppConfigResponse
   | GetMemoryContentsResponse
   | GetMachineStateResponse

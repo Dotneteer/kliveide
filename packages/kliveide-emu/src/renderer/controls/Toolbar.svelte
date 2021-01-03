@@ -18,6 +18,7 @@
 
   // --- The virtual machine instance
   export let vmEngine;
+  export let vmEngineError;
 
   // --- We change Titlebar colors as the app focus changes
   let backgroundColor;
@@ -98,7 +99,7 @@
       iconName="play"
       fill="lightgreen"
       title="Start"
-      enable={executionState === 0 || executionState === 3 || executionState === 5}
+      enable={!vmEngineError && (executionState === 0 || executionState === 3 || executionState === 5)}
       on:clicked={async () => await vmEngine.start()} />
     <ToolbarIconButton
       iconName="pause"
@@ -118,7 +119,7 @@
       title="Reset"
       size="22"
       highlightSize="26"
-      enable={executionState === 1 || executionState === 3}
+      enable={!vmEngineError && (executionState === 1 || executionState === 3)}
       on:clicked={async () => await vmEngine.restart()} />
     <ToolbarSeparator />
     <ToolbarIconButton
@@ -127,25 +128,25 @@
       title="Debug"
       size="20"
       highlightSize="24"
-      enable={executionState === 0 || executionState === 3 || executionState === 5}
+      enable={!vmEngineError && (executionState === 0 || executionState === 3 || executionState === 5)}
       on:clicked={async () => await vmEngine.startDebug()} />
     <ToolbarIconButton
       iconName="step-into"
       fill="lightblue"
       title="Step into"
-      enable={executionState === 3}
+      enable={!vmEngineError && executionState === 3}
       on:clicked={async () => await vmEngine.stepInto()} />
     <ToolbarIconButton
       iconName="step-over"
       fill="lightblue"
       title="Step over"
-      enable={executionState === 3}
+      enable={!vmEngineError && executionState === 3}
       on:clicked={async () => await vmEngine.stepOver()} />
     <ToolbarIconButton
       iconName="step-out"
       fill="lightblue"
       title="Step out"
-      enable={executionState === 3}
+      enable={!vmEngineError && executionState === 3}
       on:clicked={async () => await vmEngine.stepOut()} />
     <ToolbarSeparator />
     <ToolbarIconButton

@@ -64,12 +64,12 @@ import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
 import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
-import { MachineMenuProvider } from "./machine-menu";
+import { MachineContextProvider } from "./machine-context"
 import {
-  ZxSpectrum128MenuProvider,
-  ZxSpectrum48MenuProvider,
-} from "./zx-spectrum-menu";
-import { Cz88MenuProvider } from "./cz-88-menu";
+  ZxSpectrum128ContextProvider,
+  ZxSpectrum48ContextProvider,
+} from "./zx-spectrum-context";
+import { Cz88ContextProvider } from "./cz-88-context";
 import { IAppWindow } from "./IAppWindows";
 
 /**
@@ -99,7 +99,7 @@ export class AppWindow implements IAppWindow {
   private _lastMachineType: string | null = null;
 
   // --- Menu provider for the machine type
-  private _machineMenuProvider: MachineMenuProvider | null = null;
+  private _machineContextProvider: MachineContextProvider | null = null;
 
   // --- Last sound level used
   private _lastSoundLevel: number | null = null;
@@ -130,6 +130,13 @@ export class AppWindow implements IAppWindow {
    * Now, we allow only a singleton instance
    */
   static instance: AppWindow;
+
+  /**
+   * Gets the current machine context provider
+   */
+  static getContextProvider(): MachineContextProvider | null {
+    return AppWindow.instance._machineContextProvider
+  }
 
   // ==========================================================================
   // Lifecycle methods
@@ -239,8 +246,8 @@ export class AppWindow implements IAppWindow {
     // --- Set up message processing
     ipcMain.on(
       RENDERER_REQUEST_CHANNEL,
-      (_ev: IpcMainEvent, message: RequestMessage) => {
-        const response = processMessageFromRenderer(message);
+      async (_ev: IpcMainEvent, message: RequestMessage) => {
+        const response = await processMessageFromRenderer(message);
         response.correlationId = message.correlationId;
         const allWebContents = webContents.getAllWebContents();
         const pageContenst =
@@ -283,6 +290,9 @@ export class AppWindow implements IAppWindow {
         this.enableMachineMenu();
       }
     });
+
+    // --- Set up the default provider
+    this._machineContextProvider = new ZxSpectrum48ContextProvider(this);
   }
 
   /**
@@ -379,7 +389,7 @@ export class AppWindow implements IAppWindow {
     ];
 
     let extraViewItems: MenuItemConstructorOptions[] =
-      this._machineMenuProvider?.provideViewMenuItems() ?? [];
+      this._machineContextProvider?.provideViewMenuItems() ?? [];
     if (extraViewItems.length > 0) {
       extraViewItems.push({ type: "separator" });
     }
@@ -478,7 +488,7 @@ export class AppWindow implements IAppWindow {
       submenu: [],
     };
     const baseClockFrequency =
-      this._machineMenuProvider?.getNormalCpuFrequency() ?? 1_000_000;
+      this._machineContextProvider?.getNormalCpuFrequency() ?? 1_000_000;
 
     for (let i = 1; i <= 16; i++) {
       (cpuClockSubmenu.submenu as MenuItemConstructorOptions[]).push({
@@ -496,7 +506,7 @@ export class AppWindow implements IAppWindow {
     machineSubMenu.push(cpuClockSubmenu);
 
     let extraMachineItems: MenuItemConstructorOptions[] =
-      this._machineMenuProvider?.provideMachineMenuItems() ?? [];
+      this._machineContextProvider?.provideMachineMenuItems() ?? [];
     if (extraMachineItems.length > 0) {
       machineSubMenu.push({ type: "separator" });
       machineSubMenu.push(...extraMachineItems);
@@ -588,16 +598,14 @@ export class AppWindow implements IAppWindow {
     // --- Prepare the menu provider for the machine
     switch (typeId) {
       case "48":
-        this._machineMenuProvider = new ZxSpectrum48MenuProvider(this);
+        this._machineContextProvider = new ZxSpectrum48ContextProvider(this);
         break;
       case "128":
-        this._machineMenuProvider = new ZxSpectrum128MenuProvider(this);
+        this._machineContextProvider = new ZxSpectrum128ContextProvider(this);
         break;
       case "cz88":
-        this._machineMenuProvider = new Cz88MenuProvider(this);
+        this._machineContextProvider = new Cz88ContextProvider(this);
         break;
-      default:
-        this._machineMenuProvider = null;
     }
 
     // --- Now, create the menu with the current machine type
@@ -608,7 +616,7 @@ export class AppWindow implements IAppWindow {
     // --- Take care that the menu is updated according to the state
     const emuState = mainProcessStore.getState().emulatorPanelState;
     if (emuState) {
-      this._machineMenuProvider?.updateMenuStatus(emuState);
+      this._machineContextProvider?.updateMenuStatus(emuState);
     }
   }
 
@@ -679,7 +687,7 @@ export class AppWindow implements IAppWindow {
     }
 
     // --- Take care that custom machine menus are updated
-    this._machineMenuProvider?.updateMenuStatus(state);
+    this._machineContextProvider?.updateMenuStatus(state);
 
     if (this._lastMachineType !== state.currentType) {
       // --- Current machine types has changed

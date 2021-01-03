@@ -7,6 +7,7 @@
 
   // --- The virtual machine instance
   export let vmEngine;
+  export let vmEngineError;
 
   let keyboardType = "";
   let keyboardVisible = false;
@@ -57,7 +58,7 @@
     on:moved={async () => {
       initialHeight = keyboardHeight;
     }}>
-    <EmulatorPanel {vmEngine} />
+    <EmulatorPanel {vmEngine} {vmEngineError} />
     {#if keyboardVisible}
       <KeyboardPanel
         type={keyboardType}

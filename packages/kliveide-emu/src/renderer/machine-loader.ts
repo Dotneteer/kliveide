@@ -11,6 +11,8 @@ import { AudioRenderer } from "./machines/AudioRenderer";
 import { ZxSpectrumBaseStateManager } from "./machines/ZxSpectrumBaseStateManager";
 import { CambridgeZ88 } from "./machines/CambridgeZ88";
 import { KliveConfiguration } from "../shared/messaging/emu-configurations";
+import { sendMessageToMain } from "../shared/messaging/renderer-to-main-comm";
+import { GetMachineRomsResponse } from "../shared/messaging/message-types";
 
 /**
  * The configuration of the emulator app
@@ -28,6 +30,11 @@ export function setEmulatorAppConfig(config: KliveConfiguration): void {
  * Store the virtual machine engine instance
  */
 let vmEngine: VmEngine | null = null;
+
+/**
+ * Error in the engine instantiation
+ */
+let vmEngineError: string | null = null;
 
 /**
  * The WebAssembly instance with the virtual machine core
@@ -53,8 +60,15 @@ export async function getVmEngine(): Promise<VmEngine> {
 }
 
 /**
+ * Gets the error of the vm engine
+ */
+export function getVmEngineError(): string | null {
+  return vmEngineError;
+}
+
+/**
  * Changes the current machine type to a new one
- * @param typeId 
+ * @param typeId
  */
 export async function changeVmEngine(typeId: string) {
   // --- Stop the engine
@@ -91,35 +105,61 @@ export async function createVmEngine(typeId: string): Promise<VmEngine> {
 
   // --- Instantiate the requested machine
   let machine: FrameBoundZ80Machine;
+
+  // --- Obtain the current ROMs for the specified machine type
+  const machineRoms = (
+    await sendMessageToMain<GetMachineRomsResponse>({
+      type: "getMachineRoms",
+    })
+  ).roms;
+
+  // --- Handle ROM processing errors
+  vmEngineError = null;
+  if (typeof machineRoms === "string") {
+    vmEngineError = machineRoms;
+    return null;
+  }
+
+  // --- Now, create machine instances
   switch (machineType) {
     case "128": {
-      const buffer0 = await readFromStream("./roms/sp128-0.rom");
-      const buffer1 = await readFromStream("./roms/sp128-1.rom");
-      const sp128 = new ZxSpectrum128(machineApi, [buffer0, buffer1]);
-      sp128.setAudioRendererFactory(
+      // --- Use the ZX Spectrum 128 engine
+      machine = new ZxSpectrum128(machineApi, machineRoms);
+
+      // --- Configure factories that provide test/production separation
+      (machine as ZxSpectrum128).setAudioRendererFactory(
         (sampleRate: number) => new AudioRenderer(sampleRate)
       );
-      sp128.setStateManager(new ZxSpectrumBaseStateManager());
-      machine = sp128;
+      (machine as ZxSpectrum128).setStateManager(
+        new ZxSpectrumBaseStateManager()
+      );
       break;
     }
+
     case "cz88": {
-      const buffer = await readFromStream("./roms/Z88OZ47.rom");
       const scw = parts[1] === undefined ? undefined : parseInt(parts[1]);
       const sch = parts[2] === undefined ? undefined : parseInt(parts[2]);
-      machine = new CambridgeZ88(machineApi, scw, sch, [buffer]);
+      machine = new CambridgeZ88(machineApi, scw, sch, machineRoms);
       break;
     }
+
     default: {
-      const buffer = await readFromStream("./roms/sp48.rom");
-      const sp48 = new ZxSpectrum48(machineApi, [buffer]);
-      sp48.setAudioRendererFactory(
+      // --- By default, use ZX Spectrum 48
+      machine = new ZxSpectrum48(machineApi, machineRoms);
+      // --- Configure factories that provide test/production separation
+      (machine as ZxSpectrum48).setAudioRendererFactory(
         (sampleRate: number) => new AudioRenderer(sampleRate)
       );
-      sp48.setStateManager(new ZxSpectrumBaseStateManager());
-      machine = sp48;
+      (machine as ZxSpectrum48).setStateManager(
+        new ZxSpectrumBaseStateManager()
+      );
       break;
     }
+  }
+
+  if (!machine) {
+    vmEngineError = "Cannot create the virtual machine.";
+    return null;
   }
 
   // --- Create the engine and bind it with the machine

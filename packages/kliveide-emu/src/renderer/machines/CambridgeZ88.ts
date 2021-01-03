@@ -54,7 +54,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     public api: MachineApi,
     scw?: number,
     sch?: number,
-    roms?: Buffer[]
+    roms?: Uint8Array[]
   ) {
     super(api, roms);
     api.setZ88ScreenSize(scw ?? 0xff, sch ?? 8);

@@ -53,7 +53,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * @param api Machine API to access WA
    * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi, roms?: Buffer[]) {
+  constructor(public api: MachineApi, roms?: Uint8Array[]) {
     super(api, roms);
   }
 
@@ -334,7 +334,9 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * @param debugging Is started in debug mode?
    */
   async beforeStarted(debugging: boolean): Promise<void> {
+    console.log("before started...");
     await super.beforeStarted(debugging);
+    
     // --- Init audio renderers
     const state = this.getMachineState();
     this._beeperRenderer = this._audioRendererFactory(

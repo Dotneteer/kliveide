@@ -11,6 +11,7 @@
 
   // --- The virtual machine instance
   export let vmEngine;
+  export let vmEngineError;
 
   // --- We need to be aware of state changes
   const ideConnectStateAware = createRendererProcessStateAware("ideConnection");
@@ -124,7 +125,7 @@
     flex-grow: 0;
     height: 28px;
     width: 100%;
-    padding: 8px 8px;
+    padding: 0px 8px;
     background-color: var(--statusbar-background-color);
     box-sizing: border-box;
     align-content: start;
@@ -142,6 +143,7 @@
     display: flex;
     flex-shrink: 0;
     flex-grow: 0;
+    height: 100%;
     margin: 0 4px;
     align-content: flex-start;
     align-items: center;
@@ -183,11 +185,16 @@
   {#if ideConnected}
     <div class="section"><span class="label">IDE connected</span></div>
   {/if}
-  {#if vmEngine}
+  {#if vmEngine && !vmEngineError}
     <div class="section">
       <span class="label">{vmEngine.z80Machine.displayName}</span>
     </div>
     <div class="section"><span class="label">CPU: {cpuFreq}Mhz</span></div>
+  {/if}
+  {#if vmEngineError}
+    <div class="section" style="background-color: maroon">
+      <span class="label">(No machine)</span>
+    </div>
   {/if}
   <div class="section"><span class="label">Klive v{version}</span></div>
 </div>
