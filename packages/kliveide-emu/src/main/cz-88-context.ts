@@ -1,3 +1,5 @@
+import * as fs from "fs";
+
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { EmulatorPanelState } from "../shared/state/AppState";
 import { MachineContextProviderBase } from "./machine-context";
@@ -66,31 +68,35 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: Z88_640_64,
             type: "radio",
             label: "640 x 64",
-            click: () => this.requestMachine(Z88_640_64, {scw: 0xff, sch: 8}),
+            click: () => this.requestMachine(Z88_640_64, { scw: 0xff, sch: 8 }),
           },
           {
             id: Z88_640_320,
             type: "radio",
             label: "640 x 320",
-            click: () => this.requestMachine(Z88_640_320, {scw: 0xff, sch: 40}),
+            click: () =>
+              this.requestMachine(Z88_640_320, { scw: 0xff, sch: 40 }),
           },
           {
             id: Z88_640_480,
             type: "radio",
             label: "640 x 480",
-            click: () => this.requestMachine(Z88_640_480, {scw: 0xff, sch: 60}),
+            click: () =>
+              this.requestMachine(Z88_640_480, { scw: 0xff, sch: 60 }),
           },
           {
             id: Z88_800_320,
             type: "radio",
             label: "800 x 320",
-            click: () => this.requestMachine(Z88_800_320, {scw: 100, sch: 40}),
+            click: () =>
+              this.requestMachine(Z88_800_320, { scw: 100, sch: 40 }),
           },
           {
             id: Z88_800_480,
             type: "radio",
             label: "800 x 480",
-            click: () => this.requestMachine(Z88_800_480, {scw: 100, sch: 60}),
+            click: () =>
+              this.requestMachine(Z88_800_480, { scw: 100, sch: 60 }),
           },
         ],
       },
@@ -173,21 +179,70 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         { name: "All Files", extensions: ["*"] },
       ],
     });
-    let tapeFile: string = "";
+    let romFile: string = "";
     if (!result.canceled) {
       try {
-        dialog.showMessageBox(window, {message: "ROM file loading has not been implemented yet" });
+        romFile = result.filePaths[0];
+        const contents = Uint8Array.from(fs.readFileSync(romFile));
+
+        // --- Check contents length
+        if (contents.length !== 0x8_0000 && contents.length !== 0x4_0000 && contents.length !== 0x2_0000) {
+          await dialog.showMessageBox(window, {
+            title: `Invalid ROM file length: ${contents.length}`,
+            message: "The ROM file length can be 128K, 256K, or 512K.",
+            type: "error",
+          });
+          return;
+        }
+
+        // --- Check watermark
+        if (!this.isOZRom(contents)) {
+          await dialog.showMessageBox(window, {
+            title: `Invalid ROM file ${romFile}`,
+            message: "The file does not contain the OZ ROM watermark.",
+            type: "error",
+          });
+        }
       } catch (err) {
         // --- This error is intentionally ignored
         await dialog.showMessageBox(window, {
-          title: `Error processing the tape file ${tapeFile}`,
+          title: `Error processing ROM file ${romFile}`,
           message: err.toString(),
           type: "error",
           detail:
             "Please check if you have the appropriate access rights to read the files contents " +
-            "and the file is a valid .tap or .tzx file (note: 'dsk' format is not supported, yet).",
+            "and the file is a valid ROM file.",
         });
       }
     }
+  }
+
+  /**
+   * Check if specified slot contains an Application Card ('OZ' watermark)
+   * @param contents Binary contents
+   * @returns true if Application Card is available in slot; otherwise false
+   */
+  private isApplicationCard(contents: Uint8Array): boolean {
+    const topBankOffset = (contents.length & 0xe_c000) - 0x4000;
+    return (
+      contents[topBankOffset + 0x3ffb] === 0x80 &&
+      contents[topBankOffset + 0x3ffe] === "O".charCodeAt(0) &&
+      contents[topBankOffset + 0x3fff] === "Z".charCodeAt(0)
+    );
+  }
+
+  /**
+   * Check if specified slot contains an OZ Operating system
+   * @param contents Binary contents
+   * @returns true if Application Card is available in slot; otherwise false
+   */
+  private isOZRom(contents: Uint8Array): boolean {
+    const topBankOffset = (contents.length & 0xe_c000) - 0x4000;
+    console.log(`offset: ${topBankOffset.toString(16)}`);
+    return (
+      contents[topBankOffset + 0x3ffb] === 0x81 &&
+      contents[topBankOffset + 0x3ffe] === "O".charCodeAt(0) &&
+      contents[topBankOffset + 0x3fff] === "Z".charCodeAt(0)
+    );
   }
 }
