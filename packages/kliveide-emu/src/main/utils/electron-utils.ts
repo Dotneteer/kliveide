@@ -17,3 +17,19 @@ export const __DARWIN__ = process.platform === "darwin";
  * Tests if the current Electron shell application runs on Linux
  */
 export const __LINUX__ = process.platform === "linux";
+
+/**
+ * Creates a machine ID from a menu ID
+ * @param menuId Menu identifier
+ */
+export function machineIdFromMenuId(menuId: string): string {
+  return menuId.split("_").slice(1).join("_");
+}
+
+/**
+ * Creates a menu ID from a machine ID
+ * @param machineId Machine ID
+ */
+export function menuIdFromMachineId(machineId: string): string {
+    return `machine_${machineId}`;
+}

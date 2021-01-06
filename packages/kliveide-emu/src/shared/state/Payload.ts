@@ -26,6 +26,7 @@ export interface Payload {
   savedData?: Uint8Array;
   ideConfiguration?: IdeConfiguration;
   requestedType?: string;
+  requestedOptions?: Record<string, any>
   currentType?: string;
   connected?: boolean;
   selectedRom?: number;

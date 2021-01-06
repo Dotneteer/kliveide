@@ -34,7 +34,7 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
    * @param api Machine API to access WA
    * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi, roms?: Buffer[]) {
+  constructor(public api: MachineApi, roms?: Uint8Array[]) {
     super(api, roms);
   }
 

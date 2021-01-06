@@ -11,6 +11,7 @@
 
   // --- The virtual machine instance
   export let vmEngine;
+  export let vmEngineError;
 
   // --- We need to be aware of state changes
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
@@ -70,7 +71,11 @@
   // --- Set up the component when the virtual machine engine changes
   $: {
     if (vmEngine) {
+      overlayHidden = false;
       setupEmulator();
+      if (vmEngineError) {
+        overlay = vmEngineError;
+      }
     }
   }
 
@@ -100,7 +105,7 @@
   });
 
   // --- Set up the emulator according to the current virtual machine
-  async function setupEmulator() {
+  function setupEmulator() {
     overlay = "Not started yet";
     hideDisplayData();
 
@@ -191,6 +196,11 @@
 
     const shadowCtx = shadowScreenEl.getContext("2d");
     if (!shadowCtx) return;
+
+    shadowCtx.imageSmoothingEnabled = false;
+    shadowCtx.mozImageSmoothingEnabled = false;
+    shadowCtx.webkitImageSmoothingEnabled = false;
+    shadowCtx.msImageSmoothingEnabled = false;
     const shadowImageData = shadowCtx.getImageData(
       0,
       0,
@@ -208,13 +218,10 @@
     shadowCtx.putImageData(shadowImageData, 0, 0);
     if (screenCtx) {
       screenCtx.imageSmoothingEnabled = false;
-      screenCtx.drawImage(
-        shadowScreenEl,
-        0,
-        0,
-        screenEl.width,
-        screenEl.height
-      );
+      screenCtx.mozImageSmoothingEnabled = false;
+      screenCtx.webkitImageSmoothingEnabled = false;
+      screenCtx.msImageSmoothingEnabled = false;
+      screenCtx.drawImage(shadowScreenEl, 0, 0, canvasWidth, canvasHeight);
     }
   }
 
@@ -311,6 +318,7 @@
     {#if !overlayHidden}
       <ExecutionStateOverlay
         text={panelMessage ? panelMessage : overlay}
+        error={!!vmEngineError}
         on:hide={() => (overlayHidden = true)} />
     {/if}
     <canvas bind:this={screenEl} width={canvasWidth} height={canvasHeight} />

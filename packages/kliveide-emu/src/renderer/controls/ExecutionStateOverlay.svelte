@@ -5,6 +5,7 @@
 
   // --- Display this text, provided it's not empty
   export let text = "Overlay";
+  export let error = false;
 
   // --- This control will dispatch a "hide" event on click
   const dispatch = createEventDispatcher();
@@ -29,11 +30,15 @@
     border-radius: 4px;
     cursor: pointer;
   }
+
+  .overlay-error {
+    color: coral;
+  }
 </style>
 
 {#if text}
 <div class="play-overlay">
-  <span class="overlay-text" title="Hide overlay (click to show again)"
+  <span class="overlay-text" class:overlay-error={error} title="Hide overlay (click to show again)"
   on:click|stopPropagation={() => dispatch("hide")}>{text}</span>
 </div>
 {/if}

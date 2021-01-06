@@ -80,7 +80,7 @@ export async function execZxbc(
 
   const workdir = path.dirname(execPath);
   const execFile = path.basename(execPath);
-  const cmd = `${execFile} ${cmdArgs.split("\\").join("/")}`;
+  const cmd = `${execPath} ${cmdArgs.split("\\").join("/")}`;
   outChannel.appendLine(`Executing ${cmd}`);
   return new Promise<string | null>((resolve, reject) => {
     exec(

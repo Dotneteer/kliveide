@@ -58,6 +58,7 @@ export interface EmulatorPanelState {
   soundLevel?: number;
   savedData?: Uint8Array;
   requestedType?: string;
+  requestedOptions?: Record<string, any>
   currentType?: string;
   selectedRom?: number;
   selectedBank?: number;
@@ -156,6 +157,7 @@ export function getDefaultAppState(): AppState {
       executionState: 0,
       runsInDebug: false,
       requestedType: "",
+      requestedOptions: {},
       currentType: "",
       selectedRom: 0,
       selectedBank: 0,

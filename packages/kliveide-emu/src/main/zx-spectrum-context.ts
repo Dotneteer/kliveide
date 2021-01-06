@@ -1,12 +1,7 @@
 import * as fs from "fs";
 
-import {
-  BrowserWindow,
-  dialog,
-  Menu,
-  MenuItemConstructorOptions,
-} from "electron";
-import { MachineMenuProvider } from "./machine-menu";
+import { dialog, Menu, MenuItemConstructorOptions } from "electron";
+import { MachineContextProviderBase } from "./machine-context";
 import { mainProcessStore } from "./mainProcessStore";
 import {
   emulatorDisableFastLoadAction,
@@ -25,13 +20,17 @@ const TOGGLE_BEAM = "sp_toggle_beam_position";
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
 
-export abstract class ZxSpectrumMenuProviderBase
-  implements MachineMenuProvider {
+/**
+ * Context provider for ZX Spectrum machine types
+ */
+export abstract class ZxSpectrumContextProviderBase extends MachineContextProviderBase {
   /**
    * Instantiates the provider
    * @param appWindow: AppWindow instance
    */
-  constructor(public appWindow: IAppWindow) {}
+  constructor(public appWindow: IAppWindow) {
+    super();
+  }
 
   /**
    * Items to add to the Show menu
@@ -78,13 +77,6 @@ export abstract class ZxSpectrumMenuProviderBase
         click: async () => await this.selectTapeFile(),
       },
     ];
-  }
-
-  /**
-   * Items to add to the main menu, right after the machine menu
-   */
-  provideMainMenuItem(): MenuItemConstructorOptions | null {
-    return null;
   }
 
   /**
@@ -150,9 +142,9 @@ export abstract class ZxSpectrumMenuProviderBase
 }
 
 /**
- * Menu provider for the ZX Spectrum machine model
+ * Context provider for the ZX Spectrum machine model
  */
-export class ZxSpectrum48MenuProvider extends ZxSpectrumMenuProviderBase {
+export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Instantiates the provider
    * @param appWindow: AppWindow instance
@@ -167,12 +159,19 @@ export class ZxSpectrum48MenuProvider extends ZxSpectrumMenuProviderBase {
   getNormalCpuFrequency(): number {
     return 3_500_000;
   }
+
+  /**
+   * Gets the startup ROMs for the machine
+   */
+  getStartupRoms(): Uint8Array[] | string {
+    return this.loadRoms(["sp48.rom"], [0x4000]);
+  }
 }
 
 /**
- * Menu provider for the ZX Spectrum machine model
+ * Context provider for the ZX Spectrum machine model
  */
-export class ZxSpectrum128MenuProvider extends ZxSpectrumMenuProviderBase {
+export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Instantiates the provider
    * @param appWindow: AppWindow instance
@@ -186,5 +185,12 @@ export class ZxSpectrum128MenuProvider extends ZxSpectrumMenuProviderBase {
    */
   getNormalCpuFrequency(): number {
     return 3_546_900;
+  }
+
+  /**
+   * Gets the startup ROMs for the machine
+   */
+  getStartupRoms(): Uint8Array[] | string {
+    return this.loadRoms(["sp128-0.rom", "sp128-1.rom"], [0x4000]);
   }
 }
