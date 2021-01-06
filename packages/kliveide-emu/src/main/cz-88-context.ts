@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { EmulatorPanelState } from "../shared/state/AppState";
@@ -10,12 +11,19 @@ import {
   CZ88_SOFT_RESET,
 } from "../shared/machines/macine-commands";
 import { IAppWindow } from "./IAppWindows";
+import {
+  machineIdFromMenuId,
+  menuIdFromMachineId,
+} from "./utils/electron-utils";
 
 // --- Menu identifier contants
 const SOFT_RESET = "cz88_soft_reset";
 const HARD_RESET = "cz88_hard_reset";
 const LCD_DIMS = "cz88_lcd_dims";
+const ROM_MENU = "cz88_roms";
 const SELECT_ROM_FILE = "cz88_select_rom_file";
+const USE_DEFAULT_ROM = "cz88_use_default_rom";
+const USE_ROM_FILE = "cz88_rom";
 
 // --- Machine type (by LCD resolution) constants
 const Z88_640_64 = "machine_cz88_255_8";
@@ -24,7 +32,29 @@ const Z88_640_480 = "machine_cz88_255_60";
 const Z88_800_320 = "machine_cz88_100_40";
 const Z88_800_480 = "machine_cz88_100_60";
 
-let lastLcdType = Z88_640_64;
+// ----------------------------------------------------------------------------
+// We use these two variables to identify the current Z88 machine type
+
+// The last used LCD specification
+let recentLcdType = machineIdFromMenuId(Z88_640_64);
+// The name of the recent ROM
+let recentRomName: string | null = null;
+
+// ----------------------------------------------------------------------------
+// Configuration we use to instantiate the Z88 machine
+
+let recentOptions: Cz88ContructionOptions = {
+  scw: 0xff,
+  sch: 8,
+};
+
+// ----------------------------------------------------------------------------
+// UI state of the ROM submenu
+
+// The list of recently used ROMs
+let recentRoms: string[] = [];
+// Indicates that a recent ROM is selected. If false, we use the default ROM
+let recentRomSelected = false;
 
 /**
  * Represents the construction options of Z88
@@ -58,6 +88,48 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Items to add to the machine menu
    */
   provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
+    // --- Create the submenu of recent roms
+    const romsSubmenu: MenuItemConstructorOptions[] = [];
+    romsSubmenu.push({
+      id: USE_DEFAULT_ROM,
+      label: "Use default ROM",
+      type: "checkbox",
+      checked: !recentRomSelected,
+      click: (mi) => {
+        mi.checked = true;
+        recentRomSelected = false;
+        const lastRomId = `${USE_ROM_FILE}_0`;
+        const item = Menu.getApplicationMenu().getMenuItemById(lastRomId);
+        if (item) {
+          item.checked = false;
+        }
+        if (recentOptions?.rom) {
+          recentRomName = null;
+          recentOptions = { ...recentOptions, rom: undefined };
+          this.requestMachine();
+        }
+      },
+    });
+    if (recentRoms.length > 0) {
+      romsSubmenu.push({ type: "separator" });
+      for (let i = 0; i < recentRoms.length; i++) {
+        romsSubmenu.push({
+          id: `${USE_ROM_FILE}_${i}`,
+          label: path.basename(recentRoms[i]),
+          type: i === 0 ? "checkbox" : "normal",
+          checked: i === 0 && recentRomSelected,
+          click: () => this.selectRecentRomItem(i),
+        });
+      }
+    }
+    romsSubmenu.push(
+      { type: "separator" },
+      {
+        id: SELECT_ROM_FILE,
+        label: "Select ROM file...",
+        click: async () => await this.selectRomFileToUse(),
+      }
+    );
     return [
       {
         id: LCD_DIMS,
@@ -68,35 +140,51 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: Z88_640_64,
             type: "radio",
             label: "640 x 64",
-            click: () => this.requestMachine(Z88_640_64, { scw: 0xff, sch: 8 }),
+            click: () => {
+              recentLcdType = machineIdFromMenuId(Z88_640_64);
+              recentOptions = { ...recentOptions, scw: 0xff, sch: 8 };
+              this.requestMachine();
+            },
           },
           {
             id: Z88_640_320,
             type: "radio",
             label: "640 x 320",
-            click: () =>
-              this.requestMachine(Z88_640_320, { scw: 0xff, sch: 40 }),
+            click: () => {
+              recentLcdType = machineIdFromMenuId(Z88_640_320);
+              recentOptions = { ...recentOptions, scw: 0xff, sch: 40 };
+              this.requestMachine();
+            },
           },
           {
             id: Z88_640_480,
             type: "radio",
             label: "640 x 480",
-            click: () =>
-              this.requestMachine(Z88_640_480, { scw: 0xff, sch: 60 }),
+            click: () => {
+              recentLcdType = machineIdFromMenuId(Z88_640_480);
+              recentOptions = { ...recentOptions, scw: 0xff, sch: 60 };
+              this.requestMachine();
+            },
           },
           {
             id: Z88_800_320,
             type: "radio",
             label: "800 x 320",
-            click: () =>
-              this.requestMachine(Z88_800_320, { scw: 100, sch: 40 }),
+            click: () => {
+              recentLcdType = machineIdFromMenuId(Z88_800_320);
+              recentOptions = { ...recentOptions, scw: 100, sch: 40 };
+              this.requestMachine();
+            },
           },
           {
             id: Z88_800_480,
             type: "radio",
             label: "800 x 480",
-            click: () =>
-              this.requestMachine(Z88_800_480, { scw: 100, sch: 60 }),
+            click: () => {
+              recentLcdType = machineIdFromMenuId(Z88_800_480);
+              recentOptions = { ...recentOptions, scw: 100, sch: 60 };
+              this.requestMachine();
+            },
           },
         ],
       },
@@ -117,9 +205,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       },
       { type: "separator" },
       {
-        id: SELECT_ROM_FILE,
-        label: "Select ROM file...",
-        click: async () => this.selectRomFile(),
+        id: ROM_MENU,
+        type: "submenu",
+        label: "Select ROM",
+        submenu: romsSubmenu,
       },
     ];
   }
@@ -136,7 +225,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     }
 
     // --- Select the current LCD dimension
-    const lcdType = menu.getMenuItemById(lastLcdType);
+    const lcdType = menu.getMenuItemById(menuIdFromMachineId(recentLcdType));
     if (lcdType) {
       lcdType.checked = true;
     }
@@ -160,16 +249,56 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Sets the Z88 with the specified LCD type
    * @param typeId Machine type with LCD size specification
    */
-  private requestMachine(id: string, options: Cz88ContructionOptions): void {
-    const typeId = id.split("_").slice(1).join("_");
-    this.appWindow.requestMachineType(typeId, options);
-    lastLcdType = typeId;
+  private requestMachine(): void {
+    const typeId = `${recentLcdType}_${recentRomName ?? ""}`;
+    this.appWindow.requestMachineType(typeId, recentOptions);
+  }
+
+  /**
+   * Select the ROM file to use with Z88
+   */
+  private async selectRomFileToUse(filename?: string): Promise<void> {
+    if (!filename) {
+      filename = await this.selectRomFileFromDialog();
+      if (!filename) {
+        return;
+      }
+    }
+
+    const contents = await this.checkCz88Rom(filename);
+    if (typeof contents === "string") {
+      await dialog.showMessageBox(this.appWindow.window, {
+        title: "ROM error",
+        message: contents,
+        type: "error",
+      });
+      return;
+    }
+
+    // --- Ok, let's use the contents of this file
+    recentOptions = { ...recentOptions, rom: contents };
+
+    // --- Use the selected contents
+    const recentFileIdx = recentRoms.indexOf(filename);
+    if (recentFileIdx >= 0) {
+      recentRoms.splice(recentFileIdx, 1);
+    }
+    recentRoms.unshift(filename);
+    recentRoms.splice(4);
+
+    // --- Now set the ROM name and refresh the menu
+    recentRomName = path.basename(filename);
+    recentRomSelected = true;
+    this.appWindow.setupMenu();
+
+    // --- Request the current machine type
+    this.requestMachine();
   }
 
   /**
    * Select a ROM file to use with Z88
    */
-  private async selectRomFile(): Promise<void> {
+  private async selectRomFileFromDialog(): Promise<string | null> {
     const window = this.appWindow.window;
     const result = await dialog.showOpenDialog(window, {
       title: "Open ROM file",
@@ -179,56 +308,85 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         { name: "All Files", extensions: ["*"] },
       ],
     });
-    let romFile: string = "";
-    if (!result.canceled) {
-      try {
-        romFile = result.filePaths[0];
-        const contents = Uint8Array.from(fs.readFileSync(romFile));
+    return result ? result.filePaths[0] : null;
+  }
 
-        // --- Check contents length
-        if (contents.length !== 0x8_0000 && contents.length !== 0x4_0000 && contents.length !== 0x2_0000) {
-          await dialog.showMessageBox(window, {
-            title: `Invalid ROM file length: ${contents.length}`,
-            message: "The ROM file length can be 128K, 256K, or 512K.",
-            type: "error",
-          });
-          return;
-        }
+  /**
+   * Checks if the specified file is a valid Z88 ROM
+   * @param filename ROM file name
+   * @returns The contents, if the ROM is valid; otherwise, the error message
+   */
+  private async checkCz88Rom(filename: string): Promise<string | Uint8Array> {
+    try {
+      const contents = Uint8Array.from(fs.readFileSync(filename));
 
-        // --- Check watermark
-        if (!this.isOZRom(contents)) {
-          await dialog.showMessageBox(window, {
-            title: `Invalid ROM file ${romFile}`,
-            message: "The file does not contain the OZ ROM watermark.",
-            type: "error",
-          });
-        }
-      } catch (err) {
-        // --- This error is intentionally ignored
-        await dialog.showMessageBox(window, {
-          title: `Error processing ROM file ${romFile}`,
-          message: err.toString(),
-          type: "error",
-          detail:
-            "Please check if you have the appropriate access rights to read the files contents " +
-            "and the file is a valid ROM file.",
-        });
+      // --- Check contents length
+      if (
+        contents.length !== 0x8_0000 &&
+        contents.length !== 0x4_0000 &&
+        contents.length !== 0x2_0000
+      ) {
+        return `Invalid ROM file length: ${contents.length}. The ROM file length can be 128K, 256K, or 512K.`;
       }
+
+      // --- Check watermark
+      if (!this.isOZRom(contents)) {
+        return "The file does not contain the OZ ROM watermark.";
+      }
+
+      // --- Done: valid ROM
+      return contents;
+    } catch (err) {
+      // --- This error is intentionally ignored
+      return (
+        `Error processing ROM file ${filename}. ` +
+        "Please check if you have the appropriate access rights " +
+        "to read the files contents and the file is a valid ROM file."
+      );
     }
   }
 
   /**
-   * Check if specified slot contains an Application Card ('OZ' watermark)
-   * @param contents Binary contents
-   * @returns true if Application Card is available in slot; otherwise false
+   * Selects one of the recent ROM items
+   * @param idx Selected ROM index
    */
-  private isApplicationCard(contents: Uint8Array): boolean {
-    const topBankOffset = (contents.length & 0xe_c000) - 0x4000;
-    return (
-      contents[topBankOffset + 0x3ffb] === 0x80 &&
-      contents[topBankOffset + 0x3ffe] === "O".charCodeAt(0) &&
-      contents[topBankOffset + 0x3fff] === "Z".charCodeAt(0)
+  private selectRecentRomItem(idx: number): void {
+    if (idx < 0 || idx >= recentRoms.length) {
+      return;
+    }
+
+    this.selectRomFileToUse(recentRoms[idx]);
+
+    // // --- Bring the selected ROM to the top
+    // const topItem = recentRoms.splice(idx, 1);
+    // recentRoms.unshift(...topItem);
+    // this.checkTopRecentRom();
+    // recentRomSelected = true;
+    // recentRomName = path.basename(recentRoms[0]);
+    // this.appWindow.setupMenu();
+
+    // // --- Request the current machine type
+    // this.requestMachine();
+  }
+
+  /**
+   *
+   */
+  private checkTopRecentRom(): void {
+    // --- Clear the default ROM
+    const defaultItem = Menu.getApplicationMenu().getMenuItemById(
+      USE_DEFAULT_ROM
     );
+    if (defaultItem) {
+      defaultItem.checked = false;
+    }
+
+    // --- Set the top ROM
+    const lastRomId = `${USE_ROM_FILE}_0`;
+    const item = Menu.getApplicationMenu().getMenuItemById(lastRomId);
+    if (item) {
+      item.checked = true;
+    }
   }
 
   /**
@@ -238,7 +396,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   private isOZRom(contents: Uint8Array): boolean {
     const topBankOffset = (contents.length & 0xe_c000) - 0x4000;
-    console.log(`offset: ${topBankOffset.toString(16)}`);
     return (
       contents[topBankOffset + 0x3ffb] === 0x81 &&
       contents[topBankOffset + 0x3ffe] === "O".charCodeAt(0) &&

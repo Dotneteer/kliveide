@@ -7,6 +7,7 @@ import {
   __WIN32__,
   __LINUX__,
   __DEV__,
+  menuIdFromMachineId,
 } from "./utils/electron-utils";
 import {
   BrowserWindow,
@@ -64,7 +65,7 @@ import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
 import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
-import { MachineContextProvider } from "./machine-context"
+import { MachineContextProvider } from "./machine-context";
 import {
   ZxSpectrum128ContextProvider,
   ZxSpectrum48ContextProvider,
@@ -135,7 +136,7 @@ export class AppWindow implements IAppWindow {
    * Gets the current machine context provider
    */
   static getContextProvider(): MachineContextProvider | null {
-    return AppWindow.instance._machineContextProvider
+    return AppWindow.instance._machineContextProvider;
   }
 
   // ==========================================================================
@@ -395,32 +396,34 @@ export class AppWindow implements IAppWindow {
     }
     viewSubMenu.push(...extraViewItems);
 
-    viewSubMenu.push({
-      id: "toggle_statusbar",
-      label: "Show statusbar",
-      type: "checkbox",
-      checked: true,
-      click: (mi) => {
-        if (mi.checked) {
-          mainProcessStore.dispatch(emulatorShowStatusbarAction());
-        } else {
-          mainProcessStore.dispatch(emulatorHideStatusbarAction());
-        }
+    viewSubMenu.push(
+      {
+        id: "toggle_statusbar",
+        label: "Show statusbar",
+        type: "checkbox",
+        checked: true,
+        click: (mi) => {
+          if (mi.checked) {
+            mainProcessStore.dispatch(emulatorShowStatusbarAction());
+          } else {
+            mainProcessStore.dispatch(emulatorHideStatusbarAction());
+          }
+        },
       },
-    },
-    {
-      id: TOGGLE_FRAMES,
-      label: "Show frame information",
-      type: "checkbox",
-      checked: true,
-      click: (mi) => {
-        if (mi.checked) {
-          mainProcessStore.dispatch(emulatorShowFramesAction());
-        } else {
-          mainProcessStore.dispatch(emulatorHideFramesAction());
-        }
-      },
-    });
+      {
+        id: TOGGLE_FRAMES,
+        label: "Show frame information",
+        type: "checkbox",
+        checked: true,
+        click: (mi) => {
+          if (mi.checked) {
+            mainProcessStore.dispatch(emulatorShowFramesAction());
+          } else {
+            mainProcessStore.dispatch(emulatorHideFramesAction());
+          }
+        },
+      }
+    );
 
     // --- Add the file and view menu
     template.push(fileMenu, {
@@ -432,12 +435,17 @@ export class AppWindow implements IAppWindow {
     const machineSubMenu: MenuItemConstructorOptions[] = [];
     for (let i = 0; i < MACHINE_MENU_ITEMS.length; i++) {
       machineSubMenu.push({
-        id: `machine_${MACHINE_MENU_ITEMS[i].id}`,
+        id: menuIdFromMachineId(MACHINE_MENU_ITEMS[i].id),
         label: MACHINE_MENU_ITEMS[i].label,
         type: "radio",
         checked: i ? false : true,
         enabled: MACHINE_MENU_ITEMS[i].enabled,
-        click: (mi) => this.requestMachineType((mi.id.split("_"))[1]),
+        click: async (mi) => {
+          this.requestMachineType(mi.id.split("_")[1]);
+          // --- Wait while the menu is instantiated
+          await new Promise((r) => setTimeout(r, 400));
+          this.setMachineTypeMenu(mi.id);
+        },
       });
     }
 
@@ -574,10 +582,8 @@ export class AppWindow implements IAppWindow {
   /**
    * Sets the active menu according to the current machine type
    */
-  setMachineTypeMenu(type: string): void {
-    const menuItem = Menu.getApplicationMenu().getMenuItemById(
-      `machine_${type}`
-    );
+  setMachineTypeMenu(id: string): void {
+    const menuItem = Menu.getApplicationMenu().getMenuItemById(`${id}`);
     if (menuItem) {
       menuItem.checked = true;
     }
@@ -610,8 +616,7 @@ export class AppWindow implements IAppWindow {
 
     // --- Now, create the menu with the current machine type
     this.setupMenu();
-    //this.setMachineTypeMenu(typeId);
-    this.setMachineTypeMenu(id);
+    this.setMachineTypeMenu(menuIdFromMachineId(typeId));
 
     // --- Take care that the menu is updated according to the state
     const emuState = mainProcessStore.getState().emulatorPanelState;

@@ -23,11 +23,17 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    * @param api Machine API to access WA
    * @param roms Optional buffers with ROMs
    */
-  constructor(public api: MachineApi, roms?: Uint8Array[]) {
+  constructor(public api: MachineApi, public roms?: Uint8Array[]) {
     super(api);
+  }
+
+  /**
+   * Prepares the machine to run
+   */
+  prepareMachine(): void {
     this.configureMachine();
-    api.turnOnMachine();
-    this.initRoms(roms);
+    this.api.turnOnMachine();
+    this.initRoms(this.roms);
   }
 
   /**

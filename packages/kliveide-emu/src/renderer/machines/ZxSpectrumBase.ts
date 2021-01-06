@@ -55,6 +55,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   constructor(public api: MachineApi, roms?: Uint8Array[]) {
     super(api, roms);
+    this.prepareMachine();
   }
 
   /**

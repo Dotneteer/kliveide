@@ -70,7 +70,6 @@
       updatingMachineType = true;
       try {
         // --- Update the machine type
-        console.log(JSON.stringify(emuUi.requestedOptions));
         await changeVmEngine(emuUi.requestedType, emuUi.requestedOptions);
         stateAware.dispatch(emulatorSetupTypeAction(emuUi.requestedType)());
         

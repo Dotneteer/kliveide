@@ -11,6 +11,11 @@ export interface IAppWindow {
   readonly window: BrowserWindow | null;
 
   /**
+   * Sets up the application menu
+   */
+  setupMenu(): void;
+  
+  /**
    * Posts a message from the renderer to the main
    * @param message Message contents
    */
