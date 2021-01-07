@@ -3,7 +3,7 @@
 
 ;; add ix,bc (0x09)
 (func $AddIXBC
-  (call $AluAdd16 (call $getIndexReg) (call $getBC))
+  (call $AluAdd16 (call $getIndexReg) (i32.load16_u (i32.const $BC#)))
   call $setIndexReg
 )
 
@@ -289,22 +289,28 @@
 
 ;; ld b,xh (0x44)
 (func $LdBXH
-  (i32.shr_u (call $getIndexReg) (i32.const 8))
-  call $setB
+  (i32.store8
+    (i32.const $B#)
+    (i32.shr_u (call $getIndexReg) (i32.const 8))
+  )
 )
 
 ;; ld b,xl (0x45)
 (func $LdBXL
-  (i32.and (call $getIndexReg) (i32.const 0xff))
-  call $setB
+  (i32.store8
+    (i32.const $B#)
+    (i32.and (call $getIndexReg) (i32.const 0xff))
+  )
 )
 
 ;; ld b,(ix+d) (0x46)
 (func $LdBIXi
   (local $addr i32)
+  i32.const $B#
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $setB (call $readMemory))
+  (call $readMemory)
+  i32.store8
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))
@@ -312,22 +318,28 @@
 
 ;; ld c,xh (0x4c)
 (func $LdCXH
-  (i32.shr_u (call $getIndexReg) (i32.const 8))
-  call $setC
+  (i32.store8
+    (i32.const $C#)
+    (i32.shr_u (call $getIndexReg) (i32.const 8))
+  )
 )
 
 ;; ld c,xl (0x4d)
 (func $LdCXL
-  (i32.and (call $getIndexReg) (i32.const 0xff))
-  call $setC
+  (i32.store8
+    (i32.const $C#)
+    (i32.and (call $getIndexReg) (i32.const 0xff))
+  )
 )
 
 ;; ld c,(ix+d) (0x4e)
 (func $LdCIXi
   (local $addr i32)
+  i32.const $C#
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $setC (call $readMemory))
+  (call $readMemory)
+  i32.store8
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))
@@ -382,7 +394,7 @@
 ;; ld xh,b (0x60)
 (func $LdXHB
   (i32.and (call $getIndexReg) (i32.const 0x00ff))
-  (i32.shl (call $getB) (i32.const 8))
+  (i32.shl (i32.load8_u (i32.const $B#)) (i32.const 8))
   i32.or
   call $setIndexReg
 )
@@ -390,7 +402,7 @@
 ;; ld xh,c (0x61)
 (func $LdXHC
   (i32.and (call $getIndexReg) (i32.const 0x00ff))
-  (i32.shl (call $getC) (i32.const 8))
+  (i32.shl (i32.load8_u (i32.const $C#)) (i32.const 8))
   i32.or
   call $setIndexReg
 )
@@ -442,7 +454,7 @@
 (func $LdXLB
   (i32.or 
     (i32.and (call $getIndexReg) (i32.const 0xff00))
-    (call $getB)
+    (i32.load8_u (i32.const $B#))
   )
   call $setIndexReg
 )
@@ -451,7 +463,7 @@
 (func $LdXLC
   (i32.or 
     (i32.and (call $getIndexReg) (i32.const 0xff00))
-    (call $getC)
+    (i32.load8_u (i32.const $C#))
   )
   call $setIndexReg
 )
@@ -509,7 +521,7 @@
   (local $addr i32)
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $writeMemory (call $getB))
+  (call $writeMemory (i32.load8_u (i32.const $B#)))
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))
@@ -520,7 +532,7 @@
   (local $addr i32)
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $writeMemory (call $getC))
+  (call $writeMemory (i32.load8_u (i32.const $C#)))
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))

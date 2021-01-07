@@ -39,7 +39,7 @@
   end
   (i32.store8 
     (i32.const $A#)
-    (i32.and (get_local $newA)(i32.const 0xff))
+    (get_local $newA)
   )
 )
 
@@ -62,7 +62,7 @@
 ;; bsla de,b (0x28)
 (func $Bsla
   call $getDE
-  (i32.and (call $getB) (i32.const 0x07))
+  (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x07))
   i32.shl
   call $setDE
 )
@@ -71,7 +71,7 @@
 (func $Bsra
   (i32.and (call $getDE) (i32.const 0x8000))
   call $getDE
-  (i32.and (call $getB) (i32.const 0x07))
+  (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x07))
   i32.shr_u
   i32.or
   call $setDE
@@ -80,7 +80,7 @@
 ;; bsrl de,b (0x2a)
 (func $Bsrl
   call $getDE
-  (i32.and (call $getB) (i32.const 0x07))
+  (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x07))
   i32.shr_u
   call $setDE
 )
@@ -88,7 +88,7 @@
 ;; bsrf de,b (0x2b)
 (func $Bsrf
   (i32.xor (call $getDE) (i32.const 0xffff))
-  (i32.and (call $getB) (i32.const 0x0f))
+  (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x0f))
   i32.shr_u
   i32.const 0xffff
   i32.xor
@@ -98,12 +98,12 @@
 ;; brlc de,b (0x2c)
 (func $Brlc
   call $getDE
-  (i32.and (call $getB) (i32.const 0x0f))
+  (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x0f))
   i32.shl
 
   call $getDE
   i32.const 16
-  (i32.and (call $getB) (i32.const 0x0f))
+  (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x0f))
   i32.sub
   i32.shr_u
   i32.or
@@ -130,8 +130,10 @@
 
 ;; add bc,a (0x33)
 (func $AddBCA
-  (i32.add (call $getBC) (i32.load8_u (i32.const $A#)))
-  call $setBC
+  (i32.store16
+    (i32.const  $BC#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.load8_u (i32.const $A#)))
+  )
 )
 
 ;; add hl,NN (0x34)
@@ -150,8 +152,10 @@
 
 ;; add bc,NN (0x36)
 (func $AddBCNN
-  (i32.add (call $getBC) (call $readCode16))
-  call $setBC
+  (i32.store16
+    (i32.const $BC#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (call $readCode16))
+  )
   (call $incTacts (i32.const 2))
 )
 
@@ -180,7 +184,7 @@
   call $incTacts
 
   ;; Write (HL) to port BC
-  call $getBC
+  (i32.load16_u (i32.const $BC#))
   call $getHL
   tee_local $hl
   call $readMemory
@@ -190,7 +194,7 @@
   (i32.add (get_local $hl) (i32.const 1))
   call $setHL
 
-  (i32.add (call $getBC) (i32.const 1))
+  (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   call $setWZ
 )
 
@@ -297,7 +301,7 @@
 (func $JpInC
   (local $bc i32)
 
-  call $getBC
+  (i32.load16_u (i32.const $BC#))
   (i32.add (tee_local $bc) (i32.const 1))
   call $setWZ
 
@@ -344,13 +348,15 @@
   call $setHL
   (i32.add (get_local $de) (get_local $step))
   call $setDE
-  (i32.sub (call $getBC) (i32.const 1))
-  call $setBC
+  (i32.store16
+    (i32.const $BC#)
+    (i32.sub (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
 )
 
 ;; Tail of the ldirx/lddrx operations
 (func $LdrxTail
-  (i32.eq (call $getBC) (i32.const 0))
+  (i32.eq (i32.load16_u (i32.const $BC#)) (i32.const 0))
   if return end
 
   (i32.sub (get_global $PC) (i32.const 2))
@@ -435,8 +441,10 @@
   call $setDE
 
   ;; Decrement BC
-  (i32.sub (call $getBC) (i32.const 1))
-  call $setBC
+  (i32.store16
+    (i32.const $BC#)
+    (i32.sub (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
   call $LdrxTail
 )
 

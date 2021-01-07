@@ -33,8 +33,11 @@
 ;; quickly. These are their offsets:
 
 ;; $F# = 0x0120_0E00
-;; $AF# = 0x0120_0E00
 ;; $A# = 0x0120_0E01
+;; $AF# = 0x0120_0E00
+;; $B# = 0x0120_0E03
+;; $C# = 0x0120_0E02
+;; $BC# = 0x0120_0E02
 ;; 02: C
 ;; 03: B
 ;; 04: E
@@ -245,36 +248,6 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Z80 CPU registers access
-
-;; Gets the value of B
-(func $getB (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=3
-)
-
-;; Sets the value of B
-(func $setB (param $v i32)
-  (i32.store8 offset=3 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of C
-(func $getC (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=2
-)
-
-;; Sets the value of C
-(func $setC (param $v i32)
-  (i32.store8 offset=2 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of BC
-(func $getBC (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=2
-)
-
-;; Sets the value of BC
-(func $setBC (param $v i32)
-  (i32.store16 offset=2 (get_global $REG_AREA_INDEX) (get_local $v))
-)
 
 ;; Gets the value of D
 (func $getD (result i32)
@@ -773,7 +746,7 @@
   i32.const $PREF_NONE# set_global $prefixMode
   i32.const $IND_NONE# set_global $indexMode
   (i32.store16 (i32.const $AF#) (i32.const 0xffff))
-  (call $setBC (i32.const 0x0000))
+  (i32.store16 (i32.const $BC#) (i32.const 0x0000))
   (call $setDE (i32.const 0x0000))
   (call $setHL (i32.const 0x0000))
   (i32.store16 offset=8 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
