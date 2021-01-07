@@ -57,7 +57,6 @@
     ;; R5, R3, C from result 
     (i32.and (call $getA) (i32.const 0x29)) 
   )
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -135,7 +134,6 @@
     (i32.and (call $getA) (i32.const 0x28)) ;; Keey R3 and R5
   )
   (i32.or (get_local $newC))
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -228,7 +226,6 @@
 
   get_local $newC
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -310,7 +307,6 @@
 
   get_local $newC
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -597,7 +593,6 @@
   i32.or
 
   ;; Done
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -671,7 +666,6 @@
   
   i32.const 0x12 ;; Set H and N
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -735,7 +729,6 @@
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -764,7 +757,6 @@
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -781,7 +773,6 @@
   i32.or
   i32.const 0x01 ;; Mask for C flag
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -860,7 +851,6 @@
 
   (i32.shl (get_local $cFlag) (i32.const 4)) ;; Set H to the previous C
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 

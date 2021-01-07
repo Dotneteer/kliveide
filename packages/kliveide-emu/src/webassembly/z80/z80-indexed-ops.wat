@@ -71,7 +71,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -101,7 +100,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -171,7 +169,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -199,7 +196,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -235,7 +231,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -261,7 +256,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 
   ;; Adjust WZ

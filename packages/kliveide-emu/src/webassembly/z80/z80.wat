@@ -967,7 +967,6 @@
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
   ;; Set F through Q
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -982,8 +981,7 @@
     ;; Keep C flag  
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
-  ;; Set F through Q
-  (i32.and (i32.const 0xff))
+  ;; Set F
   i32.store8
 )
 
@@ -1086,7 +1084,6 @@
   ;; Combine them with F
   get_local $f
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 
   ;; Fetch the result
@@ -1109,10 +1106,12 @@
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   tee_local $f
   i32.add
-  tee_local $res
+  set_local $res
 
   ;; Calculate Z
   i32.const $F#
+  
+  get_local $res
   i32.const 0xffff
   i32.and
   if (result i32)  ;; (Z)
@@ -1177,7 +1176,6 @@
   i32.or
   i32.or
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1270,7 +1268,6 @@
   i32.or
   i32.or
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1410,7 +1407,6 @@
   )
 
   ;; Done
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1467,7 +1463,6 @@
   )
 
   ;; Done
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1485,7 +1480,6 @@
   ;; Set H
   i32.const 0x10 ;; H flag mask
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1499,7 +1493,6 @@
   i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (call $getA))
   i32.load8_u
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1513,7 +1506,6 @@
   i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (call $getA))
   i32.load8_u
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1581,7 +1573,6 @@
   )
 
   ;; Done
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 

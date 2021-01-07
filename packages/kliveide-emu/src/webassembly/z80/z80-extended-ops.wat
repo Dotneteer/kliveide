@@ -16,7 +16,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -63,7 +62,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -89,7 +87,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -115,7 +112,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -142,7 +138,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -169,7 +164,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -196,7 +190,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -222,7 +215,6 @@
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -314,7 +306,6 @@
   i32.or
   i32.or
   i32.or
-  (i32.and (i32.const 0xff))
 
   ;; Store F
   i32.store8
@@ -435,7 +426,6 @@
   i32.or
   i32.or
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 
   (call $incTacts (i32.const 1))
@@ -504,7 +494,6 @@
   ;; Keep C
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -555,7 +544,6 @@
   ;; Keep C
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -735,7 +723,6 @@
   ;; Set N
   i32.const $F#
   (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x02))
-  (i32.and (i32.const 0xff))
   i32.store8
 
   ;; Decrement B
@@ -751,7 +738,6 @@
   else
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xbf))
   end
-  (i32.and (i32.const 0xff))
   i32.store8
 
   ;; Increment or decrement HL
@@ -849,7 +835,6 @@
   ;; Set PV
   i32.const $F#
   (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-  (i32.and (i32.const 0xff))
   i32.store8
 
   ;; PC := PC - 2
@@ -877,7 +862,6 @@
     i32.const $F#
     (i32.load8_u (i32.const $F#))
     (i32.or (tee_local $f) (i32.const 0x04))
-    (i32.and (i32.const 0xff))
     i32.store8
 
     (i32.eq
@@ -914,7 +898,6 @@
     ;; Set PV
     i32.const $F#
     (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-    (i32.and (i32.const 0xff))
     i32.store8
 
     ;; PC := PC - 2
@@ -928,7 +911,6 @@
     ;; Reset PV
     i32.const $F#
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfb))
-    (i32.and (i32.const 0xff))
     i32.store8
   end
 )
@@ -940,7 +922,6 @@
     ;; Set PV
     i32.const $F#
     (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-    (i32.and (i32.const 0xff))
     i32.store8
 
     ;; PC := PC - 2
@@ -953,7 +934,6 @@
     ;; Reset PV
     i32.const $F#
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfb))
-    (i32.and (i32.const 0xff))
     i32.store8
   end
 )
@@ -975,7 +955,6 @@
 
   ;; Merge flags
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -992,7 +971,6 @@
 
   ;; Merge flags
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 
   ;; WZ++
@@ -1023,7 +1001,6 @@
 
   ;; Merge flags
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 )
 
@@ -1040,7 +1017,6 @@
 
   ;; Merge flags
   i32.or
-  (i32.and (i32.const 0xff))
   i32.store8
 
   (i32.sub (call $getWZ) (i32.const 1))
@@ -1061,7 +1037,6 @@
 (func $Ldir
   i32.const $F#
   (call $LdBase (i32.const 1))
-  (i32.and (i32.const 0xff))
   i32.store8
 
   call $LdrTail
@@ -1071,7 +1046,6 @@
 (func $Cpir
   i32.const $F#
   (call $CpBase (i32.const 1))
-  (i32.and (i32.const 0xff))
   i32.store8
 
   i32.const 1
@@ -1094,7 +1068,6 @@
 (func $Lddr
   i32.const $F#
   (call $LdBase (i32.const -1))
-  (i32.and (i32.const 0xff))
   i32.store8
 
   call $LdrTail
@@ -1104,7 +1077,6 @@
 (func $Cpdr
   i32.const $F#
   (call $CpBase (i32.const -1))
-  (i32.and (i32.const 0xff))
   i32.store8
 
   i32.const -1
