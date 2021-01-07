@@ -31,6 +31,8 @@
 ;; Other register are stored in the memory starting at the $$REG_AREA_INDEX 
 ;; as 8-bit registers. With WA memory access functions they can by addressed
 ;; quickly. These are their offsets:
+
+;; $F# = 0x0120_0E00
 ;; 00: F
 ;; 01: A
 ;; 02: C
@@ -176,7 +178,7 @@
 ;; the memory directly.
 (func $getCpuState
   ;; Registers
-  (i32.store8 offset=0 (get_global $STATE_TRANSFER_BUFF) (call $getF))
+  (i32.store8 offset=0 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u (i32.const $F#)))
   (i32.store8 offset=1 (get_global $STATE_TRANSFER_BUFF) (call $getA))
   (i32.store16 offset=18 (get_global $STATE_TRANSFER_BUFF) (get_global $PC))
   (i32.store16 offset=20 (get_global $STATE_TRANSFER_BUFF) (get_global $SP))
@@ -246,11 +248,6 @@
 ;; Sets the value of A
 (func $setA (param $v i32)
   (i32.store8 offset=1 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of F
-(func $getF (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=0
 )
 
 ;; Sets the value of F
@@ -968,7 +965,7 @@
     (i32.load8_u (i32.add (get_global $INC_FLAGS) (get_local $v)))
     
     ;; Keep the current C flag
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
   ;; Set F through Q
   (call $setF (i32.and (i32.const 0xff)))
@@ -982,7 +979,7 @@
     (i32.load8_u (i32.add (get_global $DEC_FLAGS) (get_local $v)))
 
     ;; Keep C flag  
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
   ;; Set F through Q
   (call $setF (i32.and (i32.const 0xff)))
@@ -1048,7 +1045,7 @@
   (call $incTacts (i32.const 7))
 
   ;; Keep S, Z, and PV from F
-  (set_local $f (i32.and (call $getF) (i32.const 0xc4)))
+  (set_local $f (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)))
   
   ;; Calc the value of H flag
   (i32.add
@@ -1105,7 +1102,7 @@
   ;; Calculate result
   (i32.add (call $getHL) (get_local $other))
   tee_local $res
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   tee_local $f
   i32.add
   tee_local $res
@@ -1191,7 +1188,7 @@
   ;; Calculate result
   (i32.sub (call $getHL) (get_local $other))
   tee_local $res
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   tee_local $f
   i32.sub
   tee_local $res
@@ -1569,45 +1566,45 @@
 
 ;; Tests the Z condition
 (func $testZ (result i32)
-  (i32.and (call $getF) (i32.const 0x40))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40))
 )
 
 ;; Tests the NZ condition
 (func $testNZ (result i32)
-  (i32.and (call $getF) (i32.const 0x40))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40))
   i32.eqz
 )
 
 ;; Tests the C condition
 (func $testC (result i32)
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
 )
 
 ;; Tests the NC condition
 (func $testNC (result i32)
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.eqz
 )
 
 ;; Tests the PE condition
 (func $testPE (result i32)
-  (i32.and (call $getF) (i32.const 0x04))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04))
 )
 
 ;; Tests the PO condition
 (func $testPO (result i32)
-  (i32.and (call $getF) (i32.const 0x04))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04))
   i32.eqz
 )
 
 ;; Tests the M condition
 (func $testM (result i32)
-  (i32.and (call $getF) (i32.const 0x80))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80))
 )
 
 ;; Tests the P condition
 (func $testP (result i32)
-  (i32.and (call $getF) (i32.const 0x80))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80))
   i32.eqz
 )
 

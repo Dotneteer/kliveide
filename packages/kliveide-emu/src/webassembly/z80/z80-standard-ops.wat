@@ -51,7 +51,7 @@
   call $setA
   (i32.or
     ;; S, Z, PV flags mask
-    (i32.and (call $getF) (i32.const 0xc4))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4))
     ;; R5, R3, C from result 
     (i32.and (call $getA) (i32.const 0x29)) 
   )
@@ -127,7 +127,7 @@
 
   ;; Calc the new F
   (i32.or
-    (i32.and (call $getF) (i32.const 0xc4)) ;; Keep S, Z, PV
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Keep S, Z, PV
     (i32.and (call $getA) (i32.const 0x28)) ;; Keey R3 and R5
   )
   (i32.or (get_local $newC))
@@ -209,7 +209,7 @@
   set_local $newC
 
   ;; Adjust with current C flag
-  call $getF
+  (i32.load8_u (i32.const $F#))
   i32.const 0x01 ;; C Flag mask
   i32.and
   get_local $res
@@ -217,7 +217,7 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calculate new C Flag
-  (i32.and (call $getF) (i32.const 0xc4)) ;; Keep S, Z, PV
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Keep S, Z, PV
   (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
   i32.or
 
@@ -288,7 +288,7 @@
   (i32.shr_u (call $getA) (i32.const 1))
 
   ;; Adjust with current C flag
-  call $getF
+  (i32.load8_u (i32.const $F#))
   i32.const 0x01 ;; C Flag mask
   i32.and
   i32.const 7
@@ -297,7 +297,7 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calculate new C Flag
-  (i32.and (call $getF) (i32.const 0xc4)) ;; Keep S, Z, PV
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Keep S, Z, PV
   (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
   i32.or
 
@@ -385,13 +385,13 @@
   set_local $lNibble
 
   ;; Calculate H flag
-  call $getF
+  (i32.load8_u (i32.const $F#))
   i32.const 0x10 ;; Mask for H flag
   i32.and
   set_local $hFlag
 
   ;; Calculate N flag
-  call $getF
+  (i32.load8_u (i32.const $F#))
   i32.const 0x02 ;; Mask for N flag
   i32.and
   set_local $nFlag
@@ -404,7 +404,7 @@
 
   ;; Calculate the diff value
   (i32.eq 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
     (i32.const 0)
   )
   if
@@ -653,7 +653,7 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; New F
-  (i32.and (call $getF) (i32.const 0xc5)) ;; Keep S, Z, PV, C
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc5)) ;; Keep S, Z, PV, C
   (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
   i32.or
   
@@ -717,7 +717,7 @@
   (i32.add (get_global $INC_FLAGS) (get_local $v))
   i32.load8_u
 
-  call $getF
+  (i32.load8_u (i32.const $F#))
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
@@ -744,7 +744,7 @@
   (i32.add (get_global $DEC_FLAGS) (get_local $v))
   i32.load8_u
 
-  call $getF
+  (i32.load8_u (i32.const $F#))
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
@@ -759,7 +759,7 @@
 ;; scf (0x37)
 (func $Scf
   (i32.and (call $getA) (i32.const 0x28)) ;; Mask for R5, R3
-  (i32.and (call $getF) (i32.const 0xc4)) ;; Mask for S, Z, PV
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Mask for S, Z, PV
   i32.or
   i32.const 0x01 ;; Mask for C flag
   i32.or
@@ -827,10 +827,10 @@
 (func $Ccf
   (local $cFlag i32)
   (i32.and (call $getA) (i32.const 0x28)) ;; Mask for R5, R3
-  (i32.and (call $getF) (i32.const 0xc4)) ;; Mask for S, Z, PV
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Mask for S, Z, PV
   i32.or
   
-  (i32.and (call $getF) (i32.const 0x01)) ;; Mask for C flag
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Mask for C flag
   tee_local $cFlag
   i32.const 0x01 ;; Complement C flag
   i32.xor
@@ -1177,7 +1177,7 @@
 (func $AdcAB
   (call $AluAdd 
     (call $getB) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1185,7 +1185,7 @@
 (func $AdcAC
   (call $AluAdd 
     (call $getC) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1193,7 +1193,7 @@
 (func $AdcAD
   (call $AluAdd 
     (call $getD) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1201,7 +1201,7 @@
 (func $AdcAE
   (call $AluAdd 
     (call $getE) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1209,7 +1209,7 @@
 (func $AdcAH
   (call $AluAdd 
     (call $getH) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1217,7 +1217,7 @@
 (func $AdcAL
   (call $AluAdd 
     (call $getL) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1225,7 +1225,7 @@
 (func $AdcAHLi
   (call $AluAdd 
     (call $readMemory (call $getHL))
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1233,7 +1233,7 @@
 (func $AdcAA
   (call $AluAdd 
     (call $getA) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1281,7 +1281,7 @@
 (func $SbcAB
   (call $AluSub 
     (call $getB) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1289,7 +1289,7 @@
 (func $SbcAC
   (call $AluSub 
     (call $getC) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1297,7 +1297,7 @@
 (func $SbcAD
   (call $AluSub 
     (call $getD) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1305,7 +1305,7 @@
 (func $SbcAE
   (call $AluSub 
     (call $getE) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1313,7 +1313,7 @@
 (func $SbcAH
   (call $AluSub 
     (call $getH) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1321,7 +1321,7 @@
 (func $SbcAL
   (call $AluSub 
     (call $getL) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1329,7 +1329,7 @@
 (func $SbcAHLi
   (call $AluSub
     (call $readMemory (call $getHL))
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1337,7 +1337,7 @@
 (func $SbcAA
   (call $AluSub 
     (call $getA) 
-    (i32.and (call $getF) (i32.const 0x01))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
 
@@ -1666,7 +1666,7 @@
 ;; adc a,N (0xce)
 (func $AdcAN
   call $readCodeMemory
-  (i32.and (call $getF) (i32.const 1))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 1))
   call $AluAdd
 )
 
@@ -1850,7 +1850,7 @@
 ;;  sbc N (0xde)
 (func $SbcAN
   call $readCodeMemory
-  (i32.and (call $getF) (i32.const 1))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 1))
   call $AluSub
 )
 

@@ -48,7 +48,7 @@
   call $Bit
 
   ;; Correct the R3 and R5 flags
-  (i32.and (call $getF) (i32.const 0xd7)) ;; Mask out R3 and R5
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xd7)) ;; Mask out R3 and R5
   (i32.and
     (i32.shr_u (get_local $addr) (i32.const 8))
     (i32.const 0x28)

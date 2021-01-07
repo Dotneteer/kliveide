@@ -498,8 +498,9 @@
     call $setA
 
     ;; Reset Z and C
-    (i32.and (call $getF) (i32.const 0xBE))
-    call $setF
+    (i32.store8 (i32.const $F#)
+      (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xBE))
+    )
     (call $setPC (get_global $tapeLoadBytesInvalidHeader))
     call $nextTapeBlock
     return
@@ -525,7 +526,7 @@
         if
           ;; We read a different byte, it's an error
           ;; Reset Z and C
-          (i32.and (call $getF) (i32.const 0xBE))
+          (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xBE))
           call $setF
           (call $setPC (get_global $tapeLoadBytesInvalidHeader))
           return
@@ -557,7 +558,7 @@
   if
     ;; Read over the expected length
     ;; Reset Carry to sign error
-    (i32.and (call $getF) (i32.const 0xfe))
+    (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfe))
     call $setF
   else
     ;; Verify checksum
@@ -565,11 +566,11 @@
     if
       ;; Wrong checksum
       ;; Reset Carry to sign error
-      (i32.and (call $getF) (i32.const 0xfe))
+      (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfe))
       call $setF
     else
       ;; Block read successfully, set Carry
-      (i32.or (call $getF) (i32.const 0x01))
+      (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x01))
       call $setF
     end
   end

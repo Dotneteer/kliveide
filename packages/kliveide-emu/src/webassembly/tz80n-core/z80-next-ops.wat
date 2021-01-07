@@ -381,7 +381,7 @@
   ;; Adjust flags
   (i32.add (get_global $INC_FLAGS) (get_local $v))
   i32.load8_u
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
   (call $setF (i32.and (i32.const 0xff)))
 )

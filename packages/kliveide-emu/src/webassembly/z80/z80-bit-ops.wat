@@ -38,7 +38,10 @@
 ;; $a: argument
 (func $Rl (param $a i32) (result i32)
   (local $c i32)
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and 
+    (i32.load8_u (i32.const $F#))
+    (i32.const 0x01)
+  )
   tee_local $c
   if (result i32)
     get_global $RL1_FLAGS
@@ -58,7 +61,7 @@
 ;; $a: argument
 (func $Rr (param $a i32) (result i32)
   (local $c i32)
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.const 7
   i32.shl
   tee_local $c
@@ -137,7 +140,7 @@
   end
 
   ;; Keep C
-  (i32.and (call $getF) (i32.const 0x01))
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
 
   ;; Keep R3 and R5
@@ -218,7 +221,7 @@
   call $Bit
 
   ;; Correct R3 and R5 flags
-  (i32.and (call $getF) (i32.const 0xd7))  ;; Clear R3 and R5
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xd7))  ;; Clear R3 and R5
   (i32.and (call $getWH) (i32.const 0x28)) ;; Get R3 and R5 from WZH
   i32.or
   call $setF
