@@ -66,11 +66,13 @@
   call $setIndexReg
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $INC_FLAGS) (get_local $v))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; dec xh (0x25)
@@ -94,11 +96,13 @@
   call $setIndexReg
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $DEC_FLAGS) (get_local $v))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; ld xh,N (0x26)
@@ -162,11 +166,13 @@
   call $setIndexReg
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $INC_FLAGS) (get_local $v))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; dec xl (0x2d)
@@ -188,11 +194,13 @@
   call $setIndexReg
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $DEC_FLAGS) (get_local $v))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; ld xl,N (0x2e)
@@ -222,11 +230,13 @@
   call $writeMemory
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $INC_FLAGS) (get_local $v))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
   ;; dec (ix+d) (0x35)
@@ -246,11 +256,13 @@
   call $writeMemory
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $DEC_FLAGS) (get_local $v))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))

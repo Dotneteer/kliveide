@@ -49,13 +49,16 @@
     (i32.shr_u (call $getA) (i32.const 7))
   )
   call $setA
+
+  i32.const $F#
   (i32.or
     ;; S, Z, PV flags mask
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4))
     ;; R5, R3, C from result 
     (i32.and (call $getA) (i32.const 0x29)) 
   )
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; ex af,af' (0x08)
@@ -126,13 +129,14 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calc the new F
+  i32.const $F#
   (i32.or
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Keep S, Z, PV
     (i32.and (call $getA) (i32.const 0x28)) ;; Keey R3 and R5
   )
   (i32.or (get_local $newC))
-  
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; djnz (0x10)
@@ -217,13 +221,15 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calculate new C Flag
+  i32.const $F#
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Keep S, Z, PV
   (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
   i32.or
 
   get_local $newC
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; jr NN (0x18)
@@ -297,13 +303,15 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Calculate new C Flag
+  i32.const $F#
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Keep S, Z, PV
   (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
   i32.or
 
   get_local $newC
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; jr nz,NN (0x20)
@@ -552,6 +560,8 @@
   tee_local $a
   (call $setA (i32.and (i32.const 0xff)))
 
+  i32.const $F#
+
   ;; Calculate parity
   get_local $a
   i32.const 0xff
@@ -587,7 +597,8 @@
   i32.or
 
   ;; Done
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; jr z,NN (0x28)
@@ -652,6 +663,7 @@
   (i32.xor (call $getA) (i32.const 0xff))
   (call $setA (i32.and (i32.const 0xff)))
 
+  i32.const $F#
   ;; New F
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc5)) ;; Keep S, Z, PV, C
   (i32.and (call $getA) (i32.const 0x28)) ;; Keep R3 and R5
@@ -659,7 +671,8 @@
   
   i32.const 0x12 ;; Set H and N
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; jr nc,NN (0x30)
@@ -714,6 +727,7 @@
   call $writeMemory
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $INC_FLAGS) (get_local $v))
   i32.load8_u
 
@@ -721,7 +735,8 @@
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; dec (hl) (0x35)
@@ -741,6 +756,7 @@
   call $writeMemory
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $DEC_FLAGS) (get_local $v))
   i32.load8_u
 
@@ -748,7 +764,8 @@
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; ld (hl),n (0x36)
@@ -758,12 +775,14 @@
 
 ;; scf (0x37)
 (func $Scf
+  i32.const $F#
   (i32.and (call $getA) (i32.const 0x28)) ;; Mask for R5, R3
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Mask for S, Z, PV
   i32.or
   i32.const 0x01 ;; Mask for C flag
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; jr c,NN (0x38)
@@ -826,6 +845,9 @@
 ;; ccf (0x3f)
 (func $Ccf
   (local $cFlag i32)
+
+  i32.const $F#
+
   (i32.and (call $getA) (i32.const 0x28)) ;; Mask for R5, R3
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)) ;; Mask for S, Z, PV
   i32.or
@@ -838,7 +860,8 @@
 
   (i32.shl (get_local $cFlag) (i32.const 4)) ;; Set H to the previous C
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; ld b,c (0x41)

@@ -11,11 +11,13 @@
   (call $setB (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),b (0x41)
@@ -56,11 +58,13 @@
   (call $setC (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),c (0x49)
@@ -80,11 +84,13 @@
   (call $setD (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),d (0x51)
@@ -104,11 +110,13 @@
   (call $setE (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),e (0x59)
@@ -129,11 +137,13 @@
   (call $setH (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),h (0x61)
@@ -154,11 +164,13 @@
   (call $setL (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),l (0x69)
@@ -179,11 +191,13 @@
   set_local $pval
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),0 (0x71)
@@ -203,11 +217,13 @@
   (call $setA (call $readPort (call $getBC)) (tee_local $pval))
   
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (get_local $pval))
   i32.load8_u
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; out (c),a (0x79)
@@ -250,9 +266,12 @@
   (i32.sub (i32.const 0) (call $getA))
   i32.const 0xff
   i32.and
-  tee_local $a
+  set_local $a
+
+  i32.const $F#
 
   ;; Keep S, R5, R3
+  get_local $a
   i32.const 0xA8 ;; Mask for S|R5|R3
   i32.and ;; (S|R5|R3)
   ;; Set N
@@ -295,7 +314,10 @@
   i32.or
   i32.or
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+
+  ;; Store F
+  i32.store8
 
   ;; Store the result
   get_local $a
@@ -394,6 +416,8 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Set flags
+  i32.const $F#
+
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; (C)
   (i32.and (get_local $xr) (i32.const 0xa8)) ;; (C, S|R5|R3)
 
@@ -411,7 +435,9 @@
   i32.or
   i32.or
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
+
   (call $incTacts (i32.const 1))
 )
 
@@ -471,13 +497,15 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (call $getA))
   i32.load8_u
 
   ;; Keep C
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; adc hl,hl (0x6a)
@@ -520,13 +548,15 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (call $getA))
   i32.load8_u
 
   ;; Keep C
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; sbc hl,sp (0x72)
@@ -703,8 +733,10 @@
   call $writeMemory
 
   ;; Set N
+  i32.const $F#
   (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x02))
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 
   ;; Decrement B
   (i32.sub (call $getB) (i32.const 1))
@@ -712,13 +744,15 @@
   call $setB
 
   ;; Set or reset Z
+  i32.const $F#
   (i32.eq (get_local $bc) (i32.const 0))
   if (result i32)
     (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x40))
   else
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xbf))
   end
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 
   ;; Increment or decrement HL
   (i32.add (call $getHL) (get_local $step))
@@ -761,6 +795,8 @@
   )
   set_local $v2
 
+  i32.const $F#
+
   ;; Calculate flag N 
   (i32.shr_u
     (i32.and (get_local $v) (i32.const 0x80))
@@ -798,7 +834,7 @@
   (i32.or (get_local $f))
 
   ;; Store the flags
-  call $setF
+  i32.store8
 )
 
 
@@ -811,8 +847,10 @@
   if return end
 
   ;; Set PV
+  i32.const $F#
   (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 
   ;; PC := PC - 2
   (i32.sub (get_global $PC) (i32.const 2))
@@ -836,9 +874,12 @@
   call $getBC
   if
     ;; Set PV
+    i32.const $F#
     (i32.load8_u (i32.const $F#))
     (i32.or (tee_local $f) (i32.const 0x04))
-    (call $setF (i32.and (i32.const 0xff)))
+    (i32.and (i32.const 0xff))
+    i32.store8
+
     (i32.eq
       (i32.and (get_local $f) (i32.const 0x40))
       (i32.const 0)
@@ -871,8 +912,10 @@
   (i32.ne (call $getB) (i32.const 0))
   if
     ;; Set PV
+    i32.const $F#
     (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-    (call $setF (i32.and (i32.const 0xff)))
+    (i32.and (i32.const 0xff))
+    i32.store8
 
     ;; PC := PC - 2
     (i32.sub (get_global $PC) (i32.const 2))
@@ -883,8 +926,10 @@
     call $Adjust5Tacts
   else
     ;; Reset PV
+    i32.const $F#
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfb))
-    (call $setF (i32.and (i32.const 0xff)))
+    (i32.and (i32.const 0xff))
+    i32.store8
   end
 )
 
@@ -893,8 +938,10 @@
   (i32.ne (call $getB) (i32.const 0))
   if
     ;; Set PV
+    i32.const $F#
     (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-    (call $setF (i32.and (i32.const 0xff)))
+    (i32.and (i32.const 0xff))
+    i32.store8
 
     ;; PC := PC - 2
     (i32.sub (get_global $PC) (i32.const 2))
@@ -904,8 +951,10 @@
     (call $Adjust5Tacts (call $getBC))
   else
     ;; Reset PV
+    i32.const $F#
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfb))
-    (call $setF (i32.and (i32.const 0xff)))
+    (i32.and (i32.const 0xff))
+    i32.store8
   end
 )
 
@@ -914,6 +963,8 @@
 
 ;; ldi (0xa0)
 (func $Ldi
+  i32.const $F#
+
   (call $LdBase (i32.const 1))
   
   ;; Calc PV
@@ -924,11 +975,13 @@
 
   ;; Merge flags
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; cpi (0xa1)
 (func $Cpi
+  i32.const $F#
   (call $CpBase (i32.const 1))
 
   ;; Calc PV
@@ -939,7 +992,8 @@
 
   ;; Merge flags
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 
   ;; WZ++
   (i32.add (call $getWZ) (i32.const 1))
@@ -958,8 +1012,9 @@
 
 ;; ldd (0xa8)
 (func $Ldd
+  i32.const $F#
   (call $LdBase (i32.const -1))
-  
+
   ;; Calc PV
   i32.const 0x04
   i32.const 0x00
@@ -968,11 +1023,13 @@
 
   ;; Merge flags
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; cpd (0xa9)
 (func $Cpd
+  i32.const $F#
   (call $CpBase (i32.const -1))
 
   ;; Calc PV
@@ -983,7 +1040,9 @@
 
   ;; Merge flags
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
+
   (i32.sub (call $getWZ) (i32.const 1))
   call $setWZ
 )
@@ -1000,15 +1059,21 @@
 
 ;; ldir (0xb0)
 (func $Ldir
+  i32.const $F#
   (call $LdBase (i32.const 1))
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
+
   call $LdrTail
 )
 
 ;; cpir (0xb1)
 (func $Cpir
+  i32.const $F#
   (call $CpBase (i32.const 1))
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
+
   i32.const 1
   call $CprTail
 )
@@ -1027,15 +1092,21 @@
 
 ;; lddr (0xb8)
 (func $Lddr
+  i32.const $F#
   (call $LdBase (i32.const -1))
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
+
   call $LdrTail
 )
 
 ;; cpdr (0xb9)
 (func $Cpdr
+  i32.const $F#
   (call $CpBase (i32.const -1))
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
+
   i32.const -1
   call $CprTail
 )

@@ -39,6 +39,8 @@
 
 ;; bit (ix+d),Q
 (func $XBitNQ (param $addr i32)
+  i32.const $F#
+
   get_local $addr
   call $readMemory
   (i32.shr_u 
@@ -54,7 +56,7 @@
     (i32.const 0x28)
   )
   i32.or
-  call $setF
+  i32.store8
 
   ;; Adjust tacts
   (call $contendRead (call $getHL) (i32.const 1))

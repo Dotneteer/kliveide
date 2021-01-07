@@ -210,7 +210,10 @@
 ;; the memory.
 (func $updateCpuState
   ;; Registers
-  (call $setF (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=0))
+  (i32.store8
+    (i32.const $F#)
+    (i32.load8_u offset=0 (get_global $STATE_TRANSFER_BUFF))
+  )
   (call $setA (get_global $STATE_TRANSFER_BUFF) (i32.load8_u offset=1))
 
   (set_global $PC (get_global $STATE_TRANSFER_BUFF) (i32.load16_u offset=18))
@@ -248,11 +251,6 @@
 ;; Sets the value of A
 (func $setA (param $v i32)
   (i32.store8 offset=1 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Sets the value of F
-(func $setF (param $v i32)
-  (i32.store8 offset=0 (get_global $REG_AREA_INDEX) (get_local $v))
 )
 
 ;; Gets the value of AF
@@ -605,7 +603,7 @@
 ;; Turns on the CPU
 (func $turnOnCpu
   i32.const 0xff call $setA
-  i32.const 0xff call $setF
+  (i32.store8 (i32.const $F#) (i32.const 0xff))
   i32.const 0xffff set_global $PC
   i32.const 0xffff set_global $SP
   (i32.store16 offset=0 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
@@ -960,6 +958,7 @@
 ;; Adjust flags after an 8-bit INC statement
 ;; $v: The value **before** the INC operation
 (func $adjustIncFlags (param $v i32)
+  i32.const $F#
   (i32.or
     ;; Get flag from the table
     (i32.load8_u (i32.add (get_global $INC_FLAGS) (get_local $v)))
@@ -968,12 +967,14 @@
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
   ;; Set F through Q
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Adjust flags after an 8-bit DEC statement
 ;; $v: The value **before** the DEC operation
 (func $adjustDecFlags (param $v i32)
+  i32.const $F#
   (i32.or
     ;; Get flag from the table
     (i32.load8_u (i32.add (get_global $DEC_FLAGS) (get_local $v)))
@@ -982,7 +983,8 @@
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
   ;; Set F through Q
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Decrements the value of SP
@@ -1045,6 +1047,7 @@
   (call $incTacts (i32.const 7))
 
   ;; Keep S, Z, and PV from F
+  i32.const $F#
   (set_local $f (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc4)))
   
   ;; Calc the value of H flag
@@ -1083,7 +1086,8 @@
   ;; Combine them with F
   get_local $f
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 
   ;; Fetch the result
   get_local $res
@@ -1108,6 +1112,7 @@
   tee_local $res
 
   ;; Calculate Z
+  i32.const $F#
   i32.const 0xffff
   i32.and
   if (result i32)  ;; (Z)
@@ -1172,7 +1177,8 @@
   i32.or
   i32.or
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Subtract two 16-bit values following the sbc hl,NN logic
@@ -1191,9 +1197,11 @@
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   tee_local $f
   i32.sub
-  tee_local $res
+  set_local $res
 
   ;; Calculate Z
+  i32.const $F#
+  get_local $res
   i32.const 0xffff
   i32.and
   if (result i32)  ;; (Z)
@@ -1262,7 +1270,8 @@
   i32.or
   i32.or
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Carries out a relative jump
@@ -1367,6 +1376,7 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Get C flag
+  i32.const $F#
   (i32.shr_u 
     (i32.and (get_local $res) (i32.const 0x100))
     (i32.const 8)
@@ -1400,7 +1410,8 @@
   )
 
   ;; Done
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Executes ALU subtraction; sets A and F
@@ -1419,6 +1430,7 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Get C flag
+  i32.const $F#
   (i32.shr_u 
     (i32.and (get_local $res) (i32.const 0x100))
     (i32.const 8)
@@ -1455,7 +1467,8 @@
   )
 
   ;; Done
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Executes ALU AND operations; sets A and F
@@ -1465,13 +1478,15 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (call $getA))
   i32.load8_u
 
   ;; Set H
   i32.const 0x10 ;; H flag mask
   i32.or
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Executes ALU XOR operation; sets A and F
@@ -1481,9 +1496,11 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (call $getA))
   i32.load8_u
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Executes ALU OOR operation; sets A and F
@@ -1493,9 +1510,11 @@
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
+  i32.const $F#
   (i32.add (get_global $LOG_FLAGS) (call $getA))
   i32.load8_u
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Executes ALU 8-add compare; sets F
@@ -1509,6 +1528,7 @@
   set_local $res
   
   ;; Get C flag
+  i32.const $F#
   (i32.shr_u 
     (i32.and (get_local $res) (i32.const 0x100))
     (i32.const 8)
@@ -1561,7 +1581,8 @@
   )
 
   ;; Done
-  (call $setF (i32.and (i32.const 0xff)))
+  (i32.and (i32.const 0xff))
+  i32.store8
 )
 
 ;; Tests the Z condition
