@@ -475,8 +475,10 @@
   if return end
 
   ;; Move AF' to AF
-  (i32.load16_u offset=8 (get_global $REG_AREA_INDEX))
-  call $setAF
+  (i32.store16 
+    (i32.const  $AF#)
+    (i32.load16_u offset=8 (get_global $REG_AREA_INDEX))
+  )
 
   ;; Check if it is a verify
   (i32.eq
@@ -494,8 +496,10 @@
   )
   if
     ;; This block has a different type we're expecting
-    (i32.xor (i32.load8_u (i32.const $A#)) (call $getL))
-    call $setA
+    (i32.store8 
+      (i32.const $A#)
+      (i32.xor (i32.load8_u (i32.const $A#)) (call $getL))
+    )
 
     ;; Reset Z and C
     (i32.store8 (i32.const $F#)

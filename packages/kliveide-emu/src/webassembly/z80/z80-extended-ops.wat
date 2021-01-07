@@ -207,7 +207,10 @@
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
   
   ;; Read and store port value
-  (call $setA (call $readPort (call $getBC)) (tee_local $pval))
+  (call $readPort (call $getBC))
+  (set_local $pval)
+
+  (i32.store8 (i32.const $A#) (get_local $pval))
   
   ;; Adjust flags
   i32.const $F#
@@ -314,8 +317,7 @@
   i32.store8
 
   ;; Store the result
-  get_local $a
-  (call $setA (i32.and (i32.const 0xff)))
+  (i32.store8 (i32.const $A#) (get_local $a))
 )
 
 ;; retn/reti
@@ -406,8 +408,8 @@
   else
     call $getI
   end
-  tee_local $xr
-  (call $setA (i32.and (i32.const 0xff)))
+  set_local $xr
+  (i32.store8 (i32.const $A#) (get_local $xr))
 
   ;; Set flags
   i32.const $F#
@@ -484,10 +486,11 @@
   call $writeMemory
 
   ;; Set A
+  i32.const $A#
   (i32.and (i32.load8_u (i32.const $A#)) (i32.const 0xf0))
   (i32.and (get_local $tmp) (i32.const 0x0f))
   i32.or
-  (call $setA (i32.and (i32.const 0xff)))
+  i32.store8
 
   ;; Adjust flags
   i32.const $F#
@@ -534,10 +537,11 @@
   call $writeMemory
 
   ;; Set A
+  i32.const $A#
   (i32.and (i32.load8_u (i32.const $A#)) (i32.const 0xf0))
   (i32.shr_u (get_local $tmp) (i32.const 4))
   i32.or
-  (call $setA (i32.and (i32.const 0xff)))
+  i32.store8
 
   ;; Adjust flags
   i32.const $F#

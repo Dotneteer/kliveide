@@ -3,10 +3,11 @@
 
 ;; swapnib (0x23)
 (func $SwapNib
+  i32.const $A#
   (i32.shl (i32.load8_u (i32.const $A#)) (i32.const 4))
   (i32.shr_u (i32.load8_u (i32.const $A#)) (i32.const 4))
   i32.or
-  (call $setA (i32.and (i32.const 0xff)))
+  i32.store8
 )
 
 ;; mirror (0x24)
@@ -36,7 +37,10 @@
     i32.and
     br_if $mirror_loop
   end
-  (call $setA (i32.and (get_local $newA)(i32.const 0xff)))
+  (i32.store8 
+    (i32.const $A#)
+    (i32.and (get_local $newA)(i32.const 0xff))
+  )
 )
 
 ;; test N (0x27)
@@ -49,8 +53,10 @@
   call $readCodeMemory
   call $AluAnd
 
-  get_local $a
-  (call $setA (i32.and (i32.const 0xff)))
+  (i32.store8 
+    (i32.const $A#)
+    (get_local $a)
+  )
 )
 
 ;; bsla de,b (0x28)
@@ -280,10 +286,11 @@
 
 ;; setae (0x96)
 (func $SetAE
+  i32.const $A#
   i32.const 0x80
   (i32.and (call $getE) (i32.const 0x07))
   i32.shr_u
-  (call $setA (i32.and (i32.const 0xff)))
+  i32.store8
 )
 
 ;; jp (c) (0x98)
