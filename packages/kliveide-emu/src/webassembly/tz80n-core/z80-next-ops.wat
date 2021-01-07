@@ -3,8 +3,8 @@
 
 ;; swapnib (0x23)
 (func $SwapNib
-  (i32.shl (call $getA) (i32.const 4))
-  (i32.shr_u (call $getA) (i32.const 4))
+  (i32.shl (i32.load8_u (i32.const $A#)) (i32.const 4))
+  (i32.shr_u (i32.load8_u (i32.const $A#)) (i32.const 4))
   i32.or
   (call $setA (i32.and (i32.const 0xff)))
 )
@@ -16,7 +16,7 @@
 
   i32.const 0
   set_local $newA
-  (i32.or (call $getA) (i32.const 0xff00))
+  (i32.or (i32.load8_u (i32.const $A#)) (i32.const 0xff00))
   set_local $a
   loop $mirror_loop
     ;; Get the rightmost bit of A
@@ -43,7 +43,7 @@
 (func $TestN
   (local $a i32)
 
-  call $getA
+  (i32.load8_u (i32.const $A#))
   set_local $a
 
   call $readCodeMemory
@@ -112,19 +112,19 @@
 
 ;; add hl,a (0x31)
 (func $AddHLA
-  (i32.add (call $getHL) (call $getA))
+  (i32.add (call $getHL) (i32.load8_u (i32.const $A#)))
   call $setHL
 )
 
 ;; add de,a (0x32)
 (func $AddDEA
-  (i32.add (call $getDE) (call $getA))
+  (i32.add (call $getDE) (i32.load8_u (i32.const $A#)))
   call $setDE
 )
 
 ;; add bc,a (0x33)
 (func $AddBCA
-  (i32.add (call $getBC) (call $getA))
+  (i32.add (call $getBC) (i32.load8_u (i32.const $A#)))
   call $setBC
 )
 
@@ -208,7 +208,7 @@
   call $writeTbBlueIndex
 
   ;; Write TBBLUE value register
-  call $getA
+  (i32.load8_u (i32.const $A#))
   call $writeTbBlueValue
 )
 
@@ -321,7 +321,7 @@
   tee_local $hl
   call $readMemory
   tee_local $memVal
-  call $getA
+  (i32.load8_u (i32.const $A#))
   i32.ne
   if
     get_local $de
@@ -412,7 +412,7 @@
   tee_local $memVal
 
   ;; Conditional copy
-  call $getA
+  (i32.load8_u (i32.const $A#))
   i32.ne
   if
     call $getDE

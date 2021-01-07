@@ -480,7 +480,7 @@
 
   ;; Check if it is a verify
   (i32.eq
-    (i32.and (call $getAF) (i32.const 0xff01))
+    (i32.and (i32.load16_u (i32.const $AF#)) (i32.const 0xff01))
     (i32.const 0xff00)
   )
   set_local $isVerify
@@ -490,11 +490,11 @@
   ;; 0xFF for data block
   (i32.ne 
     (i32.load8_u (get_global $tapeBufferPtr))
-    (call $getA)
+    (i32.load8_u (i32.const $A#))
   )
   if
     ;; This block has a different type we're expecting
-    (i32.xor (call $getA) (call $getL))
+    (i32.xor (i32.load8_u (i32.const $A#)) (call $getL))
     call $setA
 
     ;; Reset Z and C
@@ -507,7 +507,8 @@
   end
 
   ;; It is time to load the block
-  call $getA call $setH
+  (i32.load8_u (i32.const $A#))
+  call $setH
 
   ;; Skip the header byte
   (i32.add (get_global $tapeBufferPtr) (i32.const 1))

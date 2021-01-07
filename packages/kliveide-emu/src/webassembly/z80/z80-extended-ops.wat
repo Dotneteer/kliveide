@@ -222,7 +222,10 @@
 (func $OutCA
   ;; WZ = BC + 1
   (call $setWZ (i32.add (call $getBC) (i32.const 1)))
-  (call $writePort (call $getBC) (call $getA))
+  (call $writePort 
+    (call $getBC) 
+    (i32.load8_u (i32.const $A#))
+  )
 )
 
 ;; ld (NN),QQ 
@@ -255,7 +258,7 @@
 (func $Neg
   (local $a i32)
   ;; Calc the new value of A
-  (i32.sub (i32.const 0) (call $getA))
+  (i32.sub (i32.const 0) (i32.load8_u (i32.const $A#)))
   i32.const 0xff
   i32.and
   set_local $a
@@ -289,7 +292,7 @@
 
   ;; Calculate H
   i32.const 0
-  call $getA
+  (i32.load8_u (i32.const $A#))
   i32.const 0x0f
   i32.and
   i32.const 24
@@ -347,7 +350,7 @@
 
 ;; ld i,a 0x47
 (func $LdIA
-  call $getA
+  (i32.load8_u (i32.const $A#))
   call $setI    
   (call $incTacts (i32.const 1))
 )
@@ -370,7 +373,7 @@
 
 ;; ld r,a 0x4f
 (func $LdRA
-  call $getA
+  (i32.load8_u (i32.const $A#))
   call $setR    
   (call $incTacts (i32.const 1))
 )
@@ -475,20 +478,20 @@
 
   ;; Write back to memory
   call $getHL
-  (i32.shl (call $getA) (i32.const 4))
+  (i32.shl (i32.load8_u (i32.const $A#)) (i32.const 4))
   (i32.shr_u (get_local $tmp) (i32.const 4))
   i32.or
   call $writeMemory
 
   ;; Set A
-  (i32.and (call $getA) (i32.const 0xf0))
+  (i32.and (i32.load8_u (i32.const $A#)) (i32.const 0xf0))
   (i32.and (get_local $tmp) (i32.const 0x0f))
   i32.or
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
   i32.const $F#
-  (i32.add (get_global $LOG_FLAGS) (call $getA))
+  (i32.add (get_global $LOG_FLAGS) (i32.load8_u (i32.const $A#)))
   i32.load8_u
 
   ;; Keep C
@@ -525,20 +528,20 @@
 
   ;; Write back to memory
   call $getHL
-  (i32.and (call $getA) (i32.const 0x0f))
+  (i32.and (i32.load8_u (i32.const $A#)) (i32.const 0x0f))
   (i32.shl (get_local $tmp) (i32.const 4))
   i32.or
   call $writeMemory
 
   ;; Set A
-  (i32.and (call $getA) (i32.const 0xf0))
+  (i32.and (i32.load8_u (i32.const $A#)) (i32.const 0xf0))
   (i32.shr_u (get_local $tmp) (i32.const 4))
   i32.or
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
   i32.const $F#
-  (i32.add (get_global $LOG_FLAGS) (call $getA))
+  (i32.add (get_global $LOG_FLAGS) (i32.load8_u (i32.const $A#)))
   i32.load8_u
 
   ;; Keep C
@@ -620,7 +623,7 @@
 
   ;; Keep S, Z, and C
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xc1)) ;; (S|Z|C)
-  (i32.add (get_local $memVal) (call $getA))
+  (i32.add (get_local $memVal) (i32.load8_u (i32.const $A#)))
   (i32.and (tee_local $memVal) (i32.const 0x08))
   (i32.shl (get_local $memVal) (i32.const 4))
   
@@ -640,7 +643,7 @@
   (local $hl i32)
   (local $compRes i32)
   (local $r3r5 i32)
-  call $getA
+  (i32.load8_u (i32.const $A#))
   call $getHL
   tee_local $hl
   call $readMemory
@@ -657,7 +660,7 @@
   i32.const 0x02 ;; (C, N)
 
   ;; Calculate H
-  (i32.and (call $getA) (i32.const 0x0f))
+  (i32.and (i32.load8_u (i32.const $A#)) (i32.const 0x0f))
   (i32.and (get_local $compRes) (i32.const 0x0f))
   i32.sub
   i32.const 0x10

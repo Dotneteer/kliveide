@@ -433,7 +433,7 @@
 ;; ld xh,e (0x67)
 (func $LdXHA
   (i32.and (call $getIndexReg) (i32.const 0x00ff))
-  (i32.shl (call $getA) (i32.const 8))
+  (i32.shl (i32.load8_u (i32.const $A#)) (i32.const 8))
   i32.or
   call $setIndexReg
 )
@@ -499,7 +499,7 @@
 (func $LdXLA
   (i32.or 
     (i32.and (call $getIndexReg) (i32.const 0xff00))
-    (call $getA)
+    (i32.load8_u (i32.const $A#))
   )
   call $setIndexReg
 )
@@ -575,7 +575,7 @@
   (local $addr i32)
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $writeMemory (call $getA))
+  (call $writeMemory (i32.load8_u (i32.const $A#)))
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))

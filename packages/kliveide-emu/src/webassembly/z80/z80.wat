@@ -33,8 +33,8 @@
 ;; quickly. These are their offsets:
 
 ;; $F# = 0x0120_0E00
-;; 00: F
-;; 01: A
+;; $AF# = 0x0120_0E00
+;; $A# = 0x0120_0E01
 ;; 02: C
 ;; 03: B
 ;; 04: E
@@ -179,7 +179,7 @@
 (func $getCpuState
   ;; Registers
   (i32.store8 offset=0 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u (i32.const $F#)))
-  (i32.store8 offset=1 (get_global $STATE_TRANSFER_BUFF) (call $getA))
+  (i32.store8 offset=1 (get_global $STATE_TRANSFER_BUFF) (i32.load8_u (i32.const $A#)))
   (i32.store16 offset=18 (get_global $STATE_TRANSFER_BUFF) (get_global $PC))
   (i32.store16 offset=20 (get_global $STATE_TRANSFER_BUFF) (get_global $SP))
 
@@ -243,19 +243,9 @@
 ;; ----------------------------------------------------------------------------
 ;; Z80 CPU registers access
 
-;; Gets the value of A
-(func $getA (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=1
-)
-
 ;; Sets the value of A
 (func $setA (param $v i32)
   (i32.store8 offset=1 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of AF
-(func $getAF (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=0
 )
 
 ;; Sets the value of AF
@@ -484,7 +474,7 @@
 (func $getReg8 (param $r i32) (result i32)
   (i32.eq (get_local $r) (i32.const 0x07))
   if
-    call $getA
+    (i32.load8_u (i32.const $A#))
     return
   end
 
@@ -1366,7 +1356,7 @@
   (local $r12 i32)
 
   ;; Add values (+carry) and store in A
-  (tee_local $a (call $getA))
+  (tee_local $a (i32.load8_u (i32.const $A#)))
   (i32.add (get_local $arg))
   (i32.add (get_local $c))
   tee_local $res
@@ -1419,7 +1409,7 @@
   (local $r12 i32)
 
   ;; Subtract values (-carry) and store in A
-  (tee_local $a (call $getA))
+  (tee_local $a (i32.load8_u (i32.const $A#)))
   (i32.sub (get_local $arg))
   (i32.sub (get_local $c))
   tee_local $res
@@ -1469,12 +1459,12 @@
 ;; Executes ALU AND operations; sets A and F
 ;; $arg: other argument
 (func $AluAnd (param $arg i32)
-  (i32.and (call $getA) (get_local $arg))
+  (i32.and (i32.load8_u (i32.const $A#)) (get_local $arg))
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
   i32.const $F#
-  (i32.add (get_global $LOG_FLAGS) (call $getA))
+  (i32.add (get_global $LOG_FLAGS) (i32.load8_u (i32.const $A#)))
   i32.load8_u
 
   ;; Set H
@@ -1486,12 +1476,12 @@
 ;; Executes ALU XOR operation; sets A and F
 ;; $arg: other argument
 (func $AluXor (param $arg i32)
-  (i32.xor (call $getA) (get_local $arg))
+  (i32.xor (i32.load8_u (i32.const $A#)) (get_local $arg))
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
   i32.const $F#
-  (i32.add (get_global $LOG_FLAGS) (call $getA))
+  (i32.add (get_global $LOG_FLAGS) (i32.load8_u (i32.const $A#)))
   i32.load8_u
   i32.store8
 )
@@ -1499,12 +1489,12 @@
 ;; Executes ALU OOR operation; sets A and F
 ;; $arg: other argument
 (func $AluOr (param $arg i32)
-  (i32.or (call $getA) (get_local $arg))
+  (i32.or (i32.load8_u (i32.const $A#)) (get_local $arg))
   (call $setA (i32.and (i32.const 0xff)))
 
   ;; Adjust flags
   i32.const $F#
-  (i32.add (get_global $LOG_FLAGS) (call $getA))
+  (i32.add (get_global $LOG_FLAGS) (i32.load8_u (i32.const $A#)))
   i32.load8_u
   i32.store8
 )
@@ -1516,7 +1506,7 @@
   (local $r12 i32)
 
   ;; Subtract values
-  (i32.sub (call $getA) (get_local $arg))
+  (i32.sub (i32.load8_u (i32.const $A#)) (get_local $arg))
   set_local $res
   
   ;; Get C flag
@@ -1539,7 +1529,7 @@
   (i32.or (i32.const 0x02))
 
   ;; Lookup value
-  (call $getR12Lookup (get_local $res) (call $getA) (get_local $arg))
+  (call $getR12Lookup (get_local $res) (i32.load8_u (i32.const $A#)) (get_local $arg))
   set_local $r12
 
   ;; Combine with half-carry sub
