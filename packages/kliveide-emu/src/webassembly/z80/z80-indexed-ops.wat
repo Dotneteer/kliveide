@@ -70,8 +70,7 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; dec xh (0x25)
@@ -99,8 +98,7 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; ld xh,N (0x26)
@@ -168,8 +166,7 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; dec xl (0x2d)
@@ -195,8 +192,7 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; ld xl,N (0x2e)
@@ -230,9 +226,7 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
-
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
   ;; dec (ix+d) (0x35)
@@ -256,8 +250,7 @@
   i32.load8_u
   (i32.and (call $getF) (i32.const 0x01))
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))

@@ -483,16 +483,6 @@
   (i32.store16 offset=26 (get_global $REG_AREA_INDEX) (get_local $v))
 )
 
-;; Gets the value of Q
-(func $getQ (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=28
-)
-
-;; Sets the value of Q
-(func $setQ (param $v i32)
-  (i32.store8 offset=28 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
 ;; Gets the specified 8-bit register
 ;; $r: Register index from 0-7: B, C, D, E, H, L, F, A
 ;; returns: 8-bit register value
@@ -981,8 +971,7 @@
     (i32.and (call $getF) (i32.const 0x01))
   )
   ;; Set F through Q
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; Adjust flags after an 8-bit DEC statement
@@ -996,8 +985,7 @@
     (i32.and (call $getF) (i32.const 0x01))
   )
   ;; Set F through Q
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; Decrements the value of SP
@@ -1098,8 +1086,7 @@
   ;; Combine them with F
   get_local $f
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 
   ;; Fetch the result
   get_local $res
@@ -1188,8 +1175,7 @@
   i32.or
   i32.or
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; Subtract two 16-bit values following the sbc hl,NN logic
@@ -1279,8 +1265,7 @@
   i32.or
   i32.or
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; Carries out a relative jump
@@ -1418,8 +1403,7 @@
   )
 
   ;; Done
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; Executes ALU subtraction; sets A and F
@@ -1474,8 +1458,7 @@
   )
 
   ;; Done
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; Executes ALU AND operations; sets A and F
@@ -1581,8 +1564,7 @@
   )
 
   ;; Done
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; Tests the Z condition

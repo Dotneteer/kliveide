@@ -15,8 +15,7 @@
   i32.and
   set_local $res
   (i32.load8_u (i32.add (get_global $RLC_FLAGS) (get_local $a)))
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
   get_local $res
 )
 
@@ -31,8 +30,7 @@
   i32.and
   set_local $res
   (i32.load8_u (i32.add (get_global $RRC_FLAGS) (get_local $a)))
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
   get_local $res
 )
 
@@ -50,8 +48,7 @@
   get_local $a
   i32.add
   i32.load8_u
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
   (i32.shl (get_local $a) (i32.const 1))
   get_local $c
   i32.or
@@ -73,8 +70,7 @@
   get_local $a
   i32.add
   i32.load8_u
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
   (i32.shr_u (get_local $a) (i32.const 1))
   get_local $c
   i32.or
@@ -85,8 +81,7 @@
 (func $Sla (param $a i32) (result i32)
   (i32.add (get_global $RL0_FLAGS) (get_local $a))
   i32.load8_u
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
   (i32.shl (get_local $a) (i32.const 1))
 )
 
@@ -95,8 +90,7 @@
 (func $Sra (param $a i32) (result i32)
   (i32.add (get_global $SRA_FLAGS) (get_local $a))
   i32.load8_u
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 
   (i32.shr_u (get_local $a) (i32.const 1))
   (i32.and (get_local $a) (i32.const 0x80))
@@ -108,8 +102,7 @@
 (func $Sll (param $a i32) (result i32)
   (i32.add (get_global $RL1_FLAGS) (get_local $a))
   i32.load8_u
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 
   (i32.shl (get_local $a) (i32.const 1))
   i32.const 1
@@ -121,8 +114,7 @@
 (func $Srl (param $a i32) (result i32)
   (i32.add (get_global $RR0_FLAGS) (get_local $a))
   i32.load8_u
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 
   (i32.shr_u (get_local $a) (i32.const 1))
 )
@@ -156,8 +148,7 @@
   i32.const 0x10 ;; (Z|PV|S, C, R3|R5, H)
   i32.or
 
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; ----------------------------------------------------------------------------
@@ -230,8 +221,7 @@
   (i32.and (call $getF) (i32.const 0xd7))  ;; Clear R3 and R5
   (i32.and (call $getWH) (i32.const 0x28)) ;; Get R3 and R5 from WZH
   i32.or
-  call $setQ
-  (call $setF (call $getQ))
+  call $setF
 
   ;; Adjust tacts
   (call $contendRead (call $getHL) (i32.const 1))

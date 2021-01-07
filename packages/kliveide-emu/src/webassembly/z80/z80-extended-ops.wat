@@ -411,8 +411,7 @@
   i32.or
   i32.or
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
   (call $incTacts (i32.const 1))
 )
 
@@ -799,8 +798,7 @@
   (i32.or (get_local $f))
 
   ;; Store the flags
-  call $setQ
-  (call $setF (call $getQ))
+  call $setF
 )
 
 
@@ -941,8 +939,7 @@
 
   ;; Merge flags
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 
   ;; WZ++
   (i32.add (call $getWZ) (i32.const 1))

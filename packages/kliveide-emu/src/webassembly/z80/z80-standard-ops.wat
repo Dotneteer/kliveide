@@ -55,8 +55,7 @@
     ;; R5, R3, C from result 
     (i32.and (call $getA) (i32.const 0x29)) 
   )
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; ex af,af' (0x08)
@@ -133,8 +132,7 @@
   )
   (i32.or (get_local $newC))
   
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; djnz (0x10)
@@ -225,8 +223,7 @@
 
   get_local $newC
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; jr NN (0x18)
@@ -306,8 +303,7 @@
 
   get_local $newC
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; jr nz,NN (0x20)
@@ -591,8 +587,7 @@
   i32.or
 
   ;; Done
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; jr z,NN (0x28)
@@ -664,8 +659,7 @@
   
   i32.const 0x12 ;; Set H and N
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; jr nc,NN (0x30)
@@ -727,8 +721,7 @@
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; dec (hl) (0x35)
@@ -755,8 +748,7 @@
   i32.const 0x01 ;; C flag mask
   i32.and
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; ld (hl),n (0x36)
@@ -771,8 +763,7 @@
   i32.or
   i32.const 0x01 ;; Mask for C flag
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; jr c,NN (0x38)
@@ -847,8 +838,7 @@
 
   (i32.shl (get_local $cFlag) (i32.const 4)) ;; Set H to the previous C
   i32.or
-  (call $setQ (i32.and (i32.const 0xff)))
-  (call $setF (call $getQ))
+  (call $setF (i32.and (i32.const 0xff)))
 )
 
 ;; ld b,c (0x41)
