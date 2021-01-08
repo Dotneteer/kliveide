@@ -128,8 +128,10 @@
 
 ;; add hl,a (0x31)
 (func $AddHLA
-  (i32.add (call $getHL) (i32.load8_u (i32.const $A#)))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.load8_u (i32.const $A#)))
+  )
 )
 
 ;; add de,a (0x32)
@@ -150,8 +152,13 @@
 
 ;; add hl,NN (0x34)
 (func $AddHLNN
-  (i32.add (call $getHL) (call $readCode16))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add 
+      (i32.load16_u (i32.const $HL#)) 
+      (call $readCode16)
+    )
+  )
   (call $incTacts (i32.const 2))
 )
 
@@ -199,14 +206,16 @@
 
   ;; Write (HL) to port BC
   (i32.load16_u (i32.const $BC#))
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   tee_local $hl
   call $readMemory
   call $writePort
 
   ;; Increment HL
-  (i32.add (get_local $hl) (i32.const 1))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (get_local $hl) (i32.const 1))
+  )
 
   (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   call $setWZ
@@ -240,7 +249,9 @@
 (func $PixelDn
   (local $hl i32)
 
-  call $getHL
+  i32.const $HL#
+
+  (i32.load16_u (i32.const $HL#))
   (i32.ne 
     (i32.and (tee_local $hl) (i32.const 0x0700))
     (i32.const 0x0700)
@@ -267,13 +278,15 @@
   end
 
   ;; Done
-  call $setHL
+  i32.store16
 )
 
 ;; pixelad (0x94)
 (func $PixelAd
   (local $d i32)
 
+  i32.const $HL#
+  
   (i32.load8_u (i32.const $D#))
   ;; (D & 0xc0) << 5
   (i32.and (tee_local $d) (i32.const 0xc0))
@@ -299,7 +312,7 @@
   i32.add
   i32.add
   i32.add
-  call $setHL
+  i32.store16
 )
 
 ;; setae (0x96)
@@ -342,7 +355,7 @@
   set_local $de
 
   ;; Conditional copy from (HL) to (DE)
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   tee_local $hl
   call $readMemory
   tee_local $memVal
@@ -358,8 +371,10 @@
   end
 
   ;; Prepare for loop
-  (i32.add (get_local $hl) (get_local $step))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (get_local $hl) (get_local $step))
+  )
   (i32.store16
     (i32.const $DE#)
     (i32.add (get_local $de) (get_local $step))
@@ -394,13 +409,15 @@
 
   ;; (HL) := (DE)
   (i32.load16_u (i32.const $DE#))
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   call $readMemory
   call $writeMemory
 
   ;; Increment L
-  (i32.add (call $getL) (i32.const 1))
-  call $setL
+  (i32.store8
+    (i32.const $L#)
+    (i32.add (i32.load8_u (i32.const $L#)) (i32.const 1))
+  )
 
   ;; Increment D
   (i32.store8 (i32.const $D#)
@@ -435,7 +452,7 @@
   (local $memVal i32)
 
   ;; Read (HL & 0xfff8 + E & 0x07)
-  (i32.and (call $getHL) (i32.const 0xfff8))
+  (i32.and (i32.load16_u (i32.const $HL#)) (i32.const 0xfff8))
   (i32.and (i32.load8_u (i32.const $E#)) (i32.const 0x07))
   i32.add
   call $readMemory

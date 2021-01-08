@@ -227,12 +227,12 @@
 
 ;; Bop (hl)
 (func $BopHLi
-  call $getHL
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
+  (i32.load16_u (i32.const $HL#))
   call $readMemory
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   ;; Call the bit operation
   i32.const $BOP_JT#
@@ -262,7 +262,7 @@
 (func $BitNHLi
   i32.const $F#
 
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   call $readMemory
   (i32.shr_u
     (i32.and (get_global $opCode) (i32.const 0x38))
@@ -279,7 +279,7 @@
   i32.store8
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 )
 
 ;; res N,Q (0x80-bf)
@@ -305,12 +305,12 @@
 
 ;; res N,(hl)
 (func $ResNHLi
-  call $getHL
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
+  (i32.load16_u (i32.const $HL#))
   call $readMemory
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   (i32.shl 
     (i32.const 1)
@@ -346,12 +346,12 @@
 
 ;; set N,(hl)
 (func $SetNHLi
-  call $getHL
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
+  (i32.load16_u (i32.const $HL#))
   call $readMemory
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   (i32.shl 
     (i32.const 1)

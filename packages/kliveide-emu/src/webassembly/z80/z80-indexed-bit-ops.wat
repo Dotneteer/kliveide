@@ -59,7 +59,7 @@
   i32.store8
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 )
 
 ;; res (ix+d),Q
@@ -71,7 +71,7 @@
   call $readMemory
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   (i32.shl 
     (i32.const 1)
@@ -102,7 +102,7 @@
   call $readMemory
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   (i32.shl 
     (i32.const 1)

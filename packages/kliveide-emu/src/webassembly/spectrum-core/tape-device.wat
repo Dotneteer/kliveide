@@ -498,7 +498,7 @@
     ;; This block has a different type we're expecting
     (i32.store8 
       (i32.const $A#)
-      (i32.xor (i32.load8_u (i32.const $A#)) (call $getL))
+      (i32.xor (i32.load8_u (i32.const $A#)) (i32.load8_u (i32.const $L#)))
     )
 
     ;; Reset Z and C
@@ -511,8 +511,10 @@
   end
 
   ;; It is time to load the block
-  (i32.load8_u (i32.const $A#))
-  call $setH
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $A#))
+  )
 
   ;; Skip the header byte
   (i32.add (get_global $tapeBufferPtr) (i32.const 1))
@@ -522,12 +524,17 @@
 
     (i32.gt_u (i32.load16_u (i32.const $DE#)) (i32.const 0))
     if
-      (i32.load8_u (get_global $tapeBufferPtr))
-      call $setL
+      (i32.store8
+        (i32.const $L#)
+        (i32.load8_u (get_global $tapeBufferPtr))
+      )
       get_local $isVerify
       if
         ;; VERIFY operation
-        (i32.ne (i32.load8_u (call $getIX)) (call $getL))
+        (i32.ne
+          (i32.load8_u (call $getIX)) 
+          (i32.load8_u (i32.const $L#))
+        )
         if
           ;; We read a different byte, it's an error
           ;; Reset Z and C
@@ -540,11 +547,13 @@
       end
 
       ;; Store the loaded byte
-      (call $writeMemory (call $getIX) (call $getL))
+      (call $writeMemory (call $getIX) (i32.load8_u (i32.const $L#)))
 
       ;; Calc the checksum
-      (i32.xor (call $getH) (call $getL))
-      call $setH
+      (i32.store8
+        (i32.const $H#)
+        (i32.xor (i32.load8_u (i32.const $H#)) (i32.load8_u (i32.const $L#)))
+      )
       
       ;; Increment the data pointers
       (i32.add (get_global $tapeBufferPtr) (i32.const 1))
@@ -571,7 +580,10 @@
     )
   else
     ;; Verify checksum
-    (i32.ne (i32.load8_u (get_global $tapeBufferPtr)) (call $getH))
+    (i32.ne 
+      (i32.load8_u (get_global $tapeBufferPtr)) 
+      (i32.load8_u (i32.const $H#))
+    )
     if
       ;; Wrong checksum
       ;; Reset Carry to sign error

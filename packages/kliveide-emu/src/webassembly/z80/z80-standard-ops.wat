@@ -93,11 +93,13 @@
 
 ;; add hl,bc (0x09)
 (func $AddHLBC
-  (call $AluAdd16
-    (call $getHL)
-    (i32.load16_u (i32.const $BC#))
+  (i32.store16
+    (i32.const $HL#)
+    (call $AluAdd16
+      (i32.load16_u (i32.const $HL#))
+      (i32.load16_u (i32.const $BC#))
+    )
   )
-  call $setHL
 )
 
 ;; ld a,(bc) (0x0a)
@@ -288,8 +290,13 @@
 
 ;; add hl,de (0x19)
 (func $AddHLDE
-  (call $AluAdd16 (call $getHL) (i32.load16_u (i32.const $DE#)))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (call $AluAdd16 
+      (i32.load16_u (i32.const $HL#))
+      (i32.load16_u (i32.const $DE#))
+    )
+  )
 )
 
 ;; ld a,(de) (0x1a)
@@ -385,7 +392,10 @@
 
 ;; ld hl,NN (0x21)
 (func $LdHLNN
-  (call $setHL (call $readCode16))
+  (i32.store16
+    (i32.const $HL#)
+    (call $readCode16)
+  )
 )
 
 ;; ld (NN),hl (0x22)
@@ -398,35 +408,45 @@
   (call $setWZ (i32.add (i32.const 1)))
 
   ;; Store HL
-  (call $writeMemory (get_local $addr) (call $getL))
-  (call $writeMemory (call $getWZ) (call $getH))
+  (call $writeMemory (get_local $addr) (i32.load8_u (i32.const $L#)))
+  (call $writeMemory (call $getWZ) (i32.load8_u (i32.const $H#)))
 )
 
 ;; inc hl (0x23)
 (func $IncHL
-  (call $setHL (i32.add (call $getHL) (i32.const 1)))
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $incTacts (i32.const 2))
 )
 
 ;; inc h (0x24)
 (func $IncH
   (local $v i32)
-  call $getH
-  (call $setH (i32.add (tee_local $v) (i32.const 1)))
+  i32.const $H#
+  (i32.load8_u (i32.const $H#))
+  (i32.add (tee_local $v) (i32.const 1))
+  i32.store8
   (call $adjustIncFlags (get_local $v))
 )
 
 ;; dec h (0x25)
 (func $DecH
   (local $v i32)
-  call $getH
-  (call $setH (i32.sub (tee_local $v) (i32.const 1)))
+  i32.const $H#
+  (i32.load8_u (i32.const $H#))
+  (i32.sub (tee_local $v) (i32.const 1))
+  i32.store8
   (call $adjustDecFlags (get_local $v))
 )
 
 ;; ld h,N (0x26)
 (func $LdHN
-  (call $setH (call $readCodeMemory))
+  (i32.store8
+    (i32.const $H#)
+    (call $readCodeMemory)
+  )
 )
 
 ;; daa (0x27)
@@ -672,8 +692,13 @@
 
 ;; add hl,hl (0x29)
 (func $AddHLHL
-  (call $AluAdd16 (call $getHL) (call $getHL))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (call $AluAdd16
+      (i32.load16_u (i32.const $HL#))
+      (i32.load16_u (i32.const $HL#))
+    )
+  )
 )
 
 ;; ld hl,(NN) (0x2a)
@@ -686,35 +711,51 @@
   (call $setWZ (i32.add (i32.const 1)))
 
   ;; Read HL from memory
-  (call $setL (call $readMemory (get_local $addr)))
-  (call $setH (call $readMemory (call $getWZ)))
+  (i32.store8
+    (i32.const $L#)
+    (call $readMemory (get_local $addr))
+  )
+  (i32.store8
+    (i32.const $H#)
+    (call $readMemory (call $getWZ))
+  )
 )
 
 ;; dec hl (0x2b)
 (func $DecHL
-  (call $setHL (i32.sub (call $getHL) (i32.const 1)))
+  (i32.store16
+    (i32.const $HL#)
+    (i32.sub (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $incTacts (i32.const 2))
 )
 
 ;; inc l (0x2c)
 (func $IncL
   (local $v i32)
-  call $getL
-  (call $setL (i32.add (tee_local $v) (i32.const 1)))
+  i32.const $L#
+  (i32.load8_u (i32.const $L#))
+  (i32.add (tee_local $v) (i32.const 1))
+  i32.store8
   (call $adjustIncFlags (get_local $v))
 )
 
 ;; dec l (0x2d)
 (func $DecL
   (local $v i32)
-  call $getL
-  (call $setL (i32.sub (tee_local $v) (i32.const 1)))
+  i32.const $L#
+  (i32.load8_u (i32.const $L#))
+  (i32.sub (tee_local $v) (i32.const 1))
+  i32.store8
   (call $adjustDecFlags (get_local $v))
 )
 
 ;; ld l,N (0x2e)
 (func $LdLN
-  (call $setL (call $readCodeMemory))
+  (i32.store8
+    (i32.const $L#)
+    (call $readCodeMemory)
+  )
 )
 
 ;; cpl (0x2f)
@@ -776,14 +817,14 @@
   (local $v i32)
 
   ;; Get the value from the memory
-  (call $readMemory (call $getHL))
+  (call $readMemory (i32.load16_u (i32.const $HL#)))
   set_local $v
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   ;; Increment value
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   (i32.add (get_local $v) (i32.const 1))
   call $writeMemory
 
@@ -804,14 +845,14 @@
   (local $v i32)
 
   ;; Get the value from the memory
-  (call $readMemory (call $getHL))
+  (call $readMemory (i32.load16_u (i32.const $HL#)))
   set_local $v
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   ;; Increment value
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   (i32.sub (get_local $v) (i32.const 1))
   call $writeMemory
 
@@ -829,7 +870,10 @@
 
 ;; ld (hl),n (0x36)
 (func $LdHLiN
-  (call $writeMemory (call $readCodeMemory (call $getHL)))
+  (call $writeMemory 
+    (i32.load16_u (i32.const $HL#))
+    (call $readCodeMemory)
+  )
 )
 
 ;; scf (0x37)
@@ -854,8 +898,10 @@
 
 ;; add hl,sp (0x39)
 (func $AddHLSP
-  (call $AluAdd16 (call $getHL) (get_global $SP))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (call $AluAdd16 (i32.load16_u (i32.const $HL#)) (get_global $SP))
+  )
 )
 
 ;; ld a,(NN) (0x3a)
@@ -960,7 +1006,7 @@
 (func $LdBH
   (i32.store8 
     (i32.const $B#)
-    (call $getH)
+    (i32.load8_u (i32.const $H#))
   )
 )
 
@@ -968,7 +1014,7 @@
 (func $LdBL
   (i32.store8 
     (i32.const $B#)
-    (call $getL)
+    (i32.load8_u (i32.const $L#))
   )
 )
 
@@ -976,7 +1022,8 @@
 (func $LdBHLi
   (i32.store8 
     (i32.const $B#)
-    (call $readMemory (call $getHL))
+    (i32.load16_u (i32.const $HL#))
+    (call $readMemory)
   )
 )
 
@@ -1016,7 +1063,7 @@
 (func $LdCH
   (i32.store8
     (i32.const $C#)
-    (call $getH)
+    (i32.load8_u (i32.const $H#))
   )
 )
 
@@ -1024,7 +1071,7 @@
 (func $LdCL
   (i32.store8
     (i32.const $C#)
-    (call $getL)
+    (i32.load8_u (i32.const $L#))
   )
 )
 
@@ -1032,7 +1079,8 @@
 (func $LdCHLi
   (i32.store8
     (i32.const $C#)
-    (call $readMemory (call $getHL))
+    (i32.load16_u (i32.const $HL#))
+    (call $readMemory)
   )
 )
 
@@ -1072,7 +1120,7 @@
 (func $LdDH
   (i32.store8
     (i32.const $D#)
-    (call $getH)
+    (i32.load8_u (i32.const $H#))
   )
 )
 
@@ -1080,7 +1128,7 @@
 (func $LdDL
   (i32.store8
     (i32.const $D#)
-    (call $getL)
+    (i32.load8_u (i32.const $L#))
   )
 )
 
@@ -1088,7 +1136,8 @@
 (func $LdDHLi
   (i32.store8
     (i32.const $D#)
-    (call $readMemory (call $getHL))
+    (i32.load16_u (i32.const $HL#))
+    (call $readMemory)
   )
 )
 
@@ -1128,7 +1177,7 @@
 (func $LdEH
   (i32.store8
     (i32.const $E#)
-    (call $getH)
+    (i32.load8_u (i32.const $H#))
   )
 )
 
@@ -1136,7 +1185,7 @@
 (func $LdEL
   (i32.store8
     (i32.const $E#)
-    (call $getL)
+    (i32.load8_u (i32.const $L#))
   )
 )
 
@@ -1144,7 +1193,8 @@
 (func $LdEHLi
   (i32.store8
     (i32.const $E#)
-    (call $readMemory (call $getHL))
+    (i32.load16_u (i32.const $HL#))
+    (call $readMemory)
   )
 )
 
@@ -1158,102 +1208,164 @@
 
 ;; ld h,b (0x60)
 (func $LdHB
-  (call $setH (i32.load8_u (i32.const $B#)))
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $B#))
+  )
 )
 
 ;; ld h,c (0x61)
 (func $LdHC
-  (call $setH (i32.load8_u (i32.const $C#)))
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $C#))
+  )
 )
 
 ;; ld h,d (0x62)
 (func $LdHD
-  (call $setH (i32.load8_u (i32.const $D#)))
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $D#))
+  )
 )
 
 ;; ld h,e (0x63)
 (func $LdHE
-  (call $setH (i32.load8_u (i32.const $E#)))
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $E#))
+  )
 )
 
 ;; ld h,l (0x65)
 (func $LdHL
-  (call $setH (call $getL))
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $L#))
+  )
 )
 
 ;; ld h,(hl) (0x66)
 (func $LdHHLi
-  (call $setH (call $readMemory (call $getHL)))
+  (i32.store8
+    (i32.const $H#)
+    (i32.load16_u (i32.const $HL#))
+    (call $readMemory)
+  )
 )
 
 ;; ld h,a (0x67)
 (func $LdHA
-  (call $setH (i32.load8_u (i32.const $A#)))
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $A#))
+  )
 )
 
 ;; ld l,b (0x68)
 (func $LdLB
-  (call $setL (i32.load8_u (i32.const $B#)))
+  (i32.store8
+    (i32.const $L#)
+    (i32.load8_u (i32.const $B#))
+  )
 )
 
 ;; ld l,c (0x69)
 (func $LdLC
-  (call $setL (i32.load8_u (i32.const $C#)))
+  (i32.store8
+    (i32.const $L#)
+    (i32.load8_u (i32.const $C#))
+  )
 )
 
 ;; ld l,d (0x6a)
 (func $LdLD
-  (call $setL (i32.load8_u (i32.const $D#)))
+  (i32.store8
+    (i32.const $L#)
+    (i32.load8_u (i32.const $D#))
+  )
 )
 
 ;; ld l,e (0x6b)
 (func $LdLE
-  (call $setL (i32.load8_u (i32.const $E#)))
+  (i32.store8
+    (i32.const $L#)
+    (i32.load8_u (i32.const $E#))
+  )
 )
 
 ;; ld l,h (0x6c)
 (func $LdLH
-  (call $setL (call $getH))
+  (i32.store8
+    (i32.const $L#)
+    (i32.load8_u (i32.const $H#))
+  )
 )
 
 ;; ld l,(hl) (0x6e)
 (func $LdLHLi
-  (call $setL (call $readMemory (call $getHL)))
+  (i32.store8
+    (i32.const $L#)
+    (i32.load16_u (i32.const $HL#))
+    (call $readMemory)
+  )
 )
 
 ;; ld l,a (0x6f)
 (func $LdLA
-  (call $setL (i32.load8_u (i32.const $A#)))
+  (i32.store8
+    (i32.const $L#)
+    (i32.load8_u (i32.const $A#))
+  )
 )
 
 ;; ld (hl),b (0x70)
 (func $LdHLiB
-  (call $writeMemory (call $getHL) (i32.load8_u (i32.const $B#)))
+  (call $writeMemory
+    (i32.load16_u (i32.const $HL#))
+    (i32.load8_u (i32.const $B#))
+  )
 )
 
 ;; ld (hl),c (0x71)
 (func $LdHLiC
-  (call $writeMemory (call $getHL) (i32.load8_u (i32.const $C#)))
+  (call $writeMemory
+    (i32.load16_u (i32.const $HL#))
+    (i32.load8_u (i32.const $C#))
+  )
 )
 
 ;; ld (hl),d (0x72)
 (func $LdHLiD
-  (call $writeMemory (call $getHL) (i32.load8_u (i32.const $D#)))
+  (call $writeMemory
+    (i32.load16_u (i32.const $HL#))
+    (i32.load8_u (i32.const $D#))
+  )
 )
 
 ;; ld (hl),e (0x73)
 (func $LdHLiE
-  (call $writeMemory (call $getHL) (i32.load8_u (i32.const $E#)))
+  (call $writeMemory
+    (i32.load16_u (i32.const $HL#))
+    (i32.load8_u (i32.const $E#))
+  )
 )
 
 ;; ld (hl),h (0x74)
 (func $LdHLiH
-  (call $writeMemory (call $getHL) (call $getH))
+  (call $writeMemory
+    (i32.load16_u (i32.const $HL#))
+    (i32.load8_u (i32.const $H#))
+  )
 )
 
 ;; ld (hl),l (0x75)
 (func $LdHLiL
-  (call $writeMemory (call $getHL) (call $getL))
+  (call $writeMemory
+    (i32.load16_u (i32.const $HL#))
+    (i32.load8_u (i32.const $L#))
+  )
 )
 
 ;; halt (0x76)
@@ -1270,7 +1382,10 @@
 
 ;; ld (hl),a (0x77)
 (func $LdHLiA
-  (call $writeMemory (call $getHL) (i32.load8_u (i32.const $A#)))
+  (call $writeMemory
+    (i32.load16_u (i32.const $HL#))
+    (i32.load8_u (i32.const $A#))
+  )
 )
 
 ;; ld a,b (0x78)
@@ -1309,7 +1424,7 @@
 (func $LdAH
   (i32.store8
     (i32.const $A#)
-    (call $getH)
+    (i32.load8_u (i32.const $H#))
   )
 )
 
@@ -1317,7 +1432,7 @@
 (func $LdAL
   (i32.store8
     (i32.const $A#)
-    (call $getL)
+    (i32.load8_u (i32.const $L#))
   )
 )
 
@@ -1325,7 +1440,8 @@
 (func $LdAHLi
   (i32.store8
     (i32.const $A#)
-    (call $readMemory (call $getHL))
+    (i32.load16_u (i32.const $HL#))
+    (call $readMemory)
   )
 )
 
@@ -1351,17 +1467,20 @@
 
 ;; add a,h (0x84)
 (func $AddAH
-  (call $AluAdd (call $getH) (i32.const 0))
+  (call $AluAdd (i32.load8_u (i32.const $H#)) (i32.const 0))
 )
 
 ;; add a,l (0x85)
 (func $AddAL
-  (call $AluAdd (call $getL) (i32.const 0))
+  (call $AluAdd (i32.load8_u (i32.const $L#)) (i32.const 0))
 )
 
 ;; add a,(hl) (0x86)
 (func $AddAHLi
-  (call $AluAdd (call $readMemory (call $getHL)) (i32.const 0))
+  (call $AluAdd 
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
+    (i32.const 0)
+  )
 )
 
 ;; add a,a (0x87)
@@ -1404,7 +1523,7 @@
 ;; adc a,h (0x8c)
 (func $AdcAH
   (call $AluAdd 
-    (call $getH) 
+    (i32.load8_u (i32.const $H#))
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
@@ -1412,7 +1531,7 @@
 ;; adc a,l (0x8d)
 (func $AdcAL
   (call $AluAdd 
-    (call $getL) 
+    (i32.load8_u (i32.const $L#))
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
@@ -1420,7 +1539,7 @@
 ;; adc a,(hl) (0x8e)
 (func $AdcAHLi
   (call $AluAdd 
-    (call $readMemory (call $getHL))
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
@@ -1455,17 +1574,20 @@
 
 ;; sub H (0x94)
 (func $SubAH
-  (call $AluSub (call $getH) (i32.const 0))
+  (call $AluSub (i32.load8_u (i32.const $H#)) (i32.const 0))
 )
 
 ;; sub L (0x95)
 (func $SubAL
-  (call $AluSub (call $getL) (i32.const 0))
+  (call $AluSub (i32.load8_u (i32.const $L#)) (i32.const 0))
 )
 
 ;; sub (hl) (0x96)
 (func $SubAHLi
-  (call $AluSub (call $readMemory (call $getHL)) (i32.const 0))
+  (call $AluSub 
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
+    (i32.const 0)
+  )
 )
 
 ;; sub A (0x97)
@@ -1508,7 +1630,7 @@
 ;; sbc a,h (0x9c)
 (func $SbcAH
   (call $AluSub 
-    (call $getH) 
+    (i32.load8_u (i32.const $H#)) 
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
@@ -1516,7 +1638,7 @@
 ;; sbc a,l (0x9d)
 (func $SbcAL
   (call $AluSub 
-    (call $getL) 
+    (i32.load8_u (i32.const $L#)) 
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
@@ -1524,7 +1646,7 @@
 ;; sbc a,(hl) (0x9e)
 (func $SbcAHLi
   (call $AluSub
-    (call $readMemory (call $getHL))
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
     (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   )
 )
@@ -1559,17 +1681,19 @@
 
 ;; and h (0xa4)
 (func $AndAH
-  (call $AluAnd (call $getH))
+  (call $AluAnd (i32.load8_u (i32.const $H#)))
 )
 
 ;; and l (0xa5)
 (func $AndAL
-  (call $AluAnd (call $getL))
+  (call $AluAnd (i32.load8_u (i32.const $L#)))
 )
 
 ;; and (hl) (0xa6)
 (func $AndAHLi
-  (call $AluAnd (call $readMemory (call $getHL)))
+  (call $AluAnd 
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
+  )
 )
 
 ;; and a (0xa7)
@@ -1599,17 +1723,19 @@
 
 ;; xor h (0xac)
 (func $XorAH
-  (call $AluXor (call $getH))
+  (call $AluXor (i32.load8_u (i32.const $H#)))
 )
 
 ;; xor l (0xad)
 (func $XorAL
-  (call $AluXor (call $getL))
+  (call $AluXor (i32.load8_u (i32.const $L#)))
 )
 
 ;; xor (hl) (0xae)
 (func $XorAHLi
-  (call $AluXor (call $readMemory (call $getHL)))
+  (call $AluXor
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
+  )
 )
 
 ;; xor a (0xaf)
@@ -1639,17 +1765,19 @@
 
 ;; or h (0xb4)
 (func $OrAH
-  (call $AluOr (call $getH))
+  (call $AluOr (i32.load8_u (i32.const $H#)))
 )
 
 ;; or l (0xb5)
 (func $OrAL
-  (call $AluOr (call $getL))
+  (call $AluOr (i32.load8_u (i32.const $L#)))
 )
 
 ;; or (hl) (0xb6)
 (func $OrAHLi
-  (call $AluOr (call $readMemory (call $getHL)))
+  (call $AluOr 
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
+  )
 )
 
 ;; or a (0xb7)
@@ -1679,17 +1807,19 @@
 
 ;; cp h (0xbc)
 (func $CpAH
-  (call $AluCp (call $getH))
+  (call $AluCp (i32.load8_u (i32.const $H#)))
 )
 
 ;; cp l (0xbd)
 (func $CpAL
-  (call $AluCp (call $getL))
+  (call $AluCp (i32.load8_u (i32.const $L#)))
 )
 
 ;; cp (hl) (0xbe)
 (func $CpAHLi
-  (call $AluCp (call $readMemory (call $getHL)))
+  (call $AluCp 
+    (call $readMemory (i32.load16_u (i32.const $HL#)))
+  )
 )
 
 ;; cp a (0xbf)
@@ -1987,11 +2117,12 @@
   get_local $tmp
   i32.store16 offset=12
 
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   set_local $tmp
-  get_global $REG_AREA_INDEX
-  i32.load16_u offset=14
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.load16_u offset=14 (get_global $REG_AREA_INDEX))
+  )
   get_global $REG_AREA_INDEX
   get_local $tmp
   i32.store16 offset=14
@@ -2074,8 +2205,10 @@
 
 ;; pop hl (0xe1)
 (func $PopHL
-  call $popValue
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (call $popValue)
+  )
 )
 
 ;; jp po (0xe2)
@@ -2105,13 +2238,13 @@
 
   ;; Write H to stack
   get_local $tmpSp
-  call $getH
+  (i32.load8_u (i32.const $H#))
   call $writeMemory
 
   ;; Write L to stack
   (i32.sub (get_local $tmpSp) (i32.const 1))
   tee_local $tmpSp
-  call $getL
+  (i32.load8_u (i32.const $L#))
   call $writeMemory
 
   ;; Adjust tacts
@@ -2119,8 +2252,10 @@
   (call $contendWrite (get_local $tmpSp) (i32.const 1))
 
   ;; Copy WZ to HL
-  call $getWZ
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (call $getWZ)
+  )
 )
 
 ;; call po (0xe4)
@@ -2145,7 +2280,7 @@
 
 ;; push hl (0xe5)
 (func $PushHL
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   call $pushValue
 )
 
@@ -2171,7 +2306,7 @@
 
 ;; jp (hl) (0xe9)
 (func $JpHL
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   call $setPC
 )
 
@@ -2188,14 +2323,15 @@
 ;; ex de,hl (0xeb)
 (func $ExDEHL
   (local $tmp i32)
-  (i32.load16_u (i32.const $DE#))
-  set_local $tmp
+  (set_local $tmp (i32.load16_u (i32.const $DE#)))
   (i32.store16
     (i32.const $DE#)
-    (call $getHL)
+    (i32.load16_u (i32.const $HL#))
   )
-  get_local $tmp
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (get_local $tmp)
+  )
 )
 
 ;; call pe (0xec)
@@ -2317,7 +2453,7 @@
 
 ;; ld sp,hl
 (func $LdSPHL
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   call $setSP
   (call $incTacts (i32.const 2))
 )

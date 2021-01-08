@@ -37,7 +37,7 @@
 
 ;; sbc hl,bc (0x42)
 (func $SbcHLBC
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
   (call $AluSbcHL (i32.load16_u (i32.const $BC#)))
   (call $incTacts (i32.const 7))
 )
@@ -166,7 +166,8 @@
   )
   
   ;; Read and store port value
-  (call $setH 
+  (i32.store8
+    (i32.const $H#)
     (call $readPort (i32.load16_u (i32.const $BC#)))
     (tee_local $pval)
   )
@@ -188,7 +189,7 @@
   )
   (call $writePort 
     (i32.load16_u (i32.const $BC#))
-    (call $getH)
+    (i32.load8_u (i32.const $H#))
   )
 )
 
@@ -202,7 +203,8 @@
   )
   
   ;; Read and store port value
-  (call $setL
+  (i32.store8
+    (i32.const $L#)
     (call $readPort (i32.load16_u (i32.const $BC#)))
     (tee_local $pval)
   )
@@ -224,7 +226,7 @@
   )
   (call $writePort
     (i32.load16_u (i32.const $BC#))
-    (call $getL)
+    (i32.load8_u (i32.const $L#))
   )
 )
 
@@ -424,7 +426,7 @@
 
 ;; adc hl,bc (0x4a)
 (func $AdcHLBC
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
   (call $AluAdcHL (i32.load16_u (i32.const $BC#)))
   (call $incTacts (i32.const 7))
 )
@@ -453,7 +455,7 @@
 
 ;; sbc hl,de (0x52)
 (func $SbcHLDE
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
   (call $AluSbcHL (i32.load16_u (i32.const $DE#)))
   (call $incTacts (i32.const 7))
 )
@@ -509,7 +511,7 @@
 
 ;; adc hl,de (0x5a)
 (func $AdcHLDE
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
   (call $AluAdcHL (i32.load16_u (i32.const $DE#)))
   (call $incTacts (i32.const 7))
 )
@@ -531,8 +533,8 @@
 
 ;; sbc hl,hl (0x62)
 (func $SbcHLHL
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
-  (call $AluSbcHL (call $getHL))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (call $AluSbcHL (i32.load16_u (i32.const $HL#)))
   (call $incTacts (i32.const 7))
 )
 
@@ -540,7 +542,7 @@
 (func $Rrd
   (local $hl i32)
   (local $tmp i32)
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   tee_local $hl
   call $readMemory
   set_local $tmp
@@ -556,7 +558,7 @@
   call $setWZ
 
   ;; Write back to memory
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   (i32.shl (i32.load8_u (i32.const $A#)) (i32.const 4))
   (i32.shr_u (get_local $tmp) (i32.const 4))
   i32.or
@@ -582,8 +584,8 @@
 
 ;; adc hl,hl (0x6a)
 (func $AdcHLHL
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
-  (call $AluAdcHL (call $getHL))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (call $AluAdcHL (i32.load16_u (i32.const $HL#)))
   (call $incTacts (i32.const 7))
 )
 
@@ -591,7 +593,7 @@
 (func $Rld
   (local $hl i32)
   (local $tmp i32)
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   tee_local $hl
   call $readMemory
   set_local $tmp
@@ -607,7 +609,7 @@
   call $setWZ
 
   ;; Write back to memory
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   (i32.and (i32.load8_u (i32.const $A#)) (i32.const 0x0f))
   (i32.shl (get_local $tmp) (i32.const 4))
   i32.or
@@ -633,7 +635,7 @@
 
 ;; sbc hl,sp (0x72)
 (func $SbcHLSP
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
   (call $AluSbcHL (get_global $SP))
   (call $incTacts (i32.const 7))
 )
@@ -652,7 +654,7 @@
 
 ;; adc hl,sp (0x7a)
 (func $AdcHLSP
-  (call $setWZ (i32.add (call $getHL) (i32.const 1)))
+  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
   (call $AluAdcHL (get_global $SP))
   (call $incTacts (i32.const 7))
 )
@@ -684,15 +686,17 @@
   ;; (DE) := (HL)
   (i32.load16_u (i32.const $DE#))
   tee_local $de
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   tee_local $hl
   call $readMemory
   tee_local $memVal
   call $writeMemory
 
   ;; Increment/decrement HL
-  (i32.add (get_local $hl) (get_local $step))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (get_local $hl) (get_local $step))
+  )
 
   ;; Adjust tacts
   (call $contendRead (get_local $de) (i32.const 1))
@@ -729,7 +733,7 @@
   (local $compRes i32)
   (local $r3r5 i32)
   (i32.load8_u (i32.const $A#))
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   tee_local $hl
   call $readMemory
 
@@ -774,8 +778,10 @@
   (call $Adjust5Tacts (get_local $hl))
 
   ;; Increment/decrement HL
-  (i32.add (get_local $hl) (get_local $step))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (get_local $hl) (get_local $step))
+  )
 
   ;; Decrement BC
   (i32.store16
@@ -804,7 +810,7 @@
   call $setWZ
 
   ;; (HL) := in(BC)
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   tee_local $hl
   get_local $bc
   call $readPort
@@ -833,8 +839,10 @@
   i32.store8
 
   ;; Increment or decrement HL
-  (i32.add (call $getHL) (get_local $step))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (get_local $step))
+  )
 )
 
 ;; Base of outi/outd/otir/otdr operations
@@ -847,7 +855,7 @@
   (call $incTacts (i32.const 1))
 
   ;; Read the value from memory
-  call $getHL
+  (i32.load16_u (i32.const $HL#))
   call $readMemory
   set_local $v
 
@@ -868,12 +876,14 @@
   )
 
   ;; Increment/decrement HL
-  (i32.add (call $getHL) (get_local $step))
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (get_local $step))
+  )
 
   ;; Calculate $v2
   (i32.and
-    (i32.add (get_local $v) (call $getL))
+    (i32.add (get_local $v) (i32.load8_u (i32.const $L#)))
     (i32.const 0xff)
   )
   set_local $v2
@@ -973,7 +983,7 @@
       call $setPC
 
       ;; Adjust tacts
-      (i32.sub (call $getHL) (i32.const 1))
+      (i32.sub (i32.load16_u (i32.const $HL#)) (i32.const 1))
       call $Adjust5Tacts
 
       ;; WZ := PC + 1
@@ -1002,7 +1012,7 @@
     call $setPC
 
     ;; Adjust tacts
-    (i32.sub (call $getHL) (i32.const 1))
+    (i32.sub (i32.load16_u (i32.const $HL#)) (i32.const 1))
     call $Adjust5Tacts
   else
     ;; Reset PV

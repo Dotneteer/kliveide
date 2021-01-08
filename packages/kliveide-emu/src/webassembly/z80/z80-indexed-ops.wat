@@ -446,9 +446,12 @@
 ;; ld h,(ix+d) (0x66)
 (func $LdHIXi
   (local $addr i32)
+  
+  i32.const $H#
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $setH (call $readMemory))
+  (call $readMemory)
+  i32.store8
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))
@@ -511,9 +514,11 @@
 ;; ld l,(ix+d) (0x6e)
 (func $LdLIXi
   (local $addr i32)
+  i32.const $L#
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $setL (call $readMemory))
+  (call $readMemory)
+  i32.store8
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))
@@ -577,7 +582,7 @@
   (local $addr i32)
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $writeMemory (call $getH))
+  (call $writeMemory (i32.load8_u (i32.const $H#)))
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))
@@ -588,7 +593,7 @@
   (local $addr i32)
   call $getIndexedAddress
   (call $AdjustPcTact5 (tee_local $addr))
-  (call $writeMemory (call $getL))
+  (call $writeMemory (i32.load8_u (i32.const $L#)))
 
   ;; Adjust WZ
   (call $setWZ (get_local $addr))

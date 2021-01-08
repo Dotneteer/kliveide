@@ -41,8 +41,9 @@
 ;; $D# = 0x0120_0E05
 ;; $E# = 0x0120_0E04
 ;; $DE# = 0x0120_0E04
-;; 04: E
-;; 05: D
+;; $H# = 0x0120_0E07
+;; $L# = 0x0120_0E06
+;; $HL# = 0x0120_0E06
 ;; 06: L
 ;; 07: H
 ;; 08: AF'
@@ -249,36 +250,6 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Z80 CPU registers access
-
-;; Gets the value of H
-(func $getH (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=7
-)
-
-;; Sets the value of H
-(func $setH (param $v i32)
-  (i32.store8 offset=7 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of L
-(func $getL (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=6
-)
-
-;; Sets the value of L
-(func $setL (param $v i32)
-  (i32.store8 offset=6 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of HL
-(func $getHL (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=6
-)
-
-;; Sets the value of HL
-(func $setHL (param $v i32)
-  (i32.store16 offset=6 (get_global $REG_AREA_INDEX) (get_local $v))
-)
 
 ;; Gets the value of I
 (func $getI (result i32)
@@ -719,7 +690,7 @@
   (i32.store16 (i32.const $AF#) (i32.const 0xffff))
   (i32.store16 (i32.const $BC#) (i32.const 0x0000))
   (i32.store16 (i32.const $DE#) (i32.const 0x0000))
-  (call $setHL (i32.const 0x0000))
+  (i32.store16 (i32.const $HL#) (i32.const 0x0000))
   (i32.store16 offset=8 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
   (i32.store16 offset=10 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
   (i32.store16 offset=12 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
@@ -1026,11 +997,11 @@
   (local $signed i32)
 
   ;; WZ = HL + 1
-  (i32.add (call $getHL) (i32.const 1))
+  (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
   call $setWZ
 
   ;; Calculate result
-  (i32.add (call $getHL) (get_local $other))
+  (i32.add (i32.load16_u (i32.const $HL#)) (get_local $other))
   tee_local $res
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   tee_local $f
@@ -1050,7 +1021,7 @@
   end
 
   ;; Calculate H
-  (i32.and (call $getHL) (i32.const 0x0fff))
+  (i32.and (i32.load16_u (i32.const $HL#)) (i32.const 0x0fff))
   (i32.and (get_local $other) (i32.const 0x0fff))
   i32.add
   get_local $f
@@ -1068,7 +1039,7 @@
 
   ;; Calculate PV
   (i32.shr_s 
-    (i32.shl (call $getHL) (i32.const 16))
+    (i32.shl (i32.load16_u (i32.const $HL#)) (i32.const 16))
     (i32.const 16)
   )
   (i32.shr_s 
@@ -1092,11 +1063,13 @@
   end
 
   ;; Store the result
-  get_local $res
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (get_local $res)
+  )
 
   ;; Calculate S, R5, R3
-  call $getH
+  (i32.load8_u (i32.const $H#))
   i32.const 0xA8 ;; Mask for S|R5|R3
   i32.and
 
@@ -1115,11 +1088,11 @@
   (local $signed i32)
 
   ;; WZ = HL + 1;
-  (i32.add (call $getHL) (i32.const 1))
+  (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
   call $setWZ
 
   ;; Calculate result
-  (i32.sub (call $getHL) (get_local $other))
+  (i32.sub (i32.load16_u (i32.const $HL#)) (get_local $other))
   tee_local $res
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
   tee_local $f
@@ -1141,7 +1114,7 @@
   i32.const 0x02 ;; (Z, N)
 
   ;; Calculate H
-  (i32.and (call $getHL) (i32.const 0x0fff))
+  (i32.and (i32.load16_u (i32.const $HL#)) (i32.const 0x0fff))
   (i32.and (get_local $other) (i32.const 0x0fff))
   i32.sub
   get_local $f
@@ -1159,7 +1132,7 @@
 
   ;; Calculate PV
   (i32.shr_s 
-    (i32.shl (call $getHL) (i32.const 16))
+    (i32.shl (i32.load16_u (i32.const $HL#)) (i32.const 16))
     (i32.const 16)
   )
   (i32.shr_s 
@@ -1183,11 +1156,13 @@
   end
 
   ;; Store the result
-  get_local $res
-  call $setHL
+  (i32.store16
+    (i32.const $HL#)
+    (get_local $res)
+  )
 
   ;; Calculate S, R5, R3
-  call $getH
+  (i32.load8_u (i32.const $H#))
   i32.const 0xA8 ;; Mask for S|R5|R3
   i32.and
 
