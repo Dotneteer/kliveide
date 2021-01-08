@@ -419,8 +419,10 @@
 
 ;; ld i,a 0x47
 (func $LdIA
-  (i32.load8_u (i32.const $A#))
-  call $setI    
+  (i32.store8
+    (i32.const $I#)
+    (i32.load8_u (i32.const $A#))
+  )
   (call $incTacts (i32.const 1))
 )
 
@@ -448,8 +450,10 @@
 
 ;; ld r,a 0x4f
 (func $LdRA
-  (i32.load8_u (i32.const $A#))
-  call $setR    
+  (i32.store8
+    (i32.const $R#)
+    (i32.load8_u (i32.const $A#))
+  )
   (call $incTacts (i32.const 1))
 )
 
@@ -477,9 +481,9 @@
   (local $xr i32)
   (i32.and (get_global $opCode) (i32.const 0x08))
   if (result i32)
-    call $getR
+    (i32.load8_u (i32.const $R#))
   else
-    call $getI
+    (i32.load8_u (i32.const $I#))
   end
   set_local $xr
   (i32.store8 (i32.const $A#) (get_local $xr))

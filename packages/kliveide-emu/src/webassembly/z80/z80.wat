@@ -44,12 +44,12 @@
 ;; $H# = 0x0120_0E07
 ;; $L# = 0x0120_0E06
 ;; $HL# = 0x0120_0E06
-;; 06: L
-;; 07: H
 ;; 08: AF'
 ;; 10: BC'
 ;; 12: DE'
 ;; 14: HL'
+;; $I# = 0x0120_0E10
+;; $R# = 0x0120_0E11
 ;; 16: I
 ;; 17: R
 ;; 18: 16 bits reserved for PC (not used)
@@ -250,31 +250,6 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Z80 CPU registers access
-
-;; Gets the value of I
-(func $getI (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=16
-)
-
-;; Sets the value of I
-(func $setI (param $v i32)
-  (i32.store8 offset=16 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of R
-(func $getR (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=17
-)
-
-;; Sets the value of R
-(func $setR (param $v i32)
-  (i32.store8 offset=17 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of IR
-(func $getIR (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=16
-)
 
 ;; Sets the value of PC
 (func $setPC (param $v i32)
@@ -663,7 +638,8 @@
 (func $refreshMemory
   (local $r i32)
   ;; r := (r + 1) & 0x7f | (r & 0x80)
-  call $getR
+  i32.const $R#
+  (i32.load8_u (i32.const $R#))
   tee_local $r
   i32.const 1
   i32.add
@@ -673,7 +649,7 @@
   i32.const 0x80
   i32.and
   i32.or
-  call $setR
+  i32.store8
   (call $incTacts (i32.const 1))
 )
 
@@ -699,8 +675,8 @@
   (call $setIY (i32.const 0x0000))
   (call $setSP (i32.const 0xffff))
   (call $setPC (i32.const 0))
-  (call $setI (i32.const 0))
-  (call $setR (i32.const 0))
+  (i32.store8 (i32.const $I#) (i32.const 0))
+  (i32.store8 (i32.const $R#) (i32.const 0))
   (call $setWZ (i32.const 0x0000))
   i32.const 0x0000 set_global $isInOpExecution
   i32.const 0x0000 set_global $tacts
@@ -763,7 +739,7 @@
     
     ;; Let's assume, the device retrieves 0xff (the least significant bit is ignored)
     ;; addr = i << 8 | 0xfe;
-    call $getI
+    (i32.load8_u (i32.const $I#))
     i32.const 8
     i32.shl
     i32.const 0xfe
