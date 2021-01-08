@@ -114,6 +114,9 @@
 ;; Default SCW value
 (global $defaultSCW (mut i32) (i32.const 0xff))
 
+;; Indicates that the LCD has turned off
+(global $lcdWentOff (mut i32) (i32.const 0))
+
 ;; ============================================================================
 ;; Screen methods
 
@@ -139,6 +142,7 @@
   (set_global $textFlashPhase (i32.const 0))
   (set_global $flashCount (i32.const 0))
   (set_global $sbfRowWidth (i32.const 256))
+  (set_global $lcdWentOff (i32.const 0))
 
   ;; Calculate screen dimensions
   (i32.mul (get_global $sbfRowWidth) (get_global $SCH))
@@ -179,11 +183,16 @@
   ;; Test if LCD is ON
   (i32.eqz (i32.and (get_global $COM) (i32.const $BM_COMLCDON#)))
   if
-    call $renderScreenOff
+    (i32.eqz (get_global $lcdWentOff))
+    if
+      call $renderScreenOff
+      (set_global $lcdWentOff (i32.const 1))
+    end
     return
   end
 
   ;; Prepare rendering
+  (set_global $lcdWentOff (i32.const 0))
   call $initRendering
 
   ;; Init coordinates and pointers
