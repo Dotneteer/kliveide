@@ -532,7 +532,7 @@
       if
         ;; VERIFY operation
         (i32.ne
-          (i32.load8_u (call $getIX)) 
+          (i32.load8_u (i32.load16_u (i32.const $IX#))) 
           (i32.load8_u (i32.const $L#))
         )
         if
@@ -547,7 +547,10 @@
       end
 
       ;; Store the loaded byte
-      (call $writeMemory (call $getIX) (i32.load8_u (i32.const $L#)))
+      (call $writeMemory 
+        (i32.load16_u (i32.const $IX#))
+        (i32.load8_u (i32.const $L#))
+      )
 
       ;; Calc the checksum
       (i32.store8
@@ -556,10 +559,12 @@
       )
       
       ;; Increment the data pointers
-      (i32.add (get_global $tapeBufferPtr) (i32.const 1))
-      set_global $tapeBufferPtr
-      (i32.add (call $getIX) (i32.const 1))
-      call $setIX
+      (i32.store16
+        (i32.const $IX#)
+        (i32.add (get_global $tapeBufferPtr) (i32.const 1))
+        (set_global $tapeBufferPtr)
+        (i32.add (i32.load16_u (i32.const $IX#)) (i32.const 1))
+      )
 
       ;; Decrement byte count
       (i32.store16

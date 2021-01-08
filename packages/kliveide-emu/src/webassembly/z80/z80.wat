@@ -54,6 +54,8 @@
 ;; 17: R
 ;; 18: 16 bits reserved for PC (not used)
 ;; 20: 16 bits reserved for SP (not used)
+;; $IX# = 0x0120_0E16
+;; $IY# = 0x0120_0E18
 ;; 22: IX
 ;; 24: IY
 ;; 26: WZ
@@ -259,66 +261,6 @@
 ;; Sets the value of SP
 (func $setSP (param $v i32)
   (set_global $SP (i32.and (get_local $v) (i32.const 0xffff)))
-)
-
-;; Gets the value of XH
-(func $getXH (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=23
-)
-
-;; Sets the value of XH
-(func $setXH (param $v i32)
-  (i32.store8 offset=23 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of XL
-(func $getXL (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=22
-)
-
-;; Sets the value of XL
-(func $setXL (param $v i32)
-  (i32.store8 offset=22 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of IX
-(func $getIX (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=22
-)
-
-;; Sets the value of IX
-(func $setIX (param $v i32)
-  (i32.store16 offset=22 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of YH
-(func $getYH (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=25
-)
-
-;; Sets the value of YH
-(func $setYH (param $v i32)
-  (i32.store8 offset=25 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of YL
-(func $getYL (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=24
-)
-
-;; Sets the value of YL
-(func $setYL (param $v i32)
-  (i32.store8 offset=24 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of IY
-(func $getIY (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=24
-)
-
-;; Sets the value of IY
-(func $setIY (param $v i32)
-  (i32.store16 offset=24 (get_global $REG_AREA_INDEX) (get_local $v))
 )
 
 ;; Gets the value of WH
@@ -671,8 +613,8 @@
   (i32.store16 offset=10 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
   (i32.store16 offset=12 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
   (i32.store16 offset=14 (get_global $REG_AREA_INDEX) (i32.const 0x0000))
-  (call $setIX (i32.const 0x0000))
-  (call $setIY (i32.const 0x0000))
+  (i32.store16 (i32.const $IX#) (i32.const 0x0000))
+  (i32.store16 (i32.const $IY#) (i32.const 0x0000))
   (call $setSP (i32.const 0xffff))
   (call $setPC (i32.const 0))
   (i32.store8 (i32.const $I#) (i32.const 0))
