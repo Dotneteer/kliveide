@@ -41,13 +41,13 @@ function mergeWatFile(filename, symbols) {
 
 // --- Collect constant values from comments
 function collectConstants(source) {
-  const commentRegExp = /(\.)*(;;)\s*(\$[0-9a-zA-Z_]+#)\s*=\s*((0x)?([0-9a-fA-F]+))(\.*)/g;
+  const commentRegExp = /(\.)*(;;)\s*(\$[0-9a-zA-Z_]+#)\s*=\s*((0x)?([0-9a-fA-F_]+))(\.*)/g;
   const pairs = {};
   let matchInfo;
   while ((matchInfo = commentRegExp.exec(source)) !== null) {
     const value = matchInfo[5]
-      ? parseInt(matchInfo[6], 16)
-      : parseInt(matchInfo[6]);
+      ? parseInt(matchInfo[6].replace("_", ""), 16)
+      : parseInt(matchInfo[6].replace("_", ""));
     pairs[matchInfo[3].toString()] = value;
   }
   return pairs;

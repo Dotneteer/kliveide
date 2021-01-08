@@ -45,7 +45,7 @@
   (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
   if
     ;; Check if I is 0x3F
-    (i32.eq (call $getI) (i32.const 0x3f))
+    (i32.eq (i32.load8_u (i32.const $I#)) (i32.const 0x3f))
     if
       get_global $shiftsReleased
       if

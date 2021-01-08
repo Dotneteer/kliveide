@@ -39,6 +39,8 @@
 
 ;; bit (ix+d),Q
 (func $XBitNQ (param $addr i32)
+  i32.const $F#
+
   get_local $addr
   call $readMemory
   (i32.shr_u 
@@ -48,16 +50,16 @@
   call $Bit
 
   ;; Correct the R3 and R5 flags
-  (i32.and (call $getF) (i32.const 0xd7)) ;; Mask out R3 and R5
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xd7)) ;; Mask out R3 and R5
   (i32.and
     (i32.shr_u (get_local $addr) (i32.const 8))
     (i32.const 0x28)
   )
   i32.or
-  call $setF
+  i32.store8
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 )
 
 ;; res (ix+d),Q
@@ -69,7 +71,7 @@
   call $readMemory
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   (i32.shl 
     (i32.const 1)
@@ -100,7 +102,7 @@
   call $readMemory
 
   ;; Adjust tacts
-  (call $contendRead (call $getHL) (i32.const 1))
+  (call $contendRead (i32.load16_u (i32.const $HL#)) (i32.const 1))
 
   (i32.shl 
     (i32.const 1)

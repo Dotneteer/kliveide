@@ -475,12 +475,14 @@
   if return end
 
   ;; Move AF' to AF
-  (i32.load16_u offset=8 (get_global $REG_AREA_INDEX))
-  call $setAF
+  (i32.store16 
+    (i32.const  $AF#)
+    (i32.load16_u offset=8 (get_global $REG_AREA_INDEX))
+  )
 
   ;; Check if it is a verify
   (i32.eq
-    (i32.and (call $getAF) (i32.const 0xff01))
+    (i32.and (i32.load16_u (i32.const $AF#)) (i32.const 0xff01))
     (i32.const 0xff00)
   )
   set_local $isVerify
@@ -490,23 +492,29 @@
   ;; 0xFF for data block
   (i32.ne 
     (i32.load8_u (get_global $tapeBufferPtr))
-    (call $getA)
+    (i32.load8_u (i32.const $A#))
   )
   if
     ;; This block has a different type we're expecting
-    (i32.xor (call $getA) (call $getL))
-    call $setA
+    (i32.store8 
+      (i32.const $A#)
+      (i32.xor (i32.load8_u (i32.const $A#)) (i32.load8_u (i32.const $L#)))
+    )
 
     ;; Reset Z and C
-    (i32.and (call $getF) (i32.const 0xBE))
-    call $setF
+    (i32.store8 (i32.const $F#)
+      (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xBE))
+    )
     (call $setPC (get_global $tapeLoadBytesInvalidHeader))
     call $nextTapeBlock
     return
   end
 
   ;; It is time to load the block
-  call $getA call $setH
+  (i32.store8
+    (i32.const $H#)
+    (i32.load8_u (i32.const $A#))
+  )
 
   ;; Skip the header byte
   (i32.add (get_global $tapeBufferPtr) (i32.const 1))
@@ -514,40 +522,55 @@
 
   loop $loadByte
 
-    (i32.gt_u (call $getDE) (i32.const 0))
+    (i32.gt_u (i32.load16_u (i32.const $DE#)) (i32.const 0))
     if
-      (i32.load8_u (get_global $tapeBufferPtr))
-      call $setL
+      (i32.store8
+        (i32.const $L#)
+        (i32.load8_u (get_global $tapeBufferPtr))
+      )
       get_local $isVerify
       if
         ;; VERIFY operation
-        (i32.ne (i32.load8_u (call $getIX)) (call $getL))
+        (i32.ne
+          (i32.load8_u (i32.load16_u (i32.const $IX#))) 
+          (i32.load8_u (i32.const $L#))
+        )
         if
           ;; We read a different byte, it's an error
           ;; Reset Z and C
-          (i32.and (call $getF) (i32.const 0xBE))
-          call $setF
+          (i32.store8 (i32.const $F#)
+            (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xBE))
+          )
           (call $setPC (get_global $tapeLoadBytesInvalidHeader))
           return
         end
       end
 
       ;; Store the loaded byte
-      (call $writeMemory (call $getIX) (call $getL))
+      (call $writeMemory 
+        (i32.load16_u (i32.const $IX#))
+        (i32.load8_u (i32.const $L#))
+      )
 
       ;; Calc the checksum
-      (i32.xor (call $getH) (call $getL))
-      call $setH
+      (i32.store8
+        (i32.const $H#)
+        (i32.xor (i32.load8_u (i32.const $H#)) (i32.load8_u (i32.const $L#)))
+      )
       
       ;; Increment the data pointers
-      (i32.add (get_global $tapeBufferPtr) (i32.const 1))
-      set_global $tapeBufferPtr
-      (i32.add (call $getIX) (i32.const 1))
-      call $setIX
+      (i32.store16
+        (i32.const $IX#)
+        (i32.add (get_global $tapeBufferPtr) (i32.const 1))
+        (set_global $tapeBufferPtr)
+        (i32.add (i32.load16_u (i32.const $IX#)) (i32.const 1))
+      )
 
       ;; Decrement byte count
-      (i32.sub (call $getDE) (i32.const 1))
-      call $setDE
+      (i32.store16
+        (i32.const $DE#)
+        (i32.sub (i32.load16_u (i32.const $DE#)) (i32.const 1))
+      )
       br $loadByte
     end
   end
@@ -557,20 +580,26 @@
   if
     ;; Read over the expected length
     ;; Reset Carry to sign error
-    (i32.and (call $getF) (i32.const 0xfe))
-    call $setF
+    (i32.store8 (i32.const $F#)
+      (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfe))
+    )
   else
     ;; Verify checksum
-    (i32.ne (i32.load8_u (get_global $tapeBufferPtr)) (call $getH))
+    (i32.ne 
+      (i32.load8_u (get_global $tapeBufferPtr)) 
+      (i32.load8_u (i32.const $H#))
+    )
     if
       ;; Wrong checksum
       ;; Reset Carry to sign error
-      (i32.and (call $getF) (i32.const 0xfe))
-      call $setF
+      (i32.store8 (i32.const $F#)
+        (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xfe))
+      )
     else
       ;; Block read successfully, set Carry
-      (i32.or (call $getF) (i32.const 0x01))
-      call $setF
+      (i32.store8 (i32.const $F#)
+        (i32.or (i32.load8_u (i32.const $F#)) (i32.const 0x01))
+      )
     end
   end
 
