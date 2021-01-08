@@ -32,14 +32,15 @@
 ;; as 8-bit registers. With WA memory access functions they can by addressed
 ;; quickly. These are their offsets:
 
-;; $F# = 0x0120_0E00
 ;; $A# = 0x0120_0E01
+;; $F# = 0x0120_0E00
 ;; $AF# = 0x0120_0E00
 ;; $B# = 0x0120_0E03
 ;; $C# = 0x0120_0E02
 ;; $BC# = 0x0120_0E02
-;; 02: C
-;; 03: B
+;; $D# = 0x0120_0E05
+;; $E# = 0x0120_0E04
+;; $DE# = 0x0120_0E04
 ;; 04: E
 ;; 05: D
 ;; 06: L
@@ -248,36 +249,6 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Z80 CPU registers access
-
-;; Gets the value of D
-(func $getD (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=5
-)
-
-;; Sets the value of D
-(func $setD (param $v i32)
-  (i32.store8 offset=5 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of E
-(func $getE (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=4
-)
-
-;; Sets the value of E
-(func $setE (param $v i32)
-  (i32.store8 offset=4 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of DE
-(func $getDE (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=4
-)
-
-;; Sets the value of DE
-(func $setDE (param $v i32)
-  (i32.store16 offset=4 (get_global $REG_AREA_INDEX) (get_local $v))
-)
 
 ;; Gets the value of H
 (func $getH (result i32)
@@ -747,7 +718,7 @@
   i32.const $IND_NONE# set_global $indexMode
   (i32.store16 (i32.const $AF#) (i32.const 0xffff))
   (i32.store16 (i32.const $BC#) (i32.const 0x0000))
-  (call $setDE (i32.const 0x0000))
+  (i32.store16 (i32.const $DE#) (i32.const 0x0000))
   (call $setHL (i32.const 0x0000))
   (i32.store16 offset=8 (get_global $REG_AREA_INDEX) (i32.const 0xffff))
   (i32.store16 offset=10 (get_global $REG_AREA_INDEX) (i32.const 0x0000))

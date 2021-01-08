@@ -520,7 +520,7 @@
 
   loop $loadByte
 
-    (i32.gt_u (call $getDE) (i32.const 0))
+    (i32.gt_u (i32.load16_u (i32.const $DE#)) (i32.const 0))
     if
       (i32.load8_u (get_global $tapeBufferPtr))
       call $setL
@@ -553,8 +553,10 @@
       call $setIX
 
       ;; Decrement byte count
-      (i32.sub (call $getDE) (i32.const 1))
-      call $setDE
+      (i32.store16
+        (i32.const $DE#)
+        (i32.sub (i32.load16_u (i32.const $DE#)) (i32.const 1))
+      )
       br $loadByte
     end
   end

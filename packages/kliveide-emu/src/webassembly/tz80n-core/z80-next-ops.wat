@@ -61,59 +61,69 @@
 
 ;; bsla de,b (0x28)
 (func $Bsla
-  call $getDE
+  i32.const $DE#
+  (i32.load16_u (i32.const $DE#))
   (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x07))
   i32.shl
-  call $setDE
+  i32.store16
 )
 
 ;; bsra de,b (0x29)
 (func $Bsra
-  (i32.and (call $getDE) (i32.const 0x8000))
-  call $getDE
+  i32.const $DE#
+  (i32.and (i32.load16_u (i32.const $DE#)) (i32.const 0x8000))
+  (i32.load16_u (i32.const $DE#))
   (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x07))
   i32.shr_u
   i32.or
-  call $setDE
+  i32.store16
 )
 
 ;; bsrl de,b (0x2a)
 (func $Bsrl
-  call $getDE
+  i32.const $DE#
+  (i32.load16_u (i32.const $DE#))
   (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x07))
   i32.shr_u
-  call $setDE
+  i32.store16
 )
 
 ;; bsrf de,b (0x2b)
 (func $Bsrf
-  (i32.xor (call $getDE) (i32.const 0xffff))
+  i32.const $DE#
+  (i32.xor (i32.load16_u (i32.const $DE#)) (i32.const 0xffff))
   (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x0f))
   i32.shr_u
   i32.const 0xffff
   i32.xor
-  call $setDE
+  i32.store16
 )
 
 ;; brlc de,b (0x2c)
 (func $Brlc
-  call $getDE
+  i32.const $DE#
+  (i32.load16_u (i32.const $DE#))
   (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x0f))
   i32.shl
 
-  call $getDE
+  (i32.load16_u (i32.const $DE#))
   i32.const 16
   (i32.and (i32.load8_u (i32.const $B#)) (i32.const 0x0f))
   i32.sub
   i32.shr_u
   i32.or
-  call $setDE
+  i32.store16
 )
 
 ;; mul (0x30)
 (func $Mul
-  (i32.mul (call $getD) (call $getE))
-  call $setDE
+  (i32.store16
+    (i32.const $DE#)
+    (i32.mul 
+      (i32.load8_u (i32.const $D#))
+      (i32.load8_u (i32.const $E#))
+    )
+  )
 )
 
 ;; add hl,a (0x31)
@@ -124,8 +134,10 @@
 
 ;; add de,a (0x32)
 (func $AddDEA
-  (i32.add (call $getDE) (i32.load8_u (i32.const $A#)))
-  call $setDE
+  (i32.store16
+    (i32.const $DE#)
+    (i32.add (i32.load16_u (i32.const $DE#)) (i32.load8_u (i32.const $A#)))
+  )
 )
 
 ;; add bc,a (0x33)
@@ -145,8 +157,10 @@
 
 ;; add de,NN (0x35)
 (func $AddDENN
-  (i32.add (call $getDE) (call $readCode16))
-  call $setDE
+  (i32.store16
+    (i32.const $DE#)
+    (i32.add (i32.load16_u (i32.const $DE#)) (call $readCode16))
+  )
   (call $incTacts (i32.const 2))
 )
 
@@ -260,7 +274,7 @@
 (func $PixelAd
   (local $d i32)
 
-  call $getD
+  (i32.load8_u (i32.const $D#))
   ;; (D & 0xc0) << 5
   (i32.and (tee_local $d) (i32.const 0xc0))
   i32.const 5
@@ -277,7 +291,7 @@
   i32.shl
 
   ;; E >> 3
-  (i32.shr_u (call $getE) (i32.const 3))
+  (i32.shr_u (i32.load8_u (i32.const $E#)) (i32.const 3))
 
   ;; Calculate the address
   i32.const 0x4000
@@ -292,7 +306,7 @@
 (func $SetAE
   i32.const $A#
   i32.const 0x80
-  (i32.and (call $getE) (i32.const 0x07))
+  (i32.and (i32.load8_u (i32.const $E#)) (i32.const 0x07))
   i32.shr_u
   i32.store8
 )
@@ -324,7 +338,7 @@
   (local $memVal i32)
 
   ;; Obtain DE
-  call $getDE
+  (i32.load16_u (i32.const $DE#))
   set_local $de
 
   ;; Conditional copy from (HL) to (DE)
@@ -346,8 +360,10 @@
   ;; Prepare for loop
   (i32.add (get_local $hl) (get_local $step))
   call $setHL
-  (i32.add (get_local $de) (get_local $step))
-  call $setDE
+  (i32.store16
+    (i32.const $DE#)
+    (i32.add (get_local $de) (get_local $step))
+  )
   (i32.store16
     (i32.const $BC#)
     (i32.sub (i32.load16_u (i32.const $BC#)) (i32.const 1))
@@ -377,7 +393,7 @@
   (local $v i32)
 
   ;; (HL) := (DE)
-  call $getDE
+  (i32.load16_u (i32.const $DE#))
   call $getHL
   call $readMemory
   call $writeMemory
@@ -387,9 +403,10 @@
   call $setL
 
   ;; Increment D
-  call $getD
-  (i32.add (tee_local $v) (i32.const 1))
-  call $setD
+  (i32.store8 (i32.const $D#)
+    (i32.load8_u (i32.const $D#))
+    (i32.add (tee_local $v) (i32.const 1))
+  )
 
   ;; Adjust flags
   i32.const $F#
@@ -419,7 +436,7 @@
 
   ;; Read (HL & 0xfff8 + E & 0x07)
   (i32.and (call $getHL) (i32.const 0xfff8))
-  (i32.and (call $getE) (i32.const 0x07))
+  (i32.and (i32.load8_u (i32.const $E#)) (i32.const 0x07))
   i32.add
   call $readMemory
   tee_local $memVal
@@ -428,7 +445,7 @@
   (i32.load8_u (i32.const $A#))
   i32.ne
   if
-    call $getDE
+    (i32.load16_u (i32.const $DE#))
     get_local $memVal
     call $writeMemory
     (call $incTacts (i32.const 2))
@@ -437,8 +454,10 @@
   end
 
   ;; Inc DE
-  (i32.add (call $getDE) (i32.const 1))
-  call $setDE
+  (i32.store16
+    (i32.const $DE#)
+    (i32.add (i32.load16_u (i32.const $DE#)) (i32.const 1))
+  )
 
   ;; Decrement BC
   (i32.store16
