@@ -5,7 +5,10 @@
 (func $InBC
   (local $pval i32)
   ;; WZ = BC + 1
-  (call $setWZ (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
   
   ;; Read and store port value
   (i32.store8
@@ -26,7 +29,10 @@
 ;; out (c),b (0x41)
 (func $OutCB
   ;; WZ = BC + 1
-  (call $setWZ (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
 
   ;; Write
   (call $writePort 
@@ -37,7 +43,10 @@
 
 ;; sbc hl,bc (0x42)
 (func $SbcHLBC
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluSbcHL (i32.load16_u (i32.const $BC#)))
   (call $incTacts (i32.const 7))
 )
@@ -45,12 +54,14 @@
 ;; ld (NN),bc (0x43)
 (func $LdNNiBC
   (local $addr i32)
-  call $readCode16
-  (i32.add (tee_local $addr) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $readCode16)
+    (i32.add (tee_local $addr) (i32.const 1))
+  )
   get_local $addr
   (call $writeMemory (i32.load8_u (i32.const $C#)))
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   (call $writeMemory (i32.load8_u (i32.const $B#)))
 )
 
@@ -58,7 +69,8 @@
 (func $InCC
   (local $pval i32)
   ;; WZ = BC + 1
-  (call $setWZ 
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   
@@ -81,7 +93,10 @@
 ;; out (c),c (0x49)
 (func $OutCC
   ;; WZ = BC + 1
-  (call $setWZ (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
   (call $writePort 
     (i32.load16_u (i32.const $BC#)) 
     (i32.load8_u (i32.const $C#))
@@ -92,7 +107,10 @@
 (func $InDC
   (local $pval i32)
   ;; WZ = BC + 1
-  (call $setWZ (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
   
   ;; Read and store port value
   (i32.store8 
@@ -113,7 +131,10 @@
 ;; out (c),d (0x51)
 (func $OutCD
   ;; WZ = BC + 1
-  (call $setWZ (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
   (call $writePort 
     (i32.load16_u (i32.const $BC#))
     (i32.load8_u (i32.const $D#))
@@ -124,7 +145,8 @@
 (func $InEC
   (local $pval i32)
   ;; WZ = BC + 1
-  (call $setWZ 
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   
@@ -147,8 +169,10 @@
 ;; out (c),e (0x59)
 (func $OutCE
   ;; WZ = BC + 1
-  (call $setWZ 
-    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1)
+  )
   )
   (call $writePort 
     (i32.load16_u (i32.const $BC#))
@@ -161,7 +185,8 @@
   (local $pval i32)
 
   ;; WZ = BC + 1
-  (call $setWZ 
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   
@@ -184,7 +209,8 @@
 ;; out (c),h (0x61)
 (func $OutCH
   ;; WZ = BC + 1
-  (call $setWZ 
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   (call $writePort 
@@ -198,7 +224,8 @@
   (local $pval i32)
 
   ;; WZ = BC + 1
-  (call $setWZ 
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   
@@ -221,7 +248,8 @@
 ;; out (c),l (0x69)
 (func $OutCL
   ;; WZ = BC + 1
-  (call $setWZ 
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   (call $writePort
@@ -234,7 +262,8 @@
 (func $In0C
   (local $pval i32)
   ;; WZ = BC + 1
-  (call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   
@@ -254,7 +283,8 @@
 ;; out (c),0 (0x71)
 (func $OutC0
   ;; WZ = BC + 1
-  (call $setWZ 
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   (call $writePort 
@@ -267,7 +297,8 @@
 (func $InAC
   (local $pval i32)
   ;; WZ = BC + 1
-  (call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   
@@ -289,7 +320,8 @@
 ;; out (c),a (0x79)
 (func $OutCA
   ;; WZ = BC + 1
-  (call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
   (call $writePort 
@@ -304,9 +336,11 @@
   (local $addr i32)
 
   ;; Obtain address
-  call $readCode16
-  (i32.add (tee_local $addr) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $readCode16)
+    (i32.add (tee_local $addr) (i32.const 1))
+  )
 
   ;; Obtain reg value
   (i32.shr_u 
@@ -319,7 +353,7 @@
   get_local $addr
   (i32.and (get_local $qq) (i32.const 0xff))
   call $writeMemory
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   (i32.shr_u (get_local $qq) (i32.const 8))
   call $writeMemory
 )
@@ -389,13 +423,14 @@
 
 ;; retn/reti
 (func $Retn
-  get_global $iff2
-  set_global $iff1
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (get_global $iff2)
+    (set_global $iff1)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
-
   call $popFromStepOver
 )
 
@@ -428,7 +463,10 @@
 
 ;; adc hl,bc (0x4a)
 (func $AdcHLBC
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluAdcHL (i32.load16_u (i32.const $BC#)))
   (call $incTacts (i32.const 7))
 )
@@ -436,15 +474,18 @@
 ;; ld bc,(NN) (0x4b)
 (func $LdBCNNi
   (local $addr i32)
-  call $readCode16
-  (call $setWZ (i32.add (tee_local $addr) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (call $readCode16)
+    (i32.add (tee_local $addr) (i32.const 1))
+  )
   (i32.store8
     (i32.const $C#)
     (call $readMemory (get_local $addr))
   )
   (i32.store8
     (i32.const $B#)
-    (call $readMemory (call $getWZ))
+    (call $readMemory (i32.load16_u (i32.const $WZ#)))
   )
 )
 
@@ -459,7 +500,10 @@
 
 ;; sbc hl,de (0x52)
 (func $SbcHLDE
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluSbcHL (i32.load16_u (i32.const $DE#)))
   (call $incTacts (i32.const 7))
 )
@@ -467,12 +511,14 @@
 ;; ld (NN),de (0x53)
 (func $LdNNiDE
   (local $addr i32)
-  call $readCode16
-  (i32.add (tee_local $addr) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $readCode16)
+    (i32.add (tee_local $addr) (i32.const 1))
+  )
   get_local $addr
   (call $writeMemory (i32.load8_u (i32.const $E#)))
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   (call $writeMemory (i32.load8_u (i32.const $D#)))
 )
 
@@ -515,7 +561,10 @@
 
 ;; adc hl,de (0x5a)
 (func $AdcHLDE
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluAdcHL (i32.load16_u (i32.const $DE#)))
   (call $incTacts (i32.const 7))
 )
@@ -523,21 +572,27 @@
 ;; ld de,(NN) (0x5b)
 (func $LdDENNi
   (local $addr i32)
-  call $readCode16
-  (call $setWZ (i32.add (tee_local $addr) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (call $readCode16)
+    (i32.add (tee_local $addr) (i32.const 1))
+  )
   (i32.store8
     (i32.const $E#)
     (call $readMemory (get_local $addr))
   )
   (i32.store8 
     (i32.const $D#) 
-    (call $readMemory (call $getWZ))
+    (call $readMemory (i32.load16_u (i32.const $WZ#)))
   )
 )
 
 ;; sbc hl,hl (0x62)
 (func $SbcHLHL
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluSbcHL (i32.load16_u (i32.const $HL#)))
   (call $incTacts (i32.const 7))
 )
@@ -558,8 +613,10 @@
   (call $contendRead (get_local $hl) (i32.const 1))
 
   ;; WZ := HL + 1
-  (i32.add (get_local $hl) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (get_local $hl) (i32.const 1))
+  )
 
   ;; Write back to memory
   (i32.load16_u (i32.const $HL#))
@@ -588,7 +645,10 @@
 
 ;; adc hl,hl (0x6a)
 (func $AdcHLHL
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluAdcHL (i32.load16_u (i32.const $HL#)))
   (call $incTacts (i32.const 7))
 )
@@ -609,8 +669,10 @@
   (call $contendRead (get_local $hl) (i32.const 1))
 
   ;; WZ := HL + 1
-  (i32.add (get_local $hl) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (get_local $hl) (i32.const 1))
+  )
 
   ;; Write back to memory
   (i32.load16_u (i32.const $HL#))
@@ -639,7 +701,10 @@
 
 ;; sbc hl,sp (0x72)
 (func $SbcHLSP
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluSbcHL (get_global $SP))
   (call $incTacts (i32.const 7))
 )
@@ -647,18 +712,23 @@
 ;; ld (NN),sp (0x73)
 (func $LdNNiSP
   (local $addr i32)
-  call $readCode16
-  (i32.add (tee_local $addr) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $readCode16)
+    (i32.add (tee_local $addr) (i32.const 1))
+  )
   get_local $addr
   (call $writeMemory (i32.and (get_global $SP) (i32.const 0xff)))
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   (call $writeMemory (i32.shr_u (get_global $SP) (i32.const 8)))
 )
 
 ;; adc hl,sp (0x7a)
 (func $AdcHLSP
-  (call $setWZ (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
   (call $AluAdcHL (get_global $SP))
   (call $incTacts (i32.const 7))
 )
@@ -666,10 +736,13 @@
 ;; ld sp,(NN) (0x7b)
 (func $LdSPNNi
   (local $addr i32)
-  call $readCode16
-  (call $setWZ (i32.add (tee_local $addr) (i32.const 1)))
+  (i32.store16
+    (i32.const $WZ#)
+    (call $readCode16)
+    (i32.add (tee_local $addr) (i32.const 1))
+  )
   (call $readMemory (get_local $addr))
-  (call $readMemory (call $getWZ))
+  (call $readMemory (i32.load16_u (i32.const $WZ#)))
   i32.const 8
   i32.shl
   i32.add
@@ -807,11 +880,12 @@
   (local $bc i32)
   (local $hl i32)
   (call $incTacts (i32.const 1))
+  i32.const  $WZ#
   (i32.load16_u (i32.const $BC#))
 
   ;; Increment or decrement WZ
   (i32.add (tee_local $bc) (get_local $step))
-  call $setWZ
+  i32.store16
 
   ;; (HL) := in(BC)
   (i32.load16_u (i32.const $HL#))
@@ -870,8 +944,10 @@
   )
 
   ;; WZ := BC +/- 1
-  (i32.add (i32.load16_u (i32.const $BC#)) (get_local $step))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (get_local $step))
+  )
 
   ;; Now, write to the port
   (call $writePort 
@@ -958,8 +1034,10 @@
   call $Adjust5Tacts
 
   ;; WZ := PC + 1
-  (i32.add (get_local $pc) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (get_local $pc) (i32.const 1))
+  )
 )
 
 ;; Tail of the cpir/cpdr operations
@@ -991,13 +1069,17 @@
       call $Adjust5Tacts
 
       ;; WZ := PC + 1
-      (i32.add (get_local $pc) (i32.const 1))
-      call $setWZ
+      (i32.store16
+        (i32.const $WZ#)
+        (i32.add (get_local $pc) (i32.const 1))
+      )
 
     else
       ;; WZ++/WZ--
-      (i32.add (call $getWZ) (get_local $step))
-      call $setWZ
+      (i32.store16
+        (i32.const $WZ#)
+        (i32.add (i32.load16_u (i32.const $WZ#)) (get_local $step))
+      )
     end
   end
 )
@@ -1085,8 +1167,10 @@
   i32.store8
 
   ;; WZ++
-  (i32.add (call $getWZ) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $WZ#)) (i32.const 1))
+  )
 )
 
 ;; ini (0xa2)
@@ -1130,8 +1214,10 @@
   i32.or
   i32.store8
 
-  (i32.sub (call $getWZ) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.sub (i32.load16_u (i32.const $WZ#)) (i32.const 1))
+  )
 )
 
 ;; ind (0xaa)

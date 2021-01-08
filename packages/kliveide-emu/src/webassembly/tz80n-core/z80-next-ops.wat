@@ -217,8 +217,10 @@
     (i32.add (get_local $hl) (i32.const 1))
   )
 
-  (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
 )
 
 ;; nextreg (0x91)
@@ -328,9 +330,11 @@
 (func $JpInC
   (local $bc i32)
 
-  (i32.load16_u (i32.const $BC#))
-  (i32.add (tee_local $bc) (i32.const 1))
-  call $setWZ
+  (i32.store16 
+    (i32.const $WZ#)
+    (i32.load16_u (i32.const $BC#))
+    (i32.add (tee_local $bc) (i32.const 1))
+  )
 
   get_local $bc
   (i32.shl (call $readPort) (i32.const 6))

@@ -17,8 +17,12 @@
   )
 
   ;; Update WZ
-  (call $setWL (i32.load8_u (i32.const $A#)))
-  (call $setWH
+  (i32.store8
+    (i32.const $WL#)
+    (i32.load8_u (i32.const $A#))
+  )
+  (i32.store8
+    (i32.const $WH#)
     (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
   )
 )
@@ -105,8 +109,10 @@
 ;; ld a,(bc) (0x0a)
 (func $LdABCi
   ;; Calculate WZ
-  (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
-  call $setWZ
+  (i32.store16 
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $BC#)) (i32.const 1))
+  )
 
   ;; Read A from (BC)
   (i32.store8
@@ -206,8 +212,14 @@
 ;; ld (de),a (0x12)
 (func $LdDEiA
   ;; Update WZ
-  (call $setWH (i32.add (i32.load16_u (i32.const $DE#)) (i32.const 1)))
-  (call $setWL (i32.load8_u (i32.const $A#)))
+  (i32.store8
+    (i32.const $WH#)
+    (i32.add (i32.load16_u (i32.const $DE#)) (i32.const 1))
+  )
+  (i32.store8
+    (i32.const $WL#)
+    (i32.load8_u (i32.const $A#))
+  )
   (call $writeMemory (i32.load16_u (i32.const $DE#)) (i32.load8_u (i32.const $A#)))
 )
 
@@ -302,8 +314,10 @@
 ;; ld a,(de) (0x1a)
 (func $LdADEi
   ;; Calculate WZ
-  (i32.add (i32.load16_u (i32.const $DE#)) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $DE#)) (i32.const 1))
+  )
 
   ;; Read A from (DE)
   (i32.store8
@@ -402,14 +416,19 @@
 (func $LdNNiHL
   (local $addr i32)
   ;; Obtain the address to store HL
-  (tee_local $addr (call $readCode16))
+  (i32.store16 (i32.const $WZ#)
+    (tee_local $addr (call $readCode16))
 
-  ;; Set WZ to addr + 1
-  (call $setWZ (i32.add (i32.const 1)))
+    ;; Set WZ to addr + 1
+    (i32.add (i32.const 1))
+  )
 
   ;; Store HL
   (call $writeMemory (get_local $addr) (i32.load8_u (i32.const $L#)))
-  (call $writeMemory (call $getWZ) (i32.load8_u (i32.const $H#)))
+  (call $writeMemory
+    (i32.load16_u (i32.const $WZ#))
+    (i32.load8_u (i32.const $H#))
+  )
 )
 
 ;; inc hl (0x23)
@@ -705,10 +724,13 @@
 (func $LdHLNNi
   (local $addr i32)
   ;; Read the address
-  (tee_local $addr (call $readCode16))
+  (i32.store16
+    (i32.const $WZ#)
+    (tee_local $addr (call $readCode16))
 
-  ;; Set WZ to addr + 1
-  (call $setWZ (i32.add (i32.const 1)))
+    ;; Set WZ to addr + 1
+    (i32.add (i32.const 1))
+  )
 
   ;; Read HL from memory
   (i32.store8
@@ -717,7 +739,7 @@
   )
   (i32.store8
     (i32.const $H#)
-    (call $readMemory (call $getWZ))
+    (call $readMemory (i32.load16_u (i32.const $WZ#)))
   )
 )
 
@@ -794,11 +816,17 @@
 ;; ld (NN),a (0x32)
 (func $LdNNiA
   (local $addr i32)
-  (tee_local $addr (call $readCode16))
 
   ;; Adjust WZ
-  (call $setWL (i32.add (i32.const 1)))
-  (call $setWH (i32.load8_u (i32.const $A#)))
+  (i32.store8
+    (i32.const $WL#)
+    (tee_local $addr (call $readCode16))
+    (i32.add (i32.const 1))
+  )
+  (i32.store8
+    (i32.const $WH#)
+    (i32.load8_u (i32.const $A#))
+  )
 
   ;; Store A
   (call $writeMemory (get_local $addr) (i32.load8_u (i32.const $A#)))
@@ -909,10 +937,14 @@
   (local $addr i32)
 
   ;; Read the address
-  (tee_local $addr (call $readCode16))
+  (i32.store16 
+    (i32.const $WZ#)
+    (tee_local $addr (call $readCode16))
   
-  ;; Set WZ to addr + 1
-  (call $setWZ (i32.const 1) (i32.add))
+    ;; Set WZ to addr + 1
+    (i32.const 1)
+    (i32.add)
+  )
   
   ;; Read A from memory
   (i32.store8
@@ -1833,9 +1865,11 @@
   call $testZ
   if return end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -1855,14 +1889,14 @@
   call $testZ
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
 ;; jp (0xc3)
 (func $Jp
   call $readAddrToWZ
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
@@ -1880,7 +1914,7 @@
   get_global $PC
   tee_local $oldPC
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -1902,12 +1936,14 @@
 ;; rst N (0xc7, 0xcf, 0xd7, 0xdf, 0xe7, 0xef, 0xf7, 0xff)
 (func $RstN
   (local $oldPC i32)
+  i32.const $WZ#
   get_global $PC
   tee_local $oldPC
   call $pushValue
   (i32.and (get_global $opCode) (i32.const 0x38))
-  call $setWZ
-  call $getWZ
+  i32.store16
+
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -1919,9 +1955,11 @@
   call $testNZ
   if return end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -1929,9 +1967,11 @@
 
 ;; ret (0xc9)
 (func $Ret
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -1943,7 +1983,7 @@
   call $testNZ
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
@@ -1968,7 +2008,7 @@
   tee_local $oldPC
 
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -1985,7 +2025,7 @@
   get_global $PC
   tee_local $oldPC
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -2005,9 +2045,11 @@
   call $testC
   if return end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -2027,7 +2069,7 @@
   call $testC
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
@@ -2042,8 +2084,14 @@
   call $writePort
 
   ;; Update WZ
-  (call $setWL (i32.add (get_local $port) (i32.const 1)))
-  (call $setWH (i32.load8_u (i32.const $A#)))
+  (i32.store8
+    (i32.const $WL#)
+    (i32.add (get_local $port) (i32.const 1))
+  )
+  (i32.store8
+    (i32.const $WH#)
+    (i32.load8_u (i32.const $A#))
+  )
 )
 
 ;; call nc (0xd4)
@@ -2060,7 +2108,7 @@
   tee_local $oldPC
 
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -2086,9 +2134,11 @@
   call $testNC
   if return  end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -2134,7 +2184,7 @@
   call $testNC
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
@@ -2150,8 +2200,10 @@
   call $readPort
   i32.store8
 
-  (i32.add (get_local $port) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (get_local $port) (i32.const 1))
+  )
 )
 
 ;; call c (0xdc)
@@ -2168,7 +2220,7 @@
   tee_local $oldPC
 
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -2195,9 +2247,11 @@
   call $testPE
   if return end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -2217,13 +2271,14 @@
   call $testPE
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
 ;; ex (sp),hl (0xe3)
 (func $ExSPiHL
   (local $tmpSp i32)
+  i32.const $WZ#
   get_global $SP
   tee_local $tmpSp
   call $readMemory
@@ -2231,7 +2286,7 @@
   tee_local $tmpSp
   (i32.shl (call $readMemory) (i32.const 8))
   i32.add
-  call $setWZ
+  i32.store16
 
   ;; Adjust tacts
   (call $contendRead (get_local $tmpSp) (i32.const 1))
@@ -2254,7 +2309,7 @@
   ;; Copy WZ to HL
   (i32.store16
     (i32.const $HL#)
-    (call $getWZ)
+    (i32.load16_u (i32.const $WZ#))
   )
 )
 
@@ -2272,7 +2327,7 @@
   tee_local $oldPC
 
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -2296,9 +2351,11 @@
   call $testPO
   if return end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -2316,7 +2373,7 @@
   call $testPO
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
@@ -2348,7 +2405,7 @@
   tee_local $oldPC
 
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -2373,9 +2430,11 @@
   call $testM
   if return end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -2395,7 +2454,7 @@
   call $testM
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
@@ -2419,7 +2478,7 @@
   tee_local $oldPC
 
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))
@@ -2443,9 +2502,11 @@
   call $testP
   if return end
 
-  call $popValue
-  call $setWZ
-  call $getWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (call $popValue)
+  )
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   call $popFromStepOver
@@ -2464,7 +2525,7 @@
   call $testP
   if return end
 
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 )
 
@@ -2490,7 +2551,7 @@
   tee_local $oldPC
 
   call $pushValue
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   (call $pushToStepOver (get_local $oldPC))

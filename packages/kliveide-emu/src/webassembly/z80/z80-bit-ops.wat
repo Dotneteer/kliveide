@@ -272,7 +272,7 @@
 
   ;; Correct R3 and R5 flags
   (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0xd7))  ;; Clear R3 and R5
-  (i32.and (call $getWH) (i32.const 0x28)) ;; Get R3 and R5 from WZH
+  (i32.and (i32.load8_u (i32.const $WH#)) (i32.const 0x28)) ;; Get R3 and R5 from WZH
   i32.or
   
   ;; Store F

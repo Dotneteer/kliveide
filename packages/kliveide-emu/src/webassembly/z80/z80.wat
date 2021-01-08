@@ -56,12 +56,9 @@
 ;; 20: 16 bits reserved for SP (not used)
 ;; $IX# = 0x0120_0E16
 ;; $IY# = 0x0120_0E18
-;; 22: IX
-;; 24: IY
-;; 26: WZ
-;; 28: Q: internal register where Z80 assembles the new content of the
-;;        F register, before moving it back to F. The behaviour is 
-;;        deterministic in Zilog Z80 and nondeterministic in NEC Z80.
+;; $WH# = 0x0120_0E1B
+;; $WL# = 0x0120_0E1A
+;; $WZ# = 0x0120_0E1A
 
 ;; Number of tacts within one screen rendering frame. This value indicates the
 ;; number of clock cycles with normal CPU speed.
@@ -261,36 +258,6 @@
 ;; Sets the value of SP
 (func $setSP (param $v i32)
   (set_global $SP (i32.and (get_local $v) (i32.const 0xffff)))
-)
-
-;; Gets the value of WH
-(func $getWH (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=27
-)
-
-;; Sets the value of WH
-(func $setWH (param $v i32)
-  (i32.store8 offset=27 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of WL
-(func $getWL (result i32)
-  get_global $REG_AREA_INDEX i32.load8_u offset=26
-)
-
-;; Sets the value of WL
-(func $setWL (param $v i32)
-  (i32.store8 offset=26 (get_global $REG_AREA_INDEX) (get_local $v))
-)
-
-;; Gets the value of WZ
-(func $getWZ (result i32)
-  get_global $REG_AREA_INDEX i32.load16_u offset=26
-)
-
-;; Sets the value of WZ
-(func $setWZ (param $v i32)
-  (i32.store16 offset=26 (get_global $REG_AREA_INDEX) (get_local $v))
 )
 
 ;; Gets the specified 8-bit register
@@ -619,7 +586,7 @@
   (call $setPC (i32.const 0))
   (i32.store8 (i32.const $I#) (i32.const 0))
   (i32.store8 (i32.const $R#) (i32.const 0))
-  (call $setWZ (i32.const 0x0000))
+  (i32.store16 (i32.const $WZ#) (i32.const 0x0000))
   i32.const 0x0000 set_global $isInOpExecution
   i32.const 0x0000 set_global $tacts
 )
@@ -681,6 +648,7 @@
     
     ;; Let's assume, the device retrieves 0xff (the least significant bit is ignored)
     ;; addr = i << 8 | 0xfe;
+    i32.const $WZ#
     (i32.load8_u (i32.const $I#))
     i32.const 8
     i32.shl
@@ -694,16 +662,19 @@
     i32.const 8
     i32.shl
     i32.or
-    call $setWZ
+    i32.store16
     (call $incTacts (i32.const 6))
   else
     ;; Interrupt mode 0 or 1
-    (call $setWZ (i32.const 0x0038))
+    (i32.store16
+      (i32.const $WZ#)
+      (i32.const 0x0038)
+    )
     (call $incTacts (i32.const 5))
   end
 
   ;; pc := wz
-  call $getWZ
+  (i32.load16_u (i32.const $WZ#))
   call $setPC
 
   ;; Support step-over debugging
@@ -732,20 +703,22 @@
   if
     ;; indexed bit operations
     ;; WZ := IX + opCode
-    (i32.add 
-      (call $getIndexReg)
-      (i32.shr_s 
-        (i32.shl (get_global $opCode) (i32.const 24))
-        (i32.const 24)
+    (i32.store16 
+      (i32.const $WZ#)
+      (i32.add 
+        (call $getIndexReg)
+        (i32.shr_s 
+          (i32.shl (get_global $opCode) (i32.const 24))
+          (i32.const 24)
+        )
       )
     )
-    call $setWZ
 
     ;; Adjust tacts
     (call $contendRead (get_global $PC) (i32.const 1))
 
     ;; The address to use with the indexed bit operation
-    call $getWZ 
+    (i32.load16_u (i32.const $WZ#))
 
     ;; Get operation function
     i32.const $INDEXED_BIT_JT#
@@ -856,8 +829,10 @@
   (local $res i32)
 
   ;; Calculate WZ
-  (i32.add (get_local $reg) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (get_local $reg) (i32.const 1))
+  )
 
   ;; Adjust tacts
   (call $incTacts (i32.const 7))
@@ -915,8 +890,10 @@
   (local $signed i32)
 
   ;; WZ = HL + 1
-  (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
 
   ;; Calculate result
   (i32.add (i32.load16_u (i32.const $HL#)) (get_local $other))
@@ -1006,8 +983,10 @@
   (local $signed i32)
 
   ;; WZ = HL + 1;
-  (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (i32.add (i32.load16_u (i32.const $HL#)) (i32.const 1))
+  )
 
   ;; Calculate result
   (i32.sub (i32.load16_u (i32.const $HL#)) (get_local $other))
@@ -1110,8 +1089,10 @@
   call $setPC
 
   ;; Copy to WZ
-  get_global $PC
-  call $setWZ
+  (i32.store16
+    (i32.const $WZ#)
+    (get_global $PC)
+  )
 )
 
 ;; Adjust tacts for IX-indirect addressing
@@ -1452,12 +1433,13 @@
 
 ;; Read address to WZ
 (func $readAddrToWZ
+  i32.const $WZ#
   call $readCodeMemory
   call $readCodeMemory
   i32.const 8
   i32.shl
   i32.or
-  call $setWZ
+  i32.store16
 )
 
 ;; Read 16 bits from the code
