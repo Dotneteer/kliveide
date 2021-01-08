@@ -399,7 +399,7 @@
 (func $JrNz
   (local $e i32)
   (set_local $e (call $readCodeMemory))
-  call $testZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test Z
   if return end
   (call $relativeJump (get_local $e))
 )
@@ -704,7 +704,8 @@
 (func $JrZ
   (local $e i32)
   (set_local $e (call $readCodeMemory))
-  call $testNZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test NZ
+  i32.eqz
   if return end
   (call $relativeJump (get_local $e))
 )
@@ -803,7 +804,7 @@
 (func $JrNc
   (local $e i32)
   (set_local $e (call $readCodeMemory))
-  call $testC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test C
   if return end
   (call $relativeJump (get_local $e))
 )
@@ -919,7 +920,8 @@
 (func $JrC
   (local $e i32)
   (set_local $e (call $readCodeMemory))
-  call $testNC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test NC
+  i32.eqz
   if return end
   (call $relativeJump (get_local $e))
 )
@@ -1862,7 +1864,7 @@
 ;; ret nz (0xc0)
 (func $RetNz
   (call $incTacts (i32.const 1))
-  call $testZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test Z
   if return end
 
   (i32.store16
@@ -1886,7 +1888,7 @@
 ;; jp nz (0xc2)
 (func $JpNz
   call $readAddrToWZ
-  call $testZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test Z
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -1905,7 +1907,7 @@
   (local $oldPC i32)
 
   call $readAddrToWZ
-  call $testZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test Z
   if return end
 
   ;; Adjust tacts
@@ -1952,7 +1954,8 @@
 ;; ret nz (0xc8)
 (func $RetZ
   (call $incTacts (i32.const 1))
-  call $testNZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test NZ
+  i32.eqz
   if return end
 
   (i32.store16
@@ -1980,7 +1983,8 @@
 ;; jp z (0xca)
 (func $JpZ
   call $readAddrToWZ
-  call $testNZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test NZ
+  i32.eqz
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -1998,7 +2002,8 @@
 (func $CallZ
   (local $oldPC i32)
   call $readAddrToWZ
-  call $testNZ
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40)) ;; Test NZ
+  i32.eqz
   if return  end
 
   ;; Adjust tacts
@@ -2042,7 +2047,7 @@
 (func $RetNc
   ;; Adjust tacts
   (call $incTacts (i32.const 1))
-  call $testC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test C
   if return end
 
   (i32.store16
@@ -2066,7 +2071,7 @@
 ;; jp nc (0xd2)
 (func $JpNc
   call $readAddrToWZ
-  call $testC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test C
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -2098,7 +2103,7 @@
 (func $CallNc
   (local $oldPC i32)
   call $readAddrToWZ
-  call $testC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test C
   if return end
 
   ;; Adjust tacts
@@ -2131,7 +2136,8 @@
 (func $RetC
   ;; Adjust tacts
   (call $incTacts (i32.const 1))
-  call $testNC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test NC
+  i32.eqz
   if return  end
 
   (i32.store16
@@ -2181,7 +2187,8 @@
 ;; jp c (0xda)
 (func $JpC
   call $readAddrToWZ
-  call $testNC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test NC
+  i32.eqz
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -2210,7 +2217,8 @@
 (func $CallC
   (local $oldPC i32)
   call $readAddrToWZ
-  call $testNC
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01)) ;; Test NC
+  i32.eqz
   if return end
 
   ;; Adjust tacts
@@ -2244,7 +2252,7 @@
 (func $RetPo
   ;; Adjust tacts
   (call $incTacts (i32.const 1))
-  call $testPE
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04)) ;; Test PE
   if return end
 
   (i32.store16
@@ -2268,7 +2276,7 @@
 ;; jp po (0xe2)
 (func $JpPo
   call $readAddrToWZ
-  call $testPE
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04)) ;; Test PE
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -2317,7 +2325,7 @@
 (func $CallPo
   (local $oldPC i32)
   call $readAddrToWZ
-  call $testPE
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04)) ;; Test PE
   if return end
 
   ;; Adjust tacts
@@ -2348,7 +2356,8 @@
 ;; ret pe (0xe8)
 (func $RetPe
   (call $incTacts (i32.const 1))
-  call $testPO
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04)) ;; Test PO
+  i32.eqz
   if return end
 
   (i32.store16
@@ -2370,7 +2379,8 @@
 ;; jp po (0xea)
 (func $JpPe
   call $readAddrToWZ
-  call $testPO
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04)) ;; Test PO
+  i32.eqz
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -2395,7 +2405,8 @@
 (func $CallPe
   (local $oldPC i32)
   call $readAddrToWZ
-  call $testPO
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04)) ;; Test PO
+  i32.eqz
   if return end
 
   ;; Adjust tacts
@@ -2427,7 +2438,7 @@
 ;; ret p (0xf0)
 (func $RetP
   (call $incTacts (i32.const 1))
-  call $testM
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80)) ;; Test M
   if return end
 
   (i32.store16
@@ -2451,7 +2462,7 @@
 ;; jp p (0xf2)
 (func $JpP
   call $readAddrToWZ
-  call $testM
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80)) ;; Test M
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -2468,7 +2479,7 @@
 (func $CallP
   (local $oldPC i32)
   call $readAddrToWZ
-  call $testM
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80)) ;; Test M
   if return end
 
   ;; Adjust tacts
@@ -2499,7 +2510,8 @@
 ;; ret m (0xf8)
 (func $RetM
   (call $incTacts (i32.const 1))
-  call $testP
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80)) ;; Test P
+  i32.eqz
   if return end
 
   (i32.store16
@@ -2522,7 +2534,8 @@
 ;; jp m (0xfa)
 (func $JpM
   call $readAddrToWZ
-  call $testP
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80)) ;; Test P
+  i32.eqz
   if return end
 
   (i32.load16_u (i32.const $WZ#))
@@ -2541,7 +2554,8 @@
 (func $CallM
   (local $oldPC i32)
   call $readAddrToWZ
-  call $testP
+  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80)) ;; Test P
+  i32.eqz
   if return end
 
   ;; Adjust tacts

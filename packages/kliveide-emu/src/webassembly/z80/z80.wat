@@ -1387,50 +1387,6 @@
   i32.store8
 )
 
-;; Tests the Z condition
-(func $testZ (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40))
-)
-
-;; Tests the NZ condition
-(func $testNZ (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x40))
-  i32.eqz
-)
-
-;; Tests the C condition
-(func $testC (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
-)
-
-;; Tests the NC condition
-(func $testNC (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x01))
-  i32.eqz
-)
-
-;; Tests the PE condition
-(func $testPE (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-)
-
-;; Tests the PO condition
-(func $testPO (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x04))
-  i32.eqz
-)
-
-;; Tests the M condition
-(func $testM (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80))
-)
-
-;; Tests the P condition
-(func $testP (result i32)
-  (i32.and (i32.load8_u (i32.const $F#)) (i32.const 0x80))
-  i32.eqz
-)
-
 ;; Read address to WZ
 (func $readAddrToWZ
   i32.const $WZ#
