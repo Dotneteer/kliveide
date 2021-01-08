@@ -76,7 +76,7 @@
     "copy-webpack-plugin": "^6.0.2",
     "cross-env": "^7.0.2",
     "css-loader": "^3.6.0",
-    "electron": "^10.1.5",
+    "electron": "^11.1.1",
     "electron-builder": "^22.9.1",
     "expect": "^25.1.0",
     "html-webpack-plugin": "^4.3.0",
