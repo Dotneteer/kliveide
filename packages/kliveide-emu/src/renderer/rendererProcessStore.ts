@@ -1,11 +1,28 @@
 import { combineReducers, createStore, applyMiddleware } from "redux";
 import { appReducers } from "../shared/state/app-reducers";
-import { forwardToMain, replayActionRenderer } from "../shared/state/redux-core";
 import { AppState, getDefaultAppState } from "../shared/state/AppState";
 import { StateAwareObject } from "../shared/state/StateAwareObject";
+import { REDUX_ACTION_CHANNEL } from "../shared/utils/channel-ids";
+import { IpcRendereApi } from "../exposed-apis";
 
 const spectNetApp = combineReducers(appReducers);
 const initialState = getDefaultAppState();
+
+const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
+
+/**
+ * This middleware function forwards actions to the main process, provided they
+ * are not local-scoped.
+ */
+const forwardToMain = (store: any) => (next: (arg0: any) => any) => (action: {
+  meta: { scope: string };
+}) => {
+  if (!action.meta || !action.meta.scope || action.meta.scope !== "local") {
+    ipcRenderer.send(REDUX_ACTION_CHANNEL, action);
+    return;
+  }
+  return next(action);
+};
 
 const store = createStore(
   spectNetApp,
@@ -26,3 +43,12 @@ export const rendererProcessStore = store;
 export const createRendererProcessStateAware = (
   propName: keyof AppState | null = null
 ) => new StateAwareObject(rendererProcessStore, propName);
+
+/**
+ * Replays the action at the renderer side.
+ */
+function replayActionRenderer(store: any) {
+  ipcRenderer.on(REDUX_ACTION_CHANNEL, (_event: any, payload: any) => {
+    store.dispatch(payload);
+  });
+}

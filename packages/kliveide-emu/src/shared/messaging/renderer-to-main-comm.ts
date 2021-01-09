@@ -1,10 +1,13 @@
-import { ipcRenderer, IpcRendererEvent } from "electron";
+import { IpcRendererEvent } from "electron";
 import { RequestMessage, ResponseMessage } from "./message-types";
 import {
   RENDERER_REQUEST_CHANNEL,
   MAIN_RESPONSE_CHANNEL,
 } from "../utils/channel-ids";
+import { IpcRendereApi } from "../../exposed-apis";
 
+// --- Electron APIs exposed for the renderer process
+const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
 
 // ============================================================================
 // Methods for renderer process --> main process communication
