@@ -56,8 +56,8 @@ const commonConfig = {
       },
       {
         test: /\.worklet\.js$/,
-        use: { loader: 'worklet-loader' }
-      }
+        use: { loader: "worklet-loader" },
+      },
     ],
   },
 };
@@ -96,4 +96,22 @@ rendererConfig.plugins = [
   }),
 ];
 
-module.exports = [mainConfig, rendererConfig];
+const preloadConfig = {
+  entry: "./src/preload.ts",
+  target: "electron-preload",
+  output: {
+    path: path.join(__dirname, "dist"),
+    filename: "preload.bundled.js",
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(ts|tsx)$/,
+        exclude: /node_modules/,
+        loader: "ts-loader",
+      },
+    ],
+  },
+};
+
+module.exports = [mainConfig, preloadConfig, rendererConfig];

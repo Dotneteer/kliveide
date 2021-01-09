@@ -175,7 +175,8 @@ export class AppWindow implements IAppWindow {
       webPreferences: {
         webSecurity: false,
         devTools: process.env.NODE_ENV === "production" ? false : true,
-        nodeIntegration: true,
+        contextIsolation: true,
+        preload: path.join(__dirname, "preload.bundled.js"),
       },
       acceptFirstMouse: true,
       icon: path.join(__dirname, "icons/spectnet-logo.png"),

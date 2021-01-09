@@ -228,25 +228,6 @@ function storeSavedDataInState(length: number): void {
   rendererProcessStore.dispatch(emulatorSetSavedDataAction(savedData)());
 }
 
-/**
- * Read data from the specified URI
- * @param uri URI to read form
- */
-async function readFromStream(uri: string): Promise<Buffer> {
-  const buffers: Buffer[] = [];
-  const data = await fetch(uri);
-  let done = false;
-  const reader = data.body.getReader();
-  do {
-    const read = await reader.read();
-    if (read.value) {
-      buffers.push(Buffer.from(read.value));
-    }
-    done = read.done;
-  } while (!done);
-  return Buffer.concat(buffers);
-}
-
 // ============================================================================
 // CPU hook methods
 

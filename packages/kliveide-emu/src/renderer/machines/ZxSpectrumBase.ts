@@ -1,6 +1,3 @@
-import * as path from "path";
-import * as fs from "fs";
-
 import { MemoryHelper } from "./memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
@@ -274,7 +271,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     return screenData;
   }
 
-  initTapeContents(message?: string): void {
+  async initTapeContents(message?: string): Promise<void> {
     const state = this._stateManager.getState();
     const emuState = state.emulatorPanelState;
 
@@ -282,8 +279,10 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     if (!emuState.tapeContents || emuState.tapeContents.length === 0) {
       let contents = new Uint8Array(0);
       try {
-        contents = fs.readFileSync(path.join(__dirname, "./tapes/Pac-Man.tzx"));
-      } catch (err) {}
+        contents = await this.readFromStream("./tapes/Pac-Man.tzx");
+      } catch (err) {
+        console.log(`Load error: ${err}`);
+      }
       this._stateManager.setTapeContents(contents);
       this._defaultTapeSet = contents;
     } else {
@@ -326,7 +325,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     super.beforeFirstStart();
 
     // --- Take care of tape contents
-    this.initTapeContents();
+    await this.initTapeContents();
   }
 
   /**
@@ -336,7 +335,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   async beforeStarted(debugging: boolean): Promise<void> {
     await super.beforeStarted(debugging);
-    
+
     // --- Init audio renderers
     const state = this.getMachineState();
     this._beeperRenderer = this._audioRendererFactory(
@@ -460,6 +459,32 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Read data from the specified URI
+   * @param uri URI to read form
+   */
+  async readFromStream(uri: string): Promise<Uint8Array> {
+    const buffers: Uint8Array[] = [];
+    const data = await fetch(uri);
+    let done = false;
+    const reader = data.body.getReader();
+    do {
+      const read = await reader.read();
+      if (read.value) {
+        buffers.push(read.value);
+      }
+      done = read.done;
+    } while (!done);
+    const length = buffers.reduce((a, b) => a + b.length, 0)
+    const resultArray = new Uint8Array(length);
+    let offset = 0;
+    for (let i = 0; i < buffers.length; i++) {
+      resultArray.set(buffers[i], offset);
+      offset += buffers[i].length;
+    }
+    return resultArray;
   }
 }
 

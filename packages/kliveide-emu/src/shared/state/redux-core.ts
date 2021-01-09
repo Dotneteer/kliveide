@@ -1,12 +1,5 @@
-import { webContents, ipcMain, ipcRenderer } from "electron";
 import { Payload } from "./Payload";
 import { ActionTypes } from "./ActionTypes";
-import { REDUX_ACTION_CHANNEL } from "../utils/channel-ids";
-
-/**
- * The name of the function that serializes the redux state.
- */
-const GET_REDUX_STATE_FUNC = "getReduxState";
 
 /**
  * This variable stores the alias registry
@@ -89,72 +82,6 @@ export const triggerAlias = (_store: any) => (next: any) => (action: SpectNetAct
   }
   return next(action);
 };
-
-/**
- * This middleware function forwards the action originated in the main process
- * to the renderer processes of browser windows.
- */
-export const forwardToRenderer = () => (next: any) => (action: SpectNetAction) => {
-  if (action.meta && action.meta.scope === "local") {
-    return next(action);
-  }
-
-  // --- change scope to avoid endless-loop
-  const rendererAction = {
-    ...action,
-    meta: {
-      ...action.meta, // --- Keep this for future metadata extension
-      scope: "local"
-    }
-  };
-
-  // --- Broadcast the action to all renderer processes
-  const allWebContents = webContents.getAllWebContents();
-  allWebContents.forEach(contents => {
-    contents.send(REDUX_ACTION_CHANNEL, rendererAction);
-  });
-
-  // --- Next middleware element
-  return next(action);
-};
-
-/**
- * Give renderers a way to sync the current state of the store, but be sure
- * we don't expose any remote objects. In other words, we need our state to
- * be serializable.
- *
- * Refer to https://github.com/electron/electron/blob/master/docs/api/remote.md#remote-objects
- */
-export function replayActionMain(store: any) {
-  (global as any)[GET_REDUX_STATE_FUNC] = () => JSON.stringify(store.getState());
-
-  ipcMain.on(REDUX_ACTION_CHANNEL, (event, payload) => {
-    store.dispatch(payload);
-  });
-}
-
-/**
- * This middleware function forwards actions to the main process, provided they
- * are not local-scoped.
- */
-export const forwardToMain = (store: any) => (
-  next: (arg0: any) => any
-) => (action: { meta: { scope: string } }) => {
-  if (!action.meta || !action.meta.scope || action.meta.scope !== "local") {
-    ipcRenderer.send(REDUX_ACTION_CHANNEL, action);
-    return;
-  }
-  return next(action);
-};
-
-/**
- * Replays the action at the renderer side.
- */
-export function replayActionRenderer(store: any) {
-  ipcRenderer.on(REDUX_ACTION_CHANNEL, (event, payload) => {
-    store.dispatch(payload);
-  });
-}
 
 /**
  * This type definition describes the available metadata types.
