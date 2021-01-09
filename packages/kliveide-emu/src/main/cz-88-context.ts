@@ -193,15 +193,13 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         id: SOFT_RESET,
         label: "Soft reset",
         accelerator: "F8",
-        click: () =>
-          mainProcessStore.dispatch(machineCommandAction(CZ88_SOFT_RESET)()),
+        click: async () => await this.softReset(),
       },
       {
         id: HARD_RESET,
         label: "Hard reset",
         accelerator: "F9",
-        click: () =>
-          mainProcessStore.dispatch(machineCommandAction(CZ88_HARD_RESET)()),
+        click: async () => await this.hardReset(),
       },
       { type: "separator" },
       {
@@ -401,5 +399,37 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       contents[topBankOffset + 0x3ffe] === "O".charCodeAt(0) &&
       contents[topBankOffset + 0x3fff] === "Z".charCodeAt(0)
     );
+  }
+
+  /**
+   * Execure soft reset
+   */
+  private async softReset(): Promise<void> {
+    if (await this.confirmReset("Soft")) {
+      mainProcessStore.dispatch(machineCommandAction(CZ88_SOFT_RESET)());
+    }
+  }
+
+  /**
+   * Execute hard reset
+   */
+  private async hardReset(): Promise<void> {
+    if (await this.confirmReset("Hard")) {
+      mainProcessStore.dispatch(machineCommandAction(CZ88_HARD_RESET)());
+    }
+  }
+
+  /**
+   * Display a confirm message for reset
+   */
+  private async confirmReset(type: string): Promise<boolean> {
+    const result = await dialog.showMessageBox(this.appWindow.window, {
+      title: `Confirm Cambridge Z88 ${type} Reset`,
+      message: "Are you sure you want to reset the machine?",
+      buttons: [ "Yes", "No" ],
+      defaultId: 0,
+      type: "question"
+    });
+    return result.response === 0;
   }
 }
