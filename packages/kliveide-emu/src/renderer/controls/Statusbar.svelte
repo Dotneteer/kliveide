@@ -175,12 +175,12 @@
       <SvgIcon iconName="window" width="16" height="16" fill={fillValue} />
       {#if vmEngine}<span class="label">{renderedFramesStr}</span>{/if}
     </div>
+    <div class="section" title="The value of Program Counter">
+      <span class="label">PC: ${PC.toString(16)
+          .toUpperCase()
+          .padStart(4, '0')}</span>
+    </div>
   {/if}
-  <div class="section" title="The value of Program Counter">
-    <span class="label">PC: ${PC.toString(16)
-        .toUpperCase()
-        .padStart(4, '0')}</span>
-  </div>
   <div class="placeholder" />
   {#if ideConnected}
     <div class="section"><span class="label">IDE connected</span></div>
