@@ -12,7 +12,6 @@ function setupAppWindow(): void {
   mainWindow = new AppWindow();
   mainWindow.setupMenu();
   mainWindow.load();
-  mainWindow.startWatchingIde();
 }
 
 // --- This method will be called when Electron has finished
@@ -21,6 +20,7 @@ function setupAppWindow(): void {
 app.on("ready", () => {
   setupAppWindow();
   startApiServer();
+  mainWindow.startWatchingIde();
 });
 
 // --- Quit when all windows are closed.

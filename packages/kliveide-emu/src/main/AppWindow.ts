@@ -44,7 +44,7 @@ import {
   RENDERER_RESPONSE_CHANNEL,
 } from "../../src/shared/utils/channel-ids";
 import { processMessageFromRenderer } from "./mainMessageProcessor";
-import { EmulatorPanelState, IdeConnection } from "../shared/state/AppState";
+import { AppState, IdeConnection } from "../shared/state/AppState";
 import {
   emulatorSetSavedDataAction,
   emulatorRequestTypeAction,
@@ -62,7 +62,9 @@ import {
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
-import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
+import {
+  ideDisconnectsAction,
+} from "../shared/state/redux-ide-connection.state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { MachineContextProvider } from "./machine-context";
@@ -72,6 +74,7 @@ import {
 } from "./zx-spectrum-context";
 import { Cz88ContextProvider } from "./cz-88-context";
 import { IAppWindow } from "./IAppWindows";
+import { appConfiguration } from "./klive-configuration";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -87,6 +90,7 @@ const MIN_HEIGHT = 676;
 // --- Menu IDs
 const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_FRAMES = "toggle_frames";
+const TOGGLE_DEVTOOLS = "toggle_devtools";
 
 /**
  * This class encapsulates the functionality of the application's window
@@ -275,11 +279,9 @@ export class AppWindow implements IAppWindow {
     );
 
     // --- Catch state changes
-    const emulatorStateAware = createMainProcessStateAware(
-      "emulatorPanelState"
-    );
+    const emulatorStateAware = createMainProcessStateAware();
     emulatorStateAware.stateChanged.on((state) =>
-      this.processStateChange(state as EmulatorPanelState)
+      this.processStateChange(state)
     );
     const ideConnectionStateAware = createMainProcessStateAware(
       "ideConnection"
@@ -366,13 +368,21 @@ export class AppWindow implements IAppWindow {
 
     // --- Preapre the view menu
     const viewSubMenu: MenuItemConstructorOptions[] = [
-      { role: "toggleDevTools" },
-      { type: "separator" },
       { role: "resetZoom" },
       { role: "zoomIn" },
       { role: "zoomOut" },
       { type: "separator" },
       { role: "togglefullscreen" },
+      {
+        id: TOGGLE_DEVTOOLS,
+        label: "Toggle Developer Tools",
+        accelerator: "Ctrl+Shift+I",
+        visible: appConfiguration?.viewOptions?.showDevTools ?? false,
+        enabled: appConfiguration?.viewOptions?.showDevTools ?? false,
+        click: (mi) => {
+          this.window.webContents.toggleDevTools()
+        }
+      },
       { type: "separator" },
       {
         id: TOGGLE_KEYBOARD,
@@ -402,7 +412,7 @@ export class AppWindow implements IAppWindow {
         id: "toggle_statusbar",
         label: "Show statusbar",
         type: "checkbox",
-        checked: true,
+        checked: appConfiguration?.viewOptions?.showStatusbar ?? true,
         click: (mi) => {
           if (mi.checked) {
             mainProcessStore.dispatch(emulatorShowStatusbarAction());
@@ -415,7 +425,7 @@ export class AppWindow implements IAppWindow {
         id: TOGGLE_FRAMES,
         label: "Show frame information",
         type: "checkbox",
-        checked: true,
+        checked: appConfiguration?.viewOptions?.showFrameInfo ?? true,
         click: (mi) => {
           if (mi.checked) {
             mainProcessStore.dispatch(emulatorShowFramesAction());
@@ -674,21 +684,35 @@ export class AppWindow implements IAppWindow {
    * Processes emulator data changes
    * @param state Emulator state
    */
-  processStateChange(state: EmulatorPanelState): void {
-    // --- Update items in the view menu
+  processStateChange(fullState: AppState): void {
     const menu = Menu.getApplicationMenu();
+    const state = fullState.emulatorPanelState;
     if (menu) {
-      const toggle_keyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);
-      if (toggle_keyboard) {
-        toggle_keyboard.checked = !!state.keyboardPanel;
+      // --- DevTools visibility
+      const devToolVisible =
+        (fullState?.ideConnection?.connected ?? false) ||
+        (appConfiguration?.viewOptions?.showDevTools ?? false);
+      const toggleDevTools = menu.getMenuItemById(TOGGLE_DEVTOOLS);
+      if (toggleDevTools) {
+        toggleDevTools.visible = toggleDevTools.enabled = devToolVisible;
       }
-    }
-    const emuState = mainProcessStore.getState().emulatorPanelState;
-    if (emuState) {
-      const clockMultiplier = emuState.clockMultiplier ?? 1;
-      const cmItem = menu.getMenuItemById(`clockMultiplier_${clockMultiplier}`);
-      if (cmItem) {
-        cmItem.checked = false;
+
+      // --- Keyboard panel status
+      const toggleKeyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);
+      if (toggleKeyboard) {
+        toggleKeyboard.checked = !!state.keyboardPanel;
+      }
+
+      // --- Clock multiplier status
+      const emuState = mainProcessStore.getState().emulatorPanelState;
+      if (emuState) {
+        const clockMultiplier = emuState.clockMultiplier ?? 1;
+        const cmItem = menu.getMenuItemById(
+          `clockMultiplier_${clockMultiplier}`
+        );
+        if (cmItem) {
+          cmItem.checked = false;
+        }
       }
     }
 
@@ -764,6 +788,9 @@ export class AppWindow implements IAppWindow {
         if (Date.now() - lastHeartBeat > 3000) {
           // --- IDE seems to be disconnected
           mainProcessStore.dispatch(ideDisconnectsAction());
+          if (!(appConfiguration?.viewOptions?.showDevTools ?? false)) {
+            this.window.webContents.closeDevTools();
+          }
         }
       }
     }
