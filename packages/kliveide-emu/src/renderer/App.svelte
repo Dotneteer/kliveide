@@ -26,6 +26,7 @@
   let themeStyle = "";
   let themeClass = "";
   let updatingMachineType;
+  let toolbarVisible;
   let statusbarVisible;
 
   // --- Respond to theme changes
@@ -72,7 +73,7 @@
         // --- Update the machine type
         await changeVmEngine(emuUi.requestedType, emuUi.requestedOptions);
         stateAware.dispatch(emulatorSetupTypeAction(emuUi.requestedType)());
-        
+
         // --- Allow redux message cycle to loop back to the renderer
         await new Promise((r) => setTimeout(r, 100));
         vmEngine = await getVmEngine();
@@ -82,6 +83,7 @@
       }
     }
     statusbarVisible = emuUi.statusbar;
+    toolbarVisible = emuUi.showToolbar;
   });
 
   // --- Cleanup subscriptions
@@ -112,7 +114,9 @@
 </style>
 
 <main style={themeStyle} class={themeClass}>
-  <Toolbar {vmEngine} {vmEngineError} />
+  {#if toolbarVisible}
+    <Toolbar {vmEngine} {vmEngineError} />
+  {/if}
   <MainCanvas {vmEngine} {vmEngineError} />
   {#if statusbarVisible}
     <Statusbar {vmEngine} {vmEngineError} />

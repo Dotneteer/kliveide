@@ -58,7 +58,7 @@ export interface EmulatorPanelState {
   soundLevel?: number;
   savedData?: Uint8Array;
   requestedType?: string;
-  requestedOptions?: Record<string, any>
+  requestedOptions?: Record<string, any>;
   currentType?: string;
   selectedRom?: number;
   selectedBank?: number;
@@ -66,6 +66,7 @@ export interface EmulatorPanelState {
   statusbar?: boolean;
   internalState?: Record<string, any>;
   showFrames?: boolean;
+  showToolbar?: boolean;
 }
 
 /**
@@ -140,7 +141,6 @@ export interface RunProgramCommand {
   errorCode?: string;
 }
 
-
 /**
  * Gets the default application state
  */
@@ -167,7 +167,8 @@ export function getDefaultAppState(): AppState {
       statusbar: true,
       internalState: {},
       clockMultiplier: 1,
-      showFrames: true
+      showFrames: true,
+      showToolbar: true,
     },
     ideConfiguration: {
       projectFolder: "",

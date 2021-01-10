@@ -59,12 +59,12 @@ import {
   emulatorSetClockMultiplierAction,
   emulatorShowFramesAction,
   emulatorHideFramesAction,
+  emulatorShowToolbarAction,
+  emulatorHideToolbarAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
-import {
-  ideDisconnectsAction,
-} from "../shared/state/redux-ide-connection.state";
+import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { MachineContextProvider } from "./machine-context";
@@ -89,8 +89,18 @@ const MIN_HEIGHT = 676;
 
 // --- Menu IDs
 const TOGGLE_KEYBOARD = "toggle_keyboard";
+const TOGGLE_TOOLBAR = "toggle_toolbar";
+const TOGGLE_STATUSBAR = "toggle_statusbar";
 const TOGGLE_FRAMES = "toggle_frames";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
+const START_VM = "start_vm";
+const PAUSE_VM = "pause_vm";
+const STOP_VM = "stop_vm";
+const RESTART_VM = "restart_vm";
+const DEBUG_VM = "debug_vm";
+const STEP_INTO_VM = "step_into_vm";
+const STEP_OVER_VM = "step_over_vm";
+const STEP_OUT_VM = "step_out_vm";
 
 /**
  * This class encapsulates the functionality of the application's window
@@ -380,8 +390,8 @@ export class AppWindow implements IAppWindow {
         visible: appConfiguration?.viewOptions?.showDevTools ?? false,
         enabled: appConfiguration?.viewOptions?.showDevTools ?? false,
         click: (mi) => {
-          this.window.webContents.toggleDevTools()
-        }
+          this.window.webContents.toggleDevTools();
+        },
       },
       { type: "separator" },
       {
@@ -409,7 +419,20 @@ export class AppWindow implements IAppWindow {
 
     viewSubMenu.push(
       {
-        id: "toggle_statusbar",
+        id: TOGGLE_TOOLBAR,
+        label: "Show toolbar",
+        type: "checkbox",
+        checked: appConfiguration?.viewOptions?.showToolbar ?? true,
+        click: (mi) => {
+          if (mi.checked) {
+            mainProcessStore.dispatch(emulatorShowToolbarAction());
+          } else {
+            mainProcessStore.dispatch(emulatorHideToolbarAction());
+          }
+        },
+      },
+      {
+        id: TOGGLE_STATUSBAR,
         label: "Show statusbar",
         type: "checkbox",
         checked: appConfiguration?.viewOptions?.showStatusbar ?? true,
@@ -441,6 +464,72 @@ export class AppWindow implements IAppWindow {
       label: "View",
       submenu: viewSubMenu,
     });
+
+    // --- Prepare the Run menu
+
+    const runMenu: MenuItemConstructorOptions = {
+      label: "Run",
+      submenu: [
+        {
+          id: START_VM,
+          label: "Start",
+          accelerator: "F5",
+          enabled: true,
+          click: async () => await this.startVm(),
+        },
+        {
+          id: PAUSE_VM,
+          label: "Pause",
+          accelerator: "Shift+F5",
+          enabled: false,
+          click: async () => await this.pauseVm(),
+        },
+        {
+          id: STOP_VM,
+          label: "Stop",
+          accelerator: "F4",
+          enabled: false,
+          click: async () => await this.stopVm(),
+        },
+        {
+          id: RESTART_VM,
+          label: "Restart",
+          accelerator: "Shift+F4",
+          enabled: false,
+          click: async () => await this.restartVm(),
+        },
+        { type: "separator" },
+        {
+          id: DEBUG_VM,
+          label: "Start with debugging",
+          accelerator: "Ctrl+F5",
+          enabled: true,
+          click: async () => await this.debugVm(),
+        },
+        {
+          id: STEP_INTO_VM,
+          label: "Step into",
+          accelerator: "F3",
+          enabled: false,
+          click: async () => await this.stepIntoVm(),
+        },
+        {
+          id: STEP_OVER_VM,
+          label: "Step over",
+          accelerator: "Shift+F3",
+          enabled: false,
+          click: async () => await this.stepOverVm(),
+        },
+        {
+          id: STEP_OUT_VM,
+          label: "Step out",
+          accelerator: "Ctrl+F3",
+          enabled: false,
+          click: async () => await this.stepOutVm(),
+        },
+      ],
+    };
+    template.push(runMenu);
 
     // --- Prepare the machine menu
     const machineSubMenu: MenuItemConstructorOptions[] = [];
@@ -567,40 +656,6 @@ export class AppWindow implements IAppWindow {
   }
 
   /**
-   * Disables all machine menu items
-   */
-  disableMachineMenu(): void {
-    for (const item of MACHINE_MENU_ITEMS) {
-      const menuItem = Menu.getApplicationMenu().getMenuItemById(item.id);
-      if (menuItem) {
-        menuItem.enabled = false;
-      }
-    }
-  }
-
-  /**
-   * Disables all machine menu items
-   */
-  enableMachineMenu(): void {
-    for (const item of MACHINE_MENU_ITEMS) {
-      const menuItem = Menu.getApplicationMenu().getMenuItemById(item.id);
-      if (menuItem) {
-        menuItem.enabled = item.enabled;
-      }
-    }
-  }
-
-  /**
-   * Sets the active menu according to the current machine type
-   */
-  setMachineTypeMenu(id: string): void {
-    const menuItem = Menu.getApplicationMenu().getMenuItemById(`${id}`);
-    if (menuItem) {
-      menuItem.checked = true;
-    }
-  }
-
-  /**
    * Requests a machine type according to its menu ID
    * @param id Machine type, or menu ID of the machine type
    * @param options Machine construction options
@@ -637,6 +692,71 @@ export class AppWindow implements IAppWindow {
   }
 
   /**
+   * Verifies if IDE is still connected
+   */
+  async startWatchingIde(): Promise<void> {
+    this._watchingIde = true;
+    while (this._watchingIde) {
+      await new Promise((r) => setTimeout(r, 400));
+      const state = mainProcessStore.getState();
+      const lastHeartBeat = state.ideConnection?.lastHeartBeat ?? -1;
+      if (lastHeartBeat > 0) {
+        if (Date.now() - lastHeartBeat > 3000) {
+          // --- IDE seems to be disconnected
+          mainProcessStore.dispatch(ideDisconnectsAction());
+          if (!(appConfiguration?.viewOptions?.showDevTools ?? false)) {
+            this.window.webContents.closeDevTools();
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Stops watching IDE connection
+   */
+  stopWatchingIde(): void {
+    this._watchingIde = false;
+  }
+
+  // ==========================================================================
+  // Menu helpers
+
+  /**
+   * Disables all machine menu items
+   */
+  private disableMachineMenu(): void {
+    for (const item of MACHINE_MENU_ITEMS) {
+      const menuItem = Menu.getApplicationMenu().getMenuItemById(item.id);
+      if (menuItem) {
+        menuItem.enabled = false;
+      }
+    }
+  }
+
+  /**
+   * Disables all machine menu items
+   */
+  private enableMachineMenu(): void {
+    for (const item of MACHINE_MENU_ITEMS) {
+      const menuItem = Menu.getApplicationMenu().getMenuItemById(item.id);
+      if (menuItem) {
+        menuItem.enabled = item.enabled;
+      }
+    }
+  }
+
+  /**
+   * Sets the active menu according to the current machine type
+   */
+  setMachineTypeMenu(id: string): void {
+    const menuItem = Menu.getApplicationMenu().getMenuItemById(`${id}`);
+    if (menuItem) {
+      menuItem.checked = true;
+    }
+  }
+
+  /**
    * Sets the sound menu with the specified level
    * @param level Sound level
    */
@@ -667,11 +787,88 @@ export class AppWindow implements IAppWindow {
     }
   }
 
+  // ==========================================================================
+  // Virtual machine helpers
+
+  /**
+   * Starts the virtual machine
+   */
+  private async startVm(): Promise<void> {
+    await this.sendMessageToRenderer({ type: "startVm" });
+  }
+
+  /**
+   * Pauses the virtual machine
+   */
+  private async pauseVm(): Promise<void> {
+    await this.sendMessageToRenderer({ type: "pauseVm" });
+  }
+
+  /**
+   * Stops the virtual machine
+   */
+  private async stopVm(): Promise<void> {
+    if (await this.confirmStop("stopping", "stop")) {
+      await this.sendMessageToRenderer({ type: "stopVm" });
+    }
+  }
+
+  /**
+   * Restarts the virtual machine
+   */
+  private async restartVm(): Promise<void> {
+    if (await this.confirmStop("restarting", "restart")) {
+      await this.sendMessageToRenderer({ type: "restartVm" });
+    }
+  }
+
+  /**
+   * Starts debugging the virtual machine
+   */
+  private async debugVm(): Promise<void> {
+    await this.sendMessageToRenderer({ type: "debugVm" });
+  }
+
+  /**
+   * Steps into the virtual machine
+   */
+  private async stepIntoVm(): Promise<void> {
+    await this.sendMessageToRenderer({ type: "stepIntoVm" });
+  }
+
+  /**
+   * Steps over the virtual machine
+   */
+  private async stepOverVm(): Promise<void> {
+    await this.sendMessageToRenderer({ type: "stepOverVm" });
+  }
+
+  /**
+   * Steps out the virtual machine
+   */
+  private async stepOutVm(): Promise<void> {
+    await this.sendMessageToRenderer({ type: "stepOutVm" });
+  }
+
+  /**
+   * Display a confirm message for reset
+   */
+  private async confirmStop(actionName: string, actionVerb: string): Promise<boolean> {
+    const result = await dialog.showMessageBox(this.window, {
+      title: `Confirm ${actionName} the machine`,
+      message: `Are you sure you want to ${actionVerb} the machine?`,
+      buttons: [ "Yes", "No" ],
+      defaultId: 0,
+      type: "question"
+    });
+    return result.response === 0;
+  }
+
   /**
    * Sets the specified sound level
    * @param level Sound level (between 0.0 and 1.0)
    */
-  setSoundLevel(level: number): void {
+  private setSoundLevel(level: number): void {
     if (level === 0) {
       mainProcessStore.dispatch(emulatorMuteAction());
     } else {
@@ -684,9 +881,9 @@ export class AppWindow implements IAppWindow {
    * Processes emulator data changes
    * @param state Emulator state
    */
-  processStateChange(fullState: AppState): void {
+  private processStateChange(fullState: AppState): void {
     const menu = Menu.getApplicationMenu();
-    const state = fullState.emulatorPanelState;
+    const emuState = fullState.emulatorPanelState;
     if (menu) {
       // --- DevTools visibility
       const devToolVisible =
@@ -700,11 +897,10 @@ export class AppWindow implements IAppWindow {
       // --- Keyboard panel status
       const toggleKeyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);
       if (toggleKeyboard) {
-        toggleKeyboard.checked = !!state.keyboardPanel;
+        toggleKeyboard.checked = !!emuState.keyboardPanel;
       }
 
       // --- Clock multiplier status
-      const emuState = mainProcessStore.getState().emulatorPanelState;
       if (emuState) {
         const clockMultiplier = emuState.clockMultiplier ?? 1;
         const cmItem = menu.getMenuItemById(
@@ -714,30 +910,67 @@ export class AppWindow implements IAppWindow {
           cmItem.checked = false;
         }
       }
+
+      // --- VM control commands
+      const executionState = emuState.executionState;
+      const startVm = menu.getMenuItemById(START_VM);
+      if (startVm) {
+        startVm.enabled =
+          executionState === 0 || executionState === 3 || executionState === 5;
+      }
+      const pauseVm = menu.getMenuItemById(PAUSE_VM);
+      if (pauseVm) {
+        pauseVm.enabled = executionState === 1;
+      }
+      const stopVm = menu.getMenuItemById(STOP_VM);
+      if (stopVm) {
+        stopVm.enabled = executionState === 1 || executionState === 3;
+      }
+      const restartVm = menu.getMenuItemById(RESTART_VM);
+      if (restartVm) {
+        restartVm.enabled = executionState === 1 || executionState === 3;
+      }
+      const debugVm = menu.getMenuItemById(DEBUG_VM);
+      if (debugVm) {
+        debugVm.enabled =
+          executionState === 0 || executionState === 3 || executionState === 5;
+      }
+      const stepIntoVm = menu.getMenuItemById(STEP_INTO_VM);
+      if (stepIntoVm) {
+        stepIntoVm.enabled = executionState === 3;
+      }
+      const stepOverVm = menu.getMenuItemById(STEP_OVER_VM);
+      if (stepOverVm) {
+        stepOverVm.enabled = executionState === 3;
+      }
+      const stepOutVm = menu.getMenuItemById(STEP_OUT_VM);
+      if (stepOutVm) {
+        stepOutVm.enabled = executionState === 3;
+      }
     }
 
     // --- Take care that custom machine menus are updated
-    this._machineContextProvider?.updateMenuStatus(state);
+    this._machineContextProvider?.updateMenuStatus(emuState);
 
-    if (this._lastMachineType !== state.currentType) {
+    if (this._lastMachineType !== emuState.currentType) {
       // --- Current machine types has changed
-      this._lastMachineType = state.currentType;
+      this._lastMachineType = emuState.currentType;
       this.requestMachineType(this._lastMachineType);
     }
 
     if (
-      this._lastSoundLevel !== state.soundLevel ||
-      this._lastMuted !== state.muted
+      this._lastSoundLevel !== emuState.soundLevel ||
+      this._lastMuted !== emuState.muted
     ) {
       // --- Sound level has changed
-      this._lastSoundLevel = state.soundLevel;
-      this._lastMuted = state.muted;
+      this._lastSoundLevel = emuState.soundLevel;
+      this._lastMuted = emuState.muted;
       this.setSoundLevelMenu(this._lastMuted, this._lastSoundLevel);
     }
 
     // --- The engine has just saved a ZX Spectrum file
-    if (state?.savedData && state.savedData.length > 0) {
-      const data = state.savedData;
+    if (emuState?.savedData && emuState.savedData.length > 0) {
+      const data = emuState.savedData;
       const ideConfig = mainProcessStore.getState().ideConfiguration;
       if (!ideConfig) {
         return;
@@ -775,69 +1008,8 @@ export class AppWindow implements IAppWindow {
     }
   }
 
-  /**
-   * Verifies if IDE is still connected
-   */
-  async startWatchingIde(): Promise<void> {
-    this._watchingIde = true;
-    while (this._watchingIde) {
-      await new Promise((r) => setTimeout(r, 400));
-      const state = mainProcessStore.getState();
-      const lastHeartBeat = state.ideConnection?.lastHeartBeat ?? -1;
-      if (lastHeartBeat > 0) {
-        if (Date.now() - lastHeartBeat > 3000) {
-          // --- IDE seems to be disconnected
-          mainProcessStore.dispatch(ideDisconnectsAction());
-          if (!(appConfiguration?.viewOptions?.showDevTools ?? false)) {
-            this.window.webContents.closeDevTools();
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Stops watching IDE connection
-   */
-  stopWatchingIde(): void {
-    this._watchingIde = false;
-  }
-
-  async selectTapeFile(): Promise<void> {
-    const result = await dialog.showOpenDialog(this.window, {
-      title: "Open tape file",
-      filters: [
-        { name: "Tape files", extensions: ["tzx", "tap"] },
-        { name: "All Files", extensions: ["*"] },
-      ],
-    });
-    let tapeFile: string = "";
-    if (!result.canceled) {
-      try {
-        tapeFile = result.filePaths[0];
-        const contents = fs.readFileSync(tapeFile);
-        if (checkTapeFile(new BinaryReader(contents))) {
-          mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
-          await dialog.showMessageBox(this.window, {
-            title: `Tape file loaded`,
-            message: `Tape file ${tapeFile} successfully loaded.`,
-            type: "info",
-          });
-        } else {
-          throw new Error("Could not process the contenst of tape file.");
-        }
-      } catch (err) {
-        // --- This error is intentionally ignored
-        await dialog.showMessageBox(this.window, {
-          title: `Error processing the tape file ${tapeFile}`,
-          message: err.toString(),
-          type: "error",
-          detail:
-            "Please check if you have the appropriate access rights to read the files contents and the file is a valid .tap or .tzx file (note: 'dsk' format is not supported, yet).",
-        });
-      }
-    }
-  }
+  // ==========================================================================
+  // Helpers for menu commands
 }
 
 /**

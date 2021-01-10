@@ -42,4 +42,5 @@ export interface Payload {
   clockMultiplier?: number;
   machineCommand?: string;
   showFrames?: boolean;
+  showToolbar?: boolean;
 }

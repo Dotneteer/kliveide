@@ -28,6 +28,38 @@ export async function processMessageFromMain(
 ): Promise<ResponseMessage> {
   const machine = await getVmEngine();
   switch (message.type) {
+    case "startVm":
+      await machine.start();
+      return <DefaultResponse>{ type: "ack" };
+
+    case "pauseVm":
+      await machine.pause();
+      return <DefaultResponse>{ type: "ack" };
+
+    case "stopVm":
+      await machine.stop();
+      return <DefaultResponse>{ type: "ack" };
+
+    case "restartVm":
+      await machine.restart();
+      return <DefaultResponse>{ type: "ack" };
+
+    case "debugVm":
+      await machine.startDebug();
+      return <DefaultResponse>{ type: "ack" };
+
+    case "stepIntoVm":
+      await machine.stepInto();
+      return <DefaultResponse>{ type: "ack" };
+
+    case "stepOverVm":
+      await machine.stepOver();
+      return <DefaultResponse>{ type: "ack" };
+
+    case "stepOutVm":
+      await machine.stepOut();
+      return <DefaultResponse>{ type: "ack" };
+
     case "injectCode": {
       await machine.injectCode(message.codeToInject);
       return <DefaultResponse>{ type: "ack" };

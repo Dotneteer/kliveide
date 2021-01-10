@@ -21,6 +21,7 @@ export interface KliveDiagnostics {
  */
 export interface ViewOptions {
   showDevTools?: boolean;
+  showToolbar?: boolean;
   showStatusbar?: boolean;
   showFrameInfo?: boolean;
   showKeyboard?: boolean;
