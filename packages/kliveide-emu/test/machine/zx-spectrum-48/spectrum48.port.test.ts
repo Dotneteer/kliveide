@@ -3,7 +3,7 @@ import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/renderer/machines/wa-api";
-import { ZxSpectrum48 } from "../../../src/renderer/machines/ZxSpectrum48";
+import { ZxSpectrum48 } from "../../../src/renderer/machines/spectrum/ZxSpectrum48";
 import {
   ExecuteCycleOptions,
   EmulationMode,

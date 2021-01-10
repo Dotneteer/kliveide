@@ -9,7 +9,7 @@ import {
   IntFlags,
   TmkFlags,
   TstaFlags,
-} from "../../../src/renderer/machines/CambridgeZ88";
+} from "../../../src/renderer/machines/cz88/CambridgeZ88";
 
 const buffer = fs.readFileSync(
   path.join(__dirname, "../../../build/cz88.wasm")

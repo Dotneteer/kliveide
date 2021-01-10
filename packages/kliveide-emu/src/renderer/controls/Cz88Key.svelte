@@ -17,8 +17,11 @@
   // --- Keyword to display
   export let keyword;
 
-  // --- Symbol to display
+  // --- Symbol (top-right) to display
   export let symbol;
+
+  // --- Second (bottom-right) symbol to display
+  export let secondSymbol;
 
   // --- Main text to be put to the top of the key
   export let top;
@@ -44,6 +47,7 @@
   const normalWidth = 100;
   let mouseOverKey = false;
   let mouseOverSymbol = false;
+  let mouseOverSecondSymbol = false;
 
   // --- Colors
   const keyBackground = themeStore.getProperty("--key-cz88-background-color");
@@ -62,6 +66,8 @@
   $: mainStrokeColor = mouseOverKey ? highlightKeyColor : "transparent";
   $: symbolFillColor = mouseOverSymbol ? highlightKeyColor : symbolKeyColor;
   $: symbolStrokeColor = mouseOverSymbol ? highlightKeyColor : "transparent";
+  $: secondSymbolFillColor = mouseOverSecondSymbol ? highlightKeyColor : symbolKeyColor;
+  $: secondSymbolStrokeColor = mouseOverSecondSymbol ? highlightKeyColor : "transparent";
   $: cursor = mouseOverKey | mouseOverSymbol ? "pointer" : "default";
 
   // --- Thic component raises a "clicked" event
@@ -103,7 +109,7 @@
   {#if key}
     <text
       x="14"
-      y="74"
+      y="88"
       font-size="36"
       text-anchor="left"
       fill={mainFillColor}
@@ -118,7 +124,7 @@
   {#if symbol}
     <rect
       x="48"
-      y="24"
+      y="16"
       width={54}
       height={40}
       fill="transparent"
@@ -128,11 +134,9 @@
       on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
       {symbol}
     </rect>
-  {/if}
-  {#if symbol}
     <text
       x="68"
-      y="44"
+      y="36"
       font-size={32}
       text-anchor="middle"
       fill={symbolFillColor}
@@ -142,6 +146,33 @@
       on:mouseleave={() => (mouseOverSymbol = false)}
       on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
       {symbol}
+    </text>
+  {/if}
+  {#if secondSymbol }
+    <rect
+      x="48"
+      y="68"
+      width={54}
+      height={40}
+      fill="transparent"
+      {cursor}
+      on:mouseenter={() => (mouseOverSecondSymbol = true)}
+      on:mouseleave={() => (mouseOverSecondSymbol = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
+      {symbol}
+    </rect>
+    <text
+      x="68"
+      y="88"
+      font-size={32}
+      text-anchor="middle"
+      fill={secondSymbolFillColor}
+      stroke={secondSymbolStrokeColor}
+      {cursor}
+      on:mouseenter={() => (mouseOverSecondSymbol = true)}
+      on:mouseleave={() => (mouseOverSecondSymbol = false)}
+      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
+      {secondSymbol}
     </text>
   {/if}
   {#if keyword}
