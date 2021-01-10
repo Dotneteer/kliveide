@@ -5,6 +5,7 @@ export interface KliveConfiguration {
   port?: number;
   machineType?: string;
   diagnostics?: KliveDiagnostics;
+  viewOptions?: ViewOptions;
 }
 
 /**
@@ -13,4 +14,14 @@ export interface KliveConfiguration {
 export interface KliveDiagnostics {
   soundBufferUnderflow?: boolean;
   longFrameInfo?: boolean;
+}
+
+/**
+ * View menu options
+ */
+export interface ViewOptions {
+  showDevTools?: boolean;
+  showStatusbar?: boolean;
+  showFrameInfo?: boolean;
+  showKeyboard?: boolean;
 }
