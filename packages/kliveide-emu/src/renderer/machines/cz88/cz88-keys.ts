@@ -1,4 +1,4 @@
-import { KeyMapping } from "./keyboard";
+import { KeyMapping } from "../keyboard";
 
 /**
  * This enum assigns key codes to the keys of the Cambridge Z88 keyboard
@@ -169,7 +169,7 @@ const usMapping: KeyMapping = {
   F1: "Help",
   F2: "Index",
   F3: "Menu",
-  F4: "CapsLock",
+  F7: "CapsLock",
   F6: ["ShiftL", "ShiftR"]
 }
 
@@ -178,3 +178,11 @@ const usMapping: KeyMapping = {
  */
 export const cz88KeyMappings = usMapping;
 
+/**
+ * Represents the view of a Z88 key
+ */
+export interface Cz88KeyView {
+  key: string,
+  symbol: string,
+  secondSymbol: string
+}

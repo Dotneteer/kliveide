@@ -1,20 +1,20 @@
 import { ZxSpectrumBase } from "./ZxSpectrumBase";
-import { MachineApi } from "./wa-api";
+import { MachineApi } from "../wa-api";
 import {
   Spectrum128MachineState,
   MachineState,
   ExecuteCycleOptions,
   EmulationMode,
   DebugStepMode,
-} from "../../shared/machines/machine-state";
+} from "../../../shared/machines/machine-state";
 import {
   BANK_0_OFFS,
   ROM_128_0_OFFS,
   ROM_48_OFFS,
   STATE_TRANSFER_BUFF,
-} from "./memory-map";
-import { MemoryHelper } from "./memory-helpers";
-import { spectrumKeyCodes } from "./spectrum-keys";
+} from "../memory-map";
+import { MemoryHelper } from "../memory-helpers";
+import { spectrumKeyCodes } from "../spectrum-keys";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point

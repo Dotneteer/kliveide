@@ -1,4 +1,4 @@
-import { MemoryHelper } from "./memory-helpers";
+import { MemoryHelper } from "../memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
   COLORIZATION_BUFFER,
@@ -6,23 +6,23 @@ import {
   PSG_SAMPLE_BUFFER,
   RENDERING_TACT_TABLE,
   STATE_TRANSFER_BUFF,
-} from "./memory-map";
-import { MachineApi } from "./wa-api";
-import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
+} from "../memory-map";
+import { MachineApi } from "../wa-api";
+import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
 import {
   MachineState,
   MemoryContentionType,
   SpectrumMachineStateBase,
   Z80MachineStateBase,
-} from "../../shared/machines/machine-state";
-import { BinaryReader } from "../../shared/utils/BinaryReader";
-import { TzxReader } from "../../shared/tape/tzx-file";
-import { TapReader } from "../../shared/tape/tap-file";
-import { IAudioRenderer } from "./IAudioRenderer";
-import { IZxSpectrumBaseStateManager } from "./IZxSpectrumBaseStateManager";
-import { KeyMapping } from "./keyboard";
-import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
-import { ExtraMachineFeatures } from "./Z80MachineBase";
+} from "../../../shared/machines/machine-state";
+import { BinaryReader } from "../../../shared/utils/BinaryReader";
+import { TzxReader } from "../../../shared/tape/tzx-file";
+import { TapReader } from "../../../shared/tape/tap-file";
+import { IAudioRenderer } from "../IAudioRenderer";
+import { IZxSpectrumBaseStateManager } from "../IZxSpectrumBaseStateManager";
+import { KeyMapping } from "../keyboard";
+import { spectrumKeyCodes, spectrumKeyMappings } from "../spectrum-keys";
+import { ExtraMachineFeatures } from "../Z80MachineBase";
 
 /**
  * This class is intended to be the base class of all ZX Spectrum

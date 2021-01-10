@@ -1,25 +1,25 @@
-import { MachineApi } from "./wa-api";
-import { MemoryHelper } from "./memory-helpers";
+import { MachineApi } from "../wa-api";
+import { MemoryHelper } from "../memory-helpers";
 import {
   BLOCK_LOOKUP_TABLE,
   PIXEL_BUFFER,
   STATE_TRANSFER_BUFF,
   Z88_MEM_AREA,
-} from "./memory-map";
-import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
+} from "../memory-map";
+import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
 import {
   CambridgeZ88MachineState,
   MachineState,
   Z80MachineStateBase,
-} from "../../shared/machines/machine-state";
-import { KeyMapping } from "./keyboard";
+} from "../../../shared/machines/machine-state";
+import { KeyMapping } from "../keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
-import { ExtraMachineFeatures } from "./Z80MachineBase";
+import { ExtraMachineFeatures } from "../Z80MachineBase";
 import {
   CZ88_HARD_RESET,
   CZ88_SOFT_RESET,
-} from "../../shared/machines/macine-commands";
-import { IVmEngineController } from "./IVmEngineController";
+} from "../../../shared/machines/macine-commands";
+import { IVmEngineController } from "../IVmEngineController";
 
 /**
  * This class implements the Cambride Z88 machine

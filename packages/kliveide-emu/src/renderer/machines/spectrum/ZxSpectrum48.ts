@@ -1,14 +1,14 @@
 import { ZxSpectrumBase } from "./ZxSpectrumBase";
-import { MachineApi } from "./wa-api";
+import { MachineApi } from "../wa-api";
 import {
   Spectrum48MachineState,
   MachineState,
   ExecuteCycleOptions,
   EmulationMode,
   DebugStepMode,
-} from "../../shared/machines/machine-state";
-import { ROM_48_OFFS } from "./memory-map";
-import { CodeToInject } from "../../shared/machines/api-data";
+} from "../../../shared/machines/machine-state";
+import { ROM_48_OFFS } from "../memory-map";
+import { CodeToInject } from "../../../shared/machines/api-data";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point
