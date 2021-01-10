@@ -1,7 +1,18 @@
-import { KeyMapping } from "./keyboard";
+import { KeyMapping } from "../keyboard";
 
 /**
- * This enum assigns key codes to the keys of the Cambridge Z88 keyboard
+ * This enum assigns key codes to the keys of the Cambridge Z88 keyboard.
+ * Each number identifies a physical key in the Z88 keyboard matrix, using
+ * a code from 0-63. Code sequence:
+ * 0: A8/D0,
+ * 1: A8/D1,
+ * 2: A8/D2,
+ * ...
+ * 62: A15/D6
+ * 63: A15/D7
+ * 
+ * Each propery names a Z88 key in the 8x8 matrix. The property value is
+ * the associated code
  */
 export const cz88KeyCodes: Record<string, number> = {
   N8: 0,
@@ -79,6 +90,12 @@ export const cz88KeyCodes: Record<string, number> = {
 
 Object.freeze(cz88KeyCodes);
 
+/**
+ * Maps the physical keyboard to the US keyboard. 
+ * Property: Physical key virtual keycodes
+ * Value: single string, or an array of strings that represent the
+ * primary, secondary, and, ternary Z88 key code
+ */
 const usMapping: KeyMapping = {
   Escape: "Escape",
   Digit1: "N1",
@@ -169,7 +186,7 @@ const usMapping: KeyMapping = {
   F1: "Help",
   F2: "Index",
   F3: "Menu",
-  F4: "CapsLock",
+  F7: "CapsLock",
   F6: ["ShiftL", "ShiftR"]
 }
 
@@ -178,3 +195,17 @@ const usMapping: KeyMapping = {
  */
 export const cz88KeyMappings = usMapping;
 
+/**
+ * Represents the view of a Z88 key
+ */
+export interface Cz88KeyView {
+  key?: string;
+  keyword?: string;
+  symbol?: string;
+  secondSymbol?: string;
+}
+
+/**
+ * Represents a keyboard layout
+ */
+export type Cz88KeyboardLayout = Record<string, Cz88KeyView>;

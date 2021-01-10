@@ -1,4 +1,4 @@
-import { ExecuteCycleOptions } from "../../shared/machines/machine-state";
+import { ExecuteCycleOptions } from "../../shared/machines/machine-state"
 
 /**
  * Defines the services of a virtual machine engine controller.

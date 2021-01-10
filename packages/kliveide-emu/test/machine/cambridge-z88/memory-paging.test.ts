@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { MachineApi } from "../../../src/renderer/machines/wa-api";
 import { importObject } from "../../import-object";
-import { CambridgeZ88 } from "../../../src/renderer/machines/CambridgeZ88";
+import { CambridgeZ88 } from "../../../src/renderer/machines/cz88/CambridgeZ88";
 
 const buffer = fs.readFileSync(
   path.join(__dirname, "../../../build/cz88.wasm")
