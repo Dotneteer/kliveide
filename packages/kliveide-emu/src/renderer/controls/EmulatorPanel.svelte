@@ -106,7 +106,7 @@
 
   // --- Set up the emulator according to the current virtual machine
   function setupEmulator() {
-    overlay = "Not started yet";
+    overlay = "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
     hideDisplayData();
 
     // --- Refresh the screen when there's a new frame

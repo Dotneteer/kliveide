@@ -1,4 +1,4 @@
-import { createAction, createLocalAction, SpectNetAction } from "./redux-core";
+import { createAction, SpectNetAction } from "./redux-core";
 
 export function machineCommandAction(machineCommand?: string) {
   return createAction("MACHINE_COMMAND", { machineCommand: machineCommand ?? "" });

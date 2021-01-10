@@ -104,19 +104,19 @@
     <ToolbarIconButton
       iconName="pause"
       fill="lightblue"
-      title="Stop"
+      title="Pause"
       enable={executionState === 1}
       on:clicked={async () => await vmEngine.pause()} />
     <ToolbarIconButton
       iconName="stop"
       fill="orangered"
-      title="Pause"
+      title="Stop"
       enable={executionState === 1 || executionState === 3}
       on:clicked={async () => await vmEngine.stop()} />
     <ToolbarIconButton
       iconName="restart"
       fill="lightgreen"
-      title="Reset"
+      title="Restart"
       size="22"
       highlightSize="26"
       enable={!vmEngineError && (executionState === 1 || executionState === 3)}

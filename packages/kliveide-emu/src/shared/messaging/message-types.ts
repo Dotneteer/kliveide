@@ -12,6 +12,64 @@ export interface MessageBase {
 }
 
 /**
+ * The main process sends this message to start the VM
+ */
+export interface StartVmMessage extends MessageBase {
+  type: "startVm";
+}
+
+/**
+ * The main process sends this message to pause the VM
+ */
+export interface PauseVmMessage extends MessageBase {
+  type: "pauseVm";
+}
+
+/**
+ * The main process sends this message to stop the VM
+ */
+export interface StopVmMessage extends MessageBase {
+  type: "stopVm";
+}
+
+/**
+ * The main process sends this message to restart the VM
+ */
+export interface RestartVmMessage extends MessageBase {
+  type: "restartVm";
+}
+
+/**
+ * The main process sends this message to start debugging the VM
+ */
+export interface DebugVmMessage extends MessageBase {
+  type: "debugVm";
+}
+
+/**
+ * The main process sends this message to step-into the VM
+ */
+export interface StepIntoVmMessage extends MessageBase {
+  type: "stepIntoVm";
+}
+
+/**
+ * The main process sends this message to step-over the VM
+ */
+export interface StepOverVmMessage extends MessageBase {
+  type: "stepOverVm";
+}
+
+
+/**
+ * The main process sends this message to step-out the VM
+ */
+export interface StepOutVmMessage extends MessageBase {
+  type: "stepOutVm";
+}
+
+
+/**
  * This message signs that the rendered process has successfully
  * started its operation
  */
@@ -92,6 +150,14 @@ export interface GetMemoryPartitionMessage extends MessageBase {
  * The messages that are send as requests to a processing entity
  */
 export type RequestMessage =
+  | StartVmMessage
+  | PauseVmMessage
+  | StopVmMessage
+  | RestartVmMessage
+  | DebugVmMessage
+  | StepIntoVmMessage
+  | StepOverVmMessage
+  | StepOutVmMessage
   | SignRendererStartedMessage
   | GetMachineRomsMessage
   | SetToDefaultMachineMessage
