@@ -59,6 +59,8 @@ import {
   emulatorSetClockMultiplierAction,
   emulatorShowFramesAction,
   emulatorHideFramesAction,
+  emulatorShowToolbarAction,
+  emulatorHideToolbarAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
@@ -87,6 +89,8 @@ const MIN_HEIGHT = 676;
 
 // --- Menu IDs
 const TOGGLE_KEYBOARD = "toggle_keyboard";
+const TOGGLE_TOOLBAR = "toggle_toolbar";
+const TOGGLE_STATUSBAR = "toggle_statusbar";
 const TOGGLE_FRAMES = "toggle_frames";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const START_VM = "start_vm";
@@ -415,7 +419,20 @@ export class AppWindow implements IAppWindow {
 
     viewSubMenu.push(
       {
-        id: "toggle_statusbar",
+        id: TOGGLE_TOOLBAR,
+        label: "Show toolbar",
+        type: "checkbox",
+        checked: appConfiguration?.viewOptions?.showToolbar ?? true,
+        click: (mi) => {
+          if (mi.checked) {
+            mainProcessStore.dispatch(emulatorShowToolbarAction());
+          } else {
+            mainProcessStore.dispatch(emulatorHideToolbarAction());
+          }
+        },
+      },
+      {
+        id: TOGGLE_STATUSBAR,
         label: "Show statusbar",
         type: "checkbox",
         checked: appConfiguration?.viewOptions?.showStatusbar ?? true,

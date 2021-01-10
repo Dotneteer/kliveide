@@ -123,6 +123,8 @@ export function emulatorSetClockMultiplierAction(clockMultiplier: number) {
 
 export const emulatorShowFramesAction = createAction("EMULATOR_SHOW_FRAMES");
 export const emulatorHideFramesAction = createAction("EMULATOR_HIDE_FRAMES");
+export const emulatorShowToolbarAction = createAction("EMULATOR_SHOW_TOOLBAR");
+export const emulatorHideToolbarAction = createAction("EMULATOR_HIDE_TOOLBAR");
 
 /**
  * This reducer manages emulator panel state changes
@@ -231,6 +233,10 @@ export function emulatorStateReducer(
       return { ...state, showFrames: true };
     case "EMULATOR_HIDE_FRAMES":
       return { ...state, showFrames: false };
+    case "EMULATOR_SHOW_TOOLBAR":
+      return { ...state, showToolbar: true };
+    case "EMULATOR_HIDE_TOOLBAR":
+      return { ...state, showToolbar: false };
   }
   return state;
 }
