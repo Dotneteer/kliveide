@@ -10,4 +10,6 @@
 (export "setClockMultiplier" (func $setClockMultiplier))
 (export "setPC" (func $setPC))
 (export "setSP" (func $setSP))
+(export "snoozeCpu" (func $snoozeCpu))
+(export "awakeCpu" (func $awakeCpu))
 

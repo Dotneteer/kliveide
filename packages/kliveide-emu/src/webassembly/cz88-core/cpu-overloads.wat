@@ -81,6 +81,14 @@
 
   (i32.eq (get_local $addr8) (i32.const 0xb2))
   if
+    (i32.and (get_global $INT) (i32.const $BM_INTKWAIT#))
+    if
+      call $snoozeCpu
+      i32.const 0xff
+      return
+    else
+      ;; The CPU is awake, just read the port value
+    end
     ;; Keyboard
     (call $getKeyLineStatus (i32.shr_u (get_local $addr) (i32.const 8)))
     return

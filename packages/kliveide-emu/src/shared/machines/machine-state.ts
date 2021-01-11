@@ -16,6 +16,7 @@ export abstract class Z80MachineStateBase extends Z80CpuState {
 
   // --- CPU diagnostics
   cpuDiagnostics: number;
+  cpuSnoozed: boolean;
 
   // --- Common screen configuration
   screenWidth: number;

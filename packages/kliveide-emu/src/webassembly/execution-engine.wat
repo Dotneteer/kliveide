@@ -66,21 +66,24 @@
     (i32.div_u (get_global $tacts) (get_global $clockMultiplier))
     set_local $currentFrameTact
 
-    ;; Execute an entire instruction
-    (call $beforeCpuCycle (get_local $currentFrameTact))
-    call $executeCpuCycle
-    loop $instructionLoop
-      get_global $isInOpExecution
-      if
-        call $executeCpuCycle
-        br $instructionLoop
-      end
-    end 
-    (call $afterCpuCycle (get_local $currentFrameTact))
-
-    (call $beforeTerminationCheck (get_local $currentFrameTact))
+    ;; Do not use the CPU if that is snoozed
+    (i32.eqz (get_global $cpuSnoozed))
+    if
+      ;; Execute an entire instruction
+      (call $beforeCpuCycle (get_local $currentFrameTact))
+      call $executeCpuCycle
+      loop $instructionLoop
+        get_global $isInOpExecution
+        if
+          call $executeCpuCycle
+          br $instructionLoop
+        end
+      end 
+      (call $afterCpuCycle (get_local $currentFrameTact))
+    end
 
     ;; Check termination point
+    (call $beforeTerminationCheck (get_local $currentFrameTact))
     call $testIfTerminationPointReached
     if
       i32.const $EX_REA_TERM# set_global $executionCompletionReason ;; Reason: Termination point reached
@@ -150,8 +153,17 @@
     call $afterTerminationCheck
 
     ;; Test frame completion
-    (i32.ge_u (get_local $currentFrameTact) (get_global $tactsInFrame))
-    set_global $frameCompleted
+    (get_global $cpuSnoozed)
+    if
+      ;; When the CPU is snoozed, the frame completes
+      (set_local $currentFrameTact (get_global $tactsInFrame))
+      (set_global $frameCompleted (i32.const 1))
+    else
+      ;; Active CPU, check if all frame tacts ran
+      (i32.ge_u (get_local $currentFrameTact) (get_global $tactsInFrame))
+      set_global $frameCompleted
+    end
+
     (br_if $frameCycle (i32.eqz (get_global $frameCompleted)))
   end
 
