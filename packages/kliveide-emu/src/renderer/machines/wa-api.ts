@@ -13,6 +13,8 @@ export interface CpuApi {
   setClockMultiplier(flags: number): void;
   setPC(pc: number): void;
   setSP(sp: number): void;
+  snoozeCpu(): void;
+  awakeCpu(): void;
 }
 
 /**

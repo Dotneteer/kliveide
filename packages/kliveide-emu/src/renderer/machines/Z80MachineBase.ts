@@ -253,6 +253,7 @@ export abstract class Z80MachineBase {
     s.clockMultiplier = mh.readByte(51);
     s.cpuDiagnostics = mh.readUint16(52);
     s.defaultClockMultiplier = mh.readByte(53);
+    s.cpuSnoozed = mh.readBool(54);
 
     return s;
   }

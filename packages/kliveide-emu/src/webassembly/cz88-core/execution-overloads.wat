@@ -48,6 +48,19 @@
   ;; 5ms frame completed, update the real time clock
   call $incRtcCounter
 
+  ;; Awake the CPU when a key is pressed
+  (i32.load offset=0 (get_global $KEYBOARD_LINES))
+  if
+    ;; A keyboard status bit is set in one of the first 4 lines
+    call $awakeCpu
+  else
+    (i32.load offset=4 (get_global $KEYBOARD_LINES))
+    if
+      ;; A keyboard status bit is set in one of the second 4 lines
+      call $awakeCpu
+    end
+  end
+
   ;; Set flash phase
   (i32.add (get_global $flashCount) (i32.const 1))
   set_global $flashCount
