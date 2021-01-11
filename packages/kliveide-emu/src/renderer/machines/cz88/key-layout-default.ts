@@ -149,7 +149,8 @@ export const defaultZ88KeyboardLayout: Cz88KeyboardLayout = {
   },
   Pound: {
     key: "\u00a3",
-    symbol: "~"
+    symbol: "~",
+    secondSymbol: "\u20ac"
   },
   ShiftL: {
     keyword: "SHIFT"
