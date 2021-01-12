@@ -22,8 +22,8 @@
   // let clo = esZ88KeyboardLayout;
   // let clo = frZ88KeyboardLayout;
   // let clo = deZ88KeyboardLayout;
-  let clo = dkZ88KeyboardLayout;
-  // let clo = seZ88KeyboardLayout;
+  // let clo = dkZ88KeyboardLayout;
+  let clo = seZ88KeyboardLayout;
 
   onMount(async () => {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
