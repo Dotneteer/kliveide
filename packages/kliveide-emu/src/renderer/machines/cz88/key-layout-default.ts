@@ -10,6 +10,7 @@ import { Cz88KeyboardLayout } from "./cz88-keys";
  *   secondSymbol: Second symbolkey (bottom-right)
  */
 export const defaultZ88KeyboardLayout: Cz88KeyboardLayout = {
+  /* 1st (top) row */
   Escape: {
     keyword: "ESC",
   },
@@ -68,6 +69,7 @@ export const defaultZ88KeyboardLayout: Cz88KeyboardLayout = {
   Delete: {
     keyword: "DEL"
   },
+  /* 2nd row */
   Tab: {
     keyword: "TAB"
   },
@@ -109,6 +111,7 @@ export const defaultZ88KeyboardLayout: Cz88KeyboardLayout = {
     key: "]",
     symbol: "}"
   },
+  /* 3rd row */
   Diamond: {
     keyword: "\u25c7"
   },
@@ -152,6 +155,7 @@ export const defaultZ88KeyboardLayout: Cz88KeyboardLayout = {
     symbol: "~",
     secondSymbol: "\u20ac" /* € */
   },
+  /* 4th row */
   ShiftL: {
     keyword: "SHIFT"
   },
@@ -194,6 +198,7 @@ export const defaultZ88KeyboardLayout: Cz88KeyboardLayout = {
   Up: {
     keyword: "\u21e7"
   },
+  /* 5th row */
   Index: {
     keyword: "INDEX"
   },
