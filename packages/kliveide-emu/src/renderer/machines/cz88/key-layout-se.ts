@@ -5,6 +5,7 @@ import { defaultZ88KeyboardLayout } from "./key-layout-default";
  * Defines the SE/FI keys that differ from the default layout
  */
 const seLayoutDiff: Cz88KeyboardLayout = {
+  /* 1st (top) row */
   Minus: {
     key: "=",
     symbol: "<"
@@ -17,6 +18,7 @@ const seLayoutDiff: Cz88KeyboardLayout = {
     key: "/",
     symbol: "?"
   },
+  /* 2nd row */
   SBracketL: {
     key: "\u00c5", /* Å */
     symbol: "|",
@@ -27,6 +29,7 @@ const seLayoutDiff: Cz88KeyboardLayout = {
     symbol: "\"",
     secondSymbol: "`"
   },
+  /* 3rd row */
   Semicolon: {
     key: "\u00d6", /* Ö */
     symbol: "[",
@@ -37,6 +40,7 @@ const seLayoutDiff: Cz88KeyboardLayout = {
     symbol: "]",
     secondSymbol: "}"
   },
+  /* 4th row */
   Comma: {
     key: ",",
     symbol: ";"

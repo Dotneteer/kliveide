@@ -5,6 +5,7 @@ import { defaultZ88KeyboardLayout } from "./key-layout-default";
  * Defines the Danish/Norwegian keys that differ from the default Z88 UK layout
  */
 const dkLayoutDiff: Cz88KeyboardLayout = {
+  /* 1st (top) row */
   Minus: {
     key: "=",
     symbol: "<"
@@ -17,6 +18,7 @@ const dkLayoutDiff: Cz88KeyboardLayout = {
     key: "/",
     symbol: "?"
   },
+  /* 2nd row */
   SBracketL: {
     key: "\u00c5", /* Å */
     symbol: "]",
@@ -26,6 +28,7 @@ const dkLayoutDiff: Cz88KeyboardLayout = {
     key: "\'",
     symbol: "\""
   },
+  /* 3rd row */
   Semicolon: {
     key: "\u00c6", /* Æ */
     symbol: "[",
@@ -36,6 +39,7 @@ const dkLayoutDiff: Cz88KeyboardLayout = {
     symbol: "\\",
     secondSymbol: "|"
   },
+  /* 4th row */
   Comma: {
     key: ",",
     symbol: ";"
