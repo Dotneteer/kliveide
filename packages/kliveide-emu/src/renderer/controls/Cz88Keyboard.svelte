@@ -20,8 +20,8 @@
   let cz88;
   // let clo = defaultZ88KeyboardLayout;
   // let clo = esZ88KeyboardLayout;
-  let clo = frZ88KeyboardLayout;
-  // let clo = deZ88KeyboardLayout;
+  // let clo = frZ88KeyboardLayout;
+  let clo = deZ88KeyboardLayout;
   // let clo = dkZ88KeyboardLayout;
   // let clo = seZ88KeyboardLayout;
 

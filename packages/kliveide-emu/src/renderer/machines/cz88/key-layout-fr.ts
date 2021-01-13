@@ -2,7 +2,7 @@ import { Cz88KeyboardLayout } from "./cz88-keys";
 import { defaultZ88KeyboardLayout } from "./key-layout-default";
 
 /**
- * Defines the FR keys that differ from the default layout
+ * Defines the french keys that differ from the default layout
  */
 const frLayoutDiff: Cz88KeyboardLayout = {
   /* 1st (top) row */
