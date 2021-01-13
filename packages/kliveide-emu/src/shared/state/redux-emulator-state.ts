@@ -126,6 +126,10 @@ export const emulatorHideFramesAction = createAction("EMULATOR_HIDE_FRAMES");
 export const emulatorShowToolbarAction = createAction("EMULATOR_SHOW_TOOLBAR");
 export const emulatorHideToolbarAction = createAction("EMULATOR_HIDE_TOOLBAR");
 
+export function emulatorSetKeyboardAction(keyboardLayout: string) {
+  return createAction("EMULATOR_SET_KEYBOARD", { keyboardLayout });
+}
+
 /**
  * This reducer manages emulator panel state changes
  * @param state Input state
@@ -237,6 +241,8 @@ export function emulatorStateReducer(
       return { ...state, showToolbar: true };
     case "EMULATOR_HIDE_TOOLBAR":
       return { ...state, showToolbar: false };
+    case "EMULATOR_SET_KEYBOARD":
+      return { ...state, keyboardLayout: payload.keyboardLayout };
   }
   return state;
 }

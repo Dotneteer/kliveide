@@ -15,6 +15,7 @@ import {
   machineIdFromMenuId,
   menuIdFromMachineId,
 } from "./utils/electron-utils";
+import { emulatorSetKeyboardAction } from "../shared/state/redux-emulator-state";
 
 // --- Menu identifier contants
 const SOFT_RESET = "cz88_soft_reset";
@@ -24,6 +25,13 @@ const ROM_MENU = "cz88_roms";
 const SELECT_ROM_FILE = "cz88_select_rom_file";
 const USE_DEFAULT_ROM = "cz88_use_default_rom";
 const USE_ROM_FILE = "cz88_rom";
+const KEYBOARDS = "cz88_keyboards";
+const DE_KEYBOARD = "cz88_de_layout";
+const DK_KEYBOARD = "cz88_dk_layout";
+const FR_KEYBOARD = "cz88_fr_layout";
+const ES_KEYBOARD = "cz88_es_layout";
+const SE_KEYBOARD = "cz88_se_layout";
+const UK_KEYBOARD = "cz88_uk_layout";
 
 // --- Machine type (by LCD resolution) constants
 const Z88_640_64 = "machine_cz88_255_8";
@@ -211,6 +219,49 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
           },
         ],
       },
+      {
+        id: KEYBOARDS,
+        label: "Keyboard layout",
+        type: "submenu",
+        submenu: [
+          {
+            id: UK_KEYBOARD,
+            label: "British && American",
+            type: "radio",
+            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("uk")()),
+          },
+          {
+            id: ES_KEYBOARD,
+            label: "Spanish",
+            type: "radio",
+            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("es")()),
+          },
+          {
+            id: FR_KEYBOARD,
+            label: "French",
+            type: "radio",
+            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("fr")()),
+          },
+          {
+            id: DE_KEYBOARD,
+            label: "German",
+            type: "radio",
+            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("de")()),
+          },
+          {
+            id: DK_KEYBOARD,
+            label: "Danish && Norwegian",
+            type: "radio",
+            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("dk")()),
+          },
+          {
+            id: SE_KEYBOARD,
+            label: "Swedish && Finish",
+            type: "radio",
+            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("se")()),
+          },
+        ]
+      },
       { type: "separator" },
       {
         id: SOFT_RESET,
@@ -256,6 +307,13 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     const lcdType = menu.getMenuItemById(menuIdFromMachineId(recentLcdType));
     if (lcdType) {
       lcdType.checked = true;
+    }
+
+    // --- Select the current keyboard layout
+    const keyboardId = `cz88_${state.keyboardLayout}_layout`;
+    const keyboardItem = menu.getMenuItemById(keyboardId);
+    if (keyboardItem) {
+      keyboardItem.checked = true;
     }
   }
 

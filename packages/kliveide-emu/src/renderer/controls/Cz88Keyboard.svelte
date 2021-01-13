@@ -12,18 +12,14 @@
 
   export let clientWidth;
   export let clientHeight;
+  export let layout;
 
   let zoom = 1.0;
   const defaultWidth = 15 * 108 + 200 + 48;
   const defaultHeight = 5 * (100 + 8) + 48;
 
   let cz88;
-  // let clo = defaultZ88KeyboardLayout;
-  // let clo = esZ88KeyboardLayout;
-  // let clo = frZ88KeyboardLayout;
-  let clo = deZ88KeyboardLayout;
-  // let clo = dkZ88KeyboardLayout;
-  // let clo = seZ88KeyboardLayout;
+  let clo;
 
   onMount(async () => {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
@@ -33,6 +29,29 @@
   // --- Respond to panel size changes
   $: {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
+  }
+
+  $: {
+    switch (layout) {
+      case "es":
+        clo = esZ88KeyboardLayout;
+        break;
+      case "fr":
+        clo = frZ88KeyboardLayout;
+        break;
+      case "de":
+        clo = deZ88KeyboardLayout;
+        break;
+      case "dk":
+        clo = dkZ88KeyboardLayout;
+        break;
+      case "se":
+        clo = seZ88KeyboardLayout;
+        break;
+      default:
+        clo = defaultZ88KeyboardLayout;
+        break;
+    }
   }
 
   function calculateDimensions(clientWidth, clientHeight, width, height) {
