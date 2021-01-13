@@ -19,6 +19,7 @@ import {
   IpcMainEvent,
   webContents,
   dialog,
+  shell,
 } from "electron";
 import {
   mainProcessStore,
@@ -639,17 +640,32 @@ export class AppWindow implements IAppWindow {
       });
     }
 
+    const helpSubmenu: MenuItemConstructorOptions[] = [
+      {
+        label: "Klive on Github",
+        click: async () => {
+          await shell.openExternal("https://github.com/Dotneteer/kliveide");
+        },
+      },
+      {
+        label: "Getting started with Klive",
+        click: async () => {
+          await shell.openExternal(
+            "https://dotneteer.github.io/kliveide/getting-started/install-kliveide.html"
+          );
+        },
+      },
+    ];
+    let extraHelpItems: MenuItemConstructorOptions[] =
+      this._machineContextProvider?.provideHelpMenuItems() ?? [];
+    if (extraHelpItems.length > 0) {
+      helpSubmenu.push({ type: "separator" });
+      helpSubmenu.push(...extraHelpItems);
+    }
+
     template.push({
       role: "help",
-      submenu: [
-        {
-          label: "Learn More",
-          click: async () => {
-            const { shell } = require("electron");
-            await shell.openExternal("https://dotneteer.github.io/kliveide/");
-          },
-        },
-      ],
+      submenu: helpSubmenu,
     });
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
@@ -853,13 +869,16 @@ export class AppWindow implements IAppWindow {
   /**
    * Display a confirm message for reset
    */
-  private async confirmStop(actionName: string, actionVerb: string): Promise<boolean> {
+  private async confirmStop(
+    actionName: string,
+    actionVerb: string
+  ): Promise<boolean> {
     const result = await dialog.showMessageBox(this.window, {
       title: `Confirm ${actionName} the machine`,
       message: `Are you sure you want to ${actionVerb} the machine?`,
-      buttons: [ "Yes", "No" ],
+      buttons: ["Yes", "No"],
       defaultId: 0,
-      type: "question"
+      type: "question",
     });
     return result.response === 0;
   }

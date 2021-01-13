@@ -1,7 +1,7 @@
 import * as fs from "fs";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
-import { MachineContextProviderBase } from "./machine-context";
+import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { mainProcessStore } from "./mainProcessStore";
 import {
   emulatorDisableFastLoadAction,
@@ -19,6 +19,14 @@ import { IAppWindow } from "./IAppWindows";
 const TOGGLE_BEAM = "sp_toggle_beam_position";
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
+
+// --- ZX Spectrum-specific menu items
+const zxSpectrumLinks: LinkDescriptor[] = [
+  {
+    label: "ZX Spectrum 48 BASIC",
+    uri: "https://dotneteer.github.io/kliveide/spectrum/basic-toc.html",
+  },
+];
 
 /**
  * Context provider for ZX Spectrum machine types
@@ -92,6 +100,13 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     if (toggleFastLoad) {
       toggleFastLoad.checked = !!state.fastLoad;
     }
+  }
+
+  /**
+   * Items to add to the Help menu
+   */
+  provideHelpMenuItems(): MenuItemConstructorOptions[] | null {
+    return this.getHyperlinkItems(zxSpectrumLinks);
   }
 
   /**
