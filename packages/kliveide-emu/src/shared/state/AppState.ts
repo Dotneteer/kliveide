@@ -48,6 +48,7 @@ export interface EmulatorPanelState {
   tapeContents?: Uint8Array;
   tapeLoaded?: boolean;
   keyboardPanel?: boolean;
+  keyboardLayout?: string;
   shadowScreen?: boolean;
   beamPosition?: boolean;
   fastLoad?: boolean;
@@ -149,6 +150,7 @@ export function getDefaultAppState(): AppState {
     appHasFocus: true,
     emulatorPanelState: {
       engineInitialized: false,
+      keyboardLayout: "",
       keyboardPanel: false,
       beamPosition: false,
       shadowScreen: false,

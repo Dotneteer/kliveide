@@ -12,6 +12,8 @@
   let keyboardType = "";
   let keyboardVisible = false;
   let delayIsOver = true;
+  let layout = "";
+
   const stateAware = createRendererProcessStateAware("emulatorPanelState");
   stateAware.stateChanged.on(async (state) => {
     if (keyboardVisible !== state.keyboardPanel) {
@@ -20,6 +22,7 @@
       await tick();
       delayIsOver = true;
     }
+    layout = state.keyboardLayout;
   });
 
   let keyboardHeight;
@@ -65,7 +68,8 @@
         showPanel={delayIsOver}
         visible={keyboardVisible}
         {initialHeight}
-        bind:sizedHeight={keyboardHeight} />
+        {layout}
+        bind:sizedHeight={keyboardHeight}/>
     {/if}
   </SplitContainer>
 </div>
