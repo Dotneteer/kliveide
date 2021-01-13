@@ -44,23 +44,33 @@ const Z88_800_480 = "machine_cz88_100_60";
 // Z88-specific help menu items
 const z88Links: LinkDescriptor[] = [
   {
-    label: "The COM register (sample)",
+    label: "Cambridge Z88 User Guide",
     uri:
-      "https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112999/The+COM+register",
+      "https://cambridgez88.jira.com/wiki/spaces/UG/"
   },
   {
-    label: "Bank switching (sample)",
+    label: "Cambridge Z88 Developers' Notes",
     uri:
-      "https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113001/Bank+Switching",
+      "https://cambridgez88.jira.com/wiki/spaces/DN/"
   },
   {
     label: null,
   },
   {
-    label: "The keyboard (sample)",
+    label: "Cambridge Z88 ROM && 3rd party application source code",
     uri:
-      "https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113013/The+Keyboard",
+      "https://bitbucket.org/cambridge/",
   },
+  {
+    label: "Cambridge Z88 on Wikipedia",
+    uri:
+      "https://en.wikipedia.org/wiki/Cambridge_Z88"
+  },
+  {
+    label: "Cambridge Z88 assembler tools and utilities",
+    uri:
+      "https://gitlab.com/bits4fun"
+  }
 ];
 
 // ----------------------------------------------------------------------------
