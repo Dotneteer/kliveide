@@ -113,6 +113,9 @@
 ;; CPU diagnostics flags
 (global $cpuDiagnostics (mut i32) (i32.const 0x00))
 
+;; Is the CPU snoozed?
+(global $cpuSnoozed (mut i32) (i32.const 0x00))
+
 ;; ----------------------------------------------------------------------------
 ;; ALU helper tables
 
@@ -206,7 +209,8 @@
   (i32.store offset=47 (get_global $STATE_TRANSFER_BUFF) (get_global $baseClockFrequency))      
   (i32.store8 offset=51 (get_global $STATE_TRANSFER_BUFF) (get_global $clockMultiplier))      
   (i32.store8 offset=52 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuDiagnostics))      
-  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $defaultClockMultiplier))      
+  (i32.store8 offset=53 (get_global $STATE_TRANSFER_BUFF) (get_global $defaultClockMultiplier))     
+  (i32.store8 offset=54 (get_global $STATE_TRANSFER_BUFF) (get_global $cpuSnoozed))     
 )
 
 ;; Restores the CPU state from the transfer area. This method copies register values
@@ -418,6 +422,16 @@
   i32.const 0x0000 set_global $opCode
 )
 
+;; Sets the CPU state to snoozed
+(func $snoozeCpu
+  (set_global $cpuSnoozed (i32.const 1))
+)
+
+;; Awakes the CPU
+(func $awakeCpu
+  (set_global $cpuSnoozed (i32.const 0))
+)
+
 ;; ----------------------------------------------------------------------------
 ;; Execution cycle methods
 
@@ -593,7 +607,10 @@
 
 ;; Executes the NMI request
 (func $executeNMI
-    ;; Test for HLT
+  ;; Interrupt awakes the CPU
+  call $awakeCpu
+
+  ;; Test for HLT
   (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
   if
     (set_global $PC 
@@ -619,6 +636,9 @@
 (func $executeInterrupt
   (local $addr i32)
   (local $oldPc i32)
+
+  ;; Interrupt awakes the CPU
+  call $awakeCpu
 
   ;; Save the PC
   get_global $PC set_local $oldPc

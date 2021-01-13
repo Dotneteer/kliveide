@@ -178,6 +178,11 @@
     ;; a combination of one or more time events has occurred
     (i32.or (get_global $STA) (i32.const $BM_STATIME#))
     set_global $STA
+
+    (i32.and (get_global $INT) (i32.const $BM_INTGINT#))
+    if
+      call $awakeCpu
+    end
   end
 )
 
