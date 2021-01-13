@@ -7,7 +7,6 @@
   import { deZ88KeyboardLayout } from "../machines/cz88/key-layout-de";
   import { dkZ88KeyboardLayout } from "../machines/cz88/key-layout-dk";
   import { seZ88KeyboardLayout } from "../machines/cz88/key-layout-se";
-  import { noZ88KeyboardLayout } from "../machines/cz88/key-layout-no";
 
   import { getVmEngine } from "../machine-loader";
 
@@ -19,13 +18,12 @@
   const defaultHeight = 5 * (100 + 8) + 48;
 
   let cz88;
-  let clo = defaultZ88KeyboardLayout;
+  // let clo = defaultZ88KeyboardLayout;
   // let clo = esZ88KeyboardLayout;
   // let clo = frZ88KeyboardLayout;
-  // let clo = deZ88KeyboardLayout;
+  let clo = deZ88KeyboardLayout;
   // let clo = dkZ88KeyboardLayout;
   // let clo = seZ88KeyboardLayout;
-  // let clo = noZ88KeyboardLayout;
 
   onMount(async () => {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
