@@ -3,7 +3,7 @@ import * as path from "path";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { EmulatorPanelState } from "../shared/state/AppState";
-import { MachineContextProviderBase } from "./machine-context";
+import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { mainProcessStore } from "./mainProcessStore";
 import { machineCommandAction } from "../shared/state/redux-machine-command-state";
 import {
@@ -31,6 +31,29 @@ const Z88_640_320 = "machine_cz88_255_40";
 const Z88_640_480 = "machine_cz88_255_60";
 const Z88_800_320 = "machine_cz88_100_40";
 const Z88_800_480 = "machine_cz88_100_60";
+
+// ----------------------------------------------------------------------------
+// Z88-specific help menu items
+const z88Links: LinkDescriptor[] = [
+  {
+    label: "The COM register (sample)",
+    uri:
+      "https://cambridgez88.jira.com/wiki/spaces/DN/pages/3112999/The+COM+register",
+  },
+  {
+    label: "Bank switching (sample)",
+    uri:
+      "https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113001/Bank+Switching",
+  },
+  {
+    label: null,
+  },
+  {
+    label: "The keyboard (sample)",
+    uri:
+      "https://cambridgez88.jira.com/wiki/spaces/DN/pages/3113013/The+Keyboard",
+  },
+];
 
 // ----------------------------------------------------------------------------
 // We use these two variables to identify the current Z88 machine type
@@ -209,6 +232,13 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         submenu: romsSubmenu,
       },
     ];
+  }
+
+  /**
+   * Items to add to the Help menu
+   */
+  provideHelpMenuItems(): MenuItemConstructorOptions[] | null {
+    return this.getHyperlinkItems(z88Links);
   }
 
   /**
@@ -426,9 +456,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     const result = await dialog.showMessageBox(this.appWindow.window, {
       title: `Confirm Cambridge Z88 ${type} Reset`,
       message: "Are you sure you want to reset the machine?",
-      buttons: [ "Yes", "No" ],
+      buttons: ["Yes", "No"],
       defaultId: 0,
-      type: "question"
+      type: "question",
     });
     return result.response === 0;
   }

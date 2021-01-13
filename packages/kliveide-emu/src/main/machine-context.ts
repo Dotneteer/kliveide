@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { MenuItemConstructorOptions } from "electron";
+import { MenuItemConstructorOptions, shell } from "electron";
 import { EmulatorPanelState } from "../shared/state/AppState";
 
 /**
@@ -17,6 +17,11 @@ export interface MachineContextProvider {
    * Items to add to the machine menu
    */
   provideMachineMenuItems(): MenuItemConstructorOptions[] | null;
+
+  /**
+   * Items to add to the Help menu
+   */
+  provideHelpMenuItems(): MenuItemConstructorOptions[] | null;
 
   /**
    * Items to add to the main menu, right after the machine menu
@@ -49,9 +54,16 @@ export abstract class MachineContextProviderBase
   }
 
   /**
-   * Items to add to the machine menu
+   * Items to add to the Machine menu
    */
-  provideMachineMenuItems(): MenuItemConstructorOptions[] {
+  provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
+    return null;
+  }
+
+  /**
+   * Items to add to the Help menu
+   */
+  provideHelpMenuItems(): MenuItemConstructorOptions[] | null {
     return null;
   }
 
@@ -124,4 +136,36 @@ export abstract class MachineContextProviderBase
     }
     return result;
   }
+
+  /**
+   * Gets hyperlink items from a LinkDescriptor array
+   */
+  protected getHyperlinkItems(
+    links: LinkDescriptor[]
+  ): MenuItemConstructorOptions[] {
+    return links.map((li) => ({
+      type: li.label ? "normal" : "separator",
+      label: li?.label,
+      click: async () => {
+        if (li.uri) {
+          await shell.openExternal(li.uri);
+        }
+      },
+    }));
+  }
+}
+
+/**
+ * Describes a link in the Helpmenu
+ */
+export interface LinkDescriptor {
+  /**
+   * Label to display. Set null to display a separator.
+   */
+  label: string | null;
+
+  /**
+   * Uri to access
+   */
+  uri?: string;
 }
