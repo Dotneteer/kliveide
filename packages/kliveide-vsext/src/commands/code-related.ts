@@ -54,6 +54,7 @@ export async function compileCodeCommand(
   // --- Do the compilation
   let compilationOutput: AssemblerOutput | null = null;
   const fileExt = path.extname(filename);
+  let firstPhaseOk = true;
   switch (fileExt) {
     case ".zxbas":
     case ".bor":
@@ -79,6 +80,7 @@ export async function compileCodeCommand(
       try {
         await execZxbc(cmdArgs, outChannel);
       } catch (err) {
+        firstPhaseOk = false;
         outChannel.appendLine(err);
         break;
       }
@@ -92,6 +94,10 @@ export async function compileCodeCommand(
       // --- Compile the ASM file
       filename = outputName;
       break;
+  }
+
+  if (!firstPhaseOk) {
+    return null;
   }
 
   // --- Call the Z80 Assembler
