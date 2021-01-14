@@ -119,6 +119,14 @@ const usMapping: KeyMapping = {
   Digit0: "N0",
   Numpad0: "N0",
   Minus: "Minus",
+
+  Insert: [ "Diamond", "V"],
+  Delete: [ "ShiftR", "Delete"],
+  Home: [ "Diamond", "Left"],
+  End: [ "Diamond", "Right"],
+  PageUp: [ "ShiftR", "Up"],
+  PageDown: [ "ShiftR", "Down"],
+
   NumpadAdd: [ "ShiftL", "Equal"],
   NumpadSubtract: "Minus",
   NumpadMultiply: [ "ShiftL", "N8"],
@@ -126,7 +134,6 @@ const usMapping: KeyMapping = {
   NumpadDecimal: "Period",
   Equal: "Equal",
   Backslash: "Backslash",
-  Delete: "Delete",
   Backspace: "Delete",
 
   Tab: "Tab",
@@ -172,7 +179,6 @@ const usMapping: KeyMapping = {
   Slash: "Slash",
   ShiftRight: "ShiftR",
 
-  Home: "Index",
   ContextMenu: "Menu",
   Space: "Space",
   CapsLock: "CapsLock",
