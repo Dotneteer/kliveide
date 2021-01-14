@@ -8,20 +8,14 @@
   // --- Current zoom factor
   export let zoom = 1.0;
 
+  // --- Layout information
+  export let layoutInfo;
+
+  // --- Number of clickable icons
+  export let iconCount;
+
   // --- Z88 key code
   export let code;
-
-  // --- Key to display
-  export let key;
-
-  // --- Keyword to display
-  export let keyword;
-
-  // --- Symbol (top-right) to display
-  export let symbol;
-
-  // --- Second (bottom-right) symbol to display
-  export let secondSymbol;
 
   // --- Main text to be put to the top of the key
   export let top;
@@ -49,6 +43,12 @@
   let mouseOverSymbol = false;
   let mouseOverSecondSymbol = false;
 
+  // --- Key icons to display
+  let key;
+  let keyword;
+  let symbol;
+  let secondSymbol;
+
   // --- Colors
   const keyBackground = themeStore.getProperty("--key-cz88-background-color");
   const mainKeyColor = themeStore.getProperty("--key-cz88-main-color");
@@ -58,6 +58,20 @@
     "--key-cz88-highlight-color"
   );
 
+  // --- Reactive expressions for layout
+  $: {
+    if (layoutInfo) {
+      keyword = layoutInfo.keyword;
+      key = layoutInfo.key;
+      symbol = layoutInfo.symbol;
+      secondSymbol = layoutInfo.secondSymbol;
+    }
+    iconCount = 0;
+    if (key) iconCount++;
+    if (symbol) iconCount++;
+    if (secondSymbol) iconCount++;
+  }
+
   // --- Reactive expressions for button dimensions
   $: normalHeight = 100;
   $: currentWidth = zoom * (xwidth || normalWidth);
@@ -66,21 +80,25 @@
   $: mainStrokeColor = mouseOverKey ? highlightKeyColor : "transparent";
   $: symbolFillColor = mouseOverSymbol ? highlightKeyColor : symbolKeyColor;
   $: symbolStrokeColor = mouseOverSymbol ? highlightKeyColor : "transparent";
-  $: secondSymbolFillColor = mouseOverSecondSymbol ? highlightKeyColor : symbolKeyColor;
-  $: secondSymbolStrokeColor = mouseOverSecondSymbol ? highlightKeyColor : "transparent";
+  $: secondSymbolFillColor = mouseOverSecondSymbol
+    ? highlightKeyColor
+    : symbolKeyColor;
+  $: secondSymbolStrokeColor = mouseOverSecondSymbol
+    ? highlightKeyColor
+    : "transparent";
   $: cursor = mouseOverKey | mouseOverSymbol ? "pointer" : "default";
 
-  // --- Thic component raises a "clicked" event
+  // --- This component raises a "clicked" event
   const dispatch = createEventDispatcher();
 
-  function raiseClicked(e, code, keyCategory) {
-    dispatch("clicked", {
+  // --- Notify parent about the key action
+  function keyAction(e, target, isDown) {
+    dispatch("do", {
       code,
-      keyCategory,
-      altKey: e.altKey,
-      button: e.button,
-      ctrlKey: e.ctrlKey,
-      shiftKey: e.shiftKey,
+      target,
+      isDown,
+      isLeft: e.button === 0,
+      iconCount
     });
   }
 </script>
@@ -88,7 +106,9 @@
 <svg
   width={currentWidth}
   height={currentHeight}
-  viewBox="0 0 {parseInt(xwidth || normalWidth) + 20} {parseInt(xheight || normalHeight) + 20}"
+  viewBox="0 0 {parseInt(xwidth || normalWidth) + 20} {parseInt(
+    xheight || normalHeight
+  ) + 20}"
   style="margin:0"
   preserveAspectRatio="none"
   xmlns="http://www.w3.org/2000/svg">
@@ -105,7 +125,9 @@
     {cursor}
     on:mouseenter={() => (mouseOverKey = true)}
     on:mouseleave={() => (mouseOverKey = false)}
-    on:mousedown={(e) => raiseClicked(e, code, 'main')} />
+    on:mousedown={(e) => keyAction(e, "key", true)}
+    on:mouseup={(e) => keyAction(e, "key", false)}
+  />
   {#if key}
     <text
       x="14"
@@ -117,7 +139,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}>
       {key}
     </text>
   {/if}
@@ -131,7 +154,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverSymbol = true)}
       on:mouseleave={() => (mouseOverSymbol = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
+      on:mousedown={(e) => keyAction(e, "symbol", true)}
+      on:mouseup={(e) => keyAction(e, "symbol", false)}>
       {symbol}
     </rect>
     <text
@@ -144,11 +168,12 @@
       {cursor}
       on:mouseenter={() => (mouseOverSymbol = true)}
       on:mouseleave={() => (mouseOverSymbol = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
+      on:mousedown={(e) => keyAction(e, "symbol", true)}
+      on:mouseup={(e) => keyAction(e, "symbol", false)}>
       {symbol}
     </text>
   {/if}
-  {#if secondSymbol }
+  {#if secondSymbol}
     <rect
       x="48"
       y="68"
@@ -158,7 +183,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverSecondSymbol = true)}
       on:mouseleave={() => (mouseOverSecondSymbol = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
+      on:mousedown={(e) => keyAction(e, "secondSymbol", true)}
+      on:mouseup={(e) => keyAction(e, "secondSymbol", false)}>
       {symbol}
     </rect>
     <text
@@ -171,7 +197,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverSecondSymbol = true)}
       on:mouseleave={() => (mouseOverSecondSymbol = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'symbol')}>
+      on:mousedown={(e) => keyAction(e, "secondSymbol", true)}
+      on:mouseup={(e) => keyAction(e, "secondSymbol", false)}>
       {secondSymbol}
     </text>
   {/if}
@@ -186,7 +213,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}>
       {keyword}
     </text>
   {/if}
@@ -201,7 +229,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}>
       {top}
     </text>
   {/if}
@@ -216,7 +245,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}>
       {bottom}
     </text>
   {/if}
@@ -231,9 +261,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
-      E
-    </text>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}> E </text>
     <text
       x={(xwidth || 100) / 2 - 6}
       y={84}
@@ -244,9 +273,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
-      N
-    </text>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}> N </text>
     <text
       x={(xwidth || 100) / 2 - 6}
       y={114}
@@ -257,9 +285,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
-      T
-    </text>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}> T </text>
     <text
       x={(xwidth || 100) / 2 - 6}
       y={144}
@@ -270,9 +297,8 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
-      E
-    </text>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}> E </text>
     <text
       x={(xwidth || 100) / 2 - 6}
       y={174}
@@ -283,8 +309,7 @@
       {cursor}
       on:mouseenter={() => (mouseOverKey = true)}
       on:mouseleave={() => (mouseOverKey = false)}
-      on:mousedown={(e) => raiseClicked(e, code, 'main')}>
-      R
-    </text>
+      on:mousedown={(e) => keyAction(e, "key", true)}
+      on:mouseup={(e) => keyAction(e, "key", false)}> R </text>
   {/if}
 </svg>
