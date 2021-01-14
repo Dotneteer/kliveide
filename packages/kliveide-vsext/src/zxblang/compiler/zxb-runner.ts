@@ -79,11 +79,10 @@ export async function execZxbc(
   }
 
   const workdir = path.dirname(execPath);
-  const execFile = path.basename(execPath);
   const cmd = `${execPath} ${cmdArgs.split("\\").join("/")}`;
   outChannel.appendLine(`Executing ${cmd}`);
   return new Promise<string | null>((resolve, reject) => {
-    exec(
+    const process = exec(
       cmd,
       {
         cwd: workdir,
@@ -96,5 +95,8 @@ export async function execZxbc(
         resolve(null);
       }
     );
+    if (!process?.pid) {
+      throw new Error(`Cannot run the ZXBC utility with your specified path (${execPath})`);
+    }
   });
 }
