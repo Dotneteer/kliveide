@@ -85,8 +85,14 @@
         }
         break;
       case 3:
-        if (ev.target === "symbol") {
-          cz88.setKeyStatus(ev.isLeft ? LEFT_SHIFT_KEY : SQUARE_KEY, ev.isDown);
+      if (ev.target === "key" && !ev.isLeft) {
+          cz88.setKeyStatus(LEFT_SHIFT_KEY, ev.isDown);
+        } else if (ev.target === "symbol") {
+          if (ev.special === "dk") {
+            cz88.setKeyStatus(SQUARE_KEY, ev.isDown);
+          } else {
+            cz88.setKeyStatus(ev.isLeft ? LEFT_SHIFT_KEY : SQUARE_KEY, ev.isDown);
+          }
         } else if (ev.target === "secondSymbol" && ev.isLeft) {
           cz88.setKeyStatus(DIAMOND_KEY, ev.isDown);
         }

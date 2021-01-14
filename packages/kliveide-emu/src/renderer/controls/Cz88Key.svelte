@@ -98,7 +98,8 @@
       target,
       isDown,
       isLeft: e.button === 0,
-      iconCount
+      iconCount,
+      special: layoutInfo.special
     });
   }
 </script>

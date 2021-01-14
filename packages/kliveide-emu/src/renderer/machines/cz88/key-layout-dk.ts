@@ -22,7 +22,8 @@ const dkLayoutDiff: Cz88KeyboardLayout = {
   SBracketL: {
     key: "\u00c5", /* Å */
     symbol: "]",
-    secondSymbol: "}"
+    secondSymbol: "}",
+    special: "dk",
   },
   SBracketR: {
     key: "\'",
@@ -32,12 +33,14 @@ const dkLayoutDiff: Cz88KeyboardLayout = {
   Semicolon: {
     key: "\u00c6", /* Æ */
     symbol: "[",
-    secondSymbol: "{"
+    secondSymbol: "{",
+    special: "dk",
   },
   Quote: {
     key: "\u00d8", /* Ø */
     symbol: "\\",
-    secondSymbol: "|"
+    secondSymbol: "|",
+    special: "dk",
   },
   /* 4th row */
   Comma: {
