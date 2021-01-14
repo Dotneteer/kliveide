@@ -203,6 +203,7 @@ export interface Cz88KeyView {
   keyword?: string;
   symbol?: string;
   secondSymbol?: string;
+  special?: string;
 }
 
 /**

@@ -320,7 +320,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     }
 
     // --- Select the current keyboard layout
-    const keyboardId = `cz88_${state.keyboardLayout}_layout`;
+    const keyboardId = `cz88_${state?.keyboardLayout ?? "uk"}_layout`;
     const keyboardItem = menu.getMenuItemById(keyboardId);
     if (keyboardItem) {
       keyboardItem.checked = true;
