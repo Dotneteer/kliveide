@@ -52,6 +52,10 @@ const z88Links: LinkDescriptor[] = [
     uri: "https://cambridgez88.jira.com/wiki/spaces/DN/",
   },
   {
+    label: "BBC BASIC (Z80) Reference Guide for Z88",
+    uri: "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI",
+  },
+  {
     label: null,
   },
   {
