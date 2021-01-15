@@ -45,32 +45,27 @@ const Z88_800_480 = "machine_cz88_100_60";
 const z88Links: LinkDescriptor[] = [
   {
     label: "Cambridge Z88 User Guide",
-    uri:
-      "https://cambridgez88.jira.com/wiki/spaces/UG/"
+    uri: "https://cambridgez88.jira.com/wiki/spaces/UG/",
   },
   {
     label: "Cambridge Z88 Developers' Notes",
-    uri:
-      "https://cambridgez88.jira.com/wiki/spaces/DN/"
+    uri: "https://cambridgez88.jira.com/wiki/spaces/DN/",
   },
   {
     label: null,
   },
   {
     label: "Cambridge Z88 ROM && 3rd party application source code",
-    uri:
-      "https://bitbucket.org/cambridge/",
+    uri: "https://bitbucket.org/cambridge/",
   },
   {
     label: "Cambridge Z88 on Wikipedia",
-    uri:
-      "https://en.wikipedia.org/wiki/Cambridge_Z88"
+    uri: "https://en.wikipedia.org/wiki/Cambridge_Z88",
   },
   {
     label: "Cambridge Z88 assembler tools and utilities",
-    uri:
-      "https://gitlab.com/bits4fun"
-  }
+    uri: "https://gitlab.com/bits4fun",
+  },
 ];
 
 // ----------------------------------------------------------------------------
@@ -129,6 +124,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Items to add to the machine menu
    */
   provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
+    // --- We need the current status
+    const emuState = mainProcessStore.getState().emulatorPanelState;
+
     // --- Create the submenu of recent roms
     const romsSubmenu: MenuItemConstructorOptions[] = [];
     romsSubmenu.push({
@@ -238,39 +236,45 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: UK_KEYBOARD,
             label: "British && American",
             type: "radio",
-            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("uk")()),
+            click: () =>
+              mainProcessStore.dispatch(emulatorSetKeyboardAction("uk")()),
           },
           {
             id: ES_KEYBOARD,
             label: "Spanish",
             type: "radio",
-            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("es")()),
+            click: () =>
+              mainProcessStore.dispatch(emulatorSetKeyboardAction("es")()),
           },
           {
             id: FR_KEYBOARD,
             label: "French",
             type: "radio",
-            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("fr")()),
+            click: () =>
+              mainProcessStore.dispatch(emulatorSetKeyboardAction("fr")()),
           },
           {
             id: DE_KEYBOARD,
             label: "German",
             type: "radio",
-            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("de")()),
+            click: () =>
+              mainProcessStore.dispatch(emulatorSetKeyboardAction("de")()),
           },
           {
             id: DK_KEYBOARD,
             label: "Danish && Norwegian",
             type: "radio",
-            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("dk")()),
+            click: () =>
+              mainProcessStore.dispatch(emulatorSetKeyboardAction("dk")()),
           },
           {
             id: SE_KEYBOARD,
             label: "Swedish && Finish",
             type: "radio",
-            click: () => mainProcessStore.dispatch(emulatorSetKeyboardAction("se")()),
+            click: () =>
+              mainProcessStore.dispatch(emulatorSetKeyboardAction("se")()),
           },
-        ]
+        ],
       },
       { type: "separator" },
       {
@@ -320,7 +324,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     }
 
     // --- Select the current keyboard layout
-    const keyboardId = `cz88_${state?.keyboardLayout ?? "uk"}_layout`;
+    const keyboardId = `cz88_${
+      state?.keyboardLayout ? state.keyboardLayout : "uk"
+    }_layout`;
     const keyboardItem = menu.getMenuItemById(keyboardId);
     if (keyboardItem) {
       keyboardItem.checked = true;
@@ -452,17 +458,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     }
 
     this.selectRomFileToUse(recentRoms[idx]);
-
-    // // --- Bring the selected ROM to the top
-    // const topItem = recentRoms.splice(idx, 1);
-    // recentRoms.unshift(...topItem);
-    // this.checkTopRecentRom();
-    // recentRomSelected = true;
-    // recentRomName = path.basename(recentRoms[0]);
-    // this.appWindow.setupMenu();
-
-    // // --- Request the current machine type
-    // this.requestMachine();
   }
 
   /**
