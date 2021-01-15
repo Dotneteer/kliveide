@@ -184,6 +184,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.KBLine5 = mh.readByte(197);
     s.KBLine6 = mh.readByte(198);
     s.KBLine7 = mh.readByte(199);
+    s.lcdWentOff = mh.readBool(200);
 
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
@@ -262,14 +263,18 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * @param resultState Machine state on frame completion
    */
   async onFrameCompleted(
-    _resultState: Z80MachineStateBase,
+    resultState: Z80MachineStateBase,
     toWait: number
   ): Promise<void> {
+    const state = resultState as CambridgeZ88MachineState;
+    this.vmEngineController.setUiMessage(
+      state.lcdWentOff
+        ? "Z88 turned the LCD off (no activity). Press both SHIFT keys to use Z88 again"
+        : null
+    );
     if (toWait >= 0) {
       this.vmEngineController.signScreenRefreshed();
     }
-    // --- At this point we have not completed the execution yet
-    // --- Initiate the refresh of the screen
   }
 
   /**

@@ -32,4 +32,15 @@ export interface IVmEngineController {
    * @param secodary Optional secondary key
    */
   delayKey(primaryKey: number, secondaryKey?: number): Promise<void>;
+
+  /**
+   * Gets the current UI message
+   */
+  getUiMessage(): string | null;
+
+  /**
+   * Sets a UI message to display
+   * @param message Message to display
+   */
+  setUiMessage(message: string | null): void;
 }
