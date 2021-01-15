@@ -99,7 +99,7 @@
       isDown,
       isLeft: e.button === 0,
       iconCount,
-      special: layoutInfo.special
+      special: layoutInfo ? layoutInfo.special : undefined
     });
   }
 </script>

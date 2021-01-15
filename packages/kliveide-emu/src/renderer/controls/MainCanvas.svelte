@@ -42,6 +42,31 @@
   });
 </script>
 
+<div class="main-panel">
+  <SplitContainer
+    direction="vertical"
+    refreshTag={keyboardVisible}
+    minimumSize={80}
+    bind:isMoving={splitterIsMoving}
+    on:moved={async () => {
+      initialHeight = keyboardHeight;
+    }}
+  >
+    <EmulatorPanel {vmEngine} {vmEngineError} />
+    {#if keyboardVisible}
+      <KeyboardPanel
+        {vmEngine}
+        type={keyboardType}
+        showPanel={delayIsOver}
+        visible={keyboardVisible}
+        {initialHeight}
+        {layout}
+        bind:sizedHeight={keyboardHeight}
+      />
+    {/if}
+  </SplitContainer>
+</div>
+
 <style>
   .main-panel {
     display: flex;
@@ -51,25 +76,3 @@
     width: 100%;
   }
 </style>
-
-<div class="main-panel">
-  <SplitContainer
-    direction="vertical"
-    refreshTag={keyboardVisible}
-    minimumSize={80}
-    bind:isMoving={splitterIsMoving}
-    on:moved={async () => {
-      initialHeight = keyboardHeight;
-    }}>
-    <EmulatorPanel {vmEngine} {vmEngineError} />
-    {#if keyboardVisible}
-      <KeyboardPanel
-        type={keyboardType}
-        showPanel={delayIsOver}
-        visible={keyboardVisible}
-        {initialHeight}
-        {layout}
-        bind:sizedHeight={keyboardHeight}/>
-    {/if}
-  </SplitContainer>
-</div>

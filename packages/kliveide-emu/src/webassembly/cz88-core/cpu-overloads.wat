@@ -268,6 +268,14 @@
   if
     ;; INT, Set Main Blink Interrupts
     get_local $v set_global $INT
+    ;; (i32.and (get_local $v) (i32.const $BM_INTKEY#))
+    ;; if
+    ;;   i32.const 333333
+    ;;   call $trace
+    ;; else
+    ;;   i32.const 444444
+    ;;   call $trace
+    ;; end
     return
   end
 
