@@ -275,6 +275,7 @@
 <style>
   .emulator-panel {
     display: flex;
+    flex-direction: row;
     overflow: hidden;
     flex-shrink: 1;
     flex-grow: 1;

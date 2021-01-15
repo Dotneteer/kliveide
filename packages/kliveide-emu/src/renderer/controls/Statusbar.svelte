@@ -152,8 +152,8 @@
 
   .placeholder {
     width: 100%;
-    flex-grow: 1;
-    flex-shrink: 1;
+    flex-grow: 0;
+    flex-shrink: 0;
   }
 </style>
 

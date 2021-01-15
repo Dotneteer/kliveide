@@ -49,7 +49,6 @@ import { AppState, IdeConnection } from "../shared/state/AppState";
 import {
   emulatorSetSavedDataAction,
   emulatorRequestTypeAction,
-  emulatorSetTapeContenstAction,
   emulatorSetSoundLevelAction,
   emulatorMuteAction,
   emulatorUnmuteAction,
@@ -66,8 +65,6 @@ import {
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
 import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
-import { checkTapeFile } from "../shared/tape/readers";
-import { BinaryReader } from "../shared/utils/BinaryReader";
 import { MachineContextProvider } from "./machine-context";
 import {
   ZxSpectrum128ContextProvider,
@@ -85,8 +82,8 @@ let windowStateKeeper: any | null = null;
 /**
  * Minimum application window dimensions
  */
-const MIN_WIDTH = 960;
-const MIN_HEIGHT = 676;
+const MIN_WIDTH = 640;
+const MIN_HEIGHT = 128;
 
 // --- Menu IDs
 const TOGGLE_KEYBOARD = "toggle_keyboard";
