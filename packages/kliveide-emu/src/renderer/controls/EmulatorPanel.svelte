@@ -112,6 +112,11 @@
     // --- Refresh the screen when there's a new frame
     vmEngine.screenRefreshed.on(() => displayScreenData());
 
+    // --- Display UI messages when those come
+    vmEngine.uiMessageChanged.on((msg) => {
+      overlay = msg;
+    });
+
     // --- Change the execution state overlay text on change
     vmEngine.executionStateChanged.on((arg) => {
       execState = arg.newState;
@@ -272,6 +277,49 @@
   }
 </script>
 
+<svelte:window
+  on:keydown={(e) => handleKey(e, true)}
+  on:keyup={(e) => handleKey(e, false)}
+  on:blur={erasePressedKeys}
+/>
+<div
+  tabindex="-1"
+  class="emulator-panel"
+  bind:clientWidth
+  bind:clientHeight
+  bind:this={panelEl}
+>
+  <div
+    class="emulator-screen"
+    style={`width:${canvasWidth}px; height:${canvasHeight}px`}
+    on:click={() => (overlayHidden = false)}
+  >
+    {#if execState === 3 && showBeam}
+      <BeamOverlay
+        {panelRectangle}
+        {screenRectangle}
+        width={clientWidth}
+        height={clientHeight}
+        {tactToDisplay}
+      />
+    {/if}
+    {#if !overlayHidden}
+      <ExecutionStateOverlay
+        text={panelMessage ? panelMessage : overlay}
+        error={!!vmEngineError}
+        on:hide={() => (overlayHidden = true)}
+      />
+    {/if}
+    <canvas bind:this={screenEl} width={canvasWidth} height={canvasHeight} />
+    <canvas
+      bind:this={shadowScreenEl}
+      width={shadowCanvasWidth}
+      height={shadowCanvasHeight}
+      style="display:none"
+    />
+  </div>
+</div>
+
 <style>
   .emulator-panel {
     display: flex;
@@ -293,40 +341,3 @@
     background-color: #404040;
   }
 </style>
-
-<svelte:window
-  on:keydown={(e) => handleKey(e, true)}
-  on:keyup={(e) => handleKey(e, false)}
-  on:blur={erasePressedKeys} />
-<div
-  tabindex="-1"
-  class="emulator-panel"
-  bind:clientWidth
-  bind:clientHeight
-  bind:this={panelEl}>
-  <div
-    class="emulator-screen"
-    style={`width:${canvasWidth}px; height:${canvasHeight}px`}
-    on:click={() => (overlayHidden = false)}>
-    {#if execState === 3 && showBeam}
-      <BeamOverlay
-        {panelRectangle}
-        {screenRectangle}
-        width={clientWidth}
-        height={clientHeight}
-        {tactToDisplay} />
-    {/if}
-    {#if !overlayHidden}
-      <ExecutionStateOverlay
-        text={panelMessage ? panelMessage : overlay}
-        error={!!vmEngineError}
-        on:hide={() => (overlayHidden = true)} />
-    {/if}
-    <canvas bind:this={screenEl} width={canvasWidth} height={canvasHeight} />
-    <canvas
-      bind:this={shadowScreenEl}
-      width={shadowCanvasWidth}
-      height={shadowCanvasHeight}
-      style="display:none" />
-  </div>
-</div>

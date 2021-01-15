@@ -287,6 +287,9 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   KBLine5: number;
   KBLine6: number;
   KBLine7: number;
+
+  // --- Other
+  lcdWentOff: boolean;
 }
 
 /**

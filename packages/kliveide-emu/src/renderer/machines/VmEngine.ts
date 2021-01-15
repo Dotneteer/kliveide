@@ -57,6 +57,9 @@ export class VmEngine implements IVmEngineController {
   // --- Raise when the execution state of the machine has been changed
   private _executionStateChanged = new LiteEvent<VmStateChangedArgs>();
 
+  // --- Raise when the UI message changed
+  private _uiMessageChanged = new LiteEvent<string | null>();
+
   // --- Raise when it's time to refresh the screen
   private _screenRefreshed = new LiteEvent<void>();
 
@@ -78,6 +81,9 @@ export class VmEngine implements IVmEngineController {
   // --- Last machine-specific command executed
   private _lastCommand: string | null = null;
 
+  // --- Message to display on the UI
+  private _uiMessage: string | null = null;
+
   // --- Time monitoring
   private _sumFrameTime = 0.0;
   private _lastFrameTime = 0.0;
@@ -96,20 +102,21 @@ export class VmEngine implements IVmEngineController {
     this._loadedState = z80Machine.getMachineState();
     rendererProcessStore.dispatch(engineInitializedAction());
     this._stateAware = createRendererProcessStateAware("machineCommand");
-    this._stateAware.stateChanged.on(
-      async (command) => {
-        if (command !== this._lastCommand) {
-          try {
-            this._lastCommand = command as string;
-            if (this._lastCommand) {
-              await this.z80Machine.executeMachineCommand(this._lastCommand, this);
-            }
-          } finally {
-            rendererProcessStore.dispatch(machineCommandAction()());
+    this._stateAware.stateChanged.on(async (command) => {
+      if (command !== this._lastCommand) {
+        try {
+          this._lastCommand = command as string;
+          if (this._lastCommand) {
+            await this.z80Machine.executeMachineCommand(
+              this._lastCommand,
+              this
+            );
           }
+        } finally {
+          rendererProcessStore.dispatch(machineCommandAction()());
         }
       }
-    );
+    });
   }
 
   /**
@@ -124,6 +131,24 @@ export class VmEngine implements IVmEngineController {
    */
   signScreenRefreshed(): void {
     this._screenRefreshed.fire();
+  }
+
+  /**
+   * Gets the current UI message
+   */
+  getUiMessage(): string | null {
+    return this._uiMessage;
+  }
+
+  /**
+   * Sets a UI message to display
+   * @param message Message to display
+   */
+  setUiMessage(message: string | null): void {
+    if (this._uiMessage !== message) {
+      this._uiMessage = message;
+      this._uiMessageChanged.fire(message);
+    }
   }
 
   /**
@@ -202,6 +227,13 @@ export class VmEngine implements IVmEngineController {
    */
   get executionStateChanged(): ILiteEvent<VmStateChangedArgs> {
     return this._executionStateChanged.expose();
+  }
+
+  /**
+   * This event is raised whenever the UI message changes
+   */
+  get uiMessageChanged(): ILiteEvent<string | null> {
+    return this._uiMessageChanged.expose();
   }
 
   /**
