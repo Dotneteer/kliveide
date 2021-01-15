@@ -56,7 +56,7 @@
   <SplitContainer
     direction="vertical"
     refreshTag={keyboardVisible}
-    minimumSize={200}
+    minimumSize={80}
     bind:isMoving={splitterIsMoving}
     on:moved={async () => {
       initialHeight = keyboardHeight;

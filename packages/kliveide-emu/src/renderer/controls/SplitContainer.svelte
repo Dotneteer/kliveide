@@ -126,8 +126,8 @@
 <style>
   .split-container {
     display: flex;
-    flex-grow: 1;
-    flex-shrink: 1;
+    flex-grow: 0;
+    flex-shrink: 0;
     height: 100%;
     width: 100%;
   }
