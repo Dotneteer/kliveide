@@ -47,6 +47,25 @@
     i32.and
     i32.store8
   end
+
+  ;; Test if an interrupt should be raised
+  (i32.or
+    (i32.load offset=0 (get_global $KEYBOARD_LINES))
+    (i32.load offset=4 (get_global $KEYBOARD_LINES))
+  )
+  if
+    ;; A key is pressed. Do we need an interrupt?
+    (i32.and (get_global $INT) (i32.const $BM_INTKEY#))
+    if
+      (i32.eqz (i32.and (get_global $STA) (i32.const $BM_STAKEY#)))
+      if
+        ;; Yes, sign an interrupt
+        (i32.or (get_global $STA) (i32.const $BM_STAKEY#))
+        set_global $STA
+      end
+    end
+    call $awakeCpu
+  end
 )
 
 ;; Gets the status of the specified key

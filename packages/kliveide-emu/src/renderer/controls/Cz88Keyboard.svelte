@@ -8,8 +8,7 @@
   import { dkZ88KeyboardLayout } from "../machines/cz88/key-layout-dk";
   import { seZ88KeyboardLayout } from "../machines/cz88/key-layout-se";
 
-  import { getVmEngine } from "../machine-loader";
-
+  export let vmEngine;
   export let clientWidth;
   export let clientHeight;
   export let layout;
@@ -23,18 +22,18 @@
   const SQUARE_KEY = 62;
   const DIAMOND_KEY = 52;
 
-  let cz88;
   let clo;
 
   onMount(async () => {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
-    cz88 = await getVmEngine();
   });
 
   // --- Respond to panel size changes
   $: {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
   }
+
+  $: cz88 = vmEngine;
 
   $: {
     switch (layout) {

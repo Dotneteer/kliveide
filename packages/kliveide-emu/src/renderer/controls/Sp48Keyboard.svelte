@@ -2,8 +2,7 @@
   import { onMount } from "svelte";
   import Sp48Key from "./Sp48Key.svelte";
 
-  import { getVmEngine } from "../machine-loader";
-
+  export let vmEngine;
   export let clientWidth;
   export let clientHeight;
 
@@ -13,12 +12,11 @@
   let row1Shift;
   let row2Shift;
 
-  let spectrum;
-
   onMount(async () => {
     calculateDimensions(clientWidth, clientHeight, defaultWidth, defaultHeight);
-    spectrum = await getVmEngine();
   });
+
+  $: spectrum = vmEngine;
 
   // --- Respond to panel size changes
   $: {

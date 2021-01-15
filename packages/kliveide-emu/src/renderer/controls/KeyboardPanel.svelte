@@ -9,6 +9,7 @@
   export let sizedHeight;
   export let showPanel = true;
   export let layout;
+  export let vmEngine;
 
   let component = Sp48Keyboard;
 
@@ -48,6 +49,7 @@
     {#if showPanel}
       <svelte:component
         this={component}
+        {vmEngine}
         clientWidth={sizedWidth}
         clientHeight={sizedHeight} 
         {layout} />
