@@ -21,9 +21,20 @@
 
 ;; Resets main Blink registers
 (func $resetBlink
-  i32.const 0x00 set_global $INT
-  i32.const 0x00 set_global $STA
+  call $resetZ88Screen
+  
   i32.const 0x00 set_global $COM
+
+  call $resetRtc
+
+  ;;BM_INTFLAP | BM_INTTIME | BM_INTGINT
+  i32.const 0x23 set_global $INT
+  
+  ;; BM_TMKTICK
+  i32.const 0x01 set_global $TMK
+
+  i32.const 0x00 set_global $STA
+  i32.const 0x00 set_global $TSTA
 )
 
 ;; ============================================================================
@@ -41,11 +52,7 @@
   ;; Reset the timer when requested
   (i32.and (get_local $v) (i32.const $BM_COMRESTIM#))
   if
-    i32.const 0x98 set_global $TIM0
-    i32.const 0x00 set_global $TIM1
-    i32.const 0x00 set_global $TIM2
-    i32.const 0x00 set_global $TIM3
-    i32.const 0x00 set_global $TIM4
+    call $resetRtc
   end
 
   ;; RAMS flag may change, se emulate setting SR0 again
