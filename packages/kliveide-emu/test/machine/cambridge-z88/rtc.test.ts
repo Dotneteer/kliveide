@@ -39,7 +39,7 @@ describe("Cambridge Z88 - RTC", function () {
     expect(s.STA).toBe(0);
     expect(s.COM).toBe(0);
 
-    expect(s.TIM0).toBe(0x98);
+    expect(s.TIM0).toBe(0);
     expect(s.TIM1).toBe(0);
     expect(s.TIM2).toBe(0);
     expect(s.TIM3).toBe(0);
