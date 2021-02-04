@@ -242,7 +242,8 @@
 
   // --- Handles key presses
   function handleKey(e, isDown) {
-    if (!e) return;
+    if (!e || execState !== 1) return;
+    
     // --- Special key: both Shift released
     if (
       (e.code === "ShiftLeft" || e.code === "ShiftRight") &&

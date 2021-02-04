@@ -1,6 +1,9 @@
 ;; ============================================================================
 ;; Implements the Z88 keyboard device (Blink)
 
+;; Indicates if there is a key pressed
+(global $isKeypressed (mut i32) (i32.const 0x00))
+
 ;; Resets the keyboard
 (func $resetKeyboard
   (i32.store offset=0 (get_global $KEYBOARD_LINES) (i32.const 0x0000))
@@ -48,11 +51,15 @@
     i32.store8
   end
 
-  ;; Test if an interrupt should be raised
+  ;; Test if a key is pressed
   (i32.or
     (i32.load offset=0 (get_global $KEYBOARD_LINES))
     (i32.load offset=4 (get_global $KEYBOARD_LINES))
   )
+  set_global $isKeypressed
+
+  ;; If a key is pressed, we may need an interrupt
+  get_global $isKeypressed
   if
     ;; A key is pressed. Do we need an interrupt?
     (i32.and (get_global $INT) (i32.const $BM_INTKEY#))
@@ -64,7 +71,10 @@
         set_global $STA
       end
     end
-    call $awakeCpu
+    (i32.and (get_global $INT) (i32.const $BM_INTKWAIT#))
+    if
+      call $awakeCpu
+    end
   end
 )
 

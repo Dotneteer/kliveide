@@ -83,11 +83,12 @@
   if
     (i32.and (get_global $INT) (i32.const $BM_INTKWAIT#))
     if
-      call $snoozeCpu
-      i32.const 0xff
-      return
-    else
-      ;; The CPU is awake, just read the port value
+      (i32.eqz (get_global $isKeypressed))
+      if
+        call $snoozeCpu
+        i32.const 0xff
+        return
+      end
     end
     ;; Keyboard
     (call $getKeyLineStatus (i32.shr_u (get_local $addr) (i32.const 8)))
@@ -268,14 +269,6 @@
   if
     ;; INT, Set Main Blink Interrupts
     get_local $v set_global $INT
-    ;; (i32.and (get_local $v) (i32.const $BM_INTKEY#))
-    ;; if
-    ;;   i32.const 333333
-    ;;   call $trace
-    ;; else
-    ;;   i32.const 444444
-    ;;   call $trace
-    ;; end
     return
   end
 

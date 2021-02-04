@@ -30,157 +30,139 @@
 ;; $BM_TMKTICK# = 0x01      // TMK: Set to enable tick interrupt
 (global $TMK (mut i32) (i32.const 0x0000))
 
+;; Tick event to raise as an interrupt
+(global $tickEvent (mut i32) (i32.const 0x0000))
+
 ;; ============================================================================
 ;; Real-Time Clock methods
 
 ;; Resets the Z88 Real-Time Clock
 (func $resetRtc
-  i32.const 0x98 set_global $TIM0
+  i32.const 0x00 set_global $TIM0
   i32.const 0x00 set_global $TIM1
   i32.const 0x00 set_global $TIM2
   i32.const 0x00 set_global $TIM3
   i32.const 0x00 set_global $TIM4
-  i32.const 0x00 set_global $TSTA
-  i32.const 0x00 set_global $TMK
 )
 
 ;; Increments the Z88 Real-Time Clock (in every 5 ms)
 (func $incRtcCounter
+  ;; Sign no TICK event
+  (set_global $tickEvent (i32.const 0))
+
   (i32.and (get_global $COM) (i32.const $BM_COMRESTIM#))
   if
     ;; Stop Real Time Clock (RESTIM = 1) and reset counters
-    i32.const 0x98 set_global $TIM0
-    i32.const 0x00 set_global $TIM1
-    i32.const 0x00 set_global $TIM2
-    i32.const 0x00 set_global $TIM3
-    i32.const 0x00 set_global $TIM4
+    call $resetRtc
     return
   end
   
-  ;; fire a single interrupt for TSTA.TICK register, but only if the flap is closed
-  ;; (the Blink doesn't emit RTC interrupts while the flap is open, even if INT.TIME is enabled)
-  (i32.and (get_global $STA) (i32.const $BM_STAFLAPOPEN#))
-  (i32.eqz)
-  if
-    (i32.and (get_global $TMK) (i32.const $BM_TMKTICK#))
-    if
-      (i32.and (get_global $TSTA) (i32.const $BM_TSTATICK#))
-      i32.eqz
-      if
-        (i32.and (get_global $INT) (i32.const $BM_INTTIME#))
-        if
-          ;; INT.TIME interrupts are enabled, and Blink may signal it
-          ;; TMK.TICK interrupts are enabled, signal that a tick occurred
-          (i32.or (get_global $TSTA) (i32.const $BM_TSTATICK#))
-          set_global $TSTA
-        end
-      end
-    end
-  end
-
   ;; Increment TIM0
-  (i32.add (get_global $TIM0) (i32.const 1))
-  set_global $TIM0
+  (set_global $TIM0 (i32.add (get_global $TIM0) (i32.const 1)))
 
-  ;; Handle TIM0
+  ;; Test if TIM0 is to be reset
   (i32.gt_u (get_global $TIM0) (i32.const 199))
   if
-    i32.const 0 set_global $TIM0
-  end
-
-  (i32.eq (get_global $TIM0) (i32.const 0x80))
-  if
-    ;; Increment TIM1
-    (i32.add (get_global $TIM1) (i32.const 1))
-    set_global $TIM1
-
-    ;; signal interrupt only if the flap is closed (the Blink doesn't emit RTC interrupts while the flap is open,
-    ;; even if INT.TIME is enabled)
-    (i32.and (get_global $STA) (i32.const $BM_STAFLAPOPEN#))
-    (i32.eqz)
+    ;; When this counter reaches 200, wrap back to 0
+    (set_global $TIM0 (i32.const 0))
+  else
+    (i32.and (get_global $TIM0) (i32.const 0x01))
     if
-      (i32.and (get_global $TMK) (i32.const $BM_TMKSEC#))
+      ;; a 10ms TSTA.TICK event as occurred (every 2nd 5ms count)
+      (set_global $tickEvent (i32.const $BM_TSTATICK#))
+    end
+
+    (i32.eq (get_global $TIM0) (i32.const 128))
+    if
+      ;; According to blink dump monitoring on Z88, when TIM0 reaches 0x80 (bit 7), a second has passed
+      (set_global $TIM1 (i32.add (get_global $TIM1) (i32.const 1)))
+      (set_global $tickEvent (i32.const $BM_TMKSEC#))
+
+      (i32.gt_u (get_global $TIM1) (i32.const 59))
       if
-        (i32.and (get_global $TSTA) (i32.const $BM_TSTASEC#))
-        i32.eqz
+        ;; 60 seconds passed
+        (set_global $TIM1 (i32.const 0))
+
+        ;; Increment TIM2
+        (set_global $TIM2 (i32.add (get_global $TIM2) (i32.const 1)))
+        (i32.gt_u (get_global $TIM2) (i32.const 255))
         if
-          (i32.and (get_global $INT) (i32.const $BM_INTTIME#))
+          ;; 256 minutes has passed
+          (set_global $TIM2 (i32.const 0))
+
+          ;; Increment TIM3
+          (set_global $TIM3 (i32.add (get_global $TIM3) (i32.const 1)))
+          (i32.gt_u (get_global $TIM3) (i32.const 255))
           if
-            ;; INT.TIME interrupts are enabled, and Blink may signal it
-            ;; TMK.TICK interrupts are enabled, signal that a tick occurred
-            (i32.or (get_global $TSTA) (i32.const $BM_TSTASEC#))
-            set_global $TSTA
+            ;; 65535 minutes has passed
+            (set_global $TIM3 (i32.const 0))
+
+            ;; Increment TIM4
+            (set_global $TIM4 (i32.add (get_global $TIM4) (i32.const 1)))
+            (i32.gt_u (get_global $TIM4) (i32.const 31))
+            if
+              ;; 32 * 65535 minutes has passed
+              (set_global $TIM4 (i32.const 0))
+            end
           end
         end
       end
-    end
-  end
 
-  ;; Handle TIM1
-  (i32.gt_u (get_global $TIM1) (i32.const 59))
-  if
-    ;; 1 minute has passed
-    i32.const 0 set_global $TIM1
-
-    (i32.and (get_global $STA) (i32.const $BM_STAFLAPOPEN#))
-    (i32.eqz)
-    if
-      (i32.and (get_global $TMK) (i32.const $BM_TMKMIN#))
+      (i32.eq (get_global $TIM1) (i32.const 32))
       if
-        (i32.and (get_global $TSTA) (i32.const $BM_TSTAMIN#))
-        i32.eqz
-        if
-          (i32.and (get_global $INT) (i32.const $BM_INTTIME#))
-          if
-            ;; TMK.MIN interrupts are enabled, signal that a minute occurred only if it's not already signaled.
-            ;; but only if the flap is closed (the Blink doesn't emit RTC interrupts while the flap is open, even if INT.TIME is enabled)
-            ;; INT.TIME interrupts are enabled, and Blink may signal it
-            (i32.or (get_global $TSTA) (i32.const $BM_TSTAMIN#))
-            set_global $TSTA
-          end
-        end
-      end
-    end
-
-    ;; Increment TIM2
-    (i32.add (get_global $TIM2) (i32.const 1))
-    set_global $TIM2
-
-    (i32.gt_u (get_global $TIM2) (i32.const 255))
-    if
-      ;; 256 minutes passed
-      i32.const 0 set_global $TIM2
-
-      ;; Increment TIM3
-      (i32.add (get_global $TIM3) (i32.const 1))
-      set_global $TIM3
-
-      (i32.gt_u (get_global $TIM3) (i32.const 255))
-      if
-        ;; 65536 minutes passed
-        i32.const 0 set_global $TIM3
-
-        ;; Increment TIM4
-        (i32.add (get_global $TIM4) (i32.const 1))
-        set_global $TIM4
-
-        (i32.gt_u (get_global $TIM4) (i32.const 31))
-        if
-          ;; 65536 * 32 minutes passed
-          i32.const 0 set_global $TIM4
-        end        
+        ;; 1 minute has passed
+        (set_global $tickEvent (i32.const $BM_TSTAMIN#))
       end
     end
   end
 
-  (get_global $TSTA)
+  (i32.eqz (i32.and (get_global $INT) (i32.const $BM_INTGINT#)))
   if
-    ;; a combination of one or more time events has occurred
-    (i32.or (get_global $STA) (i32.const $BM_STATIME#))
-    set_global $STA
-
-    (i32.and (get_global $INT) (i32.const $BM_INTGINT#))
+    ;; No interrupts get out of Blink
+    return
+  end
+  
+  (i32.and (get_global $STA) (i32.const $BM_STAFLAPOPEN#))
+  if
+    ;; Flap is Open
+    ;; (on real hardware, there is no interrupt - in OZvm it's a trick to get 
+    ;; LCD switched off properly by the ROM)
+    ;; (guarantee there is no STA.TIME event)
+    ;; STA = STA & ~BM_STATIME
+    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    (i32.eqz (i32.rem_u (get_global $TIM0) (i32.const 3)))
     if
+      call $awakeCpu
+    end
+    return
+  end
+
+  (i32.eqz (i32.and (get_global $INT) (i32.const $BM_INTTIME#)))
+  if
+    ;; INT.TIME is not enabled (no RTC interrupts)
+    ;; No interrupt is fired
+    ;; STA = STA & ~BM_STATIME
+    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    return
+  end
+
+  (i32.eqz (get_global $TMK))
+  if
+    ;; No time event (a TMK.TICK, TMK.SEC or TMK.MIN) is enabled (not allowed to happen)
+    ;; No interrupt is fired
+    ;; STA = STA & ~BM_STATIME
+    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    return
+  end
+
+  get_global $tickEvent
+  if
+    ;; always signal what RTC event happened in Blink
+    (set_global $TSTA (get_global $tickEvent))
+    (i32.and (get_global $TMK) (get_global $tickEvent))
+    if
+      ;; only fire the interrupt that TMK is allowing to come out
+      (set_global $STA (i32.or (get_global $STA) (i32.const $BM_STATIME#)))
       call $awakeCpu
     end
   end
@@ -194,6 +176,7 @@
   loop $incCycle
     (get_local $ticks)
     if
+      (set_global $TSTA (i32.const 0))
       call $incRtcCounter
 
       (i32.sub (get_local $ticks) (i32.const 1))

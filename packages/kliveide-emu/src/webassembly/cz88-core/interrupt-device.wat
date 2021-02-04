@@ -97,20 +97,27 @@
 
 ;; Sets the value of the TACK register
 (func $setTACK (param $v i32)
-  (i32.and 
-    (get_global $TSTA)
-    ;; Create bit mask
-    (i32.xor
-      ;; 8-bit LSB
-      (i32.and (get_local $v) (i32.const 0xff))
-      (i32.const 0xff)
-    )
-  )
-  set_global $TSTA
+  (i32.and (get_local $v) (i32.const $BM_TSTATICK#))
+  if
+    ;; Reset BM_TSTATICK
+    (set_global $TSTA (i32.and (get_global $TSTA) (i32.const 0xfe)))
+  end
+
+  (i32.and (get_local $v) (i32.const $BM_TSTASEC#))
+  if
+    ;; Reset BM_TSTASEC
+    (set_global $TSTA (i32.and (get_global $TSTA) (i32.const 0xfd)))
+  end
+
+  (i32.and (get_local $v) (i32.const $BM_TSTAMIN#))
+  if
+    ;; Reset BM_TSTAMIN
+    (set_global $TSTA (i32.and (get_global $TSTA) (i32.const 0xfb)))
+  end
+
   (i32.eqz (get_global $TSTA))
   if
-    (i32.and (get_global $STA) (i32.const $BM_STATIME_MASK#))
-    set_global $STA
+    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
   end
 )
 

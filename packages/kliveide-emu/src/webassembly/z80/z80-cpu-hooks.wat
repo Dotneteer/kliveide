@@ -87,7 +87,7 @@
   end
 )
 
-;; Invokes the $intExecuted diagnostics hook method
+;; Invokes the $halted diagnostics hook method
 (func $hookHalted
   (i32.and (get_global $cpuDiagnostics) (i32.const $HK_HALTED#))
   if

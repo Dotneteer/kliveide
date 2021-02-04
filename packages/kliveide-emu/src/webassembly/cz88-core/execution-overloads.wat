@@ -15,6 +15,12 @@
 
 ;; The execution engine is about to execute a CPU cycle
 (func $afterCpuCycle (param $frameTact i32)
+  ;; Awake the CPU whenever a key is pressed
+  get_global $isKeypressed
+  if
+    call $awakeCpu
+  end
+
   ;; Check for interrupt
   (call $isMaskableInterruptRequested)
   if (result i32)
@@ -48,11 +54,21 @@
   ;; 5ms frame completed, update the real time clock
   call $incRtcCounter
 
+;; Check again if a key is pressed
+  (i32.or
+    (i32.load offset=0 (get_global $KEYBOARD_LINES))
+    (i32.load offset=4 (get_global $KEYBOARD_LINES))
+  )
+  set_global $isKeypressed
+
   ;; Awake the CPU when a key is pressed
-  (i32.load offset=0 (get_global $KEYBOARD_LINES))
+  get_global $isKeypressed
   if
     ;; A keyboard status bit is set in one of the first 4 lines
-    call $awakeCpu
+    (i32.and (get_global $INT) (i32.const $BM_INTKWAIT#))
+    if
+      call $awakeCpu
+    end
   else
     (i32.load offset=4 (get_global $KEYBOARD_LINES))
     if

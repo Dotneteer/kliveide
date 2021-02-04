@@ -79,9 +79,13 @@
           br $instructionLoop
         end
       end 
-      (call $afterCpuCycle (get_local $currentFrameTact))
+    else
+      ;; Mimic that time is passing
+      (i32.add (get_global $tacts) (i32.const 10))
+      set_global $tacts
     end
-
+    (call $afterCpuCycle (get_local $currentFrameTact))
+    
     ;; Check termination point
     (call $beforeTerminationCheck (get_local $currentFrameTact))
     call $testIfTerminationPointReached
@@ -153,16 +157,8 @@
     call $afterTerminationCheck
 
     ;; Test frame completion
-    (get_global $cpuSnoozed)
-    if
-      ;; When the CPU is snoozed, the frame completes
-      (set_local $currentFrameTact (get_global $tactsInFrame))
-      (set_global $frameCompleted (i32.const 1))
-    else
-      ;; Active CPU, check if all frame tacts ran
-      (i32.ge_u (get_local $currentFrameTact) (get_global $tactsInFrame))
-      set_global $frameCompleted
-    end
+    (i32.ge_u (get_local $currentFrameTact) (get_global $tactsInFrame))
+    set_global $frameCompleted
 
     (br_if $frameCycle (i32.eqz (get_global $frameCompleted)))
   end
