@@ -107,12 +107,12 @@
           end
         end
       end
-    end
-  
-    (i32.eq (get_global $TIM1) (i32.const 32))
-    if
-      ;; 1 minute has passed
-      (set_global $tickEvent (i32.const $BM_TSTAMIN#))
+
+      (i32.eq (get_global $TIM1) (i32.const 32))
+      if
+        ;; 1 minute has passed
+        (set_global $tickEvent (i32.const $BM_TSTAMIN#))
+      end
     end
   end
 
@@ -176,6 +176,7 @@
   loop $incCycle
     (get_local $ticks)
     if
+      (set_global $TSTA (i32.const 0))
       call $incRtcCounter
 
       (i32.sub (get_local $ticks) (i32.const 1))
