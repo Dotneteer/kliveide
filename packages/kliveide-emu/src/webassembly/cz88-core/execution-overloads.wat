@@ -78,14 +78,8 @@
   end
 
   ;; Set flash phase
-  (i32.add (get_global $flashCount) (i32.const 1))
-  set_global $flashCount
-  (i32.ge_u (get_global $flashCount) (get_global $flashToggleCount))
-  if
-    (set_global $flashCount (i32.const 0))
-    (i32.xor (get_global $flashPhase) (i32.const 0x01))
-    set_global $flashPhase
-  end
+  (i32.le_u (get_global $TIM0) (i32.const 120))
+  set_global $flashPhase
 
   ;; Set text flash phase
   (i32.add (get_global $textFlashCount) (i32.const 1))
