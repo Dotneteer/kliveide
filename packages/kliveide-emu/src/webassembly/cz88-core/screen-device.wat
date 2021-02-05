@@ -51,9 +51,6 @@
 ;; Number of screen frames rendered
 (global $screenFrameCount (mut i32) (i32.const 0x0000))
 
-;; Flash toggle counter
-(global $flashToggleCount (mut i32) (i32.const 0x0000))
-
 ;; Current flash phase
 (global $flashPhase (mut i32) (i32.const 0x0000))
 
@@ -136,7 +133,6 @@
   (set_global $SCH (get_global $defaultSCH))
   (set_global $SCW (get_global $defaultSCW))
   (set_global $screenFrameCount (i32.const 0))
-  (set_global $flashToggleCount (i32.const 140))
   (set_global $flashPhase (i32.const 0))
   (set_global $textFlashToggleCount (i32.const 200))
   (set_global $textFlashPhase (i32.const 0))
