@@ -26,6 +26,14 @@
 ;; $BM_STATIME_MASK# = 0xfe // Bit 0 reset mask
 (global $STA (mut i32) (i32.const 0x0000))
 
+;; Signs if interrupt is active
+(global $interruptSignalActive (mut i32) (i32.const 0x0000))
+
+;; Set the value of STA
+(func $setSTA (param $v i32)
+  (set_global $STA (get_local $v))
+)
+
 ;; Tests if the maskable interrupt has been requested
 (func $isMaskableInterruptRequested (result i32)
   ;; Is the BM_INTGINT flag set?
@@ -33,12 +41,14 @@
   if
     (i32.and (get_global $INT) (get_global $STA))
     if
+      (set_global $interruptSignalActive (i32.const 1))
       i32.const 1
       return
     end
   end
 
   ;; No interrupt
+  (set_global $interruptSignalActive (i32.const 0))
   i32.const 0
 )
 
@@ -64,7 +74,7 @@
 
   (i32.eqz (get_global $TSTA))
   if
-    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    (call $setSTA (i32.and (get_global $STA) (i32.const 0xfe)))
   end
 )
 
@@ -79,5 +89,5 @@
       (i32.const 0xff)
     )
   )
-  set_global $STA
+  call $setSTA
 )
