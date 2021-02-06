@@ -81,7 +81,7 @@
       end 
     else
       ;; Mimic that time is passing
-      (i32.add (get_global $tacts) (i32.const 10))
+      (i32.add (get_global $tacts) (i32.const 12))
       set_global $tacts
     end
     (call $afterCpuCycle (get_local $currentFrameTact))

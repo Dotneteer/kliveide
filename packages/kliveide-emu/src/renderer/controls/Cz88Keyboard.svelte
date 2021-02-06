@@ -73,6 +73,7 @@
 
     // --- Set status of the secondary key
     switch (ev.iconCount) {
+      case 0:
       case 1:
         if (!ev.isLeft) {
           cz88.setKeyStatus(LEFT_SHIFT_KEY, ev.isDown);
