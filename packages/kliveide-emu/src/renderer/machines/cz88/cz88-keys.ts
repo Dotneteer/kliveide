@@ -193,7 +193,7 @@ const usMapping: KeyMapping = {
   F2: "Index",
   F3: "Menu",
   F7: "CapsLock",
-  F6: ["ShiftL", "ShiftR"]
+  F6: ["ShiftL" , "ShiftR"]
 }
 
 /**

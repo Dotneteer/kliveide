@@ -4,6 +4,9 @@
 ;; Indicates if there is a key pressed
 (global $isKeypressed (mut i32) (i32.const 0x00))
 
+(global $isLeftShiftDown (mut i32) (i32.const 0x00))
+(global $isRightShiftDown (mut i32) (i32.const 0x00))
+
 ;; Resets the keyboard
 (func $resetKeyboard
   (i32.store offset=0 (get_global $KEYBOARD_LINES) (i32.const 0x0000))
@@ -18,6 +21,19 @@
   ;; Ignore invalid key codes
   (i32.gt_u (get_local $keyCode) (i32.const 63))
   if return end
+
+  ;; Special shift handling in sleep mode
+  get_global $isInSleepMode
+  if
+    (i32.eq (get_local $keyCode) (i32.const 63))
+    if
+      (set_global $isRightShiftDown (get_local $isDown))
+    end
+    (i32.eq (get_local $keyCode) (i32.const 54))
+    if
+      (set_global $isLeftShiftDown (get_local $isDown))
+    end
+  end
 
   ;; Calculate line address
   (i32.add 

@@ -1,3 +1,9 @@
+;; Indicates that keys were released after the Z88 went to sleep
+(global $shiftsReleased (mut i32) (i32.const 0x0000))
+
+;; Indicates if Z88 is in halt mode
+(global $isInSleepMode (mut i32) (i32.const 0x0000))
+
 ;; Should CPU clock change be allowed?
 (func $allowCpuClockChange (result i32)
   i32.const 1
@@ -64,15 +70,9 @@
   ;; Awake the CPU when a key is pressed
   get_global $isKeypressed
   if
-    ;; A keyboard status bit is set in one of the first 4 lines
+    ;; A keyboard key is pressed, maybe the CPU should be woken up
     (i32.and (get_global $INT) (i32.const $BM_INTKWAIT#))
     if
-      call $awakeCpu
-    end
-  else
-    (i32.load offset=4 (get_global $KEYBOARD_LINES))
-    if
-      ;; A keyboard status bit is set in one of the second 4 lines
       call $awakeCpu
     end
   end
@@ -96,5 +96,84 @@
   i32.eqz
   if
     call $renderScreen
+  end
+
+  ;; Check id the CPU is HALTed
+  (i32.and (get_global $cpuSignalFlags) (i32.const $SIG_HLT#))
+  if
+    ;; Check if I is 0x3F
+    (i32.eq (i32.load8_u (i32.const $I#)) (i32.const 0x3f))
+    if
+      (set_global $isInSleepMode (i32.const 1))
+      get_global $shiftsReleased
+      if
+        ;; Test if both shift keys are pressed again
+        (i32.or
+          ;; Test right shift
+          (i32.and
+           (i32.load8_u offset=7 (get_global $KEYBOARD_LINES))
+           (i32.const 0x80)
+          )
+          ;; Test left shift
+          (i32.and
+            (i32.load8_u offset=6 (get_global $KEYBOARD_LINES))
+            (i32.const 0x40)
+          )
+        )
+        (i32.eq (i32.const 0xc0))
+        if
+          (set_global $shiftsReleased (i32.const 0))
+          return
+        end
+      else
+        ;; Test if both shift keys are released
+        (i32.or
+          ;; Test right shift released
+          (i32.and
+            (i32.load8_u offset=7 (get_global $KEYBOARD_LINES))
+            (i32.const 0x80)
+          )
+          ;; Test left shift released
+          (i32.and
+            (i32.load8_u offset=6 (get_global $KEYBOARD_LINES))
+            (i32.const 0x40)
+          )
+        )
+        i32.eqz
+        if
+          ;; Sign that both shift keys are released
+          (set_global $shiftsReleased (i32.const 1))
+        end
+      end
+    else
+      (set_global $isInSleepMode (i32.const 0))
+    end
+  else
+    (set_global $isInSleepMode (i32.const 0))
+  end
+
+  ;; Special shift key handling for sleep mode
+  get_global $isInSleepMode
+  if
+    (i32.and (get_global $isLeftShiftDown) (get_global $isRightShiftDown))
+    if
+      ;; Sign both shift as pressed
+      (i32.store8 offset=7 
+        (get_global $KEYBOARD_LINES)
+        ;; Set right shift
+        (i32.or
+          (i32.load8_u offset=7 (get_global $KEYBOARD_LINES))
+          (i32.const 0x80)
+        )
+      )
+      (i32.store8 offset=6
+        (get_global $KEYBOARD_LINES)
+        ;; Set left shift
+        (i32.and
+          (i32.load8_u offset=6 (get_global $KEYBOARD_LINES))
+          (i32.const 0x40)
+        )
+      )
+    end
   end
 )

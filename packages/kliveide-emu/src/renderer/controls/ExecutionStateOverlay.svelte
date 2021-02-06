@@ -19,6 +19,7 @@
     height: 0;
     left: 8px;
     top: 8px;
+    margin-right: 16px;
   }
 
   .overlay-text {
