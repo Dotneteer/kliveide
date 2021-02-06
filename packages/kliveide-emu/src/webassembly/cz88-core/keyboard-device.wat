@@ -84,7 +84,7 @@
       if
         ;; Yes, sign an interrupt
         (i32.or (get_global $STA) (i32.const $BM_STAKEY#))
-        set_global $STA
+        call $setSTA
       end
     end
     (i32.and (get_global $INT) (i32.const $BM_INTKWAIT#))

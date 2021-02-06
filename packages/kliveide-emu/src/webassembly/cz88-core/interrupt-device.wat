@@ -26,20 +26,29 @@
 ;; $BM_STATIME_MASK# = 0xfe // Bit 0 reset mask
 (global $STA (mut i32) (i32.const 0x0000))
 
+;; Signs if interrupt is active
+(global $interruptSignalActive (mut i32) (i32.const 0x0000))
+
+;; Set the value of STA
+(func $setSTA (param $v i32)
+  (set_global $STA (get_local $v))
+  call $isMaskableInterruptRequested
+)
+
 ;; Tests if the maskable interrupt has been requested
-(func $isMaskableInterruptRequested (result i32)
+(func $isMaskableInterruptRequested
   ;; Is the BM_INTGINT flag set?
   (i32.and (get_global $INT) (i32.const $BM_INTGINT#))
   if
     (i32.and (get_global $INT) (get_global $STA))
     if
-      i32.const 1
+      (set_global $interruptSignalActive (i32.const 1))
       return
     end
   end
 
   ;; No interrupt
-  i32.const 0
+  (set_global $interruptSignalActive (i32.const 0))
 )
 
 ;; Sets the value of the TACK register
@@ -64,7 +73,7 @@
 
   (i32.eqz (get_global $TSTA))
   if
-    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    (call $setSTA (i32.and (get_global $STA) (i32.const 0xfe)))
   end
 )
 
@@ -79,5 +88,5 @@
       (i32.const 0xff)
     )
   )
-  set_global $STA
+  call $setSTA
 )

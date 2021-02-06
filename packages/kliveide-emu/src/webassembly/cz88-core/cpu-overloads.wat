@@ -268,7 +268,7 @@
   (i32.eq (get_local $addr8) (i32.const 0xb1))
   if
     ;; INT, Set Main Blink Interrupts
-    get_local $v set_global $INT
+    (call $setINT (get_local $v))
     return
   end
 

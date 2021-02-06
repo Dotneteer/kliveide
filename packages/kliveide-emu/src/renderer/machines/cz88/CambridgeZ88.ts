@@ -269,7 +269,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     const state = resultState as CambridgeZ88MachineState;
     this.vmEngineController.setUiMessage(
       state.lcdWentOff
-        ? "Z88 turned the LCD off (no activity). Press either F6 or press both SHIFT keys and keep them firmly down to use Z88 again."
+        ? "Z88 turned the LCD off (no activity). Press F6 to use Z88 again."
         : null
     );
     if (toWait >= 0) {

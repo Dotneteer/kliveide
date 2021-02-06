@@ -129,7 +129,7 @@
     ;; LCD switched off properly by the ROM)
     ;; (guarantee there is no STA.TIME event)
     ;; STA = STA & ~BM_STATIME
-    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    (call $setSTA (i32.and (get_global $STA) (i32.const 0xfe)))
     (i32.eqz (i32.rem_u (get_global $TIM0) (i32.const 3)))
     if
       call $awakeCpu
@@ -142,7 +142,7 @@
     ;; INT.TIME is not enabled (no RTC interrupts)
     ;; No interrupt is fired
     ;; STA = STA & ~BM_STATIME
-    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    (call $setSTA (i32.and (get_global $STA) (i32.const 0xfe)))
     return
   end
 
@@ -151,7 +151,7 @@
     ;; No time event (a TMK.TICK, TMK.SEC or TMK.MIN) is enabled (not allowed to happen)
     ;; No interrupt is fired
     ;; STA = STA & ~BM_STATIME
-    (set_global $STA (i32.and (get_global $STA) (i32.const 0xfe)))
+    (call $setSTA (i32.and (get_global $STA) (i32.const 0xfe)))
     return
   end
 
@@ -162,7 +162,7 @@
     (i32.and (get_global $TMK) (get_global $tickEvent))
     if
       ;; only fire the interrupt that TMK is allowing to come out
-      (set_global $STA (i32.or (get_global $STA) (i32.const $BM_STATIME#)))
+      (call $setSTA (i32.or (get_global $STA) (i32.const $BM_STATIME#)))
       call $awakeCpu
     end
   end

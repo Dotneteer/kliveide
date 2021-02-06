@@ -28,17 +28,23 @@
   call $resetRtc
 
   ;;BM_INTFLAP | BM_INTTIME | BM_INTGINT
-  i32.const 0x23 set_global $INT
+  (call $setINT (i32.const 0x23))
   
   ;; BM_TMKTICK
   i32.const 0x01 set_global $TMK
 
-  i32.const 0x00 set_global $STA
+  (call $setSTA (i32.const 0x00))
   i32.const 0x00 set_global $TSTA
 )
 
 ;; ============================================================================
 ;; Register setter functions
+
+;; Set the value of INT
+(func $setINT (param $v i32)
+  (set_global $INT (get_local $v))
+  call $isMaskableInterruptRequested
+)
 
 ;; Sets the value of COM
 (func $setCOM (param $v i32)

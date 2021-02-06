@@ -28,7 +28,7 @@
   end
 
   ;; Check for interrupt
-  (call $isMaskableInterruptRequested)
+  (get_global $interruptSignalActive)
   if (result i32)
     ;; Set the interrupt signal
     (i32.or (get_global $cpuSignalFlags) (i32.const $SIG_INT#))
