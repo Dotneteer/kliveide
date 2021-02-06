@@ -43,6 +43,7 @@
 ;; Set the value of INT
 (func $setINT (param $v i32)
   (set_global $INT (get_local $v))
+  call $isMaskableInterruptRequested
 )
 
 ;; Sets the value of COM

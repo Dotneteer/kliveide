@@ -32,24 +32,23 @@
 ;; Set the value of STA
 (func $setSTA (param $v i32)
   (set_global $STA (get_local $v))
+  call $isMaskableInterruptRequested
 )
 
 ;; Tests if the maskable interrupt has been requested
-(func $isMaskableInterruptRequested (result i32)
+(func $isMaskableInterruptRequested
   ;; Is the BM_INTGINT flag set?
   (i32.and (get_global $INT) (i32.const $BM_INTGINT#))
   if
     (i32.and (get_global $INT) (get_global $STA))
     if
       (set_global $interruptSignalActive (i32.const 1))
-      i32.const 1
       return
     end
   end
 
   ;; No interrupt
   (set_global $interruptSignalActive (i32.const 0))
-  i32.const 0
 )
 
 ;; Sets the value of the TACK register
