@@ -25,3 +25,4 @@
 (export "clearMemory" (func $clearMemory))
 (export "setZ88ScreenSize" (func $setZ88ScreenSize))
 (export "raiseBatteryLow" (func $raiseBatteryLow))
+(export "setBeeperSampleRate" (func $setBeeperSampleRate))

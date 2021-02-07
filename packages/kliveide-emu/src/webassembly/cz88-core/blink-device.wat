@@ -69,6 +69,14 @@
     call $resetRtc
   end
 
+  ;; Set the last beeper bit 
+  (i32.eqz (i32.and (get_local $v) (i32.const $BM_COMSRUN#)))
+  if
+    ;; Beeper bit
+    (i32.and (get_local $v) (i32.const $BM_COMSBIT#))
+    set_global $beeperLastEarBit
+  end
+
   ;; RAMS flag may change, se emulate setting SR0 again
   (call $setSR0 (i32.load8_u offset=0 (get_global $Z88_SR)))
 )

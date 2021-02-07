@@ -2,6 +2,7 @@ import { MachineApi } from "../wa-api";
 import { MemoryHelper } from "../memory-helpers";
 import {
   BLOCK_LOOKUP_TABLE,
+  CZ88_BEEPER_BUFFER,
   PIXEL_BUFFER,
   STATE_TRANSFER_BUFF,
   Z88_MEM_AREA,
@@ -22,6 +23,8 @@ import {
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
 import { IVmEngineController } from "../IVmEngineController";
+import { IAudioRenderer } from "../IAudioRenderer";
+import { ICambridgeZ88BaseStateManager } from "./ICambrideZ88BaseStateMananger";
 
 /**
  * This class implements the Cambride Z88 machine
@@ -45,6 +48,16 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   // --- Screen dimensions
   private _screenWidth = 0;
   private _screenHeight = 0;
+
+  // --- Beeper emulation
+  private _beeperRenderer: IAudioRenderer | null = null;
+
+  // --- A factory method for audio renderers
+  private _audioRendererFactory: (sampleRate: number) => IAudioRenderer = () =>
+    new SilentAudioRenderer();
+
+  // --- A state manager factory
+  private _stateManager: ICambridgeZ88BaseStateManager = new DefaultCambridgeZ88BaseStateManager();
 
   /**
    * Creates a new instance of the ZX Spectrum machine
@@ -80,6 +93,24 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
       this.options?.scw ?? 0xff,
       this.options?.sch ?? 8
     );
+  }
+
+  /**
+   * Assigns an audio renderer factory to this instance
+   * @param factory Audio renderer factory
+   */
+  setAudioRendererFactory(
+    factory: (sampleRate: number) => IAudioRenderer
+  ): void {
+    this._audioRendererFactory = factory;
+  }
+
+  /**
+   * Sets the ZX Spectrum base state manage object
+   * @param manager State manager object
+   */
+  setStateManager(manager: ICambridgeZ88BaseStateManager): void {
+    this._stateManager = manager;
   }
 
   /**
@@ -188,6 +219,8 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.KBLine7 = mh.readByte(199);
     s.lcdWentOff = mh.readBool(200);
     s.isInSleepMode = mh.readBool(201);
+    s.audioSampleLength = mh.readUint32(202);
+    s.audioSampleCount = mh.readUint32(206);
 
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
@@ -248,7 +281,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * @param rate Sample rate
    */
   setAudioSampleRate(rate: number): void {
-    // TODO: Implement this method
+    this.api.setBeeperSampleRate(rate);
   }
 
   /**
@@ -258,6 +291,53 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   async prepareForInjection(_model: string): Promise<number> {
     // TODO: Implement this method
     return 0;
+  }
+
+  /**
+   * Cleans up audio
+   */
+  async cleanupAudio(): Promise<void> {
+    if (this._beeperRenderer) {
+      await this._beeperRenderer.closeAudio();
+      this._beeperRenderer = null;
+    }
+  }
+
+  // ==========================================================================
+  // Lifecycle methods
+
+  /**
+   * Override this method to define an action when the virtual machine has
+   * started.
+   * @param debugging Is started in debug mode?
+   */
+  async beforeStarted(debugging: boolean): Promise<void> {
+    await super.beforeStarted(debugging);
+
+    // --- Init audio renderers
+    const state = this.getMachineState();
+    this._beeperRenderer = this._audioRendererFactory(
+      state.tactsInFrame / state.audioSampleLength
+    );
+    this._beeperRenderer.suspend();
+    await this._beeperRenderer.initializeAudio();
+  }
+
+  /**
+   * Stops audio when the machine has paused
+   * @param isFirstPause Is the machine paused the first time?
+   */
+  async onPaused(isFirstPause: boolean): Promise<void> {
+    await super.onPaused(isFirstPause);
+    this.cleanupAudio();
+  }
+
+  /**
+   * Stops audio when the machine has stopped
+   */
+  async onStopped(): Promise<void> {
+    await super.onStopped();
+    this.cleanupAudio();
   }
 
   /**
@@ -277,6 +357,19 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     );
     if (toWait >= 0) {
       this.vmEngineController.signScreenRefreshed();
+    }
+
+    // --- Update load state
+    const emuState = this._stateManager.getState().emulatorPanelState;
+
+    if (!this.executionOptions.disableScreenRendering) {
+      // --- Obtain beeper samples
+      let mh = new MemoryHelper(this.api, CZ88_BEEPER_BUFFER);
+      const beeperSamples = mh
+        .readBytes(0, resultState.audioSampleCount)
+        .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
+      this._beeperRenderer.storeSamples(beeperSamples);
+      this._beeperRenderer.resume();
     }
   }
 
@@ -301,7 +394,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
       case CZ88_PRESS_BOTH_SHIFTS:
         this.api.setKeyStatus(cz88KeyCodes.ShiftL, true);
         this.api.setKeyStatus(cz88KeyCodes.ShiftR, true);
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 400));
         this.api.setKeyStatus(cz88KeyCodes.ShiftL, false);
         this.api.setKeyStatus(cz88KeyCodes.ShiftR, false);
         break;
@@ -310,7 +403,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         if (state.isInSleepMode) {
           this.api.setKeyStatus(cz88KeyCodes.ShiftL, true);
           this.api.setKeyStatus(cz88KeyCodes.ShiftR, true);
-          await new Promise(r => setTimeout(r, 400));
+          await new Promise((r) => setTimeout(r, 400));
           this.api.setKeyStatus(cz88KeyCodes.ShiftL, false);
           this.api.setKeyStatus(cz88KeyCodes.ShiftR, false);
         }
@@ -350,4 +443,24 @@ export enum TmkFlags {
   BM_TMKTICK = 0x01,
   BM_TMKSEC = 0x02,
   BM_TMKMIN = 0x04,
+}
+
+/**
+ * Provides a way to test a Z88 virtual machine in Node
+ */
+class SilentAudioRenderer implements IAudioRenderer {
+  async initializeAudio(): Promise<void> {}
+  storeSamples(_samples: number[]): void {}
+  suspend(): void {}
+  resume(): void {}
+  async closeAudio(): Promise<void> {}
+}
+
+/**
+ * A no-op implementation of class DefaultZxSpectrumBaseStateManager implements ICambridgeZ88BaseStateManager {
+
+ */
+class DefaultCambridgeZ88BaseStateManager
+  implements ICambridgeZ88BaseStateManager {
+  getState(): any {}
 }

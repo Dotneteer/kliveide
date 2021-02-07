@@ -68,6 +68,9 @@
   (i32.store offset=196 (get_global $STATE_TRANSFER_BUFF) (i32.load offset=4 (get_global $KEYBOARD_LINES)))
   (i32.store8 offset=200 (get_global $STATE_TRANSFER_BUFF) (get_global $lcdWentOff))
   (i32.store8 offset=201 (get_global $STATE_TRANSFER_BUFF) (get_global $isInSleepMode))
+  (i32.store8 offset=201 (get_global $STATE_TRANSFER_BUFF) (get_global $isInSleepMode))
+  (i32.store offset=202 (get_global $STATE_TRANSFER_BUFF) (get_global $audioSampleLength))
+  (i32.store offset=206 (get_global $STATE_TRANSFER_BUFF) (get_global $audioSampleCount))
 )
 
 ;; ============================================================================

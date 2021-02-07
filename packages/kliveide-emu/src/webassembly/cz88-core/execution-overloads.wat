@@ -11,7 +11,16 @@
 
 ;; The execution engine starts a new frame
 (func $onInitNewFrame (param $oldClockMultiplier i32)
-  ;; TODO: Implement this method
+  ;; Reset beeper frame state for every 8th frame
+  (i32.and (get_global $frameCount) (i32.const 0x07))
+  i32.eqz
+  if
+    (i32.ne (get_local $oldClockMultiplier) (get_global $clockMultiplier))
+    if
+      (call $setBeeperSampleRate (get_global $audioSampleRate))
+    end 
+    i32.const 0 set_global $audioSampleCount
+  end
 )
 
 ;; The execution engine is about to execute a CPU cycle
@@ -52,7 +61,57 @@
 
 ;; The execution engine is after checking loop termination
 (func $afterTerminationCheck
-  ;; TODO: Implement this method
+  ;; Is it time to render the next beeper/sound sample?
+  (i32.ge_u (get_global $tacts) (get_global $audioNextSampleTact))
+  if
+    ;; Current bit of the oscillator
+    call $calculateOscillatorBit
+
+    ;; Render next beeper sample
+    ;; Buffer address
+    (i32.add (get_global $CZ88_BEEPER_BUFFER) (get_global $audioSampleCount))
+
+    ;; Sound sample
+    (i32.and (get_global $COM) (i32.const $BM_COMSRUN#))
+    if (result i32)
+      ;; Use Txd or 3200 Hz
+      (i32.and (get_global $COM) (i32.const $BM_COMSBIT#))
+      if (result i32)
+        ;; Implement TxD later
+        i32.const 0
+      else
+        get_global $oscillatorBit
+      end
+    else
+      ;; Use SBIT
+      get_global $beeperLastEarBit
+    end
+
+    ;; Render and store
+    i32.eqz
+    i32.eqz
+    i32.store8 
+
+    ;; Adjust sample count
+    (i32.add (get_global $audioSampleCount) (i32.const 1))
+    set_global $audioSampleCount
+
+    ;; Calculate next sample tact
+    (i32.add (get_global $audioGateValue) (get_global $audioLowerGate))
+    set_global $audioGateValue
+    (i32.add (get_global $audioNextSampleTact) (get_global $audioSampleLength))
+    set_global $audioNextSampleTact
+
+    (i32.ge_u (get_global $audioGateValue) (get_global $audioUpperGate))
+    if
+      ;; Shift the next sample 
+      (i32.add (get_global $audioNextSampleTact) (i32.const 1))
+      set_global $audioNextSampleTact
+
+      (i32.sub (get_global $audioGateValue) (get_global $audioUpperGate))
+      set_global $audioGateValue
+    end
+  end
 )
 
 ;; The execution engine has just completed the current frame
@@ -176,4 +235,15 @@
       )
     end
   end
+
+  ;; Prepare for the next beeper sample rate that may overflow to the next frame
+  (i32.gt_u (get_global $audioNextSampleTact) (get_global $tacts))
+  if
+    (i32.sub 
+      (get_global $audioNextSampleTact)
+      (i32.mul (get_global $tactsInFrame) (get_global $clockMultiplier))
+    )
+    set_global $audioNextSampleTact
+  end
+
 )
