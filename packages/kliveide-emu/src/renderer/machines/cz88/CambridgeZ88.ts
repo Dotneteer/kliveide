@@ -16,7 +16,9 @@ import { KeyMapping } from "../keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
 import { ExtraMachineFeatures } from "../Z80MachineBase";
 import {
+  CZ88_BATTERY_LOW,
   CZ88_HARD_RESET,
+  CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
 import { IVmEngineController } from "../IVmEngineController";
@@ -185,6 +187,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.KBLine6 = mh.readByte(198);
     s.KBLine7 = mh.readByte(199);
     s.lcdWentOff = mh.readBool(200);
+    s.isInSleepMode = mh.readBool(201);
 
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
@@ -293,9 +296,25 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         break;
       case CZ88_HARD_RESET:
         await controller.stop();
-        this.api.turnOnMachine();
-        //this.api.clearMemory();
         await controller.start();
+        break;
+      case CZ88_PRESS_BOTH_SHIFTS:
+        this.api.setKeyStatus(cz88KeyCodes.ShiftL, true);
+        this.api.setKeyStatus(cz88KeyCodes.ShiftR, true);
+        await new Promise(r => setTimeout(r, 400));
+        this.api.setKeyStatus(cz88KeyCodes.ShiftL, false);
+        this.api.setKeyStatus(cz88KeyCodes.ShiftR, false);
+        break;
+      case CZ88_BATTERY_LOW:
+        const state = this.getMachineState();
+        if (state.isInSleepMode) {
+          this.api.setKeyStatus(cz88KeyCodes.ShiftL, true);
+          this.api.setKeyStatus(cz88KeyCodes.ShiftR, true);
+          await new Promise(r => setTimeout(r, 400));
+          this.api.setKeyStatus(cz88KeyCodes.ShiftL, false);
+          this.api.setKeyStatus(cz88KeyCodes.ShiftR, false);
+        }
+        this.api.raiseBatteryLow();
         break;
     }
   }

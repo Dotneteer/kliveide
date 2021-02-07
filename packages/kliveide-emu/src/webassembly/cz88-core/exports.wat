@@ -24,3 +24,4 @@
 (export "writePortCz88" (func $writePort))
 (export "clearMemory" (func $clearMemory))
 (export "setZ88ScreenSize" (func $setZ88ScreenSize))
+(export "raiseBatteryLow" (func $raiseBatteryLow))
