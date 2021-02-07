@@ -13,6 +13,7 @@ import { CambridgeZ88 } from "./machines/cz88/CambridgeZ88";
 import { KliveConfiguration } from "../shared/messaging/emu-configurations";
 import { sendMessageToMain } from "../shared/messaging/renderer-to-main-comm";
 import { GetMachineRomsResponse } from "../shared/messaging/message-types";
+import { CambridgeZ88BaseStateManager } from "./machines/cz88/CambridgeZ88BaseStateManager";
 
 /**
  * The configuration of the emulator app
@@ -137,6 +138,12 @@ export async function createVmEngine(id: string, options?: Record<string, any>):
 
     case "cz88": {
       machine = new CambridgeZ88(machineApi, options, machineRoms);
+      (machine as CambridgeZ88).setAudioRendererFactory(
+        (sampleRate: number) => new AudioRenderer(sampleRate)
+      );
+      (machine as CambridgeZ88).setStateManager(
+        new CambridgeZ88BaseStateManager()
+      );
       break;
     }
 

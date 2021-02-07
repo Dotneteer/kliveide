@@ -42,7 +42,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   private _audioRendererFactory: (sampleRate: number) => IAudioRenderer = () =>
     new SilentAudioRenderer();
 
-  // --- A state manage rfactory
+  // --- A state manager factory
   private _stateManager: IZxSpectrumBaseStateManager = new DefaultZxSpectrumBaseStateManager();
 
   /**

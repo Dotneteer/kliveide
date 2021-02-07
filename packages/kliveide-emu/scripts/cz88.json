@@ -28,7 +28,8 @@
     "cz88-core/rtc-device.wat",
     "cz88-core/memory-device.wat",
     "cz88-core/keyboard-device.wat",
-    "cz88-core/screen-device.wat"
+    "cz88-core/screen-device.wat",
+    "cz88-core/beeper-device.wat"
   ],
   "outFile": "../build/cz88.wat"
 }
