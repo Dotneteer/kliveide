@@ -7,7 +7,9 @@ import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { mainProcessStore } from "./mainProcessStore";
 import { machineCommandAction } from "../shared/state/redux-machine-command-state";
 import {
+  CZ88_BATTERY_LOW,
   CZ88_HARD_RESET,
+  CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../shared/machines/macine-commands";
 import { IAppWindow } from "./IAppWindows";
@@ -20,6 +22,8 @@ import { emulatorSetKeyboardAction } from "../shared/state/redux-emulator-state"
 // --- Menu identifier contants
 const SOFT_RESET = "cz88_soft_reset";
 const HARD_RESET = "cz88_hard_reset";
+const PRESS_SHIFTS = "cz88_press_shifts";
+const BATTERY_LOW = "cz88_battery_low";
 const LCD_DIMS = "cz88_lcd_dims";
 const ROM_MENU = "cz88_roms";
 const SELECT_ROM_FILE = "cz88_select_rom_file";
@@ -295,6 +299,18 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       },
       { type: "separator" },
       {
+        id: PRESS_SHIFTS,
+        label: "Press both SHIFT keys",
+        accelerator: "F6",
+        click: async () => await this.pressBothShifts(),
+      },
+      {
+        id: BATTERY_LOW,
+        label: "Raise Battery low signal",
+        click: async () => await this.raiseBatteryLow(),
+      },
+      { type: "separator" },
+      {
         id: ROM_MENU,
         type: "submenu",
         label: "Select ROM",
@@ -334,6 +350,16 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     const keyboardItem = menu.getMenuItemById(keyboardId);
     if (keyboardItem) {
       keyboardItem.checked = true;
+    }
+
+    // --- Enable/disable commands requiring a running machine
+    const bothShifts = menu.getMenuItemById(PRESS_SHIFTS);
+    if (bothShifts) {
+      bothShifts.enabled = state.executionState === 1;
+    }
+    const batLow = menu.getMenuItemById(BATTERY_LOW);
+    if (batLow) {
+      batLow.enabled = state.executionState === 1;
     }
   }
 
@@ -514,6 +540,20 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     if (await this.confirmReset("Hard")) {
       mainProcessStore.dispatch(machineCommandAction(CZ88_HARD_RESET)());
     }
+  }
+
+  /**
+   * Press both shift keys
+   */
+  private async pressBothShifts(): Promise<void> {
+    mainProcessStore.dispatch(machineCommandAction(CZ88_PRESS_BOTH_SHIFTS)());
+  }
+
+  /**
+   * Press both shift keys
+   */
+  private async raiseBatteryLow(): Promise<void> {
+    mainProcessStore.dispatch(machineCommandAction(CZ88_BATTERY_LOW)());
   }
 
   /**

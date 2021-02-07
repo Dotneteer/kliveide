@@ -37,6 +37,14 @@
   i32.const 0x00 set_global $TSTA
 )
 
+;; Raises the battery low signal
+(func $raiseBatteryLow
+  (call $setSTA
+    (i32.or (get_global $STA) (i32.const $BM_STABTL#))
+  )
+  call $awakeCpu
+)
+
 ;; ============================================================================
 ;; Register setter functions
 

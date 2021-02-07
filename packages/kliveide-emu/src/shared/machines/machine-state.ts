@@ -290,6 +290,7 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
 
   // --- Other
   lcdWentOff: boolean;
+  isInSleepMode: boolean;
 }
 
 /**
