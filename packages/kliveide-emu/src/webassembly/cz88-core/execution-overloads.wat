@@ -64,12 +64,32 @@
   ;; Is it time to render the next beeper/sound sample?
   (i32.ge_u (get_global $tacts) (get_global $audioNextSampleTact))
   if
+    ;; Current bit of the oscillator
+    call $calculateOscillatorBit
+
     ;; Render next beeper sample
+    ;; Buffer address
     (i32.add (get_global $CZ88_BEEPER_BUFFER) (get_global $audioSampleCount))
-    i32.const 1
-    i32.const 0
-    get_global $beeperLastEarBit
-    select
+
+    ;; Sound sample
+    (i32.and (get_global $COM) (i32.const $BM_COMSRUN#))
+    if (result i32)
+      ;; Use Txd or 3200 Hz
+      (i32.and (get_global $COM) (i32.const $BM_COMSBIT#))
+      if (result i32)
+        ;; Implement TxD later
+        i32.const 0
+      else
+        get_global $oscillatorBit
+      end
+    else
+      ;; Use SBIT
+      get_global $beeperLastEarBit
+    end
+
+    ;; Render and store
+    i32.eqz
+    i32.eqz
     i32.store8 
 
     ;; Adjust sample count

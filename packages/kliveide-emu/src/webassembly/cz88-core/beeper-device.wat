@@ -32,6 +32,9 @@
 ;; Last EAR bit value
 (global $beeperLastEarBit (mut i32) (i32.const 0x0000))
 
+;; Oscillator bit value (3200 Hz)
+(global $oscillatorBit (mut i32) (i32.const 0x0000))
+
 ;; ----------------------------------------------------------------------------
 ;; Beeper device routines
 
@@ -63,4 +66,29 @@
   i32.trunc_u/f32
   set_global $audioLowerGate
   i32.const $GATE_DIVIDER# set_global $audioUpperGate
+)
+
+;; Calculate the oscillator bir
+(func $calculateOscillatorBit
+  ;; Calculate the tick count
+  (i64.add
+    (i64.mul
+      (i64.extend_u/i32 (get_global $frameCount))
+      (i64.extend_u/i32 (get_global $tactsInFrame))
+    )
+    (i64.extend_u/i32 (get_global $tacts))
+  )
+
+  ;; This many clock cycles in a half oscillator period
+  (i32.div_u
+    (i32.mul (get_global $baseClockFrequency) (get_global $clockMultiplier))
+    (i32.const 6400)
+  )
+  i64.extend_u/i32
+  i64.div_u
+
+  ;; Set the oscillator bit
+  (i64.and (i64.const 1))
+  i32.wrap/i64
+  set_global $oscillatorBit
 )

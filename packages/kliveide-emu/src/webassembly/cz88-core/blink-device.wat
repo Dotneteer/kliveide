@@ -70,10 +70,8 @@
   end
 
   ;; Set the last beeper bit 
-  (i32.and (get_local $v) (i32.const $BM_COMSRUN#))
+  (i32.eqz (i32.and (get_local $v) (i32.const $BM_COMSRUN#)))
   if
-    ;; TxD or 3200 Hz  
-  else
     ;; Beeper bit
     (i32.and (get_local $v) (i32.const $BM_COMSBIT#))
     set_global $beeperLastEarBit
