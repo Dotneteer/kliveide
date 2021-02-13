@@ -46,14 +46,18 @@ function getKliveConfiguration(): KliveConfiguration | null {
  */
 function getKliveSettings(): KliveSettings | null {
   const configFile = path.join(getHomeFolder(), SETTINGS_FILE_PATH);
-  if (fs.existsSync(configFile)) {
-    try {
-      const contents = fs.readFileSync(configFile, "utf8");
-      const config = JSON.parse(contents);
-      return config;
-    } catch (err) {
-      console.log(`Cannot read and parse Klive settings file: ${err}`);
+  const folder = path.dirname(configFile);
+  try {
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder, {
+        recursive: true,
+      });
     }
+    const contents = fs.readFileSync(configFile, "utf8");
+    const config = JSON.parse(contents);
+    return config;
+  } catch (err) {
+    console.log(`Cannot read and parse Klive settings file: ${err}`);
   }
   return null;
 }

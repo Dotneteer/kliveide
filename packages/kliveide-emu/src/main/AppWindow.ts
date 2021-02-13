@@ -359,17 +359,22 @@ export class AppWindow implements IAppWindow {
    */
   setupMenu(): void {
     // --- Merge startup configuration and settings
-    const viewOptions = appSettings?.viewOptions;
-    if (viewOptions?.showFrameInfo === undefined) {
-      viewOptions.showFrameInfo = appConfiguration?.viewOptions?.showFrameInfo;
+    const viewOptions = appSettings?.viewOptions ?? {
+      showToolbar: true,
+      showStatusbar: true,
+      showFrameInfo: true,
+    };
+
+    if (viewOptions.showFrameInfo === undefined) {
+      viewOptions.showFrameInfo = appConfiguration?.viewOptions.showFrameInfo;
     }
-    if (viewOptions?.showToolbar === undefined) {
+    if (viewOptions.showToolbar === undefined) {
       viewOptions.showToolbar = appConfiguration?.viewOptions?.showToolbar;
     }
-    if (viewOptions?.showStatusbar === undefined) {
+    if (viewOptions.showStatusbar === undefined) {
       viewOptions.showStatusbar = appConfiguration?.viewOptions?.showStatusbar;
     }
-    if (viewOptions?.showKeyboard === undefined) {
+    if (viewOptions.showKeyboard === undefined) {
       viewOptions.showKeyboard = appConfiguration?.viewOptions?.showStatusbar;
     }
 
@@ -410,7 +415,7 @@ export class AppWindow implements IAppWindow {
         accelerator: "Ctrl+Shift+I",
         visible: appConfiguration?.viewOptions?.showDevTools ?? false,
         enabled: appConfiguration?.viewOptions?.showDevTools ?? false,
-        click: (mi) => {
+        click: () => {
           this.window.webContents.toggleDevTools();
         },
       },
@@ -700,7 +705,12 @@ export class AppWindow implements IAppWindow {
 
   applyStoredSettings(): void {
     // --- Set view options
-    const viewOptions = appSettings.viewOptions;
+    const viewOptions = appSettings?.viewOptions ?? {
+      showToolbar: true,
+      showStatusbar: true,
+      showFrameInfo: true,
+    };
+
     if (viewOptions?.showFrameInfo === undefined) {
       viewOptions.showFrameInfo = appConfiguration?.viewOptions?.showFrameInfo;
     }
@@ -746,11 +756,6 @@ export class AppWindow implements IAppWindow {
       );
     }
 
-    // --- Sound
-    if (appSettings?.soundLevel) {
-      this.setSoundLevel(appSettings.soundLevel);
-    }
-
     // --- Machine specific
     if (appSettings?.machineSpecific && this._machineContextProvider) {
       this._machineContextProvider.setMachineSpecificSettings(
@@ -763,6 +768,12 @@ export class AppWindow implements IAppWindow {
           this._machineContextProvider.getMachineContextDescription()
         )()
       );
+    }
+
+    // --- Sound
+    if (appSettings?.soundLevel) {
+      this.setSoundLevel(appSettings.soundLevel);
+      this.setSoundLevelMenu(false, appSettings.soundLevel);
     }
   }
 
@@ -1097,15 +1108,10 @@ export class AppWindow implements IAppWindow {
       this.requestMachineType(this._lastMachineType);
     }
 
-    if (
-      this._lastSoundLevel !== emuState.soundLevel ||
-      this._lastMuted !== emuState.muted
-    ) {
-      // --- Sound level has changed
-      this._lastSoundLevel = emuState.soundLevel;
-      this._lastMuted = emuState.muted;
-      this.setSoundLevelMenu(this._lastMuted, this._lastSoundLevel);
-    }
+    // --- Sound level has changed
+    this._lastSoundLevel = emuState.soundLevel;
+    this._lastMuted = emuState.muted;
+    this.setSoundLevelMenu(this._lastMuted, this._lastSoundLevel);
 
     // --- The engine has just saved a ZX Spectrum file
     if (emuState?.savedData && emuState.savedData.length > 0) {

@@ -140,7 +140,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Context description for Z88
    */
   getMachineContextDescription(): string {
-    return `${lcdLabel}, ROM: ${
+    return `Screen: ${lcdLabel}, ROM: ${
       recentRomName ?? DEFAULT_ROM
     } (${romSize}KB), RAM: ${ramSize}KB`;
   }
