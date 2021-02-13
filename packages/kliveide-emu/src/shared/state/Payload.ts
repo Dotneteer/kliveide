@@ -44,4 +44,5 @@ export interface Payload {
   showFrames?: boolean;
   showToolbar?: boolean;
   keyboardLayout?: string;
+  machineContext?: string;
 }

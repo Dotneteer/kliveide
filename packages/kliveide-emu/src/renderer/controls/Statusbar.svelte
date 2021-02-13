@@ -32,6 +32,9 @@
   // --- CPU clock information
   let baseClockFrequency = 1;
   let clockMultiplier = 1;
+  
+  // --- Machine context information
+  let machineContext;
 
   // --- Frame information
   let showFrames;
@@ -61,6 +64,7 @@
       PC = state.pc;
       clockMultiplier = emuUi.clockMultiplier;
       showFrames = emuUi.showFrames;
+      machineContext = emuUi.machineContext;
     }
   });
 
@@ -189,6 +193,11 @@
     <div class="section">
       <span class="label">{vmEngine.z80Machine.displayName}</span>
     </div>
+    {#if machineContext}
+    <div class="section">
+      <span class="label">{machineContext}</span>
+    </div>
+    {/if}
     <div class="section"><span class="label">CPU: {cpuFreq}Mhz</span></div>
   {/if}
   {#if vmEngineError}

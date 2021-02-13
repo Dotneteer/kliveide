@@ -61,6 +61,7 @@ import {
   emulatorHideFramesAction,
   emulatorShowToolbarAction,
   emulatorHideToolbarAction,
+  emulatorSetMachineContextAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
@@ -464,7 +465,6 @@ export class AppWindow implements IAppWindow {
     });
 
     // --- Prepare the Run menu
-
     const runMenu: MenuItemConstructorOptions = {
       label: "Run",
       submenu: [
@@ -666,6 +666,14 @@ export class AppWindow implements IAppWindow {
     });
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+
+    if (this._machineContextProvider) {
+      mainProcessStore.dispatch(
+        emulatorSetMachineContextAction(
+          this._machineContextProvider.getMachineContextDescription()
+        )()
+      );
+    }
   }
 
   /**
