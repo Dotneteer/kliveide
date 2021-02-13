@@ -26,8 +26,8 @@
   let themeStyle = "";
   let themeClass = "";
   let updatingMachineType;
-  let toolbarVisible;
-  let statusbarVisible;
+  let toolbarVisible = false;
+  let statusbarVisible = false;
 
   // --- Respond to theme changes
   const unsubscribe = themeStore.subscribe((theme) => {

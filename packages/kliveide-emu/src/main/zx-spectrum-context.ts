@@ -32,6 +32,9 @@ const zxSpectrumLinks: LinkDescriptor[] = [
  * Context provider for ZX Spectrum machine types
  */
 export abstract class ZxSpectrumContextProviderBase extends MachineContextProviderBase {
+  // --- The last used tape file
+  private _lastTapeFile: string | null = null;
+
   /**
    * Instantiates the provider
    * @param appWindow: AppWindow instance
@@ -115,6 +118,44 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
   abstract getNormalCpuFrequency(): number;
 
   /**
+   * Override this method to get the machine-specific settings
+   */
+  getMachineSpecificSettings(): Record<string, any> {
+    const state = mainProcessStore.getState().emulatorPanelState;
+    return {
+      fastLoad: state.fastLoad,
+      showBeam: state.beamPosition,
+      lastTapeFile: this._lastTapeFile,
+    };
+  }
+
+  /**
+   * Override this method to set the machine-specific settings
+   */
+  async setMachineSpecificSettings(settings: Record<string, any>): Promise<void> {
+    mainProcessStore.dispatch(
+      settings.fastLoad
+        ? emulatorEnableFastLoadAction()
+        : emulatorDisableFastLoadAction()
+    );
+    mainProcessStore.dispatch(
+      settings.showBeam
+        ? emulatorShowBeamPositionAction()
+        : emulatorHideBeamPositionAction()
+    );
+    if (settings.lastTapeFile) {
+      try {
+        const contents = fs.readFileSync(settings.lastTapeFile);
+        if (checkTapeFile(new BinaryReader(contents))) {
+          mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
+        }
+      } catch {
+        // --- This error is intentionally ignored
+      }
+    }
+  }
+
+  /**
    * Select a tape file to use with the ZX Spectrum
    */
   private async selectTapeFile(): Promise<void> {
@@ -133,6 +174,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         const contents = fs.readFileSync(tapeFile);
         if (checkTapeFile(new BinaryReader(contents))) {
           mainProcessStore.dispatch(emulatorSetTapeContenstAction(contents)());
+          this._lastTapeFile = tapeFile;
           await dialog.showMessageBox(window, {
             title: `Tape file loaded`,
             message: `Tape file ${tapeFile} successfully loaded.`,
@@ -176,6 +218,13 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
   }
 
   /**
+   * Context description for ZX Spectrum 48
+   */
+  getMachineContextDescription(): string {
+    return `256x192, ROM: sp48.rom (16KB), RAM: 48KB`;
+  }
+
+  /**
    * Gets the startup ROMs for the machine
    */
   getStartupRoms(): Uint8Array[] | string {
@@ -200,6 +249,13 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
    */
   getNormalCpuFrequency(): number {
     return 3_546_900;
+  }
+
+  /**
+   * Context description for ZX Spectrum 48
+   */
+  getMachineContextDescription(): string {
+    return `256x192, ROM: sp128.rom (32KB), RAM: 128KB`;
   }
 
   /**

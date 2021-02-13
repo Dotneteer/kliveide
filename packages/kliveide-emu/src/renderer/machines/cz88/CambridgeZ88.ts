@@ -389,6 +389,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         break;
       case CZ88_HARD_RESET:
         await controller.stop();
+        this.api.turnOnMachine();
         await controller.start();
         break;
       case CZ88_PRESS_BOTH_SHIFTS:

@@ -6,7 +6,7 @@ import {
   GetMachineRomsResponse,
 } from "../shared/messaging/message-types";
 import { ResponseMessage } from "../shared/messaging/message-types";
-import { appConfiguration } from "./klive-configuration";
+import { appConfiguration, appSettings } from "./klive-configuration";
 import { mainProcessStore } from "./mainProcessStore";
 import { AppWindow } from "./AppWindow";
 
@@ -19,8 +19,11 @@ export async function processMessageFromRenderer(
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "rendererStarted":
-      const startupType = appConfiguration?.machineType ?? "48";
+      const startupType =
+        appSettings?.machineType ?? appConfiguration?.machineType ?? "48";
       mainProcessStore.dispatch(emulatorRequestTypeAction(startupType)());
+      await new Promise((r) => setTimeout(r, 600));
+      AppWindow.instance.applyStoredSettings();
       return <AppConfigResponse>{
         type: "appConfigResponse",
         config: appConfiguration,
@@ -33,7 +36,7 @@ export async function processMessageFromRenderer(
         roms: provider ? provider.getStartupRoms() : [],
       };
 
-    case "setToDefaultMachine": 
+    case "setToDefaultMachine":
       AppWindow.instance.requestMachineType("48");
       return <DefaultResponse>{ type: "ack" };
 

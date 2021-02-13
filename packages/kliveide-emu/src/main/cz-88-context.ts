@@ -22,6 +22,9 @@ import {
   emulatorSetMachineContextAction,
 } from "../shared/state/redux-emulator-state";
 
+// --- Default ROM file
+const DEFAULT_ROM = "Z88OZ47.rom";
+
 // --- Menu identifier contants
 const SOFT_RESET = "cz88_soft_reset";
 const HARD_RESET = "cz88_hard_reset";
@@ -93,6 +96,8 @@ let recentRomName: string | null = null;
 let romSize = 512;
 // The current RAM size
 let ramSize = 512;
+// The current keyboard layout
+let kbLayout = "uk";
 
 // ----------------------------------------------------------------------------
 // Configuration we use to instantiate the Z88 machine
@@ -135,8 +140,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Context description for Z88
    */
   getMachineContextDescription(): string {
-    return `${lcdLabel}, ROM: ${recentRomName ?? "default"}, 
-    ${romSize}KB, RAM: ${ramSize}KB`;
+    return `${lcdLabel}, ROM: ${
+      recentRomName ?? DEFAULT_ROM
+    } (${romSize}KB), RAM: ${ramSize}KB`;
   }
 
   /**
@@ -212,61 +218,31 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: Z88_640_64,
             type: "radio",
             label: "640 x 64",
-            click: () => {
-              recentLcdType = machineIdFromMenuId(Z88_640_64);
-              lcdLabel = "640x480";
-              recentOptions = { ...recentOptions, scw: 0xff, sch: 8 };
-              this.requestMachine();
-              this.setContext();
-            },
+            click: () => this.setLcd(Z88_640_64, "640x64", 0xff, 8),
           },
           {
             id: Z88_640_320,
             type: "radio",
             label: "640 x 320",
-            click: () => {
-              recentLcdType = machineIdFromMenuId(Z88_640_320);
-              lcdLabel = "640x320";
-              recentOptions = { ...recentOptions, scw: 0xff, sch: 40 };
-              this.requestMachine();
-              this.setContext();
-            },
+            click: () => this.setLcd(Z88_640_320, "640x320", 0xff, 40),
           },
           {
             id: Z88_640_480,
             type: "radio",
             label: "640 x 480",
-            click: () => {
-              recentLcdType = machineIdFromMenuId(Z88_640_480);
-              lcdLabel = "640x480";
-              recentOptions = { ...recentOptions, scw: 0xff, sch: 60 };
-              this.requestMachine();
-              this.setContext();
-            },
+            click: () => this.setLcd(Z88_640_480, "640x480", 0xff, 60),
           },
           {
             id: Z88_800_320,
             type: "radio",
             label: "800 x 320",
-            click: () => {
-              recentLcdType = machineIdFromMenuId(Z88_800_320);
-              lcdLabel = "800x320";
-              recentOptions = { ...recentOptions, scw: 100, sch: 40 };
-              this.requestMachine();
-              this.setContext();
-            },
+            click: () => this.setLcd(Z88_800_320, "800x320", 100, 40),
           },
           {
             id: Z88_800_480,
             type: "radio",
             label: "800 x 480",
-            click: () => {
-              recentLcdType = machineIdFromMenuId(Z88_800_480);
-              lcdLabel = "800x480";
-              recentOptions = { ...recentOptions, scw: 100, sch: 60 };
-              this.requestMachine();
-              this.setContext();
-            },
+            click: () => this.setLcd(Z88_800_480, "800x480", 100, 60),
           },
         ],
       },
@@ -279,43 +255,55 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: UK_KEYBOARD,
             label: "British && American",
             type: "radio",
-            click: () =>
-              mainProcessStore.dispatch(emulatorSetKeyboardAction("uk")()),
+            click: () => {
+              kbLayout = "uk";
+              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+            },
           },
           {
             id: ES_KEYBOARD,
             label: "Spanish",
             type: "radio",
-            click: () =>
-              mainProcessStore.dispatch(emulatorSetKeyboardAction("es")()),
+            click: () => {
+              kbLayout = "es";
+              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+            },
           },
           {
             id: FR_KEYBOARD,
             label: "French",
             type: "radio",
-            click: () =>
-              mainProcessStore.dispatch(emulatorSetKeyboardAction("fr")()),
+            click: () => {
+              kbLayout = "fr";
+              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+            },
           },
           {
             id: DE_KEYBOARD,
             label: "German",
             type: "radio",
-            click: () =>
-              mainProcessStore.dispatch(emulatorSetKeyboardAction("de")()),
+            click: () => {
+              kbLayout = "de";
+              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+            },
           },
           {
             id: DK_KEYBOARD,
             label: "Danish && Norwegian",
             type: "radio",
-            click: () =>
-              mainProcessStore.dispatch(emulatorSetKeyboardAction("dk")()),
+            click: () => {
+              kbLayout = "dk";
+              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+            },
           },
           {
             id: SE_KEYBOARD,
             label: "Swedish && Finish",
             type: "radio",
-            click: () =>
-              mainProcessStore.dispatch(emulatorSetKeyboardAction("se")()),
+            click: () => {
+              kbLayout = "se";
+              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+            },
           },
         ],
       },
@@ -409,7 +397,64 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Gets the startup ROMs for the machine
    */
   getStartupRoms(): Uint8Array[] | string {
-    return this.loadRoms(["Z88OZ47.rom"], [0x2_0000, 0x4_0000, 0x8_0000]);
+    return this.loadRoms([DEFAULT_ROM], [0x2_0000, 0x4_0000, 0x8_0000]);
+  }
+
+  /**
+   * Override this method to get the machine-specific settings
+   */
+  getMachineSpecificSettings(): Record<string, any> {
+    return {
+      lcd: lcdLabel,
+      kbLayout,
+      romFile: recentRoms.length > 0 ? recentRoms[0] : null,
+    };
+  }
+
+  /**
+   * Override this method to set the machine-specific settings
+   */
+  async setMachineSpecificSettings(settings: Record<string, any>): Promise<void> {
+    if (settings.lcd) {
+      switch (settings.lcd) {
+        case "640x64":
+          this.setLcd(Z88_640_64, "640x64", 0xff, 8);
+          break;
+
+        case "640x320":
+          this.setLcd(Z88_640_320, "640x320", 0xff, 40);
+          break;
+
+        case "640x480":
+          this.setLcd(Z88_640_480, "640x480", 0xff, 60);
+          break;
+
+        case "800x320":
+          this.setLcd(Z88_800_320, "800x320", 100, 40);
+          break;
+
+        case "800x480":
+          this.setLcd(Z88_800_480, "800x480", 100, 60);
+          break;
+      }
+    }
+    if (settings.kbLayout) {
+      switch (settings.kbLayout) {
+        case "uk":
+        case "fr":
+        case "es":
+        case "de":
+        case "dk":
+        case "se":
+          kbLayout = settings.kbLayout;
+          mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+          break;
+      }
+    }
+    await new Promise(r => setTimeout(r, 600));
+    if (settings.romFile) {
+      await this.selectRomFileToUse(settings.romFile);
+    }
   }
 
   /**
@@ -421,6 +466,25 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     this.appWindow.requestMachineType(typeId, recentOptions);
   }
 
+  /**
+   * Sets the Z88 LCD mode
+   * @param menuId LCD menu id
+   * @param label LCD label
+   * @param scw LCD width
+   * @param sch LCD height
+   */
+  private setLcd(
+    menuId: string,
+    label: string,
+    scw: number,
+    sch: number
+  ): void {
+    recentLcdType = machineIdFromMenuId(menuId);
+    lcdLabel = label;
+    recentOptions = { ...recentOptions, scw, sch };
+    this.requestMachine();
+    this.setContext();
+  }
   /**
    * Select the ROM file to use with Z88
    */
@@ -500,7 +564,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       if (!this.isOZRom(contents)) {
         return "The file does not contain the OZ ROM watermark.";
       }
-
       // --- Done: valid ROM
       return contents;
     } catch (err) {

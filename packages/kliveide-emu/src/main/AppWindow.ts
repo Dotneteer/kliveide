@@ -20,6 +20,7 @@ import {
   webContents,
   dialog,
   shell,
+  WebContents,
 } from "electron";
 import {
   mainProcessStore,
@@ -62,6 +63,7 @@ import {
   emulatorShowToolbarAction,
   emulatorHideToolbarAction,
   emulatorSetMachineContextAction,
+  emulatorKeyboardHeightAction,
 } from "../shared/state/redux-emulator-state";
 import { BinaryWriter } from "../shared/utils/BinaryWriter";
 import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
@@ -73,7 +75,12 @@ import {
 } from "./zx-spectrum-context";
 import { Cz88ContextProvider } from "./cz-88-context";
 import { IAppWindow } from "./IAppWindows";
-import { appConfiguration } from "./klive-configuration";
+import {
+  appConfiguration,
+  appSettings,
+  saveKliveSettings,
+} from "./klive-configuration";
+import { KliveSettings } from "../shared/messaging/emu-configurations";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -351,6 +358,21 @@ export class AppWindow implements IAppWindow {
    * Sets up the application menu
    */
   setupMenu(): void {
+    // --- Merge startup configuration and settings
+    const viewOptions = appSettings?.viewOptions;
+    if (viewOptions?.showFrameInfo === undefined) {
+      viewOptions.showFrameInfo = appConfiguration?.viewOptions?.showFrameInfo;
+    }
+    if (viewOptions?.showToolbar === undefined) {
+      viewOptions.showToolbar = appConfiguration?.viewOptions?.showToolbar;
+    }
+    if (viewOptions?.showStatusbar === undefined) {
+      viewOptions.showStatusbar = appConfiguration?.viewOptions?.showStatusbar;
+    }
+    if (viewOptions?.showKeyboard === undefined) {
+      viewOptions.showKeyboard = appConfiguration?.viewOptions?.showStatusbar;
+    }
+
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
     if (__DARWIN__) {
       template.push({
@@ -421,7 +443,7 @@ export class AppWindow implements IAppWindow {
         id: TOGGLE_TOOLBAR,
         label: "Show toolbar",
         type: "checkbox",
-        checked: appConfiguration?.viewOptions?.showToolbar ?? true,
+        checked: viewOptions.showToolbar ?? true,
         click: (mi) => {
           if (mi.checked) {
             mainProcessStore.dispatch(emulatorShowToolbarAction());
@@ -434,7 +456,7 @@ export class AppWindow implements IAppWindow {
         id: TOGGLE_STATUSBAR,
         label: "Show statusbar",
         type: "checkbox",
-        checked: appConfiguration?.viewOptions?.showStatusbar ?? true,
+        checked: viewOptions.showStatusbar ?? true,
         click: (mi) => {
           if (mi.checked) {
             mainProcessStore.dispatch(emulatorShowStatusbarAction());
@@ -447,7 +469,7 @@ export class AppWindow implements IAppWindow {
         id: TOGGLE_FRAMES,
         label: "Show frame information",
         type: "checkbox",
-        checked: appConfiguration?.viewOptions?.showFrameInfo ?? true,
+        checked: viewOptions.showFrameInfo ?? true,
         click: (mi) => {
           if (mi.checked) {
             mainProcessStore.dispatch(emulatorShowFramesAction());
@@ -676,6 +698,74 @@ export class AppWindow implements IAppWindow {
     }
   }
 
+  applyStoredSettings(): void {
+    // --- Set view options
+    const viewOptions = appSettings.viewOptions;
+    if (viewOptions?.showFrameInfo === undefined) {
+      viewOptions.showFrameInfo = appConfiguration?.viewOptions?.showFrameInfo;
+    }
+    mainProcessStore.dispatch(
+      viewOptions?.showFrameInfo
+        ? emulatorShowFramesAction()
+        : emulatorHideFramesAction()
+    );
+    if (viewOptions?.showToolbar === undefined) {
+      viewOptions.showToolbar = appConfiguration?.viewOptions?.showToolbar;
+    }
+    mainProcessStore.dispatch(
+      viewOptions?.showToolbar
+        ? emulatorShowToolbarAction()
+        : emulatorHideToolbarAction()
+    );
+    if (viewOptions?.showStatusbar === undefined) {
+      viewOptions.showStatusbar = appConfiguration?.viewOptions?.showStatusbar;
+    }
+    mainProcessStore.dispatch(
+      viewOptions?.showStatusbar
+        ? emulatorShowStatusbarAction()
+        : emulatorHideStatusbarAction()
+    );
+    if (viewOptions?.showKeyboard === undefined) {
+      viewOptions.showKeyboard = appConfiguration?.viewOptions?.showStatusbar;
+    }
+    if (viewOptions?.keyboardHeight) {
+      mainProcessStore.dispatch(
+        emulatorKeyboardHeightAction(viewOptions.keyboardHeight)()
+      );
+    }
+    mainProcessStore.dispatch(
+      viewOptions?.showKeyboard
+        ? emulatorShowKeyboardAction()
+        : emulatorHideKeyboardAction()
+    );
+
+    // --- CPU settings
+    if (appSettings?.clockMultiplier) {
+      mainProcessStore.dispatch(
+        emulatorSetClockMultiplierAction(appSettings.clockMultiplier)()
+      );
+    }
+
+    // --- Sound
+    if (appSettings?.soundLevel) {
+      this.setSoundLevel(appSettings.soundLevel);
+    }
+
+    // --- Machine specific
+    if (appSettings?.machineSpecific && this._machineContextProvider) {
+      this._machineContextProvider.setMachineSpecificSettings(
+        appSettings.machineSpecific
+      );
+    }
+    if (this._machineContextProvider) {
+      mainProcessStore.dispatch(
+        emulatorSetMachineContextAction(
+          this._machineContextProvider.getMachineContextDescription()
+        )()
+      );
+    }
+  }
+
   /**
    * Requests a machine type according to its menu ID
    * @param id Machine type, or menu ID of the machine type
@@ -784,7 +874,9 @@ export class AppWindow implements IAppWindow {
   setSoundLevelMenu(muted: boolean, level: number): void {
     for (const menuItem of SOUND_MENU_ITEMS) {
       const item = Menu.getApplicationMenu().getMenuItemById(menuItem.id);
-      item.checked = false;
+      if (item) {
+        item.checked = false;
+      }
     }
     if (muted) {
       const soundItem = Menu.getApplicationMenu().getMenuItemById(
@@ -806,6 +898,29 @@ export class AppWindow implements IAppWindow {
         }
       }
     }
+  }
+
+  /**
+   * Saves the current application settings
+   */
+  saveAppSettings(): void {
+    const state = mainProcessStore.getState().emulatorPanelState;
+    const kliveSettings: KliveSettings = {
+      machineType: state.currentType.split("_")[0],
+      viewOptions: {
+        showToolbar: state.showToolbar,
+        showFrameInfo: state.showFrames,
+        showKeyboard: state.keyboardPanel,
+        showStatusbar: state.statusbar,
+        keyboardHeight: state.keyboardHeight,
+      },
+      clockMultiplier: state.clockMultiplier,
+      soundLevel: state.soundLevel,
+    };
+    if (this._machineContextProvider) {
+      kliveSettings.machineSpecific = this._machineContextProvider.getMachineSpecificSettings();
+    }
+    saveKliveSettings(kliveSettings);
   }
 
   // ==========================================================================
@@ -1031,9 +1146,6 @@ export class AppWindow implements IAppWindow {
       );
     }
   }
-
-  // ==========================================================================
-  // Helpers for menu commands
 }
 
 /**

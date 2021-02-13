@@ -1,9 +1,11 @@
 <script>
-  import { tick, onDestroy } from "svelte";
+  import { tick, onDestroy, onMount } from "svelte";
   import SplitContainer from "./SplitContainer.svelte";
   import EmulatorPanel from "./EmulatorPanel.svelte";
   import KeyboardPanel from "./KeyboardPanel.svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
+  import { emulatorKeyboardHeightAction } from "../../shared/state/redux-emulator-state";
+  import { init } from "svelte/internal";
 
   // --- The virtual machine instance
   export let vmEngine;
@@ -23,6 +25,10 @@
       delayIsOver = true;
     }
     layout = state.keyboardLayout;
+    const height = stateAware.state.keyboardHeight;
+    if (height) {
+      initialHeight = height;
+    }
   });
 
   let keyboardHeight;
@@ -30,6 +36,8 @@
   let splitterIsMoving = false;
 
   $: keyboardType = vmEngine ? vmEngine.keyboardType : "";
+
+  onMount(() => {});
 
   // --- Cleanup subscriptions
   onDestroy(() => {
@@ -50,6 +58,7 @@
     bind:isMoving={splitterIsMoving}
     on:moved={async () => {
       initialHeight = keyboardHeight;
+      stateAware.dispatch(emulatorKeyboardHeightAction(keyboardHeight)());
     }}
   >
     <EmulatorPanel {vmEngine} {vmEngineError} />
