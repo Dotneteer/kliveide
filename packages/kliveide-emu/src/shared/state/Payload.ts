@@ -45,4 +45,5 @@ export interface Payload {
   showToolbar?: boolean;
   keyboardLayout?: string;
   machineContext?: string;
+  keyboardHeight?: number;
 }

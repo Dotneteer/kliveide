@@ -44,4 +44,5 @@ app.on("activate", () => {
 
 app.on("before-quit", () => {
   mainWindow.stopWatchingIde();
+  mainWindow.saveAppSettings();
 });

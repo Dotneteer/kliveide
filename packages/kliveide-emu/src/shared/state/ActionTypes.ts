@@ -47,6 +47,7 @@ export interface ActionTypes {
   EMULATOR_HIDE_TOOLBAR: null;
   EMULATOR_SET_KEYBOARD: null;
   EMULATOR_MACHINE_CONTEXT: null;
+  EMULATOR_KEYBOARD_HEIGHT: null;
 
   // --- Machine specific commands
   MACHINE_COMMAND: null;

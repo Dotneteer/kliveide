@@ -128,6 +128,9 @@ export function emulatorSetMachineContextAction(machineContext: string) {
   return createAction("EMULATOR_MACHINE_CONTEXT", { machineContext });
 }
 
+export function emulatorKeyboardHeightAction(keyboardHeight: number) {
+  return createAction("EMULATOR_KEYBOARD_HEIGHT", { keyboardHeight });
+}
 
 /**
  * This reducer manages emulator panel state changes
@@ -233,7 +236,9 @@ export function emulatorStateReducer(
     case "EMULATOR_SET_KEYBOARD":
       return { ...state, keyboardLayout: payload.keyboardLayout };
     case "EMULATOR_MACHINE_CONTEXT":
-        return { ...state, machineContext: payload.machineContext };
-    }
+      return { ...state, machineContext: payload.machineContext };
+    case "EMULATOR_KEYBOARD_HEIGHT":
+      return { ...state, keyboardHeight: payload.keyboardHeight };
+  }
   return state;
 }

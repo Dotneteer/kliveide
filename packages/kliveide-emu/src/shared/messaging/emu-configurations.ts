@@ -25,4 +25,16 @@ export interface ViewOptions {
   showStatusbar?: boolean;
   showFrameInfo?: boolean;
   showKeyboard?: boolean;
+  keyboardHeight?: number;
+}
+
+/**
+ * Represents the Klive settings to persist
+ */
+export interface KliveSettings {
+  machineType?: string;
+  viewOptions?: ViewOptions;
+  clockMultiplier?: number;
+  soundLevel?: number;
+  machineSpecific?: Record<string, any>
 }

@@ -47,6 +47,16 @@ export interface MachineContextProvider {
    * Override this method tom provide a context description
    */
   getMachineContextDescription(): string;
+
+  /**
+   * Override this method to get the machine-specific settings
+   */
+  getMachineSpecificSettings(): Record<string, any>;
+
+  /**
+   * Override this method to set the machine-specific settings
+   */
+  setMachineSpecificSettings(settings: Record<string, any>): Promise<void>;
 }
 
 export abstract class MachineContextProviderBase
@@ -100,6 +110,18 @@ export abstract class MachineContextProviderBase
   getMachineContextDescription(): string {
     return "";
   }
+
+  /**
+   * Override this method to get the machine-specific settings
+   */
+  getMachineSpecificSettings(): Record<string, any> {
+    return {};
+  }
+
+  /**
+   * Override this method to set the machine-specific settings
+   */
+  async setMachineSpecificSettings(settings: Record<string, any>): Promise<void> {}
 
   /**
    * Loads the startup ROMs of the machine

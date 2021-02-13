@@ -49,6 +49,7 @@ export interface EmulatorPanelState {
   tapeLoaded?: boolean;
   keyboardPanel?: boolean;
   keyboardLayout?: string;
+  keyboardHeight?: number;
   beamPosition?: boolean;
   fastLoad?: boolean;
   isLoading?: boolean;
@@ -152,6 +153,7 @@ export function getDefaultAppState(): AppState {
       engineInitialized: false,
       keyboardLayout: "",
       keyboardPanel: false,
+      keyboardHeight: 0,
       beamPosition: false,
       fastLoad: false,
       isLoading: false,
@@ -165,11 +167,11 @@ export function getDefaultAppState(): AppState {
       panelMessage: "",
       muted: false,
       soundLevel: 0.5,
-      statusbar: true,
+      statusbar: false,
       internalState: {},
       clockMultiplier: 1,
-      showFrames: true,
-      showToolbar: true,
+      showFrames: false,
+      showToolbar: false,
       machineContext: "",
     },
     ideConfiguration: {
