@@ -23,12 +23,6 @@ export const emulatorHideKeyboardAction = createAction(
 export const emulatorToggleKeyboardAction = createAction(
   "EMULATOR_TOGGLE_KEYBOARD"
 );
-export const emulatorShowShadowScreenAction = createAction(
-  "EMULATOR_SHOW_SHADOW_SCREEN"
-);
-export const emulatorHideShadowScreenAction = createAction(
-  "EMULATOR_HIDE_SHADOW_SCREEN"
-);
 export const emulatorToggleShadowScreenAction = createAction(
   "EMULATOR_TOGGLE_SHADOW_SCREEN"
 );
@@ -130,6 +124,11 @@ export function emulatorSetKeyboardAction(keyboardLayout: string) {
   return createAction("EMULATOR_SET_KEYBOARD", { keyboardLayout });
 }
 
+export function emulatorSetMachineContextAction(machineContext: string) {
+  return createAction("EMULATOR_MACHINE_CONTEXT", { machineContext });
+}
+
+
 /**
  * This reducer manages emulator panel state changes
  * @param state Input state
@@ -161,16 +160,6 @@ export function emulatorStateReducer(
         ...state,
         keyboardPanel:
           state.keyboardPanel === undefined ? true : !state.keyboardPanel,
-      };
-    case "EMULATOR_SHOW_SHADOW_SCREEN":
-      return { ...state, shadowScreen: true };
-    case "EMULATOR_HIDE_SHADOW_SCREEN":
-      return { ...state, shadowScreen: false };
-    case "EMULATOR_TOGGLE_SHADOW_SCREEN":
-      return {
-        ...state,
-        shadowScreen:
-          state.shadowScreen === undefined ? true : !state.shadowScreen,
       };
     case "EMULATOR_SHOW_BEAM_POSITION":
       return { ...state, beamPosition: true };
@@ -243,6 +232,8 @@ export function emulatorStateReducer(
       return { ...state, showToolbar: false };
     case "EMULATOR_SET_KEYBOARD":
       return { ...state, keyboardLayout: payload.keyboardLayout };
-  }
+    case "EMULATOR_MACHINE_CONTEXT":
+        return { ...state, machineContext: payload.machineContext };
+    }
   return state;
 }

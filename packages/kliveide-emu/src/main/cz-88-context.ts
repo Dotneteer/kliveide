@@ -17,7 +17,10 @@ import {
   machineIdFromMenuId,
   menuIdFromMachineId,
 } from "./utils/electron-utils";
-import { emulatorSetKeyboardAction } from "../shared/state/redux-emulator-state";
+import {
+  emulatorSetKeyboardAction,
+  emulatorSetMachineContextAction,
+} from "../shared/state/redux-emulator-state";
 
 // --- Menu identifier contants
 const SOFT_RESET = "cz88_soft_reset";
@@ -57,7 +60,8 @@ const z88Links: LinkDescriptor[] = [
   },
   {
     label: "BBC BASIC (Z80) Reference Guide for Z88",
-    uri: "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI",
+    uri:
+      "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI",
   },
   {
     label: null,
@@ -81,8 +85,14 @@ const z88Links: LinkDescriptor[] = [
 
 // The last used LCD specification
 let recentLcdType = machineIdFromMenuId(Z88_640_64);
+let lcdLabel = "640x64";
+
 // The name of the recent ROM
 let recentRomName: string | null = null;
+// The current ROM size
+let romSize = 512;
+// The current RAM size
+let ramSize = 512;
 
 // ----------------------------------------------------------------------------
 // Configuration we use to instantiate the Z88 machine
@@ -122,6 +132,23 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
+   * Context description for Z88
+   */
+  getMachineContextDescription(): string {
+    return `${lcdLabel}, ROM: ${recentRomName ?? "default"}, 
+    ${romSize}KB, RAM: ${ramSize}KB`;
+  }
+
+  /**
+   * Sets the current machine context
+   */
+  setContext(): void {
+    mainProcessStore.dispatch(
+      emulatorSetMachineContextAction(this.getMachineContextDescription())()
+    );
+  }
+
+  /**
    * Items to add to the Show menu
    */
   provideViewMenuItems(): MenuItemConstructorOptions[] | null {
@@ -132,9 +159,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Items to add to the machine menu
    */
   provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
-    // --- We need the current status
-    const emuState = mainProcessStore.getState().emulatorPanelState;
-
     // --- Create the submenu of recent roms
     const romsSubmenu: MenuItemConstructorOptions[] = [];
     romsSubmenu.push({
@@ -155,6 +179,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
           recentOptions = { ...recentOptions, rom: undefined };
           this.requestMachine();
         }
+        this.setContext();
       },
     });
     if (recentRoms.length > 0) {
@@ -189,8 +214,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             label: "640 x 64",
             click: () => {
               recentLcdType = machineIdFromMenuId(Z88_640_64);
+              lcdLabel = "640x480";
               recentOptions = { ...recentOptions, scw: 0xff, sch: 8 };
               this.requestMachine();
+              this.setContext();
             },
           },
           {
@@ -199,8 +226,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             label: "640 x 320",
             click: () => {
               recentLcdType = machineIdFromMenuId(Z88_640_320);
+              lcdLabel = "640x320";
               recentOptions = { ...recentOptions, scw: 0xff, sch: 40 };
               this.requestMachine();
+              this.setContext();
             },
           },
           {
@@ -209,8 +238,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             label: "640 x 480",
             click: () => {
               recentLcdType = machineIdFromMenuId(Z88_640_480);
+              lcdLabel = "640x480";
               recentOptions = { ...recentOptions, scw: 0xff, sch: 60 };
               this.requestMachine();
+              this.setContext();
             },
           },
           {
@@ -219,8 +250,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             label: "800 x 320",
             click: () => {
               recentLcdType = machineIdFromMenuId(Z88_800_320);
+              lcdLabel = "800x320";
               recentOptions = { ...recentOptions, scw: 100, sch: 40 };
               this.requestMachine();
+              this.setContext();
             },
           },
           {
@@ -229,8 +262,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             label: "800 x 480",
             click: () => {
               recentLcdType = machineIdFromMenuId(Z88_800_480);
+              lcdLabel = "800x480";
               recentOptions = { ...recentOptions, scw: 100, sch: 60 };
               this.requestMachine();
+              this.setContext();
             },
           },
         ],

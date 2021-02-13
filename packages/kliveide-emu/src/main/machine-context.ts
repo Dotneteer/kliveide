@@ -42,6 +42,11 @@ export interface MachineContextProvider {
    * Gets the startup ROMs for the machine
    */
   getStartupRoms(): Uint8Array[] | string;
+
+  /**
+   * Override this method tom provide a context description
+   */
+  getMachineContextDescription(): string;
 }
 
 export abstract class MachineContextProviderBase
@@ -88,6 +93,13 @@ export abstract class MachineContextProviderBase
    * Gets the startup ROMs for the machine
    */
   abstract getStartupRoms(): Uint8Array[] | string;
+
+  /**
+   * Override this method tom provide a context description
+   */
+  getMachineContextDescription(): string {
+    return "";
+  }
 
   /**
    * Loads the startup ROMs of the machine

@@ -49,7 +49,6 @@ export interface EmulatorPanelState {
   tapeLoaded?: boolean;
   keyboardPanel?: boolean;
   keyboardLayout?: string;
-  shadowScreen?: boolean;
   beamPosition?: boolean;
   fastLoad?: boolean;
   isLoading?: boolean;
@@ -68,6 +67,7 @@ export interface EmulatorPanelState {
   internalState?: Record<string, any>;
   showFrames?: boolean;
   showToolbar?: boolean;
+  machineContext?: string;
 }
 
 /**
@@ -153,7 +153,6 @@ export function getDefaultAppState(): AppState {
       keyboardLayout: "",
       keyboardPanel: false,
       beamPosition: false,
-      shadowScreen: false,
       fastLoad: false,
       isLoading: false,
       executionState: 0,
@@ -171,6 +170,7 @@ export function getDefaultAppState(): AppState {
       clockMultiplier: 1,
       showFrames: true,
       showToolbar: true,
+      machineContext: "",
     },
     ideConfiguration: {
       projectFolder: "",
