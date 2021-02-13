@@ -221,7 +221,7 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
    * Context description for ZX Spectrum 48
    */
   getMachineContextDescription(): string {
-    return `256x192, ROM: sp48.rom (16KB), RAM: 48KB`;
+    return `Screen: 256x192, ROM: sp48.rom (16KB), RAM: 48KB`;
   }
 
   /**
@@ -255,7 +255,7 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
    * Context description for ZX Spectrum 48
    */
   getMachineContextDescription(): string {
-    return `256x192, ROM: sp128.rom (32KB), RAM: 128KB`;
+    return `Screen: 256x192, ROM: sp128.rom (32KB), RAM: 128KB`;
   }
 
   /**
