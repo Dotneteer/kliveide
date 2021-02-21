@@ -34,7 +34,5 @@ export interface ViewOptions {
 export interface KliveSettings {
   machineType?: string;
   viewOptions?: ViewOptions;
-  clockMultiplier?: number;
-  soundLevel?: number;
   machineSpecific?: Record<string, Record<string, any>>
 }

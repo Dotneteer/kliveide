@@ -574,9 +574,9 @@ export class AppWindow implements IAppWindow {
           const machineType = mi.id.split("_")[1];
           this.requestMachineType(machineType);
           // --- Wait while the menu is instantiated
-          await new Promise((r) => setTimeout(r, 400));
+          await new Promise((r) => setTimeout(r, 200));
           this.setMachineTypeMenu(mi.id);
-          await new Promise((r) => setTimeout(r, 600));
+          await new Promise((r) => setTimeout(r, 200));
           AppWindow.instance.applyStoredSettings(machineType);
         },
       });
@@ -757,13 +757,6 @@ export class AppWindow implements IAppWindow {
         : emulatorHideKeyboardAction()
     );
 
-    // --- CPU settings
-    if (appSettings?.clockMultiplier) {
-      mainProcessStore.dispatch(
-        emulatorSetClockMultiplierAction(appSettings.clockMultiplier)()
-      );
-    }
-
     // --- Machine specific
     const machineSpecific = appSettings?.machineSpecific[machineType];
 
@@ -776,12 +769,6 @@ export class AppWindow implements IAppWindow {
           this._machineContextProvider.getMachineContextDescription()
         )()
       );
-    }
-
-    // --- Sound
-    if (appSettings?.soundLevel) {
-      this.setSoundLevel(appSettings.soundLevel);
-      this.setSoundLevelMenu(false, appSettings.soundLevel);
     }
   }
 
@@ -934,8 +921,6 @@ export class AppWindow implements IAppWindow {
         showStatusbar: state.statusbar,
         keyboardHeight: state.keyboardHeight,
       },
-      clockMultiplier: state.clockMultiplier,
-      soundLevel: state.soundLevel,
     };
     if (this._machineContextProvider) {
       kliveSettings.machineSpecific = appSettings?.machineSpecific;
@@ -1034,7 +1019,7 @@ export class AppWindow implements IAppWindow {
    * Sets the specified sound level
    * @param level Sound level (between 0.0 and 1.0)
    */
-  private setSoundLevel(level: number): void {
+  setSoundLevel(level: number): void {
     if (level === 0) {
       mainProcessStore.dispatch(emulatorMuteAction());
     } else {

@@ -7,6 +7,7 @@ import {
   emulatorDisableFastLoadAction,
   emulatorEnableFastLoadAction,
   emulatorHideBeamPositionAction,
+  emulatorSetClockMultiplierAction,
   emulatorSetTapeContenstAction,
 } from "../shared/state/redux-emulator-state";
 import { emulatorShowBeamPositionAction } from "../shared/state/redux-emulator-state";
@@ -14,6 +15,7 @@ import { EmulatorPanelState } from "../shared/state/AppState";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { checkTapeFile } from "../shared/tape/readers";
 import { IAppWindow } from "./IAppWindows";
+import { AppWindow } from "./AppWindow";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -126,6 +128,8 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
       fastLoad: state.fastLoad,
       showBeam: state.beamPosition,
       lastTapeFile: this._lastTapeFile,
+      clockMultiplier: state.clockMultiplier,
+      soundLevel: state.soundLevel
     };
   }
 
@@ -133,6 +137,15 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    * Override this method to set the machine-specific settings
    */
   async setMachineSpecificSettings(settings: Record<string, any>): Promise<void> {
+    if (settings.clockMultiplier) {
+      mainProcessStore.dispatch(
+        emulatorSetClockMultiplierAction(settings.clockMultiplier)()
+      );
+    }
+    if (settings.soundLevel) {
+      AppWindow.instance.setSoundLevel(settings.soundLevel);
+      AppWindow.instance.setSoundLevelMenu(false, settings.soundLevel);
+    }
     mainProcessStore.dispatch(
       settings.fastLoad
         ? emulatorEnableFastLoadAction()
