@@ -20,7 +20,6 @@ import {
   webContents,
   dialog,
   shell,
-  WebContents,
 } from "electron";
 import {
   mainProcessStore,
@@ -766,8 +765,7 @@ export class AppWindow implements IAppWindow {
     }
 
     // --- Machine specific
-    const machineSpecific =
-      appSettings?.machineSpecific[machineType];
+    const machineSpecific = appSettings?.machineSpecific[machineType];
 
     if (machineSpecific && this._machineContextProvider) {
       this._machineContextProvider.setMachineSpecificSettings(machineSpecific);
@@ -940,7 +938,7 @@ export class AppWindow implements IAppWindow {
       soundLevel: state.soundLevel,
     };
     if (this._machineContextProvider) {
-      kliveSettings.machineSpecific = appSettings.machineSpecific;
+      kliveSettings.machineSpecific = appSettings?.machineSpecific;
       if (!kliveSettings.machineSpecific) {
         kliveSettings.machineSpecific = {};
       }
@@ -949,6 +947,7 @@ export class AppWindow implements IAppWindow {
       ] = this._machineContextProvider.getMachineSpecificSettings();
     }
     saveKliveSettings(kliveSettings);
+    reloadSettings();
   }
 
   // ==========================================================================
