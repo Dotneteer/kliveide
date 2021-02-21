@@ -71,8 +71,8 @@
       updatingMachineType = true;
       try {
         // --- Update the machine type
-        await changeVmEngine(emuUi.requestedType, emuUi.requestedOptions);
         stateAware.dispatch(emulatorSetupTypeAction(emuUi.requestedType)());
+        await changeVmEngine(emuUi.requestedType, emuUi.requestedOptions);
 
         // --- Allow redux message cycle to loop back to the renderer
         await new Promise((r) => setTimeout(r, 100));

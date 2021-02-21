@@ -78,6 +78,7 @@ import { IAppWindow } from "./IAppWindows";
 import {
   appConfiguration,
   appSettings,
+  reloadSettings,
   saveKliveSettings,
 } from "./klive-configuration";
 import { KliveSettings } from "../shared/messaging/emu-configurations";
@@ -566,10 +567,18 @@ export class AppWindow implements IAppWindow {
         checked: i ? false : true,
         enabled: MACHINE_MENU_ITEMS[i].enabled,
         click: async (mi) => {
-          this.requestMachineType(mi.id.split("_")[1]);
+          try {
+            this.saveAppSettings();
+          } catch {
+            // --- Intentionally ignored
+          }
+          const machineType = mi.id.split("_")[1];
+          this.requestMachineType(machineType);
           // --- Wait while the menu is instantiated
           await new Promise((r) => setTimeout(r, 400));
           this.setMachineTypeMenu(mi.id);
+          await new Promise((r) => setTimeout(r, 600));
+          AppWindow.instance.applyStoredSettings(machineType);
         },
       });
     }
@@ -703,7 +712,7 @@ export class AppWindow implements IAppWindow {
     }
   }
 
-  applyStoredSettings(): void {
+  applyStoredSettings(machineType: string): void {
     // --- Set view options
     const viewOptions = appSettings?.viewOptions ?? {
       showToolbar: true,
@@ -757,10 +766,11 @@ export class AppWindow implements IAppWindow {
     }
 
     // --- Machine specific
-    if (appSettings?.machineSpecific && this._machineContextProvider) {
-      this._machineContextProvider.setMachineSpecificSettings(
-        appSettings.machineSpecific
-      );
+    const machineSpecific =
+      appSettings?.machineSpecific[machineType];
+
+    if (machineSpecific && this._machineContextProvider) {
+      this._machineContextProvider.setMachineSpecificSettings(machineSpecific);
     }
     if (this._machineContextProvider) {
       mainProcessStore.dispatch(
@@ -786,9 +796,6 @@ export class AppWindow implements IAppWindow {
     const parts = id.split("_");
     const typeId = parts[0];
 
-    // --- Set the new machine type in the state vector
-    mainProcessStore.dispatch(emulatorRequestTypeAction(id, options)());
-
     // --- Prepare the menu provider for the machine
     switch (typeId) {
       case "48":
@@ -801,6 +808,9 @@ export class AppWindow implements IAppWindow {
         this._machineContextProvider = new Cz88ContextProvider(this);
         break;
     }
+
+    // --- Set the new machine type in the state vector
+    mainProcessStore.dispatch(emulatorRequestTypeAction(id, options)());
 
     // --- Now, create the menu with the current machine type
     this.setupMenu();
@@ -916,8 +926,9 @@ export class AppWindow implements IAppWindow {
    */
   saveAppSettings(): void {
     const state = mainProcessStore.getState().emulatorPanelState;
+    const machineType = state.currentType.split("_")[0];
     const kliveSettings: KliveSettings = {
-      machineType: state.currentType.split("_")[0],
+      machineType,
       viewOptions: {
         showToolbar: state.showToolbar,
         showFrameInfo: state.showFrames,
@@ -929,7 +940,13 @@ export class AppWindow implements IAppWindow {
       soundLevel: state.soundLevel,
     };
     if (this._machineContextProvider) {
-      kliveSettings.machineSpecific = this._machineContextProvider.getMachineSpecificSettings();
+      kliveSettings.machineSpecific = appSettings.machineSpecific;
+      if (!kliveSettings.machineSpecific) {
+        kliveSettings.machineSpecific = {};
+      }
+      kliveSettings.machineSpecific[
+        machineType
+      ] = this._machineContextProvider.getMachineSpecificSettings();
     }
     saveKliveSettings(kliveSettings);
   }

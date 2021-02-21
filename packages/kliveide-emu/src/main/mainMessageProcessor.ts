@@ -23,7 +23,7 @@ export async function processMessageFromRenderer(
         appSettings?.machineType ?? appConfiguration?.machineType ?? "48";
       mainProcessStore.dispatch(emulatorRequestTypeAction(startupType)());
       await new Promise((r) => setTimeout(r, 600));
-      AppWindow.instance.applyStoredSettings();
+      AppWindow.instance.applyStoredSettings(startupType);
       return <AppConfigResponse>{
         type: "appConfigResponse",
         config: appConfiguration,

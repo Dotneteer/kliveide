@@ -143,6 +143,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         ? emulatorShowBeamPositionAction()
         : emulatorHideBeamPositionAction()
     );
+    this._lastTapeFile = settings.lastTapeFile;
     if (settings.lastTapeFile) {
       try {
         const contents = fs.readFileSync(settings.lastTapeFile);
@@ -152,6 +153,8 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
       } catch {
         // --- This error is intentionally ignored
       }
+    } else {
+      mainProcessStore.dispatch(emulatorSetTapeContenstAction(new Uint8Array(0))());
     }
   }
 

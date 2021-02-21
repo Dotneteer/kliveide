@@ -63,6 +63,13 @@ function getKliveSettings(): KliveSettings | null {
 }
 
 /**
+ * Reloads the application settings
+ */
+export function reloadSettings(): void {
+  appSettings = getKliveSettings();
+}
+
+/**
  * Saves the current settings
  * @param settings Settings to save
  */
@@ -83,4 +90,5 @@ export const appConfiguration: KliveConfiguration | null = getKliveConfiguration
 /**
  * The application settings instance
  */
-export const appSettings: KliveSettings | null = getKliveSettings();
+export let appSettings: KliveSettings | null = getKliveSettings();
+
