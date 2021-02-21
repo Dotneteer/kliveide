@@ -1,6 +1,6 @@
 {
   "name": "kliveide-emu",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "ZX Spectrum Emulator",
   "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
