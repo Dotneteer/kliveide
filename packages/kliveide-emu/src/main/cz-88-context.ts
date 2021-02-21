@@ -18,9 +18,11 @@ import {
   menuIdFromMachineId,
 } from "./utils/electron-utils";
 import {
+  emulatorSetClockMultiplierAction,
   emulatorSetKeyboardAction,
   emulatorSetMachineContextAction,
 } from "../shared/state/redux-emulator-state";
+import { AppWindow } from "./AppWindow";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";
@@ -404,17 +406,22 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Override this method to get the machine-specific settings
    */
   getMachineSpecificSettings(): Record<string, any> {
+    const state = mainProcessStore.getState().emulatorPanelState;
     return {
       lcd: lcdLabel,
       kbLayout,
       romFile: recentRoms.length > 0 ? recentRoms[0] : null,
+      clockMultiplier: state.clockMultiplier,
+      soundLevel: state.soundLevel
     };
   }
 
   /**
    * Override this method to set the machine-specific settings
    */
-  async setMachineSpecificSettings(settings: Record<string, any>): Promise<void> {
+  async setMachineSpecificSettings(
+    settings: Record<string, any>
+  ): Promise<void> {
     if (settings.lcd) {
       switch (settings.lcd) {
         case "640x64":
@@ -451,7 +458,17 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
           break;
       }
     }
-    await new Promise(r => setTimeout(r, 600));
+    if (settings.clockMultiplier) {
+      mainProcessStore.dispatch(
+        emulatorSetClockMultiplierAction(settings.clockMultiplier)()
+      );
+    }
+    if (settings.soundLevel) {
+      AppWindow.instance.setSoundLevel(settings.soundLevel);
+      AppWindow.instance.setSoundLevelMenu(false, settings.soundLevel);
+    }
+
+    await new Promise((r) => setTimeout(r, 600));
     if (settings.romFile) {
       await this.selectRomFileToUse(settings.romFile);
     }
