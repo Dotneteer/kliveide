@@ -53,9 +53,11 @@ function getKliveSettings(): KliveSettings | null {
         recursive: true,
       });
     }
-    const contents = fs.readFileSync(configFile, "utf8");
-    const config = JSON.parse(contents);
-    return config;
+    if (fs.existsSync(configFile)) {
+      const contents = fs.readFileSync(configFile, "utf8");
+      const config = JSON.parse(contents);
+      return config;
+    }
   } catch (err) {
     console.log(`Cannot read and parse Klive settings file: ${err}`);
   }
@@ -67,12 +69,25 @@ function getKliveSettings(): KliveSettings | null {
  * @param settings Settings to save
  */
 export function saveKliveSettings(settings: KliveSettings): void {
-  const configFile = path.join(getHomeFolder(), SETTINGS_FILE_PATH);
+  const settingsFile = path.join(getHomeFolder(), SETTINGS_FILE_PATH);
+  const folder = path.dirname(settingsFile);
   try {
-    fs.writeFileSync(configFile, JSON.stringify(settings, null, 2));
+    if (!fs.existsSync(folder)) {
+      fs.mkdirSync(folder, {
+        recursive: true,
+      });
+    }
+    fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
   } catch (err) {
     console.log(`Cannot save Klive settings file: ${err}`);
   }
+}
+
+/**
+ * Reloads configuration settings
+ */
+export function reloadSettings(): void {
+  appSettings = getKliveSettings();
 }
 
 /**
@@ -83,4 +98,4 @@ export const appConfiguration: KliveConfiguration | null = getKliveConfiguration
 /**
  * The application settings instance
  */
-export const appSettings: KliveSettings | null = getKliveSettings();
+export let appSettings: KliveSettings | null = getKliveSettings();
