@@ -1,5 +1,42 @@
 # Klive IDE Changelog
 
+## 0.9.0-alpha.9
+
+### Klive Emulator
+
+#### Features
+
+- Cambridge Z88 Emulation handles
+    - Hard & soft reset
+    - Extra screen resolutions
+    - Selecting custom ROM
+    - Keyboard layouts for UK, DK/NO, SE/FI, DE, FR, and ES
+    - Sound emulation
+    - New Real-Time Clock implementation
+- Statusbar can be turned on and off
+- Frame information on statusbar can be turned on and off
+- Developer Tools is displayed only when connected to the IDE
+- Machine-specific Help menu items
+- Saving emulator settings (machine-specific) to a file when exiting the emulator
+
+#### Refactorings
+
+- Emulator updated to Electron 11.1; uses context isolation
+
+#### Fixes
+
+- ZX Spectrum 48/128 interrupt signal is no longer (256 microsecond), as in the real hardware.
+
+### Klive IDE
+
+#### Fixes
+
+- Report an error when ZXBC utility cannot be found
+
+#### Known Issues
+
+- Disassembly View does not refresh automatically when the selected ROM or Bank changes.
+
 ## 0.8.0-alpha.8
 
 ### Klive Emulator
