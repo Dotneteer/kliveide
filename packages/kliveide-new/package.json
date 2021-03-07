@@ -1,0 +1,25 @@
+{
+  "name": "klive-emu-new",
+  "version": "0.9.0",
+  "description": "Klive Emulator",
+  "main": "./dist/main.bundle.js",
+  "author": "Istvan Novak",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dotneteer/kliveide.git"
+  },
+  "keywords": [
+    "ZX Spectrum",
+    "Z80",
+    "emulator"
+  ],
+  "bugs": "https://github.com/Dotneteer/kliveide/issues",
+  "homepage": "https://github.com/Dotneteer/kliveide",
+  "scripts": {
+    "build:wa": "watsc ./src/wats/z80/core.wats ./build/core.wat && wat2wasm ./build/core.wat -o ./build/core.wasm"
+  },
+  "devDependencies": {
+    "wat2wasm": "^3.0.0"
+  }
+}

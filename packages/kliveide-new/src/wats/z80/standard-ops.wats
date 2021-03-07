@@ -1,0 +1,139 @@
+// ============================================================================
+// Z80 Standard operations
+// ============================================================================
+
+table void standardOps() {
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 00-07
+  exAF,     Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 08-0f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 10-17
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 18-1f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 20-27
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 28-2f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 30-37
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 38-3f
+
+  Nop,      LdBC,     LdBD,     LdBE,     LdBH,     LdBL,     LdBHLi,   LdBA,      // 40-47
+  LdCB,     Nop,      LdCD,     LdCE,     LdCH,     LdCL,     LdCHLi,   LdCA,      // 48-4f
+  LdDB,     LdDC,     Nop,      LdDE,     LdDH,     LdDL,     LdDHLi,   LdDA,      // 50-57
+  LdEB,     LdEC,     LdED,     Nop,      LdEH,     LdEL,     LdEHLi,   LdEA,      // 58-5f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 60-67
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 68-6f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      LdHLiA,    // 70-77
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 78-7f
+
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 80-87
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 88-8f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 90-97
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 98-9f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // a0-a7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // a8-af
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // b0-b7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // b8-bf
+
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // c0-c7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // c8-cf
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // d0-d7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // d8-df
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // e0-e8
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // e8-ef
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // f0-f7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop        // f8-ff
+};
+
+// nop (0x00)
+void Nop() {}
+
+// ex af,af' (0x08)
+void exAF() {
+  local u16 tmp = af;
+  af = af_;
+  af_ = tmp;
+}
+
+// ld b,c (0x41)
+void LdBC() { b = c; }
+
+// ld b,d (0x42)
+void LdBD() { b = d; }
+
+// ld b,e (0x43)
+void LdBE() { b = e; }
+
+// ld b,h (0x44)
+void LdBH() { b = h; }
+
+// ld b,l (0x45)
+void LdBL() { b = l; }
+
+// ld b,(hl) (0x46)
+void LdBHLi() { b = readMemory(hl); }
+
+// ld b,a (0x47)
+void LdBA() { b = a; }
+
+// ld c,b (0x48)
+void LdCB() { c = b; }
+
+// ld c,d (0x4a)
+void LdCD() { c = d; }
+
+// ld c,e (0x4b)
+void LdCE() { c = e; }
+
+// ld c,h (0x4c)
+void LdCH() { c = h; }
+
+// ld c,l (0x4d)
+void LdCL() { c = l; }
+
+// ld c,(hl) (0x4e)
+void LdCHLi() { c = readMemory(hl); }
+
+// ld c,a (0x4f)
+void LdCA() { c = a; }
+
+// ld d,b (0x50)
+void LdDB() { d = b; }
+
+// ld d,c (0x51)
+void LdDC() { d = c; }
+
+// ld d,e (0x53)
+void LdDE() { d = e; }
+
+// ld d,h (0x54)
+void LdDH() { d = h; }
+
+// ld d,l (0x55)
+void LdDL() { d = l; }
+
+// ld d,(hl) (0x56)
+void LdDHLi() { d = readMemory(hl); }
+
+// ld d,a (0x57)
+void LdDA() { d = a; }
+
+// ld e,b (0x58)
+void LdEB() { e = b; }
+
+// ld e,c (0x59)
+void LdEC() { e = c; }
+
+// ld e,d (0x5a)
+void LdED() { e = d; }
+
+// ld e,h (0x5c)
+void LdEH() { e = h; }
+
+// ld e,l (0x5d)
+void LdEL() { e = l; }
+
+// ld e,(hl) (0x5e)
+void LdEHLi() { e = readMemory(hl); }
+
+// ld e,a (0x5f)
+void LdEA() { e = a; }
+
+// ld (hl),a (0x77)
+void LdHLiA() { writeMemory(hl, a); }
+
