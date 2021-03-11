@@ -17,9 +17,29 @@
   "bugs": "https://github.com/Dotneteer/kliveide/issues",
   "homepage": "https://github.com/Dotneteer/kliveide",
   "scripts": {
-    "build:wa": "watsc ./src/wats/z80/core.wats ./build/core.wat && wat2wasm ./build/core.wat -o ./build/core.wasm"
+    "build:wa": "watsc ./src/wats/tz80-core/tz80.wats ./build/tz80.wat && wat2wasm ./build/tz80.wat -o ./build/tz80.wasm"
   },
   "devDependencies": {
-    "wat2wasm": "^3.0.0"
+    "@types/expect": "^24.3.0",
+    "@types/mocha": "^8.2.1",
+    "@types/node": "^14.14.33",
+    "copy-pkg-json-webpack-plugin": "^0.0.39",
+    "copy-webpack-plugin": "^8.0.0",
+    "cross-env": "^7.0.3",
+    "css-loader": "^5.1.1",
+    "electron": "^12.0.0",
+    "electron-builder": "^22.10.5",
+    "expect": "^26.6.2",
+    "html-webpack-plugin": "^5.3.1",
+    "lodash": "^4.17.21",
+    "mocha": "^8.3.1",
+    "rimraf": "^3.0.2",
+    "ts-loader": "^8.0.17",
+    "ts-mocha": "^8.0.0",
+    "typescript": "^4.2.3",
+    "wat2wasm": "^3.0.0",
+    "webpack": "^5.24.4",
+    "webpack-cli": "^4.5.0",
+    "worklet-loader": "^1.0.0"
   }
 }
