@@ -1,0 +1,62 @@
+// Base CPU clock frequency
+global u32 baseClockFrequency;
+
+// Clock frequency multiplier
+global u32 clockMultiplier;
+
+// Default clock frequency multiplier
+global u32 defaultClockMultiplier;
+
+// Sets the default clock multiplier
+export void setClockMultiplier(u32 multiplier) {
+  defaultClockMultiplier = multiplier & 0x1f;
+}
+
+
+export void setUlaIssue(u8 ula) {
+}
+
+export void getMachineState() {
+}
+
+export void setExecutionOptions() {
+}
+
+export void executeMachineLoop() {
+}
+
+export void setInterruptTact(u32 tact) {
+}
+
+export void checkForInterrupt(u32 tact) {
+}
+
+export void setKeyStatus(u8 key, bool isDown) {
+}
+
+export bool getKeyStatus(u8 key) {
+  return false;
+}
+
+export void setBeeperSampleRate(u32 rate) {
+}
+
+export void colorize() {
+}
+
+export u8 getCursorMode() {
+  return 0;
+}
+
+export void initTape(u16 blocks) {
+}
+
+export void setFastLoad(bool fast) {
+}
+
+export void resetStepOverStack() {
+}
+
+export void markStepOverStack() {
+}
+

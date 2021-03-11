@@ -1,0 +1,20 @@
+// ============================================================================
+// Core memory and port handling functions
+// ============================================================================
+
+// Reads the contents of the memory
+inline u8 readMemory(u16 addr) {
+  local u32 block = addr >> 13;
+  local u32 offset = addr & 0b0001_1111_1111_1111;
+  tacts += 3;
+  return vmMemory[blockLookupTable[block].readIndex + offset];
+}
+
+// Reads the contents of the memory
+inline void writeMemory(u16 addr, u8 value) {
+  local u32 block = addr >> 13;
+  local u32 offset = addr & 0b0001_1111_1111_1111;
+  local u32 vaddr = blockLookupTable[block].writeIndex + offset;
+  vmMemory[blockLookupTable[block].writeIndex + offset] = value;
+  tacts += 3;
+}

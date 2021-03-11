@@ -1,0 +1,1602 @@
+// ============================================================================
+// Z80 Standard operations
+// ============================================================================
+
+table void standardOps() {
+  Nop,      LdBCnn,   LdBCiA,   IncBC,    IncB,     DecB,     LdBn,     Rlca,      // 00-07
+  ExAF,     AddHLBC,  LdABCi,   DecBC,    IncC,     DecC,     LdCn,     Rrca,      // 08-0f
+  Djnz,     LdDEnn,   LdDEiA,   IncDE,    IncD,     DecD,     LdDn,     Rla,       // 10-17
+  Jr,       AddHLDE,  LdADEi,   DecDE,    IncE,     DecE,     LdEn,     Rra,       // 18-1f
+  JrNz,     LdHLnn,   LdNNiHL,  IncHL,    IncH,     DecH,     LdHn,     Daa,       // 20-27
+  JrZ,      AddHLHL,  LdHLNNi,  DecHL,    IncL,     DecL,     LdLn,     Cpl,       // 28-2f
+  JrNc,     LdSPnn,   LdNNiA,   IncSP,    IncHLi,   DecHLi,   LdHLin,   Scf,       // 30-37
+  JrC,      AddHLSP,  LdANNi,   DecSP,    IncA,     DecA,     LdAn,     Ccf,       // 38-3f
+
+  Nop,      LdBC,     LdBD,     LdBE,     LdBH,     LdBL,     LdBHLi,   LdBA,      // 40-47
+  LdCB,     Nop,      LdCD,     LdCE,     LdCH,     LdCL,     LdCHLi,   LdCA,      // 48-4f
+  LdDB,     LdDC,     Nop,      LdDE,     LdDH,     LdDL,     LdDHLi,   LdDA,      // 50-57
+  LdEB,     LdEC,     LdED,     Nop,      LdEH,     LdEL,     LdEHLi,   LdEA,      // 58-5f
+  LdHB,     LdHC,     LdHD,     LdHE,     Nop,      LdHL,     LdHHLi,   LdHA,      // 60-67
+  LdLB,     LdLC,     LdLD,     LdLE,     LdLH,     Nop,      LdLHLi,   LdLA,      // 68-6f
+  LdHLiB,   LdHLiC,   LdHLiD,   LdHLiE,   LdHLiH,   LdHLiL,   Halt,     LdHLiA,    // 70-77
+  LdAB,     LdAC,     LdAD,     LdAE,     LdAH,     LdAL,     LdAHLi,   Nop,       // 78-7f
+
+  AddB,     AddC,     AddD,     AddE,     AddH,     AddL,     AddHLi,   AddA,      // 80-87
+  AdcB,     AdcC,     AdcD,     AdcE,     AdcH,     AdcL,     AdcHLi,   AdcA,      // 88-8f
+  SubB,     SubC,     SubD,     SubE,     SubH,     SubL,     SubHLi,   SubA,      // 90-97
+  SbcB,     SbcC,     SbcD,     SbcE,     SbcH,     SbcL,     SbcHLi,   SbcA,      // 98-9f
+  AndB,     AndC,     AndD,     AndE,     AndH,     AndL,     AndHLi,   AndA,      // a0-a7
+  XorB,     XorC,     XorD,     XorE,     XorH,     XorL,     XorHLi,   XorA,      // a8-af
+  OrB,      OrC,      OrD,      OrE,      OrH,      OrL,      OrHLi,    OrA,       // b0-b7
+  CpB,      CpC,      CpD,      CpE,      CpH,      CpL,      CpHLi,    CpA,       // b8-bf
+
+  RetNz,    PopBC,    JpNz,     Jp,       CallNz,   PushBC,   AddN,     Rst00,     // c0-c7
+  RetZ,     Ret,      JpZ,      Nop,      CallZ,    Call,     AdcN,     Rst08,     // c8-cf
+  RetNc,    PopDE,    JpNc,     OutNA,    CallNc,   PushDE,   SubN,     Rst10,     // d0-d7
+  RetC,     Exx,      JpC,      InAN,     CallC,    DDPref,   SbcN,     Rst18,     // d8-df
+  RetPo,    PopHL,    JpPo,     ExSPHLi,  CallPo,   PushHL,   AndN,     Rst20,     // e0-e7
+  RetPe,    JpHL,     JpPe,     ExDEHL,   CallPe,   Nop,      XorN,     Rst28,     // e8-ef
+  RetP,     PopAF,    JpP,      Di,       CallP,    PushAF,   OrN,      Rst30,     // f0-f7
+  RetM,     LdSPHL,   JpM,      Nop,      CallM,    FDPref,   CpN,      Rst38      // f8-ff
+};
+
+// nop (0x00)
+void Nop() {}
+
+// ld bc,nn (0x01)
+void LdBCnn() {
+  c = readMemory(pc);
+  pc += 1;
+  b = readMemory(pc);
+  pc += 1;
+}
+
+// ld (bc),a (0x02)
+void LdBCiA() {
+  wl = bc + 1;
+  wh = a;
+  writeMemory(bc, a);
+}
+
+// inc bc (0x03)
+void IncBC() {
+  bc += 1;
+  tacts += 2;
+}
+
+// inc b (0x04)
+void IncB() {
+  adjustIncFlags(b);
+  b += 1;
+}
+
+// dec b (0x05)
+void DecB() {
+  adjustDecFlags(b);
+  b -= 1;
+}
+
+// ld b,n (0x06)
+void LdBn() {
+  b = readMemory(pc);
+  pc += 1;
+}
+
+// rlca (0x07)
+void Rlca() {
+  a = (a << 1) | (a >> 7);
+  f = (f & FLAG_SZP) | (a & FLAG_53C);
+}
+
+// ex af,af' (0x08)
+void ExAF() {
+  local u16 tmp = af;
+  af = af_;
+  af_ = tmp;
+}
+
+// add hl,bc (0x09)
+void AddHLBC() {
+  hl = add16(hl, bc);
+  tacts += 7;
+}
+
+// ld a,(bc) (0x0a)
+void LdABCi() {
+  wz = bc + 1;
+  a = readMemory(bc);
+}
+
+// dec bc (0x0b)
+void DecBC() {
+  bc -= 1;
+  tacts += 2;
+}
+
+// inc c (0x0c)
+void IncC() {
+  adjustIncFlags(c);
+  c += 1;
+}
+
+// dec c (0x0d)
+void DecC() {
+  adjustDecFlags(c);
+  c -= 1;
+}
+
+// ld c,n (0x0e)
+void LdCn() {
+  c = readMemory(pc);
+  pc += 1;
+}
+
+// rrca (0x0f)
+void Rrca() {
+  f = (f & FLAG_SZP ) | (a & FLAG_C);
+  a = (a >> 1) | (a << 7);
+  f |= (a & FLAG_53);
+}
+
+// djnz e (0x10)
+void Djnz() {
+  tacts += 1;
+  local u32 e = readMemory(pc);
+  pc += 1;
+  b -= 1;
+  if (!b) {
+    return;
+  }
+  relativeJump(e);
+}
+
+// ld de,nn (0x11)
+void LdDEnn() {
+  e = readMemory(pc);
+  pc += 1;
+  d = readMemory(pc);
+  pc += 1;
+}
+
+// ld (de),a (0x12)
+void LdDEiA() {
+  wl = de + 1;
+  wh = a;
+  writeMemory(de, a);
+}
+
+// inc de (0x13)
+void IncDE() {
+  de += 1;
+  tacts += 2;
+}
+
+// inc d (0x14)
+void IncD() {
+  adjustIncFlags(d);
+  d += 1;
+}
+
+// dec d (0x15)
+void DecD() {
+  adjustDecFlags(d);
+  d -= 1;
+}
+
+// ld d,n (0x16)
+void LdDn() {
+  d = readMemory(pc);
+  pc += 1;
+}
+
+// rla (0x17)
+void Rla() {
+  local u8 tmp = a;
+	a = (a << 1) | (f & FLAG_C);
+	f = (f & FLAG_SZP) | (a & FLAG_53) | (tmp >> 7);
+}
+
+// jr e (0x18)
+void Jr() {
+  local u8 e = readMemory(pc);
+  pc += 1;
+  relativeJump(e);
+}
+
+// add hl,de (0x19)
+void AddHLDE() {
+  hl = add16(hl, de);
+  tacts += 7;
+}
+
+// ld a,(de) (0x1a)
+void LdADEi() {
+  wz = de + 1;
+  a = readMemory(de);
+}
+
+// dec de (0x1b)
+void DecDE() {
+  de -= 1;
+  tacts += 2;
+}
+
+// inc e (0x1c)
+void IncE() {
+  adjustIncFlags(e);
+  e += 1;
+}
+
+// dec e (0x1d)
+void DecE() {
+  adjustDecFlags(e);
+  e -= 1;
+}
+
+// ld e,n (0x1e)
+void LdEn() {
+  e = readMemory(pc);
+  pc += 1;
+}
+
+// rra (0x1f)
+void Rra() {
+  local u8 tmp = a;
+  a = (a >> 1) | (f << 7);
+	f = (f & FLAG_SZP) | (a & FLAG_53) | (tmp & FLAG_C) ;
+}
+
+// jr nz,e (0x20)
+void JrNz() {
+  local u8 e = readMemory(pc);
+  pc += 1;
+  if (f & FLAG_Z) {
+    return;
+  }
+  relativeJump(e);
+}
+
+// ld hl,nn (0x21)
+void LdHLnn() {
+  l = readMemory(pc);
+  pc += 1;
+  h = readMemory(pc);
+  pc += 1;
+}
+
+// ld (nn),hl (0x22)
+void LdNNiHL() {
+  store16(l, h);
+}
+
+// inc hl (0x23)
+void IncHL() {
+  hl += 1;
+  tacts += 2;
+}
+
+// inc h (0x24)
+void IncH() {
+  adjustIncFlags(h);
+  h += 1;
+}
+
+// dec h (0x25)
+void DecH() {
+  adjustDecFlags(h);
+  h -= 1;
+}
+
+// ld h,n (0x26)
+void LdHn() {
+  h = readMemory(pc);
+  pc += 1;
+}
+
+// daa (0x27)
+void Daa() {
+  local u32 add = 0;
+  local u32 carry = f & FLAG_C;
+  if ((f & FLAG_H) | ((a & 0x0f) > 9)) {
+    add = 6;
+  }
+  if (carry | (a > 0x99)) {
+    add |= 0x60;
+  }
+  if (a > 0x99) {
+    carry = FLAG_C;
+  }
+  if (f & FLAG_N) {
+    sub8(add);
+  } else {
+    add8(add);
+  }
+  f = (f & ~(FLAG_C | FLAG_PV)) | carry | parityTable[a];
+}
+
+// jr z,e (0x28)
+void JrZ() {
+  local u8 e = readMemory(pc);
+  pc += 1;
+  if (f & FLAG_Z) {
+    relativeJump(e);
+  }
+}
+
+// add hl,hl (0x29)
+void AddHLHL() {
+  hl = add16(hl, hl);
+  tacts += 7;
+}
+
+// ld hl,(nn) (0x2a)
+void LdHLNNi() {
+  local u32 tmp = readMemory(pc);
+  pc += 1;
+  tmp += readMemory(pc) << 8;
+  pc += 1;
+  l = readMemory(tmp);
+  tmp += 1;
+  wz = tmp;
+  h = readMemory(tmp);
+}
+
+// dec hl (0x2b)
+void DecHL() {
+  hl -= 1;
+  tacts += 2;
+}
+
+// inc l (0x2c)
+void IncL() {
+  adjustIncFlags(l);
+  l += 1;
+}
+
+// dec l (0x2d)
+void DecL() {
+  adjustDecFlags(l);
+  l -= 1;
+}
+
+// ld l,n (0x2e)
+void LdLn() {
+  l = readMemory(pc);
+  pc += 1;
+}
+
+// cpl (0x2f)
+void Cpl() {
+  a ^= 0xff;
+  f = (f & (FLAG_C | FLAG_PV | FLAG_Z | FLAG_S)) |
+	  (a & FLAG_53) | (FLAG_N | FLAG_H);
+}
+
+// jr nc,e (0x30)
+void JrNc() {
+  local u8 e = readMemory(pc);
+  pc += 1;
+  if (f & FLAG_C) {
+    return;
+  }
+  relativeJump(e);
+}
+
+// ld sp,nn (0x31)
+void LdSPnn() {
+  local u16 tmp = readMemory(pc);
+  pc += 1;
+  sp = tmp + (readMemory(pc) << 8);
+  pc += 1;
+}
+
+// ld (nn),a (0x32)
+void LdNNiA() {
+  local u16 tmp = readMemory(pc);
+  pc += 1;
+  tmp += readMemory(pc) << 8;
+  pc += 1;
+  wl = tmp + 1;
+  wh = a;
+  writeMemory(tmp, a);
+}
+
+// inc bc (0x33)
+void IncSP() {
+  sp += 1;
+  tacts += 2;
+}
+
+// inc (hl) (0x34)
+void IncHLi() {
+  local u8 tmp = readMemory(hl);
+  tacts += 1;
+  adjustIncFlags(tmp);
+  writeMemory(hl, tmp + 1);
+}
+
+// dec (hl) (0x35)
+void DecHLi() {
+  local u8 tmp = readMemory(hl);
+  tacts += 1;
+  adjustDecFlags(tmp);
+  writeMemory(hl, tmp - 1);
+}
+
+// ld (hl),n (0x36)
+void LdHLin() {
+  writeMemory(hl, readMemory(pc));
+  pc += 1;
+}
+
+// scf (0x37)
+void Scf() {
+  f = (a & FLAG_53) | (f & FLAG_SZP) | FLAG_C;
+}
+
+// jr c,e (0x38)
+void JrC() {
+  local u8 e = readMemory(pc);
+  pc += 1;
+  if (f & FLAG_C) {
+    relativeJump(e);
+  }
+}
+
+// add hl,sp (0x39)
+void AddHLSP() {
+  hl = add16(hl, sp);
+  tacts += 7;
+}
+
+// ld a,(nn)
+void LdANNi() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  pc += 1;
+  a = readMemory(wz);
+  wz += 1;
+}
+
+// dec sp (0x3b)
+void DecSP() {
+  sp -= 1;
+  tacts += 2;
+}
+
+// inc a (0x3c)
+void IncA() {
+  adjustIncFlags(a);
+  a += 1;
+}
+
+// dec a (0x3d)
+void DecA() {
+  adjustDecFlags(a);
+  a -= 1;
+}
+
+// ld a,n (0x3e)
+void LdAn() {
+  a = readMemory(pc);
+  pc += 1;
+}
+
+// ccf (0x3f)
+void Ccf() {
+  f = (a & FLAG_53) | (f & FLAG_SZP) | (f & FLAG_C ? FLAG_H : FLAG_C);
+}
+
+// ld b,c (0x41)
+void LdBC() { b = c; }
+
+// ld b,d (0x42)
+void LdBD() { b = d; }
+
+// ld b,e (0x43)
+void LdBE() { b = e; }
+
+// ld b,h (0x44)
+void LdBH() { b = h; }
+
+// ld b,l (0x45)
+void LdBL() { b = l; }
+
+// ld b,(hl) (0x46)
+void LdBHLi() { b = readMemory(hl); }
+
+// ld b,a (0x47)
+void LdBA() { b = a; }
+
+// ld c,b (0x48)
+void LdCB() { c = b; }
+
+// ld c,d (0x4a)
+void LdCD() { c = d; }
+
+// ld c,e (0x4b)
+void LdCE() { c = e; }
+
+// ld c,h (0x4c)
+void LdCH() { c = h; }
+
+// ld c,l (0x4d)
+void LdCL() { c = l; }
+
+// ld c,(hl) (0x4e)
+void LdCHLi() { c = readMemory(hl); }
+
+// ld c,a (0x4f)
+void LdCA() { c = a; }
+
+// ld d,b (0x50)
+void LdDB() { d = b; }
+
+// ld d,c (0x51)
+void LdDC() { d = c; }
+
+// ld d,e (0x53)
+void LdDE() { d = e; }
+
+// ld d,h (0x54)
+void LdDH() { d = h; }
+
+// ld d,l (0x55)
+void LdDL() { d = l; }
+
+// ld d,(hl) (0x56)
+void LdDHLi() { d = readMemory(hl); }
+
+// ld d,a (0x57)
+void LdDA() { d = a; }
+
+// ld e,b (0x58)
+void LdEB() { e = b; }
+
+// ld e,c (0x59)
+void LdEC() { e = c; }
+
+// ld e,d (0x5a)
+void LdED() { e = d; }
+
+// ld e,h (0x5c)
+void LdEH() { e = h; }
+
+// ld e,l (0x5d)
+void LdEL() { e = l; }
+
+// ld e,(hl) (0x5e)
+void LdEHLi() { e = readMemory(hl); }
+
+// ld e,a (0x5f)
+void LdEA() { e = a; }
+
+// ld h,b (0x60)
+void LdHB() { h = b; }
+
+// ld h,c (0x61)
+void LdHC() { h = c; }
+
+// ld h,d (0x62)
+void LdHD() { h = d; }
+
+// ld h,e (0x63)
+void LdHE() { h = e; }
+
+// ld h,l (0x65)
+void LdHL() { h = l; }
+
+// ld h,(hl) (0x66)
+void LdHHLi() { h = readMemory(hl); }
+
+// ld h,a (0x67)
+void LdHA() { h = a; }
+
+// ld l,b (0x68)
+void LdLB() { l = b; }
+
+// ld l,c (0x69)
+void LdLC() { l = c; }
+
+// ld l,d (0x6a)
+void LdLD() { l = d; }
+
+// ld l,e (0x6b)
+void LdLE() { l = e; }
+
+// ld l,h (0x6c)
+void LdLH() { l = h; }
+
+// ld l,(hl) (0x6e)
+void LdLHLi() { l = readMemory(hl); }
+
+// ld l,a (0x6f)
+void LdLA() { l = a; }
+
+// ld (hl),b (0x70)
+void LdHLiB() { writeMemory(hl, b); }
+
+// ld (hl),c (0x71)
+void LdHLiC() { writeMemory(hl, c); }
+
+// ld (hl),d (0x72)
+void LdHLiD() { writeMemory(hl, d); }
+
+// ld (hl),e (0x73)
+void LdHLiE() { writeMemory(hl, e); }
+
+// ld (hl),h (0x74)
+void LdHLiH() { writeMemory(hl, h); }
+
+// ld (hl),l (0x75)
+void LdHLiL() { writeMemory(hl, l); }
+
+// halt (0x76)
+void Halt() {
+  cpuSignalFlags |= SIG_HLT;
+  pc -= 1;
+}
+
+// ld (hl),a (0x77)
+void LdHLiA() { writeMemory(hl, a); }
+
+// ld a,b (0x78)
+void LdAB() { a = b; }
+
+// ld a,c (0x79)
+void LdAC() { a = c; }
+
+// ld a,d (0x7a)
+void LdAD() { a = d; }
+
+// ld a,e (0x7b)
+void LdAE() { a = e; }
+
+// ld a,h (0x7c)
+void LdAH() { a = h; }
+
+// ld a,l (0x7d)
+void LdAL() { a = l; }
+
+// ld a,(hl) (0x7e)
+void LdAHLi() { a = readMemory(hl); }
+
+// add a,b (0x80)
+void AddB() {
+  add8(b);
+}
+
+// add a,c (0x81)
+void AddC() {
+  add8(c);
+}
+
+void AddD() {
+  add8(d);
+}
+
+// add a,e (0x83)
+void AddE() {
+  add8(e);
+}
+
+// add a,h (0x84)
+void AddH() {
+  add8(h);
+}
+
+// add a,l (0x85)
+void AddL() {
+  add8(l);
+}
+
+// add a,(hl) (0x86)
+void AddHLi() {
+  local u8 value = readMemory(hl);
+  add8(value);
+}
+
+// add a,a (0x87)
+void AddA() {
+  add8(a);
+}
+
+// adc a,b (0x88)
+void AdcB() {
+  adc8(b);
+}
+
+// adc a,c (0x89)
+void AdcC() {
+  adc8(c);
+}
+
+// adc a,d (0x8a)
+void AdcD() {
+  adc8(d);
+}
+
+// adc a,e (0x8b)
+void AdcE() {
+  adc8(e);
+}
+
+// adc a,h (0x8c)
+void AdcH() {
+  adc8(h);
+}
+
+// adc a,l (0x8d)
+void AdcL() {
+  adc8(l);
+}
+
+// adc a,(hl) (0x8e)
+void AdcHLi() {
+  local u8 value = readMemory(hl);
+  adc8(value);
+}
+
+// adc a,a (0x8f)
+void AdcA() {
+  adc8(a);
+}
+
+// sub b (0x90)
+void SubB() {
+  sub8(b);
+}
+
+// sub c (0x91)
+void SubC() {
+  sub8(c);
+}
+
+// sub d (0x92)
+void SubD() {
+  sub8(d);
+}
+
+// sub e (0x93)
+void SubE() {
+  sub8(e);
+}
+
+// sub h (0x94)
+void SubH() {
+  sub8(h);
+}
+
+// sub l (0x95)
+void SubL() {
+  sub8(l);
+}
+
+// sub (hl) (0x96)
+void SubHLi() {
+  local u8 value = readMemory(hl);
+  sub8(value);
+}
+
+// sub a (0x97)
+void SubA() {
+  sub8(a);
+}
+
+// sbc a,b (0x98)
+void SbcB() {
+  sbc8(b);
+}
+
+// sbc a,c (0x99)
+void SbcC() {
+  sbc8(c);
+}
+
+// sbc a,d (0x9a)
+void SbcD() {
+  sbc8(d);
+}
+
+// sbc a,e (0x9b)
+void SbcE() {
+  sbc8(e);
+}
+
+// sbc a,h (0x9c)
+void SbcH() {
+  sbc8(h);
+}
+
+// sbc a,l (0x9d)
+void SbcL() {
+  sbc8(l);
+}
+
+// sbc a,(hl) (0x9e)
+void SbcHLi() {
+  local u8 value = readMemory(hl);
+  sbc8(value);
+}
+
+// sbc a,a (0x9f)
+void SbcA() {
+  sbc8(a);
+}
+
+// and b (0xa0)
+void AndB() {
+  and8(b);
+}
+
+// and c (0xa1)
+void AndC() {
+  and8(c);
+}
+
+// and d (0xa2)
+void AndD() {
+  and8(d);
+}
+
+// and e (0xa3)
+void AndE() {
+  and8(e);
+}
+
+// and h (0xa4)
+void AndH() {
+  and8(h);
+}
+
+// and l (0xa5)
+void AndL() {
+  and8(l);
+}
+
+// and (hl) (0xa6)
+void AndHLi() {
+  local u8 value = readMemory(hl);
+  and8(value);
+}
+
+// and a (0xa7)
+void AndA() {
+  and8(a);
+}
+
+// xor b (0xa8)
+void XorB() {
+  xor8(b);
+}
+
+// xor c (0xa9)
+void XorC() {
+  xor8(c);
+}
+
+// xor d (0xaa)
+void XorD() {
+  xor8(d);
+}
+
+// xor e (0xab)
+void XorE() {
+  xor8(e);
+}
+
+// xor h (0xac)
+void XorH() {
+  xor8(h);
+}
+
+// xor l (0xad)
+void XorL() {
+  xor8(l);
+}
+
+// xor (hl) (0xae)
+void XorHLi() {
+  local u8 value = readMemory(hl);
+  xor8(value);
+}
+
+// xor a (0xaf)
+void XorA() {
+  xor8(a);
+}
+
+// or b (0xb0)
+void OrB() {
+  or8(b);
+}
+
+// or c (0xb1)
+void OrC() {
+  or8(c);
+}
+
+// or d (0xb2)
+void OrD() {
+  or8(d);
+}
+
+// or e (0xb3)
+void OrE() {
+  or8(e);
+}
+
+// or h (0xb4)
+void OrH() {
+  or8(h);
+}
+
+// or l (0xb5)
+void OrL() {
+  or8(l);
+}
+
+// or (hl) (0xb6)
+void OrHLi() {
+  local u8 value = readMemory(hl);
+  or8(value);
+}
+
+// or a (0xb7)
+void OrA() {
+  or8(a);
+}
+
+// cp b (0xb8)
+void CpB() {
+  cp8(b);
+}
+
+// cp c (0xb9)
+void CpC() {
+  cp8(c);
+}
+
+// cp d (0xba)
+void CpD() {
+  cp8(d);
+}
+
+// cp e (0xbb)
+void CpE() {
+  cp8(e);
+}
+
+// cp h (0xbc)
+void CpH() {
+  cp8(h);
+}
+
+// cp l (0xbd)
+void CpL() {
+  cp8(l);
+}
+
+// cp (hl) (0xbe)
+void CpHLi() {
+  local u8 value = readMemory(hl);
+  cp8(value);
+}
+
+// cp a (0xbf)
+void CpA() {
+  cp8(a);
+}
+
+// ret nz (0xc0)
+void RetNz() {
+  tacts += 1;
+  if (f & FLAG_Z) {
+    return;
+  }
+  retCore();
+}
+
+// pop bc (0xc1)
+void PopBC() {
+  c = readMemory(sp);
+  sp += 1;
+  b = readMemory(sp);
+  sp += 1;
+}
+
+// jp nz (0xc2)
+void JpNz() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_Z) {
+    pc += 1;
+    return;
+  }
+  pc = wz;
+}
+
+// jp nn (0xc3)
+void Jp() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  pc = wz;
+}
+
+// call nz (0xc4)
+void CallNz() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_Z) {
+    pc += 1;
+    return;
+  }
+  callCore();
+}
+
+// push bc (0xc5)
+void PushBC() {
+  tacts += 1;
+  sp -= 1;
+  writeMemory(sp, b);
+  sp -= 1;
+  writeMemory(sp, c);
+}
+
+// add a,n (0xc6)
+void AddN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  add8(value);
+}
+
+// rst 00 (0xc7)
+void Rst00() {
+  RstCore(0x00);
+}
+
+// ret z (0xc8)
+void RetZ() {
+  tacts += 1;
+  if (f & FLAG_Z) {
+    retCore();
+  }
+}
+
+// ret (0xc9)
+void Ret() {
+  retCore();
+}
+
+// jp z (0xca)
+void JpZ() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_Z) {
+    pc = wz;
+    return;
+  }
+  pc += 1;
+}
+
+// call z (0xcc)
+void CallZ() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_Z) {
+    callCore();
+    return;
+  }
+  pc += 1;
+}
+
+// call nn (0xcd)
+void Call() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  callCore();
+}
+
+// adc a,n (0xce)
+void AdcN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  adc8(value);
+}
+
+// rst 08 (0xcf)
+void Rst08() {
+  RstCore(0x08);
+}
+
+// ret nc (0xd0)
+void RetNc() {
+  tacts += 1;
+  if (f & FLAG_C) {
+    return;
+  }
+  retCore();
+}
+
+// pop de (0xd1)
+void PopDE() {
+  e = readMemory(sp);
+  sp += 1;
+  d = readMemory(sp);
+  sp += 1;
+}
+
+// jp nc (0xd2)
+void JpNc() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_C) {
+    pc += 1;
+    return;
+  }
+  pc = wz;
+}
+
+// out (n), (0xd3)
+void OutNA() {
+  local u8 nn = readMemory(pc);
+  pc += 1;
+  local u16 port = nn | (a << 8);
+  wh = a;
+  wl = nn + 1;
+  writePort(port, a) ;
+}
+
+// call nc (0xd4)
+void CallNc() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_C) {
+    pc += 1;
+    return;
+  }
+  callCore();
+}
+
+// push hl (0xd5)
+void PushDE() {
+  tacts += 1;
+  sp -= 1;
+  writeMemory(sp, d);
+  sp -= 1;
+  writeMemory(sp, e);
+}
+
+// sub a,n (0xd6)
+void SubN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  sub8(value);
+}
+
+// rst 10 (0xd7)
+void Rst10() {
+  RstCore(0x10);
+}
+
+// ret c (0xd8)
+void RetC() {
+  tacts += 1;
+  if (f & FLAG_C) {
+    retCore();
+  }
+}
+
+// exx (0xd9)
+void Exx() {
+  local u16 tmp = bc;
+  bc = bc_;
+  bc_ = tmp;
+  tmp = de;
+  de = de_;
+  de_ = tmp;
+  tmp = hl;
+  hl = hl_;
+  hl_ = tmp;
+}
+
+// jp c (0xda)
+void JpC() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_C) {
+    pc = wz;
+    return;
+  }
+  pc += 1;
+}
+
+// in a,(n) (0xdb)
+void InAN() {
+  local u16 inTemp = readMemory(pc) | (a << 8);
+  pc += 1;
+  a = readPort(inTemp);
+  wz = inTemp + 1;
+}
+
+// call c (0xdc)
+void CallC() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_C) {
+    callCore();
+    return;
+  }
+  pc += 1;
+}
+
+// sbc a,n (0xde)
+void SbcN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  sbc8(value);
+}
+
+// rst 18 (0xdf)
+void Rst18() {
+  RstCore(0x18);
+}
+
+// ret po (0xe0)
+void RetPo() {
+  tacts += 1;
+  if (f & FLAG_PV) {
+    return;
+  }
+  retCore();
+}
+
+// pop hl (0xe1)
+void PopHL() {
+  l = readMemory(sp);
+  sp += 1;
+  h = readMemory(sp);
+  sp += 1;
+}
+
+// jp po (0xe2)
+void JpPo() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_PV) {
+    pc += 1;
+    return;
+  }
+  pc = wz;
+}
+
+// ex (sp),hl (0xe3)
+void ExSPHLi() {
+  local u16 sp1 = sp + 1;
+  local u8 tempL = readMemory(sp);
+  local u8 tempH = readMemory(sp1);
+  tacts += 1;
+  writeMemory(sp1, h);
+  writeMemory(sp, l);
+  tacts += 2;
+  l = tempL;
+  h = tempH;
+}
+
+// call po (0xe4)
+void CallPo() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_PV) {
+    pc += 1;
+    return;
+  }
+  callCore();
+}
+
+// push hl (0xe5)
+void PushHL() {
+  tacts += 1;
+  sp -= 1;
+  writeMemory(sp, h);
+  sp -= 1;
+  writeMemory(sp, l);
+}
+
+// and a,n (0xe6)
+void AndN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  and8(value);
+}
+
+// rst 20 (0xe7)
+void Rst20() {
+  RstCore(0x20);
+}
+
+// ret pe (0xe8)
+void RetPe() {
+  tacts += 1;
+  if (f & FLAG_PV) {
+    retCore();
+  }
+}
+
+// jp (hl)
+void JpHL() {
+  pc = hl;
+}
+
+// jp pe (0xea)
+void JpPe() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_PV) {
+    pc = wz;
+    return;
+  }
+  pc += 1;
+}
+
+// ex de,hl (0xeb)
+void ExDEHL() {
+  local u16 tmp = de;
+  de = hl;
+  hl = tmp;
+}
+
+// call pe (0xec)
+void CallPe() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_PV) {
+    callCore();
+    return;
+  }
+  pc += 1;
+}
+
+// xor a,n (0xee)
+void XorN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  xor8(value);
+}
+
+// rst 28 (0xef)
+void Rst28() {
+  RstCore(0x28);
+}
+
+// ret p (0xf0)
+void RetP() {
+  tacts += 1;
+  if (f & FLAG_S) {
+    return;
+  }
+  retCore();
+}
+
+// pop af (0xf1)
+void PopAF() {
+  f = readMemory(sp);
+  sp += 1;
+  a = readMemory(sp);
+  sp += 1;
+}
+
+// jp p (0xf2)
+void JpP() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_S) {
+    pc += 1;
+    return;
+  }
+  pc = wz;
+}
+
+// di (0xf3)
+void Di() {
+  iff1 = 0;
+  iff2 = 0;
+}
+
+// call nc (0xf4)
+void CallP() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_S) {
+    pc += 1;
+    return;
+  }
+  callCore();
+}
+
+// push af (0xf5)
+void PushAF() {
+  tacts += 1;
+  sp -= 1;
+  writeMemory(sp, a);
+  sp -= 1;
+  writeMemory(sp, f);
+}
+
+// or a,n (0xf6)
+void OrN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  or8(value);
+}
+
+// rst 30 (0xf7)
+void Rst30() {
+  RstCore(0x30);
+}
+
+// ret m (0xf8)
+void RetM() {
+  tacts += 1;
+  if (f & FLAG_S) {
+    retCore();
+  }
+}
+
+// ld sp,hl (0xf9)
+void LdSPHL() {
+  tacts += 2;
+  sp = hl;
+}
+
+// jp m (0xfa)
+void JpM() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_S) {
+    pc = wz;
+    return;
+  }
+  pc += 1;
+}
+
+// ei (0xfb)
+void Ei() {
+  iff1 = 1;
+  iff2 = 1;
+  lastSignalAddress = pc;
+}
+
+// call M (0xfc)
+void CallM() {
+  wl = readMemory(pc);
+  pc += 1;
+  wh = readMemory(pc);
+  if (f & FLAG_S) {
+    callCore();
+    return;
+  }
+  pc += 1;
+}
+
+// cp n (0xfe)
+void CpN() {
+  local u8 value = readMemory(pc);
+  pc += 1;
+  cp8(value);
+}
+
+// rst 38 (0xff)
+void Rst38() {
+  RstCore(0x38);
+}
+
+// Handles the DD prefix (IX-indexed instructions)
+void DDPref() {
+  // --- Read the opCode from PC
+  opCode = readMemory(pc);
+  pc += 1;
+  r += 1;
+
+  // --- Too long DD/FD sequence?
+  ddfdDepth += 1;
+  if (ddfdDepth > 4) {
+    // --- Yes, go back one byte
+    pc -= 1;
+    r -= 1;
+    return;
+  }
+  useIx = true;
+  indexedOps()[opCode];
+}
+
+// Handles the DD prefix (IX-indexed instrcutions)
+void FDPref() {
+  // --- Read the opCode from PC
+  opCode = readMemory(pc);
+  pc += 1;
+  r += 1;
+
+  // --- Too long DD/FD sequence?
+  ddfdDepth += 1;
+  if (ddfdDepth > 4) {
+    // --- Yes, go back one byte
+    pc -= 1;
+    r -= 1;
+    return;
+  }
+  useIx = false;
+  indexedOps()[opCode];
+}
+
+// ============================================================================
+// Helpers
+
+// Executes a relative jump
+inline void relativeJump(u8 e) {
+  tacts += 5;
+  pc += i8(e);
+  wz = pc;
+}
+
+// Stores two 8-bit values to the address in the code
+void store16(u8 low, u8 high) {
+  local u32 tmp = readMemory(pc);
+  pc += 1;
+  tmp += readMemory(pc) << 8;
+  pc += 1;
+  writeMemory(tmp, low);
+  tmp += 1;
+  wz = tmp;
+  writeMemory(tmp, high);
+}
+
+// Core of the RET instruction
+void retCore() {
+  local u8 tmp = readMemory(sp);
+  sp += 1;
+  tmp += readMemory(sp) << 8;
+  sp += 1;
+  pc = tmp;
+  wz = tmp;
+}
+
+// Core of the CALL instruction
+void callCore() {
+  tacts += 1;
+  pc += 1;
+  sp -= 1;
+  writeMemory(sp, pc >> 8);
+  sp -= 1;
+  writeMemory(sp, pc);
+  pc = wz;
+}
+
+// Core of the RST instruction
+void RstCore(u16 addr) {
+  tacts += 1;
+  sp -= 1;
+  writeMemory(sp, pc >> 8);
+  sp -= 1;
+  writeMemory(sp, pc);
+  pc = addr;
+  wz = addr;
+}

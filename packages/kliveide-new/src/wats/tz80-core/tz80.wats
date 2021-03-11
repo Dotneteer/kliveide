@@ -1,0 +1,135 @@
+import void trace "imports" "trace" (u32);
+
+#include "../z80/z80.wats"
+#include "../z80/z80-default-handlers.wats"
+#include "machine.wats"
+
+// ============================================================================
+// Test machine global variables
+
+// Test run mode
+global u32 testRunMode;
+const u32 RM_NORMAL = 0;
+const u32 RM_ONE_INSTRUCTION = 1;
+const u32 RM_UNTIL_HALT = 2;
+const u32 RM_UNTIL_END = 3;
+
+// The end of the code injected for test pusposes
+global u16 testCodeEndsAt;
+
+// The length of test input sequence
+global u32 testInputLength;
+
+// The index of the next test input
+global u32 nextTestInput;
+
+// The length of the I/O access log
+global u32 ioLogLength;
+
+// ============================================================================
+// Test machine types
+
+// Structure for an I/O log entry
+type ioOp = struct {
+  u16 address,
+  u8 value,
+  bool isOutput
+};
+
+// Test input for I/O tests
+u8[256] testInput;
+
+// I/O operation log for tests
+ioOp[256] ioOperationLog;
+
+// ============================================================================
+// Test I/O handler
+
+// Reads a byte from the specified I/O port
+u8 readPort(u16 port) {
+  local u8 value = testInput[nextTestInput];
+  nextTestInput += 1;
+  if (nextTestInput >= testInputLength) {
+    nextTestInput = 0;
+  }
+  ioOperationLog[ioLogLength].address = port;
+  ioOperationLog[ioLogLength].value = value;
+  ioOperationLog[ioLogLength].isOutput = false;
+  ioLogLength += 1;
+  tacts += 4;
+  return value;
+}
+
+// Writes a byte to the specified I/O port
+void writePort(u16 port, u8 value) {
+  ioOperationLog[ioLogLength].address = port;
+  ioOperationLog[ioLogLength].value = value;
+  ioOperationLog[ioLogLength].isOutput = true;
+  ioLogLength += 1;
+  tacts += 4;
+}
+
+// ============================================================================
+// Test machine specific functions
+
+// Prepares the machine for running a test
+export void prepareTest(u8 mode, u16 codeEnds) {
+  testRunMode = mode;
+  testCodeEndsAt = codeEnds;
+  nextTestInput = 0;
+  ioLogLength = 0;
+}
+
+// Sets the length of the test input sequence
+export void setTestInputLength(u32 length) {
+  testInputLength = length;
+}
+
+// Returns the length of the collected I/O log
+export u32 getIoLogLength() {
+  return ioLogLength;
+}
+
+// Runs the preapred test code
+export void runTestCode() {
+  do {
+    executeCpuCycle();
+    if (testRunMode <= RM_ONE_INSTRUCTION) {
+      return;
+    }
+
+    if (testRunMode == RM_UNTIL_HALT) {
+      if (cpuSignalFlags & SIG_HLT) {
+        return;
+      }
+    }
+
+    if (pc >= testCodeEndsAt) {
+      return;
+    }
+  } while (true);
+}
+
+// ============================================================================
+// Generic machine functions
+
+// Turns on the virtual machine
+export void turnOnMachine() {
+  setupMachine();
+}
+
+// Resets the virtual machine
+export void resetMachine() {
+  setupMachine();
+}
+
+// Sets up the machine
+void setupMachine() {
+  local i32 i = 0;
+  while (i < 8) {
+    blockLookupTable[i].readIndex = i * 0x2000;
+    blockLookupTable[i].writeIndex = i * 0x2000;
+    blockLookupTable[i].flags = RAM_BLOCK;
+    i += 1;
+  }
+}
