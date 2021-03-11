@@ -1,0 +1,548 @@
+// ============================================================================
+// Z80 Standard operations
+// ============================================================================
+
+table void indexedBitOps() {
+  RlcIXB,   RlcIXC,   RlcIXD,   RlcIXE,   RlcIXH,   RlcIXL,   RlcIXi,   RlcIXA,    // 00-07
+  RrcIXB,   RrcIXC,   RrcIXD,   RrcIXE,   RrcIXH,   RrcIXL,   RrcIXi,   RrcIXA,    // 08-0f
+  RlIXB,    RlIXC,    RlIXD,    RlIXE,    RlIXH,    RlIXL,    RlIXi,    RlIXA,     // 10-17
+  RrIXB,    RrIXC,    RrIXD,    RrIXE,    RrIXH,    RrIXL,    RrIXi,    RrIXA,     // 18-1f
+  SlaIXB,   SlaIXC,   SlaIXD,   SlaIXE,   SlaIXH,   SlaIXL,   SlaIXi,   SlaIXA,    // 20-27
+  SraIXB,   SraIXC,   SraIXD,   SraIXE,   SraIXH,   SraIXL,   SraIXi,   SraIXA,    // 28-2f
+  SllIXB,   SllIXC,   SllIXD,   SllIXE,   SllIXH,   SllIXL,   SllIXi,   SllIXA,    // 30-37
+  SrlIXB,   SrlIXC,   SrlIXD,   SrlIXE,   SrlIXH,   SrlIXL,   SrlIXi,   SrlIXA,    // 38-3f
+
+  Bit0IXi,  Bit0IXi,  Bit0IXi,  Bit0IXi,  Bit0IXi,  Bit0IXi,  Bit0IXi,  Bit0IXi,   // 40-47
+  Bit1IXi,  Bit1IXi,  Bit1IXi,  Bit1IXi,  Bit1IXi,  Bit1IXi,  Bit1IXi,  Bit1IXi,   // 48-4f
+  Bit2IXi,  Bit2IXi,  Bit2IXi,  Bit2IXi,  Bit2IXi,  Bit2IXi,  Bit2IXi,  Bit2IXi,   // 50-57
+  Bit3IXi,  Bit3IXi,  Bit3IXi,  Bit3IXi,  Bit3IXi,  Bit3IXi,  Bit3IXi,  Bit3IXi,   // 58-5f
+  Bit4IXi,  Bit4IXi,  Bit4IXi,  Bit4IXi,  Bit4IXi,  Bit4IXi,  Bit4IXi,  Bit4IXi,   // 60-67
+  Bit5IXi,  Bit5IXi,  Bit5IXi,  Bit5IXi,  Bit5IXi,  Bit5IXi,  Bit5IXi,  Bit5IXi,   // 68-6f
+  Bit6IXi,  Bit6IXi,  Bit6IXi,  Bit6IXi,  Bit6IXi,  Bit6IXi,  Bit6IXi,  Bit6IXi,   // 70-77
+  Bit7IXi,  Bit7IXi,  Bit7IXi,  Bit7IXi,  Bit7IXi,  Bit7IXi,  Bit7IXi,  Bit7IXi,   // 78-7f
+
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // 80-87
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // 88-8f
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // 90-97
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // 98-9f
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // a0-a7
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // a8-af
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // b0-b7
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // b8-bf
+
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // c0-c7
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // c8-cf
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // d0-d7
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // d8-df
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // e0-e7
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // e8-ef
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,      // f0-f7
+  NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD,     NopD       // f8-ff
+};
+
+void NopD() {
+}
+
+// rlc (ix+D),b (0x00)
+void RlcIXB() {
+  b = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// rlc (ix+D),c (0x01)
+void RlcIXC() {
+  c = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// rlc (ix+D),d (0x02)
+void RlcIXD() {
+  d = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// rlc (ix+D),e (0x03)
+void RlcIXE() {
+  e = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// rlc (ix+D),h (0x04)
+void RlcIXH() {
+  h = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// rlc (ix+D),l (0x05)
+void RlcIXL() {
+  l = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// rlc (ix+D),l (0x06)
+void RlcIXi() {
+  local u8 tmp = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// rlc (ix+D),a (0x07)
+void RlcIXA() {
+  a = rlc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// rrc (ix+D),b (0x08)
+void RrcIXB() {
+  b = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// rrc (ix+D),c (0x09)
+void RrcIXC() {
+  c = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// rrc (ix+D),d (0x0a)
+void RrcIXD() {
+  d = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// rrc (ix+D),e (0x0b)
+void RrcIXE() {
+  e = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// rrc (ix+D),h (0x0c)
+void RrcIXH() {
+  h = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// rrc (ix+D),l (0x0d)
+void RrcIXL() {
+  l = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// rrc (ix+D) (0x0e)
+void RrcIXi() {
+  local u8 tmp = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// rrc (ix+D),a (0x0f)
+void RrcIXA() {
+  a = rrc8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// rl (ix+D),b (0x10)
+void RlIXB() {
+  b = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// rl (ix+D),c (0x11)
+void RlIXC() {
+  c = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// rl (ix+D),d (0x12)
+void RlIXD() {
+  d = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// rl (ix+D),e (0x13)
+void RlIXE() {
+  e = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// rl (ix+D),h (0x14)
+void RlIXH() {
+  h = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// rl (ix+D),l (0x15)
+void RlIXL() {
+  l = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// rl (ix+D) (0x16)
+void RlIXi() {
+  local u8 tmp = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// rl (ix+D),a (0x17)
+void RlIXA() {
+  a = rl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// rr (ix+D),b (0x18)
+void RrIXB() {
+  b = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// rr (ix+D),c (0x19)
+void RrIXC() {
+  c = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// rr (ix+D),d (0x1a)
+void RrIXD() {
+  d = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// rr (ix+D),e (0x1b)
+void RrIXE() {
+  e = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// rr (ix+D),h (0x1c)
+void RrIXH() {
+  h = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// rr (ix+D),l (0x1d)
+void RrIXL() {
+  l = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// rr (ix+D) (0x1e)
+void RrIXi() {
+  local u8 tmp = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// rr (ix+D),a (0x1f)
+void RrIXA() {
+  a = rr8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// sla (ix+D),b (0x20)
+void SlaIXB() {
+  b = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// sla (ix+D),c (0x21)
+void SlaIXC() {
+  c = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// sla (ix+D),d (0x22)
+void SlaIXD() {
+  d = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// sla (ix+D),e (0x23)
+void SlaIXE() {
+  e = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// sla (ix+D),h (0x24)
+void SlaIXH() {
+  h = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// sla (ix+D),l (0x25)
+void SlaIXL() {
+  l = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// sla (ix+D) (0x26)
+void SlaIXi() {
+  local u8 tmp = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// sla (ix+D),a (0x27)
+void SlaIXA() {
+  a = sla8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// sra (ix+D),b (0x28)
+void SraIXB() {
+  b = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// sra (ix+D),c (0x29)
+void SraIXC() {
+  c = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// sra (ix+D),d (0x2a)
+void SraIXD() {
+  d = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// sra (ix+D),e (0x2b)
+void SraIXE() {
+  e = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// sra (ix+D),h (0x2c)
+void SraIXH() {
+  h = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// sra (ix+D),l (0x2d)
+void SraIXL() {
+  l = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// sra (ix+D) (0x2e)
+void SraIXi() {
+  local u8 tmp = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// sra (ix+D),a (0x2f)
+void SraIXA() {
+  a = sra8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// sll (ix+D),b (0x30)
+void SllIXB() {
+  b = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// sll (ix+D),c (0x31)
+void SllIXC() {
+  c = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// sll (ix+D),d (0x32)
+void SllIXD() {
+  d = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// sll (ix+D),e (0x33)
+void SllIXE() {
+  e = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// sll (ix+D),h (0x34)
+void SllIXH() {
+  h = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// sll (ix+D),l (0x35)
+void SllIXL() {
+  l = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// sll (ix+D) (0x36)
+void SllIXi() {
+  local u8 tmp = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// sll (ix+D),a (0x37)
+void SllIXA() {
+  a = sll8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// srl (ix+D),b (0x38)
+void SrlIXB() {
+  b = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, b);
+}
+
+// srl (ix+D),c (0x39)
+void SrlIXC() {
+  c = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, c);
+}
+
+// srl (ix+D),d (0x3a)
+void SrlIXD() {
+  d = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, d);
+}
+
+// srl (ix+D),e (0x3b)
+void SrlIXE() {
+  e = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, e);
+}
+
+// srl (ix+D),h (0x3c)
+void SrlIXH() {
+  h = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, h);
+}
+
+// srl (ix+D),l (0x3d)
+void SrlIXL() {
+  l = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, l);
+}
+
+// srl (ix+D) (0x3e)
+void SrlIXi() {
+  local u8 tmp = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, tmp);
+}
+
+// srl (ix+D),a (0x3f)
+void SrlIXA() {
+  a = srl8(readMemory(wz));
+  tacts += 1;
+  writeMemory(wz, a);
+}
+
+// bit 0,(ix+D) (0x40-0x47)
+void Bit0IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(0, tmp);
+}
+
+// bit 1,(ix+D) (0x48-0x4f)
+void Bit1IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(1, tmp);
+}
+
+// bit 2,(ix+D) (0x50-0x57)
+void Bit2IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(2, tmp);
+}
+
+// bit 3,(ix+D) (0x58-0x5f)
+void Bit3IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(3, tmp);
+}
+
+// bit 4,(ix+D) (0x60-0x67)
+void Bit4IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(4, tmp);
+}
+
+// bit 5,(ix+D) (0x68-0x6f)
+void Bit5IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(5, tmp);
+}
+
+// bit 6,(ix+D) (0x70-0x77)
+void Bit6IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(6, tmp);
+}
+
+// bit 7,(ix+D) (0x78-0x7f)
+void Bit7IXi() {
+  local u8 tmp = readMemory(wz);
+  tacts += 1;
+  bit8W(7, tmp);
+}

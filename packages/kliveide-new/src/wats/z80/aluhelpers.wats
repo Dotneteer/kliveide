@@ -314,3 +314,73 @@ inline void cp8(u8 value) {
     (tmp & FLAG_S);
 }
 
+// The core of the 8-bit RLC operation
+inline u8 rlc8(u8 oper) {
+  local u8 tmp = (oper << 1) | (oper >> 7);
+  f = (tmp & FLAG_C) | sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit RRC operation
+inline u8 rrc8(u8 oper) {
+  f = oper & FLAG_C;
+  local u8 tmp = (oper >>1) | (oper << 7);
+  f |= sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit RL operation
+inline u8 rl8(u8 oper) {
+  local u8 tmp = (oper << 1) | (f & FLAG_C);
+  f = (oper >> 7) | sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit RR operation
+inline u8 rr8(u8 oper) {
+  local u8 tmp = (oper >> 1) | (f << 7);
+  f = (oper & FLAG_C) | sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit SLA operation
+inline u8 sla8(u8 oper) {
+  f = oper >> 7;
+  local u8 tmp = oper << 1;
+  f |= sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit SRA operation
+inline u8 sra8(u8 oper) {
+  f = oper & FLAG_C;
+  local u8 tmp = (oper & 0x80) | (oper >> 1);
+  f |= sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit SLL operation
+inline u8 sll8(u8 oper) {
+  f = oper >> 7;
+  local u8 tmp = (oper << 1) | 0x01;
+  f |= sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit SRL operation
+inline u8 srl8(u8 oper) {
+  f = oper & FLAG_C;
+  local u8 tmp = oper >> 1;
+  f |= sz53pTable[tmp];
+  return tmp;
+}
+
+// The core of the 8-bit BIT operation with WZ
+inline void bit8W(u8 bit, u8 oper) {
+  f = (f & FLAG_C) | FLAG_H | (wh & FLAG_53);
+  local u32 bitVal = oper & (0x01 << bit);
+  if(!bitVal) {
+    f |= FLAG_PV | FLAG_Z;
+  }
+  f |= bitVal & 0x80;
+}
