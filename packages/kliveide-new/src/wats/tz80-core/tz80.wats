@@ -23,11 +23,51 @@ global u32 testInputLength;
 // The index of the next test input
 global u32 nextTestInput;
 
-// The length of the memory access log
-global u32 memLogLength;
-
 // The length of the I/O access log
 global u32 ioLogLength;
+
+// ============================================================================
+// Test machine types
+
+// Structure for an I/O log entry
+type ioOp = struct {
+  u16 address,
+  u8 value,
+  bool isOutput
+};
+
+// Test input for I/O tests
+u8[256] testInput;
+
+// I/O operation log for tests
+ioOp[256] ioOperationLog;
+
+// ============================================================================
+// Test I/O handler
+
+// Reads a byte from the specified I/O port
+u8 readPort(u16 port) {
+  local u8 value = testInput[nextTestInput];
+  nextTestInput += 1;
+  if (nextTestInput >= testInputLength) {
+    nextTestInput = 0;
+  }
+  ioOperationLog[ioLogLength].address = port;
+  ioOperationLog[ioLogLength].value = value;
+  ioOperationLog[ioLogLength].isOutput = false;
+  ioLogLength += 1;
+  tacts += 4;
+  return value;
+}
+
+// Writes a byte to the specified I/O port
+void writePort(u16 port, u8 value) {
+  ioOperationLog[ioLogLength].address = port;
+  ioOperationLog[ioLogLength].value = value;
+  ioOperationLog[ioLogLength].isOutput = true;
+  ioLogLength += 1;
+  tacts += 4;
+}
 
 // ============================================================================
 // Test machine specific functions
@@ -37,18 +77,12 @@ export void prepareTest(u8 mode, u16 codeEnds) {
   testRunMode = mode;
   testCodeEndsAt = codeEnds;
   nextTestInput = 0;
-  memLogLength = 0;
   ioLogLength = 0;
 }
 
 // Sets the length of the test input sequence
 export void setTestInputLength(u32 length) {
   testInputLength = length;
-}
-
-// Returns the length of the collected memory log
-export u32 getMemLogLength() {
-  return memLogLength;
 }
 
 // Returns the length of the collected I/O log

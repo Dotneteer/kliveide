@@ -23,7 +23,6 @@ export interface CpuApi {
 export interface TestCpuApi extends CpuApi {
   prepareTest(mode: RunMode, codeEnds: number): void;
   setTestInputLength(length: number): void;
-  getMemLogLength(): number;
   getIoLogLength(): number;
   getTbBlueLogLength(): number;
   runTestCode(): void;

@@ -32,8 +32,8 @@ table void standardOps() {
 
   RetNz,    PopBC,    JpNz,     Jp,       CallNz,   PushBC,   AddN,     Rst00,     // c0-c7
   RetZ,     Ret,      JpZ,      Nop,      CallZ,    Call,     AdcN,     Rst08,     // c8-cf
-  RetNc,    PopDE,    JpNc,     Nop,      CallNc,   PushDE,   SubN,     Rst10,     // d0-d7
-  RetC,     Exx,      JpC,      Nop,      CallC,    DDPref,   SbcN,     Rst18,     // d8-df
+  RetNc,    PopDE,    JpNc,     OutNA,    CallNc,   PushDE,   SubN,     Rst10,     // d0-d7
+  RetC,     Exx,      JpC,      InAN,     CallC,    DDPref,   SbcN,     Rst18,     // d8-df
   RetPo,    PopHL,    JpPo,     ExSPHLi,  CallPo,   PushHL,   AndN,     Rst20,     // e0-e7
   RetPe,    JpHL,     JpPe,     ExDEHL,   CallPe,   Nop,      XorN,     Rst28,     // e8-ef
   RetP,     PopAF,    JpP,      Di,       CallP,    PushAF,   OrN,      Rst30,     // f0-f7
@@ -1145,6 +1145,16 @@ void JpNc() {
   pc = wz;
 }
 
+// out (n), (0xd3)
+void OutNA() {
+  local u8 nn = readMemory(pc);
+  pc += 1;
+  local u16 port = nn | (a << 8);
+  wh = a;
+  wl = nn + 1;
+  writePort(port, a) ;
+}
+
 // call nc (0xd4)
 void CallNc() {
   wl = readMemory(pc);
@@ -1209,6 +1219,14 @@ void JpC() {
     return;
   }
   pc += 1;
+}
+
+// in a,(n) (0xdb)
+void InAN() {
+  local u16 inTemp = readMemory(pc) | (a << 8);
+  pc += 1;
+  a = readPort(inTemp);
+  wz = inTemp + 1;
 }
 
 // call c (0xdc)

@@ -2,14 +2,14 @@ import { TestCpuApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
 import { RunMode } from "./RunMode";
 import {
-  TEST_INPUT_OFFS,
   REG_AREA_INDEX,
   STATE_TRANSFER_BUFF,
-  TEST_IO_LOG_OFFS,
-  TEST_TBBLUE_LOG_OFFS,
   CPU_STATE_BUFFER,
 } from "./memory-map";
 import { FlagsSetMask, Z80CpuState } from "../../shared/machines/z80-helpers";
+
+const TEST_INPUT_BUFFER = 0x010005d6;
+const IO_OPERATION_LOG = 0x010006d6;
 
 /**
  * This class represents a test machine that can be used for testing the WA machine
@@ -64,7 +64,7 @@ export class TestZ80Machine {
    * @param input List of input byte values
    */
   initInput(input: number[]): void {
-    const mh = new MemoryHelper(this.cpuApi, TEST_INPUT_OFFS);
+    const mh = new MemoryHelper(this.cpuApi, TEST_INPUT_BUFFER);
     for (let i = 0; i < input.length; i++) {
       mh.writeByte(i, input[i]);
     }
@@ -197,7 +197,7 @@ export class TestZ80Machine {
    * Gets the memory access log of the test machine
    */
   get ioAccessLog(): IoOp[] {
-    const mh = new MemoryHelper(this.cpuApi, TEST_IO_LOG_OFFS);
+    const mh = new MemoryHelper(this.cpuApi, IO_OPERATION_LOG);
     const length = this.cpuApi.getIoLogLength();
     const result: IoOp[] = [];
     for (let i = 0; i < length; i++) {
@@ -206,23 +206,6 @@ export class TestZ80Machine {
         address: l & 0xffff,
         value: (l >> 16) & 0xff,
         isOutput: ((l >> 24) & 0xff) !== 0,
-      });
-    }
-    return result;
-  }
-
-  /**
-   * Gets the memory access log of the test machine
-   */
-  get tbBlueAccessLog(): TbBlueOp[] {
-    const mh = new MemoryHelper(this.cpuApi, TEST_TBBLUE_LOG_OFFS);
-    const length = this.cpuApi.getTbBlueLogLength();
-    const result: TbBlueOp[] = [];
-    for (let i = 0; i < length; i++) {
-      const l = mh.readUint16(i * 2);
-      result.push({
-        data: (l >> 8) & 0xff,
-        isIndex: (l & 0xff) !== 0,
       });
     }
     return result;
