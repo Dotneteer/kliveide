@@ -72,26 +72,6 @@ describe("New: Indexed bit ops 80-bf (ix)", () => {
       });
     }
   }
-
-  it("Create code", () => {
-    const regs = ["b", "c", "d", "e", "h", "l", "i", "a"];
-    const bit = 7;
-    for (let i = 0; i < regs.length; i++) {
-      const template = `
-// set ${bit},(ix+D)${regs[i]==="i" ? "" : ","+regs[i]} (0x${(0xc0 + bit * 8 + i).toString(16)})
-void Set${bit}IX${regs[i].toUpperCase()}() {
-  ${regs[i]} = readMemory(wz) | 0x${(1 << bit).toString(16).padStart(2, "0")};
-  tacts += 1;
-  writeMemory(wz, ${regs[i]});
-}`;
-      console.log(template);
-    }
-    const names: string[] = [];
-    for (let i = 0; i < regs.length; i++) {
-      names.push(`Set${bit}IX${regs[i].toUpperCase()}`);
-    }
-    console.log(names.join(", "));
-  });
 });
 
 function getReg8(s: Z80CpuState, q: number): number {

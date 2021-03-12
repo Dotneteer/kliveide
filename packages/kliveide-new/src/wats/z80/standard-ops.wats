@@ -31,13 +31,13 @@ table void standardOps() {
   CpB,      CpC,      CpD,      CpE,      CpH,      CpL,      CpHLi,    CpA,       // b8-bf
 
   RetNz,    PopBC,    JpNz,     Jp,       CallNz,   PushBC,   AddN,     Rst00,     // c0-c7
-  RetZ,     Ret,      JpZ,      Nop,      CallZ,    Call,     AdcN,     Rst08,     // c8-cf
+  RetZ,     Ret,      JpZ,      CBPref,   CallZ,    Call,     AdcN,     Rst08,     // c8-cf
   RetNc,    PopDE,    JpNc,     OutNA,    CallNc,   PushDE,   SubN,     Rst10,     // d0-d7
   RetC,     Exx,      JpC,      InAN,     CallC,    DDPref,   SbcN,     Rst18,     // d8-df
   RetPo,    PopHL,    JpPo,     ExSPiHL,  CallPo,   PushHL,   AndN,     Rst20,     // e0-e7
   RetPe,    JpHL,     JpPe,     ExDEHL,   CallPe,   Nop,      XorN,     Rst28,     // e8-ef
   RetP,     PopAF,    JpP,      Di,       CallP,    PushAF,   OrN,      Rst30,     // f0-f7
-  RetM,     LdSPHL,   JpM,      Nop,      CallM,    FDPref,   CpN,      Rst38      // f8-ff
+  RetM,     LdSPHL,   JpM,      Ei,       CallM,    FDPref,   CpN,      Rst38      // f8-ff
 };
 
 // nop (0x00)
@@ -1507,6 +1507,16 @@ void CpN() {
 // rst 38 (0xff)
 void Rst38() {
   RstCore(0x38);
+}
+
+// Handles the CB prefix (bit instructions)
+void CBPref() {
+  // --- Read the opCode from PC
+  opCode = readMemory(pc);
+  pc += 1;
+  r += 1;
+  tacts += 1;
+  bitOps()[opCode];
 }
 
 // Handles the DD prefix (IX-indexed instructions)

@@ -375,6 +375,16 @@ inline u8 srl8(u8 oper) {
   return tmp;
 }
 
+// The core of the 8-bit BIT operation
+inline void bit8(u8 bit, u8 oper) {
+  f = (f & FLAG_C) | FLAG_H | (oper & FLAG_53);
+  local u32 bitVal = oper & (0x01 << bit);
+  if(!bitVal) {
+    f |= FLAG_PV | FLAG_Z;
+  }
+  f |= bitVal & 0x80;
+}
+
 // The core of the 8-bit BIT operation with WZ
 inline void bit8W(u8 bit, u8 oper) {
   f = (f & FLAG_C) | FLAG_H | (wh & FLAG_53);
