@@ -1,5 +1,5 @@
 // ============================================================================
-// Z80 Standard operations
+// Z80 Indexed bit operations
 // ============================================================================
 
 table void indexedBitOps() {
@@ -39,9 +39,6 @@ table void indexedBitOps() {
   Set6IXB,  Set6IXC,  Set6IXD,  Set6IXE,  Set6IXH,  Set6IXL,  Set6IXi,  Set6IXA,   // f0-f7
   Set7IXB,  Set7IXC,  Set7IXD,  Set7IXE,  Set7IXH,  Set7IXL,  Set7IXi,  Set7IXA    // f8-ff
 };
-
-void NopD() {
-}
 
 // rlc (ix+D),b (0x00)
 void RlcIXB() {

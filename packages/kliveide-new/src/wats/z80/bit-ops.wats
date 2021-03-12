@@ -1,0 +1,1395 @@
+// ============================================================================
+// Z80 Bit operations
+// ============================================================================
+
+table void bitOps() {
+  RlcB,     RlcC,     RlcD,     RlcE,     RlcH,     RlcL,     RlcHLi,   RlcA,      // 00-07
+  RrcB,     RrcC,     RrcD,     RrcE,     RrcH,     RrcL,     RrcHLi,   RrcA,      // 08-0f
+  RlB,      RlC,      RlD,      RlE,      RlH,      RlL,      RlHLi,    RlA,       // 10-17
+  RrB,      RrC,      RrD,      RrE,      RrH,      RrL,      RrHLi,    RrA,       // 18-1f
+  SlaB,     SlaC,     SlaD,     SlaE,     SlaH,     SlaL,     SlaHLi,   SlaA,      // 20-27
+  SraB,     SraC,     SraD,     SraE,     SraH,     SraL,     SraHLi,   SraA,      // 28-2f
+  SllB,     SllC,     SllD,     SllE,     SllH,     SllL,     SllHLi,   SllA,      // 30-37
+  SrlB,     SrlC,     SrlD,     SrlE,     SrlH,     SrlL,     SrlHLi,   SrlA,      // 38-3f
+
+  Bit0B,    Bit0C,    Bit0D,    Bit0E,    Bit0H,    Bit0L,    Bit0HLi,  Bit0A,     // 40-47
+  Bit1B,    Bit1C,    Bit1D,    Bit1E,    Bit1H,    Bit1L,    Bit1HLi,  Bit1A,     // 48-4f
+  Bit2B,    Bit2C,    Bit2D,    Bit2E,    Bit2H,    Bit2L,    Bit2HLi,  Bit2A,     // 50-57
+  Bit3B,    Bit3C,    Bit3D,    Bit3E,    Bit3H,    Bit3L,    Bit3HLi,  Bit3A,     // 58-5f
+  Bit4B,    Bit4C,    Bit4D,    Bit4E,    Bit4H,    Bit4L,    Bit4HLi,  Bit4A,     // 60-67
+  Bit5B,    Bit5C,    Bit5D,    Bit5E,    Bit5H,    Bit5L,    Bit5HLi,  Bit5A,     // 68-6f
+  Bit6B,    Bit6C,    Bit6D,    Bit6E,    Bit6H,    Bit6L,    Bit6HLi,  Bit6A,     // 70-77
+  Bit7B,    Bit7C,    Bit7D,    Bit7E,    Bit7H,    Bit7L,    Bit7HLi,  Bit7A,     // 78-7f
+
+  Res0B,    Res0C,    Res0D,    Res0E,    Res0H,    Res0L,    Res0HLi,  Res0A,     // 80-87
+  Res1B,    Res1C,    Res1D,    Res1E,    Res1H,    Res1L,    Res1HLi,  Res1A,     // 88-8f
+  Res2B,    Res2C,    Res2D,    Res2E,    Res2H,    Res2L,    Res2HLi,  Res2A,     // 90-97
+  Res3B,    Res3C,    Res3D,    Res3E,    Res3H,    Res3L,    Res3HLi,  Res3A,     // 98-9f
+  Res4B,    Res4C,    Res4D,    Res4E,    Res4H,    Res4L,    Res4HLi,  Res4A,     // a0-a7
+  Res5B,    Res5C,    Res5D,    Res5E,    Res5H,    Res5L,    Res5HLi,  Res5A,     // a8-af
+  Res6B,    Res6C,    Res6D,    Res6E,    Res6H,    Res6L,    Res6HLi,  Res6A,     // b0-b7
+  Res7B,    Res7C,    Res7D,    Res7E,    Res7H,    Res7L,    Res7HLi,  Res7A,     // b8-bf
+
+  Set0B,    Set0C,    Set0D,    Set0E,    Set0H,    Set0L,    Set0HLi,  Set0A,     // c0-c7
+  Set1B,    Set1C,    Set1D,    Set1E,    Set1H,    Set1L,    Set1HLi,  Set1A,     // c8-cf
+  Set2B,    Set2C,    Set2D,    Set2E,    Set2H,    Set2L,    Set2HLi,  Set2A,     // d0-d7
+  Set3B,    Set3C,    Set3D,    Set3E,    Set3H,    Set3L,    Set3HLi,  Set3A,     // d8-df
+  Set4B,    Set4C,    Set4D,    Set4E,    Set4H,    Set4L,    Set4HLi,  Set4A,     // e0-e7
+  Set5B,    Set5C,    Set5D,    Set5E,    Set5H,    Set5L,    Set5HLi,  Set5A,     // e8-ef
+  Set6B,    Set6C,    Set6D,    Set6E,    Set6H,    Set6L,    Set6HLi,  Set6A,     // f0-f7
+  Set7B,    Set7C,    Set7D,    Set7E,    Set7H,    Set7L,    Set7HLi,  Set7A      // f8-ff
+};
+
+// rlc b (0x00)
+void RlcB() {
+  b = rlc8(b);
+}
+
+
+// rlc c (0x01)
+void RlcC() {
+  c = rlc8(c);
+}
+
+// rlc d (0x02)
+void RlcD() {
+  d = rlc8(d);
+}
+
+// rlc e (0x03)
+void RlcE() {
+  e = rlc8(e);
+}
+
+// rlc h (0x04)
+void RlcH() {
+  h = rlc8(h);
+}
+
+
+// rlc l (0x05)
+void RlcL() {
+  l = rlc8(l);
+}
+
+// rlc (hl) (0x06)
+void RlcHLi() {
+  local u8 tmp = rlc8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// rlc a (0x07)
+void RlcA() {
+  a = rlc8(a);
+}
+
+// rrc b (0x08)
+void RrcB() {
+  b = rrc8(b);
+}
+
+// rrc c (0x09)
+void RrcC() {
+  c = rrc8(c);
+}
+
+// rrc d (0x0a)
+void RrcD() {
+  d = rrc8(d);
+}
+
+// rrc e (0x0b)
+void RrcE() {
+  e = rrc8(e);
+}
+
+// rrc h (0x0c)
+void RrcH() {
+  h = rrc8(h);
+}
+
+// rrc l (0x0d)
+void RrcL() {
+  l = rrc8(l);
+}
+
+// rrc (hl) (0x0e)
+void RrcHLi() {
+  local u8 tmp = rrc8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// rrc a (0x0f)
+void RrcA() {
+  a = rrc8(a);
+}
+
+// rl b (0x10)
+void RlB() {
+  b = rl8(b);
+}
+
+// rl c (0x11)
+void RlC() {
+  c = rl8(c);
+}
+
+// rl d (0x12)
+void RlD() {
+  d = rl8(d);
+}
+
+// rl e (0x13)
+void RlE() {
+  e = rl8(e);
+}
+
+// rl h (0x14)
+void RlH() {
+  h = rl8(h);
+}
+
+// rl l (0x15)
+void RlL() {
+  l = rl8(l);
+}
+
+// rl (hl) (0x16)
+void RlHLi() {
+  local u8 tmp = rl8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// rl a (0x17)
+void RlA() {
+  a = rl8(a);
+}
+
+// rr b (0x18)
+void RrB() {
+  b = rr8(b);
+}
+
+// rr c (0x19)
+void RrC() {
+  c = rr8(c);
+}
+
+// rr d (0x1a)
+void RrD() {
+  d = rr8(d);
+}
+
+// rr e (0x1b)
+void RrE() {
+  e = rr8(e);
+}
+
+// rr h (0x1c)
+void RrH() {
+  h = rr8(h);
+}
+
+// rr l (0x1d)
+void RrL() {
+  l = rr8(l);
+}
+
+// rr (hl) (0x1e)
+void RrHLi() {
+  local u8 tmp = rr8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// rr a (0x1f)
+void RrA() {
+  a = rr8(a);
+}
+
+// sla b (0x20)
+void SlaB() {
+  b = sla8(b);
+}
+
+// sla c (0x21)
+void SlaC() {
+  c = sla8(c);
+}
+
+// sla d (0x22)
+void SlaD() {
+  d = sla8(d);
+}
+
+// sla e (0x23)
+void SlaE() {
+  e = sla8(e);
+}
+
+// sla h (0x24)
+void SlaH() {
+  h = sla8(h);
+}
+
+// sla l (0x25)
+void SlaL() {
+  l = sla8(l);
+}
+
+// sla (hl) (0x26)
+void SlaHLi() {
+  local u8 tmp = sla8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// sla a (0x27)
+void SlaA() {
+  a = sla8(a);
+}
+
+// sra b (0x28)
+void SraB() {
+  b = sra8(b);
+}
+
+// sra c (0x29)
+void SraC() {
+  c = sra8(c);
+}
+
+// sra d (0x2a)
+void SraD() {
+  d = sra8(d);
+}
+
+// sra e (0x2b)
+void SraE() {
+  e = sra8(e);
+}
+
+// sra h (0x2c)
+void SraH() {
+  h = sra8(h);
+}
+
+// sra l (0x2d)
+void SraL() {
+  l = sra8(l);
+}
+
+// sra (hl) (0x2e)
+void SraHLi() {
+  local u8 tmp = sra8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// sra a (0x2f)
+void SraA() {
+  a = sra8(a);
+}
+
+// sll b (0x30)
+void SllB() {
+  b = sll8(b);
+}
+
+// sll c (0x31)
+void SllC() {
+  c = sll8(c);
+}
+
+// sll d (0x32)
+void SllD() {
+  d = sll8(d);
+}
+
+// sll e (0x33)
+void SllE() {
+  e = sll8(e);
+}
+
+// sll h (0x34)
+void SllH() {
+  h = sll8(h);
+}
+
+// sll l (0x35)
+void SllL() {
+  l = sll8(l);
+}
+
+// sll (hl) (0x36)
+void SllHLi() {
+  local u8 tmp = sll8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// sll a (0x37)
+void SllA() {
+  a = sll8(a);
+}
+
+// srl b (0x38)
+void SrlB() {
+  b = srl8(b);
+}
+
+// srl c (0x39)
+void SrlC() {
+  c = srl8(c);
+}
+
+// srl d (0x3a)
+void SrlD() {
+  d = srl8(d);
+}
+
+// srl e (0x3b)
+void SrlE() {
+  e = srl8(e);
+}
+
+// srl h (0x3c)
+void SrlH() {
+  h = srl8(h);
+}
+
+// srl l (0x3d)
+void SrlL() {
+  l = srl8(l);
+}
+
+// srl (hl) (0x3e)
+void SrlHLi() {
+  local u8 tmp = srl8(readMemory(hl));
+  tacts += 1;
+  writeMemory(hl, tmp);
+}
+
+// srl a (0x3f)
+void SrlA() {
+  a = srl8(a);
+}
+
+// bit 0,b (0x40)
+void Bit0B() {
+  bit8(0, b);
+}
+
+// bit 0,c (0x41)
+void Bit0C() {
+  bit8(0, c);
+}
+
+// bit 0,d (0x42)
+void Bit0D() {
+  bit8(0, d);
+}
+
+// bit 0,e (0x43)
+void Bit0E() {
+  bit8(0, e);
+}
+
+// bit 0,h (0x44)
+void Bit0H() {
+  bit8(0, h);
+}
+
+// bit 0,l (0x45)
+void Bit0L() {
+  bit8(0, l);
+}
+
+// bit 0,(hl) (0x46)
+void Bit0HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(0, tmp);
+}
+
+// bit 0,a (0x47)
+void Bit0A() {
+  bit8(0, a);
+}
+
+// bit 1,b (0x48)
+void Bit1B() {
+  bit8(1, b);
+}
+
+
+// bit 1,c (0x49)
+void Bit1C() {
+  bit8(1, c);
+}
+
+// bit 1,d (0x4a)
+void Bit1D() {
+  bit8(1, d);
+}
+
+// bit 1,e (0x4b)
+void Bit1E() {
+  bit8(1, e);
+}
+
+// bit 1,h (0x4c)
+void Bit1H() {
+  bit8(1, h);
+}
+
+// bit 1,l (0x4d)
+void Bit1L() {
+  bit8(1, l);
+}
+
+// bit 1,(hl) (0x4e)
+void Bit1HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(1, tmp);
+}
+
+// bit 1,a (0x4f)
+void Bit1A() {
+  bit8(1, a);
+}
+
+// bit 2,b (0x50)
+void Bit2B() {
+  bit8(2, b);
+}
+
+// bit 2,c (0x51)
+void Bit2C() {
+  bit8(2, c);
+}
+
+// bit 2,d (0x52)
+void Bit2D() {
+  bit8(2, d);
+}
+
+// bit 2,e (0x53)
+void Bit2E() {
+  bit8(2, e);
+}
+
+// bit 2,h (0x54)
+void Bit2H() {
+  bit8(2, h);
+}
+
+// bit 2,l (0x55)
+void Bit2L() {
+  bit8(2, l);
+}
+
+// bit 2,(hl) (0x56)
+void Bit2HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(2, tmp);
+}
+
+// bit 2,a (0x57)
+void Bit2A() {
+  bit8(2, a);
+}
+
+// bit 3,b (0x58)
+void Bit3B() {
+  bit8(3, b);
+}
+
+// bit 3,c (0x59)
+void Bit3C() {
+  bit8(3, c);
+}
+
+// bit 3,d (0x5a)
+void Bit3D() {
+  bit8(3, d);
+}
+
+// bit 3,e (0x5b)
+void Bit3E() {
+  bit8(3, e);
+}
+
+// bit 3,h (0x5c)
+void Bit3H() {
+  bit8(3, h);
+}
+
+// bit 3,l (0x5d)
+void Bit3L() {
+  bit8(3, l);
+}
+
+// bit 3,(hl) (0x5e)
+void Bit3HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(3, tmp);
+}
+
+// bit 3,a (0x5f)
+void Bit3A() {
+  bit8(3, a);
+}
+
+// bit 4,b (0x60)
+void Bit4B() {
+  bit8(4, b);
+}
+
+// bit 4,c (0x61)
+void Bit4C() {
+  bit8(4, c);
+}
+
+// bit 4,d (0x62)
+void Bit4D() {
+  bit8(4, d);
+}
+
+// bit 4,e (0x63)
+void Bit4E() {
+  bit8(4, e);
+}
+
+// bit 4,h (0x64)
+void Bit4H() {
+  bit8(4, h);
+}
+
+// bit 4,l (0x65)
+void Bit4L() {
+  bit8(4, l);
+}
+
+// bit 4,(hl) (0x66)
+void Bit4HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(4, tmp);
+}
+
+// bit 4,a (0x67)
+void Bit4A() {
+  bit8(4, a);
+}
+
+// bit 5,b (0x68)
+void Bit5B() {
+  bit8(5, b);
+}
+
+// bit 5,c (0x69)
+void Bit5C() {
+  bit8(5, c);
+}
+
+// bit 5,d (0x7a)
+void Bit5D() {
+  bit8(5, d);
+}
+
+// bit 5,e (0x7b)
+void Bit5E() {
+  bit8(5, e);
+}
+
+// bit 5,h (0x7c)
+void Bit5H() {
+  bit8(5, h);
+}
+
+// bit 5,l (0x7d)
+void Bit5L() {
+  bit8(5, l);
+}
+
+// bit 5,(hl) (0x7e)
+void Bit5HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(5, tmp);
+}
+
+// bit 5,a (0x7f)
+void Bit5A() {
+  bit8(5, a);
+}
+
+// bit 6,b (0x70)
+void Bit6B() {
+  bit8(6, b);
+}
+
+
+// bit 6,c (0x71)
+void Bit6C() {
+  bit8(6, c);
+}
+
+// bit 6,d (0x72)
+void Bit6D() {
+  bit8(6, d);
+}
+
+// bit 6,e (0x73)
+void Bit6E() {
+  bit8(6, e);
+}
+
+// bit 6,h (0x74)
+void Bit6H() {
+  bit8(6, h);
+}
+
+// bit 6,l (0x75)
+void Bit6L() {
+  bit8(6, l);
+}
+
+// bit 6,(hl) (0x76)
+void Bit6HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(6, tmp);
+}
+
+// bit 6,a (0x77)
+void Bit6A() {
+  bit8(6, a);
+}
+
+// bit 7,b (0x78)
+void Bit7B() {
+  bit8(7, b);
+}
+
+// bit 7,c (0x79)
+void Bit7C() {
+  bit8(7, c);
+}
+
+// bit 7,d (0x7a)
+void Bit7D() {
+  bit8(7, d);
+}
+
+// bit 7,e (0x7b)
+void Bit7E() {
+  bit8(7, e);
+}
+
+// bit 7,h (0x7c)
+void Bit7H() {
+  bit8(7, h);
+}
+
+// bit 7,l (0x7d)
+void Bit7L() {
+  bit8(7, l);
+}
+
+// bit 7,(hl) (0x7e)
+void Bit7HLi() {
+  local u8 tmp = readMemory(hl);
+	tacts += 1;
+	bit8W(7, tmp);
+}
+
+// bit 7,a (0x7f)
+void Bit7A() {
+  bit8(7, a);
+}
+
+// res 0,b (0x80)
+void Res0B() {
+  b &= 0xfe;
+}
+
+
+// res 0,c (0x81)
+void Res0C() {
+  c &= 0xfe;
+}
+
+// res 0,d (0x82)
+void Res0D() {
+  d &= 0xfe;
+}
+
+// res 0,e (0x83)
+void Res0E() {
+  e &= 0xfe;
+}
+
+// res 0,h (0x84)
+void Res0H() {
+  h &= 0xfe;
+}
+
+// res 0,l (0x85)
+void Res0L() {
+  l &= 0xfe;
+}
+
+// res 0,(hl) (0x86)
+void Res0HLi() {
+  local u8 tmp = readMemory(hl) & 0xfe;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 0,a (0x87)
+void Res0A() {
+  a &= 0xfe;
+}
+
+// res 1,b (0x88)
+void Res1B() {
+  b &= 0xfd;
+}
+
+
+// res 1,c (0x89)
+void Res1C() {
+  c &= 0xfd;
+}
+
+// res 1,d (0x8a)
+void Res1D() {
+  d &= 0xfd;
+}
+
+// res 1,e (0x8b)
+void Res1E() {
+  e &= 0xfd;
+}
+
+// res 1,h (0x8c)
+void Res1H() {
+  h &= 0xfd;
+}
+
+// res 1,l (0x8d)
+void Res1L() {
+  l &= 0xfd;
+}
+
+// res 1,(hl) (0x8e)
+void Res1HLi() {
+  local u8 tmp = readMemory(hl) & 0xfd;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 1,a (0x8f)
+void Res1A() {
+  a &= 0xfd;
+}
+
+// res 2,b (0x90)
+void Res2B() {
+  b &= 0xfb;
+}
+
+
+// res 2,c (0x91)
+void Res2C() {
+  c &= 0xfb;
+}
+
+// res 2,d (0x92)
+void Res2D() {
+  d &= 0xfb;
+}
+
+// res 2,e (0x93)
+void Res2E() {
+  e &= 0xfb;
+}
+
+// res 2,h (0x94)
+void Res2H() {
+  h &= 0xfb;
+}
+
+// res 2,l (0x95)
+void Res2L() {
+  l &= 0xfb;
+}
+
+// res 2,(hl) (0x96)
+void Res2HLi() {
+  local u8 tmp = readMemory(hl) & 0xfb;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 2,a (0x97)
+void Res2A() {
+  a &= 0xfb;
+}
+
+// res 3,b (0x98)
+void Res3B() {
+  b &= 0xf7;
+}
+
+// res 3,c (0x99)
+void Res3C() {
+  c &= 0xf7;
+}
+
+// res 3,d (0x9a)
+void Res3D() {
+  d &= 0xf7;
+}
+
+// res 3,e (0x9b)
+void Res3E() {
+  e &= 0xf7;
+}
+
+// res 3,h (0x9c)
+void Res3H() {
+  h &= 0xf7;
+}
+
+// res 3,l (0x9d)
+void Res3L() {
+  l &= 0xf7;
+}
+
+// res 3,(hl) (0x9e)
+void Res3HLi() {
+  local u8 tmp = readMemory(hl) & 0xf7;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 3,a (0x9f)
+void Res3A() {
+  a &= 0xf7;
+}
+
+// res 4,b (0xa0)
+void Res4B() {
+  b &= 0xef;
+}
+
+
+// res 4,c (0xa1)
+void Res4C() {
+  c &= 0xef;
+}
+
+// res 4,d (0xa2)
+void Res4D() {
+  d &= 0xef;
+}
+
+// res 4,e (0xa3)
+void Res4E() {
+  e &= 0xef;
+}
+
+// res 4,h (0xa4)
+void Res4H() {
+  h &= 0xef;
+}
+
+// res 4,l (0xa5)
+void Res4L() {
+  l &= 0xef;
+}
+
+// res 4,(hl) (0xa6)
+void Res4HLi() {
+  local u8 tmp = readMemory(hl) & 0xef;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 4,a (0xa7)
+void Res4A() {
+  a &= 0xef;
+}
+
+// res 5,b (0xa8)
+void Res5B() {
+  b &= 0xdf;
+}
+
+// res 5,c (0xa9)
+void Res5C() {
+  c &= 0xdf;
+}
+
+// res 5,d (0xaa)
+void Res5D() {
+  d &= 0xdf;
+}
+
+// res 5,e (0xab)
+void Res5E() {
+  e &= 0xdf;
+}
+
+// res 5,h (0xac)
+void Res5H() {
+  h &= 0xdf;
+}
+
+// res 5,l (0xad)
+void Res5L() {
+  l &= 0xdf;
+}
+
+// res 5,(hl) (0xae)
+void Res5HLi() {
+  local u8 tmp = readMemory(hl) & 0xdf;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 5,a (0xaf)
+void Res5A() {
+  a &= 0xdf;
+}
+
+// res 6,b (0xb0)
+void Res6B() {
+  b &= 0xbf;
+}
+
+// res 6,c (0xb1)
+void Res6C() {
+  c &= 0xbf;
+}
+
+// res 6,d (0xb2)
+void Res6D() {
+  d &= 0xbf;
+}
+
+// res 6,e (0xb3)
+void Res6E() {
+  e &= 0xbf;
+}
+
+// res 6,h (0xb4)
+void Res6H() {
+  h &= 0xbf;
+}
+
+// res 6,l (0xb5)
+void Res6L() {
+  l &= 0xbf;
+}
+
+// res 6,(hl) (0xb6)
+void Res6HLi() {
+  local u8 tmp = readMemory(hl) & 0xbf;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 6,a (0xb7)
+void Res6A() {
+  a &= 0xbf;
+}
+
+// res 7,b (0xb8)
+void Res7B() {
+  b &= 0x7f;
+}
+
+// res 7,c (0xb9)
+void Res7C() {
+  c &= 0x7f;
+}
+
+// res 7,d (0xba)
+void Res7D() {
+  d &= 0x7f;
+}
+
+// res 7,e (0xbb)
+void Res7E() {
+  e &= 0x7f;
+}
+
+// res 7,h (0xbc)
+void Res7H() {
+  h &= 0x7f;
+}
+
+// res 7,l (0xbd)
+void Res7L() {
+  l &= 0x7f;
+}
+
+// res 7,(hl) (0xbe)
+void Res7HLi() {
+  local u8 tmp = readMemory(hl) & 0x7f;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// res 7,a (0xbf)
+void Res7A() {
+  a &= 0x7f;
+}
+
+// set 0,b (0xc0)
+void Set0B() {
+  b |= 0x01;
+}
+
+
+// set 0,c (0xc1)
+void Set0C() {
+  c |= 0x01;
+}
+
+// set 0,d (0xc2)
+void Set0D() {
+  d |= 0x01;
+}
+
+// set 0,e (0xc3)
+void Set0E() {
+  e |= 0x01;
+}
+
+// set 0,h (0xc4)
+void Set0H() {
+  h |= 0x01;
+}
+
+// set 0,l (0xc5)
+void Set0L() {
+  l |= 0x01;
+}
+
+// set 0,(hl) (0xc6)
+void Set0HLi() {
+  local u8 tmp = readMemory(hl) | 0x01;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 0,a (0xc7)
+void Set0A() {
+  a |= 0x01;
+}
+
+// set 1,b (0xc8)
+void Set1B() {
+  b |= 0x02;
+}
+
+// set 1,c (0xc9)
+void Set1C() {
+  c |= 0x02;
+}
+
+// set 1,d (0xca)
+void Set1D() {
+  d |= 0x02;
+}
+
+// set 1,e (0xcb)
+void Set1E() {
+  e |= 0x02;
+}
+
+// set 1,h (0xcc)
+void Set1H() {
+  h |= 0x02;
+}
+
+// set 1,l (0xcd)
+void Set1L() {
+  l |= 0x02;
+}
+
+// set 1,(hl) (0xce)
+void Set1HLi() {
+  local u8 tmp = readMemory(hl) | 0x02;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 1,a (0xcf)
+void Set1A() {
+  a |= 0x02;
+}
+
+// set 2,b (0xd0)
+void Set2B() {
+  b |= 0x04;
+}
+
+// set 2,c (0xd1)
+void Set2C() {
+  c |= 0x04;
+}
+
+// set 2,d (0xd2)
+void Set2D() {
+  d |= 0x04;
+}
+
+// set 2,e (0xd3)
+void Set2E() {
+  e |= 0x04;
+}
+
+// set 2,h (0xd4)
+void Set2H() {
+  h |= 0x04;
+}
+
+// set 2,l (0xd5)
+void Set2L() {
+  l |= 0x04;
+}
+
+// set 2,(hl) (0xd6)
+void Set2HLi() {
+  local u8 tmp = readMemory(hl) | 0x04;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 2,a (0xd7)
+void Set2A() {
+  a |= 0x04;
+}
+
+// set 3,b (0xd8)
+void Set3B() {
+  b |= 0x08;
+}
+
+
+// set 3,c (0xd9)
+void Set3C() {
+  c |= 0x08;
+}
+
+// set 3,d (0xda)
+void Set3D() {
+  d |= 0x08;
+}
+
+// set 3,e (0xdb)
+void Set3E() {
+  e |= 0x08;
+}
+
+// set 3,h (0xdc)
+void Set3H() {
+  h |= 0x08;
+}
+
+// set 3,l (0xdd)
+void Set3L() {
+  l |= 0x08;
+}
+
+// set 3,(hl) (0xde)
+void Set3HLi() {
+  local u8 tmp = readMemory(hl) | 0x08;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 3,a (0xdf)
+void Set3A() {
+  a |= 0x08;
+}
+
+// set 4,b (0xe0)
+void Set4B() {
+  b |= 0x10;
+}
+
+// set 4,c (0xe1)
+void Set4C() {
+  c |= 0x10;
+}
+
+// set 4,d (0xe2)
+void Set4D() {
+  d |= 0x10;
+}
+
+// set 4,e (0xe3)
+void Set4E() {
+  e |= 0x10;
+}
+
+// set 4,h (0xe4)
+void Set4H() {
+  h |= 0x10;
+}
+
+// set 4,l (0xe5)
+void Set4L() {
+  l |= 0x10;
+}
+
+// set 4,(hl) (0xe6)
+void Set4HLi() {
+  local u8 tmp = readMemory(hl) | 0x10;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 4,a (0xe7)
+void Set4A() {
+  a |= 0x10;
+}
+
+// set 5,b (0xe8)
+void Set5B() {
+  b |= 0x20;
+}
+
+// set 5,c (0xe9)
+void Set5C() {
+  c |= 0x20;
+}
+
+// set 5,d (0xea)
+void Set5D() {
+  d |= 0x20;
+}
+
+// set 5,e (0xeb)
+void Set5E() {
+  e |= 0x20;
+}
+
+// set 5,h (0xec)
+void Set5H() {
+  h |= 0x20;
+}
+
+// set 5,l (0xed)
+void Set5L() {
+  l |= 0x20;
+}
+
+// set 5,(hl) (0xee)
+void Set5HLi() {
+  local u8 tmp = readMemory(hl) | 0x20;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 5,a (0xef)
+void Set5A() {
+  a |= 0x20;
+}
+
+// set 6,b (0xf0)
+void Set6B() {
+  b |= 0x40;
+}
+
+// set 6,c (0xf1)
+void Set6C() {
+  c |= 0x40;
+}
+
+// set 6,d (0xf2)
+void Set6D() {
+  d |= 0x40;
+}
+
+// set 6,e (0xf3)
+void Set6E() {
+  e |= 0x40;
+}
+
+// set 6,h (0xf4)
+void Set6H() {
+  h |= 0x40;
+}
+
+// set 6,l (0xf5)
+void Set6L() {
+  l |= 0x40;
+}
+
+// set 6,(hl) (0xf6)
+void Set6HLi() {
+  local u8 tmp = readMemory(hl) | 0x40;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 6,a (0xf7)
+void Set6A() {
+  a |= 0x40;
+}
+
+// set 7,b (0xf8)
+void Set7B() {
+  b |= 0x80;
+}
+
+// set 7,c (0xf9)
+void Set7C() {
+  c |= 0x80;
+}
+
+// set 7,d (0xfa)
+void Set7D() {
+  d |= 0x80;
+}
+
+// set 7,e (0xfb)
+void Set7E() {
+  e |= 0x80;
+}
+
+// set 7,h (0xfc)
+void Set7H() {
+  h |= 0x80;
+}
+
+// set 7,l (0xfd)
+void Set7L() {
+  l |= 0x80;
+}
+
+// set 7,(hl) (0xfe)
+void Set7HLi() {
+  local u8 tmp = readMemory(hl) | 0x80;
+	tacts += 1;
+	writeMemory(hl, tmp);
+}
+
+// set 7,a (0xff)
+void Set7A() {
+  a |= 0x80;
+}
