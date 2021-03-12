@@ -34,7 +34,7 @@ table void standardOps() {
   RetZ,     Ret,      JpZ,      Nop,      CallZ,    Call,     AdcN,     Rst08,     // c8-cf
   RetNc,    PopDE,    JpNc,     OutNA,    CallNc,   PushDE,   SubN,     Rst10,     // d0-d7
   RetC,     Exx,      JpC,      InAN,     CallC,    DDPref,   SbcN,     Rst18,     // d8-df
-  RetPo,    PopHL,    JpPo,     ExSPHLi,  CallPo,   PushHL,   AndN,     Rst20,     // e0-e7
+  RetPo,    PopHL,    JpPo,     ExSPiHL,  CallPo,   PushHL,   AndN,     Rst20,     // e0-e7
   RetPe,    JpHL,     JpPe,     ExDEHL,   CallPe,   Nop,      XorN,     Rst28,     // e8-ef
   RetP,     PopAF,    JpP,      Di,       CallP,    PushAF,   OrN,      Rst30,     // f0-f7
   RetM,     LdSPHL,   JpM,      Nop,      CallM,    FDPref,   CpN,      Rst38      // f8-ff
@@ -1283,7 +1283,7 @@ void JpPo() {
 }
 
 // ex (sp),hl (0xe3)
-void ExSPHLi() {
+void ExSPiHL() {
   local u16 sp1 = sp + 1;
   local u8 tempL = readMemory(sp);
   local u8 tempH = readMemory(sp1);
@@ -1515,6 +1515,7 @@ void DDPref() {
   opCode = readMemory(pc);
   pc += 1;
   r += 1;
+  tacts += 1;
 
   // --- Too long DD/FD sequence?
   ddfdDepth += 1;
@@ -1534,6 +1535,7 @@ void FDPref() {
   opCode = readMemory(pc);
   pc += 1;
   r += 1;
+  tacts += 1;
 
   // --- Too long DD/FD sequence?
   ddfdDepth += 1;

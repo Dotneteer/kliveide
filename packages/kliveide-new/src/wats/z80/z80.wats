@@ -304,4 +304,5 @@ inline void push16(u32 v) {
 #include "aluhelpers.wats"
 #include "standard-ops.wats"
 #include "indexed-ops.wats"
+#include "indexed-bit-ops.wats"
 
