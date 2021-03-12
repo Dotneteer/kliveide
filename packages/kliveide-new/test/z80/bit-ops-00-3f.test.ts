@@ -1359,25 +1359,6 @@ describe("New: Bit ops 00-3f", () => {
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(15);
   });
-
-
-  it("Create code", () => {
-    const regs = ["b", "c", "d", "e", "h", "l", "(hl)", "a"];
-    const bit = 7;
-    for (let i = 0; i < regs.length; i++) {
-      const template = `
-// set ${bit},${regs[i]} (0x${(0xf8+i).toString(16)})
-void Set${bit}${regs[i].toUpperCase()}() {
-  ${regs[i]} |= 0x${(1 << bit).toString(16).padStart(2, "0")};
-}`;
-      console.log(template);
-    }
-    const names: string[] = [];
-    for (let i = 0; i < regs.length; i++) {
-      names.push(`Set${bit}${regs[i].toUpperCase()}`);
-    }
-    console.log(names.join(", "));
-  });
 });
 
 function setReg8(s: Z80CpuState, q: number, val: number): void {

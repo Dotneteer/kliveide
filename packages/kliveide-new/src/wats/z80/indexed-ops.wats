@@ -526,13 +526,13 @@ void IXCB() {
   // --- Read the offset from PC
   wz = getXY() + i8(readMemory(pc));
   pc += 1;
-  r += 1;
+  refreshMemory();
   tacts += 1;
 
   // --- Read the opcode
   opCode = readMemory(pc);
   pc += 1;
-  r += 1;
+  refreshMemory();
   tacts += 1;
   indexedBitOps()[opCode];
 }

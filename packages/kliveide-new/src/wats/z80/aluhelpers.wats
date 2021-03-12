@@ -203,7 +203,7 @@ inline void adjustDecFlags(u8 value) {
   f = (f & 0x01) | decFlags[value];
 }
 
-// Adds tw 16-bit value and sets F accordingly
+// Adds two 16-bit value and sets F accordingly
 inline u16 add16(u16 v1, u16 v2) {
   local u32 tmpVal = v1  + v2;
   local u32 lookup = 
@@ -213,10 +213,45 @@ inline u16 add16(u16 v1, u16 v2) {
   wz = v1 + 1;
   f = 
     (f & 0xc4) | 
-    (tmpVal & 0x10000 ? 0x01 : 0x00) | 
+    (tmpVal & 0x10000 ? FLAG_C : 0x00) | 
     ((tmpVal >> 8) & 0x28) | 
     halfCarryAddFlags[lookup];
   return tmpVal;
+}
+
+// Adds two 16-bit value and sets F accordingly
+inline void adc16(u16 v2) {
+  local u32 tmpVal = hl + v2 + (f & FLAG_C);
+  local u32 lookup = 
+    ((hl & 0x0800) >> 11) | 
+    ((v2 & 0x0800) >> 10) | 
+    ((tmpVal & 0x0800) >> 9);
+  wz = hl + 1;
+  hl = tmpVal;
+  f = 
+    (tmpVal & 0x10000 ? FLAG_C : 0) |
+    overflowAddFlags[lookup >> 4] |
+    (h & (FLAG_53 | FLAG_S)) |
+    halfCarryAddFlags[lookup & 0x07] |
+    (hl ? 0 : FLAG_Z);
+}
+
+// Subtracts two 16-bit value and sets F accordingly
+inline void sbc16(u16 v2) {
+  local u32 tmpVal = hl - v2 - (f & FLAG_C);
+  local u32 lookup = 
+    ((hl & 0x0800) >> 11) | 
+    ((v2 & 0x0800) >> 10) | 
+    ((tmpVal & 0x0800) >> 9);
+  wz = hl + 1;
+  hl = tmpVal;
+  f = 
+    (tmpVal & 0x10000 ? FLAG_C : 0) |
+    FLAG_N | 
+    overflowSubFlags[lookup >> 4] |
+    (h & (FLAG_53 | FLAG_S)) |
+    halfCarrySubFlags[lookup & 0x07] |
+    (hl ? 0 : FLAG_Z);
 }
 
 // The core of the 8-bit ADD operation

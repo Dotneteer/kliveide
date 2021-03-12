@@ -35,7 +35,7 @@ table void standardOps() {
   RetNc,    PopDE,    JpNc,     OutNA,    CallNc,   PushDE,   SubN,     Rst10,     // d0-d7
   RetC,     Exx,      JpC,      InAN,     CallC,    DDPref,   SbcN,     Rst18,     // d8-df
   RetPo,    PopHL,    JpPo,     ExSPiHL,  CallPo,   PushHL,   AndN,     Rst20,     // e0-e7
-  RetPe,    JpHL,     JpPe,     ExDEHL,   CallPe,   Nop,      XorN,     Rst28,     // e8-ef
+  RetPe,    JpHL,     JpPe,     ExDEHL,   CallPe,   EDPref,   XorN,     Rst28,     // e8-ef
   RetP,     PopAF,    JpP,      Di,       CallP,    PushAF,   OrN,      Rst30,     // f0-f7
   RetM,     LdSPHL,   JpM,      Ei,       CallM,    FDPref,   CpN,      Rst38      // f8-ff
 };
@@ -1514,9 +1514,19 @@ void CBPref() {
   // --- Read the opCode from PC
   opCode = readMemory(pc);
   pc += 1;
-  r += 1;
+  refreshMemory();
   tacts += 1;
   bitOps()[opCode];
+}
+
+// Handles the ED prefix (extended instructions)
+void EDPref() {
+  // --- Read the opCode from PC
+  opCode = readMemory(pc);
+  pc += 1;
+  refreshMemory();
+  tacts += 1;
+  extendedOps()[opCode];
 }
 
 // Handles the DD prefix (IX-indexed instructions)
@@ -1524,7 +1534,7 @@ void DDPref() {
   // --- Read the opCode from PC
   opCode = readMemory(pc);
   pc += 1;
-  r += 1;
+  refreshMemory();
   tacts += 1;
 
   // --- Too long DD/FD sequence?
@@ -1544,7 +1554,7 @@ void FDPref() {
   // --- Read the opCode from PC
   opCode = readMemory(pc);
   pc += 1;
-  r += 1;
+  refreshMemory();
   tacts += 1;
 
   // --- Too long DD/FD sequence?
