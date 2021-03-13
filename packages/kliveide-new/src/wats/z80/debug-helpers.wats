@@ -1,0 +1,58 @@
+// ============================================================================
+// Z80 debug helpers
+// ============================================================================
+
+// Depth of the step-out stack
+global u32 stepOutStackDepth;
+
+// Indicates if a RET instruction has been executed
+global bool retExecuted;
+
+// Address to step-out from the current execution
+global i32 stepOutAddress;
+
+// Starting depth of step-out stack
+global u32 stepOutStartDepth;
+
+// The contents of the step-out stack
+u16[1024] stepOutStack;
+
+// Resets the step-over stack
+export void resetStepOverStack() {
+  stepOutStackDepth = 0;
+  retExecuted = false;
+  stepOutAddress = -1;
+  stepOutStartDepth =0;
+}
+
+// Marks the depth of the step-over stack before each run
+export void markStepOverStack() {
+  stepOutStartDepth = stepOutStackDepth;
+}
+
+// Pushes the value to the step-over stack
+void pushToStepOver(u16 value) {
+  // --- Do not allow stack overflow
+  if (stepOutStackDepth >= 1024) {
+    return;
+  }
+
+  // --- Store the value on stack
+  stepOutStack[stepOutStackDepth] = value;
+  stepOutStackDepth += 1;
+}
+
+// Pops a value from the step-over stack
+void popFromStepOver() {
+  // Do not allow stack underflow
+  if (stepOutStackDepth == 0) {
+    return;
+  }
+
+  // --- Pop the value
+  stepOutStackDepth -= 1;
+  stepOutAddress = stepOutStack[stepOutStackDepth];
+
+  // Sign a RET statement
+  retExecuted = true;
+}

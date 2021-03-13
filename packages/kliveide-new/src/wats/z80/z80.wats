@@ -1,5 +1,5 @@
 // ============================================================================
-// WAT# Z80 CPU Core
+// Z80 CPU Core
 // ============================================================================
 
 // ----------------------------------------------------------------------------
@@ -107,8 +107,8 @@ const u32 SIG_HLT_MASK = 0xf7;
 // Is the CPU snoozed?
 global bool cpuSnoozed;
 
-// The Program Counter value of the last signalled event
-global i32 lastSignalAddress;
+// The number of instructions to process before interrupt is enabled again
+global i32 intBacklog;
 
 // ----------------------------------------------------------------------------
 // Z80 flag constants
@@ -138,7 +138,7 @@ type cpuStateStruct = struct {
   bool useIx,
   u32 cpuSignalFlags,
   bool cpuSnoozed,
-  i32 lastSignalAddress
+  i32 intBacklog
 };
 
 // ----------------------------------------------------------------------------
@@ -156,7 +156,7 @@ export void getCpuState() {
   cpuStateBuffer.useIx = useIx;
   cpuStateBuffer.cpuSignalFlags = cpuSignalFlags;
   cpuStateBuffer.cpuSnoozed = cpuSnoozed;
-  cpuStateBuffer.lastSignalAddress = lastSignalAddress;
+  cpuStateBuffer.intBacklog = intBacklog;
 }
 
 // Updates the CPU state according to the state transfer buffer
@@ -171,7 +171,7 @@ export void updateCpuState() {
   useIx = cpuStateBuffer.useIx;
   cpuSignalFlags = cpuStateBuffer.cpuSignalFlags;
   cpuSnoozed = cpuStateBuffer.cpuSnoozed;
-  lastSignalAddress = cpuStateBuffer.lastSignalAddress;
+  intBacklog = cpuStateBuffer.intBacklog;
 }
 
 // Turn on the CPU
@@ -180,6 +180,7 @@ export void turnOnCpu() {
   tacts = 0;
   cpuSignalFlags = SIG_NON;
   cpuSnoozed = false;
+  intBacklog = 0;
 }
 
 // Resets the CPU
@@ -244,6 +245,11 @@ export void executeCpuCycle() {
   // --- Execute the operation
   standardOps()[opCode];
 
+  // --- Handle the interrupt backlog
+  if (intBacklog > 0) {
+    intBacklog -= 1;
+  }
+
   if (!cpuSignalFlags) {
     // No signals, this execution cycle is complete.
     return;
@@ -257,8 +263,12 @@ export void executeCpuCycle() {
 
   // Handle INT
   if (cpuSignalFlags & SIG_INT) {
-    executeInt();
-    return;
+    if (iff1) {
+      if (!intBacklog) {
+        executeInt();
+        return;
+      }
+    }
   }
 
   // Handle HLT
@@ -275,10 +285,71 @@ export void executeCpuCycle() {
 
 // Responds to the INT signal
 void executeInt() {
+  // --- Interrupt awakes the CPU
+  awakeCpu();
+
+  // --- Save the current PC value
+  local u16 oldPc = pc;
+
+  // --- Remove CPU from the halted state
+  if (cpuSignalFlags & SIG_HLT) {
+    pc += 1;
+    cpuSignalFlags &= SIG_HLT_MASK;
+  }
+
+  // --- Reset the interrupt flags
+  iff1 = false;
+  iff2 = false;
+
+  // --- Push the return address to the stack
+  sp -= 1;
+  writeMemory(sp, pc >> 8);
+  sp -= 1;
+  writeMemory(sp, pc);
+
+  // --- Go on according to the interrupt mode
+  if (interruptMode == 2) {
+    // --- IM 2
+    tacts += 2;
+
+    // Let's assume, the device retrieves 0xff (the least significant bit is ignored)
+    // addr = i << 8 | 0xfe;
+    local u16 addr = (i << 8) | 0xfe;
+    tacts += 5;
+    wz = readMemory(addr) + (readMemory(addr + 1) << 8);
+    tacts += 6;
+  } else {
+    // --- IM 0 or IM 1
+    wz = 0x0038;
+    tacts += 5;
+  }
+  pc = wz;
+  pushToStepOver(oldPc);
 }
 
 // Responds to the NMI signal
 void executeNmi() {
+  // --- Interrupt awakes the CPU
+  awakeCpu();
+
+  // --- Remove CPU from the halted state
+  if (cpuSignalFlags & SIG_HLT) {
+    pc += 1;
+    cpuSignalFlags &= SIG_HLT_MASK;
+  }
+
+  // --- Update the interrupt flip-flops
+  iff2 = iff1;
+  iff1 = false;
+
+  // --- Push the return address to the stack
+  sp -= 1;
+  writeMemory(sp, pc >> 8);
+  sp -= 1;
+  writeMemory(sp, pc);
+
+  // --- Jump to the NMI routine
+  pc = 0x0066;
 }
 
 // Responds to the HLT signal
@@ -311,4 +382,6 @@ inline void push16(u32 v) {
 #include "extended-ops.wats"
 #include "indexed-ops.wats"
 #include "indexed-bit-ops.wats"
+#include "debug-helpers.wats"
+
 

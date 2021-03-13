@@ -1482,7 +1482,7 @@ void JpM() {
 void Ei() {
   iff1 = 1;
   iff2 = 1;
-  lastSignalAddress = pc;
+  intBacklog = 3;
 }
 
 // call M (0xfc)
