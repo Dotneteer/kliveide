@@ -19,3 +19,12 @@ inline void writeMemory(u16 addr, u8 value) {
   tacts += 3;
 }
 
+// Memory read contention delay
+inline void contendRead(u16 addr) {
+  // Intentionally left empty
+}
+
+// Memory write contention delay
+inline void contendWrite(u16 addr) {
+  // Intentionally left empty
+}

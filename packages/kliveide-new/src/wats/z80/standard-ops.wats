@@ -410,6 +410,9 @@ void IncSP() {
 // inc (hl) (0x34)
 void IncHLi() {
   local u8 tmp = readMemory(hl);
+  #if MEM_CONTENDED
+    contendRead(hl);
+  #endif
   tacts += 1;
   adjustIncFlags(tmp);
   writeMemory(hl, tmp + 1);
@@ -418,6 +421,9 @@ void IncHLi() {
 // dec (hl) (0x35)
 void DecHLi() {
   local u8 tmp = readMemory(hl);
+  #if MEM_CONTENDED
+    contendRead(hl);
+  #endif
   tacts += 1;
   adjustDecFlags(tmp);
   writeMemory(hl, tmp - 1);
@@ -1287,10 +1293,20 @@ void ExSPiHL() {
   local u16 sp1 = sp + 1;
   local u8 tempL = readMemory(sp);
   local u8 tempH = readMemory(sp1);
+  #if MEM_CONTENDED
+    contendRead(sp1);
+  #endif
   tacts += 1;
   writeMemory(sp1, h);
   writeMemory(sp, l);
-  tacts += 2;
+  #if MEM_CONTENDED
+    contendWrite(sp);
+    tacts += 1;
+    contendWrite(sp);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
   l = tempL;
   h = tempH;
 }
