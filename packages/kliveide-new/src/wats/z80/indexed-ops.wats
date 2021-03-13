@@ -139,10 +139,26 @@ void LdXLn() {
 // inc (ix+D) (0x34)
 void IncIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   local u32 tmp = readMemory(wz);
+  #if MEM_CONTENDED
+    contendRead(wz);
+  #endif
   tacts += 1;
   adjustIncFlags(tmp);
   writeMemory(wz, tmp + 1);
@@ -151,10 +167,26 @@ void IncIXi() {
 // dec (ix+D) (0x35)
 void DecIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   local u32 tmp = readMemory(wz);
+  #if MEM_CONTENDED
+    contendRead(wz);
+  #endif
   tacts += 1;
   adjustDecFlags(tmp);
   writeMemory(wz, tmp - 1);
@@ -166,8 +198,15 @@ void LdIXin() {
   pc += 1;
   wz = getXY() + dist;
   local u8 value = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
   pc += 1;
-  tacts += 2;
   writeMemory(wz, value);
 }
 
@@ -186,8 +225,21 @@ void LdBXL() { b = getXYL(); }
 // ld b,(ix+D) (0x46)
 void LdBIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   b = readMemory(wz);
 }
@@ -201,8 +253,21 @@ void LdCXL() { c = getXYL(); }
 // ld c,(ix+D) (0x4e)
 void LdCIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   c = readMemory(wz);
 }
@@ -216,8 +281,21 @@ void LdDXL() { d = getXYL(); }
 // ld d,(ix+D) (0x56)
 void LdDIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   d = readMemory(wz);
 }
@@ -231,8 +309,21 @@ void LdEXL() { e = getXYL(); }
 // ld e,(ix+D) (0x5e)
 void LdEIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   e = readMemory(wz);
 }
@@ -255,8 +346,21 @@ void LdXHXL() { setXYH(getXYL()); }
 // ld h,(ix+D) (0x66)
 void LdHIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   h = readMemory(wz);
 }
@@ -282,8 +386,21 @@ void LdXLXH() { setXYL(getXYH()); }
 // ld l,(ix+D) (0x6e)
 void LdLIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   l = readMemory(wz);
 }
@@ -294,8 +411,21 @@ void LdXLA() { setXYL(a); }
 // ld (ix+D),b (0x70)
 void LdIXiB() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   writeMemory(wz, b);
 }
@@ -303,8 +433,21 @@ void LdIXiB() {
 // ld (ix+D),c (0x71)
 void LdIXiC() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   writeMemory(wz, c);
 }
@@ -312,8 +455,21 @@ void LdIXiC() {
 // ld (ix+D),d (0x72)
 void LdIXiD() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   writeMemory(wz, d);
 }
@@ -321,8 +477,21 @@ void LdIXiD() {
 // ld (ix+D),e (0x73)
 void LdIXiE() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   writeMemory(wz, e);
 }
@@ -330,8 +499,21 @@ void LdIXiE() {
 // ld (ix+D),h (0x74)
 void LdIXiH() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   writeMemory(wz, h);
 }
@@ -339,8 +521,21 @@ void LdIXiH() {
 // ld (ix+D),l (0x75)
 void LdIXiL() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   writeMemory(wz, l);
 }
@@ -348,8 +543,21 @@ void LdIXiL() {
 // ld (ix+D),a (0x77)
 void LdIXiA() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   writeMemory(wz, a);
 }
@@ -363,8 +571,21 @@ void LdAXL() { a = getXYL(); }
 // ld a,(ix+D) (0x7e)
 void LdAIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   a = readMemory(wz);
 }
@@ -401,8 +622,21 @@ void AdcXL() {
 // adc a,(ix+D) (0x8e)
 void AdcIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   adc8(readMemory(wz));
 }
@@ -420,8 +654,21 @@ void SubXL() {
 // sub a,(ix+D) (0x96)
 void SubIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   sub8(readMemory(wz));
 }
@@ -439,8 +686,21 @@ void SbcXL() {
 // sbc a,(ix+D) (0x9e)
 void SbcIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   sbc8(readMemory(wz));
 }
@@ -458,8 +718,21 @@ void AndXL() {
 // and a,(ix+D) (0xa6)
 void AndIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   and8(readMemory(wz));
 }
@@ -477,8 +750,21 @@ void XorXL() {
 // xor a,(ix+D) (0xae)
 void XorIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   xor8(readMemory(wz));
 }
@@ -496,8 +782,21 @@ void OrXL() {
 // or a,(ix+D) (0xb6)
 void OrIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   or8(readMemory(wz));
 }
@@ -515,8 +814,21 @@ void CpXL() {
 // cp a,(ix+D) (0xbe)
 void CpIXi() {
   local i8 dist = readMemory(pc);
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += 1;
-  tacts += 5;
   wz = getXY() + dist;
   cp8(readMemory(wz));
 }
@@ -527,13 +839,19 @@ void IXCB() {
   wz = getXY() + i8(readMemory(pc));
   pc += 1;
   refreshMemory();
-  tacts += 1;
 
   // --- Read the opcode
   opCode = readMemory(pc);
   pc += 1;
   refreshMemory();
-  tacts += 1;
+  #if MEM_CONTENDED
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
   indexedBitOps()[opCode];
 }
 
@@ -550,10 +868,20 @@ void ExSPiIX() {
   local u16 sp1 = sp + 1;
   local u8 tempL = readMemory(sp);
   local u8 tempH = readMemory(sp1);
+  #if MEM_CONTENDED
+    contendRead(sp1);
+  #endif
   tacts += 1;
   writeMemory(sp1, getXYH());
   writeMemory(sp, getXYL());
-  tacts += 2;
+  #if MEM_CONTENDED
+    contendWrite(sp);
+    tacts += 1;
+    contendWrite(sp);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
   setXYL(tempL);
   setXYH(tempH);
 }

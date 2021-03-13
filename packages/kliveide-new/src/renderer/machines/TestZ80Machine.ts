@@ -8,8 +8,8 @@ import {
 } from "./memory-map";
 import { FlagsSetMask, Z80CpuState } from "../../shared/machines/z80-helpers";
 
-const TEST_INPUT_BUFFER = 0x010005d6;
-const IO_OPERATION_LOG = 0x010006d6;
+const TEST_INPUT_BUFFER = 0x01000dd6;
+const IO_OPERATION_LOG = 0x01000ed6;
 
 /**
  * This class represents a test machine that can be used for testing the WA machine
@@ -129,7 +129,7 @@ export class TestZ80Machine {
     s.useIx = mh.readBool(16);
     s.cpuSignalFlags = mh.readUint32(17);
     s.cpuSnoozed = mh.readBool(21);
-    s.lastSignalAddress = mh.readUint32(22);
+    s.intBacklog = mh.readUint32(22);
 
     return s;
   }
@@ -168,7 +168,7 @@ export class TestZ80Machine {
     mh.writeBool(16, s.useIx);
     mh.writeUint32(17, s.cpuSignalFlags);
     mh.writeBool(21, s.cpuSnoozed);
-    mh.writeUint32(22, s.lastSignalAddress);
+    mh.writeUint32(22, s.intBacklog);
 
     // --- Pass data to webAssembly
     this.cpuApi.updateCpuState();

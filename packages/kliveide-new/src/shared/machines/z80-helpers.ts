@@ -266,5 +266,5 @@ export class Z80CpuState {
   useIx: boolean;
   cpuSignalFlags: Z80SignalStateFlags;
   cpuSnoozed: boolean;
-  lastSignalAddress: number;
+  intBacklog: number;
 }

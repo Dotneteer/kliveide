@@ -229,7 +229,18 @@ void SbcHLHL() {
 // rrd (0x67)
 void Rrd() {
   local u8 tmp = readMemory(hl);
-  tacts += 4;
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 4;
+  #endif
 	writeMemory(hl, (a << 4) | (tmp >> 4));
 	a = (a & 0xf0) | (tmp & 0x0f);
 	f = (f & FLAG_C) | sz53pTable[a];
@@ -258,7 +269,18 @@ void AdcHLHL() {
 // rld (0x6f)
 void Rld() {
   local u8 tmp = readMemory(hl);
-  tacts += 4;
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 4;
+  #endif
 	writeMemory(hl, (tmp << 4) | (a & 0x0f));
 	a = (a & 0xf0) | (tmp >> 4);
 	f = (f & FLAG_C) | sz53pTable[a];
@@ -344,7 +366,20 @@ void Cpi() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-	tacts += 5;
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   hl += 1;
   bc -= 1;
 	f = 
@@ -415,7 +450,20 @@ void Cpd() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-	tacts += 5;
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   hl -= 1;
   bc -= 1;
 	f = 
@@ -492,7 +540,20 @@ void Cpir() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-  tacts += 5;
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   bc -= 1;
 	f = 
     (f & FLAG_C) | 
@@ -550,7 +611,20 @@ void Otir() {
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
 	if (b) {
-    tacts += 5;
+    #if MEM_CONTENDED
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+    #else
+      tacts += 5;
+    #endif
 	  pc -= 2;
 	}
 }
@@ -584,7 +658,20 @@ void Cpdr() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-  tacts += 5;
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
 	bc -= 1;
 	f = 
     (f & FLAG_C) | 
@@ -641,7 +728,20 @@ void Otdr() {
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
 	if (b) {
-	  tacts += 5;
+    #if MEM_CONTENDED
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+    #else
+      tacts += 5;
+    #endif
 	  pc -= 2;
 	}
 }

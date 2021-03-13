@@ -53,10 +53,3 @@ export void initTape(u16 blocks) {
 
 export void setFastLoad(bool fast) {
 }
-
-export void resetStepOverStack() {
-}
-
-export void markStepOverStack() {
-}
-
