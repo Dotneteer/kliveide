@@ -26,9 +26,9 @@ table void extendedOps() {
   Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 90-97
   Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 98-9f
   Ldi,      Cpi,      Ini,      Outi,     Nop,      Nop,      Nop,      Nop,       // a0-a7
-  Ldd,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // a8-af
-  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // b0-b7
-  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // b8-bf
+  Ldd,      Cpd,      Ind,      Outd,     Nop,      Nop,      Nop,      Nop,       // a8-af
+  Ldir,     Cpir,     Inir,     Otir,     Nop,      Nop,      Nop,      Nop,       // b0-b7
+  Lddr,     Cpdr,     Indr,     Otdr,     Nop,      Nop,      Nop,      Nop,       // b8-bf
 
   Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // c0-c7
   Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // c8-cf
@@ -405,4 +405,243 @@ void Ldd() {
     (f & (FLAG_C | FLAG_Z | FLAG_S)) |
     (bc ? FLAG_PV : 0) |
 	  (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+}
+
+// cpd (0xa9)
+void Cpd() {
+  local u8 value = readMemory(hl);
+  local u8 tmp = a - value;
+	local i32 lookup = 
+    ((a & 0x08) >> 3 ) |
+	  ((value & 0x08 ) >> 2) |
+	  ((tmp & 0x08) >> 1 );
+	tacts += 5;
+  hl -= 1;
+  bc -= 1;
+	f = 
+    (f & FLAG_C) | 
+    (bc ? (FLAG_PV | FLAG_N) : FLAG_N) |
+	  halfCarrySubFlags[lookup] | 
+    (tmp ? 0 : FLAG_Z) |
+	  (tmp & FLAG_S);
+	if (f & FLAG_H) {
+    tmp -= 1;
+  };
+	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+	wz -= 1;
+}
+
+// ind (0xaa)
+void Ind() {
+	tacts += 1;
+	local u8 tmp = readPort(bc);
+	writeMemory(hl, tmp);
+	wz = bc - 1;
+  b -= 1;
+  hl -= 1;
+  local u8 tmp2 = tmp + c - 1;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+}
+
+// outd (0xab)
+void Outd() {
+	tacts += 1;
+	local u8 tmp = readMemory(hl);
+	b -= 1;
+	wz = bc - 1;
+	writePort(bc, tmp);
+  hl -= 1;
+  local u8 tmp2 = tmp + l;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    ((tmp2 < tmp) ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+}
+
+// ldir (0xb0)
+void Ldir() {
+  local u8 tmp = readMemory(hl);
+	writeMemory(de, tmp);
+	tacts += 2;
+  bc -= 1;
+	tmp += a;
+	f = 
+    (f & (FLAG_C | FLAG_Z | FLAG_S)) | 
+    (bc ? FLAG_PV : 0) |
+	  (tmp & FLAG_3) | 
+    ((tmp & 0x02) ? FLAG_5 : 0);
+	if (bc) {
+	  tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	}
+  hl += 1;
+  de += 1;
+}
+
+// cpir (0xb1)
+void Cpir() {
+  local u8 value = readMemory(hl);
+  local u8 tmp = a - value;
+	local i32 lookup = 
+    ((a & 0x08) >> 3 ) |
+	  ((value & 0x08 ) >> 2) |
+	  ((tmp & 0x08) >> 1 );
+  tacts += 5;
+  bc -= 1;
+	f = 
+    (f & FLAG_C) | 
+    (bc ? (FLAG_PV | FLAG_N) : FLAG_N) |
+	  halfCarrySubFlags[lookup] | 
+    (tmp ? 0 : FLAG_Z) |
+	  (tmp & FLAG_S);
+	if (f & FLAG_H) {
+    tmp -= 1;
+  }
+	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
+    tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	} else {
+	  wz += 1;
+	}
+	hl += 1;
+}
+
+
+// inir (0xb2)
+void Inir() {
+	tacts += 1;
+	local u8 tmp = readPort(bc);
+	writeMemory(hl, tmp);
+  wz = bc + 1;
+  b -= 1;
+  local u8 tmp2 = tmp + c + 1;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+    tacts += 5;
+	  pc -= 2;
+	}
+  hl += 1;
+}
+
+// otir (0xb3)
+void Otir() {
+	tacts += 1;
+	local u8 tmp = readMemory(hl);
+	b -= 1;
+	wz = bc + 1;
+	writePort(bc, tmp);
+  hl += 1;
+  local u8 tmp2 = tmp + l;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+    tacts += 5;
+	  pc -= 2;
+	}
+}
+
+// lddr (0xb8)
+void Lddr() {
+  local u8 tmp = readMemory(hl);
+	writeMemory(de, tmp);
+	tacts += 2;
+	bc -= 1;
+	tmp += a;
+	f = 
+    (f & (FLAG_C | FLAG_Z | FLAG_S)) | 
+    (bc ? FLAG_PV : 0) |
+	  (tmp & FLAG_3) | 
+    ((tmp & 0x02) ? FLAG_5 : 0);
+	if (bc) {
+    tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	}
+  hl -= 1;
+  de -= 1;
+}
+
+// cpdr (0xb9)
+void Cpdr() {
+  local u8 value = readMemory(hl);
+  local u8 tmp = a - value;
+	local i32 lookup = 
+    ((a & 0x08) >> 3 ) |
+	  ((value & 0x08 ) >> 2) |
+	  ((tmp & 0x08) >> 1 );
+  tacts += 5;
+	bc -= 1;
+	f = 
+    (f & FLAG_C) | 
+    (bc ? (FLAG_PV | FLAG_N) : FLAG_N) |
+	  halfCarrySubFlags[lookup] | 
+    (tmp ? 0 : FLAG_Z) |
+	  (tmp & FLAG_S);
+	if (f & FLAG_H) {
+    tmp -= 1;
+  }
+	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
+    tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	} else {
+	  wz -= 1;
+	}
+	hl -= 1;
+}
+
+// indr (0xba)
+void Indr() {
+	tacts += 1;
+	local u8 tmp = readPort(bc);
+	writeMemory(hl, tmp);
+	wz = bc - 1;
+	b -= 1;
+  local u8 tmp2 = tmp + c - 1;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+	  tacts += 5;
+	  pc -= 2;
+	}
+  hl -= 1;
+}
+
+// otdr (0xbb)
+void Otdr() {
+	tacts += 1;
+	local u8 tmp = readMemory(hl);
+	b -= 1;
+	wz = bc - 1;
+	writePort(bc, tmp);
+  hl -= 1;
+  local u8 tmp2 = tmp + l;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+	  tacts += 5;
+	  pc -= 2;
+	}
 }
