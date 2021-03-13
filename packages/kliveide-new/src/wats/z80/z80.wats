@@ -238,7 +238,7 @@ export void executeCpuCycle() {
   // --- Read the opCode from PC and refresh memory
   opCode = readMemory(pc);
   pc += 1;
-  r += 1;
+  refreshMemory();
   tacts += 1;
 
   // --- Execute the operation
@@ -289,6 +289,10 @@ void executeHalt() {
 // ----------------------------------------------------------------------------
 // Helpers
 
+inline void refreshMemory() {
+  r = (r + 1) & 0x7f | (r & 0x80);
+}
+
 // Increments the current T-State value
 inline void incTacts(u32 inc) { tacts += inc; }
 
@@ -304,6 +308,7 @@ inline void push16(u32 v) {
 #include "aluhelpers.wats"
 #include "standard-ops.wats"
 #include "bit-ops.wats"
+#include "extended-ops.wats"
 #include "indexed-ops.wats"
 #include "indexed-bit-ops.wats"
 

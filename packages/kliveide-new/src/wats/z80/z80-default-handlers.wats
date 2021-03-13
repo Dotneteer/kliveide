@@ -18,3 +18,4 @@ inline void writeMemory(u16 addr, u8 value) {
   vmMemory[blockLookupTable[block].writeIndex + offset] = value;
   tacts += 3;
 }
+
