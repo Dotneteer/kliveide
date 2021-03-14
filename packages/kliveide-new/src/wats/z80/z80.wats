@@ -11,10 +11,11 @@ u8[16 * 1024 * 1024] vmMemory;
 
 // Lookup structure for a 8K memory page
 type blockLookup = struct {
-  u32 readIndex,
-  u32 writeIndex,
-  u8 flags,
-  u8[7] reserved
+  u32 readIndex,  // Memory index for read
+  u32 writeIndex, // Memory index for write
+  u8 flags,       // Page flag (ROM, RAM, NOMEM)
+  u16 partition,  // Partition paged in
+  u8[5] reserved  // Reserved for machine-specific use
 };
 
 // Block flag types
@@ -107,8 +108,20 @@ const u32 SIG_HLT_MASK = 0xf7;
 // Is the CPU snoozed?
 global bool cpuSnoozed;
 
+// Indicates if a RET instruction has been executed
+global bool retExecuted;
+
 // The number of instructions to process before interrupt is enabled again
 global i32 intBacklog;
+
+// Base CPU clock frequency
+global u32 baseClockFrequency;
+
+// Clock frequency multiplier
+global u32 clockMultiplier;
+
+// Default clock frequency multiplier
+global u32 defaultClockMultiplier;
 
 // ----------------------------------------------------------------------------
 // Z80 flag constants
@@ -138,7 +151,8 @@ type cpuStateStruct = struct {
   bool useIx,
   u32 cpuSignalFlags,
   bool cpuSnoozed,
-  i32 intBacklog
+  i32 intBacklog,
+  i32 retExecuted
 };
 
 // ----------------------------------------------------------------------------
@@ -157,6 +171,7 @@ export void getCpuState() {
   cpuStateBuffer.cpuSignalFlags = cpuSignalFlags;
   cpuStateBuffer.cpuSnoozed = cpuSnoozed;
   cpuStateBuffer.intBacklog = intBacklog;
+  cpuStateBuffer.retExecuted = retExecuted;
 }
 
 // Updates the CPU state according to the state transfer buffer
@@ -172,6 +187,7 @@ export void updateCpuState() {
   cpuSignalFlags = cpuStateBuffer.cpuSignalFlags;
   cpuSnoozed = cpuStateBuffer.cpuSnoozed;
   intBacklog = cpuStateBuffer.intBacklog;
+  retExecuted = cpuStateBuffer.retExecuted;
 }
 
 // Turn on the CPU
@@ -228,6 +244,11 @@ export void awakeCpu() {
   cpuSnoozed = false;
 }
 
+// Sets the default clock multiplier
+export void setClockMultiplier(u32 multiplier) {
+  defaultClockMultiplier = multiplier & 0x1f;
+}
+
 // ----------------------------------------------------------------------------
 // Execution cycle
 
@@ -235,6 +256,7 @@ export void awakeCpu() {
 export void executeCpuCycle() {
   // --- Just started to process instructions
   ddfdDepth = 0;
+  retExecuted = 0;
 
   // --- Read the opCode from PC and refresh memory
   opCode = readMemory(pc);
@@ -354,28 +376,19 @@ void executeNmi() {
 
 // Responds to the HLT signal
 void executeHalt() {
-  
+  tacts += 3;
+  refreshMemory();
 }
 
 // ----------------------------------------------------------------------------
 // Helpers
 
+// Emulates memory refresh
 inline void refreshMemory() {
   r = (r + 1) & 0x7f | (r & 0x80);
 }
 
-// Increments the current T-State value
-inline void incTacts(u32 inc) { tacts += inc; }
-
-// Pushes a 16-bit value to the stack
-inline void push16(u32 v) {
-  v = u16(v);
-  sp -= 1;
-  writeMemory(sp, v & 0xff);
-  sp -= 1;
-  writeMemory(sp, v >> 8);
-}
-
+// Load the code that implements the Z80 instructions
 #include "aluhelpers.wats"
 #include "standard-ops.wats"
 #include "bit-ops.wats"

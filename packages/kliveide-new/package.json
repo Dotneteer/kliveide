@@ -17,7 +17,8 @@
   "bugs": "https://github.com/Dotneteer/kliveide/issues",
   "homepage": "https://github.com/Dotneteer/kliveide",
   "scripts": {
-    "build:wa": "watsc ./src/wats/tz80-core/tz80.wats ./build/tz80.wat && wat2wasm ./build/tz80.wat -o ./build/tz80.wasm"
+    "build:wa": "watsc ./src/wats/tz80-core/tz80.wats ./build/tz80.wat && wat2wasm ./build/tz80.wat -o ./build/tz80.wasm",
+    "build:sp48": "watsc ./src/wats/sp48-core/sp48.wats ./build/sp48.wat && wat2wasm ./build/sp48.wat -o ./build/sp48.wasm"
   },
   "devDependencies": {
     "@types/expect": "^24.3.0",

@@ -1,0 +1,53 @@
+// ============================================================================
+// Implementation of common machine parts of the ZX Spectrum 48K, 128K, 2A,
+// and 3+ virtual machines
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Virtual machine state variables
+
+// Describes the state of a ZX Spectrum machine
+type spMachineState = struct {
+  bool portBit3LastValue,
+  bool portBit4LastValue,
+  u32 portBit4ChangedFrom0Tacts,
+  u32 portBit4ChangedFrom1Tacts,
+  u8[8] keyboardLines,
+  u32 interruptTact,
+  u32 interruptEndTact,
+  u8 memorySelectedRom,
+  bool memoryPagingEnabled,
+  u8 memorySelectedBank,
+  bool memoryUseShadowScreen,
+  u32 memoryScreenOffset
+};
+
+// Transfer buffer for machine state
+spMachineState spectrumMachineStateBuffer;
+
+// Accumulated memory contention value
+global u32 contentionAccumulated;
+
+// Stores contention values for each screen rendering tact
+u8[0x1'4000] contentionTable;
+
+// ----------------------------------------------------------------------------
+// Public methods
+
+// Gets the current machine state
+export void getMachineState() {
+  spectrumMachineStateBuffer.portBit3LastValue = portBit3LastValue;
+  spectrumMachineStateBuffer.portBit4LastValue = portBit4LastValue;
+  spectrumMachineStateBuffer.portBit4ChangedFrom0Tacts = portBit4ChangedFrom0Tacts;
+  spectrumMachineStateBuffer.portBit4ChangedFrom1Tacts = portBit4ChangedFrom1Tacts;
+  spectrumMachineStateBuffer.keyboardLines := &keyboardLines;
+  spectrumMachineStateBuffer.interruptTact = interruptTact;
+  spectrumMachineStateBuffer.interruptEndTact = interruptEndTact;
+}
+
+// Applies memory contention delay according to the current frame tact
+inline void applyContentionDelay() {
+  local u32 delay = contentionTable[tacts/clockMultiplier];
+  tacts += delay;
+  contentionAccumulated += delay;
+}

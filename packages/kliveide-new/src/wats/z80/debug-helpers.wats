@@ -5,9 +5,6 @@
 // Depth of the step-out stack
 global u32 stepOutStackDepth;
 
-// Indicates if a RET instruction has been executed
-global bool retExecuted;
-
 // Address to step-out from the current execution
 global i32 stepOutAddress;
 

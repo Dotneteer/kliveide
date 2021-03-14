@@ -1,0 +1,153 @@
+// ============================================================================
+// I/O handlers for ZX Spectrum 48
+
+// ----------------------------------------------------------------------------
+// Port device state
+
+// Last value of bit 3 on port $FE
+global bool portBit3LastValue;
+
+// Last value of bit 4 on port $FE
+global bool portBit4LastValue;
+
+// Tacts value when last time bit 4 of $fe changed from 0 to 1
+global u32 portBit4ChangedFrom0Tacts;
+
+// Tacts value when last time bit 4 of $fe changed from 1 to 0
+global u32 portBit4ChangedFrom1Tacts;
+
+// Reads a byte from the specified I/O port
+u8 readPort(u16 port) {
+  // TODO: Implement this method
+  return 0xff;
+}
+
+// Writes a byte to the specified I/O port
+void writePort(u16 port, u8 value) {
+  // TODO: Implement this method
+}
+
+// Reads information from the 0xfe port
+u8 readPortFE(u16 addr) {
+  return 0xff;
+}
+//   (local $portValue i32)
+//   (local $bit4Sensed i32)
+//   (local $chargeTime i32)
+//   (local $bit6Value i32)
+//   (local $earBit i32)
+
+//   ;; Scan keyboard line status
+//   (call $getKeyLineStatus (i32.shr_u (get_local $addr) (i32.const 8)))
+//   set_local $portValue
+
+//   ;; Check for LOAD mode
+//   (i32.eq (get_global $tapeMode) (i32.const 1))
+//   if (result i32)
+//     (i32.and (get_local $portValue) (i32.const 0xbf))
+//     call $getTapeEarBit tee_local $earBit
+//     (i32.shl (i32.const 4))
+//     set_global $beeperLastEarBit
+//     (i32.shl (get_local $earBit) (i32.const 6))
+//     i32.or
+//   else
+//     ;; Handle analog EAR bit
+//     get_global $portBit4LastValue
+//     (i32.eq (tee_local $bit4Sensed) (i32.const 0))
+//     if
+//       ;; Changed later to 1 from 0 than to 0 from 1?
+//       (i32.sub (get_global $portBit4ChangedFrom1Tacts) (get_global $portBit4ChangedFrom0Tacts))
+//       (i32.gt_s (tee_local $chargeTime) (i32.const 0))
+//       if 
+//         ;; Yes, calculate charge time
+//         (i32.gt_u (get_local $chargeTime) (i32.const 700))
+//         if (result i32)
+//           i32.const 2800
+//         else
+//           (i32.mul (i32.const 4) (get_local $chargeTime))
+//         end
+//         set_local $chargeTime
+
+//         ;; Calculate time ellapsed since last change from 1 to 0
+//         (i32.sub (get_global $tacts) (get_global $portBit4ChangedFrom1Tacts))
+//         ;; Less than charge time?
+//         (i32.lt_u (get_local $chargeTime))
+//         i32.const 4
+//         i32.shl
+//         set_local $bit4Sensed
+//       end
+//     end
+
+//     ;; Calculate bit 6 value
+//     get_global $portBit3LastValue
+//     if (result i32)
+//       i32.const 0x40
+//     else
+//       i32.const 0x40
+//       i32.const 0x00
+//       get_local $bit4Sensed
+//       select
+//     end
+//     set_local $bit6Value
+
+//     ;; Check for ULA 3
+//     (i32.eq (get_global $ulaIssue) (i32.const 3))
+//     if
+//       get_global $portBit3LastValue
+//       if
+//         (i32.eq (get_local $bit4Sensed) (i32.const 0))
+//         if
+//         i32.const 0
+//         set_local $bit6Value
+//         end
+//       end
+//     end
+
+//     ;; Merge bit 6 with port value
+//     (i32.and (get_local $portValue) (i32.const 0xbf))
+//     get_local $bit6Value
+//     i32.or
+//   end
+// )
+
+// ----------------------------------------------------------------------------
+// Helper routines
+
+// Applies I/O contention wait
+// addr: port address
+void applyIOContentionDelay(u16 addr) {
+  // Calculate the low bit value
+  local bool lowbit = addr & 0x0001;
+
+  // Check for contended range
+  if (addr & 0xc000 == 0x4000) {
+    if (lowbit) {
+      // Low bit set, C:1, C:1, C:1, C:1 
+      applyContentionDelay();
+      tacts += 1;
+      applyContentionDelay();
+      tacts += 1;
+      applyContentionDelay();
+      tacts += 1;
+      applyContentionDelay();
+      tacts += 1;
+    } else {
+      // Low bit reset, C:1, C:3
+      applyContentionDelay();
+      tacts += 1;
+      applyContentionDelay();
+      tacts += 3;
+    }
+  } else {
+    if (lowbit) {
+      // Low bit set, N:4
+      tacts += 4;
+    } else {
+      // Low bit reset, C:1, C:3
+      applyContentionDelay();
+      tacts += 1;
+      applyContentionDelay();
+      tacts += 3;
+    }
+  }
+}

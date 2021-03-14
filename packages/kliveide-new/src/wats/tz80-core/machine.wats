@@ -1,17 +1,15 @@
-// Base CPU clock frequency
-global u32 baseClockFrequency;
+// ============================================================================
+// Implementation of unused test Z80 machine functions
 
-// Clock frequency multiplier
-global u32 clockMultiplier;
-
-// Default clock frequency multiplier
-global u32 defaultClockMultiplier;
-
-// Sets the default clock multiplier
-export void setClockMultiplier(u32 multiplier) {
-  defaultClockMultiplier = multiplier & 0x1f;
+// Memory read contention delay
+inline void contendRead(u16 addr) {
+  // Intentionally left empty
 }
 
+// Memory write contention delay
+inline void contendWrite(u16 addr) {
+  // Intentionally left empty
+}
 
 export void setUlaIssue(u8 ula) {
 }

@@ -1,3 +1,10 @@
+// ============================================================================
+// Z80 CPU Test machine implementation
+//
+// This virtual machine is used in Klive unit tests to execute a thorough
+// check of the Z80 implementation.
+// ============================================================================
+
 import void trace "imports" "trace" (u32);
 
 #include "../z80/z80.wats"

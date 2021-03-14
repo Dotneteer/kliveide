@@ -1,0 +1,41 @@
+// Should CPU clock change be allowed?
+bool allowCpuClockChange () {
+  // TODO: Implement this method
+  return true;
+}
+
+// Event handler for a new frame initialization
+inline void onInitNewFrame(u32 oldClockMultiplier) {
+  // TODO: Implement this method
+}
+
+// The execution engine is about to execute a CPU cycle
+inline void beforeCpuCycle(u32 frameTact) {
+  // TODO: Implement this method
+}
+
+// The execution engine has just executed a CPU cycle
+inline void afterCpuCycle(u32 frameTact) {
+  // TODO: Implement this method
+}
+
+// The execution engine is before checking loop termination
+inline void beforeTerminationCheck(u32 frameTact) {
+  // TODO: Implement this method
+}
+
+// Tests if the execution cycle reached the termination point
+inline bool testTerminationPoint() {
+  // TODO: Implement this method
+  return false;
+}
+
+// The execution engine is after checking loop termination
+inline void afterTerminationCheck() {
+  // TODO: Implement this method
+}
+
+// The execution engine has just completed a frame
+inline void onFrameCompleted() {
+  // TODO: Implement this method
+}
