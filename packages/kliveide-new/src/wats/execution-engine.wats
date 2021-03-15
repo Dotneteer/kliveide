@@ -56,10 +56,10 @@ global u32 debugStepMode;
 global bool fastTapeMode;
 
 // The index of the ROM when a termination point is defined
-global u8 terminationRom;
+global i8 terminationRom;
 
 // The value of the PC register to reach when a termination point  is defined
-global u16 terminationPoint;
+global i32 terminationPoint;
 
 // This flag shows that the virtual machine should run in hidden mode
 // (no screen, no sound, no delays)
@@ -81,8 +81,8 @@ type execOptions = struct {
   u32 emulationMode,
   u32 debugStepMode,
   bool fastTapeMode,
-  u8 terminationRom,
-  u16 terminationPoint,
+  i8 terminationRom,
+  i32 terminationPoint,
   bool fastVmMode,
   bool disableScreenRendering,
   u32 stepOverBreakpoint

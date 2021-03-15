@@ -14,8 +14,9 @@ type blockLookup = struct {
   u32 readIndex,  // Memory index for read
   u32 writeIndex, // Memory index for write
   u8 flags,       // Page flag (ROM, RAM, NOMEM)
+  bool contended, // Contended memory block?
   u16 partition,  // Partition paged in
-  u8[5] reserved  // Reserved for machine-specific use
+  u8[4] reserved  // Reserved for machine-specific use
 };
 
 // Block flag types

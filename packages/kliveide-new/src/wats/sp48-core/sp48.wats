@@ -2,12 +2,19 @@
 // ZX Spectrum 48K machine implementation
 // ============================================================================
 import void trace "imports" "trace" (u32);
+import void saveModeLeft "imports" "saveModeLeft" (u32);
+
+// --- Sign that ZX Spectrum models have contended memory
+#define MEM_CONTENDED
 
 #include "../z80/z80.wats"
 #include "../z80/z80-default-handlers.wats"
 #include "../execution-engine.wats"
 #include "../spectrum-core/memory-device.wats"
+#include "../spectrum-core/screen-device.wats"
+#include "../spectrum-core/tape-device.wats"
 #include "../spectrum-core/keyboard-device.wats"
+#include "../spectrum-core/beeper-device.wats"
 #include "../spectrum-core/interrupt-device.wats"
 #include "../spectrum-core/machine.wats"
 #include "../spectrum-core/execution-overloads.wats"

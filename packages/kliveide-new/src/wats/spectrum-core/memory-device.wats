@@ -17,49 +17,48 @@ global bool memoryUseShadowScreen;
 // The WA memory offset where the screen memory starts
 global u32 memoryScreenOffset;
 
+// Number of ROMs
+global u8 numberOfRoms;
+
+// Number of RAM banks
+global u8 ramBanks;
+
 // ----------------------------------------------------------------------------
 // Public device routines
-
-*blockLookup ptr;
 
 // Sets an entry in the BLOCK_LOOKUP_TABLE
 // block: Block index
 // bankOffset: Offset in the 16MB virtual memory
 // contended: Is that block contended?
 // readonly: Is that block read-only?
-void setMemoryBlockEntry(
+export void setMemoryBlockEntry(
   u32 block, 
   u32 bankOffset, 
   bool contended, 
   bool readonly) {
 
-  (*ptr).readIndex = 100;
-
-  //blockLookupTable[block & 0x07].readIndex = 
+  local *blockLookup ptr = &(blockLookupTable[block & 0x07]);
+  (*ptr).readIndex = bankOffset;
+  (*ptr).writeIndex = bankOffset;
+  (*ptr).flags = readonly;
+  (*ptr).contended = contended;
 }
-  
-//   (local $indexAddr i32)
-  
-//   ;; Calculate the address within the index table
-//   (i32.add
-//     (i32.shl 
-//       ;; 8 blocks, 16 bytes each
-//       (i32.and (get_local $block) (i32.const 0x07))
-//       (i32.const 4)
-//     )
-//     (get_global $BLOCK_LOOKUP_TABLE)
-//   )
 
-//   ;; Store read pointer
-//   (i32.store (tee_local $indexAddr) (get_local $bankOffset))
+// Memory read contention delay
+inline void contendRead(u16 addr) {
+  if (blockLookupTable[(addr & 0xe000) >> 9].contended) {
+    local u32 delay = contentionTable[tacts/clockMultiplier];
+    tacts += delay;
+    contentionAccumulated += delay;
+  }
+}
 
-//   ;; Store write pointer
-//   (i32.store offset=4 (get_local $indexAddr) (get_local $bankOffset))
-
-//   ;; Store read RAM/ROM information
-//   (i32.store8 offset=8 (get_local $indexAddr) (get_local $readonly))
-  
-//   ;; Store contention information
-//   (i32.store8 offset=9 (get_local $indexAddr) (get_local $contended))
-// )
+// Memory write contention delay
+inline void contendWrite(u16 addr) {
+  if (blockLookupTable[(addr & 0xe000) >> 9].contended) {
+    local u32 delay = contentionTable[tacts/clockMultiplier];
+    tacts += delay;
+    contentionAccumulated += delay;
+  }
+}
 

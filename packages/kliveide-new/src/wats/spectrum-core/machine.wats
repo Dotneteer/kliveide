@@ -8,18 +8,76 @@
 
 // Describes the state of a ZX Spectrum machine
 type spMachineState = struct {
+  // --- Port device state
   bool portBit3LastValue,
   bool portBit4LastValue,
   u32 portBit4ChangedFrom0Tacts,
   u32 portBit4ChangedFrom1Tacts,
+
+  // --- Keyboard device state
   u8[8] keyboardLines,
+
+  // --- Interrupt device state
   u32 interruptTact,
   u32 interruptEndTact,
+
+  // --- Memory device state
+  u8 numberOfRoms,
+  u8 ramBanks,
   u8 memorySelectedRom,
   bool memoryPagingEnabled,
   u8 memorySelectedBank,
   bool memoryUseShadowScreen,
-  u32 memoryScreenOffset
+  u32 memoryScreenOffset,
+
+  // --- Screen device state
+  u32 verticalSyncLines,
+  u32 nonVisibleBorderTopLines,
+  u32 borderTopLines,
+  u32 displayLines,
+  u32 borderBottomLines,
+  u32 nonVisibleBorderBottomLines,
+  u32 horizontalBlankingTime,
+  u32 borderLeftTime,
+  u32 displayLineTime,
+  u32 borderRightTime,
+  u32 nonVisibleBorderRightTime,
+  u32 pixelDataPrefetchTime,
+  u32 attributeDataPrefetchTime,
+  u32 firstDisplayLine,
+  u32 lastDisplayLine,
+  u32 borderLeftPixels,
+  u32 borderRightPixels,
+  u32 displayWidth,
+  u32 screenLineTime,
+  u32 rasterLines,
+  u32 firstDisplayPixelTact,
+  u32 firstScreenPixelTact,
+  u32 screenWidth,
+  u32 screenLines,
+  u32 borderColor,
+  u32 flashPhase,
+  u32 pixelByte1,
+  u32 pixelByte2,
+  u32 attrByte1,
+  u32 attrByte2,
+  u32 flashFrames,
+  *renderingTactEntry renderingTablePtr,
+  *u8 pixelBufferPtr,
+
+  // --- Audio device state
+  u32 audioSampleRate,
+  u32 audioSampleLength,
+  u32 audioLowerGate,
+  u32 audioUpperGate,
+  u32 audioGateValue,
+  u32 audioNextSampleTact,
+  u32 audioSampleCount,
+  u32 beeperLastEarBit,
+
+  // --- Engine state
+  u32 contentionAccumulated,
+  u32 lastExecutionContentionValue
 };
 
 // Transfer buffer for machine state
@@ -27,6 +85,9 @@ spMachineState spectrumMachineStateBuffer;
 
 // Accumulated memory contention value
 global u32 contentionAccumulated;
+
+// Contention value accummulated during last execution
+global u32 lastExecutionContentionValue;
 
 // Stores contention values for each screen rendering tact
 u8[0x1'4000] contentionTable;
@@ -36,14 +97,148 @@ u8[0x1'4000] contentionTable;
 
 // Gets the current machine state
 export void getMachineState() {
+  // --- Port state
   spectrumMachineStateBuffer.portBit3LastValue = portBit3LastValue;
   spectrumMachineStateBuffer.portBit4LastValue = portBit4LastValue;
   spectrumMachineStateBuffer.portBit4ChangedFrom0Tacts = portBit4ChangedFrom0Tacts;
   spectrumMachineStateBuffer.portBit4ChangedFrom1Tacts = portBit4ChangedFrom1Tacts;
+
+  // --- Keyboard state
   spectrumMachineStateBuffer.keyboardLines := &keyboardLines;
+
+  // --- Interrupt state
   spectrumMachineStateBuffer.interruptTact = interruptTact;
   spectrumMachineStateBuffer.interruptEndTact = interruptEndTact;
+
+  // --- Memory state
+  spectrumMachineStateBuffer.numberOfRoms = numberOfRoms;
+  spectrumMachineStateBuffer.ramBanks = ramBanks;
+  spectrumMachineStateBuffer.memorySelectedRom = memorySelectedRom;
+  spectrumMachineStateBuffer.memoryPagingEnabled = memoryPagingEnabled;
+  spectrumMachineStateBuffer.memorySelectedBank = memorySelectedBank;
+  spectrumMachineStateBuffer.memoryUseShadowScreen = memoryUseShadowScreen;
+  spectrumMachineStateBuffer.memoryScreenOffset = memoryScreenOffset;
+
+  // --- Screen state
+  spectrumMachineStateBuffer.verticalSyncLines = verticalSyncLines;
+  spectrumMachineStateBuffer.nonVisibleBorderTopLines = nonVisibleBorderTopLines;
+  spectrumMachineStateBuffer.borderTopLines = borderTopLines;
+  spectrumMachineStateBuffer.displayLines = displayLines;
+  spectrumMachineStateBuffer.borderBottomLines = borderBottomLines;
+  spectrumMachineStateBuffer.nonVisibleBorderBottomLines = nonVisibleBorderBottomLines;
+  spectrumMachineStateBuffer.horizontalBlankingTime = horizontalBlankingTime;
+  spectrumMachineStateBuffer.borderLeftTime = borderLeftTime;
+  spectrumMachineStateBuffer.displayLineTime = displayLineTime;
+  spectrumMachineStateBuffer.borderRightTime = borderRightTime;
+  spectrumMachineStateBuffer.nonVisibleBorderRightTime = nonVisibleBorderRightTime;
+  spectrumMachineStateBuffer.pixelDataPrefetchTime = pixelDataPrefetchTime;
+  spectrumMachineStateBuffer.attributeDataPrefetchTime = attributeDataPrefetchTime;
+  spectrumMachineStateBuffer.firstDisplayLine = firstDisplayLine;
+  spectrumMachineStateBuffer.lastDisplayLine = lastDisplayLine;
+  spectrumMachineStateBuffer.borderLeftPixels = borderLeftPixels;
+  spectrumMachineStateBuffer.borderRightPixels = borderRightPixels;
+  spectrumMachineStateBuffer.displayWidth = displayWidth;
+  spectrumMachineStateBuffer.screenLineTime = screenLineTime;
+  spectrumMachineStateBuffer.rasterLines = rasterLines;
+  spectrumMachineStateBuffer.firstDisplayPixelTact = firstDisplayPixelTact;
+  spectrumMachineStateBuffer.firstScreenPixelTact = firstScreenPixelTact;
+  spectrumMachineStateBuffer.screenWidth = screenWidth;
+  spectrumMachineStateBuffer.screenLines = screenLines;
+  spectrumMachineStateBuffer.borderColor = borderColor;
+  spectrumMachineStateBuffer.flashPhase = flashPhase;
+  spectrumMachineStateBuffer.pixelByte1 = pixelByte1;
+  spectrumMachineStateBuffer.pixelByte2 = pixelByte2;
+  spectrumMachineStateBuffer.attrByte1 = attrByte1;
+  spectrumMachineStateBuffer.attrByte2 = attrByte2;
+  spectrumMachineStateBuffer.flashFrames = flashFrames;
+  spectrumMachineStateBuffer.renderingTablePtr = renderingTablePtr;
+  spectrumMachineStateBuffer.pixelBufferPtr = pixelBufferPtr;
+
+  // --- Audio state
+  spectrumMachineStateBuffer.audioSampleRate = audioSampleRate;
+  spectrumMachineStateBuffer.audioSampleLength = audioSampleLength;
+  spectrumMachineStateBuffer.audioLowerGate = audioLowerGate;
+  spectrumMachineStateBuffer.audioUpperGate = audioUpperGate;
+  spectrumMachineStateBuffer.audioGateValue = audioGateValue;
+  spectrumMachineStateBuffer.audioNextSampleTact = audioNextSampleTact;
+  spectrumMachineStateBuffer.audioSampleCount = audioSampleCount;
+  spectrumMachineStateBuffer.beeperLastEarBit = beeperLastEarBit;
+
+  // --- Engine state
+  spectrumMachineStateBuffer.contentionAccumulated = contentionAccumulated;
+  spectrumMachineStateBuffer.lastExecutionContentionValue = lastExecutionContentionValue;
 }
+
+// Resets the ZX Spectrum machine
+export void resetMachine() {
+  // --- Reset engine state variables
+  lastRenderedFrameTact = 0;
+  frameCount = 0;
+  tacts = 0;
+  frameCompleted = true;
+  contentionAccumulated = 0;
+  lastExecutionContentionValue = 0;
+  emulationMode = EMU_CONT;
+  debugStepMode = DEB_NONE;
+  fastTapeMode = false;
+  terminationRom = -1;
+  terminationPoint = -1;
+  fastVmMode = false;
+  disableScreenRendering = false;
+  executionCompletionReason = EXCR_EXEC;
+  stepOverBreakpoint = 0;
+
+  // Reset keyboard line status
+  keyboardLines[0] = 0;
+  keyboardLines[1] = 0;
+  keyboardLines[2] = 0;
+  keyboardLines[3] = 0;
+  keyboardLines[4] = 0;
+  keyboardLines[5] = 0;
+  keyboardLines[6] = 0;
+  keyboardLines[7] = 0;
+
+  // Reset memory state
+  memorySelectedRom = 0;
+  memoryPagingEnabled = 1;
+  memorySelectedBank = 0;
+  memoryUseShadowScreen = false;
+
+  // Reset port state
+  portBit3LastValue = 0;
+  portBit4LastValue = 0;
+  portBit4ChangedFrom0Tacts = 0;
+  portBit4ChangedFrom1Tacts = 0;
+
+  // Reset beeper state
+  audioGateValue = 0;
+  audioNextSampleTact = 0;
+  beeperLastEarBit = 0;
+
+  // ;; Reset PSG state
+  // get_global $psgClockStep set_global $psgNextClockTact
+
+  // (i32.store offset=0 (get_global $PSG_REGS) (i32.const 0))
+  // (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
+  // (i32.store offset=8 (get_global $PSG_REGS) (i32.const 0))
+  // (i32.store offset=12 (get_global $PSG_REGS) (i32.const 0))
+  // i32.const 0xffff set_global $psgNoiseSeed
+
+  // ;; Reset tape state
+  // i32.const 0 set_global $tapeMode
+  // i32.const 0 set_global $tapeBlocksToPlay
+  // i32.const 1 set_global $tapeEof
+  // get_global $TAPE_DATA_BUFFER set_global $tapeBufferPtr
+  // get_global $TAPE_DATA_BUFFER set_global $tapeNextBlockPtr
+  // i32.const 0 set_global $tapePlayPhase
+  // i64.const 0 set_global $tapeStartTact
+
+  // Reset debugging state
+  stepOutStackDepth = 0;
+}
+
+// ----------------------------------------------------------------------------
+// Helper methods
 
 // Applies memory contention delay according to the current frame tact
 inline void applyContentionDelay() {
