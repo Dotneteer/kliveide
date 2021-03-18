@@ -46,14 +46,15 @@ export u32 getKeyStatus(u8 keyCode) {
 // Returns the status value to be received when querying the I/O
 export u32 getKeyLineStatus(u8 line) {
   local u32 status = 0;
-  status |= keyboardLines[0];
-  status |= keyboardLines[1];
-  status |= keyboardLines[2];
-  status |= keyboardLines[3];
-  status |= keyboardLines[4];
-  status |= keyboardLines[5];
-  status |= keyboardLines[6];
-  status |= keyboardLines[7];
+  local u32 lineIndex = 0;
+  line ^= 0xff;
+  while (lineIndex < 8) {
+    if (line & 0x01) {
+      status |= keyboardLines[lineIndex];
+    }
+    lineIndex += 1;
+    line >>= 1;
+  }
   return status ^ 0xff;
 }
 

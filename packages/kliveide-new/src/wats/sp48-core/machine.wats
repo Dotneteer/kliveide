@@ -1,0 +1,60 @@
+// ============================================================================
+// ZX Spectrum 48K machine-specific routines
+// ============================================================================
+
+// Sets up the ZX Spectrum machine
+export void setupMachine () {
+  // --- Let's use ULA issue 3 by default
+  ulaIssue = 3;
+
+  // --- CPU configuration
+  baseClockFrequency = 3'500'000;
+  clockMultiplier = defaultClockMultiplier;
+  resetCpu(true);
+  
+  // --- Memory configuration
+  numberOfRoms = 1;
+  ramBanks = 0;
+  memoryScreenOffset = 0x4000;
+
+  // --- Set up block lookup table
+  setMemoryBlockEntry(0, 0x0000, false, true);
+  setMemoryBlockEntry(1, 0x2000, false, true);
+  setMemoryBlockEntry(2, 0x4000, true, false);
+  setMemoryBlockEntry(3, 0x6000, true, false);
+  setMemoryBlockEntry(4, 0x8000, false, false);
+  setMemoryBlockEntry(5, 0xa000, false, false);
+  setMemoryBlockEntry(6, 0xc000, false, false);
+  setMemoryBlockEntry(7, 0xe000, false, false);
+
+  // --- Set the initial state of a ZX Spectrum machine
+  resetMachine();
+
+  // --- Screen frame configuration
+  interruptTact = 11;
+  verticalSyncLines = 8;
+  nonVisibleBorderTopLines = 8;
+  borderTopLines = 48;
+  borderBottomLines = 48;
+  nonVisibleBorderBottomLines = 8;
+  displayLines = 192;
+  borderLeftTime = 24;
+  borderRightTime = 24;
+  displayLineTime = 128;
+  horizontalBlankingTime = 40;
+  nonVisibleBorderRightTime = 8;
+  pixelDataPrefetchTime = 2;
+  attributeDataPrefetchTime = 1;
+
+  calcScreenAttributes();
+  initRenderingTactTable();
+
+  //   ;; PSG sound configuration
+  //   (set_global $psgSupportsSound (i32.const 0))
+
+  //   ;; Tape device data
+  //   (set_global $tapeLoadBytesRoutine (i32.const 0x056c))
+  //   (set_global $tapeLoadBytesInvalidHeader (i32.const 0x056b))
+  //   (set_global $tapeLoadBytesResume (i32.const 0x05e2))
+  //   (set_global $tapeSaveBytesRoutine (i32.const 0x04c2))
+}

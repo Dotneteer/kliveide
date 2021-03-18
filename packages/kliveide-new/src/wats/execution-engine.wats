@@ -179,7 +179,7 @@ export void executeMachineLoop() {
       tacts += 12;
     } else {
       // --- Carry on with the CPU cycle
-      // --- Check in interrupt signal should be raised
+      // --- Check if interrupt signal should be raised
       if (shouldRaiseInterrupt(currentFrameTact)) {
         cpuSignalFlags |= SIG_INT;
       } else {

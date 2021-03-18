@@ -75,7 +75,19 @@ type spMachineState = struct {
   u32 audioSampleCount,
   u32 beeperLastEarBit,
 
+  // --- Tape device state
+  u32 tapeMode,
+  u16 tapeBlocksToPlay,
+  bool tapeEof,
+  *u8 tapeBufferPtr,
+  *u8 tapeNextBlockPtr,
+  u32 tapePlayPhase,
+  u64 tapeStartTact,
+  bool tapeFastLoad,
+  u32 tapeSavePhase,
+
   // --- Engine state
+  u8 ulaIssue,
   u32 contentionAccumulated,
   u32 lastExecutionContentionValue
 };
@@ -89,11 +101,19 @@ global u32 contentionAccumulated;
 // Contention value accummulated during last execution
 global u32 lastExecutionContentionValue;
 
+// ULA issue used by the machine
+global u8 ulaIssue = 3;
+
 // Stores contention values for each screen rendering tact
 u8[0x1'4000] contentionTable;
 
 // ----------------------------------------------------------------------------
 // Public methods
+
+// Sets the ZX Spectrum ULA issue value
+export void setUlaIssue(u8 ula) {
+  ulaIssue = ula == 2 ? 2 : 3;
+}
 
 // Gets the current machine state
 export void getMachineState() {
@@ -164,7 +184,19 @@ export void getMachineState() {
   spectrumMachineStateBuffer.audioSampleCount = audioSampleCount;
   spectrumMachineStateBuffer.beeperLastEarBit = beeperLastEarBit;
 
+  // --- Tape state
+  spectrumMachineStateBuffer.tapeMode = tapeMode;
+  spectrumMachineStateBuffer.tapeBlocksToPlay = tapeBlocksToPlay;
+  spectrumMachineStateBuffer.tapeEof = tapeEof;
+  spectrumMachineStateBuffer.tapeBufferPtr = tapeBufferPtr;
+  spectrumMachineStateBuffer.tapeNextBlockPtr = tapeNextBlockPtr;
+  spectrumMachineStateBuffer.tapePlayPhase = tapePlayPhase;
+  spectrumMachineStateBuffer.tapeStartTact = tapeStartTact;
+  spectrumMachineStateBuffer.tapeFastLoad = tapeFastLoad;
+  spectrumMachineStateBuffer.tapeSavePhase = tapeSavePhase;
+
   // --- Engine state
+  spectrumMachineStateBuffer.ulaIssue = ulaIssue;
   spectrumMachineStateBuffer.contentionAccumulated = contentionAccumulated;
   spectrumMachineStateBuffer.lastExecutionContentionValue = lastExecutionContentionValue;
 }

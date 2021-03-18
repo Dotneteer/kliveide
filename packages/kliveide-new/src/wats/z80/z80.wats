@@ -122,7 +122,7 @@ global u32 baseClockFrequency;
 global u32 clockMultiplier;
 
 // Default clock frequency multiplier
-global u32 defaultClockMultiplier;
+global u32 defaultClockMultiplier = 1;
 
 // ----------------------------------------------------------------------------
 // Z80 flag constants

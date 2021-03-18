@@ -19,11 +19,19 @@ inline u8 readMemoryNoContention(u16 addr) {
   ];
 }
 
-// Reads the contents of the memory
+// Writes the contents of the memory
 inline void writeMemory(u16 addr, u8 value) {
   vmMemory[
     blockLookupTable[addr >> 13].writeIndex + 
     (addr & 0b0001_1111_1111_1111)
   ] = value;
   tacts += 3;
+}
+
+// Writes the contents of the memory without appluing contention
+inline void writeMemoryNoContention(u16 addr, u8 value) {
+  vmMemory[
+    blockLookupTable[addr >> 13].writeIndex + 
+    (addr & 0b0001_1111_1111_1111)
+  ] = value;
 }

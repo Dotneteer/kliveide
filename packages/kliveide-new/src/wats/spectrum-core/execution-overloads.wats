@@ -1,39 +1,60 @@
-// Should CPU clock change be allowed?
+// ZX Spectrum allows clock changes when the tape is passive
 bool allowCpuClockChange () {
-  // TODO: Implement this method
-  return true;
+  return !tapeMode;
 }
 
 // Event handler for a new frame initialization
+// Here, ZX Spectrum initializes the rendering of the next screen
+// frame and resets the audio samples buffer.
 inline void onInitNewFrame(u32 oldClockMultiplier) {
-  // TODO: Implement this method
+  // --- Reset pointers used for screen rendering
+  local u32 overflow = lastRenderedFrameTact;
+  renderingTablePtr = &renderingTactTable;
+  pixelBufferPtr = &pixelRenderingBuffer;
+  frameCompleted = false;
+
+  // --- Render the overflown part of the screen
+  renderScreen(overflow);
+
+  // --- Calculate flash phase
+  if (!(frameCount % flashFrames)) {
+    flashPhase ^= 0x01;
+  }
+
+  // --- Reset beeper frame state
+  if (oldClockMultiplier != clockMultiplier) {
+    setBeeperSampleRate(audioSampleRate);
+  }
+  audioSampleCount = 0;
 }
 
 // The execution engine is about to execute a CPU cycle
 inline void beforeCpuCycle(u32 frameTact) {
-  // TODO: Implement this method
+  // --- Nothing to do
 }
 
 // The execution engine has just executed a CPU cycle
 inline void afterCpuCycle(u32 frameTact) {
-  // TODO: Implement this method
+  // --- Nothing to do
 }
 
-// The execution engine is before checking loop termination
+// ZX Spectrum renders the next pixels of the screen 
 inline void beforeTerminationCheck(u32 frameTact) {
-  // TODO: Implement this method
+  renderScreen(frameTact);
 }
 
 // Tests if the execution cycle reached the termination point
 inline bool testTerminationPoint() {
-  // TODO: Implement this method
+  if (memorySelectedRom == terminationRom) {
+    return pc == terminationPoint;
+  }
   return false;
 }
 
 // The execution engine is after checking loop termination
 inline void afterTerminationCheck() {
-  // Notify the tape device to check tape hooks
-  //call $checkTapeHooks
+  // --- Notify the tape device to check tape hooks
+  checkTapeHooks();
 
   // Is it time to render the next beeper/sound sample?
   if (tacts >= audioNextSampleTact) {
@@ -66,5 +87,19 @@ inline void afterTerminationCheck() {
 
 // The execution engine has just completed a frame
 inline void onFrameCompleted() {
-  // TODO: Implement this method
+  // --- The current screen rendering frame completed
+  // --- Prepare for the next PSG tact that may overflow to the next frame
+  // (i32.gt_u (get_global $psgNextClockTact) (get_global $tactsInFrame))
+  // if
+  //   (i32.sub 
+  //     (get_global $psgNextClockTact)
+  //     (get_global $tactsInFrame)
+  //   )
+  //   set_global $psgNextClockTact
+  // end
+
+  // --- Prepare for the next beeper sample rate that may overflow to the next frame
+  if (audioNextSampleTact > tacts) {
+    audioNextSampleTact -= tactsInFrame * clockMultiplier;
+  }
 }
