@@ -413,8 +413,8 @@ export class AppWindow implements IAppWindow {
         id: TOGGLE_DEVTOOLS,
         label: "Toggle Developer Tools",
         accelerator: "Ctrl+Shift+I",
-        visible: appConfiguration?.viewOptions?.showDevTools ?? false,
-        enabled: appConfiguration?.viewOptions?.showDevTools ?? false,
+        visible: true, //appConfiguration?.viewOptions?.showDevTools ?? false,
+        enabled: true, //appConfiguration?.viewOptions?.showDevTools ?? false,
         click: () => {
           this.window.webContents.toggleDevTools();
         },
@@ -1037,13 +1037,13 @@ export class AppWindow implements IAppWindow {
     const emuState = fullState.emulatorPanelState;
     if (menu) {
       // --- DevTools visibility
-      const devToolVisible =
-        (fullState?.ideConnection?.connected ?? false) ||
-        (appConfiguration?.viewOptions?.showDevTools ?? false);
-      const toggleDevTools = menu.getMenuItemById(TOGGLE_DEVTOOLS);
-      if (toggleDevTools) {
-        toggleDevTools.visible = toggleDevTools.enabled = devToolVisible;
-      }
+      // const devToolVisible =
+      //   (fullState?.ideConnection?.connected ?? false) ||
+      //   (appConfiguration?.viewOptions?.showDevTools ?? false);
+      // const toggleDevTools = menu.getMenuItemById(TOGGLE_DEVTOOLS);
+      // if (toggleDevTools) {
+      //   toggleDevTools.visible = toggleDevTools.enabled = devToolVisible;
+      // }
 
       // --- Keyboard panel status
       const toggleKeyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);

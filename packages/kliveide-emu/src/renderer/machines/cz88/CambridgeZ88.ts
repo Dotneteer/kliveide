@@ -2,9 +2,9 @@ import { MachineApi } from "../wa-api";
 import { MemoryHelper } from "../memory-helpers";
 import {
   BLOCK_LOOKUP_TABLE,
+  CPU_STATE_BUFFER,
   CZ88_BEEPER_BUFFER,
   PIXEL_BUFFER,
-  STATE_TRANSFER_BUFF,
   Z88_MEM_AREA,
 } from "../memory-map";
 import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
@@ -167,7 +167,9 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    */
   getMachineState(): CambridgeZ88MachineState {
     const s = super.getMachineState() as CambridgeZ88MachineState;
-    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+
+    // TODO: Update the buffer address
+    const mh = new MemoryHelper(this.api, CPU_STATE_BUFFER);
 
     // --- Blink device data
     s.INT = mh.readByte(160);
@@ -219,8 +221,9 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.KBLine7 = mh.readByte(199);
     s.lcdWentOff = mh.readBool(200);
     s.isInSleepMode = mh.readBool(201);
-    s.audioSampleLength = mh.readUint32(202);
-    s.audioSampleCount = mh.readUint32(206);
+    // TODO: Update the state
+    // s.audioSampleLength = mh.readUint32(202);
+    // s.audioSampleCount = mh.readUint32(206);
 
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
@@ -314,13 +317,14 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   async beforeStarted(debugging: boolean): Promise<void> {
     await super.beforeStarted(debugging);
 
+    // TODO: Update this section
     // --- Init audio renderers
-    const state = this.getMachineState();
-    this._beeperRenderer = this._audioRendererFactory(
-      state.tactsInFrame / state.audioSampleLength
-    );
-    this._beeperRenderer.suspend();
-    await this._beeperRenderer.initializeAudio();
+    // const state = this.getMachineState();
+    // this._beeperRenderer = this._audioRendererFactory(
+    //   state.tactsInFrame / state.audioSampleLength
+    // );
+    // this._beeperRenderer.suspend();
+    // await this._beeperRenderer.initializeAudio();
   }
 
   /**
@@ -362,15 +366,16 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     // --- Update load state
     const emuState = this._stateManager.getState().emulatorPanelState;
 
-    if (!this.executionOptions.disableScreenRendering) {
-      // --- Obtain beeper samples
-      let mh = new MemoryHelper(this.api, CZ88_BEEPER_BUFFER);
-      const beeperSamples = mh
-        .readBytes(0, resultState.audioSampleCount)
-        .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
-      this._beeperRenderer.storeSamples(beeperSamples);
-      this._beeperRenderer.resume();
-    }
+    // TODO: Update this section
+    // if (!this.executionOptions.disableScreenRendering) {
+    //   // --- Obtain beeper samples
+    //   let mh = new MemoryHelper(this.api, CZ88_BEEPER_BUFFER);
+    //   const beeperSamples = mh
+    //     .readBytes(0, resultState.audioSampleCount)
+    //     .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
+    //   this._beeperRenderer.storeSamples(beeperSamples);
+    //   this._beeperRenderer.resume();
+    // }
   }
 
   /**
@@ -389,7 +394,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         break;
       case CZ88_HARD_RESET:
         await controller.stop();
-        this.api.turnOnMachine();
+        this.api.setupMachine();
         await controller.start();
         break;
       case CZ88_PRESS_BOTH_SHIFTS:

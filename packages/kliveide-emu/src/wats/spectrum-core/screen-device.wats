@@ -1,0 +1,591 @@
+// ============================================================================
+// ZX Spectrum screen device
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Screen device constants
+
+const u32 RT_NONE = 0x00; 
+const u32 RT_Border = 0x04;
+const u32 RT_BorderFetchPixel = 0x05;
+const u32 RT_BorderFetchAttr = 0x06;
+const u32 RT_DisplayB1 = 0x08;
+const u32 RT_DisplayB1FetchB2 = 0x09;
+const u32 RT_DisplayB1FetchA2 = 0x0a;
+const u32 RT_DisplayB2 = 0x10;
+const u32 RT_DisplayB2FetchB1 = 0x11;
+const u32 RT_DisplayB2FetchA1 = 0x12;
+
+// ----------------------------------------------------------------------------
+// Screen device state
+
+// Number of lines used for vertical sync
+global u32 verticalSyncLines;
+
+// The number of top border lines that are not visible when rendering the screen
+global u32 nonVisibleBorderTopLines;
+
+// The number of border lines before the display
+global u32 borderTopLines;
+
+// Number of display lines
+global u32 displayLines;
+
+// The number of border lines after the display
+global u32 borderBottomLines;
+
+// The number of bottom border lines that are not visible when rendering the screen
+global u32 nonVisibleBorderBottomLines;
+
+// Horizontal blanking time (HSync+blanking). Given in Z80 clock cycles.
+global u32 horizontalBlankingTime;
+
+// The time of displaying left part of the border. Given in Z80 clock cycles.
+global u32 borderLeftTime;
+
+// The time of displaying a pixel row. Given in Z80 clock cycles.
+global u32 displayLineTime;
+
+// The time of displaying right part of the border. Given in Z80 clock cycles.
+global u32 borderRightTime;
+
+// The time used to render the nonvisible right part of the border. Given in Z80 clock cycles.
+global u32 nonVisibleBorderRightTime;
+
+// The time the data of a particular pixel should be prefetched before displaying it.
+// Given in Z80 clock cycles.
+global u32 pixelDataPrefetchTime;
+
+// The time the data of a particular pixel attribute should be prefetched before displaying it.
+// Given in Z80 clock cycles.
+global u32 attributeDataPrefetchTime;
+
+// First visible display line
+global u32 firstDisplayLine;
+
+// Last visible display line
+global u32 lastDisplayLine;
+
+// Number of pixels in the left border
+global u32 borderLeftPixels;
+
+// Number of pixels in the right border
+global u32 borderRightPixels;
+
+// Width of display in pixels
+global u32 displayWidth;
+
+// Total time of a screen line
+global u32 screenLineTime;
+
+// Total number of raster lines (including the non-visible ones)
+global u32 rasterLines;
+
+// The tact in which the top left pixel should be displayed. Given in Z80 clock cycles.
+global u32 firstDisplayPixelTact;
+
+// The tact at which the first pixel is displayed
+global u32 firstScreenPixelTact;
+
+// Total width of the screen
+global u32 screenWidth;
+
+// Total number of screen lines
+global u32 screenLines;
+
+// The current border color
+global u32 borderColor;
+
+// The current flash phase (normal/inverse)
+global u32 flashPhase;
+
+// Pixel byte #1 read by ULA
+global u32 pixelByte1;
+
+// Pixel byte #2 read by ULA
+global u32 pixelByte2;
+
+// Attribute byte #1 read by ULA
+global u32 attrByte1;
+
+// Attribute byte #2 read by ULA
+global u32 attrByte2;
+
+// Number of flash frames
+global u32 flashFrames;
+
+// ----------------------------------------------------------------------------
+// Memory variables
+
+type renderingTactEntry = struct {
+  u8 phase,
+  u16 pixelAddress,
+  u16 attrAddress
+};
+
+// Pointer to the next tact in the rendering table
+*renderingTactEntry renderingTablePtr;
+
+// Pointer to the next pixel in the rendering buffet
+*u8 pixelBufferPtr;
+
+// --- The table of rendering tacts
+renderingTactEntry[0x6'0000] renderingTactTable;
+
+// --- Pixel buffer area
+u8[0x2'8000] pixelRenderingBuffer;
+
+// --- Colorization area
+u32[0x2'8000] colorizationBuffer;
+
+// ----------------------------------------------------------------------------
+// Helper data
+
+// Paper colors when flash is off 
+data u8 paperColorFlashOff [
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
+  0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 
+  0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 
+  0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 
+  0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 
+  0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 
+  0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 
+  0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 
+  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 
+  0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 
+  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 
+  0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 
+  0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
+  0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 
+  0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 
+  0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 
+  0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 
+  0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 
+  0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
+  0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 
+  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 
+  0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 
+  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 
+  0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 
+  0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
+];
+
+// Paper colors when flash is on 
+data u8 paperColorFlashOn [
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
+  0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 
+  0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 
+  0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 
+  0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 
+  0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 
+  0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 
+  0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 
+  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 
+  0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 
+  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 
+  0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 
+  0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+];
+
+// Ink colors when flash is off 
+data u8 inkColorFlashOff [
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f  
+];
+
+// Ink colors when flash is on 
+data u8 inkColorFlashOn [
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
+  0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 
+  0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 
+  0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 
+  0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 
+  0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 0x06, 
+  0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 
+  0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 
+  0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 
+  0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 
+  0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 
+  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 
+  0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 0x0d, 
+  0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 
+  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
+];
+
+// ZX Spectrum color palette
+data u32 spectrumPalette [
+  0xff'00'00'00,
+  0xff'aa'00'00,
+  0xff'00'00'aa,
+  0xff'aa'00'aa,
+  0xff'00'aa'00,
+  0xff'aa'aa'00,
+  0xff'00'aa'aa,
+  0xff'aa'aa'aa,
+  0xff'00'00'00,
+  0xff'ff'00'00,
+  0xff'00'00'ff,
+  0xff'ff'00'ff,
+  0xff'00'ff'00,
+  0xff'ff'ff'00,
+  0xff'00'ff'ff,
+  0xff'ff'ff'ff
+];
+
+// ----------------------------------------------------------------------------
+// Screen device routines
+
+// Calculates extra screen attributes from screen configuration parameters
+void calcScreenAttributes() {
+  screenLines = borderTopLines + displayLines + borderBottomLines;
+  firstDisplayLine = verticalSyncLines + nonVisibleBorderTopLines + borderTopLines;
+  lastDisplayLine = firstDisplayLine + displayLines - 1;
+  borderLeftPixels = 2 * borderLeftTime;
+  borderRightPixels = 2 * borderRightTime;
+  displayWidth = 2 * displayLineTime;
+  screenWidth = borderLeftPixels + displayWidth + borderRightPixels;
+  screenLineTime = borderLeftTime + displayLineTime + 
+    borderRightTime + nonVisibleBorderRightTime +
+    horizontalBlankingTime;
+  rasterLines = firstDisplayLine + displayLines + 
+    borderBottomLines + nonVisibleBorderBottomLines;
+  tactsInFrame = rasterLines * screenLineTime;
+  firstDisplayPixelTact = firstDisplayLine * screenLineTime + borderLeftTime;
+  firstScreenPixelTact = (verticalSyncLines + nonVisibleBorderTopLines) * screenLineTime;
+  flashFrames = u32(f32(baseClockFrequency)/tactsInFrame/2.0);
+}
+
+// Initializes the table used for screen rendering
+export void initRenderingTactTable() {
+
+  // Calculate the first and last visible lines
+  local u32 firstVisibleLine = verticalSyncLines + nonVisibleBorderTopLines;
+  local u32 lastVisibleLine = rasterLines - nonVisibleBorderBottomLines;
+
+  // Calculate the last visible line and display tacts
+  local u32 lastVisibleLineTact = screenLineTime - nonVisibleBorderRightTime -
+    horizontalBlankingTime;
+  local u32 lastDisplayLineTact = borderLeftTime + displayLineTime;
+
+  // Calculate border pixel and attribute fetch tacts
+  local u32 borderPixelFetchTact = borderLeftTime - pixelDataPrefetchTime;
+  local u32 borderAttrFetchTact = borderLeftTime - attributeDataPrefetchTime;
+
+  // Init the loop over tacts
+  local *renderingTactEntry tablePtr = &renderingTactTable;
+  local *u8 contentionPtr = &contentionTable;
+  local u32 tact = 0;
+
+  while (tact < tactsInFrame) {
+    // --- Init the current tact
+    local u32 phase = RT_NONE;
+    local u32 contentionDelay = 0;
+    local u32 pixelAddr = 0;
+    local u32 attrAddr = 0;
+
+    // --- Calculate line and tact in line
+    local u32 line = tact/screenLineTime;
+    local u32 tactInLine = tact % screenLineTime;
+
+    // Test, if the current tact is visible
+    if (
+      (line >= firstVisibleLine) & 
+      (line < lastVisibleLine) & 
+      (tactInLine < lastVisibleLineTact)
+    ) {
+      // --- Yes, the tact is visible.
+      // --- Test, if it is in the display area
+      if (
+        (line >= firstDisplayLine) &
+        (line <= lastDisplayLine) &
+        (tactInLine >= borderLeftTime) &
+        (tactInLine < lastDisplayLineTact)
+      ) {
+        // --- Yes, it is the display area
+        // --- Carry out actions according to pixel tact
+        local u32 pixelTact = (tactInLine - borderLeftTime) & 0x07;
+        if (!pixelTact) {
+          phase = RT_DisplayB1FetchB2;
+          pixelAddr = calcPixelAddress(line, tactInLine + 4);
+          contentionDelay = 5;
+        } else if (pixelTact == 1) {
+          phase = RT_DisplayB1FetchA2;
+          attrAddr = calcAttrAddress(line, tactInLine + 3);
+          contentionDelay = 4;
+        } else if (pixelTact == 2) {
+          phase = RT_DisplayB1;
+          contentionDelay = 3;
+        } else if (pixelTact == 3) {
+          phase = RT_DisplayB1;
+          contentionDelay = 2;
+        } else if (pixelTact == 4) {
+          phase = RT_DisplayB2;
+          contentionDelay = 1;
+        } else if (pixelTact == 5) {
+          phase = RT_DisplayB2;
+          contentionDelay = 0;
+        } else if (pixelTact == 6) {
+          // --- Test, if there are more pixels to display in this line
+          if (tactInLine < (borderLeftTime + displayLineTime - pixelDataPrefetchTime)) {
+            // --- Yes, there are still more bytes
+            phase = RT_DisplayB2FetchB1;
+            pixelAddr = calcPixelAddress(line, tactInLine + pixelDataPrefetchTime);
+            contentionDelay = 0;
+          } else {
+            // --- Last byte in this line
+            phase = RT_DisplayB2;
+          }
+        } else {
+          // --- Pixel tact 7
+          // --- Test, if there are more pixels to display in this line
+          if (tactInLine < (borderLeftTime + displayLineTime - attributeDataPrefetchTime)) {
+            // --- Yes, there are still more bytes
+            phase = RT_DisplayB2FetchA1;
+            attrAddr = calcAttrAddress(line, tactInLine + attributeDataPrefetchTime);
+            contentionDelay = 6;
+          }
+          else {
+            // --- Last byte in this line
+            phase = RT_DisplayB2;
+          }
+        }
+      } else {
+        // --- No, it is the border area
+        phase = RT_Border;
+        
+        // --- Left or right border?
+        if (line >= firstDisplayLine) {
+          if (line <= lastDisplayLine) {
+            // -- Yes, it is left or right border
+            // --- Is it pixel data prefetch time?
+            if (tactInLine == borderPixelFetchTact) {
+              // --- Yes, prefetch pixel data
+              phase = RT_BorderFetchPixel;
+              pixelAddr = calcPixelAddress(line, tactInLine + pixelDataPrefetchTime);
+              contentionDelay = 0;
+            } else if (tactInLine == borderAttrFetchTact) {
+              phase = RT_BorderFetchAttr;
+              attrAddr = calcAttrAddress(line, tactInLine + attributeDataPrefetchTime);
+              contentionDelay = 6;
+            }
+          }
+        } 
+      }
+    }
+
+    // --- Store the current rendering item
+    (*tablePtr).phase = phase;
+    (*tablePtr).pixelAddress = pixelAddr;
+    (*tablePtr).attrAddress = attrAddr;
+    *contentionPtr = contentionDelay;
+
+    // --- Move to the next table item
+    tablePtr += 1;
+    contentionPtr += 1;
+    tact += 1;
+  }
+
+  // Add extra (non-rendering) tacts to protect frame overflow
+  line = 100;
+  while (line) {
+    (*tablePtr).phase = RT_NONE;
+    (*tablePtr).pixelAddress = 0;
+    (*tablePtr).attrAddress = 0;
+    tablePtr += 1;
+    line -= 1;
+  }
+}
+
+// Calculates the pixel address
+// line: line
+// tactInLine: line within the tact
+u32 calcPixelAddress(u32 line, u32 tactInLine) {
+  local u32 row = line - firstDisplayLine;
+  return 
+    ((row & 0xc0) << 5) +
+    ((row & 0x07) << 8) +
+    ((row & 0x38) << 2) +
+    ((tactInLine - borderLeftTime) >> 2);
+}
+
+// Calculates the attribute address
+// line: line
+// tactInLine: line within the tact
+u32 calcAttrAddress(u32 line, u32 tactInLine) {
+  return
+    ((tactInLine - borderLeftTime) >> 2) +
+    (((line - firstDisplayLine) >> 3) << 5) +
+    0x1800;
+}
+
+// Renders the screen 
+// toTact: last tact to render
+void renderScreen(u32 toTact) {
+  local u32 tact = lastRenderedFrameTact;
+  while (tact <= toTact) {
+    local u8 phase = (*renderingTablePtr).phase;
+
+    // --- Process the current rendering tact
+    if (phase) {
+      // --- Test for border procesing
+      if (phase & RT_Border) {
+        // --- Store border pixels
+        *pixelBufferPtr = borderColor;
+        pixelBufferPtr += 1;
+        *pixelBufferPtr = borderColor;
+        pixelBufferPtr += 1;
+
+        // --- Fetch border byte?
+        if (phase & 0x01) {
+          // --- Fetch pixel byte 1
+          pixelByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
+        } else if (phase & 0x02) {
+          // --- Fetch attr byte 1
+          attrByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
+        }
+      } else if (phase & RT_DisplayB1) {
+        // --- Process Byte1 pixels
+        *pixelBufferPtr = getAttrColor(pixelByte1 & 0x80, attrByte1);
+        pixelBufferPtr += 1;
+        *pixelBufferPtr = getAttrColor(pixelByte1 & 0x40, attrByte1);
+        pixelBufferPtr += 1;
+        pixelByte1 <<= 2;
+        
+        // --- Fetch pixel byte?
+        if (phase & 0x01) {
+          // --- Fetch pixel byte 2
+          pixelByte2 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
+        } else if (phase & 0x02) {
+          // --- Fetch attr byte 2
+          attrByte2 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
+        }
+      } else {
+        // --- Process Byte2 pixels
+        *pixelBufferPtr = getAttrColor(pixelByte2 & 0x80, attrByte2);
+        pixelBufferPtr += 1;
+        *pixelBufferPtr = getAttrColor(pixelByte2 & 0x40, attrByte2);
+        pixelBufferPtr += 1;
+        pixelByte2 <<= 2;
+        
+        // --- Fetch pixel byte?
+        if (phase & 0x01) {
+          // --- Fetch pixel byte 1
+          pixelByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
+        } else if (phase & 0x02) {
+          // --- Fetch attr byte 1
+          attrByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
+        }
+      }
+    }
+
+    // --- Move to the next rendering tact
+    renderingTablePtr += 1;
+    tact += 1;
+  }
+  lastRenderedFrameTact = tact;
+}
+
+// Gets the color for the specified pixel
+// pixel: 0 - paper, other: ink
+// attr: attribute value
+u8 getAttrColor(i32 pixel, i32 attr) {
+  if (pixel) {
+    if (flashPhase) {
+      return inkColorFlashOn[attr];
+    } 
+    return inkColorFlashOff[attr];
+  } 
+  if (flashPhase) {
+    return paperColorFlashOn[attr];
+  }
+  return paperColorFlashOff[attr];
+}
+
+// Colorizes the data in pixel buffer
+export void colorize() {
+  // --- Initialize the coloring
+  local u32 counter = screenLines * screenWidth;
+  local *u8 sourcePtr = &pixelRenderingBuffer;
+  local *u32 destPtr = &colorizationBuffer;
+
+  // --- Colorization loop
+  while (counter) {
+    (*destPtr) = spectrumPalette[(*sourcePtr) & 0x0f];
+    sourcePtr += 1;
+    destPtr += 1;
+    counter -= 1;
+  }
+}

@@ -1,0 +1,747 @@
+// ============================================================================
+// Z80 Extended operations
+// ============================================================================
+
+table void extendedOps() {
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 00-07
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 08-0f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 10-17
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 18-1f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 20-27
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 28-2f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 30-37
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 38-3f
+
+  InBC,     OutCB,    SbcHLBC,  LdNNiBC,  Neg,      Retn,     Im0,      LdIA,      // 40-47
+  InCC,     OutCC,    AdcHLBC,  LdBCNNi,  Neg,      Retn,     Im0,      LdRA,      // 48-4f
+  InDC,     OutCD,    SbcHLDE,  LdNNiDE,  Neg,      Retn,     Im1,      LdAI,      // 50-57
+  InEC,     OutCE,    AdcHLDE,  LdDENNi,  Neg,      Retn,     Im2,      LdAR,      // 58-5f
+  InHC,     OutCH,    SbcHLHL,  LdNNiHL,  Neg,      Retn,     Im0,      Rrd,       // 60-67
+  InLC,     OutCL,    AdcHLHL,  LdHLNNi,  Neg,      Retn,     Im0,      Rld,       // 68-6f
+  InC,      OutC0,    SbcHLSP,  LdNNiSP,  Neg,      Retn,     Im1,      Nop,       // 70-77
+  InAC,     OutCA,    AdcHLSP,  LdSPNNi,  Neg,      Retn,     Im2,      Nop,       // 78-7f
+
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 80-87
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 88-8f
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 90-97
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // 98-9f
+  Ldi,      Cpi,      Ini,      Outi,     Nop,      Nop,      Nop,      Nop,       // a0-a7
+  Ldd,      Cpd,      Ind,      Outd,     Nop,      Nop,      Nop,      Nop,       // a8-af
+  Ldir,     Cpir,     Inir,     Otir,     Nop,      Nop,      Nop,      Nop,       // b0-b7
+  Lddr,     Cpdr,     Indr,     Otdr,     Nop,      Nop,      Nop,      Nop,       // b8-bf
+
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // c0-c7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // c8-cf
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // d0-d7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // d8-df
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // e0-e7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // e8-ef
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,       // f0-f7
+  Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop,      Nop        // f8-ff
+};
+
+// in b,(c) (0x40)
+void InBC() {
+  wz = bc + 1;
+  b = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[b];
+}
+
+// out (c),b (0x41)
+void OutCB() {
+  writePort(bc, b);
+  wz = bc + 1;
+}
+
+// sbc hl,bc (0x42)
+void SbcHLBC() {
+  tacts += 7;
+  sbc16(bc);
+}
+
+// ld (nn),bc (0x43)
+void LdNNiBC() {
+  store16(c, b);
+}
+
+// neg (0x44, 0x4c, 0x54, 0x5c, 0x64, 0x6c, 0x74, 0x7c)
+void Neg() {
+  local u8 tmp = a;
+  a = 0;
+  sub8(tmp);
+}
+
+// retn (0x45, 0x4d, 0x55, 0x5d, 0x65, 0x6d, 0x75, 0x7d)
+void Retn() {
+  iff1 = iff2;
+  retCore();
+}
+
+// im 0 (0x46, 0x4e, 0x66, 0x6e)
+void Im0() {
+  interruptMode = 0;
+}
+
+// ld i,a (0x47)
+void LdIA() {
+  tacts += 1;
+  i = a;
+}
+
+// in c,(c) (0x48)
+void InCC() {
+  wz = bc + 1;
+  c = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[c];
+}
+
+// out (c),c (0x49)
+void OutCC() {
+  writePort(bc, c);
+  wz = bc + 1;
+}
+
+// adc hl,bc (0x4a)
+void AdcHLBC() {
+  tacts += 7;
+  adc16(bc);
+}
+
+// ld bc,(nn) (0x4b)
+void LdBCNNi() {
+  local u32 tmp = readMemory(pc);
+  pc += 1;
+  tmp += readMemory(pc) << 8;
+  pc += 1;
+  c = readMemory(tmp);
+  tmp += 1;
+  wz = tmp;
+  b = readMemory(tmp);
+}
+
+// ld r,a (0x4f)
+void LdRA() {
+  tacts += 1;
+  r = a;
+}
+
+// in d,(c) (0x50)
+void InDC() {
+  wz = bc + 1;
+  d = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[d];
+}
+
+// out (c),d (0x51)
+void OutCD() {
+  writePort(bc, d);
+  wz = bc + 1;
+}
+
+// sbc hl,de (0x52)
+void SbcHLDE() {
+  tacts += 7;
+  sbc16(de);
+}
+
+// ld (nn),de (0x53)
+void LdNNiDE() {
+  store16(e, d);
+}
+
+// im 1 (0x56, 0x76)
+void Im1() {
+  interruptMode = 1;
+}
+
+// ld a,i (0x57)
+void LdAI() {
+  tacts += 1;
+  a = i;
+  f = (f & FLAG_C) | sz53Table[a] | (iff2 ? FLAG_PV : 0);
+}
+
+// in e,(c) (0x58)
+void InEC() {
+  wz = bc + 1;
+  e = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[e];
+}
+
+// out (c),e (0x59)
+void OutCE() {
+  writePort(bc, e);
+  wz = bc + 1;
+}
+
+// adc hl,de (0x5a)
+void AdcHLDE() {
+  tacts += 7;
+  adc16(de);
+}
+
+// ld de,(nn) (0x5b)
+void LdDENNi() {
+  local u32 tmp = readMemory(pc);
+  pc += 1;
+  tmp += readMemory(pc) << 8;
+  pc += 1;
+  e = readMemory(tmp);
+  tmp += 1;
+  wz = tmp;
+  d = readMemory(tmp);
+}
+
+// im 2 (0x5e, 0x7e)
+void Im2() {
+  interruptMode = 2;
+}
+
+// ld a,r 
+void LdAR() {
+  tacts += 1;
+  a = r;
+  f = (f & FLAG_C) | sz53Table[a] | (iff2 ? FLAG_PV : 0);
+}
+
+// in h,(c) (0x60)
+void InHC() {
+  wz = bc + 1;
+  h = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[h];
+}
+
+// out (c),h (0x61)
+void OutCH() {
+  writePort(bc, h);
+  wz = bc + 1;
+}
+
+// sbc hl,hl (0x62)
+void SbcHLHL() {
+  tacts += 7;
+  sbc16(hl);
+}
+
+// ld (nn),bc (0x63)
+// The same as defined in standard ops
+
+// rrd (0x67)
+void Rrd() {
+  local u8 tmp = readMemory(hl);
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 4;
+  #endif
+	writeMemory(hl, (a << 4) | (tmp >> 4));
+	a = (a & 0xf0) | (tmp & 0x0f);
+	f = (f & FLAG_C) | sz53pTable[a];
+	wz = hl + 1;
+}
+
+// in l,(c) (0x68)
+void InLC() {
+  wz = bc + 1;
+  l = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[l];
+}
+
+// out (c),l (0x69)
+void OutCL() {
+  writePort(bc, l);
+  wz = bc + 1;
+}
+
+// adc hl,hl (0x6a)
+void AdcHLHL() {
+  tacts += 7;
+  adc16(hl);
+}
+
+// rld (0x6f)
+void Rld() {
+  local u8 tmp = readMemory(hl);
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 4;
+  #endif
+	writeMemory(hl, (tmp << 4) | (a & 0x0f));
+	a = (a & 0xf0) | (tmp >> 4);
+	f = (f & FLAG_C) | sz53pTable[a];
+	wz = hl + 1;
+}
+
+
+// in (c) (0x70)
+void InC() {
+  wz = bc + 1;
+  local u8 tmp = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[tmp];
+}
+
+// out (c),0 (0x71)
+void OutC0() {
+  writePort(bc, 0);
+  wz = bc + 1;
+}
+
+// sbc hl,sp (0x72)
+void SbcHLSP() {
+  tacts += 7;
+  sbc16(sp);
+}
+
+// ld (nn),sp (0x73)
+void LdNNiSP() {
+  store16(sp, sp >> 8);
+}
+
+// in a,(c) (0x78)
+void InAC() {
+  wz = bc + 1;
+  a = readPort(bc);
+  f = (f & FLAG_C) | sz53Table[a];
+}
+
+// out (c),a (0x79)
+void OutCA() {
+  writePort(bc, a);
+  wz = bc + 1;
+}
+
+// adc hl,sp (0x7a)
+void AdcHLSP() {
+  tacts += 7;
+  adc16(sp);
+}
+
+// ld sp,(nn) (0x7b)
+void LdSPNNi() {
+  local u32 tmp = readMemory(pc);
+  pc += 1;
+  tmp += readMemory(pc) << 8;
+  pc += 1;
+  local u32 val = readMemory(tmp);
+  tmp += 1;
+  wz = tmp;
+  sp = (readMemory(tmp) << 8) + val;
+}
+
+// ldi (0xa0)
+void Ldi() {
+  local u8 tmp = readMemory(hl);
+	bc -= 1;
+	writeMemory(de, tmp);
+	tacts += 2;
+	de += 1;
+  hl += 1;
+	tmp += a;
+	f = 
+    (f & (FLAG_C | FLAG_Z | FLAG_S)) | 
+    (bc ? FLAG_PV : 0) |
+	  (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+}
+
+// cpi (0xa1)
+void Cpi() {
+  local u8 value = readMemory(hl);
+  local u8 tmp = a - value;
+	local i32 lookup = 
+    ((a & 0x08) >> 3 ) |
+	  ((value & 0x08 ) >> 2) |
+	  ((tmp & 0x08) >> 1 );
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
+  hl += 1;
+  bc -= 1;
+	f = 
+    (f & FLAG_C) | 
+    (bc ? (FLAG_PV | FLAG_N) : FLAG_N) |
+	  halfCarrySubFlags[lookup] | 
+    (tmp ? 0 : FLAG_Z) |
+	  (tmp & FLAG_S );
+	if (f & FLAG_H) {
+    tmp -= 1;
+  }
+	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+	wz += 1;
+}
+
+// ini (0xa2)
+void Ini() {
+	tacts += 1;
+	local u8 tmp = readPort(bc);
+	writeMemory(hl, tmp);
+	wz = bc + 1;
+  b -= 1;
+  hl += 1;
+  local u8 tmp2 = tmp + c + 1;
+	f =
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+}
+
+// outi (0xa3)
+void Outi() {
+	tacts += 1;
+	local u8 tmp = readMemory(hl);
+	b -= 1;
+	wz = bc + 1;
+	writePort(bc, tmp);
+  hl += 1;
+  local u8 tmp2 = tmp + l;
+	f =
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+}
+
+// ldd (0xa8)
+void Ldd() {
+  local u8 tmp = readMemory(hl);
+	bc -= 1;
+	writeMemory(de, tmp);
+	tacts += 2;
+	de -= 1;
+  hl -= 1;
+	tmp += a;
+	f = 
+    (f & (FLAG_C | FLAG_Z | FLAG_S)) |
+    (bc ? FLAG_PV : 0) |
+	  (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+}
+
+// cpd (0xa9)
+void Cpd() {
+  local u8 value = readMemory(hl);
+  local u8 tmp = a - value;
+	local i32 lookup = 
+    ((a & 0x08) >> 3 ) |
+	  ((value & 0x08 ) >> 2) |
+	  ((tmp & 0x08) >> 1 );
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
+  hl -= 1;
+  bc -= 1;
+	f = 
+    (f & FLAG_C) | 
+    (bc ? (FLAG_PV | FLAG_N) : FLAG_N) |
+	  halfCarrySubFlags[lookup] | 
+    (tmp ? 0 : FLAG_Z) |
+	  (tmp & FLAG_S);
+	if (f & FLAG_H) {
+    tmp -= 1;
+  };
+	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+	wz -= 1;
+}
+
+// ind (0xaa)
+void Ind() {
+	tacts += 1;
+	local u8 tmp = readPort(bc);
+	writeMemory(hl, tmp);
+	wz = bc - 1;
+  b -= 1;
+  hl -= 1;
+  local u8 tmp2 = tmp + c - 1;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+}
+
+// outd (0xab)
+void Outd() {
+	tacts += 1;
+	local u8 tmp = readMemory(hl);
+	b -= 1;
+	wz = bc - 1;
+	writePort(bc, tmp);
+  hl -= 1;
+  local u8 tmp2 = tmp + l;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    ((tmp2 < tmp) ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+}
+
+// ldir (0xb0)
+void Ldir() {
+  local u8 tmp = readMemory(hl);
+	writeMemory(de, tmp);
+	tacts += 2;
+  bc -= 1;
+	tmp += a;
+	f = 
+    (f & (FLAG_C | FLAG_Z | FLAG_S)) | 
+    (bc ? FLAG_PV : 0) |
+	  (tmp & FLAG_3) | 
+    ((tmp & 0x02) ? FLAG_5 : 0);
+	if (bc) {
+	  tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	}
+  hl += 1;
+  de += 1;
+}
+
+// cpir (0xb1)
+void Cpir() {
+  local u8 value = readMemory(hl);
+  local u8 tmp = a - value;
+	local i32 lookup = 
+    ((a & 0x08) >> 3 ) |
+	  ((value & 0x08 ) >> 2) |
+	  ((tmp & 0x08) >> 1 );
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
+  bc -= 1;
+	f = 
+    (f & FLAG_C) | 
+    (bc ? (FLAG_PV | FLAG_N) : FLAG_N) |
+	  halfCarrySubFlags[lookup] | 
+    (tmp ? 0 : FLAG_Z) |
+	  (tmp & FLAG_S);
+	if (f & FLAG_H) {
+    tmp -= 1;
+  }
+	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
+    tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	} else {
+	  wz += 1;
+	}
+	hl += 1;
+}
+
+
+// inir (0xb2)
+void Inir() {
+	tacts += 1;
+	local u8 tmp = readPort(bc);
+	writeMemory(hl, tmp);
+  wz = bc + 1;
+  b -= 1;
+  local u8 tmp2 = tmp + c + 1;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+    tacts += 5;
+	  pc -= 2;
+	}
+  hl += 1;
+}
+
+// otir (0xb3)
+void Otir() {
+	tacts += 1;
+	local u8 tmp = readMemory(hl);
+	b -= 1;
+	wz = bc + 1;
+	writePort(bc, tmp);
+  hl += 1;
+  local u8 tmp2 = tmp + l;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+    #if MEM_CONTENDED
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+    #else
+      tacts += 5;
+    #endif
+	  pc -= 2;
+	}
+}
+
+// lddr (0xb8)
+void Lddr() {
+  local u8 tmp = readMemory(hl);
+	writeMemory(de, tmp);
+	tacts += 2;
+	bc -= 1;
+	tmp += a;
+	f = 
+    (f & (FLAG_C | FLAG_Z | FLAG_S)) | 
+    (bc ? FLAG_PV : 0) |
+	  (tmp & FLAG_3) | 
+    ((tmp & 0x02) ? FLAG_5 : 0);
+	if (bc) {
+    tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	}
+  hl -= 1;
+  de -= 1;
+}
+
+// cpdr (0xb9)
+void Cpdr() {
+  local u8 value = readMemory(hl);
+  local u8 tmp = a - value;
+	local i32 lookup = 
+    ((a & 0x08) >> 3 ) |
+	  ((value & 0x08 ) >> 2) |
+	  ((tmp & 0x08) >> 1 );
+  #if MEM_CONTENDED
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
+	bc -= 1;
+	f = 
+    (f & FLAG_C) | 
+    (bc ? (FLAG_PV | FLAG_N) : FLAG_N) |
+	  halfCarrySubFlags[lookup] | 
+    (tmp ? 0 : FLAG_Z) |
+	  (tmp & FLAG_S);
+	if (f & FLAG_H) {
+    tmp -= 1;
+  }
+	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
+    tacts += 5;
+	  pc -= 2;
+	  wz = pc + 1;
+	} else {
+	  wz -= 1;
+	}
+	hl -= 1;
+}
+
+// indr (0xba)
+void Indr() {
+	tacts += 1;
+	local u8 tmp = readPort(bc);
+	writeMemory(hl, tmp);
+	wz = bc - 1;
+	b -= 1;
+  local u8 tmp2 = tmp + c - 1;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+	  tacts += 5;
+	  pc -= 2;
+	}
+  hl -= 1;
+}
+
+// otdr (0xbb)
+void Otdr() {
+	tacts += 1;
+	local u8 tmp = readMemory(hl);
+	b -= 1;
+	wz = bc - 1;
+	writePort(bc, tmp);
+  hl -= 1;
+  local u8 tmp2 = tmp + l;
+	f = 
+    (tmp & 0x80 ? FLAG_N : 0) |
+    (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
+    (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
+    sz53Table[b];
+	if (b) {
+    #if MEM_CONTENDED
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+      contendRead(bc);
+      tacts += 1;
+    #else
+      tacts += 5;
+    #endif
+	  pc -= 2;
+	}
+}

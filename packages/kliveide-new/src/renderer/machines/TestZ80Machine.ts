@@ -8,8 +8,8 @@ import {
 } from "./memory-map";
 import { FlagsSetMask, Z80CpuState } from "../../shared/machines/z80-helpers";
 
-const TEST_INPUT_BUFFER = 0x01000dd6;
-const IO_OPERATION_LOG = 0x01000ed6;
+const TEST_INPUT_BUFFER = 0x01000de3;
+const IO_OPERATION_LOG = 0x01000ee3;
 
 /**
  * This class represents a test machine that can be used for testing the WA machine

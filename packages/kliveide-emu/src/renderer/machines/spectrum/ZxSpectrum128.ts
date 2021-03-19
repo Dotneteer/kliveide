@@ -9,9 +9,9 @@ import {
 } from "../../../shared/machines/machine-state";
 import {
   BANK_0_OFFS,
+  CPU_STATE_BUFFER,
   ROM_128_0_OFFS,
   ROM_48_OFFS,
-  STATE_TRANSFER_BUFF,
 } from "../memory-map";
 import { MemoryHelper } from "../memory-helpers";
 import { spectrumKeyCodes } from "../spectrum-keys";
@@ -97,7 +97,8 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
   getMachineState(): MachineState {
     const s = super.getMachineState() as Spectrum128MachineState;
 
-    let mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+    // TODO: Update the buffer
+    let mh = new MemoryHelper(this.api, CPU_STATE_BUFFER);
 
     // --- Get PSG state
     s.psgToneA = mh.readUint16(420);

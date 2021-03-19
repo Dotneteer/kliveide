@@ -12,7 +12,7 @@ const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 
-describe("Extended ops 40-7f", () => {
+describe("New: Extended ops 40-7f", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as TestCpuApi;
@@ -377,7 +377,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 
@@ -586,7 +586,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -605,7 +605,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -624,7 +624,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -643,7 +643,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -755,7 +755,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 
@@ -800,7 +800,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.tacts).toBe(20);
   });
 
-  it("5e: im 1", () => {
+  it("5e: im 2", () => {
     let s = testMachine.initCode([0xed, 0x5e]);
     s = testMachine.run(s);
 
@@ -820,7 +820,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -839,7 +839,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -858,7 +858,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -877,7 +877,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -936,7 +936,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.tacts).toBe(12);
   });
 
-  it("62: sbc hl,sp #1", () => {
+  it("62: sbc hl,hl #1", () => {
     let s = testMachine.initCode([0xed, 0x62]);
     s.f &= 0xfe;
     s.hl = 0x3456;
@@ -954,7 +954,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.tacts).toBe(15);
   });
 
-  it("62: sbc hl,sp #2", () => {
+  it("62: sbc hl,hl #2", () => {
     let s = testMachine.initCode([0xed, 0x62]);
     s.f |= FlagsSetMask.C;
     s.hl = 0x3456;
@@ -1497,7 +1497,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 

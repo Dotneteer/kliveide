@@ -12,7 +12,7 @@ const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 
-describe("Indexed ops (ix) 40-7f", () => {
+describe("New: Indexed ops (ix) 40-7f", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as TestCpuApi;
@@ -338,7 +338,7 @@ describe("Indexed ops (ix) 40-7f", () => {
 
     testMachine.shouldKeepRegisters();
     testMachine.shouldKeepMemory();
-    expect(s.stateFlags & Z80SignalStateFlags.Halted).toBeTruthy();
+    expect(s.cpuSignalFlags & Z80SignalStateFlags.Halted).toBeTruthy();
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(8);
   });

@@ -1,0 +1,37 @@
+// ============================================================================
+// Core memory handling functions
+// ============================================================================
+
+// Reads the contents of the memory
+inline u8 readMemory(u16 addr) {
+  tacts += 3;
+  return vmMemory[
+    blockLookupTable[addr >> 13].readIndex + 
+    (addr & 0b0001_1111_1111_1111)
+  ];
+}
+
+// Reads the contents of the memory without applying contention
+inline u8 readMemoryNoContention(u16 addr) {
+  return vmMemory[
+    blockLookupTable[addr >> 13].readIndex + 
+    (addr & 0b0001_1111_1111_1111)
+  ];
+}
+
+// Writes the contents of the memory
+inline void writeMemory(u16 addr, u8 value) {
+  vmMemory[
+    blockLookupTable[addr >> 13].writeIndex + 
+    (addr & 0b0001_1111_1111_1111)
+  ] = value;
+  tacts += 3;
+}
+
+// Writes the contents of the memory without appluing contention
+inline void writeMemoryNoContention(u16 addr, u8 value) {
+  vmMemory[
+    blockLookupTable[addr >> 13].writeIndex + 
+    (addr & 0b0001_1111_1111_1111)
+  ] = value;
+}

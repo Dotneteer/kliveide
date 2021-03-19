@@ -11,7 +11,7 @@ const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 
-describe("Extended ops 80-bf", () => {
+describe("New: Extended ops 80-bf", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as TestCpuApi;
@@ -224,8 +224,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.c).toBe(0xcc);
     expect(s.hl).toBe(0x1001);
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory("1000");
@@ -249,8 +249,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.c).toBe(0xcc);
     expect(s.hl).toBe(0x1001);
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory("1000");
@@ -521,8 +521,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.c).toBe(0xcc);
     expect(s.hl).toBe(0x0fff);
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory("1000");
@@ -546,8 +546,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.c).toBe(0xcc);
     expect(s.hl).toBe(0x0fff);
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory("1000");
@@ -740,8 +740,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.c).toBe(0xcc);
     expect(s.hl).toBe(0x1003);
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory("1000-1002");
@@ -912,8 +912,8 @@ describe("Extended ops 80-bf", () => {
     expect(s.c).toBe(0xcc);
     expect(s.hl).toBe(0x0fff);
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
-    expect(s.f & FlagsSetMask.N).toBeTruthy();
-    expect(s.f & FlagsSetMask.C).toBeFalsy();
+    expect(s.f & FlagsSetMask.N).toBeFalsy();
+    expect(s.f & FlagsSetMask.C).toBeTruthy();
 
     testMachine.shouldKeepRegisters("F, BC, HL");
     testMachine.shouldKeepMemory("1000-1002");

@@ -6,6 +6,7 @@ import {
   EmulationMode,
   DebugStepMode,
   Z80MachineStateBase,
+  SpectrumMachineStateBase,
 } from "../../shared/machines/machine-state";
 import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
@@ -741,7 +742,7 @@ export class VmEngine implements IVmEngineController {
    * @param page Page index
    */
   getRomPage(page: number): Uint8Array {
-    const state = this.z80Machine.getMachineState();
+    const state = this.z80Machine.getMachineState() as SpectrumMachineStateBase;
     if (!state.memoryPagingEnabled || page < 0 || page > state.numberOfRoms) {
       return new Uint8Array(0);
     }
@@ -757,7 +758,7 @@ export class VmEngine implements IVmEngineController {
    * @param page Page index
    */
   getBankPage(page: number): Uint8Array {
-    const state = this.z80Machine.getMachineState();
+    const state = this.z80Machine.getMachineState() as SpectrumMachineStateBase;
     if (!state.memoryPagingEnabled || page < 0 || page > state.ramBanks) {
       return new Uint8Array(0);
     }

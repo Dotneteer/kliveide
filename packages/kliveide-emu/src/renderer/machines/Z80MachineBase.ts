@@ -4,8 +4,9 @@ import { MemoryHelper } from "./memory-helpers";
 import {
   BREAKPOINTS_MAP,
   BRP_PARTITION_MAP,
+  CPU_STATE_BUFFER,
+  EXEC_ENGINE_STATE_BUFFER,
   REG_AREA_INDEX,
-  STATE_TRANSFER_BUFF,
 } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 import { BreakpointDefinition } from "../../shared/machines/api-data";
@@ -84,7 +85,7 @@ export abstract class Z80MachineBase {
    * Turns on the machine
    */
   turnOnMachine(): void {
-    this.api.turnOnMachine();
+    this.api.setupMachine();
   }
 
   /**
@@ -103,118 +104,19 @@ export abstract class Z80MachineBase {
    * Override this method to represent the appropriate machine state
    */
   abstract createMachineState(): MachineState;
-
-  /**
-   * CPU hook. Invoked when the CPU fetches an operation code
-   * @param _opCode The fetched operation code
-   * @param _pcAfter The value of PC after the fetch operation
-   */
-  opCodeFetched(_opCode: number, _pcAfter: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU has completed a standard instruction
-   * @param _opCode The fetched operation code
-   * @param _pcAfter The value of PC after the operation
-   */
-  standardOpExecuted(_opCode: number, _pcAfter: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU has completed an extended instruction
-   * @param _opCode The fetched operation code
-   * @param _pcAfter The value of PC after the operation
-   */
-  extendedOpExecuted(_opCode: number, _pcAfter: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU has completed an indexed instruction
-   * @param _opCode The fetched operation code
-   * @param _indexMode The index mode: IX=0, IY=1
-   * @param _pcAfter The value of PC after the operation
-   */
-  indexedOpExecuted(
-    _opCode: number,
-    _indexMode: number,
-    _pcAfter: number
-  ): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU has completed a bit instruction
-   * @param _opCode The fetched operation code
-   * @param _pcAfter The value of PC after the operation
-   */
-  bitOpExecuted(_opCode: number, _pcAfter: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU has completed an IX-indexed bit
-   * instruction
-   * @param _opCode The fetched operation code
-   * @param _indexMode The index mode: IX=0, IY=1
-   * @param _pcAfter The value of PC after the operation
-   */
-  indexedBitOpExecuted(
-    _opCode: number,
-    _indexMode: number,
-    _pcAfter: number
-  ): void {}
-
-  /**
-   * CPU hook. Invoked when a maskable interrupt is about to be executed
-   * @param _pcInt The value of PC that points to the beginning of the
-   * interrupt routine
-   */
-  intExecuted(_pcInt: number): void {}
-
-  /**
-   * CPU hook. Invoked when a non-maskable interrupt is about to be executed
-   * interrupt routine
-   */
-  nmiExecuted(): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU has been halted.
-   * @param _pcHalt The value of PC that points to the HALT statement
-   * interrupt routine
-   */
-  halted(_pcHalt: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU reads memory while processing a statement
-   * @param _address The memory address read
-   * @param _value The memory value read
-   */
-  memoryRead(_address: number, _value: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU writes memory while processing a statement
-   * @param _address The memory address read
-   * @param _value The memory value read
-   */
-  memoryWritten(_address: number, _value: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU reads from an I/O port
-   * @param _address The memory address read
-   * @param _value The memory value read
-   */
-  ioRead(_address: number, _value: number): void {}
-
-  /**
-   * CPU hook. Invoked when the CPU writes to an I/O port
-   * @param _address The memory address read
-   * @param _value The memory value read
-   */
-  ioWritten(_address: number, _value: number): void {}
-
+  
   /**
    * Override this method to obtain machine state
    */
   getMachineState(): MachineState {
     const s = this.createMachineState();
-    this.api.getMachineState();
+
+    // --- Obtain the CPU state
+    this.api.getCpuState();
 
     // --- Get register data from the memory
     let mh = new MemoryHelper(this.api, REG_AREA_INDEX);
-
+    s.af = mh.readUint16(0);
     s.bc = mh.readUint16(2);
     s.de = mh.readUint16(4);
     s.hl = mh.readUint16(6);
@@ -222,38 +124,39 @@ export abstract class Z80MachineBase {
     s._bc_ = mh.readUint16(10);
     s._de_ = mh.readUint16(12);
     s._hl_ = mh.readUint16(14);
-    s.i = mh.readByte(16);
-    s.r = mh.readByte(17);
+    s.pc = mh.readUint16(16);
+    s.sp = mh.readUint16(18);
+    s.i = mh.readByte(20);
+    s.r = mh.readByte(21);
     s.ix = mh.readUint16(22);
     s.iy = mh.readUint16(24);
     s.wz = mh.readUint16(26);
 
-    mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+    // --- Get CPU state from memory
+    mh = new MemoryHelper(this.api, CPU_STATE_BUFFER);
+    s.tactsInFrame = mh.readUint32(0);
+    s.tacts = mh.readUint32(4);
+    s.iff1 = mh.readBool(8);
+    s.iff2 = mh.readBool(9);
+    s.interruptMode = mh.readByte(10);
+    s.opCode = mh.readByte(11);
+    s.ddfdDepth = mh.readUint32(12);
+    s.useIx = mh.readBool(16);
+    s.cpuSignalFlags = mh.readUint32(17);
+    s.cpuSnoozed = mh.readBool(21);
+    s.intBacklog = mh.readUint32(22);
+    s.retExecuted = mh.readBool(26);
+    s.baseClockFrequency = mh.readUint32(27);
+    s.clockMultiplier = mh.readUint32(31);
+    s.defaultClockMultiplier = mh.readUint32(35);
 
-    s.af = mh.readUint16(0);
-    s.pc = mh.readUint16(18);
-    s.sp = mh.readUint16(20);
-
-    s.tactsInFrame = mh.readUint32(28);
-    s.tacts = mh.readUint32(32);
-    s.stateFlags = mh.readByte(36);
-    s.useGateArrayContention = mh.readBool(37);
-    s.iff1 = mh.readBool(38);
-    s.iff2 = mh.readBool(39);
-    s.interruptMode = mh.readByte(40);
-    s.isInterruptBlocked = mh.readBool(41);
-    s.isInOpExecution = mh.readBool(42);
-    s.prefixMode = mh.readByte(43);
-    s.indexMode = mh.readByte(44);
-    s.maskableInterruptModeEntered = mh.readBool(45);
-    s.opCode = mh.readByte(46);
-
-    // --- Get CPU configuration data
-    s.baseClockFrequency = mh.readUint32(47);
-    s.clockMultiplier = mh.readByte(51);
-    s.cpuDiagnostics = mh.readUint16(52);
-    s.defaultClockMultiplier = mh.readByte(53);
-    s.cpuSnoozed = mh.readBool(54);
+    // --- Get execution engine state
+    this.api.getExecutionEngineState();
+    mh = new MemoryHelper(this.api, EXEC_ENGINE_STATE_BUFFER);
+    s.frameCount = mh.readUint32(0);
+    s.frameCompleted = mh.readBool(4);
+    s.lastRenderedFrameTact = mh.readUint32(5)
+    s.executionCompletionReason = mh.readUint32(9);
 
     return s;
   }

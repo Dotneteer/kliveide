@@ -2,13 +2,13 @@ import { TestCpuApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
 import { RunMode } from "./RunMode";
 import {
-  TEST_INPUT_OFFS,
   REG_AREA_INDEX,
-  STATE_TRANSFER_BUFF,
-  TEST_IO_LOG_OFFS,
-  TEST_TBBLUE_LOG_OFFS,
+  CPU_STATE_BUFFER,
 } from "./memory-map";
 import { FlagsSetMask, Z80CpuState } from "../../shared/machines/z80-helpers";
+
+const TEST_INPUT_BUFFER = 0x01000de3;
+const IO_OPERATION_LOG = 0x01000ee3;
 
 /**
  * This class represents a test machine that can be used for testing the WA machine
@@ -22,6 +22,7 @@ export class TestZ80Machine {
    * @param cpuApi Module API obtained by the loader
    */
   constructor(public cpuApi: TestCpuApi) {
+    this.cpuApi.resetMachine();
     this.cpuApi.turnOnCpu();
   }
 
@@ -29,6 +30,7 @@ export class TestZ80Machine {
    * Resets the test machine
    */
   reset(): void {
+    this.cpuApi.resetMachine();
     this.cpuApi.turnOnCpu();
     this.cpuApi.resetCpu();
   }
@@ -61,7 +63,7 @@ export class TestZ80Machine {
    * @param input List of input byte values
    */
   initInput(input: number[]): void {
-    const mh = new MemoryHelper(this.cpuApi, TEST_INPUT_OFFS);
+    const mh = new MemoryHelper(this.cpuApi, TEST_INPUT_BUFFER);
     for (let i = 0; i < input.length; i++) {
       mh.writeByte(i, input[i]);
     }
@@ -97,7 +99,8 @@ export class TestZ80Machine {
 
     // --- Get register data from the memory
     let mh = new MemoryHelper(this.cpuApi, REG_AREA_INDEX);
-    //s.af = mh.readUint16(0);
+
+    s.af = mh.readUint16(0);
     s.bc = mh.readUint16(2);
     s.de = mh.readUint16(4);
     s.hl = mh.readUint16(6);
@@ -105,34 +108,28 @@ export class TestZ80Machine {
     s._bc_ = mh.readUint16(10);
     s._de_ = mh.readUint16(12);
     s._hl_ = mh.readUint16(14);
-    s.i = mh.readByte(16);
-    s.r = mh.readByte(17);
+    s.pc = mh.readUint16(16);
+    s.sp = mh.readUint16(18);
+    s.i = mh.readByte(20);
+    s.r = mh.readByte(21);
     s.ix = mh.readUint16(22);
     s.iy = mh.readUint16(24);
     s.wz = mh.readUint16(26);
 
-    // --- Get state data
-    mh = new MemoryHelper(this.cpuApi, STATE_TRANSFER_BUFF);
-    s.af = mh.readUint16(0);
+    mh = new MemoryHelper(this.cpuApi, CPU_STATE_BUFFER);
 
-    s.pc = mh.readUint16(18);
-    s.sp = mh.readUint16(20);
+    s.tactsInFrame = mh.readUint32(0);
+    s.tacts = mh.readUint32(4);
+    s.iff1 = mh.readBool(8);
+    s.iff2 = mh.readBool(9);
+    s.interruptMode = mh.readByte(10);
+    s.opCode = mh.readByte(11);
+    s.ddfdDepth = mh.readUint32(12);
+    s.useIx = mh.readBool(16);
+    s.cpuSignalFlags = mh.readUint32(17);
+    s.cpuSnoozed = mh.readBool(21);
+    s.intBacklog = mh.readUint32(22);
 
-    s.tactsInFrame = mh.readUint32(28);
-    s.tacts = mh.readUint32(32);
-    s.stateFlags = mh.readByte(36);
-    s.useGateArrayContention = mh.readBool(37);
-    s.iff1 = mh.readBool(38);
-    s.iff2 = mh.readBool(39);
-    s.interruptMode = mh.readByte(40);
-    s.isInterruptBlocked = mh.readBool(41);
-    s.isInOpExecution = mh.readBool(42);
-    s.prefixMode = mh.readByte(43);
-    s.indexMode = mh.readByte(44);
-    s.maskableInterruptModeEntered = mh.readBool(45);
-    s.opCode = mh.readByte(46);
-
-    // --- Done.
     return s;
   }
 
@@ -142,7 +139,7 @@ export class TestZ80Machine {
    */
   set cpuState(s: Z80CpuState) {
     let mh = new MemoryHelper(this.cpuApi, REG_AREA_INDEX);
-    //mh.writeUint16(0, s.af);
+    mh.writeUint16(0, s.af);
     mh.writeUint16(2, s.bc);
     mh.writeUint16(4, s.de);
     mh.writeUint16(6, s.hl);
@@ -150,32 +147,27 @@ export class TestZ80Machine {
     mh.writeUint16(10, s._bc_);
     mh.writeUint16(12, s._de_);
     mh.writeUint16(14, s._hl_);
-    mh.writeByte(16, s.i);
-    mh.writeByte(17, s.r);
+    mh.writeUint16(16, s.pc);
+    mh.writeUint16(18, s.sp);
+    mh.writeByte(20, s.i);
+    mh.writeByte(21, s.r);
     mh.writeUint16(22, s.ix);
     mh.writeUint16(24, s.iy);
     mh.writeUint16(26, s.wz);
 
     // --- Get state data
-    mh = new MemoryHelper(this.cpuApi, STATE_TRANSFER_BUFF);
-    mh.writeUint16(0, s.af);
-
-    mh.writeUint16(18, s.pc);
-    mh.writeUint16(20, s.sp);
-
-    mh.writeUint32(28, s.tactsInFrame);
-    mh.writeUint32(32, s.tacts);
-    mh.writeByte(36, s.stateFlags);
-    mh.writeBool(37, s.useGateArrayContention);
-    mh.writeBool(38, s.iff1);
-    mh.writeBool(39, s.iff2);
-    mh.writeByte(40, s.interruptMode);
-    mh.writeBool(41, s.isInterruptBlocked);
-    mh.writeBool(42, s.isInOpExecution);
-    mh.writeByte(43, s.prefixMode);
-    mh.writeByte(44, s.indexMode);
-    mh.writeBool(45, s.maskableInterruptModeEntered);
-    mh.writeByte(46, s.opCode);
+    mh = new MemoryHelper(this.cpuApi, CPU_STATE_BUFFER);
+    mh.writeUint32(0, s.tactsInFrame);
+    mh.writeUint32(4, s.tacts);
+    mh.writeBool(8, s.iff1);
+    mh.writeBool(9, s.iff2);
+    mh.writeByte(10, s.interruptMode);
+    mh.writeByte(11, s.opCode);
+    mh.writeUint32(12, s.ddfdDepth);
+    mh.writeBool(16, s.useIx);
+    mh.writeUint32(17, s.cpuSignalFlags);
+    mh.writeBool(21, s.cpuSnoozed);
+    mh.writeUint32(22, s.intBacklog);
 
     // --- Pass data to webAssembly
     this.cpuApi.updateCpuState();
@@ -204,7 +196,7 @@ export class TestZ80Machine {
    * Gets the memory access log of the test machine
    */
   get ioAccessLog(): IoOp[] {
-    const mh = new MemoryHelper(this.cpuApi, TEST_IO_LOG_OFFS);
+    const mh = new MemoryHelper(this.cpuApi, IO_OPERATION_LOG);
     const length = this.cpuApi.getIoLogLength();
     const result: IoOp[] = [];
     for (let i = 0; i < length; i++) {
@@ -213,23 +205,6 @@ export class TestZ80Machine {
         address: l & 0xffff,
         value: (l >> 16) & 0xff,
         isOutput: ((l >> 24) & 0xff) !== 0,
-      });
-    }
-    return result;
-  }
-
-  /**
-   * Gets the memory access log of the test machine
-   */
-  get tbBlueAccessLog(): TbBlueOp[] {
-    const mh = new MemoryHelper(this.cpuApi, TEST_TBBLUE_LOG_OFFS);
-    const length = this.cpuApi.getTbBlueLogLength();
-    const result: TbBlueOp[] = [];
-    for (let i = 0; i < length; i++) {
-      const l = mh.readUint16(i * 2);
-      result.push({
-        data: (l >> 8) & 0xff,
-        isIndex: (l & 0xff) !== 0,
       });
     }
     return result;

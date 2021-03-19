@@ -10,10 +10,19 @@ export const VM_MEMORY = 0x00_0000
 // Z80-specific memory map
 
 // --- Register area
-export const REG_AREA_INDEX = 0x0120_0E00;
+export const REG_AREA_INDEX = 0x01000080;
+
+// --- CPU state transfer area
+export const CPU_STATE_BUFFER = 0x0100009c;
+
+// --- Execution engine state transfer buffer
+export const EXEC_ENGINE_STATE_BUFFER = 0x01000de3;
+
+// --- Execution options state transfer buffer
+export const EXEC_OPTIONS_BUFFER = 0x01000df0;
 
 // --- Machine state trasnfer buffer
-export const STATE_TRANSFER_BUFF = 0x0120_0E60;
+export const SPECTRUM_MACHINE_STATE_BUFFER = 0x013db434;
 
 // ============================================================================
 // Generic virtual machine engine memory map
@@ -54,6 +63,9 @@ export const TEST_TBBLUE_LOG_OFFS = 0x0122_0900;
 // ============================================================================
 // ZX Spectrum memory map
 
+// --- The beginning of the rendering tact table
+export const RENDERING_TACT_TABLE = 0x010e0fe4;
+
 // --- Offset address for bank 0
 export const BANK_0_OFFS = 0x00_0000;
 
@@ -67,25 +79,22 @@ export const ROM_128_0_OFFS = 0x02_4000;
 export const BLOCK_LOOKUP_TABLE = 0x0121_A400;
 
 // --- Pixel rendering buffer
-export const PIXEL_RENDERING_BUFFER = 0x0129_4700;
+export const PIXEL_RENDERING_BUFFER = 0x012c0fe4;
 
 // --- Colorization buffer
-export const COLORIZATION_BUFFER = 0x012B_C700;
+export const COLORIZATION_BUFFER = 0x012e8fe4;
 
 // --- Beeper samples
-export const BEEPER_SAMPLE_BUFFER = 0x0135_C700;
+export const BEEPER_SAMPLE_BUFFER = 0x013d9434;
 
 // --- AY PSG chip samples
 export const PSG_SAMPLE_BUFFER = 0x0135_E700;
 
 // --- Tape LOAD buffer
-export const TAPE_DATA_BUFFER = 0x0136_0700;
+export const TAPE_DATA_BUFFER = 0x0138942c;
 
 // --- Tape SAVE buffer
-export const TAPE_SAVE_BUFFER = 0x0140_0700;
-
-// --- The beginning of the rendering tact table
-export const RENDERING_TACT_TABLE = 0x0122_0200;
+export const TAPE_SAVE_BUFFER = 0x013c942c;
 
 // --- The beginning of the PSG envelope table
 export const PSG_ENVELOP_TABLE = 0x0140_4C00;

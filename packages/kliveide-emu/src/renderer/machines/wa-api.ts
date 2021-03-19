@@ -27,6 +27,7 @@ export interface TestCpuApi extends CpuApi {
   getIoLogLength(): number;
   getTbBlueLogLength(): number;
   runTestCode(): void;
+  resetMachine(): void;
 }
 
 /**
@@ -34,10 +35,11 @@ export interface TestCpuApi extends CpuApi {
  */
 export interface MachineApi extends CpuApi {
   // --- Virtual machine methods
-  turnOnMachine(): void;
+  setupMachine(): void;
   resetMachine(): void;
   setUlaIssue(ula: number): void;
   getMachineState(): void;
+  getExecutionEngineState(): void;
   setExecutionOptions(): void;
   executeMachineLoop(): void;
   setInterruptTact(tact: number): void;

@@ -239,6 +239,7 @@ export void executeMachineLoop() {
       if (cpuSignalFlags & SIG_HLT) {
         // --- The CPU is HALTed
         executionCompletionReason = EXCR_HALT;
+        trace(333333);
         return;
       }
     }

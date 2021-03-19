@@ -82,6 +82,7 @@ export abstract class TapeFileReader {
     let count = 0;
     for (const dataBlock of this.tapeFileBlocks) {
       const playable = dataBlock.playableBytes;
+      console.log(JSON.stringify(playable));
       if (playable && playable.length > 0) {
         mh.writeUint16(offset, playable.length);
         offset += 2;
