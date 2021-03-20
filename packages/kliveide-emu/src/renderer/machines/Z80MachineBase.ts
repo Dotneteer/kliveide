@@ -181,7 +181,7 @@ export abstract class Z80MachineBase {
     }
 
     // --- Init code execution
-    this.api.resetCpu();
+    this.api.resetCpu(true);
     this.api.setPC(startAddress);
   }
 

@@ -200,10 +200,6 @@ export void updateCpuState() {
 // Turn on the CPU
 export void turnOnCpu() {
   resetCpu(true);
-  tacts = 0;
-  cpuSignalFlags = SIG_NON;
-  cpuSnoozed = false;
-  intBacklog = 0;
 }
 
 // Resets the CPU
@@ -229,6 +225,10 @@ export void resetCpu(bool hard) {
     iy = 0;
     wz = 0;
   }
+  tacts = 0;
+  cpuSignalFlags = SIG_NON;
+  cpuSnoozed = false;
+  intBacklog = 0;
 }
 
 // Sets the Program Counter
@@ -301,7 +301,7 @@ export void executeCpuCycle() {
   }
 
   // Handle HLT
-  if (cpuSignalFlags & SIG_HLT_MASK) {
+  if (cpuSignalFlags & SIG_HLT) {
     executeHalt();
     return;
   }

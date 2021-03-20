@@ -6,7 +6,7 @@ import { RunMode } from "./RunMode";
 export interface CpuApi {
   memory: any;
   turnOnCpu(): void;
-  resetCpu(): void;
+  resetCpu(hard: boolean): void;
   getCpuState(): void;
   updateCpuState(): void;
   setCpuDiagnostics(flags: number): void;

@@ -23,7 +23,7 @@ class DaaSample {
   ) {}
 }
 
-describe("New: Standard ops 00-3f", () => {
+describe("Standard ops 00-3f", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as TestCpuApi;

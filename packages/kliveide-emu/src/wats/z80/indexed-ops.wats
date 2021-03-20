@@ -37,7 +37,7 @@ table void indexedOps() {
   RetPo,    PopIX,    JpPo,     ExSPiIX,  CallPo,   PushIX,   AndN,     Rst20,     // e0-e7
   RetPe,    JpIX,     JpPe,     ExDEHL,   CallPe,   Nop,      XorN,     Rst28,     // e8-ef
   RetP,     PopAF,    JpP,      Di,       CallP,    PushAF,   OrN,      Rst30,     // f0-f7
-  RetM,     LdSPIX,   JpM,      Nop,      CallM,    FDPref,   CpN,      Rst38      // f8-ff
+  RetM,     LdSPIX,   JpM,      Ei,      CallM,    FDPref,   CpN,      Rst38      // f8-ff
 };
 
 // add ix,bc (0x09)

@@ -93,9 +93,9 @@ describe("ZX Spectrum 48 - Beeper", () => {
     ]);
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x8020);
-    expect(s.tacts).toBe(13571);
+    expect(s.tacts).toBe(13574);
     expect(s.frameCompleted).toBe(false);
     expect(s.audioSampleLength).toBe(350);
     expect(s.audioSampleCount).toBe(39);
@@ -131,8 +131,8 @@ describe("ZX Spectrum 48 - Beeper", () => {
       0xd3,
       0xfe, // OUT ($FE),A
       0x01,
-      0x40,
-      0x00, // LD BC,$0040
+      0x3f,
+      0x00, // LD BC,$003f
       0x0b, // DECLB: DEC BC
       0x78, // LD A,B
       0xb1, // OR C
@@ -147,14 +147,14 @@ describe("ZX Spectrum 48 - Beeper", () => {
     ]);
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x8020);
-    expect(s.tacts).toBe(13571);
+    expect(s.tacts).toBe(13470);
     expect(s.frameCompleted).toBe(false);
     expect(s.audioSampleLength).toBe(269);
     expect(s.audioSampleCount).toBe(51);
     const mh = new MemoryHelper(api, BEEPER_SAMPLE_BUFFER);
-    const expected = "011111100000011111100000001111110000001111111000000";
+    const expected = "011111100000011111100000001111110000001111110000000";
     let samples = "";
     for (let i = 0; i < s.audioSampleCount; i++) {
       samples += mh.readByte(i) === 1 ? "1" : "0";
@@ -185,8 +185,8 @@ describe("ZX Spectrum 48 - Beeper", () => {
       0xd3,
       0xfe, // OUT ($FE),A
       0x01,
-      0x40,
-      0x00, // LD BC,$0040
+      0x3f,
+      0x00, // LD BC,$003f
       0x0b, // DECLB: DEC BC
       0x78, // LD A,B
       0xb1, // OR C
@@ -201,16 +201,16 @@ describe("ZX Spectrum 48 - Beeper", () => {
     ]);
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x8020);
-    expect(s.tacts).toBe(6);
+    expect(s.tacts).toBe(11);
     expect(s.frameCount).toBe(1);
     expect(s.frameCompleted).toBe(true);
     expect(s.audioSampleLength).toBe(187);
     expect(s.audioSampleCount).toBe(374);
     const mh = new MemoryHelper(api, BEEPER_SAMPLE_BUFFER);
     const expected =
-      "01111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111110000000001111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+      "01111111110000000001111111110000000001111111110000000011111111110000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000011111111100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
     let samples = "";
     for (let i = 0; i < s.audioSampleCount; i++) {
       samples += mh.readByte(i) === 1 ? "1" : "0";
@@ -258,9 +258,9 @@ describe("ZX Spectrum 48 - Beeper", () => {
 
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
-    const s = machine.getMachineState();
+    const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800b);
-    expect(s.tacts).toBe(8);
+    expect(s.tacts).toBe(9);
     expect(s.frameCount).toBe(2);
     expect(s.frameCompleted).toBe(true);
     expect(s.audioSampleLength).toBe(187);

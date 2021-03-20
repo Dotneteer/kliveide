@@ -12,7 +12,7 @@ const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 
-describe("New: Extended ops 40-7f", () => {
+describe("Extended ops 40-7f", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as TestCpuApi;
@@ -578,7 +578,7 @@ describe("New: Extended ops 40-7f", () => {
   });
 
   it("57: ld a,i #1", () => {
-    let s = testMachine.initCode([0xed, 0x57]);
+    let s = testMachine.initCode([0xfb, 0xed, 0x57]);
     s.i = 0xd5;
     s = testMachine.run(s);
 
@@ -591,8 +591,8 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
     testMachine.shouldKeepMemory();
-    expect(s.pc).toBe(0x0002);
-    expect(s.tacts).toBe(9);
+    expect(s.pc).toBe(0x0003);
+    expect(s.tacts).toBe(13);
   });
 
   it("57: ld a,i #2", () => {
@@ -605,7 +605,7 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -624,7 +624,7 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -643,7 +643,7 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -820,7 +820,7 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -830,12 +830,12 @@ describe("New: Extended ops 40-7f", () => {
   });
 
   it("5f: ld a,r #2", () => {
-    let s = testMachine.initCode([0xed, 0x5f]);
+    let s = testMachine.initCode([0xfb, 0xed, 0x5f]);
     s.r = 0x25;
     s.f &= 0xfe;
     s = testMachine.run(s);
 
-    expect(s.a).toBe(0x27);
+    expect(s.a).toBe(0x28);
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
@@ -844,8 +844,8 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
     testMachine.shouldKeepMemory();
-    expect(s.pc).toBe(0x0002);
-    expect(s.tacts).toBe(9);
+    expect(s.pc).toBe(0x0003);
+    expect(s.tacts).toBe(13);
   });
 
   it("5f: ld a,r #3", () => {
@@ -858,7 +858,7 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeTruthy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
@@ -877,7 +877,7 @@ describe("New: Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");

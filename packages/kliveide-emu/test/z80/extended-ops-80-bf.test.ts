@@ -11,7 +11,7 @@ const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;
 let testMachine: TestZ80Machine;
 
-describe("New: Extended ops 80-bf", () => {
+describe("Extended ops 80-bf", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as TestCpuApi;

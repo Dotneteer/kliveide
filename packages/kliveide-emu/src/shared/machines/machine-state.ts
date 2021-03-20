@@ -288,20 +288,15 @@ export enum EmulationMode {
   UntilHalt = 1,
 
   /**
-   * Run the CPU until the current CPU rendering frame ends
-   */
-  UntilCpuFrameEnds = 2,
-
-  /**
    * Run the CPU until the current ULA rendering frame ends
    * by the ULA clock
    */
-  UntilFrameEnds = 3,
+  UntilFrameEnds = 2,
 
   /**
    * Run the CPU until a specified value of the PC register is reached
    */
-  UntilExecutionPoint = 4,
+  UntilExecutionPoint = 3,
 }
 
 /**

@@ -22,7 +22,7 @@ class DaaSample {
   ) {}
 }
 
-describe("New: Indexed ops (iy) 00-3f", () => {
+describe("Indexed ops (iy) 00-3f", () => {
   before(async () => {
     const wasm = await WebAssembly.instantiate(buffer, importObject);
     api = (wasm.instance.exports as unknown) as TestCpuApi;

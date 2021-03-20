@@ -32,7 +32,7 @@ export class TestZ80Machine {
   reset(): void {
     this.cpuApi.resetMachine();
     this.cpuApi.turnOnCpu();
-    this.cpuApi.resetCpu();
+    this.cpuApi.resetCpu(true);
   }
 
   /**
@@ -54,7 +54,7 @@ export class TestZ80Machine {
     }
 
     // --- Init code execution
-    this.cpuApi.resetCpu();
+    this.cpuApi.resetCpu(true);
     return this.cpuState;
   }
 

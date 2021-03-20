@@ -70,7 +70,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     const s = machine.getMachineState();
     expect(s.pc).toBe(0x800e);
-    expect(s.tacts).toBe(451);
+    expect(s.tacts).toBe(454);
     expect(s.frameCompleted).toBe(false);
     const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
     let sum = 0x00;
@@ -83,7 +83,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #1", () => {
-    machine.api.turnOnMachine();
+    machine.api.setupMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -104,8 +104,10 @@ describe("ZX Spectrum 48 - Screen", () => {
     fillPixelBuffer(0xff);
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
+    console.log(s.executionCompletionReason);
+    console.log(s.tacts);
     expect(s.pc).toBe(0x800d);
-    expect(s.tacts).toBe(3697);
+    expect(s.tacts).toBe(3700);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
     const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
@@ -138,7 +140,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #2", () => {
-    machine.api.turnOnMachine();
+    machine.api.setupMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -160,7 +162,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
-    expect(s.tacts).toBe(14331);
+    expect(s.tacts).toBe(14334);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
     const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
@@ -196,7 +198,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Setting border value changes border area #3", () => {
-    machine.api.turnOnMachine();
+    machine.api.setupMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -219,7 +221,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800e);
-    expect(s.tacts).toBe(14413);
+    expect(s.tacts).toBe(14416);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
     const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
@@ -263,7 +265,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Border + empty pixels", () => {
-    machine.api.turnOnMachine();
+    machine.api.setupMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -285,7 +287,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
-    expect(s.tacts).toBe(69633);
+    expect(s.tacts).toBe(69636);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
     const mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
@@ -351,7 +353,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Rendering with pattern #1", () => {
-    machine.api.turnOnMachine();
+    machine.api.setupMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -382,7 +384,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     machine.executeCycle(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
-    expect(s.tacts).toBe(69633);
+    expect(s.tacts).toBe(69636);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
     mh = new MemoryHelper(api, PIXEL_RENDERING_BUFFER);
@@ -450,7 +452,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Rendering until frame ends", () => {
-    machine.api.turnOnMachine();
+    machine.api.setupMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -548,7 +550,7 @@ describe("ZX Spectrum 48 - Screen", () => {
   });
 
   it("Colorize border + empty pixels", () => {
-    machine.api.turnOnMachine();
+    machine.api.setupMachine();
     machine.injectCode([
       0xf3, // DI
       0x3e,
@@ -571,7 +573,7 @@ describe("ZX Spectrum 48 - Screen", () => {
     machine.api.colorize();
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s.pc).toBe(0x800d);
-    expect(s.tacts).toBe(69633);
+    expect(s.tacts).toBe(69636);
     expect(s.frameCompleted).toBe(false);
     expect(s.borderColor).toBe(0x05);
     const mh = new MemoryHelper(api, COLORIZATION_BUFFER);
