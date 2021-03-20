@@ -631,7 +631,7 @@ export class AppWindow implements IAppWindow {
     const baseClockFrequency =
       this._machineContextProvider?.getNormalCpuFrequency() ?? 1_000_000;
 
-    for (let i = 1; i <= 16; i++) {
+    for (let i = 1; i <= 24; i++) {
       (cpuClockSubmenu.submenu as MenuItemConstructorOptions[]).push({
         id: `clockMultiplier_${i}`,
         type: "radio",

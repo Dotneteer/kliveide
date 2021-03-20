@@ -195,7 +195,7 @@ export void executeMachineLoop() {
     }
 
     // --- Execute the next CPU cycle
-    local u32 currentFrameTact = tacts * clockMultiplier;
+    local u32 currentFrameTact = tacts / clockMultiplier;
     if (cpuSnoozed) {
       // --- Mimic that the time is passing
       tacts += 12;

@@ -655,6 +655,7 @@ export class VmEngine implements IVmEngineController {
       // --- Use the current clock multiplier
       const emuState = rendererProcessStore.getState().emulatorPanelState;
       this.z80Machine.api.setClockMultiplier(emuState.clockMultiplier ?? 1);
+      console.log(`Set multiplier: ${emuState.clockMultiplier}`);
     }
   }
 
