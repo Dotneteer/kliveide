@@ -46,7 +46,7 @@ export void setMemoryBlockEntry(
 
 // Memory read contention delay
 inline void contendRead(u16 addr) {
-  if (blockLookupTable[(addr & 0xe000) >> 9].contended) {
+  if (blockLookupTable[addr >> 13].contended) {
     local u32 delay = contentionTable[tacts/clockMultiplier];
     tacts += delay;
     contentionAccumulated += delay;
@@ -55,7 +55,7 @@ inline void contendRead(u16 addr) {
 
 // Memory write contention delay
 inline void contendWrite(u16 addr) {
-  if (blockLookupTable[(addr & 0xe000) >> 9].contended) {
+  if (blockLookupTable[addr >> 13].contended) {
     local u32 delay = contentionTable[tacts/clockMultiplier];
     tacts += delay;
     contentionAccumulated += delay;
@@ -68,10 +68,13 @@ inline void contendWrite(u16 addr) {
 // Reads the contents of the memory
 inline u8 readMemory(u16 addr) {
   tacts += 3;
-  return vmMemory[
-    blockLookupTable[addr >> 13].readIndex + 
-    (addr & 0b0001_1111_1111_1111)
-  ];
+  local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
+  if ((*pagePtr).contended) {
+    local u32 delay = contentionTable[tacts/clockMultiplier];
+    tacts += delay;
+    contentionAccumulated += delay;
+  }
+  return vmMemory[(*pagePtr).readIndex + (addr & 0b0001_1111_1111_1111)];
 }
 
 // Reads the contents of the memory without applying contention
@@ -86,9 +89,15 @@ inline u8 readMemoryNoContention(u16 addr) {
 inline void writeMemory(u16 addr, u8 value) {
   local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
   if ((*pagePtr).flags) {
+    tacts += 3;
     return;
   }
   vmMemory[(*pagePtr).writeIndex + (addr & 0b0001_1111_1111_1111)] = value;
+  if ((*pagePtr).contended) {
+    local u32 delay = contentionTable[tacts/clockMultiplier];
+    tacts += delay;
+    contentionAccumulated += delay;
+  }
   tacts += 3;
 }
 

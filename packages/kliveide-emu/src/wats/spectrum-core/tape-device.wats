@@ -220,7 +220,7 @@ void checkTapeHooks() {
     if (pc == 0x0008) {
       tapeMode = TM_PASSIVE;
     }
-    return
+    return;
   }
 
   // --- SAVE Mode. Error or too long pause?
@@ -253,6 +253,7 @@ void nextTapeBlock() {
   // --- OK, move to the next block, get the length of the next block
   local *u16 lengthPtr = tapeBufferPtr;
   tapeNextBlockPtr = tapeBufferPtr + 2 + (*lengthPtr);
+  tapeBufferPtr += 2;
 
   // --- Decrement the number of remaining blocks
   tapeBlocksToPlay -= 1;
@@ -260,9 +261,9 @@ void nextTapeBlock() {
   // --- Reset playing the current block
   tapePlayPhase = PP_PILOT;
   tapeStartTact = getCurrentTactAsI64();
-  tapePilotEndPos = PILOT_PULSE * (*tapeBufferPtr) & 0x80
+  tapePilotEndPos = PILOT_PULSE * (((*tapeBufferPtr) & 0x80)
     ? DATA_PILOT_COUNT
-    : HEADER_PILOT_COUNT;
+    : HEADER_PILOT_COUNT);
   tapeSync1EndPos = tapePilotEndPos + SYNC_1_PULSE;
   tapeSync2EndPos = tapeSync1EndPos + SYNC_2_PULSE;
   tapeBitMask = 0x80;
@@ -308,7 +309,6 @@ bool getTapeEarBit() {
   if (tapePlayPhase == PP_DATA) {
     // --- Generate current bit pulse
     local u64 bitPos = pos - tapeBitStartPos;
-
     // --- First pulse?
     if (bitPos < tapeBitPulseLen) {
       return false; // => Low EAR bit
@@ -325,10 +325,11 @@ bool getTapeEarBit() {
       tapeBufferPtr += 1;
     }
 
+
     // --- Do we have more bits to play?
     if (tapeBufferPtr < tapeNextBlockPtr) {
       // --- Prepare to the next bit
-      tapeBitStartPos = tapeBitStartPos + 2 * tapeBitPulseLen;
+      tapeBitStartPos += 2 * tapeBitPulseLen;
 
       // --- Select the bit pulse length of the next bit
       tapeBitPulseLen = (*tapeBufferPtr) & tapeBitMask
@@ -344,6 +345,7 @@ bool getTapeEarBit() {
 
     // --- Prepare to the terminating sync
     tapeTermEndPos = tapeBitStartPos + 2 * tapeBitPulseLen + TERM_SYNC;
+    return false;
   }
 
   // --- Termination sync?

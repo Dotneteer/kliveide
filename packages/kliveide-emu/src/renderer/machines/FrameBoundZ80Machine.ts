@@ -30,7 +30,6 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
     this.configureMachine();
     this.api.setupMachine();
     this.initRoms(this.roms);
-    console.log("Prepare machine called");
   }
 
   /**

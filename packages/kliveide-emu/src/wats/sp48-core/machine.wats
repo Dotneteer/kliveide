@@ -49,12 +49,12 @@ export void setupMachine () {
   calcScreenAttributes();
   initRenderingTactTable();
 
+  // --- Tape device data
+  tapeLoadBytesRoutine = 0x056c;
+  tapeLoadBytesInvalidHeader = 0x056b;
+  tapeLoadBytesResume = 0x05e2;
+  tapeSaveBytesRoutine = 0x04c2;
+
   //   ;; PSG sound configuration
   //   (set_global $psgSupportsSound (i32.const 0))
-
-  //   ;; Tape device data
-  //   (set_global $tapeLoadBytesRoutine (i32.const 0x056c))
-  //   (set_global $tapeLoadBytesInvalidHeader (i32.const 0x056b))
-  //   (set_global $tapeLoadBytesResume (i32.const 0x05e2))
-  //   (set_global $tapeSaveBytesRoutine (i32.const 0x04c2))
 }

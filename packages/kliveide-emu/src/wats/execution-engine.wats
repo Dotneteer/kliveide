@@ -39,6 +39,8 @@ const u32 BR_MEM_WR_CV = 0x10; // Memory write breakpoint has condition value
 // ----------------------------------------------------------------------------
 // Execution cycle variables
 
+global i32 interruptCount = 0;
+
 // Number of frames rendered
 global u32 frameCount;
 
