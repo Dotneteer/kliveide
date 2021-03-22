@@ -224,7 +224,7 @@ export void resetMachine() {
   executionCompletionReason = EXCR_EXEC;
   stepOverBreakpoint = 0;
 
-  // Reset keyboard line status
+  // --- Reset keyboard line status
   keyboardLines[0] = 0;
   keyboardLines[1] = 0;
   keyboardLines[2] = 0;
@@ -234,42 +234,32 @@ export void resetMachine() {
   keyboardLines[6] = 0;
   keyboardLines[7] = 0;
 
-  // Reset memory state
+  // --- Reset memory state
   memorySelectedRom = 0;
   memoryPagingEnabled = 1;
   memorySelectedBank = 0;
   memoryUseShadowScreen = false;
 
-  // Reset port state
+  // --- Reset port state
   portBit3LastValue = 0;
   portBit4LastValue = 0;
   portBit4ChangedFrom0Tacts = 0;
   portBit4ChangedFrom1Tacts = 0;
 
-  // Reset beeper state
+  // --- Reset beeper state
   audioGateValue = 0;
   audioNextSampleTact = 0;
+  audioSampleCount = 0;
   beeperLastEarBit = 0;
 
-  // ;; Reset PSG state
-  // get_global $psgClockStep set_global $psgNextClockTact
-
-  // (i32.store offset=0 (get_global $PSG_REGS) (i32.const 0))
-  // (i32.store offset=4 (get_global $PSG_REGS) (i32.const 0))
-  // (i32.store offset=8 (get_global $PSG_REGS) (i32.const 0))
-  // (i32.store offset=12 (get_global $PSG_REGS) (i32.const 0))
-  // i32.const 0xffff set_global $psgNoiseSeed
-
-  // ;; Reset tape state
-  // i32.const 0 set_global $tapeMode
-  // i32.const 0 set_global $tapeBlocksToPlay
-  // i32.const 1 set_global $tapeEof
-  // get_global $TAPE_DATA_BUFFER set_global $tapeBufferPtr
-  // get_global $TAPE_DATA_BUFFER set_global $tapeNextBlockPtr
-  // i32.const 0 set_global $tapePlayPhase
-  // i64.const 0 set_global $tapeStartTact
-
-  // Reset debugging state
+  // --- Reset tape device
+  tapeMode = TM_PASSIVE;
+  tapeBlocksToPlay = 0;
+  tapeEof = false;
+  tapeBufferPtr = &tapeDataBuffer;
+  tapeFastLoad = false;
+  
+  // --- Reset debugging state
   stepOutStackDepth = 0;
 }
 

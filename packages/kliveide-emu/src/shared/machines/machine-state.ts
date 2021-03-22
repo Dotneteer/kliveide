@@ -136,39 +136,6 @@ export class Spectrum48MachineState extends SpectrumMachineStateBase {
  */
 export class Spectrum128MachineState extends SpectrumMachineStateBase {
   type: "128";
-
-  psgToneA: number;
-  psgToneAEnabled: boolean;
-  psgNoiseAEnabled: boolean;
-  psgVolA: number;
-  psgEnvA: boolean;
-  psgCntA: number;
-  psgBitA: boolean;
-
-  psgToneB: number;
-  psgToneBEnabled: boolean;
-  psgNoiseBEnabled: boolean;
-  psgVolB: number;
-  psgEnvB: boolean;
-  psgCntB: number;
-  psgBitB: boolean;
-
-  psgToneC: number;
-  psgToneCEnabled: boolean;
-  psgNoiseCEnabled: boolean;
-  psgVolC: number;
-  psgEnvC: boolean;
-  psgCntC: number;
-  psgBitC: boolean;
-
-  psgNoiseSeed: number;
-  psgNoiseFreq: number;
-  psgCntNoise: number;
-  psgBitNoise: boolean;
-  psgEvnFreq: number;
-  psgEnvStyle: number;
-  psgCntEnv: number;
-  psgPosEnv: number;
 }
 
 /**

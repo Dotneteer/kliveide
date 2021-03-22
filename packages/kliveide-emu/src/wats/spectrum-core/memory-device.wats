@@ -66,7 +66,7 @@ inline void contendWrite(u16 addr) {
 // Core memory handling routines
 
 // Reads the contents of the memory
-u8 readMemory(u16 addr) {
+inline u8 readMemory(u16 addr) {
   tacts += 3;
   local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
   if ((*pagePtr).contended) {
@@ -86,7 +86,7 @@ inline u8 readMemoryNoContention(u16 addr) {
 }
 
 // Writes the contents of the memory
-void writeMemory(u16 addr, u8 value) {
+inline void writeMemory(u16 addr, u8 value) {
   local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
   if ((*pagePtr).flags) {
     tacts += 3;

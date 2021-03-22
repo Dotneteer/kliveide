@@ -16,48 +16,6 @@ global u32 portBit4ChangedFrom0Tacts;
 // Tacts value when last time bit 4 of $fe changed from 1 to 0
 global u32 portBit4ChangedFrom1Tacts;
 
-// Reads a byte from the specified I/O port
-u8 readPort(u16 port) {
-  // --- Handle the contention delay
-  applyIOContentionDelay(port);
-
-  // --- Handle the 0xfe port
-  if (!(port & 0x0001)) {
-    local u8 value = readPortFE(port);
-    tacts += 4;
-    return value;
-  }
-
-  // --- Handle the Kempston port
-  if (!(port & 0x00e0)) {
-    tacts += 4;
-    // TODO: Implement Kempston port handling
-    return 0xff;
-  }
-  
-  // --- Floating port handling
-  // --- Get the rendering table entry of the current ULA tact
-  local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
-
-  // --- Check phase
-  if (((*tactItem).phase & 0x03) == 0x02) {
-    // --- Fetch the attribute value of the current tact
-    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
-  }
-
-  // --- Return the default port value
-  tacts += 4;
-  return 0xff;
-}
-
-// Writes a byte to the specified I/O port
-void writePort(u16 port, u8 value) {
-  applyIOContentionDelay(port);
-  if (!(port & 0x0001)) {
-    writePortFE(port, value);
-  }
-}
-
 // Reads information from the 0xfe port
 u8 readPortFE(u16 addr) {
   // --- Scan keyboard line status

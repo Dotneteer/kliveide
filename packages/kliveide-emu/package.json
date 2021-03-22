@@ -24,7 +24,7 @@
     "tscbuild": "tsc",
     "mergewat": "node ./scripts/mergewat.js",
     "build:sp48": "watsc ./src/wats/sp48-core/sp48.wats ./build/sp48.wat && wat2wasm ./build/sp48.wat -o ./build/sp48.wasm",
-    "build:sp128": "npm run mergewat -- sp128.json && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",
+    "build:sp128": "watsc ./src/wats/sp128-core/sp128.wats ./build/sp128.wat && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",
     "build:cz88": "npm run mergewat -- cz88.json && wat2wasm ./build/cz88.wat -o ./build/cz88.wasm",
     "build:tz80": "watsc ./src/wats/tz80-core/tz80.wats ./build/tz80.wat && wat2wasm ./build/tz80.wat -o ./build/tz80.wasm",
     "build:tz80n": "npm run mergewat -- tz80n.json && wat2wasm ./build/tz80n.wat -o ./build/tz80n.wasm",

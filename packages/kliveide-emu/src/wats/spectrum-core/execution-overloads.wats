@@ -35,7 +35,9 @@ void beforeCpuCycle(u32 frameTact) {
 
 // The execution engine has just executed a CPU cycle
 void afterCpuCycle(u32 frameTact) {
-  // --- Nothing to do
+  #if SUPPORTS_PSG
+  preparePsgSamples();
+  #endif
 }
 
 // ZX Spectrum renders the next pixels of the screen 
@@ -60,26 +62,14 @@ inline void afterTerminationCheck() {
   if (tacts >= audioNextSampleTact) {
     renderBeeperSample();
 
-    // get_global $psgSupportsSound
-    // if
-    //   ;; Render next PSG sample
-    //   (i32.add 
-    //     (get_global $PSG_SAMPLE_BUFFER) 
-    //     (i32.mul (get_global $audioSampleCount) (i32.const 2))
-    //   )
-    //   (i32.eqz (get_global $psgOrphanSamples))
-    //   if (result i32)
-    //     i32.const 0
-    //   else
-    //     (i32.div_u 
-    //       (i32.div_u (get_global $psgOrphanSum) (get_global $psgOrphanSamples))
-    //       (i32.const 3)
-    //     )
-    //   end
-    //   i32.store16
-    //   i32.const 0 set_global $psgOrphanSum
-    //   i32.const 0 set_global $psgOrphanSamples
-    // end
+    #if SUPPORTS_PSG
+    // --- Render next PSG sample
+    psgSamplesBuffer[audioSampleCount] = psgOrphanSamples 
+      ? psgOrphanSum/psgOrphanSamples/3
+      : 0;
+    psgOrphanSum = 0;
+    psgOrphanSamples =0;
+    #endif
 
     moveToNextAudioSample();
   }
@@ -88,15 +78,13 @@ inline void afterTerminationCheck() {
 // The execution engine has just completed a frame
 inline void onFrameCompleted() {
   // --- The current screen rendering frame completed
+
+  #if SUPPORTS_PSG
   // --- Prepare for the next PSG tact that may overflow to the next frame
-  // (i32.gt_u (get_global $psgNextClockTact) (get_global $tactsInFrame))
-  // if
-  //   (i32.sub 
-  //     (get_global $psgNextClockTact)
-  //     (get_global $tactsInFrame)
-  //   )
-  //   set_global $psgNextClockTact
-  // end
+  if (psgNextClockTact > tactsInFrame) {
+    psgNextClockTact -= tactsInFrame;
+  }
+  #endif
 
   // --- Prepare for the next beeper sample rate that may overflow to the next frame
   if (audioNextSampleTact > tacts) {

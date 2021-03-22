@@ -84,10 +84,10 @@ export async function changeVmEngine(id: string, options?: Record<string, any>) 
 
   // --- Create the new engine
   waInstance = null;
-  const newEngine = await createVmEngine(id, options);
+    const newEngine = await createVmEngine(id, options);
 
-  // --- Store it
-  vmEngine = newEngine;
+    // --- Store it
+    vmEngine = newEngine;
 }
 
 /**

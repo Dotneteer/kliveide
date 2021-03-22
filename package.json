@@ -24,6 +24,7 @@
     "bump": "lerna version --no-push --no-git-tag-version",
     "build:wa": "cd packages/kliveide-new && npm run build:wa",
     "build:sp48": "cd packages/kliveide-emu && npm run build:sp48",
+    "build:sp128": "cd packages/kliveide-emu && npm run build:sp128",
     "build:tz80": "cd packages/kliveide-emu && npm run build:tz80",
     "build:win": "cd packages/kliveide-emu && npm run build:win",
     "build:mac": "cd packages/kliveide-emu && npm run build:mac",

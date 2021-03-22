@@ -383,7 +383,6 @@ void executeNmi() {
 
 // Responds to the HLT signal
 void executeHalt() {
-  tacts += 3;
   refreshMemory();
 }
 

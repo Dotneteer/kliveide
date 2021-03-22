@@ -11,9 +11,7 @@ import { MachineApi } from "../wa-api";
 import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
 import {
   MachineState,
-  MemoryContentionType,
   SpectrumMachineStateBase,
-  Z80MachineStateBase,
 } from "../../../shared/machines/machine-state";
 import { BinaryReader } from "../../../shared/utils/BinaryReader";
 import { TzxReader } from "../../../shared/tape/tzx-file";
@@ -60,6 +58,13 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   getExtraMachineFeatures(): ExtraMachineFeatures[] {
     return ["UlaDebug", "Tape", "Sound"];
+  }
+
+  /**
+   * Indicates if this modes supports the AY-3-8912 PSG chip
+   */
+  get supportsPsg(): boolean {
+    return false;
   }
 
   /**
@@ -117,7 +122,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
   getMachineState(): MachineState {
     // --- Obtain execution engine state
     const s = super.getMachineState() as SpectrumMachineStateBase;
-    
+
     // --- Obtain ZX Spectrum specific state
     this.api.getMachineState();
     let mh = new MemoryHelper(this.api, SPECTRUM_MACHINE_STATE_BUFFER);
@@ -127,7 +132,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     s.portBit4LastValue = mh.readBool(1);
     s.portBit4ChangedFrom0Tacts = mh.readUint32(2);
     s.portBit4ChangedFrom1Tacts = mh.readUint32(6);
-   
+
     // --- Get keyboard state
     s.keyboardLines = [];
     for (let i = 0; i < 8; i++) {
@@ -213,15 +218,6 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     s.contentionAccumulated = mh.readUint32(168);
     s.lastExecutionContentionValue = mh.readUint32(172);
 
-    // // --- Get Spectrum-specific execution engine state
-    // // --- Get sound state
-    // s.psgSupportsSound = mh.readBool(348);
-    // s.psgRegisterIndex = mh.readByte(349);
-    // s.psgClockStep = mh.readUint32(350);
-    // s.psgNextClockTact = mh.readUint32(354);
-    // s.psgOrphanSamples = mh.readUint32(358);
-    // s.psgOrphanSum = mh.readUint32(362);
-
     // --- Screen rendering tact
     mh = new MemoryHelper(this.api, RENDERING_TACT_TABLE);
     const tactStart = 5 * s.lastRenderedFrameTact;
@@ -301,7 +297,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       await this._beeperRenderer.closeAudio();
       this._beeperRenderer = null;
     }
-    if (this._psgRenderer) {
+    if (this.supportsPsg && this._psgRenderer) {
       await this._psgRenderer.closeAudio();
       this._psgRenderer = null;
     }
@@ -329,17 +325,19 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     await super.beforeStarted(debugging);
 
     // --- Init audio renderers
-    const state = this.getMachineState() as SpectrumMachineStateBase;;
+    const state = this.getMachineState() as SpectrumMachineStateBase;
     this._beeperRenderer = this._audioRendererFactory(
       state.tactsInFrame / state.audioSampleLength
     );
     this._beeperRenderer.suspend();
     await this._beeperRenderer.initializeAudio();
-    this._psgRenderer = this._audioRendererFactory(
-      state.tactsInFrame / state.audioSampleLength
-    );
-    this._psgRenderer.suspend();
-    await this._psgRenderer.initializeAudio();
+    if (this.supportsPsg) {
+      this._psgRenderer = this._audioRendererFactory(
+        state.tactsInFrame / state.audioSampleLength
+      );
+      this._psgRenderer.suspend();
+      await this._psgRenderer.initializeAudio();
+    }
   }
 
   /**
@@ -365,7 +363,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * evaluations (whether to continue the cycle of not)
    */
   async beforeEvalLoopCompletion(
-    resultState: SpectrumMachineStateBase,
+    resultState: SpectrumMachineStateBase
   ): Promise<void> {
     this._stateManager.selectRom(resultState.memorySelectedRom);
     this._stateManager.selectBank(resultState.memorySelectedBank);
@@ -403,14 +401,16 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       this._beeperRenderer.resume();
 
       // --- Obtain psg samples
-      mh = new MemoryHelper(this.api, PSG_SAMPLE_BUFFER);
-      const psgSamples = mh
-        .readWords(0, resultState.audioSampleCount)
-        .map((smp) =>
-          emuState.muted ? 0 : (smp / 8192) * (emuState.soundLevel ?? 0)
-        );
-      this._psgRenderer.storeSamples(psgSamples);
-      this._psgRenderer.resume();
+      if (this.supportsPsg) {
+        mh = new MemoryHelper(this.api, PSG_SAMPLE_BUFFER);
+        const psgSamples = mh
+          .readWords(0, resultState.audioSampleCount)
+          .map((smp) =>
+            emuState.muted ? 0 : (smp / 65535) * (emuState.soundLevel ?? 0)
+          );
+        this._psgRenderer.storeSamples(psgSamples);
+        this._psgRenderer.resume();
+      }
     }
 
     // --- Check if a tape should be loaded
@@ -469,7 +469,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       }
       done = read.done;
     } while (!done);
-    const length = buffers.reduce((a, b) => a + b.length, 0)
+    const length = buffers.reduce((a, b) => a + b.length, 0);
     const resultArray = new Uint8Array(length);
     let offset = 0;
     for (let i = 0; i < buffers.length; i++) {

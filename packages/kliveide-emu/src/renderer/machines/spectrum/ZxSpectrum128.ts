@@ -52,8 +52,13 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    */
   constructor(public api: MachineApi, roms?: Uint8Array[]) {
     super(api, roms);
-    // --- Turn on hooks for all instruction-related events
-    api.setCpuDiagnostics(0x0000);
+  }
+
+  /**
+   * ZX Spectrum 128 supports the AY-3-8912 PSG chip
+   */
+  get supportsPsg(): boolean {
+    return true;
   }
 
   /**
@@ -67,7 +72,7 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    * Gets the memory address of the first ROM page of the machine
    */
   getRomPageBaseAddress(): number {
-    return ROM_128_0_OFFS;
+    return 0;
   }
 
   /**
@@ -96,44 +101,6 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
    */
   getMachineState(): MachineState {
     const s = super.getMachineState() as Spectrum128MachineState;
-
-    // TODO: Update the buffer
-    let mh = new MemoryHelper(this.api, CPU_STATE_BUFFER);
-
-    // --- Get PSG state
-    s.psgToneA = mh.readUint16(420);
-    s.psgToneAEnabled = mh.readBool(422);
-    s.psgNoiseAEnabled = mh.readBool(423);
-    s.psgVolA = mh.readByte(424);
-    s.psgEnvA = mh.readBool(425);
-    s.psgCntA = mh.readUint16(426);
-    s.psgBitA = mh.readBool(428);
-
-    s.psgToneB = mh.readUint16(429);
-    s.psgToneBEnabled = mh.readBool(431);
-    s.psgNoiseBEnabled = mh.readBool(432);
-    s.psgVolB = mh.readByte(433);
-    s.psgEnvB = mh.readBool(434);
-    s.psgCntB = mh.readUint16(435);
-    s.psgBitB = mh.readBool(437);
-
-    s.psgToneC = mh.readUint16(438);
-    s.psgToneCEnabled = mh.readBool(440);
-    s.psgNoiseCEnabled = mh.readBool(441);
-    s.psgVolC = mh.readByte(442);
-    s.psgEnvC = mh.readBool(443);
-    s.psgCntC = mh.readUint16(444);
-    s.psgBitC = mh.readBool(446);
-
-    s.psgNoiseSeed = mh.readUint16(447);
-    s.psgNoiseFreq = mh.readUint16(449);
-    s.psgCntNoise = mh.readUint16(451);
-    s.psgBitNoise = mh.readBool(453);
-    s.psgEvnFreq = mh.readUint16(454);
-    s.psgEnvStyle = mh.readByte(456);
-    s.psgCntEnv = mh.readUint16(457);
-    s.psgPosEnv = mh.readUint16(459);
-
     // --- Done.
     return s as MachineState;
   }
@@ -188,38 +155,5 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
     await controller.delayKey(spectrumKeyCodes.Enter);
     await controller.waitForCycleTermination();
     return SP48_MAIN_ENTRY;
-  }
-
-  private ioLog: [string, string][] = [];
-
-  /**
-   * Override this method to define an action when the virtual machine has
-   * started.
-   * @param debugging Is started in debug mode?
-   */
-  async beforeStarted(debugging: boolean): Promise<void> {
-    await super.beforeStarted(debugging);
-    this.ioLog = [];
-  }
-
-  /**
-   * Override this action to define an action when the virtual machine
-   * has paused.
-   * @param isFirstPause Is the machine paused the first time?
-   */
-  async onPaused(isFirstPause: boolean): Promise<void> {
-    await super.onPaused(isFirstPause);
-  }
-
-  /**
-   * CPU hook. Invoked when the CPU writes to an I/O port
-   * @param address The memory address read
-   * @param value The memory value read
-   */
-  ioWritten(address: number, value: number): void {
-    this.ioLog.push([
-      address.toString(16),
-      value.toString(16).padStart(2, "0"),
-    ]);
   }
 }

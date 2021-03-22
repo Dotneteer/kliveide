@@ -1,0 +1,172 @@
+// ============================================================================
+// ZX Spectrum 128K machine-specific routines
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Virtual machine memory map:
+
+// Block 00: 0x00'0000 - 0x00'1fff (ROM 0, lower 8K)
+// Block 01: 0x00'2000 - 0x00'3fff (ROM 0, upper 8K)
+// Block 02: 0x00'4000 - 0x00'5fff (ROM 1, lower 8K)
+// Block 03: 0x00'6000 - 0x00'7fff (ROM 1, upper 8K)
+// Block 04: 0x00'8000 - 0x00'9fff (BANK 0, lower 8K)
+// Block 05: 0x00'a000 - 0x00'bfff (BANK 0, upper 8K)
+// Block 06: 0x00'c000 - 0x00'dfff (BANK 1, lower 8K, contended)
+// Block 07: 0x00'e000 - 0x00'ffff (BANK 1, upper 8K, contended)
+// Block 08: 0x01'0000 - 0x01'1fff (BANK 2, lower 8K)
+// Block 09: 0x01'2000 - 0x01'3fff (BANK 2, upper 8K)
+// Block 10: 0x01'4000 - 0x01'5fff (BANK 3, lower 8K, contended)
+// Block 11: 0x01'6000 - 0x00'7fff (BANK 3, upper 8K, contended)
+// Block 12: 0x01'8000 - 0x01'9fff (BANK 4, lower 8K)
+// Block 13: 0x01'a000 - 0x01'bfff (BANK 4, upper 8K)
+// Block 14: 0x01'c000 - 0x01'dfff (BANK 5, lower 8K, contended)
+// Block 15: 0x01'e000 - 0x00'ffff (BANK 5, upper 8K, contended)
+// Block 16: 0x02'0000 - 0x02'1fff (BANK 6, lower 8K)
+// Block 17: 0x02'2000 - 0x02'3fff (BANK 6, upper 8K)
+// Block 18: 0x02'4000 - 0x02'5fff (BANK 7, lower 8K, contended)
+// Block 19: 0x02'6000 - 0x02'7fff (BANK 7, upper 8K, contended)
+
+// Unused: 0x02'8000 - 0xff'ffff
+
+// --- ZX Spectrum 128 virtual memory offsets
+const u32 ROM_0_OFFSET = 0x00'0000;
+const u32 ROM_1_OFFSET = 0x00'4000;
+const u32 BANK_0_OFFSET = 0x00'8000;
+const u32 BANK_5_OFFSET = 0x01'c000;
+const u32 BANK_7_OFFSET = 0x02'4000;
+
+// ----------------------------------------------------------------------------
+// Public routines
+
+// Sets up the ZX Spectrum machine
+export void setupMachine () {
+  // --- Let's use ULA issue 3 by default
+  ulaIssue = 3;
+
+  // --- CPU configuration
+  baseClockFrequency = 3'546'900;
+  clockMultiplier = defaultClockMultiplier;
+  resetCpu(true);
+  
+  // --- Memory configuration
+  numberOfRoms = 2;
+  ramBanks = 8;
+  memoryScreenOffset = 0x01'c000; // BANK 5
+
+  // --- Set up block lookup table
+  setMemoryBlockEntry(0, 0x00'0000, false, true);   // ROM 0, lower
+  setMemoryBlockEntry(1, 0x00'2000, false, true);   // ROM 0, upper
+  setMemoryBlockEntry(2, 0x01'c000, true, false);   // BANK 5, lower, contended
+  setMemoryBlockEntry(3, 0x01'e000, true, false);   // BANK 5, upper, contended
+  setMemoryBlockEntry(4, 0x01'0000, false, false);  // BANK 2, lower
+  setMemoryBlockEntry(5, 0x01'2000, false, false);  // BANK 2, upper
+  setMemoryBlockEntry(6, 0x00'8000, false, false);  // BANK 0, lower
+  setMemoryBlockEntry(7, 0x00'a000, false, false);  // BANK 0, upper
+
+  // --- Set the initial state of a ZX Spectrum machine
+  resetMachine();
+
+  // --- Screen frame configuration
+  setInterruptTact(14);
+  verticalSyncLines = 8;
+  nonVisibleBorderTopLines = 7;
+  borderTopLines = 48;
+  borderBottomLines = 48;
+  nonVisibleBorderBottomLines = 8;
+  displayLines = 192;
+  borderLeftTime = 24;
+  borderRightTime = 24;
+  displayLineTime = 128;
+  horizontalBlankingTime = 40;
+  nonVisibleBorderRightTime = 12;
+  pixelDataPrefetchTime = 2;
+  attributeDataPrefetchTime = 1;
+
+  calcScreenAttributes();
+  initRenderingTactTable();
+
+  // --- Tape device data
+  tapeLoadBytesRoutine = 0x056c;
+  tapeLoadBytesInvalidHeader = 0x056b;
+  tapeLoadBytesResume = 0x05e2;
+  tapeSaveBytesRoutine = 0x04c2;
+
+  // --- Setup the PSG sound
+  initEnvelopeTables();
+  initSound(&psg);
+  psgRegisterIndex = 0;
+
+  psgNextClockTact = 0;
+  psgOrphanSamples =0;
+  psgOrphanSum = 0;
+}
+
+// ----------------------------------------------------------------------------
+// I/O port handling
+
+// Reads a byte from the specified I/O port
+u8 readPort(u16 port) {
+  // --- Handle the contention delay
+  applyIOContentionDelay(port);
+
+  // --- Handle the 0xfe port
+  if (!(port & 0x0001)) {
+    local u8 value = readPortFE(port);
+    tacts += 4;
+    return value;
+  }
+
+  // --- Handle the Kempston port
+  if (!(port & 0x00e0)) {
+    tacts += 4;
+    // TODO: Implement Kempston port handling
+    return 0xff;
+  }
+  
+  // --- Handle the PSG register index port
+  if ((port & 0xc002) == 0xc000) {
+    return readPsgRegisterValue(&psg);
+  }
+
+  // --- Floating port handling
+  // --- Get the rendering table entry of the current ULA tact
+  local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
+
+  // --- Check phase
+  if (((*tactItem).phase & 0x03) == 0x02) {
+    // --- Fetch the attribute value of the current tact
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
+  }
+
+  // --- Return the default port value
+  tacts += 4;
+  return 0xff;
+}
+
+// Writes a byte to the specified I/O port
+void writePort(u16 port, u8 value) {
+  applyIOContentionDelay(port);
+
+  // --- Standard ZX Spectrum port
+  if (!(port & 0x0001)) {
+    writePortFE(port, value);
+    return;
+  }
+
+  // --- Test for memory paging port
+  if ((port & 0xc002) == 0x4000) {
+    handleMemoryPagingPort(value);
+    return;
+  }
+
+  // --- Test for PSG register index port
+  if ((port & 0xc002) == 0xc000) {
+    psgRegisterIndex = value & 0x0f;
+    return;
+  }
+
+  // --- Test for PSG register value port
+  if ((port & 0xc002) == 0x8000) {
+    writePsgRegisterValue(&psg, value);
+  }
+}
