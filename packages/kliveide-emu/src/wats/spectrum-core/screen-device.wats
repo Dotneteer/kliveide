@@ -5,16 +5,16 @@
 // ----------------------------------------------------------------------------
 // Screen device constants
 
-const u32 RT_NONE = 0x00; 
-const u32 RT_Border = 0x04;
-const u32 RT_BorderFetchPixel = 0x05;
-const u32 RT_BorderFetchAttr = 0x06;
-const u32 RT_DisplayB1 = 0x08;
-const u32 RT_DisplayB1FetchB2 = 0x09;
-const u32 RT_DisplayB1FetchA2 = 0x0a;
-const u32 RT_DisplayB2 = 0x10;
-const u32 RT_DisplayB2FetchB1 = 0x11;
-const u32 RT_DisplayB2FetchA1 = 0x12;
+const u32 RT_NONE = 0; 
+const u32 RT_Border = 1;
+const u32 RT_BorderFetchPixel = 2;
+const u32 RT_BorderFetchAttr = 3;
+const u32 RT_DisplayB1 = 4;
+const u32 RT_DisplayB1FetchB2 = 5;
+const u32 RT_DisplayB1FetchA2 = 6;
+const u32 RT_DisplayB2 = 7;
+const u32 RT_DisplayB2FetchB1 = 8;
+const u32 RT_DisplayB2FetchA1 = 9;
 
 // ----------------------------------------------------------------------------
 // Screen device state
@@ -305,6 +305,24 @@ data u32 spectrumPalette [
   0xff'ff'ff'ff
 ];
 
+// --- This function represents no-op rendering
+void NoRendering() {
+}
+
+// Stores the functions that handle particular rendering phases
+table void renderingPhases() {
+  NoRendering, 
+  renderBorder, 
+  renderBorderFetchPixel, 
+  renderBorderFetchAttr,
+  renderDisplayB1, 
+  renderDisplayB1FetchB2, 
+  renderDisplayB1FetchA2,
+  renderDisplayB2, 
+  renderDisplayB2FetchB1, 
+  renderDisplayB2FetchA1
+};
+
 // ----------------------------------------------------------------------------
 // Screen device routines
 
@@ -496,62 +514,7 @@ u32 calcAttrAddress(u32 line, u32 tactInLine) {
 void renderScreen(u32 toTact) {
   local u32 tact = lastRenderedFrameTact;
   while (tact <= toTact) {
-    local u8 phase = (*renderingTablePtr).phase;
-
-    // --- Process the current rendering tact
-    if (phase) {
-      // --- Test for border procesing
-      if (phase & RT_Border) {
-        // --- Store border pixels
-        *pixelBufferPtr = borderColor;
-        pixelBufferPtr += 1;
-        *pixelBufferPtr = borderColor;
-        pixelBufferPtr += 1;
-
-        // --- Fetch border byte?
-        if (phase & 0x01) {
-          // --- Fetch pixel byte 1
-          pixelByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
-        } else if (phase & 0x02) {
-          // --- Fetch attr byte 1
-          attrByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
-        }
-      } else if (phase & RT_DisplayB1) {
-        // --- Process Byte1 pixels
-        *pixelBufferPtr = getAttrColor(pixelByte1 & 0x80, attrByte1);
-        pixelBufferPtr += 1;
-        *pixelBufferPtr = getAttrColor(pixelByte1 & 0x40, attrByte1);
-        pixelBufferPtr += 1;
-        pixelByte1 <<= 2;
-        
-        // --- Fetch pixel byte?
-        if (phase & 0x01) {
-          // --- Fetch pixel byte 2
-          pixelByte2 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
-        } else if (phase & 0x02) {
-          // --- Fetch attr byte 2
-          attrByte2 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
-        }
-      } else {
-        // --- Process Byte2 pixels
-        *pixelBufferPtr = getAttrColor(pixelByte2 & 0x80, attrByte2);
-        pixelBufferPtr += 1;
-        *pixelBufferPtr = getAttrColor(pixelByte2 & 0x40, attrByte2);
-        pixelBufferPtr += 1;
-        pixelByte2 <<= 2;
-        
-        // --- Fetch pixel byte?
-        if (phase & 0x01) {
-          // --- Fetch pixel byte 1
-          pixelByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
-        } else if (phase & 0x02) {
-          // --- Fetch attr byte 1
-          attrByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
-        }
-      }
-    }
-
-    // --- Move to the next rendering tact
+    renderingPhases()[(*renderingTablePtr).phase];
     renderingTablePtr += 1;
     tact += 1;
   }
@@ -574,6 +537,81 @@ u8 getAttrColor(i32 pixel, i32 attr) {
   return paperColorFlashOff[attr];
 }
 
+void renderBorder() {
+  *pixelBufferPtr = borderColor;
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = borderColor;
+  pixelBufferPtr += 1;
+}
+
+void renderBorderFetchPixel() {
+  *pixelBufferPtr = borderColor;
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = borderColor;
+  pixelBufferPtr += 1;
+  pixelByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
+}
+
+void renderBorderFetchAttr() {
+  *pixelBufferPtr = borderColor;
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = borderColor;
+  pixelBufferPtr += 1;
+  attrByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
+}
+
+void renderDisplayB1() {
+  *pixelBufferPtr = getAttrColor(pixelByte1 & 0x80, attrByte1);
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = getAttrColor(pixelByte1 & 0x40, attrByte1);
+  pixelBufferPtr += 1;
+  pixelByte1 <<= 2;
+}
+
+void renderDisplayB1FetchB2() {
+  *pixelBufferPtr = getAttrColor(pixelByte1 & 0x80, attrByte1);
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = getAttrColor(pixelByte1 & 0x40, attrByte1);
+  pixelBufferPtr += 1;
+  pixelByte1 <<= 2;
+  pixelByte2 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
+}
+
+void renderDisplayB1FetchA2() {
+  *pixelBufferPtr = getAttrColor(pixelByte1 & 0x80, attrByte1);
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = getAttrColor(pixelByte1 & 0x40, attrByte1);
+  pixelBufferPtr += 1;
+  pixelByte1 <<= 2;
+  attrByte2 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
+}
+
+void renderDisplayB2() {
+  *pixelBufferPtr = getAttrColor(pixelByte2 & 0x80, attrByte2);
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = getAttrColor(pixelByte2 & 0x40, attrByte2);
+  pixelBufferPtr += 1;
+  pixelByte2 <<= 2;
+}
+
+void renderDisplayB2FetchB1() {
+  *pixelBufferPtr = getAttrColor(pixelByte2 & 0x80, attrByte2);
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = getAttrColor(pixelByte2 & 0x40, attrByte2);
+  pixelBufferPtr += 1;
+  pixelByte2 <<= 2;
+  pixelByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).pixelAddress];
+}
+
+void renderDisplayB2FetchA1() {
+  *pixelBufferPtr = getAttrColor(pixelByte2 & 0x80, attrByte2);
+  pixelBufferPtr += 1;
+  *pixelBufferPtr = getAttrColor(pixelByte2 & 0x40, attrByte2);
+  pixelBufferPtr += 1;
+  pixelByte2 <<= 2;
+  attrByte1 = vmMemory[memoryScreenOffset + (*renderingTablePtr).attrAddress];
+}
+
 // Colorizes the data in pixel buffer
 export void colorize() {
   // --- Initialize the coloring
@@ -583,7 +621,7 @@ export void colorize() {
 
   // --- Colorization loop
   while (counter) {
-    (*destPtr) = spectrumPalette[(*sourcePtr) & 0x0f];
+    (*destPtr) = spectrumPalette[*sourcePtr];
     sourcePtr += 1;
     destPtr += 1;
     counter -= 1;
