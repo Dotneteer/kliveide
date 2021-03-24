@@ -1,0 +1,252 @@
+// ============================================================================
+// Cambridge Z88 machine-specific routines
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Virtual machine memory map:
+
+// Block 0: 0x00'0000 - 0x00'1fff (ROM 0, lower 8K)
+// Block 1: 0x00'2000 - 0x00'3fff (ROM 0, upper 8K)
+// Block 2: 0x00'4000 - 0x00'5fff (RAM 0x4000-5fff, contended)
+// Block 3: 0x00'6000 - 0x00'7fff (RAM 0x6000-7fff, contended)
+// Block 4: 0x00'8000 - 0x00'9fff (RAM 0x8000-9fff)
+// Block 5: 0x00'a000 - 0x00'bfff (RAM 0xa000-bfff)
+// Block 6: 0x00'c000 - 0x00'dfff (RAM 0xc000-dfff)
+// Block 7: 0x00'e000 - 0x00'ffff (RAM 0xe000-ffff)
+
+// Unused: 0x01'0000 - 0xff'ffff
+
+type z88MachineState = struct {
+  // --- Blink device state
+  u8 COM,
+  u8 EPR,
+
+  // --- Machine modes
+  bool shiftsReleased,
+  bool isInSleepMode,
+
+  // --- Interrupt
+  u32 INT,
+  u32 STA,
+  bool interruptSignalActive,
+
+  // --- Memory
+  u8[4] segmentRegs,
+  u8[6] chipMasks,
+
+  // --- RTC
+  u8 TIM0,
+  u8 TIM1,
+  u8 TIM2,
+  u8 TIM3,
+  u8 TIM4,
+  u8 TSTA,
+  u8 TMK,
+
+  // --- Screen
+  u16 PB0,
+  u16 PB1,
+  u16 PB2,
+  u16 PB3,
+  u16 SBR,
+  u8 SCW,
+  u8 SCH,
+  u32 screenFrameCount,
+  bool flashPhase,
+  bool textFlashPhase,
+  bool lcdWentOff,
+  u16 screenWidth,
+  u16 screenLines,
+
+  // --- Audio device state
+  u32 audioSampleRate,
+  u32 audioSampleLength,
+  u32 audioLowerGate,
+  u32 audioUpperGate,
+  u32 audioGateValue,
+  u32 audioNextSampleTact,
+  u32 audioSampleCount,
+  u8 beeperLastEarBit
+};
+
+// Transfer buffer for machine state
+z88MachineState z88MachineStateBuffer;
+
+// ----------------------------------------------------------------------------
+// Public routines
+
+// Sets up the ZX Spectrum machine
+export void setupMachine () {
+}
+
+// ----------------------------------------------------------------------------
+// I/O port handling
+
+// Reads a byte from the specified I/O port
+u8 readPort(u16 port) {
+  local u8 addr8 = port;
+
+  if (addr8 == 0xb0) {
+    // --- Machine Identification (MID)
+    // --- $01: F88
+    // --- $80: ZVM
+    // --- $FF: Z88 (Blink on Cambridge Z88 does not implement read operation, and returns $FF)
+    return 0x80;
+  }
+
+  // --- Read STA
+  if (addr8 == 0xb1) {
+    return STA;
+  }
+
+  // --- Read keyboard status
+  if (addr8 == 0xb2) {
+    if (INT & INT_KWAIT) {
+      if (!isKeypressed) {
+        snoozeCpu();
+        return 0xff;
+      }
+    }
+    return getKeyLineStatus(port >> 8);
+  }
+
+  // --- Read TSTA
+  if (addr8 == 0xb5) {
+    return TSTA;
+  }
+
+  // --- Read TIM0
+  if (addr8 == 0xd0) {
+    return TIM0;
+  }
+
+  // --- Read TIM1
+  if (addr8 == 0xd1) {
+    return TIM1;
+  }
+
+  // --- Read TIM2
+  if (addr8 == 0xd2) {
+    return TIM2;
+  }
+
+  // --- Read TIM3
+  if (addr8 == 0xd3) {
+    return TIM3;
+  }
+
+  // --- Read TIM4
+  if (addr8 == 0xd4) {
+    return TIM4;
+  }
+
+  // --- Read SCW
+  if (addr8 == 0x70) {
+    return SCW;
+  }
+
+  // --- Read SCH
+  if (addr8 == 0x71) {
+    return SCH;
+  }
+
+  // --- Read RxD (not implemented yet)
+  if (addr8 == 0xe0) {
+    return 0x00;
+  }
+
+  // --- Read RxE (not implemented yet)
+  if (addr8 == 0xe1) {
+    return 0x00;
+  }
+
+  // --- Read UIT, UART Int status, always ready to receive... (not implemented yet)
+  if (addr8 == 0xe5) {
+    return 0x10;
+  }
+
+  // --- Return the default port value
+  return 0xff;
+}
+
+// Writes a byte to the specified I/O port
+void writePort(u16 port, u8 value) {
+  local u8 addr8 = port;
+
+  // --- No ports below address 0x70 are handled
+  if (addr8 < 0x70) {
+    return;
+  }
+
+  // --- Check for screen ports (0x70..0x74)
+  if (addr8 <= 0x74) {
+    // --- This is a screen port, calculate the register value
+    local u16 screenRegVal = port & 0xff00 | value;
+
+    // --- Dispatch according to port
+    if (addr8 == 0x70) {
+      PB0 = screenRegVal;
+      return;
+    }
+    if (addr8 == 0x71) {
+      PB1 = screenRegVal;
+      return;
+    }
+    if (addr8 == 0x72) {
+      PB2 = screenRegVal;
+      return;
+    }
+    if (addr8 == 0x73) {
+      PB3 = screenRegVal;
+      return;
+    }
+    SBR = screenRegVal;
+    return;
+  }
+
+  if (addr8 == 0xd0) {
+    setSR0(value);
+  }
+
+  if (addr8 == 0xd1) {
+    setSR1(value);
+  }
+
+  if (addr8 == 0xd2) {
+    setSR2(value);
+  }
+
+  if (addr8 == 0xd3) {
+    setSR3(value);
+  }
+
+  if (addr8 == 0xb0) {
+    setCOM(value);
+  }
+
+  if (addr8 == 0xb1) {
+    setINT(value);
+  }
+
+  if (addr8 == 0xb3) {
+    EPR = value;
+  }
+
+  if (addr8 == 0xb4) {
+    setTACK(value);
+  }
+
+  if (addr8 == 0xb5) {
+    TMK = value;
+  }
+
+  if (addr8 == 0xb6) {
+    setACK(value);
+  }
+  
+  // 0xe2: RXC, UART Receiver Control (not yet implemented)
+  // 0xe3: TXD, UART Transmit Data (not yet implemented)
+  // 0xe4: TXC, UART Transmit Control (not yet implemented)
+  // 0xe5: UMK, UART Int. mask (not yet implemented)
+  // 0xe6 UAK, UART acknowledge int. mask (not yet implemented)
+}

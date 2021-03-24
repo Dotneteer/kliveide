@@ -1,0 +1,67 @@
+// ============================================================================
+// Cambridge Z88 beeper device
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Beeper constants
+const u32 GATE_DIVIDER = 100'000;
+
+// ----------------------------------------------------------------------------
+// Memory area for beeper samples
+
+u8[0x2000] beeperSamples;
+
+// ----------------------------------------------------------------------------
+// Beeper device state
+
+// Sample rate of the beeper audio
+global u32 audioSampleRate;
+
+// Sample length (lower) in CPU clock tacts
+global u32 audioSampleLength;
+
+// Lower gate for sample length
+global u32 audioLowerGate;
+
+// Upper gate for sample length
+global u32 audioUpperGate;
+
+// Current beeper gate value
+global u32 audioGateValue;
+
+// Tact value of the last sample
+global u32 audioNextSampleTact;
+
+// Count of samples in the current frame
+global u32 audioSampleCount;
+
+// Last EAR bit value
+global bool beeperLastEarBit;
+
+// The current value of the oscillator bit
+global bool oscillatorBit;
+
+// ----------------------------------------------------------------------------
+// Beeper device routines
+
+// Sets the specified beeper sample rate
+// rate: New beeper sample rate
+export void setBeeperSampleRate(u32 rate) {
+  audioSampleRate = rate;
+  local f32 sampleLength = (f32(baseClockFrequency) * clockMultiplier) / rate;
+  audioSampleLength = sampleLength;
+  audioLowerGate = (sampleLength - audioSampleLength) * GATE_DIVIDER;
+  audioUpperGate = GATE_DIVIDER;
+}
+
+// Calculate the oscillator bit
+void calculateOscillatorBit() {
+  oscillatorBit = 
+    (
+      // --- Tick count
+      (u64(frameCount)*tactsInFrame + tacts) / 
+      // --- This many clock cycles in a half oscillator period
+      (baseClockFrequency * clockMultiplier / 6400)
+      // --- Parity of half period
+    ) & 0x01;
+}

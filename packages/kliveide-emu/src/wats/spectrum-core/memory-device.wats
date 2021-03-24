@@ -26,24 +26,6 @@ global u8 ramBanks;
 // ----------------------------------------------------------------------------
 // Public device routines
 
-// Sets an entry in the BLOCK_LOOKUP_TABLE
-// block: Block index
-// bankOffset: Offset in the 16MB virtual memory
-// contended: Is that block contended?
-// readonly: Is that block read-only?
-export void setMemoryBlockEntry(
-  u32 block, 
-  u32 bankOffset, 
-  bool contended, 
-  bool readonly) {
-
-  local *blockLookup ptr = &(blockLookupTable[block & 0x07]);
-  (*ptr).readIndex = bankOffset;
-  (*ptr).writeIndex = bankOffset;
-  (*ptr).flags = readonly;
-  (*ptr).contended = contended;
-}
-
 // Memory read contention delay
 inline void contendRead(u16 addr) {
   if (blockLookupTable[addr >> 13].contended) {

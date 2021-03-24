@@ -1,0 +1,598 @@
+// ============================================================================
+// Cambridge Z88 screen device
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Screen constants and variables
+
+const u32 PX_COL_ON = 0xff7D1B46;
+const u32 PX_COL_OFF  = 0xffB9E0D2;
+const u32 PX_COL_GREY = 0xffA7B090;
+const u32 PX_SCR_OFF  = 0xffE0E0E0;
+
+const u8 ATTR_HRS = 0x20;
+const u8 ATTR_REV = 0x10;
+const u8 ATTR_FLS = 0x08;
+const u8 ATTR_GRY = 0x04;
+const u8 ATTR_UND = 0x02;
+const u8 ATTR_NUL = 0x34;
+const u8 ATTR_CUR = 0x38;
+
+// LORES0 (PB0, 16bits register). The 6 * 8 pixel per char User Defined Fonts.
+global u16 PB0;
+
+// LORES1 (PB1, 16bits register). The 6 * 8 pixel per char fonts.
+global u16 PB1;
+
+// HIRES0 (PB2 16bits register). The 8 * 8 pixel per char PipeDream Map.
+global u16 PB2;
+
+// HIRES1 (PB3, 16bits register) The 8 * 8 pixel per char fonts for the OZ
+// window
+global u16 PB3;
+
+// Screen Base Register (16bits register) The Screen base File (2K size,
+// containing char info about screen). If this register is 0, then the system
+// cannot render the pixel screen.
+global u16 SBR;
+
+// Blink Read register, SCW ($70)
+// LCD Horisontal resolution in pixels / 8
+// Available horisontal resolutions:
+// 640 pixels ($FF or 80), 800 pixels (100)
+global u8 SCW;
+
+// Blink Read register, SCH ($71)
+// LCD Vertical resolution in pixels / 8
+// Available horisontal resolutions:
+// 64 pixels ($FF or 8), 256 pixels (32), 480 pixels (60)
+global u8 SCH;
+
+// Number of screen frames rendered
+global u32 screenFrameCount;
+
+// Current flash phase
+global bool flashPhase;
+
+// Current flash count
+global u32 flashCount;
+
+// Flash toggle counter
+global u32 textFlashToggleCount;
+
+// Current text flash phase
+global bool textFlashPhase;
+
+// Current text flash count
+global u32 textFlashCount;
+
+// LORES 0 address
+global u32 loRes0;
+
+// LORES 0 bank
+global u32 loRes0Bank;
+
+// LORES 1 address
+global u32 loRes1;
+
+// LORES 1 bank
+global u32 loRes1Bank;
+
+// HIRES 0 address
+global u32 hiRes0;
+
+// HIRES 0 bank
+global u32 hiRes0Bank;
+
+// HIRES 1 address
+global u32 hiRes1;
+
+// HIRES 1 bank
+global u32 hiRes1Bank;
+
+// SBR
+global u32 sbr;
+
+// SBR bank
+global u32 sbrBank;
+
+// SBF row width
+global u32 sbfRowWidth;
+
+// SBF size
+global u32 sbfSize;
+
+// SBF size
+global u32 ctrlCharsPerRow;
+
+// Default SCH value
+global u8 defaultSCH;
+
+// Default SCW value
+global u8 defaultSCW;
+
+// Indicates that the LCD has turned off
+global bool lcdWentOff;
+
+// Width of the screen
+global u16 screenWidth;
+
+// Height of the screen
+global u16 screenLines;
+
+// Stores the rendered screen
+u32[0x5'e000] pixelBuffer;
+
+// ----------------------------------------------------------------------------
+// Screen routines
+
+// Sets the LCD size to use with Z88
+void setZ88ScreenSize(u8 scw, u8 sch) {
+  SCW = scw;
+  SCH = sch;
+}
+
+// Resets the Z88 Screen device
+void resetScreen() {
+  PB0 = 0;
+  PB1 = 0;
+  PB2 = 0;
+  PB3 = 0;
+  SBR = 0;
+  SCH = 0;
+  SCW = 0;
+  screenFrameCount = 0;
+  flashPhase = false;
+  flashCount = 0;
+  textFlashToggleCount = 0;
+  textFlashPhase = false;
+  sbfRowWidth = 256;
+  lcdWentOff = false;
+
+  // --- Calculate screen dimensions
+  sbfSize = sbfRowWidth * SCH;
+  
+  // --- Screen width in pixels
+  screenWidth = SCW == 0xff ? 640 : SCW * 8;
+  
+  // --- Screen height
+  screenLines = SCH * 8;
+
+  // --- Control characters in a row
+  ctrlCharsPerRow = screenWidth / 6;
+}
+
+// Renders the screen
+void renderScreen() {
+  // --- Test if LCD is ON
+  if (!(COM & COM_LCDON)) {
+    if (!lcdWentOff)
+      renderScreenOff();
+      lcdWentOff = true;
+    return;
+  }
+
+  // --- Prepare rendering
+  lcdWentOff = false;
+  initRendering();
+
+  // --- Init coordinates and pointers
+  local u32 coordX = 0;
+  local u32 coordY = 0;
+  local u32 rowCount = SCH;
+  local u32 rowSbrPtr = getBankedMemoryAddress(sbrBank, sbr);
+
+  // --- Row loop
+  while (rowCount) {
+    // --- Initialize the row pointer and the column loop
+    local u32 sbrPtr = rowSbrPtr;
+    local u32 columnCount = ctrlCharsPerRow + 1;
+
+    // --- Column loop
+    while (columnCount) {
+      // --- Read the screen character and its attribute
+      local u8 char = vmMemory[sbrPtr];
+      local u8 attr = vmMemory[sbrPtr + 1];
+
+      // --- Render individual characters
+      if (attr & ATTR_HRS) {
+        if (attr & ATTR_CUR) {
+          drawLoResCursor(coordX, coordY, char, attr);
+          coordX += 6;
+        } else {
+          if (attr & ATTR_NUL != ATTR_NUL) {
+            drawHiResChar(coordX, coordY, char, attr);
+            coordX += 8;
+          }
+        }
+      } else {
+        // --- It is a LORES character
+        drawLoResChar(coordX, coordY, char, attr);
+        coordX += 6;
+      }
+
+      // --- Next column
+      sbrPtr += 2;
+      columnCount += 1;
+    }
+
+    // --- Turn off the remaining pixels
+    // --- Iterate through the pixel rows
+    local u32 orphanCount = 8;
+    while (orphanCount) {
+      // --- Calculate the top-left pixel address
+      local u32 pixelPtr = calcPixelPtr(coordX, coordY);
+
+      // --- Iterate through the orphaned pixels
+      columnCount = coordX;
+      while (columnCount < screenWidth) {
+        pixelBuffer[pixelPtr] = PX_COL_OFF;
+        pixelPtr += 1;
+        columnCount += 1;
+      }
+
+      // --- Next row
+      orphanCount -= 1;
+      coordY += 1;
+    }
+
+    // --- Prepare for the next row
+    coordX = 0;
+    rowSbrPtr += sbfRowWidth;
+    rowCount -= 1;
+  }
+}
+
+// Draws a LoRes character
+void drawLoResChar(
+  u32 x,
+  u32 y,
+  u8 char,
+  u8 attr
+) {
+  if (screenWidth < x + 6) {
+    return;
+  }
+
+  // --- Initialize the top-left position
+  local u32 pixelPtr = calcPixelPtr(x, y);
+ 
+  // --- Check empty flash character
+  if (attr & ATTR_FLS) {
+    if (textFlashPhase) {
+      local u32 rowCount = 8;
+      while (rowCount) {
+        // --- Store empty pixels
+        pixelBuffer[pixelPtr] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 1] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 2] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 3] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 4] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 5] = PX_COL_OFF;
+        pixelPtr += screenWidth;
+        rowCount -= 1;
+      }
+      return;
+    }
+  }
+
+  // --- Set pixel color
+  local u32 pixelColor = attr & ATTR_GRY ? PX_COL_GREY : PX_COL_ON;
+
+  // --- Calculate font offset
+  local u32 fontOffset = (attr & 0x01) << 8 | char;
+  local u32 fontBank;
+  if (fontOffset >= 0x01c0) {
+    // --- UDG
+    fontOffset = loRes0 + (char & 0x3f) << 3;
+    fontBank = loRes0Bank;
+  } else {
+    // --- Standard character
+    fontOffset = loRes1 + fontOffset << 3;
+    fontBank = loRes1Bank;
+  }
+
+  // --- Draw the bits sequentially
+  local u32 fontAddress = getBankedMemoryAddress(fontBank, fontOffset);
+  local u8 charMask = attr & ATTR_REV ? 0xff : 0x00;
+
+  // --- Line 0
+  local u8 charPattern = vmMemory[fontAddress] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 1
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 1] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 2
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 2] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 3
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 3] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 4
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 4] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 5
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 5] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 6
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 6] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 7
+  pixelPtr += screenWidth;
+
+  // --- Check for underline
+  if (attr & ATTR_UND) {
+    if (attr & ATTR_REV) {
+      drawLowResRow(pixelPtr, pixelColor, 0x00);
+    } else {
+      drawLowResRow(pixelPtr, pixelColor, 0xff);
+    }
+    return;
+  }
+
+  // --- No underscore, display the 8th row of the char font
+  charPattern = vmMemory[fontAddress + 7] ^ charMask;
+  drawLowResRow(pixelPtr, pixelColor, charPattern);
+}
+
+// Draws a row of LoRes char
+void drawLowResRow(
+  u32 pixelPtr,
+  u32 pixelColor,
+  u32 charPattern
+) {
+  pixelBuffer[pixelPtr] = charPattern & 0x20 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 1] = charPattern & 0x10 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 2] = charPattern & 0x08 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 3] = charPattern & 0x04 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 4] = charPattern & 0x02 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 5] = charPattern & 0x01 ? pixelColor : PX_COL_OFF;
+}
+
+// Draws a LoRes cursor
+void drawLoResCursor(
+  u32 x,
+  u32 y,
+  u32 char,
+  u32 attr
+) {
+  if (screenWidth < x + 6) {
+    return;
+  }
+
+  // --- Initialize the top-left position
+  local u32 pixelPtr = calcPixelPtr(x, y);
+ 
+  // --- Calculate font offset
+  local u32 fontOffset = (attr & 0x01) << 8 | char;
+  local u32 fontBank;
+  if (fontOffset >= 0x01c0) {
+    // --- UDG
+    fontOffset = loRes0 + (char & 0x3f) << 3;
+    fontBank = loRes0Bank;
+  } else {
+    // --- Standard character
+    fontOffset = loRes1 + fontOffset << 3;
+    fontBank = loRes1Bank;
+  }
+
+  // --- Draw the bits sequentially
+  local u32 fontAddress = getBankedMemoryAddress(fontBank, fontOffset);
+  local u8 charMask = flashPhase ? 0xff : 0x00;
+
+  // --- Line 0
+  local u8 charPattern = vmMemory[fontAddress] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+
+  // --- Line 1
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 1] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+
+  // --- Line 2
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 2] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+
+  // --- Line 3
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 3] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+
+  // --- Line 4
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 4] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+
+  // --- Line 5
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 5] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+
+  // --- Line 6
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 6] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+
+  // --- Line 7
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 7] ^ charMask;
+  drawLowResRow(pixelPtr, PX_COL_ON, charPattern);
+}
+
+// Draws a HiRes character
+void drawHiResChar(
+  u32 x,
+  u32 y,
+  u8 char,
+  u8 attr
+) {
+  if (screenWidth < x + 8) {
+    return;
+  }
+
+  // --- Initialize the top-left position
+  local u32 pixelPtr = calcPixelPtr(x, y);
+ 
+  // --- Check empty flash character
+  if (attr & ATTR_FLS) {
+    if (textFlashPhase) {
+      local u32 rowCount = 8;
+      while (rowCount) {
+        // --- Store empty pixels
+        pixelBuffer[pixelPtr] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 1] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 2] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 3] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 4] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 5] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 6] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 6] = PX_COL_OFF;
+        pixelPtr += screenWidth;
+        rowCount -= 1;
+      }
+      return;
+    }
+  }
+
+  // --- Set pixel color
+  local u32 pixelColor = attr & ATTR_GRY ? PX_COL_GREY : PX_COL_ON;
+
+  // --- Calculate font offset
+  local u32 fontOffset = (attr & 0x03) << 8 | char;
+  local u32 fontBank;
+  if (fontOffset >= 0x0300) {
+    // --- OZ window font entries
+    fontOffset = hiRes1 + char << 3;
+    fontBank = hiRes1Bank;
+  } else {
+    // --- Pipedream map entries
+    fontOffset = hiRes0 + fontOffset << 3;
+    fontBank = hiRes0Bank;
+  }
+
+  // --- Draw the bits sequentially
+  local u32 fontAddress = getBankedMemoryAddress(fontBank, fontOffset);
+  local u8 charMask = attr & ATTR_REV ? 0xff : 0x00;
+
+  // --- Line 0
+  local u8 charPattern = vmMemory[fontAddress] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 1
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 1] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 2
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 2] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 3
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 3] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 4
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 4] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 5
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 5] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 6
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 6] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+
+  // --- Line 7
+  pixelPtr += screenWidth;
+  charPattern = vmMemory[fontAddress + 7] ^ charMask;
+  drawHiResRow(pixelPtr, pixelColor, charPattern);
+}
+
+// Draws a row of HiRes char
+void drawHiResRow(
+  u32 pixelPtr,
+  u32 pixelColor,
+  u32 charPattern
+//   (param $pixelPtr i32)
+//   (param $pixelColor i32)
+//   (param $charPattern i32)
+) {
+  pixelBuffer[pixelPtr] = charPattern & 0x80 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 1] = charPattern & 0x40 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 2] = charPattern & 0x20 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 3] = charPattern & 0x10 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 4] = charPattern & 0x08 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 5] = charPattern & 0x04 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 6] = charPattern & 0x02 ? pixelColor : PX_COL_OFF;
+  pixelBuffer[pixelPtr + 7] = charPattern & 0x01 ? pixelColor : PX_COL_OFF;
+}
+
+// Initializes screen rendering variables
+void initRendering() {
+  // --- LORES 0
+  loRes0 = (((PB0 << 3) & 0xf700) | ((PB0 << 1) & 0x003f)) << 8;
+  loRes0Bank = loRes0 >> 16;
+  loRes0 &= 0x3fff;
+
+  // --- LORES 1
+  loRes1 = (((PB1 << 6) & 0xff00) | ((PB1 << 4) & 0x0030)) << 8;
+  loRes1Bank = loRes1 >> 16;
+  loRes1 &= 0x3fff;
+
+  // --- HIRES 0
+  hiRes0 = (((PB2 << 7) & 0xff00) | ((PB2 << 5) & 0x0020)) << 8;
+  hiRes0Bank = hiRes0 >> 16;
+  hiRes0 &= 0x3fff;
+
+  // --- HIRES 1
+  hiRes1 = (((PB3 << 5) & 0xff00) | ((PB3 << 3) & 0x0038)) << 8;
+  hiRes1Bank = hiRes1 >> 16;
+  hiRes1 &= 0x3fff;
+
+  // --- SBR
+  sbr = (((SBR << 5) & 0xff00) | ((SBR << 3) & 0x38)) << 8;
+  sbrBank = sbr >> 16;
+  sbr &= 0x3fff;
+}
+
+// Renders the OFF state of the LCD screen
+void renderScreenOff() {
+  // --- Prepare rendering
+  local *u32 ptr = &pixelBuffer;
+  local u32 count = screenWidth * screenLines;
+  while (count) {
+    *ptr = PX_SCR_OFF;
+    ptr += 1;
+    count -= 1;
+  }
+}
+
+// Gets the banked memory address
+inline u32 getBankedMemoryAddress(u8 bank, u16 offs) {
+  return &(vmMemory[(offs & 0x3fff) | (bank << 14)]);
+}
+
+// Calculates the pixel buffer position for the specified coordinates
+inline u32 calcPixelPtr(u32 x, u32 y) {
+  return x + y*screenWidth;
+}

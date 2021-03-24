@@ -387,6 +387,48 @@ void executeHalt() {
 }
 
 // ----------------------------------------------------------------------------
+// Generic memory handler
+
+// Sets an entry in blockLookupTable
+// block: Block index
+// bankOffset: Offset in the 16MB virtual memory
+// contended: Is that block contended?
+// readonly: Is that block read-only?
+void setMemoryBlockEntry(
+  u32 block, 
+  u32 bankOffset, 
+  bool contended, 
+  bool readonly) {
+
+  local *blockLookup ptr = &(blockLookupTable[block & 0x07]);
+  (*ptr).readIndex = bankOffset;
+  (*ptr).writeIndex = bankOffset;
+  (*ptr).flags = readonly;
+  (*ptr).contended = contended;
+}
+
+// Sets an entry in blockLookupTable
+// block: Block index
+// bankOffset: Offset in the 16MB virtual memory
+// contended: Is that block contended?
+// readonly: Is that block read-only?
+// partition: partition information
+void setMemoryBlockEntryWithPartition(
+  u32 block, 
+  u32 bankOffset,
+  u16 partition,
+  bool contended, 
+  bool readonly) {
+
+  local *blockLookup ptr = &(blockLookupTable[block & 0x07]);
+  (*ptr).readIndex = bankOffset;
+  (*ptr).writeIndex = bankOffset;
+  (*ptr).flags = readonly;
+  (*ptr).contended = contended;
+  (*ptr).partition = partition;
+}
+
+// ----------------------------------------------------------------------------
 // Helpers
 
 // Emulates memory refresh
