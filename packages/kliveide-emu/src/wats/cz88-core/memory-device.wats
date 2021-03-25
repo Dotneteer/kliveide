@@ -115,18 +115,18 @@ void resetMemory() {
     setSR3(0);
 
     // --- 512K internal ROM
-    setChipMask(0, 0x1f);
+    setZ88ChipMask(0, 0x1f);
 
     // --- 512K internal RAM
-    setChipMask(1, 0x1f);
+    setZ88ChipMask(1, 0x1f);
 
     // --- 1MB No cards in all slot
-    setChipMask(2, 0x3f);
-    setChipMask(3, 0x3f);
-    setChipMask(4, 0x3f);
+    setZ88ChipMask(2, 0x3f);
+    setZ88ChipMask(3, 0x3f);
+    setZ88ChipMask(4, 0x3f);
 
     // --- Card 3 is RAM
-    setCard3Rom(0);
+    setZ88Card3Rom(0);
 }
 
 // Clears the contents of the memory
@@ -222,7 +222,7 @@ inline u8 getRomInfoForAddress(u16 addr) {
 }
 
 // Sets the value of the specified slot mask
-void setChipMask(u8 chip, u8 mask) {
+export void setZ88ChipMask(u8 chip, u8 mask) {
   // --- Clamp the slot index
   if (chip > 4) {
     chip = 4;
@@ -242,18 +242,18 @@ void setChipMask(u8 chip, u8 mask) {
 }
 
 // Sets the ROM flag for Card 3
-void setCard3Rom(u8 isRom) {
-  romInfo[5] = isRom;
+export void setZ88Card3Rom(u8 isRom) {
+  chipMasks[5] = isRom;
   recalculateRomInfo();
 }
 
 // Recalculates ROM information
 void recalculateRomInfo() {
   // --- Calculate ROM information
-  local u8 bank = 0;
+  local u32 bank = 0;
   while (bank <= 0xff) {
     local u8 romFlags;
-    if (bank < 0x1f) {
+    if (bank <= 0x1f) {
       // --- Internal ROM
       romFlags = ROM_BLOCK;
     } else if (bank <= 0x3f) {

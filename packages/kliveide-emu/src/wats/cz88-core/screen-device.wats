@@ -127,7 +127,7 @@ u32[0x5'e000] pixelBuffer;
 // Screen routines
 
 // Sets the LCD size to use with Z88
-void setZ88ScreenSize(u8 scw, u8 sch) {
+export void setZ88ScreenSize(u8 scw, u8 sch) {
   SCW = scw;
   SCH = sch;
 }

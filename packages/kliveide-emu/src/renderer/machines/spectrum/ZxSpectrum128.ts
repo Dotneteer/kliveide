@@ -8,10 +8,10 @@ import {
   DebugStepMode,
 } from "../../../shared/machines/machine-state";
 import {
-  BANK_0_OFFS,
+  BANK_0_OFFSET,
   CPU_STATE_BUFFER,
-  ROM_128_0_OFFS,
-  ROM_48_OFFS,
+  ROM_128_0_OFFSET,
+  ROM_48_OFFSET,
 } from "../memory-map";
 import { MemoryHelper } from "../memory-helpers";
 import { spectrumKeyCodes } from "../spectrum-keys";
@@ -82,11 +82,11 @@ export class ZxSpectrum128 extends ZxSpectrumBase {
   getMemoryPartition(partition: number): Uint8Array {
     let offset = 0;
     if (partition === 0x10) {
-      offset = ROM_128_0_OFFS;
+      offset = ROM_128_0_OFFSET;
     } else if (partition === 0x11) {
-      offset = ROM_48_OFFS;
+      offset = ROM_48_OFFSET;
     } else {
-      offset = BANK_0_OFFS + (partition & 0x07) * 0x4000;
+      offset = BANK_0_OFFSET + (partition & 0x07) * 0x4000;
     }
     const mh = new MemoryHelper(this.api, offset);
     const result = new Uint8Array(0x4000);

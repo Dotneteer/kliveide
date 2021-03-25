@@ -26,8 +26,8 @@ type z88MachineState = struct {
   bool isInSleepMode,
 
   // --- Interrupt
-  u32 INT,
-  u32 STA,
+  u8 INT,
+  u8 STA,
   bool interruptSignalActive,
 
   // --- Memory
@@ -66,7 +66,10 @@ type z88MachineState = struct {
   u32 audioGateValue,
   u32 audioNextSampleTact,
   u32 audioSampleCount,
-  u8 beeperLastEarBit
+  bool beeperLastEarBit,
+
+  // --- Keyboard
+  u8[8] keyboardLines
 };
 
 // Transfer buffer for machine state
@@ -77,6 +80,101 @@ z88MachineState z88MachineStateBuffer;
 
 // Sets up the ZX Spectrum machine
 export void setupMachine () {
+  // --- CPU
+  baseClockFrequency = 3'276'800;
+  clockMultiplier = defaultClockMultiplier;
+
+  // --- Screen
+  screenLines = 64;
+  screenWidth = 640;
+  tactsInFrame = 16384;
+
+  // --- Blink setup
+  resetBlink();
+  resetRtc();
+  resetMemory();
+  resetScreen();
+  resetKeyboard();
+
+  // --- Reset beeper state
+  audioGateValue = 0;
+  audioNextSampleTact = 0;
+  audioSampleCount = 0;
+  beeperLastEarBit = 0;
+
+  // --- Reset debugging state
+  stepOutStackDepth = 0;
+}
+
+// Copies the virtual machine state to the memory buffer
+export void getMachineState() {
+  // --- Blink device state
+  z88MachineStateBuffer.COM = COM;
+  z88MachineStateBuffer.EPR = EPR;
+
+  // --- Machine modes
+  z88MachineStateBuffer.shiftsReleased = shiftsReleased;
+  z88MachineStateBuffer.isInSleepMode = isInSleepMode;
+
+  // --- Interrupt
+  z88MachineStateBuffer.INT = INT;
+  z88MachineStateBuffer.STA = STA;
+  z88MachineStateBuffer.interruptSignalActive = interruptSignalActive;
+
+  // --- Memory
+  z88MachineStateBuffer.segmentRegs[0] = segmentRegs[0];
+  z88MachineStateBuffer.segmentRegs[1] = segmentRegs[1];
+  z88MachineStateBuffer.segmentRegs[2] = segmentRegs[2];
+  z88MachineStateBuffer.segmentRegs[3] = segmentRegs[3];
+  z88MachineStateBuffer.chipMasks[0] = chipMasks[0];
+  z88MachineStateBuffer.chipMasks[1] = chipMasks[1];
+  z88MachineStateBuffer.chipMasks[2] = chipMasks[2];
+  z88MachineStateBuffer.chipMasks[3] = chipMasks[3];
+  z88MachineStateBuffer.chipMasks[4] = chipMasks[4];
+
+  // --- RTC
+  z88MachineStateBuffer.TIM0 = TIM0;
+  z88MachineStateBuffer.TIM1 = TIM1;
+  z88MachineStateBuffer.TIM2 = TIM2;
+  z88MachineStateBuffer.TIM3 = TIM3;
+  z88MachineStateBuffer.TIM4 = TIM4;
+  z88MachineStateBuffer.TSTA = TSTA;
+  z88MachineStateBuffer.TMK = TMK;
+
+  // --- Screen
+  z88MachineStateBuffer.PB0 = PB0;
+  z88MachineStateBuffer.PB1 = PB1;
+  z88MachineStateBuffer.PB2 = PB2;
+  z88MachineStateBuffer.PB3 = PB3;
+  z88MachineStateBuffer.SBR = SBR;
+  z88MachineStateBuffer.SCW = SCW;
+  z88MachineStateBuffer.SCH = SCH;
+  z88MachineStateBuffer.screenFrameCount = screenFrameCount;
+  z88MachineStateBuffer.flashPhase = flashPhase;
+  z88MachineStateBuffer.textFlashPhase = textFlashPhase;
+  z88MachineStateBuffer.lcdWentOff = lcdWentOff;
+  z88MachineStateBuffer.screenWidth = screenWidth;
+  z88MachineStateBuffer.screenLines = screenLines;
+
+  // --- Audio
+  z88MachineStateBuffer.audioSampleRate = audioSampleRate;
+  z88MachineStateBuffer.audioSampleLength = audioSampleLength;
+  z88MachineStateBuffer.audioLowerGate = audioLowerGate;
+  z88MachineStateBuffer.audioUpperGate = audioUpperGate;
+  z88MachineStateBuffer.audioGateValue = audioGateValue;
+  z88MachineStateBuffer.audioNextSampleTact = audioNextSampleTact;
+  z88MachineStateBuffer.audioSampleCount = audioSampleCount;
+  z88MachineStateBuffer.beeperLastEarBit = beeperLastEarBit;
+
+  // --- Keyboard
+  z88MachineStateBuffer.keyboardLines[0] = keyboardLines[0];
+  z88MachineStateBuffer.keyboardLines[1] = keyboardLines[1];
+  z88MachineStateBuffer.keyboardLines[2] = keyboardLines[2];
+  z88MachineStateBuffer.keyboardLines[3] = keyboardLines[3];
+  z88MachineStateBuffer.keyboardLines[4] = keyboardLines[4];
+  z88MachineStateBuffer.keyboardLines[5] = keyboardLines[5];
+  z88MachineStateBuffer.keyboardLines[6] = keyboardLines[6];
+  z88MachineStateBuffer.keyboardLines[7] = keyboardLines[7];
 }
 
 // ----------------------------------------------------------------------------
@@ -249,4 +347,8 @@ void writePort(u16 port, u8 value) {
   // 0xe4: TXC, UART Transmit Control (not yet implemented)
   // 0xe5: UMK, UART Int. mask (not yet implemented)
   // 0xe6 UAK, UART acknowledge int. mask (not yet implemented)
+}
+
+export void writePortCz88(u16 port, u8 value) {
+  writePort(port, value);
 }

@@ -27,7 +27,7 @@ import {
   RegisterData,
 } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
-import { BANK_0_OFFS } from "./memory-map";
+import { BANK_0_OFFSET } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 import { emulatorAppConfig } from "../machine-loader";
 import { machineCommandAction } from "../../shared/state/redux-machine-command-state";
@@ -762,7 +762,7 @@ export class VmEngine implements IVmEngineController {
     if (!state.memoryPagingEnabled || page < 0 || page > state.ramBanks) {
       return new Uint8Array(0);
     }
-    const mh = new MemoryHelper(this.z80Machine.api, BANK_0_OFFS);
+    const mh = new MemoryHelper(this.z80Machine.api, BANK_0_OFFSET);
     return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
 

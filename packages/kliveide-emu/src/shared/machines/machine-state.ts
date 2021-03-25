@@ -45,7 +45,7 @@ export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
   memoryPagingEnabled: boolean;
   memoryUseShadowScreen: boolean;
   memoryScreenOffset: number;
-  
+
   // --- Screen frame configuration
   verticalSyncLines: number;
   nonVisibleBorderTopLines: number;
@@ -144,16 +144,28 @@ export class Spectrum128MachineState extends SpectrumMachineStateBase {
 export class CambridgeZ88MachineState extends Z80MachineStateBase {
   type: "cz88";
 
-  // --- CPU configuration
-  baseClockFrequency: number;
-  clockMultiplier: number;
-  supportsNextOperations: boolean;
+  // --- Blink device status
+  COM: number;
+  EPR: number;
 
-  // --- BLINK Device
+  // --- Machine modes
+  shiftsReleased: boolean;
+  isInSleepMode: boolean;
+
+  // --- Interrupt
   INT: number;
   STA: number;
-  COM: number;
-  SHFF: boolean;
+  interruptSignalActive: boolean;
+
+  SR0: number;
+  SR1: number;
+  SR2: number;
+  SR3: number;
+  chipMask0: number;
+  chipMask1: number;
+  chipMask2: number;
+  chipMask3: number;
+  chipMask4: number;
 
   // --- RTC device
   TIM0: number;
@@ -172,17 +184,32 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   SBF: number;
   SCW: number;
   SCH: number;
+  screenFrameCount: number;
+  flashPhase: boolean;
+  textFlashPhase: boolean;
+  lcdWentOff: boolean;
+
+  // --- Keyboard
+  KBLine0: number;
+  KBLine1: number;
+  KBLine2: number;
+  KBLine3: number;
+  KBLine4: number;
+  KBLine5: number;
+  KBLine6: number;
+  KBLine7: number;
+
+  // --- Beeper state
+  audioSampleRate: number;
+  audioSampleLength: number;
+  audioLowerGate: number;
+  audioUpperGate: number;
+  audioGateValue: number;
+  audioNextSampleTact: number;
+  audioSampleCount: number;
+  beeperLastEarBit: boolean;
 
   // --- Memory device
-  SR0: number;
-  SR1: number;
-  SR2: number;
-  SR3: number;
-  chipMask1: number;
-  chipMask2: number;
-  chipMask3: number;
-  chipMask4: number;
-  chipMask0: number;
   s0OffsetL: number;
   s0FlagL: number;
   s0OffsetH: number;
@@ -199,19 +226,6 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   s3FlagL: number;
   s3OffsetH: number;
   s3FlagH: number;
-
-  KBLine0: number;
-  KBLine1: number;
-  KBLine2: number;
-  KBLine3: number;
-  KBLine4: number;
-  KBLine5: number;
-  KBLine6: number;
-  KBLine7: number;
-
-  // --- Other
-  lcdWentOff: boolean;
-  isInSleepMode: boolean;
 }
 
 /**
