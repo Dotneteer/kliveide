@@ -109,28 +109,28 @@ global u32 z88RndSeed = 0;
 
 // Initial setup of Z88 memory
 void resetMemory() {
-    setSR0(0);
-    setSR1(0);
-    setSR2(0);
-    setSR3(0);
+  setSR0(0);
+  setSR1(0);
+  setSR2(0);
+  setSR3(0);
 
-    // --- 512K internal ROM
-    setZ88ChipMask(0, 0x1f);
+  // --- 512K internal ROM
+  setZ88ChipMask(0, 0x1f);
 
-    // --- 512K internal RAM
-    setZ88ChipMask(1, 0x1f);
+  // --- 512K internal RAM
+  setZ88ChipMask(1, 0x1f);
 
-    // --- 1MB No cards in all slot
-    setZ88ChipMask(2, 0x3f);
-    setZ88ChipMask(3, 0x3f);
-    setZ88ChipMask(4, 0x3f);
+  // --- No cards in any slot
+  setZ88ChipMask(2, 0x00);
+  setZ88ChipMask(3, 0x00);
+  setZ88ChipMask(4, 0x00);
 
-    // --- Card 3 is RAM
-    setZ88Card3Rom(0);
+  // --- Card 3 is RAM
+  setZ88Card3Rom(0);
 }
 
 // Clears the contents of the memory
-void clearMemory() {
+export void clearMemory() {
   // --- Fill up the RAM (above 512K) area with zeros
   local u32 counter = 0x07'0000;
   local *u64 ptr = &(vmMemory[0x08'0000]);
@@ -218,7 +218,7 @@ inline u8 getRomInfoForAddress(u16 addr) {
   if (addr <= 0x1fff) {
     return romInfo[COM & COM_RAMS ? 0x20 : 0x00];
   }
-  return romInfo[segmentRegs[addr << 14]];
+  return romInfo[segmentRegs[addr >> 14]];
 }
 
 // Sets the value of the specified slot mask
@@ -275,7 +275,7 @@ void recalculateRomInfo() {
 }
 
 // Sets the random seed value
-inline void setRndSeed(u32 seed) {
+export void setZ88RndSeed(u32 seed) {
   z88RndSeed = seed ? seed & 0xffff : 0xac23;
 }
 
@@ -312,6 +312,11 @@ inline u8 readMemory(u16 addr) {
 
 // Writes the contents of the memory
 inline void writeMemory(u16 addr, u8 value) {
+  local u8 romFlags = getRomInfoForAddress(addr);
+  if (romFlags) {
+    tacts += 3;
+    return;
+  }
   local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
   if ((*pagePtr).flags) {
     tacts += 3;

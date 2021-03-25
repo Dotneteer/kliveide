@@ -279,7 +279,7 @@ void writePort(u16 port, u8 value) {
   // --- Check for screen ports (0x70..0x74)
   if (addr8 <= 0x74) {
     // --- This is a screen port, calculate the register value
-    local u16 screenRegVal = port & 0xff00 | value;
+    local u16 screenRegVal = (port & 0xff00) | value;
 
     // --- Dispatch according to port
     if (addr8 == 0x70) {
@@ -349,6 +349,17 @@ void writePort(u16 port, u8 value) {
   // 0xe6 UAK, UART acknowledge int. mask (not yet implemented)
 }
 
+// ----------------------------------------------------------------------------
+// Functions used for testing
+
 export void writePortCz88(u16 port, u8 value) {
   writePort(port, value);
+}
+
+export u8 testReadCz88Memory(u16 addr) {
+  return readMemory(addr);
+}
+
+export void testWriteCz88Memory(u16 addr, u8 v) {
+  writeMemory(addr,v);
 }

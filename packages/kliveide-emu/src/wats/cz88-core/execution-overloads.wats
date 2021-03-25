@@ -12,7 +12,7 @@ bool allowCpuClockChange () {
 // The execution engine starts a new frame
 inline void onInitNewFrame(u32 oldClockMultiplier) {
   // Reset beeper frame state for every 8th frame
-  if (frameCount & 0x07) {
+  if ((frameCount & 0x07) == 0) {
     if (oldClockMultiplier != clockMultiplier) {
       setBeeperSampleRate(audioSampleRate);
     }
@@ -45,7 +45,7 @@ inline bool testTerminationPoint() {
 }
 
 // The execution engine is after checking loop termination
-inline void afterTerminationCheck() {
+void afterTerminationCheck() {
   // --- Is it time to render the next beeper/sound sample?
   if (tacts < audioNextSampleTact) {
     return;
@@ -75,7 +75,7 @@ inline void afterTerminationCheck() {
 }
 
 // The execution engine has just completed a frame
-inline void onFrameCompleted() {
+void onFrameCompleted() {
   // --- 5ms frame completed, update the real time clock
   incRtcCounter();
 
@@ -101,7 +101,7 @@ inline void onFrameCompleted() {
   }
 
   // --- Refresh the screen for every 8th frame
-  if (frameCount & 0x07 == 0) {
+  if ((frameCount & 0x07) == 0) {
     renderScreen();
   }
 

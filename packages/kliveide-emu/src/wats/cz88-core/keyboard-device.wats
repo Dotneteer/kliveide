@@ -30,12 +30,11 @@ void resetKeyboard() {
 }
 
 // Sets the status of the specified key
-void setKeyStatus(u8 keyCode, bool isDown) {
+export void setKeyStatus(u8 keyCode, bool isDown) {
   // --- Ignore invalid key codes
   if (keyCode > 63) {
     return;
   }
-
   // --- Special shift handling in sleep mode
   if (isInSleepMode) {
     if (keyCode == 63) {
@@ -47,8 +46,8 @@ void setKeyStatus(u8 keyCode, bool isDown) {
   }
 
   // --- Calculate line address and mask
-  local u32 line = keyCode / 5;
-  local u8 mask = 1 << (keyCode % 5);
+  local u32 line = keyCode >> 3;
+  local u8 mask = 1 << (keyCode & 0x07);
 
   if (isDown) {
     // --- Set the key pressed
@@ -83,7 +82,7 @@ export u32 getKeyStatus(u8 keyCode) {
   if (keyCode > 63) {
     return false;
   }
-  return keyboardLines[keyCode / 5] & (1 << (keyCode % 5));
+  return keyboardLines[keyCode >> 3] & (1 << (keyCode & 0x07));
 }
 
 // Gets the byte we would get when querying the I/O address with the

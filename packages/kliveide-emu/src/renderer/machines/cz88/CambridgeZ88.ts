@@ -79,6 +79,14 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   }
 
   /**
+   * Turns on the machine
+   */
+  turnOnMachine(): void {
+    this.api.setupMachine();
+    this.api.clearMemory();
+  }
+
+  /**
    * Override this property to apply multiple engine loops before
    * Refreshing the UI
    */
@@ -193,52 +201,53 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     s.chipMask2 = mh.readByte(13);
     s.chipMask3 = mh.readByte(14);
     s.chipMask4 = mh.readByte(15);
+    s.chipMask5 = mh.readByte(16);
 
     // --- RTC device
-    s.TIM0 = mh.readByte(16);
-    s.TIM1 = mh.readByte(17);
-    s.TIM2 = mh.readByte(18);
-    s.TIM3 = mh.readByte(19);
-    s.TIM4 = mh.readByte(20);
-    s.TSTA = mh.readByte(21);
-    s.TMK = mh.readByte(22);
+    s.TIM0 = mh.readByte(17);
+    s.TIM1 = mh.readByte(18);
+    s.TIM2 = mh.readByte(19);
+    s.TIM3 = mh.readByte(20);
+    s.TIM4 = mh.readByte(21);
+    s.TSTA = mh.readByte(22);
+    s.TMK = mh.readByte(23);
 
     // --- Screen device
-    s.PB0 = mh.readUint16(23);
-    s.PB1 = mh.readUint16(25);
-    s.PB2 = mh.readUint16(27);
-    s.PB3 = mh.readUint16(29);
-    s.SBF = mh.readUint16(31);
-    s.SCW = mh.readByte(33);
-    s.SCH = mh.readByte(34);
-    s.screenFrameCount = mh.readUint32(35);
-    s.flashPhase = mh.readBool(39);
-    s.textFlashPhase = mh.readBool(40);
-    s.lcdWentOff = mh.readBool(41);
+    s.PB0 = mh.readUint16(24);
+    s.PB1 = mh.readUint16(26);
+    s.PB2 = mh.readUint16(28);
+    s.PB3 = mh.readUint16(30);
+    s.SBF = mh.readUint16(32);
+    s.SCW = mh.readByte(34);
+    s.SCH = mh.readByte(35);
+    s.screenFrameCount = mh.readUint32(36);
+    s.flashPhase = mh.readBool(40);
+    s.textFlashPhase = mh.readBool(41);
+    s.lcdWentOff = mh.readBool(42);
 
     // --- Setup screen size
     s.screenWidth = s.SCW === 100 ? 800 : 640;
     s.screenLines = s.SCH * 8;
 
     // --- Audio
-    s.audioSampleRate = mh.readUint32(50);
-    s.audioSampleLength = mh.readUint32(54);
-    s.audioLowerGate = mh.readUint32(58);
-    s.audioUpperGate = mh.readUint32(62);
-    s.audioGateValue = mh.readUint32(66);
-    s.audioNextSampleTact = mh.readUint32(70);
-    s.audioSampleCount = mh.readUint32(74);
-    s.beeperLastEarBit = mh.readBool(78);
+    s.audioSampleRate = mh.readUint32(47);
+    s.audioSampleLength = mh.readUint32(51);
+    s.audioLowerGate = mh.readUint32(55);
+    s.audioUpperGate = mh.readUint32(59);
+    s.audioGateValue = mh.readUint32(63);
+    s.audioNextSampleTact = mh.readUint32(67);
+    s.audioSampleCount = mh.readUint32(71);
+    s.beeperLastEarBit = mh.readBool(75);
 
     // --- Others
-    s.KBLine0 = mh.readByte(79);
-    s.KBLine1 = mh.readByte(80);
-    s.KBLine2 = mh.readByte(81);
-    s.KBLine3 = mh.readByte(82);
-    s.KBLine4 = mh.readByte(83);
-    s.KBLine5 = mh.readByte(84);
-    s.KBLine6 = mh.readByte(85);
-    s.KBLine7 = mh.readByte(86);
+    s.KBLine0 = mh.readByte(76);
+    s.KBLine1 = mh.readByte(77);
+    s.KBLine2 = mh.readByte(78);
+    s.KBLine3 = mh.readByte(79);
+    s.KBLine4 = mh.readByte(80);
+    s.KBLine5 = mh.readByte(81);
+    s.KBLine6 = mh.readByte(82);
+    s.KBLine7 = mh.readByte(83);
 
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     s.s0OffsetL = slotMh.readUint32(0) - VM_MEMORY;
@@ -387,6 +396,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         .readBytes(0, resultState.audioSampleCount)
         .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
       this._beeperRenderer.storeSamples(beeperSamples);
+      console.log(beeperSamples);
       this._beeperRenderer.resume();
     }
   }
@@ -408,6 +418,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
       case CZ88_HARD_RESET:
         await controller.stop();
         this.api.setupMachine();
+        this.api.clearMemory();
         await controller.start();
         break;
       case CZ88_PRESS_BOTH_SHIFTS:

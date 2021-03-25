@@ -56,6 +56,7 @@ void incRtcCounter() {
   if (COM & COM_RESTIM) {
     // --- Stop Real Time Clock (RESTIM = 1) and reset counters
     resetRtc();
+    return;
   }
   
   // --- Increment TIM0
@@ -73,7 +74,7 @@ void incRtcCounter() {
       // --- According to blink dump monitoring on Z88, when TIM0 reaches 0x80 (bit 7), a second has passed
       TIM1 += 1;
       tickEvent = TMK_SEC;
-      if (TIM1 == 59) {
+      if (TIM1 > 59) {
         // --- 60 seconds passed
         TIM1 = 0;
 

@@ -166,6 +166,7 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   chipMask2: number;
   chipMask3: number;
   chipMask4: number;
+  chipMask5: number;
 
   // --- RTC device
   TIM0: number;

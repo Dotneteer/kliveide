@@ -46,7 +46,7 @@ global u8 SCW;
 // LCD Vertical resolution in pixels / 8
 // Available horisontal resolutions:
 // 64 pixels ($FF or 8), 256 pixels (32), 480 pixels (60)
-global u8 SCH;
+global u8 SCH = 0xff;
 
 // Number of screen frames rendered
 global u32 screenFrameCount;
@@ -106,10 +106,10 @@ global u32 sbfSize;
 global u32 ctrlCharsPerRow;
 
 // Default SCH value
-global u8 defaultSCH;
+global u8 defaultSCH = 8;
 
 // Default SCW value
-global u8 defaultSCW;
+global u8 defaultSCW = 0xff;
 
 // Indicates that the LCD has turned off
 global bool lcdWentOff;
@@ -128,8 +128,8 @@ u32[0x5'e000] pixelBuffer;
 
 // Sets the LCD size to use with Z88
 export void setZ88ScreenSize(u8 scw, u8 sch) {
-  SCW = scw;
-  SCH = sch;
+  defaultSCW = scw;
+  defaultSCH = sch;
 }
 
 // Resets the Z88 Screen device
@@ -139,8 +139,8 @@ void resetScreen() {
   PB2 = 0;
   PB3 = 0;
   SBR = 0;
-  SCH = 0;
-  SCW = 0;
+  SCH = defaultSCH;
+  SCW = defaultSCW;
   screenFrameCount = 0;
   flashPhase = false;
   flashCount = 0;
@@ -193,27 +193,26 @@ void renderScreen() {
       // --- Read the screen character and its attribute
       local u8 char = vmMemory[sbrPtr];
       local u8 attr = vmMemory[sbrPtr + 1];
-
       // --- Render individual characters
-      if (attr & ATTR_HRS) {
-        if (attr & ATTR_CUR) {
+      if (!(attr & ATTR_HRS)) {
+        // --- It is a LORES character
+        drawLoResChar(coordX, coordY, char, attr);
+        coordX += 6;
+      } else {
+        if ((attr & ATTR_CUR) == ATTR_CUR) {
           drawLoResCursor(coordX, coordY, char, attr);
           coordX += 6;
         } else {
-          if (attr & ATTR_NUL != ATTR_NUL) {
+          if ((attr & ATTR_NUL) != ATTR_NUL) {
             drawHiResChar(coordX, coordY, char, attr);
             coordX += 8;
           }
         }
-      } else {
-        // --- It is a LORES character
-        drawLoResChar(coordX, coordY, char, attr);
-        coordX += 6;
       }
 
       // --- Next column
       sbrPtr += 2;
-      columnCount += 1;
+      columnCount -= 1;
     }
 
     // --- Turn off the remaining pixels
@@ -280,15 +279,15 @@ void drawLoResChar(
   local u32 pixelColor = attr & ATTR_GRY ? PX_COL_GREY : PX_COL_ON;
 
   // --- Calculate font offset
-  local u32 fontOffset = (attr & 0x01) << 8 | char;
+  local u32 fontOffset = ((attr & 0x01) << 8) | char;
   local u32 fontBank;
   if (fontOffset >= 0x01c0) {
     // --- UDG
-    fontOffset = loRes0 + (char & 0x3f) << 3;
+    fontOffset = loRes0 + ((char & 0x3f) << 3);
     fontBank = loRes0Bank;
   } else {
     // --- Standard character
-    fontOffset = loRes1 + fontOffset << 3;
+    fontOffset = loRes1 + (fontOffset << 3);
     fontBank = loRes1Bank;
   }
 
@@ -377,15 +376,15 @@ void drawLoResCursor(
   local u32 pixelPtr = calcPixelPtr(x, y);
  
   // --- Calculate font offset
-  local u32 fontOffset = (attr & 0x01) << 8 | char;
+  local u32 fontOffset = ((attr & 0x01) << 8) | char;
   local u32 fontBank;
   if (fontOffset >= 0x01c0) {
     // --- UDG
-    fontOffset = loRes0 + (char & 0x3f) << 3;
+    fontOffset = loRes0 + ((char & 0x3f) << 3);
     fontBank = loRes0Bank;
   } else {
     // --- Standard character
-    fontOffset = loRes1 + fontOffset << 3;
+    fontOffset = loRes1 + (fontOffset << 3);
     fontBank = loRes1Bank;
   }
 
@@ -460,7 +459,7 @@ void drawHiResChar(
         pixelBuffer[pixelPtr + 4] = PX_COL_OFF;
         pixelBuffer[pixelPtr + 5] = PX_COL_OFF;
         pixelBuffer[pixelPtr + 6] = PX_COL_OFF;
-        pixelBuffer[pixelPtr + 6] = PX_COL_OFF;
+        pixelBuffer[pixelPtr + 7] = PX_COL_OFF;
         pixelPtr += screenWidth;
         rowCount -= 1;
       }
@@ -472,15 +471,15 @@ void drawHiResChar(
   local u32 pixelColor = attr & ATTR_GRY ? PX_COL_GREY : PX_COL_ON;
 
   // --- Calculate font offset
-  local u32 fontOffset = (attr & 0x03) << 8 | char;
+  local u32 fontOffset = ((attr & 0x03) << 8) | char;
   local u32 fontBank;
   if (fontOffset >= 0x0300) {
     // --- OZ window font entries
-    fontOffset = hiRes1 + char << 3;
+    fontOffset = hiRes1 + (char << 3);
     fontBank = hiRes1Bank;
   } else {
     // --- Pipedream map entries
-    fontOffset = hiRes0 + fontOffset << 3;
+    fontOffset = hiRes0 + (fontOffset << 3);
     fontBank = hiRes0Bank;
   }
 
@@ -533,9 +532,6 @@ void drawHiResRow(
   u32 pixelPtr,
   u32 pixelColor,
   u32 charPattern
-//   (param $pixelPtr i32)
-//   (param $pixelColor i32)
-//   (param $charPattern i32)
 ) {
   pixelBuffer[pixelPtr] = charPattern & 0x80 ? pixelColor : PX_COL_OFF;
   pixelBuffer[pixelPtr + 1] = charPattern & 0x40 ? pixelColor : PX_COL_OFF;
@@ -551,27 +547,27 @@ void drawHiResRow(
 void initRendering() {
   // --- LORES 0
   loRes0 = (((PB0 << 3) & 0xf700) | ((PB0 << 1) & 0x003f)) << 8;
-  loRes0Bank = loRes0 >> 16;
+  loRes0Bank = loRes0 >>> 16;
   loRes0 &= 0x3fff;
 
   // --- LORES 1
   loRes1 = (((PB1 << 6) & 0xff00) | ((PB1 << 4) & 0x0030)) << 8;
-  loRes1Bank = loRes1 >> 16;
+  loRes1Bank = loRes1 >>> 16;
   loRes1 &= 0x3fff;
 
   // --- HIRES 0
   hiRes0 = (((PB2 << 7) & 0xff00) | ((PB2 << 5) & 0x0020)) << 8;
-  hiRes0Bank = hiRes0 >> 16;
+  hiRes0Bank = hiRes0 >>> 16;
   hiRes0 &= 0x3fff;
 
   // --- HIRES 1
   hiRes1 = (((PB3 << 5) & 0xff00) | ((PB3 << 3) & 0x0038)) << 8;
-  hiRes1Bank = hiRes1 >> 16;
+  hiRes1Bank = hiRes1 >>> 16;
   hiRes1 &= 0x3fff;
 
   // --- SBR
   sbr = (((SBR << 5) & 0xff00) | ((SBR << 3) & 0x38)) << 8;
-  sbrBank = sbr >> 16;
+  sbrBank = sbr >>> 16;
   sbr &= 0x3fff;
 }
 
@@ -589,7 +585,7 @@ void renderScreenOff() {
 
 // Gets the banked memory address
 inline u32 getBankedMemoryAddress(u8 bank, u16 offs) {
-  return &(vmMemory[(offs & 0x3fff) | (bank << 14)]);
+  return (offs & 0x3fff) | (bank << 14);
 }
 
 // Calculates the pixel buffer position for the specified coordinates
