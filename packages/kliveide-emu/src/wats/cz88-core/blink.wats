@@ -26,12 +26,17 @@ global u8 EPR;
 // Resets main Blink registers
 void resetBlink() {
   resetScreen();
+
   COM = 0;
+
   resetRtc();
+
   setINT(INT_FLAP | INT_TIME | INT_GINT);
   TMK = TMK_TICK;  
   setSTA(0);
   TSTA = 0;
+
+  resetMemory();
 }
 
 // Raises the battery low signal

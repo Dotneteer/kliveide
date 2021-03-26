@@ -46,7 +46,7 @@ export void setKeyStatus(u8 keyCode, bool isDown) {
   }
 
   // --- Calculate line address and mask
-  local u32 line = keyCode >> 3;
+  local u32 line = keyCode >>> 3;
   local u8 mask = 1 << (keyCode & 0x07);
 
   if (isDown) {
@@ -59,12 +59,12 @@ export void setKeyStatus(u8 keyCode, bool isDown) {
 
   // --- Test if a key is pressed
   local *u64 lineStatusCombined = &keyboardLines;
-  isKeypressed = (*lineStatusCombined);
+  isKeypressed = *lineStatusCombined;
 
   // --- If a key is pressed, we may need an interrupt
   if (isKeypressed) {
     if (INT & INT_KEY) {
-      if (STA & STA_KEY) {
+      if (!(STA & STA_KEY)) {
         // --- Yes, sign an interrupt
         setSTA(STA | STA_KEY);
       }
@@ -82,7 +82,7 @@ export u32 getKeyStatus(u8 keyCode) {
   if (keyCode > 63) {
     return false;
   }
-  return keyboardLines[keyCode >> 3] & (1 << (keyCode & 0x07));
+  return keyboardLines[keyCode >>> 3] & (1 << (keyCode & 0x07));
 }
 
 // Gets the byte we would get when querying the I/O address with the

@@ -1,8 +1,8 @@
 // Indicates that keys were released after the Z88 went to sleep
-global bool shiftsReleased;
+global bool shiftsReleased = false;
 
 // Indicates if Z88 is in halt mode
-global bool isInSleepMode;
+global bool isInSleepMode = false;
 
 // Z88 allows clock changes any time
 bool allowCpuClockChange () {
@@ -27,9 +27,16 @@ inline void beforeCpuCycle(u32 frameTact) {
 
 // The execution engine has just executed a CPU cycle
 inline void afterCpuCycle(u32 frameTact) {
-  // Awake the CPU whenever a key is pressed
+  // ---Awake the CPU whenever a key is pressed
   if (isKeypressed) {
     awakeCpu();
+  }
+
+  // --- Check for interrupt
+  if (interruptSignalActive) {
+    cpuSignalFlags |= SIG_INT;
+  } else {
+    cpuSignalFlags &= SIG_INT_MASK;
   }
 }
 
@@ -81,7 +88,7 @@ void onFrameCompleted() {
 
   // --- Check again if a key is pressed
   local *u64 lineStatusCombined = &keyboardLines;
-  isKeypressed = (*lineStatusCombined);
+  isKeypressed = *lineStatusCombined;
 
   // --- Awake the CPU when a key is pressed
   if (isKeypressed) {
@@ -120,7 +127,6 @@ void onFrameCompleted() {
         // --- Test if both shift keys are released
         if (((keyboardLines[7] & 0x80) | (keyboardLines[6] & 0x40)) == 0x00) {
           shiftsReleased = true;
-          return;
         }
       }
     } else {

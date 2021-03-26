@@ -91,9 +91,6 @@ export void setupMachine () {
 
   // --- Blink setup
   resetBlink();
-  resetRtc();
-  resetMemory();
-  resetScreen();
   resetKeyboard();
 
   // --- Reset beeper state

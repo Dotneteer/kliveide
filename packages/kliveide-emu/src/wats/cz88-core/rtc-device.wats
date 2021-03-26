@@ -74,6 +74,7 @@ void incRtcCounter() {
       // --- According to blink dump monitoring on Z88, when TIM0 reaches 0x80 (bit 7), a second has passed
       TIM1 += 1;
       tickEvent = TMK_SEC;
+
       if (TIM1 > 59) {
         // --- 60 seconds passed
         TIM1 = 0;
@@ -99,11 +100,11 @@ void incRtcCounter() {
           }
         }
       }
-    }
 
-    if (TIM1 == 32) {
-      // --- 1 minute has passed
-      tickEvent = TSTA_MIN;
+      if (TIM1 == 32) {
+        // --- 1 minute has passed
+        tickEvent = TSTA_MIN;
+      }
     }
   }
 
