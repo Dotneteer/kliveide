@@ -380,7 +380,7 @@ describe("Cambridge Z88 - RTC", function () {
       tim2: 250,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TstaFlags.BM_TSTAMIN,
+      tsta: TstaFlags.BM_TSTATICK,
     },
     {
       tick: 3006329,
@@ -391,7 +391,7 @@ describe("Cambridge Z88 - RTC", function () {
       tim2: 250,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TstaFlags.BM_TSTAMIN,
+      tsta: TstaFlags.BM_TSTATICK,
     },
   ];
 

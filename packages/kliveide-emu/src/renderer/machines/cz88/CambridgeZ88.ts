@@ -396,7 +396,6 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         .readBytes(0, resultState.audioSampleCount)
         .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
       this._beeperRenderer.storeSamples(beeperSamples);
-      console.log(beeperSamples);
       this._beeperRenderer.resume();
     }
   }

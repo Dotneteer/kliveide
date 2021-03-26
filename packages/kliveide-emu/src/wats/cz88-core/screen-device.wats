@@ -18,6 +18,9 @@ const u8 ATTR_UND = 0x02;
 const u8 ATTR_NUL = 0x34;
 const u8 ATTR_CUR = 0x38;
 
+// Toggle count for flashing text
+const u32 TEXT_FLASH_TOGGLE = 200;
+
 // LORES0 (PB0, 16bits register). The 6 * 8 pixel per char User Defined Fonts.
 global u16 PB0;
 
@@ -56,9 +59,6 @@ global bool flashPhase;
 
 // Current flash count
 global u32 flashCount;
-
-// Flash toggle counter
-global u32 textFlashToggleCount;
 
 // Current text flash phase
 global bool textFlashPhase;
@@ -121,7 +121,7 @@ global u16 screenWidth;
 global u16 screenLines;
 
 // Stores the rendered screen
-u32[0x5'e000] pixelBuffer;
+u32[0x17'8000] pixelBuffer;
 
 // ----------------------------------------------------------------------------
 // Screen routines
@@ -144,7 +144,6 @@ void resetScreen() {
   screenFrameCount = 0;
   flashPhase = false;
   flashCount = 0;
-  textFlashToggleCount = 0;
   textFlashPhase = false;
   sbfRowWidth = 256;
   lcdWentOff = false;
@@ -218,9 +217,10 @@ void renderScreen() {
     // --- Turn off the remaining pixels
     // --- Iterate through the pixel rows
     local u32 orphanCount = 8;
+    local u32 orphanY = coordY;
     while (orphanCount) {
       // --- Calculate the top-left pixel address
-      local u32 pixelPtr = calcPixelPtr(coordX, coordY);
+      local u32 pixelPtr = calcPixelPtr(coordX, orphanY);
 
       // --- Iterate through the orphaned pixels
       columnCount = coordX;
@@ -232,10 +232,11 @@ void renderScreen() {
 
       // --- Next row
       orphanCount -= 1;
-      coordY += 1;
+      orphanY += 1;
     }
 
     // --- Prepare for the next row
+    coordY += 8;
     coordX = 0;
     rowSbrPtr += sbfRowWidth;
     rowCount -= 1;

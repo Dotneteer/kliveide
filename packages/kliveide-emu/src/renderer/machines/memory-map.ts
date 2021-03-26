@@ -73,7 +73,7 @@ export const TAPE_SAVE_BUFFER = 0x013c942c;
 // Cambridge Z88 memory map
 
 // --- Machine state trasnfer buffer
-export const Z88_MACHINE_STATE_BUFFER = 0x0125_b0ee;
+export const Z88_MACHINE_STATE_BUFFER = 0x016c_30ee;
 
 // --- Z88 pixel buffer area
 export const Z88_PIXEL_BUFFER = 0x010e_30ee;

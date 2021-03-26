@@ -102,7 +102,7 @@ void onFrameCompleted() {
 
   // --- Set text flash phase
   textFlashCount += 1;
-  if (textFlashCount >= textFlashToggleCount) {
+  if (textFlashCount >= TEXT_FLASH_TOGGLE) {
     textFlashCount = 0;
     textFlashPhase = !textFlashPhase;
   }
