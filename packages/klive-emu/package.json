@@ -1,7 +1,7 @@
 {
   "name": "klive-emu",
   "version": "0.9.0",
-  "description": "ZX Spectrum Emulator",
+  "description": "Sinclair Computer Emulator",
   "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
   "license": "MIT",
