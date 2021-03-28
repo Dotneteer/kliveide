@@ -177,7 +177,7 @@ describe("Standard ops 40-7f", () => {
 
     testMachine.shouldKeepRegisters();
     testMachine.shouldKeepMemory();
-    expect(s.stateFlags & Z80SignalStateFlags.Halted).toBeTruthy();
+    expect(s.cpuSignalFlags & Z80SignalStateFlags.Halted).toBeTruthy();
     expect(s.pc).toBe(0x0000);
     expect(s.tacts).toBe(4);
   });

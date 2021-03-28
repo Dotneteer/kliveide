@@ -7,7 +7,7 @@ import {
   EmulationMode,
   DebugStepMode,
 } from "../../../shared/machines/machine-state";
-import { ROM_48_OFFS } from "../memory-map";
+import { ROM_48_OFFSET } from "../memory-map";
 import { CodeToInject } from "../../../shared/machines/api-data";
 
 /**
@@ -49,7 +49,8 @@ export class ZxSpectrum48 extends ZxSpectrumBase {
    * Gets the memory address of the first ROM page of the machine
    */
   getRomPageBaseAddress(): number {
-    return ROM_48_OFFS;
+    //return ROM_48_OFFS;
+    return 0;
   }
 
   /**

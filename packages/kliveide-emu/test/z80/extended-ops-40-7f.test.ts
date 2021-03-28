@@ -377,7 +377,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 
@@ -578,7 +578,7 @@ describe("Extended ops 40-7f", () => {
   });
 
   it("57: ld a,i #1", () => {
-    let s = testMachine.initCode([0xed, 0x57]);
+    let s = testMachine.initCode([0xfb, 0xed, 0x57]);
     s.i = 0xd5;
     s = testMachine.run(s);
 
@@ -586,13 +586,13 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeTruthy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
     testMachine.shouldKeepMemory();
-    expect(s.pc).toBe(0x0002);
-    expect(s.tacts).toBe(9);
+    expect(s.pc).toBe(0x0003);
+    expect(s.tacts).toBe(13);
   });
 
   it("57: ld a,i #2", () => {
@@ -755,7 +755,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 
@@ -800,7 +800,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.tacts).toBe(20);
   });
 
-  it("5e: im 1", () => {
+  it("5e: im 2", () => {
     let s = testMachine.initCode([0xed, 0x5e]);
     s = testMachine.run(s);
 
@@ -830,22 +830,22 @@ describe("Extended ops 40-7f", () => {
   });
 
   it("5f: ld a,r #2", () => {
-    let s = testMachine.initCode([0xed, 0x5f]);
+    let s = testMachine.initCode([0xfb, 0xed, 0x5f]);
     s.r = 0x25;
     s.f &= 0xfe;
     s = testMachine.run(s);
 
-    expect(s.a).toBe(0x27);
+    expect(s.a).toBe(0x28);
     expect(s.f & FlagsSetMask.S).toBeFalsy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
     testMachine.shouldKeepRegisters("AF");
     testMachine.shouldKeepMemory();
-    expect(s.pc).toBe(0x0002);
-    expect(s.tacts).toBe(9);
+    expect(s.pc).toBe(0x0003);
+    expect(s.tacts).toBe(13);
   });
 
   it("5f: ld a,r #3", () => {
@@ -936,7 +936,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.tacts).toBe(12);
   });
 
-  it("62: sbc hl,sp #1", () => {
+  it("62: sbc hl,hl #1", () => {
     let s = testMachine.initCode([0xed, 0x62]);
     s.f &= 0xfe;
     s.hl = 0x3456;
@@ -954,7 +954,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.tacts).toBe(15);
   });
 
-  it("62: sbc hl,sp #2", () => {
+  it("62: sbc hl,hl #2", () => {
     let s = testMachine.initCode([0xed, 0x62]);
     s.f |= FlagsSetMask.C;
     s.hl = 0x3456;
@@ -1497,7 +1497,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeTruthy();
+    expect(s.f & FlagsSetMask.PV).toBeFalsy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 

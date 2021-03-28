@@ -2,16 +2,15 @@ import { MachineApi } from "../wa-api";
 import { MemoryHelper } from "../memory-helpers";
 import {
   BLOCK_LOOKUP_TABLE,
-  CZ88_BEEPER_BUFFER,
-  PIXEL_BUFFER,
-  STATE_TRANSFER_BUFF,
-  Z88_MEM_AREA,
+  Z88_PIXEL_BUFFER,
+  VM_MEMORY,
+  Z88_MACHINE_STATE_BUFFER,
+  Z88_BEEPER_BUFFER,
 } from "../memory-map";
 import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
 import {
   CambridgeZ88MachineState,
   MachineState,
-  Z80MachineStateBase,
 } from "../../../shared/machines/machine-state";
 import { KeyMapping } from "../keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
@@ -77,6 +76,14 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     const state = this.getMachineState();
     this._screenWidth = state.screenWidth;
     this._screenHeight = state.screenLines;
+  }
+
+  /**
+   * Turns on the machine
+   */
+  turnOnMachine(): void {
+    this.api.setupMachine();
+    this.api.clearMemory();
   }
 
   /**
@@ -167,77 +174,97 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    */
   getMachineState(): CambridgeZ88MachineState {
     const s = super.getMachineState() as CambridgeZ88MachineState;
-    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+
+    this.api.getMachineState();
+    const mh = new MemoryHelper(this.api, Z88_MACHINE_STATE_BUFFER);
 
     // --- Blink device data
-    s.INT = mh.readByte(160);
-    s.STA = mh.readByte(161);
-    s.COM = mh.readByte(162);
+    s.COM = mh.readByte(0);
+    s.EPR = mh.readByte(1);
+
+    // --- Machine modes
+    s.shiftsReleased = mh.readBool(2);
+    s.isInSleepMode = mh.readBool(3);
+
+    // --- Interrupt
+    s.INT = mh.readByte(4);
+    s.STA = mh.readByte(5);
+    s.interruptSignalActive = mh.readBool(6);
+
+    // --- Memory device
+    s.SR0 = mh.readByte(7);
+    s.SR1 = mh.readByte(8);
+    s.SR2 = mh.readByte(9);
+    s.SR3 = mh.readByte(10);
+    s.chipMask0 = mh.readByte(11);
+    s.chipMask1 = mh.readByte(12);
+    s.chipMask2 = mh.readByte(13);
+    s.chipMask3 = mh.readByte(14);
+    s.chipMask4 = mh.readByte(15);
+    s.chipMask5 = mh.readByte(16);
 
     // --- RTC device
-    s.TIM0 = mh.readByte(163);
-    s.TIM1 = mh.readByte(164);
-    s.TIM2 = mh.readByte(165);
-    s.TIM3 = mh.readByte(166);
-    s.TIM4 = mh.readByte(167);
-    s.TSTA = mh.readByte(168);
-    s.TMK = mh.readByte(169);
+    s.TIM0 = mh.readByte(17);
+    s.TIM1 = mh.readByte(18);
+    s.TIM2 = mh.readByte(19);
+    s.TIM3 = mh.readByte(20);
+    s.TIM4 = mh.readByte(21);
+    s.TSTA = mh.readByte(22);
+    s.TMK = mh.readByte(23);
 
     // --- Screen device
-    s.PB0 = mh.readUint16(170);
-    s.PB1 = mh.readUint16(172);
-    s.PB2 = mh.readUint16(174);
-    s.PB3 = mh.readUint16(176);
-    s.SBF = mh.readUint16(178);
-    s.SCW = mh.readByte(180);
-    s.SCH = mh.readByte(181);
+    s.PB0 = mh.readUint16(24);
+    s.PB1 = mh.readUint16(26);
+    s.PB2 = mh.readUint16(28);
+    s.PB3 = mh.readUint16(30);
+    s.SBF = mh.readUint16(32);
+    s.SCW = mh.readByte(34);
+    s.SCH = mh.readByte(35);
+    s.screenFrameCount = mh.readUint32(36);
+    s.flashPhase = mh.readBool(40);
+    s.textFlashPhase = mh.readBool(41);
+    s.lcdWentOff = mh.readBool(42);
 
     // --- Setup screen size
     s.screenWidth = s.SCW === 100 ? 800 : 640;
     s.screenLines = s.SCH * 8;
 
-    // --- Memory device
-    s.SR0 = mh.readByte(182);
-    s.SR1 = mh.readByte(183);
-    s.SR2 = mh.readByte(184);
-    s.SR3 = mh.readByte(185);
-    s.chipMask0 = mh.readByte(186);
-    s.chipMask1 = mh.readByte(187);
-    s.chipMask2 = mh.readByte(188);
-    s.chipMask3 = mh.readByte(189);
-    s.chipMask4 = mh.readByte(190);
+    // --- Audio
+    s.audioSampleRate = mh.readUint32(47);
+    s.audioSampleLength = mh.readUint32(51);
+    s.audioLowerGate = mh.readUint32(55);
+    s.audioUpperGate = mh.readUint32(59);
+    s.audioGateValue = mh.readUint32(63);
+    s.audioNextSampleTact = mh.readUint32(67);
+    s.audioSampleCount = mh.readUint32(71);
+    s.beeperLastEarBit = mh.readBool(75);
 
     // --- Others
-    s.SHFF = mh.readBool(191);
-    s.KBLine0 = mh.readByte(192);
-    s.KBLine1 = mh.readByte(193);
-    s.KBLine2 = mh.readByte(194);
-    s.KBLine3 = mh.readByte(195);
-    s.KBLine4 = mh.readByte(196);
-    s.KBLine5 = mh.readByte(197);
-    s.KBLine6 = mh.readByte(198);
-    s.KBLine7 = mh.readByte(199);
-    s.lcdWentOff = mh.readBool(200);
-    s.isInSleepMode = mh.readBool(201);
-    s.audioSampleLength = mh.readUint32(202);
-    s.audioSampleCount = mh.readUint32(206);
+    s.KBLine0 = mh.readByte(76);
+    s.KBLine1 = mh.readByte(77);
+    s.KBLine2 = mh.readByte(78);
+    s.KBLine3 = mh.readByte(79);
+    s.KBLine4 = mh.readByte(80);
+    s.KBLine5 = mh.readByte(81);
+    s.KBLine6 = mh.readByte(82);
+    s.KBLine7 = mh.readByte(83);
 
     const slotMh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
-    s.s0OffsetL = slotMh.readUint32(0) - Z88_MEM_AREA;
+    s.s0OffsetL = slotMh.readUint32(0) - VM_MEMORY;
     s.s0FlagL = slotMh.readByte(8);
-    s.s0OffsetH = slotMh.readUint32(16) - Z88_MEM_AREA;
+    s.s0OffsetH = slotMh.readUint32(16) - VM_MEMORY;
     s.s0FlagH = slotMh.readByte(24);
-    s.s1OffsetL = slotMh.readUint32(32) - Z88_MEM_AREA;
+    s.s1OffsetL = slotMh.readUint32(32) - VM_MEMORY;
     s.s1FlagL = slotMh.readByte(40);
-    s.s1OffsetH = slotMh.readUint32(48) - Z88_MEM_AREA;
+    s.s1OffsetH = slotMh.readUint32(48) - VM_MEMORY;
     s.s1FlagH = slotMh.readByte(56);
-    s.s2OffsetL = slotMh.readUint32(64) - Z88_MEM_AREA;
+    s.s2OffsetL = slotMh.readUint32(64) - VM_MEMORY;
     s.s2FlagL = slotMh.readByte(72);
-    s.s2OffsetH = slotMh.readUint32(80) - Z88_MEM_AREA;
+    s.s2OffsetH = slotMh.readUint32(80) - VM_MEMORY;
     s.s2FlagH = slotMh.readByte(88);
-    s.s3OffsetL = slotMh.readUint32(96) - Z88_MEM_AREA;
+    s.s3OffsetL = slotMh.readUint32(96) - VM_MEMORY;
     s.s3FlagL = slotMh.readByte(104);
-    s.s3OffsetH = slotMh.readUint32(112) - Z88_MEM_AREA;
+    s.s3OffsetH = slotMh.readUint32(112) - VM_MEMORY;
     s.s3FlagH = slotMh.readByte(120);
     return s;
   }
@@ -246,7 +273,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * Gets the addressable Z80 memory contents from the machine
    */
   getMemoryContents(): Uint8Array {
-    const result = new Uint8Array(0x10000);
+    const result = new Uint8Array(0x1_0000);
     const mh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
     for (let i = 0; i < 8; i++) {
       const offs = i * 0x2000;
@@ -269,8 +296,8 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     const buffer = this.api.memory.buffer as ArrayBuffer;
     const screenData = new Uint32Array(
       buffer.slice(
-        PIXEL_BUFFER,
-        PIXEL_BUFFER + 4 * this._screenWidth * this._screenHeight
+        Z88_PIXEL_BUFFER,
+        Z88_PIXEL_BUFFER + 4 * this._screenWidth * this._screenHeight
       )
     );
     return screenData;
@@ -346,7 +373,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
    * @param resultState Machine state on frame completion
    */
   async onFrameCompleted(
-    resultState: Z80MachineStateBase,
+    resultState: CambridgeZ88MachineState,
     toWait: number
   ): Promise<void> {
     const state = resultState as CambridgeZ88MachineState;
@@ -364,7 +391,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
 
     if (!this.executionOptions.disableScreenRendering) {
       // --- Obtain beeper samples
-      let mh = new MemoryHelper(this.api, CZ88_BEEPER_BUFFER);
+      let mh = new MemoryHelper(this.api, Z88_BEEPER_BUFFER);
       const beeperSamples = mh
         .readBytes(0, resultState.audioSampleCount)
         .map((smp) => (emuState.muted ? 0 : smp * (emuState.soundLevel ?? 0)));
@@ -389,7 +416,8 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         break;
       case CZ88_HARD_RESET:
         await controller.stop();
-        this.api.turnOnMachine();
+        this.api.setupMachine();
+        this.api.clearMemory();
         await controller.start();
         break;
       case CZ88_PRESS_BOTH_SHIFTS:

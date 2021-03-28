@@ -1359,9 +1359,6 @@ describe("Bit ops 00-3f", () => {
     expect(s.pc).toBe(0x0002);
     expect(s.tacts).toBe(15);
   });
-
-
-
 });
 
 function setReg8(s: Z80CpuState, q: number, val: number): void {

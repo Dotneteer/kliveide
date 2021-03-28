@@ -6,6 +6,7 @@ import {
   EmulationMode,
   DebugStepMode,
   Z80MachineStateBase,
+  SpectrumMachineStateBase,
 } from "../../shared/machines/machine-state";
 import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
@@ -26,7 +27,7 @@ import {
   RegisterData,
 } from "../../shared/machines/api-data";
 import { vmSetRegistersAction } from "../../shared/state/redux-vminfo-state";
-import { BANK_0_OFFS } from "./memory-map";
+import { BANK_0_OFFSET } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
 import { emulatorAppConfig } from "../machine-loader";
 import { machineCommandAction } from "../../shared/state/redux-machine-command-state";
@@ -741,7 +742,7 @@ export class VmEngine implements IVmEngineController {
    * @param page Page index
    */
   getRomPage(page: number): Uint8Array {
-    const state = this.z80Machine.getMachineState();
+    const state = this.z80Machine.getMachineState() as SpectrumMachineStateBase;
     if (!state.memoryPagingEnabled || page < 0 || page > state.numberOfRoms) {
       return new Uint8Array(0);
     }
@@ -757,11 +758,11 @@ export class VmEngine implements IVmEngineController {
    * @param page Page index
    */
   getBankPage(page: number): Uint8Array {
-    const state = this.z80Machine.getMachineState();
+    const state = this.z80Machine.getMachineState() as SpectrumMachineStateBase;
     if (!state.memoryPagingEnabled || page < 0 || page > state.ramBanks) {
       return new Uint8Array(0);
     }
-    const mh = new MemoryHelper(this.z80Machine.api, BANK_0_OFFS);
+    const mh = new MemoryHelper(this.z80Machine.api, BANK_0_OFFSET);
     return new Uint8Array(mh.readBytes(page * 0x4000, 0x4000));
   }
 

@@ -5,15 +5,13 @@ import {
   BLOCK_LOOKUP_TABLE,
   PSG_SAMPLE_BUFFER,
   RENDERING_TACT_TABLE,
-  STATE_TRANSFER_BUFF,
+  SPECTRUM_MACHINE_STATE_BUFFER,
 } from "../memory-map";
 import { MachineApi } from "../wa-api";
 import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
 import {
   MachineState,
-  MemoryContentionType,
   SpectrumMachineStateBase,
-  Z80MachineStateBase,
 } from "../../../shared/machines/machine-state";
 import { BinaryReader } from "../../../shared/utils/BinaryReader";
 import { TzxReader } from "../../../shared/tape/tzx-file";
@@ -60,6 +58,13 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    */
   getExtraMachineFeatures(): ExtraMachineFeatures[] {
     return ["UlaDebug", "Tape", "Sound"];
+  }
+
+  /**
+   * Indicates if this modes supports the AY-3-8912 PSG chip
+   */
+  get supportsPsg(): boolean {
+    return false;
   }
 
   /**
@@ -115,120 +120,103 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * Gets the current state of the ZX Spectrum machine
    */
   getMachineState(): MachineState {
+    // --- Obtain execution engine state
     const s = super.getMachineState() as SpectrumMachineStateBase;
 
-    let mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+    // --- Obtain ZX Spectrum specific state
+    this.api.getMachineState();
+    let mh = new MemoryHelper(this.api, SPECTRUM_MACHINE_STATE_BUFFER);
 
-    // --- Get Spectrum-specific execution engine state
-    s.ulaIssue = mh.readByte(160);
-    s.fastTapeMode = mh.readBool(161);
-    s.terminationRom = mh.readByte(162);
-    s.terminationPoint = mh.readUint16(163);
-    s.fastVmMode = mh.readBool(165);
-
-    // --- Get memory configuration data
-    s.numberOfRoms = mh.readByte(180);
-    s.romContentsAddress = mh.readUint32(181);
-    s.spectrum48RomIndex = mh.readByte(185);
-    s.contentionType = mh.readByte(186) as MemoryContentionType;
-    s.ramBanks = mh.readByte(187);
-    s.nextMemorySize = mh.readByte(188);
-
-    // --- Get screen frame configuration data
-    s.interruptTact = mh.readUint16(189);
-    s.verticalSyncLines = mh.readUint16(191);
-    s.nonVisibleBorderTopLines = mh.readUint16(193);
-    s.borderTopLines = mh.readUint16(195);
-    s.displayLines = mh.readUint16(197);
-    s.borderBottomLines = mh.readUint16(199);
-    s.nonVisibleBorderBottomLines = mh.readUint16(201);
-    s.horizontalBlankingTime = mh.readUint16(203);
-    s.borderLeftTime = mh.readUint16(205);
-    s.displayLineTime = mh.readUint16(207);
-    s.borderRightTime = mh.readUint16(209);
-    s.nonVisibleBorderRightTime = mh.readUint16(211);
-    s.pixelDataPrefetchTime = mh.readUint16(213);
-    s.attributeDataPrefetchTime = mh.readUint16(215);
-
-    // --- Get calculated screen attributes
-    s.screenLines = mh.readUint32(240);
-    s.firstDisplayLine = mh.readUint32(244);
-    s.lastDisplayLine = mh.readUint32(248);
-    s.borderLeftPixels = mh.readUint32(252);
-    s.borderRightPixels = mh.readUint32(256);
-    s.displayWidth = mh.readUint32(260);
-    s.screenWidth = mh.readUint32(264);
-    s.screenLineTime = mh.readUint32(268);
-    s.rasterLines = mh.readUint32(272);
-    s.firstDisplayPixelTact = mh.readUint32(276);
-    s.firstScreenPixelTact = mh.readUint32(280);
+    // --- Get port state
+    s.portBit3LastValue = mh.readBool(0);
+    s.portBit4LastValue = mh.readBool(1);
+    s.portBit4ChangedFrom0Tacts = mh.readUint32(2);
+    s.portBit4ChangedFrom1Tacts = mh.readUint32(6);
 
     // --- Get keyboard state
     s.keyboardLines = [];
     for (let i = 0; i < 8; i++) {
-      s.keyboardLines[i] = mh.readByte(284 + i);
+      s.keyboardLines[i] = mh.readByte(10 + i);
     }
 
-    // --- Get port state
-    s.portBit3LastValue = mh.readBool(292);
-    s.portBit4LastValue = mh.readBool(293);
-    s.portBit4ChangedFrom0Tacts = mh.readUint32(294);
-    s.portBit4ChangedFrom1Tacts = mh.readUint32(298);
+    // --- Interrupt state
+    s.interruptTact = mh.readUint16(18);
+    s.interruptEndTact = mh.readUint16(20);
 
-    // --- Get interrupt state
-    s.interruptRaised = mh.readBool(302);
-    s.interruptRevoked = mh.readBool(303);
+    // --- Memory state
+    s.numberOfRoms = mh.readByte(22);
+    s.ramBanks = mh.readByte(23);
+    s.memorySelectedRom = mh.readByte(24);
+    s.memoryPagingEnabled = mh.readBool(25);
+    s.memorySelectedBank = mh.readByte(26);
+    s.memoryUseShadowScreen = mh.readBool(27);
+    s.memoryScreenOffset = mh.readUint16(28);
+
+    // --- Screen device state
+    s.verticalSyncLines = mh.readUint16(30);
+    s.nonVisibleBorderTopLines = mh.readUint16(32);
+    s.borderTopLines = mh.readUint16(34);
+    s.displayLines = mh.readUint16(36);
+    s.borderBottomLines = mh.readUint16(38);
+    s.nonVisibleBorderBottomLines = mh.readUint16(40);
+    s.horizontalBlankingTime = mh.readUint16(42);
+    s.borderLeftTime = mh.readUint16(44);
+    s.displayLineTime = mh.readUint16(46);
+    s.borderRightTime = mh.readUint16(48);
+    s.nonVisibleBorderRightTime = mh.readUint16(50);
+    s.pixelDataPrefetchTime = mh.readUint16(52);
+    s.attributeDataPrefetchTime = mh.readUint16(54);
+
+    // --- Get calculated screen attributes
+    s.firstDisplayLine = mh.readUint32(56);
+    s.lastDisplayLine = mh.readUint32(60);
+    s.borderLeftPixels = mh.readUint32(64);
+    s.borderRightPixels = mh.readUint32(68);
+    s.displayWidth = mh.readUint32(72);
+    s.screenLineTime = mh.readUint32(76);
+    s.rasterLines = mh.readUint32(80);
+    s.firstDisplayPixelTact = mh.readUint32(84);
+    s.firstScreenPixelTact = mh.readUint32(88);
+    s.screenWidth = mh.readUint32(92);
+    s.screenLines = mh.readUint32(96);
 
     // --- Get screen state
-    s.borderColor = mh.readByte(304);
-    s.flashPhase = mh.readBool(305);
-    s.pixelByte1 = mh.readByte(306);
-    s.pixelByte2 = mh.readByte(307);
-    s.attrByte1 = mh.readByte(308);
-    s.attrByte2 = mh.readByte(309);
-    s.flashFrames = mh.readByte(310);
-    s.renderingTablePtr = mh.readUint32(311);
-    s.pixelBufferPtr = mh.readUint32(315);
+    s.borderColor = mh.readByte(100);
+    s.flashPhase = mh.readBool(101);
+    s.pixelByte1 = mh.readByte(102);
+    s.pixelByte2 = mh.readByte(103);
+    s.attrByte1 = mh.readByte(104);
+    s.attrByte2 = mh.readByte(105);
+    s.flashFrames = mh.readByte(106);
+    s.renderingTablePtr = mh.readUint32(107);
+    s.pixelBufferPtr = mh.readUint32(111);
 
     // --- Get beeper state
-    s.audioSampleRate = mh.readUint32(319);
-    s.audioSampleLength = mh.readUint32(323);
-    s.audioLowerGate = mh.readUint32(327);
-    s.audioUpperGate = mh.readUint32(331);
-    s.audioGateValue = mh.readUint32(335);
-    s.audioNextSampleTact = mh.readUint32(339);
-    s.beeperLastEarBit = mh.readBool(343);
-    s.audioSampleCount = mh.readUint32(344);
+    s.audioSampleRate = mh.readUint32(115);
+    s.audioSampleLength = mh.readUint32(119);
+    s.audioLowerGate = mh.readUint32(123);
+    s.audioUpperGate = mh.readUint32(127);
+    s.audioGateValue = mh.readUint32(131);
+    s.audioNextSampleTact = mh.readUint32(135);
+    s.audioSampleCount = mh.readUint32(139);
+    s.beeperLastEarBit = mh.readBool(143);
 
-    // --- Get sound state
-    s.psgSupportsSound = mh.readBool(348);
-    s.psgRegisterIndex = mh.readByte(349);
-    s.psgClockStep = mh.readUint32(350);
-    s.psgNextClockTact = mh.readUint32(354);
-    s.psgOrphanSamples = mh.readUint32(358);
-    s.psgOrphanSum = mh.readUint32(362);
+    // --- Get tape device state
+    s.tapeMode = mh.readByte(144);
+    s.tapeBlocksToPlay = mh.readUint16(145);
+    s.tapeEof = mh.readBool(147);
+    s.tapeBufferPtr = mh.readUint32(148);
+    s.tapeNextBlockPtr = mh.readUint32(152);
+    s.tapePlayPhase = mh.readByte(156);
+    s.tapeStartTactL = mh.readUint32(157);
+    s.tapeStartTactH = mh.readUint32(161);
+    s.tapeFastLoad = mh.readBool(165);
+    s.tapeSavePhase = mh.readByte(166);
 
-    // --- Get tape state
-    s.tapeMode = mh.readByte(366);
-    s.tapeLoadBytesRoutine = mh.readUint16(367);
-    s.tapeLoadBytesResume = mh.readUint16(369);
-    s.tapeLoadBytesInvalidHeader = mh.readUint16(371);
-    s.tapeSaveBytesRoutine = mh.readUint16(373);
-    s.tapeBlocksToPlay = mh.readByte(375);
-    s.tapeEof = mh.readBool(376);
-    s.tapeBufferPtr = mh.readUint32(377);
-    s.tapeNextBlockPtr = mh.readUint32(381);
-    s.tapePlayPhase = mh.readByte(385);
-    s.tapeStartTactL = mh.readUint32(386);
-    s.tapeStartTactH = mh.readUint32(390);
-    s.tapeBitMask = mh.readByte(394);
-
-    // --- Memory pages
-    s.memorySelectedRom = mh.readByte(395);
-    s.memoryPagingEnabled = mh.readBool(396);
-    s.memorySelectedBank = mh.readByte(397);
-    s.memoryUseShadowScreen = mh.readBool(398);
-    s.memoryScreenOffset = mh.readUint16(399);
+    // --- Engine state
+    s.ulaIssue = mh.readByte(167);
+    s.contentionAccumulated = mh.readUint32(168);
+    s.lastExecutionContentionValue = mh.readUint32(172);
 
     // --- Screen rendering tact
     mh = new MemoryHelper(this.api, RENDERING_TACT_TABLE);
@@ -262,7 +250,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * Gets the screen data of the ZX Spectrum machine
    */
   getScreenData(): Uint32Array {
-    const state = this.getMachineState();
+    const state = this.getMachineState() as SpectrumMachineStateBase;
     const buffer = this.api.memory.buffer as ArrayBuffer;
     const length = state.screenLines * state.screenWidth;
     const screenData = new Uint32Array(
@@ -309,7 +297,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       await this._beeperRenderer.closeAudio();
       this._beeperRenderer = null;
     }
-    if (this._psgRenderer) {
+    if (this.supportsPsg && this._psgRenderer) {
       await this._psgRenderer.closeAudio();
       this._psgRenderer = null;
     }
@@ -337,17 +325,19 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
     await super.beforeStarted(debugging);
 
     // --- Init audio renderers
-    const state = this.getMachineState();
+    const state = this.getMachineState() as SpectrumMachineStateBase;
     this._beeperRenderer = this._audioRendererFactory(
       state.tactsInFrame / state.audioSampleLength
     );
     this._beeperRenderer.suspend();
     await this._beeperRenderer.initializeAudio();
-    this._psgRenderer = this._audioRendererFactory(
-      state.tactsInFrame / state.audioSampleLength
-    );
-    this._psgRenderer.suspend();
-    await this._psgRenderer.initializeAudio();
+    if (this.supportsPsg) {
+      this._psgRenderer = this._audioRendererFactory(
+        state.tactsInFrame / state.audioSampleLength
+      );
+      this._psgRenderer.suspend();
+      await this._psgRenderer.initializeAudio();
+    }
   }
 
   /**
@@ -373,7 +363,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * evaluations (whether to continue the cycle of not)
    */
   async beforeEvalLoopCompletion(
-    resultState: Z80MachineStateBase
+    resultState: SpectrumMachineStateBase
   ): Promise<void> {
     this._stateManager.selectRom(resultState.memorySelectedRom);
     this._stateManager.selectBank(resultState.memorySelectedBank);
@@ -385,7 +375,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
    * @param resultState Machine state on frame completion
    */
   async onFrameCompleted(
-    resultState: Z80MachineStateBase,
+    resultState: SpectrumMachineStateBase,
     toWait: number
   ): Promise<void> {
     if (!this.executionOptions.disableScreenRendering && toWait > 0) {
@@ -411,14 +401,16 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       this._beeperRenderer.resume();
 
       // --- Obtain psg samples
-      mh = new MemoryHelper(this.api, PSG_SAMPLE_BUFFER);
-      const psgSamples = mh
-        .readWords(0, resultState.audioSampleCount)
-        .map((smp) =>
-          emuState.muted ? 0 : (smp / 8192) * (emuState.soundLevel ?? 0)
-        );
-      this._psgRenderer.storeSamples(psgSamples);
-      this._psgRenderer.resume();
+      if (this.supportsPsg) {
+        mh = new MemoryHelper(this.api, PSG_SAMPLE_BUFFER);
+        const psgSamples = mh
+          .readWords(0, resultState.audioSampleCount)
+          .map((smp) =>
+            emuState.muted ? 0 : (smp / 65535) * (emuState.soundLevel ?? 0)
+          );
+        this._psgRenderer.storeSamples(psgSamples);
+        this._psgRenderer.resume();
+      }
     }
 
     // --- Check if a tape should be loaded
@@ -477,7 +469,7 @@ export abstract class ZxSpectrumBase extends FrameBoundZ80Machine {
       }
       done = read.done;
     } while (!done);
-    const length = buffers.reduce((a, b) => a + b.length, 0)
+    const length = buffers.reduce((a, b) => a + b.length, 0);
     const resultArray = new Uint8Array(length);
     let offset = 0;
     for (let i = 0; i < buffers.length; i++) {

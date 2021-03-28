@@ -6,7 +6,7 @@ import { RunMode } from "./RunMode";
 export interface CpuApi {
   memory: any;
   turnOnCpu(): void;
-  resetCpu(): void;
+  resetCpu(hard: boolean): void;
   getCpuState(): void;
   updateCpuState(): void;
   setCpuDiagnostics(flags: number): void;
@@ -27,6 +27,7 @@ export interface TestCpuApi extends CpuApi {
   getIoLogLength(): number;
   getTbBlueLogLength(): number;
   runTestCode(): void;
+  resetMachine(): void;
 }
 
 /**
@@ -34,10 +35,11 @@ export interface TestCpuApi extends CpuApi {
  */
 export interface MachineApi extends CpuApi {
   // --- Virtual machine methods
-  turnOnMachine(): void;
+  setupMachine(): void;
   resetMachine(): void;
   setUlaIssue(ula: number): void;
   getMachineState(): void;
+  getExecutionEngineState(): void;
   setExecutionOptions(): void;
   executeMachineLoop(): void;
   setInterruptTact(tact: number): void;

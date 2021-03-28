@@ -258,37 +258,17 @@ export class Z80CpuState {
 
   tactsInFrame: number;
   tacts: number;
-  stateFlags: Z80SignalStateFlags;
-  useGateArrayContention: boolean;
   iff1: boolean;
   iff2: boolean;
   interruptMode: number;
-  isInterruptBlocked: boolean;
-  isInOpExecution: boolean;
-  prefixMode: OpPrefixMode;
-  indexMode: OpIndexMode;
-  maskableInterruptModeEntered: boolean;
   opCode: number;
-}
-
-enum OpPrefixMode {
-  // No operation prefix
-  None = 0,
-
-  // Extended mode (0xED prefix)
-  Extended,
-
-  // Bit operations mode (0xCB prefix)
-  Bit,
-}
-
-enum OpIndexMode {
-  // Indexed address mode is not used</summary>
-  None = 0,
-
-  // <summary>Indexed address with IX register</summary>
-  IX,
-
-  // <summary>Indexed address with IY register</summary>
-  IY,
+  ddfdDepth: number;
+  useIx: boolean;
+  cpuSignalFlags: Z80SignalStateFlags;
+  cpuSnoozed: boolean;
+  intBacklog: number;
+  retExecuted: boolean;
+  baseClockFrequency: number;
+  clockMultiplier: number;
+  defaultClockMultiplier: number;
 }

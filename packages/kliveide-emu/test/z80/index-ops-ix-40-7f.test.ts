@@ -338,7 +338,7 @@ describe("Indexed ops (ix) 40-7f", () => {
 
     testMachine.shouldKeepRegisters();
     testMachine.shouldKeepMemory();
-    expect(s.stateFlags & Z80SignalStateFlags.Halted).toBeTruthy();
+    expect(s.cpuSignalFlags & Z80SignalStateFlags.Halted).toBeTruthy();
     expect(s.pc).toBe(0x0001);
     expect(s.tacts).toBe(8);
   });

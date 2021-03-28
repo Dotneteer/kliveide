@@ -68,7 +68,7 @@
   i32.const $GATE_DIVIDER# set_global $audioUpperGate
 )
 
-;; Calculate the oscillator bir
+;; Calculate the oscillator bit
 (func $calculateOscillatorBit
   ;; Calculate the tick count
   (i64.add

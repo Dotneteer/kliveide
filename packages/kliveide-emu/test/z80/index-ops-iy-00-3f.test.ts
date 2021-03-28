@@ -1330,18 +1330,18 @@ describe("Indexed ops (iy) 00-3f", () => {
   });
 
   const daaSamples = [
-    new DaaSample(0x99, false, false, false, 0x998c),
-    new DaaSample(0x99, true, false, false, 0x9f8c),
-    new DaaSample(0x7a, false, false, false, 0x8090),
-    new DaaSample(0x7a, true, false, false, 0x8090),
-    new DaaSample(0xa9, false, false, false, 0x090d),
-    new DaaSample(0x87, false, false, true, 0xe7a5),
-    new DaaSample(0x87, true, false, true, 0xedad),
-    new DaaSample(0x1b, false, false, true, 0x8195),
-    new DaaSample(0x1b, true, false, true, 0x8195),
-    new DaaSample(0xaa, false, false, false, 0x1011),
-    new DaaSample(0xaa, true, false, false, 0x1011),
-    new DaaSample(0xc6, true, false, false, 0x2c29),
+    new DaaSample(0x99, false, false, false, 0x9988),
+    new DaaSample(0x99, true, false, false, 0x9f88),
+    new DaaSample(0x7a, false, false, false, 0x8094),
+    new DaaSample(0x7a, true, false, false, 0x8094),
+    new DaaSample(0xa9, false, false, false, 0x0909),
+    new DaaSample(0x87, false, false, true, 0xe7a1),
+    new DaaSample(0x87, true, false, true, 0xeda9),
+    new DaaSample(0x1b, false, false, true, 0x8191),
+    new DaaSample(0x1b, true, false, true, 0x8191),
+    new DaaSample(0xaa, false, false, false, 0x1015),
+    new DaaSample(0xaa, true, false, false, 0x1015),
+    new DaaSample(0xc6, true, false, false, 0x2c2d),
   ];
   daaSamples.forEach((sm, index) => {
     it(`27: daa #${index + 1}`, () => {

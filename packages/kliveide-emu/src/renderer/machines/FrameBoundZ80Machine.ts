@@ -2,15 +2,11 @@ import { Z80MachineBase } from "./Z80MachineBase";
 import { MachineApi } from "./wa-api";
 import { MemoryHelper } from "./memory-helpers";
 import {
-  DebugStepMode,
-  EmulationMode,
   ExecuteCycleOptions,
-  ExecutionCompletionReason,
-  FrameBoundZ80MachineState,
   MachineState,
   Z80MachineStateBase,
 } from "../../shared/machines/machine-state";
-import { BLOCK_LOOKUP_TABLE, STATE_TRANSFER_BUFF } from "./memory-map";
+import { BLOCK_LOOKUP_TABLE, EXEC_OPTIONS_BUFFER } from "./memory-map";
 import { CodeToInject } from "../../shared/machines/api-data";
 import { DiagViewFrame } from "../../shared/machines/diag-info";
 
@@ -32,7 +28,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
    */
   prepareMachine(): void {
     this.configureMachine();
-    this.api.turnOnMachine();
+    this.api.setupMachine();
     this.initRoms(this.roms);
   }
 
@@ -158,29 +154,6 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
   }
 
   /**
-   * Retrieves the current state of the machine
-   */
-  getMachineState(): MachineState {
-    const s = super.getMachineState() as FrameBoundZ80MachineState;
-
-    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
-
-    // --- Get execution engine state
-    s.lastRenderedFrameTact = mh.readUint32(80);
-    s.frameCount = mh.readUint32(84);
-    s.frameCompleted = mh.readBool(88);
-    s.contentionAccummulated = mh.readUint32(89);
-    s.lastExecutionContentionValue = mh.readUint32(93);
-    s.emulationMode = mh.readByte(97) as EmulationMode;
-    s.debugStepMode = mh.readByte(98) as DebugStepMode;
-    s.disableScreenRendering = mh.readBool(99);
-    s.executionCompletionReason = mh.readByte(100) as ExecutionCompletionReason;
-    s.stepOverBreakPoint = mh.readUint16(101);
-
-    return s as MachineState;
-  }
-
-  /**
    * Executes the machine cycle
    * @param options Execution options
    */
@@ -188,7 +161,7 @@ export abstract class FrameBoundZ80Machine extends Z80MachineBase {
     this.executionOptions = options;
 
     // --- Copy execution options
-    const mh = new MemoryHelper(this.api, STATE_TRANSFER_BUFF);
+    const mh = new MemoryHelper(this.api, EXEC_OPTIONS_BUFFER);
     mh.writeByte(0, options.emulationMode);
     mh.writeByte(1, options.debugStepMode);
     mh.writeBool(2, options.fastTapeMode);

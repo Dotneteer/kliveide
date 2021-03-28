@@ -32,7 +32,6 @@ describe("Cambridge Z88 - RTC", function () {
 
   it("blink reset", () => {
     machine.reset();
-
     const s = machine.getMachineState();
 
     expect(s.INT).toBe(0x23);
@@ -394,30 +393,6 @@ describe("Cambridge Z88 - RTC", function () {
       tim4: 0x00,
       tsta: TstaFlags.BM_TSTATICK,
     },
-    // // 48 + 128 + 59 * 200 + (250 + 4*256) * 60 * 200 (15_299_976) ticks
-    // {
-    //   tick: 15_299_976,
-    //   int: IntFlags.BM_INTTIME,
-    //   tmk: TmkFlags.BM_TMKTICK | TmkFlags.BM_TMKSEC | TmkFlags.BM_TMKMIN,
-    //   tim0: 0x80,
-    //   tim1: 0x00,
-    //   tim2: 251,
-    //   tim3: 4,
-    //   tim4: 0x00,
-    //   tsta: TstaFlags.BM_TSTATICK | TstaFlags.BM_TSTASEC | TmkFlags.BM_TMKMIN,
-    // },
-    // // 48 + 128 + 59 * 200 + (250 + 257*256) * 60 * 200 (792_515_976) ticks
-    // {
-    //   tick: 792_515_976,
-    //   int: IntFlags.BM_INTTIME,
-    //   tmk: TmkFlags.BM_TMKTICK | TmkFlags.BM_TMKSEC | TmkFlags.BM_TMKMIN,
-    //   tim0: 0x80,
-    //   tim1: 0x00,
-    //   tim2: 251,
-    //   tim3: 1,
-    //   tim4: 1,
-    //   tsta: TstaFlags.BM_TSTATICK | TstaFlags.BM_TSTASEC | TmkFlags.BM_TMKMIN,
-    // },
   ];
 
   tickSamples.forEach((smp) => {

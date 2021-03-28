@@ -9,63 +9,44 @@ export abstract class Z80MachineStateBase extends Z80CpuState {
   // --- Type discriminator
   type: MachineState["type"];
 
-  // --- CPU configuration
-  baseClockFrequency: number;
-  clockMultiplier: number;
-  defaultClockMultiplier: number;
-
-  // --- CPU diagnostics
-  cpuDiagnostics: number;
-  cpuSnoozed: boolean;
-
-  // --- Common screen configuration
-  screenWidth: number;
-  screenLines: number;
-
-  // --- Engine state
+  // --- Execution engine state
   frameCount: number;
   frameCompleted: boolean;
-  executionCompletionReason: number;
-  stepOverBreakPoint: number;
-
-  // --- Temporary state properties, move them to spectrum
-  numberOfRoms: number;
-  ramBanks: number;
-
-  memorySelectedRom: number;
-  memorySelectedBank: number;
-  memoryPagingEnabled: boolean;
-
-  tapeMode: number;
-
-  audioSampleLength: number;
-  audioSampleCount: number;
-}
-
-/**
- * Represents the state of a frame-bound Z80 machine
- */
-export class FrameBoundZ80MachineState extends Z80MachineStateBase {
   lastRenderedFrameTact: number;
-  contentionAccummulated: number;
-  lastExecutionContentionValue: number;
-  emulationMode: EmulationMode;
-  debugStepMode: DebugStepMode;
-  disableScreenRendering: boolean;
+  executionCompletionReason: number;
+
+  // --- Screen dimensions
+  screenWidth: number;
+  screenLines: number;
 }
 
 /**
  * Represents the state of the ZX Spectrum machine
  */
-export abstract class SpectrumMachineStateBase extends FrameBoundZ80MachineState {
-  // --- Memory configuration
-  romContentsAddress: number;
-  spectrum48RomIndex: number;
-  contentionType: MemoryContentionType;
-  nextMemorySize: number;
+export abstract class SpectrumMachineStateBase extends Z80MachineStateBase {
+  // --- Port $fe state
+  portBit3LastValue: boolean;
+  portBit4LastValue: boolean;
+  portBit4ChangedFrom0Tacts: number;
+  portBit4ChangedFrom1Tacts: number;
+
+  // --- Keyboard state
+  keyboardLines: number[];
+
+  // --- Interrupt configuration
+  interruptTact: number;
+  interruptEndTact: number;
+
+  // --- Memory state
+  numberOfRoms: number;
+  ramBanks: number;
+  memorySelectedRom: number;
+  memorySelectedBank: number;
+  memoryPagingEnabled: boolean;
+  memoryUseShadowScreen: boolean;
+  memoryScreenOffset: number;
 
   // --- Screen frame configuration
-  interruptTact: number;
   verticalSyncLines: number;
   nonVisibleBorderTopLines: number;
   borderTopLines: number;
@@ -79,35 +60,17 @@ export abstract class SpectrumMachineStateBase extends FrameBoundZ80MachineState
   nonVisibleBorderRightTime: number;
   pixelDataPrefetchTime: number;
   attributeDataPrefetchTime: number;
+
+  // --- Calculated screen data
   firstDisplayLine: number;
   lastDisplayLine: number;
   borderLeftPixels: number;
-  displayWidth: number;
   borderRightPixels: number;
+  displayWidth: number;
   screenLineTime: number;
+  rasterLines: number;
   firstDisplayPixelTact: number;
   firstScreenPixelTact: number;
-  rasterLines: number;
-
-  // --- Engine state
-  ulaIssue: number;
-  fastTapeMode: boolean;
-  terminationRom: number;
-  terminationPoint: number;
-  fastVmMode: boolean;
-
-  // --- Keyboard state
-  keyboardLines: number[];
-
-  // --- Port $fe state
-  portBit3LastValue: boolean;
-  portBit4LastValue: boolean;
-  portBit4ChangedFrom0Tacts: number;
-  portBit4ChangedFrom1Tacts: number;
-
-  // --- InterruptState
-  interruptRaised: boolean;
-  interruptRevoked: boolean;
 
   // --- Screen state
   borderColor: number;
@@ -122,11 +85,30 @@ export abstract class SpectrumMachineStateBase extends FrameBoundZ80MachineState
 
   // --- Beeper state
   audioSampleRate: number;
+  audioSampleLength: number;
   audioLowerGate: number;
   audioUpperGate: number;
   audioGateValue: number;
   audioNextSampleTact: number;
+  audioSampleCount: number;
   beeperLastEarBit: boolean;
+
+  // --- Tape state
+  tapeMode: number;
+  tapeBlocksToPlay: number;
+  tapeEof: boolean;
+  tapeBufferPtr: number;
+  tapeNextBlockPtr: number;
+  tapePlayPhase: number;
+  tapeStartTactL: number;
+  tapeStartTactH: number;
+  tapeFastLoad: boolean;
+  tapeSavePhase: number;
+
+  // --- Engine state
+  ulaIssue: number;
+  contentionAccumulated: number;
+  lastExecutionContentionValue: number;
 
   // --- Sound state
   psgSupportsSound: boolean;
@@ -135,34 +117,6 @@ export abstract class SpectrumMachineStateBase extends FrameBoundZ80MachineState
   psgNextClockTact: number;
   psgOrphanSamples: number;
   psgOrphanSum: number;
-
-  // --- Tape state
-  tapeLoadBytesRoutine: number;
-  tapeLoadBytesResume: number;
-  tapeLoadBytesInvalidHeader: number;
-  tapeSaveBytesRoutine: number;
-  tapeBlocksToPlay: number;
-  tapeEof: boolean;
-  tapeBufferPtr: number;
-  tapeNextBlockPtr: number;
-  tapePlayPhase: number;
-  tapeStartTactL: number;
-  tapeStartTactH: number;
-  tapeBitMask: number;
-  tapeLastMicBitTact: number;
-  tapeLastMicBitTactH: number;
-  tapeLastMicBit: boolean;
-  tapeSavePhase: number;
-  tapePilotPulseCount: number;
-  tapeDataBlockCount: number;
-  tapePrevDataPulse: number;
-  tapeSaveDataLen: number;
-  tapeBitOffs: number;
-  tapeDataByte: number;
-
-  // --- Memory paging info
-  memoryUseShadowScreen: boolean;
-  memoryScreenOffset: number;
 
   // --- Screen rendering tact
   renderingPhase: number;
@@ -182,39 +136,6 @@ export class Spectrum48MachineState extends SpectrumMachineStateBase {
  */
 export class Spectrum128MachineState extends SpectrumMachineStateBase {
   type: "128";
-
-  psgToneA: number;
-  psgToneAEnabled: boolean;
-  psgNoiseAEnabled: boolean;
-  psgVolA: number;
-  psgEnvA: boolean;
-  psgCntA: number;
-  psgBitA: boolean;
-
-  psgToneB: number;
-  psgToneBEnabled: boolean;
-  psgNoiseBEnabled: boolean;
-  psgVolB: number;
-  psgEnvB: boolean;
-  psgCntB: number;
-  psgBitB: boolean;
-
-  psgToneC: number;
-  psgToneCEnabled: boolean;
-  psgNoiseCEnabled: boolean;
-  psgVolC: number;
-  psgEnvC: boolean;
-  psgCntC: number;
-  psgBitC: boolean;
-
-  psgNoiseSeed: number;
-  psgNoiseFreq: number;
-  psgCntNoise: number;
-  psgBitNoise: boolean;
-  psgEvnFreq: number;
-  psgEnvStyle: number;
-  psgCntEnv: number;
-  psgPosEnv: number;
 }
 
 /**
@@ -223,16 +144,29 @@ export class Spectrum128MachineState extends SpectrumMachineStateBase {
 export class CambridgeZ88MachineState extends Z80MachineStateBase {
   type: "cz88";
 
-  // --- CPU configuration
-  baseClockFrequency: number;
-  clockMultiplier: number;
-  supportsNextOperations: boolean;
+  // --- Blink device status
+  COM: number;
+  EPR: number;
 
-  // --- BLINK Device
+  // --- Machine modes
+  shiftsReleased: boolean;
+  isInSleepMode: boolean;
+
+  // --- Interrupt
   INT: number;
   STA: number;
-  COM: number;
-  SHFF: boolean;
+  interruptSignalActive: boolean;
+
+  SR0: number;
+  SR1: number;
+  SR2: number;
+  SR3: number;
+  chipMask0: number;
+  chipMask1: number;
+  chipMask2: number;
+  chipMask3: number;
+  chipMask4: number;
+  chipMask5: number;
 
   // --- RTC device
   TIM0: number;
@@ -251,17 +185,32 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   SBF: number;
   SCW: number;
   SCH: number;
+  screenFrameCount: number;
+  flashPhase: boolean;
+  textFlashPhase: boolean;
+  lcdWentOff: boolean;
+
+  // --- Keyboard
+  KBLine0: number;
+  KBLine1: number;
+  KBLine2: number;
+  KBLine3: number;
+  KBLine4: number;
+  KBLine5: number;
+  KBLine6: number;
+  KBLine7: number;
+
+  // --- Beeper state
+  audioSampleRate: number;
+  audioSampleLength: number;
+  audioLowerGate: number;
+  audioUpperGate: number;
+  audioGateValue: number;
+  audioNextSampleTact: number;
+  audioSampleCount: number;
+  beeperLastEarBit: boolean;
 
   // --- Memory device
-  SR0: number;
-  SR1: number;
-  SR2: number;
-  SR3: number;
-  chipMask1: number;
-  chipMask2: number;
-  chipMask3: number;
-  chipMask4: number;
-  chipMask0: number;
   s0OffsetL: number;
   s0FlagL: number;
   s0OffsetH: number;
@@ -278,19 +227,6 @@ export class CambridgeZ88MachineState extends Z80MachineStateBase {
   s3FlagL: number;
   s3OffsetH: number;
   s3FlagH: number;
-
-  KBLine0: number;
-  KBLine1: number;
-  KBLine2: number;
-  KBLine3: number;
-  KBLine4: number;
-  KBLine5: number;
-  KBLine6: number;
-  KBLine7: number;
-
-  // --- Other
-  lcdWentOff: boolean;
-  isInSleepMode: boolean;
 }
 
 /**
@@ -334,20 +270,15 @@ export enum EmulationMode {
   UntilHalt = 1,
 
   /**
-   * Run the CPU until the current CPU rendering frame ends
-   */
-  UntilCpuFrameEnds = 2,
-
-  /**
    * Run the CPU until the current ULA rendering frame ends
    * by the ULA clock
    */
-  UntilFrameEnds = 3,
+  UntilFrameEnds = 2,
 
   /**
    * Run the CPU until a specified value of the PC register is reached
    */
-  UntilExecutionPoint = 4,
+  UntilExecutionPoint = 3,
 }
 
 /**
