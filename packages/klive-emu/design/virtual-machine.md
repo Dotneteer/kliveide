@@ -18,7 +18,7 @@ A machine loop continuously runs a machine frame. A frame is a time period measu
 1. The virtual machine prepares the frame to run.
 2. The engine runs as many CPU instructions that fit into a frame.
 3. The UI has the opportunity to send user input to the virtual machine (e.g., emulate keyboard).
-4. The Ui can display output (e.g., render screen).
+4. The UI can display output (e.g., render screen).
 
 
 

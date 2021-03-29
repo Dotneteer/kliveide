@@ -29,7 +29,7 @@
 
 ## Virtual Machines
 
-All virtual machines (ZX Spectrum, Cabridge Z88, and future machines) run in the Emulator window's renderer process as a combination of JavaScript and WebAssembly code.
+All virtual machines (ZX Spectrum, Cambridge Z88, and future machines) run in the Emulator window's renderer process as a combination of JavaScript and WebAssembly code.
 - WebAssembly: virtual machine core implementation (CPU, memory, and other hardware emulation)
 - JavaScript: UI integration and machine execution loop management
 
