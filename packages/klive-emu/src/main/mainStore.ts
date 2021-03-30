@@ -29,8 +29,8 @@ const forwardToRendererMiddleware = () => (next: any) => async (
   action: KliveAction
 ) => {
   if (!isForwarding) {
-    await ideStateMessenger?.forwardAction(action);
-    await emuStateMessenger?.forwardAction(action);
+    ideStateMessenger?.forwardAction(action);
+    emuStateMessenger?.forwardAction(action);
   }
 
   // --- Next middleware element
@@ -45,10 +45,6 @@ const forwardToRendererMiddleware = () => (next: any) => async (
   getInitialAppState(),
   applyMiddleware(forwardToRendererMiddleware)
 );
-
-mainStore.subscribe(() => {
-  console.log(JSON.stringify(mainStore.getState()));
-})
 
 /**
  * This class forwards state changes in main to a particular renderer

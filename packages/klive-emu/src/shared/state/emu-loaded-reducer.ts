@@ -3,7 +3,7 @@ import { ActionCreator, KliveAction } from "./state-core";
 // ============================================================================
 // Actions
 
-export const emuLoadUi: ActionCreator = () => ({ type: "EMU_UI_LOADED" });
+export const emuLoadUiAction: ActionCreator = () => ({ type: "EMU_UI_LOADED" });
 
 // ============================================================================
 // Reducer

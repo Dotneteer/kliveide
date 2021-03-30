@@ -3,17 +3,20 @@ import { ActionCreator, KliveAction } from "./state-core";
 // ============================================================================
 // Actions
 
-export const ideLoadUiAction: ActionCreator = () => ({ type: "IDE_UI_LOADED" });
+export const setThemeAction: ActionCreator = (theme: string) => ({
+  type: "SET_THEME",
+  payload: { theme },
+});
 
 // ============================================================================
 // Reducer
 
-const initialState = false;
+const initialState = "dark";
 
-export default function (state = initialState, { type }: KliveAction): boolean {
+export default function (state = initialState, { type, payload }: KliveAction): string {
   switch (type) {
-    case "IDE_UI_LOADED":
-      return true;
+    case "SET_THEME":
+      return payload.theme;
     default:
       return state;
   }

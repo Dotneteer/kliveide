@@ -23,9 +23,7 @@ let isForwarding = false;
  * This middleware function forwards the action originated in the main process
  * to the renderer processes of browser windows.
  */
-const forwardToMainMiddleware = () => (next: any) => (
-  action: KliveAction
-) => {
+const forwardToMainMiddleware = () => (next: any) => (action: KliveAction) => {
   if (!isForwarding) {
     forwarder.forwardAction(action);
   }
@@ -41,15 +39,14 @@ export const emuStore = createStore(
   applyMiddleware(forwardToMainMiddleware)
 );
 
-emuStore.subscribe(() => {
-  console.log(JSON.stringify(emuStore.getState()));
-})
-
-ipcRenderer.on(RENDERER_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionMessage) => {
-  isForwarding = true;
-  try {
-    emuStore.dispatch(msg.action);
-  } finally {
-    isForwarding = false;
+ipcRenderer.on(
+  RENDERER_STATE_REQUEST_CHANNEL,
+  (_ev, msg: ForwardActionMessage) => {
+    isForwarding = true;
+    try {
+      emuStore.dispatch(msg.action);
+    } finally {
+      isForwarding = false;
+    }
   }
-});
+);
