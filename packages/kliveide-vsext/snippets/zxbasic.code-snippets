@@ -1,0 +1,25 @@
+{
+    // https://code.visualstudio.com/docs/editor/userdefinedsnippets   
+
+    "For inline": {
+      "prefix": "fori",
+      "body": ["FOR ${1:i}=${2:1} TO ${3:5}: $0 :NEXT $1"],
+      "description": "For loop inline"
+    },
+    "For inline step": {
+      "prefix": "foris",
+      "body": ["FOR ${1:i}=${2:1} TO ${3:5} STEP ${4:1}: $0 :NEXT $1"],
+      "description": "For loop inline with step"
+    },    
+    "For": {
+      "prefix": "for",
+      "body": ["FOR ${1:i}=${2:1} TO ${3:5}", "\t$0", "NEXT $1"],
+      "description": "For loop"
+    },
+    "For step": {
+      "prefix": "fors",
+      "body": ["FOR ${1:i}=${2:1} TO ${3:5} STEP ${4:1}", "\t$0", "NEXT $1"],
+      "description": "For loop with step"
+    }
+
+}
