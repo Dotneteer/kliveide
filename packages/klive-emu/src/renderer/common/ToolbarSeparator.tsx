@@ -1,7 +1,7 @@
 import * as React from "react";
 
 /**
- * Represents the statusbar of the emulator
+ * Represents a toolbar separator comonent
  */
 export class ToolbarSeparator extends React.Component {
   render() {
