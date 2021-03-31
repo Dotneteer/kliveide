@@ -22,6 +22,7 @@ function setupEmuWindow(): void {
 
 function setupIdeWindow(): void {
   ideWindow = new IdeWindow();
+  ideWindow.hide();
   ideWindow.setupMenu();
   ideWindow.load();
   registerIdeWindowForwarder(ideWindow.window);

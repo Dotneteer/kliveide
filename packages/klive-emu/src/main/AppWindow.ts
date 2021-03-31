@@ -70,6 +70,20 @@ export abstract class AppWindow {
   }
 
   /**
+   * Hide this window
+   */
+  hide(): void {
+    this.window.hide();
+  }
+  
+  /**
+   * Show this window
+   */
+  show(): void {
+    this.window.show();
+  }
+
+  /**
    * Loads the contenst of the main window
    */
   load(): void {
