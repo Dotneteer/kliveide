@@ -1,8 +1,14 @@
 import * as path from "path";
 import * as electronLocalShortcut from "electron-localshortcut";
 
-import { BrowserWindow, BrowserWindowConstructorOptions } from "electron";
+import {
+  BrowserWindow,
+  BrowserWindowConstructorOptions,
+  MenuItem,
+} from "electron";
 import { __DARWIN__, __LINUX__, __WIN32__ } from "./electron-utils";
+import { KliveAction } from "../shared/state/state-core";
+import { mainStore } from "./mainStore";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.
@@ -64,6 +70,20 @@ export abstract class AppWindow {
   }
 
   /**
+   * Hide this window
+   */
+  hide(): void {
+    this.window.hide();
+  }
+  
+  /**
+   * Show this window
+   */
+  show(): void {
+    this.window.show();
+  }
+
+  /**
    * Loads the contenst of the main window
    */
   load(): void {
@@ -81,8 +101,7 @@ export abstract class AppWindow {
   /**
    * Sets up the window menu
    */
-  setupMenu(): void {
-  }
+  setupMenu(): void {}
 
   /**
    * The file to store the window state
@@ -225,5 +244,22 @@ export abstract class AppWindow {
    */
   onClosed(): void {
     this._window = null;
+  }
+
+  // ==========================================================================
+  // Helpers
+
+  /**
+   * Executes a checkbox action
+   * @param menuItem Menu item
+   * @param showAction Action on show
+   * @param hideAction Action on hide
+   */
+  checkboxAction(
+    menuItem: MenuItem,
+    showAction: KliveAction,
+    hideAction: KliveAction
+  ): void {
+    mainStore.dispatch(menuItem.checked ? showAction: hideAction);
   }
 }

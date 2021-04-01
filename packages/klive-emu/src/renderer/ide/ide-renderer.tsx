@@ -1,14 +1,10 @@
-/**
- * React renderer.
- */
-// Import the styles here to process them with webpack
-import "_public/style.css";
+import "_public/style.scss";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { ideStore } from "./ideStore";
-import { ideLoadUi } from "../../shared/state/ide-loaded-reducer";
+import { setThemeAction } from "../../shared/state/theme-reducer";
 
 ReactDOM.render(
   <Provider store={ideStore}>
@@ -20,5 +16,5 @@ ReactDOM.render(
 );
 
 function signInit(): void {
-  ideStore.dispatch(ideLoadUi())
+  ideStore.dispatch(setThemeAction("light"));
 }

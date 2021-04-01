@@ -29,8 +29,8 @@ const forwardToRendererMiddleware = () => (next: any) => async (
   action: KliveAction
 ) => {
   if (!isForwarding) {
-    await ideStateMessenger?.forwardAction(action);
-    await emuStateMessenger?.forwardAction(action);
+    ideStateMessenger?.forwardAction(action);
+    emuStateMessenger?.forwardAction(action);
   }
 
   // --- Next middleware element
@@ -45,10 +45,6 @@ const forwardToRendererMiddleware = () => (next: any) => async (
   getInitialAppState(),
   applyMiddleware(forwardToRendererMiddleware)
 );
-
-mainStore.subscribe(() => {
-  console.log(JSON.stringify(mainStore.getState()));
-})
 
 /**
  * This class forwards state changes in main to a particular renderer
@@ -89,16 +85,12 @@ class MainToRendererStateForwarder extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  get requestChannel(): string {
-    return RENDERER_STATE_REQUEST_CHANNEL;
-  }
+  readonly requestChannel = RENDERER_STATE_REQUEST_CHANNEL;
 
   /**
    * The channel to listen for responses
    */
-  get responseChannel(): string {
-    return MAIN_STATE_RESPONSE_CHANNEL;
-  }
+  readonly responseChannel = MAIN_STATE_RESPONSE_CHANNEL
 }
 
 // --- Messenger instances

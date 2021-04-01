@@ -25,7 +25,7 @@ const commonConfig = {
       _renderer: srcPaths("src/renderer"),
       _utils: srcPaths("src/utils"),
     },
-    extensions: [".js", ".json", ".ts", ".tsx"],
+    extensions: [".js", ".json", ".ts", ".tsx", ".scss"],
   },
   module: {
     rules: [
@@ -36,7 +36,7 @@ const commonConfig = {
       },
       {
         test: /\.(scss|css)$/,
-        use: ["style-loader", "css-loader"],
+        use: ["style-loader", "css-loader", "sass-loader"],
       },
       {
         test: /\.(jpg|png|svg|ico|icns)$/,
@@ -125,4 +125,9 @@ const preloadConfig = {
   },
 };
 
-module.exports = [mainConfig, emuRendererConfig, ideRendererConfig, preloadConfig];
+module.exports = [
+  mainConfig,
+  emuRendererConfig,
+  ideRendererConfig,
+  preloadConfig,
+];

@@ -13,15 +13,18 @@ let ideWindow: IdeWindow;
 /**
  * Sets up the main window
  */
-function setupEmuWindow(): void {
+async function setupEmuWindow(): Promise<void> {
   emuWindow = new EmuWindow();
   emuWindow.setupMenu();
   emuWindow.load();
   registerEmuWindowForwarder(emuWindow.window);
+  await emuWindow.ensureStarted();
+  emuWindow.requestMachineType("sp48");
 }
 
 function setupIdeWindow(): void {
   ideWindow = new IdeWindow();
+  ideWindow.hide();
   ideWindow.setupMenu();
   ideWindow.load();
   registerIdeWindowForwarder(ideWindow.window);
@@ -53,3 +56,4 @@ app.on("activate", () => {
 ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionMessage) => {
   forwardRendererState(msg);
 });
+

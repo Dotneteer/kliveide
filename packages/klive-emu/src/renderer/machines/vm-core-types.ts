@@ -43,6 +43,11 @@ export interface Firmware {
 }
 
 /**
+ * Options to create a machine
+ */
+export type MachineCreationOptions = MachineSetupOptions & Record<string, any>;
+
+/**
  * States of the virtual machine core
  *  |--> WaitForSetup --> Configured --> TurnedOn -->|
  *  |<-----------------------------------------------|

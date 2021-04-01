@@ -1,0 +1,163 @@
+* {
+  box-sizing: border-box;
+}
+
+@mixin sizeToWindow() {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  flex-shrink: 1;
+  flex-grow: 1;
+}
+
+html,
+body {
+  font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
+    HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background-color: 0;
+  min-width: 100px;
+  min-height: 40px;
+  @include sizeToWindow();
+}
+
+.app-container {
+  @include sizeToWindow();
+}
+
+.toolbar {
+  display: flex;
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 40px;
+  width: 100%;
+  padding: 0px 4px;
+  background-color: var(--toolbar-active-background-color);
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: start;
+  font-size: 0.9em;
+}
+
+.toolbar-button {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  padding: 4px 4px;
+  margin: 0px 0px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+
+  &.disabled {
+    cursor: default;
+  }
+
+  &.selected {
+    border: 1px solid #007acc;
+  }
+}
+
+.separator-container {
+  height: 100%;
+  padding: 4px 8px;
+
+  & .separator {
+    border-left: var(--toolbar-separator);
+    height: 100%;
+  }
+}
+
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  width: 100%;
+}
+
+.statusbar {
+  display: flex;
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 28px;
+  width: 100%;
+  padding: 0px 8px;
+  background-color: var(--statusbar-background-color);
+  box-sizing: border-box;
+  align-content: start;
+  align-items: center;
+  justify-items: start;
+  font-size: 0.9em;
+
+  &.label {
+    margin: 0px 8px;
+    color: var(--statusbar-foreground-color);
+  }
+
+  &.section {
+    display: flex;
+    flex-shrink: 0;
+    flex-grow: 0;
+    height: 100%;
+    margin: 0 4px;
+    align-content: flex-start;
+    align-items: center;
+    justify-items: start;
+  }
+
+  &.placeholder {
+    width: 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
+  }
+}
+
+// ============================================================================
+// Splitter related styles
+
+.split-container {
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.keyboard-panel {
+  display: flex;
+  overflow: hidden;
+  flex-shrink: 1;
+  flex-grow: 1;
+  height: 100%;
+  background-color: var(--keyboard-background-color);
+  padding: 16px 12px 8px 12px;
+  box-sizing: border-box;
+  align-content: start;
+  justify-items: start;
+  justify-content: center;
+}
+
+.emulator-panel {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  flex-shrink: 1;
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+  background-color: var(--emulator-background-color);
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+}
+
+.emulator-screen {
+  background-color: #404040;
+}

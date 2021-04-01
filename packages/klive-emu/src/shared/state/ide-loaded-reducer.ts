@@ -3,7 +3,7 @@ import { ActionCreator, KliveAction } from "./state-core";
 // ============================================================================
 // Actions
 
-export const ideLoadUi: ActionCreator = () => ({ type: "IDE_UI_LOADED" });
+export const ideLoadUiAction: ActionCreator = () => ({ type: "IDE_UI_LOADED" });
 
 // ============================================================================
 // Reducer
