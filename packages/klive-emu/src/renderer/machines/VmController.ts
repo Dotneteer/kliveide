@@ -333,7 +333,7 @@ enum VmState {
  * This class represents the arguments of the event that signs that
  * the state of the virtual machine changes
  */
-class VmStateChangedArgs {
+export class VmStateChangedArgs {
   /**
    * Initializes the event arguments
    * @param oldState Old virtual machine state

@@ -1,5 +1,7 @@
 import * as React from "react";
 import { SplitContainer } from "../common/SplitContainer";
+import EmulatorPanel from "./EmulatorPanel";
+import { KeyboardPanel } from "./KeyboardPanel";
 
 /**
  * Represents the main canvas of the emulator
@@ -7,13 +9,9 @@ import { SplitContainer } from "../common/SplitContainer";
 export class MainPanel extends React.Component {
   render() {
     return (
-      <SplitContainer>
-        <div
-          style={{ background: "grey", width: "100%", height: "100%" }}
-        ></div>
-        <div
-          style={{ background: "darkgrey", width: "100%", height: "100%" }}
-        ></div>
+      <SplitContainer direction="vertical">
+        <EmulatorPanel />
+        <KeyboardPanel type="sp48" />
       </SplitContainer>
     );
   }

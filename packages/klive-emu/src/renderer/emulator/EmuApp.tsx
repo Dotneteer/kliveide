@@ -9,6 +9,8 @@ import { connect } from "react-redux";
 import { Toolbar } from "./Toolbar";
 import { MainPanel } from "./MainPanel";
 import { Statusbar } from "./Statusbar";
+import { emuLoadUiAction } from "../../shared/state/emu-loaded-reducer";
+import "./emu-message-processor";
 
 interface Props {
   emuViewOptions: EmuViewOptions;
@@ -38,6 +40,9 @@ class EmuApp extends React.Component<Props, State> {
   }
 
   componentDidMount() {
+    // --- The emulator window is ready to set up the virtual machine
+    emuStore.dispatch(emuLoadUiAction());
+
     // --- Handle theme updates
     this.updateThemeState();
     this._themeAware = new StateAwareObject(emuStore, "theme");
@@ -80,3 +85,5 @@ class EmuApp extends React.Component<Props, State> {
 export default connect((state: AppState) => {
   return { emuViewOptions: state.emuViewOptions };
 }, null)(EmuApp);
+
+

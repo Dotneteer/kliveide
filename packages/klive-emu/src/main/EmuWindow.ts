@@ -1,4 +1,13 @@
-import { app, Menu, MenuItem, MenuItemConstructorOptions } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  IpcMainEvent,
+  Menu,
+  MenuItem,
+  MenuItemConstructorOptions,
+} from "electron";
+import { setMachineTypeAction } from "../shared/state/machine-type-reducer";
 import {
   emuHideKeyboardAction,
   emuHideStatusbarAction,
@@ -9,6 +18,25 @@ import {
 } from "../shared/state/emu-view-options-reducer";
 import { AppWindow } from "./AppWindow";
 import { __DARWIN__ } from "./electron-utils";
+import { mainStore } from "./mainStore";
+import { MessengerBase } from "../shared/messaging/MessengerBase";
+import {
+  RequestMessage,
+  ResponseMessage,
+} from "../shared/messaging/message-types";
+import {
+  MAIN_TO_EMU_REQUEST_CHANNEL,
+  MAIN_TO_EMU_RESPONE_CHANNEL,
+} from "../shared/messaging/channels";
+import { IEmuAppWindow } from "./IEmuAppWindow";
+import {
+  MachineContextProvider,
+  MachineContextProviderBase,
+} from "./machine-context";
+import {
+  ZxSpectrum128ContextProvider,
+  ZxSpectrum48ContextProvider,
+} from "./zx-spectrum-context";
 
 // --- Menu IDs
 const TOGGLE_KEYBOARD = "toggle_keyboard";
@@ -28,13 +56,26 @@ const STEP_OUT_VM = "step_out_vm";
 /**
  * Represents the singleton emulator window
  */
-export class EmuWindow extends AppWindow {
+export class EmuWindow extends AppWindow implements IEmuAppWindow {
+  private _machineContextProvider: MachineContextProvider;
+
+  /**
+   * Now, we allow only a singleton instance
+   */
+  static instance: EmuWindow;
+
+  /**
+   * Messaging channel to the Emulator renderer
+   */
+  readonly emuMessenger: MainToEmulatorMessenger;
+
   /**
    * Initializes the window instance
    */
   constructor() {
     super();
     EmuWindow.instance = this;
+    this.emuMessenger = new MainToEmulatorMessenger(this.window);
   }
 
   get contentFile(): string {
@@ -48,13 +89,12 @@ export class EmuWindow extends AppWindow {
     return "emu-window-state.json";
   }
 
-  // ==========================================================================
-  // Static members
-
   /**
-   * Now, we allow only a singleton instance
+   * The window has been closed
    */
-  static instance: EmuWindow;
+  onClosed(): void {
+    app.quit();
+  }
 
   /**
    * Sets up the application menu
@@ -199,28 +239,34 @@ export class EmuWindow extends AppWindow {
           label: "Start",
           accelerator: "F5",
           enabled: true,
-          //click: async () => await this.startVm(),
+          click: async () => {
+            console.log("StartVm");
+            await this.emuMessenger.sendMessage({ type: "startVm" });
+          },
         },
         {
           id: PAUSE_VM,
           label: "Pause",
           accelerator: "Shift+F5",
           enabled: false,
-          //click: async () => await this.pauseVm(),
+          click: async () =>
+            await this.emuMessenger.sendMessage({ type: "pauseVm" }),
         },
         {
           id: STOP_VM,
           label: "Stop",
           accelerator: "F4",
           enabled: false,
-          //click: async () => await this.stopVm(),
+          click: async () =>
+            await this.emuMessenger.sendMessage({ type: "stopVm" }),
         },
         {
           id: RESTART_VM,
           label: "Restart",
           accelerator: "Shift+F4",
           enabled: false,
-          //click: async () => await this.restartVm(),
+          click: async () =>
+            await this.emuMessenger.sendMessage({ type: "restartVm" }),
         },
         { type: "separator" },
         {
@@ -228,28 +274,32 @@ export class EmuWindow extends AppWindow {
           label: "Start with debugging",
           accelerator: "Ctrl+F5",
           enabled: true,
-          //click: async () => await this.debugVm(),
+          click: async () =>
+            await this.emuMessenger.sendMessage({ type: "debugVm" }),
         },
         {
           id: STEP_INTO_VM,
           label: "Step into",
           accelerator: "F3",
           enabled: false,
-          //click: async () => await this.stepIntoVm(),
+          click: async () =>
+            await this.emuMessenger.sendMessage({ type: "stepIntoVm" }),
         },
         {
           id: STEP_OVER_VM,
           label: "Step over",
           accelerator: "Shift+F3",
           enabled: false,
-          //click: async () => await this.stepOverVm(),
+          click: async () =>
+            await this.emuMessenger.sendMessage({ type: "stepOverVm" }),
         },
         {
           id: STEP_OUT_VM,
           label: "Step out",
           accelerator: "Ctrl+F3",
           enabled: false,
-          //click: async () => await this.stepOutVm(),
+          click: async () =>
+            await this.emuMessenger.sendMessage({ type: "stepOutVm" }),
         },
       ],
     };
@@ -410,6 +460,115 @@ export class EmuWindow extends AppWindow {
     //   );
     // }
   }
+
+  /**
+   * Saves the current application settings
+   */
+  saveAppSettings(): void {
+    const state = mainStore.getState();
+    // const machineType = state.currentType.split("_")[0];
+    // const kliveSettings: KliveSettings = {
+    //   machineType,
+    //   viewOptions: {
+    //     showToolbar: state.showToolbar,
+    //     showFrameInfo: state.showFrames,
+    //     showKeyboard: state.keyboardPanel,
+    //     showStatusbar: state.statusbar,
+    //     keyboardHeight: state.keyboardHeight,
+    //   },
+    // };
+    // if (this._machineContextProvider) {
+    //   kliveSettings.machineSpecific = appSettings?.machineSpecific;
+    //   if (!kliveSettings.machineSpecific) {
+    //     kliveSettings.machineSpecific = {};
+    //   }
+    //   kliveSettings.machineSpecific[
+    //     machineType
+    //   ] = this._machineContextProvider.getMachineSpecificSettings();
+    // }
+    // saveKliveSettings(kliveSettings);
+    // reloadSettings();
+  }
+
+  // ==========================================================================
+  // IEmuAppWindow implementation
+
+  /**
+   * Posts a message from the renderer to the main
+   * @param message Message contents
+   */
+  postMessageToEmulator(message: RequestMessage): void {}
+
+  /**
+   * Requests a machine type according to its menu ID
+   * @param id Machine type, or menu ID of the machine type
+   * @param options Machine construction options
+   */
+  async requestMachineType(id: string, options?: Record<string, any>): Promise<void> {
+    // #1: Create the context provider for the machine
+    const contextProvider = contextRegistry[id];
+    if (!contextProvider) {
+      // TODO: issue an error
+      return;
+    }
+
+    // #2: Set up the firmware
+    this._machineContextProvider = new (contextProvider as any)(options) as MachineContextProvider;
+    mainStore.dispatch(setMachineTypeAction(id));
+    console.log(`Machine type changed to: ${id}`);
+  }
+
+  // ==========================================================================
+  // Helpers
+
+  /**
+   * Ensures that the Emulator UI is started
+   */
+  async ensureStarted(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const interval = setInterval(() => {
+        if (mainStore.getState().emuUiLoaded) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 20);
+    });
+  }
+}
+
+/**
+ * This class sends messages from main to the emulator window
+ */
+class MainToEmulatorMessenger extends MessengerBase {
+  /**
+   * Initializes the listener that processes responses
+   */
+  constructor(public readonly window: BrowserWindow) {
+    super();
+    ipcMain.on(
+      this.responseChannel,
+      (_ev: IpcMainEvent, response: ResponseMessage) =>
+        this.processResponse(response)
+    );
+  }
+
+  /**
+   * Sends out the message
+   * @param message Message to send
+   */
+  protected send(message: RequestMessage): void {
+    this.window.webContents.send(this.requestChannel, message);
+  }
+
+  /**
+   * The channel to send the request out
+   */
+  readonly requestChannel = MAIN_TO_EMU_REQUEST_CHANNEL;
+
+  /**
+   * The channel to listen for responses
+   */
+  readonly responseChannel = MAIN_TO_EMU_RESPONE_CHANNEL;
 }
 
 /**
@@ -437,3 +596,11 @@ const SOUND_MENU_ITEMS: { id: string; level: number }[] = [
   { id: "sound_level_high", level: 0.5 },
   { id: "sound_level_highest", level: 1.0 },
 ];
+
+/**
+ * Stores the registry of context providers
+ */
+const contextRegistry: Record<string, typeof MachineContextProviderBase> = {
+  sp48: ZxSpectrum48ContextProvider,
+  sp128: ZxSpectrum128ContextProvider,
+};

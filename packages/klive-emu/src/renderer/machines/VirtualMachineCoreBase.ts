@@ -2,6 +2,7 @@ import { IVmController } from "./IVmController";
 import {
   ExecuteCycleOptions,
   MachineCoreState,
+  MachineCreationOptions,
   MachineSetupOptions,
   MachineState,
 } from "./vm-core-types";
@@ -15,6 +16,12 @@ import {
 export abstract class VirtualMachineCoreBase {
   private _coreState: MachineCoreState;
   private _controller: IVmController;
+
+  /**
+   * Instantiates a core with the specified options
+   * @param options Options to use with machine creation
+   */
+  constructor(protected readonly options: MachineCreationOptions) {}
 
   /**
    * Attaches this machine core to a controller

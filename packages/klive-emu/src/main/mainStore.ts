@@ -85,16 +85,12 @@ class MainToRendererStateForwarder extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  get requestChannel(): string {
-    return RENDERER_STATE_REQUEST_CHANNEL;
-  }
+  readonly requestChannel = RENDERER_STATE_REQUEST_CHANNEL;
 
   /**
    * The channel to listen for responses
    */
-  get responseChannel(): string {
-    return MAIN_STATE_RESPONSE_CHANNEL;
-  }
+  readonly responseChannel = MAIN_STATE_RESPONSE_CHANNEL
 }
 
 // --- Messenger instances

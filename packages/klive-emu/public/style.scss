@@ -128,3 +128,36 @@ body {
   height: 100%;
   width: 100%;
 }
+
+.keyboard-panel {
+  display: flex;
+  overflow: hidden;
+  flex-shrink: 1;
+  flex-grow: 1;
+  height: 100%;
+  background-color: var(--keyboard-background-color);
+  padding: 16px 12px 8px 12px;
+  box-sizing: border-box;
+  align-content: start;
+  justify-items: start;
+  justify-content: center;
+}
+
+.emulator-panel {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  flex-shrink: 1;
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+  background-color: var(--emulator-background-color);
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+}
+
+.emulator-screen {
+  background-color: #404040;
+}
