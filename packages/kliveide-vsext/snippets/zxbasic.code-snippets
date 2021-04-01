@@ -3,45 +3,45 @@
 
   "for i=n to n inline": {
     "prefix": "fori",
-    "body": ["FOR ${1:i}=${2:1} to ${3:5} ${4|step 1,|}: $0 :next $1"],
-    "description": "Create for loop inline eg:\nfor i = 1 to 10: print i: next i\n(Sinclair Basic compatible)"
+    "body": ["for ${1:i} = ${2:1} to ${3:5} step ${4:1}: $0 :next $1"],
+    "description": "Create for loop inline eg:\n\nfor i = 1 to 10: print i: next i\n\n(Sinclair Basic compatible)"
   },
   "for i=n to n": {
     "prefix": "for",
-    "body": ["for ${1:i}=${2:1} to ${3:5} ${4|step 1,|}:", "\t$0", "next $1"],
-    "description": "Create for loop eg:\nfor i = 1 to 10\n\tprint i\nnext i\n(Sinclair Basic compatible)"
+    "body": ["for ${1:i} = ${2:1} to ${3:5} step ${4:1}:", "\t$0", "next $1"],
+    "description": "Create for loop eg:\n\nfor i = 1 to 10\n  print i\nnext i\n\n(Sinclair Basic compatible)"
   },
 
   "subroutine name (...": {
     "prefix": "sub",
     "body": ["sub ${1:name}(${2})", "\t$0", "end sub"],
-    "description": "Create a subroutine eg:\nsub printat (y as uByte, x as uByte, data$ as STRING)\n\tprint at y, x, data$\nend sub"
+    "description": "Create a subroutine eg:\n\nsub printat (y as uByte, x as uByte, data$ as STRING)\n  print at y, x, data$\nend sub\n\n"
   },
 
   "do : loop expr": {
     "prefix": "do",
     "body": ["do", "\t$0", "loop ${1|until,while|} ${2:expr}"],
-    "description": "Create a do : loop while/until expression eg:\ndo\n\tprint \"go\"\nloop until INKEY$ <> \"\"\ndo\n\tprint \"go\"\nloop while INKEY$ = \"\""
+    "description": "Create a do : loop while/until expression eg:\n\ndo\n  print \"go\"\nloop until INKEY$ <> \"\"\ndo\n  print \"go\"\nloop while INKEY$ = \"\"\n\n"
   },
   "do expr : loop": {
     "prefix": "doexpr",
     "body": ["do ${1|until,while|} ${2:expr}", "\t$0", "loop"],
-    "description": "Create a do while/until expression : loop eg:\ndo until INKEY$ <> \"\"\n\tprint \"go\"\nloop\nndo while INKEY$ = \"\"\n\tprint \"go\"\nloop"
+    "description": "Create a do while/until expression : loop eg:\n\ndo until INKEY$ <> \"\"\n  print \"go\"\nloop\nndo while INKEY$ = \"\"\n  print \"go\"\nloop\n\n"
   },
 
   "while expr : end": {
     "prefix": "while",
     "body": ["while ${1:expr}", "\t$0", "end while"],
-    "description": "Create a While : end while eg:\nwhile a < b\n  let a = a + 1\n poke a, 0\nend while"
+    "description": "Create a While : end while eg:\n\nwhile a < b\n  let a = a + 1\n  poke a, 0\nend while\n\n"
   },
   "if expr": {
     "prefix": "if",
     "body": ["if ${1:expr} then $0"],
-    "description": "if expression eg:\nif a < 5 then print \"A is less than five\"\n(Sinclair Basic compatible)"
+    "description": "if expression eg:\n\nif a < 5 then print \"A is less\"\n\n(Sinclair Basic compatible)"
   },
   "if expr : end": {
     "prefix": "ifend",
     "body": ["if ${1:expr}", "\t$0", "end if"],
-    "description": "if expression : endif eg:\nif a < 5 then\n\tprint \"1\"\n\tprint \"2\"\nend if"
+    "description": "if expression : endif eg:\n\nif a < 5 then\n  print \"1\"\n  print \"2\"\nend if\n\n"
   }
 }
