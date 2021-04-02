@@ -1,4 +1,5 @@
 import {
+  CreateMachineResponse,
   DefaultResponse,
   RequestMessage,
   ResponseMessage,
@@ -19,6 +20,12 @@ async function processEmulatorMessages(
   message: RequestMessage
 ): Promise<ResponseMessage> {
   switch (message.type) {
+    case "CreateMachine":
+      console.log(`Create machine: ${message.machineId}`);
+      return <CreateMachineResponse>{
+        type: "CreateMachineResponse",
+        error: null,
+      };
     case "startVm":
       console.log("startVm");
       return <DefaultResponse>{ type: "ack" };

@@ -5,7 +5,6 @@ import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { AppState } from "../shared/state/AppState";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { checkTapeFile } from "../shared/tape/readers";
-import { IEmuAppWindow } from "./IEmuAppWindow";
 import { mainStore } from "./mainStore";
 import {
   spectrumBeamPositionAction,
@@ -223,8 +222,9 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
 
   /**
    * Gets the startup ROMs for the machine
+   * @return Firmware contents, if found; otherwise, error message
    */
-  getStartupRoms(): Uint8Array[] | string {
+   getFirmware(): Uint8Array[] | string {
     return this.loadRoms(["sp48.rom"], [0x4000]);
   }
 }
@@ -257,8 +257,9 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
 
   /**
    * Gets the startup ROMs for the machine
+   * @return Firmware contents, if found; otherwise, error message
    */
-  getStartupRoms(): Uint8Array[] | string {
+   getFirmware(): Uint8Array[] | string {
     return this.loadRoms(["sp128-0.rom", "sp128-1.rom"], [0x4000]);
   }
 }

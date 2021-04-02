@@ -37,6 +37,7 @@ import {
   ZxSpectrum128ContextProvider,
   ZxSpectrum48ContextProvider,
 } from "./zx-spectrum-context";
+import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
 
 // --- Menu IDs
 const TOGGLE_KEYBOARD = "toggle_keyboard";
@@ -504,7 +505,7 @@ export class EmuWindow extends AppWindow implements IEmuAppWindow {
    * @param id Machine type, or menu ID of the machine type
    * @param options Machine construction options
    */
-  async requestMachineType(id: string, options?: Record<string, any>): Promise<void> {
+  async requestMachineType(id: string, options?: MachineCreationOptions): Promise<void> {
     // #1: Create the context provider for the machine
     const contextProvider = contextRegistry[id];
     if (!contextProvider) {
@@ -514,6 +515,16 @@ export class EmuWindow extends AppWindow implements IEmuAppWindow {
 
     // #2: Set up the firmware
     this._machineContextProvider = new (contextProvider as any)(options) as MachineContextProvider;
+    const firmware = this._machineContextProvider.getFirmware();
+    if (typeof firmware === "string") {
+      // TODO: issue an error
+      console.log(`firmware issue: ${firmware}`);
+      return;
+    }
+    const creationOptions = {...options, firmware }
+
+    // #3: Instantiate the machine
+
     mainStore.dispatch(setMachineTypeAction(id));
     console.log(`Machine type changed to: ${id}`);
   }
