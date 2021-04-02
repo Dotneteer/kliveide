@@ -1,4 +1,5 @@
 import { BrowserWindow } from "electron";
+import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
 import { RequestMessage } from "../shared/messaging/message-types";
 
 /**
@@ -26,5 +27,5 @@ export interface IEmuAppWindow {
    * @param id Machine type, or menu ID of the machine type
    * @param options Machine construction options
    */
-  requestMachineType(id: string, options?: Record<string, any>): Promise<void>;
+  requestMachineType(id: string, options?: MachineCreationOptions): Promise<void>;
 }

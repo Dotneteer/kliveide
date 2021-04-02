@@ -8,7 +8,7 @@ import { appReducers } from "../../shared/state/app-reducers";
 import { RendererToMainStateForwarder } from "../common/RendererToMainStateForwarder";
 import { getInitialAppState } from "../../shared/state/AppState";
 import { IpcRendereApi } from "../../exposed-apis";
-import { ForwardActionMessage } from "../../shared/messaging/message-types";
+import { ForwardActionRequest } from "../../shared/messaging/message-types";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -45,7 +45,7 @@ ideStore.subscribe(() => {
   console.log(JSON.stringify(ideStore.getState()));
 })
 
-ipcRenderer.on(RENDERER_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionMessage) => {
+ipcRenderer.on(RENDERER_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   isForwarding = true;
   try {
     ideStore.dispatch(msg.action);

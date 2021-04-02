@@ -8,7 +8,7 @@ import { appReducers } from "../../shared/state/app-reducers";
 import { RendererToMainStateForwarder } from "../common/RendererToMainStateForwarder";
 import { getInitialAppState } from "../../shared/state/AppState";
 import { IpcRendereApi } from "../../exposed-apis";
-import { ForwardActionMessage } from "../../shared/messaging/message-types";
+import { ForwardActionRequest } from "../../shared/messaging/message-types";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -41,7 +41,7 @@ export const emuStore = createStore(
 
 ipcRenderer.on(
   RENDERER_STATE_REQUEST_CHANNEL,
-  (_ev, msg: ForwardActionMessage) => {
+  (_ev, msg: ForwardActionRequest) => {
     isForwarding = true;
     try {
       emuStore.dispatch(msg.action);

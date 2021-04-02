@@ -4,7 +4,7 @@ import { EmuWindow } from "./EmuWindow";
 import { IdeWindow } from "./IdeWindow";
 import { forwardRendererState, registerEmuWindowForwarder, registerIdeWindowForwarder } from "./mainStore";
 import { MAIN_STATE_REQUEST_CHANNEL } from "../shared/messaging/channels";
-import { ForwardActionMessage, RequestMessage } from "../shared/messaging/message-types";
+import { ForwardActionRequest, RequestMessage } from "../shared/messaging/message-types";
 
 // --- Global reference to the mainwindow
 let emuWindow: EmuWindow;
@@ -53,7 +53,7 @@ app.on("activate", () => {
   }
 });
 
-ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionMessage) => {
+ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   forwardRendererState(msg);
 });
 

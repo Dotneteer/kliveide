@@ -3,7 +3,7 @@ import { appReducers } from "../shared/state/app-reducers";
 import { MessengerBase } from "../shared/messaging/MessengerBase";
 import {
   DefaultResponse,
-  ForwardActionMessage,
+  ForwardActionRequest,
   RequestMessage,
   ResponseMessage,
 } from "../shared/messaging/message-types";
@@ -118,7 +118,7 @@ export function registerEmuWindowForwarder(window: BrowserWindow): void {
  * @param stateMessage
  */
 export function forwardRendererState(
-  actionMessage: ForwardActionMessage
+  actionMessage: ForwardActionRequest
 ): void {
   isForwarding = true;
   try {

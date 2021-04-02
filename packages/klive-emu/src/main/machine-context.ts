@@ -40,8 +40,9 @@ export interface MachineContextProvider {
 
   /**
    * Gets the startup ROMs for the machine
+   * @return Firmware contents, if found; otherwise, error message
    */
-  getStartupRoms(): Uint8Array[] | string;
+  getFirmware(): Uint8Array[] | string;
 
   /**
    * Override this method tom provide a context description
@@ -59,15 +60,13 @@ export interface MachineContextProvider {
   setMachineSpecificSettings(settings: Record<string, any>): Promise<void>;
 }
 
-export abstract class MachineContextProviderBase 
+export abstract class MachineContextProviderBase
   implements MachineContextProvider {
-
   /**
    * Constructs the provider with the specified options
-   * @param options 
+   * @param options
    */
-  constructor(protected readonly options?: Record<string, any>) {
-  }
+  constructor(protected readonly options?: Record<string, any>) {}
 
   /**
    * Items to add to the View menu
@@ -109,8 +108,9 @@ export abstract class MachineContextProviderBase
 
   /**
    * Gets the startup ROMs for the machine
+   * @return Firmware contents, if found; otherwise, error message
    */
-  abstract getStartupRoms(): Uint8Array[] | string;
+  abstract getFirmware(): Uint8Array[] | string;
 
   /**
    * Override this method tom provide a context description
