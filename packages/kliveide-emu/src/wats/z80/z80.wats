@@ -197,11 +197,6 @@ export void updateCpuState() {
   retExecuted = cpuStateBuffer.retExecuted;
 }
 
-// Turn on the CPU
-export void turnOnCpu() {
-  resetCpu(true);
-}
-
 // Resets the CPU
 // hard: Is it hard reset?
 export void resetCpu(bool hard) {

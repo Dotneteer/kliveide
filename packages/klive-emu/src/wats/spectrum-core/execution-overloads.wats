@@ -23,7 +23,7 @@ inline void onInitNewFrame(u32 oldClockMultiplier) {
 
   // --- Reset beeper frame state
   if (oldClockMultiplier != clockMultiplier) {
-    setBeeperSampleRate(audioSampleRate);
+    setAudioSampleRate(audioSampleRate);
   }
   audioSampleCount = 0;
 }

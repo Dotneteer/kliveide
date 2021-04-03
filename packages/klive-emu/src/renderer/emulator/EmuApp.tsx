@@ -3,10 +3,10 @@ import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { AppState, EmuViewOptions } from "../../shared/state/AppState";
 import { AppStateContext } from "../common/AppStateContext";
 import { emuStore } from "./emuStore";
-import { themeStore } from "../themes/theme-store";
+import { themeService } from "../themes/theme-service";
 import { IThemeProperties } from "../themes/IThemeProperties";
 import { connect } from "react-redux";
-import { Toolbar } from "./Toolbar";
+import Toolbar from "./Toolbar";
 import { MainPanel } from "./MainPanel";
 import { Statusbar } from "./Statusbar";
 import { emuLoadUiAction } from "../../shared/state/emu-loaded-reducer";
@@ -47,7 +47,7 @@ class EmuApp extends React.Component<Props, State> {
     this.updateThemeState();
     this._themeAware = new StateAwareObject(emuStore, "theme");
     this._themeAware.stateChanged.on((theme) => {
-      themeStore.setTheme(theme);
+      themeService.setTheme(theme);
       this.updateThemeState();
     });
   }
@@ -67,7 +67,7 @@ class EmuApp extends React.Component<Props, State> {
   }
 
   private updateThemeState(): void {
-    const theme = themeStore.getActiveTheme();
+    const theme = themeService.getActiveTheme();
     if (!theme) {
       return;
     }
@@ -85,5 +85,3 @@ class EmuApp extends React.Component<Props, State> {
 export default connect((state: AppState) => {
   return { emuViewOptions: state.emuViewOptions };
 }, null)(EmuApp);
-
-

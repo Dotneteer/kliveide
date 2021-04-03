@@ -9,6 +9,21 @@ import { AppState } from "../shared/state/AppState";
  */
 export interface MachineContextProvider {
   /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[];
+
+  /**
+   * Firmware sizes accected by the virtual machine
+   */
+  readonly acceptedFirmwareSizes: number[] | null;
+
+  /**
+   * Function that checks the firmware integrity
+   */
+  readonly checkFirmware?: (contents: Uint8Array) => string | null;
+
+  /**
    * Items to add to the View menu
    */
   provideViewMenuItems(): MenuItemConstructorOptions[] | null;
@@ -69,6 +84,21 @@ export abstract class MachineContextProviderBase
   constructor(protected readonly options?: Record<string, any>) {}
 
   /**
+   * Gets the names of firmware files
+   */
+  abstract readonly firmwareFiles: string[];
+
+  /**
+   * Firmware sizes accected by the virtual machine
+   */
+  readonly acceptedFirmwareSizes: number[] | null = null;
+
+  /**
+   * Function that checks the firmware integrity
+   */
+  readonly checkFirmware?: (contents: Uint8Array) => string | null;
+
+  /**
    * Items to add to the View menu
    */
   provideViewMenuItems(): MenuItemConstructorOptions[] | null {
@@ -110,7 +140,9 @@ export abstract class MachineContextProviderBase
    * Gets the startup ROMs for the machine
    * @return Firmware contents, if found; otherwise, error message
    */
-  abstract getFirmware(): Uint8Array[] | string;
+  getFirmware(): Uint8Array[] | string {
+    return this.loadRoms();
+  }
 
   /**
    * Override this method tom provide a context description
@@ -140,32 +172,30 @@ export abstract class MachineContextProviderBase
    * @param checkfunction Optional function to check ROM integrity
    * @returns The array of loaded ROMs, if ok. Otherwise, the error message
    */
-  protected loadRoms(
-    filenames: string[],
-    acceptedSizes: number[],
-    checkfunction?: (contents: Uint8Array) => string | null
-  ): Uint8Array[] | string {
+  protected loadRoms(): Uint8Array[] | string {
     const result: Uint8Array[] = [];
 
     // --- Iterate throug all ROM files
     try {
-      for (let i = 0; i < filenames.length; i++) {
+      for (let i = 0; i < this.firmwareFiles.length; i++) {
         // --- Read the file
-        const romfile = path.join(__dirname, "roms", filenames[i]);
+        const romfile = path.join(__dirname, "roms", this.firmwareFiles[i]);
         const contents = fs.readFileSync(romfile);
         const byteArray = Uint8Array.from(contents);
 
         // --- Validate the size
-        const matchingSize = acceptedSizes.find(
-          (size) => byteArray.length === size
-        );
-        if (matchingSize === undefined) {
-          return `ROM #${i} has an invalid size of ${byteArray.length}.`;
+        if (this.acceptedFirmwareSizes) {
+          const matchingSize = this.acceptedFirmwareSizes.find(
+            (size) => byteArray.length === size
+          );
+          if (matchingSize === undefined) {
+            return `ROM #${i} has an invalid size of ${byteArray.length}.`;
+          }
         }
 
         // --- Carry out the ROM consistency check
-        if (checkfunction) {
-          const check = checkfunction(byteArray);
+        if (this.checkFirmware) {
+          const check = this.checkFirmware(byteArray);
           if (check) {
             return check;
           }

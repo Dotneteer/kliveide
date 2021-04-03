@@ -48,6 +48,8 @@ export interface ZxSpectrumSpecificState {
   fastLoad?: boolean;
   showBeamPosition?: boolean;
   tapeContents?: Uint8Array;
+  tapeLoaded?: boolean;
+  loadMode?: boolean;
 }
 
 /**

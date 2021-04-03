@@ -23,7 +23,6 @@ export class TestZ80Machine {
    */
   constructor(public cpuApi: TestCpuApi) {
     this.cpuApi.resetMachine();
-    this.cpuApi.turnOnCpu();
   }
 
   /**
@@ -31,7 +30,6 @@ export class TestZ80Machine {
    */
   reset(): void {
     this.cpuApi.resetMachine();
-    this.cpuApi.turnOnCpu();
     this.cpuApi.resetCpu(true);
   }
 

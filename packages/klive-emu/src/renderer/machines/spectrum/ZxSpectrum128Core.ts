@@ -12,11 +12,16 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
   constructor(options: MachineCreationOptions) {
     super(options);
   }
-  
+
   /**
    * Gets the unique model identifier of the machine
    */
   readonly modelId = "sp128";
+
+  /**
+   * The name of the module file with the WA machine engine
+   */
+  readonly waModuleFile: string = "sp128.wasm";
 
   /**
    * Gets a unique identifier for the particular configuration of the model

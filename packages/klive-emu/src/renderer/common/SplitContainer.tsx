@@ -25,7 +25,7 @@ export class SplitContainer extends React.Component<Props> {
     this._hostElement = React.createRef();
   }
 
-  handleResize = (e: Event) => {
+  handleResize = () => {
     this.setupSplitter(false);
   };
 

@@ -37,4 +37,6 @@ export interface ActionTypes {
   SPECTRUM_FAST_LOAD: null;
   SPECTRUM_BEAM_POSITION: null;
   SPECTRUM_TAPE_CONTENTS: null;
+  SPECTRUM_TAPE_LOADED: null;
+  SPECTRUM_LOAD_MODE: null;
 }

@@ -46,6 +46,10 @@ const forwardToRendererMiddleware = () => (next: any) => async (
   applyMiddleware(forwardToRendererMiddleware)
 );
 
+// mainStore.subscribe(() => {
+//   console.log(JSON.stringify(mainStore.getState(), null, 2));
+// })
+
 /**
  * This class forwards state changes in main to a particular renderer
  */
@@ -79,7 +83,11 @@ class MainToRendererStateForwarder extends MessengerBase {
    * @param message Message to send
    */
   protected send(message: RequestMessage): void {
-    this.window.webContents.send(this.requestChannel, message);
+    try {
+      this.window.webContents.send(this.requestChannel, message);
+    } catch {
+      // --- This exception in intentionally ignored
+    }
   }
 
   /**

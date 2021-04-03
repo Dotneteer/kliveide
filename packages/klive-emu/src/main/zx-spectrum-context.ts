@@ -43,6 +43,11 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
   }
 
   /**
+   * Firmware sizes accected by the virtual machine
+   */
+  readonly acceptedFirmwareSizes: number[] | null = [0x4000];
+
+  /**
    * Items to add to the Show menu
    */
   provideViewMenuItems(): MenuItemConstructorOptions[] | null {
@@ -207,6 +212,11 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
   }
 
   /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[] = ["sp48.rom"];
+
+  /**
    * The normal CPU frequency of the machine
    */
   getNormalCpuFrequency(): number {
@@ -218,14 +228,6 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
    */
   getMachineContextDescription(): string {
     return `Screen: 256x192, ROM: sp48.rom (16KB), RAM: 48KB`;
-  }
-
-  /**
-   * Gets the startup ROMs for the machine
-   * @return Firmware contents, if found; otherwise, error message
-   */
-   getFirmware(): Uint8Array[] | string {
-    return this.loadRoms(["sp48.rom"], [0x4000]);
   }
 }
 
@@ -242,6 +244,11 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
   }
 
   /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[] = ["sp128-0.rom", "sp128-1.rom"];
+
+  /**
    * The normal CPU frequency of the machine
    */
   getNormalCpuFrequency(): number {
@@ -253,13 +260,5 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
    */
   getMachineContextDescription(): string {
     return `Screen: 256x192, ROM: sp128.rom (32KB), RAM: 128KB`;
-  }
-
-  /**
-   * Gets the startup ROMs for the machine
-   * @return Firmware contents, if found; otherwise, error message
-   */
-   getFirmware(): Uint8Array[] | string {
-    return this.loadRoms(["sp128-0.rom", "sp128-1.rom"], [0x4000]);
   }
 }

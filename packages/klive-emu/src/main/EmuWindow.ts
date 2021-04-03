@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   IpcMainEvent,
   Menu,
@@ -21,6 +22,7 @@ import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./mainStore";
 import { MessengerBase } from "../shared/messaging/MessengerBase";
 import {
+  CreateMachineResponse,
   RequestMessage,
   ResponseMessage,
 } from "../shared/messaging/message-types";
@@ -505,28 +507,34 @@ export class EmuWindow extends AppWindow implements IEmuAppWindow {
    * @param id Machine type, or menu ID of the machine type
    * @param options Machine construction options
    */
-  async requestMachineType(id: string, options?: MachineCreationOptions): Promise<void> {
+  async requestMachineType(
+    id: string,
+    options?: MachineCreationOptions
+  ): Promise<void> {
     // #1: Create the context provider for the machine
     const contextProvider = contextRegistry[id];
     if (!contextProvider) {
-      // TODO: issue an error
+      this.showError(`Cannot find a context provider for '${id}'.`, "Internal error");
       return;
     }
 
     // #2: Set up the firmware
-    this._machineContextProvider = new (contextProvider as any)(options) as MachineContextProvider;
+    this._machineContextProvider = new (contextProvider as any)(
+      options
+    ) as MachineContextProvider;
     const firmware = this._machineContextProvider.getFirmware();
     if (typeof firmware === "string") {
-      // TODO: issue an error
-      console.log(`firmware issue: ${firmware}`);
+      this.showError(`Cannot load firmware: ${firmware}.`, "Internal error");
       return;
     }
-    const creationOptions = {...options, firmware }
-
+    
     // #3: Instantiate the machine
-
-    mainStore.dispatch(setMachineTypeAction(id));
-    console.log(`Machine type changed to: ${id}`);
+    const creationOptions = { ...options, firmware } as MachineCreationOptions;
+    this.emuMessenger.sendMessage<CreateMachineResponse>({
+      type: "CreateMachine",
+      machineId: id,
+      options: creationOptions
+    })
   }
 
   // ==========================================================================
@@ -543,6 +551,18 @@ export class EmuWindow extends AppWindow implements IEmuAppWindow {
           resolve();
         }
       }, 20);
+    });
+  }
+
+  /**
+   * Displays an error message in a pop-up
+   * @param message
+   */
+  async showError(message: string, title = "Error"): Promise<void> {
+    await dialog.showMessageBox(this.window, {
+      title,
+      message,
+      type: "error",
     });
   }
 }

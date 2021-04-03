@@ -1,5 +1,5 @@
 import * as React from "react";
-import { themeStore } from "../themes/theme-store";
+import { themeService } from "../themes/theme-service";
 
 interface Props {
   iconName: string;
@@ -24,23 +24,23 @@ export class SvgIcon extends React.Component<Props> {
       fill === null || fill === undefined
         ? "white"
         : this.props.fill.startsWith("--")
-        ? themeStore.getProperty(fill)
+        ? themeService.getProperty(fill)
         : fill;
     const styleValue = {
       width: `${
         this.props.width === undefined
-          ? themeStore.getProperty("--icon-default-size")
+          ? themeService.getProperty("--icon-default-size")
           : this.props.width
       }px`,
       height: `${
       this.props.height === undefined
-        ? themeStore.getProperty("--icon-default-size")
+        ? themeService.getProperty("--icon-default-size")
         : this.props.height
     }px`,
       fill: `${fillValue}`,
       transform: `rotate(${this.props.rotate ?? 0}deg)`,
     };
-    const iconInfo = themeStore.getIcon(this.props.iconName);
+    const iconInfo = themeService.getIcon(this.props.iconName);
     return (
       <svg
         className={this.props.xclass}
