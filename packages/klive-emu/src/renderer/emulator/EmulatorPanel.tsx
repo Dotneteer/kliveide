@@ -1,15 +1,23 @@
+import { TouchBarScrubber } from "electron";
 import * as React from "react";
 import { connect } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
 import { AppState } from "../../shared/state/AppState";
 import { VirtualMachineCoreBase } from "../machines/VirtualMachineCoreBase";
-import { vmEngineService } from "../machines/vm-engine-service";
+import {
+  vmEngineService,
+  VmStateChangedArgs,
+} from "../machines/vm-engine-service";
+import { BeamOverlay } from "./BeamOverlay";
+import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 
 interface Props {
   executionState?: number;
 }
 
 interface State {
+  windowWidth: number;
+  windowHeight: number;
   canvasWidth: number;
   canvasHeight: number;
   shadowCanvasWidth: number;
@@ -18,7 +26,9 @@ interface State {
   screenRectangle?: DOMRect;
   overlay?: string;
   panelMessage?: string;
-  overlayMessage?: string;
+  showOverlay?: boolean;
+  tactToDisplay?: number;
+  calcCount: number;
 }
 
 /**
@@ -42,25 +52,33 @@ class EmulatorPanel extends React.Component<Props, State> {
     this._screenElement = React.createRef();
     this._shadowScreenElement = React.createRef();
     this.state = {
+      windowWidth: 0,
+      windowHeight: 0,
       canvasWidth: 0,
       canvasHeight: 0,
       shadowCanvasWidth: 0,
       shadowCanvasHeight: 0,
+      overlay:
+        "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.",
+      showOverlay: true,
+      calcCount: 0
     };
   }
 
-  componentDidMount(): void {
+  async componentDidMount(): Promise<void> {
     window.addEventListener("keydown", this.handleKeyDown);
     window.addEventListener("keyup", this.handleKeyUp);
     vmEngineService.vmEngineChanged.on(this.vmChange);
+    vmEngineService.executionStateChanged.on(this.executionStateChange);
     this.calculateDimensions();
   }
 
   componentWillUnmount(): void {
     if (this._engine) {
       vmEngineService.screenRefreshed.off(this.handleScreenRefresh);
+      vmEngineService.vmEngineChanged.off(this.vmChange);
+      vmEngineService.executionStateChanged.on(this.executionStateChange);
     }
-    vmEngineService.vmEngineChanged.off(this.vmChange);
     window.removeEventListener("keydown", this.handleKeyDown);
     window.removeEventListener("keyup", this.handleKeyUp);
   }
@@ -74,7 +92,31 @@ class EmulatorPanel extends React.Component<Props, State> {
             width: `${this.state.canvasWidth}px`,
             height: `${this.state.canvasHeight}px`,
           }}
+          onClick={() => this.setState({ showOverlay: true })}
         >
+          {this.props.executionState === 3 && (
+            <BeamOverlay
+              key={this.state.calcCount}
+              panelRectangle={this.state.hostRectangle}
+              screenRectangle={this.state.screenRectangle}
+              width={this.state.windowWidth}
+              height={this.state.windowHeight}
+              tactToDisplay={this.state.tactToDisplay}
+            />
+          )}
+          {this.state.showOverlay && (
+            <ExecutionStateOverlay
+              text={
+                this.state.panelMessage
+                  ? this.state.panelMessage
+                  : this.state.overlay
+              }
+              error={!!vmEngineService.vmEngineError}
+              clicked={() => {
+                this.setState({ showOverlay: false });
+              }}
+            />
+          )}
           <canvas
             ref={this._screenElement}
             width={this.state.canvasWidth}
@@ -83,8 +125,8 @@ class EmulatorPanel extends React.Component<Props, State> {
           <canvas
             ref={this._shadowScreenElement}
             style={{ display: "none" }}
-            width={this.state.canvasWidth}
-            height={this.state.canvasHeight}
+            width={this.state.shadowCanvasWidth}
+            height={this.state.shadowCanvasHeight}
           />
         </div>
         <ReactResizeDetector
@@ -108,6 +150,31 @@ class EmulatorPanel extends React.Component<Props, State> {
     this.configureScreen();
   };
 
+  executionStateChange = (args: VmStateChangedArgs) => {
+    this.calculateDimensions();
+    let overlay = "";
+    switch (args.newState) {
+      case 1:
+        overlay = args.isDebug ? "Debug mode" : "";
+        break;
+      case 3:
+        overlay = "Paused";
+        const state = this._engine.getMachineState();
+        this.setState({
+          tactToDisplay: state.lastRenderedFrameTact % state.tactsInFrame,
+        });
+        this.displayScreenData();
+        break;
+      case 5:
+        overlay = "Stopped";
+        break;
+      default:
+        overlay = "";
+        break;
+    }
+    this.setState({ overlay });
+  };
+
   handleScreenRefresh = () => {
     this.displayScreenData();
   };
@@ -129,8 +196,10 @@ class EmulatorPanel extends React.Component<Props, State> {
     if (!this._hostElement || !vmEngineService.hasEngine) {
       return;
     }
-    const clientWidth = this._hostElement.current.clientWidth;
-    const clientHeight = this._hostElement.current.clientHeight;
+    const hostRectangle =this._hostElement.current.getBoundingClientRect();
+    const screenRectangle = this._screenElement.current.getBoundingClientRect();
+    const clientWidth = this._hostElement.current.offsetWidth;
+    const clientHeight = this._hostElement.current.offsetHeight;
     const width = vmEngineService.getEngine().screenWidth;
     const height = vmEngineService.getEngine().screenHeight;
     let widthRatio = Math.floor((clientWidth - 8) / width);
@@ -141,16 +210,21 @@ class EmulatorPanel extends React.Component<Props, State> {
     const canvasWidth = width * ratio;
     const canvasHeight = height * ratio;
 
-    this._shadowScreenElement.current.width = width;
-    this._shadowScreenElement.current.height = height;
     const shadowCanvasWidth = width;
     const shadowCanvasHeight = height;
     this.setState({
+      windowWidth: hostRectangle.width,
+      windowHeight: hostRectangle.height,
       canvasWidth,
       canvasHeight,
       shadowCanvasWidth,
       shadowCanvasHeight,
+      hostRectangle,
+      screenRectangle,
+      calcCount: this.state.calcCount + 1
     });
+    this._shadowScreenElement.current.width = width;
+    this._shadowScreenElement.current.height = height;
   }
 
   // --- Setup the screen buffers

@@ -165,6 +165,7 @@ export function calculateInitialSizes(
     (children[i] as any).style[clientDim] = "100%";
     (children[i] as any).style[crossDim] =
       children.length === 1 ? "100%" : undefined;
+    (children[i] as any).style["position"] = "relative";
   }
 
   if (children.length === 1) {

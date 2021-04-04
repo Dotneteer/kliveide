@@ -11,7 +11,6 @@ import {
   ExecuteCycleOptions,
   ExecutionCompletionReason,
   MachineCreationOptions,
-  MachineState,
 } from "./vm-core-types";
 import { emuStore } from "../emulator/emuStore";
 import { IVmController } from "./IVmController";
@@ -28,6 +27,7 @@ import {
  */
 class VmEngineService implements IVmController {
   private _vmEngine: VirtualMachineCoreBase | undefined;
+  private _error: string | null = null;
   private _stateAware: StateAwareObject<string>;
   private _vmEngineChanged = new LiteEvent<VirtualMachineCoreBase>();
   private _vmScreenRefreshed = new LiteEvent<void>();
@@ -136,8 +136,7 @@ class VmEngineService implements IVmController {
    * Gets the error message of the virtual machine engine
    */
   get vmEngineError(): string | null {
-    // TODO: Implement this method
-    throw new Error("Not implemented yet");
+    return this._error;
   }
 
   /**
@@ -294,7 +293,6 @@ class VmEngineService implements IVmController {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-
       // --- Prepare the breakpoints
       // TODO: Implement this call
       //this._vmEngine.setupBreakpoints(this._breakpoints);
@@ -684,7 +682,7 @@ enum VmState {
  * This class represents the arguments of the event that signs that
  * the state of the virtual machine changes
  */
-class VmStateChangedArgs {
+export class VmStateChangedArgs {
   /**
    * Initializes the event arguments
    * @param oldState Old virtual machine state
