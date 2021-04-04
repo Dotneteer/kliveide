@@ -47,7 +47,7 @@ export default function (
     case "SPECTRUM_BEAM_POSITION":
       return { ...state, showBeamPosition: payload.showBeamPosition };
     case "SPECTRUM_TAPE_CONTENTS":
-      return { ...state, tapeContents: payload.tapeContents };
+      return { ...state, tapeContents: payload.tapeContents, tapeLoaded: false };
     case "SPECTRUM_TAPE_LOADED":
       return { ...state, tapeLoaded: true };
     case "SPECTRUM_LOAD_MODE":

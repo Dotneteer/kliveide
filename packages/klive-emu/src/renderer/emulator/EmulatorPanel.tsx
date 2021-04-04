@@ -34,6 +34,8 @@ class EmulatorPanel extends React.Component<Props, State> {
   private _imageBuffer8: Uint8Array;
   private _pixelData: Uint32Array;
 
+  private _pressedKeys: Record<string, boolean> = {};
+
   constructor(props: Props) {
     super(props);
     this._hostElement = React.createRef();
@@ -48,6 +50,8 @@ class EmulatorPanel extends React.Component<Props, State> {
   }
 
   componentDidMount(): void {
+    window.addEventListener("keydown", this.handleKeyDown);
+    window.addEventListener("keyup", this.handleKeyUp);
     vmEngineService.vmEngineChanged.on(this.vmChange);
     this.calculateDimensions();
   }
@@ -57,11 +61,13 @@ class EmulatorPanel extends React.Component<Props, State> {
       vmEngineService.screenRefreshed.off(this.handleScreenRefresh);
     }
     vmEngineService.vmEngineChanged.off(this.vmChange);
+    window.removeEventListener("keydown", this.handleKeyDown);
+    window.removeEventListener("keyup", this.handleKeyUp);
   }
 
   render() {
     return (
-      <div ref={this._hostElement} className="emulator-panel">
+      <div ref={this._hostElement} className="emulator-panel" tabIndex={-1}>
         <div
           className="emulator-screen"
           style={{
@@ -99,7 +105,6 @@ class EmulatorPanel extends React.Component<Props, State> {
       vmEngineService.screenRefreshed.on(this.handleScreenRefresh);
     }
     this.calculateDimensions();
-    this.configureSound();
     this.configureScreen();
   };
 
@@ -109,6 +114,14 @@ class EmulatorPanel extends React.Component<Props, State> {
 
   handleResize = () => {
     this.calculateDimensions();
+  };
+
+  handleKeyDown = (e: KeyboardEvent) => {
+    this.handleKey(e, true);
+  };
+
+  handleKeyUp = (e: KeyboardEvent) => {
+    this.handleKey(e, false);
   };
 
   // --- Calculate the dimensions so that the virtual machine display fits the screen
@@ -138,23 +151,12 @@ class EmulatorPanel extends React.Component<Props, State> {
       shadowCanvasWidth,
       shadowCanvasHeight,
     });
-    console.log(JSON.stringify(this.state, null, 2));
-  }
-
-  configureSound(): void {
-    const audioCtx = new AudioContext();
-    const sampleRate = audioCtx.sampleRate;
-    audioCtx.close();
-    if (vmEngineService.hasEngine) {
-      vmEngineService.getEngine().setAudioSampleRate(sampleRate);
-    }
   }
 
   // --- Setup the screen buffers
   configureScreen() {
     const dataLen =
       this.state.shadowCanvasWidth * this.state.shadowCanvasHeight * 4;
-    console.log(dataLen);
     this._imageBuffer = new ArrayBuffer(dataLen);
     this._imageBuffer8 = new Uint8Array(this._imageBuffer);
     this._pixelData = new Uint32Array(this._imageBuffer);
@@ -212,6 +214,42 @@ class EmulatorPanel extends React.Component<Props, State> {
     if (screenCtx) {
       screenCtx.clearRect(0, 0, screenEl.width, screenEl.height);
     }
+  }
+
+  handleKey(e: KeyboardEvent, isDown: boolean): void {
+    const executionState = this.props.executionState ?? 0;
+    if (!e || executionState !== 1) return;
+
+    // --- Special key: both Shift released
+    if (
+      (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
+      e.shiftKey === false &&
+      !isDown
+    ) {
+      this.handleMappedKey("ShiftLeft", false);
+      this.handleMappedKey("ShiftRight", false);
+    } else {
+      this.handleMappedKey(e.code, isDown);
+    }
+    if (isDown) {
+      this._pressedKeys[e.code.toString()] = true;
+    } else {
+      delete this._pressedKeys[e.code.toString()];
+    }
+  }
+
+  handleMappedKey(code: string, isDown: boolean) {
+    if (this._engine) {
+      this._engine.handlePhysicalKey(code, isDown);
+    }
+  }
+
+  // --- Release all keys that remained pressed
+  erasePressedKeys() {
+    for (let code in this._pressedKeys) {
+      this.handleMappedKey(code, false);
+    }
+    this._pressedKeys = {};
   }
 }
 

@@ -16,6 +16,8 @@ import { IAudioRenderer } from "../IAudioRenderer";
 import { AudioRenderer } from "../AudioRenderer";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import { ZxSpectrumStateManager } from "./ZxSpectrumStateManager";
+import { KeyMapping } from "../keyboard";
+import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
 
 /**
  * ZX Spectrum common core implementation
@@ -68,6 +70,17 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
       this.storeSavedDataInState(length);
     },
   };
+
+  /**
+   * Creates the CPU instance
+   */
+  configureMachine(): void {
+    super.configureMachine();
+    const audioCtx = new AudioContext();
+    const sampleRate = audioCtx.sampleRate;
+    audioCtx.close();
+    this.setAudioSampleRate(sampleRate);
+  }
 
   /**
    * Sets the audio sample rate to use with sound devices
@@ -207,6 +220,21 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
   }
 
   /**
+   * Gets the key mapping used by the machine
+   */
+  getKeyMapping(): KeyMapping {
+    return spectrumKeyMappings;
+  }
+
+  /**
+   * Resolves a string key code to a key number
+   * @param code Key code to resolve
+   */
+  resolveKeyCode(code: string): number | null {
+    return spectrumKeyCodes[code] ?? null;
+  }
+
+  /**
    * Override this method to set the clock multiplier
    * @param multiplier Clock multiplier to apply from the next frame
    */
@@ -235,8 +263,6 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   async beforeFirstStart(): Promise<void> {
     super.beforeFirstStart();
-
-    // --- Take care of tape contents
     await this.initTapeContents();
   }
 
@@ -345,22 +371,24 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
 
   async initTapeContents(message?: string): Promise<void> {
     const state = this._stateManager.getState();
-    const emuState = state.emulatorPanel;
 
     // --- Set tape contents
-    if (!state.spectrumSpecific.tapeContents || state.spectrumSpecific.tapeContents.length === 0) {
+    if (
+      !state.spectrumSpecific.tapeContents ||
+      state.spectrumSpecific.tapeContents.length === 0
+    ) {
       let contents = new Uint8Array(0);
       try {
         contents = await this.readFromStream("./tapes/Pac-Man.tzx");
       } catch (err) {
         console.log(`Load error: ${err}`);
       }
-      this._stateManager.setTapeContents(contents);
       this._defaultTapeSet = contents;
     } else {
       this._defaultTapeSet = state.spectrumSpecific.tapeContents;
     }
 
+    this._stateManager.setTapeContents(this._defaultTapeSet);
     const binaryReader = new BinaryReader(this._defaultTapeSet);
     this.initTape(binaryReader);
 
@@ -539,15 +567,4 @@ export interface SpectrumMachineStateBase extends MachineState, Z80CpuState {
   renderingPhase: number;
   pixelAddr: number;
   attrAddr: number;
-}
-
-/**
- * Provides a way to test a ZX Spectrum virtual machine in Node
- */
-class SilentAudioRenderer implements IAudioRenderer {
-  async initializeAudio(): Promise<void> {}
-  storeSamples(_samples: number[]): void {}
-  suspend(): void {}
-  resume(): void {}
-  async closeAudio(): Promise<void> {}
 }

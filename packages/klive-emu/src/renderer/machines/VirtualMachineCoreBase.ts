@@ -1,4 +1,5 @@
 import { IVmController } from "./IVmController";
+import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
 import { EXEC_ENGINE_STATE_BUFFER, EXEC_OPTIONS_BUFFER } from "./memory-map";
 import {
@@ -208,6 +209,50 @@ export abstract class VirtualMachineCoreBase {
     s.executionCompletionReason = mh.readUint32(9);
 
     return s;
+  }
+
+  /**
+   * Handles pressing or releasing a physical key on the keyboard
+   * @param keycode Virtual keycode
+   * @param isDown Is the key pressed down?
+   */
+  handlePhysicalKey(keycode: string, isDown: boolean): void {
+    const keyMapping = this.getKeyMapping();
+    const keySet = keyMapping[keycode];
+    if (!keySet) {
+      // --- No mapping for the specified physical key
+      return;
+    }
+
+    if (typeof keySet === "string") {
+      // --- Single key
+      const resolved = this.resolveKeyCode(keySet);
+      if (resolved !== null) {
+        this.setKeyStatus(resolved, isDown);
+      }
+    } else {
+      for (const key of keySet) {
+        const resolved = this.resolveKeyCode(key);
+        if (resolved !== null) {
+          this.setKeyStatus(resolved, isDown);
+        }
+      }
+    }
+  }
+
+  /**
+   * Gets the key mapping used by the machine
+   */
+  getKeyMapping(): KeyMapping {
+    return {};
+  }
+
+  /**
+   * Resolves a string key code to a key number
+   * @param code Key code to resolve
+   */
+  resolveKeyCode(code: string): number | null {
+    return null;
   }
 
   /**

@@ -22,7 +22,6 @@ import {
   emuSetExecutionStateAction,
   emuSetFrameIdAction,
 } from "../../shared/state/emulator-panel-reducer";
-import { stat } from "original-fs";
 
 /**
  * This class is responsible for controlling the singleton virtual machine
@@ -259,7 +258,8 @@ class VmEngineService implements IVmController {
       this.executionState === VmState.Stopped;
 
     if (this._isFirstStart) {
-      this._vmEngine.setupMachine();
+      await this._vmEngine.setupMachine();
+      await this._vmEngine.beforeFirstStart();
 
       // --- Warm up to avoid sound delays
       this._completionTask = this.executeCycle(
@@ -268,7 +268,7 @@ class VmEngineService implements IVmController {
           DebugStepMode.None
         )
       );
-      await new Promise((r) => setTimeout(r, 200));
+      delay(200);
       await this.cancelRun();
     }
 
@@ -294,11 +294,6 @@ class VmEngineService implements IVmController {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      // --- Now, do the real start
-      this._vmEngine.reset();
-
-      // --- Allow the machine execute a custom action on first start
-      await this._vmEngine.beforeFirstStart();
 
       // --- Prepare the breakpoints
       // TODO: Implement this call
