@@ -9,7 +9,7 @@ interface Props {
 /**
  * Represents the overlay of the emulator's panel
  */
-export class ExecutionStateOverlay extends React.Component<Props> {
+export default class ExecutionStateOverlay extends React.Component<Props> {
   handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     this.props.clicked?.();

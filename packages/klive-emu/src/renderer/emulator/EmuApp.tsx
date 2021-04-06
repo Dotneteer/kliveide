@@ -7,8 +7,8 @@ import { themeService } from "../themes/theme-service";
 import { IThemeProperties } from "../themes/IThemeProperties";
 import { connect } from "react-redux";
 import Toolbar from "./Toolbar";
-import { MainPanel } from "./MainPanel";
-import { Statusbar } from "./Statusbar";
+import MainPanel from "./MainPanel";
+import Statusbar from "./Statusbar";
 import { emuLoadUiAction } from "../../shared/state/emu-loaded-reducer";
 import "./emu-message-processor";
 
@@ -60,7 +60,7 @@ class EmuApp extends React.Component<Props, State> {
     return (
       <div style={this.state.themeStyle} className={this.state.themeClass}>
         {this.props.emuViewOptions.showToolbar && <Toolbar></Toolbar>}
-        <MainPanel></MainPanel>
+        <MainPanel />
         {this.props.emuViewOptions.showStatusBar && <Statusbar></Statusbar>}
       </div>
     );

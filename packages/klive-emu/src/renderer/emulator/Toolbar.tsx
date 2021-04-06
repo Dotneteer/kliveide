@@ -1,12 +1,15 @@
 import * as React from "react";
 import { connect } from "react-redux";
+import { emuToggleKeyboardAction } from "../../shared/state/emu-view-options-reducer";
 import { AppState } from "../../shared/state/AppState";
 import { ToolbarIconButton } from "../common/ToolbarIconButton";
 import { ToolbarSeparator } from "../common/ToolbarSeparator";
 import { vmEngineService } from "../machines/vm-engine-service";
+import { emuStore } from "./emuStore";
 
 interface Props {
   executionState?: number;
+  showKeyboard?: boolean;
 }
 
 interface State {
@@ -92,7 +95,7 @@ export class Toolbar extends React.Component<Props, State> {
               executionState === 5)
           }
           clicked={async () => await engine.startDebug()}
-          />
+        />
         <ToolbarIconButton
           iconName="step-into"
           fill="lightblue"
@@ -118,6 +121,8 @@ export class Toolbar extends React.Component<Props, State> {
         <ToolbarIconButton
           iconName="keyboard"
           title="Toggle keyboard"
+          selected={this.props.showKeyboard}
+          clicked={() => emuStore.dispatch(emuToggleKeyboardAction())}
           highlightSize={32}
         />
         <ToolbarSeparator />
@@ -139,5 +144,8 @@ export class Toolbar extends React.Component<Props, State> {
 }
 
 export default connect((state: AppState) => {
-  return { executionState: state.emulatorPanel.executionState };
+  return {
+    executionState: state.emulatorPanel.executionState,
+    showKeyboard: state.emuViewOptions.showKeyboard,
+  };
 }, null)(Toolbar);

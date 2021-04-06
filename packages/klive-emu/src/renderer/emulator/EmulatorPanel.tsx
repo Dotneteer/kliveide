@@ -8,8 +8,8 @@ import {
   vmEngineService,
   VmStateChangedArgs,
 } from "../machines/vm-engine-service";
-import { BeamOverlay } from "./BeamOverlay";
-import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
+import BeamOverlay from "./BeamOverlay";
+import ExecutionStateOverlay from "./ExecutionStateOverlay";
 
 interface Props {
   executionState?: number;

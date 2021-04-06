@@ -37,7 +37,7 @@ interface State {
 /**
  * Represents the beam overlay of the emulator
  */
-export class BeamOverlay extends React.Component<Props, State> {
+export default class BeamOverlay extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = { mounted: false } as State;

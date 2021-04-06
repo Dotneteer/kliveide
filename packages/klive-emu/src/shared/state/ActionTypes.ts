@@ -13,6 +13,7 @@ export interface ActionTypes {
   EMU_HIDE_STATUSBAR: null;
   EMU_SHOW_KEYBOARD: null;
   EMU_HIDE_KEYBOARD: null;
+  EMU_TOGGLE_KEYBOARD: null;
   EMU_SHOW_FRAME_INFO: null;
   EMU_HIDE_FRAME_INFO: null;
 

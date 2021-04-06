@@ -1,4 +1,6 @@
 import * as React from "react";
+import { connect } from "react-redux";
+import { AppState } from "../../shared/state/AppState";
 
 interface Props {
   type: string;
@@ -10,27 +12,27 @@ interface Props {
 /**
  * Represents the keyboard panel of the emulator
  */
-export class KeyboardPanel extends React.Component<Props> {
-  private _visible: boolean;
-  private _initialHeight: string;
+class KeyboardPanel extends React.Component<Props> {
   private _showPanel: boolean;
 
-  constructor(props: Props) {
-    super(props);
-  }
-
   componentDidMount() {
-    this._visible = this.props.visible ?? true;
-    this._initialHeight = this.props.initialHeight ?? "50%";
     this._showPanel = this.props.showPanel ?? true;
   }
 
   render() {
-    if (this._visible) {
+    if (this.props.visible) {
       return (
-        <div className="keyboard-panel">{this._showPanel && <div></div>}</div>
+        <div data-initial-size={this.props.initialHeight}
+          className="keyboard-panel"
+        >
+          {this._showPanel && <div></div>}
+        </div>
       );
     }
     return null;
   }
 }
+
+export default connect((state: AppState) => {
+  return { visible: state.emuViewOptions.showKeyboard };
+}, null)(KeyboardPanel);

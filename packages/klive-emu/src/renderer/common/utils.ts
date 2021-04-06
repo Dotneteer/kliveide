@@ -12,3 +12,14 @@ export function delay(milliseconds: number): Promise<void> {
     }, milliseconds);
   });
 }
+
+/**
+ * Delays execution while the next animation frame
+ */
+export function animationTick(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+}

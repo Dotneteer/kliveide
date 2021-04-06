@@ -22,6 +22,9 @@ export const emuShowKeyboardAction: ActionCreator = () => ({
 export const emuHideKeyboardAction: ActionCreator = () => ({
   type: "EMU_HIDE_KEYBOARD",
 });
+export const emuToggleKeyboardAction: ActionCreator = () => ({
+  type: "EMU_TOGGLE_KEYBOARD",
+});
 export const emuShowFrameInfoAction: ActionCreator = () => ({
   type: "EMU_SHOW_FRAME_INFO",
 });
@@ -51,6 +54,8 @@ export default function (
       return { ...state, showKeyboard: true };
     case "EMU_HIDE_KEYBOARD":
       return { ...state, showKeyboard: false };
+    case "EMU_TOGGLE_KEYBOARD":
+      return { ...state, showKeyboard: !state.showKeyboard };
     case "EMU_SHOW_FRAME_INFO":
       return { ...state, showFrameInfo: true };
     case "EMU_HIDE_FRAME_INFO":
