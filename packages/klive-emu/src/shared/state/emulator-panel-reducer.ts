@@ -20,7 +20,9 @@ export const emuSetFrameIdAction: ActionCreator = (
 
 export const emuMuteSoundAction: ActionCreator = () => ({ type: "EMU_MUTE" });
 
-export const emuUnmuteSoundAction: ActionCreator = () => ({ type: "EMU_MUTE" });
+export const emuUnmuteSoundAction: ActionCreator = () => ({
+  type: "EMU_UNMUTE",
+});
 
 export const emuSetDebugModeAction: ActionCreator = (runsInDebug: boolean) => ({
   type: "EMU_SET_DEBUG",
@@ -72,6 +74,20 @@ export const emuSetFirmWareAction: ActionCreator = (
   payload: { firmware },
 });
 
+export const emuSetExtraFeaturesAction: ActionCreator = (
+  extraFeatures: string[]
+) => ({
+  type: "EMU_SET_EXTRA",
+  payload: { extraFeatures },
+});
+
+export const emuSetBaseFrequencyAction: ActionCreator = (
+  baseClockFrequency: number
+) => ({
+  type: "EMU_SET_BASE_FREQ",
+  payload: { baseClockFrequency },
+});
+
 // ============================================================================
 // Reducer
 
@@ -112,6 +128,10 @@ export default function (
       return { ...state, keyboardHeight: payload.keyboardHeight };
     case "EMU_SET_FIRMWARE":
       return { ...state, firmware: payload.firmware };
+    case "EMU_SET_EXTRA":
+      return { ...state, extraFeatures: payload.extraFeatures };
+    case "EMU_SET_BASE_FREQ":
+      return { ...state, baseClockFrequency: payload.baseClockFrequency };
     default:
       return state;
   }

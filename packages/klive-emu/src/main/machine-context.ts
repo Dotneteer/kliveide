@@ -3,6 +3,7 @@ import * as path from "path";
 
 import { MenuItemConstructorOptions, shell } from "electron";
 import { AppState } from "../shared/state/AppState";
+import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
 
 /**
  * Describes the responsibility of a menu provider for a particular machine
@@ -73,6 +74,11 @@ export interface MachineContextProvider {
    * Override this method to set the machine-specific settings
    */
   setMachineSpecificSettings(settings: Record<string, any>): Promise<void>;
+
+  /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[];
 }
 
 export abstract class MachineContextProviderBase
@@ -164,6 +170,13 @@ export abstract class MachineContextProviderBase
   async setMachineSpecificSettings(
     settings: Record<string, any>
   ): Promise<void> {}
+
+  /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return [];
+  }
 
   /**
    * Loads the startup ROMs of the machine

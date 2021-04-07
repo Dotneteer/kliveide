@@ -1,7 +1,10 @@
 import * as fs from "fs";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
-import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
+import {
+  LinkDescriptor,
+  MachineContextProviderBase,
+} from "./machine-context";
 import { AppState } from "../shared/state/AppState";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { checkTapeFile } from "../shared/tape/readers";
@@ -13,6 +16,7 @@ import {
 } from "../shared/state/spectrum-specific-reducer";
 import { emuSetClockMultiplierAction } from "../shared/state/emulator-panel-reducer";
 import { EmuWindow } from "./EmuWindow";
+import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -154,6 +158,13 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     } else {
       mainStore.dispatch(spectrumTapeContentsAction(new Uint8Array(0)));
     }
+  }
+
+  /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return ["UlaDebug", "Sound", "Tape"];
   }
 
   /**

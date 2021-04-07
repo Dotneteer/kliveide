@@ -34,7 +34,7 @@ export abstract class VirtualMachineCoreBase {
    * Instantiates a core with the specified options
    * @param options Options to use with machine creation
    */
-  constructor(protected readonly options: MachineCreationOptions) {
+  constructor(public readonly options: MachineCreationOptions) {
     this._coreState = MachineCoreState.WaitForSetup;
   }
 

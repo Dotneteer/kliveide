@@ -27,6 +27,7 @@ export interface EmuViewOptions {
 export interface EmulatorPanelState {
   width?: number;
   height?: number;
+  baseClockFrequency?: number;
   clockMultiplier?: number;
   executionState?: number;
   runsInDebug?: boolean;
@@ -39,6 +40,7 @@ export interface EmulatorPanelState {
   panelMessage?: string;
   machineContext?: string;
   firmware?: Uint8Array[];
+  extraFeatures?: string[];
 }
 
 /**
@@ -75,9 +77,11 @@ export function getInitialAppState(): AppState {
       panelMessage: "",
       muted: false,
       soundLevel: 0.5,
+      baseClockFrequency: 0,
       clockMultiplier: 1,
       machineContext: "",
       firmware: [],
+      extraFeatures: [],
     },
     spectrumSpecific: {
       fastLoad: true,

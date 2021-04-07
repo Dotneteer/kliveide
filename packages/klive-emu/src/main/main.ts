@@ -1,41 +1,33 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { BrowserWindow, app, ipcMain } from "electron";
-import { EmuWindow } from "./EmuWindow";
-import { IdeWindow } from "./IdeWindow";
-import { forwardRendererState, registerEmuWindowForwarder, registerIdeWindowForwarder } from "./mainStore";
+import { forwardRendererState } from "./mainStore";
 import { MAIN_STATE_REQUEST_CHANNEL } from "../shared/messaging/channels";
-import { ForwardActionRequest, RequestMessage } from "../shared/messaging/message-types";
+import { ForwardActionRequest } from "../shared/messaging/message-types";
+import {
+  processStateChange,
+  setupMenu,
+  setupWindows,
+  stateAware,
+} from "./app-menu-state";
 
-// --- Global reference to the mainwindow
-let emuWindow: EmuWindow;
-let ideWindow: IdeWindow;
+function setupIdeWindow(): void {}
 
 /**
- * Sets up the main window
+ * Sets up state change cathing
  */
-async function setupEmuWindow(): Promise<void> {
-  emuWindow = new EmuWindow();
-  emuWindow.setupMenu();
-  emuWindow.load();
-  registerEmuWindowForwarder(emuWindow.window);
-  await emuWindow.ensureStarted();
-  emuWindow.requestMachineType("sp48");
-}
-
-function setupIdeWindow(): void {
-  ideWindow = new IdeWindow();
-  ideWindow.hide();
-  ideWindow.setupMenu();
-  ideWindow.load();
-  registerIdeWindowForwarder(ideWindow.window);
+function watchStateChanges(): void {
+  stateAware.stateChanged.on((state) => {
+    processStateChange(state);
+  });
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", () => {
-  setupEmuWindow();
-  setupIdeWindow();
+app.on("ready", async () => {
+  await setupWindows();
+  setupMenu();
+  watchStateChanges();
 });
 
 // Quit when all windows are closed.
@@ -47,13 +39,14 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("activate", () => {
+app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    setupEmuWindow();
+    await setupWindows();
+    setupMenu();
+    watchStateChanges();
   }
 });
 
 ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   forwardRendererState(msg);
 });
-

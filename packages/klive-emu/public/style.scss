@@ -95,12 +95,12 @@ body {
   justify-items: start;
   font-size: 0.9em;
 
-  &.label {
+  & .label {
     margin: 0px 8px;
     color: var(--statusbar-foreground-color);
   }
 
-  &.section {
+  & .section {
     display: flex;
     flex-shrink: 0;
     flex-grow: 0;
@@ -111,7 +111,7 @@ body {
     justify-items: start;
   }
 
-  &.placeholder {
+  & .placeholder {
     width: 100%;
     flex-grow: 1;
     flex-shrink: 1;

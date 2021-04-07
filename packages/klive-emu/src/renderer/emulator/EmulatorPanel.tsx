@@ -13,6 +13,7 @@ import ExecutionStateOverlay from "./ExecutionStateOverlay";
 
 interface Props {
   executionState?: number;
+  showBeam?: boolean;
 }
 
 interface State {
@@ -94,7 +95,7 @@ class EmulatorPanel extends React.Component<Props, State> {
           }}
           onClick={() => this.setState({ showOverlay: true })}
         >
-          {this.props.executionState === 3 && (
+          {this.props.executionState === 3 && this.props.showBeam && (
             <BeamOverlay
               key={this.state.calcCount}
               panelRectangle={this.state.hostRectangle}
@@ -329,7 +330,7 @@ class EmulatorPanel extends React.Component<Props, State> {
 
 export default connect((state: AppState) => {
   return {
-    displayScreen: state.emuViewOptions,
     executionState: state.emulatorPanel.executionState,
+    showBeam: state?.spectrumSpecific?.showBeamPosition,
   };
 }, null)(EmulatorPanel);

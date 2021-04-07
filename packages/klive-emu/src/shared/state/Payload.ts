@@ -22,4 +22,6 @@ export interface Payload {
   firmware?: Uint8Array[];
   tapeLoaded?: boolean;
   loadMode?: boolean;
+  extraFeatures?: string[];
+  baseClockFrequency?: number;
 }

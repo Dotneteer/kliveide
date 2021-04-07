@@ -18,14 +18,19 @@ interface Props {
 class MainPanel extends React.Component<Props> {
   render() {
     return (
-      <SplitContainer
-        direction="vertical"
-        refreshTag={!!this.props.showKeyboard}
-        splitterMoved={this.handleMoved}
-      >
-        <EmulatorPanel />
-        <KeyboardPanel initialHeight={this.props.keyboardHeight} type="sp48" />
-      </SplitContainer>
+      <div className="main-panel">
+        <SplitContainer
+          direction="vertical"
+          refreshTag={!!this.props.showKeyboard}
+          splitterMoved={this.handleMoved}
+        >
+          <EmulatorPanel />
+          <KeyboardPanel
+            initialHeight={this.props.keyboardHeight}
+            type="sp48"
+          />
+        </SplitContainer>
+      </div>
     );
   }
 

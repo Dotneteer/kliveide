@@ -28,35 +28,51 @@ async function processEmulatorMessages(
         error: null,
       };
     case "startVm":
-      console.log("startVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.start();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "pauseVm":
-      console.log("pauseVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.pause();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stopVm":
-      console.log("stopVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stop();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "restartVm":
-      console.log("restartVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.restart();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "debugVm":
-      console.log("debugVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.startDebug();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stepIntoVm":
-      console.log("stepIntoVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stepInto();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stepOverVm":
-      console.log("stepOverVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stepOver();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stepOutVm":
-      console.log("stepOutVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stepOut();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     default:

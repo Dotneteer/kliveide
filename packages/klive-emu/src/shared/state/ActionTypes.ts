@@ -28,11 +28,13 @@ export interface ActionTypes {
   EMU_SET_DEBUG: null;
   EMU_SET_MESSAGE: null;
   EMU_SET_SOUND_LEVEL: null;
+  EMU_SET_BASE_FREQ: null;
   EMU_SET_CLOCK_MULTIPLIER: null;
   EMU_SET_KEYBOARD: null;
   EMU_MACHINE_CONTEXT: null;
   EMU_KEYBOARD_HEIGHT: null;
   EMU_SET_FIRMWARE: null;
+  EMU_SET_EXTRA: null;
 
   // --- ZX Spectrum specific action
   SPECTRUM_FAST_LOAD: null;
