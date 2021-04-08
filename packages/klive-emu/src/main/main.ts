@@ -1,25 +1,17 @@
+// ============================================================================
+// The startup file of the main Electron process
+// ============================================================================
+
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { BrowserWindow, app, ipcMain } from "electron";
 import { forwardRendererState } from "./mainStore";
 import { MAIN_STATE_REQUEST_CHANNEL } from "../shared/messaging/channels";
 import { ForwardActionRequest } from "../shared/messaging/message-types";
 import {
-  processStateChange,
   setupMenu,
   setupWindows,
-  stateAware,
+  watchStateChanges,
 } from "./app-menu-state";
-
-function setupIdeWindow(): void {}
-
-/**
- * Sets up state change cathing
- */
-function watchStateChanges(): void {
-  stateAware.stateChanged.on((state) => {
-    processStateChange(state);
-  });
-}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

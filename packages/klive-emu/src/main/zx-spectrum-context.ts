@@ -15,8 +15,8 @@ import {
   spectrumTapeContentsAction,
 } from "../shared/state/spectrum-specific-reducer";
 import { emuSetClockMultiplierAction } from "../shared/state/emulator-panel-reducer";
-import { EmuWindow } from "./EmuWindow";
 import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
+import { emuWindow } from "./app-menu-state";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -171,7 +171,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    * Select a tape file to use with the ZX Spectrum
    */
   private async selectTapeFile(): Promise<void> {
-    const window = EmuWindow.instance.window;
+    const window = emuWindow.window;
     const result = await dialog.showOpenDialog(window, {
       title: "Open tape file",
       filters: [

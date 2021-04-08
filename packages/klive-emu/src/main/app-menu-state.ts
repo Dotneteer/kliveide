@@ -439,6 +439,15 @@ export function setupMenu(): void {
 }
 
 /**
+ * Sets up state change cathing
+ */
+export function watchStateChanges(): void {
+  stateAware.stateChanged.on((state) => {
+    processStateChange(state);
+  });
+}
+
+/**
  * Processes emulator data changes
  * @param state Emulator state
  */

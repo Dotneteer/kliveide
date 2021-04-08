@@ -1,3 +1,4 @@
+import { ProgramCounterInfo } from "../../shared/state/AppState";
 import { IVmController } from "./IVmController";
 import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
@@ -109,6 +110,12 @@ export abstract class VirtualMachineCoreBase {
    * Get the type of the keyboard to display
    */
   readonly keyboardType: string | null = null;
+
+  /**
+   * Gets the program counter information of the machine
+   * @param state Current machine state
+   */
+  abstract getProgramCounterInfo(state: MachineState): ProgramCounterInfo;
 
   /**
    * Sets up the machine with the specified options

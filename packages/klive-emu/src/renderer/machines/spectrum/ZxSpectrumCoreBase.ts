@@ -18,6 +18,7 @@ import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import { ZxSpectrumStateManager } from "./ZxSpectrumStateManager";
 import { KeyMapping } from "../keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
+import { ProgramCounterInfo } from "../../../shared/state/AppState";
 
 /**
  * ZX Spectrum common core implementation
@@ -60,6 +61,17 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   get supportsPsg(): boolean {
     return false;
+  }
+
+  /**
+   * Gets the program counter information of the machine
+   * @param state Current machine state
+   */
+  getProgramCounterInfo(state: SpectrumMachineStateBase): ProgramCounterInfo {
+    return {
+      label: "PC",
+      value: state._pc,
+    };
   }
 
   /**
@@ -109,9 +121,9 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   getMachineState(): SpectrumMachineStateBase {
     // --- Obtain execution engine state
-    const cpuSate = this.z80.getCpuState();
+    const cpuState = this.z80.getCpuState();
     const engineState = super.getMachineState();
-    const s = { ...cpuSate, ...engineState } as SpectrumMachineStateBase;
+    const s = { ...cpuState, ...engineState } as SpectrumMachineStateBase;
 
     // --- Obtain ZX Spectrum specific state
     this.api.getMachineState();

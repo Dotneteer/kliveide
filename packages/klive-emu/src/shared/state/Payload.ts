@@ -1,3 +1,5 @@
+import { FrameDiagData } from "./AppState";
+
 /**
  * Represents payload properties
  */
@@ -24,4 +26,5 @@ export interface Payload {
   loadMode?: boolean;
   extraFeatures?: string[];
   baseClockFrequency?: number;
+  frameDiagData?: FrameDiagData;
 }

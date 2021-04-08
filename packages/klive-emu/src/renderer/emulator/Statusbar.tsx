@@ -1,7 +1,7 @@
 import * as React from "react";
 import { connect } from "react-redux";
 import { getVersion } from "../../version";
-import { AppState } from "../../shared/state/AppState";
+import { AppState, ProgramCounterInfo } from "../../shared/state/AppState";
 import { SvgIcon } from "../common/SvgIcon";
 import { vmEngineService } from "../machines/vm-engine-service";
 import { themeService } from "../themes/theme-service";
@@ -11,6 +11,12 @@ interface Props {
   cpuFreq?: number;
   displayName: string;
   machineContext?: string;
+  lastFrameTime?: string;
+  lastEngineTime?: string;
+  avgEngineTime?: string;
+  avgFrameTime?: string;
+  renderedFrames?: number;
+  pcInfo?: ProgramCounterInfo;
 }
 
 /**
@@ -33,7 +39,9 @@ class Statusbar extends React.Component<Props> {
           height={16}
           fill={this._fillValue}
         />
-        <span className="label">0</span>
+        <span className="label">
+          {this.props.avgEngineTime} / {this.props.lastEngineTime}
+        </span>
       </div>,
       <div
         key="2"
@@ -41,7 +49,9 @@ class Statusbar extends React.Component<Props> {
         title="Total time per frame (average/last)"
       >
         <SvgIcon iconName="vm" width={16} height={16} fill={this._fillValue} />
-        <span className="label">0</span>
+        <span className="label">
+          {this.props.avgFrameTime} / {this.props.lastFrameTime}
+        </span>
       </div>,
       <div key="3" className="section" title="# of frames rendered since start">
         <SvgIcon
@@ -50,11 +60,12 @@ class Statusbar extends React.Component<Props> {
           height={16}
           fill={this._fillValue}
         />
-        <span className="label">0</span>
+        <span className="label">{this.props.renderedFrames}</span>
       </div>,
       <div key="4" className="section" title="The value of Program Counter">
         <span className="label">
-          PC: ${Number(0).toString(16).toUpperCase().padStart(4, "0")}
+          {this.props.pcInfo?.label ?? ""}: $
+          {(this.props.pcInfo?.value ?? 0).toString(16).toUpperCase().padStart(4, "0")}
         </span>
       </div>,
     ];
@@ -76,8 +87,9 @@ class Statusbar extends React.Component<Props> {
         {this.props.showFrames && frameInformation}
         <div key="placeholder" className="placeholder" />
         {vmEngineService.hasEngine && cpuInformation}
-        <div className="section"><span className="label">Klive {getVersion()}</span></div>
-
+        <div className="section">
+          <span className="label">Klive {getVersion()}</span>
+        </div>
       </div>
     );
   }
@@ -93,5 +105,35 @@ export default connect((state: AppState) => {
       ? vmEngineService.getEngine()?.displayName ?? ""
       : "",
     machineContext: state.emulatorPanel.machineContext,
+    lastFrameTime: state.emulatorPanel.frameDiagData.lastFrameTime.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      }
+    ),
+    lastEngineTime: state.emulatorPanel.frameDiagData.lastEngineTime.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      }
+    ),
+    avgEngineTime: state.emulatorPanel.frameDiagData.avgEngineTime.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      }
+    ),
+    avgFrameTime: state.emulatorPanel.frameDiagData.avgFrameTime.toLocaleString(
+      undefined,
+      {
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 4,
+      }
+    ),
+    renderedFrames: state.emulatorPanel.frameDiagData.renderedFrames,
+    pcInfo: state.emulatorPanel.frameDiagData.pcInfo,
   };
 }, null)(Statusbar);

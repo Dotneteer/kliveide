@@ -1,3 +1,7 @@
+// ============================================================================
+// Implements the redux store for the main process.
+// ============================================================================
+
 import { combineReducers, createStore, applyMiddleware } from "redux";
 import { appReducers } from "../shared/state/app-reducers";
 import { MessengerBase } from "../shared/messaging/MessengerBase";

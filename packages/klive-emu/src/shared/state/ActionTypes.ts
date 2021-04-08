@@ -35,6 +35,7 @@ export interface ActionTypes {
   EMU_KEYBOARD_HEIGHT: null;
   EMU_SET_FIRMWARE: null;
   EMU_SET_EXTRA: null;
+  EMU_SET_DIAG_DATA: null;
 
   // --- ZX Spectrum specific action
   SPECTRUM_FAST_LOAD: null;

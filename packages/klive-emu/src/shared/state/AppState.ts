@@ -41,6 +41,34 @@ export interface EmulatorPanelState {
   machineContext?: string;
   firmware?: Uint8Array[];
   extraFeatures?: string[];
+  frameDiagData?: FrameDiagData;
+}
+
+/**
+ * Represents disgnostics data for machine frames
+ */
+export interface FrameDiagData {
+  lastEngineTime: number;
+  avgEngineTime: number;
+  lastFrameTime: number;
+  avgFrameTime: number;
+  renderedFrames: number;
+  pcInfo: ProgramCounterInfo;
+}
+
+/**
+ * Represents the Program Counter information of a virtual machine's CPU
+ */
+ export interface ProgramCounterInfo {
+  /**
+   * Label of the Program Counter
+   */
+  label: string;
+
+  /**
+   * Program Counter value
+   */
+  value: number;
 }
 
 /**
@@ -82,6 +110,17 @@ export function getInitialAppState(): AppState {
       machineContext: "",
       firmware: [],
       extraFeatures: [],
+      frameDiagData: {
+        lastFrameTime: 0,
+        lastEngineTime: 0,
+        avgEngineTime: 0,
+        avgFrameTime: 0,
+        renderedFrames: 0,
+        pcInfo: {
+          label: "",
+          value: 0
+        }
+      },
     },
     spectrumSpecific: {
       fastLoad: true,

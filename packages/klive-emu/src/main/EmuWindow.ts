@@ -1,7 +1,4 @@
-import {
-  app,
-  dialog,
-} from "electron";
+import { app, dialog } from "electron";
 import { AppWindow } from "./AppWindow";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./mainStore";
@@ -9,7 +6,6 @@ import {
   CreateMachineResponse,
   RequestMessage,
 } from "../shared/messaging/message-types";
-import { IEmuAppWindow } from "./IEmuAppWindow";
 import {
   MachineContextProvider,
   MachineContextProviderBase,
@@ -19,29 +15,21 @@ import {
   ZxSpectrum48ContextProvider,
 } from "./zx-spectrum-context";
 import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
-import {
-  emuSetExtraFeaturesAction,
-} from "../shared/state/emulator-panel-reducer";
+import { emuSetExtraFeaturesAction } from "../shared/state/emulator-panel-reducer";
 import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
 import { emuMessenger, setEmuMessenger } from "./app-menu-state";
 
 /**
  * Represents the singleton emulator window
  */
-export class EmuWindow extends AppWindow implements IEmuAppWindow {
+export class EmuWindow extends AppWindow {
   private _machineContextProvider: MachineContextProvider;
-
-  /**
-   * Now, we allow only a singleton instance
-   */
-  static instance: EmuWindow;
 
   /**
    * Initializes the window instance
    */
   constructor() {
     super();
-    EmuWindow.instance = this;
     setEmuMessenger(new MainToEmulatorMessenger(this.window));
   }
 
@@ -52,6 +40,9 @@ export class EmuWindow extends AppWindow implements IEmuAppWindow {
     return this._machineContextProvider;
   }
 
+  /**
+   * The name of the file that provides the window's contents
+   */
   get contentFile(): string {
     return "emu-index.html";
   }

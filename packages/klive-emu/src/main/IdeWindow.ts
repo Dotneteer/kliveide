@@ -9,9 +9,11 @@ export class IdeWindow extends AppWindow {
    */
   constructor() {
     super();
-    IdeWindow.instance = this;
   }
 
+  /**
+   * The name of the file that provides the window's contents
+   */
   get contentFile(): string {
     return "ide-index.html";
   }
@@ -22,12 +24,4 @@ export class IdeWindow extends AppWindow {
   get stateFile(): string {
     return "ide-window-state.json";
   }
-
-  // ==========================================================================
-  // Static members
-
-  /**
-   * Now, we allow only a singleton instance
-   */
-  static instance: IdeWindow;
 }

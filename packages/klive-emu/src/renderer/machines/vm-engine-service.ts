@@ -11,6 +11,7 @@ import {
   ExecuteCycleOptions,
   ExecutionCompletionReason,
   MachineCreationOptions,
+  MachineState,
 } from "./vm-core-types";
 import { emuStore } from "../emulator/emuStore";
 import { IVmController } from "./IVmController";
@@ -18,9 +19,11 @@ import { EmulatedKeyStroke } from "./keyboard";
 import { BreakpointDefinition } from "../../shared/machines/debug-types";
 import {
   emuSetDebugModeAction,
+  emuSetDiagDataAction,
   emuSetExecutionStateAction,
   emuSetFrameIdAction,
 } from "../../shared/state/emulator-panel-reducer";
+import { FrameDiagData } from "../../shared/state/AppState";
 
 /**
  * This class is responsible for controlling the singleton virtual machine
@@ -64,9 +67,6 @@ class VmEngineService implements IVmController {
 
   // --- Breakpoints to use
   private _breakpoints: BreakpointDefinition[] = [];
-
-  // --- Last machine-specific command executed
-  private _lastCommand: string | null = null;
 
   // --- Message to display on the UI
   private _uiMessage: string | null = null;
@@ -118,6 +118,9 @@ class VmEngineService implements IVmController {
 
     // --- Modify the app state
     emuStore.dispatch(setMachineTypeAction(id));
+    emuStore.dispatch(
+      emuSetDiagDataAction(this.getFrameDiagData(engine.getMachineState()))
+    );
 
     // --- Allow a little delay for all processes to get synched
     await delay(20);
@@ -534,6 +537,9 @@ class VmEngineService implements IVmController {
       this._sumFrameTime += this._lastFrameTime;
       this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
       toWait = Math.floor(nextFrameTime - curTime);
+      emuStore.dispatch(
+        emuSetDiagDataAction(this.getFrameDiagData(resultState))
+      );
 
       // --- Let the machine complete the frame
       await engine.onFrameCompleted(resultState, toWait);
@@ -639,6 +645,20 @@ class VmEngineService implements IVmController {
       this._uiMessage = message;
       this._uiMessageChanged.fire(message);
     }
+  }
+
+  /**
+   * Gets information about frame times
+   */
+  getFrameDiagData(state: MachineState): FrameDiagData {
+    return {
+      lastEngineTime: this._lastEngineTime,
+      avgEngineTime: this._avgEngineTime,
+      lastFrameTime: this._lastFrameTime,
+      avgFrameTime: this._avgFrameTime,
+      renderedFrames: this._renderedFrames,
+      pcInfo: this._vmEngine.getProgramCounterInfo(state),
+    };
   }
 }
 

@@ -81,6 +81,10 @@ export interface MachineContextProvider {
   getExtraMachineFeatures(): ExtraMachineFeatures[];
 }
 
+/**
+ * Room implementation of MachineContextProvider. Use this base
+ * class for your context provider classes.
+ */
 export abstract class MachineContextProviderBase
   implements MachineContextProvider {
   /**
@@ -147,7 +151,7 @@ export abstract class MachineContextProviderBase
    * @return Firmware contents, if found; otherwise, error message
    */
   getFirmware(): Uint8Array[] | string {
-    return this.loadRoms();
+    return this.loadFirmware();
   }
 
   /**
@@ -185,7 +189,7 @@ export abstract class MachineContextProviderBase
    * @param checkfunction Optional function to check ROM integrity
    * @returns The array of loaded ROMs, if ok. Otherwise, the error message
    */
-  protected loadRoms(): Uint8Array[] | string {
+  protected loadFirmware(): Uint8Array[] | string {
     const result: Uint8Array[] = [];
 
     // --- Iterate throug all ROM files

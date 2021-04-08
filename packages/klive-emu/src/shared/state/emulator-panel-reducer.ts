@@ -1,4 +1,4 @@
-import { EmulatorPanelState } from "./AppState";
+import { EmulatorPanelState, FrameDiagData } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
 
 // ============================================================================
@@ -88,6 +88,13 @@ export const emuSetBaseFrequencyAction: ActionCreator = (
   payload: { baseClockFrequency },
 });
 
+export const emuSetDiagDataAction: ActionCreator = (
+  frameDiagData: FrameDiagData
+) => ({
+  type: "EMU_SET_DIAG_DATA",
+  payload: { frameDiagData },
+});
+
 // ============================================================================
 // Reducer
 
@@ -132,6 +139,8 @@ export default function (
       return { ...state, extraFeatures: payload.extraFeatures };
     case "EMU_SET_BASE_FREQ":
       return { ...state, baseClockFrequency: payload.baseClockFrequency };
+    case "EMU_SET_DIAG_DATA":
+      return { ...state, frameDiagData: payload.frameDiagData };
     default:
       return state;
   }
