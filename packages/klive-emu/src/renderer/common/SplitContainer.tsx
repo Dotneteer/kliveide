@@ -33,7 +33,7 @@ export class SplitContainer extends React.Component<Props> {
     // --- Used default property values
     this._direction = this.props.direction ?? "horizontal";
     this._gutterSize = this.props.gutterSize ?? 10;
-    this._minimumSize = this.props.minimumSize ?? 80;
+    this._minimumSize = this.props.minimumSize ?? 180;
 
     if (!this._hostElement) return;
     this._style = {

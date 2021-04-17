@@ -191,3 +191,21 @@ body {
   left: 0;
   top: 0;
 }
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 100%;
+  background-color: transparent;
+  box-sizing: border-box;
+  align-content: start;
+  justify-items: start;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.key-row {
+  padding: 0px 0px;
+}

@@ -8,6 +8,7 @@ import { forwardRendererState } from "./mainStore";
 import { MAIN_STATE_REQUEST_CHANNEL } from "../shared/messaging/channels";
 import { ForwardActionRequest } from "../shared/messaging/message-types";
 import {
+  emuWindow,
   setupMenu,
   setupWindows,
   watchStateChanges,
@@ -20,6 +21,7 @@ app.on("ready", async () => {
   await setupWindows();
   setupMenu();
   watchStateChanges();
+  emuWindow.requestMachineType("sp48");
 });
 
 // Quit when all windows are closed.

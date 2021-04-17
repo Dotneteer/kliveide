@@ -96,6 +96,7 @@ class Statusbar extends React.Component<Props> {
 }
 
 export default connect((state: AppState) => {
+  console.log(JSON.stringify(state.emulatorPanel));
   return {
     showFrames: state.emuViewOptions.showFrameInfo,
     cpuFreq:

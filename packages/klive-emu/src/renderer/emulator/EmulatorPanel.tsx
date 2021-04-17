@@ -1,4 +1,3 @@
-import { TouchBarScrubber } from "electron";
 import * as React from "react";
 import { connect } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
@@ -10,6 +9,8 @@ import {
 } from "../machines/vm-engine-service";
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
+
+const TURNED_OFF_MESSAGE = "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
 
 interface Props {
   executionState?: number;
@@ -59,8 +60,7 @@ class EmulatorPanel extends React.Component<Props, State> {
       canvasHeight: 0,
       shadowCanvasWidth: 0,
       shadowCanvasHeight: 0,
-      overlay:
-        "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.",
+      overlay: TURNED_OFF_MESSAGE,
       showOverlay: true,
       calcCount: 0
     };
@@ -149,6 +149,8 @@ class EmulatorPanel extends React.Component<Props, State> {
     }
     this.calculateDimensions();
     this.configureScreen();
+    this.hideDisplayData();
+    this.setState({ overlay: TURNED_OFF_MESSAGE });
   };
 
   executionStateChange = (args: VmStateChangedArgs) => {
@@ -239,9 +241,9 @@ class EmulatorPanel extends React.Component<Props, State> {
 
   // --- Displays the screen
   displayScreenData() {
-    const executionState = this.props.executionState ?? 0;
-    // --- Do not refresh after stopped state
-    if (!executionState || executionState === 5) return;
+    // const executionState = this.props.executionState ?? 0;
+    // // --- Do not refresh after stopped state
+    // if (!executionState || executionState === 5) return;
 
     const screenEl = this._screenElement.current;
     const shadowScreenEl = this._shadowScreenElement.current;

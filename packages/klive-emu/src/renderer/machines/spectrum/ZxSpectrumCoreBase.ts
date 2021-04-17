@@ -255,6 +255,14 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
   }
 
   /**
+   * Gets the cursor mode of the ZX Spectrum machine
+   * @returns 
+   */
+  getCursorMode(): number {
+    return this.api.getCursorMode();
+  }
+
+  /**
    * Extracts saved data
    * @param length Data length
    */

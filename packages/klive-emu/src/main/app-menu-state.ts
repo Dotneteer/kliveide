@@ -53,6 +53,11 @@ export let stateAware: StateAwareObject;
 export let emuMessenger: MainToEmulatorMessenger;
 
 /**
+ * Last known machine type
+ */
+let lastMachineType = "";
+
+/**
  * Last known sound level
  */
 let lastSoundLevel: number | null = null;
@@ -68,7 +73,6 @@ export async function setupWindows(): Promise<void> {
   emuWindow.load();
   registerEmuWindowForwarder(emuWindow.window);
   await emuWindow.ensureStarted();
-  emuWindow.requestMachineType("sp48");
 
   // --- Prepare the IDE window
   ideWindow = new IdeWindow();
@@ -298,12 +302,13 @@ export function setupMenu(): void {
 
   // --- Prepare the machine menu
   const machineSubMenu: MenuItemConstructorOptions[] = [];
+  const machineType = mainStore.getState().machineType?.split("_")[0];
   for (let i = 0; i < MACHINE_MENU_ITEMS.length; i++) {
     machineSubMenu.push({
       id: menuIdFromMachineId(MACHINE_MENU_ITEMS[i].id),
       label: MACHINE_MENU_ITEMS[i].label,
       type: "radio",
-      checked: i ? false : true,
+      checked: MACHINE_MENU_ITEMS[i].id === machineType,
       enabled: MACHINE_MENU_ITEMS[i].enabled,
       click: async (mi) => {
         try {
@@ -313,8 +318,7 @@ export function setupMenu(): void {
           // --- Intentionally ignored
         }
         const machineType = mi.id.split("_")[1];
-        // TODO: Implement this
-        // requestMachineType(machineType);
+        emuWindow.requestMachineType(machineType);
         // TODO: Implement this
         //setMachineTypeMenu(mi.id);
         // await new Promise((r) => setTimeout(r, 200));
@@ -422,20 +426,6 @@ export function setupMenu(): void {
   });
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
-
-  // --- Set up the machine specific description
-  if (emuWindow?.machineContextProvider) {
-    mainStore.dispatch(
-      emuMachineContextAction(
-        emuWindow.machineContextProvider.getMachineContextDescription()
-      )
-    );
-    mainStore.dispatch(
-      emuSetBaseFrequencyAction(
-        emuWindow.machineContextProvider.getNormalCpuFrequency()
-      )
-    );
-  }
 }
 
 /**
@@ -519,13 +509,13 @@ export function processStateChange(fullState: AppState): void {
   }
 
   // --- Take care that custom machine menus are updated
-  //this._machineContextProvider?.updateMenuStatus(fullState);
+  emuWindow.machineContextProvider?.updateMenuStatus(fullState);
 
-  // if (this._lastMachineType !== emuState.currentType) {
-  //   // --- Current machine types has changed
-  //   this._lastMachineType = emuState.currentType;
-  //   this.requestMachineType(this._lastMachineType);
-  // }
+  if (lastMachineType !== fullState.machineType) {
+     // --- Current machine types has changed
+     lastMachineType = fullState.machineType;
+     setupMenu();
+   }
 
   // --- Sound level has changed
   lastSoundLevel = emuState.soundLevel;
@@ -655,9 +645,9 @@ interface MachineMenuItem {
  * The list of machine menu items
  */
 const MACHINE_MENU_ITEMS: MachineMenuItem[] = [
-  { id: "48", label: "ZX Spectrum 48", enabled: true },
-  { id: "128", label: "ZX Spectrum 128", enabled: true },
-  { id: "p3e", label: "ZX Spectrum +3E (to be done)", enabled: false },
+  { id: "sp48", label: "ZX Spectrum 48", enabled: true },
+  { id: "sp128", label: "ZX Spectrum 128", enabled: true },
+  { id: "spp3e", label: "ZX Spectrum +3E (to be done)", enabled: false },
   {
     id: "next",
     label: "ZX Spectrum Next (to be done)",

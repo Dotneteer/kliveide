@@ -5,6 +5,7 @@ import { mainStore } from "./mainStore";
 import {
   CreateMachineResponse,
   RequestMessage,
+  StopVmRequest,
 } from "../shared/messaging/message-types";
 import {
   MachineContextProvider,
@@ -15,9 +16,14 @@ import {
   ZxSpectrum48ContextProvider,
 } from "./zx-spectrum-context";
 import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
-import { emuSetExtraFeaturesAction } from "../shared/state/emulator-panel-reducer";
+import {
+  emuMachineContextAction,
+  emuSetBaseFrequencyAction,
+  emuSetExecutionStateAction,
+  emuSetExtraFeaturesAction,
+} from "../shared/state/emulator-panel-reducer";
 import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
-import { emuMessenger, setEmuMessenger } from "./app-menu-state";
+import { emuMessenger, setEmuMessenger, setupMenu } from "./app-menu-state";
 
 /**
  * Represents the singleton emulator window
@@ -108,6 +114,11 @@ export class EmuWindow extends AppWindow {
     id: string,
     options?: MachineCreationOptions
   ): Promise<void> {
+    // Preparation: Stop the current machine
+    emuMessenger.sendMessage(<StopVmRequest>{
+      type: "stopVm",
+    });
+
     // #1: Create the context provider for the machine
     const contextProvider = contextRegistry[id];
     if (!contextProvider) {
@@ -142,6 +153,21 @@ export class EmuWindow extends AppWindow {
         this._machineContextProvider.getExtraMachineFeatures()
       )
     );
+
+    // #5: Set up the machine specific description
+    mainStore.dispatch(
+      emuMachineContextAction(
+        this._machineContextProvider.getMachineContextDescription()
+      )
+    );
+    mainStore.dispatch(
+      emuSetBaseFrequencyAction(
+        this._machineContextProvider.getNormalCpuFrequency()
+      )
+    );
+
+    // #6: Set the default execution state
+    mainStore.dispatch(emuSetExecutionStateAction(0));
   }
 
   // ==========================================================================
