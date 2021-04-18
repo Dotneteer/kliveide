@@ -3,6 +3,7 @@ import { connect } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 import ReactResizeDetector from "react-resize-detector";
 import Sp48Keyboard from "./Sp48Keyboard";
+import Cz88Keyboard from "./Cz88Keyboard";
 import { animationTick } from "../common/utils";
 
 interface Props {
@@ -33,6 +34,22 @@ class KeyboardPanel extends React.Component<Props, State> {
   }
 
   render() {
+    let keyboard = null;
+    switch (this.props.type) {
+      case "sp48":
+        keyboard = (
+          <Sp48Keyboard width={this.state.width} height={this.state.height} />
+        );
+        break;
+      case "cz88":
+        keyboard = (
+          <Cz88Keyboard
+            width={this.state.width}
+            height={this.state.height}
+            layout={this.props.layout}
+          />
+        );
+    }
     if (this.props.visible) {
       return (
         <div
@@ -40,7 +57,7 @@ class KeyboardPanel extends React.Component<Props, State> {
           data-initial-size={this.props.initialHeight}
           ref={this._hostElement}
         >
-          <Sp48Keyboard width={this.state.width} height={this.state.height} />
+          {keyboard}
           <ReactResizeDetector
             handleWidth
             handleHeight

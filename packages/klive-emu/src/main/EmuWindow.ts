@@ -23,7 +23,8 @@ import {
   emuSetExtraFeaturesAction,
 } from "../shared/state/emulator-panel-reducer";
 import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
-import { emuMessenger, setEmuMessenger, setupMenu } from "./app-menu-state";
+import { emuMessenger, setEmuMessenger } from "./app-menu-state";
+import { Cz88ContextProvider } from "./cz88-context";
 
 /**
  * Represents the singleton emulator window
@@ -119,6 +120,9 @@ export class EmuWindow extends AppWindow {
       type: "stopVm",
     });
 
+    // Use only the first segment of the ID
+    id = id.split("_")[0];
+
     // #1: Create the context provider for the machine
     const contextProvider = contextRegistry[id];
     if (!contextProvider) {
@@ -133,7 +137,7 @@ export class EmuWindow extends AppWindow {
     this._machineContextProvider = new (contextProvider as any)(
       options
     ) as MachineContextProvider;
-    const firmware = this._machineContextProvider.getFirmware();
+    const firmware = this._machineContextProvider.getFirmware(options);
     if (typeof firmware === "string") {
       this.showError(`Cannot load firmware: ${firmware}.`, "Internal error");
       return;
@@ -206,4 +210,5 @@ export class EmuWindow extends AppWindow {
 const contextRegistry: Record<string, typeof MachineContextProviderBase> = {
   sp48: ZxSpectrum48ContextProvider,
   sp128: ZxSpectrum128ContextProvider,
+  cz88: Cz88ContextProvider
 };

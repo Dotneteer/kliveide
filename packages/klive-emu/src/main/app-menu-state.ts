@@ -563,6 +563,19 @@ export function processStateChange(fullState: AppState): void {
 }
 
 /**
+ * Sets the specified sound level
+ * @param level Sound level (between 0.0 and 1.0)
+ */
+ export function setSoundLevel(level: number): void {
+  if (level === 0) {
+    mainStore.dispatch(emuMuteSoundAction());
+  } else {
+    mainStore.dispatch(emuUnmuteSoundAction());
+    mainStore.dispatch(emuSetSoundLevelAction(level));
+  }
+}
+
+/**
  * Sets the sound menu with the specified level
  * @param level Sound level
  */
@@ -610,19 +623,6 @@ function checkboxAction(
   hideAction: KliveAction
 ): void {
   mainStore.dispatch(menuItem.checked ? showAction : hideAction);
-}
-
-/**
- * Sets the specified sound level
- * @param level Sound level (between 0.0 and 1.0)
- */
-function setSoundLevel(level: number): void {
-  if (level === 0) {
-    mainStore.dispatch(emuMuteSoundAction());
-  } else {
-    mainStore.dispatch(emuUnmuteSoundAction());
-    mainStore.dispatch(emuSetSoundLevelAction(level));
-  }
 }
 
 /**

@@ -4,6 +4,7 @@ import * as path from "path";
 import { MenuItemConstructorOptions, shell } from "electron";
 import { AppState } from "../shared/state/AppState";
 import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
+import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
 
 /**
  * Describes the responsibility of a menu provider for a particular machine
@@ -56,9 +57,10 @@ export interface MachineContextProvider {
 
   /**
    * Gets the startup ROMs for the machine
+   * @param options Machine setup options
    * @return Firmware contents, if found; otherwise, error message
    */
-  getFirmware(): Uint8Array[] | string;
+  getFirmware(options?: MachineCreationOptions): Uint8Array[] | string;
 
   /**
    * Override this method tom provide a context description
@@ -148,9 +150,13 @@ export abstract class MachineContextProviderBase
 
   /**
    * Gets the startup ROMs for the machine
+   * @param options Machine setup options
    * @return Firmware contents, if found; otherwise, error message
    */
-  getFirmware(): Uint8Array[] | string {
+  getFirmware(options?: MachineCreationOptions): Uint8Array[] | string {
+    if (options?.firmware) {
+      return options.firmware;
+    }
     return this.loadFirmware();
   }
 

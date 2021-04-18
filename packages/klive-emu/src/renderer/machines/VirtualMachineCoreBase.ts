@@ -24,7 +24,7 @@ export abstract class VirtualMachineCoreBase {
   /**
    * The WA machine API to use the machine core
    */
-  protected api: MachineApi;
+  public api: MachineApi;
 
   /**
    * The initial state of the machine after setup
@@ -125,9 +125,7 @@ export abstract class VirtualMachineCoreBase {
   async setupMachine(): Promise<void> {
     // --- Prepare the firmware
     let firmware: Uint8Array[] = [];
-    if (this.options.firmwareFiles) {
-      // TODO: load the firmware files
-    } else if (this.options.firmware) {
+    if (this.options.firmware) {
       firmware = this.options.firmware;
     } else {
       throw new Error("No firmware specified.");

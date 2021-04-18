@@ -17,11 +17,6 @@ export interface MachineSetupOptions {
   tactsInFrame: number;
 
   /**
-   * Optional firmware file names
-   */
-  firmwareFiles?: string[];
-
-  /**
    * Optional firmware contents
    */
   firmware?: Uint8Array[];

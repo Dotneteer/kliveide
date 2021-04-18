@@ -1,6 +1,6 @@
 import * as React from "react";
 import { themeService } from "../themes/theme-service";
-import { ButtonClickArgs } from "./ui-core-types";
+import { Sp48ButtonClickArgs } from "./ui-core-types";
 
 const NORMAL_WIDTH = 100;
 
@@ -21,7 +21,7 @@ interface Props {
   glyph?: number;
   useSymColor?: boolean;
   xwidth?: number;
-  keyAction?: (e: ButtonClickArgs, down: boolean) => void;
+  keyAction?: (e: Sp48ButtonClickArgs) => void;
 }
 
 interface State {
@@ -127,12 +127,8 @@ export default class Sp48Key extends React.Component<Props, State> {
           cursor={cursor}
           onMouseEnter={() => this.setState({ mouseOverKey: true })}
           onMouseLeave={() => this.setState({ mouseOverKey: false })}
-          onMouseDown={(e) =>
-            this.raiseKeyAction(e, this.props.code, "main", true)
-          }
-          onMouseUp={(e) =>
-            this.raiseKeyAction(e, this.props.code, "main", false)
-          }
+          onMouseDown={(e) => this.raiseKeyAction(e, "main", true)}
+          onMouseUp={(e) => this.raiseKeyAction(e, "main", false)}
         />
         {this.props.main && (
           <text
@@ -145,12 +141,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverKey: true })}
             onMouseLeave={() => this.setState({ mouseOverKey: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "main", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "main", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "main", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "main", false)}
           >
             {this.props.main}
           </text>
@@ -166,12 +158,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverKey: true })}
             onMouseLeave={() => this.setState({ mouseOverKey: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "main", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "main", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "main", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "main", false)}
           >
             {this.props.keyword}
           </text>
@@ -187,12 +175,8 @@ export default class Sp48Key extends React.Component<Props, State> {
               cursor={cursor}
               onMouseEnter={() => this.setState({ mouseOverKey: true })}
               onMouseLeave={() => this.setState({ mouseOverKey: false })}
-              onMouseDown={(e) =>
-                this.raiseKeyAction(e, this.props.code, "symbol", true)
-              }
-              onMouseUp={(e) =>
-                this.raiseKeyAction(e, this.props.code, "symbol", false)
-              }
+              onMouseDown={(e) => this.raiseKeyAction(e, "symbol", true)}
+              onMouseUp={(e) => this.raiseKeyAction(e, "symbol", false)}
             >
               {this.props.symbol}
             </rect>
@@ -208,12 +192,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverSymbol: true })}
             onMouseLeave={() => this.setState({ mouseOverSymbol: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "symbol", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "symbol", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "symbol", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "symbol", false)}
           >
             {this.props.symbol}
           </text>
@@ -229,12 +209,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverSymbol: true })}
             onMouseLeave={() => this.setState({ mouseOverSymbol: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "symbol", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "symbol", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "symbol", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "symbol", false)}
           >
             {this.props.symbolWord}
           </text>
@@ -253,7 +229,6 @@ export default class Sp48Key extends React.Component<Props, State> {
             onMouseDown={(e) =>
               this.raiseKeyAction(
                 e,
-                this.props.code,
                 this.props.topNum ? "topNum" : "above",
                 true
               )
@@ -261,7 +236,6 @@ export default class Sp48Key extends React.Component<Props, State> {
             onMouseUp={(e) =>
               this.raiseKeyAction(
                 e,
-                this.props.code,
                 this.props.topNum ? "topNum" : "above",
                 false
               )
@@ -281,12 +255,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverBelow: true })}
             onMouseLeave={() => this.setState({ mouseOverBelow: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "below", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "below", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "below", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "below", false)}
           >
             {this.props.below}
           </text>
@@ -302,8 +272,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverKey: true })}
             onMouseLeave={() => this.setState({ mouseOverKey: false })}
-            onMouseDown={(e) => this.raiseKeyAction(e, this.props.code, "main", true)}
-            onMouseUp={(e) => this.raiseKeyAction(e, this.props.code, "main", false)}
+            onMouseDown={(e) => this.raiseKeyAction(e, "main", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "main", false)}
           >
             {this.props.center}
           </text>
@@ -331,8 +301,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverKey: true })}
             onMouseLeave={() => this.setState({ mouseOverKey: false })}
-            onMouseDown={(e) => this.raiseKeyAction(e, this.props.code, "main", true)}
-            onMouseUp={(e) => this.raiseKeyAction(e, this.props.code, "main", false)}
+            onMouseDown={(e) => this.raiseKeyAction(e, "main", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "main", false)}
           >
             {this.props.top}
           </text>
@@ -360,8 +330,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverKey: true })}
             onMouseLeave={() => this.setState({ mouseOverKey: false })}
-            onMouseDown={(e) => this.raiseKeyAction(e, this.props.code, "main", true)}
-            onMouseUp={(e) => this.raiseKeyAction(e, this.props.code, "main", false)}
+            onMouseDown={(e) => this.raiseKeyAction(e, "main", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "main", false)}
           >
             {this.props.bottom}
           </text>
@@ -377,12 +347,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverTopNum: true })}
             onMouseLeave={() => this.setState({ mouseOverTopNum: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "above", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "above", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "above", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "above", false)}
           >
             {this.props.topNum}
           </text>
@@ -399,12 +365,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverGlyph: true })}
             onMouseLeave={() => this.setState({ mouseOverGlyph: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "glyph", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "glyph", false)}
           />
         )}
         {this.props.glyph && this.props.glyph & 0x01 && (
@@ -417,12 +379,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverGlyph: true })}
             onMouseLeave={() => this.setState({ mouseOverGlyph: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "glyph", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "glyph", false)}
           />
         )}
         {this.props.glyph && this.props.glyph & 0x02 && (
@@ -435,12 +393,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverGlyph: true })}
             onMouseLeave={() => this.setState({ mouseOverGlyph: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "glyph", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "glyph", false)}
           />
         )}
         {this.props.glyph && this.props.glyph & 0x04 && (
@@ -453,12 +407,8 @@ export default class Sp48Key extends React.Component<Props, State> {
             cursor={cursor}
             onMouseEnter={() => this.setState({ mouseOverGlyph: true })}
             onMouseLeave={() => this.setState({ mouseOverGlyph: false })}
-            onMouseDown={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", true)
-            }
-            onMouseUp={(e) =>
-              this.raiseKeyAction(e, this.props.code, "glyph", false)
-            }
+            onMouseDown={(e) => this.raiseKeyAction(e, "glyph", true)}
+            onMouseUp={(e) => this.raiseKeyAction(e, "glyph", false)}
           />
         )}
       </svg>
@@ -467,20 +417,14 @@ export default class Sp48Key extends React.Component<Props, State> {
 
   private raiseKeyAction(
     e: React.MouseEvent,
-    code: number,
     keyCategory: string,
     down: boolean
   ) {
-    this.props.keyAction?.(
-      {
-        code,
-        keyCategory,
-        altKey: e.altKey,
-        button: e.button,
-        ctrlKey: e.ctrlKey,
-        shiftKey: e.shiftKey,
-      },
-      down
-    );
+    this.props.keyAction?.({
+      code: this.props.code,
+      keyCategory,
+      button: e.button,
+      down,
+    });
   }
 }

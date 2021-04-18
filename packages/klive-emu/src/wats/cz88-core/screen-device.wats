@@ -130,6 +130,7 @@ u32[0x17'8000] pixelBuffer;
 export void setZ88ScreenSize(u8 scw, u8 sch) {
   defaultSCW = scw;
   defaultSCH = sch;
+  resetScreen();
 }
 
 // Resets the Z88 Screen device
@@ -165,9 +166,10 @@ void resetScreen() {
 void renderScreen() {
   // --- Test if LCD is ON
   if (!(COM & COM_LCDON)) {
-    if (!lcdWentOff)
+    if (!lcdWentOff) {
       renderScreenOff();
-      lcdWentOff = true;
+    }
+    lcdWentOff = true;
     return;
   }
 
@@ -186,7 +188,7 @@ void renderScreen() {
     // --- Initialize the row pointer and the column loop
     local u32 sbrPtr = rowSbrPtr;
     local u32 columnCount = ctrlCharsPerRow + 1;
-
+    
     // --- Column loop
     while (columnCount) {
       // --- Read the screen character and its attribute

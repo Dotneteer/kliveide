@@ -75,6 +75,12 @@ async function processEmulatorMessages(
       }
       return <DefaultResponse>{ type: "ack" };
 
+    case "executeMachineCommand":
+      if (vmEngineService.hasEngine) {
+        vmEngineService.getEngine().executeMachineCommand(message.command);
+      }
+      return <DefaultResponse>{ type: "ack" };
+
     default:
       return <DefaultResponse>{ type: "ack" };
   }

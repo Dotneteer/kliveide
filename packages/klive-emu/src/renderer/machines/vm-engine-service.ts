@@ -24,6 +24,7 @@ import {
   emuSetFrameIdAction,
 } from "../../shared/state/emulator-panel-reducer";
 import { FrameDiagData } from "../../shared/state/AppState";
+import { CambridgeZ88Core } from "./cz88/CambridgeZ88Core";
 
 /**
  * This class is responsible for controlling the singleton virtual machine
@@ -225,6 +226,13 @@ class VmEngineService implements IVmController {
       secondaryKey,
       ternaryKey,
     });
+  }
+
+  /**
+   * Resets the CPU of the machine
+   */
+  resetCpu(): void {
+    this._vmEngine.api.resetCpu(true);
   }
 
   /**
@@ -726,4 +734,5 @@ export const vmEngineService = new VmEngineService();
 const engineRegistry: Record<string, typeof VirtualMachineCoreBase> = {
   sp48: ZxSpectrum48Core,
   sp128: ZxSpectrum128Core,
+  cz88: CambridgeZ88Core,
 };

@@ -1,11 +1,21 @@
 /**
- * Event arguments when pressing a key on the virtual keyboard
+ * Event arguments when pressing a key on the ZX Spectrum 48 virtual keyboard
  */
-export interface ButtonClickArgs {
+export interface Sp48ButtonClickArgs {
   code: number;
   keyCategory: string;
-  altKey: boolean;
   button: number;
-  ctrlKey: boolean;
-  shiftKey: boolean;
+  down: boolean;
+}
+
+/**
+ * Event arguments when pressing a key on the Cambridge Z88 virtual keyboard
+ */
+ export interface Z88ButtonClickArgs {
+  code: number;
+  keyCategory: string;
+  down: boolean;
+  isLeft: boolean;
+  iconCount: number;
+  special?: string;
 }

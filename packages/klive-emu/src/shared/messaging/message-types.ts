@@ -78,6 +78,14 @@ export interface StepOutVmRequest extends MessageBase {
 }
 
 /**
+ * The main process sends this message to step-out the VM
+ */
+export interface ExecuteMachineCommandRequest extends MessageBase {
+  type: "executeMachineCommand";
+  command: string;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -90,7 +98,8 @@ export type RequestMessage =
   | DebugVmRequest
   | StepIntoVmRequest
   | StepOverVmRequest
-  | StepOutVmRequest;
+  | StepOutVmRequest
+  | ExecuteMachineCommandRequest;
 
 /**
  * Default response for actions

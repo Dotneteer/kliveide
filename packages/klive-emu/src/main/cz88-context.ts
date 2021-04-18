@@ -1,28 +1,31 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { dialog, Menu, MenuItemConstructorOptions } from "electron";
-import { EmulatorPanelState } from "../shared/state/AppState";
+import { Menu, MenuItemConstructorOptions } from "electron";
+import {
+  emuMachineContextAction,
+  emuSetClockMultiplierAction,
+  emuSetKeyboardLayoutAction,
+} from "../shared/state/emulator-panel-reducer";
+import { machineIdFromMenuId, menuIdFromMachineId } from "./electron-utils";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
-import { mainProcessStore } from "./mainProcessStore";
-import { machineCommandAction } from "../shared/state/redux-machine-command-state";
+import { mainStore } from "./mainStore";
+import {
+  emuMessenger,
+  emuWindow,
+  setSoundLevel,
+  setSoundLevelMenu,
+  setupMenu,
+} from "./app-menu-state";
+import { dialog } from "electron";
+import { AppState } from "../shared/state/AppState";
+import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
 import {
   CZ88_BATTERY_LOW,
   CZ88_HARD_RESET,
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../shared/machines/macine-commands";
-import { IAppWindow } from "./IAppWindows";
-import {
-  machineIdFromMenuId,
-  menuIdFromMachineId,
-} from "./utils/electron-utils";
-import {
-  emulatorSetClockMultiplierAction,
-  emulatorSetKeyboardAction,
-  emulatorSetMachineContextAction,
-} from "../shared/state/redux-emulator-state";
-import { AppWindow } from "./AppWindow";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";
@@ -104,7 +107,9 @@ let kbLayout = "uk";
 // ----------------------------------------------------------------------------
 // Configuration we use to instantiate the Z88 machine
 
-let recentOptions: Cz88ContructionOptions = {
+let recentOptions: MachineCreationOptions & Cz88ContructionOptions = {
+  baseClockFrequency: 1,
+  tactsInFrame: 16384,
   scw: 0xff,
   sch: 8,
 };
@@ -123,20 +128,30 @@ let recentRomSelected = false;
 export interface Cz88ContructionOptions {
   sch?: number;
   scw?: number;
-  rom?: Uint8Array;
+  firmware?: Uint8Array[];
 }
 
 /**
- * Context provider for the Cambridge Z88 machine model
+ * Context provider for ZX Spectrum machine types
  */
 export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
-   * Instantiates the provider
-   * @param appWindow: AppWindow instance
+   * Constructs the provider with the specified options
+   * @param options
    */
-  constructor(public appWindow: IAppWindow) {
-    super();
+  constructor(options?: Record<string, any>) {
+    super(options);
   }
+
+  /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[] = [DEFAULT_ROM];
+
+  /**
+   * Firmware sizes accected by the virtual machine
+   */
+  readonly acceptedFirmwareSizes: number[] | null = [0x2_0000, 0x4_0000, 0x8_0000];
 
   /**
    * The normal CPU frequency of the machine
@@ -152,15 +167,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     return `Screen: ${lcdLabel}, ROM: ${
       recentRomName ?? DEFAULT_ROM
     } (${romSize}KB), RAM: ${ramSize}KB`;
-  }
-
-  /**
-   * Sets the current machine context
-   */
-  setContext(): void {
-    mainProcessStore.dispatch(
-      emulatorSetMachineContextAction(this.getMachineContextDescription())()
-    );
   }
 
   /**
@@ -189,9 +195,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         if (item) {
           item.checked = false;
         }
-        if (recentOptions?.rom) {
+        if (recentOptions?.firmware) {
           recentRomName = null;
-          recentOptions = { ...recentOptions, rom: undefined };
+          recentOptions = { ...recentOptions, firmware: undefined };
           this.requestMachine();
         }
         this.setContext();
@@ -266,7 +272,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             type: "radio",
             click: () => {
               kbLayout = "uk";
-              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
             },
           },
           {
@@ -275,7 +281,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             type: "radio",
             click: () => {
               kbLayout = "es";
-              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
             },
           },
           {
@@ -284,7 +290,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             type: "radio",
             click: () => {
               kbLayout = "fr";
-              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
             },
           },
           {
@@ -293,7 +299,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             type: "radio",
             click: () => {
               kbLayout = "de";
-              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
             },
           },
           {
@@ -302,7 +308,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             type: "radio",
             click: () => {
               kbLayout = "dk";
-              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
             },
           },
           {
@@ -311,7 +317,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             type: "radio",
             click: () => {
               kbLayout = "se";
-              mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
             },
           },
         ],
@@ -361,12 +367,12 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
    * When the application state changes, you can update the menus
    */
-  updateMenuStatus(state: EmulatorPanelState): void {
+  updateMenuStatus(state: AppState): void {
     const menu = Menu.getApplicationMenu();
     const softReset = menu.getMenuItemById(SOFT_RESET);
     if (softReset) {
       // --- Soft reset is available only if the machine is started, paused, or stopped.
-      softReset.enabled = state.executionState > 0;
+      softReset.enabled = state.emulatorPanel.executionState > 0;
     }
 
     // --- Select the current LCD dimension
@@ -377,7 +383,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
 
     // --- Select the current keyboard layout
     const keyboardId = `cz88_${
-      state?.keyboardLayout ? state.keyboardLayout : "uk"
+      state.emulatorPanel.keyboardLayout ?? "uk"
     }_layout`;
     const keyboardItem = menu.getMenuItemById(keyboardId);
     if (keyboardItem) {
@@ -387,26 +393,29 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     // --- Enable/disable commands requiring a running machine
     const bothShifts = menu.getMenuItemById(PRESS_SHIFTS);
     if (bothShifts) {
-      bothShifts.enabled = state.executionState === 1;
+      bothShifts.enabled = state.emulatorPanel.executionState === 1;
     }
     const batLow = menu.getMenuItemById(BATTERY_LOW);
     if (batLow) {
-      batLow.enabled = state.executionState === 1;
+      batLow.enabled = state.emulatorPanel.executionState === 1;
     }
   }
 
   /**
-   * Gets the startup ROMs for the machine
+   * Sets the Z88 with the specified LCD type
+   * @param typeId Machine type with LCD size specification
    */
-  getStartupRoms(): Uint8Array[] | string {
-    return this.loadRoms([DEFAULT_ROM], [0x2_0000, 0x4_0000, 0x8_0000]);
+  private requestMachine(): void {
+    const typeId = `${recentLcdType}_${recentRomName ?? ""}`;
+
+    emuWindow.requestMachineType(typeId, recentOptions);
   }
 
   /**
    * Override this method to get the machine-specific settings
    */
   getMachineSpecificSettings(): Record<string, any> {
-    const state = mainProcessStore.getState().emulatorPanelState;
+    const state = mainStore.getState().emulatorPanel;
     return {
       lcd: lcdLabel,
       kbLayout,
@@ -454,33 +463,22 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         case "dk":
         case "se":
           kbLayout = settings.kbLayout;
-          mainProcessStore.dispatch(emulatorSetKeyboardAction(kbLayout)());
+          mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
           break;
       }
     }
     if (settings.clockMultiplier) {
-      mainProcessStore.dispatch(
-        emulatorSetClockMultiplierAction(settings.clockMultiplier)()
-      );
+      mainStore.dispatch(emuSetClockMultiplierAction(settings.clockMultiplier));
     }
     if (settings.soundLevel) {
-      AppWindow.instance.setSoundLevel(settings.soundLevel);
-      AppWindow.instance.setSoundLevelMenu(false, settings.soundLevel);
+      setSoundLevel(settings.soundLevel);
+      setSoundLevelMenu(false, settings.soundLevel);
     }
 
     await new Promise((r) => setTimeout(r, 600));
     if (settings.romFile) {
       await this.selectRomFileToUse(settings.romFile);
     }
-  }
-
-  /**
-   * Sets the Z88 with the specified LCD type
-   * @param typeId Machine type with LCD size specification
-   */
-  private requestMachine(): void {
-    const typeId = `${recentLcdType}_${recentRomName ?? ""}`;
-    this.appWindow.requestMachineType(typeId, recentOptions);
   }
 
   /**
@@ -502,6 +500,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     this.requestMachine();
     this.setContext();
   }
+
   /**
    * Select the ROM file to use with Z88
    */
@@ -515,7 +514,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
 
     const contents = await this.checkCz88Rom(filename);
     if (typeof contents === "string") {
-      await dialog.showMessageBox(this.appWindow.window, {
+      await dialog.showMessageBox(emuWindow.window, {
         title: "ROM error",
         message: contents,
         type: "error",
@@ -524,7 +523,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     }
 
     // --- Ok, let's use the contents of this file
-    recentOptions = { ...recentOptions, rom: contents };
+    recentOptions = { ...recentOptions, firmware: [contents] };
 
     // --- Use the selected contents
     const recentFileIdx = recentRoms.indexOf(filename);
@@ -537,7 +536,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     // --- Now set the ROM name and refresh the menu
     recentRomName = path.basename(filename);
     recentRomSelected = true;
-    this.appWindow.setupMenu();
+    setupMenu();
 
     // --- Request the current machine type
     this.requestMachine();
@@ -547,7 +546,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Select a ROM file to use with Z88
    */
   private async selectRomFileFromDialog(): Promise<string | null> {
-    const window = this.appWindow.window;
+    const window = emuWindow.window;
     const result = await dialog.showOpenDialog(window, {
       title: "Open ROM file",
       filters: [
@@ -606,26 +605,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
-   *
-   */
-  private checkTopRecentRom(): void {
-    // --- Clear the default ROM
-    const defaultItem = Menu.getApplicationMenu().getMenuItemById(
-      USE_DEFAULT_ROM
-    );
-    if (defaultItem) {
-      defaultItem.checked = false;
-    }
-
-    // --- Set the top ROM
-    const lastRomId = `${USE_ROM_FILE}_0`;
-    const item = Menu.getApplicationMenu().getMenuItemById(lastRomId);
-    if (item) {
-      item.checked = true;
-    }
-  }
-
-  /**
    * Check if specified slot contains an OZ Operating system
    * @param contents Binary contents
    * @returns true if Application Card is available in slot; otherwise false
@@ -644,7 +623,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   private async softReset(): Promise<void> {
     if (await this.confirmReset("Soft")) {
-      mainProcessStore.dispatch(machineCommandAction(CZ88_SOFT_RESET)());
+      this.executeMachineCommand(CZ88_SOFT_RESET);
     }
   }
 
@@ -653,29 +632,37 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   private async hardReset(): Promise<void> {
     if (await this.confirmReset("Hard")) {
-      mainProcessStore.dispatch(machineCommandAction(CZ88_HARD_RESET)());
+      this.executeMachineCommand(CZ88_HARD_RESET);
     }
+  }
+
+  /**
+   * Executes the specified machine command
+   * @param command Command to execute
+   */
+  private async executeMachineCommand(command: string): Promise<void> {
+    await emuMessenger.sendMessage({ type: "executeMachineCommand", command });
   }
 
   /**
    * Press both shift keys
    */
   private async pressBothShifts(): Promise<void> {
-    mainProcessStore.dispatch(machineCommandAction(CZ88_PRESS_BOTH_SHIFTS)());
+    this.executeMachineCommand(CZ88_PRESS_BOTH_SHIFTS);
   }
 
   /**
    * Press both shift keys
    */
   private async raiseBatteryLow(): Promise<void> {
-    mainProcessStore.dispatch(machineCommandAction(CZ88_BATTERY_LOW)());
+    this.executeMachineCommand(CZ88_BATTERY_LOW);
   }
 
   /**
    * Display a confirm message for reset
    */
   private async confirmReset(type: string): Promise<boolean> {
-    const result = await dialog.showMessageBox(this.appWindow.window, {
+    const result = await dialog.showMessageBox(emuWindow.window, {
       title: `Confirm Cambridge Z88 ${type} Reset`,
       message: "Are you sure you want to reset the machine?",
       buttons: ["Yes", "No"],
@@ -683,5 +670,14 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       type: "question",
     });
     return result.response === 0;
+  }
+
+  /**
+   * Sets the current machine context
+   */
+  setContext(): void {
+    mainStore.dispatch(
+      emuMachineContextAction(this.getMachineContextDescription())
+    );
   }
 }

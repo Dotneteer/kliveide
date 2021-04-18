@@ -6,10 +6,12 @@ import { SplitContainer } from "../common/SplitContainer";
 import EmulatorPanel from "./EmulatorPanel";
 import { emuStore } from "./emuStore";
 import KeyboardPanel from "./KeyboardPanel";
+import { vmEngineService } from "../machines/vm-engine-service";
 
 interface Props {
   showKeyboard?: boolean;
   keyboardHeight?: string;
+  type?: string;
 }
 
 /**
@@ -27,7 +29,7 @@ class MainPanel extends React.Component<Props> {
           <EmulatorPanel />
           <KeyboardPanel
             initialHeight={this.props.keyboardHeight}
-            type="sp48"
+            type={this.props.type}
           />
         </SplitContainer>
       </div>
@@ -43,10 +45,12 @@ class MainPanel extends React.Component<Props> {
 }
 
 export default connect((state: AppState) => {
+  const type = vmEngineService.hasEngine ? vmEngineService.getEngine().keyboardType : null;
   return {
     showKeyboard: state.emuViewOptions.showKeyboard,
     keyboardHeight: state.emulatorPanel?.keyboardHeight
       ? `${state.emulatorPanel?.keyboardHeight}px`
       : undefined,
+    type
   };
 }, null)(MainPanel);

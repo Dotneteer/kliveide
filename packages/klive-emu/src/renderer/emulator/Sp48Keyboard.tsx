@@ -1,8 +1,8 @@
 import * as React from "react";
 import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
 import { vmEngineService } from "../machines/vm-engine-service";
-import Sp48Key from "./Sp48Key";
-import { ButtonClickArgs } from "./ui-core-types";
+import Key from "./Sp48Key";
+import { Sp48ButtonClickArgs } from "./ui-core-types";
 
 const DEFAULT_WIDTH = 10 * 104 + 130 + 48;
 const DEFAULT_HEIGHT = 4 * (128 + 8) + 48;
@@ -29,7 +29,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
     return (
       <div className="keyboard">
         <div className="key-row">
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={15}
             keyAction={this.handleClick}
@@ -41,7 +41,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="DEF FN"
             glyph={1}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={16}
             keyAction={this.handleClick}
@@ -53,7 +53,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="FN"
             glyph={2}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={17}
             keyAction={this.handleClick}
@@ -65,7 +65,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="LINE"
             glyph={3}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={18}
             keyAction={this.handleClick}
@@ -77,7 +77,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="OPEN"
             glyph={4}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={19}
             keyAction={this.handleClick}
@@ -89,7 +89,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="CLOSE"
             glyph={5}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={24}
             keyAction={this.handleClick}
@@ -101,7 +101,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="MOVE"
             glyph={6}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={23}
             keyAction={this.handleClick}
@@ -113,7 +113,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="ERASE"
             glyph={7}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={22}
             keyAction={this.handleClick}
@@ -125,7 +125,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             below="POINT"
             glyph={16}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={21}
             keyAction={this.handleClick}
@@ -135,7 +135,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="GRAPHICS"
             below="CAT"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={20}
             keyAction={this.handleClick}
@@ -148,7 +148,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
           />
         </div>
         <div className="key-row" style={{ marginLeft: row1Shift }}>
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={10}
             keyAction={this.handleClick}
@@ -158,7 +158,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="SIN"
             below="ASN"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={11}
             keyAction={this.handleClick}
@@ -168,7 +168,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="COS"
             below="ACS"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={12}
             keyAction={this.handleClick}
@@ -178,7 +178,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="TAN"
             below="ATB"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={13}
             keyAction={this.handleClick}
@@ -188,7 +188,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="INT"
             below="VERIFY"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={14}
             keyAction={this.handleClick}
@@ -198,7 +198,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="RND"
             below="MERGE"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={29}
             keyAction={this.handleClick}
@@ -208,7 +208,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="STR$"
             below="["
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={28}
             keyAction={this.handleClick}
@@ -218,7 +218,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="CHR$"
             below="]"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={27}
             keyAction={this.handleClick}
@@ -228,7 +228,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="CODE"
             below="IN"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={26}
             keyAction={this.handleClick}
@@ -238,7 +238,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="PEEK"
             below="OUT"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={25}
             keyAction={this.handleClick}
@@ -250,7 +250,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
           />
         </div>
         <div className="key-row" style={{ marginLeft: row2Shift }}>
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={5}
             keyAction={this.handleClick}
@@ -260,7 +260,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="READ"
             below="~"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={6}
             keyAction={this.handleClick}
@@ -270,7 +270,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="RESTORE"
             below="|"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={7}
             keyAction={this.handleClick}
@@ -280,7 +280,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="DATA"
             below="\"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={8}
             keyAction={this.handleClick}
@@ -290,7 +290,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="SGN"
             below={"{"}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={9}
             keyAction={this.handleClick}
@@ -300,7 +300,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="ABS"
             below="}"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={34}
             keyAction={this.handleClick}
@@ -310,7 +310,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="SQR"
             below="CIRCLE"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={33}
             keyAction={this.handleClick}
@@ -320,7 +320,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="VAL"
             below="VAL$"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={32}
             keyAction={this.handleClick}
@@ -330,7 +330,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="LEN"
             below="SCREEN$"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={31}
             keyAction={this.handleClick}
@@ -340,7 +340,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="USR"
             below="ATTR"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={30}
             keyAction={this.handleClick}
@@ -348,7 +348,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
           />
         </div>
         <div className="key-row">
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={0}
             keyAction={this.handleClick}
@@ -356,7 +356,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             top="CAPS"
             bottom="SHIFT"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={1}
             keyAction={this.handleClick}
@@ -366,7 +366,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="LN"
             below="BEEP"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={2}
             keyAction={this.handleClick}
@@ -376,7 +376,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="EXP"
             below="INK"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={3}
             keyAction={this.handleClick}
@@ -386,7 +386,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="LPRINT"
             below="PAPER"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={4}
             keyAction={this.handleClick}
@@ -396,7 +396,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="LLIST"
             below="FLASH"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={39}
             keyAction={this.handleClick}
@@ -406,7 +406,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="BIN"
             below="BRIGHT"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={38}
             keyAction={this.handleClick}
@@ -416,7 +416,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="INKEY$"
             below="OVER"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={37}
             keyAction={this.handleClick}
@@ -426,7 +426,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="INVERSE"
             below="PI"
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={36}
             keyAction={this.handleClick}
@@ -434,7 +434,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
             bottom="SHIFT"
             useSymColor={true}
           />
-          <Sp48Key
+          <Key
             zoom={this._zoom}
             code={35}
             keyAction={this.handleClick}
@@ -447,8 +447,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
     );
   }
 
-  handleClick = (e: ButtonClickArgs, down: boolean) => {
-    console.log(`clicked:  ${e.code}, ${e.keyCategory}, ${down}`);
+  handleClick = (e: Sp48ButtonClickArgs) => {
     if (!vmEngineService.hasEngine) {
       // --- No engine
       return;
@@ -462,13 +461,13 @@ export default class Sp48Keyboard extends React.Component<Props> {
 
     switch (e.keyCategory) {
       case "main":
-        setKeyStatus(down, e.code, e.button === 0 ? undefined : 0 /* CShift */);
+        setKeyStatus(e.down, e.code, e.button === 0 ? undefined : 0 /* CShift */);
         break;
       case "symbol":
-        setKeyStatus(down, e.code, 36 /* SShift */);
+        setKeyStatus(e.down, e.code, 36 /* SShift */);
         break;
       case "above":
-        if (down) {
+        if (e.down) {
           vmEngineService.queueKeyStroke(
             frameCount,
             2,
@@ -484,7 +483,7 @@ export default class Sp48Keyboard extends React.Component<Props> {
         }
         break;
       case "below":
-        if (down) {
+        if (e.down) {
           vmEngineService.queueKeyStroke(
             frameCount,
             2,
@@ -500,11 +499,11 @@ export default class Sp48Keyboard extends React.Component<Props> {
         }
         break;
       case "topNum":
-        setKeyStatus(down, e.code, 0);
+        setKeyStatus(e.down, e.code, 0);
         break;
       case "glyph":
         if ((engine.getCursorMode() & 0x02) !== 0) return;
-        if (down) {
+        if (e.down) {
           vmEngineService.queueKeyStroke(
             frameCount,
             2,
