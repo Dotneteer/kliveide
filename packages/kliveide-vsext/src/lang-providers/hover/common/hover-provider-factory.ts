@@ -1,11 +1,13 @@
 import * as vscode from "vscode";
+import { Z80AsmHoverProvider } from "../z80asm-hover-provider";
 import { ZxBasicHoverProvider } from "../zxbasic-hover-provider";
 
 /**
  * object with existent languages hover providers
  */
 export var HoverProvider = {
-  ZxBasic: ZxBasicHoverProvider
+  ZxBasic: ZxBasicHoverProvider,
+  Z80Asm: Z80AsmHoverProvider
 }
 
 /**
