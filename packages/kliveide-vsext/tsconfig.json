@@ -10,8 +10,9 @@
     "outDir": "out",
     "baseUrl": ".",
     "downlevelIteration": true,
+    "resolveJsonModule": true,
     "paths": {
-      "*": ["node_modules/*"]
+      "*": ["node_modules/*"]      
     }
   },
   "include": [
