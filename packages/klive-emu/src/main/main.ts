@@ -4,7 +4,7 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { BrowserWindow, app, ipcMain } from "electron";
-import { forwardRendererState } from "./mainStore";
+import { forwardRendererState, mainStore } from "./mainStore";
 import { MAIN_STATE_REQUEST_CHANNEL } from "../shared/messaging/channels";
 import { ForwardActionRequest } from "../shared/messaging/message-types";
 import {
@@ -13,6 +13,7 @@ import {
   setupWindows,
   watchStateChanges,
 } from "./app-menu-state";
+import { KliveSettings } from "./klive-settings";
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -44,3 +45,34 @@ app.on("activate", async () => {
 ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   forwardRendererState(msg);
 });
+
+  /**
+   * Saves the current application settings
+   */
+  function saveAppSettings(): void {
+    const state = mainStore.getState();
+    const emuSettings = state.emulatorPanel;
+    const machineType = state.machineType.split("_")[0];
+    const kliveSettings: KliveSettings = {
+      machineType,
+      viewOptions: {
+        showToolbar: state.emuViewOptions.showToolbar,
+        showFrameInfo: state.emuViewOptions.showFrameInfo,
+        showKeyboard: state.emuViewOptions.showKeyboard,
+        showStatusBar: state.emuViewOptions.showStatusBar,
+        keyboardHeight: state.emuViewOptions.keyboardHeight,
+      },
+    };
+    // if (this._machineContextProvider) {
+    //   kliveSettings.machineSpecific = appSettings?.machineSpecific;
+    //   if (!kliveSettings.machineSpecific) {
+    //     kliveSettings.machineSpecific = {};
+    //   }
+    //   kliveSettings.machineSpecific[
+    //     machineType
+    //   ] = this._machineContextProvider.getMachineSpecificSettings();
+    // }
+    // saveKliveSettings(kliveSettings);
+    // reloadSettings();
+  }
+

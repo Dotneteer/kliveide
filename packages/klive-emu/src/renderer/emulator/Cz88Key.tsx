@@ -235,7 +235,7 @@ export default class Cz88Key extends React.Component<Props, State> {
             onMouseDown={(e) => this.raiseKeyAction(e, "main", true)}
             onMouseUp={(e) => this.raiseKeyAction(e, "main", false)}
           >
-            {top}
+            {this.props.top}
           </text>
         )}
         {this.props.bottom && (
@@ -293,8 +293,8 @@ export default class Cz88Key extends React.Component<Props, State> {
           <text
             x={(this.props.xwidth || 100) / 2 - 6}
             y={114}
-            font-size="28"
-            text-anchor="left"
+            fontSize="28"
+            textAnchor="left"
             fill={mainFillColor}
             stroke={mainStrokeColor}
             cursor={cursor}
@@ -310,8 +310,8 @@ export default class Cz88Key extends React.Component<Props, State> {
           <text
             x={(this.props.xwidth || 100) / 2 - 6}
             y={144}
-            font-size="28"
-            text-anchor="left"
+            fontSize="28"
+            textAnchor="left"
             fill={mainFillColor}
             stroke={mainStrokeColor}
             cursor={cursor}
@@ -327,8 +327,8 @@ export default class Cz88Key extends React.Component<Props, State> {
           <text
             x={(this.props.xwidth || 100) / 2 - 6}
             y={174}
-            font-size="28"
-            text-anchor="left"
+            fontSize="28"
+            textAnchor="left"
             fill={mainFillColor}
             stroke={mainStrokeColor}
             cursor={cursor}

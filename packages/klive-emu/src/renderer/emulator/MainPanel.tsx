@@ -1,12 +1,12 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { emuKeyboardHeightAction } from "../../shared/state/emulator-panel-reducer";
 import { AppState } from "../../shared/state/AppState";
 import { SplitContainer } from "../common/SplitContainer";
 import EmulatorPanel from "./EmulatorPanel";
 import { emuStore } from "./emuStore";
 import KeyboardPanel from "./KeyboardPanel";
 import { vmEngineService } from "../machines/vm-engine-service";
+import { emuKeyboardHeightAction } from "../../shared/state/emulator-panel-reducer";
 
 interface Props {
   showKeyboard?: boolean;
@@ -48,8 +48,8 @@ export default connect((state: AppState) => {
   const type = vmEngineService.hasEngine ? vmEngineService.getEngine().keyboardType : null;
   return {
     showKeyboard: state.emuViewOptions.showKeyboard,
-    keyboardHeight: state.emulatorPanel?.keyboardHeight
-      ? `${state.emulatorPanel?.keyboardHeight}px`
+    keyboardHeight: state.emulatorPanel.keyboardHeight
+      ? `${state.emulatorPanel.keyboardHeight}px`
       : undefined,
     type
   };

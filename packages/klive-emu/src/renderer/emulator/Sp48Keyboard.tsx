@@ -5,7 +5,7 @@ import Key from "./Sp48Key";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
 
 const DEFAULT_WIDTH = 10 * 104 + 130 + 48;
-const DEFAULT_HEIGHT = 4 * (128 + 8) + 48;
+const DEFAULT_HEIGHT = 4 * (128 + 16) + 48;
 
 interface Props {
   width: number;
@@ -16,7 +16,7 @@ interface Props {
  * Represents the statusbar of the emulator
  */
 export default class Sp48Keyboard extends React.Component<Props> {
-  private _zoom = 0.25;
+  private _zoom = 0.05;
 
   constructor(props: Props) {
     super(props);

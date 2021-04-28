@@ -81,5 +81,8 @@ class KeyboardPanel extends React.Component<Props, State> {
 }
 
 export default connect((state: AppState) => {
-  return { visible: state.emuViewOptions.showKeyboard };
+  return {
+    visible: state.emuViewOptions.showKeyboard,
+    layout: state.emulatorPanel.keyboardLayout,
+  };
 }, null)(KeyboardPanel);
