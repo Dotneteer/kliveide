@@ -1,0 +1,93 @@
+import "mocha";
+import * as expect from "expect";
+import { ZxBasicKeyword } from '../../../src/lang-providers/keywords/zxbasic-keyword';
+
+describe("ZxBasic language provider find Inbuilt library Functions", () => {
+
+
+  it("ASC (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("ASC").keyword).toBe("ASC (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("asc").keyword).toBe("ASC (LIBRARY FUNCTION)");
+  });
+
+  it("ATTR (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("ATTR").keyword).toBe("ATTR (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("attr").keyword).toBe("ATTR (LIBRARY FUNCTION)");
+  });
+
+  it("CSRLIN (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("CSRLIN").keyword).toBe("CSRLIN (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("csrlin").keyword).toBe("CSRLIN (LIBRARY FUNCTION)");
+  });
+
+  it("HEX (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("HEX").keyword).toBe("HEX (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("hex").keyword).toBe("HEX (LIBRARY FUNCTION)");
+  });
+
+  it("HEX16 (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("HEX16").keyword).toBe("HEX16 (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("hex16").keyword).toBe("HEX16 (LIBRARY FUNCTION)");
+  });
+
+  it("GetKey (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("GETKEY").keyword).toBe("GETKEY (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("getkey").keyword).toBe("GETKEY (LIBRARY FUNCTION)");
+  });
+
+  it("MultiKeys (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("MULTIKEYS").keyword).toBe("MULTIKEYS (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("multikeys").keyword).toBe("MULTIKEYS (LIBRARY FUNCTION)");
+  });
+
+  it("GetKeyScanCode (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("GETKEYSCANCODE").keyword).toBe("GETKEYSCANCODE (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("getkeyscancode").keyword).toBe("GETKEYSCANCODE (LIBRARY FUNCTION)");
+  });
+
+  it("LCase (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("LCASE").keyword).toBe("LCASE (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("lcase").keyword).toBe("LCASE (LIBRARY FUNCTION)");
+  });
+
+  it("UCase (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("UCase").keyword).toBe("UCASE (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("ucase").keyword).toBe("UCASE (LIBRARY FUNCTION)");
+  });
+
+  it("POINT (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("POINT").keyword).toBe("POINT (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("point").keyword).toBe("POINT (LIBRARY FUNCTION)");
+  });
+
+  it("POS (Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("POS").keyword).toBe("POS (LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("pos").keyword).toBe("POS (LIBRARY FUNCTION)");
+  });
+
+  it("print42 (Library Subroutine)", () => {
+    expect(ZxBasicKeyword.findKeyword("PRINT42").keyword).toBe("PRINT42 (LIBRARY SUBROUTINE)");
+    expect(ZxBasicKeyword.findKeyword("print42").keyword).toBe("PRINT42 (LIBRARY SUBROUTINE)");
+  });
+
+  it("printat42 (Library Subroutine)", () => {
+    expect(ZxBasicKeyword.findKeyword("PRINTAT42").keyword).toBe("PRINTAT42 (LIBRARY SUBROUTINE)");
+    expect(ZxBasicKeyword.findKeyword("printat42").keyword).toBe("PRINTAT42 (LIBRARY SUBROUTINE)");
+  });
+
+  it("print64 (Library Subroutine)", () => {
+    expect(ZxBasicKeyword.findKeyword("PRINT64").keyword).toBe("PRINT64 (LIBRARY SUBROUTINE)");
+    expect(ZxBasicKeyword.findKeyword("print64").keyword).toBe("PRINT64 (LIBRARY SUBROUTINE)");
+  });
+
+  it("printat64 (Library Subroutine)", () => {
+    expect(ZxBasicKeyword.findKeyword("PRINTAT64").keyword).toBe("PRINTAT64 (LIBRARY SUBROUTINE)");
+    expect(ZxBasicKeyword.findKeyword("printat64").keyword).toBe("PRINTAT64 (LIBRARY SUBROUTINE)");
+  });
+
+  it("SCREEN(Library Function)", () => {
+    expect(ZxBasicKeyword.findKeyword("SCREEN").keyword).toBe("SCREEN(LIBRARY FUNCTION)");
+    expect(ZxBasicKeyword.findKeyword("screen").keyword).toBe("SCREEN(LIBRARY FUNCTION)");
+  });
+
+});
