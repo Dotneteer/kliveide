@@ -15,6 +15,8 @@ import { MemoryEditorProvider } from "./custom-editors/memory/memory-editor";
 import { KLIVEIDE, SAVE_FOLDER } from "./config/sections";
 import { setExtensionContext } from "./extension-paths";
 import { BasicEditorProvider } from "./custom-editors/basic/basic-editor";
+import { HoverProviderFactory } from "./lang-providers/hover/common/hover-provider-factory";
+
 import {
   LanguageClient,
   LanguageClientOptions,
@@ -112,6 +114,9 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(DisassemblyEditorProvider.register(context));
   context.subscriptions.push(MemoryEditorProvider.register(context));
   context.subscriptions.push(BasicEditorProvider.register(context));
+
+  // --- Register Language providers
+  context.subscriptions.push(...HoverProviderFactory.registerAll(context));
 
   // --- Send the current configuration to the emulator
   try {

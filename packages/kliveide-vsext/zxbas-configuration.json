@@ -1,6 +1,7 @@
 {
   "comments": {
-    "lineComment": "REM"
+    "lineComment": "REM",
+    "blockComment": [ "'", "'" ]
   },
   "brackets": [
     ["{", "}"],
