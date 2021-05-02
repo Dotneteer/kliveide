@@ -14,7 +14,7 @@ inline void onInitNewFrame(u32 oldClockMultiplier) {
   // Reset beeper frame state for every 8th frame
   if ((frameCount & 0x07) == 0) {
     if (oldClockMultiplier != clockMultiplier) {
-      setBeeperSampleRate(audioSampleRate);
+      setAudioSampleRate(audioSampleRate);
     }
     audioSampleCount = 0;
   }

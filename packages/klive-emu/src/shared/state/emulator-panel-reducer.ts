@@ -1,4 +1,4 @@
-import { EmulatorPanelState } from "./AppState";
+import { EmulatorPanelState, FrameDiagData } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
 
 // ============================================================================
@@ -20,7 +20,9 @@ export const emuSetFrameIdAction: ActionCreator = (
 
 export const emuMuteSoundAction: ActionCreator = () => ({ type: "EMU_MUTE" });
 
-export const emuUnmuteSoundAction: ActionCreator = () => ({ type: "EMU_MUTE" });
+export const emuUnmuteSoundAction: ActionCreator = () => ({
+  type: "EMU_UNMUTE",
+});
 
 export const emuSetDebugModeAction: ActionCreator = (runsInDebug: boolean) => ({
   type: "EMU_SET_DEBUG",
@@ -72,6 +74,27 @@ export const emuSetFirmWareAction: ActionCreator = (
   payload: { firmware },
 });
 
+export const emuSetExtraFeaturesAction: ActionCreator = (
+  extraFeatures: string[]
+) => ({
+  type: "EMU_SET_EXTRA",
+  payload: { extraFeatures },
+});
+
+export const emuSetBaseFrequencyAction: ActionCreator = (
+  baseClockFrequency: number
+) => ({
+  type: "EMU_SET_BASE_FREQ",
+  payload: { baseClockFrequency },
+});
+
+export const emuSetDiagDataAction: ActionCreator = (
+  frameDiagData: FrameDiagData
+) => ({
+  type: "EMU_SET_DIAG_DATA",
+  payload: { frameDiagData },
+});
+
 // ============================================================================
 // Reducer
 
@@ -112,6 +135,12 @@ export default function (
       return { ...state, keyboardHeight: payload.keyboardHeight };
     case "EMU_SET_FIRMWARE":
       return { ...state, firmware: payload.firmware };
+    case "EMU_SET_EXTRA":
+      return { ...state, extraFeatures: payload.extraFeatures };
+    case "EMU_SET_BASE_FREQ":
+      return { ...state, baseClockFrequency: payload.baseClockFrequency };
+    case "EMU_SET_DIAG_DATA":
+      return { ...state, frameDiagData: payload.frameDiagData };
     default:
       return state;
   }

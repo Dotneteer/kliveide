@@ -43,7 +43,7 @@ global u32 beeperLastEarBit;
 
 // Sets the specified beeper sample rate
 // rate: New beeper sample rate
-export void setBeeperSampleRate(u32 rate) {
+export void setAudioSampleRate(u32 rate) {
   audioSampleRate = rate;
   local f32 sampleLength = (f32(baseClockFrequency) * clockMultiplier) / rate;
   audioSampleLength = sampleLength;

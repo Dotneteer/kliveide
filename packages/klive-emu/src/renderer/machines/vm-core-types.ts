@@ -17,29 +17,9 @@ export interface MachineSetupOptions {
   tactsInFrame: number;
 
   /**
-   * System code of the machine
+   * Optional firmware contents
    */
-  firmware: Firmware;
-}
-
-/**
- * Represents firmware to be intalled on the virtual machine
- */
-export interface Firmware {
-  /**
-   * Optional firmware label
-   */
-  label?: string;
-
-  /**
-   * Optional firmware description
-   */
-  description?: string;
-
-  /**
-   * The byte stream of the firmware (single/multiple array of bytes)
-   */
-  contents: Uint8Array[];
+  firmware?: Uint8Array[];
 }
 
 /**
@@ -217,9 +197,22 @@ export interface MachineState {
   frameCompleted: boolean;
 
   /**
+   * The last rendered frame tact
+   */
+  lastRenderedFrameTact: number;
+
+  /**
    * The completion reason of the last frame
    */
   executionCompletionReason: number;
 
-  // TODO: Implement this interface
+  /**
+   * Width of the screen
+   */
+  screenWidth: number;
+
+  /**
+   * Height of the screen
+   */
+  screenHeight: number;
 }

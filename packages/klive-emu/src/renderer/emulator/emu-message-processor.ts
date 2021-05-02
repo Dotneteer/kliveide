@@ -8,6 +8,7 @@ import { IpcRendereApi } from "../../exposed-apis";
 import { MAIN_TO_EMU_REQUEST_CHANNEL } from "../../shared/messaging/channels";
 import { MAIN_TO_EMU_RESPONE_CHANNEL } from "../../shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
+import { vmEngineService } from "../machines/vm-engine-service";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -21,41 +22,63 @@ async function processEmulatorMessages(
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "CreateMachine":
-      console.log(`Create machine: ${message.machineId}`);
+      await vmEngineService.setEngine(message.machineId, message.options);
       return <CreateMachineResponse>{
         type: "CreateMachineResponse",
         error: null,
       };
     case "startVm":
-      console.log("startVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.start();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "pauseVm":
-      console.log("pauseVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.pause();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stopVm":
-      console.log("stopVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stop();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "restartVm":
-      console.log("restartVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.restart();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "debugVm":
-      console.log("debugVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.startDebug();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stepIntoVm":
-      console.log("stepIntoVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stepInto();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stepOverVm":
-      console.log("stepOverVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stepOver();
+      }
       return <DefaultResponse>{ type: "ack" };
 
     case "stepOutVm":
-      console.log("stepOutVm");
+      if (vmEngineService.hasEngine) {
+        vmEngineService.stepOut();
+      }
+      return <DefaultResponse>{ type: "ack" };
+
+    case "executeMachineCommand":
+      if (vmEngineService.hasEngine) {
+        vmEngineService.getEngine().executeMachineCommand(message.command);
+      }
       return <DefaultResponse>{ type: "ack" };
 
     default:

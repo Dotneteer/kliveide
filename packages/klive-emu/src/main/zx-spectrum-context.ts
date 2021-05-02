@@ -1,7 +1,10 @@
 import * as fs from "fs";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
-import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
+import {
+  LinkDescriptor,
+  MachineContextProviderBase,
+} from "./machine-context";
 import { AppState } from "../shared/state/AppState";
 import { BinaryReader } from "../shared/utils/BinaryReader";
 import { checkTapeFile } from "../shared/tape/readers";
@@ -12,7 +15,8 @@ import {
   spectrumTapeContentsAction,
 } from "../shared/state/spectrum-specific-reducer";
 import { emuSetClockMultiplierAction } from "../shared/state/emulator-panel-reducer";
-import { EmuWindow } from "./EmuWindow";
+import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
+import { emuWindow } from "./app-menu-state";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -41,6 +45,11 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
   constructor(options?: Record<string, any>) {
     super(options);
   }
+
+  /**
+   * Firmware sizes accected by the virtual machine
+   */
+  readonly acceptedFirmwareSizes: number[] | null = [0x4000];
 
   /**
    * Items to add to the Show menu
@@ -152,10 +161,17 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
   }
 
   /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return ["UlaDebug", "Sound", "Tape"];
+  }
+
+  /**
    * Select a tape file to use with the ZX Spectrum
    */
   private async selectTapeFile(): Promise<void> {
-    const window = EmuWindow.instance.window;
+    const window = emuWindow.window;
     const result = await dialog.showOpenDialog(window, {
       title: "Open tape file",
       filters: [
@@ -207,6 +223,11 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
   }
 
   /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[] = ["sp48.rom"];
+
+  /**
    * The normal CPU frequency of the machine
    */
   getNormalCpuFrequency(): number {
@@ -218,14 +239,6 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
    */
   getMachineContextDescription(): string {
     return `Screen: 256x192, ROM: sp48.rom (16KB), RAM: 48KB`;
-  }
-
-  /**
-   * Gets the startup ROMs for the machine
-   * @return Firmware contents, if found; otherwise, error message
-   */
-   getFirmware(): Uint8Array[] | string {
-    return this.loadRoms(["sp48.rom"], [0x4000]);
   }
 }
 
@@ -242,6 +255,11 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
   }
 
   /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[] = ["sp128-0.rom", "sp128-1.rom"];
+
+  /**
    * The normal CPU frequency of the machine
    */
   getNormalCpuFrequency(): number {
@@ -253,13 +271,5 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
    */
   getMachineContextDescription(): string {
     return `Screen: 256x192, ROM: sp128.rom (32KB), RAM: 128KB`;
-  }
-
-  /**
-   * Gets the startup ROMs for the machine
-   * @return Firmware contents, if found; otherwise, error message
-   */
-   getFirmware(): Uint8Array[] | string {
-    return this.loadRoms(["sp128-0.rom", "sp128-1.rom"], [0x4000]);
   }
 }

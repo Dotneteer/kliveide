@@ -1,11 +1,12 @@
 import * as React from "react";
+import { animationTick, delay } from "./utils";
 
 interface Props {
   direction?: GutterDirection;
   gutterSize?: number;
   refreshTag?: any;
   minimumSize?: number;
-  splitterMoved?: () => void;
+  splitterMoved?: (children: NodeListOf<HTMLDivElement>) => void;
 }
 
 /**
@@ -13,7 +14,6 @@ interface Props {
  */
 export class SplitContainer extends React.Component<Props> {
   private _style: Record<string, string> = {};
-  private _refreshRequest = false;
   private _hostElement: React.RefObject<HTMLDivElement>;
 
   private _direction: GutterDirection;
@@ -25,7 +25,7 @@ export class SplitContainer extends React.Component<Props> {
     this._hostElement = React.createRef();
   }
 
-  handleResize = (e: Event) => {
+  handleResize = () => {
     this.setupSplitter(false);
   };
 
@@ -33,22 +33,19 @@ export class SplitContainer extends React.Component<Props> {
     // --- Used default property values
     this._direction = this.props.direction ?? "horizontal";
     this._gutterSize = this.props.gutterSize ?? 10;
-    this._minimumSize = this.props.minimumSize ?? 80;
+    this._minimumSize = this.props.minimumSize ?? 180;
 
     if (!this._hostElement) return;
     this._style = {
       flexDirection: this._direction === "horizontal" ? "row" : "column",
     };
-    this._refreshRequest = true;
     this.setupSplitter(true);
     window.addEventListener("resize", this.handleResize);
   }
 
-  componentDidUpdate() {
-    if (this._refreshRequest) {
-      this._refreshRequest = false;
-      this.setupSplitter(true);
-    }
+  async componentDidUpdate() {
+    await animationTick();
+    this.setupSplitter(true);
   }
 
   componentWillUnmount() {
@@ -93,12 +90,25 @@ export class SplitContainer extends React.Component<Props> {
       floatingGutter: true,
       gutterAlign: "center",
       onDrag: () => {},
-      onDragEnd: () => {
+      onDragEnd: async () => {
         if (this.props.splitterMoved) {
-          this.props.splitterMoved();
+          await animationTick();
+          this.props.splitterMoved(this.getDivChildren());
         }
       },
     });
+  }
+
+  /**
+   * Gets the visible div children of this container
+   * @returns
+   */
+  getDivChildren(): NodeListOf<HTMLDivElement> {
+    let children = this._hostElement.current.querySelectorAll("div");
+    return (filterChildren(
+      this._hostElement.current,
+      children
+    ) as unknown) as NodeListOf<HTMLDivElement>;
   }
 }
 
@@ -165,6 +175,7 @@ export function calculateInitialSizes(
     (children[i] as any).style[clientDim] = "100%";
     (children[i] as any).style[crossDim] =
       children.length === 1 ? "100%" : undefined;
+    (children[i] as any).style["position"] = "relative";
   }
 
   if (children.length === 1) {

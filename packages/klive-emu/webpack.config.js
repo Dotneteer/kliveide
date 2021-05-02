@@ -45,6 +45,10 @@ const commonConfig = {
           name: "[path][name].[ext]",
         },
       },
+      {
+        test: /\.worklet\.js$/,
+        use: { loader: "worklet-loader" },
+      },
     ],
   },
 };
@@ -69,6 +73,24 @@ mainConfig.plugins = [
         from: "./roms/**/*.rom",
         to() {
           return "roms/[name][ext]";
+        },
+      },
+      {
+        from: "./build/*.wasm",
+        to() {
+          return "wasm/[name][ext]";
+        },
+      },
+      {
+        from: "./roms/**/*.rom",
+        to() {
+          return "roms/[name][ext]";
+        },
+      },
+      {
+        from: "./assets/*.tzx",
+        to() {
+          return "tapes/[name][ext]";
         },
       },
       {

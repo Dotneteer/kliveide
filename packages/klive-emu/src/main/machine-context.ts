@@ -3,11 +3,28 @@ import * as path from "path";
 
 import { MenuItemConstructorOptions, shell } from "electron";
 import { AppState } from "../shared/state/AppState";
+import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
+import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
 
 /**
  * Describes the responsibility of a menu provider for a particular machine
  */
 export interface MachineContextProvider {
+  /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[];
+
+  /**
+   * Firmware sizes accected by the virtual machine
+   */
+  readonly acceptedFirmwareSizes: number[] | null;
+
+  /**
+   * Function that checks the firmware integrity
+   */
+  readonly checkFirmware?: (contents: Uint8Array) => string | null;
+
   /**
    * Items to add to the View menu
    */
@@ -40,9 +57,10 @@ export interface MachineContextProvider {
 
   /**
    * Gets the startup ROMs for the machine
+   * @param options Machine setup options
    * @return Firmware contents, if found; otherwise, error message
    */
-  getFirmware(): Uint8Array[] | string;
+  getFirmware(options?: MachineCreationOptions): Uint8Array[] | string;
 
   /**
    * Override this method tom provide a context description
@@ -58,8 +76,17 @@ export interface MachineContextProvider {
    * Override this method to set the machine-specific settings
    */
   setMachineSpecificSettings(settings: Record<string, any>): Promise<void>;
+
+  /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[];
 }
 
+/**
+ * Room implementation of MachineContextProvider. Use this base
+ * class for your context provider classes.
+ */
 export abstract class MachineContextProviderBase
   implements MachineContextProvider {
   /**
@@ -67,6 +94,21 @@ export abstract class MachineContextProviderBase
    * @param options
    */
   constructor(protected readonly options?: Record<string, any>) {}
+
+  /**
+   * Gets the names of firmware files
+   */
+  abstract readonly firmwareFiles: string[];
+
+  /**
+   * Firmware sizes accected by the virtual machine
+   */
+  readonly acceptedFirmwareSizes: number[] | null = null;
+
+  /**
+   * Function that checks the firmware integrity
+   */
+  readonly checkFirmware?: (contents: Uint8Array) => string | null;
 
   /**
    * Items to add to the View menu
@@ -108,9 +150,15 @@ export abstract class MachineContextProviderBase
 
   /**
    * Gets the startup ROMs for the machine
+   * @param options Machine setup options
    * @return Firmware contents, if found; otherwise, error message
    */
-  abstract getFirmware(): Uint8Array[] | string;
+  getFirmware(options?: MachineCreationOptions): Uint8Array[] | string {
+    if (options?.firmware) {
+      return options.firmware;
+    }
+    return this.loadFirmware();
+  }
 
   /**
    * Override this method tom provide a context description
@@ -134,38 +182,43 @@ export abstract class MachineContextProviderBase
   ): Promise<void> {}
 
   /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return [];
+  }
+
+  /**
    * Loads the startup ROMs of the machine
    * @param filenames ROM file names relative to the "roms" folder
    * @param acceptedSizes Accepted ROM sizes in bytes
    * @param checkfunction Optional function to check ROM integrity
    * @returns The array of loaded ROMs, if ok. Otherwise, the error message
    */
-  protected loadRoms(
-    filenames: string[],
-    acceptedSizes: number[],
-    checkfunction?: (contents: Uint8Array) => string | null
-  ): Uint8Array[] | string {
+  protected loadFirmware(): Uint8Array[] | string {
     const result: Uint8Array[] = [];
 
     // --- Iterate throug all ROM files
     try {
-      for (let i = 0; i < filenames.length; i++) {
+      for (let i = 0; i < this.firmwareFiles.length; i++) {
         // --- Read the file
-        const romfile = path.join(__dirname, "roms", filenames[i]);
+        const romfile = path.join(__dirname, "roms", this.firmwareFiles[i]);
         const contents = fs.readFileSync(romfile);
         const byteArray = Uint8Array.from(contents);
 
         // --- Validate the size
-        const matchingSize = acceptedSizes.find(
-          (size) => byteArray.length === size
-        );
-        if (matchingSize === undefined) {
-          return `ROM #${i} has an invalid size of ${byteArray.length}.`;
+        if (this.acceptedFirmwareSizes) {
+          const matchingSize = this.acceptedFirmwareSizes.find(
+            (size) => byteArray.length === size
+          );
+          if (matchingSize === undefined) {
+            return `ROM #${i} has an invalid size of ${byteArray.length}.`;
+          }
         }
 
         // --- Carry out the ROM consistency check
-        if (checkfunction) {
-          const check = checkfunction(byteArray);
+        if (this.checkFirmware) {
+          const check = this.checkFirmware(byteArray);
           if (check) {
             return check;
           }

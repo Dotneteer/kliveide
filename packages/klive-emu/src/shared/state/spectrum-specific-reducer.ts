@@ -23,6 +23,15 @@ export const spectrumTapeContentsAction: ActionCreator = (
   payload: { tapeContents },
 });
 
+export const spectrumTapeLoadedAction: ActionCreator = () => ({
+  type: "SPECTRUM_TAPE_LOADED",
+});
+
+export const spectrumLoadModeAction: ActionCreator = (loadMode: boolean) => ({
+  type: "SPECTRUM_LOAD_MODE",
+  payload: { loadMode },
+});
+
 // ============================================================================
 // Reducer
 
@@ -38,7 +47,11 @@ export default function (
     case "SPECTRUM_BEAM_POSITION":
       return { ...state, showBeamPosition: payload.showBeamPosition };
     case "SPECTRUM_TAPE_CONTENTS":
-      return { ...state, tapeContents: payload.tapeContents };
+      return { ...state, tapeContents: payload.tapeContents, tapeLoaded: false };
+    case "SPECTRUM_TAPE_LOADED":
+      return { ...state, tapeLoaded: true };
+    case "SPECTRUM_LOAD_MODE":
+      return { ...state, loadMode: payload.loadMode };
     default:
       return state;
   }

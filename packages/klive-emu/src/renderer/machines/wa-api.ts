@@ -5,7 +5,6 @@ import { RunMode } from "./RunMode";
  */
 export interface CpuApi {
   memory: any;
-  turnOnCpu(): void;
   resetCpu(hard: boolean): void;
   getCpuState(): void;
   updateCpuState(): void;
@@ -46,7 +45,7 @@ export interface MachineApi extends CpuApi {
   checkForInterrupt(tact: number): void;
   setKeyStatus(key: number, isDown: boolean): void;
   getKeyStatus(key: number): number;
-  setBeeperSampleRate(rate: number): void;
+  setAudioSampleRate(rate: number): void;
   colorize(): void;
   getCursorMode(): number;
   initTape(blocks: number): void;

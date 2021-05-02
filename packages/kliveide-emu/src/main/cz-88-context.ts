@@ -139,6 +139,13 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
+   * The normal CPU frequency of the machine
+   */
+  getNormalCpuFrequency(): number {
+    return 3_276_800;
+  }
+
+  /**
    * Context description for Z88
    */
   getMachineContextDescription(): string {
@@ -389,13 +396,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
-   * The normal CPU frequency of the machine
-   */
-  getNormalCpuFrequency(): number {
-    return 3_276_800;
-  }
-
-  /**
    * Gets the startup ROMs for the machine
    */
   getStartupRoms(): Uint8Array[] | string {
@@ -412,7 +412,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       kbLayout,
       romFile: recentRoms.length > 0 ? recentRoms[0] : null,
       clockMultiplier: state.clockMultiplier,
-      soundLevel: state.soundLevel
+      soundLevel: state.soundLevel,
     };
   }
 

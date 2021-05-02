@@ -13,6 +13,7 @@ export interface ActionTypes {
   EMU_HIDE_STATUSBAR: null;
   EMU_SHOW_KEYBOARD: null;
   EMU_HIDE_KEYBOARD: null;
+  EMU_TOGGLE_KEYBOARD: null;
   EMU_SHOW_FRAME_INFO: null;
   EMU_HIDE_FRAME_INFO: null;
 
@@ -27,14 +28,19 @@ export interface ActionTypes {
   EMU_SET_DEBUG: null;
   EMU_SET_MESSAGE: null;
   EMU_SET_SOUND_LEVEL: null;
+  EMU_SET_BASE_FREQ: null;
   EMU_SET_CLOCK_MULTIPLIER: null;
   EMU_SET_KEYBOARD: null;
   EMU_MACHINE_CONTEXT: null;
   EMU_KEYBOARD_HEIGHT: null;
   EMU_SET_FIRMWARE: null;
+  EMU_SET_EXTRA: null;
+  EMU_SET_DIAG_DATA: null;
 
   // --- ZX Spectrum specific action
   SPECTRUM_FAST_LOAD: null;
   SPECTRUM_BEAM_POSITION: null;
   SPECTRUM_TAPE_CONTENTS: null;
+  SPECTRUM_TAPE_LOADED: null;
+  SPECTRUM_LOAD_MODE: null;
 }

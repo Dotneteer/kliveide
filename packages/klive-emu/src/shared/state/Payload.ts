@@ -1,3 +1,5 @@
+import { FrameDiagData } from "./AppState";
+
 /**
  * Represents payload properties
  */
@@ -20,4 +22,9 @@ export interface Payload {
   showBeamPosition?: boolean;
   tapeContents?: Uint8Array;
   firmware?: Uint8Array[];
+  tapeLoaded?: boolean;
+  loadMode?: boolean;
+  extraFeatures?: string[];
+  baseClockFrequency?: number;
+  frameDiagData?: FrameDiagData;
 }

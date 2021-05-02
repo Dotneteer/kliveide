@@ -27,6 +27,7 @@ export interface EmuViewOptions {
 export interface EmulatorPanelState {
   width?: number;
   height?: number;
+  baseClockFrequency?: number;
   clockMultiplier?: number;
   executionState?: number;
   runsInDebug?: boolean;
@@ -39,6 +40,35 @@ export interface EmulatorPanelState {
   panelMessage?: string;
   machineContext?: string;
   firmware?: Uint8Array[];
+  extraFeatures?: string[];
+  frameDiagData?: FrameDiagData;
+}
+
+/**
+ * Represents disgnostics data for machine frames
+ */
+export interface FrameDiagData {
+  lastEngineTime: number;
+  avgEngineTime: number;
+  lastFrameTime: number;
+  avgFrameTime: number;
+  renderedFrames: number;
+  pcInfo: ProgramCounterInfo;
+}
+
+/**
+ * Represents the Program Counter information of a virtual machine's CPU
+ */
+ export interface ProgramCounterInfo {
+  /**
+   * Label of the Program Counter
+   */
+  label: string;
+
+  /**
+   * Program Counter value
+   */
+  value: number;
 }
 
 /**
@@ -48,6 +78,8 @@ export interface ZxSpectrumSpecificState {
   fastLoad?: boolean;
   showBeamPosition?: boolean;
   tapeContents?: Uint8Array;
+  tapeLoaded?: boolean;
+  loadMode?: boolean;
 }
 
 /**
@@ -73,9 +105,22 @@ export function getInitialAppState(): AppState {
       panelMessage: "",
       muted: false,
       soundLevel: 0.5,
+      baseClockFrequency: 0,
       clockMultiplier: 1,
       machineContext: "",
       firmware: [],
+      extraFeatures: [],
+      frameDiagData: {
+        lastFrameTime: 0,
+        lastEngineTime: 0,
+        avgEngineTime: 0,
+        avgFrameTime: 0,
+        renderedFrames: 0,
+        pcInfo: {
+          label: "",
+          value: 0
+        }
+      },
     },
     spectrumSpecific: {
       fastLoad: true,

@@ -3,9 +3,9 @@ import { IconInfo } from "./IconInfo";
 import { ITheme } from "./theme-core";
 
 /**
- * Represents the functionality of a theme store
+ * Represents the functionality of a theme service
  */
-export interface ThemeStore {
+export interface ThemeService {
   /**
    * Gets the active theme
    */
@@ -45,7 +45,7 @@ export interface ThemeStore {
 /**
  * Creates a store that handles the application's themes.
  */
-function createStore(): ThemeStore {
+function createService(): ThemeService {
   const themes: ITheme[] = [];
   let activeThemeName: string | null = null;
   let activeTheme: ITheme | null;
@@ -86,4 +86,4 @@ function createStore(): ThemeStore {
 /**
  * The singleton store instance
  */
-export const themeStore = createStore();
+export const themeService = createService();
