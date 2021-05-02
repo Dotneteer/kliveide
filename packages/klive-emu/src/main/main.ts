@@ -49,30 +49,30 @@ ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   /**
    * Saves the current application settings
    */
-  function saveAppSettings(): void {
-    const state = mainStore.getState();
-    const emuSettings = state.emulatorPanel;
-    const machineType = state.machineType.split("_")[0];
-    const kliveSettings: KliveSettings = {
-      machineType,
-      viewOptions: {
-        showToolbar: state.emuViewOptions.showToolbar,
-        showFrameInfo: state.emuViewOptions.showFrameInfo,
-        showKeyboard: state.emuViewOptions.showKeyboard,
-        showStatusBar: state.emuViewOptions.showStatusBar,
-        keyboardHeight: state.emuViewOptions.keyboardHeight,
-      },
-    };
-    // if (this._machineContextProvider) {
-    //   kliveSettings.machineSpecific = appSettings?.machineSpecific;
-    //   if (!kliveSettings.machineSpecific) {
-    //     kliveSettings.machineSpecific = {};
-    //   }
-    //   kliveSettings.machineSpecific[
-    //     machineType
-    //   ] = this._machineContextProvider.getMachineSpecificSettings();
-    // }
-    // saveKliveSettings(kliveSettings);
-    // reloadSettings();
-  }
+  // function saveAppSettings(): void {
+  //   const state = mainStore.getState();
+  //   const emuSettings = state.emulatorPanel;
+  //   const machineType = state.machineType.split("_")[0];
+  //   const kliveSettings: KliveSettings = {
+  //     machineType,
+  //     viewOptions: {
+  //       showToolbar: state.emuViewOptions.showToolbar,
+  //       showFrameInfo: state.emuViewOptions.showFrameInfo,
+  //       showKeyboard: state.emuViewOptions.showKeyboard,
+  //       showStatusBar: state.emuViewOptions.showStatusBar,
+  //       keyboardHeight: state.emuViewOptions.keyboardHeight,
+  //     },
+  //   };
+  //   // if (this._machineContextProvider) {
+  //   //   kliveSettings.machineSpecific = appSettings?.machineSpecific;
+  //   //   if (!kliveSettings.machineSpecific) {
+  //   //     kliveSettings.machineSpecific = {};
+  //   //   }
+  //   //   kliveSettings.machineSpecific[
+  //   //     machineType
+  //   //   ] = this._machineContextProvider.getMachineSpecificSettings();
+  //   // }
+  //   // saveKliveSettings(kliveSettings);
+  //   // reloadSettings();
+  // }
 

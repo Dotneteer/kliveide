@@ -22,6 +22,7 @@ body {
   background-color: 0;
   min-width: 100px;
   min-height: 40px;
+  user-select: none;
   @include sizeToWindow();
 }
 
@@ -147,8 +148,8 @@ body {
   display: flex;
   flex-direction: row;
   overflow: hidden;
-  flex-shrink: 1;
-  flex-grow: 1;
+  flex-shrink: 0;
+  flex-grow: 0;
   height: 100%;
   width: 100%;
   background-color: var(--emulator-background-color);
@@ -208,6 +209,10 @@ body {
 
 .key-row {
   padding: 0px 0px;
+  margin: 0;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 
 .key-row-z88 {

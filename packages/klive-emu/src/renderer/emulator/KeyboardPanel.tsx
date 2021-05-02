@@ -9,6 +9,7 @@ import { animationTick } from "../common/utils";
 interface Props {
   type: string;
   visible?: boolean;
+  showPanel: boolean;
   initialHeight?: string;
   layout?: string;
 }
@@ -57,7 +58,7 @@ class KeyboardPanel extends React.Component<Props, State> {
           data-initial-size={this.props.initialHeight}
           ref={this._hostElement}
         >
-          {keyboard}
+          {this.props.showPanel && keyboard}
           <ReactResizeDetector
             handleWidth
             handleHeight
