@@ -13,12 +13,11 @@ import { Z80MachineCoreBase } from "../Z80MachineCoreBase";
 import { TzxReader } from "../../../shared/tape/tzx-file";
 import { TapReader } from "../../../shared/tape/tap-file";
 import { IAudioRenderer } from "../IAudioRenderer";
-import { AudioRenderer } from "../AudioRenderer";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
-import { ZxSpectrumStateManager } from "./ZxSpectrumStateManager";
 import { KeyMapping } from "../keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
 import { ProgramCounterInfo } from "../../../shared/state/AppState";
+import { getEngineDependencies } from "../vm-engine-dependencies";
 
 /**
  * ZX Spectrum common core implementation
@@ -34,11 +33,10 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
   private _psgRenderer: IAudioRenderer | null = null;
 
   // --- A factory method for audio renderers
-  private _audioRendererFactory: (sampleRate: number) => IAudioRenderer = (s) =>
-    new AudioRenderer(s);
+  private _audioRendererFactory: (sampleRate: number) => IAudioRenderer;
 
   // --- A state manager instance
-  private _stateManager: IZxSpectrumStateManager = new ZxSpectrumStateManager();
+  private _stateManager: IZxSpectrumStateManager;
 
   /**
    * Instantiates a core with the specified options
@@ -46,9 +44,9 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   constructor(options: MachineCreationOptions) {
     super(options);
-    if (options.audioRendererFactory) {
-      this._audioRendererFactory = options.audioRendererFactory;
-    }
+    const deps = getEngineDependencies();
+    this._audioRendererFactory = deps.audioRendererFactory;
+    this._stateManager = deps.spectrumStateManager;
   }
 
   /**
@@ -88,10 +86,8 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   configureMachine(): void {
     super.configureMachine();
-    const audioCtx = new AudioContext();
-    const sampleRate = audioCtx.sampleRate;
-    audioCtx.close();
-    this.setAudioSampleRate(sampleRate);
+    const deps = getEngineDependencies();
+    this.setAudioSampleRate(deps.sampleRateGetter());
   }
 
   /**
@@ -256,11 +252,37 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
 
   /**
    * Gets the cursor mode of the ZX Spectrum machine
-   * @returns 
+   * @returns
    */
   getCursorMode(): number {
     return this.api.getCursorMode();
   }
+
+  /**
+   * Initializes the machine with the specified code
+   * @param runMode Machine run mode
+   * @param code Intial code
+   */
+   injectCode(
+    code: number[],
+    codeAddress = 0x8000,
+    startAddress = 0x8000
+  ): void {
+    for (let i = 0; i < code.length; i++) {
+      this.writeMemory(codeAddress++, code[i]);
+    }
+
+    let ptr = codeAddress;
+    while (ptr < 0x10000) {
+      this.writeMemory(ptr++, 0);
+    }
+
+    // --- Init code execution
+    this.api.resetCpu(true);
+    this.api.setPC(startAddress);
+  }
+
+
 
   /**
    * Extracts saved data

@@ -13,7 +13,9 @@ import {
 import { MessengerBase } from "../../shared/messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
-const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
+const ipcRenderer = globalThis.window
+  ? ((window as any).ipcRenderer as IpcRendereApi)
+  : null;
 
 /**
  * Implements a messenger that forwards renderer state to the main
@@ -25,11 +27,11 @@ export class RendererToMainStateForwarder extends MessengerBase {
    */
   constructor(public readonly sourceId: string) {
     super();
-    ipcRenderer.on(
-      this.responseChannel,
-      (_ev: IpcRendererEvent, response: ResponseMessage) =>
-        this.processResponse(response)
-    );
+      ipcRenderer?.on(
+        this.responseChannel,
+        (_ev: IpcRendererEvent, response: ResponseMessage) =>
+          this.processResponse(response)
+      );
   }
 
   /**
@@ -37,7 +39,7 @@ export class RendererToMainStateForwarder extends MessengerBase {
    * @param message Message to send
    */
   protected send(message: RequestMessage): void {
-    ipcRenderer.send(
+    ipcRenderer?.send(
       this.requestChannel,
       Object.assign({}, message, { sourceId: this.sourceId })
     );
@@ -48,10 +50,10 @@ export class RendererToMainStateForwarder extends MessengerBase {
    * @param state
    */
   async forwardAction(action: KliveAction): Promise<DefaultResponse> {
-    return this.sendMessage<DefaultResponse>({
+    return await this.sendMessage({
       type: "ForwardAction",
       action,
-    });
+    }) as DefaultResponse;
   }
 
   /**

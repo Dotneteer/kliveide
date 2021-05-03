@@ -1,10 +1,8 @@
 import { ProgramCounterInfo } from "../../../shared/state/AppState";
 import { Z80CpuState } from "../../../renderer/cpu/Z80Cpu";
-import { AudioRenderer } from "../AudioRenderer";
 import { IAudioRenderer } from "../IAudioRenderer";
 import { MachineCreationOptions, MachineState } from "../vm-core-types";
 import { Z80MachineCoreBase } from "../Z80MachineCoreBase";
-import { CambridgeZ88StateManager } from "./CambridgeZ88BaseStateManager";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
 import {
   BLOCK_LOOKUP_TABLE,
@@ -23,20 +21,20 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
+import { getEngineDependencies } from "../vm-engine-dependencies";
 
 /**
  * ZX Spectrum common core implementation
  */
-export abstract class CambridgeZ88Core extends Z80MachineCoreBase {
+export class CambridgeZ88Core extends Z80MachineCoreBase {
   // --- Beeper emulation
   private _beeperRenderer: IAudioRenderer | null = null;
 
   // --- A factory method for audio renderers
-  private _audioRendererFactory: (sampleRate: number) => IAudioRenderer = (s) =>
-    new AudioRenderer(s);
+  private _audioRendererFactory: (sampleRate: number) => IAudioRenderer;
 
   // --- A state manager instance
-  private _stateManager: ICambridgeZ88StateManager = new CambridgeZ88StateManager();
+  private _stateManager: ICambridgeZ88StateManager;
 
   /**
    * Instantiates a core with the specified options
@@ -44,9 +42,9 @@ export abstract class CambridgeZ88Core extends Z80MachineCoreBase {
    */
   constructor(options: MachineCreationOptions) {
     super(options);
-    if (options.audioRendererFactory) {
-      this._audioRendererFactory = options.audioRendererFactory;
-    }
+    const deps = getEngineDependencies();
+    this._audioRendererFactory = deps.audioRendererFactory;
+    this._stateManager = deps.cz88StateManager;
   }
 
   /**
@@ -63,6 +61,18 @@ export abstract class CambridgeZ88Core extends Z80MachineCoreBase {
    * The name of the module file with the WA machine engine
    */
   readonly waModuleFile: string = "cz88.wasm";
+
+  /**
+   * Friendly name to display
+   */
+  readonly displayName = "Cambridge Z88";
+
+  /**
+   * Gets a unique identifier for the particular configuration of the model
+   */
+  get configurationId(): string {
+    return this.modelId;
+  }
 
   /**
    * Override this property to apply multiple engine loops before
@@ -90,10 +100,8 @@ export abstract class CambridgeZ88Core extends Z80MachineCoreBase {
       this.options?.scw ?? 0xff,
       this.options?.sch ?? 8
     );
-    const audioCtx = new AudioContext();
-    const sampleRate = audioCtx.sampleRate;
-    audioCtx.close();
-    this.setAudioSampleRate(sampleRate);
+    const deps = getEngineDependencies();
+    this.setAudioSampleRate(deps.sampleRateGetter());
   }
 
   /**
@@ -452,3 +460,36 @@ export interface CambridgeZ88MachineState extends MachineState, Z80CpuState {
   s3OffsetH: number;
   s3FlagH: number;
 }
+
+/**
+ * Z88 INT flag values
+ */
+ export enum IntFlags {
+  BM_INTKWAIT = 0x80,
+  BM_INTA19 = 0x40,
+  BM_INTFLAP = 0x20,
+  BM_INTUART = 0x10,
+  BM_INTBTL = 0x08,
+  BM_INTKEY = 0x04,
+  BM_INTTIME = 0x02,
+  BM_INTGINT = 0x01,
+}
+
+/**
+ * Z88 TSTA flag values
+ */
+export enum TstaFlags {
+  BM_TSTATICK = 0x01,
+  BM_TSTASEC = 0x02,
+  BM_TSTAMIN = 0x04,
+}
+
+/**
+ * Z88 TMK flag values
+ */
+export enum TmkFlags {
+  BM_TMKTICK = 0x01,
+  BM_TMKSEC = 0x02,
+  BM_TMKMIN = 0x04,
+}
+

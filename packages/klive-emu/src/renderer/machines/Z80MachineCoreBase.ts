@@ -69,4 +69,21 @@ export abstract class Z80MachineCoreBase extends VirtualMachineCoreBase {
     const mem = new Uint8Array(this.api.memory.buffer, pageStart, 0x2000);
     mem[addr & 0x1fff] = value;
   }
+
+  /**
+   * Gets the addressable Z80 memory contents from the machine
+   */
+  getMemoryContents(): Uint8Array {
+    const result = new Uint8Array(0x10000);
+    const mh = new MemoryHelper(this.api, BLOCK_LOOKUP_TABLE);
+    for (let i = 0; i < 8; i++) {
+      const offs = i * 0x2000;
+      const pageStart = mh.readUint32(i * 16);
+      const source = new Uint8Array(this.api.memory.buffer, pageStart, 0x2000);
+      for (let j = 0; j < 0x2000; j++) {
+        result[offs + j] = source[j];
+      }
+    }
+    return result;
+  }
 }
