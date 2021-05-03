@@ -11,7 +11,9 @@ import { IpcRendereApi } from "../../exposed-apis";
 import { ForwardActionRequest } from "../../shared/messaging/message-types";
 
 // --- Electron APIs exposed for the renderer process
-const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
+const ipcRenderer = globalThis.window
+  ? ((window as any).ipcRenderer as IpcRendereApi)
+  : null;
 
 // --- This instance forwards renderer actions to the main process
 const forwarder = new RendererToMainStateForwarder(EMU_SOURCE);
@@ -39,7 +41,7 @@ export const emuStore = createStore(
   applyMiddleware(forwardToMainMiddleware)
 );
 
-ipcRenderer.on(
+ipcRenderer?.on(
   RENDERER_STATE_REQUEST_CHANNEL,
   (_ev, msg: ForwardActionRequest) => {
     isForwarding = true;

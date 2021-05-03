@@ -9,6 +9,7 @@ import {
   MachineCreationOptions,
   MachineState,
 } from "./vm-core-types";
+import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "./wa-api";
 
 /**
@@ -138,10 +139,10 @@ export abstract class VirtualMachineCoreBase {
         ...this.waImportProps,
       },
     };
-    const response = await fetch("./wasm/" + this.waModuleFile);
+    const deps = getEngineDependencies();
     this.api = ((
       await WebAssembly.instantiate(
-        await response.arrayBuffer(),
+        await deps.waModuleLoader(this.waModuleFile),
         waImportObject
       )
     ).instance.exports as unknown) as MachineApi;
@@ -344,6 +345,17 @@ export abstract class VirtualMachineCoreBase {
    * @param _multiplier Clock multiplier to apply from the next frame
    */
   setClockMultiplier(_multiplier: number): void {}
+
+  /**
+   * Initializes the machine with the specified code
+   * @param runMode Machine run mode
+   * @param code Intial code
+   */
+  injectCode(
+    code: number[],
+    codeAddress = 0x8000,
+    startAddress = 0x8000
+  ): void {}
 
   // ==========================================================================
   // Lifecycle methods

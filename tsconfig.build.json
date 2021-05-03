@@ -11,7 +11,9 @@
     "noImplicitThis": true,
     "strictNullChecks": false,
     "suppressImplicitAnyIndexErrors": false,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "resolveJsonModule": true
+
   },
   "exclude": [
     "**/*.test.ts",

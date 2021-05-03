@@ -145,7 +145,7 @@ export class EmuWindow extends AppWindow {
 
     // #3: Instantiate the machine
     const creationOptions = { ...options, firmware } as MachineCreationOptions;
-    emuMessenger.sendMessage<CreateMachineResponse>({
+    await emuMessenger.sendMessage({
       type: "CreateMachine",
       machineId: id,
       options: creationOptions,

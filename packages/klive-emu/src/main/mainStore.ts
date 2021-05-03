@@ -75,11 +75,11 @@ class MainToRendererStateForwarder extends MessengerBase {
    * @param state
    */
   async forwardAction(action: KliveAction): Promise<DefaultResponse> {
-    return this.sendMessage<DefaultResponse>({
+    return await this.sendMessage({
       type: "ForwardAction",
       sourceId: MAIN_SOURCE,
       action,
-    });
+    }) as DefaultResponse;
   }
 
   /**
