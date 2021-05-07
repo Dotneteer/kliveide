@@ -1,4 +1,6 @@
 import { IAudioRenderer } from "./IAudioRenderer";
+import { vmEngineService } from "./vm-engine-service";
+import { KliveConfiguration } from "../../main/klive-configuration";
 
 /**
  * Right now, we cannot use AudioWorkletProcessor from TypeScript,
@@ -13,12 +15,15 @@ const samplingWorklet = require("./Sampling.worklet.js");
 export class AudioRenderer implements IAudioRenderer {
   private _ctx: AudioContext | undefined;
   private _workletNode: AudioWorkletNode;
+  private _appConfig: KliveConfiguration;
 
   /**
    * Initializes the renderer
    * @param _samplesPerFrame Samples in a single frame
    */
-  constructor(private _samplesPerFrame: number) {}
+  constructor(private _samplesPerFrame: number) {
+    this._appConfig = vmEngineService.getAppConfiguration();
+  }
 
   /**
    * Initializes the audio in the browser
@@ -32,13 +37,12 @@ export class AudioRenderer implements IAudioRenderer {
     this._workletNode.port.postMessage({ initialize: this._samplesPerFrame });
     this._workletNode.connect(this._ctx.destination);
     this._workletNode.port.onmessage = (msg) => {
-      // TODO: Check if we need this
-      // const starving = msg.data?.diff;
-      // if (
-      //   emulatorAppConfig?.diagnostics?.soundBufferUnderflow &&
-      //   starving < -6 * this._samplesPerFrame
-      // )
-      //   console.log(`Sound buffer underflow: ${starving}`);
+      const starving = msg.data?.diff;
+      if (
+        this._appConfig?.diagnostics?.soundBufferUnderflow &&
+        starving < -6 * this._samplesPerFrame
+      )
+        console.log(`Sound buffer underflow: ${starving}`);
     };
   }
 

@@ -8,12 +8,13 @@ import { forwardRendererState, mainStore } from "./mainStore";
 import { MAIN_STATE_REQUEST_CHANNEL } from "../shared/messaging/channels";
 import { ForwardActionRequest } from "../shared/messaging/message-types";
 import {
+  emuMessenger,
   emuWindow,
   setupMenu,
   setupWindows,
   watchStateChanges,
 } from "./app-menu-state";
-import { KliveSettings } from "./klive-settings";
+import { appConfiguration } from "./klive-configuration";
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -22,7 +23,11 @@ app.on("ready", async () => {
   await setupWindows();
   setupMenu();
   watchStateChanges();
-  emuWindow.requestMachineType("sp48");
+  emuMessenger.sendMessage({
+    type: "ForwardAppConfig",
+    config: appConfiguration
+  });
+  emuWindow.requestMachineType(appConfiguration?.machineType ?? "sp48");
 });
 
 // Quit when all windows are closed.
