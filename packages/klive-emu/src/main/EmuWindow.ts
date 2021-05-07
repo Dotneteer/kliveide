@@ -24,6 +24,9 @@ import {
 import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
 import { emuMessenger, setEmuMessenger } from "./app-menu-state";
 import { Cz88ContextProvider } from "./cz88-context";
+import { AppState } from "../shared/state/AppState";
+import { KliveSettings, reloadSettings, saveKliveSettings } from "./klive-configuration";
+import { appSettings } from "./klive-settings";
 
 /**
  * Represents the singleton emulator window
@@ -71,29 +74,29 @@ export class EmuWindow extends AppWindow {
    * Saves the current application settings
    */
   saveAppSettings(): void {
-    const state = mainStore.getState();
-    // const machineType = state.currentType.split("_")[0];
-    // const kliveSettings: KliveSettings = {
-    //   machineType,
-    //   viewOptions: {
-    //     showToolbar: state.showToolbar,
-    //     showFrameInfo: state.showFrames,
-    //     showKeyboard: state.keyboardPanel,
-    //     showStatusbar: state.statusbar,
-    //     keyboardHeight: state.keyboardHeight,
-    //   },
-    // };
-    // if (this._machineContextProvider) {
-    //   kliveSettings.machineSpecific = appSettings?.machineSpecific;
-    //   if (!kliveSettings.machineSpecific) {
-    //     kliveSettings.machineSpecific = {};
-    //   }
-    //   kliveSettings.machineSpecific[
-    //     machineType
-    //   ] = this._machineContextProvider.getMachineSpecificSettings();
-    // }
-    // saveKliveSettings(kliveSettings);
-    // reloadSettings();
+    const state = mainStore.getState() as AppState;
+    const machineType = state.machineType.split("_")[0];
+    const kliveSettings: KliveSettings = {
+      machineType,
+      viewOptions: {
+        showToolbar: state.emuViewOptions.showToolbar,
+        showFrameInfo: state.emuViewOptions.showFrameInfo,
+        showKeyboard: state.emuViewOptions.showKeyboard,
+        showStatusbar: state.emuViewOptions.showStatusBar,
+        keyboardHeight: state.emulatorPanel.keyboardHeight,
+      },
+    };
+    if (this._machineContextProvider) {
+      kliveSettings.machineSpecific = appSettings?.machineSpecific;
+      if (!kliveSettings.machineSpecific) {
+        kliveSettings.machineSpecific = {};
+      }
+      kliveSettings.machineSpecific[
+        machineType
+      ] = this._machineContextProvider.getMachineSpecificSettings();
+    }
+    saveKliveSettings(kliveSettings);
+    reloadSettings();
   }
 
   // ==========================================================================

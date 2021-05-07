@@ -14,20 +14,69 @@ import {
   setupWindows,
   watchStateChanges,
 } from "./app-menu-state";
-import { appConfiguration } from "./klive-configuration";
+import { appConfiguration, appSettings } from "./klive-configuration";
+import {
+  emuHideFrameInfoAction,
+  emuHideKeyboardAction,
+  emuHideStatusbarAction,
+  emuHideToolbarAction,
+  emuShowFrameInfoAction,
+  emuShowKeyboardAction,
+  emuShowStatusbarAction,
+  emuShowToolbarAction,
+} from "../shared/state/emu-view-options-reducer";
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
   await setupWindows();
+
+  // --- Set up application state according to saved settings
+  if (appSettings) {
+    const viewOptions = appSettings.viewOptions;
+    if (viewOptions) {
+      mainStore.dispatch(
+        viewOptions.showToolbar
+          ? emuShowToolbarAction()
+          : emuHideToolbarAction()
+      );
+      mainStore.dispatch(
+        viewOptions.showStatusbar
+          ? emuShowStatusbarAction()
+          : emuHideStatusbarAction()
+      );
+      mainStore.dispatch(
+        viewOptions.showFrameInfo
+          ? emuShowFrameInfoAction()
+          : emuHideFrameInfoAction()
+      );
+      mainStore.dispatch(
+        viewOptions.showKeyboard
+          ? emuShowKeyboardAction()
+          : emuHideKeyboardAction()
+      );
+    }
+  }
+
+  // --- Prepare the application menu
   setupMenu();
-  watchStateChanges();
   emuMessenger.sendMessage({
     type: "ForwardAppConfig",
-    config: appConfiguration
+    config: appConfiguration,
   });
-  emuWindow.requestMachineType(appConfiguration?.machineType ?? "sp48");
+
+  // --- Create the machine and set its state according to the saved settings
+  const initialMachineType =
+    appSettings?.machineType ?? appConfiguration?.machineType ?? "sp48";
+  await emuWindow.requestMachineType(initialMachineType);
+  const settings = appSettings?.machineSpecific?.[initialMachineType];
+  if (settings) {
+    emuWindow.machineContextProvider.setMachineSpecificSettings(settings);
+  }
+
+  // --- Initial setup done, respond to state changes
+  watchStateChanges();
 });
 
 // Quit when all windows are closed.
@@ -47,37 +96,10 @@ app.on("activate", async () => {
   }
 });
 
+app.on("before-quit", () => {
+  emuWindow.saveAppSettings();
+});
+
 ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   forwardRendererState(msg);
 });
-
-  /**
-   * Saves the current application settings
-   */
-  // function saveAppSettings(): void {
-  //   const state = mainStore.getState();
-  //   const emuSettings = state.emulatorPanel;
-  //   const machineType = state.machineType.split("_")[0];
-  //   const kliveSettings: KliveSettings = {
-  //     machineType,
-  //     viewOptions: {
-  //       showToolbar: state.emuViewOptions.showToolbar,
-  //       showFrameInfo: state.emuViewOptions.showFrameInfo,
-  //       showKeyboard: state.emuViewOptions.showKeyboard,
-  //       showStatusBar: state.emuViewOptions.showStatusBar,
-  //       keyboardHeight: state.emuViewOptions.keyboardHeight,
-  //     },
-  //   };
-  //   // if (this._machineContextProvider) {
-  //   //   kliveSettings.machineSpecific = appSettings?.machineSpecific;
-  //   //   if (!kliveSettings.machineSpecific) {
-  //   //     kliveSettings.machineSpecific = {};
-  //   //   }
-  //   //   kliveSettings.machineSpecific[
-  //   //     machineType
-  //   //   ] = this._machineContextProvider.getMachineSpecificSettings();
-  //   // }
-  //   // saveKliveSettings(kliveSettings);
-  //   // reloadSettings();
-  // }
-

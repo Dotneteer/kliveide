@@ -12,9 +12,7 @@ import {
   shell,
 } from "electron";
 import {
-  emuMachineContextAction,
   emuMuteSoundAction,
-  emuSetBaseFrequencyAction,
   emuSetClockMultiplierAction,
   emuSetSoundLevelAction,
   emuUnmuteSoundAction,
@@ -41,6 +39,7 @@ import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
 import { EmuWindow } from "./EmuWindow";
 import { IdeWindow } from "./IdeWindow";
 import { StateAwareObject } from "../shared/state/StateAwareObject";
+import { appSettings } from "./klive-configuration";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -111,25 +110,12 @@ const STEP_OUT_VM = "step_out_vm";
  * Sets up the application menu
  */
 export function setupMenu(): void {
-  // // --- Merge startup configuration and settings
-  // const viewOptions = appSettings?.viewOptions ?? {
-  //   showToolbar: true,
-  //   showStatusbar: true,
-  //   showFrameInfo: true,
-  // };
-
-  // if (viewOptions.showFrameInfo === undefined) {
-  //   viewOptions.showFrameInfo = appConfiguration?.viewOptions.showFrameInfo;
-  // }
-  // if (viewOptions.showToolbar === undefined) {
-  //   viewOptions.showToolbar = appConfiguration?.viewOptions?.showToolbar;
-  // }
-  // if (viewOptions.showStatusbar === undefined) {
-  //   viewOptions.showStatusbar = appConfiguration?.viewOptions?.showStatusbar;
-  // }
-  // if (viewOptions.showKeyboard === undefined) {
-  //   viewOptions.showKeyboard = appConfiguration?.viewOptions?.showStatusbar;
-  // }
+  // --- Merge startup configuration and settings
+  const viewOptions = appSettings?.viewOptions ?? {
+    showToolbar: true,
+    showStatusbar: true,
+    showFrameInfo: true,
+  };
 
   const template: (MenuItemConstructorOptions | MenuItem)[] = [];
   if (__DARWIN__) {
@@ -166,8 +152,8 @@ export function setupMenu(): void {
       id: TOGGLE_DEVTOOLS,
       label: "Toggle Developer Tools",
       accelerator: "Ctrl+Shift+I",
-      visible: true, //appConfiguration?.viewOptions?.showDevTools ?? false,
-      enabled: true, //appConfiguration?.viewOptions?.showDevTools ?? false,
+      visible: viewOptions?.showDevTools ?? false,
+      enabled: viewOptions?.showDevTools ?? false,
       click: () => {
         BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
       },
@@ -184,19 +170,19 @@ export function setupMenu(): void {
     { type: "separator" },
   ];
 
-  // let extraViewItems: MenuItemConstructorOptions[] =
-  //   this._machineContextProvider?.provideViewMenuItems() ?? [];
-  // if (extraViewItems.length > 0) {
-  //   extraViewItems.push({ type: "separator" });
-  // }
-  // viewSubMenu.push(...extraViewItems);
+  let extraViewItems: MenuItemConstructorOptions[] =
+    emuWindow.machineContextProvider?.provideViewMenuItems() ?? [];
+  if (extraViewItems.length > 0) {
+    extraViewItems.push({ type: "separator" });
+  }
+  viewSubMenu.push(...extraViewItems);
 
   viewSubMenu.push(
     {
       id: TOGGLE_TOOLBAR,
       label: "Show toolbar",
       type: "checkbox",
-      checked: true, //viewOptions.showToolbar ?? true,
+      checked: viewOptions.showToolbar ?? true,
       click: (mi) =>
         checkboxAction(mi, emuShowToolbarAction(), emuHideToolbarAction()),
     },
@@ -204,7 +190,7 @@ export function setupMenu(): void {
       id: TOGGLE_STATUSBAR,
       label: "Show statusbar",
       type: "checkbox",
-      checked: true, //viewOptions.showStatusbar ?? true,
+      checked: viewOptions.showStatusbar ?? true,
       click: (mi) =>
         checkboxAction(mi, emuShowStatusbarAction(), emuHideStatusbarAction()),
     },
@@ -212,7 +198,7 @@ export function setupMenu(): void {
       id: TOGGLE_FRAMES,
       label: "Show frame information",
       type: "checkbox",
-      checked: true, //viewOptions.showFrameInfo ?? true,
+      checked: viewOptions.showFrameInfo ?? true,
       click: (mi) => {
         if (mi.checked) {
           mainStore.dispatch(emuShowFrameInfoAction());
@@ -312,8 +298,7 @@ export function setupMenu(): void {
       enabled: MACHINE_MENU_ITEMS[i].enabled,
       click: async (mi) => {
         try {
-          // TODO: Implement this
-          //saveAppSettings();
+          emuWindow.saveAppSettings();
         } catch {
           // --- Intentionally ignored
         }
@@ -447,13 +432,13 @@ export function processStateChange(fullState: AppState): void {
   const emuState = fullState.emulatorPanel;
   if (menu) {
     // --- DevTools visibility
-    // const devToolVisible =
-    //   (fullState?.ideConnection?.connected ?? false) ||
-    //   (appConfiguration?.viewOptions?.showDevTools ?? false);
-    // const toggleDevTools = menu.getMenuItemById(TOGGLE_DEVTOOLS);
-    // if (toggleDevTools) {
-    //   toggleDevTools.visible = toggleDevTools.enabled = devToolVisible;
-    // }
+    const devToolVisible =
+      //(fullState?.ideConnection?.connected ?? false) ||
+      (appSettings.viewOptions?.showDevTools ?? false);
+    const toggleDevTools = menu.getMenuItemById(TOGGLE_DEVTOOLS);
+    if (toggleDevTools) {
+      toggleDevTools.visible = toggleDevTools.enabled = devToolVisible;
+    }
 
     // --- Keyboard panel status
     const toggleKeyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);
