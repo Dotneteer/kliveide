@@ -3,7 +3,6 @@ import { AppWindow } from "./AppWindow";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./mainStore";
 import {
-  CreateMachineResponse,
   RequestMessage,
   StopVmRequest,
 } from "../shared/messaging/message-types";

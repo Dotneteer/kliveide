@@ -27,6 +27,10 @@ async function processEmulatorMessages(
         type: "CreateMachineResponse",
         error: null,
       };
+    case "ForwardAppConfig":
+      vmEngineService.setAppConfiguration(message.config);
+      return <DefaultResponse>{ type: "ack" };
+
     case "startVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.start();

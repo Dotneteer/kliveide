@@ -1,5 +1,6 @@
 import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
 import { KliveAction } from "../state/state-core";
+import { KliveConfiguration } from "../../main/klive-configuration";
 
 /**
  * The common base for all message types
@@ -13,6 +14,11 @@ export interface MessageBase {
 export interface ForwardActionRequest extends MessageBase {
   type: "ForwardAction";
   action: KliveAction;
+}
+
+export interface ForwardAppConfigRequest extends MessageBase {
+  type: "ForwardAppConfig";
+  config: KliveConfiguration;
 }
 
 export interface CreateMachineRequest extends MessageBase {
@@ -91,6 +97,7 @@ export interface ExecuteMachineCommandRequest extends MessageBase {
 export type RequestMessage =
   | CreateMachineRequest
   | ForwardActionRequest
+  | ForwardAppConfigRequest
   | StartVmRequest
   | PauseVmRequest
   | StopVmRequest

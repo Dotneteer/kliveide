@@ -16,7 +16,6 @@ import {
 import { emuStore } from "../emulator/emuStore";
 import { IVmController } from "./IVmController";
 import { EmulatedKeyStroke } from "./keyboard";
-import { BreakpointDefinition } from "../../shared/machines/debug-types";
 import {
   emuSetDebugModeAction,
   emuSetDiagDataAction,
@@ -25,12 +24,14 @@ import {
 } from "../../shared/state/emulator-panel-reducer";
 import { FrameDiagData } from "../../shared/state/AppState";
 import { CambridgeZ88Core } from "./cz88/CambridgeZ88Core";
+import { KliveConfiguration } from "../../main/klive-configuration";
 
 /**
  * This class is responsible for controlling the singleton virtual machine
  */
 class VmEngineService implements IVmController {
   private _vmEngine: VirtualMachineCoreBase | undefined;
+  private _appConfig: KliveConfiguration | undefined;;
   private _error: string | null = null;
   private _stateAware: StateAwareObject<string>;
   private _vmEngineChanged = new LiteEvent<VirtualMachineCoreBase>();
@@ -65,9 +66,6 @@ class VmEngineService implements IVmController {
 
   // --- FrameID information
   private _startCount = 0;
-
-  // --- Breakpoints to use
-  private _breakpoints: BreakpointDefinition[] = [];
 
   // --- Message to display on the UI
   private _uiMessage: string | null = null;
@@ -127,6 +125,21 @@ class VmEngineService implements IVmController {
     await delay(20);
     this._vmEngineChanged.fire(this._vmEngine);
     return;
+  }
+
+  /**
+   * Gets the app's configuration
+   */
+  getAppConfiguration(): KliveConfiguration | undefined {
+    return this._appConfig;
+  }
+
+  /**
+   * Sets the app's configuration
+   * @param config Application configuration data
+   */
+  setAppConfiguration(config?: KliveConfiguration): void {
+    this._appConfig = config;
   }
 
   /**
@@ -553,10 +566,9 @@ class VmEngineService implements IVmController {
       await engine.onFrameCompleted(resultState, toWait);
 
       // --- Wait for the next screen frame
-      // TODO: Check, if we need this
-      // if (emulatorAppConfig?.diagnostics?.longFrameInfo && toWait < 2) {
-      //   console.log(`Frame gap is too low: ${toWait}`);
-      // }
+      if (this._appConfig?.diagnostics?.longFrameInfo && toWait < 2) {
+        console.log(`Frame gap is too low: ${toWait}`);
+      }
       await delay(toWait - 2);
       nextFrameTime += nextFrameGap;
 

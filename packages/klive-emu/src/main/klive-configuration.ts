@@ -18,7 +18,6 @@ export interface KliveConfiguration {
   port?: number;
   machineType?: string;
   diagnostics?: KliveDiagnostics;
-  viewOptions?: ViewOptions;
 }
 
 /**
