@@ -41,10 +41,6 @@ export const ideStore = createStore(
   applyMiddleware(forwardToMainMiddleware)
 );
 
-ideStore.subscribe(() => {
-  console.log(JSON.stringify(ideStore.getState()));
-})
-
 ipcRenderer.on(RENDERER_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   isForwarding = true;
   try {

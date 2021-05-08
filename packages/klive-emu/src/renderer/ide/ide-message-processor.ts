@@ -1,0 +1,35 @@
+import {
+  DefaultResponse,
+  RequestMessage,
+  ResponseMessage,
+} from "../../shared/messaging/message-types";
+import { IpcRendereApi } from "../../exposed-apis";
+import { MAIN_TO_IDE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
+import { MAIN_TO_IDE_RESPONE_CHANNEL } from "../../shared/messaging/channels";
+import { IpcRendererEvent } from "electron";
+
+// --- Electron APIs exposed for the renderer process
+const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
+
+/**
+ * Processes the messages arriving from the main process
+ * @param message
+ */
+async function processIdeMessages(
+  message: RequestMessage
+): Promise<ResponseMessage> {
+  switch (message.type) {
+    default:
+      return <DefaultResponse>{ type: "ack" };
+  }
+}
+
+// --- Set up message processing
+ipcRenderer.on(
+  MAIN_TO_IDE_REQUEST_CHANNEL,
+  async (_ev: IpcRendererEvent, message: RequestMessage) => {
+    const response = await processIdeMessages(message);
+    response.correlationId = message.correlationId;
+    ipcRenderer.send(MAIN_TO_IDE_RESPONE_CHANNEL, response);
+  }
+);

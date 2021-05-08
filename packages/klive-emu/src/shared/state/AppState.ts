@@ -9,6 +9,7 @@ export interface AppState {
   machineType?: string;
   emulatorPanel?: EmulatorPanelState;
   spectrumSpecific?: ZxSpectrumSpecificState;
+  showIde?: boolean;
 }
 
 /**

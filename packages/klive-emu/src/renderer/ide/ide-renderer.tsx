@@ -4,17 +4,15 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { ideStore } from "./ideStore";
-import { setThemeAction } from "../../shared/state/theme-reducer";
+import { registerThemes } from "../common/register-themes";
+import IdeApp from "./IdeApp";
+
+// --- Prepare the themes used in this app
+registerThemes();
 
 ReactDOM.render(
   <Provider store={ideStore}>
-    <div className="app">
-      <h4 onClick={() => signInit()}>IDE window</h4>
-    </div>
+    <IdeApp />
   </Provider>,
   document.getElementById("app")
 );
-
-function signInit(): void {
-  ideStore.dispatch(setThemeAction("light"));
-}

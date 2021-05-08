@@ -39,7 +39,8 @@ import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
 import { EmuWindow } from "./EmuWindow";
 import { IdeWindow } from "./IdeWindow";
 import { StateAwareObject } from "../shared/state/StateAwareObject";
-import { appSettings } from "./klive-configuration";
+import { appConfiguration, appSettings } from "./klive-configuration";
+import { ideHideAction, ideShowAction } from "../shared/state/show-ide-reducer";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -105,6 +106,7 @@ const DEBUG_VM = "debug_vm";
 const STEP_INTO_VM = "step_into_vm";
 const STEP_OVER_VM = "step_over_vm";
 const STEP_OUT_VM = "step_out_vm";
+const SHOW_IDE = "show_ide";
 
 /**
  * Sets up the application menu
@@ -152,8 +154,8 @@ export function setupMenu(): void {
       id: TOGGLE_DEVTOOLS,
       label: "Toggle Developer Tools",
       accelerator: "Ctrl+Shift+I",
-      visible: viewOptions?.showDevTools ?? false,
-      enabled: viewOptions?.showDevTools ?? false,
+      visible: appConfiguration?.showDevTools ?? false,
+      enabled: appConfiguration?.showDevTools ?? false,
       click: () => {
         BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
       },
@@ -304,10 +306,6 @@ export function setupMenu(): void {
         }
         const machineType = mi.id.split("_")[1];
         emuWindow.requestMachineType(machineType);
-        // TODO: Implement this
-        //setMachineTypeMenu(mi.id);
-        // await new Promise((r) => setTimeout(r, 200));
-        // AppWindow.instance.applyStoredSettings(machineType);
       },
     });
   }
@@ -378,6 +376,24 @@ export function setupMenu(): void {
     });
   }
 
+  const ideMenu: MenuItemConstructorOptions = {
+    label: "IDE",
+    submenu: [
+      {
+        id: SHOW_IDE,
+        label: "Show IDE window",
+        type: "checkbox",
+        checked: false,
+        enabled: true,
+        click: async (mi) => {
+          checkboxAction(mi, ideShowAction(), ideHideAction());
+        },
+      },
+    ],
+  };
+
+  template.push(ideMenu);
+
   const helpSubmenu: MenuItemConstructorOptions[] = [
     {
       label: "Klive on Github",
@@ -430,14 +446,19 @@ export function processStateChange(fullState: AppState): void {
   const menu = Menu.getApplicationMenu();
   const viewOptions = fullState.emuViewOptions;
   const emuState = fullState.emulatorPanel;
+
+  // --- Visibility of the IDE window
+  if (fullState.showIde) {
+    ideWindow.show();
+  } else {
+    ideWindow.hide();
+  }
+
   if (menu) {
-    // --- DevTools visibility
-    const devToolVisible =
-      //(fullState?.ideConnection?.connected ?? false) ||
-      (appSettings.viewOptions?.showDevTools ?? false);
-    const toggleDevTools = menu.getMenuItemById(TOGGLE_DEVTOOLS);
-    if (toggleDevTools) {
-      toggleDevTools.visible = toggleDevTools.enabled = devToolVisible;
+    // --- IDE window visibility
+    const showIDE = menu.getMenuItemById(SHOW_IDE);
+    if (showIDE) {
+      showIDE.checked = fullState.showIde;
     }
 
     // --- Keyboard panel status
@@ -497,10 +518,10 @@ export function processStateChange(fullState: AppState): void {
   emuWindow.machineContextProvider?.updateMenuStatus(fullState);
 
   if (lastMachineType !== fullState.machineType) {
-     // --- Current machine types has changed
-     lastMachineType = fullState.machineType;
-     setupMenu();
-   }
+    // --- Current machine types has changed
+    lastMachineType = fullState.machineType;
+    setupMenu();
+  }
 
   // --- Sound level has changed
   lastSoundLevel = emuState.soundLevel;
@@ -551,7 +572,7 @@ export function processStateChange(fullState: AppState): void {
  * Sets the specified sound level
  * @param level Sound level (between 0.0 and 1.0)
  */
- export function setSoundLevel(level: number): void {
+export function setSoundLevel(level: number): void {
   if (level === 0) {
     mainStore.dispatch(emuMuteSoundAction());
   } else {

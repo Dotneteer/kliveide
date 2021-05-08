@@ -1,14 +1,25 @@
 import { AppWindow } from "./AppWindow";
+import { mainStore } from "./mainStore";
+import { ideHideAction } from "../shared/state/show-ide-reducer";
 
 /**
  * Represents the singleton IDE window
  */
 export class IdeWindow extends AppWindow {
+  allowClose = false;
   /**
    * Initializes the window instance
    */
   constructor() {
     super();
+    this.window.on("close", (e) => {
+      if (this.allowClose) {
+        return;
+      }
+      mainStore.dispatch(ideHideAction());
+      e.preventDefault();
+    });
+    this.allowClose = false;
   }
 
   /**
