@@ -1,6 +1,7 @@
 import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/klive-configuration";
+import { AppState } from "../state/AppState";
 
 /**
  * The common base for all message types
@@ -92,6 +93,14 @@ export interface ExecuteMachineCommandRequest extends MessageBase {
 }
 
 /**
+ * The main process sends its entire state to the IDE window
+ */
+ export interface SyncMainStateRequest extends MessageBase {
+  type: "syncMainState";
+  mainState: AppState;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -106,7 +115,8 @@ export type RequestMessage =
   | StepIntoVmRequest
   | StepOverVmRequest
   | StepOutVmRequest
-  | ExecuteMachineCommandRequest;
+  | ExecuteMachineCommandRequest
+  | SyncMainStateRequest;
 
 /**
  * Default response for actions

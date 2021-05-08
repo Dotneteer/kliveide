@@ -44,15 +44,11 @@ const forwardToRendererMiddleware = () => (next: any) => async (
 /**
  * Represents the master replica of the app state
  */
- export const mainStore = createStore(
+export const mainStore = createStore(
   combineReducers(appReducers),
   getInitialAppState(),
   applyMiddleware(forwardToRendererMiddleware)
 );
-
-// mainStore.subscribe(() => {
-//   console.log(JSON.stringify(mainStore.getState(), null, 2));
-// })
 
 /**
  * This class forwards state changes in main to a particular renderer
@@ -75,11 +71,11 @@ class MainToRendererStateForwarder extends MessengerBase {
    * @param state
    */
   async forwardAction(action: KliveAction): Promise<DefaultResponse> {
-    return await this.sendMessage({
+    return (await this.sendMessage({
       type: "ForwardAction",
       sourceId: MAIN_SOURCE,
       action,
-    }) as DefaultResponse;
+    })) as DefaultResponse;
   }
 
   /**
@@ -102,7 +98,7 @@ class MainToRendererStateForwarder extends MessengerBase {
   /**
    * The channel to listen for responses
    */
-  readonly responseChannel = MAIN_STATE_RESPONSE_CHANNEL
+  readonly responseChannel = MAIN_STATE_RESPONSE_CHANNEL;
 }
 
 // --- Messenger instances
@@ -121,7 +117,7 @@ export function registerEmuWindowForwarder(window: BrowserWindow): void {
  * Registers the EmuWindow instance
  * @param window BorwserWindow instance
  */
- export function registerIdeWindowForwarder(window: BrowserWindow): void {
+export function registerIdeWindowForwarder(window: BrowserWindow): void {
   ideStateMessenger = new MainToRendererStateForwarder(window);
 }
 

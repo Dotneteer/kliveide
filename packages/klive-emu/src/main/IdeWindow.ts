@@ -1,6 +1,8 @@
 import { AppWindow } from "./AppWindow";
 import { mainStore } from "./mainStore";
 import { ideHideAction } from "../shared/state/show-ide-reducer";
+import { setIdeMessenger } from "./app-menu-state";
+import { MainToIdeMessenger } from "./MainToIdeMessenger";
 
 /**
  * Represents the singleton IDE window
@@ -11,7 +13,8 @@ export class IdeWindow extends AppWindow {
    * Initializes the window instance
    */
   constructor() {
-    super();
+    super(false);
+    setIdeMessenger(new MainToIdeMessenger(this.window));
     this.window.on("close", (e) => {
       if (this.allowClose) {
         return;

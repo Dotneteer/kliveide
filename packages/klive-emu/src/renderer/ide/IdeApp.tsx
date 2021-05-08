@@ -7,6 +7,7 @@ import { themeService } from "../themes/theme-service";
 import { IThemeProperties } from "../themes/IThemeProperties";
 import { connect } from "react-redux";
 import IdeMainCanvas from "./IdeMainCanvas";
+import IdeStatusbar from "./IdeStatusbar";
 import "./ide-message-processor";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 
@@ -55,9 +56,13 @@ class IdeApp extends React.Component<Props, State> {
   }
 
   render() {
+    const viewOptions = ideStore.getState().emuViewOptions;
     return (
       <div style={this.state.themeStyle} className={this.state.themeClass}>
-          <IdeMainCanvas/>
+        <IdeMainCanvas />
+        {viewOptions.showStatusBar && (
+          <IdeStatusbar></IdeStatusbar>
+        )}
       </div>
     );
   }

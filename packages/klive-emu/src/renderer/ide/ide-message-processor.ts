@@ -7,6 +7,8 @@ import { IpcRendereApi } from "../../exposed-apis";
 import { MAIN_TO_IDE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
 import { MAIN_TO_IDE_RESPONE_CHANNEL } from "../../shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
+import { ideStore } from "./ideStore";
+import { ideSyncAction } from "../../shared/state/show-ide-reducer";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -19,6 +21,9 @@ async function processIdeMessages(
   message: RequestMessage
 ): Promise<ResponseMessage> {
   switch (message.type) {
+    case "syncMainState":
+      ideStore.dispatch(ideSyncAction(message.mainState));
+      return <DefaultResponse>{ type: "ack" };
     default:
       return <DefaultResponse>{ type: "ack" };
   }

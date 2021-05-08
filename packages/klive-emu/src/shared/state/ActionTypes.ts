@@ -47,4 +47,5 @@ export interface ActionTypes {
   // --- IDE window actions
   IDE_SHOW: null;
   IDE_HIDE: null;
+  IDE_SYNC: null;
 }

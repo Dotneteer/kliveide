@@ -6,7 +6,7 @@ import {
 } from "../../shared/messaging/channels";
 import { appReducers } from "../../shared/state/app-reducers";
 import { RendererToMainStateForwarder } from "../common/RendererToMainStateForwarder";
-import { getInitialAppState } from "../../shared/state/AppState";
+import { AppState, getInitialAppState } from "../../shared/state/AppState";
 import { IpcRendereApi } from "../../exposed-apis";
 import { ForwardActionRequest } from "../../shared/messaging/message-types";
 
@@ -32,11 +32,20 @@ const forwardToMainMiddleware = () => (next: any) => (
   return next(action);
 };
 
+const appReducer = combineReducers(appReducers);
+const rootReducer = (state: AppState, action: KliveAction) => {
+  if (action.type === "IDE_SYNC") {
+    return appReducer({...action.payload.appState} as any, action)
+  }
+  return appReducer(state as any, action);
+}
+
 /**
  * Represents the emuStore replica of the app state
  */
 export const ideStore = createStore(
-  combineReducers(appReducers),
+  rootReducer,
+  //combineReducers(appReducers),
   getInitialAppState(),
   applyMiddleware(forwardToMainMiddleware)
 );

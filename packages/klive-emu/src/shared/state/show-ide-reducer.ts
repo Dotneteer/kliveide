@@ -1,3 +1,4 @@
+import { AppState } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
 
 // ============================================================================
@@ -5,6 +6,10 @@ import { ActionCreator, KliveAction } from "./state-core";
 
 export const ideShowAction: ActionCreator = () => ({ type: "IDE_SHOW" });
 export const ideHideAction: ActionCreator = () => ({ type: "IDE_HIDE" });
+export const ideSyncAction: ActionCreator = (appState: AppState) => ({
+  type: "IDE_SYNC",
+  payload: { appState },
+});
 
 // ============================================================================
 // Reducer

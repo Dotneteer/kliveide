@@ -32,6 +32,8 @@ import {
 // Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
   await setupWindows();
+  watchStateChanges();
+  setupMenu();
 
   // --- Set up application state according to saved settings
   if (appSettings) {
@@ -59,10 +61,6 @@ app.on("ready", async () => {
       );
     }
   }
-
-  // --- Prepare the application menu
-  setupMenu();
-  watchStateChanges();
 
   emuMessenger.sendMessage({
     type: "ForwardAppConfig",

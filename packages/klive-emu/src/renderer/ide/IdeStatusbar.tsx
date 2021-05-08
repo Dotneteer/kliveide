@@ -22,7 +22,7 @@ class Statusbar extends React.Component<Props> {
         <span className="label">
           Ide Statusbar
         </span>
-      </div>,
+      </div>
         <div key="placeholder" className="placeholder" />
         <div className="section">
           <span className="label">Klive {getVersion()}</span>

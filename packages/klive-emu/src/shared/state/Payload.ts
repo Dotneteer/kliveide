@@ -1,4 +1,4 @@
-import { FrameDiagData } from "./AppState";
+import { AppState, FrameDiagData } from "./AppState";
 
 /**
  * Represents payload properties
@@ -27,4 +27,5 @@ export interface Payload {
   extraFeatures?: string[];
   baseClockFrequency?: number;
   frameDiagData?: FrameDiagData;
+  appState?: AppState;
 }

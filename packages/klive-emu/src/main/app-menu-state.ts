@@ -41,6 +41,7 @@ import { IdeWindow } from "./IdeWindow";
 import { StateAwareObject } from "../shared/state/StateAwareObject";
 import { appConfiguration, appSettings } from "./klive-configuration";
 import { ideHideAction, ideShowAction } from "../shared/state/show-ide-reducer";
+import { MainToIdeMessenger } from "./MainToIdeMessenger";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -51,6 +52,11 @@ export let stateAware: StateAwareObject;
  * Messenger instance to the emulator window
  */
 export let emuMessenger: MainToEmulatorMessenger;
+
+/**
+ * Messenger instance to the IDE window
+ */
+export let ideMessenger: MainToIdeMessenger;
 
 /**
  * Last known machine type
@@ -76,7 +82,7 @@ export async function setupWindows(): Promise<void> {
 
   // --- Prepare the IDE window
   ideWindow = new IdeWindow();
-  //ideWindow.hide();
+  ideWindow.hide();
   ideWindow.load();
   registerIdeWindowForwarder(ideWindow.window);
 
@@ -90,6 +96,14 @@ export async function setupWindows(): Promise<void> {
  */
 export function setEmuMessenger(messenger: MainToEmulatorMessenger): void {
   emuMessenger = messenger;
+}
+
+/**
+ * Sets the messenger to the IDE window
+ * @param messenger
+ */
+export function setIdeMessenger(messenger: MainToIdeMessenger): void {
+  ideMessenger = messenger;
 }
 
 // --- Menu IDs
@@ -387,6 +401,12 @@ export function setupMenu(): void {
         enabled: true,
         click: async (mi) => {
           checkboxAction(mi, ideShowAction(), ideHideAction());
+          if (mi.checked) {
+            ideMessenger.sendMessage({
+              type: "syncMainState",
+              mainState: { ...mainStore.getState() },
+            });
+          }
         },
       },
     ],
