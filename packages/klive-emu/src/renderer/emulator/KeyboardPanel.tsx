@@ -5,6 +5,21 @@ import ReactResizeDetector from "react-resize-detector";
 import Sp48Keyboard from "./Sp48Keyboard";
 import Cz88Keyboard from "./Cz88Keyboard";
 import { animationTick } from "../common/utils";
+import styles from "styled-components";
+
+const Root = styles.div`
+  display: flex;
+  overflow: hidden;
+  flex-shrink: 1;
+  flex-grow: 1;
+  height: 100%;
+  background-color: var(--keyboard-background-color);
+  padding: 16px 12px 8px 12px;
+  box-sizing: border-box;
+  align-content: start;
+  justify-items: start;
+  justify-content: center;
+`;
 
 interface Props {
   type: string;
@@ -53,8 +68,7 @@ class KeyboardPanel extends React.Component<Props, State> {
     }
     if (this.props.visible) {
       return (
-        <div
-          className="keyboard-panel"
+        <Root
           data-initial-size={this.props.initialHeight}
           ref={this._hostElement}
         >
@@ -64,7 +78,7 @@ class KeyboardPanel extends React.Component<Props, State> {
             handleHeight
             onResize={this.handleResize}
           />
-        </div>
+        </Root>
       );
     }
     return null;

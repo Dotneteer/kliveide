@@ -7,11 +7,14 @@ export const darkTheme: ITheme = {
   name: "dark",
   properties: {
     "--shell-canvas-background-color": "#1E1E1E",
+    "--panel-separator-border": "#8080805a",
+
     "--toolbar-active-background-color": "#252525",
     "--toolbar-inactive-background-color": "#383838",
     "--toolbar-button-fill": "white",
     "--toolbar-button-disabled-fill": "#585858",
     "--toolbar-separator": "2px solid #686868",
+    "--toolbar-selected-border-color": "#007acc",
 
     "--statusbar-background-color": "#007acc",
     "--statusbar-foreground-color": "white",
@@ -33,5 +36,14 @@ export const darkTheme: ITheme = {
      "--key-cz88-stroke-color": "#a0a0a0",
      "--key-cz88-main-color": "white",
      "--key-cz88-highlight-color": "#0088e0",
+
+     "--activity-bar-background-color": "#333333",
+     "--activity-icon-color": "#ffffff66",
+     "--activity-current-icon-color": "#ffffff",
+     "--activity-current-background-color": "#505050",
+
+     "--sidebar-background-color": "#252526",
+
+     "--splitter-hover-color": "#007acc",
     },
 };

@@ -24,7 +24,7 @@ export abstract class AppWindow {
   /**
    * Initializes an instance
    */
-  constructor() {
+  constructor(showWindow: boolean) {
     // --- Setup the state keeper module
     if (!windowStateKeeper) {
       windowStateKeeper = require("electron-window-state");
@@ -39,7 +39,7 @@ export abstract class AppWindow {
 
     // --- Instantiate the window
     const window = (this._window = new BrowserWindow(
-      this.getWindowOptions(savedWindowState)
+      this.getWindowOptions(savedWindowState, showWindow)
     ));
 
     // --- Allow the `electron-windows-state` package to follow and save the
@@ -122,7 +122,7 @@ export abstract class AppWindow {
    * @param savedWindowState
    * @returns
    */
-  getWindowOptions(savedWindowState: any): BrowserWindowConstructorOptions {
+  getWindowOptions(savedWindowState: any, showWindow: boolean): BrowserWindowConstructorOptions {
     const windowOptions: BrowserWindowConstructorOptions = {
       x: savedWindowState.x,
       y: savedWindowState.y,
@@ -130,7 +130,7 @@ export abstract class AppWindow {
       height: savedWindowState.height,
       minWidth: this.minimumWidth,
       minHeight: this.minimumHeight,
-      show: true,
+      show: showWindow,
       // --- This fixes subpixel aliasing on Windows
       // --- See https://github.com/atom/atom/commit/683bef5b9d133cb194b476938c77cc07fd05b972
       backgroundColor: "#fff",

@@ -3,9 +3,32 @@ import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
 import { vmEngineService } from "../machines/vm-engine-service";
 import Key from "./Sp48Key";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
+import styles from "styled-components";
 
 const DEFAULT_WIDTH = 10 * 104 + 130 + 48;
 const DEFAULT_HEIGHT = 4 * (128 + 16) + 48;
+
+const Root = styles.div`
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 100%;
+  background-color: transparent;
+  box-sizing: border-box;
+  align-content: start;
+  justify-items: start;
+  justify-content: center;
+  overflow: hidden;
+`;
+
+const KeyRow = styles.div`
+  padding: 0px 0px;
+  margin: 0;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+`;
 
 interface Props {
   width: number;
@@ -27,8 +50,8 @@ export default class Sp48Keyboard extends React.Component<Props> {
     const row1Shift = 80 * this._zoom;
     const row2Shift = 110 * this._zoom;
     return (
-      <div className="keyboard">
-        <div className="key-row">
+      <Root>
+        <KeyRow>
           <Key
             zoom={this._zoom}
             code={15}
@@ -146,8 +169,8 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="DELETE"
             below="FORMAT"
           />
-        </div>
-        <div className="key-row" style={{ marginLeft: row1Shift }}>
+        </KeyRow>
+        <KeyRow style={{ marginLeft: row1Shift }}>
           <Key
             zoom={this._zoom}
             code={10}
@@ -248,8 +271,8 @@ export default class Sp48Keyboard extends React.Component<Props> {
             above="TAB"
             below="(C)"
           />
-        </div>
-        <div className="key-row" style={{ marginLeft: row2Shift }}>
+        </KeyRow>
+        <KeyRow style={{ marginLeft: row2Shift }}>
           <Key
             zoom={this._zoom}
             code={5}
@@ -346,8 +369,8 @@ export default class Sp48Keyboard extends React.Component<Props> {
             keyAction={this.handleClick}
             center="ENTER"
           />
-        </div>
-        <div className="key-row">
+        </KeyRow>
+        <KeyRow>
           <Key
             zoom={this._zoom}
             code={0}
@@ -442,8 +465,8 @@ export default class Sp48Keyboard extends React.Component<Props> {
             top="BREAK"
             center="SPACE"
           />
-        </div>
-      </div>
+        </KeyRow>
+      </Root>
     );
   }
 

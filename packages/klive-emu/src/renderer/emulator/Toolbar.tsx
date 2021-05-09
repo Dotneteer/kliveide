@@ -16,6 +16,21 @@ import {
   spectrumFastLoadAction,
 } from "../../shared/state/spectrum-specific-reducer";
 import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
+import styles from "styled-components";
+
+const Root = styles.div`
+  display: flex;
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 40px;
+  width: 100%;
+  padding: 0px 4px;
+  background-color: var(--toolbar-active-background-color);
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: start;
+  font-size: 0.9em;
+`;
 
 interface Props {
   executionState?: number;
@@ -63,7 +78,10 @@ export class Toolbar extends React.Component<Props, State> {
           this.state.hasEngine &&
           (executionState === 0 || executionState === 3 || executionState === 5)
         }
-        clicked={async () => await engine.start()}
+        clicked={async () => {
+          console.log("Clicked");
+          await engine.start();
+        }}
       />,
       <ToolbarIconButton
         key="pause"
@@ -95,7 +113,7 @@ export class Toolbar extends React.Component<Props, State> {
         }
         clicked={async () => await engine.restart()}
       />,
-      <ToolbarSeparator key="sep-0"/>,
+      <ToolbarSeparator key="sep-0" />,
       <ToolbarIconButton
         key="debug"
         iconName="debug"
@@ -205,12 +223,12 @@ export class Toolbar extends React.Component<Props, State> {
         ]
       : null;
     return (
-      <div className="toolbar">
+      <Root>
         {machineControlButtons}
         {soundButtons}
         {beamButtons}
         {tapeButtons}
-      </div>
+      </Root>
     );
   }
 

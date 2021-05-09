@@ -58,21 +58,27 @@
   "dependencies": {
     "electron-localshortcut": "^3.2.1",
     "electron-window-state": "^5.0.3",
+    "lodash.debounce": "^4.0.8",
+    "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-icons": "^4.2.0",
     "react-redux": "^7.2.3",
     "react-resize-detector": "^6.6.4",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
-    "redux": "^4.0.5"
+    "redux": "^4.0.5",
+    "styled-components": "^5.3.0"
   },
   "devDependencies": {
     "@types/electron-localshortcut": "^3.1.0",
+    "@types/lodash.debounce": "^4.0.6",
     "@types/mocha": "^8.2.2",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.3",
     "@types/react-router": "^5.1.13",
     "@types/react-router-dom": "^5.1.7",
+    "@types/styled-components": "^5.1.9",
     "@typescript-eslint/eslint-plugin": "^4.19.0",
     "@typescript-eslint/parser": "^4.19.0",
     "copy-webpack-plugin": "^8.1.0",

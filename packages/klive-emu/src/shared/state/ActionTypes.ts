@@ -43,4 +43,14 @@ export interface ActionTypes {
   SPECTRUM_TAPE_CONTENTS: null;
   SPECTRUM_TAPE_LOADED: null;
   SPECTRUM_LOAD_MODE: null;
+
+  // --- IDE window actions
+  IDE_SHOW: null;
+  IDE_HIDE: null;
+  IDE_SYNC: null;
+
+  // --- Activities
+  SET_ACTIVITIES: null;
+  CHANGE_ACTIVITY: null;
+  POINT_ACTIVITY: null;
 }

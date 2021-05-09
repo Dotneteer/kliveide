@@ -7,11 +7,14 @@ export const lightTheme: ITheme = {
   name: "light",
   properties: {
     "--shell-canvas-background-color": "#EEEEEE",
+    "--panel-separator-border": "silver",
+
     "--toolbar-active-background-color": "#252525",
     "--toolbar-inactive-background-color": "#383838",
     "--toolbar-button-fill": "white",
     "--toolbar-button-disabled-fill": "#585858",
     "--toolbar-separator": "2px solid #686868",
+    "--toolbar-selected-border-color": "#007acc",
 
     "--statusbar-background-color": "#007acc",
     "--statusbar-foreground-color": "white",
@@ -33,5 +36,14 @@ export const lightTheme: ITheme = {
      "--key-cz88-stroke-color": "#a0a0a0",
      "--key-cz88-main-color": "white",
      "--key-cz88-highlight-color": "#0088e0",
-    },
+
+     "--activity-bar-background-color": "#c8c8c8",
+     "--activity-icon-color": "#cccccc",
+     "--activity-current-icon-color": "#ffffff",
+     "--activity-current-background-color": "#505050",
+
+     "--sidebar-background-color": "#c0c0c0",
+
+     "--splitter-hover-color": "#007acc",
+     },
 };

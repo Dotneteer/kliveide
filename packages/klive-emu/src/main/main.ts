@@ -10,6 +10,7 @@ import { ForwardActionRequest } from "../shared/messaging/message-types";
 import {
   emuMessenger,
   emuWindow,
+  ideWindow,
   setupMenu,
   setupWindows,
   watchStateChanges,
@@ -31,6 +32,8 @@ import {
 // Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
   await setupWindows();
+  watchStateChanges();
+  setupMenu();
 
   // --- Set up application state according to saved settings
   if (appSettings) {
@@ -59,8 +62,6 @@ app.on("ready", async () => {
     }
   }
 
-  // --- Prepare the application menu
-  setupMenu();
   emuMessenger.sendMessage({
     type: "ForwardAppConfig",
     config: appConfiguration,
@@ -74,9 +75,6 @@ app.on("ready", async () => {
   if (settings) {
     emuWindow.machineContextProvider.setMachineSpecificSettings(settings);
   }
-
-  // --- Initial setup done, respond to state changes
-  watchStateChanges();
 });
 
 // Quit when all windows are closed.
@@ -98,6 +96,7 @@ app.on("activate", async () => {
 
 app.on("before-quit", () => {
   emuWindow.saveAppSettings();
+  ideWindow.allowClose = true;
 });
 
 ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {

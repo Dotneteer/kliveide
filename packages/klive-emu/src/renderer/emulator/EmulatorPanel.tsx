@@ -9,8 +9,28 @@ import {
 } from "../machines/vm-engine-service";
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
+import styles from "styled-components";
 
 const TURNED_OFF_MESSAGE = "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
+
+const Root = styles.div`
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 100%;
+  width: 100%;
+  background-color: var(--emulator-background-color);
+  box-sizing: border-box;
+  justify-content: center;
+  align-items: center;
+  outline: none;
+`;
+
+const Screen = styles.div`
+  background-color: #404040;
+`;
 
 interface Props {
   executionState?: number;
@@ -86,9 +106,8 @@ class EmulatorPanel extends React.Component<Props, State> {
 
   render() {
     return (
-      <div ref={this._hostElement} className="emulator-panel" tabIndex={-1}>
-        <div
-          className="emulator-screen"
+      <Root ref={this._hostElement} tabIndex={-1}>
+        <Screen
           style={{
             width: `${this.state.canvasWidth}px`,
             height: `${this.state.canvasHeight}px`,
@@ -129,13 +148,13 @@ class EmulatorPanel extends React.Component<Props, State> {
             width={this.state.shadowCanvasWidth}
             height={this.state.shadowCanvasHeight}
           />
-        </div>
+        </Screen>
         <ReactResizeDetector
           handleWidth
           handleHeight
           onResize={this.handleResize}
         />
-      </div>
+      </Root>
     );
   }
 

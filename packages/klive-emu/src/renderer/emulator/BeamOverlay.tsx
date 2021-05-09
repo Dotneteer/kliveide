@@ -1,6 +1,13 @@
 import * as React from "react";
 import { SpectrumMachineStateBase } from "../machines/spectrum/ZxSpectrumCoreBase";
 import { vmEngineService } from "../machines/vm-engine-service";
+import styles from "styled-components";
+
+const Root = styles.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+`;
 
 interface Props {
   panelRectangle: DOMRect;
@@ -147,7 +154,7 @@ export default class BeamOverlay extends React.Component<Props, State> {
 
   render() {
     return (
-      <div className="beam-overlay">
+      <Root>
         {this.state.mounted && (
           <svg width={this.props.width} height={this.props.height}>
             <rect
@@ -193,7 +200,7 @@ export default class BeamOverlay extends React.Component<Props, State> {
             />
           </svg>
         )}
-      </div>
+      </Root>
     );
   }
 }

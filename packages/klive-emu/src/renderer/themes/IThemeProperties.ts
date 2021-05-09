@@ -6,12 +6,14 @@ export interface IThemeProperties {
    * The background color of the shell canvas.
    */
   "--shell-canvas-background-color": string;
-  
+  "--panel-separator-border": string;
+
   "--toolbar-active-background-color": string;
   "--toolbar-inactive-background-color": string;
   "--toolbar-button-fill": string;
   "--toolbar-button-disabled-fill": string;
   "--toolbar-separator": string;
+  "--toolbar-selected-border-color": string;
   
   "--statusbar-background-color": string;
   "--statusbar-foreground-color": string;
@@ -33,4 +35,13 @@ export interface IThemeProperties {
   "--key-cz88-stroke-color": string;
   "--key-cz88-main-color": string;
   "--key-cz88-highlight-color": string;
+
+  "--activity-bar-background-color": string;
+  "--activity-icon-color": string;
+  "--activity-current-icon-color": string;
+  "--activity-current-background-color": string;
+
+  "--sidebar-background-color": string;
+
+  "--splitter-hover-color": string;
 }

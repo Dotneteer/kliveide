@@ -38,7 +38,7 @@ export class EmuWindow extends AppWindow {
    * Initializes the window instance
    */
   constructor() {
-    super();
+    super(true);
     setEmuMessenger(new MainToEmulatorMessenger(this.window));
   }
 
