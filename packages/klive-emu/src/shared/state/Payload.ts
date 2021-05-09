@@ -1,3 +1,4 @@
+import { Activity } from "../activity/Activity";
 import { AppState, FrameDiagData } from "./AppState";
 
 /**
@@ -28,4 +29,6 @@ export interface Payload {
   baseClockFrequency?: number;
   frameDiagData?: FrameDiagData;
   appState?: AppState;
+  activities?: Activity[];
+  itemIndex?: number;
 }

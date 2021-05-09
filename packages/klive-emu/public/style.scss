@@ -85,7 +85,7 @@ body {
 
 .ide-main {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex-grow: 1;
   flex-shrink: 1;
   width: 100%;
@@ -249,3 +249,26 @@ body {
   font-weight: bold;
   margin: 0;
 }
+
+// ============================================================================
+// IDE window
+
+.gutter {
+  background-color: transparent;
+}
+
+.gutter:hover {
+  background-color: var(--splitter-hover-color);
+  transition-property: background-color;
+  transition-duration: 0.25s;
+  transition-delay: 0.5s;
+}
+
+.activity-button-active {
+  border-left: 2px solid white !important;
+}
+
+.activity-button-system {
+  align-self: flex-end;
+}
+

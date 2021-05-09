@@ -1,3 +1,5 @@
+import { Activity } from "../activity/Activity";
+
 /**
  * Represents the application's entire state vector
  */
@@ -10,6 +12,7 @@ export interface AppState {
   emulatorPanel?: EmulatorPanelState;
   spectrumSpecific?: ZxSpectrumSpecificState;
   showIde?: boolean;
+  activityBar?: ActivityBarState;
 }
 
 /**
@@ -60,7 +63,7 @@ export interface FrameDiagData {
 /**
  * Represents the Program Counter information of a virtual machine's CPU
  */
- export interface ProgramCounterInfo {
+export interface ProgramCounterInfo {
   /**
    * Label of the Program Counter
    */
@@ -81,6 +84,26 @@ export interface ZxSpectrumSpecificState {
   tapeContents?: Uint8Array;
   tapeLoaded?: boolean;
   loadMode?: boolean;
+}
+
+/**
+ * Represents the state of the activity bar
+ */
+export interface ActivityBarState {
+  /**
+   * The list of activities to display
+   */
+  activities?: Activity[];
+
+  /**
+   * The index of the active activity
+   */
+  activeIndex?: number;
+
+  /**
+   * The index of activity the mouse points to
+   */
+  pointedIndex?: number;
 }
 
 /**
@@ -119,8 +142,8 @@ export function getInitialAppState(): AppState {
         renderedFrames: 0,
         pcInfo: {
           label: "",
-          value: 0
-        }
+          value: 0,
+        },
       },
     },
     spectrumSpecific: {

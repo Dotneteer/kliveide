@@ -32,7 +32,7 @@ export class SplitContainer extends React.Component<Props> {
   componentDidMount() {
     // --- Used default property values
     this._direction = this.props.direction ?? "horizontal";
-    this._gutterSize = this.props.gutterSize ?? 10;
+    this._gutterSize = this.props.gutterSize ?? 8;
     this._minimumSize = this.props.minimumSize ?? 180;
 
     if (!this._hostElement) return;
@@ -740,7 +740,7 @@ function Split(
     for (let i = 0; i < pairs.length; i++) {
       rolledSize += elements[i].element[clientSize];
       updateGutterStyle(pairs[i].gutter, {
-        [position]: `${rolledSize}px`,
+        [position]: `${rolledSize-gutterSize/2}px`,
       });
     }
   }
@@ -999,7 +999,7 @@ function Split(
 
     // --- Set floating gutter position
     if (floatingGutter) {
-      const newPosition = (a as any)[clientOffset] + a[clientSize];
+      const newPosition = (a as any)[clientOffset] + a[clientSize] - gutterSize/2;
       updateGutterStyle(pairs[self.a].gutter, {
         [position]: `${newPosition}px`,
         [crossDimension(dimension)]: `${parent[parentSize]}px`,

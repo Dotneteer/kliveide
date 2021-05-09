@@ -33,4 +33,13 @@ export interface IThemeProperties {
   "--key-cz88-stroke-color": string;
   "--key-cz88-main-color": string;
   "--key-cz88-highlight-color": string;
+
+  "--activity-bar-background-color": string;
+  "--activity-icon-color": string;
+  "--activity-current-icon-color": string;
+  "--activity-current-background-color": string;
+
+  "--sidebar-background-color": string;
+
+  "--splitter-hover-color": string;
 }

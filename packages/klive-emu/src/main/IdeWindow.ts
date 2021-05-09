@@ -3,11 +3,16 @@ import { mainStore } from "./mainStore";
 import { ideHideAction } from "../shared/state/show-ide-reducer";
 import { setIdeMessenger } from "./app-menu-state";
 import { MainToIdeMessenger } from "./MainToIdeMessenger";
+import { Activity } from "../shared/activity/Activity";
+import { setActivitiesAction } from "../shared/state/activity-bar-reducer";
 
 /**
  * Represents the singleton IDE window
  */
 export class IdeWindow extends AppWindow {
+  // --- The available activities
+  private _activities: Activity[] | null;
+
   allowClose = false;
   /**
    * Initializes the window instance
@@ -23,6 +28,8 @@ export class IdeWindow extends AppWindow {
       e.preventDefault();
     });
     this.allowClose = false;
+    this.setupActivityBar();
+    mainStore.dispatch(setActivitiesAction(this._activities));
   }
 
   /**
@@ -37,5 +44,30 @@ export class IdeWindow extends AppWindow {
    */
   get stateFile(): string {
     return "ide-window-state.json";
+  }
+
+  /**
+   * Sets up the initial activity bar.
+   */
+  setupActivityBar(): void {
+    this._activities = [
+      {
+        id: "file-view",
+        iconName: "files",
+      },
+      {
+        id: "debug-view",
+        iconName: "debug-alt",
+      },
+      {
+        id: "test-view",
+        iconName: "beaker",
+      },
+      {
+        id: "settings",
+        iconName: "settings-gear",
+        isSystemActivity: true,
+      },
+    ];
   }
 }

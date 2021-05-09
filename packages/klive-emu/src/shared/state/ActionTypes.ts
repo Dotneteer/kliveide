@@ -48,4 +48,9 @@ export interface ActionTypes {
   IDE_SHOW: null;
   IDE_HIDE: null;
   IDE_SYNC: null;
+
+  // --- Activities
+  SET_ACTIVITIES: null;
+  CHANGE_ACTIVITY: null;
+  POINT_ACTIVITY: null;
 }

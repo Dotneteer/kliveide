@@ -33,5 +33,14 @@ export const darkTheme: ITheme = {
      "--key-cz88-stroke-color": "#a0a0a0",
      "--key-cz88-main-color": "white",
      "--key-cz88-highlight-color": "#0088e0",
+
+     "--activity-bar-background-color": "#333333",
+     "--activity-icon-color": "#ffffff66",
+     "--activity-current-icon-color": "#ffffff",
+     "--activity-current-background-color": "#505050",
+
+     "--sidebar-background-color": "#252526",
+
+     "--splitter-hover-color": "#007acc",
     },
 };

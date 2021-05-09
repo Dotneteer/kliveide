@@ -33,5 +33,14 @@ export const lightTheme: ITheme = {
      "--key-cz88-stroke-color": "#a0a0a0",
      "--key-cz88-main-color": "white",
      "--key-cz88-highlight-color": "#0088e0",
-    },
+
+     "--activity-bar-background-color": "#c8c8c8",
+     "--activity-icon-color": "#cccccc",
+     "--activity-current-icon-color": "#ffffff",
+     "--activity-current-background-color": "#505050",
+
+     "--sidebar-background-color": "#c0c0c0",
+
+     "--splitter-hover-color": "#007acc",
+     },
 };

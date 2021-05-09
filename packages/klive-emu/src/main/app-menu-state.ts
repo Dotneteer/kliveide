@@ -458,6 +458,8 @@ export function watchStateChanges(): void {
   });
 }
 
+let lastShowIde = false;
+
 /**
  * Processes emulator data changes
  * @param state Emulator state
@@ -468,10 +470,13 @@ export function processStateChange(fullState: AppState): void {
   const emuState = fullState.emulatorPanel;
 
   // --- Visibility of the IDE window
-  if (fullState.showIde) {
-    ideWindow.show();
-  } else {
-    ideWindow.hide();
+  if (lastShowIde !== fullState.showIde) {
+    lastShowIde = fullState.showIde;
+    if (fullState.showIde) {
+      ideWindow.show();
+    } else {
+      ideWindow.hide();
+    }
   }
 
   if (menu) {
