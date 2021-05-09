@@ -6,12 +6,14 @@ export interface IThemeProperties {
    * The background color of the shell canvas.
    */
   "--shell-canvas-background-color": string;
-  
+  "--panel-separator-border": string;
+
   "--toolbar-active-background-color": string;
   "--toolbar-inactive-background-color": string;
   "--toolbar-button-fill": string;
   "--toolbar-button-disabled-fill": string;
   "--toolbar-separator": string;
+  "--toolbar-selected-border-color": string;
   
   "--statusbar-background-color": string;
   "--statusbar-foreground-color": string;

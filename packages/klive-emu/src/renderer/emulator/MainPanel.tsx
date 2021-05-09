@@ -8,6 +8,16 @@ import KeyboardPanel from "./KeyboardPanel";
 import { vmEngineService } from "../machines/vm-engine-service";
 import { emuKeyboardHeightAction } from "../../shared/state/emulator-panel-reducer";
 import { animationTick } from "../common/utils";
+import styles from "styled-components";
+
+const Root = styles.div`
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+  width: 100%;
+  background-color: var(--emulator-background-color);
+`;
 
 interface Props {
   showKeyboard?: boolean;
@@ -42,7 +52,7 @@ class MainPanel extends React.Component<Props, State> {
       }
     }
     return (
-      <div className="main-panel">
+      <Root>
         <SplitContainer
           direction="vertical"
           refreshTag={!!this.props.showKeyboard}
@@ -55,7 +65,7 @@ class MainPanel extends React.Component<Props, State> {
             showPanel={this._delayIsOver}
           />
         </SplitContainer>
-      </div>
+      </Root>
     );
   }
 

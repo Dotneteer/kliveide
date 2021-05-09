@@ -1,5 +1,7 @@
 import * as React from "react";
 import { SvgIcon } from "./SvgIcon";
+import styles from "styled-components";
+import { animationTick } from "./utils";
 
 const DEFAULT_SIZE = 22;
 const DEFAULT_HILITE_SIZE = 28;
@@ -31,16 +33,32 @@ export class ToolbarIconButton extends React.Component<Props, State> {
   }
 
   render() {
+    const Root = styles.div`
+      display: flex;
+      width: 36px;
+      height: 36px;
+      padding: 4px 4px;
+      margin: 0px 0px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 1px solid transparent;
+      ${
+        this.props.selected
+          ? `
+          border: 2px solid var(--toolbar-selected-border-color);
+          `
+          : ``
+      }
+      ${this.props.enable ?? true ? "" : `cursor: default;`}
+    `;
+
     return (
-      <div
-        className={`toolbar-button ${this.props.selected ? "selected" : ""}${
-          this.props.enable ?? true ? "" : " disabled"
-        }`}
+      <Root
         title={this.props.title}
         onMouseDown={(ev) => this.handleMouseDown(ev)}
         onMouseUp={this.handleMouseUp}
         onMouseLeave={this.handleMouseLeave}
-        onClick={() => this.props?.clicked?.()}
       >
         <SvgIcon
           iconName={this.props.iconName}
@@ -52,7 +70,7 @@ export class ToolbarIconButton extends React.Component<Props, State> {
           width={this.state.currentSize}
           height={this.state.currentSize}
         />
-      </div>
+      </Root>
     );
   }
 
@@ -61,7 +79,10 @@ export class ToolbarIconButton extends React.Component<Props, State> {
       this.updateSize(true);
     }
   };
-  handleMouseUp = () => this.updateSize(false);
+  handleMouseUp = () => {
+    this.updateSize(false);
+    this.props?.clicked?.()
+  };
   handleMouseLeave = () => {
     if (!(this.props.enable ?? true)) {
       return;
@@ -70,6 +91,7 @@ export class ToolbarIconButton extends React.Component<Props, State> {
   };
 
   updateSize(pointed: boolean) {
+    animationTick();
     this.setState({
       currentSize: pointed
         ? this.props.highlightSize ?? DEFAULT_HILITE_SIZE

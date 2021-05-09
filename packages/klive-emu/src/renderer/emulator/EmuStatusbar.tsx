@@ -5,6 +5,7 @@ import { AppState, ProgramCounterInfo } from "../../shared/state/AppState";
 import { SvgIcon } from "../common/SvgIcon";
 import { vmEngineService } from "../machines/vm-engine-service";
 import { themeService } from "../themes/theme-service";
+import { Root, Gap, Section, Label} from "../common/StatusbarStyles";
 
 interface Props {
   showFrames?: boolean;
@@ -32,65 +33,67 @@ class Statusbar extends React.Component<Props> {
 
   render() {
     const frameInformation = [
-      <div key="1" className="section">
+      <Section key="1">
         <SvgIcon
           iconName="vm-running"
           width={16}
           height={16}
           fill={this._fillValue}
         />
-        <span className="label">
+        <Label>
           {this.props.avgEngineTime} / {this.props.lastEngineTime}
-        </span>
-      </div>,
-      <div
+        </Label>
+      </Section>,
+      <Section
         key="2"
-        className="section"
         title="Total time per frame (average/last)"
       >
         <SvgIcon iconName="vm" width={16} height={16} fill={this._fillValue} />
-        <span className="label">
+        <Label>
           {this.props.avgFrameTime} / {this.props.lastFrameTime}
-        </span>
-      </div>,
-      <div key="3" className="section" title="# of frames rendered since start">
+        </Label>
+      </Section>,
+      <Section key="3" title="# of frames rendered since start">
         <SvgIcon
           iconName="window"
           width={16}
           height={16}
           fill={this._fillValue}
         />
-        <span className="label">{this.props.renderedFrames}</span>
-      </div>,
-      <div key="4" className="section" title="The value of Program Counter">
-        <span className="label">
+        <Label>{this.props.renderedFrames}</Label>
+      </Section>,
+      <Section key="4" title="The value of Program Counter">
+        <Label>
           {this.props.pcInfo?.label ?? ""}: $
-          {(this.props.pcInfo?.value ?? 0).toString(16).toUpperCase().padStart(4, "0")}
-        </span>
-      </div>,
+          {(this.props.pcInfo?.value ?? 0)
+            .toString(16)
+            .toUpperCase()
+            .padStart(4, "0")}
+        </Label>
+      </Section>,
     ];
     const cpuInformation = [
-      <div key="14" className="section">
-        <span className="label">{this.props.displayName}</span>
-      </div>,
-      <div key="15" className="section">
-        <span className="label">{this.props.machineContext}</span>
-      </div>,
-      <div key="16" className="section">
-        <span className="label">
+      <Section key="14" >
+        <Label>{this.props.displayName}</Label>
+      </Section>,
+      <Section key="15">
+        <Label>{this.props.machineContext}</Label>
+      </Section>,
+      <Section key="16">
+        <Label>
           CPU: {(this.props.cpuFreq / 1000000).toFixed(4)}Mhz
-        </span>
-      </div>,
+        </Label>
+      </Section>,
     ];
     return (
-      <div className="statusbar">
+      <Root>
         {this.props.showFrames && frameInformation}
-        <div key="placeholder" className="placeholder" />
+        <Gap />
         {vmEngineService.hasEngine && cpuInformation}
-        <div className="section">
-          <span className="label">Klive {getVersion()}</span>
-        </div>
-      </div>
+        <Section>
+          <Label>Klive {getVersion()}</Label>
+        </Section>
+      </Root>
     );
   }
 }

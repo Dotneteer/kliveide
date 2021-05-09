@@ -10,9 +10,49 @@ import { deZ88KeyboardLayout } from "../machines/cz88/key-layout-de";
 import { dkZ88KeyboardLayout } from "../machines/cz88/key-layout-dk";
 import { seZ88KeyboardLayout } from "../machines/cz88/key-layout-se";
 import { Cz88KeyboardLayout } from "../machines/cz88/cz88-keys";
+import styles from "styled-components";
 
 const DEFAULT_WIDTH = 15 * 108 + 200 + 48;
 const DEFAULT_HEIGHT = 5 * (100 + 8) + 48;
+
+const Root = styles.div`
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  flex-grow: 0;
+  height: 100%;
+  background-color: transparent;
+  box-sizing: border-box;
+  align-content: start;
+  justify-items: start;
+  justify-content: center;
+  overflow: hidden;
+`;
+
+const KeyRow = styles.div`
+  padding: 0px 0px;
+  margin: 0;
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  font-weight: bold;
+`;
+
+const KeyRow2To3 = styles.div`
+  display: flex;
+  flex-direction: row;
+  flex-grow: 0;
+  flex-shrink: 0;
+  margin: 0;
+`;
+
+const EnterContainer = styles.div`
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  font-weight: bold;
+  margin: 0;
+`;
 
 // --- Special key codes
 const LEFT_SHIFT_KEY = 54;
@@ -61,8 +101,8 @@ export default class Cz88Keyboard extends React.Component<Props> {
 
     this.calculateZoom(this.props.width, this.props.height);
     return (
-      <div className="keyboard">
-        <div className="key-row-z88">
+      <Root>
+        <KeyRow>
           <Key
             zoom={this._zoom}
             code={61}
@@ -153,10 +193,10 @@ export default class Cz88Keyboard extends React.Component<Props> {
             layoutInfo={clo.Delete}
             keyAction={this.handleClick}
           />
-        </div>
-        <div className="key-row-z88-2-3">
+        </KeyRow>
+        <KeyRow2To3>
           <div style={{ margin: 0 }}>
-            <div className="key-row-z88">
+            <KeyRow>
               <Key
                 zoom={this._zoom}
                 code={53}
@@ -236,8 +276,8 @@ export default class Cz88Keyboard extends React.Component<Props> {
                 layoutInfo={clo.SBracketR}
                 keyAction={this.handleClick}
               />
-            </div>
-            <div className="key-row-z88">
+            </KeyRow>
+            <KeyRow>
               <Key
                 zoom={this._zoom}
                 code={52}
@@ -319,9 +359,9 @@ export default class Cz88Keyboard extends React.Component<Props> {
                 layoutInfo={clo.Pound}
                 keyAction={this.handleClick}
               />
-            </div>
+            </KeyRow>
           </div>
-          <div className="enter-z88">
+          <EnterContainer>
             <Key
               zoom={this._zoom}
               code={6}
@@ -330,9 +370,9 @@ export default class Cz88Keyboard extends React.Component<Props> {
               xwidth={122}
               xheight={200}
             />
-          </div>
-        </div>
-        <div className="key-row-z88">
+          </EnterContainer>
+        </KeyRow2To3>
+        <KeyRow>
           <Key
             zoom={this._zoom}
             code={54}
@@ -415,8 +455,8 @@ export default class Cz88Keyboard extends React.Component<Props> {
             vshift={8}
             fontSize={60}
           />
-        </div>
-        <div className="key-row-z88">
+        </KeyRow>
+        <KeyRow>
           <Key
             zoom={this._zoom}
             code={60}
@@ -481,8 +521,8 @@ export default class Cz88Keyboard extends React.Component<Props> {
             vshift={8}
             fontSize={60}
           />
-        </div>
-      </div>
+        </KeyRow>
+      </Root>
     );
   }
 

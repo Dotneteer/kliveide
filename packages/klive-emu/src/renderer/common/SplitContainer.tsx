@@ -1,5 +1,14 @@
 import * as React from "react";
-import { animationTick, delay } from "./utils";
+import { animationTick } from "./utils";
+import styles from "styled-components";
+
+const Root = styles.div`
+  display: flex;
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: 100%;
+  width: 100%;
+`;
 
 interface Props {
   direction?: GutterDirection;
@@ -54,13 +63,12 @@ export class SplitContainer extends React.Component<Props> {
 
   render() {
     return (
-      <div
+      <Root
         ref={this._hostElement}
-        className="split-container"
         style={this._style}
       >
         {this.props.children}
-      </div>
+      </Root>
     );
   }
 

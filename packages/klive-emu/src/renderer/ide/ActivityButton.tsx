@@ -36,13 +36,16 @@ class ActivityButton extends React.Component<Props> {
   }
 
   render() {
+    const style: Record<string, any> = {}
+    if (this.props.active) {
+      style.borderLeft = "2px solid white";
+    }
+    if (this.props.isSystem) {
+      style.alignSelf = "flex-end";
+    }
     return (
       <Root
-        className={
-          (this.props.active ? "activity-button-active" : "") +
-          " " +
-          (this.props.isSystem ? "activity-button-system" : "")
-        }
+        style={style}
         onClick={this.props.clicked}
         onMouseEnter={this.props.point}
         onMouseLeave={this.props.unpoint}

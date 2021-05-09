@@ -7,11 +7,14 @@ export const darkTheme: ITheme = {
   name: "dark",
   properties: {
     "--shell-canvas-background-color": "#1E1E1E",
+    "--panel-separator-border": "#8080805a",
+
     "--toolbar-active-background-color": "#252525",
     "--toolbar-inactive-background-color": "#383838",
     "--toolbar-button-fill": "white",
     "--toolbar-button-disabled-fill": "#585858",
     "--toolbar-separator": "2px solid #686868",
+    "--toolbar-selected-border-color": "#007acc",
 
     "--statusbar-background-color": "#007acc",
     "--statusbar-foreground-color": "white",
