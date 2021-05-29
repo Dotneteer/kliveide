@@ -38,7 +38,8 @@ class IdeDesk extends React.Component<Props, State> {
   render() {
     return (
       <Root>
-        <SplitContainer direction="vertical" refreshTag={this.state.refreshKey}>
+        <SplitContainer direction="vertical" refreshTag={this.state.refreshKey} >
+          <IdeDocumentsFrame />
           <IdeDocumentsFrame />
           <IdeOutputFrame initialSize={200} />
         </SplitContainer>

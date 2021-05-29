@@ -42,7 +42,7 @@ export class SplitContainer extends React.Component<Props> {
     // --- Used default property values
     this._direction = this.props.direction ?? "horizontal";
     this._gutterSize = this.props.gutterSize ?? 8;
-    this._minimumSize = this.props.minimumSize ?? 180;
+    this._minimumSize = this.props.minimumSize ?? 80;
 
     if (!this._hostElement) return;
     this._style = {
@@ -475,6 +475,7 @@ function getGutterSize(
       return gutterSize / 2;
     }
   }
+  return 0;
 }
 
 /**
@@ -811,6 +812,7 @@ function Split(
   // Both sizes are calculated from the initial parent percentage,
   // then the gutter size is subtracted.
   function adjust(context: any, offset: any) {
+    console.log(elements);
     const a = elements[context.a];
     const b = elements[context.b];
     const percentage = a.size + b.size;
@@ -849,7 +851,7 @@ function Split(
     offset =
       getMousePosition(e) -
       context.start +
-      (context.aGutterSize - context.dragOffset);
+      ((context.aGutterSize ?? 0) - context.dragOffset);
 
     if (dragInterval > 1) {
       offset = Math.round(offset / dragInterval) * dragInterval;
@@ -858,11 +860,11 @@ function Split(
     // If within snapOffset of min or max, set offset to min or max.
     // snapOffset buffers a.minSize and b.minSize, so logic is opposite for both.
     // Include the appropriate gutter sizes to prevent overflows.
-    if (offset <= a.minSize + snapOffset + context.aGutterSize) {
+    if (offset <= a.minSize + snapOffset + (context.aGutterSize ?? 0)) {
       offset = a.minSize + context.aGutterSize;
     } else if (
       offset >=
-      context.size - (b.minSize + snapOffset + context.bGutterSize)
+      context.size - (b.minSize + snapOffset + (context.bGutterSize ?? 0))
     ) {
       offset = context.size - (b.minSize + context.bGutterSize);
     }
@@ -899,8 +901,8 @@ function Split(
     context.size =
       aBounds[dimension] +
       bBounds[dimension] +
-      context.aGutterSize +
-      context.bGutterSize;
+      (context.aGutterSize ?? 0) +
+      (context.bGutterSize ?? 0);
     context.start = aBounds[position];
     context.end = aBounds[positionEnd];
   }
@@ -1065,6 +1067,7 @@ function Split(
     const a = elements[self.a].element;
     const b = elements[self.b].element;
 
+
     // Call the onDragStart callback.
     if (!self.dragging) {
       getOption(options, "onDragStart", NOOP)(getSizes());
@@ -1111,6 +1114,7 @@ function Split(
 
     // Cache the initial sizes of the pair.
     calculateSizes(self);
+
 
     // Determine the position of the mouse compared to the gutter
     self.dragOffset = getMousePosition(e) - self.end;
