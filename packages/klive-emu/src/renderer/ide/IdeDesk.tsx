@@ -3,18 +3,13 @@ import { connect } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 import { SplitContainer } from "../common/SplitContainer";
 import IdeOutputFrame from "./IdeOutputFrame";
+import IdeDocumentsFrame from "./IdeDocumentsFrame";
 import { animationTick } from "../common/utils";
-import styles from "styled-components";
+import { createStyledPanel } from "../common/PanelStyles";
 
-const Root = styles.div`
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  flex-shrink: 1;
-  width: 100%;
-  height: 100%;
-  background-color: var(--emulator-background-color);
-`;
+const Root = createStyledPanel({
+  background: "var(--emulator-background-color)"
+});
 
 interface Props {}
 
@@ -44,7 +39,7 @@ class IdeDesk extends React.Component<Props, State> {
     return (
       <Root>
         <SplitContainer direction="vertical" refreshTag={this.state.refreshKey}>
-          <IdeOutputFrame />
+          <IdeDocumentsFrame />
           <IdeOutputFrame initialSize={200} />
         </SplitContainer>
       </Root>

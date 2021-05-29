@@ -20,7 +20,7 @@ interface State {}
 /**
  * Represents the statusbar of the emulator
  */
-class IdeOutputFrame extends React.Component<Props, State> {
+class IdeDocumentFrame extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -36,4 +36,4 @@ class IdeOutputFrame extends React.Component<Props, State> {
 
 export default connect((state: AppState) => {
   return {};
-}, null)(IdeOutputFrame);
+}, null)(IdeDocumentFrame);
