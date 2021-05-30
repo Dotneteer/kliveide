@@ -6,16 +6,15 @@ import SideBar from "./SideBar";
 import IdeMain from "./IdeMain";
 import { SplitContainer } from "../common/SplitContainer";
 import { animationTick } from "../common/utils";
-import styles from "styled-components";
+import { createSizedStyledPanel } from "../common/PanelStyles";
 
-const Root = styles.div`
-  display: flex;
-  flex-direction: row;
-  flex-grow: 1;
-  flex-shrink: 1;
-  width: 100%;
-  background-color: var(--emulator-background-color);
-`;
+const Root = createSizedStyledPanel({
+  fitToClient: true,
+  splitsVertical: false,
+  others: {
+    "background-color": "var(--emulator-background-color)",
+  }
+});
 
 interface Props {}
 

@@ -3,33 +3,17 @@ import { connect } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 import { Activity } from "../../shared/activity/Activity";
 import ActivityButton from "./ActivityButton";
+import { createSizedStyledPanel, createUnsizedStyledPanel } from "../common/PanelStyles";
 
-import styles from "styled-components";
-
-const Root = styles.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  flex-grow: 0;
-  flex-shrink: 0;
-  height: 100%;
-  width: 48px;
-  background-color: var(--activity-bar-background-color);
-`;
-
-const Buttons = styles.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  flex-grow: 0;
-  flex-shrink: 0;
-`;
-
-const Gap = styles.div`
-  display: flex;
-  flex-grow: 1;
-  flex-shrink: 1;
-`;
+const Root = createSizedStyledPanel({
+  fitToClient: false,
+  width: 48,
+  others: {
+    "background-color": "var(--activity-bar-background-color)"  
+  }
+})
+const Buttons = createUnsizedStyledPanel();
+const Gap = createSizedStyledPanel();
 
 interface Props {
   activities?: Activity[];

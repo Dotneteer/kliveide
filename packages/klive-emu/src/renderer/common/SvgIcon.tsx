@@ -48,6 +48,7 @@ export class SvgIcon extends React.Component<Props> {
         style={styleValue}
         viewBox={"0 0 " + iconInfo.width + " " + iconInfo.height}
       >
+        {this.props.children}
         <path
           d={iconInfo.path}
           fillRule={iconInfo["fill-rule"] as any}

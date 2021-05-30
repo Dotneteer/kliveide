@@ -2,21 +2,17 @@ import * as React from "react";
 import { connect } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 import IdeDesk from "./IdeDesk";
-import styles from "styled-components";
+import { createSizedStyledPanel } from "../common/PanelStyles";
 
-const Root = styles.div`
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  z-index: 10;
-  outline: none;
-`;
+const Root = createSizedStyledPanel({
+  others: {
+    outline: "none",
+  },
+});
 
-interface Props {
-}
+interface Props {}
 
-interface State {
-}
+interface State {}
 
 /**
  * Represents the statusbar of the emulator
@@ -37,10 +33,8 @@ class IdeMain extends React.Component<Props, State> {
       </Root>
     );
   }
-
 }
 
 export default connect((state: AppState) => {
-  return {
-  };
+  return {};
 }, null)(IdeMain);

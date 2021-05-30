@@ -1,14 +1,11 @@
 import * as React from "react";
 import { animationTick } from "./utils";
-import styles from "styled-components";
+import ReactResizeDetector from "react-resize-detector";
+import { createSizedStyledPanel } from "./PanelStyles";
 
-const Root = styles.div`
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  height: 100%;
-  width: 100%;
-`;
+const Root = createSizedStyledPanel({
+  fitToClient: true
+})
 
 interface Props {
   direction?: GutterDirection;
@@ -68,6 +65,11 @@ export class SplitContainer extends React.Component<Props> {
         style={this._style}
       >
         {this.props.children}
+        <ReactResizeDetector 
+          handleWidth
+          handleHeight
+          onResize={this.handleResize}
+        />
       </Root>
     );
   }
@@ -141,7 +143,8 @@ export function filterChildren(
       el.style &&
       el.style.display !== undefined &&
       el.style.display !== "none");
-  return childArray.filter((el) => include(el));
+  const filteredChildren = childArray.filter((el) => include(el));
+  return filteredChildren.slice(0, filteredChildren.length - 1);
 }
 
 /**
@@ -253,8 +256,8 @@ export function removeGutters(container: HTMLElement): void {
 // ============================================================================
 // --- Common helper types
 
-type GutterAlign = "start" | "center" | "end";
-type GutterDirection = "horizontal" | "vertical";
+export type GutterAlign = "start" | "center" | "end";
+export type GutterDirection = "horizontal" | "vertical";
 type Dimension = "width" | "height";
 type ClientAxis = "clientX" | "clientY";
 type PositionStart = "left" | "top";
@@ -812,7 +815,6 @@ function Split(
   // Both sizes are calculated from the initial parent percentage,
   // then the gutter size is subtracted.
   function adjust(context: any, offset: any) {
-    console.log(elements);
     const a = elements[context.a];
     const b = elements[context.b];
     const percentage = a.size + b.size;

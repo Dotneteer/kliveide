@@ -1,9 +1,9 @@
 import * as React from "react";
 import { connect } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
-import { createStyledPanel } from "../common/PanelStyles";
+import { createSizedStyledPanel } from "../common/PanelStyles";
 
-const Root = createStyledPanel({
+const Root = createSizedStyledPanel({
   background: "var(--shell-canvas-background-color)",
   others: {
     overflow: "hidden",

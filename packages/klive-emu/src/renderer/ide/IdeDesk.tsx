@@ -1,17 +1,19 @@
 import * as React from "react";
 import { connect } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
-import { SplitContainer } from "../common/SplitContainer";
-import IdeOutputFrame from "./IdeOutputFrame";
+import { GutterDirection, SplitContainer } from "../common/SplitContainer";
 import IdeDocumentsFrame from "./IdeDocumentsFrame";
 import { animationTick } from "../common/utils";
-import { createStyledPanel } from "../common/PanelStyles";
+import { createSizedStyledPanel } from "../common/PanelStyles";
 
-const Root = createStyledPanel({
-  background: "var(--emulator-background-color)"
+const Root = createSizedStyledPanel({
+  fitToClient: true,
+  background: "var(--emulator-background-color)",
 });
 
-interface Props {}
+interface Props {
+  direction: GutterDirection;
+}
 
 interface State {
   refreshKey: number;
@@ -21,6 +23,10 @@ interface State {
  * Represents the main canvas of the emulator
  */
 class IdeDesk extends React.Component<Props, State> {
+  static defaultProps: Props = {
+    direction: "vertical",
+  };
+
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -38,10 +44,10 @@ class IdeDesk extends React.Component<Props, State> {
   render() {
     return (
       <Root>
-        <SplitContainer direction="vertical" refreshTag={this.state.refreshKey} >
+        <SplitContainer direction={this.props.direction} refreshTag={this.state.refreshKey}>
           <IdeDocumentsFrame />
           <IdeDocumentsFrame />
-          <IdeOutputFrame initialSize={200} />
+          <IdeDocumentsFrame initialSize={200} />
         </SplitContainer>
       </Root>
     );
