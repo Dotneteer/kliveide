@@ -1,9 +1,10 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { AppState } from "../../shared/state/AppState";
-import { Activity } from "../../shared/activity/Activity";
+import { AppState } from "../../../shared/state/AppState";
+import { Activity } from "../../../shared/activity/Activity";
 import ActivityButton from "./ActivityButton";
-import { createSizedStyledPanel, createUnsizedStyledPanel } from "../common/PanelStyles";
+import { createSizedStyledPanel, createUnsizedStyledPanel } from "../../common/PanelStyles";
+import { activityService } from "./ActivityService";
 
 const Root = createSizedStyledPanel({
   fitToClient: false,
@@ -17,9 +18,6 @@ const Gap = createSizedStyledPanel();
 
 interface Props {
   activities?: Activity[];
-}
-
-interface State {
   activeIndex: number;
   pointedIndex: number;
 }
@@ -27,13 +25,13 @@ interface State {
 /**
  * Represents the statusbar of the emulator
  */
-class ActivityBar extends React.Component<Props, State> {
+class ActivityBar extends React.Component<Props> {
+  static defaultProps: Props = {
+    activeIndex: -1,
+    pointedIndex: -1
+  }
   constructor(props: Props) {
     super(props);
-    this.state = {
-      activeIndex: -1,
-      pointedIndex: -1,
-    };
   }
 
   render() {
@@ -46,11 +44,11 @@ class ActivityBar extends React.Component<Props, State> {
           key={index}
           isSystem={a.isSystemActivity}
           activity={a}
-          active={this.state.activeIndex === index}
-          pointed={this.state.pointedIndex === index}
-          clicked={() => this.handleClicked(index)}
-          point={() => this.handlePointed(index)}
-          unpoint={this.handleUnpointed}
+          active={this.props.activeIndex === index}
+          pointed={this.props.pointedIndex === index}
+          clicked={() => activityService.selectActivity(index)}
+          point={() => activityService.pointActivity(index)}
+          unpoint={() => activityService.pointActivity(-1)}
         />
       );
     });
@@ -62,28 +60,12 @@ class ActivityBar extends React.Component<Props, State> {
       </Root>
     );
   }
-
-  handleClicked = (index: number) => {
-    this.setState({
-      activeIndex: index,
-    });
-  };
-
-  handlePointed = (index: number) => {
-    this.setState({
-      pointedIndex: index,
-    });
-  };
-
-  handleUnpointed = () => {
-    this.setState({
-      pointedIndex: -1,
-    });
-  };
 }
 
 export default connect((state: AppState) => {
   return {
     activities: state?.activityBar?.activities,
+    activeIndex: state?.activityBar?.activeIndex ?? -1,
+    pointedIndex: state?.activityBar?.pointedIndex ?? -1,
   };
 }, null)(ActivityBar);

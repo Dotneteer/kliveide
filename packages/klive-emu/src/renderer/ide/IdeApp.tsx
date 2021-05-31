@@ -10,6 +10,8 @@ import IdeWorkbench from "./IdeWorkbench";
 import IdeStatusbar from "./IdeStatusbar";
 import "./ide-message-processor";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
+import { sideBarService } from "./side-bar/SideBarService";
+import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
 
 interface Props {
   emuViewOptions: EmuViewOptions;
@@ -42,6 +44,20 @@ class IdeApp extends React.Component<Props, State> {
     // --- The emulator window is ready to set up the virtual machine
     ideStore.dispatch(ideLoadUiAction());
 
+    // --- Register side bar panels
+    sideBarService.registerSideBarPanel(
+      "debug-view",
+      new SampleSideBarPanelDescriptor(0, "GREEN", "green")
+    );
+    sideBarService.registerSideBarPanel(
+      "debug-view",
+      new SampleSideBarPanelDescriptor(1, "RED", "red")
+    );
+    sideBarService.registerSideBarPanel(
+      "debug-view",
+      new SampleSideBarPanelDescriptor(2, "BLUE", "blue")
+    );
+
     // --- Handle theme updates
     this.updateThemeState();
     this._themeAware = new StateAwareObject(ideStore, "theme");
@@ -60,9 +76,7 @@ class IdeApp extends React.Component<Props, State> {
     return (
       <div style={this.state.themeStyle} className={this.state.themeClass}>
         <IdeWorkbench />
-        {viewOptions.showStatusBar && (
-          <IdeStatusbar></IdeStatusbar>
-        )}
+        {viewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
       </div>
     );
   }

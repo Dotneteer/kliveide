@@ -1,8 +1,7 @@
 import * as React from "react";
-import { ISideBarHeader } from "../abstraction/side-bar";
 
-import { createPanel, createSizedStyledPanel } from "../common/PanelStyles";
-import { SvgIcon } from "../common/SvgIcon";
+import { createPanel, createSizedStyledPanel } from "../../common/PanelStyles";
+import { SvgIcon } from "../../common/SvgIcon";
 
 const Root = createSizedStyledPanel({
   height: 24,

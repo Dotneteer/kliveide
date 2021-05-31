@@ -1,22 +1,17 @@
 import * as React from "react";
-import { ISideBarPanel, ISideBarPanelHost } from "../abstraction/side-bar";
 import { createSizedStyledPanel } from "../common/PanelStyles";
+import { ISideBarPanel } from "./side-bar/SideBarService";
 
 interface Props {
   id: number;
-  host: ISideBarPanelHost;
   color: string;
 }
 
 interface State {
-  expanded: boolean;
   count: number;
 }
 
-export default class SampleSideBarPanel
-  extends React.Component<Props, State>
-  implements ISideBarPanel
-{
+export default class SampleSideBarPanel extends React.Component<Props, State> {
   static defaultProps = {
     color: "blue",
   };
@@ -26,17 +21,9 @@ export default class SampleSideBarPanel
   constructor(props: Props) {
     super(props);
     this.state = {
-      expanded: false,
       count: 0,
     };
     this._hostElement = React.createRef();
-  }
-
-  componentDidMount(): void {
-    if (!this.props.host) {
-      throw new Error("ISideBarPanelHost is not defined.");
-    }
-    this.props.host.registerPanel(this.props.id, this);
   }
 
   render() {
@@ -54,32 +41,34 @@ export default class SampleSideBarPanel
       </PlaceHolder>
     );
   }
+}
 
-  // --------------------------------------------------------------------------
-  // ISideBarPanel implementation
-  // --------------------------------------------------------------------------
-
-  /**
-   * The title of the side bar panel
-   */
-  get title(): string {
-    return `Hello ${this.props.color}`;
+export class SampleSideBarPanelDescriptor implements ISideBarPanel {
+  constructor(
+    public readonly id: number,
+    public readonly title: string,
+    public readonly color: string
+  ) {
+    this.expanded = false;
   }
 
   /**
-   * The DIV element that represents the contents of the panel
+   * Creates a node that represents the contents of a side bar panel
    */
-  get element(): HTMLDivElement {
-    return this._hostElement.current;
+  createContentElement(): React.ReactNode {
+    return <SampleSideBarPanel id={this.id} color={this.color} />;
   }
 
   /**
-   * Sets the expanded flag of the side bar panel
+   * Gets the current height of the content element
+   */
+  getContentsHeight(): number {
+    return 0;
+  }
+
+  /**
+   * Signs if the specified panel is expanded
    * @param expanded
    */
-  setExpanded(expanded: boolean): void {
-    this.setState({
-      expanded,
-    });
-  }
+  expanded: boolean;
 }

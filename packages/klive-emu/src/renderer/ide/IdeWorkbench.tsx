@@ -1,8 +1,8 @@
 import * as React from "react";
 import { connect } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
-import ActivityBar from "./ActivityBar";
-import SideBar from "./SideBar";
+import ActivityBar from "./activity-bar/ActivityBar";
+import SideBar from "./side-bar/SideBar";
 import IdeMain from "./IdeMain";
 import { SplitContainer } from "../common/SplitContainer";
 import { animationTick } from "../common/utils";

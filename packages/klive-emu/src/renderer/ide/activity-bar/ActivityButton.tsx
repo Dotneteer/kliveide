@@ -1,10 +1,10 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { AppState } from "../../shared/state/AppState";
-import { Activity } from "../../shared/activity/Activity";
-import { SvgIcon } from "../common/SvgIcon";
+import { AppState } from "../../../shared/state/AppState";
+import { Activity } from "../../../shared/activity/Activity";
+import { SvgIcon } from "../../common/SvgIcon";
 import styles from "styled-components";
-import { themeService } from "../themes/theme-service";
+import { themeService } from "../../themes/theme-service";
 
 const Root = styles.div`
   width: 100%;
