@@ -1,11 +1,12 @@
 import * as React from "react";
-import { connect } from "react-redux";
+import { useSelector } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 import ReactResizeDetector from "react-resize-detector";
 import Sp48Keyboard from "./Sp48Keyboard";
 import Cz88Keyboard from "./Cz88Keyboard";
 import { animationTick } from "../common/utils";
 import styles from "styled-components";
+import { useEffect, useState } from "react";
 
 const Root = styles.div`
   display: flex;
@@ -23,81 +24,54 @@ const Root = styles.div`
 
 interface Props {
   type: string;
-  visible?: boolean;
   showPanel: boolean;
   initialHeight?: string;
-  layout?: string;
-}
-
-interface State {
-  width: number;
-  height: number;
 }
 
 /**
  * Represents the keyboard panel of the emulator
  */
-class KeyboardPanel extends React.Component<Props, State> {
-  private _hostElement: React.RefObject<HTMLDivElement>;
+export default function KeyboardPanel(props: Props) {
+  // --- Component state
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
 
-  constructor(props: Props) {
-    super(props);
-    this._hostElement = React.createRef();
-    this.state = {
-      width: 0,
-      height: 0,
-    };
-  }
+  // --- App state selectors
+  const visible = useSelector((s: AppState) => s.emuViewOptions.showKeyboard);
+  const layout = useSelector((s: AppState) => s.emulatorPanel.keyboardLayout);
 
-  render() {
-    let keyboard = null;
-    switch (this.props.type) {
-      case "sp48":
-        keyboard = (
-          <Sp48Keyboard width={this.state.width} height={this.state.height} />
-        );
-        break;
-      case "cz88":
-        keyboard = (
-          <Cz88Keyboard
-            width={this.state.width}
-            height={this.state.height}
-            layout={this.props.layout}
-          />
-        );
+  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
+
+  useEffect(() => {
+    if (hostElement?.current) {
+      setWidth(hostElement.current.offsetWidth);
+      setHeight(hostElement.current.offsetHeight);
     }
-    if (this.props.visible) {
-      return (
-        <Root
-          data-initial-size={this.props.initialHeight}
-          ref={this._hostElement}
-        >
-          {this.props.showPanel && keyboard}
-          <ReactResizeDetector
-            handleWidth
-            handleHeight
-            onResize={this.handleResize}
-          />
-        </Root>
-      );
-    }
-    return null;
-  }
+  });
 
-  handleResize = async () => {
+  let keyboard = null;
+  switch (props.type) {
+    case "sp48":
+      keyboard = <Sp48Keyboard width={width} height={height} />;
+      break;
+    case "cz88":
+      keyboard = <Cz88Keyboard width={width} height={height} layout={layout} />;
+  }
+  if (visible) {
+    return (
+      <Root data-initial-size={props.initialHeight} ref={hostElement}>
+        {props.showPanel && keyboard}
+        <ReactResizeDetector handleWidth handleHeight onResize={handleResize} />
+      </Root>
+    );
+  }
+  return null;
+
+  async function handleResize(): Promise<void> {
     await animationTick();
-    if (this._hostElement?.current) {
-      this.setState({
-        width: this._hostElement.current.offsetWidth,
-        height: this._hostElement.current.offsetHeight,
-      });
+    if (hostElement?.current) {
+      setWidth(hostElement.current.offsetWidth);
+      setHeight(hostElement.current.offsetHeight);
     }
-  };
+  }
 }
-
-export default connect((state: AppState) => {
-  return {
-    visible: state.emuViewOptions.showKeyboard,
-    layout: state.emulatorPanel.keyboardLayout,
-  };
-}, null)(KeyboardPanel);
