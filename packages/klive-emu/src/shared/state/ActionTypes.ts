@@ -53,4 +53,7 @@ export interface ActionTypes {
   SET_ACTIVITIES: null;
   CHANGE_ACTIVITY: null;
   POINT_ACTIVITY: null;
+
+  // --- Side bar
+  SET_SIDEBAR_STATE: null;
 }

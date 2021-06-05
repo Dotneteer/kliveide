@@ -7,6 +7,7 @@ import emulatorPanelReducer from "./emulator-panel-reducer";
 import spectrumSpecificReducer from "./spectrum-specific-reducer";
 import showIdeReducer from "./show-ide-reducer";
 import activityBarReducer from "./activity-bar-reducer";
+import sideBarReducer from "./side-bar-reducer";
 
 /**
  * Represents the reducers
@@ -21,4 +22,5 @@ export const appReducers = {
   spectrumSpecific: spectrumSpecificReducer,
   showIde: showIdeReducer,
   activityBar: activityBarReducer,
+  sideBar: sideBarReducer
 };

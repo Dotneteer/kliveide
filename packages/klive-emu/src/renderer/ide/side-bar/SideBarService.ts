@@ -12,6 +12,12 @@ export interface ISideBarPanel {
   readonly title: string;
 
   /**
+   * Signs if the specified panel is expanded
+   * @param expanded
+   */
+  expanded: boolean;
+
+  /**
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode;
@@ -22,10 +28,63 @@ export interface ISideBarPanel {
   getContentsHeight(): number;
 
   /**
+   * Gets the state of the side bar to save
+   */
+  getPanelState(): Record<string, any>;
+
+  /**
+   * Sets the state of the side bar
+   * @param state Optional state to set
+   */
+  setPanelState(state: Record<string, any> | null): void;
+}
+
+/**
+ * The base class for all side bar panel descriptors
+ */
+export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
+  private _panelState: Record<string, any> = {};
+
+  /**
+   * Instantiates the panel with the specified title
+   * @param title 
+   */
+  constructor(public readonly title: string) {}
+
+  /**
    * Signs if the specified panel is expanded
    * @param expanded
    */
-  expanded: boolean;
+  expanded: boolean = false;
+
+  /**
+   * Creates a node that represents the contents of a side bar panel
+   */
+  abstract createContentElement(): React.ReactNode;
+
+  /**
+   * Gets the current height of the content element
+   */
+  getContentsHeight(): number {
+    return 0;
+  }
+
+  /**
+   * Gets the state of the side bar to save
+   */
+  getPanelState(): Record<string, any> {
+    return this._panelState;
+  }
+
+  /**
+   * Sets the state of the side bar panel
+   * @param state Optional state to set
+   */
+  setPanelState(state: Record<string, any> | null): void {
+    if (state) {
+      this._panelState = { ...this._panelState, ...state };
+    }
+  }
 }
 
 /**
@@ -33,12 +92,14 @@ export interface ISideBarPanel {
  */
 class SideBarService {
   private readonly _panels = new Map<string, ISideBarPanel[]>();
+  private readonly _sideBarChanging = new LiteEvent<void>();
   private readonly _sideBarChanged = new LiteEvent<void>();
   private _activity: string | null = null;
 
   constructor() {
     this.reset();
     activityService.activityChanged.on((activity) => {
+      this._sideBarChanging.fire();
       this._activity = activity;
       this._sideBarChanged.fire();
     });
@@ -49,6 +110,13 @@ class SideBarService {
    */
   reset(): void {
     this._panels.clear();
+  }
+
+  /**
+   * Gets the current activity ID
+   */
+  get activity(): string | null {
+    return this._activity;
   }
 
   /**
@@ -74,7 +142,14 @@ class SideBarService {
   }
 
   /**
-   * This event is fired whenever the current activity changes.
+   * This event is fired whenever the current activity is about to change.
+   */
+  get sideBarChanging(): ILiteEvent<void> {
+    return this._sideBarChanging;
+  }
+
+  /**
+   * This event is fired whenever the current activity has changed.
    */
   get sideBarChanged(): ILiteEvent<void> {
     return this._sideBarChanged;

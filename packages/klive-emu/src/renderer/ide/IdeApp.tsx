@@ -47,15 +47,15 @@ class IdeApp extends React.Component<Props, State> {
     // --- Register side bar panels
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor(0, "GREEN", "green")
+      new SampleSideBarPanelDescriptor("GREEN", "green")
     );
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor(1, "RED", "red")
+      new SampleSideBarPanelDescriptor("RED", "red")
     );
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor(2, "BLUE", "blue")
+      new SampleSideBarPanelDescriptor("BLUE", "blue")
     );
 
     // --- Handle theme updates
