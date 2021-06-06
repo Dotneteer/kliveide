@@ -18,19 +18,14 @@ export interface ISideBarPanel {
   expanded: boolean;
 
   /**
-   * Current height percentage of the panel
+   * The current height of the panel
    */
-  heightPercentage: number;
+  height: number;
 
   /**
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode;
-
-  /**
-   * Gets the current height of the content element
-   */
-  getContentsHeight(): number;
 
   /**
    * Gets the state of the side bar to save
@@ -54,9 +49,7 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
    * Instantiates the panel with the specified title
    * @param title
    */
-  constructor(public readonly title: string) {
-    this.heightPercentage = 100;
-  }
+  constructor(public readonly title: string) {}
 
   /**
    * Signs if the specified panel is expanded
@@ -65,21 +58,14 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
   expanded: boolean = false;
 
   /**
-   * Current height percentage of the panel
+   * The current height of the panel
    */
-  heightPercentage: number;
+  height: number = -1;
 
   /**
    * Creates a node that represents the contents of a side bar panel
    */
   abstract createContentElement(): React.ReactNode;
-
-  /**
-   * Gets the current height of the content element
-   */
-  getContentsHeight(): number {
-    return 0;
-  }
 
   /**
    * Gets the state of the side bar to save

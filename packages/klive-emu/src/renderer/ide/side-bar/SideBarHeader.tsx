@@ -13,7 +13,6 @@ interface Props {
   expanded: boolean;
   sizeable: boolean;
   index: number;
-  panelPercentage: number;
   clicked: () => void;
   resized: (delta: number) => void;
 }

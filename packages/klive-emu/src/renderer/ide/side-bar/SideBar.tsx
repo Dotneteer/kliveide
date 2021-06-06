@@ -17,6 +17,8 @@ export default function SideBar() {
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  console.log("Render");
+
   // --- Save the states of the side bar panels before navigating away
   sideBarService.sideBarChanging.on(() => {
     const state: SideBarState = {};
@@ -66,8 +68,10 @@ export default function SideBar() {
           index={index}
           descriptor={descriptor}
           sizeable={prevExpanded && descriptor.expanded}
-          panelPercentage={descriptor.heightPercentage}
-          visibilityChanged={() => setRefreshKey(refreshKey + 1)}
+          panelHeight={descriptor.height}
+          visibilityChanged={() => {
+            setRefreshKey(refreshKey + 1);
+          }}
           resized={async (index, delta) => await resizePanel(index, delta)}
         />
       );
@@ -81,14 +85,23 @@ export default function SideBar() {
     return `${sideBarService.activity}-${index}`;
   }
 
+  /**
+   * Starts dragging the side bar panel with the specified index
+   * @param index
+   */
+  function startDrag(index: number): void {}
+
+  /**
+   * Stops dragging the side bar panel with the specified index
+   */
+  function endDrag(): void {}
+
   // --- Resizes the specified panel
   async function resizePanel(index: number, delta: number): Promise<void> {
     if (index <= 0 || !panels[index]) return;
     await animationTick();
-    const height = panels[index].getContentsHeight();
-    const percentage = panels[index].heightPercentage;
-    const prevHeight = panels[index - 1].getContentsHeight();
-    const prevPercentage = panels[index - 1].heightPercentage;
+    const height = panels[index].height;
+    const prevHeight = panels[index - 1].height;
     let newHeight = height - delta;
     let newPrevHeight = prevHeight + delta;
     if (newHeight < MIN_PANEL_HEIGHT) {
@@ -100,19 +113,8 @@ export default function SideBar() {
       newHeight = height + (prevHeight - newPrevHeight);
     }
     const sumHeight = newHeight + newPrevHeight;
-    const sumPercentage = percentage + prevPercentage;
-    panels[index].heightPercentage = (newHeight / sumHeight) * sumPercentage;
-    panels[index - 1].heightPercentage =
-      sumPercentage - panels[index].heightPercentage;
 
-    console.log(
-      delta,
-      sumHeight,
-      newPrevHeight,
-      panels[index - 1].heightPercentage,
-      newHeight,
-      panels[index].heightPercentage
-    );
+    console.log(delta, sumHeight, newPrevHeight, newHeight);
     setPanels(panels.slice(0));
   }
 }
