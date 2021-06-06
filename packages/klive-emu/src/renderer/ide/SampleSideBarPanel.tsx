@@ -1,12 +1,21 @@
 import * as React from "react";
-import { createSizedStyledPanel } from "../common/PanelStyles";
-import { ISideBarPanel, SideBarPanelDescriptorBase } from "./side-bar/SideBarService";
+import { CSSProperties } from "styled-components";
+import {
+  ISideBarPanel,
+  SideBarPanelDescriptorBase,
+} from "./side-bar/SideBarService";
 
+/**
+ * Component properties
+ */
 interface Props {
   color: string;
   descriptor: ISideBarPanel;
 }
 
+/**
+ * Component state
+ */
 interface State {
   count: number;
 }
@@ -38,13 +47,18 @@ export default class SampleSideBarPanel extends React.Component<Props, State> {
   }
 
   render() {
-    const PlaceHolder = createSizedStyledPanel({
-      others: {
-        border: `4px dotted ${this.props.color}`,
-      },
-    });
+    const placeholderStyle: CSSProperties = {
+      display: "flex",
+      flexDirection: "column",
+      flexGrow: 1,
+      flexShrink: 1,
+      width: "100%",
+      height: "100%",
+      border: `4px dotted ${this.props.color}`
+
+    };
     return (
-      <PlaceHolder
+      <div style={placeholderStyle}
         onClick={() => {
           const count = this.state.count + 1;
           this.setState({ count });
@@ -53,7 +67,7 @@ export default class SampleSideBarPanel extends React.Component<Props, State> {
         ref={this._hostElement}
       >
         {this.state.count}
-      </PlaceHolder>
+      </div>
     );
   }
 }
@@ -61,15 +75,10 @@ export default class SampleSideBarPanel extends React.Component<Props, State> {
 /**
  * Descriptor for the sample side bar panel
  */
-export class SampleSideBarPanelDescriptor
-  extends SideBarPanelDescriptorBase
-{
+export class SampleSideBarPanelDescriptor extends SideBarPanelDescriptorBase {
   private _hostElement: React.RefObject<SampleSideBarPanel>;
 
-  constructor(
-    public readonly title: string,
-    public readonly color: string
-  ) {
+  constructor(public readonly title: string, public readonly color: string) {
     super(title);
     this._hostElement = React.createRef();
   }
@@ -79,7 +88,11 @@ export class SampleSideBarPanelDescriptor
    */
   createContentElement(): React.ReactNode {
     return (
-      <SampleSideBarPanel ref={this._hostElement} color={this.color} descriptor={this} />
+      <SampleSideBarPanel
+        ref={this._hostElement}
+        color={this.color}
+        descriptor={this}
+      />
     );
   }
 

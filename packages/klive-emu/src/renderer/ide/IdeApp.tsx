@@ -1,48 +1,38 @@
 import * as React from "react";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
-import { AppState, EmuViewOptions } from "../../shared/state/AppState";
-import { AppStateContext } from "../common/AppStateContext";
-import { ideStore } from "./ideStore";
+import { AppState } from "../../shared/state/AppState";
 import { themeService } from "../themes/theme-service";
 import { IThemeProperties } from "../themes/IThemeProperties";
-import { connect } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import IdeWorkbench from "./IdeWorkbench";
 import IdeStatusbar from "./IdeStatusbar";
 import "./ide-message-processor";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
+import { useState } from "react";
 import { sideBarService } from "./side-bar/SideBarService";
 import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
-
-interface Props {
-  emuViewOptions: EmuViewOptions;
-}
-
-interface State {
-  themeStyle: Record<string, string>;
-  themeClass: string;
-}
 
 /**
  * Represents the emulator app's root component
  */
-class IdeApp extends React.Component<Props, State> {
+export default function IdeApp() {
+  const [themeStyle, setThemeStyle] = useState({});
+  const [themeClass, setThemeClass] = useState("");
+  const store = useStore();
+  const dispatch = useDispatch();
+
   // --- Keep track of theme changes
-  private _themeAware: StateAwareObject<string>;
+  let themeAware: StateAwareObject<string>;
 
-  // --- Use the application state as a context
-  static contextType = AppStateContext;
-
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      themeStyle: {},
-      themeClass: "",
-    };
-  }
-
-  componentDidMount() {
-    // --- The emulator window is ready to set up the virtual machine
-    ideStore.dispatch(ideLoadUiAction());
+  React.useEffect(() => {
+    // --- Mount
+    dispatch(ideLoadUiAction());
+    updateThemeState();
+    themeAware = new StateAwareObject(store, "theme");
+    themeAware.stateChanged.on((theme) => {
+      themeService.setTheme(theme);
+      updateThemeState();
+    });
 
     // --- Register side bar panels
     sideBarService.registerSideBarPanel(
@@ -57,31 +47,23 @@ class IdeApp extends React.Component<Props, State> {
       "debug-view",
       new SampleSideBarPanelDescriptor("BLUE", "blue")
     );
+    
+    return () => {
+      // --- Unmount
+      dispatch(ideLoadUiAction());
+    };
+  }, [store]);
 
-    // --- Handle theme updates
-    this.updateThemeState();
-    this._themeAware = new StateAwareObject(ideStore, "theme");
-    this._themeAware.stateChanged.on((theme) => {
-      themeService.setTheme(theme);
-      this.updateThemeState();
-    });
-  }
+  const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
 
-  componentWillUnmount() {
-    this._themeAware.dispose();
-  }
+  return (
+    <div style={themeStyle} className={themeClass}>
+      <IdeWorkbench />
+      {ideViewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
+    </div>
+  );
 
-  render() {
-    const viewOptions = ideStore.getState().emuViewOptions;
-    return (
-      <div style={this.state.themeStyle} className={this.state.themeClass}>
-        <IdeWorkbench />
-        {viewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
-      </div>
-    );
-  }
-
-  private updateThemeState(): void {
+  function updateThemeState(): void {
     const theme = themeService.getActiveTheme();
     if (!theme) {
       return;
@@ -90,13 +72,7 @@ class IdeApp extends React.Component<Props, State> {
     for (const key in theme.properties) {
       themeStyle[key] = theme.properties[key as keyof IThemeProperties];
     }
-    this.setState({
-      themeStyle,
-      themeClass: `app-container ${theme.name}-theme`,
-    });
+    setThemeStyle(themeStyle);
+    setThemeClass(`app-container ${theme.name}-theme`);
   }
 }
-
-export default connect((state: AppState) => {
-  return { emuViewOptions: state.emuViewOptions };
-}, null)(IdeApp);

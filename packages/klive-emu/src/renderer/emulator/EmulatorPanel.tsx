@@ -106,7 +106,6 @@ export default function EmulatorPanel() {
         {showOverlay && (
           <ExecutionStateOverlay
             text={overlay}
-            error={!!vmEngineService.vmEngineError}
             clicked={() => {
               setShowOverlay(false);
             }}

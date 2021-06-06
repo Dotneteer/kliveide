@@ -2,8 +2,131 @@ import * as React from "react";
 
 import { createPanel, createSizedStyledPanel } from "../../common/PanelStyles";
 import { SvgIcon } from "../../common/SvgIcon";
-import styles from "styled-components";
+import { useState } from "react";
+import { CSSProperties } from "react";
 
+/**
+ * Component properties
+ */
+interface Props {
+  title: string;
+  expanded: boolean;
+  sizeable: boolean;
+  index: number;
+  panelPercentage: number;
+  clicked: () => void;
+  resized: (delta: number) => void;
+}
+
+/**
+ * Represents the statusbar of the emulator
+ */
+export default function SideBarHeader(props: Props) {
+  const [focused, setFocused] = useState(false);
+  const [pointed, setPointed] = useState(false);
+
+  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
+  const gripStyle: CSSProperties = {
+    position: "absolute",
+    height: "6px",
+    width: "100%",
+    background:
+      pointed && props.sizeable
+        ? "var(--toolbar-selected-border-color)"
+        : "transparent",
+    cursor: "ns-resize",
+  };
+  const borderStyle = focused
+    ? "1px solid var(--toolbar-selected-border-color)"
+    : "1px solid transparent";
+
+  const context: DragContext = {
+    gripPosition: 0,
+    move: (e: MouseEvent) => move(e, context),
+    resized: (delta) => props.resized(delta),
+  };
+
+  const gripElement: React.RefObject<HTMLDivElement> = React.createRef();
+  return (
+    <Root
+      ref={hostElement}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onKeyPress={handleKeyPress}
+      tabIndex={0}
+      style={{
+        borderLeft: borderStyle,
+        borderRight: borderStyle,
+        borderTop: borderStyle,
+        borderBottom: focused
+          ? borderStyle
+          : "1px solid var(--panel-separator-border)",
+      }}
+    >
+      {props.sizeable && (
+        <div
+          style={gripStyle}
+          ref={gripElement}
+          onMouseEnter={() => {
+            setPointed(true);
+          }}
+          onMouseLeave={() => {
+            setPointed(false);
+          }}
+          onMouseDown={(e) => {
+            startDrag(e);
+          }}
+          onMouseUp={() => {
+            endDrag();
+          }}
+        />
+      )}
+      <Caption onClick={() => props.clicked?.()}>
+        <SvgIcon
+          iconName="chevron-right"
+          width={16}
+          height={16}
+          rotate={props.expanded ? 90 : 0}
+        ></SvgIcon>
+        <Text>
+          {props.title.toUpperCase()}({props.sizeable.toString()})
+        </Text>
+      </Caption>
+    </Root>
+  );
+
+  function handleKeyPress(e: React.KeyboardEvent): void {
+    if (e.code === "Enter" || e.code === "Space") {
+      props.clicked?.();
+    }
+  }
+
+  function startDrag(e: React.MouseEvent): void {
+    context.gripPosition = e.clientY;
+    window.addEventListener("mouseup", endDrag);
+    window.addEventListener("touchend", endDrag);
+    window.addEventListener("touchcancel", endDrag);
+    window.addEventListener("mousemove", context.move);
+    window.addEventListener("touchmove", context.move);
+    document.body.style.cursor = "ns-resize";
+  }
+
+  function endDrag(): void {
+    window.removeEventListener("mouseup", endDrag);
+    window.removeEventListener("touchend", endDrag);
+    window.removeEventListener("touchcancel", endDrag);
+    window.removeEventListener("mousemove", context.move);
+    window.removeEventListener("touchmove", context.move);
+    document.body.style.cursor = "";
+  }
+
+  function move(e: MouseEvent, context: DragContext): void {
+    context.resized(e.clientY - context.gripPosition);
+    context.gripPosition = e.clientY;
+  }
+}
+
+// --- Component helper tags
 const Root = createSizedStyledPanel({
   height: 24,
   fitToClient: false,
@@ -28,105 +151,9 @@ const Text = createPanel({
   "padding-left": "4px",
 });
 
-interface Props {
-  title: string;
-  expanded: boolean;
-  sizeable: boolean;
-  clicked?: () => void;
-}
-
-interface State {
-  focused: boolean;
-  pointed: boolean;
-}
-
-/**
- * Represents the statusbar of the emulator
- */
-export default class SideBarHeader extends React.Component<Props, State> {
-  private _hostElement: React.RefObject<HTMLDivElement>;
-
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      focused: false,
-      pointed: false,
-    };
-    this._hostElement = React.createRef();
-  }
-
-  render() {
-    const Grip = styles.div`
-      display: relative;
-      top: 4px;
-      left: 0px;
-      height: 6px;
-      width: 100%;
-      background: ${
-        this.state.pointed
-          ? "var(--toolbar-selected-border-color)"
-          : "transparent"
-      };
-      cursor: ns-resize;
-    `;
-    const borderStyle = this.state.focused
-      ? "2px solid var(--toolbar-selected-border-color)"
-      : "2px solid transparent";
-
-    const gripElement: React.RefObject<HTMLDivElement> = React.createRef();
-    return (
-      <Root
-        ref={this._hostElement}
-        onFocus={() => this.setState({ focused: true })}
-        onBlur={() => this.setState({ focused: false })}
-        onKeyPress={this.handleKeyPress}
-        tabIndex={0}
-        style={{
-          borderLeft: borderStyle,
-          borderRight: borderStyle,
-          borderTop: borderStyle,
-          borderBottom: this.state.focused
-            ? borderStyle
-            : "1px solid var(--panel-separator-border)",
-        }}
-      >
-        {this.props.sizeable && (
-          <Grip ref={gripElement}
-            onMouseEnter={() => {
-              this.setState({ pointed: true });
-            }}
-            onMouseLeave={() => {
-              this.setState({ pointed: false });
-            }}
-            onMouseDown={() => {
-              gripElement.current.requestPointerLock();
-            }}
-            onMouseUp={() => {
-              document.exitPointerLock();
-            }}
-            onMouseMove={(e) => {
-              console.log(e.clientX, e.clientY);
-            }}
-          />
-        )}
-        <Caption onClick={() => this.props.clicked?.()}>
-          <SvgIcon
-            iconName="chevron-right"
-            width={16}
-            height={16}
-            rotate={this.props.expanded ? 90 : 0}
-          ></SvgIcon>
-          <Text>
-            {this.props.title.toUpperCase()}({this.props.sizeable.toString()})
-          </Text>
-        </Caption>
-      </Root>
-    );
-  }
-
-  handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.code === "Enter" || e.code === "Space") {
-      this.props.clicked?.();
-    }
-  };
+// --- Context for the drag operation
+interface DragContext {
+  gripPosition: number;
+  move: (e: MouseEvent) => void;
+  resized: (delta: number) => void;
 }
