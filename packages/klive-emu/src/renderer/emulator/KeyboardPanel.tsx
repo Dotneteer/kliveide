@@ -70,8 +70,8 @@ export default function KeyboardPanel(props: Props) {
   async function handleResize(): Promise<void> {
     await animationTick();
     if (hostElement?.current) {
-      setWidth(hostElement.current.offsetWidth);
-      setHeight(hostElement.current.offsetHeight);
+      setWidth(hostElement.current?.offsetWidth ?? 0);
+      setHeight(hostElement.current?.offsetHeight ?? 0);
     }
   }
 }

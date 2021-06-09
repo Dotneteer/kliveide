@@ -49,10 +49,11 @@ export default function Sp48Key(props: Props) {
   const highlightKeyColor = themeService.getProperty("--key-highlight-color");
 
   // --- State dependent display properties
+  const zoom = props.zoom <= 0 ? 0.05 : props.zoom;
   const normalHeight = props.topNum ? 148 : 128;
   const heightOffset = props.topNum ? 20 : 0;
-  const currentWidth = props.zoom * (props.xwidth || NORMAL_WIDTH);
-  const currentHeight = props.zoom * normalHeight;
+  const currentWidth = zoom * (props.xwidth || NORMAL_WIDTH);
+  const currentHeight = zoom * normalHeight;
   const mainFillColor = mouseOverKey ? highlightKeyColor : mainKeyColor;
   const mainStrokeColor = mouseOverKey ? highlightKeyColor : "transparent";
   const symbolFillColor = mouseOverSymbol ? highlightKeyColor : symbolKeyColor;
@@ -144,8 +145,8 @@ export default function Sp48Key(props: Props) {
             height={props.topNum ? 28 : 40}
             fill="transparent"
             cursor={cursor}
-            onMouseEnter={() => setMouseOverKey(true)}
-            onMouseLeave={() => setMouseOverKey(false)}
+            onMouseEnter={() => setMouseOverSymbol(true)}
+            onMouseLeave={() => setMouseOverSymbol(false)}
             onMouseDown={(e) => raiseKeyAction(e, "symbol", true)}
             onMouseUp={(e) => raiseKeyAction(e, "symbol", false)}
           >
@@ -162,7 +163,7 @@ export default function Sp48Key(props: Props) {
           stroke={symbolStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverSymbol(true)}
-          onMouseLeave={() => setMouseOverSymbol(true)}
+          onMouseLeave={() => setMouseOverSymbol(false)}
           onMouseDown={(e) => raiseKeyAction(e, "symbol", true)}
           onMouseUp={(e) => raiseKeyAction(e, "symbol", false)}
         >
@@ -179,7 +180,7 @@ export default function Sp48Key(props: Props) {
           stroke={symbolStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverSymbol(true)}
-          onMouseLeave={() => setMouseOverSymbol(true)}
+          onMouseLeave={() => setMouseOverSymbol(false)}
           onMouseDown={(e) => raiseKeyAction(e, "symbol", true)}
           onMouseUp={(e) => raiseKeyAction(e, "symbol", false)}
         >
@@ -195,8 +196,8 @@ export default function Sp48Key(props: Props) {
           fill={aboveFillColor}
           stroke={aboveStrokeColor}
           cursor={cursor}
-          onMouseEnter={() => setMouseOverSymbol(true)}
-          onMouseLeave={() => setMouseOverSymbol(true)}
+          onMouseEnter={() => setMouseOverAbove(true)}
+          onMouseLeave={() => setMouseOverAbove(false)}
           onMouseDown={(e) =>
             raiseKeyAction(e, props.topNum ? "topNum" : "above", true)
           }
@@ -217,7 +218,7 @@ export default function Sp48Key(props: Props) {
           stroke={belowStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverBelow(true)}
-          onMouseLeave={() => setMouseOverBelow(true)}
+          onMouseLeave={() => setMouseOverBelow(false)}
           onMouseDown={(e) => raiseKeyAction(e, "below", true)}
           onMouseUp={(e) => raiseKeyAction(e, "below", false)}
         >
@@ -309,7 +310,7 @@ export default function Sp48Key(props: Props) {
           stroke={topNumStrokeColor}
           cursor={cursor}
           onMouseEnter={() => setMouseOverTopNum(true)}
-          onMouseLeave={() => setMouseOverTopNum(true)}
+          onMouseLeave={() => setMouseOverTopNum(false)}
           onMouseDown={(e) => raiseKeyAction(e, "above", true)}
           onMouseUp={(e) => raiseKeyAction(e, "above", false)}
         >

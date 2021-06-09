@@ -18,9 +18,16 @@ export interface ISideBarPanel {
   expanded: boolean;
 
   /**
-   * The current height of the panel
+   * The current height of the panel. Set when the rendering engine
+   * updates the related DOM element
    */
   height: number;
+
+  /**
+   * The current percentage height of the panel. Set when the panel 
+   * is resized.
+   */
+  heightPercentage: number;
 
   /**
    * Creates a node that represents the contents of a side bar panel
@@ -63,6 +70,12 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
   height: number = -1;
 
   /**
+   * The current percentage height of the panel. Set when the panel 
+   * is resized.
+   */
+   heightPercentage = 100;
+
+   /**
    * Creates a node that represents the contents of a side bar panel
    */
   abstract createContentElement(): React.ReactNode;

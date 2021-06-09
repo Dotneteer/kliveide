@@ -12,9 +12,10 @@ interface Props {
   descriptor: ISideBarPanel;
   index: number;
   sizeable: boolean;
-  panelHeight: number;
+  heightPercentage: number;
   visibilityChanged: (index: number) => void;
-  resized: (index: number, delta: number) => void;
+  startResize: (index: number) => void;
+  resized: (delta: number) => void;
 }
 
 /**
@@ -30,7 +31,9 @@ export default function SideBarPanel(props: Props) {
     // --- Get the initial width
     (async () => {
       await animationTick();
-      props.descriptor.height = hostElement.current.offsetHeight;
+      if (hostElement.current) {
+        props.descriptor.height = hostElement.current.offsetHeight;
+      }
     })();
   });
 
@@ -38,7 +41,11 @@ export default function SideBarPanel(props: Props) {
     <div
       ref={hostElement}
       className={expanded ? "expanded" : "collapsed"}
-      style={{ height: expanded ? (props.panelHeight < 0 ? "100%" : `${props.panelHeight}%`) : null }}
+      style={{
+        height: expanded
+          ? `${props.descriptor.heightPercentage}%`
+          : null,
+      }}
     >
       <SideBarHeader
         title={props.descriptor.title}
@@ -51,7 +58,8 @@ export default function SideBarPanel(props: Props) {
           props.descriptor.expanded = newExpanded;
           props.visibilityChanged(props.index);
         }}
-        resized={(delta: number) => props.resized(props.index, delta)}
+        startResize={(index: number) => props.startResize(index)}
+        resized={(delta: number) => props.resized(delta)}
       />
       <div
         className="host-panel"
@@ -64,9 +72,8 @@ export default function SideBarPanel(props: Props) {
       <ReactResizeDetector
         handleWidth
         handleHeight
-        onResize={(_widt, height) => {
+        onResize={(_width, height) => {
           props.descriptor.height = height;
-          console.log(height);
         }}
       />
     </div>

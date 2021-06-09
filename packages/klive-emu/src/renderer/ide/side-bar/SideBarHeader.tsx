@@ -14,6 +14,7 @@ interface Props {
   sizeable: boolean;
   index: number;
   clicked: () => void;
+  startResize: (index: number) => void;
   resized: (delta: number) => void;
 }
 
@@ -108,6 +109,7 @@ export default function SideBarHeader(props: Props) {
     window.addEventListener("mousemove", context.move);
     window.addEventListener("touchmove", context.move);
     document.body.style.cursor = "ns-resize";
+    props.startResize(props.index);
   }
 
   function endDrag(): void {
@@ -121,7 +123,6 @@ export default function SideBarHeader(props: Props) {
 
   function move(e: MouseEvent, context: DragContext): void {
     context.resized(e.clientY - context.gripPosition);
-    context.gripPosition = e.clientY;
   }
 }
 
