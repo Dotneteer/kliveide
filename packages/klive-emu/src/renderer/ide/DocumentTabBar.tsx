@@ -1,18 +1,24 @@
 import * as React from "react";
-import { connect } from "react-redux";
-import { AppState } from "../../shared/state/AppState";
 
 import styles from "styled-components";
+import { createSizedStyledPanel } from "../common/PanelStyles";
 
-const Root = styles.div`
+const Root = createSizedStyledPanel({
+  height: 24,
+  splitsVertical: true,
+  fitToClient: false,
+});
+
+styles.div`
   display: flex;
   flex-direction: column;
   flex-grow: 0;
   flex-shrink: 0;
-  height: 100%;
-  width: 192px;
+  height: 24px;
+  width: 100%;
   background-color: var(--sidebar-background-color);
   position: relative;
+  border: 1px solid yellow
 `;
 
 interface Props {
@@ -24,25 +30,18 @@ interface State {
 /**
  * Represents the statusbar of the emulator
  */
-class SideBar extends React.Component<Props, State> {
+export default class DocumentTabBar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      activeIndex: -1,
-      pointedIndex: -1,
     };
   }
 
   render() {
     return (
-      <Root data-initial-size={100}>
+      <Root>
       </Root>
     );
   }
 
 }
-
-export default connect((state: AppState) => {
-  return {
-  };
-}, null)(SideBar);

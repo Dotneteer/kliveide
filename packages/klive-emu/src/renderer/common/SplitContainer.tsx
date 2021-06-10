@@ -1,14 +1,11 @@
 import * as React from "react";
 import { animationTick } from "./utils";
-import styles from "styled-components";
+import ReactResizeDetector from "react-resize-detector";
+import { createSizedStyledPanel } from "./PanelStyles";
 
-const Root = styles.div`
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  height: 100%;
-  width: 100%;
-`;
+const Root = createSizedStyledPanel({
+  fitToClient: true
+})
 
 interface Props {
   direction?: GutterDirection;
@@ -42,7 +39,7 @@ export class SplitContainer extends React.Component<Props> {
     // --- Used default property values
     this._direction = this.props.direction ?? "horizontal";
     this._gutterSize = this.props.gutterSize ?? 8;
-    this._minimumSize = this.props.minimumSize ?? 180;
+    this._minimumSize = this.props.minimumSize ?? 80;
 
     if (!this._hostElement) return;
     this._style = {
@@ -68,6 +65,11 @@ export class SplitContainer extends React.Component<Props> {
         style={this._style}
       >
         {this.props.children}
+        <ReactResizeDetector 
+          handleWidth
+          handleHeight
+          onResize={this.handleResize}
+        />
       </Root>
     );
   }
@@ -141,7 +143,8 @@ export function filterChildren(
       el.style &&
       el.style.display !== undefined &&
       el.style.display !== "none");
-  return childArray.filter((el) => include(el));
+  const filteredChildren = childArray.filter((el) => include(el));
+  return filteredChildren.slice(0, filteredChildren.length - 1);
 }
 
 /**
@@ -253,8 +256,8 @@ export function removeGutters(container: HTMLElement): void {
 // ============================================================================
 // --- Common helper types
 
-type GutterAlign = "start" | "center" | "end";
-type GutterDirection = "horizontal" | "vertical";
+export type GutterAlign = "start" | "center" | "end";
+export type GutterDirection = "horizontal" | "vertical";
 type Dimension = "width" | "height";
 type ClientAxis = "clientX" | "clientY";
 type PositionStart = "left" | "top";
@@ -475,6 +478,7 @@ function getGutterSize(
       return gutterSize / 2;
     }
   }
+  return 0;
 }
 
 /**
@@ -849,7 +853,7 @@ function Split(
     offset =
       getMousePosition(e) -
       context.start +
-      (context.aGutterSize - context.dragOffset);
+      ((context.aGutterSize ?? 0) - context.dragOffset);
 
     if (dragInterval > 1) {
       offset = Math.round(offset / dragInterval) * dragInterval;
@@ -858,11 +862,11 @@ function Split(
     // If within snapOffset of min or max, set offset to min or max.
     // snapOffset buffers a.minSize and b.minSize, so logic is opposite for both.
     // Include the appropriate gutter sizes to prevent overflows.
-    if (offset <= a.minSize + snapOffset + context.aGutterSize) {
+    if (offset <= a.minSize + snapOffset + (context.aGutterSize ?? 0)) {
       offset = a.minSize + context.aGutterSize;
     } else if (
       offset >=
-      context.size - (b.minSize + snapOffset + context.bGutterSize)
+      context.size - (b.minSize + snapOffset + (context.bGutterSize ?? 0))
     ) {
       offset = context.size - (b.minSize + context.bGutterSize);
     }
@@ -899,8 +903,8 @@ function Split(
     context.size =
       aBounds[dimension] +
       bBounds[dimension] +
-      context.aGutterSize +
-      context.bGutterSize;
+      (context.aGutterSize ?? 0) +
+      (context.bGutterSize ?? 0);
     context.start = aBounds[position];
     context.end = aBounds[positionEnd];
   }
@@ -1065,6 +1069,7 @@ function Split(
     const a = elements[self.a].element;
     const b = elements[self.b].element;
 
+
     // Call the onDragStart callback.
     if (!self.dragging) {
       getOption(options, "onDragStart", NOOP)(getSizes());
@@ -1111,6 +1116,7 @@ function Split(
 
     // Cache the initial sizes of the pair.
     calculateSizes(self);
+
 
     // Determine the position of the mouse compared to the gutter
     self.dragOffset = getMousePosition(e) - self.end;

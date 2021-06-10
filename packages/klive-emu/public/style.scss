@@ -7,6 +7,15 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+@mixin sizeToClient() {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
   flex-shrink: 1;
   flex-grow: 1;
 }
@@ -42,4 +51,22 @@ main, .app-container {
   transition-property: background-color;
   transition-duration: 0.25s;
   transition-delay: 0.5s;
+}
+
+.collapsed {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.expanded {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+.host-panel {
+  @include sizeToClient();
 }

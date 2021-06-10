@@ -79,7 +79,6 @@ export class Toolbar extends React.Component<Props, State> {
           (executionState === 0 || executionState === 3 || executionState === 5)
         }
         clicked={async () => {
-          console.log("Clicked");
           await engine.start();
         }}
       />,
@@ -216,7 +215,9 @@ export class Toolbar extends React.Component<Props, State> {
             title="Rewind the tape"
             enable={!this.props.loadMode}
             clicked={async () =>
-              await (engine.getEngine() as ZxSpectrumCoreBase).initTapeContents()
+              await (
+                engine.getEngine() as ZxSpectrumCoreBase
+              ).initTapeContents()
             }
           />,
           <ToolbarSeparator key="sep-5" />,

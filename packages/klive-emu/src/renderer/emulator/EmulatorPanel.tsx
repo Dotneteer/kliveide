@@ -1,5 +1,5 @@
 import * as React from "react";
-import { connect } from "react-redux";
+import { useSelector } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
 import { AppState } from "../../shared/state/AppState";
 import { VirtualMachineCoreBase } from "../machines/VirtualMachineCoreBase";
@@ -10,9 +10,276 @@ import {
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import styles from "styled-components";
+import { useEffect, useState } from "react";
 
-const TURNED_OFF_MESSAGE = "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
+const TURNED_OFF_MESSAGE =
+  "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
 
+/**
+ * Represents the display panel of the emulator
+ */
+export default function EmulatorPanel() {
+  // --- State variables
+  const [windowWidth, setWindowWidth] = useState(0);
+  const [windowHeight, setWindowHeight] = useState(0);
+  const [canvasWidth, setCanvasWidth] = useState(0);
+  const [canvasHeight, setCanvasHeight] = useState(0);
+  const [overlay, setOverlay] = useState(TURNED_OFF_MESSAGE);
+  const [showOverlay, setShowOverlay] = useState(true);
+  const [tactToDisplay, setTactToDisplay] = useState(0);
+
+  // --- App state selectors
+  const executionState = useSelector(
+    (s: AppState) => s.emulatorPanel.executionState
+  );
+  const showBeam = useSelector(
+    (s: AppState) => s?.spectrumSpecific?.showBeamPosition
+  );
+
+  // --- Element dimensions
+  let shadowCanvasWidth = 0;
+  let shadowCanvasHeight = 0;
+  let calcCount = 0;
+  let hostRectangle: DOMRect;
+  let screenRectangle: DOMRect;
+
+  // --- Element references
+  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
+  const screenElement: React.RefObject<HTMLCanvasElement> = React.createRef();
+  const shadowScreenElement: React.RefObject<HTMLCanvasElement> =
+    React.createRef();
+
+  let imageBuffer: ArrayBuffer;
+  let imageBuffer8: Uint8Array;
+  let pixelData: Uint32Array;
+
+  let pressedKeys: Record<string, boolean> = {};
+
+  // --- Prepare the virtual machine engine
+  let engine: VirtualMachineCoreBase | null = null;
+
+  useEffect(() => {
+    // --- Mount
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    vmEngineService.vmEngineChanged.on(vmChange);
+    vmEngineService.executionStateChanged.on(executionStateChange);
+    calculateDimensions();
+    if (vmEngineService.hasEngine) {
+      engine = vmEngineService.getEngine();
+      vmEngineService.screenRefreshed.on(displayScreenData);
+      calculateDimensions();
+      configureScreen();
+    }
+
+    return () => {
+      // --- Unmount
+      if (engine) {
+        vmEngineService.screenRefreshed.off(displayScreenData);
+        vmEngineService.vmEngineChanged.off(vmChange);
+        vmEngineService.executionStateChanged.on(executionStateChange);
+      }
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  });
+
+  return (
+    <Root ref={hostElement} tabIndex={-1}>
+      <Screen
+        style={{
+          width: `${canvasWidth}px`,
+          height: `${canvasHeight}px`,
+        }}
+        onClick={() => setShowOverlay(true)}
+      >
+        {executionState === 3 && showBeam && (
+          <BeamOverlay
+            key={calcCount}
+            panelRectangle={hostRectangle}
+            screenRectangle={screenRectangle}
+            width={windowWidth}
+            height={windowHeight}
+            tactToDisplay={tactToDisplay}
+          />
+        )}
+        {showOverlay && (
+          <ExecutionStateOverlay
+            text={overlay}
+            clicked={() => {
+              setShowOverlay(false);
+            }}
+          />
+        )}
+        <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
+        <canvas
+          ref={shadowScreenElement}
+          style={{ display: "none" }}
+          width={shadowCanvasWidth}
+          height={shadowCanvasHeight}
+        />
+      </Screen>
+      <ReactResizeDetector
+        handleWidth
+        handleHeight
+        onResize={calculateDimensions}
+      />
+    </Root>
+  );
+
+  function vmChange(): void {
+    if (engine) {
+      vmEngineService.screenRefreshed.off(displayScreenData);
+    }
+    engine = vmEngineService.getEngine();
+    if (engine) {
+      vmEngineService.screenRefreshed.on(displayScreenData);
+    }
+    calculateDimensions();
+    configureScreen();
+    hideDisplayData();
+    setOverlay(TURNED_OFF_MESSAGE);
+  }
+
+  function executionStateChange(args: VmStateChangedArgs): void {
+    calculateDimensions();
+    let overlay = "";
+    switch (args.newState) {
+      case 1:
+        overlay = args.isDebug ? "Debug mode" : "";
+        break;
+      case 3:
+        overlay = "Paused";
+        const state = engine.getMachineState();
+        setTactToDisplay(state.lastRenderedFrameTact % state.tactsInFrame);
+        displayScreenData();
+        break;
+      case 5:
+        overlay = "Stopped";
+        break;
+      default:
+        overlay = "";
+        break;
+    }
+    setOverlay(overlay);
+  }
+
+  function handleKeyDown(e: KeyboardEvent): void {
+    handleKey(e, true);
+  }
+
+  function handleKeyUp(e: KeyboardEvent): void {
+    handleKey(e, false);
+  }
+
+  // --- Calculate the dimensions so that the virtual machine display fits the screen
+  function calculateDimensions(): void {
+    if (!hostElement?.current || !vmEngineService.hasEngine) {
+      return;
+    }
+    hostRectangle = hostElement.current.getBoundingClientRect();
+    screenRectangle = screenElement.current.getBoundingClientRect();
+    const clientWidth = hostElement.current.offsetWidth;
+    const clientHeight = hostElement.current.offsetHeight;
+    const width = vmEngineService.getEngine().screenWidth;
+    const height = vmEngineService.getEngine().screenHeight;
+    let widthRatio = Math.floor((clientWidth - 8) / width);
+    if (widthRatio < 1) widthRatio = 1;
+    let heightRatio = Math.floor((clientHeight - 8) / height);
+    if (heightRatio < 1) heightRatio = 1;
+    const ratio = Math.min(widthRatio, heightRatio);
+    setCanvasWidth(width * ratio);
+    setCanvasHeight(height * ratio);
+    shadowCanvasWidth = width;
+    shadowCanvasHeight = height;
+    setWindowWidth(hostRectangle.width);
+    setWindowHeight(hostRectangle.height);
+    calcCount = calcCount + 1;
+    shadowScreenElement.current.width = width;
+    shadowScreenElement.current.height = height;
+  }
+
+  // --- Setup the screen buffers
+  function configureScreen(): void {
+    const dataLen = shadowCanvasWidth * shadowCanvasHeight * 4;
+    imageBuffer = new ArrayBuffer(dataLen);
+    imageBuffer8 = new Uint8Array(imageBuffer);
+    pixelData = new Uint32Array(imageBuffer);
+  }
+
+  // --- Displays the screen
+  function displayScreenData(): void {
+    const screenEl = screenElement.current;
+    const shadowScreenEl = shadowScreenElement.current;
+    if (!screenEl || !shadowScreenEl) {
+      return;
+    }
+
+    const shadowCtx = shadowScreenEl.getContext("2d");
+    if (!shadowCtx) return;
+
+    shadowCtx.imageSmoothingEnabled = false;
+    const shadowImageData = shadowCtx.getImageData(
+      0,
+      0,
+      shadowScreenEl.width,
+      shadowScreenEl.height
+    );
+    const screenCtx = screenEl.getContext("2d");
+    let j = 0;
+
+    const screenData = engine.getScreenData();
+    for (let i = 0; i < shadowCanvasWidth * shadowCanvasHeight; i++) {
+      pixelData[j++] = screenData[i];
+    }
+    shadowImageData.data.set(imageBuffer8);
+    shadowCtx.putImageData(shadowImageData, 0, 0);
+    if (screenCtx) {
+      screenCtx.imageSmoothingEnabled = false;
+      screenCtx.drawImage(shadowScreenEl, 0, 0, canvasWidth, canvasHeight);
+    }
+  }
+
+  // --- Hide the display
+  function hideDisplayData(): void {
+    const screenEl = screenElement.current;
+    if (!screenEl) return;
+
+    const screenCtx = screenEl.getContext("2d");
+    if (screenCtx) {
+      screenCtx.clearRect(0, 0, screenEl.width, screenEl.height);
+    }
+  }
+
+  function handleKey(e: KeyboardEvent, isDown: boolean): void {
+    if (!e || executionState !== 1) return;
+
+    // --- Special key: both Shift released
+    if (
+      (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
+      e.shiftKey === false &&
+      !isDown
+    ) {
+      handleMappedKey("ShiftLeft", false);
+      handleMappedKey("ShiftRight", false);
+    } else {
+      handleMappedKey(e.code, isDown);
+    }
+    if (isDown) {
+      pressedKeys[e.code.toString()] = true;
+    } else {
+      delete pressedKeys[e.code.toString()];
+    }
+  }
+
+  function handleMappedKey(code: string, isDown: boolean): void {
+    if (engine) {
+      engine.handlePhysicalKey(code, isDown);
+    }
+  }
+}
+
+// --- Helper component tags
 const Root = styles.div`
   display: flex;
   flex-direction: row;
@@ -31,327 +298,3 @@ const Root = styles.div`
 const Screen = styles.div`
   background-color: #404040;
 `;
-
-interface Props {
-  executionState?: number;
-  showBeam?: boolean;
-}
-
-interface State {
-  windowWidth: number;
-  windowHeight: number;
-  canvasWidth: number;
-  canvasHeight: number;
-  shadowCanvasWidth: number;
-  shadowCanvasHeight: number;
-  hostRectangle?: DOMRect;
-  screenRectangle?: DOMRect;
-  overlay?: string;
-  panelMessage?: string;
-  showOverlay?: boolean;
-  tactToDisplay?: number;
-  calcCount: number;
-}
-
-/**
- * Represents the display panel of the emulator
- */
-class EmulatorPanel extends React.Component<Props, State> {
-  private _hostElement: React.RefObject<HTMLDivElement>;
-  private _screenElement: React.RefObject<HTMLCanvasElement>;
-  private _shadowScreenElement: React.RefObject<HTMLCanvasElement>;
-  private _engine: VirtualMachineCoreBase | null = null;
-
-  private _imageBuffer: ArrayBuffer;
-  private _imageBuffer8: Uint8Array;
-  private _pixelData: Uint32Array;
-
-  private _pressedKeys: Record<string, boolean> = {};
-
-  constructor(props: Props) {
-    super(props);
-    this._hostElement = React.createRef();
-    this._screenElement = React.createRef();
-    this._shadowScreenElement = React.createRef();
-    this.state = {
-      windowWidth: 0,
-      windowHeight: 0,
-      canvasWidth: 0,
-      canvasHeight: 0,
-      shadowCanvasWidth: 0,
-      shadowCanvasHeight: 0,
-      overlay: TURNED_OFF_MESSAGE,
-      showOverlay: true,
-      calcCount: 0
-    };
-  }
-
-  async componentDidMount(): Promise<void> {
-    window.addEventListener("keydown", this.handleKeyDown);
-    window.addEventListener("keyup", this.handleKeyUp);
-    vmEngineService.vmEngineChanged.on(this.vmChange);
-    vmEngineService.executionStateChanged.on(this.executionStateChange);
-    this.calculateDimensions();
-  }
-
-  componentWillUnmount(): void {
-    if (this._engine) {
-      vmEngineService.screenRefreshed.off(this.handleScreenRefresh);
-      vmEngineService.vmEngineChanged.off(this.vmChange);
-      vmEngineService.executionStateChanged.on(this.executionStateChange);
-    }
-    window.removeEventListener("keydown", this.handleKeyDown);
-    window.removeEventListener("keyup", this.handleKeyUp);
-  }
-
-  render() {
-    return (
-      <Root ref={this._hostElement} tabIndex={-1}>
-        <Screen
-          style={{
-            width: `${this.state.canvasWidth}px`,
-            height: `${this.state.canvasHeight}px`,
-          }}
-          onClick={() => this.setState({ showOverlay: true })}
-        >
-          {this.props.executionState === 3 && this.props.showBeam && (
-            <BeamOverlay
-              key={this.state.calcCount}
-              panelRectangle={this.state.hostRectangle}
-              screenRectangle={this.state.screenRectangle}
-              width={this.state.windowWidth}
-              height={this.state.windowHeight}
-              tactToDisplay={this.state.tactToDisplay}
-            />
-          )}
-          {this.state.showOverlay && (
-            <ExecutionStateOverlay
-              text={
-                this.state.panelMessage
-                  ? this.state.panelMessage
-                  : this.state.overlay
-              }
-              error={!!vmEngineService.vmEngineError}
-              clicked={() => {
-                this.setState({ showOverlay: false });
-              }}
-            />
-          )}
-          <canvas
-            ref={this._screenElement}
-            width={this.state.canvasWidth}
-            height={this.state.canvasHeight}
-          />
-          <canvas
-            ref={this._shadowScreenElement}
-            style={{ display: "none" }}
-            width={this.state.shadowCanvasWidth}
-            height={this.state.shadowCanvasHeight}
-          />
-        </Screen>
-        <ReactResizeDetector
-          handleWidth
-          handleHeight
-          onResize={this.handleResize}
-        />
-      </Root>
-    );
-  }
-
-  vmChange = () => {
-    if (this._engine) {
-      vmEngineService.screenRefreshed.off(this.handleScreenRefresh);
-    }
-    this._engine = vmEngineService.getEngine();
-    if (this._engine) {
-      vmEngineService.screenRefreshed.on(this.handleScreenRefresh);
-    }
-    this.calculateDimensions();
-    this.configureScreen();
-    this.hideDisplayData();
-    this.setState({ overlay: TURNED_OFF_MESSAGE });
-  };
-
-  executionStateChange = (args: VmStateChangedArgs) => {
-    this.calculateDimensions();
-    let overlay = "";
-    switch (args.newState) {
-      case 1:
-        overlay = args.isDebug ? "Debug mode" : "";
-        break;
-      case 3:
-        overlay = "Paused";
-        const state = this._engine.getMachineState();
-        this.setState({
-          tactToDisplay: state.lastRenderedFrameTact % state.tactsInFrame,
-        });
-        this.displayScreenData();
-        break;
-      case 5:
-        overlay = "Stopped";
-        break;
-      default:
-        overlay = "";
-        break;
-    }
-    this.setState({ overlay });
-  };
-
-  handleScreenRefresh = () => {
-    this.displayScreenData();
-  };
-
-  handleResize = () => {
-    this.calculateDimensions();
-  };
-
-  handleKeyDown = (e: KeyboardEvent) => {
-    this.handleKey(e, true);
-  };
-
-  handleKeyUp = (e: KeyboardEvent) => {
-    this.handleKey(e, false);
-  };
-
-  // --- Calculate the dimensions so that the virtual machine display fits the screen
-  calculateDimensions() {
-    if (!this._hostElement || !vmEngineService.hasEngine) {
-      return;
-    }
-    const hostRectangle =this._hostElement.current.getBoundingClientRect();
-    const screenRectangle = this._screenElement.current.getBoundingClientRect();
-    const clientWidth = this._hostElement.current.offsetWidth;
-    const clientHeight = this._hostElement.current.offsetHeight;
-    const width = vmEngineService.getEngine().screenWidth;
-    const height = vmEngineService.getEngine().screenHeight;
-    let widthRatio = Math.floor((clientWidth - 8) / width);
-    if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = Math.floor((clientHeight - 8) / height);
-    if (heightRatio < 1) heightRatio = 1;
-    const ratio = Math.min(widthRatio, heightRatio);
-    const canvasWidth = width * ratio;
-    const canvasHeight = height * ratio;
-
-    const shadowCanvasWidth = width;
-    const shadowCanvasHeight = height;
-    this.setState({
-      windowWidth: hostRectangle.width,
-      windowHeight: hostRectangle.height,
-      canvasWidth,
-      canvasHeight,
-      shadowCanvasWidth,
-      shadowCanvasHeight,
-      hostRectangle,
-      screenRectangle,
-      calcCount: this.state.calcCount + 1
-    });
-    this._shadowScreenElement.current.width = width;
-    this._shadowScreenElement.current.height = height;
-  }
-
-  // --- Setup the screen buffers
-  configureScreen() {
-    const dataLen =
-      this.state.shadowCanvasWidth * this.state.shadowCanvasHeight * 4;
-    this._imageBuffer = new ArrayBuffer(dataLen);
-    this._imageBuffer8 = new Uint8Array(this._imageBuffer);
-    this._pixelData = new Uint32Array(this._imageBuffer);
-  }
-
-  // --- Displays the screen
-  displayScreenData() {
-    // const executionState = this.props.executionState ?? 0;
-    // // --- Do not refresh after stopped state
-    // if (!executionState || executionState === 5) return;
-
-    const screenEl = this._screenElement.current;
-    const shadowScreenEl = this._shadowScreenElement.current;
-    const shadowCtx = shadowScreenEl.getContext("2d");
-    if (!shadowCtx) return;
-
-    shadowCtx.imageSmoothingEnabled = false;
-    const shadowImageData = shadowCtx.getImageData(
-      0,
-      0,
-      shadowScreenEl.width,
-      shadowScreenEl.height
-    );
-    const screenCtx = screenEl.getContext("2d");
-    let j = 0;
-
-    const screenData = this._engine.getScreenData();
-    for (
-      let i = 0;
-      i < this.state.shadowCanvasWidth * this.state.shadowCanvasHeight;
-      i++
-    ) {
-      this._pixelData[j++] = screenData[i];
-    }
-    shadowImageData.data.set(this._imageBuffer8);
-    shadowCtx.putImageData(shadowImageData, 0, 0);
-    if (screenCtx) {
-      screenCtx.imageSmoothingEnabled = false;
-      screenCtx.drawImage(
-        shadowScreenEl,
-        0,
-        0,
-        this.state.canvasWidth,
-        this.state.canvasHeight
-      );
-    }
-  }
-
-  // --- Hide the display
-  hideDisplayData() {
-    const screenEl = this._screenElement.current;
-    if (!screenEl) return;
-
-    const screenCtx = screenEl.getContext("2d");
-    if (screenCtx) {
-      screenCtx.clearRect(0, 0, screenEl.width, screenEl.height);
-    }
-  }
-
-  handleKey(e: KeyboardEvent, isDown: boolean): void {
-    const executionState = this.props.executionState ?? 0;
-    if (!e || executionState !== 1) return;
-
-    // --- Special key: both Shift released
-    if (
-      (e.code === "ShiftLeft" || e.code === "ShiftRight") &&
-      e.shiftKey === false &&
-      !isDown
-    ) {
-      this.handleMappedKey("ShiftLeft", false);
-      this.handleMappedKey("ShiftRight", false);
-    } else {
-      this.handleMappedKey(e.code, isDown);
-    }
-    if (isDown) {
-      this._pressedKeys[e.code.toString()] = true;
-    } else {
-      delete this._pressedKeys[e.code.toString()];
-    }
-  }
-
-  handleMappedKey(code: string, isDown: boolean) {
-    if (this._engine) {
-      this._engine.handlePhysicalKey(code, isDown);
-    }
-  }
-
-  // --- Release all keys that remained pressed
-  erasePressedKeys() {
-    for (let code in this._pressedKeys) {
-      this.handleMappedKey(code, false);
-    }
-    this._pressedKeys = {};
-  }
-}
-
-export default connect((state: AppState) => {
-  return {
-    executionState: state.emulatorPanel.executionState,
-    showBeam: state?.spectrumSpecific?.showBeamPosition,
-  };
-}, null)(EmulatorPanel);

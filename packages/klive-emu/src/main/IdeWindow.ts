@@ -4,7 +4,7 @@ import { ideHideAction } from "../shared/state/show-ide-reducer";
 import { setIdeMessenger } from "./app-menu-state";
 import { MainToIdeMessenger } from "./MainToIdeMessenger";
 import { Activity } from "../shared/activity/Activity";
-import { setActivitiesAction } from "../shared/state/activity-bar-reducer";
+import { changeActivityAction, setActivitiesAction } from "../shared/state/activity-bar-reducer";
 
 /**
  * Represents the singleton IDE window
@@ -30,6 +30,7 @@ export class IdeWindow extends AppWindow {
     this.allowClose = false;
     this.setupActivityBar();
     mainStore.dispatch(setActivitiesAction(this._activities));
+    mainStore.dispatch(changeActivityAction(0));
   }
 
   /**

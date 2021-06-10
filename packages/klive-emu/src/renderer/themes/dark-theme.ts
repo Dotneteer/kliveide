@@ -43,6 +43,7 @@ export const darkTheme: ITheme = {
      "--activity-current-background-color": "#505050",
 
      "--sidebar-background-color": "#252526",
+     "--sidebar-header-color": "white",
 
      "--splitter-hover-color": "#007acc",
     },

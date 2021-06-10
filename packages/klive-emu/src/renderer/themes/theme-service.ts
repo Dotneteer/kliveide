@@ -3,87 +3,79 @@ import { IconInfo } from "./IconInfo";
 import { ITheme } from "./theme-core";
 
 /**
- * Represents the functionality of a theme service
+ * Creates a store that handles the application's themes.
  */
-export interface ThemeService {
+class ThemeService {
+  private readonly _themes: ITheme[] = [];
+  private _activeTheme: ITheme | null;
+  private _icons = new Map<string, IconInfo>();
+
+  constructor() {
+    IconDefs.forEach((def) => this._icons.set(def.name, def));
+  }
+
   /**
    * Gets the active theme
    */
-  getActiveTheme(): ITheme;
+   getActiveTheme(): ITheme {
+    return this._activeTheme;
+  }
 
   /**
    * Gets the value of the specified property
    * @param {string} propName Property name
    */
-  getProperty(propName: string): string;
+   getProperty(propName: string): string {
+    return (this._activeTheme.properties as any)[propName];
+  }
 
   /**
    * Sets the theme to the specified one
    * @param {string} name Active theme name
    */
-  setTheme(name: string): void;
+   setTheme(name: string) {
+    this._activeTheme = this.getTheme(name);
+  }
 
   /**
    * Registers a new theme
    * @param {ITheme} theme New theme definition
    */
-  registerTheme(theme: ITheme): void;
+   registerTheme(theme: ITheme): void {
+    this._themes.push(theme);
+  }
 
   /**
    * Gets the specified icon information
    * @param name Icon name
    */
-  getIcon(name: string): IconInfo;
+   getIcon(name: string): IconInfo {
+    const iconInfo = this._icons.get(name);
+    if (!iconInfo) {
+      throw new Error(`Icon not found: '${name}'`);
+    }
+    return iconInfo;
+  }
 
   /**
    * Registers the specified icon information
    * @param iconInfo Icon information
    */
-  registerIcon(iconInfo: IconInfo): void;
-}
-
-/**
- * Creates a store that handles the application's themes.
- */
-function createService(): ThemeService {
-  const themes: ITheme[] = [];
-  let activeThemeName: string | null = null;
-  let activeTheme: ITheme | null;
-  const icons = new Map<string, IconInfo>();
-
-  // --- Register default icons
-  IconDefs.forEach((def) => icons.set(def.name, def));
+   registerIcon(iconInfo: IconInfo): void {
+    this._icons.set(iconInfo.name, iconInfo);
+  }
 
   // --- Gets the theme by its name
-  function getTheme(name: string) {
-    const theme = themes.find((t) => t.name === name);
+  private getTheme(name: string) {
+    const theme = this._themes.find((t) => t.name === name);
     if (!theme) {
       throw new Error(`Theme not found: '${name}'`);
     }
     return theme;
   }
-
-  return {
-    getActiveTheme: () => activeTheme,
-    getProperty: (propName: string) =>
-      (activeTheme.properties as any)[propName],
-    setTheme(name: string) {
-      activeThemeName = name;
-      activeTheme = getTheme(name);
-    },
-    registerTheme: (theme: ITheme) => themes.push(theme),
-    getIcon(name: string): IconInfo {
-      const iconInfo = icons.get(name);
-      if (!iconInfo) {
-        throw new Error(`Icon not found: '${name}'`);
-      }
-      return iconInfo;
-    },
-    registerIcon: (iconInfo: IconInfo) => icons.set(iconInfo.name, iconInfo),
-  };
 }
 
 /**
  * The singleton store instance
  */
-export const themeService = createService();
+export const themeService = new ThemeService();

@@ -42,6 +42,7 @@ export interface IThemeProperties {
   "--activity-current-background-color": string;
 
   "--sidebar-background-color": string;
+  "--sidebar-header-color": string;
 
   "--splitter-hover-color": string;
 }

@@ -43,6 +43,7 @@ export const lightTheme: ITheme = {
      "--activity-current-background-color": "#505050",
 
      "--sidebar-background-color": "#c0c0c0",
+     "--sidebar-header-color": "202020",
 
      "--splitter-hover-color": "#007acc",
      },

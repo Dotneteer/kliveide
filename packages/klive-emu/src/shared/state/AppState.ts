@@ -13,6 +13,7 @@ export interface AppState {
   spectrumSpecific?: ZxSpectrumSpecificState;
   showIde?: boolean;
   activityBar?: ActivityBarState;
+  sideBar?: SideBarState;
 }
 
 /**
@@ -107,6 +108,11 @@ export interface ActivityBarState {
 }
 
 /**
+ * Represents the state of the side bar
+ */
+export type SideBarState = Record<string, Record<string, Record<string, any>>>;
+
+/**
  * The initial application state
  */
 export function getInitialAppState(): AppState {
@@ -151,5 +157,6 @@ export function getInitialAppState(): AppState {
       showBeamPosition: false,
       tapeContents: undefined,
     },
+    sideBar: {}
   };
 }
