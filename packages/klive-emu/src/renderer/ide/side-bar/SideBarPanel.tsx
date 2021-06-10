@@ -42,9 +42,9 @@ export default function SideBarPanel(props: Props) {
       ref={hostElement}
       className={expanded ? "expanded" : "collapsed"}
       style={{
-        height: expanded
-          ? `${props.descriptor.heightPercentage}%`
-          : null,
+        height: expanded ? `${props.descriptor.heightPercentage}%` : null,
+        transitionProperty: "height",
+        transitionDuration: "0.25s",
       }}
     >
       <SideBarHeader

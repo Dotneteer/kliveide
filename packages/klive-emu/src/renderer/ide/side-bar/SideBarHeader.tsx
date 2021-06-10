@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { createPanel, createSizedStyledPanel } from "../../common/PanelStyles";
 import { SvgIcon } from "../../common/SvgIcon";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CSSProperties } from "react";
 
 /**
@@ -22,6 +22,10 @@ interface Props {
  * Represents the statusbar of the emulator
  */
 export default function SideBarHeader(props: Props) {
+  // --- Is this panel being dragged?
+  const isResizing = useRef(false);
+
+  // --- Component state
   const [focused, setFocused] = useState(false);
   const [pointed, setPointed] = useState(false);
 
@@ -35,11 +39,16 @@ export default function SideBarHeader(props: Props) {
         ? "var(--toolbar-selected-border-color)"
         : "transparent",
     cursor: "ns-resize",
+    transitionProperty: "background-color",
+    transitionDuration: "0.25s",
+    transitionDelay: "0.5s"
   };
   const borderStyle = focused
     ? "1px solid var(--toolbar-selected-border-color)"
     : "1px solid transparent";
 
+  // --- We need a context that uses "this" function when handles the `move`
+  // --- function to respond to document events
   const context: DragContext = {
     gripPosition: 0,
     move: (e: MouseEvent) => move(e, context),
@@ -64,6 +73,7 @@ export default function SideBarHeader(props: Props) {
       }}
     >
       {props.sizeable && (
+        // --- We use this element for resizing the panel
         <div
           style={gripStyle}
           ref={gripElement}
@@ -74,10 +84,12 @@ export default function SideBarHeader(props: Props) {
             setPointed(false);
           }}
           onMouseDown={(e) => {
-            startDrag(e);
+            if (e.button === 0) {
+              startResize(e);
+            }
           }}
           onMouseUp={() => {
-            endDrag();
+            endResize();
           }}
         />
       )}
@@ -95,34 +107,52 @@ export default function SideBarHeader(props: Props) {
     </Root>
   );
 
+  /**
+   * Use the Enter and Space keys as mouse clicks
+   * @param e
+   */
   function handleKeyPress(e: React.KeyboardEvent): void {
     if (e.code === "Enter" || e.code === "Space") {
       props.clicked?.();
     }
   }
 
-  function startDrag(e: React.MouseEvent): void {
+  /**
+   * Starts resizing this panel
+   */
+  function startResize(e: React.MouseEvent): void {
+    isResizing.current = true;
     context.gripPosition = e.clientY;
-    window.addEventListener("mouseup", endDrag);
-    window.addEventListener("touchend", endDrag);
-    window.addEventListener("touchcancel", endDrag);
+    window.addEventListener("mouseup", endResize);
+    window.addEventListener("touchend", endResize);
+    window.addEventListener("touchcancel", endResize);
     window.addEventListener("mousemove", context.move);
     window.addEventListener("touchmove", context.move);
     document.body.style.cursor = "ns-resize";
     props.startResize(props.index);
   }
 
-  function endDrag(): void {
-    window.removeEventListener("mouseup", endDrag);
-    window.removeEventListener("touchend", endDrag);
-    window.removeEventListener("touchcancel", endDrag);
+  /**
+   * Ends resizing this panel
+   */
+  function endResize(): void {
+    if (!isResizing.current) return;
+
+    window.removeEventListener("mouseup", endResize);
+    window.removeEventListener("touchend", endResize);
+    window.removeEventListener("touchcancel", endResize);
     window.removeEventListener("mousemove", context.move);
     window.removeEventListener("touchmove", context.move);
     document.body.style.cursor = "";
   }
 
+  /**
+   * Change the size of the element 
+   */
   function move(e: MouseEvent, context: DragContext): void {
-    context.resized(e.clientY - context.gripPosition);
+    if (isResizing.current) {
+      context.resized(e.clientY - context.gripPosition);
+    }
   }
 }
 

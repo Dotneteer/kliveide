@@ -6,8 +6,10 @@ import { SideBarState } from "../../../shared/state/AppState";
 import { ideStore } from "../ideStore";
 import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
 import { useRef, useState } from "react";
-import { animationTick } from "../../../renderer/common/utils";
 
+/**
+ * The minimum height an expanded panel can have
+ */
 const MIN_PANEL_HEIGHT = 100;
 
 /**
@@ -22,15 +24,14 @@ export default function SideBar() {
 
   // --- Component state
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  // --- Save the states of the side bar panels before navigating away
   sideBarService.sideBarChanging.on(() => {
+    // --- Save the states of the side bar panels before navigating away
     const state: SideBarState = {};
     const panels = sideBarService.getSideBarPanels();
     for (let i = 0; i < panels.length; i++) {
       const panel = panels[i];
-      state[getPanelId(panel, i)] = panel.getPanelState() ?? {};
+      state[getPanelId(i)] = panel.getPanelState() ?? {};
     }
     if (sideBarService.activity) {
       const fullState = Object.assign({}, ideStore.getState().sideBar ?? {}, {
@@ -40,15 +41,15 @@ export default function SideBar() {
     }
   });
 
-  // --- Set up the side bar panels with their state
   sideBarService.sideBarChanged.on(() => {
+    // --- Set up the side bar panels with their state
     const panels = sideBarService.getSideBarPanels();
     const sideBarState = (ideStore.getState().sideBar ?? {})[
       sideBarService.activity
     ];
     for (let i = 0; i < panels.length; i++) {
       const panel = panels[i];
-      const panelState = sideBarState?.[getPanelId(panel, i)];
+      const panelState = sideBarState?.[getPanelId(i)];
       if (panelState) {
         panel.setPanelState(panelState);
       }
@@ -56,10 +57,7 @@ export default function SideBar() {
     setPanels(panels);
   });
 
-  /**
-   * We use the `changeCounter` field of the state to re-render the component any
-   * time a panel is expanded or collapsed.
-   */
+  // --- Render the side bar panels
   let sideBarPanels: React.ReactNode[] = [];
   if (panels) {
     // --- Let's collect all side bar panels registered with the current activity
@@ -74,11 +72,9 @@ export default function SideBar() {
           descriptor={descriptor}
           sizeable={prevExpanded && descriptor.expanded}
           heightPercentage={descriptor.heightPercentage}
-          visibilityChanged={() => {
-            setRefreshKey(refreshKey + 1);
-          }}
+          visibilityChanged={() => setPanels(panels.slice(0))}
           startResize={startResize}
-          resized={async (delta) => await resizePanel(delta)}
+          resized={resizePanel}
         />
       );
       prevExpanded = descriptor.expanded;
@@ -87,7 +83,7 @@ export default function SideBar() {
   return <Root data-initial-size={200}>{sideBarPanels}</Root>;
 
   // --- Helper to calculate panel ID
-  function getPanelId(panel: ISideBarPanel, index: number): string {
+  function getPanelId(index: number): string {
     return `${sideBarService.activity}-${index}`;
   }
 
@@ -103,24 +99,17 @@ export default function SideBar() {
     abovePanelHeight.current = panels[index - 1].height;
     panelPercentage.current =
       panels[index].heightPercentage + panels[index - 1].heightPercentage;
-    console.log(
-      abovePanelHeight.current,
-      sizedPanelHeight.current,
-      panelPercentage.current
-    );
   }
 
   /**
-   * Stops dragging the side bar panel with the specified index
+   * Resizes the panel selected for sizing
+   * @param delta Relative size change of the panel being sized
+   * @returns
    */
-  function endDrag(): void {}
-
-  // --- Resizes the specified panel
-  async function resizePanel(delta: number): Promise<void> {
+  function resizePanel(delta: number): void {
     const index = sizingIndex.current;
     if (index <= 0 || !panels[index]) return;
 
-    await animationTick();
     const height = panels[index].height;
     const prevHeight = panels[index - 1].height;
     let newHeight = sizedPanelHeight.current - delta;
@@ -134,11 +123,10 @@ export default function SideBar() {
       newHeight = height + (prevHeight - newPrevHeight);
     }
     const sumHeight = newHeight + newPrevHeight;
-    const abovePercentage = newPrevHeight/sumHeight * panelPercentage.current;
-    panels[index -1].heightPercentage = abovePercentage;
-    const sizedPercentage = panelPercentage.current - abovePercentage;
-    panels[index].heightPercentage = sizedPercentage;
-    console.log(abovePercentage, sizedPercentage);
+    const abovePercentage =
+      (newPrevHeight / sumHeight) * panelPercentage.current;
+    panels[index - 1].heightPercentage = abovePercentage;
+    panels[index].heightPercentage = panelPercentage.current - abovePercentage;
     setPanels(panels.slice(0));
   }
 }
