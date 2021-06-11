@@ -32,19 +32,25 @@ export const lightTheme: ITheme = {
     "--key-below-color": "#d02000",
     "--key-highlight-color": "#0048c0",
 
-     "--key-cz88-background-color": "#404040",
-     "--key-cz88-stroke-color": "#a0a0a0",
-     "--key-cz88-main-color": "white",
-     "--key-cz88-highlight-color": "#0088e0",
+    "--key-cz88-background-color": "#404040",
+    "--key-cz88-stroke-color": "#a0a0a0",
+    "--key-cz88-main-color": "white",
+    "--key-cz88-highlight-color": "#0088e0",
 
-     "--activity-bar-background-color": "#c8c8c8",
-     "--activity-icon-color": "#cccccc",
-     "--activity-current-icon-color": "#ffffff",
-     "--activity-current-background-color": "#505050",
+    "--activity-bar-background-color": "#c8c8c8",
+    "--activity-icon-color": "#cccccc",
+    "--activity-current-icon-color": "#ffffff",
+    "--activity-current-background-color": "#505050",
 
-     "--sidebar-background-color": "#c0c0c0",
-     "--sidebar-header-color": "202020",
+    "--sidebar-background-color": "#c0c0c0",
+    "--sidebar-header-color": "202020",
 
-     "--splitter-hover-color": "#007acc",
-     },
+    "--splitter-hover-color": "#007acc",
+
+    "--commandbar-background-color": "#252526",
+    "--document-tab-background-color": "#252526",
+    "--document-tab-color": "1e1e1e",
+    "--document-tab-active-background-color": "1e1e1e",
+    "--document-tab-active-color": "808080",
+  },
 };

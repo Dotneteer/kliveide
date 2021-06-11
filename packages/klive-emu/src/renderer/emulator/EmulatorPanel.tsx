@@ -10,7 +10,7 @@ import {
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import styles from "styled-components";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const TURNED_OFF_MESSAGE =
   "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
@@ -19,6 +19,9 @@ const TURNED_OFF_MESSAGE =
  * Represents the display panel of the emulator
  */
 export default function EmulatorPanel() {
+  const hostRectangle = useRef<DOMRect>();
+  const screenRectangle = useRef<DOMRect>();
+
   // --- State variables
   const [windowWidth, setWindowWidth] = useState(0);
   const [windowHeight, setWindowHeight] = useState(0);
@@ -40,8 +43,6 @@ export default function EmulatorPanel() {
   let shadowCanvasWidth = 0;
   let shadowCanvasHeight = 0;
   let calcCount = 0;
-  let hostRectangle: DOMRect;
-  let screenRectangle: DOMRect;
 
   // --- Element references
   const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
@@ -59,7 +60,6 @@ export default function EmulatorPanel() {
   let engine: VirtualMachineCoreBase | null = null;
 
   useEffect(() => {
-    // --- Mount
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     vmEngineService.vmEngineChanged.on(vmChange);
@@ -96,8 +96,8 @@ export default function EmulatorPanel() {
         {executionState === 3 && showBeam && (
           <BeamOverlay
             key={calcCount}
-            panelRectangle={hostRectangle}
-            screenRectangle={screenRectangle}
+            panelRectangle={hostRectangle.current}
+            screenRectangle={screenRectangle.current}
             width={windowWidth}
             height={windowHeight}
             tactToDisplay={tactToDisplay}
@@ -177,8 +177,8 @@ export default function EmulatorPanel() {
     if (!hostElement?.current || !vmEngineService.hasEngine) {
       return;
     }
-    hostRectangle = hostElement.current.getBoundingClientRect();
-    screenRectangle = screenElement.current.getBoundingClientRect();
+    hostRectangle.current = hostElement.current.getBoundingClientRect();
+    screenRectangle.current = screenElement.current.getBoundingClientRect();
     const clientWidth = hostElement.current.offsetWidth;
     const clientHeight = hostElement.current.offsetHeight;
     const width = vmEngineService.getEngine().screenWidth;
@@ -192,8 +192,8 @@ export default function EmulatorPanel() {
     setCanvasHeight(height * ratio);
     shadowCanvasWidth = width;
     shadowCanvasHeight = height;
-    setWindowWidth(hostRectangle.width);
-    setWindowHeight(hostRectangle.height);
+    setWindowWidth(hostRectangle.current.width);
+    setWindowHeight(hostRectangle.current.height);
     calcCount = calcCount + 1;
     shadowScreenElement.current.width = width;
     shadowScreenElement.current.height = height;

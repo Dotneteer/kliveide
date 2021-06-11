@@ -45,4 +45,10 @@ export interface IThemeProperties {
   "--sidebar-header-color": string;
 
   "--splitter-hover-color": string;
+
+  "--commandbar-background-color": string;
+  "--document-tab-background-color": string;
+  "--document-tab-color": string;
+  "--document-tab-active-background-color": string;
+  "--document-tab-active-color": string;
 }

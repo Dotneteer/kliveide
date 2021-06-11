@@ -24,7 +24,7 @@ export interface ISideBarPanel {
   height: number;
 
   /**
-   * The current percentage height of the panel. Set when the panel 
+   * The current percentage height of the panel. Set when the panel
    * is resized.
    */
   heightPercentage: number;
@@ -70,12 +70,12 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
   height: number = -1;
 
   /**
-   * The current percentage height of the panel. Set when the panel 
+   * The current percentage height of the panel. Set when the panel
    * is resized.
    */
-   heightPercentage = 100;
+  heightPercentage = 100;
 
-   /**
+  /**
    * Creates a node that represents the contents of a side bar panel
    */
   abstract createContentElement(): React.ReactNode;
@@ -99,7 +99,7 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
 }
 
 /**
- * Represents a service that handles side bar related communication
+ * Represents a service that handles side bar panels
  */
 class SideBarService {
   private readonly _panels = new Map<string, ISideBarPanel[]>();

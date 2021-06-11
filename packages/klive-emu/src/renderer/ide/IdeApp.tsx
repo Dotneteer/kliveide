@@ -47,6 +47,8 @@ export default function IdeApp() {
       "debug-view",
       new SampleSideBarPanelDescriptor("BLUE", "blue")
     );
+
+    // --- Register sample documents
     
     return () => {
       // --- Unmount
