@@ -48,7 +48,7 @@ export const darkTheme: ITheme = {
     "--splitter-hover-color": "#007acc",
 
     "--commandbar-background-color": "#252526",
-    "--document-tab-background-color": "#252526",
+    "--document-tab-background-color": "#3d3d3d",
     "--document-tab-color": "#1e1e1e",
     "--document-tab-active-background-color": "#1e1e1e",
     "--document-tab-active-color": "#808080",

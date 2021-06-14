@@ -99,6 +99,13 @@ class DocumentService {
   }
 
   /**
+   * Gets the registered document panels
+   */
+  getDocuments(): IDocumentPanel[] {
+    return this._documents;
+  }
+
+  /**
    * Registers a document
    * @param doc Document instance to register
    * @param index Document index

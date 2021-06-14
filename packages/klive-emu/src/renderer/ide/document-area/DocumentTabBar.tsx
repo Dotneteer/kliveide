@@ -1,17 +1,25 @@
 import * as React from "react";
 
-import { createSizedStyledPanel } from "../../common/PanelStyles";
+import { documentService } from "./DocumentService";
+import DocumentTab from "./DocumentTab";
 
 /**
  * Represents the statusbar of the emulator
  */
 export default function DocumentTabBar() {
-  return <Root></Root>;
-}
+  let documentTabs: React.ReactNode[] = [];
+  const docs = documentService.getDocuments();
+  docs.forEach((d) =>
+    documentTabs.push(<DocumentTab title={d.title} active={d.active} />)
+  );
 
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  height: "100%",
-  splitsVertical: true,
-  fitToClient: true,
-});
+  const style: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 1,
+    flexShrink: 1,
+    width: "100%",
+    height: "100%",
+  };
+  return <div style={style}>{documentTabs}</div>;
+}
