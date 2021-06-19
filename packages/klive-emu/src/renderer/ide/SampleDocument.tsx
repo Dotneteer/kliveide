@@ -31,8 +31,15 @@ export default class SampleDocument extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      count: this.props.descriptor.getPanelState().count ?? 0,
+      count: 0,
     };
+  }
+
+  componentDidMount(): void {
+    const loadedState = this.props.descriptor.getPanelState();
+    if (loadedState.count) {
+      this.setState({ count: loadedState.count });
+    }
   }
 
   render() {
@@ -64,8 +71,12 @@ export default class SampleDocument extends React.Component<Props, State> {
  * Descriptor for the sample side bar panel
  */
 export class SampleDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
-  constructor(public readonly title: string, public readonly color: string) {
-    super(title);
+  constructor(
+    public readonly id: string,
+    public readonly title: string,
+    public readonly color: string
+  ) {
+    super(id, title);
   }
 
   /**

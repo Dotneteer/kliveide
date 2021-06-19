@@ -31,8 +31,15 @@ export default class SampleSideBarPanel extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      count: this.props.descriptor.getPanelState().count ?? 0,
+      count: 0,
     };
+  }
+
+  componentDidMount(): void {
+    const loadedState = this.props.descriptor.getPanelState();
+    if (loadedState.count) {
+      this.setState({ count: loadedState.count });
+    }
   }
 
   render() {
@@ -58,13 +65,13 @@ export default class SampleSideBarPanel extends React.Component<Props, State> {
       </div>
     );
   }
+
 }
 
 /**
  * Descriptor for the sample side bar panel
  */
 export class SampleSideBarPanelDescriptor extends SideBarPanelDescriptorBase {
-
   constructor(public readonly title: string, public readonly color: string) {
     super(title);
   }
@@ -73,11 +80,6 @@ export class SampleSideBarPanelDescriptor extends SideBarPanelDescriptorBase {
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode {
-    return (
-      <SampleSideBarPanel
-        color={this.color}
-        descriptor={this}
-      />
-    );
+    return <SampleSideBarPanel color={this.color} descriptor={this} />;
   }
 }

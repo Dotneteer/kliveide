@@ -54,13 +54,13 @@ export default function IdeApp() {
 
     // --- Register sample documents
     documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("Doc 1", "red")
+      new SampleDocumentPanelDescriptor("1", "Doc 1", "red")
     );
     documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("Memory", "green")
+      new SampleDocumentPanelDescriptor("2", "Memory", "green")
     );
     documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("Disassembly", "blue")
+      new SampleDocumentPanelDescriptor("3", "Disassembly", "blue")
     );
 
     return () => {

@@ -2,9 +2,6 @@ import * as React from "react";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
 import SideBarPanel from "./SideBarPanel";
 import { ISideBarPanel, sideBarService } from "./SideBarService";
-import { SideBarState } from "../../../shared/state/AppState";
-import { ideStore } from "../ideStore";
-import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
 import { useRef, useState, useEffect } from "react";
 
 /**
@@ -25,47 +22,18 @@ export default function SideBar() {
   // --- Component state
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
 
-  // --- Save the states of the side bar panels before navigating away
-  const savePanelsState = () => {
-    const state: SideBarState = {};
-    const panels = sideBarService.getSideBarPanels();
-    for (let i = 0; i < panels.length; i++) {
-      const panel = panels[i];
-      state[getPanelId(i)] = panel.getPanelState() ?? {};
-    }
-    if (sideBarService.activity) {
-      const fullState = Object.assign({}, ideStore.getState().sideBar ?? {}, {
-        [sideBarService.activity]: state,
-      });
-      ideStore.dispatch(setSideBarStateAction(fullState));
-    }
-  };
-
   // --- Set up the side bar panels with their state
-  const loadPanelsState = () => {
-    const panels = sideBarService.getSideBarPanels();
-    const sideBarState = (ideStore.getState().sideBar ?? {})[
-      sideBarService.activity
-    ];
-    for (let i = 0; i < panels.length; i++) {
-      const panel = panels[i];
-      const panelState = sideBarState?.[getPanelId(i)];
-      if (panelState) {
-        panel.setPanelState(panelState);
-      }
-    }
-    setPanels(panels);
+  const panelsChanged = () => {
+    setPanels(sideBarService.getSideBarPanels());
   };
 
   useEffect(() => {
     // --- Mount
-    sideBarService.sideBarChanging.on(savePanelsState);
-    sideBarService.sideBarChanged.on(loadPanelsState);
+    sideBarService.sideBarChanged.on(panelsChanged);
 
     return () => {
       // --- Unmount
-      sideBarService.sideBarChanging.off(savePanelsState);
-      sideBarService.sideBarChanged.off(loadPanelsState);
+      sideBarService.sideBarChanged.off(panelsChanged);
     };
   });
 
@@ -93,11 +61,6 @@ export default function SideBar() {
     }
   }
   return <Root data-initial-size={200}>{sideBarPanels}</Root>;
-
-  // --- Helper to calculate panel ID
-  function getPanelId(index: number): string {
-    return `${sideBarService.activity}-${index}`;
-  }
 
   /**
    * Starts dragging the side bar panel with the specified index

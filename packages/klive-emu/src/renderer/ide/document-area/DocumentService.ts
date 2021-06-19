@@ -1,9 +1,16 @@
+import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { ideStore } from "../ideStore";
 
 /**
  * Represents a document panel
  */
 export interface IDocumentPanel {
+  /**
+   * The document identifier
+   */
+  id: string;
+
   /**
    * The index of the panel
    */
@@ -32,8 +39,11 @@ export interface IDocumentPanel {
   /**
    * Sets the state of the side bar
    * @param state Optional state to set
+   * @param fireImmediate Fire a panelStateLoaded event immediately?
    */
-  setPanelState(state: Record<string, any> | null): void;
+  setPanelState(
+    state: Record<string, any> | null
+  ): void;
 }
 
 /**
@@ -46,7 +56,7 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
    * Instantiates the panel with the specified title
    * @param title
    */
-  constructor(public readonly title: string) {}
+  constructor(public readonly id: string, public readonly title: string) {}
 
   /**
    * The index of the panel
@@ -74,7 +84,9 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
    * Sets the state of the side bar panel
    * @param state Optional state to set
    */
-  setPanelState(state: Record<string, any> | null): void {
+  setPanelState(
+    state: Record<string, any> | null
+  ): void {
     if (state) {
       this._panelState = { ...this._panelState, ...state };
     }
@@ -174,8 +186,21 @@ class DocumentService {
    * @param doc Document to activate
    */
   setActiveDocument(doc: IDocumentPanel | null): void {
+    // --- Save the state of the active panel
+    if (this._activeDocument) {
+      const fullState = Object.assign(
+        {},
+        ideStore.getState().documentFrame ?? {},
+        {
+          [this._activeDocument.id]: this._activeDocument.getPanelState(),
+        }
+      );
+      ideStore.dispatch(setDocumentFrameStateAction(fullState));
+    }
+
+    // --- Invoke custom action
     this._activeDocumentChanging.fire(doc);
-    
+
     if (!doc) {
       // --- There is no active document
       const oldDocument = this._activeDocument;
@@ -198,6 +223,15 @@ class DocumentService {
     this._activationStack.push(doc);
     this._documents.forEach((d) => (d.active = false));
     doc.active = true;
+
+    // --- Load the state of the active document
+    const documentsState = ideStore.getState().documentFrame ?? {};
+    const documentState = documentsState?.[this._activeDocument.id];
+    if (documentState) {
+      this._activeDocument.setPanelState(documentState);
+    }
+
+    // --- Invoke custom action
     this._activeDocumentChanged.fire(doc);
     this.fireChanges();
   }
@@ -226,7 +260,7 @@ class DocumentService {
   /**
    * Fires when the active document is about to change
    */
-   get activeDocumentChanging(): ILiteEvent<IDocumentPanel | null> {
+  get activeDocumentChanging(): ILiteEvent<IDocumentPanel | null> {
     return this._activeDocumentChanging;
   }
 
@@ -240,7 +274,7 @@ class DocumentService {
   /**
    * Fires when any documents changes occurres
    */
-   get documentsChanged(): ILiteEvent<DocumentsInfo> {
+  get documentsChanged(): ILiteEvent<DocumentsInfo> {
     return this._documentsChanged;
   }
 
@@ -250,8 +284,8 @@ class DocumentService {
   private fireChanges(): void {
     this._documentsChanged.fire({
       docs: this._documents.slice(0),
-      active: this._activeDocument
-    })
+      active: this._activeDocument,
+    });
   }
 }
 
@@ -261,7 +295,7 @@ class DocumentService {
 export type DocumentsInfo = {
   docs: IDocumentPanel[];
   active: IDocumentPanel | null;
-}
+};
 
 /**
  * The singleton instance of the service

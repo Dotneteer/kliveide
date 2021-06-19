@@ -35,6 +35,7 @@ export default function DocumentTab(props: Props) {
     paddingRight: "10px",
     cursor: "pointer",
     borderRight: "1px solid var(--document-tab-active-background-color)",
+    fontSize: "0.9em",
     color: props.active
       ? "var(--document-tab-active-color)"
       : "var(--document-tab-color)",

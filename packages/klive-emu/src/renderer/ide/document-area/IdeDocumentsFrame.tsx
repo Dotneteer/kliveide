@@ -40,7 +40,7 @@ export default function IdeDocumentFrame() {
           <CommandBar />
         </HeaderBar>
       )}
-      <PlaceHolder>{activeDoc?.createContentElement()}</PlaceHolder>
+      <PlaceHolder key={activeDoc?.id}>{activeDoc?.createContentElement()}</PlaceHolder>
     </Root>
   );
 }
