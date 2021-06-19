@@ -14,6 +14,7 @@ export interface AppState {
   showIde?: boolean;
   activityBar?: ActivityBarState;
   sideBar?: SideBarState;
+  documentFrame?: DocumentFrameState;
 }
 
 /**
@@ -113,6 +114,11 @@ export interface ActivityBarState {
 export type SideBarState = Record<string, Record<string, Record<string, any>>>;
 
 /**
+ * Represents the state of the document frame
+ */
+export type DocumentFrameState = Record<string, Record<string, any>>;
+
+/**
  * The initial application state
  */
 export function getInitialAppState(): AppState {
@@ -157,6 +163,7 @@ export function getInitialAppState(): AppState {
       showBeamPosition: false,
       tapeContents: undefined,
     },
-    sideBar: {}
+    sideBar: {},
+    documentFrame: {}
   };
 }

@@ -5,7 +5,7 @@ import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { SideBarState } from "../../../shared/state/AppState";
 import { ideStore } from "../ideStore";
 import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 /**
  * The minimum height an expanded panel can have
@@ -25,8 +25,8 @@ export default function SideBar() {
   // --- Component state
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
 
-  sideBarService.sideBarChanging.on(() => {
-    // --- Save the states of the side bar panels before navigating away
+  // --- Save the states of the side bar panels before navigating away
+  const savePanelsState = () => {
     const state: SideBarState = {};
     const panels = sideBarService.getSideBarPanels();
     for (let i = 0; i < panels.length; i++) {
@@ -39,10 +39,10 @@ export default function SideBar() {
       });
       ideStore.dispatch(setSideBarStateAction(fullState));
     }
-  });
+  };
 
-  sideBarService.sideBarChanged.on(() => {
-    // --- Set up the side bar panels with their state
+  // --- Set up the side bar panels with their state
+  const loadPanelsState = () => {
     const panels = sideBarService.getSideBarPanels();
     const sideBarState = (ideStore.getState().sideBar ?? {})[
       sideBarService.activity
@@ -55,6 +55,18 @@ export default function SideBar() {
       }
     }
     setPanels(panels);
+  };
+
+  useEffect(() => {
+    // --- Mount
+    sideBarService.sideBarChanging.on(savePanelsState);
+    sideBarService.sideBarChanged.on(loadPanelsState);
+
+    return () => {
+      // --- Unmount
+      sideBarService.sideBarChanging.off(savePanelsState);
+      sideBarService.sideBarChanged.off(loadPanelsState);
+    };
   });
 
   // --- Render the side bar panels

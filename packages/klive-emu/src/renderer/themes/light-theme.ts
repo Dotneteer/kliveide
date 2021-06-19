@@ -52,5 +52,7 @@ export const lightTheme: ITheme = {
     "--document-tab-color": "1e1e1e",
     "--document-tab-active-background-color": "1e1e1e",
     "--document-tab-active-color": "808080",
+
+    "--command-button-pointed-background": "#3d3d3d",
   },
 };

@@ -48,9 +48,12 @@ export const darkTheme: ITheme = {
     "--splitter-hover-color": "#007acc",
 
     "--commandbar-background-color": "#252526",
-    "--document-tab-background-color": "#3d3d3d",
-    "--document-tab-color": "#1e1e1e",
+    "--document-tab-background-color": "#2d2d2d",
+    "--document-tab-color": "#ffffff80",
     "--document-tab-active-background-color": "#1e1e1e",
-    "--document-tab-active-color": "#808080",
+    "--document-tab-active-color": "#ffffff",
+
+    "--command-button-pointed-background": "#3d3d3d",
+
   },
 };

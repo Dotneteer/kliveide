@@ -85,12 +85,14 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
  * Represenst a service that handles document panels
  */
 class DocumentService {
-  private readonly _documents: IDocumentPanel[];
+  private _documents: IDocumentPanel[];
   private _activeDocument: IDocumentPanel | null;
   private _activationStack: IDocumentPanel[];
   private _documentRegistered = new LiteEvent<IDocumentPanel>();
   private _documentUnregistered = new LiteEvent<IDocumentPanel>();
+  private _activeDocumentChanging = new LiteEvent<IDocumentPanel | null>();
   private _activeDocumentChanged = new LiteEvent<IDocumentPanel | null>();
+  private _documentsChanged = new LiteEvent<DocumentsInfo>();
 
   constructor() {
     this._documents = [];
@@ -127,12 +129,14 @@ class DocumentService {
 
     // --- Insert the document and activate it
     this._documents.splice(index, 0, doc);
+    this._documents = this._documents.slice(0);
     doc.index = index;
     this._documentRegistered.fire(doc);
     if (makeActive || !this._activeDocument) {
       this.setActiveDocument(doc);
     }
     this._activationStack.push(doc);
+    this.fireChanges();
   }
 
   /**
@@ -148,6 +152,7 @@ class DocumentService {
 
     // --- Remove the document
     this._documents.splice(position, 1);
+    this._documents = this._documents.slice(0);
     this._activationStack = this._activationStack.filter((d) => d !== doc);
     this._documentUnregistered.fire(doc);
 
@@ -161,6 +166,7 @@ class DocumentService {
     } else {
       this.setActiveDocument(this._documents[position + 1]);
     }
+    this.fireChanges();
   }
 
   /**
@@ -168,12 +174,15 @@ class DocumentService {
    * @param doc Document to activate
    */
   setActiveDocument(doc: IDocumentPanel | null): void {
+    this._activeDocumentChanging.fire(doc);
+    
     if (!doc) {
       // --- There is no active document
       const oldDocument = this._activeDocument;
       this._activeDocument = null;
       if (!oldDocument) {
         this._activeDocumentChanged.fire(null);
+        this.fireChanges();
         return;
       }
     }
@@ -190,6 +199,7 @@ class DocumentService {
     this._documents.forEach((d) => (d.active = false));
     doc.active = true;
     this._activeDocumentChanged.fire(doc);
+    this.fireChanges();
   }
 
   /**
@@ -202,23 +212,55 @@ class DocumentService {
   /**
    * Fires when a new document has been registered
    */
-  documentRegistered(): ILiteEvent<IDocumentPanel> {
+  get documentRegistered(): ILiteEvent<IDocumentPanel> {
     return this._documentRegistered;
   }
 
   /**
    * Fires when a new document has been unregistered
    */
-  documentUnregistered(): ILiteEvent<IDocumentPanel> {
+  get documentUnregistered(): ILiteEvent<IDocumentPanel> {
     return this._documentUnregistered;
   }
 
   /**
-   * Fires when a new document has been registered
+   * Fires when the active document is about to change
    */
-  activeDocumentChanged(): ILiteEvent<IDocumentPanel | null> {
+   get activeDocumentChanging(): ILiteEvent<IDocumentPanel | null> {
+    return this._activeDocumentChanging;
+  }
+
+  /**
+   * Fires when the active document has been changed
+   */
+  get activeDocumentChanged(): ILiteEvent<IDocumentPanel | null> {
     return this._activeDocumentChanged;
   }
+
+  /**
+   * Fires when any documents changes occurres
+   */
+   get documentsChanged(): ILiteEvent<DocumentsInfo> {
+    return this._documentsChanged;
+  }
+
+  /**
+   * Fires the documents changed event
+   */
+  private fireChanges(): void {
+    this._documentsChanged.fire({
+      docs: this._documents.slice(0),
+      active: this._activeDocument
+    })
+  }
+}
+
+/**
+ * Represents the document information
+ */
+export type DocumentsInfo = {
+  docs: IDocumentPanel[];
+  active: IDocumentPanel | null;
 }
 
 /**

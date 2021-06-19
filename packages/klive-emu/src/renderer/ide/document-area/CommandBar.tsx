@@ -16,6 +16,6 @@ const Root = createSizedStyledPanel({
   splitsVertical: true,
   fitToClient: false,
   others: {
-    background: "yellow", //"var(--commandbar-background-color)"
+    background: "var(--commandbar-background-color)"
   }
 });

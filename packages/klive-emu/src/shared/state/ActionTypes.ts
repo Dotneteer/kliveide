@@ -56,4 +56,7 @@ export interface ActionTypes {
 
   // --- Side bar
   SET_SIDEBAR_STATE: null;
+
+  // --- Document frame
+  SET_DOCUMENT_FRAME_STATE: null;
 }

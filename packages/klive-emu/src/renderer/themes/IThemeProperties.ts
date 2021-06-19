@@ -51,4 +51,6 @@ export interface IThemeProperties {
   "--document-tab-color": string;
   "--document-tab-active-background-color": string;
   "--document-tab-active-color": string;
+
+  "--command-button-pointed-background": string;
 }

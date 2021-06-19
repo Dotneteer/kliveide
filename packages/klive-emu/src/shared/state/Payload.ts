@@ -1,5 +1,10 @@
 import { Activity } from "../activity/Activity";
-import { AppState, FrameDiagData, SideBarState } from "./AppState";
+import {
+  AppState,
+  DocumentFrameState,
+  FrameDiagData,
+  SideBarState,
+} from "./AppState";
 
 /**
  * Represents payload properties
@@ -32,4 +37,5 @@ export interface Payload {
   activities?: Activity[];
   itemIndex?: number;
   sideBar?: SideBarState;
+  documentFrame?: DocumentFrameState;
 }
