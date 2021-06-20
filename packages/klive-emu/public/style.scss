@@ -36,7 +36,8 @@ body {
 }
 
 // --- The style of application containers
-main, .app-container {
+main,
+.app-container {
   @include sizeToWindow();
 }
 
@@ -69,4 +70,66 @@ main, .app-container {
 
 .host-panel {
   @include sizeToClient();
+}
+
+@import "../node_modules/@syncfusion/ej2-base/styles/bootstrap-dark.css";
+@import "../node_modules/@syncfusion/ej2-layouts/styles/bootstrap-dark.css";
+
+// ============================================================================
+// CSS overrides for SyncFusion controls
+
+.e-splitter.e-splitter-horizontal,
+.e-splitter.e-splitter-vertical {
+  border: transparent;
+}
+
+.e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar::after {
+  cursor: ew-resize;
+}
+
+.e-splitter .e-split-bar.e-split-bar-horizontal,
+.e-splitter .e-split-bar.e-split-bar-vertical {
+  background: var(--sidebar-background-color);
+}
+
+.e-splitter .e-split-bar.e-split-bar-horizontal.e-split-bar-hover,
+.e-splitter .e-split-bar.e-split-bar-horizontal.e-split-bar-active,
+.e-splitter .e-split-bar.e-split-bar-vertical.e-split-bar-hover,
+.e-splitter .e-split-bar.e-split-bar-vertical.e-split-bar-active {
+  background: var(--splitter-hover-color);
+}
+
+.e-splitter .e-split-bar.e-split-bar-horizontal .e-resize-handler,
+.e-splitter .e-split-bar.e-split-bar-vertical .e-resize-handler {
+  color: transparent;
+}
+
+.e-splitter
+  .e-split-bar.e-split-bar-horizontal.e-split-bar-hover
+  .e-resize-handler,
+.e-splitter
+  .e-split-bar.e-split-bar-horizontal.e-split-bar-active
+  .e-resize-handler,
+.e-splitter
+  .e-split-bar.e-split-bar-vertical.e-split-bar-hover
+  .e-resize-handler,
+.e-splitter
+  .e-split-bar.e-split-bar-vertical.e-split-bar-active
+  .e-resize-handler {
+  color: transparent;
+}
+
+// ============================================================================
+// CSS classes for IDE controls
+
+.splitter-panel-vertical {
+  height: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+.splitter-panel-vertical > div {
+  display: flex;
+  height: 100%;
+  overflow-x: hidden;
 }

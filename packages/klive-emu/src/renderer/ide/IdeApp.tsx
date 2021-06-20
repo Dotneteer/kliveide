@@ -12,7 +12,7 @@ import { useState } from "react";
 import { sideBarService } from "./side-bar/SideBarService";
 import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
 import { documentService } from "./document-area/DocumentService";
-import SampleDocument, {
+import {
   SampleDocumentPanelDescriptor,
 } from "./SampleDocument";
 

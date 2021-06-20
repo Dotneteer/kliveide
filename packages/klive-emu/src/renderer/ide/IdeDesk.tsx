@@ -1,4 +1,10 @@
 import * as React from "react";
+import {
+  PaneDirective,
+  PanesDirective,
+  SplitterComponent,
+} from "@syncfusion/ej2-react-layouts";
+
 import { GutterDirection, SplitContainer } from "../common/SplitContainer";
 import { animationTick } from "../common/utils";
 import { createSizedStyledPanel } from "../common/PanelStyles";

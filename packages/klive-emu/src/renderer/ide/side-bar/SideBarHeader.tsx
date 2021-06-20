@@ -31,8 +31,8 @@ export default function SideBarHeader(props: Props) {
 
   const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
   const gripStyle: CSSProperties = {
-    position: "absolute",
-    height: "6px",
+    position: "relative",
+    height: "2px",
     width: "100%",
     background:
       pointed && props.sizeable
@@ -41,7 +41,7 @@ export default function SideBarHeader(props: Props) {
     cursor: "ns-resize",
     transitionProperty: "background-color",
     transitionDuration: "0.25s",
-    transitionDelay: "0.5s"
+    transitionDelay: "0.5s",
   };
   const borderStyle = focused
     ? "1px solid var(--toolbar-selected-border-color)"
@@ -179,6 +179,8 @@ const Text = createPanel({
   "font-size": "0.8em",
   "font-weight": "600",
   "padding-left": "4px",
+  "flex-grow": "0",
+  "flex-shrink": "0",
 });
 
 // --- Context for the drag operation

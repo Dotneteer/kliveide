@@ -108,8 +108,6 @@ export default function SideBar() {
 
 // --- Component helper tags
 const Root = createSizedStyledPanel({
-  splitsVertical: true,
-  fitToClient: false,
   others: {
     "background-color": "var(--sidebar-background-color)",
   },
