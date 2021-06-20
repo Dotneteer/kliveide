@@ -1,16 +1,16 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
 import {
-  ISideBarPanel,
-  SideBarPanelDescriptorBase,
-} from "./side-bar/SideBarService";
+  DocumentPanelDescriptorBase,
+  IDocumentPanel,
+} from "./document-area/DocumentService";
 
 /**
  * Component properties
  */
 interface Props {
   color: string;
-  descriptor: ISideBarPanel;
+  descriptor: IDocumentPanel;
 }
 
 /**
@@ -21,9 +21,9 @@ interface State {
 }
 
 /**
- * A sample side bar panel
+ * A sample document
  */
-export default class SampleSideBarPanel extends React.Component<Props, State> {
+export default class SampleDocument extends React.Component<Props, State> {
   static defaultProps = {
     color: "blue",
   };
@@ -65,21 +65,24 @@ export default class SampleSideBarPanel extends React.Component<Props, State> {
       </div>
     );
   }
-
 }
 
 /**
  * Descriptor for the sample side bar panel
  */
-export class SampleSideBarPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor(public readonly title: string, public readonly color: string) {
-    super(title);
+export class SampleDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
+  constructor(
+    public readonly id: string,
+    public readonly title: string,
+    public readonly color: string
+  ) {
+    super(id, title);
   }
 
   /**
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode {
-    return <SampleSideBarPanel color={this.color} descriptor={this} />;
+    return <SampleDocument color={this.color} descriptor={this} />;
   }
 }

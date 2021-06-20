@@ -1,6 +1,9 @@
 import * as React from "react";
+import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
+import { SideBarState } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { activityService } from "../activity-bar/ActivityService";
+import { ideStore } from "../ideStore";
 
 /**
  * Represents an abstract side bar panel
@@ -24,7 +27,7 @@ export interface ISideBarPanel {
   height: number;
 
   /**
-   * The current percentage height of the panel. Set when the panel 
+   * The current percentage height of the panel. Set when the panel
    * is resized.
    */
   heightPercentage: number;
@@ -42,6 +45,7 @@ export interface ISideBarPanel {
   /**
    * Sets the state of the side bar
    * @param state Optional state to set
+   * @param fireImmediate Fire a panelStateLoaded event immediately?
    */
   setPanelState(state: Record<string, any> | null): void;
 }
@@ -70,12 +74,12 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
   height: number = -1;
 
   /**
-   * The current percentage height of the panel. Set when the panel 
+   * The current percentage height of the panel. Set when the panel
    * is resized.
    */
-   heightPercentage = 100;
+  heightPercentage = 100;
 
-   /**
+  /**
    * Creates a node that represents the contents of a side bar panel
    */
   abstract createContentElement(): React.ReactNode;
@@ -91,7 +95,9 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
    * Sets the state of the side bar panel
    * @param state Optional state to set
    */
-  setPanelState(state: Record<string, any> | null): void {
+  setPanelState(
+    state: Record<string, any> | null
+  ): void {
     if (state) {
       this._panelState = { ...this._panelState, ...state };
     }
@@ -99,7 +105,7 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
 }
 
 /**
- * Represents a service that handles side bar related communication
+ * Represents a service that handles side bar panels
  */
 class SideBarService {
   private readonly _panels = new Map<string, ISideBarPanel[]>();
@@ -110,8 +116,38 @@ class SideBarService {
   constructor() {
     this.reset();
     activityService.activityChanged.on((activity) => {
+      // --- Save the state of the panels
+      const state: SideBarState = {};
+      let panels = this.getSideBarPanels();
+      for (let i = 0; i < panels.length; i++) {
+        const panel = panels[i];
+        state[`${this.activity}-${i}`] = panel.getPanelState() ?? {};
+      }
+      if (this.activity) {
+        const fullState = Object.assign({}, ideStore.getState().sideBar ?? {}, {
+          [this.activity]: state,
+        });
+        ideStore.dispatch(setSideBarStateAction(fullState));
+      }
+
+      // --- Invoke custom action
       this._sideBarChanging.fire();
+
+      // --- Set the new activity
       this._activity = activity;
+
+      // --- Restore the panel state
+      panels = this.getSideBarPanels();
+      const sideBarState = (ideStore.getState().sideBar ?? {})[this.activity];
+      for (let i = 0; i < panels.length; i++) {
+        const panel = panels[i];
+        const panelState = sideBarState?.[`${this.activity}-${i}`];
+        if (panelState) {
+          panel.setPanelState(panelState);
+        }
+      }
+
+      // --- Invoke custom action
       this._sideBarChanged.fire();
     });
   }

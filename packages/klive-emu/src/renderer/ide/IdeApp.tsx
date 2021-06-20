@@ -11,6 +11,10 @@ import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { useState } from "react";
 import { sideBarService } from "./side-bar/SideBarService";
 import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
+import { documentService } from "./document-area/DocumentService";
+import SampleDocument, {
+  SampleDocumentPanelDescriptor,
+} from "./SampleDocument";
 
 /**
  * Represents the emulator app's root component
@@ -47,7 +51,18 @@ export default function IdeApp() {
       "debug-view",
       new SampleSideBarPanelDescriptor("BLUE", "blue")
     );
-    
+
+    // --- Register sample documents
+    documentService.registerDocument(
+      new SampleDocumentPanelDescriptor("1", "Doc 1", "red")
+    );
+    documentService.registerDocument(
+      new SampleDocumentPanelDescriptor("2", "Memory", "green")
+    );
+    documentService.registerDocument(
+      new SampleDocumentPanelDescriptor("3", "Disassembly", "blue")
+    );
+
     return () => {
       // --- Unmount
       dispatch(ideLoadUiAction());

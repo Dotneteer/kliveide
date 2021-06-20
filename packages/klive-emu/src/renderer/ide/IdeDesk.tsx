@@ -1,9 +1,10 @@
 import * as React from "react";
 import { GutterDirection, SplitContainer } from "../common/SplitContainer";
-import IdeDocumentsFrame from "./IdeDocumentsFrame";
 import { animationTick } from "../common/utils";
 import { createSizedStyledPanel } from "../common/PanelStyles";
 import { useState } from "react";
+import IdeDocumentsFrame from "./document-area/IdeDocumentsFrame";
+import OutputFrame from "./output-area/OutputFrame";
 
 interface Props {
   direction?: GutterDirection;
@@ -29,8 +30,7 @@ export default function IdeDesk(props: Props) {
         refreshTag={refreshKey}
       >
         <IdeDocumentsFrame />
-        <IdeDocumentsFrame />
-        <IdeDocumentsFrame initialSize={200} />
+        <OutputFrame initialSize={200} />
       </SplitContainer>
     </Root>
   );
