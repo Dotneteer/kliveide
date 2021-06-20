@@ -17,17 +17,17 @@ export default function IdeWorkbench() {
   return (
     <Root>
       <ActivityBar />
-      <SplitterComponent id="splitter" separatorSize={0}>
+      <SplitterComponent separatorSize={2}>
         <PanesDirective>
           <PaneDirective
-            cssClass="splitter-panel-vertical"
+            cssClass="splitter-panel"
             content={() => <SideBar />}
             size="10%"
             min="5%"
             max="75%"
           />
           <PaneDirective
-            cssClass="splitter-panel-vertical"
+            cssClass="splitter-panel"
             content={() => <IdeMain />}
             size="90%"
             min="5%"

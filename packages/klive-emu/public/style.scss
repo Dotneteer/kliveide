@@ -78,6 +78,9 @@ main,
 // ============================================================================
 // CSS overrides for SyncFusion controls
 
+// ----------------------------------------------------------------------------
+// Splitter and panel style overrides
+
 .e-splitter.e-splitter-horizontal,
 .e-splitter.e-splitter-vertical {
   border: transparent;
@@ -85,6 +88,10 @@ main,
 
 .e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar::after {
   cursor: ew-resize;
+}
+
+.e-splitter .e-split-bar.e-split-bar-vertical.e-resizable-split-bar::after {
+  cursor: ns-resize;
 }
 
 .e-splitter .e-split-bar.e-split-bar-horizontal,
@@ -101,7 +108,7 @@ main,
 
 .e-splitter .e-split-bar.e-split-bar-horizontal .e-resize-handler,
 .e-splitter .e-split-bar.e-split-bar-vertical .e-resize-handler {
-  color: transparent;
+  color: var(--sidebar-background-color);
 }
 
 .e-splitter
@@ -116,19 +123,19 @@ main,
 .e-splitter
   .e-split-bar.e-split-bar-vertical.e-split-bar-active
   .e-resize-handler {
-  color: transparent;
+  color: var(--splitter-hover-color);
 }
 
 // ============================================================================
 // CSS classes for IDE controls
 
-.splitter-panel-vertical {
+.splitter-panel {
   height: 100%;
   flex-grow: 1;
   flex-shrink: 1;
 }
 
-.splitter-panel-vertical > div {
+.splitter-panel > div {
   display: flex;
   height: 100%;
   overflow-x: hidden;

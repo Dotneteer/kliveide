@@ -25,6 +25,8 @@ export default function DocumentTabBar() {
 
   useEffect(() => {
     // --- Mount
+    setCurrentDocs(documentService.getDocuments());
+    setActiveDoc(documentService.getActiveDocument());
     documentService.documentsChanged.on(refreshDocs);
 
     return () => {
@@ -35,6 +37,7 @@ export default function DocumentTabBar() {
 
   // --- Create the list of visible documents
   let documentTabs: React.ReactNode[] = [];
+  console.log(`Docs: ${currentDocs.length}`)
   currentDocs.forEach((d, index) => {
     documentTabs.push(
       <DocumentTab

@@ -1,7 +1,12 @@
 import * as React from "react";
+import {
+  PaneDirective,
+  PanesDirective,
+  SplitterComponent,
+} from "@syncfusion/ej2-react-layouts";
+
 import { useSelector } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
-import { SplitContainer } from "../common/SplitContainer";
 import EmulatorPanel from "./EmulatorPanel";
 import { emuStore } from "./emuStore";
 import KeyboardPanel from "./KeyboardPanel";
@@ -35,29 +40,39 @@ export default function MainPanel() {
       delayIsOver = true;
     }
   }
-  return (
-    <Root>
-      <SplitContainer
-        direction="vertical"
-        refreshTag={!!showKeyboard}
-        splitterMoved={handleMoved}
-      >
-        <EmulatorPanel />
-        <KeyboardPanel
-          initialHeight={keyboardHeight}
-          type={type}
-          showPanel={delayIsOver}
-        />
-      </SplitContainer>
-    </Root>
-  );
 
-  function handleMoved(children: NodeListOf<HTMLDivElement>): void {
+  const handleResizing = (children: number[]) => {
     if (children.length > 0) {
-      const height = children[children.length - 1].offsetHeight;
+      const height = children[children.length - 1];
       emuStore.dispatch(emuKeyboardHeightAction(height));
     }
-  }
+  };
+
+  return (
+    <Root>
+      <SplitterComponent
+        orientation="Vertical"
+        separatorSize={2}
+        resizeStop={(arg) => handleResizing(arg.paneSize)}
+      >
+        <PanesDirective>
+          <PaneDirective
+            cssClass="splitter-panel"
+            content={() => <EmulatorPanel />}
+            min="80px"
+          />
+          {showKeyboard && (
+            <PaneDirective
+              cssClass="splitter-panel"
+              size={keyboardHeight ?? "50%"}
+              min="120px"
+              content={() => <KeyboardPanel type={type} />}
+            />
+          )}
+        </PanesDirective>
+      </SplitterComponent>
+    </Root>
+  );
 }
 
 // --- Helper component tags
@@ -69,4 +84,3 @@ const Root = styles.div`
   width: 100%;
   background-color: var(--emulator-background-color);
 `;
-

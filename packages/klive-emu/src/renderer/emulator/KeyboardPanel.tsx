@@ -24,8 +24,6 @@ const Root = styles.div`
 
 interface Props {
   type: string;
-  showPanel: boolean;
-  initialHeight?: string;
 }
 
 /**
@@ -59,8 +57,8 @@ export default function KeyboardPanel(props: Props) {
   }
   if (visible) {
     return (
-      <Root data-initial-size={props.initialHeight} ref={hostElement}>
-        {props.showPanel && keyboard}
+      <Root ref={hostElement}>
+        {keyboard}
         <ReactResizeDetector handleWidth handleHeight onResize={handleResize} />
       </Root>
     );

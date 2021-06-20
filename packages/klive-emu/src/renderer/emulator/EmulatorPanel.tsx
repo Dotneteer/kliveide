@@ -174,7 +174,11 @@ export default function EmulatorPanel() {
 
   // --- Calculate the dimensions so that the virtual machine display fits the screen
   function calculateDimensions(): void {
-    if (!hostElement?.current || !vmEngineService.hasEngine) {
+    if (
+      !hostElement?.current ||
+      !screenElement?.current ||
+      !vmEngineService.hasEngine
+    ) {
       return;
     }
     hostRectangle.current = hostElement.current.getBoundingClientRect();
@@ -195,8 +199,10 @@ export default function EmulatorPanel() {
     setWindowWidth(hostRectangle.current.width);
     setWindowHeight(hostRectangle.current.height);
     calcCount = calcCount + 1;
-    shadowScreenElement.current.width = width;
-    shadowScreenElement.current.height = height;
+    if (shadowScreenElement.current) {
+      shadowScreenElement.current.width = width;
+      shadowScreenElement.current.height = height;
+    }
   }
 
   // --- Setup the screen buffers
