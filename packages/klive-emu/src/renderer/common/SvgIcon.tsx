@@ -1,4 +1,5 @@
 import * as React from "react";
+import { CSSProperties } from "react";
 import { themeService } from "../themes/theme-service";
 
 /**
@@ -47,7 +48,7 @@ export function SvgIcon(props: React.PropsWithChildren<Props>) {
       : props.fill.startsWith("--")
       ? themeService.getProperty(fill)
       : fill;
-  const styleValue = {
+  const styleValue: CSSProperties = {
     width: `${
       props.width === undefined
         ? themeService.getProperty("--icon-default-size")
@@ -60,6 +61,8 @@ export function SvgIcon(props: React.PropsWithChildren<Props>) {
     }px`,
     fill: `${fillValue}`,
     transform: `rotate(${props.rotate ?? 0}deg)`,
+    flexShrink: 0,
+    flexGrow: 0
   };
   const iconInfo = themeService.getIcon(props.iconName);
   return (

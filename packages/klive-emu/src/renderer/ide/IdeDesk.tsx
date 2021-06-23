@@ -1,37 +1,38 @@
 import * as React from "react";
-import { GutterDirection, SplitContainer } from "../common/SplitContainer";
-import { animationTick } from "../common/utils";
+import {
+  PaneDirective,
+  PanesDirective,
+  SplitterComponent,
+} from "@syncfusion/ej2-react-layouts";
+
 import { createSizedStyledPanel } from "../common/PanelStyles";
-import { useState } from "react";
 import IdeDocumentsFrame from "./document-area/IdeDocumentsFrame";
 import OutputFrame from "./output-area/OutputFrame";
-
-interface Props {
-  direction?: GutterDirection;
-}
 
 /**
  * Represents the main canvas of the IDE
  */
-export default function IdeDesk(props: Props) {
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  React.useEffect(() => {
-    (async() => {
-      await animationTick();
-      setRefreshKey(1);
-    })()
-  });
-
+export default function IdeDesk() {
   return (
     <Root>
-      <SplitContainer
-        direction={props.direction ?? "vertical"}
-        refreshTag={refreshKey}
-      >
-        <IdeDocumentsFrame />
-        <OutputFrame initialSize={200} />
-      </SplitContainer>
+      <SplitterComponent orientation="Vertical" separatorSize={2}>
+        <PanesDirective>
+          <PaneDirective
+            cssClass="splitter-panel"
+            content={() => <IdeDocumentsFrame />}
+            size="90%"
+            min="80px"
+            max="95%"
+          />
+          <PaneDirective
+            cssClass="splitter-panel"
+            content={() => <OutputFrame />}
+            size="10%"
+            min="5%"
+            max="95%"
+          />
+        </PanesDirective>
+      </SplitterComponent>
     </Root>
   );
 }

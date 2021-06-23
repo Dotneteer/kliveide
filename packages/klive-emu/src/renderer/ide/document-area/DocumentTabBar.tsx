@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
+import ScrollablePanel from "../../common/ScrollablePanel";
 
 import {
   documentService,
@@ -25,6 +26,8 @@ export default function DocumentTabBar() {
 
   useEffect(() => {
     // --- Mount
+    setCurrentDocs(documentService.getDocuments());
+    setActiveDoc(documentService.getActiveDocument());
     documentService.documentsChanged.on(refreshDocs);
 
     return () => {
@@ -61,7 +64,12 @@ export default function DocumentTabBar() {
     width: "100%",
     height: "100%",
     background: "var(--commandbar-background-color)",
+    overflowX: "hidden",
   };
 
-  return <div style={style}>{documentTabs}</div>;
+  return (
+    <ScrollablePanel>
+      {documentTabs}
+    </ScrollablePanel>
+  );
 }

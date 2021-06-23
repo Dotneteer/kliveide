@@ -22,26 +22,24 @@ interface Props {
  * Represents the statusbar of the emulator
  */
 export default function SideBarHeader(props: Props) {
-  // --- Is this panel being dragged?
-  const isResizing = useRef(false);
-
   // --- Component state
   const [focused, setFocused] = useState(false);
   const [pointed, setPointed] = useState(false);
+  const [resizing, setResizing] = useState(false);
 
   const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
   const gripStyle: CSSProperties = {
-    position: "absolute",
-    height: "6px",
+    position: "relative",
+    height: "4px",
     width: "100%",
     background:
-      pointed && props.sizeable
+      pointed || resizing
         ? "var(--toolbar-selected-border-color)"
         : "transparent",
     cursor: "ns-resize",
     transitionProperty: "background-color",
-    transitionDuration: "0.25s",
-    transitionDelay: "0.5s"
+    transitionDuration: "0.1s",
+    transitionDelay: "0.25s",
   };
   const borderStyle = focused
     ? "1px solid var(--toolbar-selected-border-color)"
@@ -121,7 +119,7 @@ export default function SideBarHeader(props: Props) {
    * Starts resizing this panel
    */
   function startResize(e: React.MouseEvent): void {
-    isResizing.current = true;
+    setResizing(true);
     context.gripPosition = e.clientY;
     window.addEventListener("mouseup", endResize);
     window.addEventListener("touchend", endResize);
@@ -136,23 +134,20 @@ export default function SideBarHeader(props: Props) {
    * Ends resizing this panel
    */
   function endResize(): void {
-    if (!isResizing.current) return;
-
     window.removeEventListener("mouseup", endResize);
     window.removeEventListener("touchend", endResize);
     window.removeEventListener("touchcancel", endResize);
     window.removeEventListener("mousemove", context.move);
     window.removeEventListener("touchmove", context.move);
     document.body.style.cursor = "";
+    setResizing(false);
   }
 
   /**
-   * Change the size of the element 
+   * Change the size of the element
    */
   function move(e: MouseEvent, context: DragContext): void {
-    if (isResizing.current) {
-      context.resized(e.clientY - context.gripPosition);
-    }
+    context.resized(e.clientY - context.gripPosition);
   }
 }
 
@@ -179,6 +174,8 @@ const Text = createPanel({
   "font-size": "0.8em",
   "font-weight": "600",
   "padding-left": "4px",
+  "flex-grow": "0",
+  "flex-shrink": "0",
 });
 
 // --- Context for the drag operation

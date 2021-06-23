@@ -22,10 +22,10 @@ export default function OutputFrame(props: Props) {
 // --- Component helper tags
 const Root = createSizedStyledPanel({
   background: "var(--shell-canvas-background-color)",
-  others: {
-    "border-top": "1px solid var(--panel-separator-border)",
-    "border-right": "1px solid var(--panel-separator-border)",
-  },
+  // others: {
+  //   "border-top": "1px solid var(--panel-separator-border)",
+  //   "border-right": "1px solid var(--panel-separator-border)",
+  // },
 });
 
 const PlaceHolder = createSizedStyledPanel({});
