@@ -62,6 +62,18 @@ export default function IdeApp() {
     documentService.registerDocument(
       new SampleDocumentPanelDescriptor("3", "Disassembly", "blue")
     );
+    documentService.registerDocument(
+      new SampleDocumentPanelDescriptor("4", "Long Document #1", "blue")
+    );
+    documentService.registerDocument(
+      new SampleDocumentPanelDescriptor("5", "Long Document #2", "blue")
+    );
+    documentService.registerDocument(
+      new SampleDocumentPanelDescriptor("6", "Long Document #3", "blue")
+    );
+    documentService.registerDocument(
+      new SampleDocumentPanelDescriptor("7", "Long Document #4", "blue")
+    );
 
     return () => {
       // --- Unmount

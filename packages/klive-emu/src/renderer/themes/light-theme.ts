@@ -16,6 +16,8 @@ export const lightTheme: ITheme = {
     "--toolbar-separator": "2px solid #686868",
     "--toolbar-selected-border-color": "#007acc",
 
+    "--scrollbar-background-color": "#808080",
+
     "--statusbar-background-color": "#007acc",
     "--statusbar-foreground-color": "white",
 

@@ -14,6 +14,8 @@ export interface IThemeProperties {
   "--toolbar-button-disabled-fill": string;
   "--toolbar-separator": string;
   "--toolbar-selected-border-color": string;
+
+  "--scrollbar-background-color": string;
   
   "--statusbar-background-color": string;
   "--statusbar-foreground-color": string;

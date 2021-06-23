@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
+import ScrollablePanel from "../../common/ScrollablePanel";
 
 import {
   documentService,
@@ -37,7 +38,6 @@ export default function DocumentTabBar() {
 
   // --- Create the list of visible documents
   let documentTabs: React.ReactNode[] = [];
-  console.log(`Docs: ${currentDocs.length}`)
   currentDocs.forEach((d, index) => {
     documentTabs.push(
       <DocumentTab
@@ -64,7 +64,12 @@ export default function DocumentTabBar() {
     width: "100%",
     height: "100%",
     background: "var(--commandbar-background-color)",
+    overflowX: "hidden",
   };
 
-  return <div style={style}>{documentTabs}</div>;
+  return (
+    <ScrollablePanel>
+      {documentTabs}
+    </ScrollablePanel>
+  );
 }
