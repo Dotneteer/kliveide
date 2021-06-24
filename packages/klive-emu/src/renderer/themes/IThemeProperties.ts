@@ -20,6 +20,15 @@ export interface IThemeProperties {
   "--statusbar-background-color": string;
   "--statusbar-foreground-color": string;
 
+  "--menu-active-background-color": string;
+  "--menu-text-color": string;
+  "--menu-disabled-text-color": string;
+  "--menu-selected-background-color": string;
+  "--menu-pane-background-color": string;
+  "--menu-pane-shadow": string;
+  "--menu-selected-background": string;
+  "--menu-selected-text-color": string;
+
   "--icon-default-size": string;
 
   "--emulator-background-color": string;

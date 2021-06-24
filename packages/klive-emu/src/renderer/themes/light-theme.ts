@@ -21,6 +21,15 @@ export const lightTheme: ITheme = {
     "--statusbar-background-color": "#007acc",
     "--statusbar-foreground-color": "white",
 
+    "--menu-active-background-color": "#505050",
+    "--menu-text-color": "#ffffff",
+    "--menu-disabled-text-color": "#AAAAAA",
+    "--menu-selected-background-color": "#094771",
+    "--menu-pane-background-color": "#252526",
+    "--menu-pane-shadow": "rgb(0, 0, 0) 0px 2px 4px",
+    "--menu-selected-background": "#094771",
+    "--menu-selected-text-color": "#ffffff",
+
     "--icon-default-size": "14",
 
     "--emulator-background-color": "#808080",

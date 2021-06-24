@@ -1,7 +1,10 @@
 import * as React from "react";
+import { useRef } from "react";
 import { CSSProperties, useState } from "react";
 import { themeService } from "../../../renderer/themes/theme-service";
 import { SvgIcon } from "../../common/SvgIcon";
+import { MenuItem } from "../command/command";
+import ContextMenu from "../command/ContextMenu";
 import CommandIconButton from "./CommandIconButton";
 
 interface Props {
@@ -16,6 +19,7 @@ interface Props {
  */
 export default function DocumentTab(props: Props) {
   const [pointed, setPointed] = useState(false);
+  const menuId = useRef(0);
 
   const normalColor = themeService.getProperty("--document-tab-color");
   const activeColor = themeService.getProperty("--document-tab-active-color");
@@ -41,17 +45,51 @@ export default function DocumentTab(props: Props) {
       : "var(--document-tab-color)",
   };
 
+  // --- Create menu items
+  const menuItems: MenuItem[] = [
+    {
+      id: "moveLeft",
+      text: "Move Left",
+    },
+    "separator",
+    {
+      id: "moveRight",
+      text: "Move Right",
+    },
+    "separator",
+    {
+      id: "other",
+      text: "Other",
+      items: [
+        {
+          id: "moveLeft1",
+          text: "Move Left",
+        },
+        {
+          id: "moveRight1",
+          text: "Move Right",
+        },
+      ],
+    },
+  ];
+
+  menuId.current = 1;
+
   return (
     <div
+      id={`id-${menuId.current}`}
       style={style}
       onMouseDown={(e) => {
         if (e.button === 0) {
           props.clicked?.();
+        } else {
+          console.log("right-clicked");
         }
       }}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
+      <ContextMenu target={`#id-${menuId.current}`} items={menuItems} />
       <SvgIcon iconName="file-code" width={16} height={16} />
       <span style={{ marginLeft: 6, marginRight: 6 }}>{props.title}</span>
       <CommandIconButton

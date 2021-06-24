@@ -82,9 +82,13 @@ export default function IdeApp() {
   }, [store]);
 
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
+  const themeStyleJson = JSON.stringify(themeStyle).replace(/\"/g, "").replace(/,/g, ";");
+  const themeStyleStr = themeStyleJson.substr(1, themeStyleJson.length - 2);
+  document.body.setAttribute("style", themeStyleStr);
+  document.body.setAttribute("class", themeClass);
 
   return (
-    <div style={themeStyle} className={themeClass}>
+    <div className={themeClass}>
       <IdeWorkbench />
       {ideViewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
     </div>
