@@ -1,3 +1,4 @@
+import { unregister } from "electron-localshortcut";
 import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { ideStore } from "../ideStore";
@@ -41,9 +42,7 @@ export interface IDocumentPanel {
    * @param state Optional state to set
    * @param fireImmediate Fire a panelStateLoaded event immediately?
    */
-  setPanelState(
-    state: Record<string, any> | null
-  ): void;
+  setPanelState(state: Record<string, any> | null): void;
 }
 
 /**
@@ -84,9 +83,7 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
    * Sets the state of the side bar panel
    * @param state Optional state to set
    */
-  setPanelState(
-    state: Record<string, any> | null
-  ): void {
+  setPanelState(state: Record<string, any> | null): void {
     if (state) {
       this._panelState = { ...this._panelState, ...state };
     }
@@ -241,6 +238,65 @@ class DocumentService {
    */
   getActiveDocument(): IDocumentPanel | null {
     return this._activeDocument;
+  }
+
+  /**
+   * Moves the document to the left
+   * @param doc Document to move
+   */
+  moveLeft(doc: IDocumentPanel): void {
+    const index = this._documents.indexOf(doc);
+    if (index > 0) {
+      const tmp = this._documents[index];
+      this._documents[index] = this._documents[index - 1];
+      this._documents[index - 1] = tmp;
+      this._documents = this._documents.slice(0);
+      this.fireChanges();
+    }
+  }
+
+  /**
+   * Moves the document to the right
+   * @param doc Document to move
+   */
+  moveRight(doc: IDocumentPanel): void {
+    const index = this._documents.indexOf(doc);
+    if (index >= 0 && index < this._documents.length - 1) {
+      const tmp = this._documents[index];
+      this._documents[index] = this._documents[index + 1];
+      this._documents[index + 1] = tmp;
+      this._documents = this._documents.slice(0);
+      this.fireChanges();
+    }
+  }
+
+  /**
+   * Closes all documents
+   */
+  closeAll(): void {
+    const docs = this._documents.slice(0);
+    docs.forEach((d) => this.unregisterDocument(d));
+  }
+
+  /**
+   * Closes all documents except the specified one
+   * @param doc Document to keep open
+   */
+  closeOthers(doc: IDocumentPanel): void {
+    const otherDocs = this._documents.filter((d) => d !== doc);
+    otherDocs.forEach((d) => this.unregisterDocument(d));
+  }
+
+  /**
+   * Closes all documents to the right of the specified one
+   * @param doc Document to keep open
+   */
+  closeToTheRight(doc: IDocumentPanel): void {
+    const index = this._documents.indexOf(doc);
+    if (index >= 0 && index < this._documents.length - 1) {
+      const rightDocs = this._documents.slice(index + 1);
+      rightDocs.forEach((d) => this.unregisterDocument(d));
+    }
   }
 
   /**

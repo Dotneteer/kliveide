@@ -12,7 +12,7 @@ export type Command = {
   readonly visible?: boolean;
   readonly enabled?: boolean;
   readonly checked?: boolean;
-  readonly execute?: (context: CommandExecutionContext) => void;
+  readonly execute?: (context?: CommandExecutionContext) => void;
 };
 
 /**

@@ -20,14 +20,14 @@ export default function IdeDesk() {
           <PaneDirective
             cssClass="splitter-panel"
             content={() => <IdeDocumentsFrame />}
-            size="90%"
+            size="66%"
             min="80px"
             max="95%"
           />
           <PaneDirective
             cssClass="splitter-panel"
             content={() => <OutputFrame />}
-            size="10%"
+            size="34%"
             min="5%"
             max="95%"
           />

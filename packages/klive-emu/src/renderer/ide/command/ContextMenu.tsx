@@ -1,9 +1,10 @@
 import * as React from "react";
 import {
   ContextMenuComponent,
+  MenuEventArgs,
   MenuItemModel,
 } from "@syncfusion/ej2-react-navigations";
-import { isCommandGroup, MenuItem } from "./command";
+import { Command, isCommandGroup, MenuItem } from "./command";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 import { animationTick } from "../../../renderer/common/utils";
@@ -25,11 +26,16 @@ export default function IdeContextMenu({ target, items }: Props) {
     thisComponent.enableItems(disabledIds, false, true);
   };
 
+  const select = (args: MenuEventArgs) => {
+    const command = findCommandById(items, args.item.id);
+    command?.execute();
+  };
+
   if (!ideFocused) {
     (async () => {
       await animationTick();
       thisComponent.close();
-    })()
+    })();
   }
 
   return (
@@ -39,6 +45,7 @@ export default function IdeContextMenu({ target, items }: Props) {
       items={menuItems}
       animationSettings={{ effect: "None" }}
       beforeOpen={beforeOpen}
+      select={select}
     />
   );
 }
@@ -92,4 +99,28 @@ function collectDisabledIds(items: MenuItem[]): string[] {
     }
   });
   return disabledIds;
+}
+
+/**
+ * Map menu items to the model used by the ContextMenuComponent
+ * @param items Items to map
+ * @returns Mapped model
+ */
+function findCommandById(items: MenuItem[], id: string): Command | null {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (typeof item === "string") {
+      continue;
+    } else if (isCommandGroup(item)) {
+      const command = findCommandById(item.items, id);
+      if (command) {
+        return command;
+      }
+    } else {
+      if (item.id === id) {
+        return item;
+      }
+    }
+  }
+  return null;
 }

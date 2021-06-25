@@ -8,14 +8,20 @@ interface Props {
   title?: string;
   fill?: string;
   enable?: boolean;
-  selected?: boolean;
   clicked?: () => void;
 }
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function CommandIconButton(props: Props) {
+export default function CommandIconButton({
+  iconName,
+  size = 20,
+  title,
+  fill,
+  enable,
+  clicked
+}: Props) {
   const [pointed, setPointed] = useState(false);
 
   const style = {
@@ -31,25 +37,25 @@ export default function CommandIconButton(props: Props) {
   return (
     <div
       style={style}
-      title={props.title}
+      title={title}
       onMouseDown={(ev) => handleMouseDown(ev)}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
       <SvgIcon
-        iconName={props.iconName}
+        iconName={iconName}
         fill={
-          props.enable ?? true ? props.fill : "--toolbar-button-disabled-fill"
+          enable ?? true ? fill : "--toolbar-button-disabled-fill"
         }
-        width={props.size}
-        height={props.size}
+        width={size}
+        height={size}
       />
     </div>
   );
 
   function handleMouseDown(ev: React.MouseEvent): void {
     if (ev.button === 0) {
-      props?.clicked?.();
+      clicked?.();
     }
   }
 }

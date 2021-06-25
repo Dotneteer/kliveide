@@ -1,16 +1,18 @@
 import * as React from "react";
-import { useRef } from "react";
 import { CSSProperties, useState } from "react";
 import { themeService } from "../../../renderer/themes/theme-service";
 import { SvgIcon } from "../../common/SvgIcon";
 import { MenuItem } from "../command/command";
 import ContextMenu from "../command/ContextMenu";
-import CommandIconButton from "./CommandIconButton";
+import CommandIconButton from "../command/CommandIconButton";
+import { documentService, IDocumentPanel } from "./DocumentService";
 
 interface Props {
   title: string;
   active: boolean;
   index: number;
+  isLast: boolean;
+  document: IDocumentPanel;
   clicked?: () => void;
   closed?: () => void;
 }
@@ -22,11 +24,12 @@ export default function DocumentTab({
   title,
   active,
   index,
+  isLast,
+  document,
   clicked,
   closed,
 }: Props) {
   const [pointed, setPointed] = useState(false);
-  const menuId = useRef(0);
 
   const normalColor = themeService.getProperty("--document-tab-color");
   const activeColor = themeService.getProperty("--document-tab-active-color");
@@ -55,38 +58,56 @@ export default function DocumentTab({
   // --- Create menu items
   const menuItems: MenuItem[] = [
     {
-      id: "moveLeft",
-      text: "Move Left",
+      id: "close",
+      text: "Close",
+      execute: () => {
+        documentService.unregisterDocument(document);
+      }
+    },
+    {
+      id: "closeAll",
+      text: "CloseAll",
+      execute: () => {
+        documentService.closeAll();
+      }
+    },
+    {
+      id: "closeOthers",
+      text: "Close Others",
+      execute: () => {
+        documentService.closeOthers(document);
+      }
+    },
+    {
+      id: "closeToTheRight",
+      text: "Close to the Right",
+      enabled: !isLast,
+      execute: () => {
+        documentService.closeToTheRight(document);
+      }
     },
     "separator",
+    {
+      id: "moveLeft",
+      text: "Move Left",
+      enabled: index > 0,
+      execute: () => {
+        documentService.moveLeft(document);
+      }
+    },
     {
       id: "moveRight",
       text: "Move Right",
-      enabled: false,
-    },
-    "separator",
-    {
-      id: "other",
-      text: "Other",
-      items: [
-        {
-          id: "moveLeft1",
-          text: "Move Left",
-          enabled: false,
-        },
-        {
-          id: "moveRight1",
-          text: "Move Right",
-        },
-      ],
+      enabled: !isLast,
+      execute: () => {
+        documentService.moveRight(document);
+      }
     },
   ];
 
-  menuId.current = 1;
-
   return (
     <div
-      id={`id-${menuId.current}`}
+      id={`id-${index}`}
       style={style}
       onMouseDown={(e) => {
         if (e.button === 0) {
@@ -97,14 +118,16 @@ export default function DocumentTab({
       onMouseLeave={() => setPointed(false)}
     >
       <ContextMenu
+        key={index}
         context={index}
-        target={`#id-${menuId.current}`}
+        target={`#id-${index}`}
         items={menuItems}
       />
       <SvgIcon iconName="file-code" width={16} height={16} />
       <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
       <CommandIconButton
         iconName="close"
+        title="Close"
         size={16}
         fill={
           pointed
