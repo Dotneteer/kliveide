@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
 import DocumentTabBar from "./DocumentTabBar";
-import CommandBar from "./CommandBar";
+import DocumentCommandBar from "./DocumentCommandBar";
 
 import { useEffect, useState } from "react";
 import {
@@ -39,8 +39,8 @@ export default function IdeDocumentFrame() {
     <Root>
       {tabBarVisible && (
         <HeaderBar>
-          <DocumentTabBar />
-          <CommandBar />
+          <DocumentTabBar key={1} />
+          <DocumentCommandBar />
         </HeaderBar>
       )}
       <PlaceHolder key={activeDoc?.id}>{activeDoc?.createContentElement()}</PlaceHolder>

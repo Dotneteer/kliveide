@@ -62,21 +62,21 @@ export default function DocumentTab({
       text: "Close",
       execute: () => {
         documentService.unregisterDocument(document);
-      }
+      },
     },
     {
       id: "closeAll",
       text: "CloseAll",
       execute: () => {
         documentService.closeAll();
-      }
+      },
     },
     {
       id: "closeOthers",
       text: "Close Others",
       execute: () => {
         documentService.closeOthers(document);
-      }
+      },
     },
     {
       id: "closeToTheRight",
@@ -84,7 +84,7 @@ export default function DocumentTab({
       enabled: !isLast,
       execute: () => {
         documentService.closeToTheRight(document);
-      }
+      },
     },
     "separator",
     {
@@ -93,7 +93,7 @@ export default function DocumentTab({
       enabled: index > 0,
       execute: () => {
         documentService.moveLeft(document);
-      }
+      },
     },
     {
       id: "moveRight",
@@ -101,13 +101,12 @@ export default function DocumentTab({
       enabled: !isLast,
       execute: () => {
         documentService.moveRight(document);
-      }
+      },
     },
   ];
 
   return (
     <div
-      id={`id-${index}`}
       style={style}
       onMouseDown={(e) => {
         if (e.button === 0) {
@@ -117,12 +116,7 @@ export default function DocumentTab({
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
-      <ContextMenu
-        key={index}
-        context={index}
-        target={`#id-${index}`}
-        items={menuItems}
-      />
+      <ContextMenu key={index} context={index} items={menuItems} />
       <SvgIcon iconName="file-code" width={16} height={16} />
       <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
       <CommandIconButton

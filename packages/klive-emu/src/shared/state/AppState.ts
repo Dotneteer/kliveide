@@ -3,7 +3,7 @@ import { Activity } from "../activity/Activity";
 /**
  * Represents the application's entire state vector
  */
-export interface AppState {
+export type AppState = {
   emuUiLoaded: boolean;
   ideUiLoaded: boolean;
   emuHasFocus: boolean;
@@ -17,22 +17,23 @@ export interface AppState {
   activityBar?: ActivityBarState;
   sideBar?: SideBarState;
   documentFrame?: DocumentFrameState;
-}
+  outputFrame?: OutputFrameState;
+};
 
 /**
  * Represents the options of the Emulators's View menu
  */
-export interface EmuViewOptions {
+export type EmuViewOptions = {
   showToolbar?: boolean;
   showStatusBar?: boolean;
   showFrameInfo?: boolean;
   showKeyboard?: boolean;
-}
+};
 
 /**
  * Represents the state of the emulator panel
  */
-export interface EmulatorPanelState {
+export type EmulatorPanelState = {
   width?: number;
   height?: number;
   baseClockFrequency?: number;
@@ -50,24 +51,24 @@ export interface EmulatorPanelState {
   firmware?: Uint8Array[];
   extraFeatures?: string[];
   frameDiagData?: FrameDiagData;
-}
+};
 
 /**
  * Represents disgnostics data for machine frames
  */
-export interface FrameDiagData {
+export type FrameDiagData = {
   lastEngineTime: number;
   avgEngineTime: number;
   lastFrameTime: number;
   avgFrameTime: number;
   renderedFrames: number;
   pcInfo: ProgramCounterInfo;
-}
+};
 
 /**
  * Represents the Program Counter information of a virtual machine's CPU
  */
-export interface ProgramCounterInfo {
+export type ProgramCounterInfo = {
   /**
    * Label of the Program Counter
    */
@@ -77,23 +78,23 @@ export interface ProgramCounterInfo {
    * Program Counter value
    */
   value: number;
-}
+};
 
 /**
  * ZX Spectrum specific state information
  */
-export interface ZxSpectrumSpecificState {
+export type ZxSpectrumSpecificState = {
   fastLoad?: boolean;
   showBeamPosition?: boolean;
   tapeContents?: Uint8Array;
   tapeLoaded?: boolean;
   loadMode?: boolean;
-}
+};
 
 /**
  * Represents the state of the activity bar
  */
-export interface ActivityBarState {
+export type ActivityBarState = {
   /**
    * The list of activities to display
    */
@@ -108,7 +109,7 @@ export interface ActivityBarState {
    * The index of activity the mouse points to
    */
   pointedIndex?: number;
-}
+};
 
 /**
  * Represents the state of the side bar
@@ -119,6 +120,14 @@ export type SideBarState = Record<string, Record<string, Record<string, any>>>;
  * Represents the state of the document frame
  */
 export type DocumentFrameState = Record<string, Record<string, any>>;
+
+/**
+ * Represents the state of the output frame
+ */
+export type OutputFrameState = {
+  visible?: boolean;
+  maximized?: boolean;
+};
 
 /**
  * The initial application state
@@ -168,6 +177,10 @@ export function getInitialAppState(): AppState {
       tapeContents: undefined,
     },
     sideBar: {},
-    documentFrame: {}
+    documentFrame: {},
+    outputFrame: {
+      visible: true,
+      maximized : false,
+    }
   };
 }

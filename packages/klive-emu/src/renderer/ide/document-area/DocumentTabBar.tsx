@@ -1,7 +1,9 @@
+import { ContextMenuParams } from "electron";
 import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common/ScrollablePanel";
+import ContextMenu from "../command/ContextMenu";
 
 import {
   documentService,
@@ -59,20 +61,10 @@ export default function DocumentTabBar() {
     );
   });
 
-  const style: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "row",
-    flexGrow: 1,
-    flexShrink: 1,
-    width: "100%",
-    height: "100%",
-    background: "var(--commandbar-background-color)",
-    overflowX: "hidden",
-  };
-
   return (
     <ScrollablePanel>
       {documentTabs}
+      {/* <ContextMenu items={[]} /> */}
     </ScrollablePanel>
   );
 }

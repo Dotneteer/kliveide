@@ -10,12 +10,11 @@ import { AppState } from "../../../shared/state/AppState";
 import { animationTick } from "../../../renderer/common/utils";
 
 type Props = {
-  target: string;
   context: number | string;
   items: MenuItem[];
 };
 
-export default function IdeContextMenu({ target, items }: Props) {
+export default function IdeContextMenu({ items, context }: Props) {
   const ideFocused = useSelector((s: AppState) => s.ideHasFocus);
 
   var thisComponent: ContextMenuComponent;
@@ -40,8 +39,8 @@ export default function IdeContextMenu({ target, items }: Props) {
 
   return (
     <ContextMenuComponent
+      id={`contextMenu_${context}`}
       ref={(scope) => (thisComponent = scope)}
-      target={target}
       items={menuItems}
       animationSettings={{ effect: "None" }}
       beforeOpen={beforeOpen}

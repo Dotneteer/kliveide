@@ -7,10 +7,10 @@ import { CSSProperties } from "react";
 /**
  * Represents the statusbar of the emulator
  */
-export default function CommandBar() {
+export default function DocumentCommandBar() {
   const style: CSSProperties = {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     flexGrow: 0,
     flexShrink: 0,
     height: "100%",

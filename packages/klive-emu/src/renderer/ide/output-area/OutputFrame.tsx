@@ -1,5 +1,7 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
+import OutputCommandBar from "./OutputCommandbar";
+import OutputTabBar from "./OutputTabBar";
 
 /**
  * Component props
@@ -14,6 +16,10 @@ interface Props {
 export default function OutputFrame(props: Props) {
   return (
     <Root data-initial-size={props.initialSize}>
+      <HeaderBar>
+        <OutputTabBar />
+        <OutputCommandBar />
+      </HeaderBar>
       <PlaceHolder />
     </Root>
   );
@@ -22,10 +28,13 @@ export default function OutputFrame(props: Props) {
 // --- Component helper tags
 const Root = createSizedStyledPanel({
   background: "var(--shell-canvas-background-color)",
-  // others: {
-  //   "border-top": "1px solid var(--panel-separator-border)",
-  //   "border-right": "1px solid var(--panel-separator-border)",
-  // },
+});
+
+// --- Component helper tags
+const HeaderBar = createSizedStyledPanel({
+  height: 35,
+  splitsVertical: false,
+  fitToClient: true,
 });
 
 const PlaceHolder = createSizedStyledPanel({});

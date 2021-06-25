@@ -186,9 +186,30 @@ export const IconDefs: IconInfo[] = [
     "clip-rule": "evenodd",
   },
   {
+    name: "chevron-left",
+    path:
+      "M5.928 7.976l4.357 4.357-.618.62L5 8.284v-.618L9.667 3l.618.619-4.357 4.357z",
+    width: 16,
+    height: 16,
+  },
+  {
     name: "chevron-right",
     path:
       "M10.072 8.024L5.715 3.667l.618-.62L11 7.716v.618L6.333 13l-.618-.619 4.357-4.357z",
+    width: 16,
+    height: 16,
+  },
+  {
+    name: "chevron-up",
+    path:
+      "M8.024 5.928l-4.357 4.357-.62-.618L7.716 5h.618L13 9.667l-.619.618-4.357-4.357z",
+    width: 16,
+    height: 16,
+  },
+  {
+    name: "chevron-down",
+    path:
+      "M7.976 10.072l4.357-4.357.62.618L8.284 11h-.618L3 6.333l.619-.618 4.357 4.357z",
     width: 16,
     height: 16,
   },

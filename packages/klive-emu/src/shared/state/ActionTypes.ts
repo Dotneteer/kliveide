@@ -61,4 +61,8 @@ export interface ActionTypes {
 
   // --- Document frame
   SET_DOCUMENT_FRAME_STATE: null;
+
+  // --- Output frame
+  OUTPUT_FRAME_SHOW: null;
+  OUTPUT_FRAME_MAXIMIZE: null;
 }
