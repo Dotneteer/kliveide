@@ -44,6 +44,7 @@ export default function DocumentTabBar() {
         title={d.title}
         active={d === activeDoc}
         key={index}
+        index={index}
         clicked={() => {
           if (activeDoc !== d) {
             documentService.setActiveDocument(d);

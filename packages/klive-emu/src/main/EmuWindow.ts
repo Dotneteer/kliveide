@@ -25,8 +25,13 @@ import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
 import { emuMessenger, setEmuMessenger } from "./app-menu-state";
 import { Cz88ContextProvider } from "./cz88-context";
 import { AppState } from "../shared/state/AppState";
-import { KliveSettings, reloadSettings, saveKliveSettings } from "./klive-configuration";
+import {
+  KliveSettings,
+  reloadSettings,
+  saveKliveSettings,
+} from "./klive-configuration";
 import { appSettings } from "./klive-settings";
+import { emuFocusAction } from "../shared/state/emu-focus-reducer";
 
 /**
  * Represents the singleton emulator window
@@ -71,6 +76,22 @@ export class EmuWindow extends AppWindow {
   }
 
   /**
+   * The window receives the focus
+   */
+  onFocus() {
+    super.onFocus();
+    mainStore.dispatch(emuFocusAction(true));
+  }
+
+  /**
+   * The window loses the focus
+   */
+  onBlur() {
+    super.onBlur();
+    mainStore.dispatch(emuFocusAction(false));
+  }
+
+  /**
    * Saves the current application settings
    */
   saveAppSettings(): void {
@@ -91,9 +112,8 @@ export class EmuWindow extends AppWindow {
       if (!kliveSettings.machineSpecific) {
         kliveSettings.machineSpecific = {};
       }
-      kliveSettings.machineSpecific[
-        machineType
-      ] = this._machineContextProvider.getMachineSpecificSettings();
+      kliveSettings.machineSpecific[machineType] =
+        this._machineContextProvider.getMachineSpecificSettings();
     }
     saveKliveSettings(kliveSettings);
     reloadSettings();
@@ -212,5 +232,5 @@ export class EmuWindow extends AppWindow {
 const contextRegistry: Record<string, typeof MachineContextProviderBase> = {
   sp48: ZxSpectrum48ContextProvider,
   sp128: ZxSpectrum128ContextProvider,
-  cz88: Cz88ContextProvider
+  cz88: Cz88ContextProvider,
 };

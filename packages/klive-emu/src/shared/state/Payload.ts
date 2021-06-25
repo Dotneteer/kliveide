@@ -38,4 +38,5 @@ export interface Payload {
   itemIndex?: number;
   sideBar?: SideBarState;
   documentFrame?: DocumentFrameState;
+  hasFocus?: boolean;
 }

@@ -6,6 +6,8 @@ import { Activity } from "../activity/Activity";
 export interface AppState {
   emuUiLoaded: boolean;
   ideUiLoaded: boolean;
+  emuHasFocus: boolean;
+  ideHasFocus: boolean;
   theme: string;
   emuViewOptions: EmuViewOptions;
   machineType?: string;
@@ -125,6 +127,8 @@ export function getInitialAppState(): AppState {
   return {
     emuUiLoaded: false,
     ideUiLoaded: false,
+    emuHasFocus: false,
+    ideHasFocus: false,
     theme: "dark",
     emuViewOptions: {
       showToolbar: true,

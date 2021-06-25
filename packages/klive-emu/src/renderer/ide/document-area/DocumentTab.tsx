@@ -10,6 +10,7 @@ import CommandIconButton from "./CommandIconButton";
 interface Props {
   title: string;
   active: boolean;
+  index: number;
   clicked?: () => void;
   closed?: () => void;
 }
@@ -17,7 +18,13 @@ interface Props {
 /**
  * Represents the statusbar of the emulator
  */
-export default function DocumentTab(props: Props) {
+export default function DocumentTab({
+  title,
+  active,
+  index,
+  clicked,
+  closed,
+}: Props) {
   const [pointed, setPointed] = useState(false);
   const menuId = useRef(0);
 
@@ -30,7 +37,7 @@ export default function DocumentTab(props: Props) {
     flexGrow: 0,
     flexShrink: 0,
     height: "100%",
-    background: props.active
+    background: active
       ? "var(--document-tab-active-background-color)"
       : "var(--document-tab-background-color)",
     alignItems: "center",
@@ -40,7 +47,7 @@ export default function DocumentTab(props: Props) {
     cursor: "pointer",
     borderRight: "1px solid var(--document-tab-active-background-color)",
     fontSize: "0.9em",
-    color: props.active
+    color: active
       ? "var(--document-tab-active-color)"
       : "var(--document-tab-color)",
   };
@@ -55,6 +62,7 @@ export default function DocumentTab(props: Props) {
     {
       id: "moveRight",
       text: "Move Right",
+      enabled: false,
     },
     "separator",
     {
@@ -64,6 +72,7 @@ export default function DocumentTab(props: Props) {
         {
           id: "moveLeft1",
           text: "Move Left",
+          enabled: false,
         },
         {
           id: "moveRight1",
@@ -81,30 +90,32 @@ export default function DocumentTab(props: Props) {
       style={style}
       onMouseDown={(e) => {
         if (e.button === 0) {
-          props.clicked?.();
-        } else {
-          console.log("right-clicked");
+          clicked?.();
         }
       }}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
-      <ContextMenu target={`#id-${menuId.current}`} items={menuItems} />
+      <ContextMenu
+        context={index}
+        target={`#id-${menuId.current}`}
+        items={menuItems}
+      />
       <SvgIcon iconName="file-code" width={16} height={16} />
-      <span style={{ marginLeft: 6, marginRight: 6 }}>{props.title}</span>
+      <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
       <CommandIconButton
         iconName="close"
         size={16}
         fill={
           pointed
-            ? props.active
+            ? active
               ? activeColor
               : normalColor
-            : props.active
+            : active
             ? activeColor
             : "transparent"
         }
-        clicked={() => props.closed?.()}
+        clicked={() => closed?.()}
       />
     </div>
   );

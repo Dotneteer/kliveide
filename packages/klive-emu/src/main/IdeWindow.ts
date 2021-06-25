@@ -4,7 +4,11 @@ import { ideHideAction } from "../shared/state/show-ide-reducer";
 import { setIdeMessenger } from "./app-menu-state";
 import { MainToIdeMessenger } from "./MainToIdeMessenger";
 import { Activity } from "../shared/activity/Activity";
-import { changeActivityAction, setActivitiesAction } from "../shared/state/activity-bar-reducer";
+import {
+  changeActivityAction,
+  setActivitiesAction,
+} from "../shared/state/activity-bar-reducer";
+import { ideFocusAction } from "../shared/state/ide-focus-reducer";
 
 /**
  * Represents the singleton IDE window
@@ -45,6 +49,22 @@ export class IdeWindow extends AppWindow {
    */
   get stateFile(): string {
     return "ide-window-state.json";
+  }
+
+  /**
+   * The window receives the focus
+   */
+  onFocus() {
+    super.onFocus();
+    mainStore.dispatch(ideFocusAction(true));
+  }
+
+  /**
+   * The window loses the focus
+   */
+  onBlur() {
+    super.onBlur();
+    mainStore.dispatch(ideFocusAction(false));
   }
 
   /**

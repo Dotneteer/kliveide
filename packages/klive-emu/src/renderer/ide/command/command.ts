@@ -23,7 +23,7 @@ export type CommandGroup = {
   readonly text: string;
   readonly visible?: boolean;
   readonly enabled?: boolean;
-  readonly items: Command[];
+  readonly items: MenuItem[];
 };
 
 /**
