@@ -15,7 +15,9 @@ import {
  */
 export default function IdeDocumentFrame() {
   const [tabBarVisible, setTabBarVisible] = useState(true);
-  const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(null);
+  const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(
+    documentService.getActiveDocument()
+  );
 
   // --- Refresh the documents when any changes occur
   const refreshDocs = (info: DocumentsInfo) => {
@@ -37,11 +39,13 @@ export default function IdeDocumentFrame() {
     <Root>
       {tabBarVisible && (
         <HeaderBar>
-          <DocumentTabBar key={1} />
+          <DocumentTabBar />
           <DocumentCommandBar />
         </HeaderBar>
       )}
-      <PlaceHolder key={activeDoc?.id}>{activeDoc?.createContentElement()}</PlaceHolder>
+      <PlaceHolder key={activeDoc?.id}>
+        {activeDoc?.createContentElement()}
+      </PlaceHolder>
     </Root>
   );
 }

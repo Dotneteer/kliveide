@@ -80,7 +80,7 @@ export class SampleToolPanelDescriptor extends ToolPanelDescriptorBase {
   }
 
   createHeaderElement(): React.ReactNode {
-    return <div style={{ width: 100, background: this.color }} />;
+    return <div style={{ width: 80, height: "100%", background: this.color }} />;
   }
 
   /**

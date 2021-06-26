@@ -1,9 +1,7 @@
-import { ContextMenuParams } from "electron";
 import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common/ScrollablePanel";
-import ContextMenu from "../command/ContextMenu";
 
 import {
   documentService,

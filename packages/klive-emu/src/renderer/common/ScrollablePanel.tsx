@@ -65,7 +65,8 @@ export default function ScrollablePanel({
         <FloatingScrollbar
           direction="vertical"
           barSize={scrollBarSize}
-          hostStartPos={top}
+          hostTop={top}
+          hostLeft={left}
           hostSize={height}
           hostCrossSize={width}
           hostScrollSize={scrollHeight}
@@ -76,7 +77,8 @@ export default function ScrollablePanel({
         <FloatingScrollbar
           direction="horizontal"
           barSize={scrollBarSize}
-          hostStartPos={left}
+          hostTop={top}
+          hostLeft={left}
           hostSize={width}
           hostCrossSize={height}
           hostScrollSize={scrollWidth}
@@ -101,7 +103,8 @@ type Orientation = "vertical" | "horizontal";
 type ScrollBarProps = {
   direction: Orientation;
   barSize?: number;
-  hostStartPos: number;
+  hostLeft: number;
+  hostTop: number;
   hostSize: number;
   hostCrossSize: number;
   hostScrollSize: number;
@@ -112,7 +115,8 @@ type ScrollBarProps = {
 function FloatingScrollbar({
   direction,
   barSize = 10,
-  hostStartPos,
+  hostLeft,
+  hostTop,
   hostSize,
   hostCrossSize,
   hostScrollSize,
@@ -138,12 +142,10 @@ function FloatingScrollbar({
     position: "absolute",
     top:
       direction === "horizontal"
-        ? hostStartPos + hostCrossSize - barSize
+        ? hostTop + hostCrossSize - barSize
         : undefined,
     left:
-      direction === "vertical"
-        ? hostStartPos + hostCrossSize - barSize
-        : undefined,
+      direction === "vertical" ? hostLeft + hostCrossSize - barSize : undefined,
     width: direction === "horizontal" ? hostSize : barSize,
     height: direction === "vertical" ? hostSize : barSize,
     background: "transparent",
@@ -151,8 +153,8 @@ function FloatingScrollbar({
 
   const handleStyle: CSSProperties = {
     position: "absolute",
-    top: direction === "horizontal" ? undefined : hostStartPos + handlePos,
-    left: direction === "vertical" ? undefined : hostStartPos + handlePos,
+    top: direction === "horizontal" ? undefined : hostTop + handlePos,
+    left: direction === "vertical" ? undefined : hostLeft + handlePos,
     width: direction === "horizontal" ? handleSize : barSize,
     height: direction === "vertical" ? handleSize : barSize,
     background: "var(--scrollbar-background-color)",

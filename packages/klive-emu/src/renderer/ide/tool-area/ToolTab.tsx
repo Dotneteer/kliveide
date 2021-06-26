@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { contextMenuService, MenuItem } from "../command/ContextMenuService";
-import { IToolPanel } from "./ToolAreaService";
+import { IToolPanel, toolAreaService } from "./ToolAreaService";
 
 interface Props {
   title: string;
@@ -15,7 +15,7 @@ interface Props {
 /**
  * Represents the statusbar of the emulator
  */
-export default function DocumentTab({
+export default function ToolTab({
   title,
   active,
   index,
@@ -32,43 +32,30 @@ export default function DocumentTab({
     flexGrow: 0,
     flexShrink: 0,
     height: "100%",
-    background: active
-      ? "var(--document-tab-active-background-color)"
-      : "var(--document-tab-background-color)",
+    background: "var(--document-tab-active-background-color)",
     alignItems: "center",
     justifyContent: "center",
-    paddingLeft: "10px",
-    paddingRight: "10px",
+    marginLeft: "10px",
+    marginRight: "10px",
     cursor: "pointer",
-    fontSize: "0.9em",
-    color: active
-      ? "var(--document-tab-active-color)"
-      : "var(--document-tab-color)",
+    fontSize: "0.8em",
+    color:
+      active || pointed
+        ? "var(--document-tab-active-color)"
+        : "var(--document-tab-color)",
+    borderBottom: `1px solid ${
+      active ? "var(--document-tab-active-color)" : "transparent"
+    }`,
   };
 
   // --- Create menu items
   const menuItems: MenuItem[] = [
     {
-      id: "close",
-      text: "Close",
-      execute: () => {
-        // ...
-      },
-    },
-    {
-      id: "closeAll",
-      text: "CloseAll",
-      execute: () => {
-        // ...
-      },
-    },
-    "separator",
-    {
       id: "moveLeft",
       text: "Move Panel Left",
       enabled: index > 0,
       execute: () => {
-        // ...
+        toolAreaService.moveLeft(tool);
       },
     },
     {
@@ -76,7 +63,7 @@ export default function DocumentTab({
       text: "Move Panel Right",
       enabled: !isLast,
       execute: () => {
-        // ...
+        toolAreaService.moveRight(tool);
       },
     },
   ];
@@ -100,7 +87,7 @@ export default function DocumentTab({
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
-      <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
+      <span>{title.toUpperCase()}</span>
     </div>
   );
 }

@@ -102,7 +102,7 @@ class ToolAreaService {
   private _toolsRegistered = new LiteEvent<IToolPanel>();
   private _activeToolChanging = new LiteEvent<IToolPanel | null>();
   private _activeToolChanged = new LiteEvent<IToolPanel | null>();
-  private _documentsChanged = new LiteEvent<ToolsInfo>();
+  private _toolsChanged = new LiteEvent<ToolsInfo>();
 
   constructor() {
     this._tools = [];
@@ -262,15 +262,15 @@ class ToolAreaService {
   /**
    * Fires when any documents changes occurres
    */
-  get documentsChanged(): ILiteEvent<ToolsInfo> {
-    return this._documentsChanged;
+  get toolsChanged(): ILiteEvent<ToolsInfo> {
+    return this._toolsChanged;
   }
 
   /**
    * Fires the documents changed event
    */
   private fireChanges(): void {
-    this._documentsChanged.fire({
+    this._toolsChanged.fire({
       tools: this._tools.slice(0),
       active: this._activeTool,
     });
