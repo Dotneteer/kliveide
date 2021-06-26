@@ -2,10 +2,10 @@ import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { themeService } from "../../../renderer/themes/theme-service";
 import { SvgIcon } from "../../common/SvgIcon";
-import { MenuItem } from "../command/command";
 import ContextMenu from "../command/ContextMenu";
 import CommandIconButton from "../command/CommandIconButton";
 import { documentService, IDocumentPanel } from "./DocumentService";
+import { contextMenuService, MenuItem } from "../command/ContextMenuService";
 
 interface Props {
   title: string;
@@ -30,6 +30,7 @@ export default function DocumentTab({
   closed,
 }: Props) {
   const [pointed, setPointed] = useState(false);
+  const hostElement = React.createRef<HTMLDivElement>();
 
   const normalColor = themeService.getProperty("--document-tab-color");
   const activeColor = themeService.getProperty("--document-tab-active-color");
@@ -107,16 +108,23 @@ export default function DocumentTab({
 
   return (
     <div
+      ref={hostElement}
       style={style}
-      onMouseDown={(e) => {
+      onMouseDown={(e: React.MouseEvent) => {
         if (e.button === 0) {
           clicked?.();
+        } else if (e.button === 2) {
+          contextMenuService.openMenu(
+            menuItems,
+            e.clientY,
+            e.clientX,
+            hostElement.current
+          );
         }
       }}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
-      <ContextMenu key={index} context={index} items={menuItems} />
       <SvgIcon iconName="file-code" width={16} height={16} />
       <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
       <CommandIconButton

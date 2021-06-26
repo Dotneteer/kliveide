@@ -4,23 +4,53 @@ import {
   MenuEventArgs,
   MenuItemModel,
 } from "@syncfusion/ej2-react-navigations";
-import { Command, isCommandGroup, MenuItem } from "./command";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 import { animationTick } from "../../../renderer/common/utils";
+import {
+  Command,
+  CommandGroup,
+  ContextMenuOpenTarget,
+  contextMenuService,
+  isCommandGroup,
+  MenuItem,
+} from "./ContextMenuService";
+import { useState } from "react";
+import { useEffect } from "react";
 
 type Props = {
-  context: number | string;
-  items: MenuItem[];
+  target: string;
 };
 
-export default function IdeContextMenu({ items, context }: Props) {
+export default function IdeContextMenu({ target }: Props) {
+  const [items, setItems] = useState<MenuItem[]>([]);
   const ideFocused = useSelector((s: AppState) => s.ideHasFocus);
+  let thisComponent: ContextMenuComponent;
 
-  var thisComponent: ContextMenuComponent;
+  // --- Refresh menu items
+  const menuItemsChanged = () => {
+    setItems(contextMenuService.getContextMenu());
+  };
+  const openRequested = ({ top, left, target }: ContextMenuOpenTarget) => {
+    thisComponent.open(top, left, target);
+  };
+
+  useEffect(() => {
+    // --- Mount
+    contextMenuService.menuChanged.on(menuItemsChanged);
+    contextMenuService.openRequested.on(openRequested);
+
+    return () => {
+      // --- OnMount
+      contextMenuService.menuChanged.off(menuItemsChanged);
+      contextMenuService.openRequested.off(openRequested);
+    };
+  });
+
   const menuItems = mapToMenuItems(items);
 
   const beforeOpen = () => {
+    thisComponent.enableItems(collectIds(items, () => true), true, true);
     const disabledIds = collectDisabledIds(items);
     thisComponent.enableItems(disabledIds, false, true);
   };
@@ -33,14 +63,14 @@ export default function IdeContextMenu({ items, context }: Props) {
   if (!ideFocused) {
     (async () => {
       await animationTick();
-      thisComponent.close();
+      thisComponent?.close();
     })();
   }
 
   return (
     <ContextMenuComponent
-      id={`contextMenu_${context}`}
       ref={(scope) => (thisComponent = scope)}
+      target={target}
       items={menuItems}
       animationSettings={{ effect: "None" }}
       beforeOpen={beforeOpen}
@@ -82,23 +112,28 @@ function mapToMenuItems(items: MenuItem[]): MenuItemModel[] {
 }
 
 function collectDisabledIds(items: MenuItem[]): string[] {
+  return collectIds(items, (i) => !(i.enabled ?? true))
+}
+
+function collectIds(items: MenuItem[], predicate: (item: Command | CommandGroup) => boolean): string[] {
   const disabledIds: string[] = [];
   items.forEach((item) => {
     if (typeof item === "string") {
       return;
     } else if (isCommandGroup(item)) {
-      if (!(item.enabled ?? true)) {
+      if (predicate(item)) {
         disabledIds.push(item.id);
       }
       disabledIds.push(...collectDisabledIds(item.items));
     } else {
-      if (!(item.enabled ?? true)) {
+      if (predicate(item)) {
         disabledIds.push(item.id);
       }
     }
   });
   return disabledIds;
 }
+
 
 /**
  * Map menu items to the model used by the ContextMenuComponent

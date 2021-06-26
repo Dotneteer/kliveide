@@ -12,9 +12,8 @@ import { useState } from "react";
 import { sideBarService } from "./side-bar/SideBarService";
 import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
 import { documentService } from "./document-area/DocumentService";
-import {
-  SampleDocumentPanelDescriptor,
-} from "./SampleDocument";
+import { SampleDocumentPanelDescriptor } from "./SampleDocument";
+import ContextMenu from "./command/ContextMenu";
 
 /**
  * Represents the emulator app's root component
@@ -82,15 +81,18 @@ export default function IdeApp() {
   }, [store]);
 
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
-  const themeStyleJson = JSON.stringify(themeStyle).replace(/\"/g, "").replace(/,/g, ";");
+  const themeStyleJson = JSON.stringify(themeStyle)
+    .replace(/\"/g, "")
+    .replace(/,/g, ";");
   const themeStyleStr = themeStyleJson.substr(1, themeStyleJson.length - 2);
   document.body.setAttribute("style", themeStyleStr);
   document.body.setAttribute("class", themeClass);
 
   return (
-    <div className={themeClass}>
+    <div id="klive_ide_app" className={themeClass}>
       <IdeWorkbench />
       {ideViewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
+      <ContextMenu target="#klive_ide_app" />
     </div>
   );
 
