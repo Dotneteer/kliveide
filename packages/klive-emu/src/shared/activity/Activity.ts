@@ -8,6 +8,11 @@ export interface Activity {
   readonly id: string;
 
   /**
+   * Activity title
+   */
+  readonly title: string;
+
+  /**
    * The name of the associated icon.
    */
   readonly iconName: string;

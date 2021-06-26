@@ -1,3 +1,4 @@
+import { animationTick } from "../../common/utils";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 
 /**
@@ -7,6 +8,7 @@ class ContextMenuService {
   private _menuItems: MenuItem[] = [];
   private _menuChanged = new LiteEvent<void>();
   private _openRequested = new LiteEvent<ContextMenuOpenTarget>();
+  private _isOpen: boolean = false;
 
   /**
    * Sets the menu items for the context menu
@@ -31,7 +33,22 @@ class ContextMenuService {
    * @param target Target element
    */
   open(top: number, left: number, target: HTMLElement): void {
+    this._isOpen = true;
     this._openRequested.fire({ top, left, target });
+  }
+
+  /**
+   * Closes the context menu
+   */
+  close(): void {
+    this._isOpen = false;
+  }
+
+  /**
+   * Is the context menu open requested programmatically?
+   */
+  get isOpen(): boolean {
+    return this._isOpen;
   }
 
   /**
@@ -41,12 +58,13 @@ class ContextMenuService {
    * @param left Left client position
    * @param target Target element
    */
-  openMenu(
+  async openMenu(
     items: MenuItem[],
     top: number,
     left: number,
     target: HTMLElement
-  ): void {
+  ): Promise<void> {
+    await animationTick();
     this.setContextMenu(items);
     this.open(top, left, target);
   }

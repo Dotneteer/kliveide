@@ -66,5 +66,8 @@ export const darkTheme: ITheme = {
 
     "--command-button-pointed-background": "#3d3d3d",
 
+    "--dropdown-text-color": "#ffffff",
+    "--dropdown-backgound-color": "#3c3c3c",
+  
   },
 };

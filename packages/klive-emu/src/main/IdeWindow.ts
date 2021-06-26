@@ -74,18 +74,27 @@ export class IdeWindow extends AppWindow {
     this._activities = [
       {
         id: "file-view",
+        title: "Explorer",
         iconName: "files",
       },
       {
         id: "debug-view",
+        title: "Run and debug",
         iconName: "debug-alt",
       },
       {
+        id: "log-view",
+        title: "Machine logs",
+        iconName: "output",
+      },
+      {
         id: "test-view",
+        title: "Testing",
         iconName: "beaker",
       },
       {
         id: "settings",
+        title: "Manage",
         iconName: "settings-gear",
         isSystemActivity: true,
       },

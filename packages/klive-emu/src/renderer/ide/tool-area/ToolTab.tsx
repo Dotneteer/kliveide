@@ -1,5 +1,6 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
+import { animationTick } from "../../common/utils";
 import { contextMenuService, MenuItem } from "../command/ContextMenuService";
 import { IToolPanel, toolAreaService } from "./ToolAreaService";
 
@@ -72,11 +73,11 @@ export default function ToolTab({
     <div
       ref={hostElement}
       style={style}
-      onMouseDown={(e: React.MouseEvent) => {
+      onMouseDown={async (e: React.MouseEvent) => {
         if (e.button === 0) {
           clicked?.();
         } else if (e.button === 2) {
-          contextMenuService.openMenu(
+          await contextMenuService.openMenu(
             menuItems,
             e.clientY,
             e.clientX,

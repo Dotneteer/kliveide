@@ -109,11 +109,11 @@ export default function DocumentTab({
     <div
       ref={hostElement}
       style={style}
-      onMouseDown={(e: React.MouseEvent) => {
+      onMouseDown={async (e: React.MouseEvent) => {
         if (e.button === 0) {
           clicked?.();
         } else if (e.button === 2) {
-          contextMenuService.openMenu(
+          await contextMenuService.openMenu(
             menuItems,
             e.clientY,
             e.clientX,

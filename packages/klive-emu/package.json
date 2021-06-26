@@ -56,6 +56,7 @@
     ]
   },
   "dependencies": {
+    "@syncfusion/ej2-react-dropdowns": "^19.1.69",
     "@syncfusion/ej2-react-layouts": "^19.1.63",
     "@syncfusion/ej2-react-navigations": "^19.1.69",
     "electron-localshortcut": "^3.2.1",

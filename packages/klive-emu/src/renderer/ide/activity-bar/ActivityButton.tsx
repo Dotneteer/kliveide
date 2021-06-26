@@ -20,27 +20,36 @@ interface Props {
 /**
  * Represents the statusbar of the emulator
  */
-export default function ActivityButton(props: Props) {
+export default function ActivityButton({
+  activity,
+  active,
+  pointed,
+  isSystem,
+  clicked,
+  point,
+  unpoint
+}: Props) {
   const style: Record<string, any> = {};
-  if (props.active) {
+  if (active) {
     style.borderLeft = "2px solid white";
   }
-  if (props.isSystem) {
+  if (isSystem) {
     style.alignSelf = "flex-end";
   }
   return (
     <Root
       style={style}
-      onClick={props.clicked}
-      onMouseEnter={props.point}
-      onMouseLeave={props.unpoint}
+      onClick={clicked}
+      onMouseEnter={point}
+      onMouseLeave={unpoint}
+      title={activity.title}
     >
       <SvgIcon
-        iconName={props.activity.iconName}
+        iconName={activity.iconName}
         width={24}
         height={24}
         fill={themeService.getProperty(
-          props.active || props.pointed
+          active || pointed
             ? "--activity-current-icon-color"
             : "--activity-icon-color"
         )}

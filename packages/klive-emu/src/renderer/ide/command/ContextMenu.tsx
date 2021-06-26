@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  BeforeOpenCloseMenuEventArgs,
   ContextMenuComponent,
   MenuEventArgs,
   MenuItemModel,
@@ -15,7 +16,7 @@ import {
   isCommandGroup,
   MenuItem,
 } from "./ContextMenuService";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useEffect } from "react";
 
 type Props = {
@@ -25,6 +26,7 @@ type Props = {
 export default function IdeContextMenu({ target }: Props) {
   const [items, setItems] = useState<MenuItem[]>([]);
   const ideFocused = useSelector((s: AppState) => s.ideHasFocus);
+  const closeCounter = useRef(0);
   let thisComponent: ContextMenuComponent;
 
   // --- Refresh menu items
@@ -32,7 +34,7 @@ export default function IdeContextMenu({ target }: Props) {
     setItems(contextMenuService.getContextMenu());
   };
   const openRequested = ({ top, left, target }: ContextMenuOpenTarget) => {
-    thisComponent.open(top, left, target);
+    thisComponent?.open(top, left, target);
   };
 
   useEffect(() => {
@@ -49,7 +51,11 @@ export default function IdeContextMenu({ target }: Props) {
 
   const menuItems = mapToMenuItems(items);
 
-  const beforeOpen = () => {
+  const beforeOpen = (args: BeforeOpenCloseMenuEventArgs) => {
+    console.log("before open");
+    if (!contextMenuService.isOpen) {
+      args.cancel = true;
+    }
     thisComponent.enableItems(collectIds(items, () => true), true, true);
     const disabledIds = collectDisabledIds(items);
     thisComponent.enableItems(disabledIds, false, true);
@@ -59,6 +65,15 @@ export default function IdeContextMenu({ target }: Props) {
     const command = findCommandById(items, args.item.id);
     command?.execute();
   };
+
+  const onClose = () => {
+    console.log(`onclose: ${closeCounter.current}`);
+    //closeCounter.current++;
+    if (contextMenuService.isOpen /*&& closeCounter.current > 1*/) {
+      contextMenuService.close();
+      closeCounter.current = 0;
+    }
+  }
 
   if (!ideFocused) {
     (async () => {
@@ -75,6 +90,7 @@ export default function IdeContextMenu({ target }: Props) {
       animationSettings={{ effect: "None" }}
       beforeOpen={beforeOpen}
       select={select}
+      onClose={onClose}
     />
   );
 }

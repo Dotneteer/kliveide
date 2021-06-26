@@ -64,4 +64,8 @@ export interface IThemeProperties {
   "--document-tab-active-color": string;
 
   "--command-button-pointed-background": string;
+
+  "--dropdown-text-color": string;
+  "--dropdown-backgound-color": string;
+
 }

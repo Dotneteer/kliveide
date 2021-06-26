@@ -1,9 +1,12 @@
 import * as React from "react";
+import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
+
 import { CSSProperties } from "styled-components";
 import {
   IToolPanel,
   ToolPanelDescriptorBase,
 } from "./tool-area/ToolAreaService";
+import { useEffect } from "react";
 
 /**
  * Component properties
@@ -23,7 +26,7 @@ interface State {
 /**
  * A sample document
  */
-export default class SampleTool extends React.Component<Props, State> {
+class SampleTool extends React.Component<Props, State> {
   static defaultProps = {
     color: "blue",
   };
@@ -67,6 +70,30 @@ export default class SampleTool extends React.Component<Props, State> {
   }
 }
 
+function OutputPanesPropertyBar() {
+  const sportsData: { [key: string]: Object }[] = [
+    { Id: "game1", Game: "Badminton" },
+    { Id: "game2", Game: "Football" },
+    { Id: "game3", Game: "Tennis" },
+  ];
+
+  let thisComponent: DropDownListComponent;
+
+  useEffect(() => {
+    // --- Mount
+    thisComponent.value = "game1"
+  });
+
+  return (
+    <DropDownListComponent
+      ref={(scope) => (thisComponent = scope)}
+      dataSource={sportsData}
+      fields={{ text: "Game", value: "Id" }}
+      width={170}
+    />
+  );
+}
+
 /**
  * Descriptor for the sample side bar panel
  */
@@ -80,7 +107,11 @@ export class SampleToolPanelDescriptor extends ToolPanelDescriptorBase {
   }
 
   createHeaderElement(): React.ReactNode {
-    return <div style={{ width: 80, height: "100%", background: this.color }} />;
+    return (
+      <div style={{ width: "auto", alignContent: "center" }}>
+        <OutputPanesPropertyBar />
+      </div>
+    );
   }
 
   /**
