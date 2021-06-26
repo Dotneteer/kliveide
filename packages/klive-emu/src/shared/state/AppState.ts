@@ -17,7 +17,7 @@ export type AppState = {
   activityBar?: ActivityBarState;
   sideBar?: SideBarState;
   documentFrame?: DocumentFrameState;
-  outputFrame?: OutputFrameState;
+  toolFrame?: ToolFrameState;
 };
 
 /**
@@ -124,9 +124,10 @@ export type DocumentFrameState = Record<string, Record<string, any>>;
 /**
  * Represents the state of the output frame
  */
-export type OutputFrameState = {
+export type ToolFrameState = {
   visible?: boolean;
   maximized?: boolean;
+  state: Record<string, Record<string, any>>;
 };
 
 /**
@@ -178,9 +179,10 @@ export function getInitialAppState(): AppState {
     },
     sideBar: {},
     documentFrame: {},
-    outputFrame: {
+    toolFrame: {
       visible: true,
       maximized : false,
+      state: {}
     }
   };
 }

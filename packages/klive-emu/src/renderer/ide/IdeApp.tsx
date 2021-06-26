@@ -14,6 +14,8 @@ import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
 import { documentService } from "./document-area/DocumentService";
 import { SampleDocumentPanelDescriptor } from "./SampleDocument";
 import ContextMenu from "./command/ContextMenu";
+import { toolAreaService } from "./tool-area/ToolAreaService";
+import { SampleToolPanelDescriptor } from "./SampleTool";
 
 /**
  * Represents the emulator app's root component
@@ -72,6 +74,14 @@ export default function IdeApp() {
     );
     documentService.registerDocument(
       new SampleDocumentPanelDescriptor("7", "Long Document #4", "blue")
+    );
+
+    // --- Register sample tools
+    toolAreaService.registerTool(
+      new SampleToolPanelDescriptor("1", "Interactive", "red")
+    );
+    toolAreaService.registerTool(
+      new SampleToolPanelDescriptor("2", "Output", "green")
     );
 
     return () => {

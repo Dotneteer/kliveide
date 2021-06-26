@@ -7,7 +7,7 @@ import {
 
 import { createSizedStyledPanel } from "../common/PanelStyles";
 import IdeDocumentsFrame from "./document-area/IdeDocumentsFrame";
-import OutputFrame from "./output-area/OutputFrame";
+import ToolFrame from "./tool-area/ToolFrame";
 import { useSelector } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 
@@ -16,7 +16,7 @@ import { AppState } from "../../shared/state/AppState";
  */
 export default function IdeDesk() {
   const outputMaximized = useSelector(
-    (state: AppState) => state.outputFrame?.maximized ?? false
+    (state: AppState) => state.toolFrame?.maximized ?? false
   );
 
   return (
@@ -34,7 +34,7 @@ export default function IdeDesk() {
           )}
           <PaneDirective
             cssClass="splitter-panel"
-            content={() => <OutputFrame />}
+            content={() => <ToolFrame />}
             size="34%"
             min="5%"
             max="95%"

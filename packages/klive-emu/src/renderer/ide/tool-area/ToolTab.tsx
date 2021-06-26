@@ -1,19 +1,15 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { themeService } from "../../../renderer/themes/theme-service";
-import { SvgIcon } from "../../common/SvgIcon";
-import CommandIconButton from "../command/CommandIconButton";
-import { documentService, IDocumentPanel } from "./DocumentService";
 import { contextMenuService, MenuItem } from "../command/ContextMenuService";
+import { IToolPanel } from "./ToolAreaService";
 
 interface Props {
   title: string;
   active: boolean;
   index: number;
   isLast: boolean;
-  document: IDocumentPanel;
+  tool: IToolPanel;
   clicked?: () => void;
-  closed?: () => void;
 }
 
 /**
@@ -24,15 +20,11 @@ export default function DocumentTab({
   active,
   index,
   isLast,
-  document,
+  tool,
   clicked,
-  closed,
 }: Props) {
   const [pointed, setPointed] = useState(false);
   const hostElement = React.createRef<HTMLDivElement>();
-
-  const normalColor = themeService.getProperty("--document-tab-color");
-  const activeColor = themeService.getProperty("--document-tab-active-color");
 
   const style: CSSProperties = {
     display: "flex",
@@ -48,7 +40,6 @@ export default function DocumentTab({
     paddingLeft: "10px",
     paddingRight: "10px",
     cursor: "pointer",
-    borderRight: "1px solid var(--document-tab-active-background-color)",
     fontSize: "0.9em",
     color: active
       ? "var(--document-tab-active-color)"
@@ -61,29 +52,14 @@ export default function DocumentTab({
       id: "close",
       text: "Close",
       execute: () => {
-        documentService.unregisterDocument(document);
+        // ...
       },
     },
     {
       id: "closeAll",
       text: "CloseAll",
       execute: () => {
-        documentService.closeAll();
-      },
-    },
-    {
-      id: "closeOthers",
-      text: "Close Others",
-      execute: () => {
-        documentService.closeOthers(document);
-      },
-    },
-    {
-      id: "closeToTheRight",
-      text: "Close to the Right",
-      enabled: !isLast,
-      execute: () => {
-        documentService.closeToTheRight(document);
+        // ...
       },
     },
     "separator",
@@ -92,7 +68,7 @@ export default function DocumentTab({
       text: "Move Panel Left",
       enabled: index > 0,
       execute: () => {
-        documentService.moveLeft(document);
+        // ...
       },
     },
     {
@@ -100,7 +76,7 @@ export default function DocumentTab({
       text: "Move Panel Right",
       enabled: !isLast,
       execute: () => {
-        documentService.moveRight(document);
+        // ...
       },
     },
   ];
@@ -124,23 +100,7 @@ export default function DocumentTab({
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
-      <SvgIcon iconName="file-code" width={16} height={16} />
       <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
-      <CommandIconButton
-        iconName="close"
-        title="Close"
-        size={16}
-        fill={
-          pointed
-            ? active
-              ? activeColor
-              : normalColor
-            : active
-            ? activeColor
-            : "transparent"
-        }
-        clicked={() => closed?.()}
-      />
     </div>
   );
 }

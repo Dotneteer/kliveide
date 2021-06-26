@@ -8,6 +8,7 @@ type PanelProps = {
   showVerticalScrollbar?: boolean;
   showHorizontalScrollbar?: boolean;
   scrollBarSize?: number;
+  background?: string;
 } & { children?: ReactNode };
 
 /**
@@ -18,6 +19,7 @@ export default function ScrollablePanel({
   showHorizontalScrollbar = true,
   showVerticalScrollbar = true,
   scrollBarSize = 4,
+  background = "var(--shell-canvas-background-color)",
 }: PanelProps) {
   const [left, setLeft] = useState(0);
   const [top, setTop] = useState(0);
@@ -37,7 +39,7 @@ export default function ScrollablePanel({
     flexShrink: 1,
     width: "100%",
     height: "100%",
-    background: "var(--commandbar-background-color)",
+    background,
     overflowX: "hidden",
   };
 

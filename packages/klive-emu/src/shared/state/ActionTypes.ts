@@ -63,6 +63,7 @@ export interface ActionTypes {
   SET_DOCUMENT_FRAME_STATE: null;
 
   // --- Output frame
-  OUTPUT_FRAME_SHOW: null;
-  OUTPUT_FRAME_MAXIMIZE: null;
+  TOOL_FRAME_SHOW: null;
+  TOOL_FRAME_MAXIMIZE: null;
+  SET_TOOL_FRAME_STATE: null;
 }

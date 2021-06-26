@@ -5,14 +5,14 @@ import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 import { ideStore } from "../ideStore";
-import { ideOutputFrameMaximizeAction } from "../../../shared/state/output-frame-reducer";
+import { ideToolFrameMaximizeAction } from "../../../shared/state/tool-frame-reducer";
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function OutputCommandBar() {
+export default function ToolCommandBar() {
   const maximized = useSelector(
-    (state: AppState) => state.outputFrame?.maximized ?? false
+    (state: AppState) => state.toolFrame?.maximized ?? false
   );
 
   const style: CSSProperties = {
@@ -26,7 +26,7 @@ export default function OutputCommandBar() {
     justifyContent: "center",
     paddingLeft: "6px",
     paddingRight: "6px",
-    background: "var(--commandbar-background-color)",
+    background: "var(--shell-canvas-background-color)",
   };
 
   return (
@@ -36,7 +36,7 @@ export default function OutputCommandBar() {
         title={maximized ? "Restore panel size" : "Maximize panel size"}
         clicked={() => {
           console.log(!maximized);
-          ideStore.dispatch(ideOutputFrameMaximizeAction(!maximized));
+          ideStore.dispatch(ideToolFrameMaximizeAction(!maximized));
         }}
       />
       <CommandIconButton iconName="close" title="Close" clicked={() => {}} />

@@ -62,9 +62,8 @@ export default function DocumentTabBar() {
   });
 
   return (
-    <ScrollablePanel>
+    <ScrollablePanel background="var(--commandbar-background-color)">
       {documentTabs}
-      {/* <ContextMenu items={[]} /> */}
     </ScrollablePanel>
   );
 }

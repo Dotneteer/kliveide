@@ -17,8 +17,6 @@ export default function IdeDocumentFrame() {
   const [tabBarVisible, setTabBarVisible] = useState(true);
   const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(null);
 
-  const tabBarHost: React.RefObject<HTMLElement> = React.createRef();
-
   // --- Refresh the documents when any changes occur
   const refreshDocs = (info: DocumentsInfo) => {
     setTabBarVisible(info.docs.length !== 0);
@@ -62,6 +60,6 @@ const HeaderBar = createSizedStyledPanel({
 
 const PlaceHolder = createSizedStyledPanel({
   others: {
-    background: "#404040",
+    background: "var(--shell-canvas-background-color)",
   },
 });

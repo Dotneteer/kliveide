@@ -41,4 +41,5 @@ export interface Payload {
   hasFocus?: boolean;
   visible?: boolean;
   maximized?: boolean;
+  toolState?: Record<string, Record<string, any>>;
 }
