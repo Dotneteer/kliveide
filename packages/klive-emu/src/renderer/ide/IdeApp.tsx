@@ -16,6 +16,12 @@ import { SampleDocumentPanelDescriptor } from "./SampleDocument";
 import ContextMenu from "./command/ContextMenu";
 import { toolAreaService } from "./tool-area/ToolAreaService";
 import { SampleToolPanelDescriptor } from "./SampleTool";
+import { Activity } from "../../shared/activity/Activity";
+import { ideStore } from "./ideStore";
+import {
+  changeActivityAction,
+  setActivitiesAction,
+} from "../../shared/state/activity-bar-reducer";
 
 /**
  * Represents the emulator app's root component
@@ -39,10 +45,69 @@ export default function IdeApp() {
       updateThemeState();
     });
 
+    // --- Set up activities
+    const activities: Activity[] = [
+      {
+        id: "file-view",
+        title: "Explorer",
+        iconName: "files",
+        commands: [
+          {
+            id: "explorer-cmds",
+            text: "",
+            items: [
+              {
+                id: "cmd-1",
+                text: "Command #1",
+              },
+              {
+                id: "cmd-2",
+                text: "Command #2",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "debug-view",
+        title: "Run and debug",
+        iconName: "debug-alt",
+        commands: [
+          {
+            id: "cmd-1",
+            iconName: "play",
+            text: "Command #1",
+          },
+          {
+            id: "cmd-2",
+            text: "Command #2",
+          },
+        ],
+      },
+      {
+        id: "log-view",
+        title: "Machine logs",
+        iconName: "output",
+      },
+      {
+        id: "test-view",
+        title: "Testing",
+        iconName: "beaker",
+      },
+      {
+        id: "settings",
+        title: "Manage",
+        iconName: "settings-gear",
+        isSystemActivity: true,
+      },
+    ];
+    ideStore.dispatch(setActivitiesAction(activities));
+    ideStore.dispatch(changeActivityAction(0));
+
     // --- Register side bar panels
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor("GREEN", "green")
+      new SampleSideBarPanelDescriptor("LONG long GREEN", "green")
     );
     sideBarService.registerSideBarPanel(
       "debug-view",

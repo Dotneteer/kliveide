@@ -1,165 +1,26 @@
 import * as React from "react";
-
-import { createPanel, createSizedStyledPanel } from "../../common/PanelStyles";
-import { SvgIcon } from "../../common/SvgIcon";
-import { useRef, useState } from "react";
+import { Activity } from "../../../shared/activity/Activity";
+import { createSizedStyledPanel } from "../../common/PanelStyles";
+import styles from "styled-components";
 import { CSSProperties } from "react";
+import CommandIconButton from "../command/CommandIconButton";
+import { isCommandGroup, MenuItem } from "../../../shared/command/commands";
+import { contextMenuService } from "../command/ContextMenuService";
 
-/**
- * Component properties
- */
-interface Props {
-  title: string;
-  expanded: boolean;
-  sizeable: boolean;
-  index: number;
-  clicked: () => void;
-  startResize: (index: number) => void;
-  resized: (delta: number) => void;
-}
+type Props = {
+  activity: Activity;
+};
 
-/**
- * Represents the statusbar of the emulator
- */
-export default function SideBarHeader(props: Props) {
-  // --- Component state
-  const [focused, setFocused] = useState(false);
-  const [pointed, setPointed] = useState(false);
-  const [resizing, setResizing] = useState(false);
-
-  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
-  const gripStyle: CSSProperties = {
-    position: "relative",
-    height: "4px",
-    width: "100%",
-    background:
-      pointed || resizing
-        ? "var(--selected-border-color)"
-        : "transparent",
-    cursor: "ns-resize",
-    transitionProperty: "background-color",
-    transitionDuration: "0.1s",
-    transitionDelay: "0.25s",
-  };
-  const borderStyle = focused
-    ? "1px solid var(--selected-border-color)"
-    : "1px solid transparent";
-
-  // --- We need a context that uses "this" function when handles the `move`
-  // --- function to respond to document events
-  const context: DragContext = {
-    gripPosition: 0,
-    move: (e: MouseEvent) => move(e, context),
-    resized: (delta) => props.resized(delta),
-  };
-
-  const gripElement: React.RefObject<HTMLDivElement> = React.createRef();
+export default function SideBarPanelHeader({ activity }: Props) {
   return (
-    <Root
-      ref={hostElement}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      onKeyPress={handleKeyPress}
-      tabIndex={0}
-      style={{
-        borderLeft: borderStyle,
-        borderRight: borderStyle,
-        borderTop: borderStyle,
-        borderBottom: focused
-          ? borderStyle
-          : "1px solid var(--panel-separator-border)",
-      }}
-    >
-      {props.sizeable && (
-        // --- We use this element for resizing the panel
-        <div
-          style={gripStyle}
-          ref={gripElement}
-          onMouseEnter={() => {
-            setPointed(true);
-          }}
-          onMouseLeave={() => {
-            setPointed(false);
-          }}
-          onMouseDown={(e) => {
-            if (e.button === 0) {
-              startResize(e);
-            }
-          }}
-          onMouseUp={() => {
-            endResize();
-          }}
-        />
-      )}
-      <Caption onClick={() => props.clicked?.()}>
-        <SvgIcon
-          iconName="chevron-right"
-          width={16}
-          height={16}
-          rotate={props.expanded ? 90 : 0}
-        ></SvgIcon>
-        <Text>
-          {props.title.toUpperCase()}({props.sizeable.toString()})
-        </Text>
+    <Root>
+      <Caption>
+        <Text>{activity.title.toUpperCase()}</Text>
+        <CommandBar commands={activity.commands} />
       </Caption>
     </Root>
   );
-
-  /**
-   * Use the Enter and Space keys as mouse clicks
-   * @param e
-   */
-  function handleKeyPress(e: React.KeyboardEvent): void {
-    if (e.code === "Enter" || e.code === "Space") {
-      props.clicked?.();
-    }
-  }
-
-  /**
-   * Starts resizing this panel
-   */
-  function startResize(e: React.MouseEvent): void {
-    setResizing(true);
-    context.gripPosition = e.clientY;
-    window.addEventListener("mouseup", endResize);
-    window.addEventListener("touchend", endResize);
-    window.addEventListener("touchcancel", endResize);
-    window.addEventListener("mousemove", context.move);
-    window.addEventListener("touchmove", context.move);
-    document.body.style.cursor = "ns-resize";
-    props.startResize(props.index);
-  }
-
-  /**
-   * Ends resizing this panel
-   */
-  function endResize(): void {
-    window.removeEventListener("mouseup", endResize);
-    window.removeEventListener("touchend", endResize);
-    window.removeEventListener("touchcancel", endResize);
-    window.removeEventListener("mousemove", context.move);
-    window.removeEventListener("touchmove", context.move);
-    document.body.style.cursor = "";
-    setResizing(false);
-  }
-
-  /**
-   * Change the size of the element
-   */
-  function move(e: MouseEvent, context: DragContext): void {
-    context.resized(e.clientY - context.gripPosition);
-  }
 }
-
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  height: 24,
-  fitToClient: false,
-  others: {
-    "border-bottom": "1px solid var(--panel-separator-border)",
-    outline: "none",
-  },
-});
 
 const Caption = createSizedStyledPanel({
   splitsVertical: false,
@@ -169,18 +30,78 @@ const Caption = createSizedStyledPanel({
   },
 });
 
-const Text = createPanel({
-  color: "var(--sidebar-header-color)",
-  "font-size": "0.8em",
-  "font-weight": "600",
-  "padding-left": "4px",
-  "flex-grow": "0",
-  "flex-shrink": "0",
+// --- Component helper tags
+const Root = createSizedStyledPanel({
+  height: 35,
+  fitToClient: false,
+  background: "transparent",
 });
 
-// --- Context for the drag operation
-interface DragContext {
-  gripPosition: number;
-  move: (e: MouseEvent) => void;
-  resized: (delta: number) => void;
+const Text = styles.span`
+  color: var(--sidebar-header-color);
+  font-size: 0.8em;
+  font-weight: 400;
+  padding-left: 20px;
+  width: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;`;
+
+type CommandBarProps = {
+  commands?: MenuItem[];
+};
+
+function CommandBar({ commands }: CommandBarProps) {
+  const style: CSSProperties = {
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 0,
+    flexShrink: 0,
+    height: "100%",
+    width: "auto",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingLeft: "6px",
+    paddingRight: "6px",
+    background: "var(--commandbar-background-color)",
+  };
+
+  const buttons: JSX.Element[] = [];
+  if (commands) {
+    commands.forEach((cmd, index) => {
+      if (typeof cmd === "string") {
+        return;
+      } else if (isCommandGroup(cmd)) {
+        buttons.push(
+          <CommandIconButton
+            key={index}
+            doNotPropagate={true}
+            iconName="ellipsis"
+            title={cmd.text}
+            clicked={async (e: React.MouseEvent) => {
+              await contextMenuService.openMenu(
+                cmd.items,
+                e.clientY + 4,
+                e.clientX + 4,
+                e.target as HTMLElement
+              );
+            }}
+          />
+        );
+      } else {
+        buttons.push(
+          <CommandIconButton
+            key={index}
+            doNotPropagate={true}
+            iconName={cmd.iconName ?? "question"}
+            title={cmd.text}
+          />
+        );
+      }
+    });
+  }
+
+  return <div style={style}>{buttons}</div>;
 }

@@ -1,7 +1,6 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
 import DocumentTabBar from "./DocumentTabBar";
-import DocumentCommandBar from "./DocumentCommandBar";
 
 import { useEffect, useState } from "react";
 import {
@@ -9,6 +8,8 @@ import {
   DocumentsInfo,
   IDocumentPanel,
 } from "./DocumentService";
+import { CSSProperties } from "react";
+import CommandIconButton from "../command/CommandIconButton";
 
 /**
  * Represents the statusbar of the emulator
@@ -36,7 +37,7 @@ export default function IdeDocumentFrame() {
   });
 
   return (
-    <Root>
+    <Root tabIndex={0}>
       {tabBarVisible && (
         <HeaderBar>
           <DocumentTabBar />
@@ -67,3 +68,34 @@ const PlaceHolder = createSizedStyledPanel({
     background: "var(--shell-canvas-background-color)",
   },
 });
+
+/**
+ * Represents the command bar of the document frame
+ */
+function DocumentCommandBar() {
+  const style: CSSProperties = {
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 0,
+    flexShrink: 0,
+    height: "100%",
+    width: "auto",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingLeft: "6px",
+    paddingRight: "6px",
+    background: "var(--commandbar-background-color)",
+  };
+
+  return (
+    <div style={style}>
+      <CommandIconButton
+        iconName="close"
+        title="Close All"
+        clicked={() => {
+          documentService.closeAll();
+        }}
+      />
+    </div>
+  );
+}

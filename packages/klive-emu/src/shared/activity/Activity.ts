@@ -1,7 +1,9 @@
+import { MenuItem } from "../command/commands";
+
 /**
  * Describes an activity in the Activity bar
  */
-export interface Activity {
+export type Activity = {
   /**
    * The identifier of the activity.
    */
@@ -21,4 +23,9 @@ export interface Activity {
    * Signs that the activity is a system activity
    */
   readonly isSystemActivity?: boolean;
+
+  /**
+   * Optional menu commands of the activity
+   */
+  readonly commands?: MenuItem[];
 }

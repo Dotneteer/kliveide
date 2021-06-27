@@ -4,7 +4,8 @@ import { themeService } from "../../../renderer/themes/theme-service";
 import { SvgIcon } from "../../common/SvgIcon";
 import CommandIconButton from "../command/CommandIconButton";
 import { documentService, IDocumentPanel } from "./DocumentService";
-import { contextMenuService, MenuItem } from "../command/ContextMenuService";
+import { contextMenuService} from "../command/ContextMenuService";
+import { MenuItem } from "../../../shared/command/commands";
 
 interface Props {
   title: string;

@@ -1,5 +1,6 @@
 import { animationTick } from "../../common/utils";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { MenuItem } from "../../../shared/command/commands";
 
 /**
  * Represents the context menu service
@@ -28,7 +29,7 @@ class ContextMenuService {
 
   /**
    * Opens the current context menu
-   * @param top Top client position 
+   * @param top Top client position
    * @param left Left client position
    * @param target Target element
    */
@@ -54,7 +55,7 @@ class ContextMenuService {
   /**
    * Opens the specified context menu
    * @param items New context menu items
-   * @param top Top client position 
+   * @param top Top client position
    * @param left Left client position
    * @param target Target element
    */
@@ -64,8 +65,9 @@ class ContextMenuService {
     left: number,
     target: HTMLElement
   ): Promise<void> {
-    await animationTick();
+    await new Promise((r) => setTimeout(r, 25));
     this.setContextMenu(items);
+    await new Promise((r) => setTimeout(r, 25));
     this.open(top, left, target);
   }
 
@@ -98,45 +100,3 @@ export type ContextMenuOpenTarget = {
  * The singleton instance of the context menu service
  */
 export const contextMenuService = new ContextMenuService();
-
-/**
- * Represents the execution context of a command
- */
-export type CommandExecutionContext = {};
-
-/**
- * Represents a command
- */
-export type Command = {
-  readonly id: string;
-  readonly text: string;
-  readonly visible?: boolean;
-  readonly enabled?: boolean;
-  readonly checked?: boolean;
-  readonly execute?: (context?: CommandExecutionContext) => void;
-};
-
-/**
- * Represents a command group
- */
-export type CommandGroup = {
-  readonly id: string;
-  readonly text: string;
-  readonly visible?: boolean;
-  readonly enabled?: boolean;
-  readonly items: MenuItem[];
-};
-
-/**
- * Represents an item in a menu
- */
-export type MenuItem = Command | CommandGroup | "separator";
-
-/**
- * Type guard for a CommandGroup
- * @param item Item to check
- * @returns Is a CommandGroup instance?
- */
-export function isCommandGroup(item: MenuItem): item is CommandGroup {
-  return (item as CommandGroup).items !== undefined;
-}

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useEffect } from "react";
 import { useState } from "react";
 import { SvgIcon } from "../../common/SvgIcon";
 
@@ -8,7 +9,8 @@ interface Props {
   title?: string;
   fill?: string;
   enable?: boolean;
-  clicked?: () => void;
+  clicked?: (ev: React.MouseEvent) => void;
+  doNotPropagate?: boolean;
 }
 
 /**
@@ -16,12 +18,14 @@ interface Props {
  */
 export default function CommandIconButton({
   iconName,
-  size = 20,
+  size = 16,
   title,
   fill,
   enable,
-  clicked
+  clicked,
+  doNotPropagate = false,
 }: Props) {
+  const hostElement = React.createRef<HTMLDivElement>();
   const [pointed, setPointed] = useState(false);
 
   const style = {
@@ -34,28 +38,47 @@ export default function CommandIconButton({
     background: pointed ? "#3d3d3d" : "transparent",
   };
 
+  const handleMouseDown = (ev: React.MouseEvent) => {
+    if (ev.button === 0) {
+      clicked?.(ev);
+    }
+    if (doNotPropagate) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  };
+
+  const handleMouseUp = (ev: React.MouseEvent) => {
+    if (doNotPropagate) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  };
+
+  const handleClick = (ev: React.MouseEvent) => {
+    if (doNotPropagate) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  };
+
   return (
     <div
+      ref={hostElement}
       style={style}
       title={title}
-      onMouseDown={(ev) => handleMouseDown(ev)}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onClick={handleClick}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
       <SvgIcon
         iconName={iconName}
-        fill={
-          enable ?? true ? fill : "--toolbar-button-disabled-fill"
-        }
+        fill={enable ?? true ? fill : "--toolbar-button-disabled-fill"}
         width={size}
         height={size}
       />
     </div>
   );
-
-  function handleMouseDown(ev: React.MouseEvent): void {
-    if (ev.button === 0) {
-      clicked?.();
-    }
-  }
 }

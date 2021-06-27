@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { animationTick } from "../../common/utils";
-import { contextMenuService, MenuItem } from "../command/ContextMenuService";
+import { MenuItem } from "../../../shared/command/commands";
+import { contextMenuService } from "../command/ContextMenuService";
 import { IToolPanel, toolAreaService } from "./ToolAreaService";
 
 interface Props {

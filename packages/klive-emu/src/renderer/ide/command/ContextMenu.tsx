@@ -9,15 +9,17 @@ import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 import { animationTick } from "../../../renderer/common/utils";
 import {
-  Command,
-  CommandGroup,
   ContextMenuOpenTarget,
   contextMenuService,
+} from "./ContextMenuService";
+import { useState } from "react";
+import { useEffect } from "react";
+import {
+  Command,
+  CommandGroup,
   isCommandGroup,
   MenuItem,
-} from "./ContextMenuService";
-import { useRef, useState } from "react";
-import { useEffect } from "react";
+} from "../../../shared/command/commands";
 
 type Props = {
   target: string;
@@ -26,7 +28,6 @@ type Props = {
 export default function IdeContextMenu({ target }: Props) {
   const [items, setItems] = useState<MenuItem[]>([]);
   const ideFocused = useSelector((s: AppState) => s.ideHasFocus);
-  const closeCounter = useRef(0);
   let thisComponent: ContextMenuComponent;
 
   // --- Refresh menu items
@@ -52,28 +53,29 @@ export default function IdeContextMenu({ target }: Props) {
   const menuItems = mapToMenuItems(items);
 
   const beforeOpen = (args: BeforeOpenCloseMenuEventArgs) => {
-    console.log("before open");
     if (!contextMenuService.isOpen) {
       args.cancel = true;
     }
-    thisComponent.enableItems(collectIds(items, () => true), true, true);
+    thisComponent.enableItems(
+      collectIds(items, () => true),
+      true,
+      true
+    );
     const disabledIds = collectDisabledIds(items);
     thisComponent.enableItems(disabledIds, false, true);
   };
 
   const select = (args: MenuEventArgs) => {
     const command = findCommandById(items, args.item.id);
-    command?.execute();
+    command?.execute?.();
   };
 
-  const onClose = () => {
-    console.log(`onclose: ${closeCounter.current}`);
-    //closeCounter.current++;
-    if (contextMenuService.isOpen /*&& closeCounter.current > 1*/) {
+  const onClose = async () => {
+    if (contextMenuService.isOpen) {
+      await new Promise((r) => setTimeout(r, 50));
       contextMenuService.close();
-      closeCounter.current = 0;
     }
-  }
+  };
 
   if (!ideFocused) {
     (async () => {
@@ -84,7 +86,9 @@ export default function IdeContextMenu({ target }: Props) {
 
   return (
     <ContextMenuComponent
-      ref={(scope) => (thisComponent = scope)}
+      ref={(scope) => {
+        thisComponent = scope;
+      }}
       target={target}
       items={menuItems}
       animationSettings={{ effect: "None" }}
@@ -128,10 +132,13 @@ function mapToMenuItems(items: MenuItem[]): MenuItemModel[] {
 }
 
 function collectDisabledIds(items: MenuItem[]): string[] {
-  return collectIds(items, (i) => !(i.enabled ?? true))
+  return collectIds(items, (i) => !(i.enabled ?? true));
 }
 
-function collectIds(items: MenuItem[], predicate: (item: Command | CommandGroup) => boolean): string[] {
+function collectIds(
+  items: MenuItem[],
+  predicate: (item: Command | CommandGroup) => boolean
+): string[] {
   const disabledIds: string[] = [];
   items.forEach((item) => {
     if (typeof item === "string") {
@@ -149,7 +156,6 @@ function collectIds(items: MenuItem[], predicate: (item: Command | CommandGroup)
   });
   return disabledIds;
 }
-
 
 /**
  * Map menu items to the model used by the ContextMenuComponent

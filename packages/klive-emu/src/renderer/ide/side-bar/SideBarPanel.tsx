@@ -2,7 +2,7 @@ import * as React from "react";
 import ReactResizeDetector from "react-resize-detector";
 import { useEffect, useState } from "react";
 import { animationTick } from "../../../renderer/common/utils";
-import SideBarHeader from "./SideBarHeader";
+import SideBarPanelHeader from "./SideBarPanelHeader";
 import { ISideBarPanel } from "./SideBarService";
 
 /**
@@ -47,7 +47,7 @@ export default function SideBarPanel(props: Props) {
         transitionDuration: "0.25s",
       }}
     >
-      <SideBarHeader
+      <SideBarPanelHeader
         title={props.descriptor.title}
         expanded={expanded}
         sizeable={props.sizeable}
