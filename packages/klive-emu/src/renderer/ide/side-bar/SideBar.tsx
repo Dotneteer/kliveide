@@ -3,6 +3,8 @@ import { createSizedStyledPanel } from "../../common/PanelStyles";
 import SideBarPanel from "./SideBarPanel";
 import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { useRef, useState, useEffect } from "react";
+import SideBarHeader from "./SideBarHeader";
+import { activityService } from "../activity-bar/ActivityService";
 
 /**
  * The minimum height an expanded panel can have
@@ -60,7 +62,12 @@ export default function SideBar() {
       prevExpanded = descriptor.expanded;
     }
   }
-  return <Root>{sideBarPanels}</Root>;
+  return (
+    <Root>
+      <SideBarHeader activity={activityService.activeActivity} />
+      {sideBarPanels}
+    </Root>
+  );
 
   /**
    * Starts dragging the side bar panel with the specified index

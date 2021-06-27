@@ -1,8 +1,12 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { CSSProperties, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { ideToolFrameMaximizeAction } from "../../../shared/state/tool-frame-reducer";
+import { AppState } from "../../../shared/state/AppState";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
+import CommandIconButton from "../command/CommandIconButton";
+import { ideStore } from "../ideStore";
 import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";
-import ToolCommandBar from "./ToolCommandbar";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
@@ -85,3 +89,40 @@ const HeaderBar = createSizedStyledPanel({
 });
 
 const PlaceHolder = createSizedStyledPanel({});
+
+/**
+ * Represents the statusbar of the emulator
+ */
+function ToolCommandBar() {
+  const maximized = useSelector(
+    (state: AppState) => state.toolFrame?.maximized ?? false
+  );
+
+  const style: CSSProperties = {
+    display: "flex",
+    flexDirection: "row",
+    flexGrow: 0,
+    flexShrink: 0,
+    height: "100%",
+    width: "auto",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingLeft: "6px",
+    paddingRight: "6px",
+    background: "var(--shell-canvas-background-color)",
+  };
+
+  return (
+    <div style={style}>
+      <CommandIconButton
+        iconName={maximized ? "chevron-down" : "chevron-up"}
+        title={maximized ? "Restore panel size" : "Maximize panel size"}
+        clicked={() => {
+          console.log(!maximized);
+          ideStore.dispatch(ideToolFrameMaximizeAction(!maximized));
+        }}
+      />
+      <CommandIconButton iconName="close" title="Close" clicked={() => {}} />
+    </div>
+  );
+}

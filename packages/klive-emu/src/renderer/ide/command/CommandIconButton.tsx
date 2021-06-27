@@ -8,7 +8,7 @@ interface Props {
   title?: string;
   fill?: string;
   enable?: boolean;
-  clicked?: () => void;
+  clicked?: (ev: React.MouseEvent) => void;
 }
 
 /**
@@ -16,7 +16,7 @@ interface Props {
  */
 export default function CommandIconButton({
   iconName,
-  size = 20,
+  size = 16,
   title,
   fill,
   enable,
@@ -34,11 +34,25 @@ export default function CommandIconButton({
     background: pointed ? "#3d3d3d" : "transparent",
   };
 
+  const handleMouseDown = (ev: React.MouseEvent) => {
+    if (ev.button === 0) {
+      clicked?.(ev);
+    }
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+
+  const handleMouseUp = (ev: React.MouseEvent) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+
   return (
     <div
       style={style}
       title={title}
       onMouseDown={(ev) => handleMouseDown(ev)}
+      onMouseUp={(ev) => handleMouseUp(ev)}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
@@ -52,10 +66,4 @@ export default function CommandIconButton({
       />
     </div>
   );
-
-  function handleMouseDown(ev: React.MouseEvent): void {
-    if (ev.button === 0) {
-      clicked?.();
-    }
-  }
 }

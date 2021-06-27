@@ -38,6 +38,17 @@ class ActivityService {
     return this._activityChanged;
   }
 
+  /**
+   * Gets the curent activity
+   */
+  get activeActivity(): Activity | null {
+    const currentActivity = ideStore.getState().activityBar?.activeIndex ?? -1;
+    if (!this._activities || currentActivity < 0) {
+      return null;
+    }
+    return this._activities[currentActivity] ?? null;
+  }
+
   selectActivity(index: number): void {
     ideStore.dispatch(changeActivityAction(index));
   }

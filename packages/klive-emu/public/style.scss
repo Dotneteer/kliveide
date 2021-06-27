@@ -22,8 +22,8 @@
 
 html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
-    HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
+  font-family: Segoe WPC,Segoe UI, sans-serif; //-apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
+    //HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
   overflow: hidden;
   box-sizing: border-box;
   margin: 0;
@@ -83,6 +83,12 @@ main,
 
 // ============================================================================
 // CSS overrides for SyncFusion controls
+
+
+.e-splitter.e-splitter-horizontal .e-pane, .e-splitter.e-splitter-vertical .e-pane {
+  font-family: Segoe WPC,Segoe UI, sans-serif; //-apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
+    //HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
+}
 
 // ----------------------------------------------------------------------------
 // Splitter and panel style overrides

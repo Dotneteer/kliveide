@@ -82,9 +82,6 @@ function OutputPanesPropertyBar() {
   useEffect(() => {
     // --- Mount
     thisComponent.value = "game1";
-    setTimeout(() => {
-      thisComponent.showPopup();
-    }, 4000);
   });
 
   return (

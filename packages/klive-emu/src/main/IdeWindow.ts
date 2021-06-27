@@ -32,9 +32,9 @@ export class IdeWindow extends AppWindow {
       e.preventDefault();
     });
     this.allowClose = false;
-    this.setupActivityBar();
-    mainStore.dispatch(setActivitiesAction(this._activities));
-    mainStore.dispatch(changeActivityAction(0));
+    // this.setupActivityBar();
+    // mainStore.dispatch(setActivitiesAction(this._activities));
+    // mainStore.dispatch(changeActivityAction(0));
   }
 
   /**
@@ -67,37 +67,37 @@ export class IdeWindow extends AppWindow {
     mainStore.dispatch(ideFocusAction(false));
   }
 
-  /**
-   * Sets up the initial activity bar.
-   */
-  setupActivityBar(): void {
-    this._activities = [
-      {
-        id: "file-view",
-        title: "Explorer",
-        iconName: "files",
-      },
-      {
-        id: "debug-view",
-        title: "Run and debug",
-        iconName: "debug-alt",
-      },
-      {
-        id: "log-view",
-        title: "Machine logs",
-        iconName: "output",
-      },
-      {
-        id: "test-view",
-        title: "Testing",
-        iconName: "beaker",
-      },
-      {
-        id: "settings",
-        title: "Manage",
-        iconName: "settings-gear",
-        isSystemActivity: true,
-      },
-    ];
-  }
+  // /**
+  //  * Sets up the initial activity bar.
+  //  */
+  // setupActivityBar(): void {
+  //   this._activities = [
+  //     {
+  //       id: "file-view",
+  //       title: "Explorer",
+  //       iconName: "files",
+  //     },
+  //     {
+  //       id: "debug-view",
+  //       title: "Run and debug",
+  //       iconName: "debug-alt",
+  //     },
+  //     {
+  //       id: "log-view",
+  //       title: "Machine logs",
+  //       iconName: "output",
+  //     },
+  //     {
+  //       id: "test-view",
+  //       title: "Testing",
+  //       iconName: "beaker",
+  //     },
+  //     {
+  //       id: "settings",
+  //       title: "Manage",
+  //       iconName: "settings-gear",
+  //       isSystemActivity: true,
+  //     },
+  //   ];
+  // }
 }
