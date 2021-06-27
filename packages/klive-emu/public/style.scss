@@ -256,6 +256,11 @@ $context-menu-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   color: var(--dropdown-text-color);
   background: var(--dropdown-backgound-color);
   height: 24px;
+  padding-left: 8px;
+}
+
+.e-input-group.e-control-wrapper.e-input-focus input.e-input {
+  padding-left: 8px;
 }
 
 .e-input-group:not(.e-success):not(.e-warning):not(.e-error),
@@ -290,11 +295,37 @@ input.e-input.e-control.e-dropdownlist,
 .e-input-group.e-control-wrapper.e-input-focus:not(.e-success):not(.e-warning):not(.e-error),
 .e-input-group.e-control-wrapper:not(.e-disabled):active:not(.e-success):not(.e-warning):not(.e-error),
 .e-input-group.e-control-wrapper.e-input-focus:hover:not(.e-success):not(.e-warning):not(.e-error),
-.e-input-group.e-control-wrapper:not(.e-disabled):active:hover:not(.e-success):not(.e-warning):not(.e-error) {
+.e-input-group.e-control-wrapper:not(.e-disabled):active:hover:not(.e-success):not(.e-warning):not(.e-error),
+.e-input-group.e-input-focus:hover:not(.e-success):not(.e-warning):not(.e-error):not(.e-disabled),
+.e-input-group.e-control-wrapper.e-input-focus:hover:not(.e-success):not(.e-warning):not(.e-error):not(.e-disabled) {
   box-shadow: none;
-  border-color: red; // var(--statusbar-background-color);
+  border-color: var(--selected-border-color);
 }
 
+.e-popup.e-ddl {
+  margin-top: 0;
+  border: 1px solid var(--selected-border-color);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.e-dropdownbase .e-list-item,
+.e-dropdownbase .e-list-item.e-item-focus {
+  background-color: var(--dropdown-backgound-color);
+  border: 1px solid transparent;
+  color: var(--dropdown-text-color);
+  font-size: 12px;
+  min-height: 12px;
+  line-height: 18px;
+  text-indent: 8px;
+}
+
+.e-dropdownbase .e-list-item.e-active,
+.e-dropdownbase .e-list-item.e-hover,
+.e-dropdownbase .e-list-item.e-active.e-hover {
+  border: 1px solid var(--selected-border-color);
+  background-color: var(--selected-background-color);
+}
 
 // ============================================================================
 // CSS classes for IDE controls

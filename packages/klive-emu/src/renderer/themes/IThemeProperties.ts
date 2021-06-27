@@ -7,14 +7,15 @@ export interface IThemeProperties {
    */
   "--shell-canvas-background-color": string;
   "--panel-separator-border": string;
+  "--selected-border-color": string;
+  "--selected-background-color": string;
 
   "--toolbar-active-background-color": string;
   "--toolbar-inactive-background-color": string;
   "--toolbar-button-fill": string;
   "--toolbar-button-disabled-fill": string;
   "--toolbar-separator": string;
-  "--toolbar-selected-border-color": string;
-
+  
   "--scrollbar-background-color": string;
   
   "--statusbar-background-color": string;
@@ -23,7 +24,6 @@ export interface IThemeProperties {
   "--menu-active-background-color": string;
   "--menu-text-color": string;
   "--menu-disabled-text-color": string;
-  "--menu-selected-background-color": string;
   "--menu-pane-background-color": string;
   "--menu-pane-shadow": string;
   "--menu-selected-background": string;

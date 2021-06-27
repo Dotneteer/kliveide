@@ -34,7 +34,7 @@ export default function SideBarHeader(props: Props) {
     width: "100%",
     background:
       pointed || resizing
-        ? "var(--toolbar-selected-border-color)"
+        ? "var(--selected-border-color)"
         : "transparent",
     cursor: "ns-resize",
     transitionProperty: "background-color",
@@ -42,7 +42,7 @@ export default function SideBarHeader(props: Props) {
     transitionDelay: "0.25s",
   };
   const borderStyle = focused
-    ? "1px solid var(--toolbar-selected-border-color)"
+    ? "1px solid var(--selected-border-color)"
     : "1px solid transparent";
 
   // --- We need a context that uses "this" function when handles the `move`

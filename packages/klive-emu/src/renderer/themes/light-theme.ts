@@ -8,13 +8,14 @@ export const lightTheme: ITheme = {
   properties: {
     "--shell-canvas-background-color": "#EEEEEE",
     "--panel-separator-border": "silver",
+    "--selected-border-color": "#007acc",
+    "--selected-background-color": "#094771",
 
     "--toolbar-active-background-color": "#252525",
     "--toolbar-inactive-background-color": "#383838",
     "--toolbar-button-fill": "white",
     "--toolbar-button-disabled-fill": "#585858",
     "--toolbar-separator": "2px solid #686868",
-    "--toolbar-selected-border-color": "#007acc",
 
     "--scrollbar-background-color": "#808080",
 
@@ -24,7 +25,6 @@ export const lightTheme: ITheme = {
     "--menu-active-background-color": "#505050",
     "--menu-text-color": "#ffffff",
     "--menu-disabled-text-color": "#AAAAAA",
-    "--menu-selected-background-color": "#094771",
     "--menu-pane-background-color": "#252526",
     "--menu-pane-shadow": "rgb(0, 0, 0) 0px 2px 4px",
     "--menu-selected-background": "#094771",
