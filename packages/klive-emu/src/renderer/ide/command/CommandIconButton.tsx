@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useEffect } from "react";
 import { useState } from "react";
 import { SvgIcon } from "../../common/SvgIcon";
 
@@ -9,6 +10,7 @@ interface Props {
   fill?: string;
   enable?: boolean;
   clicked?: (ev: React.MouseEvent) => void;
+  doNotPropagate?: boolean;
 }
 
 /**
@@ -20,8 +22,10 @@ export default function CommandIconButton({
   title,
   fill,
   enable,
-  clicked
+  clicked,
+  doNotPropagate = false,
 }: Props) {
+  const hostElement = React.createRef<HTMLDivElement>();
   const [pointed, setPointed] = useState(false);
 
   const style = {
@@ -38,29 +42,40 @@ export default function CommandIconButton({
     if (ev.button === 0) {
       clicked?.(ev);
     }
-    ev.preventDefault();
-    ev.stopPropagation();
-  }
+    if (doNotPropagate) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  };
 
   const handleMouseUp = (ev: React.MouseEvent) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-  }
+    if (doNotPropagate) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  };
+
+  const handleClick = (ev: React.MouseEvent) => {
+    if (doNotPropagate) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  };
 
   return (
     <div
+      ref={hostElement}
       style={style}
       title={title}
-      onMouseDown={(ev) => handleMouseDown(ev)}
-      onMouseUp={(ev) => handleMouseUp(ev)}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onClick={handleClick}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
       <SvgIcon
         iconName={iconName}
-        fill={
-          enable ?? true ? fill : "--toolbar-button-disabled-fill"
-        }
+        fill={enable ?? true ? fill : "--toolbar-button-disabled-fill"}
         width={size}
         height={size}
       />

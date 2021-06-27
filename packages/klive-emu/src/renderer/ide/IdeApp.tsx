@@ -72,6 +72,17 @@ export default function IdeApp() {
         id: "debug-view",
         title: "Run and debug",
         iconName: "debug-alt",
+        commands: [
+          {
+            id: "cmd-1",
+            iconName: "play",
+            text: "Command #1",
+          },
+          {
+            id: "cmd-2",
+            text: "Command #2",
+          },
+        ],
       },
       {
         id: "log-view",
@@ -96,7 +107,7 @@ export default function IdeApp() {
     // --- Register side bar panels
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor("GREEN", "green")
+      new SampleSideBarPanelDescriptor("LONG long GREEN", "green")
     );
     sideBarService.registerSideBarPanel(
       "debug-view",

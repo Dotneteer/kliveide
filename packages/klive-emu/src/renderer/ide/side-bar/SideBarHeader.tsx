@@ -44,7 +44,10 @@ const Text = styles.span`
   padding-left: 20px;
   width: 100%;
   flex-grow: 1;
-  flex-shrink: 1;`;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;`;
 
 type CommandBarProps = {
   commands?: MenuItem[];
@@ -74,11 +77,11 @@ function CommandBar({ commands }: CommandBarProps) {
         buttons.push(
           <CommandIconButton
             key={index}
+            doNotPropagate={true}
             iconName="ellipsis"
             title={cmd.text}
             clicked={async (e: React.MouseEvent) => {
-                await new Promise((r) => setTimeout(r, 200));
-                await contextMenuService.openMenu(
+              await contextMenuService.openMenu(
                 cmd.items,
                 e.clientY + 4,
                 e.clientX + 4,
@@ -90,6 +93,8 @@ function CommandBar({ commands }: CommandBarProps) {
       } else {
         buttons.push(
           <CommandIconButton
+            key={index}
+            doNotPropagate={true}
             iconName={cmd.iconName ?? "question"}
             title={cmd.text}
           />

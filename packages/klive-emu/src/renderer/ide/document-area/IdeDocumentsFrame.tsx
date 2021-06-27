@@ -37,7 +37,7 @@ export default function IdeDocumentFrame() {
   });
 
   return (
-    <Root>
+    <Root tabIndex={0}>
       {tabBarVisible && (
         <HeaderBar>
           <DocumentTabBar />

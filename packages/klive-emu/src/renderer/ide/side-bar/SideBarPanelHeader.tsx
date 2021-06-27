@@ -1,8 +1,9 @@
 import * as React from "react";
 
 import { createPanel, createSizedStyledPanel } from "../../common/PanelStyles";
+import styles from "styled-components";
 import { SvgIcon } from "../../common/SvgIcon";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { CSSProperties } from "react";
 
 /**
@@ -33,9 +34,7 @@ export default function SideBarPanelHeader(props: Props) {
     height: "4px",
     width: "100%",
     background:
-      pointed || resizing
-        ? "var(--selected-border-color)"
-        : "transparent",
+      pointed || resizing ? "var(--selected-border-color)" : "transparent",
     cursor: "ns-resize",
     transitionProperty: "background-color",
     transitionDuration: "0.1s",
@@ -99,7 +98,7 @@ export default function SideBarPanelHeader(props: Props) {
           rotate={props.expanded ? 90 : 0}
         ></SvgIcon>
         <Text>
-          {props.title.toUpperCase()}({props.sizeable.toString()})
+          {props.title.toUpperCase()}
         </Text>
       </Caption>
     </Root>
@@ -169,14 +168,18 @@ const Caption = createSizedStyledPanel({
   },
 });
 
-const Text = createPanel({
-  color: "var(--sidebar-panel-header-color)",
-  "font-size": "0.8em",
-  "font-weight": "600",
-  "padding-left": "4px",
-  "flex-grow": "0",
-  "flex-shrink": "0",
-});
+const Text = styles.span`
+  color: var(--sidebar-panel-header-color);
+  font-size: 0.8em;
+  font-weight: 600;
+  padding-left: 4px;
+  width: 100%;
+  flex-grow: 1;
+  flex-shrink: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
 
 // --- Context for the drag operation
 interface DragContext {
