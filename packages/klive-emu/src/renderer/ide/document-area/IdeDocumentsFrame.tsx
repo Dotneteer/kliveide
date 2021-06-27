@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
 import DocumentTabBar from "./DocumentTabBar";
-import CommandBar from "./CommandBar";
+import DocumentCommandBar from "./DocumentCommandBar";
 
 import { useEffect, useState } from "react";
 import {
@@ -15,9 +15,9 @@ import {
  */
 export default function IdeDocumentFrame() {
   const [tabBarVisible, setTabBarVisible] = useState(true);
-  const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(null);
-
-  const tabBarHost: React.RefObject<HTMLElement> = React.createRef();
+  const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(
+    documentService.getActiveDocument()
+  );
 
   // --- Refresh the documents when any changes occur
   const refreshDocs = (info: DocumentsInfo) => {
@@ -40,10 +40,12 @@ export default function IdeDocumentFrame() {
       {tabBarVisible && (
         <HeaderBar>
           <DocumentTabBar />
-          <CommandBar />
+          <DocumentCommandBar />
         </HeaderBar>
       )}
-      <PlaceHolder key={activeDoc?.id}>{activeDoc?.createContentElement()}</PlaceHolder>
+      <PlaceHolder key={activeDoc?.id}>
+        {activeDoc?.createContentElement()}
+      </PlaceHolder>
     </Root>
   );
 }
@@ -62,6 +64,6 @@ const HeaderBar = createSizedStyledPanel({
 
 const PlaceHolder = createSizedStyledPanel({
   others: {
-    background: "#404040",
+    background: "var(--shell-canvas-background-color)",
   },
 });

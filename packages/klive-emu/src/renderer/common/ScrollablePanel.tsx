@@ -8,6 +8,7 @@ type PanelProps = {
   showVerticalScrollbar?: boolean;
   showHorizontalScrollbar?: boolean;
   scrollBarSize?: number;
+  background?: string;
 } & { children?: ReactNode };
 
 /**
@@ -18,7 +19,10 @@ export default function ScrollablePanel({
   showHorizontalScrollbar = true,
   showVerticalScrollbar = true,
   scrollBarSize = 4,
+  background = "var(--shell-canvas-background-color)",
 }: PanelProps) {
+  const [left, setLeft] = useState(0);
+  const [top, setTop] = useState(0);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
   const [scrollWidth, setScrollWidth] = useState(0);
@@ -35,11 +39,13 @@ export default function ScrollablePanel({
     flexShrink: 1,
     width: "100%",
     height: "100%",
-    background: "var(--commandbar-background-color)",
+    background,
     overflowX: "hidden",
   };
 
   const resize = () => {
+    setLeft(divHost.current.offsetLeft);
+    setTop(divHost.current.offsetTop);
     setWidth(divHost.current.offsetWidth);
     setHeight(divHost.current.offsetHeight);
     setScrollWidth(divHost.current.scrollWidth);
@@ -59,6 +65,8 @@ export default function ScrollablePanel({
         <FloatingScrollbar
           direction="vertical"
           barSize={scrollBarSize}
+          hostTop={top}
+          hostLeft={left}
           hostSize={height}
           hostCrossSize={width}
           hostScrollSize={scrollHeight}
@@ -69,6 +77,8 @@ export default function ScrollablePanel({
         <FloatingScrollbar
           direction="horizontal"
           barSize={scrollBarSize}
+          hostTop={top}
+          hostLeft={left}
           hostSize={width}
           hostCrossSize={height}
           hostScrollSize={scrollWidth}
@@ -93,6 +103,8 @@ type Orientation = "vertical" | "horizontal";
 type ScrollBarProps = {
   direction: Orientation;
   barSize?: number;
+  hostLeft: number;
+  hostTop: number;
   hostSize: number;
   hostCrossSize: number;
   hostScrollSize: number;
@@ -103,6 +115,8 @@ type ScrollBarProps = {
 function FloatingScrollbar({
   direction,
   barSize = 10,
+  hostLeft,
+  hostTop,
   hostSize,
   hostCrossSize,
   hostScrollSize,
@@ -126,8 +140,12 @@ function FloatingScrollbar({
 
   const barStyle: CSSProperties = {
     position: "absolute",
-    top: direction === "horizontal" ? hostCrossSize - barSize : undefined,
-    left: direction === "vertical" ? hostCrossSize - barSize : undefined,
+    top:
+      direction === "horizontal"
+        ? hostTop + hostCrossSize - barSize
+        : undefined,
+    left:
+      direction === "vertical" ? hostLeft + hostCrossSize - barSize : undefined,
     width: direction === "horizontal" ? hostSize : barSize,
     height: direction === "vertical" ? hostSize : barSize,
     background: "transparent",
@@ -135,8 +153,8 @@ function FloatingScrollbar({
 
   const handleStyle: CSSProperties = {
     position: "absolute",
-    top: direction === "horizontal" ? undefined : handlePos,
-    left: direction === "vertical" ? undefined : handlePos,
+    top: direction === "horizontal" ? undefined : hostTop + handlePos,
+    left: direction === "vertical" ? undefined : hostLeft + handlePos,
     width: direction === "horizontal" ? handleSize : barSize,
     height: direction === "vertical" ? handleSize : barSize,
     background: "var(--scrollbar-background-color)",

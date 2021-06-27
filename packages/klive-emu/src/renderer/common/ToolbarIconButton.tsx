@@ -31,7 +31,7 @@ export function ToolbarIconButton(props: Props) {
     justifyContent: "center",
     cursor: props.enable ? "" : "default",
     border: props.selected
-      ? "2px solid var(--toolbar-selected-border-color)"
+      ? "2px solid var(--selected-border-color)"
       : "1px solid transparent",
   };
 

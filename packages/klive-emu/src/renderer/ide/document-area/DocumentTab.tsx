@@ -2,11 +2,16 @@ import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { themeService } from "../../../renderer/themes/theme-service";
 import { SvgIcon } from "../../common/SvgIcon";
-import CommandIconButton from "./CommandIconButton";
+import CommandIconButton from "../command/CommandIconButton";
+import { documentService, IDocumentPanel } from "./DocumentService";
+import { contextMenuService, MenuItem } from "../command/ContextMenuService";
 
 interface Props {
   title: string;
   active: boolean;
+  index: number;
+  isLast: boolean;
+  document: IDocumentPanel;
   clicked?: () => void;
   closed?: () => void;
 }
@@ -14,8 +19,17 @@ interface Props {
 /**
  * Represents the statusbar of the emulator
  */
-export default function DocumentTab(props: Props) {
+export default function DocumentTab({
+  title,
+  active,
+  index,
+  isLast,
+  document,
+  clicked,
+  closed,
+}: Props) {
   const [pointed, setPointed] = useState(false);
+  const hostElement = React.createRef<HTMLDivElement>();
 
   const normalColor = themeService.getProperty("--document-tab-color");
   const activeColor = themeService.getProperty("--document-tab-active-color");
@@ -26,7 +40,7 @@ export default function DocumentTab(props: Props) {
     flexGrow: 0,
     flexShrink: 0,
     height: "100%",
-    background: props.active
+    background: active
       ? "var(--document-tab-active-background-color)"
       : "var(--document-tab-background-color)",
     alignItems: "center",
@@ -36,37 +50,96 @@ export default function DocumentTab(props: Props) {
     cursor: "pointer",
     borderRight: "1px solid var(--document-tab-active-background-color)",
     fontSize: "0.9em",
-    color: props.active
+    color: active
       ? "var(--document-tab-active-color)"
       : "var(--document-tab-color)",
   };
 
+  // --- Create menu items
+  const menuItems: MenuItem[] = [
+    {
+      id: "close",
+      text: "Close",
+      execute: () => {
+        documentService.unregisterDocument(document);
+      },
+    },
+    {
+      id: "closeAll",
+      text: "CloseAll",
+      execute: () => {
+        documentService.closeAll();
+      },
+    },
+    {
+      id: "closeOthers",
+      text: "Close Others",
+      execute: () => {
+        documentService.closeOthers(document);
+      },
+    },
+    {
+      id: "closeToTheRight",
+      text: "Close to the Right",
+      enabled: !isLast,
+      execute: () => {
+        documentService.closeToTheRight(document);
+      },
+    },
+    "separator",
+    {
+      id: "moveLeft",
+      text: "Move Panel Left",
+      enabled: index > 0,
+      execute: () => {
+        documentService.moveLeft(document);
+      },
+    },
+    {
+      id: "moveRight",
+      text: "Move Panel Right",
+      enabled: !isLast,
+      execute: () => {
+        documentService.moveRight(document);
+      },
+    },
+  ];
+
   return (
     <div
+      ref={hostElement}
       style={style}
-      onMouseDown={(e) => {
+      onMouseDown={async (e: React.MouseEvent) => {
         if (e.button === 0) {
-          props.clicked?.();
+          clicked?.();
+        } else if (e.button === 2) {
+          await contextMenuService.openMenu(
+            menuItems,
+            e.clientY,
+            e.clientX,
+            hostElement.current
+          );
         }
       }}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
       <SvgIcon iconName="file-code" width={16} height={16} />
-      <span style={{ marginLeft: 6, marginRight: 6 }}>{props.title}</span>
+      <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
       <CommandIconButton
         iconName="close"
+        title="Close"
         size={16}
         fill={
           pointed
-            ? props.active
+            ? active
               ? activeColor
               : normalColor
-            : props.active
+            : active
             ? activeColor
             : "transparent"
         }
-        clicked={() => props.closed?.()}
+        clicked={() => closed?.()}
       />
     </div>
   );

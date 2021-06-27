@@ -4,6 +4,8 @@
 export interface ActionTypes {
   EMU_UI_LOADED: null;
   IDE_UI_LOADED: null;
+  EMU_FOCUS: null,
+  IDE_FOCUS: null,
 
   SET_THEME: null;
 
@@ -59,4 +61,9 @@ export interface ActionTypes {
 
   // --- Document frame
   SET_DOCUMENT_FRAME_STATE: null;
+
+  // --- Output frame
+  TOOL_FRAME_SHOW: null;
+  TOOL_FRAME_MAXIMIZE: null;
+  SET_TOOL_FRAME_STATE: null;
 }

@@ -38,4 +38,8 @@ export interface Payload {
   itemIndex?: number;
   sideBar?: SideBarState;
   documentFrame?: DocumentFrameState;
+  hasFocus?: boolean;
+  visible?: boolean;
+  maximized?: boolean;
+  toolState?: Record<string, Record<string, any>>;
 }

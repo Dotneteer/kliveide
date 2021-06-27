@@ -8,18 +8,27 @@ export const lightTheme: ITheme = {
   properties: {
     "--shell-canvas-background-color": "#EEEEEE",
     "--panel-separator-border": "silver",
+    "--selected-border-color": "#007acc",
+    "--selected-background-color": "#094771",
 
     "--toolbar-active-background-color": "#252525",
     "--toolbar-inactive-background-color": "#383838",
     "--toolbar-button-fill": "white",
     "--toolbar-button-disabled-fill": "#585858",
     "--toolbar-separator": "2px solid #686868",
-    "--toolbar-selected-border-color": "#007acc",
 
     "--scrollbar-background-color": "#808080",
 
     "--statusbar-background-color": "#007acc",
     "--statusbar-foreground-color": "white",
+
+    "--menu-active-background-color": "#505050",
+    "--menu-text-color": "#ffffff",
+    "--menu-disabled-text-color": "#AAAAAA",
+    "--menu-pane-background-color": "#252526",
+    "--menu-pane-shadow": "rgb(0, 0, 0) 0px 2px 4px",
+    "--menu-selected-background": "#094771",
+    "--menu-selected-text-color": "#ffffff",
 
     "--icon-default-size": "14",
 
@@ -56,5 +65,10 @@ export const lightTheme: ITheme = {
     "--document-tab-active-color": "808080",
 
     "--command-button-pointed-background": "#3d3d3d",
+
+    "--dropdown-text-color": "#ffffff",
+    "--dropdown-backgound-color": "#3c3c3c",
+  
+
   },
 };

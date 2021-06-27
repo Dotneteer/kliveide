@@ -1,5 +1,7 @@
 import emuLoadReducer from "./emu-loaded-reducer";
 import ideLoadReducer from "./ide-loaded-reducer";
+import emuFocusReducer from "./emu-focus-reducer";
+import ideFocusReducer from "./ide-focus-reducer";
 import themeReducer from "./theme-reducer";
 import emuViewOptionsReducer from "./emu-view-options-reducer";
 import machineTypeReducer from "./machine-type-reducer";
@@ -9,6 +11,7 @@ import showIdeReducer from "./show-ide-reducer";
 import activityBarReducer from "./activity-bar-reducer";
 import sideBarReducer from "./side-bar-reducer";
 import documentFrameReducer from "./document-frame-reducer";
+import toolFrameReducer from "./tool-frame-reducer";
 
 /**
  * Represents the reducers
@@ -16,6 +19,8 @@ import documentFrameReducer from "./document-frame-reducer";
 export const appReducers = {
   emuUiLoaded: emuLoadReducer,
   ideUiLoaded: ideLoadReducer,
+  emuHasFocus: emuFocusReducer,
+  ideHasFocus: ideFocusReducer,
   theme: themeReducer,
   emuViewOptions: emuViewOptionsReducer,
   machineType: machineTypeReducer,
@@ -25,4 +30,5 @@ export const appReducers = {
   activityBar: activityBarReducer,
   sideBar: sideBarReducer,
   documentFrame: documentFrameReducer,
+  toolFrame: toolFrameReducer,
 };

@@ -60,7 +60,7 @@ export default function SideBar() {
       prevExpanded = descriptor.expanded;
     }
   }
-  return <Root data-initial-size={200}>{sideBarPanels}</Root>;
+  return <Root>{sideBarPanels}</Root>;
 
   /**
    * Starts dragging the side bar panel with the specified index

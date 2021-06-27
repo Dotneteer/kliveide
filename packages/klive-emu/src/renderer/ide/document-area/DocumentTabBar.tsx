@@ -44,6 +44,9 @@ export default function DocumentTabBar() {
         title={d.title}
         active={d === activeDoc}
         key={index}
+        index={index}
+        document={d}
+        isLast={index >= currentDocs.length - 1}
         clicked={() => {
           if (activeDoc !== d) {
             documentService.setActiveDocument(d);
@@ -56,19 +59,8 @@ export default function DocumentTabBar() {
     );
   });
 
-  const style: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "row",
-    flexGrow: 1,
-    flexShrink: 1,
-    width: "100%",
-    height: "100%",
-    background: "var(--commandbar-background-color)",
-    overflowX: "hidden",
-  };
-
   return (
-    <ScrollablePanel>
+    <ScrollablePanel background="var(--commandbar-background-color)">
       {documentTabs}
     </ScrollablePanel>
   );
