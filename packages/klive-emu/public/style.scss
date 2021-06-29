@@ -22,8 +22,6 @@
 
 html,
 body {
-  font-family: Segoe WPC,Segoe UI, sans-serif; //-apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
-    //HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
   overflow: hidden;
   box-sizing: border-box;
   margin: 0;
@@ -38,6 +36,7 @@ body {
 // --- The style of application containers
 main,
 .app-container {
+  font-family: var(--main-font-family);
   @include sizeToWindow();
 }
 
@@ -86,8 +85,7 @@ main,
 
 
 .e-splitter.e-splitter-horizontal .e-pane, .e-splitter.e-splitter-vertical .e-pane {
-  font-family: Segoe WPC,Segoe UI, sans-serif; //-apple-system, BlinkMacSystemFont, Segoe WPC, Segoe UI,
-    //HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif;
+  font-family: var(--main-font-family);
 }
 
 // ----------------------------------------------------------------------------

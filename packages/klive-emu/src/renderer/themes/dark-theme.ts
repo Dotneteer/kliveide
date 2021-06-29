@@ -6,6 +6,9 @@ import { ITheme } from "./theme-core";
 export const darkTheme: ITheme = {
   name: "dark",
   properties: {
+    "--shell-font-family": "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",
+    "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
+
     "--shell-canvas-background-color": "#1E1E1E",
     "--panel-separator-border": "#8080805a",
     "--selected-border-color": "#007fd4",

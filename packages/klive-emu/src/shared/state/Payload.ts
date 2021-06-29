@@ -42,4 +42,5 @@ export interface Payload {
   visible?: boolean;
   maximized?: boolean;
   toolState?: Record<string, Record<string, any>>;
+  isWindows?: boolean;
 }

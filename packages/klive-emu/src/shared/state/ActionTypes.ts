@@ -8,6 +8,7 @@ export interface ActionTypes {
   IDE_FOCUS: null,
 
   SET_THEME: null;
+  SET_WINDOWS: null,
 
   EMU_SHOW_TOOLBAR: null;
   EMU_HIDE_TOOLBAR: null;
