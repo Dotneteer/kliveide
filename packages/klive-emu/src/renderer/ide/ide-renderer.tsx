@@ -8,7 +8,7 @@ import { registerThemes } from "../common/register-themes";
 import IdeApp from "./IdeApp";
 
 // --- Prepare the themes used in this app
-registerThemes();
+registerThemes(ideStore.getState().isWindows ?? false);
 
 ReactDOM.render(
   <Provider store={ideStore}>

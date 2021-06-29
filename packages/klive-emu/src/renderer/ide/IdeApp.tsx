@@ -2,13 +2,12 @@ import * as React from "react";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { AppState } from "../../shared/state/AppState";
 import { themeService } from "../themes/theme-service";
-import { IThemeProperties } from "../themes/IThemeProperties";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import IdeWorkbench from "./IdeWorkbench";
 import IdeStatusbar from "./IdeStatusbar";
 import "./ide-message-processor";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
-import { useState } from "react";
+import { CSSProperties, useState } from "react";
 import { sideBarService } from "./side-bar/SideBarService";
 import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
 import { documentService } from "./document-area/DocumentService";
@@ -27,23 +26,32 @@ import {
  * Represents the emulator app's root component
  */
 export default function IdeApp() {
-  const [themeStyle, setThemeStyle] = useState({});
+  const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
   const store = useStore();
   const dispatch = useDispatch();
 
   // --- Keep track of theme changes
   let themeAware: StateAwareObject<string>;
+  let windowsAware: StateAwareObject<boolean>;
 
   React.useEffect(() => {
     // --- Mount
     dispatch(ideLoadUiAction());
     updateThemeState();
+
+    // --- Watch for theme changes
     themeAware = new StateAwareObject(store, "theme");
     themeAware.stateChanged.on((theme) => {
       themeService.setTheme(theme);
       updateThemeState();
     });
+
+    windowsAware = new StateAwareObject(store, "isWindows");
+    windowsAware.stateChanged.on((isWindows) => {
+      themeService.isWindows = isWindows;
+      updateThemeState();
+    }) 
 
     // --- Set up activities
     const activities: Activity[] = [
@@ -156,15 +164,11 @@ export default function IdeApp() {
   }, [store]);
 
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
-  const themeStyleJson = JSON.stringify(themeStyle)
-    .replace(/\"/g, "")
-    .replace(/,/g, ";");
-  const themeStyleStr = themeStyleJson.substr(1, themeStyleJson.length - 2);
-  document.body.setAttribute("style", themeStyleStr);
+  document.body.setAttribute("style", themeStyle.toString());
   document.body.setAttribute("class", themeClass);
 
   return (
-    <div id="klive_ide_app" className={themeClass}>
+    <div id="klive_ide_app" style={themeStyle} className={themeClass}>
       <IdeWorkbench />
       {ideViewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
       <ContextMenu target="#klive_ide_app" />
@@ -176,11 +180,7 @@ export default function IdeApp() {
     if (!theme) {
       return;
     }
-    let themeStyle: Record<string, string> = {};
-    for (const key in theme.properties) {
-      themeStyle[key] = theme.properties[key as keyof IThemeProperties];
-    }
-    setThemeStyle(themeStyle);
+    setThemeStyle(themeService.getThemeStyle());
     setThemeClass(`app-container ${theme.name}-theme`);
   }
 }

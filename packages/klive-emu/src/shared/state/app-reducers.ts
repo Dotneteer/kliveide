@@ -1,3 +1,4 @@
+import isWindowsReducer from "./is-windows-reducer";
 import emuLoadReducer from "./emu-loaded-reducer";
 import ideLoadReducer from "./ide-loaded-reducer";
 import emuFocusReducer from "./emu-focus-reducer";
@@ -17,6 +18,7 @@ import toolFrameReducer from "./tool-frame-reducer";
  * Represents the reducers
  */
 export const appReducers = {
+  isWindows: isWindowsReducer,
   emuUiLoaded: emuLoadReducer,
   ideUiLoaded: ideLoadReducer,
   emuHasFocus: emuFocusReducer,

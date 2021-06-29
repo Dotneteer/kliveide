@@ -14,6 +14,7 @@ import { ZxSpectrumStateManager } from "../machines/spectrum/ZxSpectrumStateMana
 import { CambridgeZ88StateManager } from "../machines/cz88/CambridgeZ88BaseStateManager";
 import { setEngineDependencies } from "../machines/vm-engine-dependencies";
 import { useState } from "react";
+import { emuStore } from "./emuStore";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({
@@ -38,23 +39,29 @@ export default function EmuApp() {
 
   // --- Keep track of theme changes
   let themeAware: StateAwareObject<string>;
+  let windowsAware: StateAwareObject<boolean>;
+
+  const emuViewOptions = useSelector((s: AppState) => s.emuViewOptions);
 
   React.useEffect(() => {
     // --- Mount
     dispatch(emuLoadUiAction());
     updateThemeState();
+
+    // --- Watch for theme changes
     themeAware = new StateAwareObject(store, "theme");
     themeAware.stateChanged.on((theme) => {
       themeService.setTheme(theme);
       updateThemeState();
     });
-    return () => {
-      // --- Unmount
-      dispatch(emuLoadUiAction());
-    };
+
+    windowsAware = new StateAwareObject(store, "isWindows");
+    windowsAware.stateChanged.on((isWindows) => {
+      themeService.isWindows = isWindows;
+      updateThemeState();
+    }) 
   }, [store]);
 
-  const emuViewOptions = useSelector((s: AppState) => s.emuViewOptions);
 
   return (
     <div style={themeStyle} className={themeClass}>
@@ -69,11 +76,7 @@ export default function EmuApp() {
     if (!theme) {
       return;
     }
-    let themeStyle: Record<string, string> = {};
-    for (const key in theme.properties) {
-      themeStyle[key] = theme.properties[key as keyof IThemeProperties];
-    }
-    setThemeStyle(themeStyle);
+    setThemeStyle(themeService.getThemeStyle());
     setThemeClass(`app-container ${theme.name}-theme`);
   }
 }

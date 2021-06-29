@@ -6,6 +6,9 @@ import { ITheme } from "./theme-core";
 export const lightTheme: ITheme = {
   name: "light",
   properties: {
+    "--shell-font-family": "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",
+    "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
+
     "--shell-canvas-background-color": "#EEEEEE",
     "--panel-separator-border": "silver",
     "--selected-border-color": "#007acc",

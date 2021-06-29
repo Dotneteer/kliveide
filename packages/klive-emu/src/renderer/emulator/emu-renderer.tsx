@@ -8,7 +8,7 @@ import { registerThemes } from "../common/register-themes";
 import EmuApp from "./EmuApp";
 
 // --- Prepare the themes used in this app
-registerThemes();
+registerThemes(emuStore.getState().isWindows ?? false);
 
 // --- Render the main component of the emulator window
 ReactDOM.render(

@@ -4,6 +4,7 @@ import { Activity } from "../activity/Activity";
  * Represents the application's entire state vector
  */
 export type AppState = {
+  isWindows: boolean;
   emuUiLoaded: boolean;
   ideUiLoaded: boolean;
   emuHasFocus: boolean;
@@ -135,6 +136,7 @@ export type ToolFrameState = {
  */
 export function getInitialAppState(): AppState {
   return {
+    isWindows: false,
     emuUiLoaded: false,
     ideUiLoaded: false,
     emuHasFocus: false,

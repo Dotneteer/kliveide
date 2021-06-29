@@ -5,6 +5,10 @@ export interface IThemeProperties {
   /**
    * The background color of the shell canvas.
    */
+
+  "--shell-font-family": string;
+  "--shell-windows-font-family": string;
+  
   "--shell-canvas-background-color": string;
   "--panel-separator-border": string;
   "--selected-border-color": string;
