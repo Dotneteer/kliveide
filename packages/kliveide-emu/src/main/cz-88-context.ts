@@ -44,6 +44,14 @@ const FR_KEYBOARD = "cz88_fr_layout";
 const ES_KEYBOARD = "cz88_es_layout";
 const SE_KEYBOARD = "cz88_se_layout";
 const UK_KEYBOARD = "cz88_uk_layout";
+const INSERT_CARDS = "cz88_insert_cards";
+const INS_SLOT1 = "cz88_insert_slot1";
+const INS_SLOT2 = "cz88_insert_slot2";
+const INS_SLOT3 = "cz88_insert_slot3";
+const REMOVE_CARDS = "cz88_remove_cards";
+const REM_SLOT1 = "cz88_remove_slot1";
+const REM_SLOT2 = "cz88_remove_slot2";
+const REM_SLOT3 = "cz88_remove_slot3";
 
 // --- Machine type (by LCD resolution) constants
 const Z88_640_64 = "machine_cz88_255_8";
@@ -65,8 +73,7 @@ const z88Links: LinkDescriptor[] = [
   },
   {
     label: "BBC BASIC (Z80) Reference Guide for Z88",
-    uri:
-      "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI",
+    uri: "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI",
   },
   {
     label: null,
@@ -101,6 +108,12 @@ let ramSize = 512;
 // The current keyboard layout
 let kbLayout = "uk";
 
+// !!! Temporary implementation
+let lastSlot1FileName: string | null = null;
+let lastSlot2FileName: string | null = null;
+let lastSlot3FileName: string | null = null;
+// !!! End
+
 // ----------------------------------------------------------------------------
 // Configuration we use to instantiate the Z88 machine
 
@@ -124,6 +137,9 @@ export interface Cz88ContructionOptions {
   sch?: number;
   scw?: number;
   rom?: Uint8Array;
+  slot1?: Uint8Array;
+  slot2?: Uint8Array;
+  slot3?: Uint8Array;
 }
 
 /**
@@ -348,6 +364,64 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         label: "Select ROM",
         submenu: romsSubmenu,
       },
+      { type: "separator" },
+      {
+        id: INSERT_CARDS,
+        label: "Insert card in",
+        type: "submenu",
+        submenu: [
+          {
+            id: INS_SLOT1,
+            label: `Slot 1${lastSlot1FileName ? ` (${path.basename(lastSlot1FileName)})` : ""}`,
+            click: () => {
+              this.selectCardFileToUse(1, lastSlot1FileName)
+            },
+          },
+          {
+            id: INS_SLOT2,
+            label: `Slot 2${lastSlot2FileName ? ` (${path.basename(lastSlot2FileName)})` : ""}`,
+            click: () => {
+              this.selectCardFileToUse(2, lastSlot2FileName)
+            },
+          },
+          {
+            id: INS_SLOT3,
+            label: `Slot 3${lastSlot3FileName ? ` (${path.basename(lastSlot3FileName)})` : ""}`,
+            click: () => {
+              this.selectCardFileToUse(3, lastSlot3FileName)
+            },
+          },
+        ],
+      },
+      { type: "separator" },
+      {
+        id: REMOVE_CARDS,
+        label: "Remove card from",
+        type: "submenu",
+        submenu: [
+          {
+            id: REM_SLOT1,
+            label: "Slot 1",
+            click: () => {
+              this.removeCardFromSlot(1);
+            },
+          },
+          {
+            id: REM_SLOT2,
+            label: "Slot 2",
+            click: () => {
+              this.removeCardFromSlot(2);
+            },
+          },
+          {
+            id: REM_SLOT3,
+            label: "Slot 3",
+            click: () => {
+              this.removeCardFromSlot(3);
+            },
+          },
+        ],
+      },
     ];
   }
 
@@ -411,6 +485,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       lcd: lcdLabel,
       kbLayout,
       romFile: recentRoms.length > 0 ? recentRoms[0] : null,
+      slot1File: lastSlot1FileName,
+      slot2File: lastSlot2FileName,
+      slot3File: lastSlot3FileName,
       clockMultiplier: state.clockMultiplier,
       soundLevel: state.soundLevel,
     };
@@ -472,6 +549,15 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     if (settings.romFile) {
       await this.selectRomFileToUse(settings.romFile);
     }
+    if (settings.slot1File) {
+      await this.selectCardFileToUse(1, settings.slot1File);
+    }
+    if (settings.slot2File) {
+      await this.selectCardFileToUse(2, settings.slot2File);
+    }
+    if (settings.slot3File) {
+      await this.selectCardFileToUse(3, settings.slot3File);
+    }
   }
 
   /**
@@ -479,7 +565,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * @param typeId Machine type with LCD size specification
    */
   private requestMachine(): void {
-    const typeId = `${recentLcdType}_${recentRomName ?? ""}`;
+    const typeId = `${recentLcdType}_${recentRomName ?? ""}_${lastSlot1FileName ?? "$"}_${lastSlot2FileName ?? "$"}_${lastSlot3FileName ?? "$"}`;
     this.appWindow.requestMachineType(typeId, recentOptions);
   }
 
@@ -502,6 +588,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     this.requestMachine();
     this.setContext();
   }
+
   /**
    * Select the ROM file to use with Z88
    */
@@ -560,6 +647,94 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
+   * Select the card file to use with Z88
+   */
+  private async selectCardFileToUse(
+    slot: number,
+    filename?: string
+  ): Promise<void> {
+    if (!filename) {
+      filename = await this.selectCardFileFromDialog();
+      if (!filename) {
+        return;
+      }
+    }
+
+    const contents = await this.checkSlotFile(filename);
+    if (typeof contents === "string") {
+      await dialog.showMessageBox(this.appWindow.window, {
+        title: "Card file error",
+        message: contents,
+        type: "error",
+      });
+      return;
+    }
+
+    switch (slot) {
+      case 1:
+        lastSlot1FileName = filename;
+        recentOptions = { ...recentOptions, slot1: contents };
+        break;
+      case 2:
+        lastSlot2FileName = filename;
+        recentOptions = { ...recentOptions, slot2: contents };
+        break;
+      default:
+        lastSlot3FileName = filename;
+        recentOptions = { ...recentOptions, slot3: contents };
+        break;
+    }
+
+    // --- Now refresh the menu
+    this.appWindow.setupMenu();
+
+    // --- Request the current machine type
+    this.requestMachine();
+  }
+
+  /**
+   * Removes card from the specified slot
+   * @param slot Slot index
+   */
+  private removeCardFromSlot(slot: number): void {
+    switch (slot) {
+      case 1:
+        lastSlot1FileName = null;
+        recentOptions = { ...recentOptions, slot1: null };
+        break;
+      case 2:
+        lastSlot2FileName = null;
+        recentOptions = { ...recentOptions, slot2: null };
+        break;
+      default:
+        lastSlot3FileName = null;
+        recentOptions = { ...recentOptions, slot3: null };
+        break;
+    }
+
+    // --- Now refresh the menu
+    this.appWindow.setupMenu();
+
+    // --- Request the current machine type
+    this.requestMachine();
+  }
+
+  /**
+   * Select a ROM file to use with Z88
+   */
+  private async selectCardFileFromDialog(): Promise<string | null> {
+    const window = this.appWindow.window;
+    const result = await dialog.showOpenDialog(window, {
+      title: "Open EPROM file",
+      filters: [
+        { name: "EPR files", extensions: ["epr"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    });
+    return result ? result.filePaths[0] : null;
+  }
+
+  /**
    * Checks if the specified file is a valid Z88 ROM
    * @param filename ROM file name
    * @returns The contents, if the ROM is valid; otherwise, the error message
@@ -594,6 +769,39 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
+   * Checks if the specified file is a valid Z88 ROM
+   * @param filename ROM file name
+   * @returns The contents, if the ROM is valid; otherwise, the error message
+   */
+   private async checkSlotFile(filename: string): Promise<string | Uint8Array> {
+    try {
+      const contents = Uint8Array.from(fs.readFileSync(filename));
+
+      // --- Check contents length
+      if (
+        contents.length !== 0x10_0000 &&
+        contents.length !== 0x08_0000 &&
+        contents.length !== 0x04_0000 &&
+        contents.length !== 0x02_0000 &&
+        contents.length !== 0x00_8000
+      ) {
+        return `Invalid card file length: ${contents.length}. The card file length can be 32K, 128K, 256K, 512K, or 1M.`;
+      }
+
+      // --- Check watermark
+      // --- Done: valid ROM
+      return contents;
+    } catch (err) {
+      // --- This error is intentionally ignored
+      return (
+        `Error processing card file ${filename}. ` +
+        "Please check if you have the appropriate access rights " +
+        "to read the files contents and the file is a valid ROM file."
+      );
+    }
+  }
+
+  /**
    * Selects one of the recent ROM items
    * @param idx Selected ROM index
    */
@@ -610,9 +818,8 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   private checkTopRecentRom(): void {
     // --- Clear the default ROM
-    const defaultItem = Menu.getApplicationMenu().getMenuItemById(
-      USE_DEFAULT_ROM
-    );
+    const defaultItem =
+      Menu.getApplicationMenu().getMenuItemById(USE_DEFAULT_ROM);
     if (defaultItem) {
       defaultItem.checked = false;
     }
