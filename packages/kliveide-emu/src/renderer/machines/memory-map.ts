@@ -80,3 +80,5 @@ export const Z88_PIXEL_BUFFER = 0x010e_30ee;
 
 // --- Z88 beeper buffer area
 export const Z88_BEEPER_BUFFER = 0x010e10ee;
+
+export const Z88_ROM_INFO = 0x010e0fee;

@@ -137,7 +137,6 @@ export async function createVmEngine(id: string, options?: Record<string, any>):
     }
 
     case "cz88": {
-      console.log(id);
       machine = new CambridgeZ88(machineApi, options, machineRoms);
       (machine as CambridgeZ88).setAudioRendererFactory(
         (sampleRate: number) => new AudioRenderer(sampleRate)

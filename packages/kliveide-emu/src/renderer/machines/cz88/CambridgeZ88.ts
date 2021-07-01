@@ -56,7 +56,8 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
     new SilentAudioRenderer();
 
   // --- A state manager factory
-  private _stateManager: ICambridgeZ88BaseStateManager = new DefaultCambridgeZ88BaseStateManager();
+  private _stateManager: ICambridgeZ88BaseStateManager =
+    new DefaultCambridgeZ88BaseStateManager();
 
   /**
    * Creates a new instance of the ZX Spectrum machine
@@ -71,6 +72,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   ) {
     super(api, options?.rom ? [options.rom] : roms);
     this.prepareMachine();
+    this.initCards();
 
     // --- Save configuration
     const state = this.getMachineState();
@@ -79,11 +81,60 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
   }
 
   /**
-   * Turns on the machine
+   * Resets the machine
    */
-  turnOnMachine(): void {
+   reset(): void {
     this.api.setupMachine();
-    this.api.clearMemory();
+    this.initCards();
+  }
+
+  initCards(): void {
+    // --- Init RAM slots
+    if (this.options?.slot1) {
+      this.initSlot(1, this.options.slot1);
+    }
+    if (this.options?.slot2) {
+      this.initSlot(2, this.options.slot2);
+    }
+    if (this.options?.slot3) {
+      this.initSlot(3, this.options.slot3);
+      this.api.setZ88Card3Rom(true);
+    }
+  }
+
+  /**
+   * Initializes the specified slot with the given contents
+   * @param slot
+   * @param contents
+   */
+  initSlot(slot: number, contents: Uint8Array): void {
+    let mask = 0x3f;
+    switch (contents.length) {
+      case 0x10_0000:
+        mask = 0x3f;
+        break;
+      case 0x08_0000:
+        mask = 0x1f;
+        break;
+      case 0x04_0000:
+        mask = 0x0f;
+        break;
+      case 0x02_0000:
+        mask = 0x07;
+        break;
+      case 0x01_0000:
+        mask = 0x03;
+        break;
+      case 0x00_8000:
+        mask = 0x01;
+        break;
+    }
+    this.api.setZ88ChipMask(slot + 1, mask);
+    let mh = new MemoryHelper(this.api, this.getRomPageBaseAddress());
+    const slotBase = slot * 1024 * 1024;
+    for (let i = 0; i < contents.length; i++) {
+      mh.writeByte(slotBase + i, contents[i]);
+    }
   }
 
   /**
@@ -418,6 +469,7 @@ export class CambridgeZ88 extends FrameBoundZ80Machine {
         await controller.stop();
         this.api.setupMachine();
         this.api.clearMemory();
+        this.initCards();
         await controller.start();
         break;
       case CZ88_PRESS_BOTH_SHIFTS:
@@ -490,6 +542,7 @@ class SilentAudioRenderer implements IAudioRenderer {
 
  */
 class DefaultCambridgeZ88BaseStateManager
-  implements ICambridgeZ88BaseStateManager {
+  implements ICambridgeZ88BaseStateManager
+{
   getState(): any {}
 }
