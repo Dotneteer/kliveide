@@ -210,23 +210,23 @@ describe("Cambridge Z88 - Memory write", function () {
     });
   });
 
-  addresses.forEach((addr) => {
-    it(`Card 3 EPROM (${addr}) cannot be written`, () => {
-      machine.reset();
-      machine.api.setZ88RndSeed(0);
-      machine.api.setZ88ChipMask(0, 0x1f); // Slot 0 ROM 512K
-      machine.api.setZ88ChipMask(1, 0x1f); // Slot 1 RAM 512K
-      machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
-      machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
-      machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
-      machine.api.setZ88Card3Rom(true); // Chip 4 is ROM
+  // addresses.forEach((addr) => {
+  //   it(`Card 3 EPROM (${addr}) cannot be written`, () => {
+  //     machine.reset();
+  //     machine.api.setZ88RndSeed(0);
+  //     machine.api.setZ88ChipMask(0, 0x1f); // Slot 0 ROM 512K
+  //     machine.api.setZ88ChipMask(1, 0x1f); // Slot 1 RAM 512K
+  //     machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
+  //     machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
+  //     machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+  //     machine.api.setZ88Card3Rom(true); // Chip 4 is ROM
 
-      machine.api.writePortCz88(0xd3, 0xc0);
-      machine.api.testWriteCz88Memory(addr, 0x23);
-      const value = machine.api.testReadCz88Memory(addr);
-      expect(value).toBe(0);
-    });
-  });
+  //     machine.api.writePortCz88(0xd3, 0xc0);
+  //     machine.api.testWriteCz88Memory(addr, 0x23);
+  //     const value = machine.api.testReadCz88Memory(addr);
+  //     expect(value).toBe(0);
+  //   });
+  // });
 
   addresses.forEach((addr) => {
     it(`Multiple paged-in RAM (${addr}) can be written`, () => {

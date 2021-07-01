@@ -374,21 +374,21 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: INS_SLOT1,
             label: `Slot 1${lastSlot1FileName ? ` (${path.basename(lastSlot1FileName)})` : ""}`,
             click: () => {
-              this.selectCardFileToUse(1, lastSlot1FileName)
+              this.selectCardFileToUse(1)
             },
           },
           {
             id: INS_SLOT2,
             label: `Slot 2${lastSlot2FileName ? ` (${path.basename(lastSlot2FileName)})` : ""}`,
             click: () => {
-              this.selectCardFileToUse(2, lastSlot2FileName)
+              this.selectCardFileToUse(2)
             },
           },
           {
             id: INS_SLOT3,
             label: `Slot 3${lastSlot3FileName ? ` (${path.basename(lastSlot3FileName)})` : ""}`,
             click: () => {
-              this.selectCardFileToUse(3, lastSlot3FileName)
+              this.selectCardFileToUse(3)
             },
           },
         ],

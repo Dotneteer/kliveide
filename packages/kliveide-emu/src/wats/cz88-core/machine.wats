@@ -128,6 +128,7 @@ export void getMachineState() {
   z88MachineStateBuffer.chipMasks[2] = chipMasks[2];
   z88MachineStateBuffer.chipMasks[3] = chipMasks[3];
   z88MachineStateBuffer.chipMasks[4] = chipMasks[4];
+  z88MachineStateBuffer.chipMasks[5] = chipMasks[5];
 
   // --- RTC
   z88MachineStateBuffer.TIM0 = TIM0;

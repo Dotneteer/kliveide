@@ -121,9 +121,9 @@ void resetMemory() {
   setZ88ChipMask(1, 0x1f);
 
   // --- No cards in any slot
-  setZ88ChipMask(2, 0x00);
-  setZ88ChipMask(3, 0x00);
-  setZ88ChipMask(4, 0x00);
+  setZ88ChipMask(2, 0x1f);
+  setZ88ChipMask(3, 0x1f);
+  setZ88ChipMask(4, 0x1f);
 
   // --- Card 3 is RAM
   setZ88Card3Rom(0);
