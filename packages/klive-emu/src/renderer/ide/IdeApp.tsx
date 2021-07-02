@@ -21,6 +21,7 @@ import {
   changeActivityAction,
   setActivitiesAction,
 } from "../../shared/state/activity-bar-reducer";
+import { toStyleString } from "./utils/css-utils";
 
 /**
  * Represents the emulator app's root component
@@ -164,7 +165,7 @@ export default function IdeApp() {
   }, [store]);
 
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
-  document.body.setAttribute("style", themeStyle.toString());
+  document.body.setAttribute("style", toStyleString(themeStyle));
   document.body.setAttribute("class", themeClass);
 
   return (
