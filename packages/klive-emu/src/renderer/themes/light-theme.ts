@@ -13,6 +13,11 @@ export const lightTheme: ITheme = {
     "--panel-separator-border": "silver",
     "--selected-border-color": "#007acc",
     "--selected-background-color": "#094771",
+    "--selection-color": "#007acc",
+
+    "--button-background-color": "#808080",
+    "--button-primary-background-color": "##007acc",
+    "--button-focused-border-color": "#c0c0c0",
 
     "--toolbar-active-background-color": "#252525",
     "--toolbar-inactive-background-color": "#383838",

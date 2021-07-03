@@ -165,6 +165,8 @@ export default function IdeApp() {
   }, [store]);
 
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
+
+  // --- Apply styles to body so that dialogs, context menus can use it, too.
   document.body.setAttribute("style", toStyleString(themeStyle));
   document.body.setAttribute("class", themeClass);
 

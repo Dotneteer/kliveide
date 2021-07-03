@@ -79,12 +79,12 @@ main,
 @import "../node_modules/@syncfusion/ej2-inputs/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-navigations/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-react-dropdowns/styles/bootstrap-dark.css";
-
+@import "../node_modules/@syncfusion/ej2-react-popups/styles/bootstrap-dark.css";
 // ============================================================================
 // CSS overrides for SyncFusion controls
 
-
-.e-splitter.e-splitter-horizontal .e-pane, .e-splitter.e-splitter-vertical .e-pane {
+.e-splitter.e-splitter-horizontal .e-pane,
+.e-splitter.e-splitter-vertical .e-pane {
   font-family: var(--main-font-family);
 }
 
@@ -329,6 +329,60 @@ input.e-input.e-control.e-dropdownlist,
 .e-dropdownbase .e-list-item.e-active.e-hover {
   border: 1px solid var(--selected-border-color);
   background-color: var(--selected-background-color);
+}
+
+// ----------------------------------------------------------------------------
+// Dropdown list overrides
+
+.e-dialog {
+  border-radius: 0;
+  border-color: var(--selection-color);
+}
+
+.e-dialog,
+.e-dlg-header-content,
+.e-dlg-content,
+.e-footer-content {
+  background-color: var(--shell-canvas-background-color);
+}
+
+.e-dialog .e-dlg-header-content,
+.e-dialog .e-dlg-header-content,
+.e-dialog .e-footer-content {
+  border: none;
+}
+
+.e-dialog .e-icon-dlg-close::before {
+  content: "\e7a7";
+}
+
+.e-btn.e-flat,
+.e-css.e-btn.e-flat,
+.e-btn.e-flat:hover,
+.e-css.e-btn.e-flat:hover,
+.e-btn.e-flat:focus,
+.e-css.e-btn.e-flat:focus {
+  border: 1px solid var(--button-background-color);
+  box-shadow: none;
+  border-radius: 0;
+  background-color: var(--button-background-color);
+}
+
+.e-btn.e-flat.e-primary,
+.e-css.e-btn.e-flat.e-primary,
+.e-btn.e-flat.e-primary:hover,
+.e-css.e-btn.e-flat.e-primary:hover,
+.e-btn.e-flat.e-primary:focus,
+.e-css.e-btn.e-flat.e-primary:focus {
+  border: 1px solid var(--button-primary-background-color);
+  background-color: var(--button-primary-background-color);
+}
+
+.e-btn.e-flat:focus,
+.e-css.e-btn.e-flat:focus,
+.e-btn.e-flat.e-primary:focus,
+.e-css.e-btn.e-flat.e-primary:focus {
+  border: 1px solid var(--button-focused-border-color);
 }
 
 // ============================================================================

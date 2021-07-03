@@ -13,6 +13,11 @@ export const darkTheme: ITheme = {
     "--panel-separator-border": "#8080805a",
     "--selected-border-color": "#007fd4",
     "--selected-background-color": "#094771",
+    "--selection-color": "#007acc",
+
+    "--button-background-color": "#606060",
+    "--button-primary-background-color": "#007acc",
+    "--button-focused-border-color": "#c0c0c0",
 
     "--toolbar-active-background-color": "#252525",
     "--toolbar-inactive-background-color": "#383838",
