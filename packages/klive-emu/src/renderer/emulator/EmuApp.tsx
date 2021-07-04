@@ -2,7 +2,6 @@ import * as React from "react";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { AppState } from "../../shared/state/AppState";
 import { themeService } from "../themes/theme-service";
-import { IThemeProperties } from "../themes/IThemeProperties";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
@@ -14,7 +13,8 @@ import { ZxSpectrumStateManager } from "../machines/spectrum/ZxSpectrumStateMana
 import { CambridgeZ88StateManager } from "../machines/cz88/CambridgeZ88BaseStateManager";
 import { setEngineDependencies } from "../machines/vm-engine-dependencies";
 import { useState } from "react";
-import { emuStore } from "./emuStore";
+import ModalDialog from "../modals/ModalDialog";
+import { toStyleString } from "../ide/utils/css-utils";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({
@@ -62,12 +62,16 @@ export default function EmuApp() {
     }) 
   }, [store]);
 
+  // --- Apply styles to body so that dialogs, context menus can use it, too.
+  document.body.setAttribute("style", toStyleString(themeStyle));
+  document.body.setAttribute("class", themeClass);
 
   return (
     <div style={themeStyle} className={themeClass}>
       {emuViewOptions.showToolbar && <Toolbar></Toolbar>}
       <MainPanel />
       {emuViewOptions.showStatusBar && <EmuStatusbar></EmuStatusbar>}
+      <ModalDialog targetId="#app" />
     </div>
   );
 

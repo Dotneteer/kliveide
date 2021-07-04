@@ -13,6 +13,11 @@ export interface IThemeProperties {
   "--panel-separator-border": string;
   "--selected-border-color": string;
   "--selected-background-color": string;
+  "--selection-color": string;
+
+  "--button-background-color": string;
+  "--button-primary-background-color": string;
+  "--button-focused-border-color": string;
 
   "--toolbar-active-background-color": string;
   "--toolbar-inactive-background-color": string;
@@ -73,4 +78,5 @@ export interface IThemeProperties {
   "--dropdown-text-color": string;
   "--dropdown-backgound-color": string;
 
+  "--dialog-header-background": string;
 }

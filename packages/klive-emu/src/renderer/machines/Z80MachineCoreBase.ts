@@ -1,9 +1,7 @@
-import { ProgramCounterInfo } from "../../shared/state/AppState";
-import { Z80Cpu, Z80CpuState } from "../cpu/Z80Cpu";
+import { Z80Cpu } from "../cpu/Z80Cpu";
 import { MemoryHelper } from "./memory-helpers";
 import { BLOCK_LOOKUP_TABLE } from "./memory-map";
 import { VirtualMachineCoreBase } from "./VirtualMachineCoreBase";
-import { MachineState } from "./vm-core-types";
 
 /**
  * ZX Spectrum common core implementation

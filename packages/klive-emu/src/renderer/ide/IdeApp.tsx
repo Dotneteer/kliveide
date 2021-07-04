@@ -21,6 +21,8 @@ import {
   changeActivityAction,
   setActivitiesAction,
 } from "../../shared/state/activity-bar-reducer";
+import { toStyleString } from "./utils/css-utils";
+import ModalDialog from "../modals/ModalDialog";
 
 /**
  * Represents the emulator app's root component
@@ -164,7 +166,9 @@ export default function IdeApp() {
   }, [store]);
 
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
-  document.body.setAttribute("style", themeStyle.toString());
+
+  // --- Apply styles to body so that dialogs, context menus can use it, too.
+  document.body.setAttribute("style", toStyleString(themeStyle));
   document.body.setAttribute("class", themeClass);
 
   return (
@@ -172,6 +176,7 @@ export default function IdeApp() {
       <IdeWorkbench />
       {ideViewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
       <ContextMenu target="#klive_ide_app" />
+      <ModalDialog targetId="#app" />
     </div>
   );
 

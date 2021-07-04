@@ -81,10 +81,11 @@ function CommandBar({ commands }: CommandBarProps) {
             iconName="ellipsis"
             title={cmd.text}
             clicked={async (e: React.MouseEvent) => {
+              const rect = (e.target as HTMLElement).getBoundingClientRect();
               await contextMenuService.openMenu(
                 cmd.items,
-                e.clientY + 4,
-                e.clientX + 4,
+                rect.y + 20,
+                rect.x,
                 e.target as HTMLElement
               );
             }}

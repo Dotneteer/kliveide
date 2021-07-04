@@ -22,10 +22,13 @@ import { AppState } from "../shared/state/AppState";
 import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
 import {
   CZ88_BATTERY_LOW,
+  CZ88_CARDS,
   CZ88_HARD_RESET,
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../shared/machines/macine-commands";
+import { Cz88ContructionOptions, Z88CardsState } from "../shared/machines/cz88-specific";
+import { ExecuteMachineCommandResponse } from "../shared/messaging/message-types";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";
@@ -40,6 +43,7 @@ const ROM_MENU = "cz88_roms";
 const SELECT_ROM_FILE = "cz88_select_rom_file";
 const USE_DEFAULT_ROM = "cz88_use_default_rom";
 const USE_ROM_FILE = "cz88_rom";
+const CARDS_DIALOG = "cz88_cards_dialog";
 const KEYBOARDS = "cz88_keyboards";
 const DE_KEYBOARD = "cz88_de_layout";
 const DK_KEYBOARD = "cz88_dk_layout";
@@ -68,8 +72,7 @@ const z88Links: LinkDescriptor[] = [
   },
   {
     label: "BBC BASIC (Z80) Reference Guide for Z88",
-    uri:
-      "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI",
+    uri: "https://docs.google.com/document/d/1ZFxKYsfNvbuTyErnH5Xtv2aKXWk1vg5TjrAxZnrLsuI",
   },
   {
     label: null,
@@ -122,14 +125,15 @@ let recentRoms: string[] = [];
 // Indicates that a recent ROM is selected. If false, we use the default ROM
 let recentRomSelected = false;
 
-/**
- * Represents the construction options of Z88
- */
-export interface Cz88ContructionOptions {
-  sch?: number;
-  scw?: number;
-  firmware?: Uint8Array[];
-}
+// ----------------------------------------------------------------------------
+// State of the card slots
+
+let slotsState: Z88CardsState = {
+  slot1: { content: "empty" },
+  slot2: { content: "empty" },
+  slot3: { content: "empty" },
+};
+
 
 /**
  * Context provider for ZX Spectrum machine types
@@ -151,7 +155,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
    * Firmware sizes accected by the virtual machine
    */
-  readonly acceptedFirmwareSizes: number[] | null = [0x2_0000, 0x4_0000, 0x8_0000];
+  readonly acceptedFirmwareSizes: number[] | null = [
+    0x2_0000, 0x4_0000, 0x8_0000,
+  ];
 
   /**
    * The normal CPU frequency of the machine
@@ -354,6 +360,12 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         label: "Select ROM",
         submenu: romsSubmenu,
       },
+      { type: "separator" },
+      {
+        id: CARDS_DIALOG,
+        label: "Insert or remove cards",
+        click: async () => await this.insertOrRemoveCards(),
+      },
     ];
   }
 
@@ -422,6 +434,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       romFile: recentRoms.length > 0 ? recentRoms[0] : null,
       clockMultiplier: state.clockMultiplier,
       soundLevel: state.soundLevel,
+      slotsState,
     };
   }
 
@@ -478,6 +491,38 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     await new Promise((r) => setTimeout(r, 600));
     if (settings.romFile) {
       await this.selectRomFileToUse(settings.romFile);
+    }
+
+    // --- Handle slot states
+    if (settings.slotsState) {
+      slotsState = settings.slotsState;
+    }
+    if (!slotsState.slot1) {
+      slotsState.slot1 = { content: "empty" };
+    } else {
+      if (slotsState.slot1.content === "eprom" && slotsState.slot1.epromFile) {
+        // TODO: Read the Slot 1 eprom file
+      } else {
+        slotsState.slot1 = { content: "empty" };
+      }
+    }
+    if (!slotsState.slot2) {
+      slotsState.slot2 = { content: "empty" };
+    } else {
+      if (slotsState.slot2.content === "eprom" && slotsState.slot2.epromFile) {
+        // TODO: Read the Slot 2 eprom file
+      } else {
+        slotsState.slot2 = { content: "empty" };
+      }
+    }
+    if (!slotsState.slot3) {
+      slotsState.slot3 = { content: "empty" };
+    } else {
+      if (slotsState.slot3.content === "eprom" && slotsState.slot3.epromFile) {
+        // TODO: Read the Slot 3 eprom file
+      } else {
+        slotsState.slot3 = { content: "empty" };
+      }
     }
   }
 
@@ -637,11 +682,32 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
+   * Execute insert/remove cards
+   */
+  private async insertOrRemoveCards(): Promise<void> {
+    const result = (await this.executeMachineCommand(
+      CZ88_CARDS,
+      slotsState
+    )) as Z88CardsState;
+    if (result) {
+      slotsState = result;
+    }
+  }
+
+  /**
    * Executes the specified machine command
    * @param command Command to execute
    */
-  private async executeMachineCommand(command: string): Promise<void> {
-    await emuMessenger.sendMessage({ type: "executeMachineCommand", command });
+  private async executeMachineCommand(
+    command: string,
+    args?: unknown
+  ): Promise<unknown> {
+    const response = (await emuMessenger.sendMessage({
+      type: "executeMachineCommand",
+      command,
+      args,
+    })) as ExecuteMachineCommandResponse;
+    return response.result;
   }
 
   /**

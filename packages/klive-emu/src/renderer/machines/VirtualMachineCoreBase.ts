@@ -336,9 +336,11 @@ export abstract class VirtualMachineCoreBase {
    * Executes a machine specific command. Override in a machine to
    * respond to those commands
    * @param _command Command to execute
-   * @param _controller Machine controller
+   * @param _args: Optional command arguments
    */
-  async executeMachineCommand(_command: string): Promise<void> {}
+  async executeMachineCommand(_command: string, _args?: unknown): Promise<unknown> {
+    return;
+  }
 
   /**
    * Override this method to set the clock multiplier

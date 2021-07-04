@@ -90,14 +90,24 @@ export interface StepOutVmRequest extends MessageBase {
 export interface ExecuteMachineCommandRequest extends MessageBase {
   type: "executeMachineCommand";
   command: string;
+  args?: unknown;
 }
 
 /**
  * The main process sends its entire state to the IDE window
  */
- export interface SyncMainStateRequest extends MessageBase {
+export interface SyncMainStateRequest extends MessageBase {
   type: "syncMainState";
   mainState: AppState;
+}
+
+/**
+ * The emulator process ask for a file open dialog
+ */
+export interface OpenFileRequest extends MessageBase {
+  type: "openFileDialog";
+  title?: string;
+  filters?: { name: string; extensions: string[] }[];
 }
 
 /**
@@ -116,7 +126,8 @@ export type RequestMessage =
   | StepOverVmRequest
   | StepOutVmRequest
   | ExecuteMachineCommandRequest
-  | SyncMainStateRequest;
+  | SyncMainStateRequest
+  | OpenFileRequest;
 
 /**
  * Default response for actions
@@ -133,7 +144,28 @@ export interface CreateMachineResponse extends MessageBase {
   error: string | null;
 }
 
-export type ResponseMessage = DefaultResponse | CreateMachineResponse;
+/**
+ * The emulator process ask for a file open dialog
+ */
+ export interface ExecuteMachineCommandResponse extends MessageBase {
+  type: "executeMachineCommandResponse";
+  result: unknown;
+}
+
+
+/**
+ * The emulator process ask for a file open dialog
+ */
+export interface OpenFileResponse extends MessageBase {
+  type: "openFileDialogResponse";
+  filename?: string;
+}
+
+export type ResponseMessage =
+  | DefaultResponse
+  | CreateMachineResponse
+  | ExecuteMachineCommandResponse
+  | OpenFileResponse;
 
 /**
  * All messages
