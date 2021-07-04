@@ -78,4 +78,5 @@ export interface IThemeProperties {
   "--dropdown-text-color": string;
   "--dropdown-backgound-color": string;
 
+  "--dialog-header-background": string;
 }

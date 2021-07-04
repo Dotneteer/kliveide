@@ -13,7 +13,7 @@ import { ZxSpectrumStateManager } from "../machines/spectrum/ZxSpectrumStateMana
 import { CambridgeZ88StateManager } from "../machines/cz88/CambridgeZ88BaseStateManager";
 import { setEngineDependencies } from "../machines/vm-engine-dependencies";
 import { useState } from "react";
-import Cz88CardsDialog from "../machines/cz88/Cz88CardsDialog";
+import ModalDialog from "../modals/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
 
 // --- Set up the virual machine engine service with the
@@ -71,7 +71,7 @@ export default function EmuApp() {
       {emuViewOptions.showToolbar && <Toolbar></Toolbar>}
       <MainPanel />
       {emuViewOptions.showStatusBar && <EmuStatusbar></EmuStatusbar>}
-      <Cz88CardsDialog targetId="#app" display={true} />
+      <ModalDialog targetId="#app" />
     </div>
   );
 

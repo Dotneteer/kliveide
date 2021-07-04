@@ -17,11 +17,14 @@ import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
 import { vmEngineService } from "../vm-engine-service";
 import {
   CZ88_BATTERY_LOW,
+  CZ88_CARDS,
   CZ88_HARD_RESET,
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
 import { getEngineDependencies } from "../vm-engine-dependencies";
+import { modalDialogService } from "../../../renderer/modals/modal-service";
+import { cz88CardsDialog } from "./Cz88CardsDialog";
 
 /**
  * ZX Spectrum common core implementation
@@ -341,22 +344,26 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    * Executes a machine specific command. Override in a machine to
    * respond to those commands
    * @param command Command to execute
+   * @param args Optional command arguments
    */
-  async executeMachineCommand(command: string): Promise<void> {
+  async executeMachineCommand(command: string, args?: unknown): Promise<unknown> {
     switch (command) {
       case CZ88_SOFT_RESET:
         vmEngineService.resetCpu();
-        break;
+        return;
+
       case CZ88_HARD_RESET:
         await vmEngineService.restart();
-        break;
+        return;
+
       case CZ88_PRESS_BOTH_SHIFTS:
         this.api.setKeyStatus(cz88KeyCodes.ShiftL, true);
         this.api.setKeyStatus(cz88KeyCodes.ShiftR, true);
         await new Promise((r) => setTimeout(r, 400));
         this.api.setKeyStatus(cz88KeyCodes.ShiftL, false);
         this.api.setKeyStatus(cz88KeyCodes.ShiftR, false);
-        break;
+        return;
+
       case CZ88_BATTERY_LOW:
         const state = this.getMachineState();
         if (state.isInSleepMode) {
@@ -367,7 +374,15 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
           this.api.setKeyStatus(cz88KeyCodes.ShiftR, false);
         }
         this.api.raiseBatteryLow();
-        break;
+        return;
+
+      case CZ88_CARDS:
+        const result = await modalDialogService.showModalDialog(cz88CardsDialog, args);
+        return result;
+
+      default:
+        console.error(`Unknown command type received: ${command}`);
+        return;
     }
   }
 }
@@ -464,7 +479,7 @@ export interface CambridgeZ88MachineState extends MachineState, Z80CpuState {
 /**
  * Z88 INT flag values
  */
- export enum IntFlags {
+export enum IntFlags {
   BM_INTKWAIT = 0x80,
   BM_INTA19 = 0x40,
   BM_INTFLAP = 0x20,
@@ -492,4 +507,3 @@ export enum TmkFlags {
   BM_TMKSEC = 0x02,
   BM_TMKMIN = 0x04,
 }
-

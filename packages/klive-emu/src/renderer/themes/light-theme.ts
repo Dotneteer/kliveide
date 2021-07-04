@@ -77,7 +77,7 @@ export const lightTheme: ITheme = {
 
     "--dropdown-text-color": "#ffffff",
     "--dropdown-backgound-color": "#3c3c3c",
-  
 
+    "--dialog-header-background": "#808080",
   },
 };

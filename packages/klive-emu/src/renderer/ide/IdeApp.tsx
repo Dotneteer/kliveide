@@ -22,6 +22,7 @@ import {
   setActivitiesAction,
 } from "../../shared/state/activity-bar-reducer";
 import { toStyleString } from "./utils/css-utils";
+import ModalDialog from "../modals/ModalDialog";
 
 /**
  * Represents the emulator app's root component
@@ -175,6 +176,7 @@ export default function IdeApp() {
       <IdeWorkbench />
       {ideViewOptions.showStatusBar && <IdeStatusbar></IdeStatusbar>}
       <ContextMenu target="#klive_ide_app" />
+      <ModalDialog targetId="#app" />
     </div>
   );
 

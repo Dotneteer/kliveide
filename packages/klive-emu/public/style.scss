@@ -332,7 +332,7 @@ input.e-input.e-control.e-dropdownlist,
 }
 
 // ----------------------------------------------------------------------------
-// Dropdown list overrides
+// Modal dialog overrides
 
 .e-dialog {
   border-radius: 0;
@@ -340,10 +340,17 @@ input.e-input.e-control.e-dropdownlist,
 }
 
 .e-dialog,
-.e-dlg-header-content,
 .e-dlg-content,
 .e-footer-content {
   background-color: var(--shell-canvas-background-color);
+}
+
+.e-dlg-header-content {
+  background-color: var(--dialog-header-background);
+}
+
+.e-dialog .e-dlg-header-content {
+  border-radius: 0;
 }
 
 .e-dialog .e-dlg-header-content,
@@ -383,6 +390,18 @@ input.e-input.e-control.e-dropdownlist,
 .e-btn.e-flat.e-primary:focus,
 .e-css.e-btn.e-flat.e-primary:focus {
   border: 1px solid var(--button-focused-border-color);
+}
+
+.e-dialog .e-dlg-header-content + .e-dlg-content {
+  padding-top: 0;
+}
+
+.e-dialog .e-dlg-content {
+  padding: 0;
+}
+
+.e-dlg-overlay {
+  opacity: 0.6;
 }
 
 // ============================================================================

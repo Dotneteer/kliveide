@@ -1,6 +1,7 @@
 import {
   CreateMachineResponse,
   DefaultResponse,
+  ExecuteMachineCommandResponse,
   RequestMessage,
   ResponseMessage,
 } from "../../shared/messaging/message-types";
@@ -81,7 +82,13 @@ async function processEmulatorMessages(
 
     case "executeMachineCommand":
       if (vmEngineService.hasEngine) {
-        vmEngineService.getEngine().executeMachineCommand(message.command);
+        const result = await vmEngineService
+          .getEngine()
+          .executeMachineCommand(message.command, message.args);
+        return <ExecuteMachineCommandResponse>{
+          type: "executeMachineCommandResponse",
+          result,
+        };
       }
       return <DefaultResponse>{ type: "ack" };
 

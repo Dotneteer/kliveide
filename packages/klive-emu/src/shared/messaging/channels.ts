@@ -19,3 +19,7 @@ export const MAIN_TO_EMU_RESPONE_CHANNEL = "MainToEmuResponse";
 // --- Channels used for main to IDE communication
 export const MAIN_TO_IDE_REQUEST_CHANNEL = "MainToIdeRequest";
 export const MAIN_TO_IDE_RESPONE_CHANNEL = "MainToIdeResponse";
+
+// --- Channels used for emulator to main communication
+export const EMU_TO_MAIN_REQUEST_CHANNEL = "EmuToMainRequest";
+export const EMU_TO_MAIN_RESPONSE_CHANNEL = "EmuToMainResponse";
