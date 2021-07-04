@@ -15,16 +15,20 @@ import { AppState } from "../../shared/state/AppState";
  * Represents the main canvas of the IDE
  */
 export default function IdeDesk() {
-  const outputMaximized = useSelector(
+  const toolsMaximized = useSelector(
     (state: AppState) => state.toolFrame?.maximized ?? false
+  );
+  const toolsVisible = useSelector(
+    (state: AppState) => state.toolFrame?.visible ?? false
   );
 
   return (
     <Root>
       <SplitterComponent orientation="Vertical" separatorSize={2}>
         <PanesDirective>
-          {!outputMaximized && (
+          {(!toolsVisible || !toolsMaximized) && (
             <PaneDirective
+              key="documents"
               cssClass="splitter-panel"
               content={() => <IdeDocumentsFrame />}
               size="66%"
@@ -32,13 +36,16 @@ export default function IdeDesk() {
               max="95%"
             />
           )}
-          <PaneDirective
-            cssClass="splitter-panel"
-            content={() => <ToolFrame />}
-            size="34%"
-            min="5%"
-            max="95%"
-          />
+          {toolsVisible && (
+            <PaneDirective
+              key="tools"
+              cssClass="splitter-panel"
+              content={() => <ToolFrame />}
+              size="34%"
+              min="5%"
+              max="95%"
+            />
+          )}
         </PanesDirective>
       </SplitterComponent>
     </Root>
