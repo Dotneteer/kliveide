@@ -13,7 +13,7 @@ import {
   SlotContent,
   SlotState,
   Z88CardsState,
-} from "../../../shared/machines/cz88-card-state";
+} from "../../../shared/machines/cz88-specific";
 import { useState } from "react";
 import { SvgIcon } from "../../common/SvgIcon";
 import { OpenFileResponse } from "../../../shared/messaging/message-types";
@@ -29,10 +29,7 @@ class Cz88CardsDialogDescriptor implements IModalDialogDescriptor {
   height = "auto";
 
   button2Text = "Cancel";
-  button2Clicked = () => {
-    modalDialogService.hide();
-    return true;
-  };
+  button2Clicked = () => true;
 
   button3Text = "Ok";
   button3Clicked = () => {

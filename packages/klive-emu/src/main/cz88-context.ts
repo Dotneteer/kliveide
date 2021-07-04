@@ -27,7 +27,7 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../shared/machines/macine-commands";
-import { Z88CardsState } from "../shared/machines/cz88-card-state";
+import { Cz88ContructionOptions, Z88CardsState } from "../shared/machines/cz88-specific";
 import { ExecuteMachineCommandResponse } from "../shared/messaging/message-types";
 
 // --- Default ROM file
@@ -129,19 +129,11 @@ let recentRomSelected = false;
 // State of the card slots
 
 let slotsState: Z88CardsState = {
-  slot1: {content:"empty" },
-  slot2: {content:"empty" },
-  slot3: {content:"empty" },
+  slot1: { content: "empty" },
+  slot2: { content: "empty" },
+  slot3: { content: "empty" },
 };
 
-/**
- * Represents the construction options of Z88
- */
-export interface Cz88ContructionOptions {
-  sch?: number;
-  scw?: number;
-  firmware?: Uint8Array[];
-}
 
 /**
  * Context provider for ZX Spectrum machine types
@@ -500,6 +492,38 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     if (settings.romFile) {
       await this.selectRomFileToUse(settings.romFile);
     }
+
+    // --- Handle slot states
+    if (settings.slotsState) {
+      slotsState = settings.slotsState;
+    }
+    if (!slotsState.slot1) {
+      slotsState.slot1 = { content: "empty" };
+    } else {
+      if (slotsState.slot1.content === "eprom" && slotsState.slot1.epromFile) {
+        // TODO: Read the Slot 1 eprom file
+      } else {
+        slotsState.slot1 = { content: "empty" };
+      }
+    }
+    if (!slotsState.slot2) {
+      slotsState.slot2 = { content: "empty" };
+    } else {
+      if (slotsState.slot2.content === "eprom" && slotsState.slot2.epromFile) {
+        // TODO: Read the Slot 2 eprom file
+      } else {
+        slotsState.slot2 = { content: "empty" };
+      }
+    }
+    if (!slotsState.slot3) {
+      slotsState.slot3 = { content: "empty" };
+    } else {
+      if (slotsState.slot3.content === "eprom" && slotsState.slot3.epromFile) {
+        // TODO: Read the Slot 3 eprom file
+      } else {
+        slotsState.slot3 = { content: "empty" };
+      }
+    }
   }
 
   /**
@@ -662,7 +686,8 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   private async insertOrRemoveCards(): Promise<void> {
     const result = (await this.executeMachineCommand(
-      CZ88_CARDS, slotsState
+      CZ88_CARDS,
+      slotsState
     )) as Z88CardsState;
     if (result) {
       slotsState = result;
