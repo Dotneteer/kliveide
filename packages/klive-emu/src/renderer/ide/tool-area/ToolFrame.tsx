@@ -1,7 +1,10 @@
 import * as React from "react";
 import { CSSProperties, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { ideToolFrameMaximizeAction } from "../../../shared/state/tool-frame-reducer";
+import {
+  ideToolFrameMaximizeAction,
+  ideToolFrameShowAction,
+} from "../../../shared/state/tool-frame-reducer";
 import { AppState } from "../../../shared/state/AppState";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
 import CommandIconButton from "../command/CommandIconButton";
@@ -10,6 +13,7 @@ import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
+import { animationTick } from "../../common/utils";
 
 /**
  * Represents the statusbar of the emulator
@@ -117,12 +121,26 @@ function ToolCommandBar() {
       <CommandIconButton
         iconName={maximized ? "chevron-down" : "chevron-up"}
         title={maximized ? "Restore panel size" : "Maximize panel size"}
-        clicked={() => {
-          console.log(!maximized);
-          ideStore.dispatch(ideToolFrameMaximizeAction(!maximized));
+        clicked={() =>
+          ideStore.dispatch(ideToolFrameMaximizeAction(!maximized))
+        }
+      />
+      <CommandIconButton
+        iconName="close"
+        title="Close"
+        clicked={async () => {
+          const toolsMaximized = !!ideStore.getState().toolFrame?.maximized;
+          if (toolsMaximized) {
+            ideStore.dispatch(ideToolFrameMaximizeAction(false));
+            await animationTick();
+          }
+          ideStore.dispatch(ideToolFrameShowAction(false));
+          if (toolsMaximized) {
+            await animationTick();
+            ideStore.dispatch(ideToolFrameMaximizeAction(true));
+          }
         }}
       />
-      <CommandIconButton iconName="close" title="Close" clicked={() => {}} />
     </div>
   );
 }

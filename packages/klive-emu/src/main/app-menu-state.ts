@@ -42,6 +42,7 @@ import { StateAwareObject } from "../shared/state/StateAwareObject";
 import { appConfiguration, appSettings } from "./klive-configuration";
 import { ideHideAction, ideShowAction } from "../shared/state/show-ide-reducer";
 import { MainToIdeMessenger } from "./MainToIdeMessenger";
+import { ideToolFrameMaximizeAction, ideToolFrameShowAction } from "../shared/state/tool-frame-reducer";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -121,6 +122,7 @@ const STEP_INTO_VM = "step_into_vm";
 const STEP_OVER_VM = "step_over_vm";
 const STEP_OUT_VM = "step_out_vm";
 const SHOW_IDE = "show_ide";
+const SHOW_IDE_TOOLS = "show_ide_tools";
 
 /**
  * Sets up the application menu
@@ -304,7 +306,7 @@ export function setupMenu(): void {
 
   // --- Prepare the machine menu
   const machineSubMenu: MenuItemConstructorOptions[] = [];
-  const machineType = mainStore.getState().machineType?.split("_")[0];
+  const machineType = mainStore.getState()?.machineType?.split("_")[0];
   for (let i = 0; i < MACHINE_MENU_ITEMS.length; i++) {
     machineSubMenu.push({
       id: menuIdFromMachineId(MACHINE_MENU_ITEMS[i].id),
@@ -409,6 +411,27 @@ export function setupMenu(): void {
           }
         },
       },
+      { type: "separator" },
+      {
+        id: SHOW_IDE_TOOLS,
+        label: "Show Tools",
+        type: "checkbox",
+        checked: mainStore.getState()?.toolFrame?.visible ?? false,
+        enabled: true,
+        click: async (mi) => {
+          const toolsMaximized = !!mainStore.getState().toolFrame?.maximized;
+          const toolsVisible = !!mainStore.getState()?.toolFrame?.visible;
+          if (toolsMaximized) {
+            mainStore.dispatch(ideToolFrameMaximizeAction(false));
+            await new Promise(r => setTimeout(r, 20));
+          }
+          mainStore.dispatch(ideToolFrameShowAction(!toolsVisible));
+          if (toolsMaximized) {
+            await new Promise(r => setTimeout(r, 20));
+            mainStore.dispatch(ideToolFrameMaximizeAction(true));
+          }
+        },
+      },
     ],
   };
 
@@ -486,6 +509,12 @@ export function processStateChange(fullState: AppState): void {
       showIDE.checked = fullState.showIde;
     }
 
+    // --- Tools panel visibility
+    const showTools = menu.getMenuItemById(SHOW_IDE_TOOLS);
+    if (showTools) {
+      showTools.checked = fullState.toolFrame?.visible ?? false;
+    }
+    
     // --- Keyboard panel status
     const toggleKeyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);
     if (toggleKeyboard) {
