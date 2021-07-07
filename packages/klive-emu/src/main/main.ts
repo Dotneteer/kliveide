@@ -79,11 +79,8 @@ app.on("ready", async () => {
   // --- Create the machine and set its state according to the saved settings
   const initialMachineType =
     appSettings?.machineType ?? appConfiguration?.machineType ?? "sp48";
-  await emuWindow.requestMachineType(initialMachineType);
   const settings = appSettings?.machineSpecific?.[initialMachineType];
-  if (settings) {
-    emuWindow.machineContextProvider.setMachineSpecificSettings(settings);
-  }
+  await emuWindow.requestMachineType(initialMachineType, undefined, settings);
 });
 
 // Quit when all windows are closed.

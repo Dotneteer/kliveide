@@ -135,7 +135,8 @@ export class EmuWindow extends AppWindow {
    */
   async requestMachineType(
     id: string,
-    options?: MachineCreationOptions
+    options?: MachineCreationOptions,
+    settings?: KliveSettings
   ): Promise<void> {
     // Preparation: Stop the current machine
     emuMessenger.sendMessage(<StopVmRequest>{
@@ -165,13 +166,20 @@ export class EmuWindow extends AppWindow {
       return;
     }
 
-    // #3: Instantiate the machine
-    const creationOptions = { ...options, firmware } as MachineCreationOptions;
-    await emuMessenger.sendMessage({
+    // #3: Set up machine-specific settings
+    let extraOptions: MachineCreationOptions | null = null;
+    if (settings) {
+      extraOptions = await this._machineContextProvider.setMachineSpecificSettings(settings);
+    }
+
+    // #4: Instantiate the machine
+    const creationOptions = { ...options, firmware, ...extraOptions } as MachineCreationOptions;
+    const requestMessage: RequestMessage = {
       type: "CreateMachine",
       machineId: id,
       options: creationOptions,
-    });
+    }
+    await emuMessenger.sendMessage(requestMessage);
 
     // #4: Sign extra machine features
     mainStore.dispatch(

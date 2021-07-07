@@ -75,7 +75,9 @@ export interface MachineContextProvider {
   /**
    * Override this method to set the machine-specific settings
    */
-  setMachineSpecificSettings(settings: Record<string, any>): Promise<void>;
+  setMachineSpecificSettings(
+    settings: Record<string, any>
+  ): Promise<MachineCreationOptions | null>;
 
   /**
    * Get the list of machine features supported
@@ -88,7 +90,8 @@ export interface MachineContextProvider {
  * class for your context provider classes.
  */
 export abstract class MachineContextProviderBase
-  implements MachineContextProvider {
+  implements MachineContextProvider
+{
   /**
    * Constructs the provider with the specified options
    * @param options
@@ -179,7 +182,9 @@ export abstract class MachineContextProviderBase
    */
   async setMachineSpecificSettings(
     settings: Record<string, any>
-  ): Promise<void> {}
+  ): Promise<MachineCreationOptions | null> {
+    return null;
+  }
 
   /**
    * Get the list of machine features supported

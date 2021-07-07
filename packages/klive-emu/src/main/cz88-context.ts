@@ -421,7 +421,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   private requestMachine(): void {
     const typeId = "cz88";
-    console.log(typeId, recentOptions);
     emuWindow.requestMachineType(typeId, recentOptions);
   }
 
@@ -445,7 +444,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   async setMachineSpecificSettings(
     settings: Record<string, any>
-  ): Promise<void> {
+  ): Promise<MachineCreationOptions | null> {
     if (settings.lcd) {
       switch (settings.lcd) {
         case "640x64":
@@ -503,7 +502,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     await this.processSlotState(1);
     await this.processSlotState(2);
     await this.processSlotState(3);
-    console.log(recentOptions);
+    return recentOptions;
   }
 
   /**

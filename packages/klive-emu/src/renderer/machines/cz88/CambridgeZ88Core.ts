@@ -103,8 +103,65 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
       this.options?.scw ?? 0xff,
       this.options?.sch ?? 8
     );
+
+    this.configureSlot(1);
+    this.configureSlot(2);
+    this.configureSlot(3);
+
     const deps = getEngineDependencies();
     this.setAudioSampleRate(deps.sampleRateGetter());
+  }
+
+  /**
+   * Configures the specified slot
+   * @param slot
+   */
+  private configureSlot(slot: number): void {
+    const slotConfig = (this.options as any)[`card${slot}`];
+    if (!slotConfig) {
+      return;
+    }
+
+    const contents = slotConfig.eprom as Uint8Array | undefined;
+    const ramSize = slotConfig.ramSize as number | undefined;
+    if (slotConfig.eprom) {
+      // --- Put the eprom contents into the memory
+      let mh = new MemoryHelper(this.api, this.getFirmwareBaseAddress());
+      const slotBase = slot * 1024 * 1024;
+      for (let i = 0; i < contents.length; i++) {
+        mh.writeByte(slotBase + i, contents[i]);
+      }
+      this.api.setZ88ChipMask(slot + 1, getChipmask(contents.length));
+      this.api.setZ88SlotMask(slot, true);
+    } else {
+      this.api.setZ88ChipMask(slot + 1, getChipmask(ramSize));
+      this.api.setZ88SlotMask(slot, false);
+    }
+
+    function getChipmask(size: number): number {
+      let mask = 0x00;
+      switch (size) {
+        case 0x00_8000:
+          mask = 0x01;
+          break;
+        case 0x01_0000:
+          mask = 0x03;
+          break;
+        case 0x02_0000:
+          mask = 0x07;
+          break;
+        case 0x04_0000:
+          mask = 0x0f;
+          break;
+        case 0x08_0000:
+          mask = 0x1f;
+          break;
+        case 0x10_0000:
+          mask = 0x3f;
+          break;
+      }
+      return mask;
+    }
   }
 
   /**
@@ -346,7 +403,10 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    * @param command Command to execute
    * @param args Optional command arguments
    */
-  async executeMachineCommand(command: string, args?: unknown): Promise<unknown> {
+  async executeMachineCommand(
+    command: string,
+    args?: unknown
+  ): Promise<unknown> {
     switch (command) {
       case CZ88_SOFT_RESET:
         vmEngineService.resetCpu();
@@ -377,7 +437,10 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
         return;
 
       case CZ88_CARDS:
-        const result = await modalDialogService.showModalDialog(cz88CardsDialog, args);
+        const result = await modalDialogService.showModalDialog(
+          cz88CardsDialog,
+          args
+        );
         return result;
 
       default:
