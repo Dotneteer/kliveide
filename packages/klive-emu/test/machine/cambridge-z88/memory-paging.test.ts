@@ -167,7 +167,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       machine.api.setZ88ChipMask(2, pat.c2); // Chip 2 RAM 1M
       machine.api.setZ88ChipMask(3, pat.c3); // Chip 3 RAM 1M
       machine.api.setZ88ChipMask(4, pat.c4); // Chip 4 RAM 1M
-      machine.api.setZ88Card3Rom(pat.c3Rom); // Is Chip 4 ROM?
+      machine.api.setZ88SlotMask(3, pat.c3Rom); // Is Chip 4 ROM?
 
       const s = machine.getMachineState();
 
@@ -318,7 +318,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       machine.api.setZ88ChipMask(2, pat.c2); // Chip 2 RAM 1M
       machine.api.setZ88ChipMask(3, pat.c3); // Chip 3 RAM 1M
       machine.api.setZ88ChipMask(4, pat.c4); // Chip 4 RAM 1M
-      machine.api.setZ88Card3Rom(pat.c3Rom); // Is Chip 4 ROM?
+      machine.api.setZ88SlotMask(3, pat.c3Rom); // Is Chip 4 ROM?
 
       const s = machine.getMachineState();
 
@@ -459,7 +459,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       machine.api.setZ88ChipMask(2, pat.c2); // Chip 2 RAM 1M
       machine.api.setZ88ChipMask(3, pat.c3); // Chip 3 RAM 1M
       machine.api.setZ88ChipMask(4, pat.c4); // Chip 4 RAM 1M
-      machine.api.setZ88Card3Rom(pat.c3Rom); // Is Chip 4 ROM?
+      machine.api.setZ88SlotMask(3, pat.c3Rom); // Is Chip 4 ROM?
 
       const s = machine.getMachineState();
 
@@ -600,7 +600,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       machine.api.setZ88ChipMask(2, pat.c2); // Chip 2 RAM 1M
       machine.api.setZ88ChipMask(3, pat.c3); // Chip 3 RAM 1M
       machine.api.setZ88ChipMask(4, pat.c4); // Chip 4 RAM 1M
-      machine.api.setZ88Card3Rom(pat.c3Rom); // Is Chip 4 ROM?
+      machine.api.setZ88SlotMask(3, pat.c3Rom); // Is Chip 4 ROM?
 
       const s = machine.getMachineState();
 
@@ -741,7 +741,7 @@ describe("Cambridge Z88 - Memory paging", function () {
       machine.api.setZ88ChipMask(2, pat.c2); // Chip 2 RAM 1M
       machine.api.setZ88ChipMask(3, pat.c3); // Chip 3 RAM 1M
       machine.api.setZ88ChipMask(4, pat.c4); // Chip 4 RAM 1M
-      machine.api.setZ88Card3Rom(pat.c3Rom); // Is Chip 4 ROM?
+      machine.api.setZ88SlotMask(3, pat.c3Rom); // Is Chip 4 ROM?
       machine.api.writePortCz88(0xb0, 0x04); // Set COM.RAMS
 
       const s = machine.getMachineState();
