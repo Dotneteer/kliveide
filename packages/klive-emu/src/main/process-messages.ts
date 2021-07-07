@@ -25,6 +25,16 @@ export async function processEmulatorRequest(
         type: "openFileDialogResponse",
         filename: result.canceled ? undefined : result.filePaths[0],
       };
+
+    case "manageZ88Cards":
+      const manageCardsStub = (emuWindow.machineContextProvider as any)?.[
+        "insertOrRemoveCards"
+      ].bind(emuWindow.machineContextProvider);
+      if (manageCardsStub) {
+        await manageCardsStub();
+      }
+      return <DefaultResponse>{ type: "ack" };
+
     default:
       return <DefaultResponse>{ type: "ack" };
   }

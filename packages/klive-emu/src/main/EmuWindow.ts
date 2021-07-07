@@ -169,16 +169,21 @@ export class EmuWindow extends AppWindow {
     // #3: Set up machine-specific settings
     let extraOptions: MachineCreationOptions | null = null;
     if (settings) {
-      extraOptions = await this._machineContextProvider.setMachineSpecificSettings(settings);
+      extraOptions =
+        await this._machineContextProvider.setMachineSpecificSettings(settings);
     }
 
     // #4: Instantiate the machine
-    const creationOptions = { ...options, firmware, ...extraOptions } as MachineCreationOptions;
+    const creationOptions = {
+      ...options,
+      firmware,
+      ...extraOptions,
+    } as MachineCreationOptions;
     const requestMessage: RequestMessage = {
       type: "CreateMachine",
       machineId: id,
       options: creationOptions,
-    }
+    };
     await emuMessenger.sendMessage(requestMessage);
 
     // #4: Sign extra machine features

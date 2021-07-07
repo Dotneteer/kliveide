@@ -111,6 +111,14 @@ export interface OpenFileRequest extends MessageBase {
 }
 
 /**
+ * The emulator process ask for Manage Z88 Cards command
+ */
+ export interface ManageZ88CardsRequest extends MessageBase {
+  type: "manageZ88Cards";
+}
+
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -127,7 +135,8 @@ export type RequestMessage =
   | StepOutVmRequest
   | ExecuteMachineCommandRequest
   | SyncMainStateRequest
-  | OpenFileRequest;
+  | OpenFileRequest
+  | ManageZ88CardsRequest;
 
 /**
  * Default response for actions

@@ -20,6 +20,7 @@ import {
   CZ88_CARDS,
   CZ88_HARD_RESET,
   CZ88_PRESS_BOTH_SHIFTS,
+  CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
 import { getEngineDependencies } from "../vm-engine-dependencies";
@@ -442,6 +443,20 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
           args
         );
         return result;
+
+      case CZ88_REFRESH_OPTIONS:
+        const card1 = (args as any).card1;
+        this.options.card1 = { ...card1 };
+        this.configureSlot(1);
+
+        const card2 = (args as any).card2;
+        this.options.card2 = { ...card2 };
+        this.configureSlot(2);
+
+        const card3 = (args as any).card3;
+        this.options.card3 = { ...card3 };
+        this.configureSlot(3);
+        break;
 
       default:
         console.error(`Unknown command type received: ${command}`);
