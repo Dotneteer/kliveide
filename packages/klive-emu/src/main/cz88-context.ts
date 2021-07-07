@@ -27,7 +27,10 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
 } from "../shared/machines/macine-commands";
-import { Cz88ContructionOptions, Z88CardsState } from "../shared/machines/cz88-specific";
+import {
+  Cz88ContructionOptions,
+  Z88CardsState,
+} from "../shared/machines/cz88-specific";
 import { ExecuteMachineCommandResponse } from "../shared/messaging/message-types";
 
 // --- Default ROM file
@@ -133,7 +136,6 @@ let slotsState: Z88CardsState = {
   slot2: { content: "empty" },
   slot3: { content: "empty" },
 };
-
 
 /**
  * Context provider for ZX Spectrum machine types
@@ -418,8 +420,8 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * @param typeId Machine type with LCD size specification
    */
   private requestMachine(): void {
-    const typeId = `${recentLcdType}_${recentRomName ?? ""}`;
-
+    const typeId = "cz88";
+    console.log(typeId, recentOptions);
     emuWindow.requestMachineType(typeId, recentOptions);
   }
 
@@ -497,32 +499,58 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     if (settings.slotsState) {
       slotsState = settings.slotsState;
     }
-    if (!slotsState.slot1) {
-      slotsState.slot1 = { content: "empty" };
-    } else {
-      if (slotsState.slot1.content === "eprom" && slotsState.slot1.epromFile) {
-        // TODO: Read the Slot 1 eprom file
-      } else {
-        slotsState.slot1 = { content: "empty" };
-      }
+
+    await this.processSlotState(1);
+    await this.processSlotState(2);
+    await this.processSlotState(3);
+    console.log(recentOptions);
+  }
+
+  /**
+   * Processes the slot information for the specified card
+   * @param slot
+   * @returns
+   */
+  private async processSlotState(slot: number): Promise<void> {
+    const anySlot = slotsState as any;
+    if (!anySlot) {
+      return;
     }
-    if (!slotsState.slot2) {
-      slotsState.slot2 = { content: "empty" };
+
+    const slotProp = `slot${slot}`;
+    const cardProp = `card${slot}`;
+
+    if (!anySlot[slotProp]) {
+      anySlot[slotProp] = { content: "empty" };
     } else {
-      if (slotsState.slot2.content === "eprom" && slotsState.slot2.epromFile) {
-        // TODO: Read the Slot 2 eprom file
-      } else {
-        slotsState.slot2 = { content: "empty" };
+      let eprom: Uint8Array | undefined;
+      let ramSize: number | undefined;
+      switch (anySlot[slotProp].content) {
+        case "32K":
+          ramSize = 0x00_8000;
+          break;
+        case "128K":
+          ramSize = 0x02_0000;
+          break;
+        case "512K":
+          ramSize = 0x08_0000;
+          break;
+        case "1M":
+          ramSize = 0x10_0000;
+          break;
+        case "eprom":
+          const contents = await this.selectCardFileToUse(
+            anySlot[slotProp].epromFile
+          );
+          if (contents) {
+            eprom = contents;
+          }
+          break;
       }
-    }
-    if (!slotsState.slot3) {
-      slotsState.slot3 = { content: "empty" };
-    } else {
-      if (slotsState.slot3.content === "eprom" && slotsState.slot3.epromFile) {
-        // TODO: Read the Slot 3 eprom file
-      } else {
-        slotsState.slot3 = { content: "empty" };
-      }
+      recentOptions[cardProp] = {
+        ramSize,
+        eprom,
+      };
     }
   }
 
@@ -604,6 +632,27 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
+   * Select the card file to use with Z88
+   */
+  private async selectCardFileToUse(
+    filename?: string
+  ): Promise<Uint8Array | null> {
+    if (!filename) {
+      return;
+    }
+    const contents = await this.checkSlotFile(filename);
+    if (typeof contents === "string") {
+      await dialog.showMessageBox(emuWindow.window, {
+        title: "Card file error",
+        message: contents,
+        type: "error",
+      });
+      return null;
+    }
+    return contents;
+  }
+
+  /**
    * Checks if the specified file is a valid Z88 ROM
    * @param filename ROM file name
    * @returns The contents, if the ROM is valid; otherwise, the error message
@@ -625,12 +674,45 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       if (!this.isOZRom(contents)) {
         return "The file does not contain the OZ ROM watermark.";
       }
+
       // --- Done: valid ROM
       return contents;
     } catch (err) {
       // --- This error is intentionally ignored
       return (
         `Error processing ROM file ${filename}. ` +
+        "Please check if you have the appropriate access rights " +
+        "to read the files contents and the file is a valid ROM file."
+      );
+    }
+  }
+
+  /**
+   * Checks if the specified file is a valid Z88 ROM
+   * @param filename ROM file name
+   * @returns The contents, if the ROM is valid; otherwise, the error message
+   */
+  private async checkSlotFile(filename: string): Promise<string | Uint8Array> {
+    try {
+      const contents = Uint8Array.from(fs.readFileSync(filename));
+
+      // --- Check contents length
+      if (
+        contents.length !== 0x10_0000 &&
+        contents.length !== 0x08_0000 &&
+        contents.length !== 0x04_0000 &&
+        contents.length !== 0x02_0000 &&
+        contents.length !== 0x00_8000
+      ) {
+        return `Invalid card file length: ${contents.length}. The card file length can be 32K, 128K, 256K, 512K, or 1M.`;
+      }
+
+      // --- Done: valid ROM
+      return contents;
+    } catch (err) {
+      // --- This error is intentionally ignored
+      return (
+        `Error processing card file ${filename}. ` +
         "Please check if you have the appropriate access rights " +
         "to read the files contents and the file is a valid ROM file."
       );
@@ -691,6 +773,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     )) as Z88CardsState;
     if (result) {
       slotsState = result;
+      await this.processSlotState(1);
+      await this.processSlotState(2);
+      await this.processSlotState(3);
+      this.requestMachine();
     }
   }
 
