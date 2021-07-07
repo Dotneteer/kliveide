@@ -146,10 +146,12 @@ function CardColumn({ slot, initialState, changed }: CardColumnProps) {
         <Filename
           file={state.epromFile}
           changed={(name: string) => {
-            setState({
+            const newState = {
               content: name ? "eprom" : initialState.content,
               epromFile: name,
-            });
+            };
+            setState(newState);
+            changed(newState);
           }}
         />
       </Cell>

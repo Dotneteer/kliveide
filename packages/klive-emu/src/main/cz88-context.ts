@@ -25,13 +25,16 @@ import {
   CZ88_CARDS,
   CZ88_HARD_RESET,
   CZ88_PRESS_BOTH_SHIFTS,
+  CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
 } from "../shared/machines/macine-commands";
 import {
   Cz88ContructionOptions,
+  SlotContent,
   Z88CardsState,
 } from "../shared/machines/cz88-specific";
 import { ExecuteMachineCommandResponse } from "../shared/messaging/message-types";
+import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";
@@ -241,31 +244,35 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: Z88_640_64,
             type: "radio",
             label: "640 x 64",
-            click: () => this.setLcd(Z88_640_64, "640x64", 0xff, 8),
+            click: async () => await this.setLcd(Z88_640_64, "640x64", 0xff, 8),
           },
           {
             id: Z88_640_320,
             type: "radio",
             label: "640 x 320",
-            click: () => this.setLcd(Z88_640_320, "640x320", 0xff, 40),
+            click: async () =>
+              await this.setLcd(Z88_640_320, "640x320", 0xff, 40),
           },
           {
             id: Z88_640_480,
             type: "radio",
             label: "640 x 480",
-            click: () => this.setLcd(Z88_640_480, "640x480", 0xff, 60),
+            click: async () =>
+              await this.setLcd(Z88_640_480, "640x480", 0xff, 60),
           },
           {
             id: Z88_800_320,
             type: "radio",
             label: "800 x 320",
-            click: () => this.setLcd(Z88_800_320, "800x320", 100, 40),
+            click: async () =>
+              await this.setLcd(Z88_800_320, "800x320", 100, 40),
           },
           {
             id: Z88_800_480,
             type: "radio",
             label: "800 x 480",
-            click: () => this.setLcd(Z88_800_480, "800x480", 100, 60),
+            click: async () =>
+              await this.setLcd(Z88_800_480, "800x480", 100, 60),
           },
         ],
       },
@@ -416,12 +423,19 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   }
 
   /**
+   * Get the list of machine features supported
+   */
+  getExtraMachineFeatures(): ExtraMachineFeatures[] {
+    return ["Z88Cards"];
+  }
+
+  /**
    * Sets the Z88 with the specified LCD type
    * @param typeId Machine type with LCD size specification
    */
-  private requestMachine(): void {
+  private async requestMachine(): Promise<void> {
     const typeId = "cz88";
-    emuWindow.requestMachineType(typeId, recentOptions);
+    await emuWindow.requestMachineType(typeId, recentOptions);
   }
 
   /**
@@ -448,23 +462,23 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     if (settings.lcd) {
       switch (settings.lcd) {
         case "640x64":
-          this.setLcd(Z88_640_64, "640x64", 0xff, 8);
+          await this.setLcd(Z88_640_64, "640x64", 0xff, 8);
           break;
 
         case "640x320":
-          this.setLcd(Z88_640_320, "640x320", 0xff, 40);
+          await this.setLcd(Z88_640_320, "640x320", 0xff, 40);
           break;
 
         case "640x480":
-          this.setLcd(Z88_640_480, "640x480", 0xff, 60);
+          await this.setLcd(Z88_640_480, "640x480", 0xff, 60);
           break;
 
         case "800x320":
-          this.setLcd(Z88_800_320, "800x320", 100, 40);
+          await this.setLcd(Z88_800_320, "800x320", 100, 40);
           break;
 
         case "800x480":
-          this.setLcd(Z88_800_480, "800x480", 100, 60);
+          await this.setLcd(Z88_800_480, "800x480", 100, 60);
           break;
       }
     }
@@ -510,7 +524,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * @param slot
    * @returns
    */
-  private async processSlotState(slot: number): Promise<void> {
+  private async processSlotState(
+    slot: number
+  ): Promise<Uint8Array | undefined> {
     const anySlot = slotsState as any;
     if (!anySlot) {
       return;
@@ -550,6 +566,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         ramSize,
         eprom,
       };
+      return eprom;
     }
   }
 
@@ -560,16 +577,16 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * @param scw LCD width
    * @param sch LCD height
    */
-  private setLcd(
+  private async setLcd(
     menuId: string,
     label: string,
     scw: number,
     sch: number
-  ): void {
+  ): Promise<void> {
     recentLcdType = machineIdFromMenuId(menuId);
     lcdLabel = label;
     recentOptions = { ...recentOptions, scw, sch };
-    this.requestMachine();
+    await this.requestMachine();
     this.setContext();
   }
 
@@ -611,7 +628,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     setupMenu();
 
     // --- Request the current machine type
-    this.requestMachine();
+    await this.requestMachine();
   }
 
   /**
@@ -765,17 +782,87 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
    * Execute insert/remove cards
    */
-  private async insertOrRemoveCards(): Promise<void> {
+  async insertOrRemoveCards(): Promise<void> {
+    const lastSlotState = { ...slotsState } as Z88CardsState;
     const result = (await this.executeMachineCommand(
       CZ88_CARDS,
       slotsState
     )) as Z88CardsState;
     if (result) {
+      let changed = false;
+      let useSoftReset = true;
       slotsState = result;
-      await this.processSlotState(1);
-      await this.processSlotState(2);
-      await this.processSlotState(3);
-      this.requestMachine();
+
+      if (
+        lastSlotState.slot1?.content !== slotsState.slot1?.content ||
+        lastSlotState.slot1?.epromFile !== slotsState.slot1?.epromFile
+      ) {
+        changed = true;
+        if (changed) {
+          useSoftReset =
+            useSoftReset &&
+            requiresSoftReset(
+              lastSlotState.slot1?.content,
+              slotsState.slot1?.content
+            );
+          await this.processSlotState(1);
+        }
+      }
+      if (
+        lastSlotState.slot2?.content !== slotsState.slot2?.content ||
+        lastSlotState.slot2?.epromFile !== slotsState.slot2?.epromFile
+      ) {
+        changed = true;
+        if (changed) {
+          useSoftReset =
+            useSoftReset &&
+            requiresSoftReset(
+              lastSlotState.slot2?.content,
+              slotsState.slot2?.content
+            );
+        }
+        await this.processSlotState(2);
+      }
+      if (
+        lastSlotState.slot3?.content !== slotsState.slot3?.content ||
+        lastSlotState.slot3?.epromFile !== slotsState.slot3?.epromFile
+      ) {
+        changed = true;
+        if (changed) {
+          useSoftReset =
+            useSoftReset &&
+            requiresSoftReset(
+              lastSlotState.slot3?.content,
+              slotsState.slot3?.content
+            );
+        }
+        await this.processSlotState(3);
+      }
+      if (changed) {
+        this.executeMachineCommand(CZ88_REFRESH_OPTIONS, recentOptions);
+        if (useSoftReset) {
+          this.executeMachineCommand(CZ88_SOFT_RESET);
+        } else {
+          const stateBefore = mainStore.getState().emulatorPanel?.executionState ?? 0;
+          await this.requestMachine();
+          if (stateBefore) {
+            await this.executeMachineCommand(CZ88_HARD_RESET);
+          }
+        }
+      }
+    }
+
+    // --- Check if slot content change requires a soft reset
+    function requiresSoftReset(
+      oldContent: SlotContent,
+      newContent: SlotContent
+    ): boolean {
+      return (
+        (oldContent === "eprom" && newContent === "empty") ||
+        (oldContent === "empty" && newContent === "eprom") ||
+        (oldContent === "empty" && newContent === "empty") ||
+        (oldContent === "eprom" && newContent === "eprom")
+      );
     }
   }
 

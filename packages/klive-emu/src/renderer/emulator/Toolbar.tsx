@@ -17,6 +17,7 @@ import {
 } from "../../shared/state/spectrum-specific-reducer";
 import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
+import { rendererToMainMessenger } from "./RendererToMainMessenger";
 
 const Root = styles.div`
   display: flex;
@@ -223,12 +224,27 @@ export class Toolbar extends React.Component<Props, State> {
           <ToolbarSeparator key="sep-5" />,
         ]
       : null;
+    const z88Buttons = this.props.extraFeatures.includes("Z88Cards")
+      ? [
+          <ToolbarIconButton
+            key="z88Card"
+            iconName="repo-push"
+            title="Manage Z88 cards"
+            clicked={async () => {
+              await rendererToMainMessenger.sendMessage({
+                type: "manageZ88Cards",
+              });
+            }}
+          />,
+        ]
+      : null;
     return (
       <Root>
         {machineControlButtons}
         {soundButtons}
         {beamButtons}
         {tapeButtons}
+        {z88Buttons}
       </Root>
     );
   }
