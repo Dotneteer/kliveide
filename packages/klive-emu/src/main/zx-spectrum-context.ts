@@ -17,6 +17,7 @@ import {
 import { emuSetClockMultiplierAction } from "../shared/state/emulator-panel-reducer";
 import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
 import { emuWindow } from "./app-menu-state";
+import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -134,7 +135,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    */
   async setMachineSpecificSettings(
     settings: Record<string, any>
-  ): Promise<void> {
+  ): Promise<MachineCreationOptions | null> {
     if (settings.clockMultiplier) {
       mainStore.dispatch(emuSetClockMultiplierAction(settings.clockMultiplier));
     }
@@ -158,6 +159,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     } else {
       mainStore.dispatch(spectrumTapeContentsAction(new Uint8Array(0)));
     }
+    return null;
   }
 
   /**

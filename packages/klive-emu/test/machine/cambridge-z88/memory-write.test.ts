@@ -71,6 +71,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.testWriteCz88Memory(addr, 0x23);
       const value = machine.api.testReadCz88Memory(addr);
@@ -88,6 +89,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
       machine.api.writePortCz88(0xb0, 0x04); // Set COM.RAMS
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.testWriteCz88Memory(addr, 0x23);
       const value = machine.api.testReadCz88Memory(addr);
@@ -108,6 +110,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.writePortCz88(0xd1, 0x20);
       machine.api.testWriteCz88Memory(addr, 0x23);
@@ -131,6 +134,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.writePortCz88(0xd1, 0x40);
       machine.api.testWriteCz88Memory(addr, 0x23);
@@ -154,6 +158,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.writePortCz88(0xd2, 0x80);
       machine.api.testWriteCz88Memory(addr, 0x23);
@@ -177,6 +182,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.writePortCz88(0xd3, 0xc0);
       machine.api.testWriteCz88Memory(addr, 0x23);
@@ -200,6 +206,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.writePortCz88(0xd3, 0x80);
       machine.api.testWriteCz88Memory(addr, 0x23);
@@ -223,7 +230,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
-      machine.api.setZ88Card3Rom(true); // Chip 4 is ROM
+      machine.api.setZ88SlotMask(3, true); // Chip 4 is ROM
 
       machine.api.writePortCz88(0xd3, 0xc0);
       machine.api.testWriteCz88Memory(addr, 0x23);
@@ -241,6 +248,7 @@ describe("Cambridge Z88 - Memory write", function () {
       machine.api.setZ88ChipMask(2, 0x3f); // Slot 2 RAM 1M
       machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
       machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+      machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
       machine.api.writePortCz88(0xd2, 0x80);
       machine.api.writePortCz88(0xd3, 0xc0);
@@ -269,9 +277,9 @@ describe("Cambridge Z88 - Memory write", function () {
         machine.api.setZ88ChipMask(2, size); // Passed size
         machine.api.setZ88ChipMask(3, 0x3f); // Slot 3 RAM 1M
         machine.api.setZ88ChipMask(4, 0x3f); // Slot 4 RAM 1M
+        machine.api.setZ88SlotMask(3, false); // Chip 4 is RAM
 
         // Even pages
-        console.log("Start");
         for (let i = 0x40; i < 0x80; i += size + 1) {
           machine.api.writePortCz88(0xd1, i);
           machine.api.testWriteCz88Memory(addr, 0x23);
@@ -279,7 +287,6 @@ describe("Cambridge Z88 - Memory write", function () {
           expect(value).toBe(0x23);
           for (let j = 0x40 + (size + 1); j < 0x80; j += size + 1) {
             machine.api.writePortCz88(0xd1, j);
-            console.log(i, j);
             const value = machine.api.testReadCz88Memory(addr);
             expect(value).toBe(0x23);
             for (let k = j + 2; k < j + size + 1; k += 2) {
