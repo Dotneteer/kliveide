@@ -50,7 +50,9 @@ export default class SampleDocument extends React.Component<Props, State> {
       flexShrink: 1,
       width: "100%",
       height: "100%",
-      border: `4px dotted ${this.props.color}`,
+      padding: 20,
+      fontSize: 20,
+      color: this.props.color,
     };
     return (
       <div

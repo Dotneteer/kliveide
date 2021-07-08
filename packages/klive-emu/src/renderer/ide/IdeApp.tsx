@@ -9,7 +9,6 @@ import "./ide-message-processor";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { CSSProperties, useState } from "react";
 import { sideBarService } from "./side-bar/SideBarService";
-import { SampleSideBarPanelDescriptor } from "./SampleSideBarPanel";
 import { documentService } from "./document-area/DocumentService";
 import { SampleDocumentPanelDescriptor } from "./SampleDocument";
 import ContextMenu from "./command/ContextMenu";
@@ -23,6 +22,15 @@ import {
 } from "../../shared/state/activity-bar-reducer";
 import { toStyleString } from "./utils/css-utils";
 import ModalDialog from "../modals/ModalDialog";
+import { Z80RegistersPanelDescriptor } from "./debug-tools/Z80RegistersPanel";
+import { UlaInformationPanelDescriptor } from "./debug-tools/UlaInformationPanel";
+import { OtherHardwareInfoPanelDescriptor } from "./debug-tools/OherHwPanel";
+import { CallStackPanelDescriptor } from "./debug-tools/CallStackPanel";
+import { Z80DisassemblyPanelDescriptor } from "./debug-tools/DisassemblyPanel";
+import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
+import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
+import { IoLogsPanelDescription } from "./log-tools/IoLogsPanel";
+import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 
 /**
  * Represents the emulator app's root component
@@ -53,7 +61,7 @@ export default function IdeApp() {
     windowsAware.stateChanged.on((isWindows) => {
       themeService.isWindows = isWindows;
       updateThemeState();
-    }) 
+    });
 
     // --- Set up activities
     const activities: Activity[] = [
@@ -112,20 +120,50 @@ export default function IdeApp() {
       },
     ];
     ideStore.dispatch(setActivitiesAction(activities));
-    ideStore.dispatch(changeActivityAction(0));
 
     // --- Register side bar panels
+    // (Explorer)
+    sideBarService.registerSideBarPanel(
+      "file-view",
+      new OpenEditorsPanelDescriptor()
+    );
+    sideBarService.registerSideBarPanel(
+      "file-view",
+      new ProjectFilesPanelDescriptor()
+    );
+
+    // (Run and Debug)
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor("LONG long GREEN", "green")
+      new Z80RegistersPanelDescriptor()
     );
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor("RED", "red")
+      new UlaInformationPanelDescriptor()
     );
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new SampleSideBarPanelDescriptor("BLUE", "blue")
+      new OtherHardwareInfoPanelDescriptor()
+    );
+    sideBarService.registerSideBarPanel(
+      "debug-view",
+      new CallStackPanelDescriptor()
+    );
+    sideBarService.registerSideBarPanel(
+      "debug-view",
+      new Z80DisassemblyPanelDescriptor()
+    );
+
+    // (Machine logs)
+    sideBarService.registerSideBarPanel(
+      "log-view",
+      new IoLogsPanelDescription()
+    );
+
+    // (Testing)
+    sideBarService.registerSideBarPanel(
+      "test-view",
+      new TestRunnerPanelDescription()
     );
 
     // --- Register sample documents
@@ -158,6 +196,7 @@ export default function IdeApp() {
     toolAreaService.registerTool(
       new SampleToolPanelDescriptor("2", "Output", "green")
     );
+    ideStore.dispatch(changeActivityAction(0));
 
     return () => {
       // --- Unmount

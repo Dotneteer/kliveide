@@ -23,15 +23,18 @@ export default function SideBar() {
 
   // --- Component state
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
+  let activityName = activityService.activeActivity.id;
 
   // --- Set up the side bar panels with their state
   const panelsChanged = () => {
+    activityName = activityService.activeActivity.id;
     setPanels(sideBarService.getSideBarPanels());
   };
 
   useEffect(() => {
     // --- Mount
     sideBarService.sideBarChanged.on(panelsChanged);
+    sideBarService.refreshSideBarPanels();
 
     return () => {
       // --- Unmount
@@ -49,7 +52,7 @@ export default function SideBar() {
       const descriptor = panels[index];
       sideBarPanels.push(
         <SideBarPanel
-          key={index}
+          key={`${activityName}-${index}`}
           index={index}
           descriptor={descriptor}
           sizeable={prevExpanded && descriptor.expanded}

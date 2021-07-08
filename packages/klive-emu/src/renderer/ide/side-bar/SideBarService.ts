@@ -189,6 +189,13 @@ class SideBarService {
   }
 
   /**
+   * Refreshes side bar panels
+   */
+  refreshSideBarPanels(): void {
+    this._sideBarChanged.fire();
+  }
+
+  /**
    * This event is fired whenever the current activity is about to change.
    */
   get sideBarChanging(): ILiteEvent<void> {
