@@ -63,8 +63,8 @@ export default function SideBarPanelHeader(props: Props) {
       style={{
         borderLeft: borderStyle,
         borderRight: borderStyle,
-        borderTop: borderStyle,
-        borderBottom: focused
+        borderBottom: borderStyle,
+        borderTop: focused
           ? borderStyle
           : "1px solid var(--panel-separator-border)",
       }}
