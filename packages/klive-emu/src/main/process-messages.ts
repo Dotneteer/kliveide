@@ -1,7 +1,7 @@
 import { dialog } from "electron";
 import {
   DefaultResponse,
-  OpenFileResponse,
+  EmuOpenFileDialogResponse,
   RequestMessage,
   ResponseMessage,
 } from "../shared/messaging/message-types";
@@ -21,8 +21,8 @@ export async function processEmulatorRequest(
         title: message.title,
         filters: message.filters,
       });
-      return <OpenFileResponse>{
-        type: "openFileDialogResponse",
+      return <EmuOpenFileDialogResponse>{
+        type: "EmuOpenFileDialogResponse",
         filename: result.canceled ? undefined : result.filePaths[0],
       };
 
@@ -33,10 +33,10 @@ export async function processEmulatorRequest(
       if (manageCardsStub) {
         await manageCardsStub();
       }
-      return <DefaultResponse>{ type: "ack" };
+      return <DefaultResponse>{ type: "Ack" };
 
     default:
-      return <DefaultResponse>{ type: "ack" };
+      return <DefaultResponse>{ type: "Ack" };
   }
 }
 

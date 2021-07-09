@@ -23,9 +23,9 @@ async function processIdeMessages(
   switch (message.type) {
     case "SyncMainState":
       ideStore.dispatch(ideSyncAction(message.mainState));
-      return <DefaultResponse>{ type: "ack" };
+      return <DefaultResponse>{ type: "Ack" };
     default:
-      return <DefaultResponse>{ type: "ack" };
+      return <DefaultResponse>{ type: "Ack" };
   }
 }
 

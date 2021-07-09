@@ -1,11 +1,16 @@
 import {
   DefaultResponse,
+  GetCpuStateResponse,
   RequestMessage,
   ResponseMessage,
 } from "../../shared/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { IDE_TO_EMU_EMU_REQUEST_CHANNEL, IDE_TO_EMU_EMU_RESPONSE_CHANNEL } from "../../shared/messaging/channels";
+import {
+  IDE_TO_EMU_EMU_REQUEST_CHANNEL,
+  IDE_TO_EMU_EMU_RESPONSE_CHANNEL,
+} from "../../shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
+import { vmEngineService } from "../machines/vm-engine-service";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -18,9 +23,12 @@ async function processIdeMessages(
   message: RequestMessage
 ): Promise<ResponseMessage> {
   switch (message.type) {
+    case "GetCpuState":
+      return <GetCpuStateResponse>{ type: "GetCpuStateResponse" };
+
     default:
       console.log(`IDE request: ${message.type}`);
-      return <DefaultResponse>{ type: "ack" };
+      return <DefaultResponse>{ type: "Ack" };
   }
 }
 

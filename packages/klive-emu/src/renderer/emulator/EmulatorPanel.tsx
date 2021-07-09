@@ -11,6 +11,7 @@ import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import styles from "styled-components";
 import { useEffect, useRef, useState } from "react";
+import { ICpu } from "../../shared/machines/AbstractCpu";
 
 const TURNED_OFF_MESSAGE =
   "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
@@ -27,7 +28,7 @@ export default function EmulatorPanel() {
   const [windowHeight, setWindowHeight] = useState(0);
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
-  const [overlay, setOverlay] = useState(TURNED_OFF_MESSAGE);
+  const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
   const [tactToDisplay, setTactToDisplay] = useState(0);
 
@@ -35,6 +36,7 @@ export default function EmulatorPanel() {
   const executionState = useSelector(
     (s: AppState) => s.emulatorPanel.executionState
   );
+  const runsInDebug = useSelector((s: AppState) => s.emulatorPanel.runsInDebug);
   const showBeam = useSelector(
     (s: AppState) => s?.spectrumSpecific?.showBeamPosition
   );
@@ -57,19 +59,46 @@ export default function EmulatorPanel() {
   let pressedKeys: Record<string, boolean> = {};
 
   // --- Prepare the virtual machine engine
-  let engine: VirtualMachineCoreBase | null = null;
+  let engine: VirtualMachineCoreBase<ICpu> | null = null;
 
   useEffect(() => {
+    // --- Take care that keys reach the engine
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+
+    // --- Respond to exngine changes
     vmEngineService.vmEngineChanged.on(vmChange);
-    vmEngineService.executionStateChanged.on(executionStateChange);
+
+    // --- Set up the virtual machine's view according to its
+    // --- execution state and current hw config
     calculateDimensions();
     if (vmEngineService.hasEngine) {
       engine = vmEngineService.getEngine();
       vmEngineService.screenRefreshed.on(displayScreenData);
       calculateDimensions();
       configureScreen();
+      let overlay = "";
+      switch (executionState) {
+        case 0:
+          overlay = TURNED_OFF_MESSAGE;
+          break;
+        case 1:
+          overlay = runsInDebug ? "Debug mode" : "";
+          break;
+        case 3:
+          overlay = "Paused";
+          const state = engine.getMachineState();
+          setTactToDisplay(state.lastRenderedFrameTact % state.tactsInFrame);
+          displayScreenData();
+          break;
+        case 5:
+          overlay = "Stopped";
+          break;
+        default:
+          overlay = "";
+          break;
+      }
+      setOverlay(overlay);
     }
 
     return () => {
@@ -77,7 +106,6 @@ export default function EmulatorPanel() {
       if (engine) {
         vmEngineService.screenRefreshed.off(displayScreenData);
         vmEngineService.vmEngineChanged.off(vmChange);
-        vmEngineService.executionStateChanged.on(executionStateChange);
       }
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
@@ -138,30 +166,6 @@ export default function EmulatorPanel() {
     calculateDimensions();
     configureScreen();
     hideDisplayData();
-    setOverlay(TURNED_OFF_MESSAGE);
-  }
-
-  function executionStateChange(args: VmStateChangedArgs): void {
-    calculateDimensions();
-    let overlay = "";
-    switch (args.newState) {
-      case 1:
-        overlay = args.isDebug ? "Debug mode" : "";
-        break;
-      case 3:
-        overlay = "Paused";
-        const state = engine.getMachineState();
-        setTactToDisplay(state.lastRenderedFrameTact % state.tactsInFrame);
-        displayScreenData();
-        break;
-      case 5:
-        overlay = "Stopped";
-        break;
-      default:
-        overlay = "";
-        break;
-    }
-    setOverlay(overlay);
   }
 
   function handleKeyDown(e: KeyboardEvent): void {

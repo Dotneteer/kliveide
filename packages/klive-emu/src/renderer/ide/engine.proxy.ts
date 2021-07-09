@@ -6,7 +6,7 @@ import { ideToEmuMessenger } from "./IdeToEmuMessenger";
 class EngineProxy {
   async getRegisters(): Promise<void> {
     ideToEmuMessenger.sendMessage({
-      type: "GetRegisters",
+      type: "GetCpuState",
     });
   }
 }

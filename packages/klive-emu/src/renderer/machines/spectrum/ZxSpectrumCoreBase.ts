@@ -117,7 +117,7 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   getMachineState(): SpectrumMachineStateBase {
     // --- Obtain execution engine state
-    const cpuState = this.z80.getCpuState();
+    const cpuState = this.cpu.getCpuState();
     const engineState = super.getMachineState();
     const s = { ...cpuState, ...engineState } as SpectrumMachineStateBase;
 

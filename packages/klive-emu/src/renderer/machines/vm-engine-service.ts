@@ -743,7 +743,7 @@ export const vmEngineService = new VmEngineService();
 /**
  * Registry of virtual machine engines
  */
-const engineRegistry: Record<string, typeof VirtualMachineCoreBase> = {
+const engineRegistry: Record<string, any> = {
   sp48: ZxSpectrum48Core,
   sp128: ZxSpectrum128Core,
   cz88: CambridgeZ88Core,

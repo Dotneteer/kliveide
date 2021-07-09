@@ -16,7 +16,7 @@ import {
 } from "../../../shared/machines/cz88-specific";
 import { useState } from "react";
 import { SvgIcon } from "../../common/SvgIcon";
-import { OpenFileResponse } from "../../../shared/messaging/message-types";
+import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog
@@ -207,7 +207,7 @@ async function selectEpromFile(): Promise<string | undefined> {
       { name: "EPR files", extensions: ["epr"] },
       { name: "All Files", extensions: ["*"] },
     ],
-  })) as OpenFileResponse;
+  })) as EmuOpenFileDialogResponse;
   return resp.filename;
 }
 

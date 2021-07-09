@@ -2,6 +2,7 @@ import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/klive-configuration";
 import { AppState } from "../state/AppState";
+import { ICpuState } from "../machines/AbstractCpu";
 
 /**
  * The common base for all message types
@@ -114,7 +115,7 @@ export interface SyncMainStateRequest extends MessageBase {
 /**
  * The Emu ask the main for a file open dialog
  */
-export interface OpenFileRequest extends MessageBase {
+export interface EmuOpenFileDialogRequest extends MessageBase {
   type: "EmuOpenFileDialog";
   title?: string;
   filters?: { name: string; extensions: string[] }[];
@@ -130,8 +131,8 @@ export interface ManageZ88CardsRequest extends MessageBase {
 /**
  * The Ide asks Emu for the contents of the Z80 registers
  */
-export interface GetRegistersRequest extends MessageBase {
-  type: "GetRegisters";
+export interface GetCpuStateRequest extends MessageBase {
+  type: "GetCpuState";
 }
 
 /**
@@ -167,12 +168,12 @@ type MainToEmuRequests =
 /**
  * Requests from Emu to Main
  */
-type EmuToMainRequests = OpenFileRequest | ManageZ88CardsRequest;
+type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
 
 /**
  * Requests for IDE to Emu
  */
-type IdeToEmuRequests = GetRegistersRequest;
+type IdeToEmuRequests = GetCpuStateRequest;
 
 /**
  * Requests send by the main process to Emu
@@ -183,7 +184,7 @@ type MainToIdeRequests = SyncMainStateRequest;
  * Default response for actions
  */
 export interface DefaultResponse extends MessageBase {
-  type: "ack";
+  type: "Ack";
 }
 
 /**
@@ -198,23 +199,33 @@ export interface CreateMachineResponse extends MessageBase {
  * The emulator process ask for a file open dialog
  */
 export interface ExecuteMachineCommandResponse extends MessageBase {
-  type: "executeMachineCommandResponse";
+  type: "ExecuteMachineCommandResponse";
   result: unknown;
 }
 
 /**
  * The emulator process ask for a file open dialog
  */
-export interface OpenFileResponse extends MessageBase {
-  type: "openFileDialogResponse";
+export interface EmuOpenFileDialogResponse extends MessageBase {
+  type: "EmuOpenFileDialogResponse";
   filename?: string;
 }
+
+/**
+ * The Ide asks Emu for the contents of the Z80 registers
+ */
+export interface GetCpuStateResponse extends MessageBase {
+  type: "GetCpuStateResponse";
+  state: ICpuState;
+}
+
 
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
   | ExecuteMachineCommandResponse
-  | OpenFileResponse;
+  | EmuOpenFileDialogResponse
+  | GetCpuStateResponse;
 
 /**
  * All messages

@@ -6,15 +6,22 @@ import { VirtualMachineCoreBase } from "./VirtualMachineCoreBase";
 /**
  * ZX Spectrum common core implementation
  */
-export abstract class Z80MachineCoreBase extends VirtualMachineCoreBase {
+export abstract class Z80MachineCoreBase extends VirtualMachineCoreBase<Z80Cpu> {
   // --- The Z80 CPU instance behind the ZX Spectrum machine
-  protected z80: Z80Cpu;
+  private _z80: Z80Cpu;
 
   /**
    * Creates the CPU instance
    */
   configureMachine(): void {
-    this.z80 = new Z80Cpu(this.api);
+    this._z80 = new Z80Cpu(this.api);
+  }
+
+  /**
+   * Gets the CPU of the virtual machine
+   */
+  get cpu(): Z80Cpu {
+    return this._z80;
   }
 
   /**
@@ -23,7 +30,7 @@ export abstract class Z80MachineCoreBase extends VirtualMachineCoreBase {
    */
   getNextInstructionAddress(): number {
     // --- Calculate the location of the step-over breakpoint
-    const pc = this.z80.getCpuState().pc;
+    const pc = this._z80.getCpuState().pc;
     const opCode = this.readMemory(pc);
     if (opCode === 0xcd) {
       // --- CALL

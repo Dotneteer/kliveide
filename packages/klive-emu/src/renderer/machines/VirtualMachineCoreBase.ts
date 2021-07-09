@@ -11,6 +11,7 @@ import {
 } from "./vm-core-types";
 import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "./wa-api";
+import { ICpu } from "../../shared/machines/AbstractCpu";
 
 /**
  * Represents the core abstraction of a virtual machine.
@@ -18,7 +19,7 @@ import { MachineApi } from "./wa-api";
  * Provides all operations that implements the machine execution
  * loop.
  */
-export abstract class VirtualMachineCoreBase {
+export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   private _coreState: MachineCoreState;
   protected controller: IVmController;
 
@@ -26,6 +27,11 @@ export abstract class VirtualMachineCoreBase {
    * The WA machine API to use the machine core
    */
   public api: MachineApi;
+
+  /**
+   * Gets the CPU of the virtual machine
+   */
+  public abstract get cpu(): T;
 
   /**
    * The initial state of the machine after setup
