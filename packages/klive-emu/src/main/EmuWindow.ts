@@ -22,7 +22,7 @@ import {
   emuSetExtraFeaturesAction,
 } from "../shared/state/emulator-panel-reducer";
 import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
-import { emuMessenger, setEmuMessenger } from "./app-menu-state";
+import { emuMessenger, setEmuForwarder, setEmuMessenger } from "./app-menu-state";
 import { Cz88ContextProvider } from "./cz88-context";
 import { AppState } from "../shared/state/AppState";
 import {
@@ -32,6 +32,7 @@ import {
 } from "./klive-configuration";
 import { appSettings } from "./klive-settings";
 import { emuFocusAction } from "../shared/state/emu-focus-reducer";
+import { MainToEmuForwarder } from "./MainToEmuForwarder";
 
 /**
  * Represents the singleton emulator window
@@ -45,6 +46,7 @@ export class EmuWindow extends AppWindow {
   constructor() {
     super(true);
     setEmuMessenger(new MainToEmulatorMessenger(this.window));
+    setEmuForwarder(new MainToEmuForwarder(this.window));
   }
 
   /**
@@ -140,7 +142,7 @@ export class EmuWindow extends AppWindow {
   ): Promise<void> {
     // Preparation: Stop the current machine
     emuMessenger.sendMessage(<StopVmRequest>{
-      type: "stopVm",
+      type: "StopVm",
     });
 
     // Use only the first segment of the ID

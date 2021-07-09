@@ -4,11 +4,8 @@ import {
   ResponseMessage,
 } from "../../shared/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { MAIN_TO_IDE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
-import { MAIN_TO_IDE_RESPONE_CHANNEL } from "../../shared/messaging/channels";
+import { IDE_TO_EMU_EMU_REQUEST_CHANNEL, IDE_TO_EMU_EMU_RESPONSE_CHANNEL } from "../../shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { ideStore } from "./ideStore";
-import { ideSyncAction } from "../../shared/state/show-ide-reducer";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -21,20 +18,18 @@ async function processIdeMessages(
   message: RequestMessage
 ): Promise<ResponseMessage> {
   switch (message.type) {
-    case "SyncMainState":
-      ideStore.dispatch(ideSyncAction(message.mainState));
-      return <DefaultResponse>{ type: "ack" };
     default:
+      console.log(`IDE request: ${message.type}`);
       return <DefaultResponse>{ type: "ack" };
   }
 }
 
 // --- Set up message processing
 ipcRenderer.on(
-  MAIN_TO_IDE_REQUEST_CHANNEL,
+  IDE_TO_EMU_EMU_REQUEST_CHANNEL,
   async (_ev: IpcRendererEvent, message: RequestMessage) => {
     const response = await processIdeMessages(message);
     response.correlationId = message.correlationId;
-    ipcRenderer.send(MAIN_TO_IDE_RESPONE_CHANNEL, response);
+    ipcRenderer.send(IDE_TO_EMU_EMU_RESPONSE_CHANNEL, response);
   }
 );

@@ -17,7 +17,7 @@ import {
 } from "../../shared/state/spectrum-specific-reducer";
 import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
-import { rendererToMainMessenger } from "./RendererToMainMessenger";
+import { emuToMainMessenger } from "./EmuToMainMessenger";
 
 const Root = styles.div`
   display: flex;
@@ -231,8 +231,8 @@ export class Toolbar extends React.Component<Props, State> {
             iconName="repo-push"
             title="Manage Z88 cards"
             clicked={async () => {
-              await rendererToMainMessenger.sendMessage({
-                type: "manageZ88Cards",
+              await emuToMainMessenger.sendMessage({
+                type: "ManageZ88Cards",
               });
             }}
           />,

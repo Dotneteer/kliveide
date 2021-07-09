@@ -13,10 +13,10 @@ const ipcRenderer = globalThis.window
   : null;
 
 /**
- * Implements a messenger that forwards renderer state to the main
+ * Implements a messenger that forwards messages to the main
  * process
  */
-class RendererToMainMessenger extends MessengerBase {
+class EmuToMainMessenger extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
@@ -58,4 +58,4 @@ class RendererToMainMessenger extends MessengerBase {
 /**
  * The singleton messenger instance
  */
-export const rendererToMainMessenger = new RendererToMainMessenger();
+export const emuToMainMessenger = new EmuToMainMessenger();

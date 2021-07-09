@@ -32,55 +32,55 @@ async function processEmulatorMessages(
       vmEngineService.setAppConfiguration(message.config);
       return <DefaultResponse>{ type: "ack" };
 
-    case "startVm":
+    case "StartVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.start();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "pauseVm":
+    case "PauseVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.pause();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "stopVm":
+    case "StopVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.stop();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "restartVm":
+    case "RestartVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.restart();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "debugVm":
+    case "DebugVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.startDebug();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "stepIntoVm":
+    case "StepIntoVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.stepInto();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "stepOverVm":
+    case "StepOverVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.stepOver();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "stepOutVm":
+    case "StepOutVm":
       if (vmEngineService.hasEngine) {
         vmEngineService.stepOut();
       }
       return <DefaultResponse>{ type: "ack" };
 
-    case "executeMachineCommand":
+    case "ExecuteMachineCommand":
       if (vmEngineService.hasEngine) {
         const result = await vmEngineService
           .getEngine()

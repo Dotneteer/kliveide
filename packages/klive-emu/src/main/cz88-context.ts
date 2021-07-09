@@ -875,7 +875,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     args?: unknown
   ): Promise<unknown> {
     const response = (await emuMessenger.sendMessage({
-      type: "executeMachineCommand",
+      type: "ExecuteMachineCommand",
       command,
       args,
     })) as ExecuteMachineCommandResponse;

@@ -8,7 +8,7 @@ import {
   modalDialogService,
 } from "../../../renderer/modals/modal-service";
 import { Cell, CenteredRow, Grid } from "../../common/grid-styles";
-import { rendererToMainMessenger } from "../../emulator/RendererToMainMessenger";
+import { emuToMainMessenger } from "../../emulator/EmuToMainMessenger";
 import {
   SlotContent,
   SlotState,
@@ -200,8 +200,8 @@ function Filename({ file, changed }: FileNameProps) {
 }
 
 async function selectEpromFile(): Promise<string | undefined> {
-  const resp = (await rendererToMainMessenger.sendMessage({
-    type: "openFileDialog",
+  const resp = (await emuToMainMessenger.sendMessage({
+    type: "EmuOpenFileDialog",
     title: "Open Eprom file",
     filters: [
       { name: "EPR files", extensions: ["epr"] },

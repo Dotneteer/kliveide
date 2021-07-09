@@ -1,5 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
+import { engineProxy } from "../engine.proxy";
+import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import {
   ISideBarPanel,
   SideBarPanelDescriptorBase,
@@ -46,6 +48,10 @@ export class Z80RegistersPanelDescriptor extends SideBarPanelDescriptorBase {
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode {
+    (async () => {
+      await engineProxy.getRegisters();
+      console.log("Register data");
+    })();
     return <Z80RegistersPanel descriptor={this} />;
   }
 }

@@ -8,6 +8,8 @@ import { forwardRendererState, mainStore } from "./mainStore";
 import {
   EMU_TO_MAIN_REQUEST_CHANNEL,
   EMU_TO_MAIN_RESPONSE_CHANNEL,
+  IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
+  IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
   MAIN_STATE_REQUEST_CHANNEL,
 } from "../shared/messaging/channels";
 import { ForwardActionRequest } from "../shared/messaging/message-types";
@@ -32,7 +34,7 @@ import {
 } from "../shared/state/emu-view-options-reducer";
 import { __WIN32__ } from "./electron-utils";
 import { setWindowsAction } from "../shared/state/is-windows-reducer";
-import { processEmulatorRequest } from "./process-messages";
+import { processEmulatorRequest, processIdeRequest } from "./process-messages";
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -105,15 +107,27 @@ app.on("before-quit", () => {
   ideWindow.allowClose = true;
 });
 
+// --- This channel forwards renderer state (Emu or IDE) to the other renderer (IDE or Emu)
 ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
   forwardRendererState(msg);
 });
 
+// --- This channel processes requests arriving from the Emu process
 ipcMain.on(
   EMU_TO_MAIN_REQUEST_CHANNEL,
   async (_ev, msg: ForwardActionRequest) => {
     const response = await processEmulatorRequest(msg);
     response.correlationId = msg.correlationId;
     emuWindow.window.webContents.send(EMU_TO_MAIN_RESPONSE_CHANNEL, response);
+  }
+);
+
+// --- This channel processes requests arriving from the Emu process
+ipcMain.on(
+  IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
+  async (_ev, msg: ForwardActionRequest) => {
+    const response = await processIdeRequest(msg);
+    response.correlationId = msg.correlationId;
+    emuWindow.window.webContents.send(IDE_TO_EMU_MAIN_RESPONSE_CHANNEL, response);
   }
 );
