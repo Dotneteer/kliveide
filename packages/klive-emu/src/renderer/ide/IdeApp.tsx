@@ -32,6 +32,8 @@ import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel"
 import { IoLogsPanelDescription } from "./log-tools/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 
+import "../../shared/messaging/decorators";
+
 /**
  * Represents the emulator app's root component
  */

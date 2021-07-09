@@ -11,6 +11,7 @@
     "outDir": "dist",
     "baseUrl": ".",
     "downlevelIteration": true,
+    "experimentalDecorators": true,
     "paths": {
       "*": ["node_modules/*"]
     }
