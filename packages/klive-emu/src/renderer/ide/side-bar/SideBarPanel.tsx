@@ -1,9 +1,9 @@
 import * as React from "react";
 import ReactResizeDetector from "react-resize-detector";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { animationTick } from "../../../renderer/common/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
-import { ISideBarPanel, sideBarService } from "./SideBarService";
+import { ISideBarPanel } from "./SideBarService";
 
 /**
  * Component properties
@@ -65,6 +65,8 @@ export default function SideBarPanel(props: Props) {
         className="host-panel"
         style={{
           display: expanded ? undefined : "none",
+          color: "var(--information-color)",
+          fontSize: "0.9em"
         }}
       >
         <div

@@ -1,37 +1,14 @@
 import * as React from "react";
-import { CSSProperties } from "styled-components";
-import {
-  ISideBarPanel,
-  SideBarPanelDescriptorBase,
-} from "../side-bar/SideBarService";
+import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
+import { SideBarPanelBase } from "../SideBarPanelBase";
 
 const TITLE = "Open Editors";
 
 /**
- * Component properties
+ * Open editors panel
  */
-type Props = {
-  descriptor: ISideBarPanel;
-};
-
-/**
- * Z80 registers panel
- */
-export default function OpenEditorsPanel({ descriptor }: Props) {
-  const placeholderStyle: CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    flexGrow: 1,
-    flexShrink: 1,
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    fontSize: "0.8em",
-    color: "#a0a0a0",
-  };
-
-  return <div style={placeholderStyle}>{TITLE}</div>;
+export default class OpenEditorsPanel extends SideBarPanelBase {
+  title = TITLE;
 }
 
 /**

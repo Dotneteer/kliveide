@@ -14,6 +14,8 @@ export interface IThemeProperties {
   "--selected-border-color": string;
   "--selected-background-color": string;
   "--selection-color": string;
+  "--information-color": string;
+  "--hilited-color": string;
 
   "--button-background-color": string;
   "--button-primary-background-color": string;
