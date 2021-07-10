@@ -49,8 +49,8 @@ export class Z80RegistersPanelDescriptor extends SideBarPanelDescriptorBase {
    */
   createContentElement(): React.ReactNode {
     (async () => {
-      await engineProxy.getRegisters();
-      console.log("Register data");
+      const state = await engineProxy.getRegisters();
+      console.log(JSON.stringify(state));
     })();
     return <Z80RegistersPanel descriptor={this} />;
   }

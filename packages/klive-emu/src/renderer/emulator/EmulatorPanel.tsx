@@ -1,20 +1,14 @@
 import * as React from "react";
+import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
 import { AppState } from "../../shared/state/AppState";
 import { VirtualMachineCoreBase } from "../machines/VirtualMachineCoreBase";
-import {
-  vmEngineService,
-  VmStateChangedArgs,
-} from "../machines/vm-engine-service";
+import { vmEngineService } from "../machines/vm-engine-service";
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
-import styles from "styled-components";
 import { useEffect, useRef, useState } from "react";
 import { ICpu } from "../../shared/machines/AbstractCpu";
-
-const TURNED_OFF_MESSAGE =
-  "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
 
 /**
  * Represents the display panel of the emulator
@@ -80,7 +74,7 @@ export default function EmulatorPanel() {
       let overlay = "";
       switch (executionState) {
         case 0:
-          overlay = TURNED_OFF_MESSAGE;
+          overlay = "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
           break;
         case 1:
           overlay = runsInDebug ? "Debug mode" : "";
@@ -113,11 +107,12 @@ export default function EmulatorPanel() {
   });
 
   return (
-    <Root ref={hostElement} tabIndex={-1}>
-      <Screen
+    <div style={rootStyle} ref={hostElement} tabIndex={-1}>
+      <div
         style={{
           width: `${canvasWidth}px`,
           height: `${canvasHeight}px`,
+          backgroundColor: "#404040",
         }}
         onClick={() => setShowOverlay(true)}
       >
@@ -146,13 +141,13 @@ export default function EmulatorPanel() {
           width={shadowCanvasWidth}
           height={shadowCanvasHeight}
         />
-      </Screen>
+      </div>
       <ReactResizeDetector
         handleWidth
         handleHeight
         onResize={calculateDimensions}
       />
-    </Root>
+    </div>
   );
 
   function vmChange(): void {
@@ -290,21 +285,17 @@ export default function EmulatorPanel() {
 }
 
 // --- Helper component tags
-const Root = styles.div`
-  display: flex;
-  flex-direction: row;
-  overflow: hidden;
-  flex-shrink: 0;
-  flex-grow: 0;
-  height: 100%;
-  width: 100%;
-  background-color: var(--emulator-background-color);
-  box-sizing: border-box;
-  justify-content: center;
-  align-items: center;
-  outline: none;
-`;
-
-const Screen = styles.div`
-  background-color: #404040;
-`;
+const rootStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "row",
+  overflow: "hidden",
+  flexShrink: 0,
+  flexGrow: 0,
+  height: "100%",
+  width: "100%",
+  backgroundColor: "var(--emulator-background-color)",
+  boxSizing: "border-box",
+  justifyContent: "center",
+  alignItems: "center",
+  outline: "none",
+};

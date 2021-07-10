@@ -24,10 +24,12 @@ async function processIdeMessages(
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "GetCpuState":
-      return <GetCpuStateResponse>{ type: "GetCpuStateResponse" };
+      return <GetCpuStateResponse>{
+        type: "GetCpuStateResponse",
+        state: vmEngineService.getEngine()?.cpu?.getCpuState(),
+      };
 
     default:
-      console.log(`IDE request: ${message.type}`);
       return <DefaultResponse>{ type: "Ack" };
   }
 }

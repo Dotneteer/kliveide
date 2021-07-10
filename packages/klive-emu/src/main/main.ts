@@ -128,6 +128,6 @@ ipcMain.on(
   async (_ev, msg: ForwardActionRequest) => {
     const response = await processIdeRequest(msg);
     response.correlationId = msg.correlationId;
-    emuWindow.window.webContents.send(IDE_TO_EMU_MAIN_RESPONSE_CHANNEL, response);
+    ideWindow.window.webContents.send(IDE_TO_EMU_MAIN_RESPONSE_CHANNEL, response);
   }
 );
