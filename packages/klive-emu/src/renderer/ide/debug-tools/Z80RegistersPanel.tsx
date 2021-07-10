@@ -17,11 +17,28 @@ const rootStyle: CSSProperties = {
   alignItems: "center",
 };
 
+const nameStyle: CSSProperties = {
+  flexShrink: 0,
+  flexGrow: 0,
+  width: 30,
+  fontWeight: 600,
+};
+
+const valueStyle: CSSProperties = {
+  width: 16,
+  color: "var(--hilited-color)",
+};
+
+
+/**
+ * Displays the row of flags
+ * @param bits Flags value
+ */
 function flagRow(bits: number) {
   const FStyle: CSSProperties = {
     flexShrink: 0,
     flexGrow: 0,
-    width: 22,
+    width: 28,
     fontSize: "1.4em",
   };
 
@@ -108,19 +125,14 @@ function flagRow(bits: number) {
   );
 }
 
+/**
+ * Displays the contents of a 16-bit register
+ * @param name Register name
+ * @param bits Value
+ * @param high High register part name
+ * @param low Low register part name
+ */
 function regRow(name: string, bits: number, high?: string, low?: string) {
-  const nameStyle: CSSProperties = {
-    flexShrink: 0,
-    flexGrow: 0,
-    width: 24,
-    fontWeight: 600,
-  };
-
-  const byteStyle: CSSProperties = {
-    width: 16,
-    color: "var(--hilited-color)",
-  };
-
   const decStyle: CSSProperties = {
     marginLeft: 4,
     color: "var(--information-color)",
@@ -135,7 +147,7 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
     <div style={rootStyle}>
       <div style={nameStyle}>{name}</div>
       <div
-        style={byteStyle}
+        style={valueStyle}
         title={`${high ?? name[0]}: ${hiByteStr} (${hiByte.toString(
           10
         )}): ${hiByte.toString(2).padStart(8, "0")} `}
@@ -143,7 +155,7 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
         {hiByteStr}
       </div>
       <div
-        style={byteStyle}
+        style={valueStyle}
         title={`${low ?? name[1]}: ${loByteStr} (${loByte.toString(
           10
         )}): ${loByte.toString(2).padStart(8, "0")} `}
@@ -160,6 +172,18 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
       </div>
     </div>
   );
+}
+
+/**
+ * Displays the content of a register status value
+ * @param name Status name
+ * @param value Status value
+ */
+function stateRow(name: string, value: number) {
+  return <div style={rootStyle} >
+    <div style={nameStyle}>{name}</div>
+    <div style={valueStyle}>{value}</div>
+  </div>
 }
 
 type State = {
@@ -193,6 +217,9 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
         {regRow("DE'", this.state?.cpuState?._de_sec ?? 0, "\u{1d5d7}'", "\u{1d5d8}'")}
         {regRow("HL'", this.state?.cpuState?._hl_sec ?? 0, "\u{1d5db}'", "\u{1d5dc}'")}
         {regRow("WZ", this.state?.cpuState?._iy ?? 0, "\u{1d5ea}\u{1d5db}", "\u{1d5ea}\u{1d5df}")}
+        {stateRow("IM", this.state?.cpuState?.interruptMode ?? 0)}
+        {stateRow("IFF1", this.state?.cpuState?.iff1 ? 1 : 0)}
+        {stateRow("IFF2", this.state?.cpuState?.iff2 ? 1 : 0)}
       </div>
     );
   }
