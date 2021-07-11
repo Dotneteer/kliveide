@@ -196,7 +196,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    */
   getMachineState(): CambridgeZ88MachineState {
     // --- Obtain execution engine state
-    const cpuState = this.z80.getCpuState();
+    const cpuState = this.cpu.getCpuState();
     const engineState = super.getMachineState();
     const s = { ...cpuState, ...engineState } as CambridgeZ88MachineState;
 

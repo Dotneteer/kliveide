@@ -7,7 +7,6 @@ import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
 import EmuStatusbar from "./EmuStatusbar";
 import { emuLoadUiAction } from "../../shared/state/emu-loaded-reducer";
-import "./emu-message-processor";
 import { AudioRenderer } from "../machines/AudioRenderer";
 import { ZxSpectrumStateManager } from "../machines/spectrum/ZxSpectrumStateManager";
 import { CambridgeZ88StateManager } from "../machines/cz88/CambridgeZ88BaseStateManager";
@@ -15,6 +14,8 @@ import { setEngineDependencies } from "../machines/vm-engine-dependencies";
 import { useState } from "react";
 import ModalDialog from "../modals/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
+import "./emu-message-processor";
+import "./ide-message-processor";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({

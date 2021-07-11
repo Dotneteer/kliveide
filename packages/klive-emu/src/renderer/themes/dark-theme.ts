@@ -14,6 +14,8 @@ export const darkTheme: ITheme = {
     "--selected-border-color": "#007fd4",
     "--selected-background-color": "#094771",
     "--selection-color": "#007acc",
+    "--information-color": "#c0c0c0",
+    "--hilited-color": "#007acc",
 
     "--button-background-color": "#606060",
     "--button-primary-background-color": "#007acc",

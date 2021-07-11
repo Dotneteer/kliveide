@@ -2,6 +2,7 @@ import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/klive-configuration";
 import { AppState } from "../state/AppState";
+import { ICpuState } from "../machines/AbstractCpu";
 
 /**
  * The common base for all message types
@@ -12,16 +13,26 @@ export interface MessageBase {
   sourceId?: string;
 }
 
+/**
+ * The Emu or IDE processes forward state changes to the main process
+ */
 export interface ForwardActionRequest extends MessageBase {
   type: "ForwardAction";
   action: KliveAction;
 }
 
+/**
+ * The main process forwards the application configuration to the Emu or IDE
+ * processes
+ */
 export interface ForwardAppConfigRequest extends MessageBase {
   type: "ForwardAppConfig";
   config: KliveConfiguration;
 }
 
+/**
+ * The main process asks the Emu process to create a virtual machine
+ */
 export interface CreateMachineRequest extends MessageBase {
   type: "CreateMachine";
   machineId: string;
@@ -29,66 +40,66 @@ export interface CreateMachineRequest extends MessageBase {
 }
 
 /**
- * The main process sends this message to start the VM
+ * The main process sends this message to Emu to start the VM
  */
 export interface StartVmRequest extends MessageBase {
-  type: "startVm";
+  type: "StartVm";
 }
 
 /**
- * The main process sends this message to pause the VM
+ * The main process sends this message to Emu to pause the VM
  */
 export interface PauseVmRequest extends MessageBase {
-  type: "pauseVm";
+  type: "PauseVm";
 }
 
 /**
- * The main process sends this message to stop the VM
+ * The main process sends this message to Emu to stop the VM
  */
 export interface StopVmRequest extends MessageBase {
-  type: "stopVm";
+  type: "StopVm";
 }
 
 /**
- * The main process sends this message to restart the VM
+ * The main process sends this message to Emu to restart the VM
  */
 export interface RestartVmRequest extends MessageBase {
-  type: "restartVm";
+  type: "RestartVm";
 }
 
 /**
- * The main process sends this message to start debugging the VM
+ * The main process sends this message to Emu to start debugging the VM
  */
 export interface DebugVmRequest extends MessageBase {
-  type: "debugVm";
+  type: "DebugVm";
 }
 
 /**
- * The main process sends this message to step-into the VM
+ * The main process sends this message to Emu to step-into the VM
  */
 export interface StepIntoVmRequest extends MessageBase {
-  type: "stepIntoVm";
+  type: "StepIntoVm";
 }
 
 /**
- * The main process sends this message to step-over the VM
+ * The main process sends this message to Emu to step-over the VM
  */
 export interface StepOverVmRequest extends MessageBase {
-  type: "stepOverVm";
+  type: "StepOverVm";
 }
 
 /**
- * The main process sends this message to step-out the VM
+ * The main process sends this message to Emu to step-out the VM
  */
 export interface StepOutVmRequest extends MessageBase {
-  type: "stepOutVm";
+  type: "StepOutVm";
 }
 
 /**
- * The main process sends this message to step-out the VM
+ * The main process sends this message to Emu to execute a machine-specific command
  */
 export interface ExecuteMachineCommandRequest extends MessageBase {
-  type: "executeMachineCommand";
+  type: "ExecuteMachineCommand";
   command: string;
   args?: unknown;
 }
@@ -97,34 +108,53 @@ export interface ExecuteMachineCommandRequest extends MessageBase {
  * The main process sends its entire state to the IDE window
  */
 export interface SyncMainStateRequest extends MessageBase {
-  type: "syncMainState";
+  type: "SyncMainState";
   mainState: AppState;
 }
 
 /**
- * The emulator process ask for a file open dialog
+ * The Emu ask the main for a file open dialog
  */
-export interface OpenFileRequest extends MessageBase {
-  type: "openFileDialog";
+export interface EmuOpenFileDialogRequest extends MessageBase {
+  type: "EmuOpenFileDialog";
   title?: string;
   filters?: { name: string; extensions: string[] }[];
 }
 
 /**
- * The emulator process ask for Manage Z88 Cards command
+ * The Emu asks the main for Manage Z88 Cards command
  */
- export interface ManageZ88CardsRequest extends MessageBase {
-  type: "manageZ88Cards";
+export interface ManageZ88CardsRequest extends MessageBase {
+  type: "ManageZ88Cards";
 }
 
+/**
+ * The Ide asks Emu for the contents of the Z80 registers
+ */
+export interface GetCpuStateRequest extends MessageBase {
+  type: "GetCpuState";
+}
 
 /**
  * All requests
  */
 export type RequestMessage =
+  | ForwardingMessage
+  | MainToEmuRequests
+  | MainToIdeRequests
+  | EmuToMainRequests
+  | IdeToEmuRequests;
+
+/**
+ * Requests that forward information among the main, Emu, and IDE processes
+ */
+type ForwardingMessage = ForwardActionRequest | ForwardAppConfigRequest;
+
+/**
+ * Requests send by the main process to Emu
+ */
+type MainToEmuRequests =
   | CreateMachineRequest
-  | ForwardActionRequest
-  | ForwardAppConfigRequest
   | StartVmRequest
   | PauseVmRequest
   | StopVmRequest
@@ -133,16 +163,28 @@ export type RequestMessage =
   | StepIntoVmRequest
   | StepOverVmRequest
   | StepOutVmRequest
-  | ExecuteMachineCommandRequest
-  | SyncMainStateRequest
-  | OpenFileRequest
-  | ManageZ88CardsRequest;
+  | ExecuteMachineCommandRequest;
+
+/**
+ * Requests from Emu to Main
+ */
+type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
+
+/**
+ * Requests for IDE to Emu
+ */
+type IdeToEmuRequests = GetCpuStateRequest;
+
+/**
+ * Requests send by the main process to Emu
+ */
+type MainToIdeRequests = SyncMainStateRequest;
 
 /**
  * Default response for actions
  */
 export interface DefaultResponse extends MessageBase {
-  type: "ack";
+  type: "Ack";
 }
 
 /**
@@ -156,25 +198,34 @@ export interface CreateMachineResponse extends MessageBase {
 /**
  * The emulator process ask for a file open dialog
  */
- export interface ExecuteMachineCommandResponse extends MessageBase {
-  type: "executeMachineCommandResponse";
+export interface ExecuteMachineCommandResponse extends MessageBase {
+  type: "ExecuteMachineCommandResponse";
   result: unknown;
 }
-
 
 /**
  * The emulator process ask for a file open dialog
  */
-export interface OpenFileResponse extends MessageBase {
-  type: "openFileDialogResponse";
+export interface EmuOpenFileDialogResponse extends MessageBase {
+  type: "EmuOpenFileDialogResponse";
   filename?: string;
 }
+
+/**
+ * The Ide asks Emu for the contents of the Z80 registers
+ */
+export interface GetCpuStateResponse extends MessageBase {
+  type: "GetCpuStateResponse";
+  state: ICpuState;
+}
+
 
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
   | ExecuteMachineCommandResponse
-  | OpenFileResponse;
+  | EmuOpenFileDialogResponse
+  | GetCpuStateResponse;
 
 /**
  * All messages

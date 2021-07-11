@@ -22,14 +22,14 @@ export default function IdeWorkbench() {
           <PaneDirective
             cssClass="splitter-panel"
             content={() => <SideBar />}
-            size="10%"
+            size="20%"
             min="5%"
             max="75%"
           />
           <PaneDirective
             cssClass="splitter-panel"
             content={() => <IdeMain />}
-            size="90%"
+            size="80%"
             min="5%"
             max="95%"
           />

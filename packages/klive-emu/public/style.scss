@@ -136,6 +136,10 @@ main,
   color: var(--splitter-hover-color);
 }
 
+.e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar::after {
+  width: 8px
+}
+
 // ----------------------------------------------------------------------------
 // Context menu overrides
 

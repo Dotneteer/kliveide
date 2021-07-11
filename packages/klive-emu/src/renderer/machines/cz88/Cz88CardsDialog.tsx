@@ -8,7 +8,7 @@ import {
   modalDialogService,
 } from "../../../renderer/modals/modal-service";
 import { Cell, CenteredRow, Grid } from "../../common/grid-styles";
-import { rendererToMainMessenger } from "../../emulator/RendererToMainMessenger";
+import { emuToMainMessenger } from "../../emulator/EmuToMainMessenger";
 import {
   SlotContent,
   SlotState,
@@ -16,7 +16,7 @@ import {
 } from "../../../shared/machines/cz88-specific";
 import { useState } from "react";
 import { SvgIcon } from "../../common/SvgIcon";
-import { OpenFileResponse } from "../../../shared/messaging/message-types";
+import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog
@@ -200,14 +200,14 @@ function Filename({ file, changed }: FileNameProps) {
 }
 
 async function selectEpromFile(): Promise<string | undefined> {
-  const resp = (await rendererToMainMessenger.sendMessage({
-    type: "openFileDialog",
+  const resp = (await emuToMainMessenger.sendMessage({
+    type: "EmuOpenFileDialog",
     title: "Open Eprom file",
     filters: [
       { name: "EPR files", extensions: ["epr"] },
       { name: "All Files", extensions: ["*"] },
     ],
-  })) as OpenFileResponse;
+  })) as EmuOpenFileDialogResponse;
   return resp.filename;
 }
 

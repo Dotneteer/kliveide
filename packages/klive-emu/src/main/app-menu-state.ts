@@ -42,7 +42,11 @@ import { StateAwareObject } from "../shared/state/StateAwareObject";
 import { appConfiguration, appSettings } from "./klive-configuration";
 import { ideHideAction, ideShowAction } from "../shared/state/show-ide-reducer";
 import { MainToIdeMessenger } from "./MainToIdeMessenger";
-import { ideToolFrameMaximizeAction, ideToolFrameShowAction } from "../shared/state/tool-frame-reducer";
+import {
+  ideToolFrameMaximizeAction,
+  ideToolFrameShowAction,
+} from "../shared/state/tool-frame-reducer";
+import { MainToEmuForwarder } from "./MainToEmuForwarder";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -53,6 +57,11 @@ export let stateAware: StateAwareObject;
  * Messenger instance to the emulator window
  */
 export let emuMessenger: MainToEmulatorMessenger;
+
+/**
+ * Messenger instance to the emulator window
+ */
+export let emuForwarder: MainToEmuForwarder;
 
 /**
  * Messenger instance to the IDE window
@@ -97,6 +106,14 @@ export async function setupWindows(): Promise<void> {
  */
 export function setEmuMessenger(messenger: MainToEmulatorMessenger): void {
   emuMessenger = messenger;
+}
+
+/**
+ * Sets the forwarder to the emulator window
+ * @param forwarder
+ */
+ export function setEmuForwarder(forwarder: MainToEmuForwarder): void {
+  emuForwarder = forwarder;
 }
 
 /**
@@ -243,7 +260,7 @@ export function setupMenu(): void {
         accelerator: "F5",
         enabled: true,
         click: async () => {
-          await emuMessenger.sendMessage({ type: "startVm" });
+          await emuMessenger.sendMessage({ type: "StartVm" });
         },
       },
       {
@@ -251,14 +268,14 @@ export function setupMenu(): void {
         label: "Pause",
         accelerator: "Shift+F5",
         enabled: false,
-        click: async () => await emuMessenger.sendMessage({ type: "pauseVm" }),
+        click: async () => await emuMessenger.sendMessage({ type: "PauseVm" }),
       },
       {
         id: STOP_VM,
         label: "Stop",
         accelerator: "F4",
         enabled: false,
-        click: async () => await emuMessenger.sendMessage({ type: "stopVm" }),
+        click: async () => await emuMessenger.sendMessage({ type: "StopVm" }),
       },
       {
         id: RESTART_VM,
@@ -266,7 +283,7 @@ export function setupMenu(): void {
         accelerator: "Shift+F4",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "restartVm" }),
+          await emuMessenger.sendMessage({ type: "RestartVm" }),
       },
       { type: "separator" },
       {
@@ -274,7 +291,7 @@ export function setupMenu(): void {
         label: "Start with debugging",
         accelerator: "Ctrl+F5",
         enabled: true,
-        click: async () => await emuMessenger.sendMessage({ type: "debugVm" }),
+        click: async () => await emuMessenger.sendMessage({ type: "DebugVm" }),
       },
       {
         id: STEP_INTO_VM,
@@ -282,7 +299,7 @@ export function setupMenu(): void {
         accelerator: "F3",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "stepIntoVm" }),
+          await emuMessenger.sendMessage({ type: "StepIntoVm" }),
       },
       {
         id: STEP_OVER_VM,
@@ -290,7 +307,7 @@ export function setupMenu(): void {
         accelerator: "Shift+F3",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "stepOverVm" }),
+          await emuMessenger.sendMessage({ type: "StepOverVm" }),
       },
       {
         id: STEP_OUT_VM,
@@ -298,7 +315,7 @@ export function setupMenu(): void {
         accelerator: "Ctrl+F3",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "stepOutVm" }),
+          await emuMessenger.sendMessage({ type: "StepOutVm" }),
       },
     ],
   };
@@ -405,7 +422,7 @@ export function setupMenu(): void {
           checkboxAction(mi, ideShowAction(), ideHideAction());
           if (mi.checked) {
             ideMessenger.sendMessage({
-              type: "syncMainState",
+              type: "SyncMainState",
               mainState: { ...mainStore.getState() },
             });
           }
@@ -423,11 +440,11 @@ export function setupMenu(): void {
           const toolsVisible = !!mainStore.getState()?.toolFrame?.visible;
           if (toolsMaximized) {
             mainStore.dispatch(ideToolFrameMaximizeAction(false));
-            await new Promise(r => setTimeout(r, 20));
+            await new Promise((r) => setTimeout(r, 20));
           }
           mainStore.dispatch(ideToolFrameShowAction(!toolsVisible));
           if (toolsMaximized) {
-            await new Promise(r => setTimeout(r, 20));
+            await new Promise((r) => setTimeout(r, 20));
             mainStore.dispatch(ideToolFrameMaximizeAction(true));
           }
         },
@@ -514,7 +531,7 @@ export function processStateChange(fullState: AppState): void {
     if (showTools) {
       showTools.checked = fullState.toolFrame?.visible ?? false;
     }
-    
+
     // --- Keyboard panel status
     const toggleKeyboard = menu.getMenuItemById(TOGGLE_KEYBOARD);
     if (toggleKeyboard) {

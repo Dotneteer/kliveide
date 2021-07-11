@@ -14,6 +14,8 @@ export const lightTheme: ITheme = {
     "--selected-border-color": "#007acc",
     "--selected-background-color": "#094771",
     "--selection-color": "#007acc",
+    "--information-color": "#202020",
+    "--hilited-color": "#007acc",
 
     "--button-background-color": "#808080",
     "--button-primary-background-color": "##007acc",
