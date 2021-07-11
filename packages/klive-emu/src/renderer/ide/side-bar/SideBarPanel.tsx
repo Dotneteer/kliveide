@@ -68,17 +68,15 @@ export default function SideBarPanel(props: Props) {
           display: expanded ? undefined : "none",
           color: "var(--information-color)",
           overflow: "hidden",
-          fontSize: "0.9em"
+          fontSize: "1.1em"
         }}
       >
         <div
           style={{
-            left: 0,
-            top: 0,
-            height: 3,
+            height: 1,
             background: "transparent",
             boxShadow: "rgb(0,0,0) 0px 6px 6px -6px inset",
-            zIndex: 0,
+            flexShrink: 0,
           }}
         />
         {props.descriptor.createContentElement()}

@@ -1,10 +1,14 @@
 import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { ideToEmuMessenger } from "./IdeToEmuMessenger";
-import { GetCpuStateResponse } from "../../shared/messaging/message-types";
+import {
+  GetCpuStateResponse,
+  GetMachineStateResponse,
+} from "../../shared/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { ideStore } from "./ideStore";
 import { EmulatorPanelState } from "../../shared/state/AppState";
+import { MachineState } from "../machines/vm-core-types";
 
 /**
  * This class allows to access the virtual machine engine from the IDE process
@@ -64,6 +68,19 @@ class EngineProxy {
     const result = await ideToEmuMessenger.sendMessage<GetCpuStateResponse>({
       type: "GetCpuState",
     });
+    return result?.state;
+  }
+
+  /**
+   * Gets the current CPU state
+   * @returns
+   */
+  async getMachineState(): Promise<MachineState> {
+    const result = await ideToEmuMessenger.sendMessage<GetMachineStateResponse>(
+      {
+        type: "GetMachineState",
+      }
+    );
     return result?.state;
   }
 }

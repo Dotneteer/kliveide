@@ -63,6 +63,8 @@ export default function ScrollablePanel({
     resize();
   });
 
+  let verticalMoveApi: ((delta: number) => void) | null = null;
+
   return (
     <div
       ref={divHost}
@@ -75,6 +77,7 @@ export default function ScrollablePanel({
         setPointed(isSizing);
         mouseLeft = true;
       }}
+      onWheel={(e) => verticalMoveApi?.(e.deltaY/4)}
     >
       {children}
       {showVerticalScrollbar && (
@@ -88,6 +91,7 @@ export default function ScrollablePanel({
           hostScrollSize={scrollHeight}
           hostScrollPos={scrollTop}
           forceShow={pointed}
+          registerApi={(action) => (verticalMoveApi = action)}
           moved={(delta) => {
             if (divHost?.current) {
               divHost.current.scrollTop = delta;
@@ -115,7 +119,7 @@ export default function ScrollablePanel({
           forceShow={pointed}
           moved={(delta) => {
             if (divHost?.current) {
-              divHost.current.scrollTop = delta;
+              divHost.current.scrollLeft = delta;
             }
           }}
           sizing={(nowSizing) => {
@@ -149,6 +153,7 @@ type ScrollBarProps = {
   hostScrollSize: number;
   hostScrollPos: number;
   forceShow: boolean;
+  registerApi?: (action: (delta: number) => void) => void;
   sizing?: (isSizing: boolean) => void;
   moved?: (newPosition: number) => void;
 };
@@ -163,6 +168,7 @@ function FloatingScrollbar({
   hostScrollSize,
   hostScrollPos,
   forceShow,
+  registerApi,
   sizing,
   moved,
 }: ScrollBarProps) {
@@ -221,6 +227,8 @@ function FloatingScrollbar({
     },
   };
 
+  registerApi?.((delta) => moveDelta(delta, context));
+
   /**
    * Starts resizing this panel
    */
@@ -242,7 +250,6 @@ function FloatingScrollbar({
     window.removeEventListener("touchcancel", endResize);
     window.removeEventListener("mousemove", context.move);
     window.removeEventListener("touchmove", context.move);
-    console.log("End resize");
     context.endDragging();
   }
 
@@ -253,6 +260,15 @@ function FloatingScrollbar({
     const delta =
       (direction === "horizontal" ? e.clientX : e.clientY) -
       context.gripPosition;
+    moveDelta(delta, context);
+  }
+
+  /**
+   * Executes the delta movement
+   * @param delta Delta value
+   * @param context Movement context
+   */
+  function moveDelta(delta: number, context: DragContext): void {
     const maxPosition = hostSize - handleSize;
     var newPosition = Math.max(0, handlePos + delta);
     newPosition = Math.min(newPosition, maxPosition);
