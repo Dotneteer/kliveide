@@ -5,32 +5,10 @@ import { SvgIcon } from "../../common/SvgIcon";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { engineProxy } from "../engine-proxy";
-import ScrollablePanel from "../../common/ScrollablePanel";
-import { scrollableContentType } from "../utils/content-utils";
-import { times } from "lodash";
+import { labelStyle, valueItemStyle, valueStyle } from "../utils/content-utils";
+import { MachineState } from "../../machines/vm-core-types";
 
 const TITLE = "Z80 CPU State";
-
-const rootStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "row",
-  width: "auto",
-  height: "auto",
-  paddingLeft: 8,
-  alignItems: "center",
-};
-
-const nameStyle: CSSProperties = {
-  flexShrink: 0,
-  flexGrow: 0,
-  width: 30,
-  fontWeight: 600,
-};
-
-const valueStyle: CSSProperties = {
-  width: 16,
-  color: "var(--hilited-color)",
-};
 
 /**
  * Displays the row of flags
@@ -74,8 +52,8 @@ function flagRow(bits: number) {
       <div style={valueStyle} title={value ? `${set} (1) ` : `${clr} (0)`}>
         <SvgIcon
           iconName={value ? "circle-large-filled" : "circle-large-outline"}
-          width={12}
-          height={12}
+          width={10}
+          height={10}
           fill="--hilited-color"
         />
       </div>
@@ -83,7 +61,7 @@ function flagRow(bits: number) {
   }
 
   return (
-    <div style={rootStyle}>
+    <div style={valueItemStyle}>
       <div style={FStyle}>F</div>
       <div style={flagsStyle}>
         <div style={flagRowStyle}>
@@ -146,10 +124,10 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
   const loByteStr = loByte.toString(16).padStart(2, "0").toUpperCase();
 
   return (
-    <div style={rootStyle}>
-      <div style={nameStyle}>{name}</div>
+    <div style={valueItemStyle}>
+      <div style={labelStyle()}>{name}</div>
       <div
-        style={valueStyle}
+        style={valueStyle(16)}
         title={`${high ?? name[0]}: ${hiByteStr} (${hiByte.toString(
           10
         )}): ${hiByte.toString(2).padStart(8, "0")} `}
@@ -157,7 +135,7 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
         {hiByteStr}
       </div>
       <div
-        style={valueStyle}
+        style={valueStyle(16)}
         title={`${low ?? name[1]}: ${loByteStr} (${loByte.toString(
           10
         )}): ${loByte.toString(2).padStart(8, "0")} `}
@@ -183,16 +161,18 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
  */
 function stateRow(name: string, value: number) {
   return (
-    <div style={rootStyle}>
-      <div style={nameStyle}>{name}</div>
-      <div style={valueStyle}>{value}</div>
+    <div style={valueItemStyle}>
+      <div style={labelStyle()}>{name}</div>
+      <div style={valueStyle(16)}>{value}</div>
     </div>
   );
 }
 
+/**
+ * Z80 register panel state
+ */
 type State = {
-  cpuState?: Z80CpuState;
-  sizing: boolean;
+  machineState?: Z80CpuState & MachineState;
 };
 
 /**
@@ -202,115 +182,83 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
-  private _isSizing = false;
-
   title = TITLE;
 
-  render() {
+  renderContent() {
+    const state = this.state?.machineState;
     return (
-      <ScrollablePanel
-        scrollBarSize={12}
-        sizing={(isSizing) => (this._isSizing = isSizing)}
-      >
-        <div style={scrollableContentType}>
-          {flagRow(this.state?.cpuState?._af & 0xff ?? 0x00)}
-          {regRow(
-            "PC",
-            this.state?.cpuState?._af ?? 0,
-            "\u{1d5e3}\u{1d5d6}:hi",
-            "\u{1d5e3}\u{1d5d6}:lo"
-          )}
-          {regRow(
-            "AF",
-            this.state?.cpuState?._af ?? 0,
-            "\u{1d5d4}",
-            "\u{1d5d9}"
-          )}
-          {regRow(
-            "BC",
-            this.state?.cpuState?._bc ?? 0,
-            "\u{1d5d5}",
-            "\u{1d5d6}"
-          )}
-          {regRow(
-            "DE",
-            this.state?.cpuState?._de ?? 0,
-            "\u{1d5d7}",
-            "\u{1d5d8}"
-          )}
-          {regRow(
-            "HL",
-            this.state?.cpuState?._hl ?? 0,
-            "\u{1d5db}",
-            "\u{1d5dc}"
-          )}
-          {regRow(
-            "SP",
-            this.state?.cpuState?._sp ?? 0,
-            "\u{1d5e6}\u{1d5e3}:hi",
-            "\u{1d5e6}\u{1d5e3}:lo"
-          )}
-          {regRow(
-            "IX",
-            this.state?.cpuState?._ix ?? 0,
-            "\u{1d5eb}\u{1d5db}",
-            "\u{1d5eb}\u{1d5df}"
-          )}
-          {regRow(
-            "IY",
-            this.state?.cpuState?._iy ?? 0,
-            "\u{1d5ec}\u{1d5db}",
-            "\u{1d5ec}\u{1d5df}"
-          )}
-          {regRow(
-            "IR",
-            ((this.state?.cpuState?._i ?? 0) << 8) | this.state?.cpuState?._r,
-            "\u{1d5dc}",
-            "\u{1d5e5}"
-          )}
-          {regRow(
-            "AF'",
-            this.state?.cpuState?._af_sec ?? 0,
-            "\u{1d5d4}'",
-            "\u{1d5d9}'"
-          )}
-          {regRow(
-            "BC'",
-            this.state?.cpuState?._bc_sec ?? 0,
-            "\u{1d5d5}'",
-            "\u{1d5d6}'"
-          )}
-          {regRow(
-            "DE'",
-            this.state?.cpuState?._de_sec ?? 0,
-            "\u{1d5d7}'",
-            "\u{1d5d8}'"
-          )}
-          {regRow(
-            "HL'",
-            this.state?.cpuState?._hl_sec ?? 0,
-            "\u{1d5db}'",
-            "\u{1d5dc}'"
-          )}
-          {regRow(
-            "WZ",
-            this.state?.cpuState?._iy ?? 0,
-            "\u{1d5ea}\u{1d5db}",
-            "\u{1d5ea}\u{1d5df}"
-          )}
-          {stateRow("IM", this.state?.cpuState?.interruptMode ?? 0)}
-          {stateRow("IFF1", this.state?.cpuState?.iff1 ? 1 : 0)}
-          {stateRow("IFF2", this.state?.cpuState?.iff2 ? 1 : 0)}
+      <>
+        {flagRow(state?._af & 0xff ?? 0x00)}
+        <div style={valueItemStyle}>
+          <div style={labelStyle()}>CLK</div>
+
+          <div style={valueStyle(64)}>
+            {new Intl.NumberFormat().format(
+              (state?.tacts ?? 0) +
+                (state?.tactsInFrame ?? 0) * (state?.frameCount ?? 0)
+            )}
+          </div>
         </div>
-      </ScrollablePanel>
+
+        {regRow(
+          "PC",
+          state?._af ?? 0,
+          "\u{1d5e3}\u{1d5d6}:hi",
+          "\u{1d5e3}\u{1d5d6}:lo"
+        )}
+        {regRow("AF", state?._af ?? 0, "\u{1d5d4}", "\u{1d5d9}")}
+        {regRow("BC", state?._bc ?? 0, "\u{1d5d5}", "\u{1d5d6}")}
+        {regRow("DE", state?._de ?? 0, "\u{1d5d7}", "\u{1d5d8}")}
+        {regRow(
+          "HL",
+          this.state?.machineState?._hl ?? 0,
+          "\u{1d5db}",
+          "\u{1d5dc}"
+        )}
+        {regRow(
+          "SP",
+          state?._sp ?? 0,
+          "\u{1d5e6}\u{1d5e3}:hi",
+          "\u{1d5e6}\u{1d5e3}:lo"
+        )}
+        {regRow(
+          "IX",
+          state?._ix ?? 0,
+          "\u{1d5eb}\u{1d5db}",
+          "\u{1d5eb}\u{1d5df}"
+        )}
+        {regRow(
+          "IY",
+          state?._iy ?? 0,
+          "\u{1d5ec}\u{1d5db}",
+          "\u{1d5ec}\u{1d5df}"
+        )}
+        {regRow(
+          "IR",
+          ((state?._i ?? 0) << 8) | state?._r,
+          "\u{1d5dc}",
+          "\u{1d5e5}"
+        )}
+        {regRow("AF'", state?._af_sec ?? 0, "\u{1d5d4}'", "\u{1d5d9}'")}
+        {regRow("BC'", state?._bc_sec ?? 0, "\u{1d5d5}'", "\u{1d5d6}'")}
+        {regRow("DE'", state?._de_sec ?? 0, "\u{1d5d7}'", "\u{1d5d8}'")}
+        {regRow("HL'", state?._hl_sec ?? 0, "\u{1d5db}'", "\u{1d5dc}'")}
+        {regRow(
+          "WZ",
+          state?._iy ?? 0,
+          "\u{1d5ea}\u{1d5db}",
+          "\u{1d5ea}\u{1d5df}"
+        )}
+        {stateRow("IM", state?.interruptMode ?? 0)}
+        {stateRow("IFF1", state?.iff1 ? 1 : 0)}
+        {stateRow("IFF2", state?.iff2 ? 1 : 0)}
+      </>
     );
   }
 
   protected async onRunEvent(): Promise<void> {
-    if (!this._isSizing) {
-      const cpuState = await engineProxy.getCpuState();
-      this.setState({ cpuState: cpuState as Z80CpuState });
-    }
+    const cpuState = await engineProxy.getMachineState();
+    this.setState({ machineState: cpuState as Z80CpuState & MachineState });
   }
 }
 

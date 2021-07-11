@@ -1,4 +1,4 @@
-import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
+import { MachineCreationOptions, MachineState } from "../../renderer/machines/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/klive-configuration";
 import { AppState } from "../state/AppState";
@@ -136,6 +136,13 @@ export interface GetCpuStateRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks Emu for the state of the virtual machine
+ */
+ export interface GetMachineStateRequest extends MessageBase {
+  type: "GetMachineState";
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -173,7 +180,7 @@ type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
 /**
  * Requests for IDE to Emu
  */
-type IdeToEmuRequests = GetCpuStateRequest;
+type IdeToEmuRequests = GetCpuStateRequest | GetMachineStateRequest;
 
 /**
  * Requests send by the main process to Emu
@@ -219,13 +226,22 @@ export interface GetCpuStateResponse extends MessageBase {
   state: ICpuState;
 }
 
+/**
+ * The Ide asks Emu for the state of the virtual machine
+ */
+ export interface GetMachineStateResponse extends MessageBase {
+  type: "GetMachineStateResponse";
+  state: MachineState
+}
+
 
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
   | ExecuteMachineCommandResponse
   | EmuOpenFileDialogResponse
-  | GetCpuStateResponse;
+  | GetCpuStateResponse
+  | GetMachineStateResponse
 
 /**
  * All messages

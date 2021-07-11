@@ -31,8 +31,11 @@ export default function ScrollablePanel({
   const [scrollHeight, setScrollHeight] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const [scrollTop, setScrollTop] = useState(0);
+  const [pointed, setPointed] = useState(false);
 
   const divHost = React.createRef<HTMLDivElement>();
+  let isSizing = false;
+  let mouseLeft = false;
 
   const containerStyle: CSSProperties = {
     display: "flex",
@@ -60,8 +63,22 @@ export default function ScrollablePanel({
     resize();
   });
 
+  let verticalMoveApi: ((delta: number) => void) | null = null;
+
   return (
-    <div ref={divHost} style={containerStyle}>
+    <div
+      ref={divHost}
+      style={containerStyle}
+      onMouseEnter={() => {
+        setPointed(true);
+        mouseLeft = false;
+      }}
+      onMouseLeave={() => {
+        setPointed(isSizing);
+        mouseLeft = true;
+      }}
+      onWheel={(e) => verticalMoveApi?.(e.deltaY/4)}
+    >
       {children}
       {showVerticalScrollbar && (
         <FloatingScrollbar
@@ -73,8 +90,20 @@ export default function ScrollablePanel({
           hostCrossSize={width}
           hostScrollSize={scrollHeight}
           hostScrollPos={scrollTop}
-          moved={(delta) => (divHost.current.scrollTop = delta)}
-          sizing={(isSizing) => sizing?.(isSizing)}
+          forceShow={pointed}
+          registerApi={(action) => (verticalMoveApi = action)}
+          moved={(delta) => {
+            if (divHost?.current) {
+              divHost.current.scrollTop = delta;
+            }
+          }}
+          sizing={(nowSizing) => {
+            isSizing = nowSizing;
+            sizing?.(nowSizing);
+            if (!nowSizing && mouseLeft) {
+              setPointed(false);
+            }
+          }}
         />
       )}
       {showHorizontalScrollbar && (
@@ -87,10 +116,19 @@ export default function ScrollablePanel({
           hostCrossSize={height}
           hostScrollSize={scrollWidth}
           hostScrollPos={scrollLeft}
+          forceShow={pointed}
           moved={(delta) => {
-            divHost.current.scrollLeft = delta;
+            if (divHost?.current) {
+              divHost.current.scrollLeft = delta;
+            }
           }}
-          sizing={(isSizing) => sizing?.(isSizing)}
+          sizing={(nowSizing) => {
+            isSizing = nowSizing;
+            sizing?.(nowSizing);
+            if (!nowSizing && mouseLeft) {
+              setPointed(false);
+            }
+          }}
         />
       )}
       <ReactResizeDetector
@@ -114,6 +152,8 @@ type ScrollBarProps = {
   hostCrossSize: number;
   hostScrollSize: number;
   hostScrollPos: number;
+  forceShow: boolean;
+  registerApi?: (action: (delta: number) => void) => void;
   sizing?: (isSizing: boolean) => void;
   moved?: (newPosition: number) => void;
 };
@@ -127,6 +167,8 @@ function FloatingScrollbar({
   hostCrossSize,
   hostScrollSize,
   hostScrollPos,
+  forceShow,
+  registerApi,
   sizing,
   moved,
 }: ScrollBarProps) {
@@ -142,7 +184,6 @@ function FloatingScrollbar({
   }
 
   const [handlePos, setHandlePos] = useState(initialPos);
-  const [pointed, setPointed] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   const barStyle: CSSProperties = {
@@ -165,7 +206,7 @@ function FloatingScrollbar({
     width: direction === "horizontal" ? handleSize : barSize,
     height: direction === "vertical" ? handleSize : barSize,
     background: "var(--scrollbar-background-color)",
-    opacity: show && (dragging ? 1.0 : pointed ? 0.8 : 0.0),
+    opacity: show && (dragging ? 1.0 : forceShow ? 0.8 : 0.0),
     transitionProperty: "opacity",
     transitionDuration: dragging ? "0s" : "0.5s",
     transitionDelay: dragging ? "0s" : "0.25s",
@@ -185,6 +226,8 @@ function FloatingScrollbar({
       sizing?.(false);
     },
   };
+
+  registerApi?.((delta) => moveDelta(delta, context));
 
   /**
    * Starts resizing this panel
@@ -217,6 +260,15 @@ function FloatingScrollbar({
     const delta =
       (direction === "horizontal" ? e.clientX : e.clientY) -
       context.gripPosition;
+    moveDelta(delta, context);
+  }
+
+  /**
+   * Executes the delta movement
+   * @param delta Delta value
+   * @param context Movement context
+   */
+  function moveDelta(delta: number, context: DragContext): void {
     const maxPosition = hostSize - handleSize;
     var newPosition = Math.max(0, handlePos + delta);
     newPosition = Math.min(newPosition, maxPosition);
@@ -225,11 +277,7 @@ function FloatingScrollbar({
   }
 
   return (
-    <div
-      style={barStyle}
-      onMouseEnter={() => setPointed(true)}
-      onMouseLeave={() => setPointed(false)}
-    >
+    <div style={barStyle}>
       {show && (
         <div
           style={handleStyle}

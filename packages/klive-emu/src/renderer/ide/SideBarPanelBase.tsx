@@ -1,7 +1,9 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
+import ScrollablePanel from "../common/ScrollablePanel";
 import { engineProxy, RunEventArgs } from "./engine-proxy";
 import { ISideBarPanel } from "./side-bar/SideBarService";
+import { scrollableContentType } from "./utils/content-utils";
 
 export type SideBarProps<P> = { descriptor: ISideBarPanel };
 
@@ -12,6 +14,7 @@ export class SideBarPanelBase<
   P = { descriptor: ISideBarPanel },
   S = {}
 > extends React.Component<SideBarProps<P>, S> {
+  private _isSizing = false;
   private _eventCount = 0;
 
   // --- Override the title in other panels
@@ -27,9 +30,22 @@ export class SideBarPanelBase<
     engineProxy.runEvent.off(this.runEvent);
   }
 
+  renderContent(): React.ReactNode {
+    return <>{this.title}</>;
+  }
+
   // --- Override the default rendering
   render() {
-    return <div style={placeholderStyle}>{this.title}</div>;
+    return (
+      <div style={placeholderStyle}>
+        <ScrollablePanel
+          scrollBarSize={8}
+          sizing={(isSizing) => (this._isSizing = isSizing)}
+        >
+          <div style={scrollableContentType}>{this.renderContent()}</div>
+        </ScrollablePanel>
+      </div>
+    );
   }
 
   /**
@@ -37,9 +53,9 @@ export class SideBarPanelBase<
    * @param execState Execution state
    */
   protected onRunEvent(
-    execState: number,
-    isDebug: boolean,
-    eventCount: number
+    _execState: number,
+    _isDebug: boolean,
+    _eventCount: number
   ): void {
     // --- Define this in overridden components
   }
@@ -50,7 +66,9 @@ export class SideBarPanelBase<
       if (execState === 1) {
         this._eventCount++;
       }
-      this.onRunEvent(execState, isDebug, this._eventCount);
+      if (!this._isSizing) {
+        this.onRunEvent(execState, isDebug, this._eventCount);
+      }
     }
   };
 }
