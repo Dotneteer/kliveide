@@ -199,7 +199,7 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   render() {
     return (
       <ScrollablePanel
-        scrollBarSize={12}
+        scrollBarSize={8}
         sizing={(isSizing) => (this._isSizing = isSizing)}
       >
         <div style={scrollableContentType}>
