@@ -4,6 +4,7 @@ import { SideBarState } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { activityService } from "../activity-bar/ActivityService";
 import { ideStore } from "../ideStore";
+import { StateAwareObject } from "../../../shared/state/StateAwareObject";
 
 /**
  * Represents an abstract side bar panel
@@ -95,26 +96,37 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
    * Sets the state of the side bar panel
    * @param state Optional state to set
    */
-  setPanelState(
-    state: Record<string, any> | null
-  ): void {
+  setPanelState(state: Record<string, any> | null): void {
     if (state) {
       this._panelState = { ...this._panelState, ...state };
     }
   }
 }
 
+type SideBarEntry = {
+  panel: ISideBarPanel;
+  machines?: string[];
+};
 /**
  * Represents a service that handles side bar panels
  */
 class SideBarService {
-  private readonly _panels = new Map<string, ISideBarPanel[]>();
+  private readonly _panels = new Map<string, SideBarEntry[]>();
   private readonly _sideBarChanging = new LiteEvent<void>();
   private readonly _sideBarChanged = new LiteEvent<void>();
   private _activity: string | null = null;
+  private _machineType: string | null = null;
+  private _currentPanels: ISideBarPanel[] = [];
 
   constructor() {
     this.reset();
+    const stateAware = new StateAwareObject<string>(ideStore, "machineType");
+    stateAware.stateChanged.on((type: string) => {
+      this._machineType = type;
+      this.refreshCurrentPanels();
+      this._sideBarChanged.fire();
+    });
+
     activityService.activityChanged.on((activity) => {
       // --- Save the state of the panels
       const state: SideBarState = {};
@@ -137,7 +149,8 @@ class SideBarService {
       this._activity = activity;
 
       // --- Restore the panel state
-      panels = this.getSideBarPanels();
+      this.refreshCurrentPanels();
+      panels = this._currentPanels;
       const sideBarState = (ideStore.getState().sideBar ?? {})[this.activity];
       for (let i = 0; i < panels.length; i++) {
         const panel = panels[i];
@@ -171,12 +184,19 @@ class SideBarService {
    * @param activityPaneId ID of the activity
    * @param panel Panel to register
    */
-  registerSideBarPanel(activityPaneId: string, panel: ISideBarPanel): void {
+  registerSideBarPanel(
+    activityPaneId: string,
+    panel: ISideBarPanel,
+    machines?: string[]
+  ): void {
     let panelList = this._panels.get(activityPaneId);
     if (panelList) {
-      panelList.push(panel);
+      panelList.push({
+        panel,
+        machines,
+      });
     } else {
-      this._panels.set(activityPaneId, [panel]);
+      this._panels.set(activityPaneId, [{ panel, machines }]);
     }
   }
 
@@ -185,7 +205,7 @@ class SideBarService {
    * @returns
    */
   getSideBarPanels(): ISideBarPanel[] {
-    return this._panels.get(this._activity) ?? [];
+    return this._currentPanels;
   }
 
   /**
@@ -207,6 +227,16 @@ class SideBarService {
    */
   get sideBarChanged(): ILiteEvent<void> {
     return this._sideBarChanged;
+  }
+
+  /**
+   * Refreshes the list of panel on a change
+   */
+  private refreshCurrentPanels(): void {
+    const panelEntries = this._panels.get(this._activity) ?? [];
+    this._currentPanels = panelEntries
+      .filter((pe) => !pe.machines || pe.machines.includes(this._machineType))
+      .map((pe) => pe.panel);
   }
 }
 

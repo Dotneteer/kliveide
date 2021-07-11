@@ -6,19 +6,9 @@ import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { engineProxy } from "../engine-proxy";
 import ScrollablePanel from "../../common/ScrollablePanel";
-import { scrollableContentType } from "../utils/content-utils";
-import { times } from "lodash";
+import { panelRootStyle, scrollableContentType } from "../utils/content-utils";
 
 const TITLE = "Z80 CPU State";
-
-const rootStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "row",
-  width: "auto",
-  height: "auto",
-  paddingLeft: 8,
-  alignItems: "center",
-};
 
 const nameStyle: CSSProperties = {
   flexShrink: 0,
@@ -83,7 +73,7 @@ function flagRow(bits: number) {
   }
 
   return (
-    <div style={rootStyle}>
+    <div style={panelRootStyle}>
       <div style={FStyle}>F</div>
       <div style={flagsStyle}>
         <div style={flagRowStyle}>
@@ -146,7 +136,7 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
   const loByteStr = loByte.toString(16).padStart(2, "0").toUpperCase();
 
   return (
-    <div style={rootStyle}>
+    <div style={panelRootStyle}>
       <div style={nameStyle}>{name}</div>
       <div
         style={valueStyle}
@@ -183,7 +173,7 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
  */
 function stateRow(name: string, value: number) {
   return (
-    <div style={rootStyle}>
+    <div style={panelRootStyle}>
       <div style={nameStyle}>{name}</div>
       <div style={valueStyle}>{value}</div>
     </div>

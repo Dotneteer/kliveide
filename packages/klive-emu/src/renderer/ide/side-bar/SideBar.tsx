@@ -35,7 +35,7 @@ export default function SideBar() {
     // --- Mount
     sideBarService.sideBarChanged.on(panelsChanged);
     sideBarService.refreshSideBarPanels();
-
+  
     return () => {
       // --- Unmount
       sideBarService.sideBarChanged.off(panelsChanged);

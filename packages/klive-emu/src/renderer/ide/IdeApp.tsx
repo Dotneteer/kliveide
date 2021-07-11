@@ -139,7 +139,8 @@ export default function IdeApp() {
     );
     sideBarService.registerSideBarPanel(
       "debug-view",
-      new UlaInformationPanelDescriptor()
+      new UlaInformationPanelDescriptor(),
+      ["sp48", "sp128"]
     );
     sideBarService.registerSideBarPanel(
       "debug-view",
