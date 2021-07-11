@@ -5,6 +5,7 @@ import { SvgIcon } from "../../common/SvgIcon";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { engineProxy } from "../engine-proxy";
+import ScrollablePanel from "../../common/ScrollablePanel";
 
 const TITLE = "Z80 CPU State";
 
@@ -28,7 +29,6 @@ const valueStyle: CSSProperties = {
   width: 16,
   color: "var(--hilited-color)",
 };
-
 
 /**
  * Displays the row of flags
@@ -180,10 +180,12 @@ function regRow(name: string, bits: number, high?: string, low?: string) {
  * @param value Status value
  */
 function stateRow(name: string, value: number) {
-  return <div style={rootStyle} >
-    <div style={nameStyle}>{name}</div>
-    <div style={valueStyle}>{value}</div>
-  </div>
+  return (
+    <div style={rootStyle}>
+      <div style={nameStyle}>{name}</div>
+      <div style={valueStyle}>{value}</div>
+    </div>
+  );
 }
 
 type State = {
@@ -201,26 +203,98 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
 
   render() {
     return (
-      <div>
-        {flagRow(this.state?.cpuState?._af & 0xff ?? 0x00)}
-        {regRow("PC", this.state?.cpuState?._af ?? 0, "\u{1d5e3}\u{1d5d6}:hi", "\u{1d5e3}\u{1d5d6}:lo")}
-        {regRow("AF", this.state?.cpuState?._af ?? 0, "\u{1d5d4}", "\u{1d5d9}")}
-        {regRow("BC", this.state?.cpuState?._bc ?? 0, "\u{1d5d5}", "\u{1d5d6}")}
-        {regRow("DE", this.state?.cpuState?._de ?? 0, "\u{1d5d7}", "\u{1d5d8}")}
-        {regRow("HL", this.state?.cpuState?._hl ?? 0, "\u{1d5db}", "\u{1d5dc}")}
-        {regRow("SP", this.state?.cpuState?._sp ?? 0, "\u{1d5e6}\u{1d5e3}:hi", "\u{1d5e6}\u{1d5e3}:lo")}
-        {regRow("IX", this.state?.cpuState?._ix ?? 0, "\u{1d5eb}\u{1d5db}", "\u{1d5eb}\u{1d5df}")}
-        {regRow("IY", this.state?.cpuState?._iy ?? 0, "\u{1d5ec}\u{1d5db}", "\u{1d5ec}\u{1d5df}")}
-        {regRow("IR", (this.state?.cpuState?._i ?? 0) << 8 | (this.state?.cpuState?._r), "\u{1d5dc}", "\u{1d5e5}")}
-        {regRow("AF'", this.state?.cpuState?._af_sec ?? 0, "\u{1d5d4}'", "\u{1d5d9}'")}
-        {regRow("BC'", this.state?.cpuState?._bc_sec ?? 0, "\u{1d5d5}'", "\u{1d5d6}'")}
-        {regRow("DE'", this.state?.cpuState?._de_sec ?? 0, "\u{1d5d7}'", "\u{1d5d8}'")}
-        {regRow("HL'", this.state?.cpuState?._hl_sec ?? 0, "\u{1d5db}'", "\u{1d5dc}'")}
-        {regRow("WZ", this.state?.cpuState?._iy ?? 0, "\u{1d5ea}\u{1d5db}", "\u{1d5ea}\u{1d5df}")}
-        {stateRow("IM", this.state?.cpuState?.interruptMode ?? 0)}
-        {stateRow("IFF1", this.state?.cpuState?.iff1 ? 1 : 0)}
-        {stateRow("IFF2", this.state?.cpuState?.iff2 ? 1 : 0)}
-      </div>
+      <ScrollablePanel scrollBarSize={12}>
+        <div style={{ width: "fit-content", height: "fit-content" }}>
+          {flagRow(this.state?.cpuState?._af & 0xff ?? 0x00)}
+          {regRow(
+            "PC",
+            this.state?.cpuState?._af ?? 0,
+            "\u{1d5e3}\u{1d5d6}:hi",
+            "\u{1d5e3}\u{1d5d6}:lo"
+          )}
+          {regRow(
+            "AF",
+            this.state?.cpuState?._af ?? 0,
+            "\u{1d5d4}",
+            "\u{1d5d9}"
+          )}
+          {regRow(
+            "BC",
+            this.state?.cpuState?._bc ?? 0,
+            "\u{1d5d5}",
+            "\u{1d5d6}"
+          )}
+          {regRow(
+            "DE",
+            this.state?.cpuState?._de ?? 0,
+            "\u{1d5d7}",
+            "\u{1d5d8}"
+          )}
+          {regRow(
+            "HL",
+            this.state?.cpuState?._hl ?? 0,
+            "\u{1d5db}",
+            "\u{1d5dc}"
+          )}
+          {regRow(
+            "SP",
+            this.state?.cpuState?._sp ?? 0,
+            "\u{1d5e6}\u{1d5e3}:hi",
+            "\u{1d5e6}\u{1d5e3}:lo"
+          )}
+          {regRow(
+            "IX",
+            this.state?.cpuState?._ix ?? 0,
+            "\u{1d5eb}\u{1d5db}",
+            "\u{1d5eb}\u{1d5df}"
+          )}
+          {regRow(
+            "IY",
+            this.state?.cpuState?._iy ?? 0,
+            "\u{1d5ec}\u{1d5db}",
+            "\u{1d5ec}\u{1d5df}"
+          )}
+          {regRow(
+            "IR",
+            ((this.state?.cpuState?._i ?? 0) << 8) | this.state?.cpuState?._r,
+            "\u{1d5dc}",
+            "\u{1d5e5}"
+          )}
+          {regRow(
+            "AF'",
+            this.state?.cpuState?._af_sec ?? 0,
+            "\u{1d5d4}'",
+            "\u{1d5d9}'"
+          )}
+          {regRow(
+            "BC'",
+            this.state?.cpuState?._bc_sec ?? 0,
+            "\u{1d5d5}'",
+            "\u{1d5d6}'"
+          )}
+          {regRow(
+            "DE'",
+            this.state?.cpuState?._de_sec ?? 0,
+            "\u{1d5d7}'",
+            "\u{1d5d8}'"
+          )}
+          {regRow(
+            "HL'",
+            this.state?.cpuState?._hl_sec ?? 0,
+            "\u{1d5db}'",
+            "\u{1d5dc}'"
+          )}
+          {regRow(
+            "WZ",
+            this.state?.cpuState?._iy ?? 0,
+            "\u{1d5ea}\u{1d5db}",
+            "\u{1d5ea}\u{1d5df}"
+          )}
+          {stateRow("IM", this.state?.cpuState?.interruptMode ?? 0)}
+          {stateRow("IFF1", this.state?.cpuState?.iff1 ? 1 : 0)}
+          {stateRow("IFF2", this.state?.cpuState?.iff2 ? 1 : 0)}
+        </div>
+      </ScrollablePanel>
     );
   }
 

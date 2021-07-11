@@ -45,6 +45,7 @@ export default function SideBarPanel(props: Props) {
         height: expanded ? `${props.descriptor.heightPercentage}%` : null,
         transitionProperty: "height",
         transitionDuration: "0.25s",
+        overflow: "hidden",
       }}
     >
       <SideBarPanelHeader
@@ -66,6 +67,7 @@ export default function SideBarPanel(props: Props) {
         style={{
           display: expanded ? undefined : "none",
           color: "var(--information-color)",
+          overflow: "hidden",
           fontSize: "0.9em"
         }}
       >

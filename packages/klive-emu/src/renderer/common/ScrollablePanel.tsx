@@ -40,7 +40,7 @@ export default function ScrollablePanel({
     width: "100%",
     height: "100%",
     background,
-    overflowX: "hidden",
+    overflow: "hidden",
   };
 
   const resize = () => {
@@ -71,6 +71,9 @@ export default function ScrollablePanel({
           hostCrossSize={width}
           hostScrollSize={scrollHeight}
           hostScrollPos={scrollTop}
+          moved={(delta) => {
+            divHost.current.scrollTop = delta;
+          }}
         />
       )}
       {showHorizontalScrollbar && (
@@ -153,8 +156,8 @@ function FloatingScrollbar({
 
   const handleStyle: CSSProperties = {
     position: "absolute",
-    top: direction === "horizontal" ? undefined : hostTop + handlePos,
-    left: direction === "vertical" ? undefined : hostLeft + handlePos,
+    top: direction === "horizontal" ? undefined : handlePos,
+    left: direction === "vertical" ? undefined : handlePos,
     width: direction === "horizontal" ? handleSize : barSize,
     height: direction === "vertical" ? handleSize : barSize,
     background: "var(--scrollbar-background-color)",
