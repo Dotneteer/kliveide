@@ -6,6 +6,8 @@ import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { engineProxy } from "../engine-proxy";
 import ScrollablePanel from "../../common/ScrollablePanel";
+import { scrollableContentType } from "../utils/content-utils";
+import { times } from "lodash";
 
 const TITLE = "Z80 CPU State";
 
@@ -189,7 +191,8 @@ function stateRow(name: string, value: number) {
 }
 
 type State = {
-  cpuState: Z80CpuState;
+  cpuState?: Z80CpuState;
+  sizing: boolean;
 };
 
 /**
@@ -199,12 +202,17 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
+  private _isSizing = false;
+
   title = TITLE;
 
   render() {
     return (
-      <ScrollablePanel scrollBarSize={12}>
-        <div style={{ width: "fit-content", height: "fit-content" }}>
+      <ScrollablePanel
+        scrollBarSize={12}
+        sizing={(isSizing) => (this._isSizing = isSizing)}
+      >
+        <div style={scrollableContentType}>
           {flagRow(this.state?.cpuState?._af & 0xff ?? 0x00)}
           {regRow(
             "PC",
@@ -299,8 +307,10 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   }
 
   protected async onRunEvent(): Promise<void> {
-    const cpuState = await engineProxy.getCpuState();
-    this.setState({ cpuState: cpuState as Z80CpuState });
+    if (!this._isSizing) {
+      const cpuState = await engineProxy.getCpuState();
+      this.setState({ cpuState: cpuState as Z80CpuState });
+    }
   }
 }
 

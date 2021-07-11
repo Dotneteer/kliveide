@@ -9,6 +9,7 @@ type PanelProps = {
   showHorizontalScrollbar?: boolean;
   scrollBarSize?: number;
   background?: string;
+  sizing?: (isSizing: boolean) => void;
 } & { children?: ReactNode };
 
 /**
@@ -20,6 +21,7 @@ export default function ScrollablePanel({
   showVerticalScrollbar = true,
   scrollBarSize = 4,
   background = "var(--shell-canvas-background-color)",
+  sizing,
 }: PanelProps) {
   const [left, setLeft] = useState(0);
   const [top, setTop] = useState(0);
@@ -71,9 +73,8 @@ export default function ScrollablePanel({
           hostCrossSize={width}
           hostScrollSize={scrollHeight}
           hostScrollPos={scrollTop}
-          moved={(delta) => {
-            divHost.current.scrollTop = delta;
-          }}
+          moved={(delta) => (divHost.current.scrollTop = delta)}
+          sizing={(isSizing) => sizing?.(isSizing)}
         />
       )}
       {showHorizontalScrollbar && (
@@ -89,6 +90,7 @@ export default function ScrollablePanel({
           moved={(delta) => {
             divHost.current.scrollLeft = delta;
           }}
+          sizing={(isSizing) => sizing?.(isSizing)}
         />
       )}
       <ReactResizeDetector
@@ -112,6 +114,7 @@ type ScrollBarProps = {
   hostCrossSize: number;
   hostScrollSize: number;
   hostScrollPos: number;
+  sizing?: (isSizing: boolean) => void;
   moved?: (newPosition: number) => void;
 };
 
@@ -124,6 +127,7 @@ function FloatingScrollbar({
   hostCrossSize,
   hostScrollSize,
   hostScrollPos,
+  sizing,
   moved,
 }: ScrollBarProps) {
   const show = hostScrollSize > hostSize;
@@ -178,6 +182,7 @@ function FloatingScrollbar({
     },
     endDragging: () => {
       setDragging(false);
+      sizing?.(false);
     },
   };
 
@@ -230,6 +235,7 @@ function FloatingScrollbar({
           style={handleStyle}
           onMouseDown={(ev) => {
             if (ev.button === 0) {
+              sizing?.(true);
               startResize(ev);
               setDragging(true);
             }
@@ -237,6 +243,7 @@ function FloatingScrollbar({
           onMouseUp={() => {
             endResize();
             setDragging(false);
+            sizing?.(false);
           }}
         />
       )}

@@ -30,7 +30,9 @@ export class MainToEmuForwarder extends MessengerBase {
    * @param message Message to send
    */
   protected send(message: RequestMessage): void {
-    this.window.webContents.send(this.requestChannel, message);
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.webContents.send(this.requestChannel, message);
+    }
   }
 
   /**
