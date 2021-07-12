@@ -111,7 +111,8 @@ type SideBarEntry = {
  * Represents a service that handles side bar panels
  */
 class SideBarService {
-  private readonly _panels = new Map<string, SideBarEntry[]>();
+  private readonly _registeredPanels = new Map<string, SideBarEntry[]>();
+  private readonly _sortedPanels = new Map<string, ISideBarPanel[]>();
   private readonly _sideBarChanging = new LiteEvent<void>();
   private readonly _sideBarChanged = new LiteEvent<void>();
   private _activity: string | null = null;
@@ -123,44 +124,17 @@ class SideBarService {
     const stateAware = new StateAwareObject<string>(ideStore, "machineType");
     stateAware.stateChanged.on((type: string) => {
       this._machineType = type;
+      this._sideBarChanging.fire();
       this.refreshCurrentPanels();
       this._sideBarChanged.fire();
     });
 
     activityService.activityChanged.on((activity) => {
-      // --- Save the state of the panels
-      const state: SideBarState = {};
-      let panels = this.getSideBarPanels();
-      for (let i = 0; i < panels.length; i++) {
-        const panel = panels[i];
-        state[`${this.activity}-${i}`] = panel.getPanelState() ?? {};
-      }
-      if (this.activity) {
-        const fullState = Object.assign({}, ideStore.getState().sideBar ?? {}, {
-          [this.activity]: state,
-        });
-        ideStore.dispatch(setSideBarStateAction(fullState));
-      }
-
-      // --- Invoke custom action
+      this.saveSideBarState();
       this._sideBarChanging.fire();
-
-      // --- Set the new activity
       this._activity = activity;
-
-      // --- Restore the panel state
       this.refreshCurrentPanels();
-      panels = this._currentPanels;
-      const sideBarState = (ideStore.getState().sideBar ?? {})[this.activity];
-      for (let i = 0; i < panels.length; i++) {
-        const panel = panels[i];
-        const panelState = sideBarState?.[`${this.activity}-${i}`];
-        if (panelState) {
-          panel.setPanelState(panelState);
-        }
-      }
-
-      // --- Invoke custom action
+      this.applySideBarState();
       this._sideBarChanged.fire();
     });
   }
@@ -169,7 +143,7 @@ class SideBarService {
    * Removes every registered panel
    */
   reset(): void {
-    this._panels.clear();
+    this._registeredPanels.clear();
   }
 
   /**
@@ -189,14 +163,14 @@ class SideBarService {
     panel: ISideBarPanel,
     machines?: string[]
   ): void {
-    let panelList = this._panels.get(activityPaneId);
+    let panelList = this._registeredPanels.get(activityPaneId);
     if (panelList) {
       panelList.push({
         panel,
         machines,
       });
     } else {
-      this._panels.set(activityPaneId, [{ panel, machines }]);
+      this._registeredPanels.set(activityPaneId, [{ panel, machines }]);
     }
   }
 
@@ -229,14 +203,114 @@ class SideBarService {
     return this._sideBarChanged;
   }
 
+  get sideBarKey(): string {
+    return this._activity && this._machineType
+      ? `${this._activity}-${this._machineType}`
+      : "";
+  }
+
+  /**
+   * Moves the specified panel up
+   * @param index Panel index
+   */
+  moveUp(index: number): void {
+    if (index === 0) {
+      return;
+    }
+
+    const panels = this._sortedPanels.get(this.sideBarKey);
+    if (!panels || index > panels.length - 1) {
+      return;
+    }
+
+    this._sideBarChanging.fire();
+    const tmp = panels[index - 1];
+    panels[index - 1] = panels[index];
+    panels[index] = tmp;
+
+    this._currentPanels = panels.slice(0);
+    this._sortedPanels.set(this.sideBarKey, this._currentPanels);
+    this.saveSideBarState();
+    this.refreshCurrentPanels();
+    this.applySideBarState();
+    this._sideBarChanged.fire();
+  }
+
+  /**
+   * Moves the specified panel up
+   * @param index Panel index
+   */
+  moveDown(index: number): void {
+    if (index < 0) {
+      return;
+    }
+
+    const panels = this.getSideBarPanels();
+    if (!panels || index > panels.length - 2) {
+      return;
+    }
+
+    this._sideBarChanging.fire();
+    const tmp = panels[index];
+    panels[index] = panels[index + 1];
+    panels[index + 1] = tmp;
+
+    this._currentPanels = panels.slice(0);
+    this._sortedPanels.set(this.sideBarKey, this._currentPanels);
+    this.saveSideBarState();
+    this.refreshCurrentPanels();
+    this.applySideBarState();
+    this._sideBarChanged.fire();
+}
+
   /**
    * Refreshes the list of panel on a change
    */
   private refreshCurrentPanels(): void {
-    const panelEntries = this._panels.get(this._activity) ?? [];
-    this._currentPanels = panelEntries
-      .filter((pe) => !pe.machines || pe.machines.includes(this._machineType))
-      .map((pe) => pe.panel);
+    if (!this._activity || !this._machineType) {
+      // --- No list of panels
+      this._currentPanels = [];
+      return;
+    }
+
+    // --- Is there a panel list for the current activity/machine type?
+    const key = this.sideBarKey;
+    this._currentPanels = this._sortedPanels.get(key);
+    if (!this._currentPanels) {
+      // --- No panel list for the current activity
+      const panelEntries = this._registeredPanels.get(this._activity) ?? [];
+      this._currentPanels = panelEntries
+        .filter((pe) => !pe.machines || pe.machines.includes(this._machineType))
+        .map((pe) => pe.panel);
+      this._sortedPanels.set(key, this._currentPanels);
+    }
+  }
+
+  private saveSideBarState(): void {
+    const state: SideBarState = {};
+    let panels = this.getSideBarPanels();
+    for (let i = 0; i < panels.length; i++) {
+      const panel = panels[i];
+      state[`${this.activity}-${i}`] = panel.getPanelState() ?? {};
+    }
+    if (this.activity) {
+      const fullState = Object.assign({}, ideStore.getState().sideBar ?? {}, {
+        [this.activity]: state,
+      });
+      ideStore.dispatch(setSideBarStateAction(fullState));
+    }
+  }
+
+  private applySideBarState(): void {
+    const panels = this._currentPanels;
+    const sideBarState = (ideStore.getState().sideBar ?? {})[this.activity];
+    for (let i = 0; i < panels.length; i++) {
+      const panel = panels[i];
+      const panelState = sideBarState?.[`${this.activity}-${i}`];
+      if (panelState) {
+        panel.setPanelState(panelState);
+      }
+    }
   }
 }
 
