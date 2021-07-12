@@ -23,7 +23,7 @@ import {
 import { toStyleString } from "./utils/css-utils";
 import ModalDialog from "../modals/ModalDialog";
 import { Z80RegistersPanelDescriptor } from "./debug-tools/Z80RegistersPanel";
-import { UlaInformationPanelDescriptor } from "./debug-tools/UlaInformationPanel";
+import { UlaInformationPanelDescriptor } from "../machines/spectrum/UlaInformationPanel";
 import { OtherHardwareInfoPanelDescriptor } from "./debug-tools/OherHwPanel";
 import { CallStackPanelDescriptor } from "./debug-tools/CallStackPanel";
 import { Z80DisassemblyPanelDescriptor } from "./debug-tools/DisassemblyPanel";
@@ -31,6 +31,7 @@ import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { IoLogsPanelDescription } from "./log-tools/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
+import { BlinkInformationPanelDescriptor } from "../machines/cz88/BlinkInformationPanel";
 
 /**
  * Represents the emulator app's root component
@@ -141,6 +142,11 @@ export default function IdeApp() {
       "debug-view",
       new UlaInformationPanelDescriptor(),
       ["sp48", "sp128"]
+    );
+    sideBarService.registerSideBarPanel(
+      "debug-view",
+      new BlinkInformationPanelDescriptor(),
+      ["cz88"]
     );
     sideBarService.registerSideBarPanel(
       "debug-view",

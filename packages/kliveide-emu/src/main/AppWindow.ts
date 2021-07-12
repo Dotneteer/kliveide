@@ -327,7 +327,7 @@ export class AppWindow implements IAppWindow {
    * @param message Message contents
    */
   postMessageToRenderer(message: RequestMessage): void {
-    if (this._window) {
+    if (this._window?.isDestroyed() === false) {
       this._window.webContents.send(MAIN_REQUEST_CHANNEL, message);
     }
   }

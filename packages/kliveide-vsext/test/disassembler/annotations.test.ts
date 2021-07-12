@@ -9,7 +9,8 @@ import {
   MemorySectionType,
 } from "../../src/disassembler/disassembly-helper";
 
-describe("Disassembler - annotations", () => {
+describe("Disassembler - annotations", function() {
+  this.timeout(10000);
   it("Construction works as expected", () => {
     // --- Act
     const dc = new DisassemblyAnnotation();

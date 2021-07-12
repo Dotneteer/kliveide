@@ -26,6 +26,7 @@ interface Props {
 export default function SideBarPanel(props: Props) {
   const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
   const [expanded, setExpanded] = useState(props.descriptor.expanded);
+  const [resizeCount, setResizeCount] = useState(0)
 
   useEffect(() => {
     // --- Get the initial width
@@ -86,6 +87,7 @@ export default function SideBarPanel(props: Props) {
         handleHeight
         onResize={(_width, height) => {
           props.descriptor.height = height;
+          setResizeCount(resizeCount + 1);
         }}
       />
     </div>

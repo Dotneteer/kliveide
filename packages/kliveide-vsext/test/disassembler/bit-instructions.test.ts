@@ -1,6 +1,8 @@
 import { Z80Tester } from "./z80-tester";
 
-describe("Disassembler - bit instructions", () => {
+describe("Disassembler - bit instructions", function () {
+  this.timeout(10000);
+
   it("Bit instructions 0x00-0x0F work as expected", async () => {
     // --- Act
     await Z80Tester.Test("rlc b", 0xcb, 0x00);

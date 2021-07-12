@@ -1,6 +1,8 @@
 import { Z80Tester } from "./z80-tester";
 
-describe("Disassembler - standard instructions", () => {
+describe("Disassembler - standard instructions", function () {
+  this.timeout(10000);
+
   it("Standard instructions 0x00-0x0F work as expected", async () => {
     // --- Act
     await Z80Tester.Test("nop", 0x00);
