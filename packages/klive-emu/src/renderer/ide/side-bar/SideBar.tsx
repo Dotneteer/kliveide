@@ -35,7 +35,7 @@ export default function SideBar() {
     // --- Mount
     sideBarService.sideBarChanged.on(panelsChanged);
     sideBarService.refreshSideBarPanels();
-  
+
     return () => {
       // --- Unmount
       sideBarService.sideBarChanged.off(panelsChanged);
@@ -47,22 +47,23 @@ export default function SideBar() {
   if (panels) {
     // --- Let's collect all side bar panels registered with the current activity
     // --- and calculate if they are sizable
-    let prevExpanded = false;
     for (let index = 0; index < panels.length; index++) {
       const descriptor = panels[index];
+      const expBefore = panels.filter((p, i) => i < index && p.expanded).length > 0
+      const expAfter = panels.filter((p, i) => i >= index && p.expanded).length > 0
       sideBarPanels.push(
         <SideBarPanel
-          key={`${activityName}-${index}`}
+          key={`${activityName}-${descriptor.title}`}
           index={index}
+          isLast={index === panels.length - 1}
           descriptor={descriptor}
-          sizeable={prevExpanded && descriptor.expanded}
+          sizeable={expBefore && expAfter}
           heightPercentage={descriptor.heightPercentage}
           visibilityChanged={() => setPanels(panels.slice(0))}
           startResize={startResize}
           resized={resizePanel}
         />
       );
-      prevExpanded = descriptor.expanded;
     }
   }
   return (

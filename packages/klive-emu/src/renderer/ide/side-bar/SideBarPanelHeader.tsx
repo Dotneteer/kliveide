@@ -15,6 +15,7 @@ interface Props {
   sizeable: boolean;
   index: number;
   clicked: () => void;
+  rightClicked?: (e: React.MouseEvent) => void;
   startResize: (index: number) => void;
   resized: (delta: number) => void;
 }
@@ -22,7 +23,16 @@ interface Props {
 /**
  * Represents the statusbar of the emulator
  */
-export default function SideBarPanelHeader(props: Props) {
+export default function SideBarPanelHeader({
+  title,
+  expanded,
+  sizeable,
+  index,
+  clicked,
+  rightClicked,
+  startResize,
+  resized,
+}: Props) {
   // --- Component state
   const [focused, setFocused] = useState(false);
   const [pointed, setPointed] = useState(false);
@@ -49,7 +59,7 @@ export default function SideBarPanelHeader(props: Props) {
   const context: DragContext = {
     gripPosition: 0,
     move: (e: MouseEvent) => move(e, context),
-    resized: (delta) => props.resized(delta),
+    resized: (delta) => resized(delta),
   };
 
   const gripElement: React.RefObject<HTMLDivElement> = React.createRef();
@@ -69,7 +79,7 @@ export default function SideBarPanelHeader(props: Props) {
           : "1px solid var(--panel-separator-border)",
       }}
     >
-      {props.sizeable && (
+      {sizeable && (
         // --- We use this element for resizing the panel
         <div
           style={gripStyle}
@@ -82,7 +92,7 @@ export default function SideBarPanelHeader(props: Props) {
           }}
           onMouseDown={(e) => {
             if (e.button === 0) {
-              startResize(e);
+              startResizing(e);
             }
           }}
           onMouseUp={() => {
@@ -90,16 +100,25 @@ export default function SideBarPanelHeader(props: Props) {
           }}
         />
       )}
-      <Caption onClick={() => props.clicked?.()}>
+      <Caption
+        onClick={(e) => {
+          if (e.button === 0) {
+            clicked?.();
+          }
+        }}
+        onMouseDown={(e) => {
+          if (e.button === 2) {
+            rightClicked?.(e);
+          }
+        }}
+      >
         <SvgIcon
           iconName="chevron-right"
           width={16}
           height={16}
-          rotate={props.expanded ? 90 : 0}
+          rotate={expanded ? 90 : 0}
         ></SvgIcon>
-        <Text>
-          {props.title.toUpperCase()}
-        </Text>
+        <Text>{title.toUpperCase()}</Text>
       </Caption>
     </Root>
   );
@@ -110,14 +129,14 @@ export default function SideBarPanelHeader(props: Props) {
    */
   function handleKeyPress(e: React.KeyboardEvent): void {
     if (e.code === "Enter" || e.code === "Space") {
-      props.clicked?.();
+      clicked?.();
     }
   }
 
   /**
    * Starts resizing this panel
    */
-  function startResize(e: React.MouseEvent): void {
+  function startResizing(e: React.MouseEvent): void {
     setResizing(true);
     context.gripPosition = e.clientY;
     window.addEventListener("mouseup", endResize);
@@ -126,7 +145,7 @@ export default function SideBarPanelHeader(props: Props) {
     window.addEventListener("mousemove", context.move);
     window.addEventListener("touchmove", context.move);
     document.body.style.cursor = "ns-resize";
-    props.startResize(props.index);
+    startResize(index);
   }
 
   /**
