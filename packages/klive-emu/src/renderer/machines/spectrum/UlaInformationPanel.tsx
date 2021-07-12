@@ -1,9 +1,16 @@
 import * as React from "react";
-import { SpectrumMachineStateBase } from "../../machines/spectrum/ZxSpectrumCoreBase";
-import { engineProxy } from "../engine-proxy";
-import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
-import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
-import { labelStyle, valueItemStyle, valueStyle } from "../utils/content-utils";
+import { SpectrumMachineStateBase } from "./ZxSpectrumCoreBase";
+import { engineProxy } from "../../ide/engine-proxy";
+import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
+import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
+import {
+  labelStyle,
+  separatorLine,
+  valueItemStyle,
+  valueStyle,
+} from "../../ide/utils/content-utils";
+import { CSSProperties } from "react";
+import { SvgIcon } from "../../common/SvgIcon";
 
 const TITLE = "ULA Information";
 const BORDER_NAMES = [
@@ -39,6 +46,50 @@ function stateRow(name: string, value: string | number) {
     <div style={valueItemStyle}>
       <div style={labelStyle(92)}>{name}</div>
       <div style={valueStyle(16)}>{value}</div>
+    </div>
+  );
+}
+
+/**
+ * Displays the content of a keyboard line
+ * @param line Line number
+ * @param value Line value
+ */
+function kbLine(line: number, title: string, value: number) {
+  const flagValueStyle: CSSProperties = {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: 16,
+    width: 16,
+  };
+
+  function kbFlag(pos: number) {
+    return (
+      <div style={flagValueStyle} title={`line ${line}/bit ${pos}`}>
+        <SvgIcon
+          iconName={
+            (value >> pos) & 0x01
+              ? "circle-large-outline"
+              : "circle-large-filled"
+          }
+          width={10}
+          height={10}
+          fill="--hilited-color"
+        />
+      </div>
+    );
+  }
+  return (
+    <div style={valueItemStyle}>
+      <div style={labelStyle(92)} title={`Keyboard line ${line}`}>
+        {title}
+      </div>
+      {kbFlag(4)}
+      {kbFlag(3)}
+      {kbFlag(2)}
+      {kbFlag(1)}
+      {kbFlag(0)}
     </div>
   );
 }
@@ -92,60 +143,15 @@ export default class UlaInformationPanel extends SideBarPanelBase<
           "EAR bit",
           state ? (state.beeperLastEarBit ? "1" : "0") : "n/a"
         )}
-        {stateRow(
-          "KB: (CS ... V)",
-          state
-            ? ((0xff ^ state.keyboardLines[0]) & 0x1f)
-                .toString(2)
-                .padStart(5, "0")
-            : "n/a"
-        )}
-        {stateRow(
-          "KB: (B ... Spc)",
-          state
-            ? ((0xff ^ state.keyboardLines[1]) & 0x1f)
-                .toString(2)
-                .padStart(5, "0")
-            : "n/a"
-        )}
-        {stateRow(
-          "KB: (A ... G)",
-          state
-            ? ((0xff ^ state.keyboardLines[2]) & 0x1f)
-                .toString(2)
-                .padStart(5, "0")
-            : "n/a"
-        )}
-        {stateRow(
-          "KB: (H ... Ent)",
-          state
-            ? ((0xff ^ state.keyboardLines[3]) & 0x1f).toString(2).padStart(5, "0")
-            : "n/a"
-        )}
-        {stateRow(
-          "KB: (Q ... T)",
-          state
-            ? ((0xff ^ state.keyboardLines[4]) & 0x1f).toString(2).padStart(5, "0")
-            : "n/a"
-        )}
-        {stateRow(
-          "KB: (Y ... P)",
-          state
-            ? ((0xff ^ state.keyboardLines[5]) & 0x1f).toString(2).padStart(5, "0")
-            : "n/a"
-        )}
-        {stateRow(
-          "KB: (1 ... 5)",
-          state
-            ? ((0xff ^ state.keyboardLines[6]) & 0x1f).toString(2).padStart(5, "0")
-            : "n/a"
-        )}
-        {stateRow(
-          "KB: (6 ... 0)",
-          state
-            ? ((0xff ^ state.keyboardLines[7]) & 0x1f).toString(2).padStart(5, "0")
-            : "n/a"
-        )}
+        {separatorLine()}
+        {kbLine(0, "KB: (CS ... V)", state?.keyboardLines[0] ?? 0)}
+        {kbLine(1, "KB: (A ... G)", state?.keyboardLines[1] ?? 0)}
+        {kbLine(2, "KB: (Q ... T)", state?.keyboardLines[2] ?? 0)}
+        {kbLine(3, "KB: (1 ... 5)", state?.keyboardLines[3] ?? 0)}
+        {kbLine(4, "KB: (6 ... 0)", state?.keyboardLines[4] ?? 0)}
+        {kbLine(5, "KB: (Y ... P)", state?.keyboardLines[5] ?? 0)}
+        {kbLine(6, "KB: (H ... Ent)", state?.keyboardLines[6] ?? 0)}
+        {kbLine(7, "KB: (B ... Spc)", state?.keyboardLines[7] ?? 0)}
       </>
     );
   }

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { CSSProperties } from "react";
 
 /**
@@ -43,4 +44,12 @@ export function valueStyle(width: number): CSSProperties {
     width,
     color: "var(--hilited-color)",
   };
+}
+
+/**
+ * Inserts a separator line
+ * @param height Separator line height
+ */
+export function separatorLine(height = 4): React.ReactNode {
+  return <div style={{ height }}></div>;
 }
