@@ -8,7 +8,9 @@ import {
 } from "../../src/disassembler/disassembly-helper";
 import { Z80Disassembler } from "../../src/disassembler/z80-disassembler";
 
-describe("Disassembler - ZX Spectrum-specific", () => {
+describe("Disassembler - ZX Spectrum-specific", function () {
+  this.timeout(10000);
+
   it("RST #08 work as expected", async () => {
     // --- Act
     await Z80Tester.TestZx(
