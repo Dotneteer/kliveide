@@ -74,6 +74,33 @@ export default function SideBar() {
   );
 
   /**
+   * Gets the index of the previous expanded panel
+   * @param index Current index
+   */
+  function getAboveExpandedIndex(index: number): number {
+    let prevIndex = -1;
+    for (let i = 0; i < index; i++) {
+      if (i < index && i > prevIndex && panels[i].expanded) {
+        prevIndex = i;
+      }
+    }
+    return prevIndex;
+  }
+
+  /**
+   * Gets the index of the next expanded panel
+   * @param index Current index
+   */
+   function getSizedExpandedIndex(index: number): number {
+    for (let i = index; i < panels.length; i++) {
+      if (panels[i].expanded) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
    * Starts dragging the side bar panel with the specified index
    * @param index
    */
@@ -81,10 +108,16 @@ export default function SideBar() {
     if (index <= 0) return;
 
     sizingIndex.current = index;
-    sizedPanelHeight.current = panels[index].height;
-    abovePanelHeight.current = panels[index - 1].height;
+    const sizedIndex = getSizedExpandedIndex(index);
+    const aboveIndex = getAboveExpandedIndex(index);
+    if (sizedIndex < 0 || aboveIndex < 0) {
+      return;
+    }
+
+    sizedPanelHeight.current = panels[sizedIndex].height;
+    abovePanelHeight.current = panels[aboveIndex].height;
     panelPercentage.current =
-      panels[index].heightPercentage + panels[index - 1].heightPercentage;
+      panels[sizedIndex].heightPercentage + panels[aboveIndex].heightPercentage;
   }
 
   /**
@@ -96,23 +129,29 @@ export default function SideBar() {
     const index = sizingIndex.current;
     if (index <= 0 || !panels[index]) return;
 
-    const height = panels[index].height;
-    const prevHeight = panels[index - 1].height;
-    let newHeight = sizedPanelHeight.current - delta;
-    let newPrevHeight = abovePanelHeight.current + delta;
-    if (newHeight < MIN_PANEL_HEIGHT) {
-      newHeight = MIN_PANEL_HEIGHT;
-      newPrevHeight = prevHeight + (height - newHeight);
+    const sizedIndex = getSizedExpandedIndex(index);
+    const aboveIndex = getAboveExpandedIndex(index);
+    if (sizedIndex < 0 || aboveIndex < 0) {
+      return;
     }
-    if (newPrevHeight < MIN_PANEL_HEIGHT) {
-      newPrevHeight = MIN_PANEL_HEIGHT;
-      newHeight = height + (prevHeight - newPrevHeight);
+
+    const sizedHeight = panels[sizedIndex].height;
+    const aboveHeight = panels[aboveIndex].height;
+    let newSizedHeight = sizedPanelHeight.current - delta;
+    let newAboveHeight = abovePanelHeight.current + delta;
+    if (newSizedHeight < MIN_PANEL_HEIGHT) {
+      newSizedHeight = MIN_PANEL_HEIGHT;
+      newAboveHeight = aboveHeight + (sizedHeight - newSizedHeight);
     }
-    const sumHeight = newHeight + newPrevHeight;
+    if (newAboveHeight < MIN_PANEL_HEIGHT) {
+      newAboveHeight = MIN_PANEL_HEIGHT;
+      newSizedHeight = sizedHeight + (aboveHeight - newAboveHeight);
+    }
+    const sumHeight = newSizedHeight + newAboveHeight;
     const abovePercentage =
-      (newPrevHeight / sumHeight) * panelPercentage.current;
-    panels[index - 1].heightPercentage = abovePercentage;
-    panels[index].heightPercentage = panelPercentage.current - abovePercentage;
+      (newAboveHeight / sumHeight) * panelPercentage.current;
+    panels[aboveIndex].heightPercentage = abovePercentage;
+    panels[sizedIndex].heightPercentage = panelPercentage.current - abovePercentage;
     setPanels(panels.slice(0));
   }
 }
