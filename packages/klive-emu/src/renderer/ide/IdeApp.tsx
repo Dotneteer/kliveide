@@ -32,6 +32,11 @@ import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel"
 import { IoLogsPanelDescription } from "./log-tools/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 import { BlinkInformationPanelDescriptor } from "../machines/cz88/BlinkInformationPanel";
+import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
+import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
+import { outputPaneService } from "./tool-area/OutputPaneService";
+import { VmOutputPanelDescriptor } from "../machines/VmOutputPane";
+import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
 
 /**
  * Represents the emulator app's root component
@@ -197,12 +202,11 @@ export default function IdeApp() {
     );
 
     // --- Register sample tools
-    toolAreaService.registerTool(
-      new SampleToolPanelDescriptor("1", "Interactive", "red")
-    );
-    toolAreaService.registerTool(
-      new SampleToolPanelDescriptor("2", "Output", "green")
-    );
+    toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
+    toolAreaService.registerTool(new OutputToolPanelDescriptor());
+    outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
+    outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
+
     ideStore.dispatch(changeActivityAction(0));
 
     return () => {
