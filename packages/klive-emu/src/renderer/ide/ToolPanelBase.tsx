@@ -28,7 +28,7 @@ export class ToolPanelBase<
         <ScrollablePanel
           scrollBarSize={8}
         >
-          <div style={scrollableContentType}>{this.renderContent()}</div>
+          <div style={scrollableContentType()}>{this.renderContent()}</div>
         </ScrollablePanel>
       </div>
     );

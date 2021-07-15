@@ -80,6 +80,7 @@ main,
 @import "../node_modules/@syncfusion/ej2-navigations/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-react-dropdowns/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-react-popups/styles/bootstrap-dark.css";
+
 // ============================================================================
 // CSS overrides for SyncFusion controls
 
@@ -407,6 +408,27 @@ input.e-input.e-control.e-dropdownlist,
 .e-dlg-overlay {
   opacity: 0.6;
 }
+
+// ----------------------------------------------------------------------------
+// Virtualized list overrides
+// .e-listview:not(.e-list-template) .e-list-item {
+//   height: auto;
+//   line-height: normal;
+//   padding: 0;
+// }
+
+// .e-listview .e-list-item {
+//   background: transparent;
+//   border: none;
+// }
+
+// .e-listview .e-list-item.e-hover {
+//   background: transparent;
+// }
+
+// .e-listview .e-list-item.e-active {
+//   background: transparent;
+// }
 
 // ============================================================================
 // CSS classes for IDE controls

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
-import ScrollablePanel from "../common/ScrollablePanel";
+import ScrollablePanel, { ScrollablePanelApi } from "../common/ScrollablePanel";
+import { themeService } from "../themes/theme-service";
 import { engineProxy, RunEventArgs } from "./engine-proxy";
 import { ISideBarPanel } from "./side-bar/SideBarService";
 import { scrollableContentType } from "./utils/content-utils";
@@ -16,9 +17,13 @@ export class SideBarPanelBase<
 > extends React.Component<SideBarProps<P>, S> {
   private _isSizing = false;
   private _eventCount = 0;
+  private _scrollablePanelApi: ScrollablePanelApi;
 
   // --- Override the title in other panels
   title = "(Panel)";
+
+  // --- Override this property to set with item width in the scrollable panel
+  width: string | number = "fit-content";
 
   // --- Listen to run events
   componentDidMount(): void {
@@ -28,6 +33,10 @@ export class SideBarPanelBase<
   // --- Stop listening to run events
   componentWillUnmount(): void {
     engineProxy.runEvent.off(this.runEvent);
+  }
+
+  get api(): ScrollablePanelApi {
+    return this._scrollablePanelApi;
   }
 
   renderContent(): React.ReactNode {
@@ -41,8 +50,11 @@ export class SideBarPanelBase<
         <ScrollablePanel
           scrollBarSize={8}
           sizing={(isSizing) => (this._isSizing = isSizing)}
+          checkin={(api) => (this._scrollablePanelApi = api)}
         >
-          <div style={scrollableContentType}>{this.renderContent()}</div>
+          <div style={scrollableContentType(this.width)}>
+            {this.renderContent()}
+          </div>
         </ScrollablePanel>
       </div>
     );

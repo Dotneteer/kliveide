@@ -4,11 +4,17 @@ import { CSSProperties } from "react";
 /**
  * Use this style within a scrollable panel
  */
-export const scrollableContentType: CSSProperties = {
-  width: "fit-content",
-  height: "fit-content",
-  paddingBottom: 4,
-};
+export function scrollableContentType(
+  width: number | string = "fit-content",
+  height: number | string = "fit-content"
+): CSSProperties {
+  return {
+    width,
+    height,
+    paddingBottom: 4,
+    flexGrow: 0,
+  };
+}
 
 /**
  * The style of the root <div> of a panel
