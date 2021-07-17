@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties, useEffect } from "react";
 import { useState } from "react";
 import ReactResizeDetector from "react-resize-detector";
-import FloatingScrollbar from "./FloatingScrollbar";
+import FloatingScrollbarOld, { ScrollBarApi } from "./FloatingScrollbar";
 import { animationTick } from "./utils";
 
 type ItemRenderer = (index: number, style: CSSProperties) => JSX.Element;
@@ -29,7 +29,8 @@ export default function VirtualizedList({
   const [pointed, setPointed] = useState(false);
 
   const divHost = React.createRef<HTMLDivElement>();
-
+  let mouseLeft = false;
+  let isSizing = false;
   const innerHeight = numItems * itemHeight;
 
   const resize = () => {
@@ -71,9 +72,24 @@ export default function VirtualizedList({
     }
   });
 
+  let verticalApi: ScrollBarApi | null = null;
+
   return (
     <>
-      <div ref={divHost} className="scroll" style={{ overflowY: "hidden" }}>
+      <div
+        ref={divHost}
+        className="scroll"
+        style={{ overflowY: "hidden" }}
+        onMouseEnter={() => {
+          setPointed(true);
+          mouseLeft = false;
+        }}
+        onMouseLeave={() => {
+          setPointed(isSizing);
+          mouseLeft = true;
+        }}
+        // onWheel={(e) => verticalMoveApi?.(e.deltaY / 4)}
+      >
         <div
           className="inner"
           style={{
@@ -93,19 +109,26 @@ export default function VirtualizedList({
           }}
         />
       </div>
-      <FloatingScrollbar
+      <FloatingScrollbarOld
         direction="vertical"
         barSize={8}
-        hostTop={top}
-        hostLeft={left}
-        hostSize={height}
-        hostCrossSize={width}
-        hostScrollSize={scrollHeight}
-        hostScrollPos={0}
-        forceShow={true}
+        // hostTop={top}
+        // hostLeft={left}
+        // hostSize={height}
+        // hostCrossSize={width}
+        // hostScrollSize={scrollHeight}
+        // hostScrollPos={0}
+        forceShow={pointed}
+        registerApi={(api) => (verticalApi = api)}
         moved={(delta) => {
           setScrollTop(delta);
           renderItems(delta);
+        }}
+        sizing={(nowSizing) => {
+          isSizing = nowSizing;
+          if (!nowSizing && mouseLeft) {
+            setPointed(false);
+          }
         }}
       />
     </>
