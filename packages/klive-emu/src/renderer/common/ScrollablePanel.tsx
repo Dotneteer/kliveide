@@ -75,7 +75,6 @@ export default function ScrollablePanel({
       }}
       onKeyDown={(e) => {
         if (e.key === "Home") {
-          console.log("Home!");
           divHost.current.scrollTop = 0;
         }
       }}
@@ -121,14 +120,6 @@ export default function ScrollablePanel({
           }}
         />
       )}
-      {/* <ReactResizeDetector
-        targetRef={divHost}
-        handleWidth
-        handleHeight
-        onResize={() => {
-          // resize();
-        }}
-      /> */}
     </div>
   );
 
