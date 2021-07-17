@@ -15,7 +15,7 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
 
   title = TITLE;
 
-  width = "100%";
+  width="fit-content";
 
   constructor(props: SideBarProps<{}>) {
     super(props);

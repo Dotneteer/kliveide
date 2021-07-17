@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { CSSProperties, ReactNode } from "react";
 import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
+import { handleScrollKeys } from "./utils";
 
 type PanelProps = {
   showVerticalScrollbar?: boolean;
@@ -10,6 +11,7 @@ type PanelProps = {
   scrollBarSize?: number;
   background?: string;
   focusable?: boolean;
+  scrollItemHeight?: number;
   sizing?: (isSizing: boolean) => void;
 } & { children?: ReactNode };
 
@@ -23,6 +25,7 @@ export default function ScrollablePanel({
   scrollBarSize = 4,
   background = "var(--shell-canvas-background-color)",
   focusable = true,
+  scrollItemHeight = 20,
   sizing,
 }: PanelProps) {
   const mounted = useRef(false);
@@ -74,9 +77,7 @@ export default function ScrollablePanel({
         divHost.current.scrollTop += e.deltaY / 4;
       }}
       onKeyDown={(e) => {
-        if (e.key === "Home") {
-          divHost.current.scrollTop = 0;
-        }
+        handleScrollKeys(divHost.current, e.key, e.ctrlKey, scrollItemHeight);
       }}
     >
       {children}
@@ -123,6 +124,9 @@ export default function ScrollablePanel({
     </div>
   );
 
+  /**
+   * Updates scrollbars according to the panel's dimension changes
+   */
   function updateDimensions(): void {
     verticalApi.current?.signHostDimension({
       hostLeft: divHost.current.offsetLeft,

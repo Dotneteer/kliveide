@@ -56,12 +56,13 @@ type State = {
   handleWidth: number;
   handleHeight: number;
   show: boolean;
+  pointed: boolean;
   dragging: boolean;
 };
 
 /**
  * This control represents a scrollbar that is visible when the scroll container has the focus.
- * 
+ *
  * Initially, the scrollbar is invisible. When its parent container passes the parent
  * dimensions through the ScrollbarApi, the control creates a handle that represents the
  * current position of the scrollbar
@@ -77,7 +78,7 @@ export default class FloatingScrollbar
   private _dims: ScrollBarData;
 
   /**
-   * 
+   *
    * @param props Component properties
    */
   constructor(props: Props) {
@@ -92,6 +93,7 @@ export default class FloatingScrollbar
       handleWidth: 0,
       handleHeight: 0,
       show: false,
+      pointed: false,
       dragging: false,
     };
     this._move = this.move.bind(this);
@@ -106,7 +108,7 @@ export default class FloatingScrollbar
   }
 
   /**
-   * The parent calls this method whenewer its dimensions or the scrollbar's 
+   * The parent calls this method whenewer its dimensions or the scrollbar's
    * position changes.
    * @param dims New host/scrollbar dimensions
    */
@@ -171,14 +173,22 @@ export default class FloatingScrollbar
       width: this.state.handleWidth,
       height: this.state.handleHeight,
       background: "var(--scrollbar-background-color)",
-      opacity: this.state.dragging ? 1.0 : this.props.forceShow ? 0.8 : 0.0,
+      opacity: this.state.dragging
+        ? 1.0
+        : this.state.pointed || this.props.forceShow
+        ? 0.8
+        : 0.0,
       transitionProperty: "opacity",
       transitionDuration: this.state.dragging ? "0s" : "0.5s",
       transitionDelay: this.state.dragging ? "0s" : "0.25s",
     };
 
     return (
-      <div style={barStyle}>
+      <div
+        style={barStyle}
+        onMouseEnter={() => this.setState({ pointed: true })}
+        onMouseLeave={() => this.setState({ pointed: false })}
+      >
         <div
           style={handleStyle}
           onMouseDown={(ev) => {
