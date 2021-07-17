@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties, useEffect } from "react";
 import { useState } from "react";
 import ReactResizeDetector from "react-resize-detector";
-import FloatingScrollbarOld, { ScrollBarApi } from "./FloatingScrollbar";
+import FloatingScrollbarOld, { ScrollbarApi } from "./FloatingScrollbar";
 import { animationTick } from "./utils";
 
 type ItemRenderer = (index: number, style: CSSProperties) => JSX.Element;
@@ -72,7 +72,7 @@ export default function VirtualizedList({
     }
   });
 
-  let verticalApi: ScrollBarApi | null = null;
+  let verticalApi: ScrollbarApi | null = null;
 
   return (
     <>

@@ -97,10 +97,12 @@ main,
   border: transparent;
 }
 
+.e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar,
 .e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar::after {
   cursor: ew-resize;
 }
 
+.e-splitter .e-split-bar.e-split-bar-vertical.e-resizable-split-bar,
 .e-splitter .e-split-bar.e-split-bar-vertical.e-resizable-split-bar::after {
   cursor: ns-resize;
 }
@@ -138,7 +140,7 @@ main,
 }
 
 .e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar::after {
-  width: 6px
+  width: 6px;
 }
 
 // ----------------------------------------------------------------------------

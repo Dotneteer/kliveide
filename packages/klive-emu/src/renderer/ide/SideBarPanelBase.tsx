@@ -42,7 +42,7 @@ export class SideBarPanelBase<
     return (
       <div style={placeholderStyle}>
         <ScrollablePanel
-          scrollBarSize={8}
+          scrollBarSize={10}
           sizing={(isSizing) => (this._isSizing = isSizing)}
         >
           <div style={scrollableContentType(this.width)}>

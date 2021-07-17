@@ -2,7 +2,7 @@ import * as React from "react";
 import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { CSSProperties, ReactNode } from "react";
-import FloatingScrollbar, { ScrollBarApi } from "./FloatingScrollbar";
+import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
 
 type PanelProps = {
   showVerticalScrollbar?: boolean;
@@ -26,8 +26,8 @@ export default function ScrollablePanel({
   sizing,
 }: PanelProps) {
   const mounted = useRef(false);
-  const verticalApi = useRef<ScrollBarApi>();
-  const horizontalApi = useRef<ScrollBarApi>();
+  const verticalApi = useRef<ScrollbarApi>();
+  const horizontalApi = useRef<ScrollbarApi>();
 
   const [pointed, setPointed] = useState(false);
 

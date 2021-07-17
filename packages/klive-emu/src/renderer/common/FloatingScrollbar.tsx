@@ -1,9 +1,15 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 
+/**
+ * The minimum size of the scrollbar's handle
+ */
 const MIN_HANDLE_SIZE = 20;
 
-type Orientation = "vertical" | "horizontal";
+/**
+ * The orientation of the scrollbar element
+ */
+export type ElementOrientation = "vertical" | "horizontal";
 
 /**
  * Represents the data of the scrollbar
@@ -18,19 +24,28 @@ export type ScrollBarData = {
   hostScrollPos: number;
 };
 
-export type ScrollBarApi = {
+/**
+ * Represents the API of the scrollbar
+ */
+export type ScrollbarApi = {
   signHostDimension: (dims: ScrollBarData) => void;
 };
 
+/**
+ * Scrollbar properties
+ */
 type Props = {
-  direction: Orientation;
+  direction: ElementOrientation;
   barSize: number;
   forceShow: boolean;
-  registerApi: (api: ScrollBarApi) => void;
+  registerApi: (api: ScrollbarApi) => void;
   sizing?: (isSizing: boolean) => void;
   moved?: (newPosition: number) => void;
 };
 
+/**
+ * Scrollbar state
+ */
 type State = {
   barTop: number;
   barLeft: number;
@@ -44,9 +59,16 @@ type State = {
   dragging: boolean;
 };
 
+/**
+ * This control represents a scrollbar that is visible when the scroll container has the focus.
+ * 
+ * Initially, the scrollbar is invisible. When its parent container passes the parent
+ * dimensions through the ScrollbarApi, the control creates a handle that represents the
+ * current position of the scrollbar
+ */
 export default class FloatingScrollbar
   extends React.Component<Props, State>
-  implements ScrollBarApi
+  implements ScrollbarApi
 {
   private _gripPosition: number;
   private _startPosition: number;
@@ -54,6 +76,10 @@ export default class FloatingScrollbar
   private _endResize: Function;
   private _dims: ScrollBarData;
 
+  /**
+   * 
+   * @param props Component properties
+   */
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -72,10 +98,18 @@ export default class FloatingScrollbar
     this._endResize = this.endResize.bind(this);
   }
 
+  /**
+   * Allow the parent component to call the scrollbar's API
+   */
   componentDidMount() {
     this.props.registerApi(this);
   }
 
+  /**
+   * The parent calls this method whenewer its dimensions or the scrollbar's 
+   * position changes.
+   * @param dims New host/scrollbar dimensions
+   */
   signHostDimension(dims: ScrollBarData) {
     this._dims = dims;
 
