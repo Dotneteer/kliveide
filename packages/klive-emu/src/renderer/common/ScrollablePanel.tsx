@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { CSSProperties, ReactNode } from "react";
 import ReactResizeDetector from "react-resize-detector";
@@ -26,6 +26,8 @@ export default function ScrollablePanel({
   sizing,
   checkin,
 }: PanelProps) {
+  const mounted = useRef(false);
+
   const [left, setLeft] = useState(0);
   const [top, setTop] = useState(0);
   const [width, setWidth] = useState(0);
@@ -74,7 +76,11 @@ export default function ScrollablePanel({
   });
 
   useEffect(() => {
-    resize();
+    if (mounted.current) {
+      resize();
+    } else {
+      mounted.current = true;
+    }
   });
 
   let verticalMoveApi: ((delta: number) => void) | null = null;

@@ -1,6 +1,8 @@
 import * as React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { CSSProperties } from "react";
+
+const MIN_HANDLE_SIZE = 20;
 
 export default function FloatingScrollbar({
   direction,
@@ -16,12 +18,34 @@ export default function FloatingScrollbar({
   sizing,
   moved,
 }: ScrollBarProps) {
+   const adjusting = useRef(false);
+
+
+  // --- We need a context that uses "this" function when handles the `move`
+  // --- function to respond to document events
+  const context: DragContext = {
+    gripPosition: 0,
+    move: (e: MouseEvent) => move(e, context),
+    resized: (newPosition, newHandlePosition) => {
+      moved?.(newPosition);
+      setHandlePos(newHandlePosition);
+    },
+    endDragging: () => {
+      setDragging(false);
+      sizing?.(false);
+    },
+  };
+
   const show = hostScrollSize > hostSize;
   const handleSize =
-    show && hostScrollSize > 0 ? (hostSize * hostSize) / hostScrollSize : 0;
+    show &&
+    Math.max(
+      hostScrollSize > 0 ? (hostSize * hostSize) / hostScrollSize : 0,
+      MIN_HANDLE_SIZE
+    );
   var initialPos =
     show && hostScrollSize > 0
-      ? (hostScrollPos * hostSize) / hostScrollSize
+      ? (hostScrollPos * hostSize) / (hostScrollSize - hostSize)
       : 0;
   if (initialPos + handleSize > hostSize) {
     initialPos = hostSize - handleSize;
@@ -43,10 +67,25 @@ export default function FloatingScrollbar({
     background: "transparent",
   };
 
+  let currentPos = handlePos;
+  if (currentPos + handleSize > hostSize) {
+    currentPos = hostSize - handleSize;
+  }
+
+  // var newScrollPosition =
+  //   (currentPos * (hostScrollSize - hostSize)) / (hostSize - handleSize);
+  // if (!adjusting.current) {
+  //   adjusting.current = true;
+  //   setTimeout(() => {
+  //     context.resized(newScrollPosition, currentPos);
+  //     adjusting.current = false;
+  //   }, 10)
+  // }
+
   const handleStyle: CSSProperties = {
     position: "absolute",
-    top: direction === "horizontal" ? undefined : handlePos,
-    left: direction === "vertical" ? undefined : handlePos,
+    top: direction === "horizontal" ? undefined : currentPos,
+    left: direction === "vertical" ? undefined : currentPos,
     width: direction === "horizontal" ? handleSize : barSize,
     height: direction === "vertical" ? handleSize : barSize,
     background: "var(--scrollbar-background-color)",
@@ -54,21 +93,6 @@ export default function FloatingScrollbar({
     transitionProperty: "opacity",
     transitionDuration: dragging ? "0s" : "0.5s",
     transitionDelay: dragging ? "0s" : "0.25s",
-  };
-
-  // --- We need a context that uses "this" function when handles the `move`
-  // --- function to respond to document events
-  const context: DragContext = {
-    gripPosition: 0,
-    move: (e: MouseEvent) => move(e, context),
-    resized: (newPosition, newHandlePosition) => {
-      moved?.(newPosition);
-      setHandlePos(newHandlePosition);
-    },
-    endDragging: () => {
-      setDragging(false);
-      sizing?.(false);
-    },
   };
 
   registerApi?.((delta) => moveDelta(delta, context));
@@ -116,7 +140,8 @@ export default function FloatingScrollbar({
     const maxPosition = hostSize - handleSize;
     var newPosition = Math.max(0, handlePos + delta);
     newPosition = Math.min(newPosition, maxPosition);
-    var newScrollPosition = (newPosition * hostScrollSize) / hostSize;
+    var newScrollPosition =
+      (newPosition * (hostScrollSize - hostSize)) / maxPosition;
     context.resized(newScrollPosition, newPosition);
   }
 
