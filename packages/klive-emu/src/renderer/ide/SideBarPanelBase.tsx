@@ -5,7 +5,7 @@ import { engineProxy, RunEventArgs } from "./engine-proxy";
 import { ISideBarPanel } from "./side-bar/SideBarService";
 import { scrollableContentType } from "./utils/content-utils";
 
-export type SideBarProps<P> = { descriptor: ISideBarPanel };
+export type SideBarProps<P> = P & { descriptor: ISideBarPanel };
 
 /**
  * Base class for side bar panel implementations

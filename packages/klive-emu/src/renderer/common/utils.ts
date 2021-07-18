@@ -33,26 +33,33 @@ export function handleScrollKeys(
   element: HTMLElement,
   key: string,
   ctrlKey: boolean,
-  itemHeight = 20
+  itemHeight = 20,
+  integralHeight = false
 ): void {
   switch (key) {
     case "Home":
-      element.scrollTop = 0;
+      setPos(0);
       break;
     case "ArrowDown":
-      element.scrollTop += itemHeight;
+      setPos(element.scrollTop + itemHeight);
       break;
     case "ArrowUp":
-      element.scrollTop -= itemHeight;
+      setPos(element.scrollTop - itemHeight);
       break;
     case "PageDown":
-      element.scrollTop += element.offsetHeight * (ctrlKey ? 5 : 1);
+      setPos(element.scrollTop + element.offsetHeight * (ctrlKey ? 5 : 1));
       break;
     case "PageUp":
-      element.scrollTop -= element.offsetHeight * (ctrlKey ? 5 : 1);
+      setPos(element.scrollTop - element.offsetHeight * (ctrlKey ? 5 : 1));
       break;
     case "End":
-      element.scrollTop = element.scrollHeight;
+      setPos(element.scrollTop = element.scrollHeight);
       break;
+  }
+
+  function setPos(position: number): void {
+    element.scrollTop = integralHeight
+      ? Math.round(position / itemHeight) * itemHeight
+      : position;
   }
 }

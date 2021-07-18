@@ -1,21 +1,29 @@
 import * as React from "react";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
-import VirtualizedList from "../../common/VirtualizedList";
+import VirtualizedList, {
+  VirtualizedListApi,
+} from "../../common/VirtualizedList";
 import { CSSProperties } from "styled-components";
 const TITLE = "Z80 Disassembly";
+
+type State = {
+  itemCount: number;
+};
 
 /**
  * Z80 disassembly panel
  */
 export default class Z80DisassemblyPanel extends SideBarPanelBase<
-  SideBarProps<{}>
+  SideBarProps<{}>,
+  State
 > {
-  private _data: { text: string; id: string;}[] = [];
+  private _data: { text: string; id: string }[] = [];
+  private _listApi: VirtualizedListApi;
 
   title = TITLE;
 
-  width="fit-content";
+  width = "fit-content";
 
   constructor(props: SideBarProps<{}>) {
     super(props);
@@ -25,13 +33,36 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
         id: i.toString(),
       });
     }
+    this.state = {
+      itemCount: this._data.length,
+    };
   }
 
   render() {
     return (
-      <VirtualizedList itemHeight={18} numItems={this._data.length} renderItem={(index: number, style: CSSProperties) => {
-        return <div key={index} style={style}>{this._data[index].text}</div>
-      }} />
+      <VirtualizedList
+        itemHeight={18}
+        numItems={this.state.itemCount}
+        renderItem={(index: number, style: CSSProperties) => {
+          return (
+            <div
+              key={index}
+              style={style}
+              onClick={() => {
+                this._data.push({
+                  text: `Item # ${this._data.length}`,
+                  id: this._data.length.toString(),
+                });
+                this.setState({ itemCount: this._data.length });
+                this._listApi?.scrollToEnd();
+              }}
+            >
+              {this._data[index].text}
+            </div>
+          );
+        }}
+        registerApi={(api) => (this._listApi = api)}
+      />
     );
   }
 }

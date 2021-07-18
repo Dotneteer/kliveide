@@ -58,6 +58,7 @@ type State = {
   show: boolean;
   pointed: boolean;
   dragging: boolean;
+  refreshCount: number;
 };
 
 /**
@@ -95,6 +96,7 @@ export default class FloatingScrollbar
       show: false,
       pointed: false,
       dragging: false,
+      refreshCount: 0,
     };
     this._move = this.move.bind(this);
     this._endResize = this.endResize.bind(this);
