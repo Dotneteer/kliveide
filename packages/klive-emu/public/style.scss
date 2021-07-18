@@ -80,6 +80,7 @@ main,
 @import "../node_modules/@syncfusion/ej2-navigations/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-react-dropdowns/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-react-popups/styles/bootstrap-dark.css";
+
 // ============================================================================
 // CSS overrides for SyncFusion controls
 
@@ -96,10 +97,12 @@ main,
   border: transparent;
 }
 
+.e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar,
 .e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar::after {
   cursor: ew-resize;
 }
 
+.e-splitter .e-split-bar.e-split-bar-vertical.e-resizable-split-bar,
 .e-splitter .e-split-bar.e-split-bar-vertical.e-resizable-split-bar::after {
   cursor: ns-resize;
 }
@@ -137,7 +140,7 @@ main,
 }
 
 .e-splitter .e-split-bar.e-split-bar-horizontal.e-resizable-split-bar::after {
-  width: 6px
+  width: 6px;
 }
 
 // ----------------------------------------------------------------------------
@@ -407,6 +410,27 @@ input.e-input.e-control.e-dropdownlist,
 .e-dlg-overlay {
   opacity: 0.6;
 }
+
+// ----------------------------------------------------------------------------
+// Virtualized list overrides
+// .e-listview:not(.e-list-template) .e-list-item {
+//   height: auto;
+//   line-height: normal;
+//   padding: 0;
+// }
+
+// .e-listview .e-list-item {
+//   background: transparent;
+//   border: none;
+// }
+
+// .e-listview .e-list-item.e-hover {
+//   background: transparent;
+// }
+
+// .e-listview .e-list-item.e-active {
+//   background: transparent;
+// }
 
 // ============================================================================
 // CSS classes for IDE controls

@@ -5,7 +5,7 @@ import { engineProxy, RunEventArgs } from "./engine-proxy";
 import { ISideBarPanel } from "./side-bar/SideBarService";
 import { scrollableContentType } from "./utils/content-utils";
 
-export type SideBarProps<P> = { descriptor: ISideBarPanel };
+export type SideBarProps<P> = P & { descriptor: ISideBarPanel };
 
 /**
  * Base class for side bar panel implementations
@@ -19,6 +19,9 @@ export class SideBarPanelBase<
 
   // --- Override the title in other panels
   title = "(Panel)";
+
+  // --- Override this property to set with item width in the scrollable panel
+  width: string | number = "fit-content";
 
   // --- Listen to run events
   componentDidMount(): void {
@@ -39,10 +42,12 @@ export class SideBarPanelBase<
     return (
       <div style={placeholderStyle}>
         <ScrollablePanel
-          scrollBarSize={8}
+          scrollBarSize={10}
           sizing={(isSizing) => (this._isSizing = isSizing)}
         >
-          <div style={scrollableContentType}>{this.renderContent()}</div>
+          <div style={scrollableContentType(this.width)}>
+            {this.renderContent()}
+          </div>
         </ScrollablePanel>
       </div>
     );

@@ -27,7 +27,7 @@ export const darkTheme: ITheme = {
     "--toolbar-button-disabled-fill": "#585858",
     "--toolbar-separator": "2px solid #686868",
 
-    "--scrollbar-background-color": "#808080",
+    "--scrollbar-background-color": "#606060",
 
     "--statusbar-background-color": "#007acc",
     "--statusbar-foreground-color": "white",
