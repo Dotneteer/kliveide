@@ -38,7 +38,7 @@ type Props = {
   direction: ElementOrientation;
   barSize: number;
   forceShow: boolean;
-  registerApi: (api: ScrollbarApi) => void;
+  registerApi?: (api: ScrollbarApi) => void;
   sizing?: (isSizing: boolean) => void;
   moved?: (newPosition: number) => void;
 };
@@ -106,7 +106,7 @@ export default class FloatingScrollbar
    * Allow the parent component to call the scrollbar's API
    */
   componentDidMount() {
-    this.props.registerApi(this);
+    this.props.registerApi?.(this);
   }
 
   /**

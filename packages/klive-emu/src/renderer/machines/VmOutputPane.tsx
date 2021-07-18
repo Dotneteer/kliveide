@@ -1,6 +1,6 @@
 import { OutputPaneDescriptorBase } from "../ide/tool-area/OutputPaneService";
 
-const ID = "VmOuputPane";
+const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";
 
 /**

@@ -4,7 +4,7 @@ import ScrollablePanel from "../common/ScrollablePanel";
 import { IToolPanel } from "./tool-area/ToolAreaService";
 import { scrollableContentType } from "./utils/content-utils";
 
-export type ToolPanelProps<P> = { descriptor: IToolPanel };
+export type ToolPanelProps<P> = P & { descriptor: IToolPanel };
 
 /**
  * Base class for side bar panel implementations

@@ -1,17 +1,55 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
-import { ToolPanelBase } from "../ToolPanelBase";
+import { useEffect, useRef, useState } from "react";
+import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
-import { outputPaneService } from "./OutputPaneService";
+import { IOutputPane, outputPaneService } from "./OutputPaneService";
 
 const TITLE = "Output";
 
+type State = {
+  text: string;
+};
+
 /**
- * Z80 registers panel
+ * The tool panel that represents the output
  */
-export default class OutputToolPanel extends ToolPanelBase {
+export default class OutputToolPanel extends ToolPanelBase<
+  ToolPanelProps<{}>,
+  State
+> {
+  private _onPaneChanged: (pane: IOutputPane) => void;
+
+  constructor(props: ToolPanelProps<{}>) {
+    super(props);
+    this._onPaneChanged = (pane: IOutputPane) => this.onOutputPaneChanged(pane);
+    this.state = {
+      text: "No pane changed yet",
+    };
+  }
+
   title = TITLE;
+
+  componentDidMount() {
+    outputPaneService.activePaneChanged.on(this._onPaneChanged);
+    const activePane = outputPaneService.getActivePane();
+    if (activePane) {
+      this.setState({text: `Current pane: ${activePane.id}`});
+    }
+  }
+
+  componentWillUnmount() {
+    outputPaneService.activePaneChanged.off(this._onPaneChanged);
+  }
+
+  onOutputPaneChanged(pane: IOutputPane): void {
+    console.log(this);
+    this.setState({ text: `New output panel: ${pane.id}` });
+  }
+
+  renderContent(): React.ReactNode {
+    return <>{this.state.text}</>;
+  }
 }
 
 type PaneData = {
@@ -20,24 +58,39 @@ type PaneData = {
 };
 
 function OutputPanesPropertyBar() {
-  let thisComponent: DropDownListComponent;
+  let paneListComponent: DropDownListComponent;
+  const mounted = useRef(false);
   const [panesData, setPanesData] = useState<PaneData[]>();
 
   useEffect(() => {
-    // // --- Mount
-    // setPanesData(
-    //   outputPaneService
-    //     .getOutputPanes()
-    //     .map((p, index) => ({ id: index, title: p.title }))
-    // );
-    // thisComponent.value = outputPaneService.getActivePane()?.id;
+    if (!mounted.current) {
+      // --- Mount
+      setPanesData(
+        outputPaneService
+          .getOutputPanes()
+          .map((p) => ({ id: p.id, title: p.title }))
+      );
+      mounted.current = true;
+    } else {
+      paneListComponent.value = outputPaneService.getActivePane()?.id;
+    }
+
+    return () => {};
   });
+
+  const selectPane = () => {
+    const selectedPanel = outputPaneService.getPaneById(
+      paneListComponent.value.toString()
+    );
+    outputPaneService.setActivePane(selectedPanel);
+  };
 
   return (
     <DropDownListComponent
-      ref={(scope) => (thisComponent = scope)}
+      ref={(scope) => (paneListComponent = scope)}
       dataSource={panesData}
       fields={{ text: "title", value: "id" }}
+      change={selectPane}
       width={170}
     />
   );

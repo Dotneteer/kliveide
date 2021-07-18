@@ -29,7 +29,7 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
     super(props);
     for (let i = 0; i < 1000; i++) {
       this._data.push({
-        text: `Item # ${i}`,
+        text: `Disassembly Item # ${i}`,
         id: i.toString(),
       });
     }
@@ -47,10 +47,10 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
           return (
             <div
               key={index}
-              style={style}
+              style={{...style}}
               onClick={() => {
                 this._data.push({
-                  text: `Item # ${this._data.length}`,
+                  text: `Disassembly Item # ${this._data.length}`,
                   id: this._data.length.toString(),
                 });
                 this.setState({ itemCount: this._data.length });

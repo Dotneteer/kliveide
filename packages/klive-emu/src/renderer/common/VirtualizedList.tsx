@@ -50,6 +50,7 @@ export default function VirtualizedList({
 
   // --- Store the API to control the vertical scrollbar
   const verticalApi = useRef<ScrollbarApi>();
+  const horizontalApi = useRef<ScrollbarApi>();
 
   // --- Temporary store fro scroll position on refresh
   const tmpScrollPos = useRef(-1);
@@ -82,7 +83,9 @@ export default function VirtualizedList({
       const item = renderItem(i, {
         position: "absolute",
         top: `${i * itemHeight}px`,
-        width: "100%",
+        width: "fit-content",
+        overflowX: "hidden",
+        whiteSpace: "nowrap",
       });
       tmpItems.push(item);
     }
@@ -121,8 +124,9 @@ export default function VirtualizedList({
         tabIndex={focusable ? 0 : -1}
         ref={divHost}
         className="scroll"
-        style={{ overflowY: "hidden" }}
-        onScroll={() => {
+        style={{ overflow: "hidden" }}
+        onScroll={(e) => {
+          console.log(e);
           updateDimensions();
           renderItems();
         }}
@@ -167,6 +171,23 @@ export default function VirtualizedList({
         moved={(delta) => {
           if (divHost?.current) {
             divHost.current.scrollTop = normalizeScrollPosition(delta);
+          }
+        }}
+        sizing={(nowSizing) => {
+          isSizing = nowSizing;
+          if (!nowSizing && mouseLeft) {
+            setPointed(false);
+          }
+        }}
+      />
+      <FloatingScrollbar
+        direction="horizontal"
+        barSize={10}
+        forceShow={pointed}
+        registerApi={(api) => (horizontalApi.current = api)}
+        moved={(delta) => {
+          if (divHost?.current) {
+            divHost.current.scrollLeft = delta;
           }
         }}
         sizing={(nowSizing) => {
@@ -245,6 +266,14 @@ export default function VirtualizedList({
       hostCrossSize: divHost.current.offsetWidth,
       hostScrollPos: divHost.current.scrollTop,
       hostScrollSize: divHost.current.scrollHeight,
+    });
+    horizontalApi.current?.signHostDimension({
+      hostLeft: divHost.current.offsetLeft,
+      hostTop: divHost.current.offsetTop,
+      hostSize: divHost.current.offsetWidth,
+      hostCrossSize: divHost.current.offsetHeight,
+      hostScrollPos: divHost.current.scrollLeft,
+      hostScrollSize: divHost.current.scrollWidth,
     });
     if (tmpScrollPos.current >= 0) {
       divHost.current.scrollTop = tmpScrollPos.current;
