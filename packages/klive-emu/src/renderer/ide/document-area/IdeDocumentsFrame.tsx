@@ -53,6 +53,7 @@ export default function IdeDocumentFrame() {
 
 // --- Component helper tags
 const Root = createSizedStyledPanel({
+  fitToClient: false,
   background: "var(--shell-canvas-background-color)",
 });
 
@@ -60,7 +61,7 @@ const Root = createSizedStyledPanel({
 const HeaderBar = createSizedStyledPanel({
   height: 35,
   splitsVertical: false,
-  fitToClient: true,
+  fitToClient: false,
 });
 
 const PlaceHolder = createSizedStyledPanel({

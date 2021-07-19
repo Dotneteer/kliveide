@@ -1,14 +1,18 @@
 import * as React from "react";
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { IOutputPane, outputPaneService } from "./OutputPaneService";
+import VirtualizedList, {
+  VirtualizedListApi,
+} from "../../common/VirtualizedList";
 
 const TITLE = "Output";
 
 type State = {
-  text: string;
+  refreshCount: number;
+  buffer: string[];
 };
 
 /**
@@ -18,13 +22,15 @@ export default class OutputToolPanel extends ToolPanelBase<
   ToolPanelProps<{}>,
   State
 > {
+  private _listApi: VirtualizedListApi;
   private _onPaneChanged: (pane: IOutputPane) => void;
 
   constructor(props: ToolPanelProps<{}>) {
     super(props);
     this._onPaneChanged = (pane: IOutputPane) => this.onOutputPaneChanged(pane);
     this.state = {
-      text: "No pane changed yet",
+      refreshCount: 0,
+      buffer: [],
     };
   }
 
@@ -34,7 +40,9 @@ export default class OutputToolPanel extends ToolPanelBase<
     outputPaneService.activePaneChanged.on(this._onPaneChanged);
     const activePane = outputPaneService.getActivePane();
     if (activePane) {
-      this.setState({text: `Current pane: ${activePane.id}`});
+      this.setState({
+        buffer: activePane.buffer.getContents(),
+      });
     }
   }
 
@@ -43,12 +51,43 @@ export default class OutputToolPanel extends ToolPanelBase<
   }
 
   onOutputPaneChanged(pane: IOutputPane): void {
-    console.log(this);
-    this.setState({ text: `New output panel: ${pane.id}` });
+    pane.buffer.writeLine("Pane changed");
+    this.setState({
+      refreshCount: this.state.refreshCount + 1,
+      buffer: pane.buffer.getContents(),
+    });
   }
 
   renderContent(): React.ReactNode {
-    return <>{this.state.text}</>;
+    return <>{this.state.refreshCount}</>;
+  }
+
+  render() {
+    return (
+      <VirtualizedList
+        itemHeight={18}
+        numItems={this.state.buffer.length}
+        renderItem={(index: number, style: CSSProperties) => {
+          return (
+            <div
+              key={index}
+              style={{ ...style }}
+              onClick={() => {
+                console.log("Add entry");
+                outputPaneService.getActivePane().buffer.writeLine("Hello");
+                this.setState({
+                  refreshCount: this.state.refreshCount + 1,
+                });
+                this._listApi.scrollToEnd();
+              }}
+            >
+              {`Item #${index}: ${this.state.buffer[index]}`}
+            </div>
+          );
+        }}
+        registerApi={(api) => (this._listApi = api)}
+      />
+    );
   }
 }
 

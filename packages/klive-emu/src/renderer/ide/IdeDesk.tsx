@@ -24,30 +24,30 @@ export default function IdeDesk() {
 
   return (
     <Root>
-      <SplitterComponent orientation="Vertical" separatorSize={2}>
-        <PanesDirective>
-          {(!toolsVisible || !toolsMaximized) && (
+      {toolsVisible && !toolsMaximized && (
+        <SplitterComponent orientation="Vertical" separatorSize={2}>
+          <PanesDirective>
             <PaneDirective
               key="documents"
               cssClass="splitter-panel"
               content={() => <IdeDocumentsFrame />}
               size="66%"
-              min="80px"
-              max="95%"
+              min="120px"
+              max="90%"
             />
-          )}
-          {toolsVisible && (
             <PaneDirective
               key="tools"
               cssClass="splitter-panel"
               content={() => <ToolFrame />}
               size="34%"
-              min="5%"
-              max="95%"
+              min="120px"
+              max="90%"
             />
-          )}
-        </PanesDirective>
-      </SplitterComponent>
+          </PanesDirective>
+        </SplitterComponent>
+      )}
+      {toolsVisible && toolsMaximized && <ToolFrame />}
+      {!toolsVisible && <IdeDocumentsFrame />}
     </Root>
   );
 }

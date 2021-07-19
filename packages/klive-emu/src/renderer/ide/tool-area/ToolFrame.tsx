@@ -92,7 +92,11 @@ const HeaderBar = createSizedStyledPanel({
   fitToClient: true,
 });
 
-const PlaceHolder = createSizedStyledPanel({});
+const PlaceHolder = createSizedStyledPanel({
+  others: {
+    "overflow": "hidden",
+  }
+});
 
 /**
  * Represents the statusbar of the emulator
