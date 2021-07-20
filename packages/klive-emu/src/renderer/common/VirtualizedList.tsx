@@ -39,7 +39,6 @@ enum ResizePhase {
   None,
   Resized,
   Rendered,
-  Scrolled,
 }
 
 /**
@@ -87,7 +86,6 @@ export default function VirtualizedList({
     }
 
     const scrollPos = divHost.current.scrollTop;
-    console.log(scrollPos);
     const { startIndex, endIndex } = getViewPort();
     const tmpItems: React.ReactNode[] = [];
     for (let i = startIndex; i <= endIndex; i++) {
@@ -131,27 +129,18 @@ export default function VirtualizedList({
     if (!mounted.current) return;
     switch (resizePhase) {
       case ResizePhase.None:
-        console.log("None");
         setResizedHeight(divHost.current.offsetHeight - 1);
         setResizePhase(ResizePhase.Resized);
         break;
       case ResizePhase.Resized:
         if (requestedPos >= 0) {
-          console.log(`Resized with pos ${requestedPos}, ${divHost.current.scrollHeight}`);
-          divHost.current.scrollTop = requestedPos;
-        }
-        const scrollPos = divHost.current.scrollTop;
-        console.log(scrollPos);
-        renderItems();
-        setResizePhase(ResizePhase.Rendered);
-        break;
-      case ResizePhase.Rendered:
-        console.log("Rendered");
-        if (requestedPos >= 0) {
           divHost.current.scrollTop = requestedPos;
           setRequestedPos(-1);
         }
-        setResizePhase(ResizePhase.Scrolled);
+        updateDimensions();
+        renderItems();
+        setResizePhase(ResizePhase.Rendered);
+        break;
     }
   });
 
@@ -314,7 +303,6 @@ export default function VirtualizedList({
         Math.floor((scrollPos + resizedHeight) / itemHeight)
       ),
     };
-    console.log(JSON.stringify(result));
     return result;
   }
 
