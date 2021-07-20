@@ -16,6 +16,7 @@ export const lightTheme: ITheme = {
     "--selection-color": "#007acc",
     "--information-color": "#202020",
     "--hilited-color": "#007acc",
+    "--console-font": "Consolas, \"Courier New\", monospace",
 
     "--button-background-color": "#808080",
     "--button-primary-background-color": "##007acc",

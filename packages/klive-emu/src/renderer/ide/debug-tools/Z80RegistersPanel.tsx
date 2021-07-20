@@ -18,7 +18,7 @@ function flagRow(bits: number) {
   const FStyle: CSSProperties = {
     flexShrink: 0,
     flexGrow: 0,
-    width: 28,
+    width: 32,
     fontSize: "1.4em",
   };
 

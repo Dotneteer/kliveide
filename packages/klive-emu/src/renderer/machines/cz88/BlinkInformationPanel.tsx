@@ -27,7 +27,7 @@ const nameStyle: CSSProperties = {
   width: 20,
 };
 
-function regNameStyle(width = 40): CSSProperties {
+function regNameStyle(width = 32): CSSProperties {
   return {
     flexShrink: 0,
     flexGrow: 0,
@@ -102,7 +102,7 @@ function kbLine(line: number, value: number) {
   }
   return (
     <div style={valueItemStyle}>
-      <div style={regNameStyle(66)} title={`Keyboard line ${line}`}>
+      <div style={regNameStyle(78)} title={`Keyboard line ${line}`}>
         {`KB line #${line}`}
       </div>
       {kbFlag(7)}

@@ -89,5 +89,6 @@ const placeholderStyle: CSSProperties = {
   justifyContent: "center",
   alignItems: "center",
   fontSize: "0.8em",
+  fontFamily: "var(--console-font)",
   color: "#a0a0a0",
 };

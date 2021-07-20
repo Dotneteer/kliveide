@@ -39,6 +39,7 @@ const placeholderStyle: CSSProperties = {
   flexShrink: 1,
   width: "100%",
   height: "100%",
+  fontFamily: "var(--console-font)",
   fontSize: "1.0em",
   padding: "8px 16px",
   color: "var(--information-color)",

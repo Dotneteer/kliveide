@@ -32,7 +32,7 @@ export const valueItemStyle: CSSProperties = {
  * The style of a label tag
  * @param width Lable width
  */
-export function labelStyle(width = 30): CSSProperties {
+export function labelStyle(width = 34): CSSProperties {
   return {
     flexShrink: 0,
     flexGrow: 0,
