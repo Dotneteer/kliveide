@@ -82,5 +82,22 @@ export const lightTheme: ITheme = {
     "--dropdown-backgound-color": "#3c3c3c",
 
     "--dialog-header-background": "#808080",
+
+    "--console-ansiBlack": "#000000",
+    "--console-ansiBlue": "#0451a5",
+    "--console-ansiBrightBlack": "#666666",
+    "--console-ansiBrightBlue": "#0451a5",
+    "--console-ansiBrightCyan": "#0598bc",
+    "--console-ansiBrightGreen": "#14CE14",
+    "--console-ansiBrightMagenta": "#bc05bc",
+    "--console-ansiBrightRed": "#cd3131",
+    "--console-ansiBrightWhite": "#a5a5a5",
+    "--console-ansiBrightYellow": "#b5ba00",
+    "--console-ansiCyan": "#0598bc",
+    "--console-ansiGreen": "#00BC00",
+    "--console-ansiMagenta": "#bc05bc",
+    "--console-ansiRed": "#cd3131",
+    "--console-ansiWhite": "#e5e5e5",
+    "--console-ansiYellow": "#949800",
   },
 };

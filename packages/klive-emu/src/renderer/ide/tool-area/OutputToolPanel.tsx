@@ -70,14 +70,22 @@ export default class OutputToolPanel extends ToolPanelBase<
               key={index}
               style={{ ...style }}
               onClick={() => {
+                const buffer = outputPaneService.getActivePane().buffer;
+                buffer.color("magenta");
+                buffer.bold(true);
+                buffer.write(`Item #${buffer.getContents().length}:`)
+                buffer.bold(false);
+                buffer.color("red");
+                buffer.bold(false);
                 outputPaneService.getActivePane().buffer.writeLine("Hello");
+                buffer.resetColor();
                 this.setState({
                   refreshCount: this.state.refreshCount + 1,
                 });
                 this._listApi.scrollToEnd(true);
               }}
             >
-              {`Item #${index}: ${this.state.buffer[index]}`}
+              <div dangerouslySetInnerHTML={{__html: this.state.buffer[index]}} />
             </div>
           );
         }}
