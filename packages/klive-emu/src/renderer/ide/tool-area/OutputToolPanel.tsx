@@ -56,13 +56,10 @@ export default class OutputToolPanel extends ToolPanelBase<
       refreshCount: this.state.refreshCount + 1,
       buffer: pane.buffer.getContents(),
     });
+    this._listApi.forceRefresh();
   }
 
-  renderContent(): React.ReactNode {
-    return <>{this.state.refreshCount}</>;
-  }
-
-  render() {
+  renderContent() {
     return (
       <VirtualizedList
         itemHeight={18}
@@ -73,12 +70,11 @@ export default class OutputToolPanel extends ToolPanelBase<
               key={index}
               style={{ ...style }}
               onClick={() => {
-                console.log("Add entry");
                 outputPaneService.getActivePane().buffer.writeLine("Hello");
                 this.setState({
                   refreshCount: this.state.refreshCount + 1,
                 });
-                this._listApi.scrollToEnd();
+                this._listApi.scrollToEnd(true);
               }}
             >
               {`Item #${index}: ${this.state.buffer[index]}`}

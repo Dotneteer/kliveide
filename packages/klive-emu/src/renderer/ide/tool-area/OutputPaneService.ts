@@ -209,7 +209,6 @@ class OutputPaneService {
     if (this._activePane !== pane && this._panes.indexOf(pane) >= 0) {
       this._activePaneChanging.fire();
       this._activePane = pane;
-      console.log(`Changed: ${pane.id}`);
       this._activePaneChanged.fire(pane);
     }
   }

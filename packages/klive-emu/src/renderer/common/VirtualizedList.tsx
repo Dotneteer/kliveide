@@ -28,9 +28,9 @@ export type VirtualizedListProps = {
  */
 export type VirtualizedListApi = {
   forceRefresh: () => void;
-  scrollToItemByIndex: (index: number) => void;
-  scrollToTop: () => void;
-  scrollToEnd: () => void;
+  scrollToItemByIndex: (index: number, withRefresh?: boolean) => void;
+  scrollToTop: (withRefresh?: boolean) => void;
+  scrollToEnd: (withRefresh?: boolean) => void;
   getViewPort: () => { startIndex: number; endIndex: number };
 };
 
@@ -38,7 +38,8 @@ export type VirtualizedListApi = {
 enum ResizePhase {
   None,
   Resized,
-  Rendered
+  Rendered,
+  Scrolled,
 }
 
 /**
@@ -59,16 +60,12 @@ export default function VirtualizedList({
   const verticalApi = useRef<ScrollbarApi>();
   const horizontalApi = useRef<ScrollbarApi>();
 
-  // --- Temporary store fro scroll position on refresh
-  const tmpScrollPos = useRef(-1);
-
   // --- Component state
   const [items, setItems] = useState<React.ReactNode[]>();
   const [pointed, setPointed] = useState(false);
-  const [, updateState] = React.useState<{}>();
   const [resizePhase, setResizePhase] = useState<ResizePhase>(ResizePhase.None);
   const [resizedHeight, setResizedHeight] = useState<number>();
-  const forceUpdate = React.useCallback(() => updateState({}), []);
+  const [requestedPos, setRequestedPos] = useState(-1);
 
   // --- Component host element
   const divHost = React.createRef<HTMLDivElement>();
@@ -116,9 +113,10 @@ export default function VirtualizedList({
       // --- Initialize the component
       registerApi?.({
         forceRefresh: () => forceRefresh(),
-        scrollToItemByIndex: (index) => scrollToItemByIndex(index),
-        scrollToTop: () => scrollToTop(),
-        scrollToEnd: () => scrollToEnd(),
+        scrollToItemByIndex: (index, withRefresh) =>
+          scrollToItemByIndex(index, withRefresh),
+        scrollToTop: (withRefresh) => scrollToTop(withRefresh),
+        scrollToEnd: (withRefresh) => scrollToEnd(withRefresh),
         getViewPort: () => getViewPort(),
       });
       updateDimensions();
@@ -136,8 +134,18 @@ export default function VirtualizedList({
         setResizePhase(ResizePhase.Resized);
         break;
       case ResizePhase.Resized:
+        if (requestedPos >= 0) {
+          divHost.current.scrollTop = requestedPos;
+        }
         renderItems();
         setResizePhase(ResizePhase.Rendered);
+        break;
+      case ResizePhase.Rendered:
+        if (requestedPos >= 0) {
+          divHost.current.scrollTop = requestedPos;
+          setRequestedPos(-1);
+        }
+        setResizePhase(ResizePhase.Scrolled);
     }
   });
 
@@ -171,7 +179,8 @@ export default function VirtualizedList({
           );
         }}
       >
-        {resizePhase === ResizePhase.Rendered && (
+        {(resizePhase === ResizePhase.Rendered ||
+          resizePhase === ResizePhase.Scrolled) && (
           <div
             className="inner"
             style={{
@@ -229,9 +238,7 @@ export default function VirtualizedList({
         handleHeight
         onResize={() => {
           if (resizePhase === ResizePhase.None) return;
-          setResizePhase(ResizePhase.None);
-          setResizedHeight(null);
-          console.log("Resized");
+          forceRefresh();
         }}
       />
     </>
@@ -244,35 +251,49 @@ export default function VirtualizedList({
    * Asks the component to update its viewport
    */
   function forceRefresh() {
-    forceUpdate();
+    setResizePhase(ResizePhase.None);
+    setRequestedPos(divHost.current ? divHost.current.scrollTop : -1);
+    setResizedHeight(null);
   }
 
   /**
    * Scrolls to the item with the specified index
    * @param index
    */
-  function scrollToItemByIndex(index: number) {
+  function scrollToItemByIndex(index: number, withRefresh = false) {
     const topPos = normalizeScrollPosition(index * itemHeight);
-    tmpScrollPos.current = normalizeScrollPosition(topPos);
-    forceRefresh();
+    setRequestedPos(normalizeScrollPosition(topPos));
+    if (withRefresh) {
+      setResizePhase(ResizePhase.None);
+      setResizedHeight(null);
+    }
   }
 
   /**
    * Scrolls to the top of the list
    * @param index
    */
-  function scrollToTop() {
-    tmpScrollPos.current = 0;
-    forceRefresh();
+  function scrollToTop(withRefresh = false) {
+    setRequestedPos(0);
+    setResizePhase(ResizePhase.Rendered);
+    if (withRefresh) {
+      setResizePhase(ResizePhase.None);
+      setResizedHeight(null);
+    }
   }
 
   /**
    * Scrolls to the end of the list
    * @param index
    */
-  function scrollToEnd() {
-    tmpScrollPos.current = 10_000_000;
-    forceRefresh();
+  function scrollToEnd(withRefresh = false) {
+    setRequestedPos(10_000_000);
+    if (withRefresh) {
+      setResizePhase(ResizePhase.None);
+      setResizedHeight(null);
+    } else {
+      setResizePhase(ResizePhase.Rendered);
+    }
   }
 
   /**
@@ -313,10 +334,6 @@ export default function VirtualizedList({
       hostScrollPos: divHost.current.scrollLeft,
       hostScrollSize: divHost.current.scrollWidth,
     });
-    if (tmpScrollPos.current >= 0) {
-      divHost.current.scrollTop = tmpScrollPos.current;
-      tmpScrollPos.current = -1;
-    }
   }
 
   /**
