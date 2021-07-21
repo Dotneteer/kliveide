@@ -12,6 +12,7 @@ const TITLE = "Output";
 
 type State = {
   refreshCount: number;
+  initPosition?: number;
   buffer: string[];
 };
 
@@ -29,7 +30,8 @@ export default class OutputToolPanel extends ToolPanelBase<
   constructor(props: ToolPanelProps<{}>) {
     super(props);
     this._onPaneChanged = (pane: IOutputPane) => this.onOutputPaneChanged(pane);
-    this._onContentsChanged = (pane: IOutputPane) => this.onContentsChanged(pane);
+    this._onContentsChanged = (pane: IOutputPane) =>
+      this.onContentsChanged(pane);
     this.state = {
       refreshCount: 0,
       buffer: [],
@@ -59,18 +61,17 @@ export default class OutputToolPanel extends ToolPanelBase<
     this.setState({
       refreshCount: this.state.refreshCount + 1,
       buffer: pane.buffer.getContents(),
+      initPosition: -1
     });
-    this._listApi.forceRefresh();
   }
 
   onContentsChanged(pane: IOutputPane): void {
     console.log("Active contents changed");
     if (pane === outputPaneService.getActivePane()) {
       this.setState({
-        //refreshCount: this.state.refreshCount + 1,
         buffer: pane.buffer.getContents(),
       });
-      this._listApi.forceRefresh();
+      this._listApi.forceRefresh(-1);
     }
   }
 
@@ -95,10 +96,7 @@ export default class OutputToolPanel extends ToolPanelBase<
                 buffer.bold(false);
                 outputPaneService.getActivePane().buffer.writeLine("Hello");
                 buffer.resetColor();
-                // this.setState({
-                //   refreshCount: this.state.refreshCount + 1,
-                // });
-                this._listApi.scrollToEnd(true);
+                //this._listApi.scrollToEnd(true);
               }}
             >
               <div
@@ -111,6 +109,7 @@ export default class OutputToolPanel extends ToolPanelBase<
           this._listApi = api;
           console.log("Api bound");
         }}
+        obtainInitPos={() => this.state.initPosition}
       />
     );
   }

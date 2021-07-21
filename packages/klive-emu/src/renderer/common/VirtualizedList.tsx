@@ -21,13 +21,14 @@ export type VirtualizedListProps = {
   integralPosition?: boolean;
   renderItem: ItemRenderer;
   registerApi?: (api: VirtualizedListApi) => void;
+  obtainInitPos?: () => number | null;
 };
 
 /**
  * Represents the API the hosts of a virtual list can invoke
  */
 export type VirtualizedListApi = {
-  forceRefresh: () => void;
+  forceRefresh: (position?: number) => void;
   scrollToItemByIndex: (index: number, withRefresh?: boolean) => void;
   scrollToTop: (withRefresh?: boolean) => void;
   scrollToEnd: (withRefresh?: boolean) => void;
@@ -51,6 +52,7 @@ export default function VirtualizedList({
   integralPosition = true,
   renderItem,
   registerApi,
+  obtainInitPos,
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
@@ -111,7 +113,7 @@ export default function VirtualizedList({
     } else {
       // --- Initialize the component
       registerApi?.({
-        forceRefresh: () => forceRefresh(),
+        forceRefresh: (position?: number) => forceRefresh(position),
         scrollToItemByIndex: (index, withRefresh) =>
           scrollToItemByIndex(index, withRefresh),
         scrollToTop: (withRefresh) => scrollToTop(withRefresh),
@@ -119,6 +121,10 @@ export default function VirtualizedList({
         getViewPort: () => getViewPort(),
       });
       updateDimensions();
+      const initPosition = obtainInitPos?.();
+      if (initPosition !== null && initPosition !== undefined) {
+        setRequestedPos(initPosition < 0 ? 10_000_000 : initPosition);
+      }
       mounted.current = true;
     }
   });
@@ -174,7 +180,7 @@ export default function VirtualizedList({
           );
         }}
       >
-        {(resizePhase !== ResizePhase.None) && (
+        {resizePhase !== ResizePhase.None && (
           <div
             className="inner"
             style={{
@@ -244,9 +250,13 @@ export default function VirtualizedList({
   /**
    * Asks the component to update its viewport
    */
-  function forceRefresh() {
+  function forceRefresh(position?: number) {
     setResizePhase(ResizePhase.None);
-    setRequestedPos(divHost.current ? divHost.current.scrollTop : -1);
+    setRequestedPos(
+      position < 0
+        ? 10_000_000
+        : position ?? (divHost.current ? divHost.current.scrollTop : -1)
+    );
     setResizedHeight(null);
   }
 
