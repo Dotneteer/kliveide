@@ -80,6 +80,11 @@ export interface IOutputBuffer {
    * @param message
    */
   writeLine(message: string): void;
+
+  /**
+   * This event fires when the contents of the buffer changes.
+   */
+  readonly contentsChanged: ILiteEvent<void>;
 }
 
 /**
@@ -93,6 +98,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   private _isItalic: boolean = false;
   private _isUnderline: boolean = false;
   private _isStrikethru: boolean = false;
+  private _contentsChanged = new LiteEvent<void>();
 
   constructor(
     public readonly bufferedLines = 1024,
@@ -180,6 +186,8 @@ export class OutputPaneBuffer implements IOutputBuffer {
     this._buffer[this._currentLineIndex] = (
       this._buffer[this._currentLineIndex] + message
     ).substr(0, this.maxLineLenght);
+
+    this._contentsChanged.fire();
   }
 
   /**
@@ -194,6 +202,13 @@ export class OutputPaneBuffer implements IOutputBuffer {
       this._currentLineIndex++;
     }
     this._buffer[this._currentLineIndex] = "";
+  }
+
+    /**
+   * This event fires when the contents of the buffer changes.
+   */
+  get contentsChanged(): ILiteEvent<void> {
+    return this._contentsChanged;
   }
 
   /**
@@ -318,6 +333,7 @@ class OutputPaneService {
   private _activePane: IOutputPane | null = null;
   private _activePaneChanging = new LiteEvent<void>();
   private _activePaneChanged = new LiteEvent<IOutputPane>();
+  private _paneContentsChanged = new LiteEvent<IOutputPane>();
 
   /**
    * Registers a new output pane
@@ -332,6 +348,9 @@ class OutputPaneService {
     if (!this._activePane) {
       this.setActivePane(pane);
     }
+    pane.buffer.contentsChanged.on(() => {
+      this._paneContentsChanged.fire(pane);
+    })
   }
 
   /**
@@ -388,6 +407,14 @@ class OutputPaneService {
    */
   get activePaneChanged(): ILiteEvent<IOutputPane> {
     return this._activePaneChanged;
+  }
+
+  /**
+   * Fires when the contents of any of the output panes changes.
+   * The event argument is the pane with changed contents
+   */
+  get paneContentsChanged(): ILiteEvent<IOutputPane> {
+    return this._paneContentsChanged;
   }
 }
 

@@ -24,10 +24,12 @@ export default class OutputToolPanel extends ToolPanelBase<
 > {
   private _listApi: VirtualizedListApi;
   private _onPaneChanged: (pane: IOutputPane) => void;
+  private _onContentsChanged: (pane: IOutputPane) => void;
 
   constructor(props: ToolPanelProps<{}>) {
     super(props);
     this._onPaneChanged = (pane: IOutputPane) => this.onOutputPaneChanged(pane);
+    this._onContentsChanged = (pane: IOutputPane) => this.onContentsChanged(pane);
     this.state = {
       refreshCount: 0,
       buffer: [],
@@ -38,6 +40,7 @@ export default class OutputToolPanel extends ToolPanelBase<
 
   componentDidMount() {
     outputPaneService.activePaneChanged.on(this._onPaneChanged);
+    outputPaneService.paneContentsChanged.on(this._onContentsChanged);
     const activePane = outputPaneService.getActivePane();
     if (activePane) {
       this.setState({
@@ -47,7 +50,8 @@ export default class OutputToolPanel extends ToolPanelBase<
   }
 
   componentWillUnmount() {
-    outputPaneService.activePaneChanged.off(this._onPaneChanged);
+    outputPaneService.activePaneChanged.off(this._onContentsChanged);
+    outputPaneService.paneContentsChanged.off(this._onPaneChanged);
   }
 
   onOutputPaneChanged(pane: IOutputPane): void {
@@ -59,9 +63,21 @@ export default class OutputToolPanel extends ToolPanelBase<
     this._listApi.forceRefresh();
   }
 
+  onContentsChanged(pane: IOutputPane): void {
+    console.log("Active contents changed");
+    if (pane === outputPaneService.getActivePane()) {
+      this.setState({
+        //refreshCount: this.state.refreshCount + 1,
+        buffer: pane.buffer.getContents(),
+      });
+      this._listApi.forceRefresh();
+    }
+  }
+
   renderContent() {
     return (
       <VirtualizedList
+        key={this.state.refreshCount}
         itemHeight={18}
         numItems={this.state.buffer.length}
         renderItem={(index: number, style: CSSProperties) => {
@@ -73,23 +89,28 @@ export default class OutputToolPanel extends ToolPanelBase<
                 const buffer = outputPaneService.getActivePane().buffer;
                 buffer.color("magenta");
                 buffer.bold(true);
-                buffer.write(`Item #${buffer.getContents().length}:`)
+                buffer.write(`Item #${buffer.getContents().length}:`);
                 buffer.bold(false);
                 buffer.color("red");
                 buffer.bold(false);
                 outputPaneService.getActivePane().buffer.writeLine("Hello");
                 buffer.resetColor();
-                this.setState({
-                  refreshCount: this.state.refreshCount + 1,
-                });
+                // this.setState({
+                //   refreshCount: this.state.refreshCount + 1,
+                // });
                 this._listApi.scrollToEnd(true);
               }}
             >
-              <div dangerouslySetInnerHTML={{__html: this.state.buffer[index]}} />
+              <div
+                dangerouslySetInnerHTML={{ __html: this.state.buffer[index] }}
+              />
             </div>
           );
         }}
-        registerApi={(api) => (this._listApi = api)}
+        registerApi={(api) => {
+          this._listApi = api;
+          console.log("Api bound");
+        }}
       />
     );
   }
