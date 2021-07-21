@@ -16,6 +16,7 @@ export const darkTheme: ITheme = {
     "--selection-color": "#007acc",
     "--information-color": "#c0c0c0",
     "--hilited-color": "#007acc",
+    "--console-font": "Consolas, \"Courier New\", monospace",
 
     "--button-background-color": "#606060",
     "--button-primary-background-color": "#007acc",
@@ -82,5 +83,22 @@ export const darkTheme: ITheme = {
 
     "--dialog-header-background": "#383838",
 
+    "--console-ansiBlack": "#000000",
+    "--console-ansiBlue": "#2472c8",
+    "--console-ansiBrightBlack": "#666666",
+    "--console-ansiBrightBlue": "#3b8eea",
+    "--console-ansiBrightCyan": "#29b8db",
+    "--console-ansiBrightGreen": "#23d18b",
+    "--console-ansiBrightMagenta": "#d670d6",
+    "--console-ansiBrightRed": "#f14c4c",
+    "--console-ansiBrightWhite": "#e5e5e5",
+    "--console-ansiBrightYellow": "#f5f543",
+    "--console-ansiCyan": "#11a8cd",
+    "--console-ansiGreen": "#0DBC79",
+    "--console-ansiMagenta": "#bc3fbc",
+    "--console-ansiRed": "#cd3131",
+    "--console-ansiWhite": "#e5e5e5",
+    "--console-ansiYellow": "#e5e510",
+ 
   },
 };

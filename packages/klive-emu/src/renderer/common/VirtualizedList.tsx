@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useState } from "react";
 import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
 import { handleScrollKeys } from "./utils";
+import ReactResizeDetector from "react-resize-detector";
 
 /**
  * The function that renders a virtual list item
@@ -20,18 +21,27 @@ export type VirtualizedListProps = {
   integralPosition?: boolean;
   renderItem: ItemRenderer;
   registerApi?: (api: VirtualizedListApi) => void;
+  obtainInitPos?: () => number | null;
+  scrolled?: (topPos: number) => void;
 };
 
 /**
  * Represents the API the hosts of a virtual list can invoke
  */
 export type VirtualizedListApi = {
-  forceRefresh: () => void;
-  scrollToItemByIndex: (index: number) => void;
-  scrollToTop: () => void;
-  scrollToEnd: () => void;
+  forceRefresh: (position?: number) => void;
+  scrollToItemByIndex: (index: number, withRefresh?: boolean) => void;
+  scrollToTop: (withRefresh?: boolean) => void;
+  scrollToEnd: (withRefresh?: boolean) => void;
   getViewPort: () => { startIndex: number; endIndex: number };
 };
+
+// --- Resizing phases
+enum ResizePhase {
+  None,
+  Resized,
+  Rendered,
+}
 
 /**
  * This function represents a virtual list
@@ -43,23 +53,22 @@ export default function VirtualizedList({
   integralPosition = true,
   renderItem,
   registerApi,
+  obtainInitPos,
+  scrolled
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
-  const initialized = useRef(false);
 
   // --- Store the API to control the vertical scrollbar
   const verticalApi = useRef<ScrollbarApi>();
   const horizontalApi = useRef<ScrollbarApi>();
 
-  // --- Temporary store fro scroll position on refresh
-  const tmpScrollPos = useRef(-1);
-
   // --- Component state
   const [items, setItems] = useState<React.ReactNode[]>();
   const [pointed, setPointed] = useState(false);
-  const [, updateState] = React.useState<{}>();
-  const forceUpdate = React.useCallback(() => updateState({}), []);
+  const [resizePhase, setResizePhase] = useState<ResizePhase>(ResizePhase.None);
+  const [resizedHeight, setResizedHeight] = useState<number>();
+  const [requestedPos, setRequestedPos] = useState(-1);
 
   // --- Component host element
   const divHost = React.createRef<HTMLDivElement>();
@@ -76,6 +85,10 @@ export default function VirtualizedList({
 
   // --- Render the items according to the top position
   const renderItems = () => {
+    if (resizePhase === ResizePhase.None) {
+      return;
+    }
+
     const scrollPos = divHost.current.scrollTop;
     const { startIndex, endIndex } = getViewPort();
     const tmpItems: React.ReactNode[] = [];
@@ -98,23 +111,45 @@ export default function VirtualizedList({
   // --- Initialize/update the virtualized list
   useEffect(() => {
     if (mounted.current) {
-      // --- Render items (once) whenever we know the height of the viewport
       updateDimensions();
-      if (divHost.current.offsetHeight !== 0 && !initialized.current) {
-        renderItems();
-        initialized.current = true;
-      }
     } else {
       // --- Initialize the component
       registerApi?.({
-        forceRefresh: () => forceRefresh(),
-        scrollToItemByIndex: (index) => scrollToItemByIndex(index),
-        scrollToTop: () => scrollToTop(),
-        scrollToEnd: () => scrollToEnd(),
+        forceRefresh: (position?: number) => forceRefresh(position),
+        scrollToItemByIndex: (index, withRefresh) =>
+          scrollToItemByIndex(index, withRefresh),
+        scrollToTop: (withRefresh) => scrollToTop(withRefresh),
+        scrollToEnd: (withRefresh) => scrollToEnd(withRefresh),
         getViewPort: () => getViewPort(),
       });
       updateDimensions();
+      const initPosition = obtainInitPos?.();
+      if (initPosition !== null && initPosition !== undefined) {
+        setRequestedPos(initPosition < 0 ? 10_000_000 : initPosition);
+      }
       mounted.current = true;
+    }
+  });
+
+  // --- Whenever it's time to resize, save the offset height of
+  // --- the scroll panel to eliminate a flex bug.
+  useEffect(() => {
+    if (!mounted.current) return;
+    switch (resizePhase) {
+      case ResizePhase.None:
+        setResizedHeight(divHost.current.offsetHeight - 1);
+        setResizePhase(ResizePhase.Resized);
+        break;
+      case ResizePhase.Resized:
+        if (requestedPos >= 0) {
+          divHost.current.scrollTop = requestedPos;
+          scrolled?.(divHost.current.scrollTop);
+          setRequestedPos(-1);
+        }
+        updateDimensions();
+        renderItems();
+        setResizePhase(ResizePhase.Rendered);
+        break;
     }
   });
 
@@ -124,11 +159,15 @@ export default function VirtualizedList({
         tabIndex={focusable ? 0 : -1}
         ref={divHost}
         className="scroll"
-        style={{ overflow: "hidden" }}
+        style={{
+          overflow: "hidden",
+          position: "relative",
+          height: resizedHeight ?? "100%",
+        }}
         onScroll={(e) => {
-          console.log(e);
           updateDimensions();
           renderItems();
+          scrolled?.(divHost.current.scrollTop);
         }}
         onWheel={(e) => {
           divHost.current.scrollTop = normalizeScrollPosition(
@@ -145,23 +184,24 @@ export default function VirtualizedList({
           );
         }}
       >
-        <div
-          className="inner"
-          style={{
-            position: "relative",
-            height: `${innerHeight}px`,
-          }}
-          onMouseEnter={() => {
-            setPointed(true);
-            mouseLeft = false;
-          }}
-          onMouseLeave={() => {
-            setPointed(isSizing);
-            mouseLeft = true;
-          }}
-        >
-          {items}
-        </div>
+        {resizePhase !== ResizePhase.None && (
+          <div
+            className="inner"
+            style={{
+              height: `${innerHeight}px`,
+            }}
+            onMouseEnter={() => {
+              setPointed(true);
+              mouseLeft = false;
+            }}
+            onMouseLeave={() => {
+              setPointed(isSizing);
+              mouseLeft = true;
+            }}
+          >
+            {items}
+          </div>
+        )}
       </div>
       <FloatingScrollbar
         direction="vertical"
@@ -197,6 +237,14 @@ export default function VirtualizedList({
           }
         }}
       />
+      <ReactResizeDetector
+        handleWidth
+        handleHeight
+        onResize={() => {
+          if (resizePhase === ResizePhase.None) return;
+          forceRefresh();
+        }}
+      />
     </>
   );
 
@@ -206,36 +254,54 @@ export default function VirtualizedList({
   /**
    * Asks the component to update its viewport
    */
-  function forceRefresh() {
-    forceUpdate();
+  function forceRefresh(position?: number) {
+    setResizePhase(ResizePhase.None);
+    setRequestedPos(
+      position < 0
+        ? 10_000_000
+        : position ?? (divHost.current ? divHost.current.scrollTop : -1)
+    );
+    setResizedHeight(null);
   }
 
   /**
    * Scrolls to the item with the specified index
    * @param index
    */
-  function scrollToItemByIndex(index: number) {
+  function scrollToItemByIndex(index: number, withRefresh = false) {
     const topPos = normalizeScrollPosition(index * itemHeight);
-    tmpScrollPos.current = normalizeScrollPosition(topPos);
-    forceRefresh();
+    setRequestedPos(normalizeScrollPosition(topPos));
+    if (withRefresh) {
+      setResizePhase(ResizePhase.None);
+      setResizedHeight(null);
+    }
   }
 
   /**
    * Scrolls to the top of the list
    * @param index
    */
-  function scrollToTop() {
-    tmpScrollPos.current = 0;
-    forceRefresh();
+  function scrollToTop(withRefresh = false) {
+    setRequestedPos(0);
+    setResizePhase(ResizePhase.Rendered);
+    if (withRefresh) {
+      setResizePhase(ResizePhase.None);
+      setResizedHeight(null);
+    }
   }
 
   /**
    * Scrolls to the end of the list
    * @param index
    */
-  function scrollToEnd() {
-    tmpScrollPos.current = 10_000_000;
-    forceRefresh();
+  function scrollToEnd(withRefresh = false) {
+    setRequestedPos(10_000_000);
+    if (withRefresh) {
+      setResizePhase(ResizePhase.None);
+      setResizedHeight(null);
+    } else {
+      setResizePhase(ResizePhase.Rendered);
+    }
   }
 
   /**
@@ -244,13 +310,14 @@ export default function VirtualizedList({
    */
   function getViewPort(): { startIndex: number; endIndex: number } {
     const scrollPos = divHost.current.scrollTop;
-    return {
+    const result = {
       startIndex: Math.floor(scrollPos / itemHeight),
       endIndex: Math.min(
         numItems - 1, // don't render past the end of the list
-        Math.floor((scrollPos + divHost.current.offsetHeight) / itemHeight)
+        Math.floor((scrollPos + resizedHeight) / itemHeight)
       ),
     };
+    return result;
   }
 
   // --------------------------------------------------------------------------
@@ -275,10 +342,6 @@ export default function VirtualizedList({
       hostScrollPos: divHost.current.scrollLeft,
       hostScrollSize: divHost.current.scrollWidth,
     });
-    if (tmpScrollPos.current >= 0) {
-      divHost.current.scrollTop = tmpScrollPos.current;
-      tmpScrollPos.current = -1;
-    }
   }
 
   /**

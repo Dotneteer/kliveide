@@ -63,7 +63,7 @@ export default function DocumentTabBar() {
     <ScrollablePanel background="var(--commandbar-background-color)">
       <div style={{
         display: "flex",
-        height: "100%"
+        height: "100%",
       }}>
       {documentTabs}
       </div>

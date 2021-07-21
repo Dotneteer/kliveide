@@ -411,27 +411,6 @@ input.e-input.e-control.e-dropdownlist,
   opacity: 0.6;
 }
 
-// ----------------------------------------------------------------------------
-// Virtualized list overrides
-// .e-listview:not(.e-list-template) .e-list-item {
-//   height: auto;
-//   line-height: normal;
-//   padding: 0;
-// }
-
-// .e-listview .e-list-item {
-//   background: transparent;
-//   border: none;
-// }
-
-// .e-listview .e-list-item.e-hover {
-//   background: transparent;
-// }
-
-// .e-listview .e-list-item.e-active {
-//   background: transparent;
-// }
-
 // ============================================================================
 // CSS classes for IDE controls
 
@@ -444,5 +423,5 @@ input.e-input.e-control.e-dropdownlist,
 .splitter-panel > div {
   display: flex;
   height: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
 }

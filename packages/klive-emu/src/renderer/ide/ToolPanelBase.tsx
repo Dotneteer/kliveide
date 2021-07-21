@@ -25,11 +25,7 @@ export class ToolPanelBase<
   render() {
     return (
       <div style={placeholderStyle}>
-        <ScrollablePanel
-          scrollBarSize={8}
-        >
-          <div style={scrollableContentType()}>{this.renderContent()}</div>
-        </ScrollablePanel>
+          {this.renderContent()}
       </div>
     );
   }
@@ -43,8 +39,8 @@ const placeholderStyle: CSSProperties = {
   flexShrink: 1,
   width: "100%",
   height: "100%",
-  justifyContent: "center",
-  alignItems: "center",
-  fontSize: "0.8em",
-  color: "#a0a0a0",
+  fontFamily: "var(--console-font)",
+  fontSize: "1.0em",
+  padding: "0px 0px 8px 16px",
+  color: "var(--information-color)",
 };

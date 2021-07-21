@@ -1,14 +1,19 @@
 import * as React from "react";
-import { useEffect, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
-import { ToolPanelDescriptorBase } from "./ToolAreaService";
+import { toolAreaService, ToolPanelDescriptorBase } from "./ToolAreaService";
 import { IOutputPane, outputPaneService } from "./OutputPaneService";
+import VirtualizedList, {
+  VirtualizedListApi,
+} from "../../common/VirtualizedList";
 
 const TITLE = "Output";
 
 type State = {
-  text: string;
+  refreshCount: number;
+  initPosition?: number;
+  buffer: string[];
 };
 
 /**
@@ -18,13 +23,18 @@ export default class OutputToolPanel extends ToolPanelBase<
   ToolPanelProps<{}>,
   State
 > {
+  private _listApi: VirtualizedListApi;
   private _onPaneChanged: (pane: IOutputPane) => void;
+  private _onContentsChanged: (pane: IOutputPane) => void;
 
   constructor(props: ToolPanelProps<{}>) {
     super(props);
     this._onPaneChanged = (pane: IOutputPane) => this.onOutputPaneChanged(pane);
+    this._onContentsChanged = (pane: IOutputPane) =>
+      this.onContentsChanged(pane);
     this.state = {
-      text: "No pane changed yet",
+      refreshCount: 0,
+      buffer: [],
     };
   }
 
@@ -32,23 +42,72 @@ export default class OutputToolPanel extends ToolPanelBase<
 
   componentDidMount() {
     outputPaneService.activePaneChanged.on(this._onPaneChanged);
+    outputPaneService.paneContentsChanged.on(this._onContentsChanged);
     const activePane = outputPaneService.getActivePane();
     if (activePane) {
-      this.setState({text: `Current pane: ${activePane.id}`});
+      this.setState({
+        buffer: activePane.buffer.getContents(),
+      });
     }
   }
 
   componentWillUnmount() {
-    outputPaneService.activePaneChanged.off(this._onPaneChanged);
+    outputPaneService.activePaneChanged.off(this._onContentsChanged);
+    outputPaneService.paneContentsChanged.off(this._onPaneChanged);
   }
 
   onOutputPaneChanged(pane: IOutputPane): void {
-    console.log(this);
-    this.setState({ text: `New output panel: ${pane.id}` });
+    pane.buffer.writeLine("Pane changed");
+    this.setState({
+      refreshCount: this.state.refreshCount + 1,
+      buffer: pane.buffer.getContents(),
+      initPosition: -1,
+    });
   }
 
-  renderContent(): React.ReactNode {
-    return <>{this.state.text}</>;
+  onContentsChanged(pane: IOutputPane): void {
+    if (pane === outputPaneService.getActivePane()) {
+      this.setState({
+        buffer: pane.buffer.getContents(),
+      });
+      this._listApi.forceRefresh(-1);
+    }
+  }
+
+  renderContent() {
+    return (
+      <VirtualizedList
+        key={this.state.refreshCount}
+        itemHeight={18}
+        numItems={this.state.buffer.length}
+        renderItem={(index: number, style: CSSProperties) => {
+          return (
+            <div
+              key={index}
+              style={{ ...style }}
+              onClick={() => {
+                const buffer = outputPaneService.getActivePane().buffer;
+                buffer.color("magenta");
+                buffer.bold(true);
+                buffer.write(`Item #${buffer.getContents().length}:`);
+                buffer.bold(false);
+                buffer.color("red");
+                buffer.bold(false);
+                outputPaneService.getActivePane().buffer.writeLine("Hello");
+                buffer.resetColor();
+              }}
+            >
+              <div
+                dangerouslySetInnerHTML={{ __html: this.state.buffer[index] }}
+              />
+            </div>
+          );
+        }}
+        registerApi={(api) => (this._listApi = api)}
+        obtainInitPos={() => this.state.initPosition}
+        scrolled={(pos) => toolAreaService.scrollActivePane(pos)}
+      />
+    );
   }
 }
 
@@ -79,10 +138,12 @@ function OutputPanesPropertyBar() {
   });
 
   const selectPane = () => {
-    const selectedPanel = outputPaneService.getPaneById(
-      paneListComponent.value.toString()
-    );
-    outputPaneService.setActivePane(selectedPanel);
+    if (paneListComponent?.value) {
+      const selectedPanel = outputPaneService.getPaneById(
+        paneListComponent.value.toString()
+      );
+      outputPaneService.setActivePane(selectedPanel);
+    }
   };
 
   return (

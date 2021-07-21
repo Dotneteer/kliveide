@@ -103,6 +103,7 @@ class ToolAreaService {
   private _activeToolChanging = new LiteEvent<IToolPanel | null>();
   private _activeToolChanged = new LiteEvent<IToolPanel | null>();
   private _toolsChanged = new LiteEvent<ToolsInfo>();
+  private _activePaneScrolled = new LiteEvent<number>();
 
   constructor() {
     this._tools = [];
@@ -267,6 +268,21 @@ class ToolAreaService {
   }
 
   /**
+   * Signs that the active pane has been scrolled
+   * @param position
+   */
+  scrollActivePane(position: number): void {
+    this._activePaneScrolled.fire(position);
+  }
+
+  /**
+   * This event is fired when the active pane is scrolled
+   */
+  get activePaneScrolled(): ILiteEvent<number | null> {
+    return this, this._activePaneScrolled;
+  }
+
+  /**
    * Fires the documents changed event
    */
   private fireChanges(): void {
@@ -280,10 +296,9 @@ class ToolAreaService {
 /**
  * Represents the document information
  */
- export type ToolsInfo = {
+export type ToolsInfo = {
   tools: IToolPanel[];
   active: IToolPanel | null;
 };
-
 
 export const toolAreaService = new ToolAreaService();

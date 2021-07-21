@@ -1,4 +1,24 @@
+import { CSSProperties } from "styled-components";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { toStyleString } from "../utils/css-utils";
+
+export type OutputColor =
+  | "black"
+  | "red"
+  | "green"
+  | "yellow"
+  | "blue"
+  | "magenta"
+  | "cyan"
+  | "white"
+  | "brightBlack"
+  | "brightRed"
+  | "brightGreen"
+  | "brightYellow"
+  | "brightBlue"
+  | "brightMagenta"
+  | "brightCyan"
+  | "brightWhite";
 
 /**
  * Represents a buffer for an output pane
@@ -15,6 +35,41 @@ export interface IOutputBuffer {
   getContents(): string[];
 
   /**
+   * Sets the default color
+   */
+  resetColor(): void;
+
+  /**
+   * Sets the output to the specified color
+   * @param color
+   */
+  color(color: OutputColor): void;
+
+  /**
+   * Indicates if the font is to be used in bold
+   * @param use
+   */
+  bold(use: boolean): void;
+
+  /**
+   * Indicates if the font is to be used in italic
+   * @param use
+   */
+  italic(use: boolean): void;
+
+  /**
+   * Indicates if the font is to be used with underline
+   * @param use
+   */
+  underline(use: boolean): void;
+
+  /**
+   * Indicates if the font is to be used with strikethru
+   * @param use
+   */
+  strikethru(use: boolean): void;
+
+  /**
    * Writes a new entry to the output
    * @param message Message to write
    */
@@ -25,6 +80,11 @@ export interface IOutputBuffer {
    * @param message
    */
   writeLine(message: string): void;
+
+  /**
+   * This event fires when the contents of the buffer changes.
+   */
+  readonly contentsChanged: ILiteEvent<void>;
 }
 
 /**
@@ -33,6 +93,12 @@ export interface IOutputBuffer {
 export class OutputPaneBuffer implements IOutputBuffer {
   private _buffer: string[] = [];
   private _currentLineIndex: number = -1;
+  private _color: OutputColor | null = null;
+  private _isBold: boolean = false;
+  private _isItalic: boolean = false;
+  private _isUnderline: boolean = false;
+  private _isStrikethru: boolean = false;
+  private _contentsChanged = new LiteEvent<void>();
 
   constructor(
     public readonly bufferedLines = 1024,
@@ -55,6 +121,53 @@ export class OutputPaneBuffer implements IOutputBuffer {
   }
 
   /**
+   * Sets the default color
+   */
+  resetColor(): void {
+    this._color = null;
+  }
+
+  /**
+   * Sets the output to the specified color
+   * @param color
+   */
+  color(color: OutputColor): void {
+    this._color = color;
+  }
+
+  /**
+   * Indicates if the font is to be used in bold
+   * @param use
+   */
+  bold(use: boolean): void {
+    this._isBold = use;
+  }
+
+  /**
+   * Indicates if the font is to be used in italic
+   * @param use
+   */
+  italic(use: boolean): void {
+    this._isItalic = use;
+  }
+
+  /**
+   * Indicates if the font is to be used with underline
+   * @param use
+   */
+  underline(use: boolean): void {
+    this._isUnderline = use;
+  }
+
+  /**
+   * Indicates if the font is to be used with strikethru
+   * @param use
+   */
+  strikethru(use: boolean): void {
+    this._isStrikethru = use;
+  }
+
+  /**
    * Writes a new entry to the output
    * @param message Message to write
    */
@@ -63,9 +176,18 @@ export class OutputPaneBuffer implements IOutputBuffer {
       this._currentLineIndex = 0;
       this._buffer[0] = "";
     }
+
+    if (this.isStyled()) {
+      message = `<span style="${toStyleString(
+        this.getStyle()
+      )}">${message}</span>`;
+    }
+
     this._buffer[this._currentLineIndex] = (
       this._buffer[this._currentLineIndex] + message
     ).substr(0, this.maxLineLenght);
+
+    this._contentsChanged.fire();
   }
 
   /**
@@ -80,6 +202,47 @@ export class OutputPaneBuffer implements IOutputBuffer {
       this._currentLineIndex++;
     }
     this._buffer[this._currentLineIndex] = "";
+  }
+
+    /**
+   * This event fires when the contents of the buffer changes.
+   */
+  get contentsChanged(): ILiteEvent<void> {
+    return this._contentsChanged;
+  }
+
+  /**
+   * Tests if we need to apply style
+   */
+  private isStyled(): boolean {
+    return (
+      !!this._color ||
+      this._isBold ||
+      this._isItalic ||
+      this._isStrikethru ||
+      this._isUnderline
+    );
+  }
+
+  private getStyle(): CSSProperties {
+    const style: CSSProperties = {};
+    if (this._color) {
+      style.color = `var(--console-ansi${this._color[0].toUpperCase()}${this._color.substring(
+        1
+      )})`;
+    }
+    if (this._isBold) {
+      style.fontWeight = 600;
+    }
+    if (this._isItalic) {
+      style.fontStyle = "italic";
+    }
+    if (this._isUnderline || this._isStrikethru) {
+      style.textDecoration = `${this._isUnderline ? "underline " : " "} ${
+        this._isStrikethru ? "line-through" : ""
+      }`.trim();
+    }
+    return style;
   }
 }
 
@@ -170,6 +333,7 @@ class OutputPaneService {
   private _activePane: IOutputPane | null = null;
   private _activePaneChanging = new LiteEvent<void>();
   private _activePaneChanged = new LiteEvent<IOutputPane>();
+  private _paneContentsChanged = new LiteEvent<IOutputPane>();
 
   /**
    * Registers a new output pane
@@ -184,6 +348,9 @@ class OutputPaneService {
     if (!this._activePane) {
       this.setActivePane(pane);
     }
+    pane.buffer.contentsChanged.on(() => {
+      this._paneContentsChanged.fire(pane);
+    })
   }
 
   /**
@@ -209,7 +376,6 @@ class OutputPaneService {
     if (this._activePane !== pane && this._panes.indexOf(pane) >= 0) {
       this._activePaneChanging.fire();
       this._activePane = pane;
-      console.log(`Changed: ${pane.id}`);
       this._activePaneChanged.fire(pane);
     }
   }
@@ -241,6 +407,14 @@ class OutputPaneService {
    */
   get activePaneChanged(): ILiteEvent<IOutputPane> {
     return this._activePaneChanged;
+  }
+
+  /**
+   * Fires when the contents of any of the output panes changes.
+   * The event argument is the pane with changed contents
+   */
+  get paneContentsChanged(): ILiteEvent<IOutputPane> {
+    return this._paneContentsChanged;
   }
 }
 

@@ -16,6 +16,7 @@ export interface IThemeProperties {
   "--selection-color": string;
   "--information-color": string;
   "--hilited-color": string;
+  "--console-font": string;
 
   "--button-background-color": string;
   "--button-primary-background-color": string;
@@ -81,4 +82,21 @@ export interface IThemeProperties {
   "--dropdown-backgound-color": string;
 
   "--dialog-header-background": string;
+
+  "--console-ansiBlack": string;
+  "--console-ansiBlue": string;
+  "--console-ansiBrightBlack": string;
+  "--console-ansiBrightBlue": string;
+  "--console-ansiBrightCyan": string;
+  "--console-ansiBrightGreen": string;
+  "--console-ansiBrightMagenta": string;
+  "--console-ansiBrightRed": string;
+  "--console-ansiBrightWhite": string;
+  "--console-ansiBrightYellow": string;
+  "--console-ansiCyan": string;
+  "--console-ansiGreen": string;
+  "--console-ansiMagenta": string;
+  "--console-ansiRed": string;
+  "--console-ansiWhite": string;
+  "--console-ansiYellow": string;
 }

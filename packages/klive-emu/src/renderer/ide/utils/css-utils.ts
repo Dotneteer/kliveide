@@ -15,11 +15,12 @@ export function kebabCase(str: string): string {
  * @returns Style string representation
  */
 export function toStyleString(style: CSSProperties): string {
+
   return Object.keys(style).reduce((accumulator, key) => {
     // transform the key from camelCase to kebab-case
     const cssKey = kebabCase(key);
     // remove ' in value
-    const cssValue = (style as any)[key].replace("'", "");
+    const cssValue = (style as any)[key].toString().replace("'", "");
     // build the result
     // you can break the line, add indent for it if you need
     return `${accumulator}${cssKey}:${cssValue};`;

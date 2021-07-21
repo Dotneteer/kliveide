@@ -36,8 +36,8 @@ export default function ToolTab({
     background: "var(--document-tab-active-background-color)",
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: "10px",
-    marginRight: "10px",
+    marginLeft: "16px",
+    marginRight: "16px",
     cursor: "pointer",
     fontSize: "0.8em",
     color:
