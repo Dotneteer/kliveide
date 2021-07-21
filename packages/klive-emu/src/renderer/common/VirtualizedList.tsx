@@ -22,6 +22,7 @@ export type VirtualizedListProps = {
   renderItem: ItemRenderer;
   registerApi?: (api: VirtualizedListApi) => void;
   obtainInitPos?: () => number | null;
+  scrolled?: (topPos: number) => void;
 };
 
 /**
@@ -53,6 +54,7 @@ export default function VirtualizedList({
   renderItem,
   registerApi,
   obtainInitPos,
+  scrolled
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
@@ -141,6 +143,7 @@ export default function VirtualizedList({
       case ResizePhase.Resized:
         if (requestedPos >= 0) {
           divHost.current.scrollTop = requestedPos;
+          scrolled?.(divHost.current.scrollTop);
           setRequestedPos(-1);
         }
         updateDimensions();
@@ -164,6 +167,7 @@ export default function VirtualizedList({
         onScroll={(e) => {
           updateDimensions();
           renderItems();
+          scrolled?.(divHost.current.scrollTop);
         }}
         onWheel={(e) => {
           divHost.current.scrollTop = normalizeScrollPosition(

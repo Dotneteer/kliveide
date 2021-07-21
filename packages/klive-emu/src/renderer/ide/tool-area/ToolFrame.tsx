@@ -19,11 +19,14 @@ import { animationTick } from "../../common/utils";
  * Represents the statusbar of the emulator
  */
 export default function ToolFrame() {
+  const headerHost = React.createRef<HTMLDivElement>();
+
   // --- Component state
   const [activeTool, setActiveTool] = useState<IToolPanel | null>(
     toolAreaService.getActiveTool()
   );
   const [currentTools, setCurrentTools] = useState<IToolPanel[]>([]);
+  const [showDecorator, setShowDecorator] = useState(false);
 
   // --- Refresh the documents when any changes occur
   const refreshDocs = (info: ToolsInfo) => {
@@ -31,14 +34,20 @@ export default function ToolFrame() {
     setActiveTool(info.active);
   };
 
+  const onScroll = (pos: number) => {
+    setShowDecorator(pos > 0);
+  };
+
   useEffect(() => {
     // --- Mount
     setCurrentTools(toolAreaService.getTools());
     setActiveTool(toolAreaService.getActiveTool());
     toolAreaService.toolsChanged.on(refreshDocs);
+    toolAreaService.activePaneScrolled.on(onScroll);
 
     return () => {
       // --- Unmount
+      toolAreaService.activePaneScrolled.off(onScroll);
       toolAreaService.toolsChanged.off(refreshDocs);
     };
   });
@@ -65,11 +74,22 @@ export default function ToolFrame() {
 
   return (
     <Root>
-      <HeaderBar>
+      <HeaderBar ref={headerHost}>
         <ToolTabBar />
         <ToolPropertyBar tool={activeTool} />
         <ToolCommandBar />
       </HeaderBar>
+      <div
+        style={{
+          position: "relative",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: 6,
+          boxShadow: showDecorator ? "#000000 0 6px 6px -6px inset" : "none",
+          zIndex: 10,
+        }}
+      ></div>
       <PlaceHolder key={activeTool.index}>
         {activeTool?.createContentElement()}
       </PlaceHolder>
@@ -94,8 +114,8 @@ const HeaderBar = createSizedStyledPanel({
 
 const PlaceHolder = createSizedStyledPanel({
   others: {
-    "overflow": "hidden",
-  }
+    overflow: "hidden",
+  },
 });
 
 /**

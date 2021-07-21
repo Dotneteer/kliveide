@@ -41,6 +41,6 @@ const placeholderStyle: CSSProperties = {
   height: "100%",
   fontFamily: "var(--console-font)",
   fontSize: "1.0em",
-  padding: "8px 16px",
+  padding: "0px 0px 8px 16px",
   color: "var(--information-color)",
 };

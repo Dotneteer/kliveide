@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
-import { ToolPanelDescriptorBase } from "./ToolAreaService";
+import { toolAreaService, ToolPanelDescriptorBase } from "./ToolAreaService";
 import { IOutputPane, outputPaneService } from "./OutputPaneService";
 import VirtualizedList, {
   VirtualizedListApi,
@@ -61,12 +61,11 @@ export default class OutputToolPanel extends ToolPanelBase<
     this.setState({
       refreshCount: this.state.refreshCount + 1,
       buffer: pane.buffer.getContents(),
-      initPosition: -1
+      initPosition: -1,
     });
   }
 
   onContentsChanged(pane: IOutputPane): void {
-    console.log("Active contents changed");
     if (pane === outputPaneService.getActivePane()) {
       this.setState({
         buffer: pane.buffer.getContents(),
@@ -96,7 +95,6 @@ export default class OutputToolPanel extends ToolPanelBase<
                 buffer.bold(false);
                 outputPaneService.getActivePane().buffer.writeLine("Hello");
                 buffer.resetColor();
-                //this._listApi.scrollToEnd(true);
               }}
             >
               <div
@@ -105,11 +103,9 @@ export default class OutputToolPanel extends ToolPanelBase<
             </div>
           );
         }}
-        registerApi={(api) => {
-          this._listApi = api;
-          console.log("Api bound");
-        }}
+        registerApi={(api) => (this._listApi = api)}
         obtainInitPos={() => this.state.initPosition}
+        scrolled={(pos) => toolAreaService.scrollActivePane(pos)}
       />
     );
   }
@@ -142,10 +138,12 @@ function OutputPanesPropertyBar() {
   });
 
   const selectPane = () => {
-    const selectedPanel = outputPaneService.getPaneById(
-      paneListComponent.value.toString()
-    );
-    outputPaneService.setActivePane(selectedPanel);
+    if (paneListComponent?.value) {
+      const selectedPanel = outputPaneService.getPaneById(
+        paneListComponent.value.toString()
+      );
+      outputPaneService.setActivePane(selectedPanel);
+    }
   };
 
   return (
