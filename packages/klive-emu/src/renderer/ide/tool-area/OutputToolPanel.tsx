@@ -57,7 +57,6 @@ export default class OutputToolPanel extends ToolPanelBase<
   }
 
   onOutputPaneChanged(pane: IOutputPane): void {
-    pane.buffer.writeLine("Pane changed");
     this.setState({
       refreshCount: this.state.refreshCount + 1,
       buffer: pane.buffer.getContents(),
@@ -69,8 +68,9 @@ export default class OutputToolPanel extends ToolPanelBase<
     if (pane === outputPaneService.getActivePane()) {
       this.setState({
         buffer: pane.buffer.getContents(),
+        initPosition: -1,
       });
-      this._listApi.forceRefresh(-1);
+      this._listApi.scrollToEnd();
     }
   }
 
@@ -82,21 +82,7 @@ export default class OutputToolPanel extends ToolPanelBase<
         numItems={this.state.buffer.length}
         renderItem={(index: number, style: CSSProperties) => {
           return (
-            <div
-              key={index}
-              style={{ ...style }}
-              onClick={() => {
-                const buffer = outputPaneService.getActivePane().buffer;
-                buffer.color("magenta");
-                buffer.bold(true);
-                buffer.write(`Item #${buffer.getContents().length}:`);
-                buffer.bold(false);
-                buffer.color("red");
-                buffer.bold(false);
-                outputPaneService.getActivePane().buffer.writeLine("Hello");
-                buffer.resetColor();
-              }}
-            >
+            <div key={index} style={{ ...style }}>
               <div
                 dangerouslySetInnerHTML={{ __html: this.state.buffer[index] }}
               />

@@ -283,7 +283,7 @@ export default function VirtualizedList({
    */
   function scrollToTop(withRefresh = false) {
     setRequestedPos(0);
-    setResizePhase(ResizePhase.Rendered);
+    setResizePhase(ResizePhase.Resized);
     if (withRefresh) {
       setResizePhase(ResizePhase.None);
       setResizedHeight(null);
@@ -300,7 +300,7 @@ export default function VirtualizedList({
       setResizePhase(ResizePhase.None);
       setResizedHeight(null);
     } else {
-      setResizePhase(ResizePhase.Rendered);
+      setResizePhase(ResizePhase.Resized);
     }
   }
 

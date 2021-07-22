@@ -79,7 +79,7 @@ export interface IOutputBuffer {
    * Writes a message and adds a new output line
    * @param message
    */
-  writeLine(message: string): void;
+  writeLine(message?: string): void;
 
   /**
    * This event fires when the contents of the buffer changes.
@@ -194,8 +194,10 @@ export class OutputPaneBuffer implements IOutputBuffer {
    * Writes a message and adds a new output line
    * @param message
    */
-  writeLine(message: string): void {
-    this.write(message);
+  writeLine(message?: string): void {
+    if (message) {
+      this.write(message);
+    }
     if (this._currentLineIndex >= this.bufferedLines) {
       this._buffer.shift();
     } else {
