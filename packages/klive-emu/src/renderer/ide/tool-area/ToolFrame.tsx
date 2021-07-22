@@ -135,7 +135,6 @@ function ToolCommandBar() {
     width: "auto",
     alignItems: "center",
     justifyContent: "center",
-    paddingLeft: "6px",
     paddingRight: "6px",
     background: "var(--shell-canvas-background-color)",
   };
