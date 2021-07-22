@@ -111,6 +111,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   clear(): void {
     this._buffer = [];
     this._currentLineIndex = -1;
+    this._contentsChanged.fire();
   }
 
   /**
@@ -379,6 +380,12 @@ class OutputPaneService {
       this._activePaneChanging.fire();
       this._activePane = pane;
       this._activePaneChanged.fire(pane);
+    }
+  }
+
+  clearActivePane(): void {
+    if (this._activePane) {
+      this._activePane.buffer.clear();
     }
   }
 

@@ -2,6 +2,7 @@ import { ideStore } from "../ide/ideStore";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { EmulatorPanelState } from "../../shared/state/AppState";
 import {
+  IOutputBuffer,
   OutputColor,
   OutputPaneDescriptorBase,
   outputPaneService,
@@ -15,6 +16,7 @@ const TITLE = "Virtual Machine";
  * Descriptor for the sample side bar panel
  */
 export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
+  private _isMachineTypeSet = false;
   private _lastEmuState: EmulatorPanelState | null = null;
 
   constructor() {
@@ -22,6 +24,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
     const vmAware = new StateAwareObject<string>(ideStore, "machineType");
     vmAware.stateChanged.on((type: string) => {
       // --- Change the execution state to "none" whenever the machine type changes
+      this._isMachineTypeSet = true;
       this._lastEmuState = null;
       const pane = outputPaneService.getPaneById(ID);
       if (pane) {
@@ -41,6 +44,9 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
       "emulatorPanel"
     );
     emuAware.stateChanged.on(async (emuPanel: EmulatorPanelState) => {
+      if (!this._isMachineTypeSet) {
+        return;
+      }
       const pane = outputPaneService.getPaneById(ID);
       if (pane) {
         const buffer = pane.buffer;
@@ -79,61 +85,62 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
             }
           }
           if (newState) {
-            buffer.resetColor();
-            buffer.writeLine();
-            buffer.write("Machine state: ");
-            buffer.bold(true);
-            buffer.color(color);
-            buffer.write(newState);
-            buffer.bold(false);
-            buffer.resetColor();
+            displayEntry(buffer, "Machine state: ", color, newState);
           }
         }
 
         // --- Check clock frequency changes
-        if (this._lastEmuState?.clockMultiplier !== emuPanel.clockMultiplier) {
-          buffer.resetColor();
-          buffer.writeLine();
-          buffer.write("CPU frequency: ");
-          buffer.bold(true);
-          buffer.color("brightMagenta");
-          buffer.write(
+        if (
+          this._lastEmuState?.clockMultiplier !== emuPanel.clockMultiplier &&
+          emuPanel.clockMultiplier &&
+          emuPanel.baseClockFrequency
+        ) {
+          displayEntry(
+            buffer,
+            "CPU frequency: ",
+            "brightMagenta",
             `${(
               (emuPanel.baseClockFrequency * emuPanel.clockMultiplier) /
               1000000
             ).toFixed(4)}Mhz`
           );
-          buffer.bold(false);
-          buffer.resetColor();
         }
 
         // --- Check sound mute/unmute
         if (this._lastEmuState?.muted != emuPanel.muted) {
-          buffer.resetColor();
-          buffer.writeLine();
-          buffer.write("Sound ");
-          buffer.bold(true);
-          buffer.color("brightMagenta");
-          buffer.write(emuPanel.muted ? "muted" : "unmuted");
-          buffer.bold(false);
-          buffer.resetColor();
+          displayEntry(
+            buffer,
+            "Sound ",
+            "brightMagenta",
+            emuPanel.muted ? "muted" : "unmuted"
+          );
         }
 
         // --- Check sound level changes
         if (this._lastEmuState?.soundLevel !== emuPanel.soundLevel) {
-          buffer.resetColor();
-          buffer.writeLine();
-          buffer.write("Sound level: ");
-          buffer.bold(true);
-          buffer.color("brightMagenta");
-          buffer.write(`${(100 * emuPanel.soundLevel).toFixed(0)}%`);
-          buffer.bold(false);
-          buffer.resetColor();
+          displayEntry(
+            buffer,
+            "Sound level: ",
+            "brightMagenta",
+            `${(100 * emuPanel.soundLevel).toFixed(0)}%`
+          );
+        }
+
+        if (this._lastEmuState?.keyboardLayout !== emuPanel.keyboardLayout) {
+          if (this._lastEmuState?.soundLevel !== emuPanel.soundLevel) {
+            displayEntry(
+              buffer,
+              "Keyboard: ",
+              "brightMagenta",
+              emuPanel.keyboardLayout
+            );
+          }
         }
       }
 
       this._lastEmuState = { ...emuPanel };
 
+      // --- Get the current PC value
       async function getPcInfo(): Promise<string> {
         const cpuState = await engineProxy.getMachineState();
         const pcLabel = emuPanel.frameDiagData?.pcInfo?.label ?? "PC";
@@ -141,6 +148,24 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
           .toString(16)
           .toUpperCase()
           .padStart(4, "0")}`;
+      }
+
+      // --- Display the specified information entry
+      function displayEntry(
+        buffer: IOutputBuffer,
+        label: string,
+        infoColor: OutputColor,
+        infoValue?: string
+      ) {
+        buffer.resetColor();
+        buffer.writeLine();
+        buffer.write(label);
+        buffer.bold(true);
+        buffer.color(infoColor);
+        if (infoValue) {
+          buffer.write(infoValue);
+        }
+        buffer.bold(false);
       }
     });
   }

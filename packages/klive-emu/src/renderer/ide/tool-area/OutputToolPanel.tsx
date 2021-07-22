@@ -7,6 +7,7 @@ import { IOutputPane, outputPaneService } from "./OutputPaneService";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common/VirtualizedList";
+import CommandIconButton from "../command/CommandIconButton";
 
 const TITLE = "Output";
 
@@ -133,13 +134,27 @@ function OutputPanesPropertyBar() {
   };
 
   return (
-    <DropDownListComponent
-      ref={(scope) => (paneListComponent = scope)}
-      dataSource={panesData}
-      fields={{ text: "title", value: "id" }}
-      change={selectPane}
-      width={170}
-    />
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <DropDownListComponent
+        ref={(scope) => (paneListComponent = scope)}
+        dataSource={panesData}
+        fields={{ text: "title", value: "id" }}
+        change={selectPane}
+        width={170}
+      />
+      <div style={{ width: 6 }} />
+      <CommandIconButton
+        iconName="clear-all"
+        title={"Clear Output"}
+        clicked={() => outputPaneService.clearActivePane()}
+      />
+    </div>
   );
 }
 

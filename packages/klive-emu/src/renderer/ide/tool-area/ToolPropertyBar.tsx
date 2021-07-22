@@ -21,7 +21,6 @@ export default function ToolPropertyBar({ tool }: Props) {
     alignItems: "center",
     justifyContent: "center",
     paddingLeft: "6px",
-    paddingRight: "6px",
     background: "var(--shell-canvas-background-color)",
   };
 
