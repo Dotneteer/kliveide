@@ -23,6 +23,8 @@ export type VirtualizedListProps = {
   registerApi?: (api: VirtualizedListApi) => void;
   obtainInitPos?: () => number | null;
   scrolled?: (topPos: number) => void;
+  focus?: () => void;
+  blur?: () => void;
 };
 
 /**
@@ -54,7 +56,9 @@ export default function VirtualizedList({
   renderItem,
   registerApi,
   obtainInitPos,
-  scrolled
+  scrolled,
+  focus,
+  blur
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
@@ -183,6 +187,9 @@ export default function VirtualizedList({
             integralPosition
           );
         }}
+
+        onFocus={() => focus?.()}
+        onBlur={() => blur?.()}
       >
         {resizePhase !== ResizePhase.None && (
           <div

@@ -3,6 +3,7 @@ import { CSSProperties } from "react";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common/VirtualizedList";
+import CommandIconButton from "../command/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { interactivePaneService } from "./InteractiveService";
 import { toolAreaService, ToolPanelDescriptorBase } from "./ToolAreaService";
@@ -28,6 +29,8 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   private _onContentsChanged: () => void;
   private _onCommandSubmitted: (command: string) => void;
   private _onCommandExecuted: (command: string) => void;
+  private _onFocusRequested: () => void;
+  private _historyIndex = -1;
 
   constructor(props: ToolPanelProps<{}>) {
     super(props);
@@ -35,6 +38,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     this._onCommandSubmitted = (command: string) =>
       this.onCommandSubmitted(command);
     this._onCommandExecuted = (command) => this.onCommandExecuted(command);
+    this._onFocusRequested = () => this.onFocusRequested();
     this.state = {
       refreshCount: 0,
       initPosition: -1,
@@ -49,17 +53,15 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     const buffer = interactivePaneService.getOutputBuffer();
     buffer.contentsChanged.on(this._onContentsChanged);
     interactivePaneService.commandSubmitted.on(this._onCommandSubmitted);
-    console.log("subscribe");
     interactivePaneService.commandExecuted.on(this._onCommandExecuted);
-    window.requestAnimationFrame(() => {
-      this._inputRef.current.focus();
-    });
+    interactivePaneService.focusRequested.on(this._onFocusRequested);
+    this.setFocusToPrompt();
   }
 
   componentWillUnmount() {
+    interactivePaneService.focusRequested.off(this._onFocusRequested);
     interactivePaneService.commandExecuted.off(this._onCommandExecuted);
     interactivePaneService.commandSubmitted.off(this._onCommandSubmitted);
-    console.log("unsubscribe");
     interactivePaneService
       .getOutputBuffer()
       .contentsChanged.off(this._onContentsChanged);
@@ -67,6 +69,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
 
   onContentsChanged(): void {
     this.setState({
+      buffer: interactivePaneService.getOutputBuffer().getContents(),
       initPosition: -1,
     });
     this._listApi.scrollToEnd();
@@ -80,6 +83,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     buffer.color("brightBlue");
     buffer.write(command);
     this.setState({ inputEnabled: false });
+    this._historyIndex = -1;
     await new Promise((r) => setTimeout(r, 100));
     interactivePaneService.signCommandExecuted();
   }
@@ -92,9 +96,11 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     buffer.write("Executed ");
     buffer.color("brightGreen");
     buffer.write(command);
-    window.requestAnimationFrame(() => {
-      this._inputRef.current.focus();
-    });
+    this.setFocusToPrompt();
+  }
+
+  onFocusRequested(): void {
+    this.setFocusToPrompt();
   }
 
   renderContent() {
@@ -108,7 +114,9 @@ export default class InteractiveToolPanel extends ToolPanelBase<
             return (
               <div key={index} style={{ ...style }}>
                 <div
-                  dangerouslySetInnerHTML={{ __html: this.state.buffer[index] }}
+                  dangerouslySetInnerHTML={{
+                    __html: this.state.buffer[index],
+                  }}
                 />
               </div>
             );
@@ -148,18 +156,39 @@ export default class InteractiveToolPanel extends ToolPanelBase<
    * @param e Keyboard event
    */
   keyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
+    const input = e.target as HTMLInputElement;
     switch (e.key) {
       case "ArrowUp":
       case "ArrowDown":
         e.preventDefault();
         e.stopPropagation();
+        const historyLength = interactivePaneService.getHistoryLength();
+        if (historyLength > 0) {
+          this._historyIndex += e.key === "ArrowUp" ? 1 : -1;
+          if (this._historyIndex === -1) {
+            input.value = "";
+          } else {
+            this._historyIndex =
+              (this._historyIndex + historyLength) % historyLength;
+            input.value = interactivePaneService.getCommandFromHistory(
+              this._historyIndex
+            );
+          }
+        }
         break;
       case "Enter":
-        const input = e.target as HTMLInputElement;
         const command = input.value;
         input.value = "";
         interactivePaneService.submitCommand(command);
         break;
+    }
+  }
+
+  setFocusToPrompt(): void {
+    if (this._inputRef.current) {
+      window.requestAnimationFrame(() => {
+        this._inputRef.current.focus();
+      });
     }
   }
 }
@@ -194,14 +223,24 @@ export class InteractiveToolPanelDescriptor extends ToolPanelDescriptorBase {
   }
 
   createHeaderElement(): React.ReactNode {
-    return <div></div>;
+    return (
+      <div>
+        <CommandIconButton
+          iconName="clear-all"
+          title={"Clear Output"}
+          clicked={() => {
+            interactivePaneService.clearOutputBuffer();
+            interactivePaneService.requestFocus();
+          }}
+        />
+      </div>
+    );
   }
 
   /**
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode {
-    console.log("Create interactive panel");
     return <InteractiveToolPanel descriptor={this} />;
   }
 }

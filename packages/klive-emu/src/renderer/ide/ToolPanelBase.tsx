@@ -2,7 +2,9 @@ import * as React from "react";
 import { CSSProperties } from "styled-components";
 import { IToolPanel } from "./tool-area/ToolAreaService";
 
-export type ToolPanelProps<P> = P & { descriptor: IToolPanel };
+export type ToolPanelProps<P> = P & {
+  descriptor: IToolPanel;
+};
 
 /**
  * Base class for side bar panel implementations
@@ -11,7 +13,6 @@ export class ToolPanelBase<
   P = { descriptor: IToolPanel },
   S = {}
 > extends React.Component<ToolPanelProps<P>, S> {
-
   // --- Override the title in other panels
   title = "(Panel)";
 
@@ -21,11 +22,7 @@ export class ToolPanelBase<
 
   // --- Override the default rendering
   render() {
-    return (
-      <div style={placeholderStyle}>
-          {this.renderContent()}
-      </div>
-    );
+    return <div style={placeholderStyle}>{this.renderContent()}</div>;
   }
 }
 

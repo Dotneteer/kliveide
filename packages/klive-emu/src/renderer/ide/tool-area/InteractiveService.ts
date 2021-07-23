@@ -13,6 +13,7 @@ class InteractivePaneService {
   private _commandSubmitted = new LiteEvent<string>();
   private _commandExecuting = false;
   private _commandExecuted = new LiteEvent<string>();
+  private _focusRequested = new LiteEvent<void>();
 
   /**
    * Gets the output buffer
@@ -23,10 +24,24 @@ class InteractivePaneService {
   }
 
   /**
+   * Clears the contents of the output buffer
+   */
+  clearOutputBuffer(): void {
+    this._outputBuffer.clear();
+  }
+
+  /**
    * Clears the command history
    */
   clearHistory(): void {
     this._history = [];
+  }
+
+  /**
+   * Gets the length of the command history
+   */
+  getHistoryLength(): number {
+    return this._history.length;
   }
 
   /**
@@ -82,6 +97,13 @@ class InteractivePaneService {
   }
 
   /**
+   * Request the focus to set to the prompt
+   */
+  requestFocus(): void {
+    this._focusRequested.fire();
+  }
+
+  /**
    * Fires when to contents of the output within the interactive pane changes
    */
   get outputContentChanged(): ILiteEvent<void> {
@@ -100,6 +122,13 @@ class InteractivePaneService {
    */
   get commandExecuted(): ILiteEvent<string> {
     return this._commandExecuted;
+  }
+
+  /**
+   * This event is raised when the interactive pane is requested to get the focus
+   */
+  get focusRequested(): ILiteEvent<void> {
+    return this._focusRequested;
   }
 }
 
