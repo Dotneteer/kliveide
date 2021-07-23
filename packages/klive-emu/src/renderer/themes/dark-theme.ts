@@ -6,7 +6,8 @@ import { ITheme } from "./theme-core";
 export const darkTheme: ITheme = {
   name: "dark",
   properties: {
-    "--shell-font-family": "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",
+    "--shell-font-family":
+      "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",
     "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
 
     "--shell-canvas-background-color": "#1E1E1E",
@@ -16,7 +17,7 @@ export const darkTheme: ITheme = {
     "--selection-color": "#007acc",
     "--information-color": "#c0c0c0",
     "--hilited-color": "#007acc",
-    "--console-font": "Consolas, \"Courier New\", monospace",
+    "--console-font": 'Consolas, "Courier New", monospace',
 
     "--button-background-color": "#606060",
     "--button-primary-background-color": "#007acc",
@@ -99,6 +100,7 @@ export const darkTheme: ITheme = {
     "--console-ansiRed": "#cd3131",
     "--console-ansiWhite": "#e5e5e5",
     "--console-ansiYellow": "#e5e510",
- 
+
+    "--interactive-input-color": "#23d18b",
   },
 };

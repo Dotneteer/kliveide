@@ -99,4 +99,6 @@ export interface IThemeProperties {
   "--console-ansiRed": string;
   "--console-ansiWhite": string;
   "--console-ansiYellow": string;
+
+  "--interactive-input-color": string;
 }

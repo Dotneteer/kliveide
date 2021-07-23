@@ -1,8 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
-import ScrollablePanel from "../common/ScrollablePanel";
 import { IToolPanel } from "./tool-area/ToolAreaService";
-import { scrollableContentType } from "./utils/content-utils";
 
 export type ToolPanelProps<P> = P & { descriptor: IToolPanel };
 
