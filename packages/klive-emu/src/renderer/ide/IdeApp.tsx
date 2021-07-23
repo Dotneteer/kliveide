@@ -13,7 +13,6 @@ import { documentService } from "./document-area/DocumentService";
 import { SampleDocumentPanelDescriptor } from "./SampleDocument";
 import ContextMenu from "./command/ContextMenu";
 import { toolAreaService } from "./tool-area/ToolAreaService";
-import { SampleToolPanelDescriptor } from "./SampleTool";
 import { Activity } from "../../shared/activity/Activity";
 import { ideStore } from "./ideStore";
 import {
@@ -37,11 +36,13 @@ import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel
 import { outputPaneService } from "./tool-area/OutputPaneService";
 import { VmOutputPanelDescriptor } from "../machines/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
+import { useRef } from "react";
 
 /**
  * Represents the emulator app's root component
  */
 export default function IdeApp() {
+  const mounted = useRef(false);
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
   const store = useStore();
@@ -52,162 +53,166 @@ export default function IdeApp() {
   let windowsAware: StateAwareObject<boolean>;
 
   React.useEffect(() => {
-    // --- Mount
-    dispatch(ideLoadUiAction());
-    updateThemeState();
+    if (!mounted.current) {
+      mounted.current = true;
 
-    // --- Watch for theme changes
-    themeAware = new StateAwareObject(store, "theme");
-    themeAware.stateChanged.on((theme) => {
-      themeService.setTheme(theme);
+      // --- Mount
+      dispatch(ideLoadUiAction());
       updateThemeState();
-    });
 
-    windowsAware = new StateAwareObject(store, "isWindows");
-    windowsAware.stateChanged.on((isWindows) => {
-      themeService.isWindows = isWindows;
-      updateThemeState();
-    });
+      // --- Watch for theme changes
+      themeAware = new StateAwareObject(store, "theme");
+      themeAware.stateChanged.on((theme) => {
+        themeService.setTheme(theme);
+        updateThemeState();
+      });
 
-    // --- Set up activities
-    const activities: Activity[] = [
-      {
-        id: "file-view",
-        title: "Explorer",
-        iconName: "files",
-        commands: [
-          {
-            id: "explorer-cmds",
-            text: "",
-            items: [
-              {
-                id: "cmd-1",
-                text: "Command #1",
-              },
-              {
-                id: "cmd-2",
-                text: "Command #2",
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "debug-view",
-        title: "Run and debug",
-        iconName: "debug-alt",
-        commands: [
-          {
-            id: "cmd-1",
-            iconName: "play",
-            text: "Command #1",
-          },
-          {
-            id: "cmd-2",
-            text: "Command #2",
-          },
-        ],
-      },
-      {
-        id: "log-view",
-        title: "Machine logs",
-        iconName: "output",
-      },
-      {
-        id: "test-view",
-        title: "Testing",
-        iconName: "beaker",
-      },
-      {
-        id: "settings",
-        title: "Manage",
-        iconName: "settings-gear",
-        isSystemActivity: true,
-      },
-    ];
-    ideStore.dispatch(setActivitiesAction(activities));
+      windowsAware = new StateAwareObject(store, "isWindows");
+      windowsAware.stateChanged.on((isWindows) => {
+        themeService.isWindows = isWindows;
+        updateThemeState();
+      });
 
-    // --- Register side bar panels
-    // (Explorer)
-    sideBarService.registerSideBarPanel(
-      "file-view",
-      new OpenEditorsPanelDescriptor()
-    );
-    sideBarService.registerSideBarPanel(
-      "file-view",
-      new ProjectFilesPanelDescriptor()
-    );
+      // --- Set up activities
+      const activities: Activity[] = [
+        {
+          id: "file-view",
+          title: "Explorer",
+          iconName: "files",
+          commands: [
+            {
+              id: "explorer-cmds",
+              text: "",
+              items: [
+                {
+                  id: "cmd-1",
+                  text: "Command #1",
+                },
+                {
+                  id: "cmd-2",
+                  text: "Command #2",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: "debug-view",
+          title: "Run and debug",
+          iconName: "debug-alt",
+          commands: [
+            {
+              id: "cmd-1",
+              iconName: "play",
+              text: "Command #1",
+            },
+            {
+              id: "cmd-2",
+              text: "Command #2",
+            },
+          ],
+        },
+        {
+          id: "log-view",
+          title: "Machine logs",
+          iconName: "output",
+        },
+        {
+          id: "test-view",
+          title: "Testing",
+          iconName: "beaker",
+        },
+        {
+          id: "settings",
+          title: "Manage",
+          iconName: "settings-gear",
+          isSystemActivity: true,
+        },
+      ];
+      ideStore.dispatch(setActivitiesAction(activities));
 
-    // (Run and Debug)
-    sideBarService.registerSideBarPanel(
-      "debug-view",
-      new Z80RegistersPanelDescriptor()
-    );
-    sideBarService.registerSideBarPanel(
-      "debug-view",
-      new UlaInformationPanelDescriptor(),
-      ["sp48", "sp128"]
-    );
-    sideBarService.registerSideBarPanel(
-      "debug-view",
-      new BlinkInformationPanelDescriptor(),
-      ["cz88"]
-    );
-    sideBarService.registerSideBarPanel(
-      "debug-view",
-      new OtherHardwareInfoPanelDescriptor()
-    );
-    sideBarService.registerSideBarPanel(
-      "debug-view",
-      new CallStackPanelDescriptor()
-    );
-    sideBarService.registerSideBarPanel(
-      "debug-view",
-      new Z80DisassemblyPanelDescriptor()
-    );
+      // --- Register side bar panels
+      // (Explorer)
+      sideBarService.registerSideBarPanel(
+        "file-view",
+        new OpenEditorsPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "file-view",
+        new ProjectFilesPanelDescriptor()
+      );
 
-    // (Machine logs)
-    sideBarService.registerSideBarPanel(
-      "log-view",
-      new IoLogsPanelDescription()
-    );
+      // (Run and Debug)
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new Z80RegistersPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new UlaInformationPanelDescriptor(),
+        ["sp48", "sp128"]
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new BlinkInformationPanelDescriptor(),
+        ["cz88"]
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new OtherHardwareInfoPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new CallStackPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new Z80DisassemblyPanelDescriptor()
+      );
 
-    // (Testing)
-    sideBarService.registerSideBarPanel(
-      "test-view",
-      new TestRunnerPanelDescription()
-    );
+      // (Machine logs)
+      sideBarService.registerSideBarPanel(
+        "log-view",
+        new IoLogsPanelDescription()
+      );
 
-    // --- Register sample documents
-    documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("1", "Doc 1", "red")
-    );
-    documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("2", "Memory", "green")
-    );
-    documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("3", "Disassembly", "blue")
-    );
-    documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("4", "Long Document #1", "blue")
-    );
-    documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("5", "Long Document #2", "blue")
-    );
-    documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("6", "Long Document #3", "blue")
-    );
-    documentService.registerDocument(
-      new SampleDocumentPanelDescriptor("7", "Long Document #4", "blue")
-    );
+      // (Testing)
+      sideBarService.registerSideBarPanel(
+        "test-view",
+        new TestRunnerPanelDescription()
+      );
 
-    // --- Register sample tools
-    toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
-    toolAreaService.registerTool(new OutputToolPanelDescriptor());
-    outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
-    outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
+      // --- Register sample documents
+      documentService.registerDocument(
+        new SampleDocumentPanelDescriptor("1", "Doc 1", "red")
+      );
+      documentService.registerDocument(
+        new SampleDocumentPanelDescriptor("2", "Memory", "green")
+      );
+      documentService.registerDocument(
+        new SampleDocumentPanelDescriptor("3", "Disassembly", "blue")
+      );
+      documentService.registerDocument(
+        new SampleDocumentPanelDescriptor("4", "Long Document #1", "blue")
+      );
+      documentService.registerDocument(
+        new SampleDocumentPanelDescriptor("5", "Long Document #2", "blue")
+      );
+      documentService.registerDocument(
+        new SampleDocumentPanelDescriptor("6", "Long Document #3", "blue")
+      );
+      documentService.registerDocument(
+        new SampleDocumentPanelDescriptor("7", "Long Document #4", "blue")
+      );
 
-    ideStore.dispatch(changeActivityAction(0));
+      // --- Register sample tools
+      toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
+      toolAreaService.registerTool(new OutputToolPanelDescriptor());
+      outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
+      outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
+
+      ideStore.dispatch(changeActivityAction(0));
+    }
 
     return () => {
       // --- Unmount

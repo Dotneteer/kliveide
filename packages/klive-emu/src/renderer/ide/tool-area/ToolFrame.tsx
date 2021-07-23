@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CSSProperties, useEffect, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   ideToolFrameMaximizeAction,
@@ -20,6 +20,7 @@ import { animationTick } from "../../common/utils";
  */
 export default function ToolFrame() {
   const headerHost = React.createRef<HTMLDivElement>();
+  const mounted = useRef(false);
 
   // --- Component state
   const [activeTool, setActiveTool] = useState<IToolPanel | null>(
@@ -40,15 +41,17 @@ export default function ToolFrame() {
 
   useEffect(() => {
     // --- Mount
-    setCurrentTools(toolAreaService.getTools());
-    setActiveTool(toolAreaService.getActiveTool());
-    toolAreaService.toolsChanged.on(refreshDocs);
-    toolAreaService.activePaneScrolled.on(onScroll);
+    if (!mounted.current) {
+      mounted.current = true;
+      toolAreaService.toolsChanged.on(refreshDocs);
+      toolAreaService.activePaneScrolled.on(onScroll);
+    }
 
     return () => {
       // --- Unmount
       toolAreaService.activePaneScrolled.off(onScroll);
       toolAreaService.toolsChanged.off(refreshDocs);
+      mounted.current = false;
     };
   });
 

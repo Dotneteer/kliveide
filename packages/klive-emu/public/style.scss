@@ -425,3 +425,9 @@ input.e-input.e-control.e-dropdownlist,
   height: 100%;
   overflow: hidden;
 }
+
+::placeholder {
+  color: var(--information-color);
+  opacity: 0.5;
+  font-style: italic;
+}
