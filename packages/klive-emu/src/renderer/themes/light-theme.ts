@@ -99,5 +99,7 @@ export const lightTheme: ITheme = {
     "--console-ansiRed": "#cd3131",
     "--console-ansiWhite": "#e5e5e5",
     "--console-ansiYellow": "#949800",
+
+    "--interactive-input-color": "#14CE14",
   },
 };

@@ -11,6 +11,9 @@ import ToolFrame from "./tool-area/ToolFrame";
 import { useSelector } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 
+const ideDocumentsFrame = () => <IdeDocumentsFrame />;
+const toolFrame = () => <ToolFrame />;
+
 /**
  * Represents the main canvas of the IDE
  */
@@ -24,30 +27,30 @@ export default function IdeDesk() {
 
   return (
     <Root>
-      {toolsVisible && !toolsMaximized && (
-        <SplitterComponent orientation="Vertical" separatorSize={2}>
-          <PanesDirective>
+      <SplitterComponent orientation="Vertical" separatorSize={2}>
+        <PanesDirective>
+          {!toolsMaximized && (
             <PaneDirective
               key="documents"
               cssClass="splitter-panel"
-              content={() => <IdeDocumentsFrame />}
+              content={ideDocumentsFrame}
               size="66%"
               min="120px"
               max="90%"
             />
+          )}
+          {toolsVisible && (
             <PaneDirective
               key="tools"
               cssClass="splitter-panel"
-              content={() => <ToolFrame />}
+              content={toolFrame}
               size="34%"
               min="120px"
               max="90%"
             />
-          </PanesDirective>
-        </SplitterComponent>
-      )}
-      {toolsVisible && toolsMaximized && <ToolFrame />}
-      {!toolsVisible && <IdeDocumentsFrame />}
+          )}
+        </PanesDirective>
+      </SplitterComponent>
     </Root>
   );
 }

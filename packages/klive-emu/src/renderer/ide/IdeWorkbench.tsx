@@ -9,11 +9,13 @@ import SideBar from "./side-bar/SideBar";
 import IdeMain from "./IdeMain";
 import { createSizedStyledPanel } from "../common/PanelStyles";
 
+const sideBar = () => <SideBar />;
+const ideMain = () => <IdeMain />;
+
 /**
  * Represents the main canvas of the emulator
  */
 export default function IdeWorkbench() {
-
   return (
     <Root>
       <ActivityBar />
@@ -21,14 +23,14 @@ export default function IdeWorkbench() {
         <PanesDirective>
           <PaneDirective
             cssClass="splitter-panel"
-            content={() => <SideBar />}
+            content={sideBar}
             size="20%"
             min="5%"
             max="75%"
           />
           <PaneDirective
             cssClass="splitter-panel"
-            content={() => <IdeMain />}
+            content={ideMain}
             size="80%"
             min="5%"
             max="95%"

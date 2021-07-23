@@ -10,11 +10,14 @@ import {
 } from "./DocumentService";
 import { CSSProperties } from "react";
 import CommandIconButton from "../command/CommandIconButton";
+import { useRef } from "react";
 
 /**
  * Represents the statusbar of the emulator
  */
 export default function IdeDocumentFrame() {
+  const mounted = useRef(false);
+
   const [tabBarVisible, setTabBarVisible] = useState(true);
   const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(
     documentService.getActiveDocument()
@@ -28,7 +31,10 @@ export default function IdeDocumentFrame() {
 
   useEffect(() => {
     // --- Mount
-    documentService.documentsChanged.on(refreshDocs);
+    if (!mounted.current) {
+      mounted.current = true;
+      documentService.documentsChanged.on(refreshDocs);
+    }
 
     return () => {
       // --- Unmount
