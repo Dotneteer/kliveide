@@ -31,6 +31,7 @@ export type VirtualizedListProps = {
   focus?: () => void;
   blur?: () => void;
   signPointed?: (use: boolean) => void;
+  handleKeys?: (e: React.KeyboardEvent) => void;
 };
 
 /**
@@ -66,6 +67,7 @@ export default function VirtualizedList({
   focus,
   blur,
   signPointed,
+  handleKeys,
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
@@ -104,13 +106,18 @@ export default function VirtualizedList({
     const { startIndex, endIndex } = getViewPort();
     const tmpItems: React.ReactNode[] = [];
     for (let i = startIndex; i <= endIndex; i++) {
-      const item = renderItem(i, {
-        position: "absolute",
-        top: `${i * itemHeight}px`,
-        width: "fit-content",
-        overflowX: "hidden",
-        whiteSpace: "nowrap",
-      }, startIndex, endIndex);
+      const item = renderItem(
+        i,
+        {
+          position: "absolute",
+          top: `${i * itemHeight}px`,
+          width: "fit-content",
+          overflowX: "hidden",
+          whiteSpace: "nowrap",
+        },
+        startIndex,
+        endIndex
+      );
       tmpItems.push(item);
     }
     setItems(tmpItems);
@@ -186,13 +193,17 @@ export default function VirtualizedList({
           );
         }}
         onKeyDown={(e) => {
-          handleScrollKeys(
-            divHost.current,
-            e.key,
-            e.ctrlKey,
-            itemHeight,
-            integralPosition
-          );
+          if (handleKeys) {
+            handleKeys(e);
+          } else {
+            handleScrollKeys(
+              divHost.current,
+              e.key,
+              e.ctrlKey,
+              itemHeight,
+              integralPosition
+            );
+          }
         }}
         onFocus={() => focus?.()}
         onBlur={() => blur?.()}

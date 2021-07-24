@@ -14,6 +14,8 @@ const TITLE = "Project Files";
 
 type State = {
   itemsCount: number;
+  selected?: ITreeNode<ProjectNode>;
+  selectedIndex: number;
 };
 
 /**
@@ -31,6 +33,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     super(props);
     this.state = {
       itemsCount: 0,
+      selectedIndex: -1,
     };
   }
 
@@ -50,7 +53,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
 
   render() {
     let slice: ITreeNode<ProjectNode>[];
-    console.log(this.itemsCount);
     return (
       <VirtualizedList
         itemHeight={22}
@@ -67,6 +69,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           return this.renderItem(index, style, slice[index - startIndex]);
         }}
         registerApi={(api) => (this._listApi = api)}
+        handleKeys={(e) => this.handleKeys(e)}
       />
     );
   }
@@ -83,6 +86,10 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       height: 22,
       fontSize: "0.8em",
       cursor: "pointer",
+      background:
+        item === this.state.selected
+          ? "var(--list-selected-background-color)"
+          : "transparent",
     };
     const topDepth = projectServices.getProjectTree().depth;
     return (
@@ -90,13 +97,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         key={index}
         className="listlike"
         style={{ ...style, ...itemStyle }}
-        onClick={() => {
-          item.isExpanded = !item.isExpanded;
-          this.setState({
-            itemsCount: this.itemsCount,
-          });
-          this._listApi.forceRefresh();
-        }}
+        onClick={() => this.collapseExpand(index, item)}
       >
         <div style={{ width: 22 + 16 * (topDepth - item.depth) }}></div>
         {item.nodeData.isFolder && (
@@ -124,7 +125,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               : "--explorer-file-color"
           }
         />
-        <span>[{item.nodeData.name}]</span>
+        <span>{item.nodeData.name}</span>
       </div>
     );
   }
@@ -143,6 +144,75 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       return [];
     }
     return tree.getViewNodeRange(start + offset, end + offset);
+  }
+
+  /**
+   * Collapse or expand the specified item
+   * @param index Item index
+   * @param item Node
+   */
+  collapseExpand(index: number, item: ITreeNode<ProjectNode>): void {
+    item.isExpanded = !item.isExpanded;
+    this.setState({
+      itemsCount: this.itemsCount,
+      selected: item,
+      selectedIndex: index,
+    });
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Allow moving in the project explorer with keys
+   */
+  handleKeys(e: React.KeyboardEvent): void {
+    const tree = projectServices.getProjectTree();
+    switch (e.code) {
+      case "ArrowUp": {
+        if (this.state.selectedIndex <= 0) return;
+        const newIndex = this.state.selectedIndex - 1;
+        const newNode = tree.getViewNodeByIndex(newIndex);
+        this.setState({
+          selectedIndex: newIndex,
+          selected: newNode,
+        });
+        break;
+      }
+      case "ArrowDown": {
+        if (this.state.selectedIndex >= this.state.itemsCount - 1) return;
+        const newIndex = this.state.selectedIndex + 1;
+        const newNode = tree.getViewNodeByIndex(newIndex);
+        this.setState({
+          selectedIndex: newIndex,
+          selected: newNode,
+        });
+        break;
+      }
+      case "Home": {
+        const newNode = tree.getViewNodeByIndex(0);
+        this.setState({
+          selectedIndex: 0,
+          selected: newNode,
+        });
+        break;
+      }
+      case "End": {
+        const newIndex = this.state.itemsCount - 1;
+        const newNode = tree.getViewNodeByIndex(newIndex);
+        this.setState({
+          selectedIndex: newIndex,
+          selected: newNode,
+        });
+        break;
+      }
+      case "Space":
+      case "Enter":
+        if (!this.state.selected) return;
+        this.collapseExpand(this.state.selectedIndex, this.state.selected)
+        break;
+      default:
+        return;
+    }
+    this._listApi.forceRefresh();
   }
 }
 
