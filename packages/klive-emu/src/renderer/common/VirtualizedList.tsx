@@ -9,7 +9,12 @@ import ReactResizeDetector from "react-resize-detector";
 /**
  * The function that renders a virtual list item
  */
-type ItemRenderer = (index: number, style: CSSProperties) => JSX.Element;
+type ItemRenderer = (
+  index: number,
+  style: CSSProperties,
+  startIndex: number,
+  endIndex: number
+) => JSX.Element;
 
 /**
  * The properties of the virtual list
@@ -58,7 +63,7 @@ export default function VirtualizedList({
   obtainInitPos,
   scrolled,
   focus,
-  blur
+  blur,
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
@@ -103,7 +108,7 @@ export default function VirtualizedList({
         width: "fit-content",
         overflowX: "hidden",
         whiteSpace: "nowrap",
-      });
+      }, startIndex, endIndex);
       tmpItems.push(item);
     }
     setItems(tmpItems);
@@ -187,7 +192,6 @@ export default function VirtualizedList({
             integralPosition
           );
         }}
-
         onFocus={() => focus?.()}
         onBlur={() => blur?.()}
       >
@@ -316,6 +320,9 @@ export default function VirtualizedList({
    * @returns
    */
   function getViewPort(): { startIndex: number; endIndex: number } {
+    if (!divHost.current) {
+      return { startIndex: -1, endIndex: -1 };
+    }
     const scrollPos = divHost.current.scrollTop;
     const result = {
       startIndex: Math.floor(scrollPos / itemHeight),

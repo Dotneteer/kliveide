@@ -1,14 +1,105 @@
 import * as React from "react";
+import VirtualizedList, {
+  VirtualizedListApi,
+} from "../../common/VirtualizedList";
+import { IListItem, ITreeNode } from "../../common/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
-import { SideBarPanelBase } from "../SideBarPanelBase";
+import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
+import { ProjectNode } from "./ProjectNode";
+import { projectServices } from "./ProjectServices";
+import { CSSProperties } from "react";
 
 const TITLE = "Project Files";
+
+type State = {
+  startIndex: number;
+  endIndex: number;
+};
 
 /**
  * Project files panel
  */
-export default class ProjectFilesPanel extends SideBarPanelBase {
+export default class ProjectFilesPanel extends SideBarPanelBase<
+  SideBarProps<{}>,
+  State
+> {
+  private _listApi: VirtualizedListApi;
+
   title = TITLE;
+
+  constructor(props: SideBarProps<{}>) {
+    super(props);
+    this.state = {
+      startIndex: 0,
+      endIndex: 0,
+    };
+  }
+
+  /**
+   * Gets the number of items in the list
+   */
+  get itemsCount(): number {
+    const tree = projectServices.getProjectTree();
+    return tree && tree.rootNode ? tree.rootNode.viewItemCount : 0;
+  }
+
+  render() {
+    let slice: IListItem<ITreeNode<ProjectNode>>[];
+    return (
+      <VirtualizedList
+        itemHeight={18}
+        numItems={this.itemsCount}
+        renderItem={(
+          index: number,
+          style: CSSProperties,
+          startIndex: number,
+          endIndex: number
+        ) => {
+          if (index === startIndex) {
+            slice = this.getListItemRange(startIndex, endIndex);
+            console.log(slice);
+          }
+          return this.renderItem(index, style, slice[index - startIndex]);
+        }}
+        registerApi={(api) => (this._listApi = api)}
+      />
+    );
+  }
+
+  renderItem(
+    index: number,
+    style: CSSProperties,
+    item: IListItem<ITreeNode<ProjectNode>>
+  ) {
+    return (
+      <div key={index} style={{ ...style }}>
+        {item.data.nodeData.name}
+      </div>
+    );
+  }
+
+  /**
+   * Retrieves the items slice of the specified range.
+   */
+  getListItemRange(
+    start: number,
+    end: number,
+    topHidden?: number
+  ): IListItem<ITreeNode<ProjectNode>>[] {
+    const tree = projectServices.getProjectTree();
+    const offset = topHidden || 0;
+    if (!tree) {
+      return [];
+    }
+    return tree
+      .getViewNodeRange(start + offset, end + offset)
+      .map((item, index) => {
+        return {
+          itemIndex: index + start + offset,
+          data: item,
+        };
+      });
+  }
 }
 
 /**
