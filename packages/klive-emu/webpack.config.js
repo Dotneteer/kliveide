@@ -1,7 +1,13 @@
+const path = require("path");
 const lodash = require("lodash");
+
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const path = require("path");
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+
+const APP_DIR = path.resolve(__dirname, "./src");
+const PUBLIC_DIR = path.resolve(__dirname, "./public");
+const MONACO_DIR = path.resolve(__dirname, "./node_modules/monaco-editor");
 
 function srcPaths(src) {
   return path.join(__dirname, src);
@@ -10,7 +16,6 @@ function srcPaths(src) {
 const isEnvProduction = process.env.NODE_ENV === "production";
 const isEnvDevelopment = process.env.NODE_ENV === "development";
 
-// #region Common settings
 const commonConfig = {
   devtool: isEnvDevelopment ? "source-map" : false,
   mode: isEnvProduction ? "production" : "development",
@@ -25,7 +30,7 @@ const commonConfig = {
       _renderer: srcPaths("src/renderer"),
       _utils: srcPaths("src/utils"),
     },
-    extensions: [".js", ".json", ".ts", ".tsx", ".scss"],
+    extensions: [".js", ".json", ".ts", ".tsx", ".scss", ".ttf"],
   },
   module: {
     rules: [
@@ -36,6 +41,12 @@ const commonConfig = {
       },
       {
         test: /\.(scss|css)$/,
+        include: APP_DIR,
+        use: ["style-loader", "css-loader", "sass-loader"],
+      },
+      {
+        test: /\.(scss|css)$/,
+        include: PUBLIC_DIR,
         use: ["style-loader", "css-loader", "sass-loader"],
       },
       {
@@ -49,10 +60,18 @@ const commonConfig = {
         test: /\.worklet\.js$/,
         use: { loader: "worklet-loader" },
       },
+      {
+        test: /\.css$/,
+        include: MONACO_DIR,
+        use: ["style-loader", "css-loader"],
+      },
+      {
+        test: /\.ttf$/,
+        use: ["file-loader"],
+      },
     ],
   },
 };
-// #endregion
 
 const mainConfig = lodash.cloneDeep(commonConfig);
 mainConfig.entry = "./src/main/main.ts";
@@ -126,6 +145,12 @@ ideRendererConfig.plugins = [
   new HtmlWebpackPlugin({
     template: path.resolve(__dirname, "./public/ide-index.html"),
     filename: "ide-index.html",
+  }),
+  new MonacoWebpackPlugin({
+    
+    // available options are documented at https://github.com/Microsoft/monaco-editor-webpack-plugin#options
+    publicPath: "/dist/",
+    languages: ["json", "javascript"]
   }),
 ];
 
