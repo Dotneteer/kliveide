@@ -431,3 +431,11 @@ input.e-input.e-control.e-dropdownlist,
   opacity: 0.5;
   font-style: italic;
 }
+
+// ============================================================================
+// Project Explorer
+
+.listlike:hover {
+  background-color: var(--list-hover-background-color)
+}
+

@@ -18,6 +18,9 @@ export interface IThemeProperties {
   "--hilited-color": string;
   "--console-font": string;
 
+  "--list-hover-background-color": string;
+  "--list-selected-background-color": string;
+
   "--button-background-color": string;
   "--button-primary-background-color": string;
   "--button-focused-border-color": string;
@@ -101,4 +104,7 @@ export interface IThemeProperties {
   "--console-ansiYellow": string;
 
   "--interactive-input-color": string;
+
+  "--explorer-folder-color": string;
+  "--explorer-file-color": string;
 }

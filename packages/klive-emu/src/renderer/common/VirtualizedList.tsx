@@ -9,7 +9,12 @@ import ReactResizeDetector from "react-resize-detector";
 /**
  * The function that renders a virtual list item
  */
-type ItemRenderer = (index: number, style: CSSProperties) => JSX.Element;
+type ItemRenderer = (
+  index: number,
+  style: CSSProperties,
+  startIndex: number,
+  endIndex: number
+) => JSX.Element;
 
 /**
  * The properties of the virtual list
@@ -25,6 +30,8 @@ export type VirtualizedListProps = {
   scrolled?: (topPos: number) => void;
   focus?: () => void;
   blur?: () => void;
+  signPointed?: (use: boolean) => void;
+  handleKeys?: (e: React.KeyboardEvent) => void;
 };
 
 /**
@@ -58,7 +65,9 @@ export default function VirtualizedList({
   obtainInitPos,
   scrolled,
   focus,
-  blur
+  blur,
+  signPointed,
+  handleKeys,
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
@@ -97,13 +106,18 @@ export default function VirtualizedList({
     const { startIndex, endIndex } = getViewPort();
     const tmpItems: React.ReactNode[] = [];
     for (let i = startIndex; i <= endIndex; i++) {
-      const item = renderItem(i, {
-        position: "absolute",
-        top: `${i * itemHeight}px`,
-        width: "fit-content",
-        overflowX: "hidden",
-        whiteSpace: "nowrap",
-      });
+      const item = renderItem(
+        i,
+        {
+          position: "absolute",
+          top: `${i * itemHeight}px`,
+          width: "fit-content",
+          overflowX: "hidden",
+          whiteSpace: "nowrap",
+        },
+        startIndex,
+        endIndex
+      );
       tmpItems.push(item);
     }
     setItems(tmpItems);
@@ -179,15 +193,18 @@ export default function VirtualizedList({
           );
         }}
         onKeyDown={(e) => {
-          handleScrollKeys(
-            divHost.current,
-            e.key,
-            e.ctrlKey,
-            itemHeight,
-            integralPosition
-          );
+          if (handleKeys) {
+            handleKeys(e);
+          } else {
+            handleScrollKeys(
+              divHost.current,
+              e.key,
+              e.ctrlKey,
+              itemHeight,
+              integralPosition
+            );
+          }
         }}
-
         onFocus={() => focus?.()}
         onBlur={() => blur?.()}
       >
@@ -199,10 +216,12 @@ export default function VirtualizedList({
             }}
             onMouseEnter={() => {
               setPointed(true);
+              signPointed?.(true);
               mouseLeft = false;
             }}
             onMouseLeave={() => {
               setPointed(isSizing);
+              signPointed?.(isSizing);
               mouseLeft = true;
             }}
           >
@@ -224,6 +243,7 @@ export default function VirtualizedList({
           isSizing = nowSizing;
           if (!nowSizing && mouseLeft) {
             setPointed(false);
+            signPointed?.(false);
           }
         }}
       />
@@ -241,6 +261,7 @@ export default function VirtualizedList({
           isSizing = nowSizing;
           if (!nowSizing && mouseLeft) {
             setPointed(false);
+            signPointed?.(false);
           }
         }}
       />
@@ -316,6 +337,9 @@ export default function VirtualizedList({
    * @returns
    */
   function getViewPort(): { startIndex: number; endIndex: number } {
+    if (!divHost.current) {
+      return { startIndex: -1, endIndex: -1 };
+    }
     const scrollPos = divHost.current.scrollTop;
     const result = {
       startIndex: Math.floor(scrollPos / itemHeight),
