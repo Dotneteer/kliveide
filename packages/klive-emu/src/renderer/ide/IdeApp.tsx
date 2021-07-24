@@ -37,10 +37,11 @@ import { outputPaneService } from "./tool-area/OutputPaneService";
 import { VmOutputPanelDescriptor } from "../machines/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
 import { useRef } from "react";
-import { TreeView } from "../common/TreeView";
 import { TreeNode } from "../common/TreeNode";
+import { TreeView } from "../common/TreeView";
 import { ProjectNode } from "./explorer-tools/ProjectNode";
 import { projectServices } from "./explorer-tools/ProjectServices";
+import { EditorDocumentPanelDescriptor } from "./editor/EditorDocument";
 
 /**
  * Represents the emulator app's root component
@@ -188,7 +189,7 @@ export default function IdeApp() {
 
       // --- Register sample documents
       documentService.registerDocument(
-        new SampleDocumentPanelDescriptor("1", "Doc 1", "red")
+        new EditorDocumentPanelDescriptor("1", "Doc 1")
       );
       documentService.registerDocument(
         new SampleDocumentPanelDescriptor("2", "Memory", "green")
@@ -225,7 +226,7 @@ export default function IdeApp() {
         isFolder: true,
       });
       root.appendChild(configFolder);
-     
+
       const viewConfig = new TreeNode<ProjectNode>({
         name: "view.cfg",
         isFolder: false,
