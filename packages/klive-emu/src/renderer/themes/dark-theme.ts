@@ -18,6 +18,7 @@ export const darkTheme: ITheme = {
     "--information-color": "#c0c0c0",
     "--hilited-color": "#007acc",
     "--console-font": 'Consolas, "Courier New", monospace',
+    "--list-hover-background-color": "#2a2d2e",
 
     "--button-background-color": "#606060",
     "--button-primary-background-color": "#007acc",
@@ -102,5 +103,8 @@ export const darkTheme: ITheme = {
     "--console-ansiYellow": "#e5e510",
 
     "--interactive-input-color": "#23d18b",
+
+    "--explorer-folder-color": "#c09553",
+    "--explorer-file-color": "#007acc",
   },
 };

@@ -2,18 +2,18 @@ import * as React from "react";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common/VirtualizedList";
-import { IListItem, ITreeNode } from "../../common/ITreeNode";
+import { ITreeNode } from "../../common/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
+import { SvgIcon } from "../../common/SvgIcon";
 
 const TITLE = "Project Files";
 
 type State = {
-  startIndex: number;
-  endIndex: number;
+  itemsCount: number;
 };
 
 /**
@@ -30,9 +30,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   constructor(props: SideBarProps<{}>) {
     super(props);
     this.state = {
-      startIndex: 0,
-      endIndex: 0,
+      itemsCount: 0,
     };
+  }
+
+  componentDidMount(): void {
+    this.setState({
+      itemsCount: this.itemsCount,
+    });
   }
 
   /**
@@ -44,11 +49,12 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   }
 
   render() {
-    let slice: IListItem<ITreeNode<ProjectNode>>[];
+    let slice: ITreeNode<ProjectNode>[];
+    console.log(this.itemsCount);
     return (
       <VirtualizedList
-        itemHeight={18}
-        numItems={this.itemsCount}
+        itemHeight={22}
+        numItems={this.state.itemsCount}
         renderItem={(
           index: number,
           style: CSSProperties,
@@ -57,7 +63,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         ) => {
           if (index === startIndex) {
             slice = this.getListItemRange(startIndex, endIndex);
-            console.log(slice);
           }
           return this.renderItem(index, style, slice[index - startIndex]);
         }}
@@ -69,11 +74,57 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   renderItem(
     index: number,
     style: CSSProperties,
-    item: IListItem<ITreeNode<ProjectNode>>
+    item: ITreeNode<ProjectNode>
   ) {
+    const itemStyle: CSSProperties = {
+      display: "flex",
+      alignItems: "center",
+      width: "100%",
+      height: 22,
+      fontSize: "0.8em",
+      cursor: "pointer",
+    };
+    const topDepth = projectServices.getProjectTree().depth;
     return (
-      <div key={index} style={{ ...style }}>
-        {item.data.nodeData.name}
+      <div
+        key={index}
+        className="listlike"
+        style={{ ...style, ...itemStyle }}
+        onClick={() => {
+          item.isExpanded = !item.isExpanded;
+          this.setState({
+            itemsCount: this.itemsCount,
+          });
+          this._listApi.forceRefresh();
+        }}
+      >
+        <div style={{ width: 22 + 16 * (topDepth - item.depth) }}></div>
+        {item.nodeData.isFolder && (
+          <SvgIcon
+            iconName="chevron-right"
+            width={16}
+            height={16}
+            rotate={item.isExpanded ? 90 : 0}
+          />
+        )}
+        <SvgIcon
+          iconName={
+            item.nodeData.isFolder
+              ? item.isExpanded
+                ? "folder-opened"
+                : "folder"
+              : "file-code"
+          }
+          width={16}
+          height={16}
+          style={{ marginLeft: 4, marginRight: 4 }}
+          fill={
+            item.nodeData.isFolder
+              ? "--explorer-folder-color"
+              : "--explorer-file-color"
+          }
+        />
+        <span>[{item.nodeData.name}]</span>
       </div>
     );
   }
@@ -85,20 +136,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     start: number,
     end: number,
     topHidden?: number
-  ): IListItem<ITreeNode<ProjectNode>>[] {
+  ): ITreeNode<ProjectNode>[] {
     const tree = projectServices.getProjectTree();
     const offset = topHidden || 0;
     if (!tree) {
       return [];
     }
-    return tree
-      .getViewNodeRange(start + offset, end + offset)
-      .map((item, index) => {
-        return {
-          itemIndex: index + start + offset,
-          data: item,
-        };
-      });
+    return tree.getViewNodeRange(start + offset, end + offset);
   }
 }
 

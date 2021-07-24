@@ -30,6 +30,7 @@ export type VirtualizedListProps = {
   scrolled?: (topPos: number) => void;
   focus?: () => void;
   blur?: () => void;
+  signPointed?: (use: boolean) => void;
 };
 
 /**
@@ -64,6 +65,7 @@ export default function VirtualizedList({
   scrolled,
   focus,
   blur,
+  signPointed,
 }: VirtualizedListProps) {
   // --- Status flags for the initialization cycle
   const mounted = useRef(false);
@@ -203,10 +205,12 @@ export default function VirtualizedList({
             }}
             onMouseEnter={() => {
               setPointed(true);
+              signPointed?.(true);
               mouseLeft = false;
             }}
             onMouseLeave={() => {
               setPointed(isSizing);
+              signPointed?.(isSizing);
               mouseLeft = true;
             }}
           >
@@ -228,6 +232,7 @@ export default function VirtualizedList({
           isSizing = nowSizing;
           if (!nowSizing && mouseLeft) {
             setPointed(false);
+            signPointed?.(false);
           }
         }}
       />
@@ -245,6 +250,7 @@ export default function VirtualizedList({
           isSizing = nowSizing;
           if (!nowSizing && mouseLeft) {
             setPointed(false);
+            signPointed?.(false);
           }
         }}
       />

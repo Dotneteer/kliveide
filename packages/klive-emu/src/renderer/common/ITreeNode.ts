@@ -1,22 +1,6 @@
 import { ILiteEvent } from "../../shared/utils/LiteEvent";
 
 /**
- * This interface defines items that can be put in a virtualized list.
- * @param TItem The payload type of a list item.
- */
- export interface IListItem<TItem> {
-  /**
-   * The index of the list item.
-   */
-  itemIndex: number;
-
-  /**
-   * The payload of the list item.
-   */
-  data: TItem;
-}
-
-/**
  * This interface represents a node in a hierarchical tree.
  * @param TNode the item that represents information about the node.
  */

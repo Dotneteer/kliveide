@@ -35,44 +35,57 @@ interface Props {
    * Rotation in degrees
    */
   rotate?: number;
+
+  /**
+   * Additional style attributes
+   */
+  style?: CSSProperties;
 }
 
 /**
  * Represents an SVG icon from the stock
  */
-export function SvgIcon(props: React.PropsWithChildren<Props>) {
-  const fill = props.fill;
+export function SvgIcon({
+  iconName,
+  xclass,
+  width,
+  height,
+  fill,
+  rotate,
+  style,
+  children,
+}: React.PropsWithChildren<Props>) {
   const fillValue =
     fill === null || fill === undefined
       ? "white"
-      : props.fill.startsWith("--")
+      : fill.startsWith("--")
       ? themeService.getProperty(fill)
       : fill;
   const styleValue: CSSProperties = {
     width: `${
-      props.width === undefined
+      width === undefined
         ? themeService.getProperty("--icon-default-size")
-        : props.width
+        : width
     }px`,
     height: `${
-      props.height === undefined
+      height === undefined
         ? themeService.getProperty("--icon-default-size")
-        : props.height
+        : height
     }px`,
     fill: `${fillValue}`,
-    transform: `rotate(${props.rotate ?? 0}deg)`,
+    transform: `rotate(${rotate ?? 0}deg)`,
     flexShrink: 0,
-    flexGrow: 0
+    flexGrow: 0,
   };
-  const iconInfo = themeService.getIcon(props.iconName);
+  const iconInfo = themeService.getIcon(iconName);
   return (
     <svg
-      className={props.xclass}
+      className={xclass}
       xmlns="http://www.w3.org/2000/svg"
-      style={styleValue}
+      style={{ ...styleValue, ...style }}
       viewBox={"0 0 " + iconInfo.width + " " + iconInfo.height}
     >
-      {props.children}
+      {children}
       <path
         d={iconInfo.path}
         fillRule={iconInfo["fill-rule"] as any}

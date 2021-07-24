@@ -17,6 +17,7 @@ export const lightTheme: ITheme = {
     "--information-color": "#202020",
     "--hilited-color": "#007acc",
     "--console-font": "Consolas, \"Courier New\", monospace",
+    "--list-hover-background-color": "#2a2d2e",
 
     "--button-background-color": "#808080",
     "--button-primary-background-color": "##007acc",
@@ -101,5 +102,8 @@ export const lightTheme: ITheme = {
     "--console-ansiYellow": "#949800",
 
     "--interactive-input-color": "#14CE14",
+
+    "--explorer-folder-color": "#c09553",
+    "--explorer-file-color": "#007acc",
   },
 };
