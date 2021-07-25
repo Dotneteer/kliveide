@@ -25,7 +25,8 @@ import {
 } from "../../../shared/machines/macine-commands";
 import { getEngineDependencies } from "../vm-engine-dependencies";
 import { modalDialogService } from "../../../renderer/modals/modal-service";
-import { cz88CardsDialog } from "./Cz88CardsDialog";
+
+export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 
 /**
  * ZX Spectrum common core implementation
@@ -439,7 +440,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
 
       case CZ88_CARDS:
         const result = await modalDialogService.showModalDialog(
-          cz88CardsDialog,
+          Z88_CARDS_DIALOG_ID,
           args
         );
         return result;

@@ -29,12 +29,17 @@ export abstract class MessengerBase {
    * @param message Message to send out
    * @returns Response for the message
    */
-  async sendMessage<TResp extends ResponseMessage = ResponseMessage>(
+  async sendMessage<TResp extends ResponseMessage>(
     message: RequestMessage
   ): Promise<TResp> {
     message.correlationId = this._requestSeqNo++;
     const promise = new Promise<TResp>((resolve) => {
-      this._messageResolvers.set(message.correlationId, resolve);
+      this._messageResolvers.set(
+        message.correlationId,
+        resolve as (
+          value: ResponseMessage | PromiseLike<ResponseMessage>
+        ) => void
+      );
     });
     this.postMessage(message);
     return promise;

@@ -39,6 +39,7 @@ export default function IdeDocumentFrame() {
     return () => {
       // --- Unmount
       documentService.documentsChanged.off(refreshDocs);
+      mounted.current = false;
     };
   });
 
@@ -50,7 +51,9 @@ export default function IdeDocumentFrame() {
           <DocumentCommandBar />
         </HeaderBar>
       )}
-      <PlaceHolder key={activeDoc?.id}>
+      <PlaceHolder 
+        // key={activeDoc?.id}
+      >
         {activeDoc?.createContentElement()}
       </PlaceHolder>
     </Root>

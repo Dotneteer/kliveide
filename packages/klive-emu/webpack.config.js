@@ -147,9 +147,7 @@ ideRendererConfig.plugins = [
     filename: "ide-index.html",
   }),
   new MonacoWebpackPlugin({
-    
     // available options are documented at https://github.com/Microsoft/monaco-editor-webpack-plugin#options
-    publicPath: "/dist/",
     languages: ["json", "javascript"]
   }),
 ];
