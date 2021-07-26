@@ -72,7 +72,7 @@ export default function ModalDialog({ targetId }: Props) {
   const onOverlayClick = () => modalDialogService.hide();
   const onDialogClose = () => {
     modalDialogService.hide();
-    modalDialogService.setModalDialog(null);
+    modalDialogService.disposeModalDialog();
   };
 
   useEffect(() => {

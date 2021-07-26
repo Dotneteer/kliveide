@@ -1,4 +1,4 @@
-import { revertHighlightSearch } from "@syncfusion/ej2-react-dropdowns";
+import * as React from "react";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 
 /**
@@ -65,6 +65,7 @@ export interface IModalDialogDescriptor {
  * Implements the logic that controls modal dialogs
  */
 class ModalDialogService {
+  private _descriptors = new Map<string, IModalDialogDescriptor>();
   private _modalDescriptor: IModalDialogDescriptor | null = null;
   private _modalChanged = new LiteEvent<IModalDialogDescriptor | null>();
   private _visible = false;
@@ -95,14 +96,19 @@ class ModalDialogService {
   }
 
   /**
-   * Sets the current modal dialog descriptor
-   * @param descriptor
+   * Registers a modal descriptor
+   * @param id Descriptor identifier
+   * @param descriptor Modial dialog descriptor
    */
-  setModalDialog(descriptor: IModalDialogDescriptor | null): void {
-    if (this._modalDescriptor !== descriptor) {
-      this._modalDescriptor = descriptor;
-      this._modalChanged.fire(descriptor);
-    }
+  registerModalDescriptor(id: string, descriptor: IModalDialogDescriptor): void {
+    this._descriptors.set(id, descriptor);
+  }
+
+  /**
+   * Disposes the modal dialog
+   */
+  disposeModalDialog(): void {
+    this._modalDescriptor = null;
   }
 
   /**
@@ -129,9 +135,13 @@ class ModalDialogService {
     this._dialogResolver(result);
   }
 
-  async showModalDialog(descriptor: IModalDialogDescriptor, args?: unknown): Promise<unknown> {
+  async showModalDialog(id: string, args?: unknown): Promise<unknown> {
     if (this._visible) {
       return;
+    }
+    const descriptor = this._descriptors.get(id);
+    if (!descriptor) {
+      throw new Error(`Unregistered modal dialog: '${id}'`)
     }
     this._modalDescriptor = descriptor;
     this._args = args;

@@ -42,6 +42,9 @@ import { TreeView } from "../common/TreeView";
 import { ProjectNode } from "./explorer-tools/ProjectNode";
 import { projectServices } from "./explorer-tools/ProjectServices";
 import { EditorDocumentPanelDescriptor } from "./editor/EditorDocument";
+import { modalDialogService } from "../modals/modal-service";
+import { Z88_CARDS_DIALOG_ID } from "../machines/cz88/CambridgeZ88Core";
+import { cz88CardsDialog } from "../machines/cz88/Cz88CardsDialog";
 
 /**
  * Represents the emulator app's root component
