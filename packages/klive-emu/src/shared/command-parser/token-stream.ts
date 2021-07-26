@@ -9,11 +9,15 @@ import { InputStream } from "./input-stream";
  *   ;
  *
  * idStart
- *   : 'a'..'z' | 'A'..'Z' | '_' | '$'
+ *   : 'a'..'z' | 'A'..'Z' | '_'
  *   ;
  *
  * idContinuation
- *   : idStart | '0'..'9' | '-' | '$' | '.' | '!' | ':'
+ *   : idStart | '0'..'9' | '-' | '$' | '.' | '!' | ':' | '#'
+ *   ;
+ *
+ *  Variable
+ *   : '${' Identifier '}'
  *   ;
  *
  * Option
@@ -46,7 +50,7 @@ import { InputStream } from "./input-stream";
  *   ;
  *
  * Number
- *   : ['+' | '-' ]? (decimalNumber | hexadecimalNumber | binaryNumber)
+ *   : '-'? (decimalNumber | hexadecimalNumber | binaryNumber)
  *   ;
  *
  * decimalNumber
@@ -54,7 +58,7 @@ import { InputStream } from "./input-stream";
  *   ;
  *
  * hexadecimalNumber
- *   : '#' hexadecimalDigit xHexadecimalDigit*
+ *   : '$' hexadecimalDigit xHexadecimalDigit*
  *   ;
  *
  * binaryNumber
@@ -84,7 +88,7 @@ import { InputStream } from "./input-stream";
  * xBinaryDigit
  *   : binaryDigit | '_' | ''''
  *   ;
- * 
+ *
  * Argument
  *   : [any characted except NL, CR, or other whitespace]+
  *   ;
@@ -221,7 +225,7 @@ export class TokenStream {
               tokenType = TokenType.NewLine;
               break;
 
-            case "\"":
+            case '"':
               phase = LexerPhase.String;
               break;
 
@@ -229,9 +233,24 @@ export class TokenStream {
               phase = LexerPhase.OptionOrNumber;
               break;
 
+            case "$":
+              phase = LexerPhase.VariableOrHexaDecimal;
+              break;
+
+            case "%":
+              phase = LexerPhase.Binary;
+              break;
+
             default:
               if (isIdStart(ch)) {
                 phase = LexerPhase.IdTail;
+                tokenType = TokenType.Identifier;
+              } else if (isDecimalDigit(ch)) {
+                phase = LexerPhase.Decimal;
+                tokenType = TokenType.DecimalLiteral;
+              } else if (isPathStart(ch)) {
+                phase = LexerPhase.PathTail;
+                tokenType = TokenType.Path;
               }
               break;
           }
@@ -259,27 +278,95 @@ export class TokenStream {
 
         // --- Wait for the completion of an identifier
         case LexerPhase.IdTail:
-          if (!isIdContinuation(ch)) {
+          if (isIdContinuation(ch)) {
+            break;
+          }
+          if (isTokenSeparator(ch)) {
             return makeToken();
           }
+          if (isPathContinuation(ch)) {
+            phase = LexerPhase.PathTail;
+            tokenType = TokenType.Path;
+          } else {
+            phase = LexerPhase.ArgumentTail;
+            tokenType = TokenType.Argument;
+          }
           break;
+
+        case LexerPhase.PathTail:
+          if (isPathContinuation(ch)) {
+            break;
+          }
+          if (isTokenSeparator(ch)) {
+            return makeToken();
+          }
+          phase = LexerPhase.ArgumentTail;
+          tokenType = TokenType.Argument;
+          break;
+
+        // ====================================================================
+        // Variables
+
+        case LexerPhase.VariableOrHexaDecimal:
+          if (ch === "{") {
+            phase = LexerPhase.Variable;
+            break;
+          } else if (isHexadecimalDigit(ch)) {
+            phase = LexerPhase.HexaDecimalTail;
+            tokenType = TokenType.HexadecimalLiteral;
+          } else {
+            phase = LexerPhase.ArgumentTail;
+            tokenType = TokenType.Argument;
+          }
+          break;
+
+        // We already parsed "${"
+        case LexerPhase.Variable:
+          if (isIdStart(ch)) {
+            phase = LexerPhase.VariableTail;
+          } else {
+            return completeToken();
+          }
+          break;
+
+        // We identified the start character of a variable, and wait for continuation
+        case LexerPhase.VariableTail:
+          if (isIdContinuation(ch)) {
+            break;
+          }
+          return ch === "}"
+            ? completeToken(TokenType.Variable)
+            : completeToken(TokenType.Unknown);
 
         // ====================================================================
         // --- Options
 
         case LexerPhase.OptionOrNumber:
-          if (ch === "#") {
-            phase = LexerPhase.Decimal
+          if (ch === "$") {
+            phase = LexerPhase.Hexadecimal;
           } else if (ch === "%") {
-            // TODO: Binary number
+            phase = LexerPhase.Binary;
           } else if (isDecimalDigit(ch)) {
-            // TODO: Decimal number
+            phase = LexerPhase.Decimal;
+            tokenType = TokenType.DecimalLiteral;
           } else if (isIdStart(ch)) {
-            // TODO: Options
+            phase = LexerPhase.OptionTail;
+            tokenType = TokenType.Option;
           } else {
-            tokenType = TokenType.Argument
-            phase = LexerPhase.ArgumentTail
+            tokenType = TokenType.Argument;
+            phase = LexerPhase.ArgumentTail;
           }
+          break;
+
+        case LexerPhase.OptionTail:
+          if (isIdContinuation(ch)) {
+            break;
+          }
+          if (isTokenSeparator(ch)) {
+            return makeToken();
+          }
+          tokenType = TokenType.Argument;
+          phase = LexerPhase.ArgumentTail;
           break;
 
         case LexerPhase.ArgumentTail:
@@ -314,7 +401,7 @@ export class TokenStream {
             case "v":
             case "0":
             case "'":
-            case "\"":
+            case '"':
             case "\\":
               phase = LexerPhase.String;
               break;
@@ -343,6 +430,74 @@ export class TokenStream {
           } else {
             return completeToken(TokenType.Unknown);
           }
+          break;
+
+        // The first character after "$"
+        case LexerPhase.Hexadecimal:
+          if (isHexadecimalDigit(ch)) {
+            phase = LexerPhase.HexaDecimalTail;
+            tokenType = TokenType.HexadecimalLiteral;
+          } else {
+            tokenType = TokenType.Argument;
+            phase = LexerPhase.ArgumentTail;
+          }
+          break;
+
+        case LexerPhase.HexaDecimalTail:
+          if (isXHexadecimalDigit(ch)) {
+            break;
+          }
+          if (isTokenSeparator(ch)) {
+            return makeToken();
+          }
+          tokenType = TokenType.Argument;
+          phase = LexerPhase.ArgumentTail;
+          break;
+
+        // The first character after "%"
+        case LexerPhase.Binary:
+          if (isBinaryDigit(ch)) {
+            phase = LexerPhase.BinaryTail;
+            tokenType = TokenType.BinaryLiteral;
+          } else {
+            tokenType = TokenType.Argument;
+            phase = LexerPhase.ArgumentTail;
+          }
+          break;
+
+        case LexerPhase.BinaryTail:
+          if (isXBinaryDigit(ch)) {
+            break;
+          }
+          if (isTokenSeparator(ch)) {
+            return makeToken();
+          }
+          tokenType = TokenType.Argument;
+          phase = LexerPhase.ArgumentTail;
+          break;
+
+        // The first decimal lieterl character
+        case LexerPhase.Decimal:
+          if (isDecimalDigit(ch)) {
+            phase = LexerPhase.DecimalTail;
+            tokenType = TokenType.DecimalLiteral;
+          } else if (isTokenSeparator(ch)) {
+            return makeToken();
+          } else {
+            tokenType = TokenType.Argument;
+            phase = LexerPhase.ArgumentTail;
+          }
+          break;
+
+        case LexerPhase.DecimalTail:
+          if (isXDecimalDigit(ch)) {
+            break;
+          }
+          if (isTokenSeparator(ch)) {
+            return makeToken();
+          }
+          tokenType = TokenType.Argument;
+          phase = LexerPhase.ArgumentTail;
           break;
 
         // ====================================================================
@@ -475,12 +630,16 @@ export enum TokenType {
   EolComment = -4,
   Unknown = 0,
 
-  Argument,
   NewLine,
+  Argument,
+  Variable,
+  Option,
+  Path,
+  Identifier,
   String,
   DecimalLiteral,
   HexadecimalLiteral,
-  BinaryLiteral
+  BinaryLiteral,
 }
 
 /**
@@ -499,8 +658,15 @@ enum LexerPhase {
   // Waiting for Option or Number decision
   OptionOrNumber,
 
+  // Waiting for a Vatiable or a hexadecimal number
+  VariableOrHexaDecimal,
+
   // Waiting for an argument tail
   ArgumentTail,
+
+  // Variable related phases
+  Variable,
+  VariableTail,
 
   // String-related parsing phases
   IdTail,
@@ -510,11 +676,15 @@ enum LexerPhase {
   StringHexa2,
   StringTail,
 
-  Option,
+  OptionTail,
+  PathTail,
 
   Decimal,
+  DecimalTail,
   Hexadecimal,
+  HexaDecimalTail,
   Binary,
+  BinaryTail,
 }
 
 /**
@@ -553,12 +723,7 @@ function isLetterOrDigit(ch: string): boolean {
  * @param ch Character to test
  */
 function isIdStart(ch: string): boolean {
-  return (
-    (ch >= "A" && ch <= "Z") ||
-    (ch >= "a" && ch <= "z") ||
-    ch === "_" ||
-    ch === "$"
-  );
+  return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || ch === "_";
 }
 
 /**
@@ -573,7 +738,8 @@ function isIdContinuation(ch: string): boolean {
     ch === "$" ||
     ch === "." ||
     ch === "!" ||
-    ch === ":"
+    ch === ":" ||
+    ch === "#"
   );
 }
 
@@ -634,8 +800,8 @@ function isHexadecimalDigit(ch: string): boolean {
  * Tests if a character is a hexadecimal digit
  * @param ch Character to test
  */
- function isXHexadecimalDigit(ch: string): boolean {
-  return isXHexadecimalDigit(ch) || ch === "_" || ch === "'";
+function isXHexadecimalDigit(ch: string): boolean {
+  return isHexadecimalDigit(ch) || ch === "_" || ch === "'";
 }
 
 /**
@@ -655,18 +821,10 @@ function isXBinaryDigit(ch: string): boolean {
 }
 
 /**
- * Tests if a character is a letter
- * @param ch Character to test
- */
-function isLetter(ch: string): boolean {
-  return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z");
-}
-
-/**
  * Tests if a character is a token separator
  * @param ch Character to test
  */
- function isTokenSeparator(ch: string): boolean {
+function isTokenSeparator(ch: string): boolean {
   return ch === " " || ch === "\t" || ch === "\r" || ch === "\r";
 }
 

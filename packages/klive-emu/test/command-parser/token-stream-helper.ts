@@ -22,7 +22,7 @@ export function testToken(
 
   // --- Test for token with subsequent token
   if (errorToken !== null) {
-    ts = new TokenStream(new InputStream(tokenStr + "/"));
+    ts = new TokenStream(new InputStream(tokenStr + " /"));
     token = ts.get();
     expect(token.type).toBe(type);
     expect(token.text).toBe(resultStr);
