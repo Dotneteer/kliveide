@@ -138,7 +138,7 @@ emuRendererConfig.plugins = [
 ];
 
 const ideRendererConfig = lodash.cloneDeep(commonConfig);
-ideRendererConfig.entry = "./src/renderer/ide/ide-renderer.tsx";
+ideRendererConfig.entry = "./src/renderer/ide-new/ide-renderer.tsx";
 ideRendererConfig.target = "electron-renderer";
 ideRendererConfig.output.filename = "ide-renderer.bundle.js";
 ideRendererConfig.plugins = [
