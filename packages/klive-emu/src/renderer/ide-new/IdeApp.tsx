@@ -5,16 +5,18 @@ import { themeService } from "../themes/theme-service";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { toStyleString } from "./utils/css-utils";
-import { AppState } from "../../shared/state/AppState";
+import { AppState, EmuViewOptions } from "../../shared/state/AppState";
 import { useLayoutEffect } from "react";
 import "./ide-message-processor";
-import VerticalSplitter from "../common/VerticalSplitter";
+import Splitter from "../common/Splitter";
 
 const WORKBENCH_ID = "ideWorkbench";
 const STATUS_BAR_ID = "ideStatusBar";
 const ACTIVITY_BAR_ID = "ideActivityBar";
 const SIDEBAR_ID = "ideSidebar";
 const MAIN_DESK_ID = "ideMainDesk";
+const DOCUMENT_FRAME_ID = "ideDocumentFrame";
+const TOOL_FRAME_ID = "ideToolFrame";
 const SPLITTER_SIZE = 8;
 
 /**
@@ -43,11 +45,9 @@ export default function IdeApp() {
   });
   const [sidebarWidth, setSidebarWidth] = useState(0);
   const [mainDeskWidth, setMainDeskWidth] = useState(0);
-  const [vertSplitterPos, setVertSplitterPos] = useState<number>();
-
-  // --- Keep track of theme changes
-  let themeAware: StateAwareObject<string>;
-  let windowsAware: StateAwareObject<boolean>;
+  const [vertSplitterPos, setVertSplitterPos] = useState(0);
+  const [documentFrameHeight, setDocumentFrameHeight] = useState(200);
+  const [toolFrameHeight, setToolFrameHeight] = useState(100);
 
   React.useEffect(() => {
     if (!mounted.current) {
@@ -58,16 +58,24 @@ export default function IdeApp() {
       updateThemeState();
 
       // --- Watch for theme changes
-      themeAware = new StateAwareObject(store, "theme");
+      const themeAware = new StateAwareObject<string>(store, "theme");
       themeAware.stateChanged.on((theme) => {
         themeService.setTheme(theme);
         updateThemeState();
       });
 
-      windowsAware = new StateAwareObject(store, "isWindows");
+      const windowsAware = new StateAwareObject<boolean>(store, "isWindows");
       windowsAware.stateChanged.on((isWindows) => {
         themeService.isWindows = isWindows;
         updateThemeState();
+      });
+
+      const viewAware = new StateAwareObject<EmuViewOptions>(
+        store,
+        "emuViewOptions"
+      );
+      viewAware.stateChanged.on(() => {
+        onResize();
       });
 
       // TODO: Other component registrations
@@ -87,7 +95,6 @@ export default function IdeApp() {
   document.body.setAttribute("class", themeClass);
 
   useLayoutEffect(() => {
-    console.log("onLayout");
     const _onResize = () => onResize();
     window.addEventListener("resize", _onResize);
     onResize();
@@ -118,14 +125,16 @@ export default function IdeApp() {
     backgroundColor: "lightgray",
   };
 
-  const vertSpliterStyle: CSSProperties = {
-    position: "absolute",
-    top: 0,
-    left: vertSplitterPos,
-    height: workbenchDims.height,
-    width: 8,
-    backgroundColor: "blue",
-    opacity: 0.5,
+  const documentFrameStyle: CSSProperties = {
+    height: documentFrameHeight,
+    width: mainDeskWidth,
+    backgroundColor: "lightgreen",
+  };
+
+  const toolFrameStyle: CSSProperties = {
+    height: toolFrameHeight,
+    width: mainDeskWidth,
+    backgroundColor: "yellow",
   };
 
   return (
@@ -133,12 +142,22 @@ export default function IdeApp() {
       <div id={WORKBENCH_ID} style={workbenchStyle}>
         <div id={ACTIVITY_BAR_ID} style={activityBarStyle} />
         <div id={SIDEBAR_ID} style={sidebarStyle} />
-        <VerticalSplitter
+        <Splitter
+          direction="vertical"
           size={SPLITTER_SIZE}
           position={vertSplitterPos}
-          height={workbenchDims.height}
+          length={workbenchDims.height}
         />
-        <div id={MAIN_DESK_ID} style={mainDeskStyle} />
+        <div id={MAIN_DESK_ID} style={mainDeskStyle}>
+          <div id={DOCUMENT_FRAME_ID} style={documentFrameStyle} />
+          <Splitter
+            direction="horizontal"
+            size={SPLITTER_SIZE}
+            position={100}
+            length={mainDeskWidth}
+          />
+          <div id={TOOL_FRAME_ID} style={toolFrameStyle} />
+        </div>
       </div>
       {ideViewOptions.showStatusBar && (
         <div id={STATUS_BAR_ID} style={statusBarStyle}></div>
@@ -156,14 +175,15 @@ export default function IdeApp() {
   }
 
   function onResize(): void {
+    console.log("resize");
     // --- Calculate workbench dimensions
     const statusBarDiv = document.getElementById(STATUS_BAR_ID);
-    const newAppHeight = Math.floor(
-      window.innerHeight - statusBarDiv.offsetHeight
+    const workbenchHeight = Math.floor(
+      window.innerHeight - (statusBarDiv?.offsetHeight ?? 0)
     );
     setWorkbenchDims({
       width: window.innerWidth,
-      height: newAppHeight,
+      height: workbenchHeight,
     });
 
     // --- Calculate sidebar and main desk dimensions
@@ -176,9 +196,7 @@ export default function IdeApp() {
       : sidebarWidth > newDeskWidth
       ? 0.5 * sidebarWidth
       : sidebarWidth;
-    firstRender.current = false;
     setSidebarWidth(newSideBarWidth);
-    console.log(sidebarWidth, newSideBarWidth);
     const newMainDeskWidth = Math.round(newDeskWidth - newSideBarWidth - 0.5);
     setMainDeskWidth(newMainDeskWidth);
 
@@ -186,6 +204,23 @@ export default function IdeApp() {
     setVertSplitterPos(
       activityBarDiv.offsetWidth + newSideBarWidth - SPLITTER_SIZE / 2
     );
+
+    // --- Calculate document and tool panel sizes
+    const docFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
+    const docFrameHeight = docFrameDiv.offsetHeight;
+    let newDocFrameHeight = firstRender.current
+      ? workbenchHeight * 0.75
+      : docFrameHeight > workbenchHeight
+      ? 0.5 * workbenchHeight
+      : docFrameHeight;
+    setDocumentFrameHeight(newDocFrameHeight);
+    const newToolFrameHeight = Math.round(
+      workbenchHeight - newDocFrameHeight - 0.5
+    );
+    setToolFrameHeight(newToolFrameHeight);
+
+    // --- Now, we're over the first render
+    firstRender.current = false;
   }
 }
 
