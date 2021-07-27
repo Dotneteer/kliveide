@@ -1,5 +1,6 @@
 import * as React from "react";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useRef, useState } from "react";
+import { documentService } from "../ide/document-area/DocumentService";
 
 export type VerticalSplitterProps = {
   direction?: "vertical" | "horizontal";
@@ -7,6 +8,9 @@ export type VerticalSplitterProps = {
   position: number;
   length: number | string;
   shift?: number;
+  onStartMove?: () => void;
+  onMove?: (delta: number) => void;
+  onEndMove?: () => void;
 };
 
 /**
@@ -18,8 +22,20 @@ export default function Splitter({
   position,
   length,
   shift = 0,
+  onStartMove,
+  onMove,
+  onEndMove,
 }: VerticalSplitterProps) {
+  // --- Store the grip position when mouse movement starts
+  const gripPosition = useRef(0);
+
+  // --- Bind functions
+  const _move = (e: MouseEvent) => move(e);
+  const _endMove = () => endMove();
+
   const [pointed, setPointed] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
   const isVertical = direction === "vertical";
   let splitterStyle: CSSProperties = {
     position: "absolute",
@@ -27,8 +43,8 @@ export default function Splitter({
     left: isVertical ? position : shift,
     height: isVertical ? length : size,
     width: isVertical ? size : length,
-    backgroundColor: pointed ? "lightblue" : "blue",
-    opacity: pointed ? 1 : 0.5,
+    backgroundColor: pointed || dragging ? "lightblue" : "blue",
+    opacity: pointed || dragging ? 1 : 0.5,
     cursor: isVertical ? "ew-resize" : "ns-resize",
   };
 
@@ -37,6 +53,40 @@ export default function Splitter({
       style={splitterStyle}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
+      onMouseDown={(e) => {
+        if (e.button === 0) {
+          startMove(e);
+        }
+      }}
+      onMouseUp={() => endMove()}
     />
   );
+
+  function startMove(e: React.MouseEvent): void {
+    gripPosition.current = isVertical ? e.clientX : e.clientY;
+    window.addEventListener("mouseup", _endMove);
+    window.addEventListener("touchend", _endMove);
+    window.addEventListener("touchcancel", _endMove);
+    window.addEventListener("mousemove", _move);
+    window.addEventListener("touchmove", _move);
+    document.body.style.cursor = isVertical ? "ew-resize" : "ns-resize";
+    setDragging(true);
+    onStartMove?.();
+  }
+
+  function move(e: MouseEvent): void {
+    const delta = (isVertical ? e.clientX : e.clientY) - gripPosition.current;
+    onMove?.(delta);
+  }
+
+  function endMove(): void {
+    window.removeEventListener("mouseup", _endMove);
+    window.removeEventListener("touchend", _endMove);
+    window.removeEventListener("touchcancel", _endMove);
+    window.removeEventListener("mousemove", _move);
+    window.removeEventListener("touchmove", _move);
+    document.body.style.cursor = "default";
+    setDragging(false);
+    onEndMove?.();
+  }
 }

@@ -186,6 +186,9 @@ export default function IdeApp() {
           size={SPLITTER_SIZE}
           position={verticalSplitterPos}
           length={workbenchDims.height}
+          onStartMove={() => startVerticalSplitter()}
+          onMove={(delta) => moveVerticalSplitter(delta)}
+          onEndMove={() => stopVerticalSplitter()}
         />
         <div id={MAIN_DESK_ID} style={mainDeskStyle}>
           {documentFrameVisible && (
@@ -204,6 +207,9 @@ export default function IdeApp() {
               position={horizontalSplitterPos}
               length={mainDeskWidth}
               shift={mainDeskLeft}
+              onStartMove={() => startHorizontalSplitter()}
+              onMove={(delta) => moveHorizontalSplitter(delta)}
+              onEndMove={() => stopHorizontalSplitter()}
             />
           )}
           {toolFrameVisible && (
@@ -280,17 +286,12 @@ export default function IdeApp() {
           ? workbenchHeight * 0.75
           : docFrameHeight
         : workbenchHeight;
-      if (toolFrameVisible && workbenchHeight - newDocFrameHeight < MIN_DESK_HEIGHT) {
+      if (
+        toolFrameVisible &&
+        workbenchHeight - newDocFrameHeight < MIN_DESK_HEIGHT
+      ) {
         newDocFrameHeight = workbenchHeight - MIN_DESK_HEIGHT;
       }
-      
-      // newDocFrameHeight = toolFrameVisible
-      //   ? firstRender.current
-      //     ? workbenchHeight * 0.75
-      //     : docFrameHeight > workbenchHeight
-      //     ? 0.5 * workbenchHeight
-      //     : docFrameHeight
-      //   : workbenchHeight;
     }
     setDocumentFrameHeight(newDocFrameHeight);
     const newToolFrameHeight = Math.round(
@@ -311,6 +312,30 @@ export default function IdeApp() {
     // --- Now, we're over the first render and the restore
     firstRender.current = false;
     restoreLayout.current = false;
+  }
+
+  function startVerticalSplitter(): void {
+    console.log("StartV");
+  }
+
+  function moveVerticalSplitter(delta: number): void {
+    console.log(`MoveV: ${delta}`);
+  }
+
+  function stopVerticalSplitter(): void {
+    console.log("StopV");
+  }
+
+  function startHorizontalSplitter(): void {
+    console.log("StartV");
+  }
+
+  function moveHorizontalSplitter(delta: number): void {
+    console.log(`MoveV: ${delta}`);
+  }
+
+  function stopHorizontalSplitter(): void {
+    console.log("StopV");
   }
 }
 
