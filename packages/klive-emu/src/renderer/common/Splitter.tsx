@@ -21,7 +21,7 @@ export default function Splitter({
 }: VerticalSplitterProps) {
   const [pointed, setPointed] = useState(false);
   const isVertical = direction === "vertical";
-  const vertSpliterStyle: CSSProperties = {
+  let splitterStyle: CSSProperties = {
     position: "absolute",
     top: isVertical ? shift : position,
     left: isVertical ? position : shift,
@@ -34,7 +34,7 @@ export default function Splitter({
 
   return (
     <div
-      style={vertSpliterStyle}
+      style={splitterStyle}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     />

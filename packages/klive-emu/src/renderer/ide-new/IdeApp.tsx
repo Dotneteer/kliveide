@@ -44,10 +44,12 @@ export default function IdeApp() {
     height: 0,
   });
   const [sidebarWidth, setSidebarWidth] = useState(0);
+  const [mainDeskLeft, setMainDeskLeft] = useState(0);
   const [mainDeskWidth, setMainDeskWidth] = useState(0);
-  const [vertSplitterPos, setVertSplitterPos] = useState(0);
+  const [verticalSplitterPos, setVerticalSplitterPos] = useState(0);
   const [documentFrameHeight, setDocumentFrameHeight] = useState(200);
   const [toolFrameHeight, setToolFrameHeight] = useState(100);
+  const [horSplitterPos, setHorSplitterPos] = useState(0);
 
   React.useEffect(() => {
     if (!mounted.current) {
@@ -145,7 +147,7 @@ export default function IdeApp() {
         <Splitter
           direction="vertical"
           size={SPLITTER_SIZE}
-          position={vertSplitterPos}
+          position={verticalSplitterPos}
           length={workbenchDims.height}
         />
         <div id={MAIN_DESK_ID} style={mainDeskStyle}>
@@ -153,8 +155,9 @@ export default function IdeApp() {
           <Splitter
             direction="horizontal"
             size={SPLITTER_SIZE}
-            position={100}
+            position={horSplitterPos}
             length={mainDeskWidth}
+            shift={mainDeskLeft}
           />
           <div id={TOOL_FRAME_ID} style={toolFrameStyle} />
         </div>
@@ -197,11 +200,12 @@ export default function IdeApp() {
       ? 0.5 * sidebarWidth
       : sidebarWidth;
     setSidebarWidth(newSideBarWidth);
+    setMainDeskLeft(activityBarDiv.offsetWidth + newSideBarWidth);
     const newMainDeskWidth = Math.round(newDeskWidth - newSideBarWidth - 0.5);
     setMainDeskWidth(newMainDeskWidth);
 
     // --- Put the vertical splitter between the side bar and the main desk
-    setVertSplitterPos(
+    setVerticalSplitterPos(
       activityBarDiv.offsetWidth + newSideBarWidth - SPLITTER_SIZE / 2
     );
 
@@ -218,6 +222,9 @@ export default function IdeApp() {
       workbenchHeight - newDocFrameHeight - 0.5
     );
     setToolFrameHeight(newToolFrameHeight);
+
+    // --- Put the horizontal splitter between the document frame and the tool frame
+    setHorSplitterPos(newDocFrameHeight - SPLITTER_SIZE / 2);
 
     // --- Now, we're over the first render
     firstRender.current = false;
