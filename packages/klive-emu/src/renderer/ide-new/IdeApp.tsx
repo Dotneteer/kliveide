@@ -5,11 +5,21 @@ import { themeService } from "../themes/theme-service";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { toStyleString } from "./utils/css-utils";
-import { AppState, EmuViewOptions } from "../../shared/state/AppState";
+import {
+  AppState,
+  EmuViewOptions,
+  ToolFrameState,
+} from "../../shared/state/AppState";
 import { useLayoutEffect } from "react";
 import "./ide-message-processor";
 import Splitter from "../common/Splitter";
+import {
+  ideToolFrameMaximizeAction,
+  ideToolFrameShowAction,
+} from "../../shared/state/tool-frame-reducer";
+import { useEffect } from "react";
 
+// --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
 const STATUS_BAR_ID = "ideStatusBar";
 const ACTIVITY_BAR_ID = "ideActivityBar";
@@ -28,15 +38,21 @@ type PanelDims = {
 };
 
 /**
- * Represents the emulator app's root component
+ * Represents the emulator app's root component.
  */
 export default function IdeApp() {
+  // --- Let's use the store for dispatching actions
   const store = useStore();
   const dispatch = useDispatch();
 
+  // --- Keep these references for later use
   const mounted = useRef(false);
   const firstRender = useRef(true);
+  const lastDocumentFrameHeight = useRef(0);
+  const lastToolFrameHeight = useRef(0);
+  const restoreLayout = useRef(false);
 
+  // --- Component state
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
   const [workbenchDims, setWorkbenchDims] = useState<PanelDims>({
@@ -49,9 +65,11 @@ export default function IdeApp() {
   const [verticalSplitterPos, setVerticalSplitterPos] = useState(0);
   const [documentFrameHeight, setDocumentFrameHeight] = useState(200);
   const [toolFrameHeight, setToolFrameHeight] = useState(100);
-  const [horSplitterPos, setHorSplitterPos] = useState(0);
+  const [horizontalSplitterPos, setHorizontalSplitterPos] = useState(0);
+  const [documentFrameVisible, setDocumentFrameVisible] = useState(true);
+  const [toolFrameVisible, setToolFrameVisible] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
 
@@ -80,6 +98,21 @@ export default function IdeApp() {
         onResize();
       });
 
+      const deskStatusAware = new StateAwareObject<ToolFrameState>(
+        store,
+        "toolFrame"
+      );
+      deskStatusAware.stateChanged.on((toolFrame) => {
+        console.log("Visibility changed");
+        setToolFrameVisible(toolFrame.visible);
+        setDocumentFrameVisible(!toolFrame.maximized);
+        if (toolFrame.visible && !toolFrame.maximized) {
+          // --- Both frame's are displayed, let's restore their previous heights
+          console.log("Restore");
+          restoreLayout.current = true;
+        }
+      });
+
       // TODO: Other component registrations
     }
 
@@ -97,14 +130,14 @@ export default function IdeApp() {
   document.body.setAttribute("class", themeClass);
 
   useLayoutEffect(() => {
+    console.log("onLayout");
     const _onResize = () => onResize();
     window.addEventListener("resize", _onResize);
     onResize();
     return () => {
       window.removeEventListener("resize", _onResize);
-      console.log("offLayout");
     };
-  }, []);
+  }, [toolFrameVisible, documentFrameVisible]);
 
   // --- Set panel style and dimensions
   const workbenchStyle: CSSProperties = {
@@ -151,15 +184,33 @@ export default function IdeApp() {
           length={workbenchDims.height}
         />
         <div id={MAIN_DESK_ID} style={mainDeskStyle}>
-          <div id={DOCUMENT_FRAME_ID} style={documentFrameStyle} />
-          <Splitter
-            direction="horizontal"
-            size={SPLITTER_SIZE}
-            position={horSplitterPos}
-            length={mainDeskWidth}
-            shift={mainDeskLeft}
-          />
-          <div id={TOOL_FRAME_ID} style={toolFrameStyle} />
+          {documentFrameVisible && (
+            <div
+              id={DOCUMENT_FRAME_ID}
+              style={documentFrameStyle}
+              onClick={() => {
+                dispatch(ideToolFrameShowAction(!toolFrameVisible));
+              }}
+            />
+          )}
+          {documentFrameVisible && toolFrameVisible && (
+            <Splitter
+              direction="horizontal"
+              size={SPLITTER_SIZE}
+              position={horizontalSplitterPos}
+              length={mainDeskWidth}
+              shift={mainDeskLeft}
+            />
+          )}
+          {toolFrameVisible && (
+            <div
+              id={TOOL_FRAME_ID}
+              style={toolFrameStyle}
+              onClick={() => {
+                dispatch(ideToolFrameMaximizeAction(documentFrameVisible));
+              }}
+            />
+          )}
         </div>
       </div>
       {ideViewOptions.showStatusBar && (
@@ -178,7 +229,6 @@ export default function IdeApp() {
   }
 
   function onResize(): void {
-    console.log("resize");
     // --- Calculate workbench dimensions
     const statusBarDiv = document.getElementById(STATUS_BAR_ID);
     const workbenchHeight = Math.floor(
@@ -211,12 +261,29 @@ export default function IdeApp() {
 
     // --- Calculate document and tool panel sizes
     const docFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
-    const docFrameHeight = docFrameDiv.offsetHeight;
-    let newDocFrameHeight = firstRender.current
-      ? workbenchHeight * 0.75
-      : docFrameHeight > workbenchHeight
-      ? 0.5 * workbenchHeight
-      : docFrameHeight;
+    const docFrameHeight = docFrameDiv?.offsetHeight ?? 0;
+    let newDocFrameHeight: number;
+    if (restoreLayout.current) {
+      // --- We need to restore the state of both panels
+      console.log(
+        lastDocumentFrameHeight.current,
+        lastToolFrameHeight.current,
+        workbenchHeight
+      );
+      newDocFrameHeight =
+        (lastDocumentFrameHeight.current * workbenchHeight) /
+        (lastDocumentFrameHeight.current + lastToolFrameHeight.current);
+      console.log(`Restored doc height: ${newDocFrameHeight}`);
+    } else {
+      // --- Calculate the height of the panel the normal way
+      newDocFrameHeight = toolFrameVisible
+        ? firstRender.current
+          ? workbenchHeight * 0.75
+          : docFrameHeight > workbenchHeight
+          ? 0.5 * workbenchHeight
+          : docFrameHeight
+        : workbenchHeight;
+    }
     setDocumentFrameHeight(newDocFrameHeight);
     const newToolFrameHeight = Math.round(
       workbenchHeight - newDocFrameHeight - 0.5
@@ -224,10 +291,18 @@ export default function IdeApp() {
     setToolFrameHeight(newToolFrameHeight);
 
     // --- Put the horizontal splitter between the document frame and the tool frame
-    setHorSplitterPos(newDocFrameHeight - SPLITTER_SIZE / 2);
+    setHorizontalSplitterPos(newDocFrameHeight - SPLITTER_SIZE / 2);
 
-    // --- Now, we're over the first render
+    // --- Save the layout temporarily
+    if (documentFrameVisible && toolFrameVisible) {
+      lastDocumentFrameHeight.current = newDocFrameHeight;
+      lastToolFrameHeight.current = newToolFrameHeight;
+      console.log(`Save: ${newDocFrameHeight}, ${newToolFrameHeight}`);
+    }
+
+    // --- Now, we're over the first render and the restore
     firstRender.current = false;
+    restoreLayout.current = false;
   }
 }
 
