@@ -1,6 +1,5 @@
 import * as React from "react";
 import { CSSProperties, useRef, useState } from "react";
-import { documentService } from "../ide/document-area/DocumentService";
 
 export type VerticalSplitterProps = {
   direction?: "vertical" | "horizontal";
@@ -43,8 +42,8 @@ export default function Splitter({
     left: isVertical ? position : shift,
     height: isVertical ? length : size,
     width: isVertical ? size : length,
-    backgroundColor: pointed || dragging ? "lightblue" : "blue",
-    opacity: pointed || dragging ? 1 : 0.5,
+    backgroundColor: pointed || dragging ? "var(--splitter-hover-color)" : "transparent",
+    opacity: pointed || dragging ? 1 : 0,
     cursor: isVertical ? "ew-resize" : "ns-resize",
   };
 

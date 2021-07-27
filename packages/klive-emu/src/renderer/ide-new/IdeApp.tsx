@@ -27,9 +27,10 @@ const SIDEBAR_ID = "ideSidebar";
 const MAIN_DESK_ID = "ideMainDesk";
 const DOCUMENT_FRAME_ID = "ideDocumentFrame";
 const TOOL_FRAME_ID = "ideToolFrame";
-const SPLITTER_SIZE = 8;
+const SPLITTER_SIZE = 4;
 
 // --- Panel sizes
+const MIN_SIDEBAR_WIDTH = 200;
 const MIN_DESK_WIDTH = 300;
 const MIN_DESK_HEIGHT = 100;
 
@@ -37,8 +38,8 @@ const MIN_DESK_HEIGHT = 100;
  * Represents the size of a panel
  */
 type PanelDims = {
-  width: number | string;
-  height: number | string;
+  width: number;
+  height: number;
 };
 
 /**
@@ -55,6 +56,9 @@ export default function IdeApp() {
   const lastDocumentFrameHeight = useRef(0);
   const lastToolFrameHeight = useRef(0);
   const restoreLayout = useRef(false);
+  const splitterStartPosition = useRef(0);
+  const activityBarWidth = useRef(0);
+  const deskWidth = useRef(0);
 
   // --- Component state
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
@@ -107,12 +111,10 @@ export default function IdeApp() {
         "toolFrame"
       );
       deskStatusAware.stateChanged.on((toolFrame) => {
-        console.log("Visibility changed");
         setToolFrameVisible(toolFrame.visible);
         setDocumentFrameVisible(!toolFrame.maximized);
         if (toolFrame.visible && !toolFrame.maximized) {
           // --- Both frame's are displayed, let's restore their previous heights
-          console.log("Restore");
           restoreLayout.current = true;
         }
       });
@@ -134,7 +136,6 @@ export default function IdeApp() {
   document.body.setAttribute("class", themeClass);
 
   useLayoutEffect(() => {
-    console.log("onLayout");
     const _onResize = () => onResize();
     window.addEventListener("resize", _onResize);
     onResize();
@@ -188,7 +189,6 @@ export default function IdeApp() {
           length={workbenchDims.height}
           onStartMove={() => startVerticalSplitter()}
           onMove={(delta) => moveVerticalSplitter(delta)}
-          onEndMove={() => stopVerticalSplitter()}
         />
         <div id={MAIN_DESK_ID} style={mainDeskStyle}>
           {documentFrameVisible && (
@@ -209,7 +209,6 @@ export default function IdeApp() {
               shift={mainDeskLeft}
               onStartMove={() => startHorizontalSplitter()}
               onMove={(delta) => moveHorizontalSplitter(delta)}
-              onEndMove={() => stopHorizontalSplitter()}
             />
           )}
           {toolFrameVisible && (
@@ -251,7 +250,9 @@ export default function IdeApp() {
 
     // --- Calculate sidebar and main desk dimensions
     const activityBarDiv = document.getElementById(ACTIVITY_BAR_ID);
+    activityBarWidth.current = activityBarDiv.offsetWidth;
     const newDeskWidth = window.innerWidth - activityBarDiv.offsetWidth;
+    deskWidth.current = newDeskWidth;
     const sidebarDiv = document.getElementById(SIDEBAR_ID);
     const sidebarWidth = sidebarDiv.offsetWidth;
     let newSideBarWidth = firstRender.current
@@ -306,7 +307,6 @@ export default function IdeApp() {
     if (documentFrameVisible && toolFrameVisible) {
       lastDocumentFrameHeight.current = newDocFrameHeight;
       lastToolFrameHeight.current = newToolFrameHeight;
-      console.log(`Save: ${newDocFrameHeight}, ${newToolFrameHeight}`);
     }
 
     // --- Now, we're over the first render and the restore
@@ -315,27 +315,47 @@ export default function IdeApp() {
   }
 
   function startVerticalSplitter(): void {
-    console.log("StartV");
+    splitterStartPosition.current = sidebarWidth;
   }
 
   function moveVerticalSplitter(delta: number): void {
-    console.log(`MoveV: ${delta}`);
-  }
+    let newSideBarWidth = Math.min(
+      Math.max(
+        Math.round(splitterStartPosition.current + delta - 0.5),
+        MIN_SIDEBAR_WIDTH
+      ),
+      Math.round(workbenchDims.width - activityBarWidth.current - MIN_DESK_WIDTH)
+    );
 
-  function stopVerticalSplitter(): void {
-    console.log("StopV");
+    setSidebarWidth(newSideBarWidth);
+    setMainDeskLeft(activityBarWidth.current + newSideBarWidth);
+    setMainDeskWidth(Math.round(deskWidth.current - newSideBarWidth - 0.5));
+    setVerticalSplitterPos(
+      activityBarWidth.current + newSideBarWidth - SPLITTER_SIZE / 2
+    );
   }
 
   function startHorizontalSplitter(): void {
-    console.log("StartV");
+    splitterStartPosition.current = documentFrameHeight;
   }
 
   function moveHorizontalSplitter(delta: number): void {
-    console.log(`MoveV: ${delta}`);
-  }
+    let newDocFrameHeight = Math.min(
+      Math.max(
+        Math.round(splitterStartPosition.current + delta - 0.5),
+        MIN_DESK_HEIGHT
+      ),
+      Math.round(workbenchDims.height - MIN_DESK_HEIGHT)
+    );
 
-  function stopHorizontalSplitter(): void {
-    console.log("StopV");
+    setDocumentFrameHeight(newDocFrameHeight);
+    lastDocumentFrameHeight.current = newDocFrameHeight;
+    const newToolFrameHeight = Math.round(workbenchDims.height - newDocFrameHeight - 0.5);
+    setToolFrameHeight(newToolFrameHeight);
+    lastToolFrameHeight.current = newToolFrameHeight;
+    setHorizontalSplitterPos(
+      newDocFrameHeight - SPLITTER_SIZE / 2
+    );
   }
 }
 
