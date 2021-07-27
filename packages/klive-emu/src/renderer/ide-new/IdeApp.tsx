@@ -29,6 +29,10 @@ const DOCUMENT_FRAME_ID = "ideDocumentFrame";
 const TOOL_FRAME_ID = "ideToolFrame";
 const SPLITTER_SIZE = 8;
 
+// --- Panel sizes
+const MIN_DESK_WIDTH = 300;
+const MIN_DESK_HEIGHT = 100;
+
 /**
  * Represents the size of a panel
  */
@@ -246,9 +250,10 @@ export default function IdeApp() {
     const sidebarWidth = sidebarDiv.offsetWidth;
     let newSideBarWidth = firstRender.current
       ? newDeskWidth * 0.25
-      : sidebarWidth > newDeskWidth
-      ? 0.5 * sidebarWidth
       : sidebarWidth;
+    if (newDeskWidth - newSideBarWidth < MIN_DESK_WIDTH) {
+      newSideBarWidth = newDeskWidth - MIN_DESK_WIDTH;
+    }
     setSidebarWidth(newSideBarWidth);
     setMainDeskLeft(activityBarDiv.offsetWidth + newSideBarWidth);
     const newMainDeskWidth = Math.round(newDeskWidth - newSideBarWidth - 0.5);
@@ -265,24 +270,27 @@ export default function IdeApp() {
     let newDocFrameHeight: number;
     if (restoreLayout.current) {
       // --- We need to restore the state of both panels
-      console.log(
-        lastDocumentFrameHeight.current,
-        lastToolFrameHeight.current,
-        workbenchHeight
-      );
       newDocFrameHeight =
         (lastDocumentFrameHeight.current * workbenchHeight) /
         (lastDocumentFrameHeight.current + lastToolFrameHeight.current);
-      console.log(`Restored doc height: ${newDocFrameHeight}`);
     } else {
       // --- Calculate the height of the panel the normal way
       newDocFrameHeight = toolFrameVisible
         ? firstRender.current
           ? workbenchHeight * 0.75
-          : docFrameHeight > workbenchHeight
-          ? 0.5 * workbenchHeight
           : docFrameHeight
         : workbenchHeight;
+      if (toolFrameVisible && workbenchHeight - newDocFrameHeight < MIN_DESK_HEIGHT) {
+        newDocFrameHeight = workbenchHeight - MIN_DESK_HEIGHT;
+      }
+      
+      // newDocFrameHeight = toolFrameVisible
+      //   ? firstRender.current
+      //     ? workbenchHeight * 0.75
+      //     : docFrameHeight > workbenchHeight
+      //     ? 0.5 * workbenchHeight
+      //     : docFrameHeight
+      //   : workbenchHeight;
     }
     setDocumentFrameHeight(newDocFrameHeight);
     const newToolFrameHeight = Math.round(
