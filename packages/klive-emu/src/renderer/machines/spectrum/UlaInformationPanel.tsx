@@ -44,7 +44,7 @@ const RENDERING_PHASES = [
 function stateRow(name: string, value: string | number) {
   return (
     <div style={valueItemStyle}>
-      <div style={labelStyle(92)}>{name}</div>
+      <div style={labelStyle(128)}>{name}</div>
       <div style={valueStyle(16)}>{value}</div>
     </div>
   );
@@ -82,7 +82,7 @@ function kbLine(line: number, title: string, value: number) {
   }
   return (
     <div style={valueItemStyle}>
-      <div style={labelStyle(92)} title={`Keyboard line ${line}`}>
+      <div style={labelStyle(128)} title={`Keyboard line ${line}`}>
         {title}
       </div>
       {kbFlag(4)}

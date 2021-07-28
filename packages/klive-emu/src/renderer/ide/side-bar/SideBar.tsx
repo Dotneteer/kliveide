@@ -23,12 +23,14 @@ export default function SideBar() {
 
   // --- Component state
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
-  let activityName = activityService.activeActivity.id;
+  let activityName = "";
 
   // --- Set up the side bar panels with their state
   const panelsChanged = () => {
-    activityName = activityService.activeActivity.id;
-    setPanels(sideBarService.getSideBarPanels());
+    if (activityService.activeActivity) {
+      activityName = activityService.activeActivity.id;
+      setPanels(sideBarService.getSideBarPanels());
+    }
   };
 
   useEffect(() => {
@@ -49,8 +51,10 @@ export default function SideBar() {
     // --- and calculate if they are sizable
     for (let index = 0; index < panels.length; index++) {
       const descriptor = panels[index];
-      const expBefore = panels.filter((p, i) => i < index && p.expanded).length > 0
-      const expAfter = panels.filter((p, i) => i >= index && p.expanded).length > 0
+      const expBefore =
+        panels.filter((p, i) => i < index && p.expanded).length > 0;
+      const expAfter =
+        panels.filter((p, i) => i >= index && p.expanded).length > 0;
       sideBarPanels.push(
         <SideBarPanel
           key={`${activityName}-${descriptor.title}`}
@@ -67,10 +71,14 @@ export default function SideBar() {
     }
   }
   return (
-    <Root>
-      <SideBarHeader activity={activityService.activeActivity} />
-      {sideBarPanels}
-    </Root>
+    activityService.activeActivity && (
+      <>
+        <Root>
+          <SideBarHeader activity={activityService.activeActivity} />
+          {sideBarPanels}
+        </Root>
+      </>
+    )
   );
 
   /**
@@ -91,7 +99,7 @@ export default function SideBar() {
    * Gets the index of the next expanded panel
    * @param index Current index
    */
-   function getSizedExpandedIndex(index: number): number {
+  function getSizedExpandedIndex(index: number): number {
     for (let i = index; i < panels.length; i++) {
       if (panels[i].expanded) {
         return i;
@@ -151,7 +159,8 @@ export default function SideBar() {
     const abovePercentage =
       (newAboveHeight / sumHeight) * panelPercentage.current;
     panels[aboveIndex].heightPercentage = abovePercentage;
-    panels[sizedIndex].heightPercentage = panelPercentage.current - abovePercentage;
+    panels[sizedIndex].heightPercentage =
+      panelPercentage.current - abovePercentage;
     setPanels(panels.slice(0));
   }
 }
@@ -159,6 +168,6 @@ export default function SideBar() {
 // --- Component helper tags
 const Root = createSizedStyledPanel({
   others: {
-    "background-color": "var(--sidebar-background-color)",
+    "background-color": "var(--sidebar-background-color)"
   },
 });

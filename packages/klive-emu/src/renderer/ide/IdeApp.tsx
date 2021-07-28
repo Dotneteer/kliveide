@@ -19,7 +19,6 @@ import {
 } from "../../shared/state/tool-frame-reducer";
 import { useEffect } from "react";
 import { Activity } from "../../shared/activity/Activity";
-import { ideStore } from "./ideStore";
 import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
 import { sideBarService } from "./side-bar/SideBarService";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
@@ -48,6 +47,10 @@ import { TreeView } from "../common/TreeView";
 import IdeContextMenu from "./command/ContextMenu";
 import ModalDialog from "../modals/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
+import IdeStatusbar from "./IdeStatusbar";
+import SideBar from "./side-bar/SideBar";
+import { activityService } from "./activity-bar/ActivityService";
+import "./ide-message-processor";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -205,7 +208,7 @@ export default function IdeApp() {
           isSystemActivity: true,
         },
       ];
-      ideStore.dispatch(setActivitiesAction(activities));
+      store.dispatch(setActivitiesAction(activities));
 
       // --- Register side bar panels
       // (Explorer)
@@ -326,13 +329,10 @@ export default function IdeApp() {
       codeFolder.appendChild(zxbFile);
       const projectTree = new TreeView(root);
       projectServices.setProjectTree(projectTree);
-    }
 
-    return () => {
-      // --- Unmount
-      dispatch(ideLoadUiAction());
-      mounted.current = false;
-    };
+      // --- Select the file-view activity
+      activityService.selectActivity(0);
+    }
   }, [store]);
 
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
@@ -361,7 +361,8 @@ export default function IdeApp() {
     display: "inline-block",
     height: "100%",
     width: sidebarWidth,
-    backgroundColor: "gray",
+    verticalAlign: "top",
+    overflow: "hidden",
   };
 
   const mainDeskStyle: CSSProperties = {
@@ -384,7 +385,7 @@ export default function IdeApp() {
   };
 
   const statusBarStyle: CSSProperties = {
-    height: ideViewOptions.showStatusBar ? 20 : 0,
+    height: ideViewOptions.showStatusBar ? 28 : 0,
     width: "100%",
     backgroundColor: "blue",
   };
@@ -395,7 +396,9 @@ export default function IdeApp() {
         <div id={ACTIVITY_BAR_ID} style={activityBarStyle}>
           <ActivityBar />
         </div>
-        <div id={SIDEBAR_ID} style={sidebarStyle} />
+        <div id={SIDEBAR_ID} style={sidebarStyle}>
+          <SideBar />
+        </div>
         <Splitter
           direction="vertical"
           size={SPLITTER_SIZE}
@@ -436,7 +439,9 @@ export default function IdeApp() {
           )}
         </div>
       </div>
-      <div id={STATUS_BAR_ID} style={statusBarStyle}></div>
+      <div id={STATUS_BAR_ID} style={statusBarStyle}>
+        <IdeStatusbar />
+      </div>
       <IdeContextMenu target="#klive_ide_app" />
       <ModalDialog targetId="#app" />
     </div>
@@ -578,7 +583,6 @@ export default function IdeApp() {
 const ideAppStyle: CSSProperties = {
   width: "100%",
   height: "100%",
-  backgroundColor: "yellow",
   overflow: "hidden",
 };
 
@@ -587,4 +591,5 @@ const activityBarStyle: CSSProperties = {
   height: "100%",
   width: 48,
   verticalAlign: "top",
+  overflow: "hidden",
 };
