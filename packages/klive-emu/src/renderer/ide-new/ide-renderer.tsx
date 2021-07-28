@@ -5,7 +5,7 @@ import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { ideStore } from "./ideStore";
 import { registerThemes } from "../common/register-themes";
-import IdeApp from "./IdeApp";
+import IdeApp from "../ide/IdeApp";
 
 
 // --- Prepare the themes used in this app
