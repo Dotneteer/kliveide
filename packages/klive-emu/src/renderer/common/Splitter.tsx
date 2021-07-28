@@ -2,6 +2,7 @@ import * as React from "react";
 import { CSSProperties, useRef, useState } from "react";
 
 export type VerticalSplitterProps = {
+  id: string;
   direction?: "vertical" | "horizontal";
   size?: number;
   position: number;
@@ -16,6 +17,7 @@ export type VerticalSplitterProps = {
  * This component implements the vertical splitter of the IDE
  */
 export default function Splitter({
+  id,
   direction = "vertical",
   size = 8,
   position,
@@ -47,11 +49,13 @@ export default function Splitter({
     cursor: isVertical ? "ew-resize" : "ns-resize",
     transitionProperty: "background-color",
     transitionDelay: "0.25s",
-    transitionDuration: "0.25s"
+    transitionDuration: "0.25s",
+    zIndex: 100,
   };
 
   return (
     <div
+      id={id}
       style={splitterStyle}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
