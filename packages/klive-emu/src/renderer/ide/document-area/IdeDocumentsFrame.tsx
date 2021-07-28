@@ -62,7 +62,7 @@ export default function IdeDocumentFrame() {
 
 // --- Component helper tags
 const Root = createSizedStyledPanel({
-  fitToClient: false,
+  fitToClient: true,
   background: "var(--shell-canvas-background-color)",
 });
 

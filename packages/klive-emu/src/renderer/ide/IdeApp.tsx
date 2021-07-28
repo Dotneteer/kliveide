@@ -370,12 +370,18 @@ export default function IdeApp() {
   };
 
   const documentFrameStyle: CSSProperties = {
+    display: "flex",
+    flexGrow: 0,
+    flexShrink: 0,
     height: documentFrameHeight,
     width: mainDeskWidth,
     backgroundColor: "lightgreen",
   };
 
   const toolFrameStyle: CSSProperties = {
+    display: "flex",
+    flexGrow: 0,
+    flexShrink: 0,
     height: toolFrameHeight,
     width: mainDeskWidth,
     backgroundColor: "yellow",
