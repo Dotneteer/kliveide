@@ -83,6 +83,9 @@ let mainDeskWidth = 0;
 let documentFrameHeight = 200;
 let toolFrameHeight = 100;
 let verticalSplitterPos = 0;
+let horizontalSplitterPos = 0;
+let showDocumentFrame = true;
+let showToolFrame = true;
 
 /**
  * Represents the emulator app's root component.
@@ -97,7 +100,6 @@ export default function IdeApp() {
   // --- Component state
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
-  const [horizontalSplitterPos, setHorizontalSplitterPos] = useState(0);
   const [documentFrameVisible, setDocumentFrameVisible] = useState(true);
   const [toolFrameVisible, setToolFrameVisible] = useState(true);
 
@@ -135,12 +137,16 @@ export default function IdeApp() {
         "toolFrame"
       );
       deskStatusAware.stateChanged.on((toolFrame) => {
-        setToolFrameVisible(toolFrame.visible);
-        setDocumentFrameVisible(!toolFrame.maximized);
-        if (toolFrame.visible && !toolFrame.maximized) {
+        showToolFrame = toolFrame.visible;
+        setToolFrameVisible(showToolFrame)
+        showDocumentFrame = !toolFrame.maximized;
+        setDocumentFrameVisible(showDocumentFrame);
+        if (showToolFrame && showDocumentFrame) {
           // --- Both frame's are displayed, let's restore their previous heights
+          console.log("Sign restoring");
           restoreLayout = true;
         }
+        onResize();
       });
 
       // --- Set up activities
@@ -339,7 +345,7 @@ export default function IdeApp() {
     return () => {
       window.removeEventListener("resize", _onResize);
     };
-  }, [toolFrameVisible, documentFrameVisible]);
+  }, []);
 
   // --- Set panel style and dimensions
   const workbenchStyle: CSSProperties = {
@@ -448,6 +454,9 @@ export default function IdeApp() {
     workbenchHeight = Math.floor(
       window.innerHeight - (statusBarDiv?.offsetHeight ?? 0)
     );
+    const workBenchDiv = document.getElementById(WORKBENCH_ID);
+    workBenchDiv.style.width = `${workbenchWidth}px`;
+    workBenchDiv.style.height = `${workbenchHeight}px`;
 
     // --- Calculate sidebar and main desk dimensions
     const activityBarDiv = document.getElementById(ACTIVITY_BAR_ID);
@@ -468,18 +477,21 @@ export default function IdeApp() {
     const docFrameHeight = docFrameDiv?.offsetHeight ?? 0;
     if (restoreLayout) {
       // --- We need to restore the state of both panels
+      console.log("restoring");
       documentFrameHeight =
         (lastDocumentFrameHeight * workbenchHeight) /
         (lastDocumentFrameHeight + lastToolFrameHeight);
     } else {
       // --- Calculate the height of the panel the normal way
-      documentFrameHeight = toolFrameVisible
-        ? firstRender
-          ? workbenchHeight * 0.75
-          : docFrameHeight
-        : workbenchHeight;
+      documentFrameHeight = showDocumentFrame
+        ? showToolFrame
+          ? firstRender
+            ? workbenchHeight * 0.75
+            : docFrameHeight
+          : workbenchHeight
+        : 0;
       if (
-        toolFrameVisible &&
+        showToolFrame &&
         workbenchHeight - documentFrameHeight < MIN_DESK_HEIGHT
       ) {
         documentFrameHeight = workbenchHeight - MIN_DESK_HEIGHT;
@@ -488,27 +500,35 @@ export default function IdeApp() {
 
     const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
     if (documentFrameDiv) {
+      console.log(`setting doc height ${documentFrameHeight}`);
       documentFrameDiv.style.height = `${documentFrameHeight}px`;
     }
 
     const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
-    toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight - 0.5);
+    toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight);
     toolFrameHeight = toolFrameHeight;
     if (toolFrameDiv) {
       toolFrameDiv.style.height = `${toolFrameHeight}px`;
     }
 
     // --- Put the horizontal splitter between the document frame and the tool frame
-    setHorizontalSplitterPos(documentFrameHeight - SPLITTER_SIZE / 2);
+    const horizontalSplitterDiv = document.getElementById(
+      HORIZONTAL_SPLITTER_ID
+    );
+    if (horizontalSplitterDiv) {
+      horizontalSplitterPos = documentFrameHeight - SPLITTER_SIZE / 2;
+      horizontalSplitterDiv.style.top = `${horizontalSplitterPos}px`;
+    }
 
     // --- Save the layout temporarily
-    if (documentFrameVisible && toolFrameVisible) {
+    if (showDocumentFrame && showToolFrame) {
       lastDocumentFrameHeight = documentFrameHeight;
       lastToolFrameHeight = toolFrameHeight;
     }
 
     // --- Now, we're over the first render and the restore
     firstRender = false;
+    console.log("Reset restore");
     restoreLayout = false;
   }
 
@@ -518,6 +538,10 @@ export default function IdeApp() {
     const sidebarDiv = document.getElementById(SIDEBAR_ID);
     const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
     const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
+    const verticalSplitterDiv = document.getElementById(VERTICAL_SPLITTER_ID);
+    const horizontalSplitterDiv = document.getElementById(
+      HORIZONTAL_SPLITTER_ID
+    );
 
     // --- Set sidebar dimesions
     sidebarWidth = newSideBarWidth;
@@ -527,7 +551,7 @@ export default function IdeApp() {
     const mainDeskDiv = document.getElementById(MAIN_DESK_ID);
     mainDeskLeft = activityBarDiv.offsetWidth + newSideBarWidth;
     mainDeskDiv.style.left = `${mainDeskLeft}px`;
-    const newMainDeskWidth = Math.round(deskWidth - newSideBarWidth - 0.5);
+    const newMainDeskWidth = Math.round(deskWidth - newSideBarWidth);
     mainDeskWidth = newMainDeskWidth;
     mainDeskDiv.style.width = `${newMainDeskWidth}px`;
 
@@ -540,13 +564,17 @@ export default function IdeApp() {
     }
 
     // --- Put the vertical splitter between the side bar and the main desk
-    const verticalSplitterDiv = document.getElementById(VERTICAL_SPLITTER_ID);
     verticalSplitterPos =
       activityBarDiv.offsetWidth + newSideBarWidth - SPLITTER_SIZE / 2;
     verticalSplitterDiv.style.left = `${verticalSplitterPos}px`;
 
-    // --- Put the horizontal splitter between the document frame and the tool frame
-    setHorizontalSplitterPos(documentFrameHeight - SPLITTER_SIZE / 2);
+    // --- Update the horizontal splitter's position
+    if (horizontalSplitterDiv) {
+      horizontalSplitterDiv.style.left = `${
+        activityBarDiv.offsetWidth + newSideBarWidth
+      }px`;
+      horizontalSplitterDiv.style.width = `${newMainDeskWidth}px`;
+    }
   }
 
   function startVerticalSplitter(): void {
@@ -556,7 +584,7 @@ export default function IdeApp() {
   function moveVerticalSplitter(delta: number): void {
     let newSideBarWidth = Math.min(
       Math.max(
-        Math.round(splitterStartPosition + delta - 0.5),
+        Math.round(splitterStartPosition + delta),
         MIN_SIDEBAR_WIDTH
       ),
       Math.round(workbenchWidth - activityBarWidth - MIN_DESK_WIDTH)
@@ -569,31 +597,35 @@ export default function IdeApp() {
   }
 
   function moveHorizontalSplitter(delta: number): void {
-    let newDocFrameHeight = Math.min(
+    documentFrameHeight = Math.min(
       Math.max(
-        Math.round(splitterStartPosition + delta - 0.5),
+        Math.round(splitterStartPosition + delta),
         MIN_DESK_HEIGHT
       ),
       Math.round(workbenchHeight - MIN_DESK_HEIGHT)
     );
 
     const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
-    documentFrameHeight = newDocFrameHeight;
     if (documentFrameDiv) {
       documentFrameDiv.style.height = `${documentFrameHeight}px`;
     }
-    lastDocumentFrameHeight = newDocFrameHeight;
+    lastDocumentFrameHeight = documentFrameHeight;
 
     const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
-    const newToolFrameHeight = Math.round(
-      workbenchHeight - newDocFrameHeight - 0.5
-    );
-    toolFrameHeight = newToolFrameHeight;
+    toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight);
     if (toolFrameDiv) {
       toolFrameDiv.style.height = `${toolFrameHeight}px`;
     }
-    lastToolFrameHeight = newToolFrameHeight;
-    setHorizontalSplitterPos(newDocFrameHeight - SPLITTER_SIZE / 2);
+    lastToolFrameHeight = toolFrameHeight;
+
+    // --- Put the horizontal splitter between the document frame and the tool frame
+    const horizontalSplitterDiv = document.getElementById(
+      HORIZONTAL_SPLITTER_ID
+    );
+    if (horizontalSplitterDiv) {
+      horizontalSplitterPos = documentFrameHeight - SPLITTER_SIZE / 2;
+      horizontalSplitterDiv.style.top = `${horizontalSplitterPos}px`;
+    }
   }
 }
 

@@ -30,6 +30,7 @@ interface State {
  */
 export default class EditorDocument extends React.Component<Props, State> {
   private divHost = React.createRef<HTMLDivElement>();
+  private _editor: monacoEditor.editor.IStandaloneCodeEditor;
 
   constructor(props: Props) {
     super(props);
@@ -45,6 +46,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     editor: monacoEditor.editor.IStandaloneCodeEditor,
     monaco: typeof monacoEditor
   ) {
+    this._editor = editor;
     editor.focus();
   }
 
@@ -65,7 +67,6 @@ export default class EditorDocument extends React.Component<Props, State> {
       flexShrink: 1,
       width: "100%",
       height: "100%",
-      //padding: "4px 0 0 0",
       overflow: "hidden",
     };
     const code = this.state.code;
@@ -77,8 +78,8 @@ export default class EditorDocument extends React.Component<Props, State> {
         <div ref={this.divHost} style={placeholderStyle}>
           {this.state.show && (
             <MonacoEditor
-              width={this.state.width}
-              height={this.state.height}
+              // width={this.state.width}
+              // height={this.state.height}
               language="javascript"
               theme="vs-dark"
               value={code}
@@ -94,10 +95,11 @@ export default class EditorDocument extends React.Component<Props, State> {
           handleWidth
           handleHeight
           onResize={() => {
-            this.setState({
-              width: `${this.divHost.current.offsetWidth}px`,
-              height: `${this.divHost.current.offsetHeight - 6}px`,
-            });
+            this._editor.layout();
+            // this.setState({
+            //   width: `${this.divHost.current.offsetWidth}px`,
+            //   height: `${this.divHost.current.offsetHeight - 6}px`,
+            // });
           }}
         />
       </>
