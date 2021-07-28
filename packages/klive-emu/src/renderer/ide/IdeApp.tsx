@@ -13,10 +13,6 @@ import {
 import { useLayoutEffect } from "react";
 import "../ide-new/ide-message-processor";
 import Splitter from "../common/Splitter";
-import {
-  ideToolFrameMaximizeAction,
-  ideToolFrameShowAction,
-} from "../../shared/state/tool-frame-reducer";
 import { useEffect } from "react";
 import { Activity } from "../../shared/activity/Activity";
 import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
@@ -50,6 +46,8 @@ import ActivityBar from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";
 import { activityService } from "./activity-bar/ActivityService";
+import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
+import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
 
 // --- App component literal constants
@@ -409,13 +407,9 @@ export default function IdeApp() {
         />
         <div id={MAIN_DESK_ID} style={mainDeskStyle}>
           {documentFrameVisible && (
-            <div
-              id={DOCUMENT_FRAME_ID}
-              style={documentFrameStyle}
-              onClick={() => {
-                dispatch(ideToolFrameShowAction(!toolFrameVisible));
-              }}
-            />
+            <div id={DOCUMENT_FRAME_ID} style={documentFrameStyle}>
+              <IdeDocumentFrame />
+            </div>
           )}
           {documentFrameVisible && toolFrameVisible && (
             <Splitter
@@ -429,13 +423,7 @@ export default function IdeApp() {
             />
           )}
           {toolFrameVisible && (
-            <div
-              id={TOOL_FRAME_ID}
-              style={toolFrameStyle}
-              onClick={() => {
-                dispatch(ideToolFrameMaximizeAction(documentFrameVisible));
-              }}
-            />
+            <div id={TOOL_FRAME_ID} style={toolFrameStyle}><ToolFrame /></div>
           )}
         </div>
       </div>

@@ -93,7 +93,7 @@ export default function ToolFrame() {
           zIndex: 10,
         }}
       ></div>
-      <PlaceHolder key={activeTool.index}>
+      <PlaceHolder key={activeTool?.index ?? -1}>
         {activeTool?.createContentElement()}
       </PlaceHolder>
     </Root>

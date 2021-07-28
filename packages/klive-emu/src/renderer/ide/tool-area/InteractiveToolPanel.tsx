@@ -80,7 +80,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     buffer.writeLine();
     buffer.resetColor();
     buffer.write("Executing ");
-    buffer.color("brightBlue");
+    buffer.color("bright-blue");
     buffer.write(command);
     this.setState({ inputEnabled: false });
     this._historyIndex = -1;
@@ -94,7 +94,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     buffer.writeLine();
     buffer.resetColor();
     buffer.write("Executed ");
-    buffer.color("brightGreen");
+    buffer.color("bright-green");
     buffer.write(command);
     this.setFocusToPrompt();
   }
