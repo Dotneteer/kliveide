@@ -45,6 +45,9 @@ import { TreeNode } from "../common/TreeNode";
 import { ProjectNode } from "./explorer-tools/ProjectNode";
 import { projectServices } from "./explorer-tools/ProjectServices";
 import { TreeView } from "../common/TreeView";
+import IdeContextMenu from "./command/ContextMenu";
+import ModalDialog from "../modals/ModalDialog";
+import ActivityBar from "./activity-bar/ActivityBar";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -380,10 +383,18 @@ export default function IdeApp() {
     backgroundColor: "yellow",
   };
 
+  const statusBarStyle: CSSProperties = {
+    height: ideViewOptions.showStatusBar ? 20 : 0,
+    width: "100%",
+    backgroundColor: "blue",
+  };
+
   return (
     <div id="klive_ide_app" style={ideAppStyle}>
       <div id={WORKBENCH_ID} style={workbenchStyle}>
-        <div id={ACTIVITY_BAR_ID} style={activityBarStyle} />
+        <div id={ACTIVITY_BAR_ID} style={activityBarStyle}>
+          <ActivityBar />
+        </div>
         <div id={SIDEBAR_ID} style={sidebarStyle} />
         <Splitter
           direction="vertical"
@@ -425,9 +436,9 @@ export default function IdeApp() {
           )}
         </div>
       </div>
-      {ideViewOptions.showStatusBar && (
-        <div id={STATUS_BAR_ID} style={statusBarStyle}></div>
-      )}
+      <div id={STATUS_BAR_ID} style={statusBarStyle}></div>
+      <IdeContextMenu target="#klive_ide_app" />
+      <ModalDialog targetId="#app" />
     </div>
   );
 
@@ -527,7 +538,9 @@ export default function IdeApp() {
         Math.round(splitterStartPosition.current + delta - 0.5),
         MIN_SIDEBAR_WIDTH
       ),
-      Math.round(workbenchDims.width - activityBarWidth.current - MIN_DESK_WIDTH)
+      Math.round(
+        workbenchDims.width - activityBarWidth.current - MIN_DESK_WIDTH
+      )
     );
 
     setSidebarWidth(newSideBarWidth);
@@ -553,12 +566,12 @@ export default function IdeApp() {
 
     setDocumentFrameHeight(newDocFrameHeight);
     lastDocumentFrameHeight.current = newDocFrameHeight;
-    const newToolFrameHeight = Math.round(workbenchDims.height - newDocFrameHeight - 0.5);
+    const newToolFrameHeight = Math.round(
+      workbenchDims.height - newDocFrameHeight - 0.5
+    );
     setToolFrameHeight(newToolFrameHeight);
     lastToolFrameHeight.current = newToolFrameHeight;
-    setHorizontalSplitterPos(
-      newDocFrameHeight - SPLITTER_SIZE / 2
-    );
+    setHorizontalSplitterPos(newDocFrameHeight - SPLITTER_SIZE / 2);
   }
 }
 
@@ -569,15 +582,9 @@ const ideAppStyle: CSSProperties = {
   overflow: "hidden",
 };
 
-const statusBarStyle: CSSProperties = {
-  height: 20,
-  width: "100%",
-  backgroundColor: "blue",
-};
-
 const activityBarStyle: CSSProperties = {
   display: "inline-block",
   height: "100%",
   width: 48,
-  backgroundColor: "red",
+  verticalAlign: "top",
 };
