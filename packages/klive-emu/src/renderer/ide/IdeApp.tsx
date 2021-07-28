@@ -4,14 +4,13 @@ import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { themeService } from "../themes/theme-service";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
-import { toStyleString } from "../ide-new/utils/css-utils";
+import { toStyleString } from "../ide/utils/css-utils";
 import {
   AppState,
   EmuViewOptions,
   ToolFrameState,
 } from "../../shared/state/AppState";
 import { useLayoutEffect } from "react";
-import "../ide-new/ide-message-processor";
 import Splitter from "../common/Splitter";
 import { useEffect } from "react";
 import { Activity } from "../../shared/activity/Activity";

@@ -45,6 +45,9 @@ export default function Splitter({
     backgroundColor: pointed || dragging ? "var(--splitter-hover-color)" : "transparent",
     opacity: pointed || dragging ? 1 : 0,
     cursor: isVertical ? "ew-resize" : "ns-resize",
+    transitionProperty: "background-color",
+    transitionDelay: "0.25s",
+    transitionDuration: "0.25s"
   };
 
   return (
