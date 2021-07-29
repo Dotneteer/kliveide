@@ -1,4 +1,3 @@
-import { unregister } from "electron-localshortcut";
 import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { ideStore } from "../ideStore";
