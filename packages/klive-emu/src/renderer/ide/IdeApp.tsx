@@ -63,10 +63,12 @@ const SPLITTER_SIZE = 4;
 
 // --- Panel sizes
 const MIN_SIDEBAR_WIDTH = 200;
-const MIN_DESK_WIDTH = 300;
+const MIN_DESK_WIDTH = 440;
 const MIN_DESK_HEIGHT = 100;
 
-// --- IdeApp non-rendering state values
+// --- These variables keep the state of the IdeApp component outside
+// --- of it (for performance reasins). It can be done, as IdeApp is a
+// --- singleton component.
 let mounted = false;
 let firstRender = true;
 let lastDocumentFrameHeight = 0;
@@ -89,15 +91,46 @@ let showToolFrame = true;
 
 /**
  * Represents the emulator app's root component.
+ *
+ * Thic component has a single instance as is re-rendered infrequenctly.
+ * Because of its singleton nature, a part of its state is kept in module-local
+ * variables and not in React state. The component logic takes care of
+ * updating the component state according to the module-local variables.
+ *
+ * Screen layout:
+ *
+ *             |--- Vertical splitter
+ * ------------v---------------------------
+ * | A |   S   || Document Frame          |
+ * | c |   i   ||                         |
+ * | t |   d   ||                         |
+ * | i |   e   ||                         |
+ * | v |   b   ||                         |
+ * | i |   a   ||                         |
+ * | t |   r   ||                         |
+ * | i |       ||=========================|<--- Horizontal splitter
+ * |   |       || Tool Frame              |
+ * | B |       ||                         |
+ * | a |       ||                         |
+ * | r |       ||                         |
+ * ----------------------------------------
+ * | Status Bar                           |
+ * ----------------------------------------
+ *
+ * Main desk: The panel with the Document Frame, Tool Frame, and the splitter
+ * between them.
+ * Workbench: The upper part of the screen without the Status Bar.
+ *
+ * For performance and UX reasons, this component implements its layout
+ * management -- including resizing the panels -- with direct access to HTML
+ * elements.
  */
 export default function IdeApp() {
   // --- Let's use the store for dispatching actions
   const store = useStore();
   const dispatch = useDispatch();
 
-  // --- Keep these references for later use
-
-  // --- Component state
+  // --- Component state (changes of them triggers re-rendering)
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
   const [documentFrameVisible, setDocumentFrameVisible] = useState(true);
@@ -105,9 +138,9 @@ export default function IdeApp() {
 
   useEffect(() => {
     if (!mounted) {
+      // --- Mount logic, executed only once during the app's life cycle
       mounted = true;
 
-      // --- Mount
       dispatch(ideLoadUiAction());
       updateThemeState();
 
@@ -118,12 +151,14 @@ export default function IdeApp() {
         updateThemeState();
       });
 
+      // --- Recognize, when we use Klive in Windows
       const windowsAware = new StateAwareObject<boolean>(store, "isWindows");
       windowsAware.stateChanged.on((isWindows) => {
         themeService.isWindows = isWindows;
         updateThemeState();
       });
 
+      // --- Re-calculate the layout whenever view options change
       const viewAware = new StateAwareObject<EmuViewOptions>(
         store,
         "emuViewOptions"
@@ -132,18 +167,22 @@ export default function IdeApp() {
         onResize();
       });
 
+      // --- Re-calculate the layout whenever the visibility of the Document
+      // --- Frame or Tool Frame changes
       const deskStatusAware = new StateAwareObject<ToolFrameState>(
         store,
         "toolFrame"
       );
       deskStatusAware.stateChanged.on((toolFrame) => {
+        // --- Set the new state of visibility flags
         showToolFrame = toolFrame.visible;
-        setToolFrameVisible(showToolFrame)
+        setToolFrameVisible(showToolFrame);
         showDocumentFrame = !toolFrame.maximized;
         setDocumentFrameVisible(showDocumentFrame);
+
+        // --- Recognize when both Frames are visible so that their dimensions
+        // --- can be restored
         if (showToolFrame && showDocumentFrame) {
-          // --- Both frame's are displayed, let's restore their previous heights
-          console.log("Sign restoring");
           restoreLayout = true;
         }
         onResize();
@@ -332,12 +371,11 @@ export default function IdeApp() {
     }
   }, [store]);
 
-  const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
-
   // --- Apply styles to body so that dialogs, context menus can use it, too.
   document.body.setAttribute("style", toStyleString(themeStyle));
   document.body.setAttribute("class", themeClass);
 
+  // --- Take care of resizing IdeApp whenever the window size changes
   useLayoutEffect(() => {
     const _onResize = () => onResize();
     window.addEventListener("resize", _onResize);
@@ -347,46 +385,8 @@ export default function IdeApp() {
     };
   }, []);
 
-  // --- Set panel style and dimensions
-  const workbenchStyle: CSSProperties = {
-    width: workbenchWidth,
-    height: workbenchHeight,
-    backgroundColor: "green",
-  };
-
-  const sidebarStyle: CSSProperties = {
-    display: "inline-block",
-    height: "100%",
-    width: sidebarWidth,
-    verticalAlign: "top",
-    overflow: "hidden",
-  };
-
-  const mainDeskStyle: CSSProperties = {
-    display: "inline-block",
-    height: "100%",
-    width: mainDeskWidth,
-    backgroundColor: "lightgray",
-  };
-
-  const documentFrameStyle: CSSProperties = {
-    display: "flex",
-    flexGrow: 0,
-    flexShrink: 0,
-    height: documentFrameHeight,
-    width: mainDeskWidth,
-    backgroundColor: "lightgreen",
-  };
-
-  const toolFrameStyle: CSSProperties = {
-    display: "flex",
-    flexGrow: 0,
-    flexShrink: 0,
-    height: toolFrameHeight,
-    width: mainDeskWidth,
-    backgroundColor: "yellow",
-  };
-
+  // --- Display the status bar when it's visible
+  const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
   const statusBarStyle: CSSProperties = {
     height: ideViewOptions.showStatusBar ? 28 : 0,
     width: "100%",
@@ -444,6 +444,10 @@ export default function IdeApp() {
     </div>
   );
 
+  /**
+   * Updates the current theme to dislay the app
+   * @returns
+   */
   function updateThemeState(): void {
     const theme = themeService.getActiveTheme();
     if (!theme) {
@@ -453,6 +457,9 @@ export default function IdeApp() {
     setThemeClass(`app-container ${theme.name}-theme`);
   }
 
+  /**
+   * Recalculate the IdeApp layout
+   */
   function onResize(): void {
     // --- Calculate workbench dimensions
     const statusBarDiv = document.getElementById(STATUS_BAR_ID);
@@ -483,7 +490,6 @@ export default function IdeApp() {
     const docFrameHeight = docFrameDiv?.offsetHeight ?? 0;
     if (restoreLayout) {
       // --- We need to restore the state of both panels
-      console.log("restoring");
       documentFrameHeight =
         (lastDocumentFrameHeight * workbenchHeight) /
         (lastDocumentFrameHeight + lastToolFrameHeight);
@@ -504,12 +510,13 @@ export default function IdeApp() {
       }
     }
 
+    // --- Set the Document Frame height
     const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
     if (documentFrameDiv) {
-      console.log(`setting doc height ${documentFrameHeight}`);
       documentFrameDiv.style.height = `${documentFrameHeight}px`;
     }
 
+    // --- Set the Tool Frame height
     const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
     toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight);
     toolFrameHeight = toolFrameHeight;
@@ -534,11 +541,15 @@ export default function IdeApp() {
 
     // --- Now, we're over the first render and the restore
     firstRender = false;
-    console.log("Reset restore");
     restoreLayout = false;
   }
 
-  function setSidebarAndDesk(newSideBarWidth: number): void {
+  /**
+   * Recalculate the dimensions of the workbench whenever the size of
+   * the Sidebar changes
+   * @param newSidebarWidth Width of the side bar
+   */
+  function setSidebarAndDesk(newSidebarWidth: number): void {
     // --- Get element to calculate from
     const activityBarDiv = document.getElementById(ACTIVITY_BAR_ID);
     const sidebarDiv = document.getElementById(SIDEBAR_ID);
@@ -550,14 +561,14 @@ export default function IdeApp() {
     );
 
     // --- Set sidebar dimesions
-    sidebarWidth = newSideBarWidth;
-    sidebarDiv.style.width = `${newSideBarWidth}px`;
+    sidebarWidth = newSidebarWidth;
+    sidebarDiv.style.width = `${newSidebarWidth}px`;
 
     // --- Set main desk dimensions
     const mainDeskDiv = document.getElementById(MAIN_DESK_ID);
-    mainDeskLeft = activityBarDiv.offsetWidth + newSideBarWidth;
+    mainDeskLeft = activityBarDiv.offsetWidth + newSidebarWidth;
     mainDeskDiv.style.left = `${mainDeskLeft}px`;
-    const newMainDeskWidth = Math.round(deskWidth - newSideBarWidth);
+    const newMainDeskWidth = Math.round(deskWidth - newSidebarWidth);
     mainDeskWidth = newMainDeskWidth;
     mainDeskDiv.style.width = `${newMainDeskWidth}px`;
 
@@ -571,52 +582,63 @@ export default function IdeApp() {
 
     // --- Put the vertical splitter between the side bar and the main desk
     verticalSplitterPos =
-      activityBarDiv.offsetWidth + newSideBarWidth - SPLITTER_SIZE / 2;
+      activityBarDiv.offsetWidth + newSidebarWidth - SPLITTER_SIZE / 2;
     verticalSplitterDiv.style.left = `${verticalSplitterPos}px`;
+    verticalSplitterDiv.style.height = `${workbenchHeight}px`;
 
     // --- Update the horizontal splitter's position
     if (horizontalSplitterDiv) {
       horizontalSplitterDiv.style.left = `${
-        activityBarDiv.offsetWidth + newSideBarWidth
+        activityBarDiv.offsetWidth + newSidebarWidth
       }px`;
       horizontalSplitterDiv.style.width = `${newMainDeskWidth}px`;
     }
   }
 
+  /**
+   * Make a note of the vertical splitter position when start moving it
+   */
   function startVerticalSplitter(): void {
     splitterStartPosition = sidebarWidth;
   }
 
+  /**
+   * Resize the workbench when moving the vertical splitter
+   * @param delta Movement delta value
+   */
   function moveVerticalSplitter(delta: number): void {
     let newSideBarWidth = Math.min(
-      Math.max(
-        Math.round(splitterStartPosition + delta),
-        MIN_SIDEBAR_WIDTH
-      ),
+      Math.max(Math.round(splitterStartPosition + delta), MIN_SIDEBAR_WIDTH),
       Math.round(workbenchWidth - activityBarWidth - MIN_DESK_WIDTH)
     );
     setSidebarAndDesk(newSideBarWidth);
   }
 
+  /**
+   * Make a note of the horizontal splitter position when start moving it
+   */
   function startHorizontalSplitter(): void {
     splitterStartPosition = documentFrameHeight;
   }
 
+  /**
+   * Resize the workbench when moving the horizontal splitter
+   * @param delta Movement delta value
+   */
   function moveHorizontalSplitter(delta: number): void {
     documentFrameHeight = Math.min(
-      Math.max(
-        Math.round(splitterStartPosition + delta),
-        MIN_DESK_HEIGHT
-      ),
+      Math.max(Math.round(splitterStartPosition + delta), MIN_DESK_HEIGHT),
       Math.round(workbenchHeight - MIN_DESK_HEIGHT)
     );
 
+    // --- New Document Frame height
     const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
     if (documentFrameDiv) {
       documentFrameDiv.style.height = `${documentFrameHeight}px`;
     }
     lastDocumentFrameHeight = documentFrameHeight;
 
+    // --- New Tool Frame height
     const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
     toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight);
     if (toolFrameDiv) {
@@ -635,6 +657,8 @@ export default function IdeApp() {
   }
 }
 
+// ============================================================================
+// Style constants
 const ideAppStyle: CSSProperties = {
   width: "100%",
   height: "100%",
@@ -647,4 +671,43 @@ const activityBarStyle: CSSProperties = {
   width: 48,
   verticalAlign: "top",
   overflow: "hidden",
+};
+
+const workbenchStyle: CSSProperties = {
+  width: workbenchWidth,
+  height: workbenchHeight,
+  backgroundColor: "green",
+};
+
+const sidebarStyle: CSSProperties = {
+  display: "inline-block",
+  height: "100%",
+  width: sidebarWidth,
+  verticalAlign: "top",
+  overflow: "hidden",
+};
+
+const mainDeskStyle: CSSProperties = {
+  display: "inline-block",
+  height: "100%",
+  width: mainDeskWidth,
+  backgroundColor: "lightgray",
+};
+
+const documentFrameStyle: CSSProperties = {
+  display: "flex",
+  flexGrow: 0,
+  flexShrink: 0,
+  height: documentFrameHeight,
+  width: mainDeskWidth,
+  backgroundColor: "lightgreen",
+};
+
+const toolFrameStyle: CSSProperties = {
+  display: "flex",
+  flexGrow: 0,
+  flexShrink: 0,
+  height: toolFrameHeight,
+  width: mainDeskWidth,
+  backgroundColor: "yellow",
 };
