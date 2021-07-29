@@ -1,5 +1,3 @@
-(window as any)["global"] = window;
-
 import "_public/style.scss";
 
 import * as React from "react";

@@ -33,7 +33,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
         buffer.writeLine();
         buffer.write("Virtual machine model changed to ");
         buffer.bold(true);
-        buffer.color("brightBlue");
+        buffer.color("bright-blue");
         buffer.write(type);
         buffer.bold(false);
         buffer.resetColor();
@@ -80,7 +80,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
               if (pcInfo) {
                 newState += ` (${pcInfo})`;
               }
-              color = "brightRed";
+              color = "bright-red";
               break;
             }
           }
@@ -98,7 +98,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
           displayEntry(
             buffer,
             "CPU frequency: ",
-            "brightMagenta",
+            "bright-magenta",
             `${(
               (emuPanel.baseClockFrequency * emuPanel.clockMultiplier) /
               1000000
@@ -111,7 +111,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
           displayEntry(
             buffer,
             "Sound ",
-            "brightMagenta",
+            "bright-magenta",
             emuPanel.muted ? "muted" : "unmuted"
           );
         }
@@ -121,7 +121,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
           displayEntry(
             buffer,
             "Sound level: ",
-            "brightMagenta",
+            "bright-magenta",
             `${(100 * emuPanel.soundLevel).toFixed(0)}%`
           );
         }
@@ -131,7 +131,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
             displayEntry(
               buffer,
               "Keyboard: ",
-              "brightMagenta",
+              "bright-magenta",
               emuPanel.keyboardLayout
             );
           }

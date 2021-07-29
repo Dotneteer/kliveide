@@ -45,7 +45,7 @@ export default function ActivityBar() {
 
 // --- Component helper tags
 const Root = createSizedStyledPanel({
-  fitToClient: false,
+  fitToClient: true,
   width: 48,
   others: {
     "background-color": "var(--activity-bar-background-color)",

@@ -11,14 +11,14 @@ export type OutputColor =
   | "magenta"
   | "cyan"
   | "white"
-  | "brightBlack"
-  | "brightRed"
-  | "brightGreen"
-  | "brightYellow"
-  | "brightBlue"
-  | "brightMagenta"
-  | "brightCyan"
-  | "brightWhite";
+  | "bright-black"
+  | "bright-red"
+  | "bright-green"
+  | "bright-yellow"
+  | "bright-blue"
+  | "bright-magenta"
+  | "bright-cyan"
+  | "bright-white";
 
 /**
  * Represents a buffer for an output pane
@@ -230,9 +230,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   private getStyle(): CSSProperties {
     const style: CSSProperties = {};
     if (this._color) {
-      style.color = `var(--console-ansi${this._color[0].toUpperCase()}${this._color.substring(
-        1
-      )})`;
+      style.color = `var(--console-ansi-${this._color})`;
     }
     if (this._isBold) {
       style.fontWeight = 600;

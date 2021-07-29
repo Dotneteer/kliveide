@@ -86,22 +86,22 @@ export interface IThemeProperties {
 
   "--dialog-header-background": string;
 
-  "--console-ansiBlack": string;
-  "--console-ansiBlue": string;
-  "--console-ansiBrightBlack": string;
-  "--console-ansiBrightBlue": string;
-  "--console-ansiBrightCyan": string;
-  "--console-ansiBrightGreen": string;
-  "--console-ansiBrightMagenta": string;
-  "--console-ansiBrightRed": string;
-  "--console-ansiBrightWhite": string;
-  "--console-ansiBrightYellow": string;
-  "--console-ansiCyan": string;
-  "--console-ansiGreen": string;
-  "--console-ansiMagenta": string;
-  "--console-ansiRed": string;
-  "--console-ansiWhite": string;
-  "--console-ansiYellow": string;
+  "--console-ansi-black": string;
+  "--console-ansi-blue": string;
+  "--console-ansi-bright-black": string;
+  "--console-ansi-bright-blue": string;
+  "--console-ansi-bright-cyan": string;
+  "--console-ansi-bright-green": string;
+  "--console-ansi-bright-magenta": string;
+  "--console-ansi-bright-red": string;
+  "--console-ansi-bright-white": string;
+  "--console-ansi-bright-yellow": string;
+  "--console-ansi-cyan": string;
+  "--console-ansi-green": string;
+  "--console-ansi-magenta": string;
+  "--console-ansi-red": string;
+  "--console-ansi-white": string;
+  "--console-ansi-yellow": string;
 
   "--interactive-input-color": string;
 

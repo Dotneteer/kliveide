@@ -1,6 +1,7 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
 import DocumentTabBar from "./DocumentTabBar";
+import ReactResizeDetector from "react-resize-detector";
 
 import { useEffect, useState } from "react";
 import {
@@ -11,6 +12,12 @@ import {
 import { CSSProperties } from "react";
 import CommandIconButton from "../command/CommandIconButton";
 import { useRef } from "react";
+import { useLayoutEffect } from "react";
+
+// --- Document Frame IDs
+const DOC_CONTAINER_ID = "ideDocumentContainer";
+const DOC_HEADER_ID = "ideDocumentFrameHeader";
+const DOC_PLACEHOLDER_ID = "ideDocumentPlaceHolder";
 
 /**
  * Represents the statusbar of the emulator
@@ -33,6 +40,8 @@ export default function IdeDocumentFrame() {
     // --- Mount
     if (!mounted.current) {
       mounted.current = true;
+      setTabBarVisible(documentService.getDocuments().length !== 0);
+      setActiveDoc(documentService.getActiveDocument());
       documentService.documentsChanged.on(refreshDocs);
     }
 
@@ -43,41 +52,71 @@ export default function IdeDocumentFrame() {
     };
   });
 
+  useLayoutEffect(() => {
+    if (mounted.current) {
+      onResize();
+    }
+  })
+
   return (
-    <Root tabIndex={0}>
+    <div tabIndex={0} id={DOC_CONTAINER_ID} style={rootStyle}>
       {tabBarVisible && (
-        <HeaderBar>
-          <DocumentTabBar />
-          <DocumentCommandBar />
-        </HeaderBar>
+        <>
+          <div id={DOC_HEADER_ID} style={headerStyle}>
+            <DocumentTabBar />
+            <DocumentCommandBar />
+          </div>
+          <div
+            id={DOC_PLACEHOLDER_ID}
+            style={placeholderStyle}
+            key={activeDoc?.id}
+          >
+            {activeDoc?.createContentElement()}
+          </div>
+        </>
       )}
-      <PlaceHolder 
-        // key={activeDoc?.id}
-      >
-        {activeDoc?.createContentElement()}
-      </PlaceHolder>
-    </Root>
+      <ReactResizeDetector
+        handleWidth
+        handleHeight
+        onResize={() => onResize()}
+      />
+    </div>
   );
+
+  /**
+   * Resize the document placeholder
+   */
+  function onResize(): void {
+    const containerDiv = document.getElementById(DOC_CONTAINER_ID);
+    const headerDiv = document.getElementById(DOC_HEADER_ID);
+    const placeHolderDiv = document.getElementById(DOC_PLACEHOLDER_ID);
+    if (containerDiv && headerDiv && placeHolderDiv) {
+      const placeHolderHeight =
+        containerDiv.offsetHeight - headerDiv.offsetHeight;
+      placeHolderDiv.style.height = `${placeHolderHeight}px`;
+    }
+  }
 }
 
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  fitToClient: false,
-  background: "var(--shell-canvas-background-color)",
-});
+const rootStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  backgroundColor: "var(--shell-canvas-background-color)",
+};
 
-// --- Component helper tags
-const HeaderBar = createSizedStyledPanel({
+const headerStyle: CSSProperties = {
+  display: "flex",
+  flexGrow: 0,
+  flexShrink: 0,
+  width: "100%",
   height: 35,
-  splitsVertical: false,
-  fitToClient: false,
-});
+};
 
-const PlaceHolder = createSizedStyledPanel({
-  others: {
-    background: "var(--shell-canvas-background-color)",
-  },
-});
+const placeholderStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  backgroundColor: "var(--shell-canvas-background-color)",
+};
 
 /**
  * Represents the command bar of the document frame
