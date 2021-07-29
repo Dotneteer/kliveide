@@ -7,6 +7,7 @@ import {
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
+import { editorService } from "./editorService";
 
 /**
  * Component properties
@@ -47,16 +48,29 @@ export default class EditorDocument extends React.Component<Props, State> {
     monaco: typeof monacoEditor
   ) {
     this._editor = editor;
-    editor.focus();
+    const state = editorService.loadState(this.props.descriptor.id)    
+    if (state) {
+      this._editor.setValue(state.text);
+      this._editor.restoreViewState(state.viewState);
+    }
+    window.requestAnimationFrame(() => this._editor.focus());
   }
 
   onChange(
     newValue: string,
     e: monacoEditor.editor.IModelContentChangedEvent
-  ) {}
+  ) {
+  }
 
   componentDidMount(): void {
     this.setState({ show: true });
+  }
+
+  componentWillUnmount(): void {
+    editorService.saveState(this.props.descriptor.id, {
+      text: this._editor.getValue(),
+      viewState: this._editor.saveViewState()
+    });
   }
 
   render() {
@@ -78,8 +92,6 @@ export default class EditorDocument extends React.Component<Props, State> {
         <div ref={this.divHost} style={placeholderStyle}>
           {this.state.show && (
             <MonacoEditor
-              // width={this.state.width}
-              // height={this.state.height}
               language="javascript"
               theme="vs-dark"
               value={code}
@@ -96,10 +108,6 @@ export default class EditorDocument extends React.Component<Props, State> {
           handleHeight
           onResize={() => {
             this._editor.layout();
-            // this.setState({
-            //   width: `${this.divHost.current.offsetWidth}px`,
-            //   height: `${this.divHost.current.offsetHeight - 6}px`,
-            // });
           }}
         />
       </>
