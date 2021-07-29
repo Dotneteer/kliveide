@@ -12,6 +12,10 @@ import { CSSProperties } from "react";
 import CommandIconButton from "../command/CommandIconButton";
 import { useRef } from "react";
 
+// --- Document Frame IDs
+const DOC_HEADER_ID = "ideDocumentFrameHeader";
+const DOC_PLACEHOLDER_ID = "ideDocumentPlaceHolder";
+
 /**
  * Represents the statusbar of the emulator
  */
@@ -33,6 +37,8 @@ export default function IdeDocumentFrame() {
     // --- Mount
     if (!mounted.current) {
       mounted.current = true;
+      setTabBarVisible(documentService.getDocuments().length !== 0);
+      setActiveDoc(documentService.getActiveDocument());
       documentService.documentsChanged.on(refreshDocs);
     }
 
@@ -44,39 +50,45 @@ export default function IdeDocumentFrame() {
   });
 
   return (
-    <Root tabIndex={0}>
+    <div tabIndex={0} style={rootStyle}>
       {tabBarVisible && (
-        <HeaderBar>
+        <div id={DOC_HEADER_ID} style={headerStyle}>
           <DocumentTabBar />
           <DocumentCommandBar />
-        </HeaderBar>
+        </div>
       )}
-      <PlaceHolder 
-        // key={activeDoc?.id}
-      >
+      <div style={placeholderStyle} key={activeDoc?.id}>
         {activeDoc?.createContentElement()}
-      </PlaceHolder>
-    </Root>
+      </div>
+    </div>
   );
 }
 
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  fitToClient: true,
-  background: "var(--shell-canvas-background-color)",
-});
+const rootStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  backgroundColor: "var(--shell-canvas-background-color)",
+};
+
+const headerStyle: CSSProperties = {
+  display: "flex",
+  flexGrow: 0,
+  flexShrink: 0,
+  width: "100%",
+  height: 35,
+};
+
+const placeholderStyle: CSSProperties = {
+  width: "100%",
+  height: "100%",
+  backgroundColor: "var(--shell-canvas-background-color)",
+};
 
 // --- Component helper tags
 const HeaderBar = createSizedStyledPanel({
   height: 35,
   splitsVertical: false,
   fitToClient: false,
-});
-
-const PlaceHolder = createSizedStyledPanel({
-  others: {
-    background: "var(--shell-canvas-background-color)",
-  },
 });
 
 /**

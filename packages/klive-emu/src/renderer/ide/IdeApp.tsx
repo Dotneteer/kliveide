@@ -179,13 +179,6 @@ export default function IdeApp() {
         setToolFrameVisible(showToolFrame);
         showDocumentFrame = !toolFrame.maximized;
         setDocumentFrameVisible(showDocumentFrame);
-
-        // --- Recognize when both Frames are visible so that their dimensions
-        // --- can be restored
-        if (showToolFrame && showDocumentFrame) {
-          restoreLayout = true;
-        }
-        onResize();
       });
 
       // --- Set up activities
@@ -379,11 +372,17 @@ export default function IdeApp() {
   useLayoutEffect(() => {
     const _onResize = () => onResize();
     window.addEventListener("resize", _onResize);
+
+    // --- Recognize when both Frames are visible so that their dimensions
+    // --- can be restored
+    if (!firstRender && showToolFrame && showDocumentFrame) {
+      restoreLayout = true;
+    }
     onResize();
     return () => {
       window.removeEventListener("resize", _onResize);
     };
-  }, []);
+  }, [documentFrameVisible, toolFrameVisible]);
 
   // --- Display the status bar when it's visible
   const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
@@ -412,12 +411,12 @@ export default function IdeApp() {
           onMove={(delta) => moveVerticalSplitter(delta)}
         />
         <div id={MAIN_DESK_ID} style={mainDeskStyle}>
-          {documentFrameVisible && (
+          {showDocumentFrame && (
             <div id={DOCUMENT_FRAME_ID} style={documentFrameStyle}>
               <IdeDocumentFrame />
             </div>
           )}
-          {documentFrameVisible && toolFrameVisible && (
+          {showDocumentFrame && showToolFrame && (
             <Splitter
               id={HORIZONTAL_SPLITTER_ID}
               direction="horizontal"
@@ -429,7 +428,7 @@ export default function IdeApp() {
               onMove={(delta) => moveHorizontalSplitter(delta)}
             />
           )}
-          {toolFrameVisible && (
+          {showToolFrame && (
             <div id={TOOL_FRAME_ID} style={toolFrameStyle}>
               <ToolFrame />
             </div>
@@ -514,6 +513,7 @@ export default function IdeApp() {
     const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
     if (documentFrameDiv) {
       documentFrameDiv.style.height = `${documentFrameHeight}px`;
+      documentFrameDiv.style.width = `${mainDeskWidth}px`;
     }
 
     // --- Set the Tool Frame height
@@ -654,6 +654,10 @@ export default function IdeApp() {
       horizontalSplitterPos = documentFrameHeight - SPLITTER_SIZE / 2;
       horizontalSplitterDiv.style.top = `${horizontalSplitterPos}px`;
     }
+
+    // --- Save the heights
+    lastDocumentFrameHeight = documentFrameHeight;
+    lastToolFrameHeight = toolFrameHeight;
   }
 }
 
@@ -676,7 +680,6 @@ const activityBarStyle: CSSProperties = {
 const workbenchStyle: CSSProperties = {
   width: workbenchWidth,
   height: workbenchHeight,
-  backgroundColor: "green",
 };
 
 const sidebarStyle: CSSProperties = {
@@ -691,7 +694,6 @@ const mainDeskStyle: CSSProperties = {
   display: "inline-block",
   height: "100%",
   width: mainDeskWidth,
-  backgroundColor: "lightgray",
 };
 
 const documentFrameStyle: CSSProperties = {
@@ -700,7 +702,6 @@ const documentFrameStyle: CSSProperties = {
   flexShrink: 0,
   height: documentFrameHeight,
   width: mainDeskWidth,
-  backgroundColor: "lightgreen",
 };
 
 const toolFrameStyle: CSSProperties = {
@@ -709,5 +710,4 @@ const toolFrameStyle: CSSProperties = {
   flexShrink: 0,
   height: toolFrameHeight,
   width: mainDeskWidth,
-  backgroundColor: "yellow",
 };

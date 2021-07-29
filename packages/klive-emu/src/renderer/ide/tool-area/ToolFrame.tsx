@@ -154,18 +154,7 @@ function ToolCommandBar() {
       <CommandIconButton
         iconName="close"
         title="Close"
-        clicked={async () => {
-          const toolsMaximized = !!ideStore.getState().toolFrame?.maximized;
-          if (toolsMaximized) {
-            ideStore.dispatch(ideToolFrameMaximizeAction(false));
-            await animationTick();
-          }
-          ideStore.dispatch(ideToolFrameShowAction(false));
-          if (toolsMaximized) {
-            await animationTick();
-            ideStore.dispatch(ideToolFrameMaximizeAction(true));
-          }
-        }}
+        clicked={() => ideStore.dispatch(ideToolFrameShowAction(false))}
       />
     </div>
   );
