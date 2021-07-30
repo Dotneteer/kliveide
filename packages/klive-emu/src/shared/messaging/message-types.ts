@@ -143,6 +143,14 @@ export interface GetCpuStateRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks the main process for the contents of a folder
+ */
+ export interface GetFolderContentsRequest extends MessageBase {
+  type: "GetFolderContents";
+  folder: string;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -150,7 +158,8 @@ export type RequestMessage =
   | MainToEmuRequests
   | MainToIdeRequests
   | EmuToMainRequests
-  | IdeToEmuRequests;
+  | IdeToEmuRequests
+  | IdeToMainRequests;
 
 /**
  * Requests that forward information among the main, Emu, and IDE processes
@@ -181,6 +190,12 @@ type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
  * Requests for IDE to Emu
  */
 type IdeToEmuRequests = GetCpuStateRequest | GetMachineStateRequest;
+
+/**
+ * Requests for IDE to Emu
+ */
+ type IdeToMainRequests = GetFolderContentsRequest;
+
 
 /**
  * Requests send by the main process to Emu
@@ -234,6 +249,22 @@ export interface GetCpuStateResponse extends MessageBase {
   state: MachineState
 }
 
+/**
+ * The Ide asks the main process for the contents of a folder
+ */
+ export interface GetFolderContentsResponse extends MessageBase {
+  type: "GetFolderResponse";
+  contents: DirectoryContent;
+}
+
+/**
+ * Describes the contents of a directory
+ */
+ export type DirectoryContent = {
+  name: string;
+  folders: DirectoryContent[];
+  files: string[];
+}
 
 export type ResponseMessage =
   | DefaultResponse
@@ -242,6 +273,7 @@ export type ResponseMessage =
   | EmuOpenFileDialogResponse
   | GetCpuStateResponse
   | GetMachineStateResponse
+  | GetFolderContentsResponse;
 
 /**
  * All messages

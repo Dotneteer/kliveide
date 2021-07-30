@@ -9,6 +9,7 @@ import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common/SvgIcon";
+import { endsWith } from "lodash";
 
 const TITLE = "Project Files";
 
@@ -37,7 +38,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     };
   }
 
-  componentDidMount(): void {
+  async componentDidMount(): Promise<void> {
+    await projectServices.setProjectFolder("C:/Temp/z88-native");
     this.setState({
       itemsCount: this.itemsCount,
     });
