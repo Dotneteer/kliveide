@@ -269,6 +269,7 @@ export default function VirtualizedList({
         handleWidth
         handleHeight
         onResize={() => {
+          console.log("Resized");
           if (resizePhase === ResizePhase.None) return;
           forceRefresh();
         }}
@@ -284,11 +285,10 @@ export default function VirtualizedList({
    */
   function forceRefresh(position?: number) {
     setResizePhase(ResizePhase.None);
-    setRequestedPos(
-      position < 0
-        ? 10_000_000
-        : position ?? (divHost.current ? divHost.current.scrollTop : -1)
-    );
+    const reqPos = position < 0
+    ? 10_000_000
+    : position ?? (divHost.current ? divHost.current.scrollTop : -1);
+    setRequestedPos(reqPos);
     setResizedHeight(null);
   }
 

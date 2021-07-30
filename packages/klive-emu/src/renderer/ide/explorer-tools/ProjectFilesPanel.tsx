@@ -55,6 +55,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     let slice: ITreeNode<ProjectNode>[];
     return (
       <VirtualizedList
+        key="1"
         itemHeight={22}
         numItems={this.state.itemsCount}
         renderItem={(

@@ -185,7 +185,7 @@ export default class FloatingScrollbar
       transitionDelay: this.state.dragging ? "0s" : "0.25s",
     };
 
-    return (
+    return this.state.show ? (
       <div
         style={barStyle}
         onMouseEnter={() => this.setState({ pointed: true })}
@@ -207,7 +207,7 @@ export default class FloatingScrollbar
           }}
         ></div>
       </div>
-    );
+    ) : null;
   }
 
   /**
