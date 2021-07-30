@@ -55,7 +55,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     let slice: ITreeNode<ProjectNode>[];
     return (
       <VirtualizedList
-        key="1"
         itemHeight={22}
         numItems={this.state.itemsCount}
         renderItem={(
@@ -89,8 +88,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       cursor: "pointer",
       background:
         item === this.state.selected
-          ? "var(--list-selected-background-color)"
+          ? "var(--selected-background-color)"
           : "transparent",
+      border: item === this.state.selected
+        ? "1px solid var(--selected-border-color)"
+        : "1px solid transparent",
     };
     const topDepth = projectServices.getProjectTree().depth;
     return (
@@ -208,7 +210,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       case "Space":
       case "Enter":
         if (!this.state.selected) return;
-        this.collapseExpand(this.state.selectedIndex, this.state.selected)
+        this.collapseExpand(this.state.selectedIndex, this.state.selected);
         break;
       default:
         return;

@@ -5,6 +5,7 @@ import { useState } from "react";
 import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
 import { handleScrollKeys } from "./utils";
 import ReactResizeDetector from "react-resize-detector";
+import { useLayoutEffect } from "react";
 
 /**
  * The function that renders a virtual list item
@@ -151,7 +152,7 @@ export default function VirtualizedList({
 
   // --- Whenever it's time to resize, save the offset height of
   // --- the scroll panel to eliminate a flex bug.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!mounted.current) return;
     switch (resizePhase) {
       case ResizePhase.None:
@@ -181,6 +182,7 @@ export default function VirtualizedList({
           overflow: "hidden",
           position: "relative",
           height: resizedHeight ?? "100%",
+          outline: "none",
         }}
         onScroll={(e) => {
           updateDimensions();
@@ -208,26 +210,24 @@ export default function VirtualizedList({
         onFocus={() => focus?.()}
         onBlur={() => blur?.()}
       >
-        {resizePhase !== ResizePhase.None && (
-          <div
-            className="inner"
-            style={{
-              height: `${innerHeight}px`,
-            }}
-            onMouseEnter={() => {
-              setPointed(true);
-              signPointed?.(true);
-              mouseLeft = false;
-            }}
-            onMouseLeave={() => {
-              setPointed(isSizing);
-              signPointed?.(isSizing);
-              mouseLeft = true;
-            }}
-          >
-            {items}
-          </div>
-        )}
+        <div
+          className="inner"
+          style={{
+            height: `${innerHeight}px`,
+          }}
+          onMouseEnter={() => {
+            setPointed(true);
+            signPointed?.(true);
+            mouseLeft = false;
+          }}
+          onMouseLeave={() => {
+            setPointed(isSizing);
+            signPointed?.(isSizing);
+            mouseLeft = true;
+          }}
+        >
+          {items}
+        </div>
       </div>
       <FloatingScrollbar
         direction="vertical"
@@ -269,7 +269,6 @@ export default function VirtualizedList({
         handleWidth
         handleHeight
         onResize={() => {
-          console.log("Resized");
           if (resizePhase === ResizePhase.None) return;
           forceRefresh();
         }}
@@ -285,9 +284,10 @@ export default function VirtualizedList({
    */
   function forceRefresh(position?: number) {
     setResizePhase(ResizePhase.None);
-    const reqPos = position < 0
-    ? 10_000_000
-    : position ?? (divHost.current ? divHost.current.scrollTop : -1);
+    const reqPos =
+      position < 0
+        ? 10_000_000
+        : position ?? (divHost.current ? divHost.current.scrollTop : -1);
     setRequestedPos(reqPos);
     setResizedHeight(null);
   }

@@ -19,7 +19,6 @@ export const lightTheme: ITheme = {
     "--console-font": "Consolas, \"Courier New\", monospace",
     
     "--list-hover-background-color": "#2a2d2e",
-    "--list-selected-background-color": "#094771",
 
     "--button-background-color": "#808080",
     "--button-primary-background-color": "##007acc",

@@ -19,7 +19,6 @@ export interface IThemeProperties {
   "--console-font": string;
 
   "--list-hover-background-color": string;
-  "--list-selected-background-color": string;
 
   "--button-background-color": string;
   "--button-primary-background-color": string;
