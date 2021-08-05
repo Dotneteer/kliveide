@@ -47,6 +47,7 @@ import {
   ideToolFrameShowAction,
 } from "../shared/state/tool-frame-reducer";
 import { MainToEmuForwarder } from "./MainToEmuForwarder";
+import { machineRegistry } from "../extensibility/main/decorators";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -324,13 +325,13 @@ export function setupMenu(): void {
   // --- Prepare the machine menu
   const machineSubMenu: MenuItemConstructorOptions[] = [];
   const machineType = mainStore.getState()?.machineType?.split("_")[0];
-  for (let i = 0; i < MACHINE_MENU_ITEMS.length; i++) {
+  for (var [_, value] of machineRegistry) {
     machineSubMenu.push({
-      id: menuIdFromMachineId(MACHINE_MENU_ITEMS[i].id),
-      label: MACHINE_MENU_ITEMS[i].label,
+      id: menuIdFromMachineId(value.id),
+      label: value.label,
       type: "radio",
-      checked: MACHINE_MENU_ITEMS[i].id === machineType,
-      enabled: MACHINE_MENU_ITEMS[i].enabled,
+      checked: value.id === machineType,
+      enabled: value.active ?? true,
       click: async (mi) => {
         try {
           emuWindow.saveAppSettings();
@@ -338,7 +339,7 @@ export function setupMenu(): void {
           // --- Intentionally ignored
         }
         const machineType = mi.id.split("_")[1];
-        emuWindow.requestMachineType(machineType);
+        await emuWindow.requestMachineType(machineType);
       },
     });
   }
@@ -719,26 +720,17 @@ interface MachineMenuItem {
 }
 
 /**
- * The list of machine menu items
- */
-const MACHINE_MENU_ITEMS: MachineMenuItem[] = [
-  { id: "sp48", label: "ZX Spectrum 48", enabled: true },
-  { id: "sp128", label: "ZX Spectrum 128", enabled: true },
-  { id: "spp3e", label: "ZX Spectrum +3E (to be done)", enabled: false },
-  {
-    id: "next",
-    label: "ZX Spectrum Next (to be done)",
-    enabled: false,
-  },
-  { id: "cz88", label: "Cambridge Z88 (in progress)", enabled: true },
-];
-
-/**
  * Get the identifiers of registered machines
  * @returns 
  */
 export function getRegisteredMachines(): string[] {
-  return MACHINE_MENU_ITEMS.filter((m) => m.enabled).map((m) => m.id);
+  const result: string[] = [];
+  for (var entry of machineRegistry.values()) {
+    if (entry.active ?? true) {
+      result.push(entry.id);
+    }
+  }
+  return result;
 }
 
 /**

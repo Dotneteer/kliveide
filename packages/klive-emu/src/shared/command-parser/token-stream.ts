@@ -9,11 +9,14 @@ export function parseCommand(command: string): Token[] {
   const tokens: Token[] = [];
   const input = new InputStream(command);
   const tokenStream = new TokenStream(input);
-  let nextToken: Token;
+  let eof = false;
   do {
-    nextToken = tokenStream.get();
-    tokens.push(nextToken);
-  } while (nextToken.type !== TokenType.Eof);
+    const nextToken = tokenStream.get();
+    eof = nextToken.type === TokenType.Eof;
+    if (!eof) {
+      tokens.push(nextToken);
+    }
+  } while (!eof);
   return tokens;
 }
 

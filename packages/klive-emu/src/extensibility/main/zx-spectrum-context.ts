@@ -1,23 +1,21 @@
 import * as fs from "fs";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
-import {
-  LinkDescriptor,
-  MachineContextProviderBase,
-} from "./machine-context";
-import { AppState } from "../shared/state/AppState";
-import { BinaryReader } from "../shared/utils/BinaryReader";
-import { checkTapeFile } from "../shared/tape/readers";
-import { mainStore } from "./mainStore";
+import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
+import { AppState } from "../../shared/state/AppState";
+import { BinaryReader } from "../../shared/utils/BinaryReader";
+import { checkTapeFile } from "../../shared/tape/readers";
+import { mainStore } from "../../main/mainStore";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
   spectrumTapeContentsAction,
-} from "../shared/state/spectrum-specific-reducer";
-import { emuSetClockMultiplierAction } from "../shared/state/emulator-panel-reducer";
-import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
-import { emuWindow } from "./app-menu-state";
-import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
+} from "../../shared/state/spectrum-specific-reducer";
+import { emuSetClockMultiplierAction } from "../../shared/state/emulator-panel-reducer";
+import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
+import { emuWindow } from "../../main/app-menu-state";
+import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
+import { VirtualMachineType } from "./decorators";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -213,8 +211,13 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
 }
 
 /**
- * Context provider for the ZX Spectrum machine model
+ * Context provider for the ZX Spectrum 48 machine model
  */
+@VirtualMachineType({
+  id: "sp48",
+  label: "ZX Spectrum 48",
+  active: true,
+})
 export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Constructs the provider with the specified options
@@ -245,8 +248,13 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
 }
 
 /**
- * Context provider for the ZX Spectrum machine model
+ * Context provider for the ZX Spectrum 128 machine model
  */
+@VirtualMachineType({
+  id: "sp128",
+  label: "ZX Spectrum 128",
+  active: true,
+})
 export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Constructs the provider with the specified options

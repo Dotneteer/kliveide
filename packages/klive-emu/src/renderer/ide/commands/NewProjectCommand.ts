@@ -6,6 +6,8 @@ import {
   TraceMessageType,
 } from "../tool-area/CommandService";
 import { Token } from "../../../shared/command-parser/token-stream";
+import { ideToEmuMessenger } from "../IdeToEmuMessenger";
+import { GetRegisteredMachinesResponse } from "../../../shared/messaging/message-types";
 
 /**
  * Creates a new Klive project
@@ -20,16 +22,25 @@ export class NewProjectCommand extends CommandBase {
    * @param args Arguments to validate
    * @returns A list of issues
    */
-  async validateArgs(args: Token[]): Promise<TraceMessage[]> {
-    console.log(`Args: ${args.length}`);
+  async validateArgs(args: Token[]): Promise<TraceMessage | TraceMessage[]> {
+      console.log(args);
     if (args.length !== 2 && args.length !== 3) {
-      return [
-        {
-          type: TraceMessageType.Error,
-          message: "Invalid number of arguments.",
-        },
-        ...this.usageMessage(),
-      ];
+      return {
+        type: TraceMessageType.Error,
+        message: "Invalid number of arguments.",
+      };
+    }
+    const machines = (
+      await ideToEmuMessenger.sendMessage<GetRegisteredMachinesResponse>({
+        type: "GetRegisteredMachines",
+      })
+    ).machines;
+    const machineType = args[0].text;
+    if (!machines.includes(machineType)) {
+      return {
+        type: TraceMessageType.Error,
+        message: `Cannot find machine with ID '${machineType}'. Available machine types are: ${machines}`,
+      };
     }
     return [];
   }

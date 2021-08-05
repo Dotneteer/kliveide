@@ -85,9 +85,14 @@ export abstract class CommandBase {
    */
   async execute(context: CommandContext): Promise<CommandResult> {
     // --- Validate the arguments and display potential issues
-    const validationMessages = await this.validateArgs(
-      context.argTokens.slice(1)
+    const received = await this.validateArgs(context.argTokens);
+    const validationMessages = Array.isArray(received) ? received : [received];
+    const hasError = validationMessages.some(
+      (m) => m.type === TraceMessageType.Error
     );
+    if (hasError) {
+      validationMessages.push(...this.usageMessage());
+    }
     for (var trace of validationMessages) {
       context.output.color(
         trace.type === TraceMessageType.Error
@@ -98,9 +103,6 @@ export abstract class CommandBase {
       );
       context.output.writeLine(trace.message);
     }
-    const hasError = validationMessages.some(
-      (m) => m.type === TraceMessageType.Error
-    );
     if (hasError) {
       // --- Sign validation error
       return {
@@ -128,13 +130,13 @@ export abstract class CommandBase {
    * @param _args Arguments to validate
    * @returns A list of issues
    */
-  async validateArgs(_args: Token[]): Promise<TraceMessage[]> {
+  async validateArgs(_args: Token[]): Promise<TraceMessage | TraceMessage[]> {
     return [];
   }
 
   /**
    * Retrieves the usage message
-   * @returns 
+   * @returns
    */
   usageMessage(): TraceMessage[] {
     const usage = this.usage;

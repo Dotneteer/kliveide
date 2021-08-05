@@ -6,20 +6,20 @@ import {
   emuMachineContextAction,
   emuSetClockMultiplierAction,
   emuSetKeyboardLayoutAction,
-} from "../shared/state/emulator-panel-reducer";
-import { machineIdFromMenuId, menuIdFromMachineId } from "./electron-utils";
+} from "../../shared/state/emulator-panel-reducer";
+import { machineIdFromMenuId, menuIdFromMachineId } from "../../main/electron-utils";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
-import { mainStore } from "./mainStore";
+import { mainStore } from "../../main/mainStore";
 import {
   emuMessenger,
   emuWindow,
   setSoundLevel,
   setSoundLevelMenu,
   setupMenu,
-} from "./app-menu-state";
+} from "../../main/app-menu-state";
 import { dialog } from "electron";
-import { AppState } from "../shared/state/AppState";
-import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
+import { AppState } from "../../shared/state/AppState";
+import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
 import {
   CZ88_BATTERY_LOW,
   CZ88_CARDS,
@@ -27,14 +27,15 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "../shared/machines/macine-commands";
+} from "../../shared/machines/macine-commands";
 import {
   Cz88ContructionOptions,
   SlotContent,
   Z88CardsState,
-} from "../shared/machines/cz88-specific";
-import { ExecuteMachineCommandResponse } from "../shared/messaging/message-types";
-import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
+} from "../../shared/machines/cz88-specific";
+import { ExecuteMachineCommandResponse } from "../../shared/messaging/message-types";
+import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
+import { VirtualMachineType } from "./decorators";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";
@@ -141,8 +142,13 @@ let slotsState: Z88CardsState = {
 };
 
 /**
- * Context provider for ZX Spectrum machine types
+ * Context provider for the Cambridge Z88 machine type
  */
+@VirtualMachineType({
+  id: "cz88",
+  label: "Cambridge Z88 (in progress)",
+  active: true
+})
 export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
    * Constructs the provider with the specified options
