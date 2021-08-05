@@ -7,7 +7,7 @@ import {
 } from "@syncfusion/ej2-react-navigations";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
-import { animationTick } from "../../../renderer/common/utils";
+import { animationTick } from "../../common/utils";
 import {
   ContextMenuOpenTarget,
   contextMenuService,

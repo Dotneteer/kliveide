@@ -39,7 +39,7 @@ import { TreeNode } from "../common/TreeNode";
 import { ProjectNode } from "./explorer-tools/ProjectNode";
 import { projectServices } from "./explorer-tools/ProjectServices";
 import { TreeView } from "../common/TreeView";
-import IdeContextMenu from "./command/ContextMenu";
+import IdeContextMenu from "./context-menu/ContextMenu";
 import ModalDialog from "../modals/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
@@ -48,6 +48,7 @@ import { activityService } from "./activity-bar/ActivityService";
 import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
 import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
+import { registerKliveCommands } from "./commands/register-commands";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -319,45 +320,8 @@ export default function IdeApp() {
       outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
       outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
 
-      // --- Register a simple project tree
-      const root = new TreeNode<ProjectNode>({
-        name: "SpectrumProject",
-        isFolder: true,
-      });
-      const configFolder = new TreeNode<ProjectNode>({
-        name: "config",
-        isFolder: true,
-      });
-      root.appendChild(configFolder);
-
-      const viewConfig = new TreeNode<ProjectNode>({
-        name: "view.cfg",
-        isFolder: false,
-      });
-      configFolder.appendChild(viewConfig);
-      const memoryConfig = new TreeNode<ProjectNode>({
-        name: "memory.cfg",
-        isFolder: false,
-      });
-      configFolder.appendChild(memoryConfig);
-
-      const codeFolder = new TreeNode<ProjectNode>({
-        name: "code",
-        isFolder: true,
-      });
-      root.appendChild(codeFolder);
-      const z80File = new TreeNode<ProjectNode>({
-        name: "code.z80.asm",
-        isFolder: false,
-      });
-      codeFolder.appendChild(z80File);
-      const zxbFile = new TreeNode<ProjectNode>({
-        name: "code.zx.bas",
-        isFolder: false,
-      });
-      codeFolder.appendChild(zxbFile);
-      const projectTree = new TreeView(root);
-      projectServices.setProjectTree(projectTree);
+      // --- Register available commands
+      registerKliveCommands();
 
       // --- Select the file-view activity
       activityService.selectActivity(0);

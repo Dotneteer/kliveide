@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../command/ContextMenuService";
+import { contextMenuService } from "../context-menu/ContextMenuService";
 import { IToolPanel, toolAreaService } from "./ToolAreaService";
 
 interface Props {

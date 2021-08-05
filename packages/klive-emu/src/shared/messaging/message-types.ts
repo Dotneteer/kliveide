@@ -151,6 +151,13 @@ export interface GetCpuStateRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks the main process for the contents of a folder
+ */
+ export interface GetRegisteredMachinesRequest extends MessageBase {
+  type: "GetRegisteredMachines";
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -194,7 +201,7 @@ type IdeToEmuRequests = GetCpuStateRequest | GetMachineStateRequest;
 /**
  * Requests for IDE to Emu
  */
- type IdeToMainRequests = GetFolderContentsRequest;
+ type IdeToMainRequests = GetFolderContentsRequest | GetRegisteredMachinesRequest;
 
 
 /**
@@ -258,6 +265,15 @@ export interface GetCpuStateResponse extends MessageBase {
 }
 
 /**
+ * The Ide asks the main process for the contents of a folder
+ */
+ export interface GetRegisteredMachinesResponse extends MessageBase {
+  type: "GetRegisteredMachinesResponse";
+  machines: string[];
+}
+
+
+/**
  * Describes the contents of a directory
  */
  export type DirectoryContent = {
@@ -273,7 +289,8 @@ export type ResponseMessage =
   | EmuOpenFileDialogResponse
   | GetCpuStateResponse
   | GetMachineStateResponse
-  | GetFolderContentsResponse;
+  | GetFolderContentsResponse
+  | GetRegisteredMachinesResponse;
 
 /**
  * All messages

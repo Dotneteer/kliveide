@@ -112,7 +112,7 @@ export function setEmuMessenger(messenger: MainToEmulatorMessenger): void {
  * Sets the forwarder to the emulator window
  * @param forwarder
  */
- export function setEmuForwarder(forwarder: MainToEmuForwarder): void {
+export function setEmuForwarder(forwarder: MainToEmuForwarder): void {
   emuForwarder = forwarder;
 }
 
@@ -732,6 +732,14 @@ const MACHINE_MENU_ITEMS: MachineMenuItem[] = [
   },
   { id: "cz88", label: "Cambridge Z88 (in progress)", enabled: true },
 ];
+
+/**
+ * Get the identifiers of registered machines
+ * @returns 
+ */
+export function getRegisteredMachines(): string[] {
+  return MACHINE_MENU_ITEMS.filter((m) => m.enabled).map((m) => m.id);
+}
 
 /**
  * Represents a sound level menu item

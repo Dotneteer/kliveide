@@ -178,10 +178,14 @@ export class OutputPaneBuffer implements IOutputBuffer {
       this._buffer[0] = "";
     }
 
+    let innerMessage = message
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
     if (this.isStyled()) {
       message = `<span style="${toStyleString(
         this.getStyle()
-      )}">${message}</span>`;
+      )}">${innerMessage}</span>`;
     }
 
     this._buffer[this._currentLineIndex] = (
@@ -207,7 +211,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
     this._buffer[this._currentLineIndex] = "";
   }
 
-    /**
+  /**
    * This event fires when the contents of the buffer changes.
    */
   get contentsChanged(): ILiteEvent<void> {
@@ -351,7 +355,7 @@ class OutputPaneService {
     }
     pane.buffer.contentsChanged.on(() => {
       this._paneContentsChanged.fire(pane);
-    })
+    });
   }
 
   /**

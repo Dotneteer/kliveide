@@ -5,7 +5,7 @@ import { animationTick } from "../../../renderer/common/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
 import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../command/ContextMenuService";
+import { contextMenuService } from "../context-menu/ContextMenuService";
 
 /**
  * Component properties

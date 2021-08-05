@@ -2,9 +2,9 @@ import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { themeService } from "../../../renderer/themes/theme-service";
 import { SvgIcon } from "../../common/SvgIcon";
-import CommandIconButton from "../command/CommandIconButton";
+import CommandIconButton from "../context-menu/CommandIconButton";
 import { documentService, IDocumentPanel } from "./DocumentService";
-import { contextMenuService} from "../command/ContextMenuService";
+import { contextMenuService} from "../context-menu/ContextMenuService";
 import { MenuItem } from "../../../shared/command/commands";
 
 interface Props {

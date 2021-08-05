@@ -6,10 +6,15 @@ import {
   DirectoryContent,
   EmuOpenFileDialogResponse,
   GetFolderContentsResponse,
+  GetRegisteredMachinesResponse,
   RequestMessage,
   ResponseMessage,
 } from "../shared/messaging/message-types";
-import { emuForwarder, emuWindow } from "./app-menu-state";
+import {
+  emuForwarder,
+  emuWindow,
+  getRegisteredMachines,
+} from "./app-menu-state";
 import { flow } from "lodash";
 
 /**
@@ -55,10 +60,14 @@ export async function processIdeRequest(
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "GetFolderContents":
-
       return <GetFolderContentsResponse>{
         type: "GetFolderResponse",
         contents: await getFolderContents(message.folder),
+      };
+    case "GetRegisteredMachines":
+      return <GetRegisteredMachinesResponse>{
+        type: "GetRegisteredMachinesResponse",
+        machines: getRegisteredMachines(),
       };
     default:
       return await emuForwarder.sendMessage(message);
@@ -111,7 +120,10 @@ async function getFolderContents(folder: string): Promise<DirectoryContent> {
 
     // --- Now, recursively read folders
     for (var subfolder of result.folders) {
-      const subcontents = await readFolders(path.join(name, subfolder.name), depth + 1);
+      const subcontents = await readFolders(
+        path.join(name, subfolder.name),
+        depth + 1
+      );
       subfolder.folders = subcontents.folders;
       subfolder.files = subcontents.files;
     }

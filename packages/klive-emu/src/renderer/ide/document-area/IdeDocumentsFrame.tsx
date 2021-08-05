@@ -10,7 +10,7 @@ import {
   IDocumentPanel,
 } from "./DocumentService";
 import { CSSProperties } from "react";
-import CommandIconButton from "../command/CommandIconButton";
+import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
 

@@ -3,8 +3,9 @@ import { CSSProperties } from "react";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common/VirtualizedList";
-import CommandIconButton from "../command/CommandIconButton";
+import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
+import { CommandResult, commandService } from "./CommandService";
 import { interactivePaneService } from "./InteractiveService";
 import { toolAreaService, ToolPanelDescriptorBase } from "./ToolAreaService";
 
@@ -28,7 +29,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   private _listApi: VirtualizedListApi;
   private _onContentsChanged: () => void;
   private _onCommandSubmitted: (command: string) => void;
-  private _onCommandExecuted: (command: string) => void;
+  private _onCommandExecuted: (result: CommandResult) => void;
   private _onFocusRequested: () => void;
   private _historyIndex = -1;
 
@@ -77,25 +78,20 @@ export default class InteractiveToolPanel extends ToolPanelBase<
 
   async onCommandSubmitted(command: string): Promise<void> {
     const buffer = interactivePaneService.getOutputBuffer();
-    buffer.writeLine();
     buffer.resetColor();
-    buffer.write("Executing ");
-    buffer.color("bright-blue");
-    buffer.write(command);
-    this.setState({ inputEnabled: false });
-    this._historyIndex = -1;
-    await new Promise((r) => setTimeout(r, 100));
-    interactivePaneService.signCommandExecuted();
+    buffer.writeLine(`$ ${command}`);
+    const result = await commandService.executeCommand(command, buffer);
+    interactivePaneService.signCommandExecuted(result);
   }
 
-  onCommandExecuted(command: string): void {
+  onCommandExecuted(result: CommandResult): void {
     this.setState({ inputEnabled: true });
     const buffer = interactivePaneService.getOutputBuffer();
-    buffer.writeLine();
+    buffer.color(result.success ? "bright-green" : "bright-red");
+    if (result.finalMessage) {
+      buffer.writeLine(result.finalMessage);
+    }
     buffer.resetColor();
-    buffer.write("Executed ");
-    buffer.color("bright-green");
-    buffer.write(command);
     this.setFocusToPrompt();
   }
 
