@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 
-import { EmuViewOptions } from "../shared/state/AppState";
+import { EmuViewOptions } from "../../shared/state/AppState";
 
 /**
  * The file that stores the Klive Emulator configuration

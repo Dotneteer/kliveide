@@ -2,9 +2,8 @@
 // The startup file of the main Electron process
 // ============================================================================
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { BrowserWindow, app, ipcMain } from "electron";
-import { forwardRendererState, mainStore } from "./mainStore";
+import { forwardRendererState, mainStore } from "./main-state/main-store";
 import {
   EMU_TO_MAIN_REQUEST_CHANNEL,
   EMU_TO_MAIN_RESPONSE_CHANNEL,
@@ -20,8 +19,8 @@ import {
   setupMenu,
   setupWindows,
   watchStateChanges,
-} from "./app-menu-state";
-import { appConfiguration, appSettings } from "./klive-configuration";
+} from "./app/app-menu";
+import { appConfiguration, appSettings } from "./main-state/klive-configuration";
 import {
   emuHideFrameInfoAction,
   emuHideKeyboardAction,
@@ -32,13 +31,13 @@ import {
   emuShowStatusbarAction,
   emuShowToolbarAction,
 } from "../shared/state/emu-view-options-reducer";
-import { __WIN32__ } from "./electron-utils";
+import { __WIN32__ } from "./utils/electron-utils";
 import { setWindowsAction } from "../shared/state/is-windows-reducer";
-import { processEmulatorRequest, processIdeRequest } from "./process-messages";
+import { processEmulatorRequest, processIdeRequest } from "./communication/process-messages";
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+// --- This method will be called when Electron has finished
+// --- initialization and is ready to create browser windows.
+// --- Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
   // --- Is Klive running on Windows?
   await setupWindows();
@@ -73,6 +72,7 @@ app.on("ready", async () => {
     }
   }
 
+  // --- Make sure that application configuration is sent to renderers
   emuMessenger.sendMessage({
     type: "ForwardAppConfig",
     config: appConfiguration,
@@ -85,15 +85,16 @@ app.on("ready", async () => {
   await emuWindow.requestMachineType(initialMachineType, undefined, settings);
 });
 
-// Quit when all windows are closed.
+// --- Quit when all windows are closed.
 app.on("window-all-closed", () => {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
+  // --- On OS X it is common for applications and their menu bar
+  // --- to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
+// --- Set up windows before the first activation
 app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     await setupWindows();
@@ -102,6 +103,7 @@ app.on("activate", async () => {
   }
 });
 
+// --- Make sure the application settings are saved
 app.on("before-quit", () => {
   emuWindow.saveAppSettings();
   ideWindow.allowClose = true;

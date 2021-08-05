@@ -16,9 +16,9 @@ import {
   emuSetClockMultiplierAction,
   emuSetSoundLevelAction,
   emuUnmuteSoundAction,
-} from "../shared/state/emulator-panel-reducer";
-import { KliveAction } from "../shared/state/state-core";
-import { AppState } from "../shared/state/AppState";
+} from "../../shared/state/emulator-panel-reducer";
+import { KliveAction } from "../../shared/state/state-core";
+import { AppState } from "../../shared/state/AppState";
 import {
   emuHideFrameInfoAction,
   emuHideKeyboardAction,
@@ -28,26 +28,26 @@ import {
   emuShowKeyboardAction,
   emuShowStatusbarAction,
   emuShowToolbarAction,
-} from "../shared/state/emu-view-options-reducer";
-import { __DARWIN__ } from "./electron-utils";
+} from "../../shared/state/emu-view-options-reducer";
+import { __DARWIN__ } from "../utils/electron-utils";
 import {
   mainStore,
   registerEmuWindowForwarder,
   registerIdeWindowForwarder,
-} from "./mainStore";
-import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
-import { EmuWindow } from "./EmuWindow";
-import { IdeWindow } from "./IdeWindow";
-import { StateAwareObject } from "../shared/state/StateAwareObject";
-import { appConfiguration, appSettings } from "./klive-configuration";
-import { ideHideAction, ideShowAction } from "../shared/state/show-ide-reducer";
-import { MainToIdeMessenger } from "./MainToIdeMessenger";
+} from "../main-state/main-store";
+import { EmuWindow } from "./emu-window";
+import { IdeWindow } from "./ide-window";
+import { StateAwareObject } from "../../shared/state/StateAwareObject";
+import { appConfiguration, appSettings } from "../main-state/klive-configuration";
+import { ideHideAction, ideShowAction } from "../../shared/state/show-ide-reducer";
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
-} from "../shared/state/tool-frame-reducer";
-import { MainToEmuForwarder } from "./MainToEmuForwarder";
-import { machineRegistry } from "../extensibility/main/decorators";
+} from "../../shared/state/tool-frame-reducer";
+import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
+import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
+import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -709,28 +709,6 @@ function checkboxAction(
  */
 function menuIdFromMachineId(machineId: string): string {
   return `machine_${machineId}`;
-}
-/**
- * Represents a machine menu item
- */
-interface MachineMenuItem {
-  id: string;
-  label: string;
-  enabled: boolean;
-}
-
-/**
- * Get the identifiers of registered machines
- * @returns 
- */
-export function getRegisteredMachines(): string[] {
-  const result: string[] = [];
-  for (var entry of machineRegistry.values()) {
-    if (entry.active ?? true) {
-      result.push(entry.id);
-    }
-  }
-  return result;
 }
 
 /**

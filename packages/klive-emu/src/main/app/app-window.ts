@@ -1,4 +1,3 @@
-
 import * as path from "path";
 import * as electronLocalShortcut from "electron-localshortcut";
 
@@ -6,7 +5,7 @@ import {
   BrowserWindow,
   BrowserWindowConstructorOptions,
 } from "electron";
-import { __DARWIN__, __LINUX__, __WIN32__ } from "./electron-utils";
+import { __DARWIN__, __LINUX__, __WIN32__ } from "../utils/electron-utils";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.

@@ -6,6 +6,20 @@ import { MachineContextProvider } from "./machine-context";
 export const machineRegistry = new Map<string, MachineRegistryInfo>();
 
 /**
+ * Get the identifiers of registered machines
+ * @returns 
+ */
+ export function getRegisteredMachines(): string[] {
+  const result: string[] = [];
+  for (var entry of machineRegistry.values()) {
+    if (entry.active ?? true) {
+      result.push(entry.id);
+    }
+  }
+  return result;
+}
+
+/**
  * Machine information to use to register the virtual machine types
  */
 export type MachineInfo = {

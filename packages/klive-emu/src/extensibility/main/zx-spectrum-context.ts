@@ -5,7 +5,7 @@ import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { AppState } from "../../shared/state/AppState";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { checkTapeFile } from "../../shared/tape/readers";
-import { mainStore } from "../../main/mainStore";
+import { mainStore } from "../../main/main-state/main-store";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
@@ -13,9 +13,9 @@ import {
 } from "../../shared/state/spectrum-specific-reducer";
 import { emuSetClockMultiplierAction } from "../../shared/state/emulator-panel-reducer";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
-import { emuWindow } from "../../main/app-menu-state";
+import { emuWindow } from "../../main/app/app-menu";
 import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
-import { VirtualMachineType } from "./decorators";
+import { VirtualMachineType } from "./machine-registry";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";

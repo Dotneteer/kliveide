@@ -1,43 +1,43 @@
 import { app, dialog } from "electron";
-import { AppWindow } from "./AppWindow";
-import { __DARWIN__ } from "./electron-utils";
-import { mainStore } from "./mainStore";
+import { AppWindow } from "./app-window";
+import { __DARWIN__ } from "../utils/electron-utils";
+import { mainStore } from "../main-state/main-store";
 import {
   RequestMessage,
   StopVmRequest,
-} from "../shared/messaging/message-types";
+} from "../../shared/messaging/message-types";
 import {
   MachineContextProvider,
   MachineContextProviderBase,
-} from "../extensibility/main/machine-context";
-import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
+} from "../../extensibility/main/machine-context";
+import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
 import {
   emuMachineContextAction,
   emuSetBaseFrequencyAction,
   emuSetExecutionStateAction,
   emuSetExtraFeaturesAction,
-} from "../shared/state/emulator-panel-reducer";
-import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
+} from "../../shared/state/emulator-panel-reducer";
 import {
   emuMessenger,
   setEmuForwarder,
   setEmuMessenger,
-} from "./app-menu-state";
-import { AppState } from "../shared/state/AppState";
+} from "./app-menu";
+import { AppState } from "../../shared/state/AppState";
 import {
   KliveSettings,
   reloadSettings,
   saveKliveSettings,
-} from "./klive-configuration";
-import { appSettings } from "./klive-settings";
-import { emuFocusAction } from "../shared/state/emu-focus-reducer";
-import { MainToEmuForwarder } from "./MainToEmuForwarder";
-import { machineRegistry } from "../extensibility/main/decorators";
+} from "../main-state/klive-configuration";
+import { appSettings } from "../main-state/klive-settings";
+import { emuFocusAction } from "../../shared/state/emu-focus-reducer";
+import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
+import { machineRegistry } from "../../extensibility/main/machine-registry";
 import {
   ZxSpectrum128ContextProvider,
   ZxSpectrum48ContextProvider,
-} from "../extensibility/main/zx-spectrum-context";
-import { Cz88ContextProvider } from "../extensibility/main/cz88-context";
+} from "../../extensibility/main/zx-spectrum-context";
+import { Cz88ContextProvider } from "../../extensibility/main/cz88-context";
+import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 
 /**
  * These are the context providers we usein the code
@@ -140,9 +140,9 @@ export class EmuWindow extends AppWindow {
 
   /**
    * Posts a message from the renderer to the main
-   * @param message Message contents
+   * @param _message Message contents
    */
-  postMessageToEmulator(message: RequestMessage): void {}
+  postMessageToEmulator(_message: RequestMessage): void {}
 
   /**
    * Requests a machine type according to its menu ID

@@ -7,16 +7,16 @@ import {
   emuSetClockMultiplierAction,
   emuSetKeyboardLayoutAction,
 } from "../../shared/state/emulator-panel-reducer";
-import { machineIdFromMenuId, menuIdFromMachineId } from "../../main/electron-utils";
+import { machineIdFromMenuId, menuIdFromMachineId } from "../../main/utils/electron-utils";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
-import { mainStore } from "../../main/mainStore";
+import { mainStore } from "../../main/main-state/main-store";
 import {
   emuMessenger,
   emuWindow,
   setSoundLevel,
   setSoundLevelMenu,
   setupMenu,
-} from "../../main/app-menu-state";
+} from "../../main/app/app-menu";
 import { dialog } from "electron";
 import { AppState } from "../../shared/state/AppState";
 import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
@@ -35,7 +35,7 @@ import {
 } from "../../shared/machines/cz88-specific";
 import { ExecuteMachineCommandResponse } from "../../shared/messaging/message-types";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
-import { VirtualMachineType } from "./decorators";
+import { VirtualMachineType } from "./machine-registry";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";

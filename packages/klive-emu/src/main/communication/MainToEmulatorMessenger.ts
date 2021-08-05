@@ -1,13 +1,10 @@
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
-import {
-  MAIN_TO_EMU_REQUEST_CHANNEL,
-  MAIN_TO_EMU_RESPONE_CHANNEL,
-} from "../shared/messaging/channels";
+import { MessengerBase } from "../../shared/messaging/MessengerBase";
 import {
   RequestMessage,
   ResponseMessage,
-} from "../shared/messaging/message-types";
-import { MessengerBase } from "../shared/messaging/MessengerBase";
+} from "../../shared/messaging/message-types";
+import { MAIN_TO_EMU_REQUEST_CHANNEL, MAIN_TO_EMU_RESPONE_CHANNEL } from "../../shared/messaging/channels";
 
 /**
  * This class sends messages from main to the emulator window
