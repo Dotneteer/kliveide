@@ -13,6 +13,8 @@ type PanelProps = {
   focusable?: boolean;
   scrollItemHeight?: number;
   sizing?: (isSizing: boolean) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 } & { children?: ReactNode };
 
 /**
@@ -23,10 +25,12 @@ export default function ScrollablePanel({
   showHorizontalScrollbar = true,
   showVerticalScrollbar = true,
   scrollBarSize = 4,
-  background = "var(--shell-canvas-background-color)",
+  background,
   focusable = true,
   scrollItemHeight = 20,
   sizing,
+  onFocus,
+  onBlur,
 }: PanelProps) {
   const mounted = useRef(false);
   const verticalApi = useRef<ScrollbarApi>();
@@ -47,7 +51,7 @@ export default function ScrollablePanel({
     height: "100%",
     background,
     overflow: "hidden",
-    outline: "none"
+    outline: "none",
   };
 
   useEffect(() => {
@@ -63,6 +67,8 @@ export default function ScrollablePanel({
       tabIndex={focusable ? 0 : -1}
       ref={divHost}
       style={containerStyle}
+      onFocus={() => onFocus?.()}
+      onBlur={() => onBlur?.()}
       onScroll={() => {
         updateDimensions();
       }}

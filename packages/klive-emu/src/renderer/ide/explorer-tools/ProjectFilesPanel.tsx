@@ -9,7 +9,6 @@ import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common/SvgIcon";
-import { endsWith } from "lodash";
 
 const TITLE = "Project Files";
 
@@ -35,7 +34,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     this.state = {
       itemsCount: 0,
       selectedIndex: -1,
-      focused: false,
     };
   }
 
@@ -74,6 +72,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         }}
         registerApi={(api) => (this._listApi = api)}
         handleKeys={(e) => this.handleKeys(e)}
+        onFocus={() => {
+          this.signFocus(true);
+          this._listApi.forceRefresh();
+        }}
+        onBlur={() => {
+          this.signFocus(false);
+          this._listApi.forceRefresh();
+        }}
       />
     );
   }
@@ -92,11 +98,15 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       cursor: "pointer",
       background:
         item === this.state.selected
-          ? "var(--focused-background-color)"
-          : "transparent",
+          ? this.state.focused
+            ? "var(--selected-background-color)"
+            : "var(--list-selected-background-color)"
+          : undefined,
       border:
         item === this.state.selected
-          ? "1px solid var(--focused-border-color)"
+          ? this.state.focused
+            ? "1px solid var(--selected-border-color)"
+            : "1px solid transparent"
           : "1px solid transparent",
     };
     return (

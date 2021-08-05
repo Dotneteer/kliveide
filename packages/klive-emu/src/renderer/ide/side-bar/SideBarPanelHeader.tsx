@@ -44,14 +44,14 @@ export default function SideBarPanelHeader({
     height: "4px",
     width: "100%",
     background:
-      pointed || resizing ? "var(--focused-border-color)" : "transparent",
+      pointed || resizing ? "var(--selected-border-color)" : "transparent",
     cursor: "ns-resize",
     transitionProperty: "background-color",
     transitionDuration: "0.1s",
     transitionDelay: "0.25s",
   };
   const borderStyle = focused
-    ? "1px solid var(--focused-border-color)"
+    ? "1px solid var(--selected-border-color)"
     : "1px solid transparent";
 
   // --- We need a context that uses "this" function when handles the `move`

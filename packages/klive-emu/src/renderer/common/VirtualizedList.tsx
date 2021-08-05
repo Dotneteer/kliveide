@@ -29,8 +29,8 @@ export type VirtualizedListProps = {
   registerApi?: (api: VirtualizedListApi) => void;
   obtainInitPos?: () => number | null;
   scrolled?: (topPos: number) => void;
-  focus?: () => void;
-  blur?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   signPointed?: (use: boolean) => void;
   handleKeys?: (e: React.KeyboardEvent) => void;
 };
@@ -66,8 +66,8 @@ export default function VirtualizedList({
   registerApi,
   obtainInitPos,
   scrolled,
-  focus,
-  blur,
+  onFocus: focus,
+  onBlur: blur,
   signPointed,
   handleKeys,
 }: VirtualizedListProps) {

@@ -12,14 +12,15 @@ export const darkTheme: ITheme = {
 
     "--shell-canvas-background-color": "#1E1E1E",
     "--panel-separator-border": "#8080805a",
-    "--focused-border-color": "#007fd4",
-    "--focused-background-color": "#094771",
+    "--selected-border-color": "#007fd4",
+    "--selected-background-color": "#094771",
     "--selection-color": "#007acc",
     "--information-color": "#c0c0c0",
     "--hilited-color": "#007acc",
     "--console-font": 'Consolas, "Courier New", monospace',
     
     "--list-hover-background-color": "#2a2d2e",
+    "--list-selected-background-color": "#2a2d2e",
 
     "--button-background-color": "#606060",
     "--button-primary-background-color": "#007acc",

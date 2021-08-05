@@ -11,14 +11,15 @@ export interface IThemeProperties {
   
   "--shell-canvas-background-color": string;
   "--panel-separator-border": string;
-  "--focused-border-color": string;
-  "--focused-background-color": string;
+  "--selected-border-color": string;
+  "--selected-background-color": string;
   "--selection-color": string;
   "--information-color": string;
   "--hilited-color": string;
   "--console-font": string;
 
   "--list-hover-background-color": string;
+  "--list-selected-background-color": string;
 
   "--button-background-color": string;
   "--button-primary-background-color": string;

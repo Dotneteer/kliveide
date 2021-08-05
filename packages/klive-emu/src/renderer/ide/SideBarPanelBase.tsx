@@ -7,14 +7,9 @@ import { scrollableContentType } from "./utils/content-utils";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;
-  focusable?: boolean;
-  onFocus?: () => void;
-  onBlur?: () => void;
 };
 
-export type SideBarState<S> = S & {
-  focused?: boolean;
-};
+export type SideBarState<S> = S & { focused?: boolean };
 
 /**
  * Base class for side bar panel implementations
@@ -49,19 +44,12 @@ export class SideBarPanelBase<
   // --- Override the default rendering
   render() {
     return (
-      <div
-        style={placeholderStyle}
-        //tabIndex={this.props.focusable ? 0 : -1}
-        onFocus={() => {
-          this.setState({ focused: true as any});
-        }}
-        onBlur={() => {
-          this.setState({ focused: false as any});
-        }}
-      >
+      <div style={placeholderStyle}>
         <ScrollablePanel
           scrollBarSize={10}
           sizing={(isSizing) => (this._isSizing = isSizing)}
+          onFocus={() => this.signFocus(true)}
+          onBlur={() => this.signFocus(false)}
         >
           <div style={scrollableContentType(this.width)}>
             {this.renderContent()}
@@ -69,6 +57,15 @@ export class SideBarPanelBase<
         </ScrollablePanel>
       </div>
     );
+  }
+
+  /**
+   * Signs if this panel is in focused/blurred state
+   * @param focused Is the panel focused?
+   */
+  protected signFocus(focused: boolean): void {
+    this.props.descriptor.focused = focused;
+    this.setState({ focused: focused as any });
   }
 
   /**
@@ -84,7 +81,7 @@ export class SideBarPanelBase<
   }
 
   // --- Take care of run events
-  runEvent = ({ execState, isDebug }: RunEventArgs) => {
+  private runEvent = ({ execState, isDebug }: RunEventArgs) => {
     if (this.props.descriptor.expanded) {
       if (execState === 1) {
         this._eventCount++;
