@@ -56,7 +56,7 @@ export default function IdeDocumentFrame() {
     if (mounted.current) {
       onResize();
     }
-  })
+  });
 
   return (
     <div tabIndex={0} id={DOC_CONTAINER_ID} style={rootStyle}>
@@ -102,6 +102,7 @@ const rootStyle: CSSProperties = {
   width: "100%",
   height: "100%",
   backgroundColor: "var(--shell-canvas-background-color)",
+  outline: "none",
 };
 
 const headerStyle: CSSProperties = {

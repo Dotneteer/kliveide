@@ -54,6 +54,25 @@ class ProjectServices {
       fullPath: contents.name,
       children: [],
     });
+    contents.folders
+      .sort((a, b) => {
+        return a.name > b.name ? 1 : a.name < b.name ? 1 : 0;
+      })
+      .forEach((f) => {
+        const folderNode = this.createTreeFrom(f);
+        folderNode.isExpanded = false;
+        root.appendChild(folderNode);
+      });
+    contents.files
+      .sort()
+      .forEach((f) => {
+        root.appendChild(new TreeNode<ProjectNode>({
+          name: f,
+          isFolder: false,
+          fullPath: `${contents.name}/${f}`,
+          children: [],
+        }));
+      });
     return root;
   }
 }

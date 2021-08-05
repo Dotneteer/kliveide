@@ -5,7 +5,16 @@ import { engineProxy, RunEventArgs } from "./engine-proxy";
 import { ISideBarPanel } from "./side-bar/SideBarService";
 import { scrollableContentType } from "./utils/content-utils";
 
-export type SideBarProps<P> = P & { descriptor: ISideBarPanel };
+export type SideBarProps<P> = P & {
+  descriptor: ISideBarPanel;
+  focusable?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
+};
+
+export type SideBarState<S> = S & {
+  focused?: boolean;
+};
 
 /**
  * Base class for side bar panel implementations
@@ -13,7 +22,7 @@ export type SideBarProps<P> = P & { descriptor: ISideBarPanel };
 export class SideBarPanelBase<
   P = { descriptor: ISideBarPanel },
   S = {}
-> extends React.Component<SideBarProps<P>, S> {
+> extends React.Component<SideBarProps<P>, SideBarState<S>> {
   private _isSizing = false;
   private _eventCount = 0;
 
@@ -40,7 +49,16 @@ export class SideBarPanelBase<
   // --- Override the default rendering
   render() {
     return (
-      <div style={placeholderStyle}>
+      <div
+        style={placeholderStyle}
+        //tabIndex={this.props.focusable ? 0 : -1}
+        onFocus={() => {
+          this.setState({ focused: true as any});
+        }}
+        onBlur={() => {
+          this.setState({ focused: false as any});
+        }}
+      >
         <ScrollablePanel
           scrollBarSize={10}
           sizing={(isSizing) => (this._isSizing = isSizing)}

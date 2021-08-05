@@ -11,8 +11,8 @@ export const lightTheme: ITheme = {
 
     "--shell-canvas-background-color": "#EEEEEE",
     "--panel-separator-border": "silver",
-    "--selected-border-color": "#007acc",
-    "--selected-background-color": "#094771",
+    "--focused-border-color": "#007acc",
+    "--focused-background-color": "#094771",
     "--selection-color": "#007acc",
     "--information-color": "#202020",
     "--hilited-color": "#007acc",

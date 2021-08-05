@@ -11,8 +11,8 @@ export interface IThemeProperties {
   
   "--shell-canvas-background-color": string;
   "--panel-separator-border": string;
-  "--selected-border-color": string;
-  "--selected-background-color": string;
+  "--focused-border-color": string;
+  "--focused-background-color": string;
   "--selection-color": string;
   "--information-color": string;
   "--hilited-color": string;

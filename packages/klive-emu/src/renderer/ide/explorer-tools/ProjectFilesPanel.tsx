@@ -35,6 +35,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     this.state = {
       itemsCount: 0,
       selectedIndex: -1,
+      focused: false,
     };
   }
 
@@ -59,6 +60,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       <VirtualizedList
         itemHeight={22}
         numItems={this.state.itemsCount}
+        integralPosition={false}
         renderItem={(
           index: number,
           style: CSSProperties,
@@ -90,13 +92,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       cursor: "pointer",
       background:
         item === this.state.selected
-          ? "var(--selected-background-color)"
+          ? "var(--focused-background-color)"
           : "transparent",
-      border: item === this.state.selected
-        ? "1px solid var(--selected-border-color)"
-        : "1px solid transparent",
+      border:
+        item === this.state.selected
+          ? "1px solid var(--focused-border-color)"
+          : "1px solid transparent",
     };
-    const topDepth = projectServices.getProjectTree().depth;
     return (
       <div
         key={index}
@@ -104,7 +106,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         style={{ ...style, ...itemStyle }}
         onClick={() => this.collapseExpand(index, item)}
       >
-        <div style={{ width: 22 + 16 * (topDepth - item.depth) }}></div>
+        <div
+          style={{
+            width: 22 + 12 * item.level + (item.nodeData.isFolder ? 0 : 12),
+          }}
+        ></div>
         {item.nodeData.isFolder && (
           <SvgIcon
             iconName="chevron-right"
@@ -171,42 +177,24 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    */
   handleKeys(e: React.KeyboardEvent): void {
     const tree = projectServices.getProjectTree();
+    let newIndex = -1;
     switch (e.code) {
-      case "ArrowUp": {
+      case "ArrowUp":
         if (this.state.selectedIndex <= 0) return;
-        const newIndex = this.state.selectedIndex - 1;
-        const newNode = tree.getViewNodeByIndex(newIndex);
-        this.setState({
-          selectedIndex: newIndex,
-          selected: newNode,
-        });
+        newIndex = this.state.selectedIndex - 1;
         break;
-      }
+
       case "ArrowDown": {
         if (this.state.selectedIndex >= this.state.itemsCount - 1) return;
-        const newIndex = this.state.selectedIndex + 1;
-        const newNode = tree.getViewNodeByIndex(newIndex);
-        this.setState({
-          selectedIndex: newIndex,
-          selected: newNode,
-        });
+        newIndex = this.state.selectedIndex + 1;
         break;
       }
       case "Home": {
-        const newNode = tree.getViewNodeByIndex(0);
-        this.setState({
-          selectedIndex: 0,
-          selected: newNode,
-        });
+        newIndex = 0;
         break;
       }
       case "End": {
-        const newIndex = this.state.itemsCount - 1;
-        const newNode = tree.getViewNodeByIndex(newIndex);
-        this.setState({
-          selectedIndex: newIndex,
-          selected: newNode,
-        });
+        newIndex = this.state.itemsCount - 1;
         break;
       }
       case "Space":
@@ -217,7 +205,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       default:
         return;
     }
-    this._listApi.forceRefresh();
+    if (newIndex >= 0) {
+      this._listApi.ensureVisible(newIndex);
+      this.setState({
+        selectedIndex: newIndex,
+        selected: tree.getViewNodeByIndex(newIndex),
+      });
+      this._listApi.forceRefresh();
+    }
   }
 }
 

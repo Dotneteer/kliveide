@@ -86,7 +86,7 @@ async function getFolderContents(folder: string): Promise<DirectoryContent> {
     }
 
     const result: DirectoryContent = {
-      name,
+      name: path.basename(name),
       folders: [],
       files: [],
     };

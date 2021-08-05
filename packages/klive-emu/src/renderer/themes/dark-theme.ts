@@ -12,8 +12,8 @@ export const darkTheme: ITheme = {
 
     "--shell-canvas-background-color": "#1E1E1E",
     "--panel-separator-border": "#8080805a",
-    "--selected-border-color": "#007fd4",
-    "--selected-background-color": "#094771",
+    "--focused-border-color": "#007fd4",
+    "--focused-background-color": "#094771",
     "--selection-color": "#007acc",
     "--information-color": "#c0c0c0",
     "--hilited-color": "#007acc",

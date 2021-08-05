@@ -47,6 +47,7 @@ export default function ScrollablePanel({
     height: "100%",
     background,
     overflow: "hidden",
+    outline: "none"
   };
 
   useEffect(() => {
