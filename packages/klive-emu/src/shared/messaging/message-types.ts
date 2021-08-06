@@ -1,6 +1,9 @@
-import { MachineCreationOptions, MachineState } from "../../renderer/machines/vm-core-types";
+import {
+  MachineCreationOptions,
+  MachineState,
+} from "../../renderer/machines/vm-core-types";
 import { KliveAction } from "../state/state-core";
-import { KliveConfiguration } from "../../main/klive-configuration";
+import { KliveConfiguration } from "../../main/main-state/klive-configuration";
 import { AppState } from "../state/AppState";
 import { ICpuState } from "../machines/AbstractCpu";
 
@@ -138,8 +141,33 @@ export interface GetCpuStateRequest extends MessageBase {
 /**
  * The Ide asks Emu for the state of the virtual machine
  */
- export interface GetMachineStateRequest extends MessageBase {
+export interface GetMachineStateRequest extends MessageBase {
   type: "GetMachineState";
+}
+
+/**
+ * The Ide asks the main process for the contents of a folder
+ */
+export interface GetFolderContentsRequest extends MessageBase {
+  type: "GetFolderContents";
+  folder: string;
+}
+
+/**
+ * The Ide asks the main process for the contents of a folder
+ */
+export interface GetRegisteredMachinesRequest extends MessageBase {
+  type: "GetRegisteredMachines";
+}
+
+/**
+ * The Ide asks the main process to create a Klive project
+ */
+export interface CreateKliveProjectRequest extends MessageBase {
+  type: "CreateKliveProject";
+  machineType: string;
+  rootFolder: string | null;
+  projectFolder: string;
 }
 
 /**
@@ -150,7 +178,8 @@ export type RequestMessage =
   | MainToEmuRequests
   | MainToIdeRequests
   | EmuToMainRequests
-  | IdeToEmuRequests;
+  | IdeToEmuRequests
+  | IdeToMainRequests;
 
 /**
  * Requests that forward information among the main, Emu, and IDE processes
@@ -181,6 +210,14 @@ type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
  * Requests for IDE to Emu
  */
 type IdeToEmuRequests = GetCpuStateRequest | GetMachineStateRequest;
+
+/**
+ * Requests for IDE to Main
+ */
+type IdeToMainRequests =
+  | GetFolderContentsRequest
+  | GetRegisteredMachinesRequest
+  | CreateKliveProjectRequest;
 
 /**
  * Requests send by the main process to Emu
@@ -229,11 +266,44 @@ export interface GetCpuStateResponse extends MessageBase {
 /**
  * The Ide asks Emu for the state of the virtual machine
  */
- export interface GetMachineStateResponse extends MessageBase {
+export interface GetMachineStateResponse extends MessageBase {
   type: "GetMachineStateResponse";
-  state: MachineState
+  state: MachineState;
 }
 
+/**
+ * The Ide asks the main process for the contents of a folder
+ */
+export interface GetFolderContentsResponse extends MessageBase {
+  type: "GetFolderResponse";
+  contents: DirectoryContent;
+}
+
+/**
+ * The Ide asks the main process for the contents of a folder
+ */
+export interface GetRegisteredMachinesResponse extends MessageBase {
+  type: "GetRegisteredMachinesResponse";
+  machines: string[];
+}
+
+/**
+ * The Ide asks the main process to create a Klive project
+ */
+export interface CreateKliveProjectResponse extends MessageBase {
+  type: "CreateKliveProjectResponse";
+  error?: string;
+  targetFolder: string;
+}
+
+/**
+ * Describes the contents of a directory
+ */
+export type DirectoryContent = {
+  name: string;
+  folders: DirectoryContent[];
+  files: string[];
+};
 
 export type ResponseMessage =
   | DefaultResponse
@@ -242,6 +312,9 @@ export type ResponseMessage =
   | EmuOpenFileDialogResponse
   | GetCpuStateResponse
   | GetMachineStateResponse
+  | GetFolderContentsResponse
+  | GetRegisteredMachinesResponse
+  | CreateKliveProjectResponse;
 
 /**
  * All messages

@@ -3,9 +3,9 @@ import { Activity } from "../../../shared/activity/Activity";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
 import styles from "styled-components";
 import { CSSProperties } from "react";
-import CommandIconButton from "../command/CommandIconButton";
+import CommandIconButton from "../context-menu/CommandIconButton";
 import { isCommandGroup, MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../command/ContextMenuService";
+import { contextMenuService } from "../context-menu/ContextMenuService";
 
 type Props = {
   activity: Activity;

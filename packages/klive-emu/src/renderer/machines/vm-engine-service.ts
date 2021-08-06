@@ -24,7 +24,7 @@ import {
 } from "../../shared/state/emulator-panel-reducer";
 import { FrameDiagData } from "../../shared/state/AppState";
 import { CambridgeZ88Core } from "./cz88/CambridgeZ88Core";
-import { KliveConfiguration } from "../../main/klive-configuration";
+import { KliveConfiguration } from "../../main/main-state/klive-configuration";
 
 /**
  * This class is responsible for controlling the singleton virtual machine

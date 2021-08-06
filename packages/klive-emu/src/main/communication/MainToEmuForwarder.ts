@@ -1,18 +1,18 @@
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import {
-  MAIN_TO_IDE_REQUEST_CHANNEL,
-  MAIN_TO_IDE_RESPONE_CHANNEL,
-} from "../shared/messaging/channels";
+  IDE_TO_EMU_EMU_REQUEST_CHANNEL,
+  IDE_TO_EMU_EMU_RESPONSE_CHANNEL,
+} from "../../shared/messaging/channels";
 import {
   RequestMessage,
   ResponseMessage,
-} from "../shared/messaging/message-types";
-import { MessengerBase } from "../shared/messaging/MessengerBase";
+} from "../../shared/messaging/message-types";
+import { MessengerBase } from "../../shared/messaging/MessengerBase";
 
 /**
  * This class sends messages from main to the emulator window
  */
-export class MainToIdeMessenger extends MessengerBase {
+export class MainToEmuForwarder extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
@@ -30,16 +30,18 @@ export class MainToIdeMessenger extends MessengerBase {
    * @param message Message to send
    */
   protected send(message: RequestMessage): void {
-    this.window.webContents.send(this.requestChannel, message);
+    if (this.window && !this.window.isDestroyed()) {
+      this.window.webContents.send(this.requestChannel, message);
+    }
   }
 
   /**
    * The channel to send the request out
    */
-  readonly requestChannel = MAIN_TO_IDE_REQUEST_CHANNEL;
+  readonly requestChannel = IDE_TO_EMU_EMU_REQUEST_CHANNEL;
 
   /**
    * The channel to listen for responses
    */
-  readonly responseChannel = MAIN_TO_IDE_RESPONE_CHANNEL;
+  readonly responseChannel = IDE_TO_EMU_EMU_RESPONSE_CHANNEL;
 }

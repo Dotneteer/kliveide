@@ -14,11 +14,13 @@ import { setEngineDependencies } from "../machines/vm-engine-dependencies";
 import { useRef, useState } from "react";
 import ModalDialog from "../modals/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
-import "./emu-message-processor";
-import "./ide-message-processor";
 import { modalDialogService } from "../modals/modal-service";
 import { Z88_CARDS_DIALOG_ID } from "../machines/cz88/CambridgeZ88Core";
 import { cz88CardsDialog } from "../machines/cz88/Cz88CardsDialog";
+
+// --- We need to import these files to setup the app
+import "./emu-message-processor";
+import "./ide-message-processor";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({
@@ -95,3 +97,4 @@ export default function EmuApp() {
     setThemeClass(`app-container ${theme.name}-theme`);
   }
 }
+

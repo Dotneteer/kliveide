@@ -2,9 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { MenuItemConstructorOptions, shell } from "electron";
-import { AppState } from "../shared/state/AppState";
-import { ExtraMachineFeatures } from "../shared/machines/machine-specfic";
-import { MachineCreationOptions } from "../renderer/machines/vm-core-types";
+import { AppState } from "../../shared/state/AppState";
+import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
+import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
 
 /**
  * Describes the responsibility of a menu provider for a particular machine
@@ -86,7 +86,7 @@ export interface MachineContextProvider {
 }
 
 /**
- * Room implementation of MachineContextProvider. Use this base
+ * Root implementation of MachineContextProvider. Use this base
  * class for your context provider classes.
  */
 export abstract class MachineContextProviderBase

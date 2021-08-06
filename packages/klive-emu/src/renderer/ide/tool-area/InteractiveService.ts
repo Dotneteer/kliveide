@@ -1,4 +1,5 @@
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { CommandResult } from "./CommandService";
 import { IOutputBuffer, OutputPaneBuffer } from "./OutputPaneService";
 
 const MAX_HISTORY = 1024;
@@ -12,7 +13,7 @@ class InteractivePaneService {
   private _history: string[] = [];
   private _commandSubmitted = new LiteEvent<string>();
   private _commandExecuting = false;
-  private _commandExecuted = new LiteEvent<string>();
+  private _commandExecuted = new LiteEvent<CommandResult>();
   private _focusRequested = new LiteEvent<void>();
 
   /**
@@ -89,10 +90,10 @@ class InteractivePaneService {
   /**
    * Signs that the last submitted command has been completed
    */
-  signCommandExecuted(): void {
+  signCommandExecuted(result: CommandResult): void {
     if (this._commandExecuting) {
       this._commandExecuting = false;
-      this._commandExecuted.fire(this._history[this._history.length - 1]);
+      this._commandExecuted.fire(result);
     }
   }
 
@@ -120,7 +121,7 @@ class InteractivePaneService {
   /**
    * Fires when a command has been executed
    */
-  get commandExecuted(): ILiteEvent<string> {
+  get commandExecuted(): ILiteEvent<CommandResult> {
     return this._commandExecuted;
   }
 

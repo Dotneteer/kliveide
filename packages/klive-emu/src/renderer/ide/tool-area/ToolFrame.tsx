@@ -7,13 +7,12 @@ import {
 } from "../../../shared/state/tool-frame-reducer";
 import { AppState } from "../../../shared/state/AppState";
 import { createSizedStyledPanel } from "../../common/PanelStyles";
-import CommandIconButton from "../command/CommandIconButton";
+import CommandIconButton from "../context-menu/CommandIconButton";
 import { ideStore } from "../ideStore";
 import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
-import { animationTick } from "../../common/utils";
 
 /**
  * Represents the statusbar of the emulator

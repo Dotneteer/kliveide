@@ -16,9 +16,9 @@ import {
   emuSetClockMultiplierAction,
   emuSetSoundLevelAction,
   emuUnmuteSoundAction,
-} from "../shared/state/emulator-panel-reducer";
-import { KliveAction } from "../shared/state/state-core";
-import { AppState } from "../shared/state/AppState";
+} from "../../shared/state/emulator-panel-reducer";
+import { KliveAction } from "../../shared/state/state-core";
+import { AppState } from "../../shared/state/AppState";
 import {
   emuHideFrameInfoAction,
   emuHideKeyboardAction,
@@ -28,25 +28,26 @@ import {
   emuShowKeyboardAction,
   emuShowStatusbarAction,
   emuShowToolbarAction,
-} from "../shared/state/emu-view-options-reducer";
-import { __DARWIN__ } from "./electron-utils";
+} from "../../shared/state/emu-view-options-reducer";
+import { __DARWIN__ } from "../utils/electron-utils";
 import {
   mainStore,
   registerEmuWindowForwarder,
   registerIdeWindowForwarder,
-} from "./mainStore";
-import { MainToEmulatorMessenger } from "./MainToEmulatorMessenger";
-import { EmuWindow } from "./EmuWindow";
-import { IdeWindow } from "./IdeWindow";
-import { StateAwareObject } from "../shared/state/StateAwareObject";
-import { appConfiguration, appSettings } from "./klive-configuration";
-import { ideHideAction, ideShowAction } from "../shared/state/show-ide-reducer";
-import { MainToIdeMessenger } from "./MainToIdeMessenger";
+} from "../main-state/main-store";
+import { EmuWindow } from "./emu-window";
+import { IdeWindow } from "./ide-window";
+import { StateAwareObject } from "../../shared/state/StateAwareObject";
+import { appConfiguration, appSettings } from "../main-state/klive-configuration";
+import { ideHideAction, ideShowAction } from "../../shared/state/show-ide-reducer";
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
-} from "../shared/state/tool-frame-reducer";
-import { MainToEmuForwarder } from "./MainToEmuForwarder";
+} from "../../shared/state/tool-frame-reducer";
+import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
+import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
+import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -112,7 +113,7 @@ export function setEmuMessenger(messenger: MainToEmulatorMessenger): void {
  * Sets the forwarder to the emulator window
  * @param forwarder
  */
- export function setEmuForwarder(forwarder: MainToEmuForwarder): void {
+export function setEmuForwarder(forwarder: MainToEmuForwarder): void {
   emuForwarder = forwarder;
 }
 
@@ -324,13 +325,13 @@ export function setupMenu(): void {
   // --- Prepare the machine menu
   const machineSubMenu: MenuItemConstructorOptions[] = [];
   const machineType = mainStore.getState()?.machineType?.split("_")[0];
-  for (let i = 0; i < MACHINE_MENU_ITEMS.length; i++) {
+  for (var [_, value] of machineRegistry) {
     machineSubMenu.push({
-      id: menuIdFromMachineId(MACHINE_MENU_ITEMS[i].id),
-      label: MACHINE_MENU_ITEMS[i].label,
+      id: menuIdFromMachineId(value.id),
+      label: value.label,
       type: "radio",
-      checked: MACHINE_MENU_ITEMS[i].id === machineType,
-      enabled: MACHINE_MENU_ITEMS[i].enabled,
+      checked: value.id === machineType,
+      enabled: value.active ?? true,
       click: async (mi) => {
         try {
           emuWindow.saveAppSettings();
@@ -338,7 +339,7 @@ export function setupMenu(): void {
           // --- Intentionally ignored
         }
         const machineType = mi.id.split("_")[1];
-        emuWindow.requestMachineType(machineType);
+        await emuWindow.requestMachineType(machineType);
       },
     });
   }
@@ -709,29 +710,6 @@ function checkboxAction(
 function menuIdFromMachineId(machineId: string): string {
   return `machine_${machineId}`;
 }
-/**
- * Represents a machine menu item
- */
-interface MachineMenuItem {
-  id: string;
-  label: string;
-  enabled: boolean;
-}
-
-/**
- * The list of machine menu items
- */
-const MACHINE_MENU_ITEMS: MachineMenuItem[] = [
-  { id: "sp48", label: "ZX Spectrum 48", enabled: true },
-  { id: "sp128", label: "ZX Spectrum 128", enabled: true },
-  { id: "spp3e", label: "ZX Spectrum +3E (to be done)", enabled: false },
-  {
-    id: "next",
-    label: "ZX Spectrum Next (to be done)",
-    enabled: false,
-  },
-  { id: "cz88", label: "Cambridge Z88 (in progress)", enabled: true },
-];
 
 /**
  * Represents a sound level menu item

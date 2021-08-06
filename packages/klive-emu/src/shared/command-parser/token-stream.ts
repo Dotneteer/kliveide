@@ -1,6 +1,26 @@
 import { InputStream } from "./input-stream";
 
 /**
+ * Parses the specified command into a token list
+ * @param command Command to parse
+ * @returns Parsed command
+ */
+export function parseCommand(command: string): Token[] {
+  const tokens: Token[] = [];
+  const input = new InputStream(command);
+  const tokenStream = new TokenStream(input);
+  let eof = false;
+  do {
+    const nextToken = tokenStream.get();
+    eof = nextToken.type === TokenType.Eof;
+    if (!eof) {
+      tokens.push(nextToken);
+    }
+  } while (!eof);
+  return tokens;
+}
+
+/**
  * This class implements the tokenizer (lexer) of the Klive command parser.
  * It recognizes these tokens:
  *

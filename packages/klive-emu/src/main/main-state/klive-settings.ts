@@ -1,7 +1,8 @@
 import * as path from "path";
 import * as fs from "fs";
 
-import { EmuViewOptions } from "../shared/state/AppState";
+import { EmuViewOptions } from "../../shared/state/AppState";
+import { getHomeFolder } from "../utils/file-utils";
 
 /**
  * The file that stores the Klive Emulator configuration
@@ -23,18 +24,14 @@ export interface KliveSettings {
 }
 
 /**
- * Gets the current home folder
+ * Represents the Klive project type
  */
-function getHomeFolder(): string {
-  return (
-    process.env[process.platform === "win32" ? "USERPROFILE" : "HOME"] ?? ""
-  );
-}
+export interface KliveProject extends KliveSettings {}
 
 /**
  * Gets the configuration of Klive Emulator from the user folder
  */
- function getKliveSettings(): KliveSettings | null {
+function getKliveSettings(): KliveSettings | null {
   const configFile = path.join(getHomeFolder(), SETTINGS_FILE_PATH);
   const folder = path.dirname(configFile);
   try {

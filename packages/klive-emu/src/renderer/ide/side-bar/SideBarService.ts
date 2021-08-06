@@ -22,6 +22,11 @@ export interface ISideBarPanel {
   expanded: boolean;
 
   /**
+   * Signs if the panel is focused
+   */
+  focused: boolean;
+
+  /**
    * The current height of the panel. Set when the rendering engine
    * updates the related DOM element
    */
@@ -68,6 +73,11 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
    * @param expanded
    */
   expanded: boolean = false;
+
+  /**
+   * Signs if the panel is focused
+   */
+  focused: boolean = false;
 
   /**
    * The current height of the panel
@@ -261,7 +271,7 @@ class SideBarService {
     this.refreshCurrentPanels();
     this.applySideBarState();
     this._sideBarChanged.fire();
-}
+  }
 
   /**
    * Refreshes the list of panel on a change

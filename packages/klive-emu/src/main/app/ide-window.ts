@@ -1,9 +1,9 @@
-import { AppWindow } from "./AppWindow";
-import { mainStore } from "./mainStore";
-import { ideHideAction } from "../shared/state/show-ide-reducer";
-import { setIdeMessenger } from "./app-menu-state";
-import { MainToIdeMessenger } from "./MainToIdeMessenger";
-import { ideFocusAction } from "../shared/state/ide-focus-reducer";
+import { AppWindow } from "./app-window";
+import { mainStore } from "../main-state/main-store";
+import { ideHideAction } from "../../shared/state/show-ide-reducer";
+import { setIdeMessenger } from "./app-menu";
+import { ideFocusAction } from "../../shared/state/ide-focus-reducer";
+import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 
 /**
  * Represents the singleton IDE window
