@@ -10,7 +10,7 @@ import {
   valueStyle,
 } from "../../ide/utils/content-utils";
 import { CSSProperties } from "react";
-import { SvgIcon } from "../../common/SvgIcon";
+import { SvgIcon } from "../../common-ui/SvgIcon";
 
 const TITLE = "ULA Information";
 const BORDER_NAMES = [

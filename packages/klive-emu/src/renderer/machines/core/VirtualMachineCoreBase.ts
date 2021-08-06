@@ -1,8 +1,8 @@
-import { ProgramCounterInfo } from "../../shared/state/AppState";
+import { ProgramCounterInfo } from "../../../shared/state/AppState";
 import { IVmController } from "./IVmController";
 import { KeyMapping } from "./keyboard";
-import { MemoryHelper } from "./memory-helpers";
-import { EXEC_ENGINE_STATE_BUFFER, EXEC_OPTIONS_BUFFER } from "./memory-map";
+import { MemoryHelper } from "../wa-interop/memory-helpers";
+import { EXEC_ENGINE_STATE_BUFFER, EXEC_OPTIONS_BUFFER } from "../wa-interop/memory-map";
 import {
   ExecuteCycleOptions,
   MachineCoreState,
@@ -10,8 +10,9 @@ import {
   MachineState,
 } from "./vm-core-types";
 import { getEngineDependencies } from "./vm-engine-dependencies";
-import { MachineApi } from "./wa-api";
-import { ICpu } from "../../shared/machines/AbstractCpu";
+import { MachineApi } from "../wa-interop/wa-api";
+import { ICpu } from "../../../shared/machines/AbstractCpu";
+import { ICustomDisassembler } from "../../../shared/z80/disassembler/custom-disassembly";
 
 /**
  * Represents the core abstraction of a virtual machine.
@@ -364,6 +365,14 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
     codeAddress = 0x8000,
     startAddress = 0x8000
   ): void {}
+
+  /**
+   * The virtual machine can provide its custom disassember
+   * @returns The custom disassebler, if supported; otherwise, null
+   */
+  provideCustomDisassembler(): ICustomDisassembler | null {
+    return null;
+  }
 
   // ==========================================================================
   // Lifecycle methods

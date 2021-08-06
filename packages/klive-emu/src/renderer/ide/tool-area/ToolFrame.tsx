@@ -6,7 +6,7 @@ import {
   ideToolFrameShowAction,
 } from "../../../shared/state/tool-frame-reducer";
 import { AppState } from "../../../shared/state/AppState";
-import { createSizedStyledPanel } from "../../common/PanelStyles";
+import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ideStore } from "../ideStore";
 import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";

@@ -1,8 +1,8 @@
 import * as React from "react";
 
-import { createSizedStyledPanel } from "../../common/PanelStyles";
+import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import styles from "styled-components";
-import { SvgIcon } from "../../common/SvgIcon";
+import { SvgIcon } from "../../common-ui/SvgIcon";
 import { useState } from "react";
 import { CSSProperties } from "react";
 

@@ -10,11 +10,11 @@ import { emuLoadUiAction } from "../../shared/state/emu-loaded-reducer";
 import { AudioRenderer } from "../machines/AudioRenderer";
 import { ZxSpectrumStateManager } from "../machines/spectrum/ZxSpectrumStateManager";
 import { CambridgeZ88StateManager } from "../machines/cz88/CambridgeZ88BaseStateManager";
-import { setEngineDependencies } from "../machines/vm-engine-dependencies";
+import { setEngineDependencies } from "../machines/core/vm-engine-dependencies";
 import { useRef, useState } from "react";
-import ModalDialog from "../modals/ModalDialog";
+import ModalDialog from "../common-ui/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
-import { modalDialogService } from "../modals/modal-service";
+import { modalDialogService } from "../common-ui/modal-service";
 import { Z88_CARDS_DIALOG_ID } from "../machines/cz88/CambridgeZ88Core";
 import { cz88CardsDialog } from "../machines/cz88/Cz88CardsDialog";
 

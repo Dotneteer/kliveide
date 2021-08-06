@@ -1,4 +1,4 @@
-import { MachineCreationOptions } from "../vm-core-types";
+import { MachineCreationOptions } from "../core/vm-core-types";
 import { ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
 
 /**

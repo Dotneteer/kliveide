@@ -1,7 +1,7 @@
 import * as React from "react";
 import ReactResizeDetector from "react-resize-detector";
 import { useEffect, useState } from "react";
-import { animationTick } from "../../../renderer/common/utils";
+import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
 import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { MenuItem } from "../../../shared/command/commands";

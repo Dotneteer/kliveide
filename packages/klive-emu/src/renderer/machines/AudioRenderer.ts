@@ -1,5 +1,5 @@
 import { IAudioRenderer } from "./IAudioRenderer";
-import { vmEngineService } from "./vm-engine-service";
+import { vmEngineService } from "./core/vm-engine-service";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
 
 /**

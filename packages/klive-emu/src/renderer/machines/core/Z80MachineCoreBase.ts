@@ -1,6 +1,6 @@
-import { Z80Cpu } from "../cpu/Z80Cpu";
-import { MemoryHelper } from "./memory-helpers";
-import { BLOCK_LOOKUP_TABLE } from "./memory-map";
+import { Z80Cpu } from "../../cpu/Z80Cpu";
+import { MemoryHelper } from "../wa-interop/memory-helpers";
+import { BLOCK_LOOKUP_TABLE } from "../wa-interop/memory-map";
 import { VirtualMachineCoreBase } from "./VirtualMachineCoreBase";
 
 /**

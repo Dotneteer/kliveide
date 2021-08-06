@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
-import ScrollablePanel from "../common/ScrollablePanel";
+import ScrollablePanel from "../common-ui/ScrollablePanel";
 import { engineProxy, RunEventArgs } from "./engine-proxy";
 import { ISideBarPanel } from "./side-bar/SideBarService";
 import { scrollableContentType } from "./utils/content-utils";

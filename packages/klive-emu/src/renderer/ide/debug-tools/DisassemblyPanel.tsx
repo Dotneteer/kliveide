@@ -3,7 +3,7 @@ import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../../common/VirtualizedList";
+} from "../../common-ui/VirtualizedList";
 import { CSSProperties } from "styled-components";
 const TITLE = "Z80 Disassembly";
 

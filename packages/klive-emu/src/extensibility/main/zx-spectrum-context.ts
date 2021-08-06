@@ -14,7 +14,7 @@ import {
 import { emuSetClockMultiplierAction } from "../../shared/state/emulator-panel-reducer";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
 import { emuWindow } from "../../main/app/app-menu";
-import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
+import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import { VirtualMachineType } from "./machine-registry";
 
 // --- Menu identifier contants

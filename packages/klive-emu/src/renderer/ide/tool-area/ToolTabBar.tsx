@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import ScrollablePanel from "../../common/ScrollablePanel";
+import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";
 import ToolTab from "./ToolTab";
 

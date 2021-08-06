@@ -1,11 +1,11 @@
-import { TestCpuApi } from "./wa-api";
-import { MemoryHelper } from "./memory-helpers";
-import { RunMode } from "./RunMode";
+import { TestCpuApi } from "../wa-interop/wa-api";
+import { MemoryHelper } from "../wa-interop/memory-helpers";
 import {
   REG_AREA_INDEX,
   CPU_STATE_BUFFER,
-} from "./memory-map";
-import { FlagsSetMask, Z80CpuState } from "../cpu/Z80Cpu";
+} from "../wa-interop/memory-map";
+import { FlagsSetMask, Z80CpuState } from "../../cpu/Z80Cpu";
+import { RunMode } from "./vm-core-types";
 
 const TEST_INPUT_BUFFER = 0x01000de3;
 const IO_OPERATION_LOG = 0x01000ee3;

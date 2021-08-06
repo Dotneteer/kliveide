@@ -1,4 +1,4 @@
-import { RunMode } from "./RunMode";
+import { RunMode } from "../core/vm-core-types";
 
 /**
  * Represents the CPU API

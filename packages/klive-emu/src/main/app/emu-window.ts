@@ -10,7 +10,7 @@ import {
   MachineContextProvider,
   MachineContextProviderBase,
 } from "../../extensibility/main/machine-context";
-import { MachineCreationOptions } from "../../renderer/machines/vm-core-types";
+import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import {
   emuMachineContextAction,
   emuSetBaseFrequencyAction,

@@ -1,9 +1,9 @@
-import { setMachineTypeAction } from "../../shared/state/machine-type-reducer";
-import { StateAwareObject } from "../../shared/state/StateAwareObject";
-import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
-import { delay } from "../common/utils";
-import { ZxSpectrum128Core } from "./spectrum/ZxSpectrum128Core";
-import { ZxSpectrum48Core } from "./spectrum/ZxSpectrum48Core";
+import { setMachineTypeAction } from "../../../shared/state/machine-type-reducer";
+import { StateAwareObject } from "../../../shared/state/StateAwareObject";
+import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { delay } from "../../common-ui/utils";
+import { ZxSpectrum128Core } from "../spectrum/ZxSpectrum128Core";
+import { ZxSpectrum48Core } from "../spectrum/ZxSpectrum48Core";
 import { VirtualMachineCoreBase } from "./VirtualMachineCoreBase";
 import {
   DebugStepMode,
@@ -13,7 +13,7 @@ import {
   MachineCreationOptions,
   MachineState,
 } from "./vm-core-types";
-import { emuStore } from "../emulator/emuStore";
+import { emuStore } from "../../emulator/emuStore";
 import { IVmController } from "./IVmController";
 import { EmulatedKeyStroke } from "./keyboard";
 import {
@@ -21,10 +21,10 @@ import {
   emuSetDiagDataAction,
   emuSetExecutionStateAction,
   emuSetFrameIdAction,
-} from "../../shared/state/emulator-panel-reducer";
-import { FrameDiagData } from "../../shared/state/AppState";
-import { CambridgeZ88Core } from "./cz88/CambridgeZ88Core";
-import { KliveConfiguration } from "../../main/main-state/klive-configuration";
+} from "../../../shared/state/emulator-panel-reducer";
+import { FrameDiagData } from "../../../shared/state/AppState";
+import { CambridgeZ88Core } from "../cz88/CambridgeZ88Core";
+import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
 
 /**
  * This class is responsible for controlling the singleton virtual machine

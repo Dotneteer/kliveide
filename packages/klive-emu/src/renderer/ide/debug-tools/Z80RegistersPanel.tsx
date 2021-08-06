@@ -1,12 +1,12 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
-import { SvgIcon } from "../../common/SvgIcon";
+import { SvgIcon } from "../../common-ui/SvgIcon";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { engineProxy } from "../engine-proxy";
 import { labelStyle, valueItemStyle, valueStyle } from "../utils/content-utils";
-import { MachineState } from "../../machines/vm-core-types";
+import { MachineState } from "../../machines/core/vm-core-types";
 
 const TITLE = "Z80 CPU State";
 

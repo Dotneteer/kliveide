@@ -1,12 +1,12 @@
-import { ITreeView } from "../../common/ITreeNode";
+import { ITreeView } from "../../common-ui/ITreeNode";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { ProjectNode } from "./ProjectNode";
 import {
   DirectoryContent,
   GetFolderContentsResponse,
 } from "../../../shared/messaging/message-types";
-import { TreeNode } from "../../common/TreeNode";
-import { TreeView } from "../../common/TreeView";
+import { TreeNode } from "../../common-ui/TreeNode";
+import { TreeView } from "../../common-ui/TreeView";
 
 /**
  * This class implements the project services

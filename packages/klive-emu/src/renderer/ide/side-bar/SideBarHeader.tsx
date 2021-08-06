@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Activity } from "../../../shared/activity/Activity";
-import { createSizedStyledPanel } from "../../common/PanelStyles";
+import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import styles from "styled-components";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";

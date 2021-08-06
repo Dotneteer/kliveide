@@ -2,9 +2,9 @@ import * as React from "react";
 import { connect } from "react-redux";
 import { emuToggleKeyboardAction } from "../../shared/state/emu-view-options-reducer";
 import { AppState } from "../../shared/state/AppState";
-import { ToolbarIconButton } from "../common/ToolbarIconButton";
-import { ToolbarSeparator } from "../common/ToolbarSeparator";
-import { vmEngineService } from "../machines/vm-engine-service";
+import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
+import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
+import { vmEngineService } from "../machines/core/vm-engine-service";
 import { emuStore } from "./emuStore";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
 import {

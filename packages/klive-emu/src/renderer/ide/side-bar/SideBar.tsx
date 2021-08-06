@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createSizedStyledPanel } from "../../common/PanelStyles";
+import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import SideBarPanel from "./SideBarPanel";
 import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { useRef, useState, useEffect } from "react";

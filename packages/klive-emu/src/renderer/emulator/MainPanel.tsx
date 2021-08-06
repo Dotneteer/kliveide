@@ -10,7 +10,7 @@ import { AppState } from "../../shared/state/AppState";
 import EmulatorPanel from "./EmulatorPanel";
 import { emuStore } from "./emuStore";
 import KeyboardPanel from "./KeyboardPanel";
-import { vmEngineService } from "../machines/vm-engine-service";
+import { vmEngineService } from "../machines/core/vm-engine-service";
 import { emuKeyboardHeightAction } from "../../shared/state/emulator-panel-reducer";
 import styles from "styled-components";
 

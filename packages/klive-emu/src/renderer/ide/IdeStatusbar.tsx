@@ -1,6 +1,6 @@
 import * as React from "react";
 import { getVersion } from "../../version";
-import { Root, Gap, Section, Label } from "../common/StatusbarStyles";
+import { Root, Gap, Section, Label } from "../common-ui/StatusbarStyles";
 
 /**
  * Represents the statusbar of the emulator

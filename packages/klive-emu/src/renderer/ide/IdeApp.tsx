@@ -11,7 +11,7 @@ import {
   ToolFrameState,
 } from "../../shared/state/AppState";
 import { useLayoutEffect } from "react";
-import Splitter from "../common/Splitter";
+import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
 import { Activity } from "../../shared/activity/Activity";
 import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
@@ -35,12 +35,12 @@ import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
 import { outputPaneService } from "./tool-area/OutputPaneService";
 import { VmOutputPanelDescriptor } from "../machines/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
-import { TreeNode } from "../common/TreeNode";
+import { TreeNode } from "../common-ui/TreeNode";
 import { ProjectNode } from "./explorer-tools/ProjectNode";
 import { projectServices } from "./explorer-tools/ProjectServices";
-import { TreeView } from "../common/TreeView";
+import { TreeView } from "../common-ui/TreeView";
 import IdeContextMenu from "./context-menu/ContextMenu";
-import ModalDialog from "../modals/ModalDialog";
+import ModalDialog from "../common-ui/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";

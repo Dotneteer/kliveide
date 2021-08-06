@@ -6,8 +6,8 @@ import {
 import {
   IModalDialogDescriptor,
   modalDialogService,
-} from "../../../renderer/modals/modal-service";
-import { Cell, CenteredRow, Grid } from "../../common/grid-styles";
+} from "../../common-ui/modal-service";
+import { Cell, CenteredRow, Grid } from "../../common-ui/grid-styles";
 import { emuToMainMessenger } from "../../emulator/EmuToMainMessenger";
 import {
   SlotContent,
@@ -15,7 +15,7 @@ import {
   Z88CardsState,
 } from "../../../shared/machines/cz88-specific";
 import { useState } from "react";
-import { SvgIcon } from "../../common/SvgIcon";
+import { SvgIcon } from "../../common-ui/SvgIcon";
 import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
 
 /**

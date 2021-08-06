@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "react";
-import { SvgIcon } from "../../common/SvgIcon";
+import { SvgIcon } from "../../common-ui/SvgIcon";
 import { engineProxy } from "../../ide/engine-proxy";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";

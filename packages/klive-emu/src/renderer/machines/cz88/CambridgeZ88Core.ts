@@ -1,8 +1,8 @@
 import { ProgramCounterInfo } from "../../../shared/state/AppState";
 import { Z80CpuState } from "../../../renderer/cpu/Z80Cpu";
 import { IAudioRenderer } from "../IAudioRenderer";
-import { MachineCreationOptions, MachineState } from "../vm-core-types";
-import { Z80MachineCoreBase } from "../Z80MachineCoreBase";
+import { MachineCreationOptions, MachineState } from "../core/vm-core-types";
+import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
 import {
   BLOCK_LOOKUP_TABLE,
@@ -10,11 +10,11 @@ import {
   Z88_BEEPER_BUFFER,
   Z88_MACHINE_STATE_BUFFER,
   Z88_PIXEL_BUFFER,
-} from "../memory-map";
-import { MemoryHelper } from "../memory-helpers";
-import { KeyMapping } from "../keyboard";
+} from "../wa-interop/memory-map";
+import { MemoryHelper } from "../wa-interop/memory-helpers";
+import { KeyMapping } from "../core/keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
-import { vmEngineService } from "../vm-engine-service";
+import { vmEngineService } from "../core/vm-engine-service";
 import {
   CZ88_BATTERY_LOW,
   CZ88_CARDS,
@@ -23,8 +23,8 @@ import {
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
-import { getEngineDependencies } from "../vm-engine-dependencies";
-import { modalDialogService } from "../../../renderer/modals/modal-service";
+import { getEngineDependencies } from "../core/vm-engine-dependencies";
+import { modalDialogService } from "../../common-ui/modal-service";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 

@@ -4,7 +4,7 @@ import { AppState } from "../../shared/state/AppState";
 import ReactResizeDetector from "react-resize-detector";
 import Sp48Keyboard from "./Sp48Keyboard";
 import Cz88Keyboard from "./Cz88Keyboard";
-import { animationTick } from "../common/utils";
+import { animationTick } from "../common-ui/utils";
 import styles from "styled-components";
 import { useEffect, useState } from "react";
 
