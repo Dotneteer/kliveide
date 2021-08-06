@@ -1,6 +1,6 @@
 import { BinaryReader } from "../utils/BinaryReader";
 import { BinaryWriter } from "../utils/BinaryWriter";
-import { TapeFileReader, ITapeDataBlock } from "../../renderer/machines/spectrum/tape-data";
+import { TapeFileReader, ITapeDataBlock } from "../../renderer/machines/zx-spectrum/tape-data";
 
 /**
  * This class implements a reader that can handle TAP files

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "react";
-import { themeService } from "../themes/theme-service";
+import { themeService } from "./themes/theme-service";
 
 /**
  * SvgIcon properties

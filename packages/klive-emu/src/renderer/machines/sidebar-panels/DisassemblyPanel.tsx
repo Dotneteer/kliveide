@@ -1,10 +1,10 @@
 import * as React from "react";
-import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
-import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common-ui/VirtualizedList";
 import { CSSProperties } from "styled-components";
+import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
+import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 const TITLE = "Z80 Disassembly";
 
 type State = {
@@ -47,7 +47,7 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
           return (
             <div
               key={index}
-              style={{...style}}
+              style={{ ...style }}
               onClick={() => {
                 this._data.push({
                   text: `Disassembly Item # ${this._data.length}`,

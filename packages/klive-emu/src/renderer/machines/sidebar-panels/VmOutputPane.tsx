@@ -1,13 +1,13 @@
-import { ideStore } from "../ide/ideStore";
-import { StateAwareObject } from "../../shared/state/StateAwareObject";
-import { EmulatorPanelState } from "../../shared/state/AppState";
+import { ideStore } from "../../ide/ideStore";
+import { StateAwareObject } from "../../../shared/state/StateAwareObject";
+import { EmulatorPanelState } from "../../../shared/state/AppState";
 import {
   IOutputBuffer,
   OutputColor,
   OutputPaneDescriptorBase,
   outputPaneService,
-} from "../ide/tool-area/OutputPaneService";
-import { engineProxy } from "../ide/engine-proxy";
+} from "../../ide/tool-area/OutputPaneService";
+import { engineProxy } from "../../ide/engine-proxy";
 
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";

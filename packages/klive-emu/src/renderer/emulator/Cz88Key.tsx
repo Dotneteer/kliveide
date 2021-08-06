@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
-import { Cz88KeyView } from "../machines/cz88/cz88-keys";
-import { themeService } from "../themes/theme-service";
+import { Cz88KeyView } from "../machines/cambridge-z88/cz88-keys";
+import { themeService } from "../common-ui/themes/theme-service";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 
 const NORMAL_WIDTH = 100;

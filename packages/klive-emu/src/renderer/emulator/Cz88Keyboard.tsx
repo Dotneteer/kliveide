@@ -1,15 +1,15 @@
 import * as React from "react";
-import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
+import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import { vmEngineService } from "../machines/core/vm-engine-service";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 import Key from "./Cz88Key";
-import { defaultZ88KeyboardLayout } from "../machines/cz88/key-layout-default";
-import { esZ88KeyboardLayout } from "../machines/cz88/key-layout-es";
-import { frZ88KeyboardLayout } from "../machines/cz88/key-layout-fr";
-import { deZ88KeyboardLayout } from "../machines/cz88/key-layout-de";
-import { dkZ88KeyboardLayout } from "../machines/cz88/key-layout-dk";
-import { seZ88KeyboardLayout } from "../machines/cz88/key-layout-se";
-import { Cz88KeyboardLayout } from "../machines/cz88/cz88-keys";
+import { defaultZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-default";
+import { esZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-es";
+import { frZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-fr";
+import { deZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-de";
+import { dkZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-dk";
+import { seZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-se";
+import { Cz88KeyboardLayout } from "../machines/cambridge-z88/cz88-keys";
 import styles from "styled-components";
 
 const DEFAULT_WIDTH = 15 * 108 + 200 + 48;

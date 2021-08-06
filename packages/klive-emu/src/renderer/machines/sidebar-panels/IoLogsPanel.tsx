@@ -3,7 +3,7 @@ import { CSSProperties } from "styled-components";
 import {
   ISideBarPanel,
   SideBarPanelDescriptorBase,
-} from "../side-bar/SideBarService";
+} from "../../ide/side-bar/SideBarService";
 
 const TITLE = "I/O Operations";
 

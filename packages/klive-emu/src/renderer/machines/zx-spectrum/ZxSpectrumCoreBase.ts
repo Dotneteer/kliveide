@@ -1,5 +1,5 @@
 import { BinaryReader } from "../../../shared/utils/BinaryReader";
-import { Z80CpuState } from "../../../renderer/cpu/Z80Cpu";
+import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
@@ -12,7 +12,7 @@ import { MachineCreationOptions, MachineState } from "../core/vm-core-types";
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { TzxReader } from "../../../shared/tape/tzx-file";
 import { TapReader } from "../../../shared/tape/tap-file";
-import { IAudioRenderer } from "../IAudioRenderer";
+import { IAudioRenderer } from "../audio/IAudioRenderer";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import { KeyMapping } from "../core/keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";

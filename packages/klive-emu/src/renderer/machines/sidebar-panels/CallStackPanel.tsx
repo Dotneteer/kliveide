@@ -1,6 +1,6 @@
 import * as React from "react";
-import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
-import { SideBarPanelBase } from "../SideBarPanelBase";
+import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
+import { SideBarPanelBase } from "../../ide/SideBarPanelBase";
 
 const TITLE = "Call Stack";
 

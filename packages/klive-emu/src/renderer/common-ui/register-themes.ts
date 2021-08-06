@@ -1,6 +1,6 @@
-import { darkTheme } from "../themes/dark-theme";
-import { lightTheme } from "../themes/light-theme";
-import { themeService } from "../themes/theme-service";
+import { darkTheme } from "./themes/dark-theme";
+import { lightTheme } from "./themes/light-theme";
+import { themeService } from "./themes/theme-service";
 
 export function registerThemes(isWindows: boolean): void {
   themeService.isWindows = isWindows;

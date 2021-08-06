@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { themeService } from "../../../renderer/themes/theme-service";
+import { themeService } from "../../common-ui/themes/theme-service";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { documentService, IDocumentPanel } from "./DocumentService";

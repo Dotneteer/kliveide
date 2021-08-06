@@ -15,7 +15,7 @@ import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
 } from "../../shared/state/spectrum-specific-reducer";
-import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
+import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
 

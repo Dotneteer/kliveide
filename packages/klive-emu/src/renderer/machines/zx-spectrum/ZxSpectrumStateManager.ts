@@ -1,6 +1,6 @@
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import { spectrumLoadModeAction, spectrumTapeContentsAction, spectrumTapeLoadedAction } from "../../../shared/state/spectrum-specific-reducer";
-import { emuStore } from "../../../renderer/emulator/emuStore";
+import { emuStore } from "../../emulator/emuStore";
 import { emuSetMessageAction } from "../../../shared/state/emulator-panel-reducer";
 
 export class ZxSpectrumStateManager implements IZxSpectrumStateManager {

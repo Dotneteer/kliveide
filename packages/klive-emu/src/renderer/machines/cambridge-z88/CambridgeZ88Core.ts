@@ -1,6 +1,6 @@
 import { ProgramCounterInfo } from "../../../shared/state/AppState";
-import { Z80CpuState } from "../../../renderer/cpu/Z80Cpu";
-import { IAudioRenderer } from "../IAudioRenderer";
+import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { IAudioRenderer } from "../audio/IAudioRenderer";
 import { MachineCreationOptions, MachineState } from "../core/vm-core-types";
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";

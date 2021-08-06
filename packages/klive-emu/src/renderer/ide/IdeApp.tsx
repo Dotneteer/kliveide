@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
-import { themeService } from "../themes/theme-service";
+import { themeService } from "../common-ui/themes/theme-service";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
@@ -18,13 +18,11 @@ import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
 import { sideBarService } from "./side-bar/SideBarService";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
-import { Z80RegistersPanelDescriptor } from "./debug-tools/Z80RegistersPanel";
-import { UlaInformationPanelDescriptor } from "../machines/spectrum/UlaInformationPanel";
-import { BlinkInformationPanelDescriptor } from "../machines/cz88/BlinkInformationPanel";
-import { OtherHardwareInfoPanelDescriptor } from "./debug-tools/OherHwPanel";
-import { CallStackPanelDescriptor } from "./debug-tools/CallStackPanel";
-import { Z80DisassemblyPanelDescriptor } from "./debug-tools/DisassemblyPanel";
-import { IoLogsPanelDescription } from "./log-tools/IoLogsPanel";
+import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";
+import { UlaInformationPanelDescriptor } from "../machines/zx-spectrum/UlaInformationPanel";
+import { BlinkInformationPanelDescriptor } from "../machines/cambridge-z88/BlinkInformationPanel";
+import { CallStackPanelDescriptor } from "../machines/sidebar-panels/CallStackPanel";
+import { IoLogsPanelDescription } from "../machines/sidebar-panels/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 import { documentService } from "./document-area/DocumentService";
 import { EditorDocumentPanelDescriptor } from "./editor/EditorDocument";
@@ -33,7 +31,7 @@ import { toolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
 import { outputPaneService } from "./tool-area/OutputPaneService";
-import { VmOutputPanelDescriptor } from "../machines/VmOutputPane";
+import { VmOutputPanelDescriptor } from "../machines/sidebar-panels/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
 import { TreeNode } from "../common-ui/TreeNode";
 import { ProjectNode } from "./explorer-tools/ProjectNode";
@@ -49,6 +47,7 @@ import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
 import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
 import { registerKliveCommands } from "./commands/register-commands";
+import { Z80DisassemblyPanelDescriptor } from "../machines/sidebar-panels/DisassemblyPanel";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -265,10 +264,6 @@ export default function IdeApp() {
         "debug-view",
         new BlinkInformationPanelDescriptor(),
         ["cz88"]
-      );
-      sideBarService.registerSideBarPanel(
-        "debug-view",
-        new OtherHardwareInfoPanelDescriptor()
       );
       sideBarService.registerSideBarPanel(
         "debug-view",
