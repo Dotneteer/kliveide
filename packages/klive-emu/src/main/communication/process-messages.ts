@@ -1,6 +1,7 @@
 import { dialog } from "electron";
 import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
 import {
+  CreateKliveProjectResponse,
   DefaultResponse,
   EmuOpenFileDialogResponse,
   GetFolderContentsResponse,
@@ -9,7 +10,7 @@ import {
   ResponseMessage,
 } from "../../shared/messaging/message-types";
 import { emuForwarder, emuWindow } from "../app/app-menu";
-import { getFolderContents } from "../utils/file-utils";
+import { createKliveProject, getFolderContents } from "../utils/file-utils";
 
 /**
  * Processes the requests arriving from the emulator process
@@ -58,12 +59,27 @@ export async function processIdeRequest(
         type: "GetFolderResponse",
         contents: await getFolderContents(message.folder),
       };
+
     case "GetRegisteredMachines":
       return <GetRegisteredMachinesResponse>{
         type: "GetRegisteredMachinesResponse",
         machines: getRegisteredMachines(),
       };
+
+    case "CreateKliveProject":
+      const operation = await createKliveProject(
+        message.machineType,
+        message.rootFolder,
+        message.projectFolder
+      );
+      return <CreateKliveProjectResponse>{
+        type: "CreateKliveProjectResponse",
+        error: operation.error,
+        targetFolder: operation.targetFolder
+      };
+
     default:
+      // --- If the main does not recofnize a request, it forwards it to Emu
       return await emuForwarder.sendMessage(message);
   }
 }
