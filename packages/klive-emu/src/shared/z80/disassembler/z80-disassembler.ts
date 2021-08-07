@@ -175,7 +175,7 @@ export class Z80Disassembler {
           break;
         }
         bytes.push(
-          `#${intToX2(this.memoryContents[section.startAddress + i + j])}`
+          `$${intToX2(this.memoryContents[section.startAddress + i + j])}`
         );
       }
 
@@ -207,7 +207,7 @@ export class Z80Disassembler {
         const value =
           this.memoryContents[section.startAddress + i + j * 2] +
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
-        words.push(`#${intToX4(value & 0xffff)}`);
+        words.push(`$${intToX4(value & 0xffff)}`);
       }
 
       await this.allowEventLoop();
@@ -232,9 +232,9 @@ export class Z80Disassembler {
   private _generateSkipOutput(section: MemorySection): void {
     this._output.addItem({
       address: section.startAddress,
-      instruction: `.skip ${intToX4(
+      instruction: `.skip $${intToX4(
         section.endAddress - section.startAddress + 1
-      )}H`,
+      )}`,
     });
   }
 
@@ -517,14 +517,14 @@ export class Z80Disassembler {
       case "B":
         // --- #B: 8-bit value from the code
         var value = this._fetch();
-        replacement = `#${intToX2(value)}`;
+        replacement = `$${intToX2(value)}`;
         symbolPresent = true;
         symbolValue = value;
         break;
       case "W":
         // --- #W: 16-bit word from the code
         var word = this._fetchWord();
-        replacement = `#${intToX4(word)}`;
+        replacement = `$${intToX4(word)}`;
         symbolPresent = true;
         symbolValue = word;
         break;
@@ -545,8 +545,8 @@ export class Z80Disassembler {
         if (this._displacement) {
           replacement =
             toSbyte(this._displacement) < 0
-              ? `-#${intToX2(0x100 - this._displacement)}`
-              : `+#${intToX2(this._displacement)}`;
+              ? `-$${intToX2(0x100 - this._displacement)}`
+              : `+$${intToX2(this._displacement)}`;
         }
         break;
     }
@@ -892,7 +892,7 @@ export const standardInstructions: string[] = [
   /* 0xc4 */ "call nz,^L",
   /* 0xc5 */ "push bc",
   /* 0xc6 */ "add a,^B",
-  /* 0xc7 */ "rst #00",
+  /* 0xc7 */ "rst $00",
   /* 0xc8 */ "ret z",
   /* 0xc9 */ "ret",
   /* 0xca */ "jp z,^L",
@@ -900,7 +900,7 @@ export const standardInstructions: string[] = [
   /* 0xcc */ "call z,^L",
   /* 0xcd */ "call ^L",
   /* 0xce */ "adc a,^B",
-  /* 0xcf */ "rst #08",
+  /* 0xcf */ "rst $08",
 
   /* 0xd0 */ "ret nc",
   /* 0xd1 */ "pop de",
@@ -909,7 +909,7 @@ export const standardInstructions: string[] = [
   /* 0xd4 */ "call nc,^L",
   /* 0xd5 */ "push de",
   /* 0xd6 */ "sub ^B",
-  /* 0xd7 */ "rst #10",
+  /* 0xd7 */ "rst $10",
   /* 0xd8 */ "ret c",
   /* 0xd9 */ "exx",
   /* 0xda */ "jp c,^L",
@@ -917,7 +917,7 @@ export const standardInstructions: string[] = [
   /* 0xdc */ "call c,^L",
   /* 0xdd */ "",
   /* 0xde */ "sbc a,^B",
-  /* 0xdf */ "rst #18",
+  /* 0xdf */ "rst $18",
 
   /* 0xe0 */ "ret po",
   /* 0xe1 */ "pop hl",
@@ -926,7 +926,7 @@ export const standardInstructions: string[] = [
   /* 0xe4 */ "call po,^L",
   /* 0xe5 */ "push hl",
   /* 0xe6 */ "and ^B",
-  /* 0xe7 */ "rst #20",
+  /* 0xe7 */ "rst $20",
   /* 0xe8 */ "ret pe",
   /* 0xe9 */ "jp (hl)",
   /* 0xea */ "jp pe,^L",
@@ -934,7 +934,7 @@ export const standardInstructions: string[] = [
   /* 0xec */ "call pe,^L",
   /* 0xed */ "",
   /* 0xee */ "xor ^B",
-  /* 0xef */ "rst #28",
+  /* 0xef */ "rst $28",
 
   /* 0xf0 */ "ret p",
   /* 0xf1 */ "pop af",
@@ -943,7 +943,7 @@ export const standardInstructions: string[] = [
   /* 0xf4 */ "call p,^L",
   /* 0xf5 */ "push af",
   /* 0xf6 */ "or ^B",
-  /* 0xf7 */ "rst #30",
+  /* 0xf7 */ "rst $30",
   /* 0xf8 */ "ret m",
   /* 0xf9 */ "ld sp,hl",
   /* 0xfa */ "jp m,^L",
@@ -951,7 +951,7 @@ export const standardInstructions: string[] = [
   /* 0xfc */ "call m,^L",
   /* 0xfd */ "",
   /* 0xfe */ "cp ^B",
-  /* 0xff */ "rst #38",
+  /* 0xff */ "rst $38",
 ];
 
 /**

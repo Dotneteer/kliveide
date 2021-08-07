@@ -11,7 +11,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.TestExt("mirror a", 0xed, 0x24);
     await Z80Tester.Test("nop", 0xed, 0x24);
 
-    await Z80Tester.TestExt("test #C4", 0xed, 0x27, 0xc4);
+    await Z80Tester.TestExt("test $C4", 0xed, 0x27, 0xc4);
     await Z80Tester.Test("nop", 0xed, 0x27);
 
     await Z80Tester.TestExt("bsla de,b", 0xed, 0x28);
@@ -41,25 +41,25 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.TestExt("add bc,a", 0xed, 0x33);
     await Z80Tester.Test("nop", 0xed, 0x33);
 
-    await Z80Tester.TestExt("add hl,#789A", 0xed, 0x34, 0x9a, 0x78);
+    await Z80Tester.TestExt("add hl,$789A", 0xed, 0x34, 0x9a, 0x78);
     await Z80Tester.Test("nop", 0xed, 0x34);
 
-    await Z80Tester.TestExt("add de,#789A", 0xed, 0x35, 0x9a, 0x78);
+    await Z80Tester.TestExt("add de,$789A", 0xed, 0x35, 0x9a, 0x78);
     await Z80Tester.Test("nop", 0xed, 0x35);
 
-    await Z80Tester.TestExt("add bc,#789A", 0xed, 0x36, 0x9a, 0x78);
+    await Z80Tester.TestExt("add bc,$789A", 0xed, 0x36, 0x9a, 0x78);
     await Z80Tester.Test("nop", 0xed, 0x36);
 
-    await Z80Tester.TestExt("push #34AF", 0xed, 0x8a, 0xaf, 0x34);
+    await Z80Tester.TestExt("push $34AF", 0xed, 0x8a, 0xaf, 0x34);
     await Z80Tester.Test("nop", 0xed, 0x8a);
 
     await Z80Tester.TestExt("outinb", 0xed, 0x90);
     await Z80Tester.Test("nop", 0xed, 0x90);
 
-    await Z80Tester.TestExt("nextreg #34,#56", 0xed, 0x91, 0x34, 0x56);
+    await Z80Tester.TestExt("nextreg $34,$56", 0xed, 0x91, 0x34, 0x56);
     await Z80Tester.Test("nop", 0xed, 0x91);
 
-    await Z80Tester.TestExt("nextreg #34,a", 0xed, 0x92, 0x34);
+    await Z80Tester.TestExt("nextreg $34,a", 0xed, 0x92, 0x34);
     await Z80Tester.Test("nop", 0xed, 0x92);
 
     await Z80Tester.TestExt("pixeldn", 0xed, 0x93);
@@ -98,7 +98,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in b,(c)", 0xed, 0x40);
     await Z80Tester.Test("out (c),b", 0xed, 0x41);
     await Z80Tester.Test("sbc hl,bc", 0xed, 0x42);
-    await Z80Tester.Test("ld (#BC9A),bc", 0xed, 0x43, 0x9a, 0xbc);
+    await Z80Tester.Test("ld ($BC9A),bc", 0xed, 0x43, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x44);
     await Z80Tester.Test("retn", 0xed, 0x45);
     await Z80Tester.Test("im 0", 0xed, 0x46);
@@ -106,7 +106,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in c,(c)", 0xed, 0x48);
     await Z80Tester.Test("out (c),c", 0xed, 0x49);
     await Z80Tester.Test("adc hl,bc", 0xed, 0x4a);
-    await Z80Tester.Test("ld bc,(#BC9A)", 0xed, 0x4b, 0x9a, 0xbc);
+    await Z80Tester.Test("ld bc,($BC9A)", 0xed, 0x4b, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x4c);
     await Z80Tester.Test("reti", 0xed, 0x4d);
     await Z80Tester.Test("im 0", 0xed, 0x4e);
@@ -118,7 +118,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in d,(c)", 0xed, 0x50);
     await Z80Tester.Test("out (c),d", 0xed, 0x51);
     await Z80Tester.Test("sbc hl,de", 0xed, 0x52);
-    await Z80Tester.Test("ld (#BC9A),de", 0xed, 0x53, 0x9a, 0xbc);
+    await Z80Tester.Test("ld ($BC9A),de", 0xed, 0x53, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x54);
     await Z80Tester.Test("retn", 0xed, 0x55);
     await Z80Tester.Test("im 1", 0xed, 0x56);
@@ -126,7 +126,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in e,(c)", 0xed, 0x58);
     await Z80Tester.Test("out (c),e", 0xed, 0x59);
     await Z80Tester.Test("adc hl,de", 0xed, 0x5a);
-    await Z80Tester.Test("ld de,(#BC9A)", 0xed, 0x5b, 0x9a, 0xbc);
+    await Z80Tester.Test("ld de,($BC9A)", 0xed, 0x5b, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x5c);
     await Z80Tester.Test("retn", 0xed, 0x5d);
     await Z80Tester.Test("im 2", 0xed, 0x5e);
@@ -138,7 +138,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in h,(c)", 0xed, 0x60);
     await Z80Tester.Test("out (c),h", 0xed, 0x61);
     await Z80Tester.Test("sbc hl,hl", 0xed, 0x62);
-    await Z80Tester.Test("ld (#BC9A),hl", 0xed, 0x63, 0x9a, 0xbc);
+    await Z80Tester.Test("ld ($BC9A),hl", 0xed, 0x63, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x64);
     await Z80Tester.Test("retn", 0xed, 0x65);
     await Z80Tester.Test("im 0", 0xed, 0x66);
@@ -146,7 +146,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in l,(c)", 0xed, 0x68);
     await Z80Tester.Test("out (c),l", 0xed, 0x69);
     await Z80Tester.Test("adc hl,hl", 0xed, 0x6a);
-    await Z80Tester.Test("ld hl,(#BC9A)", 0xed, 0x6b, 0x9a, 0xbc);
+    await Z80Tester.Test("ld hl,($BC9A)", 0xed, 0x6b, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x6c);
     await Z80Tester.Test("retn", 0xed, 0x6d);
     await Z80Tester.Test("im 0", 0xed, 0x6e);
@@ -158,7 +158,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in (c)", 0xed, 0x70);
     await Z80Tester.Test("out (c),0", 0xed, 0x71);
     await Z80Tester.Test("sbc hl,sp", 0xed, 0x72);
-    await Z80Tester.Test("ld (#BC9A),sp", 0xed, 0x73, 0x9a, 0xbc);
+    await Z80Tester.Test("ld ($BC9A),sp", 0xed, 0x73, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x74);
     await Z80Tester.Test("retn", 0xed, 0x75);
     await Z80Tester.Test("im 1", 0xed, 0x76);
@@ -166,7 +166,7 @@ describe("Disassembler - extended instructions", function () {
     await Z80Tester.Test("in a,(c)", 0xed, 0x78);
     await Z80Tester.Test("out (c),a", 0xed, 0x79);
     await Z80Tester.Test("adc hl,sp", 0xed, 0x7a);
-    await Z80Tester.Test("ld sp,(#BC9A)", 0xed, 0x7b, 0x9a, 0xbc);
+    await Z80Tester.Test("ld sp,($BC9A)", 0xed, 0x7b, 0x9a, 0xbc);
     await Z80Tester.Test("neg", 0xed, 0x7c);
     await Z80Tester.Test("retn", 0xed, 0x7d);
     await Z80Tester.Test("im 2", 0xed, 0x7e);
