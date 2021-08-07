@@ -77,6 +77,7 @@ export class Z80Disassembler {
       peek: (ahead?: number) => this._peek(ahead),
       allowEventLoop: () => this.allowEventLoop(),
       addDisassemblyItem: (item: DisassemblyItem) => this._output.addItem(item),
+      createLabel: (address: number) => this._output.createLabel(address),
     });
   }
 

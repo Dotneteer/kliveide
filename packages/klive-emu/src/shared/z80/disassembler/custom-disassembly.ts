@@ -52,6 +52,12 @@ export interface IDisassemblyApi {
    * @param item
    */
   addDisassemblyItem(item: DisassemblyItem): void;
+
+  /**
+   * Creates a label for the specified address
+   * @param address Addres to create a label from
+   */
+  createLabel(address: number): void;
 }
 
 /**

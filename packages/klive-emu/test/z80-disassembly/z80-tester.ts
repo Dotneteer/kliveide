@@ -1,4 +1,5 @@
 import * as expect from "expect";
+import { ICustomDisassembler } from "../../src/shared/z80/disassembler/custom-disassembly";
 import { intToX2, MemoryMap, MemorySection} from "../../src/shared/z80/disassembler/disassembly-helper"
 import { Z80Disassembler } from "../../src/shared/z80/disassembler/z80-disassembler";
 
@@ -61,6 +62,83 @@ export class Z80Tester {
     }
     expect(item.instruction.toLowerCase()).toBe(expected.toLowerCase());
     expect(item.opCodes ? item.opCodes.trim() : "").toBe(this._joinOpCodes(opCodes));
+  }
+
+  /**
+   * Tests custom disassemblers
+   * @provider Custom disassembler provider
+   * @param expected Expected result
+   * @param opCodes opcodes to disassemble
+   */
+  static async TestCustom(
+    provider: ICustomDisassembler,
+    expected: string[],
+    ...opCodes: number[]
+  ): Promise<void> {
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
+    const disassembler = new Z80Disassembler(
+      map.sections,
+      new Uint8Array(opCodes)
+    );
+    disassembler.setCustomDisassembler(provider);
+    var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
+    expect(output.outputItems.length).toBe(expected.length);
+    for (let i = 0; i < expected.length; i++) {
+      const instr = output.outputItems[i].instruction;
+      expect(instr).toBeTruthy();
+      if (!instr) {
+        continue;
+      }
+      expect(instr.toLowerCase()).toBe(expected[i]);
+    }
+  }
+
+  /**
+   * Tests custom disassemblers
+   * @provider Custom disassembler provider
+   * @param expected Expected result
+   * @param opCodes opcodes to disassemble
+   */
+   static async TestCustomWithComments(
+    provider: ICustomDisassembler,
+    expected: string[],
+    comments: string[],
+    opCodes: number[]
+  ): Promise<void> {
+    const map = new MemoryMap();
+    map.add(new MemorySection(0x0000, opCodes.length - 1));
+    const disassembler = new Z80Disassembler(
+      map.sections,
+      new Uint8Array(opCodes)
+    );
+    disassembler.setCustomDisassembler(provider);
+    var output = await disassembler.disassemble();
+    expect(output).not.toBeNull();
+    if (output === null) {
+      return;
+    }
+    expect(output.outputItems.length).toBe(expected.length);
+    for (let i = 0; i < expected.length; i++) {
+      const instr = output.outputItems[i].instruction;
+      expect(instr).toBeTruthy();
+      if (!instr) {
+        continue;
+      }
+      expect(instr.toLowerCase()).toBe(expected[i]);
+    }
+    expect(output.outputItems.length).toBe(comments.length);
+    for (let i = 0; i < comments.length; i++) {
+      const comment = output.outputItems[i].hardComment;
+      if (!comment) {
+        continue;
+      }
+      expect(comment.toLowerCase()).toBe(comments[i]);
+    }
   }
 
   /**
