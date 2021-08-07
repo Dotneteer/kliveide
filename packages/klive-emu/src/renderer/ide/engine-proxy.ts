@@ -3,6 +3,7 @@ import { ideToEmuMessenger } from "./IdeToEmuMessenger";
 import {
   GetCpuStateResponse,
   GetMachineStateResponse,
+  GetMemoryContentsResponse,
 } from "../../shared/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
@@ -82,6 +83,19 @@ class EngineProxy {
       }
     );
     return result?.state;
+  }
+
+  /**
+   * Gets the memory contents of the machine
+   * @returns 
+   */
+  async getMemoryContents(): Promise<Uint8Array> {
+    const result = await ideToEmuMessenger.sendMessage<GetMemoryContentsResponse>(
+      {
+        type: "GetMemoryContents",
+      }
+    );
+    return result?.contents;
   }
 }
 

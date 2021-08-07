@@ -2,6 +2,7 @@ import {
   DefaultResponse,
   GetCpuStateResponse,
   GetMachineStateResponse,
+  GetMemoryContentsResponse,
   RequestMessage,
   ResponseMessage,
 } from "../../shared/messaging/message-types";
@@ -34,6 +35,12 @@ async function processIdeMessages(
       return <GetMachineStateResponse>{
         type: "GetMachineStateResponse",
         state: vmEngineService.getEngine()?.getMachineState(),
+      };
+
+    case "GetMemoryContents":
+      return <GetMemoryContentsResponse>{
+        type: "GetMemoryContentsResponse",
+        contents: vmEngineService.getEngine()?.getMemoryContents(),
       };
 
     default:

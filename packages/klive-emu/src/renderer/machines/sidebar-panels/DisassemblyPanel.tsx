@@ -5,6 +5,11 @@ import VirtualizedList, {
 import { CSSProperties } from "styled-components";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
+import { engineProxy } from "../../ide/engine-proxy";
+import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { Z80Disassembler } from "../../../shared/z80/disassembler/z80-disassembler";
+import { MemorySection } from "../../../shared/z80/disassembler/disassembly-helper";
+
 const TITLE = "Z80 Disassembly";
 
 type State = {
@@ -64,6 +69,25 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
         registerApi={(api) => (this._listApi = api)}
       />
     );
+  }
+
+  /**
+   * Respond to a run event
+   * @param execState Execution state
+   */
+  protected async onRunEvent(
+    execState: number,
+    isDebug: boolean,
+    eventCount: number
+  ): Promise<void> {
+    const cpuState = (await engineProxy.getCpuState()) as Z80CpuState;
+    const memory = await engineProxy.getMemoryContents();
+    const pcValue = cpuState._pc;
+    const disassembler = new Z80Disassembler(
+      [new MemorySection(pcValue, pcValue + 255)],
+      new Uint8Array()
+    );
+    console.log(pcValue, memory.length);
   }
 }
 

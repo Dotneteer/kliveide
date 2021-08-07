@@ -32,7 +32,9 @@ export abstract class MessengerBase {
   async sendMessage<TResp extends ResponseMessage>(
     message: RequestMessage
   ): Promise<TResp> {
-    message.correlationId = this._requestSeqNo++;
+    if (message.correlationId === undefined) {
+      message.correlationId = this._requestSeqNo++;
+    }
     const promise = new Promise<TResp>((resolve) => {
       this._messageResolvers.set(
         message.correlationId,

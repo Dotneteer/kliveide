@@ -72,22 +72,22 @@ export class SideBarPanelBase<
    * Respond to a run event
    * @param execState Execution state
    */
-  protected onRunEvent(
+  protected async onRunEvent(
     _execState: number,
     _isDebug: boolean,
     _eventCount: number
-  ): void {
+  ): Promise<void> {
     // --- Define this in overridden components
   }
 
   // --- Take care of run events
-  private runEvent = ({ execState, isDebug }: RunEventArgs) => {
+  private runEvent = async ({ execState, isDebug }: RunEventArgs) => {
     if (this.props.descriptor.expanded) {
       if (execState === 1) {
         this._eventCount++;
       }
       if (!this._isSizing) {
-        this.onRunEvent(execState, isDebug, this._eventCount);
+        await this.onRunEvent(execState, isDebug, this._eventCount);
       }
     }
   };

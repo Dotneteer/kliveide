@@ -146,6 +146,13 @@ export interface GetMachineStateRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks Emu for the memory contents of the virtual machine
+ */
+export interface GetMemoryContentsRequest extends MessageBase {
+  type: "GetMemoryContents";
+}
+
+/**
  * The Ide asks the main process for the contents of a folder
  */
 export interface GetFolderContentsRequest extends MessageBase {
@@ -209,7 +216,10 @@ type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
 /**
  * Requests for IDE to Emu
  */
-type IdeToEmuRequests = GetCpuStateRequest | GetMachineStateRequest;
+type IdeToEmuRequests =
+  | GetCpuStateRequest
+  | GetMachineStateRequest
+  | GetMemoryContentsRequest;
 
 /**
  * Requests for IDE to Main
@@ -272,6 +282,14 @@ export interface GetMachineStateResponse extends MessageBase {
 }
 
 /**
+ * The Ide asks Emu for the memory contents of the virtual machine
+ */
+ export interface GetMemoryContentsResponse extends MessageBase {
+  type: "GetMemoryContentsResponse";
+  contents: Uint8Array;
+}
+
+/**
  * The Ide asks the main process for the contents of a folder
  */
 export interface GetFolderContentsResponse extends MessageBase {
@@ -312,6 +330,7 @@ export type ResponseMessage =
   | EmuOpenFileDialogResponse
   | GetCpuStateResponse
   | GetMachineStateResponse
+  | GetMemoryContentsResponse
   | GetFolderContentsResponse
   | GetRegisteredMachinesResponse
   | CreateKliveProjectResponse;
