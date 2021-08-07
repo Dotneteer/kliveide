@@ -38,7 +38,7 @@ class EngineProxy {
           // --- Running, periodically fire run events
           this._running = true;
           while (this._running) {
-            await new Promise((r) => setTimeout(r, 200));
+            await new Promise((r) => setTimeout(r, 800));
             if (this._running) {
               this._runEvent.fire({
                 execState: 1,

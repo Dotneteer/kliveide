@@ -190,7 +190,7 @@ export default function VirtualizedList({
         break;
     }
   });
-
+  
   return (
     <>
       <div
@@ -302,13 +302,13 @@ export default function VirtualizedList({
    * Asks the component to update its viewport
    */
   function forceRefresh(position?: number) {
-    setResizePhase(ResizePhase.None);
     const reqPos =
       position < 0
         ? 10_000_000
         : position ?? (divHost.current ? divHost.current.scrollTop : -1);
     setRequestedPos(reqPos);
     setResizedHeight(null);
+    setResizePhase(ResizePhase.None);
   }
 
   /**
@@ -319,8 +319,8 @@ export default function VirtualizedList({
     const topPos = normalizeScrollPosition(index * itemHeight);
     setRequestedPos(normalizeScrollPosition(topPos));
     if (withRefresh) {
-      setResizePhase(ResizePhase.None);
       setResizedHeight(null);
+      setResizePhase(ResizePhase.None);
     }
   }
 
@@ -332,8 +332,8 @@ export default function VirtualizedList({
     setRequestedPos(0);
     setResizePhase(ResizePhase.Resized);
     if (withRefresh) {
-      setResizePhase(ResizePhase.None);
       setResizedHeight(null);
+      setResizePhase(ResizePhase.None);
     }
   }
 
@@ -344,8 +344,8 @@ export default function VirtualizedList({
   function scrollToEnd(withRefresh = false) {
     setRequestedPos(10_000_000);
     if (withRefresh) {
-      setResizePhase(ResizePhase.None);
       setResizedHeight(null);
+      setResizePhase(ResizePhase.None);
     } else {
       setResizePhase(ResizePhase.Resized);
     }

@@ -8,12 +8,17 @@ import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { engineProxy } from "../../ide/engine-proxy";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { Z80Disassembler } from "../../../shared/z80/disassembler/z80-disassembler";
-import { MemorySection } from "../../../shared/z80/disassembler/disassembly-helper";
+import {
+  DisassemblyOutput,
+  MemorySection,
+} from "../../../shared/z80/disassembler/disassembly-helper";
 
 const TITLE = "Z80 Disassembly";
+const DISASS_LENGTH = 256;
 
 type State = {
   itemCount: number;
+  output?: DisassemblyOutput;
 };
 
 /**
@@ -44,25 +49,18 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
   }
 
   render() {
+    const items = this.state.output?.outputItems ?? [];
+    const numItems = this.state.output
+      ? this.state.output.outputItems.length
+      : 0;
     return (
       <VirtualizedList
         itemHeight={18}
-        numItems={this.state.itemCount}
+        numItems={numItems}
         renderItem={(index: number, style: CSSProperties) => {
           return (
-            <div
-              key={index}
-              style={{ ...style }}
-              onClick={() => {
-                this._data.push({
-                  text: `Disassembly Item # ${this._data.length}`,
-                  id: this._data.length.toString(),
-                });
-                this.setState({ itemCount: this._data.length });
-                this._listApi?.scrollToEnd();
-              }}
-            >
-              {this._data[index].text}
+            <div key={index} style={{ ...style }}>
+              {items[index].instruction}
             </div>
           );
         }}
@@ -84,10 +82,17 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
     const memory = await engineProxy.getMemoryContents();
     const pcValue = cpuState._pc;
     const disassembler = new Z80Disassembler(
-      [new MemorySection(pcValue, pcValue + 255)],
-      new Uint8Array()
+      [new MemorySection(pcValue, pcValue + DISASS_LENGTH)],
+      memory
     );
-    console.log(pcValue, memory.length);
+    const disassemblyOutput = await disassembler.disassemble(
+      pcValue,
+      pcValue + DISASS_LENGTH
+    );
+    this.setState({
+      output: disassemblyOutput,
+    });
+    this._listApi.forceRefresh(0);
   }
 }
 
