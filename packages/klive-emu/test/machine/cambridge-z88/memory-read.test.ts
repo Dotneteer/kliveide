@@ -1,18 +1,22 @@
 import "mocha";
 import * as expect from "expect";
-import { CambridgeZ88Core } from "../../../src/renderer/machines/cz88/CambridgeZ88Core";
-import { DefaultCambridgeZ88StateManager, loadWaModule, SilentAudioRenderer } from "../helpers";
-import { setEngineDependencies } from "../../../src/renderer/machines/vm-engine-dependencies";
+import { CambridgeZ88Core } from "../../../src/renderer/machines/cambridge-z88/CambridgeZ88Core";
+import {
+  DefaultCambridgeZ88StateManager,
+  loadWaModule,
+  SilentAudioRenderer,
+} from "../helpers";
+import { setEngineDependencies } from "../../../src/renderer/machines/core/vm-engine-dependencies";
 
 let machine: CambridgeZ88Core;
 
-// --- Set up the virual machine engine service with the 
+// --- Set up the virual machine engine service with the
 setEngineDependencies({
   waModuleLoader: (n) => loadWaModule(n),
   sampleRateGetter: () => 48000,
   audioRendererFactory: () => new SilentAudioRenderer(),
   cz88StateManager: new DefaultCambridgeZ88StateManager(),
-})
+});
 
 /**
  * Random sequences used for testing
@@ -24,7 +28,7 @@ describe("Cambridge Z88 - Memory read", function () {
     machine = new CambridgeZ88Core({
       baseClockFrequency: 3_276_800,
       tactsInFrame: 16384,
-      firmware: [new Uint8Array(32768)]
+      firmware: [new Uint8Array(32768)],
     });
     await machine.setupMachine();
   });
@@ -34,33 +38,9 @@ describe("Cambridge Z88 - Memory read", function () {
   });
 
   const addresses: number[] = [
-    0x0000,
-    0x1234,
-    0x1fff,
-    0x2000,
-    0x2345,
-    0x2fff,
-    0x3000,
-    0x3456,
-    0x3fff,
-    0x4000,
-    0x5678,
-    0x5fff,
-    0x6000,
-    0x6789,
-    0x7fff,
-    0x8000,
-    0x89ab,
-    0x9fff,
-    0xa000,
-    0xbcde,
-    0xbfff,
-    0xc000,
-    0xcdef,
-    0xdfff,
-    0xe000,
-    0xef01,
-    0xffff,
+    0x0000, 0x1234, 0x1fff, 0x2000, 0x2345, 0x2fff, 0x3000, 0x3456, 0x3fff,
+    0x4000, 0x5678, 0x5fff, 0x6000, 0x6789, 0x7fff, 0x8000, 0x89ab, 0x9fff,
+    0xa000, 0xbcde, 0xbfff, 0xc000, 0xcdef, 0xdfff, 0xe000, 0xef01, 0xffff,
   ];
 
   addresses.forEach((addr) => {

@@ -2,8 +2,8 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { TestCpuApi } from "../../src/renderer/machines/wa-api";
-import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
+import { TestCpuApi } from "../../src/renderer/machines/wa-interop/wa-api";
+import { TestZ80Machine } from "../../src/renderer/machines/core/TestZ80Machine";
 import { importObject } from "./import-object";
 import { FlagsSetMask, Z80CpuState } from "../../src/renderer/cpu/Z80Cpu";
 

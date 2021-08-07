@@ -2,9 +2,9 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { TestCpuApi } from "../../src/renderer/machines/wa-api";
-import { TestZ80Machine } from "../../src/renderer/machines/TestZ80Machine";
-import { RunMode } from "../../src/renderer/machines/RunMode";
+import { TestCpuApi } from "../../src/renderer/machines/wa-interop/wa-api";
+import { TestZ80Machine } from "../../src/renderer/machines/core/TestZ80Machine";
+import { RunMode } from "../../src/renderer/machines/core/vm-core-types";
 import { importObject } from "./import-object";
 import { Z80SignalStateFlags } from "../../src/renderer/cpu/Z80Cpu";
 
