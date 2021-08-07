@@ -1,4 +1,4 @@
-import { animationTick } from "../../common/utils";
+import { animationTick } from "../../common-ui/utils";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { MenuItem } from "../../../shared/command/commands";
 

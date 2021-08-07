@@ -1,22 +1,22 @@
 import * as React from "react";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { AppState } from "../../shared/state/AppState";
-import { themeService } from "../themes/theme-service";
+import { themeService } from "../common-ui/themes/theme-service";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
 import EmuStatusbar from "./EmuStatusbar";
 import { emuLoadUiAction } from "../../shared/state/emu-loaded-reducer";
-import { AudioRenderer } from "../machines/AudioRenderer";
-import { ZxSpectrumStateManager } from "../machines/spectrum/ZxSpectrumStateManager";
-import { CambridgeZ88StateManager } from "../machines/cz88/CambridgeZ88BaseStateManager";
-import { setEngineDependencies } from "../machines/vm-engine-dependencies";
+import { AudioRenderer } from "../machines/audio/AudioRenderer";
+import { ZxSpectrumStateManager } from "../machines/zx-spectrum/ZxSpectrumStateManager";
+import { CambridgeZ88StateManager } from "../machines/cambridge-z88/CambridgeZ88BaseStateManager";
+import { setEngineDependencies } from "../machines/core/vm-engine-dependencies";
 import { useRef, useState } from "react";
-import ModalDialog from "../modals/ModalDialog";
+import ModalDialog from "../common-ui/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
-import { modalDialogService } from "../modals/modal-service";
-import { Z88_CARDS_DIALOG_ID } from "../machines/cz88/CambridgeZ88Core";
-import { cz88CardsDialog } from "../machines/cz88/Cz88CardsDialog";
+import { modalDialogService } from "../common-ui/modal-service";
+import { Z88_CARDS_DIALOG_ID } from "../machines/cambridge-z88/CambridgeZ88Core";
+import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";
 
 // --- We need to import these files to setup the app
 import "./emu-message-processor";

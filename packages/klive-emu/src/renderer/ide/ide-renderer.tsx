@@ -4,7 +4,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { ideStore } from "./ideStore";
-import { registerThemes } from "../common/register-themes";
+import { registerThemes } from "../common-ui/register-themes";
 import IdeApp from "./IdeApp";
 
 

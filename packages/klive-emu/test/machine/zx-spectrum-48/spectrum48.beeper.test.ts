@@ -5,15 +5,15 @@ import {
   loadWaModule,
   SilentAudioRenderer,
 } from "../helpers";
-import { setEngineDependencies } from "../../../src/renderer/machines/vm-engine-dependencies";
-import { ZxSpectrum48Core } from "../../../src/renderer/machines/spectrum/ZxSpectrum48Core";
-import { SpectrumMachineStateBase } from "../../../src/renderer/machines/spectrum/ZxSpectrumCoreBase";
+import { setEngineDependencies } from "../../../src/renderer/machines/core/vm-engine-dependencies";
+import { ZxSpectrum48Core } from "../../../src/renderer/machines/zx-spectrum/ZxSpectrum48Core";
+import { SpectrumMachineStateBase } from "../../../src/renderer/machines/zx-spectrum/ZxSpectrumCoreBase";
 import {
   EmulationMode,
   ExecuteCycleOptions,
-} from "../../../src/renderer/machines/vm-core-types";
-import { MemoryHelper } from "../../../src/renderer/machines/memory-helpers";
-import { BEEPER_SAMPLE_BUFFER } from "../../../src/renderer/machines/memory-map";
+} from "../../../src/renderer/machines/core/vm-core-types";
+import { MemoryHelper } from "../../../src/renderer/machines/wa-interop/memory-helpers";
+import { BEEPER_SAMPLE_BUFFER } from "../../../src/renderer/machines/wa-interop/memory-map";
 
 let machine: ZxSpectrum48Core;
 

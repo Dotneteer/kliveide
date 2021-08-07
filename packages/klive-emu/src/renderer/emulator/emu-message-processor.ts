@@ -9,7 +9,7 @@ import { IpcRendereApi } from "../../exposed-apis";
 import { MAIN_TO_EMU_REQUEST_CHANNEL } from "../../shared/messaging/channels";
 import { MAIN_TO_EMU_RESPONE_CHANNEL } from "../../shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { vmEngineService } from "../machines/vm-engine-service";
+import { vmEngineService } from "../machines/core/vm-engine-service";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;

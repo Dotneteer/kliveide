@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties } from "react";
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../../common/VirtualizedList";
+} from "../../common-ui/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { CommandResult, commandService } from "./CommandService";

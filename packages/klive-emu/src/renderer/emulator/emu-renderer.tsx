@@ -4,7 +4,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { emuStore } from "./emuStore";
-import { registerThemes } from "../common/register-themes";
+import { registerThemes } from "../common-ui/register-themes";
 import EmuApp from "./EmuApp";
 
 // --- Prepare the themes used in this app

@@ -5,7 +5,7 @@ import {
   RENDERER_STATE_REQUEST_CHANNEL,
 } from "../../shared/messaging/channels";
 import { appReducers } from "../../shared/state/app-reducers";
-import { RendererToMainStateForwarder } from "../common/RendererToMainStateForwarder";
+import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
 import { getInitialAppState } from "../../shared/state/AppState";
 import { IpcRendereApi } from "../../exposed-apis";
 import { ForwardActionRequest } from "../../shared/messaging/message-types";

@@ -1,6 +1,6 @@
-import { MemoryHelper } from "../machines/memory-helpers";
-import { CPU_STATE_BUFFER, REG_AREA_INDEX } from "../machines/memory-map";
-import { CpuApi } from "../machines/wa-api";
+import { MemoryHelper } from "../machines/wa-interop/memory-helpers";
+import { CPU_STATE_BUFFER, REG_AREA_INDEX } from "../machines/wa-interop/memory-map";
+import { CpuApi } from "../machines/wa-interop/wa-api";
 import { ICpu, ICpuState } from "../../shared/machines/AbstractCpu";
 
 /**

@@ -3,7 +3,7 @@ import ActivityButton from "./ActivityButton";
 import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
-} from "../../common/PanelStyles";
+} from "../../common-ui/PanelStyles";
 import { activityService } from "./ActivityService";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";

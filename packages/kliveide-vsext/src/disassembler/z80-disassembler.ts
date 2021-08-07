@@ -804,7 +804,7 @@ export class Z80Disassembler {
       this._spectMode = SpectrumSpecificMode.None;
       result.item = <DisassemblyItem>{
         address,
-        lastAddress: (this._offset - 1) & 0xffff,
+        //lastAddress: (this._offset - 1) & 0xffff,
         instruction: `.defb #${intToX2(errorCode)}`,
         hardComment: `(error code: #${intToX2(errorCode)})`,
       };
@@ -826,7 +826,7 @@ export class Z80Disassembler {
       this._spectMode = SpectrumSpecificMode.None;
       result.item = <DisassemblyItem>{
         address,
-        lastAddress: (this._offset - 1) & 0xffff,
+        //lastAddress: (this._offset - 1) & 0xffff,
         instruction: `.defw #${intToX4(callAddress)}`,
       };
     }

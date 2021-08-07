@@ -1,6 +1,6 @@
 import * as React from "react";
-import { ZxSpectrumCoreBase } from "../machines/spectrum/ZxSpectrumCoreBase";
-import { vmEngineService } from "../machines/vm-engine-service";
+import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
+import { vmEngineService } from "../machines/core/vm-engine-service";
 import Key from "./Sp48Key";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
 import styles from "styled-components";

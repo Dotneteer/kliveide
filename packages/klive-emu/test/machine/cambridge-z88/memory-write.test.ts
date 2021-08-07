@@ -1,12 +1,12 @@
 import "mocha";
 import * as expect from "expect";
-import { CambridgeZ88Core } from "../../../src/renderer/machines/cz88/CambridgeZ88Core";
+import { CambridgeZ88Core } from "../../../src/renderer/machines/cambridge-z88/CambridgeZ88Core";
 import {
   DefaultCambridgeZ88StateManager,
   loadWaModule,
   SilentAudioRenderer,
 } from "../helpers";
-import { setEngineDependencies } from "../../../src/renderer/machines/vm-engine-dependencies";
+import { setEngineDependencies } from "../../../src/renderer/machines/core/vm-engine-dependencies";
 
 let machine: CambridgeZ88Core;
 
@@ -33,33 +33,9 @@ describe("Cambridge Z88 - Memory write", function () {
   });
 
   const addresses: number[] = [
-    0x0000,
-    0x1234,
-    0x1fff,
-    0x2000,
-    0x2345,
-    0x2fff,
-    0x3000,
-    0x3456,
-    0x3fff,
-    0x4000,
-    0x5678,
-    0x5fff,
-    0x6000,
-    0x6789,
-    0x7fff,
-    0x8000,
-    0x89ab,
-    0x9fff,
-    0xa000,
-    0xbcde,
-    0xbfff,
-    0xc000,
-    0xcdef,
-    0xdfff,
-    0xe000,
-    0xef01,
-    0xffff,
+    0x0000, 0x1234, 0x1fff, 0x2000, 0x2345, 0x2fff, 0x3000, 0x3456, 0x3fff,
+    0x4000, 0x5678, 0x5fff, 0x6000, 0x6789, 0x7fff, 0x8000, 0x89ab, 0x9fff,
+    0xa000, 0xbcde, 0xbfff, 0xc000, 0xcdef, 0xdfff, 0xe000, 0xef01, 0xffff,
   ];
 
   addresses.forEach((addr) => {

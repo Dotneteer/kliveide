@@ -1,6 +1,6 @@
 import * as React from "react";
-import { SpectrumMachineStateBase } from "../machines/spectrum/ZxSpectrumCoreBase";
-import { vmEngineService } from "../machines/vm-engine-service";
+import { SpectrumMachineStateBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
+import { vmEngineService } from "../machines/core/vm-engine-service";
 import styles from "styled-components";
 
 /**

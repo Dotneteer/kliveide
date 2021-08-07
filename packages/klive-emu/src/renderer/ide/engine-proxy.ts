@@ -8,7 +8,7 @@ import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { ideStore } from "./ideStore";
 import { EmulatorPanelState } from "../../shared/state/AppState";
-import { MachineState } from "../machines/vm-core-types";
+import { MachineState } from "../machines/core/vm-core-types";
 
 /**
  * This class allows to access the virtual machine engine from the IDE process

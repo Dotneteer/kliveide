@@ -1,14 +1,14 @@
 import * as React from "react";
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../../common/VirtualizedList";
-import { ITreeNode } from "../../common/ITreeNode";
+} from "../../common-ui/VirtualizedList";
+import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
-import { SvgIcon } from "../../common/SvgIcon";
+import { SvgIcon } from "../../common-ui/SvgIcon";
 
 const TITLE = "Project Files";
 

@@ -1,7 +1,7 @@
 import {
   MachineCreationOptions,
   MachineState,
-} from "../../renderer/machines/vm-core-types";
+} from "../../renderer/machines/core/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
 import { AppState } from "../state/AppState";

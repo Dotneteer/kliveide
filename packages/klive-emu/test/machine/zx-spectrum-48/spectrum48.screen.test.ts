@@ -1,22 +1,32 @@
 import "mocha";
 import * as expect from "expect";
-import { DefaultZxSpectrumStateManager, loadWaModule, SilentAudioRenderer } from "../helpers";
-import { setEngineDependencies } from "../../../src/renderer/machines/vm-engine-dependencies";
-import { ZxSpectrum48Core } from "../../../src/renderer/machines/spectrum/ZxSpectrum48Core";
-import { EmulationMode, ExecuteCycleOptions } from "../../../src/renderer/machines/vm-core-types";
-import { SpectrumMachineStateBase } from "../../../src/renderer/machines/spectrum/ZxSpectrumCoreBase";
-import { MemoryHelper } from "../../../src/renderer/machines/memory-helpers";
-import { COLORIZATION_BUFFER, PIXEL_RENDERING_BUFFER } from "../../../src/renderer/machines/memory-map";
+import {
+  DefaultZxSpectrumStateManager,
+  loadWaModule,
+  SilentAudioRenderer,
+} from "../helpers";
+import { setEngineDependencies } from "../../../src/renderer/machines/core/vm-engine-dependencies";
+import { ZxSpectrum48Core } from "../../../src/renderer/machines/zx-spectrum/ZxSpectrum48Core";
+import { SpectrumMachineStateBase } from "../../../src/renderer/machines/zx-spectrum/ZxSpectrumCoreBase";
+import {
+  EmulationMode,
+  ExecuteCycleOptions,
+} from "../../../src/renderer/machines/core/vm-core-types";
+import { MemoryHelper } from "../../../src/renderer/machines/wa-interop/memory-helpers";
+import {
+  COLORIZATION_BUFFER,
+  PIXEL_RENDERING_BUFFER,
+} from "../../../src/renderer/machines/wa-interop/memory-map";
 
 let machine: ZxSpectrum48Core;
 
-// --- Set up the virual machine engine service with the 
+// --- Set up the virual machine engine service with the
 setEngineDependencies({
   waModuleLoader: (n) => loadWaModule(n),
   sampleRateGetter: () => 48000,
   audioRendererFactory: () => new SilentAudioRenderer(),
   spectrumStateManager: new DefaultZxSpectrumStateManager(),
-})
+});
 
 describe("ZX Spectrum 48 - Screen", () => {
   before(async () => {

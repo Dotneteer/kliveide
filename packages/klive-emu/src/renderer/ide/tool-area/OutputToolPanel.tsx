@@ -6,7 +6,7 @@ import { toolAreaService, ToolPanelDescriptorBase } from "./ToolAreaService";
 import { IOutputPane, outputPaneService } from "./OutputPaneService";
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../../common/VirtualizedList";
+} from "../../common-ui/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
 
 const TITLE = "Output";
