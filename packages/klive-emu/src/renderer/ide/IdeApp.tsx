@@ -33,10 +33,6 @@ import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
 import { outputPaneService } from "./tool-area/OutputPaneService";
 import { VmOutputPanelDescriptor } from "../machines/sidebar-panels/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
-import { TreeNode } from "../common-ui/TreeNode";
-import { ProjectNode } from "./explorer-tools/ProjectNode";
-import { projectServices } from "./explorer-tools/ProjectServices";
-import { TreeView } from "../common-ui/TreeView";
 import IdeContextMenu from "./context-menu/ContextMenu";
 import ModalDialog from "../common-ui/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
@@ -48,6 +44,7 @@ import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
 import { registerKliveCommands } from "./commands/register-commands";
 import { Z80DisassemblyPanelDescriptor } from "../machines/sidebar-panels/DisassemblyPanel";
+import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -267,11 +264,15 @@ export default function IdeApp() {
       );
       sideBarService.registerSideBarPanel(
         "debug-view",
-        new CallStackPanelDescriptor()
+        new Z80DisassemblyPanelDescriptor()
       );
       sideBarService.registerSideBarPanel(
         "debug-view",
-        new Z80DisassemblyPanelDescriptor()
+        new MemoryPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new CallStackPanelDescriptor()
       );
 
       // (Machine logs)

@@ -83,6 +83,10 @@ export default function VirtualizedList({
   const verticalApi = useRef<ScrollbarApi>();
   const horizontalApi = useRef<ScrollbarApi>();
 
+  // --- Store last viewport information
+  const lastStartIndex = useRef(-1);
+  const lastEndIndex = useRef(-1);
+
   // --- Component state
   const [items, setItems] = useState<React.ReactNode[]>();
   const [pointed, setPointed] = useState(false);
@@ -112,6 +116,8 @@ export default function VirtualizedList({
 
     const scrollPos = divHost.current.scrollTop;
     const { startIndex, endIndex } = getViewPort();
+    lastStartIndex.current = startIndex;
+    lastEndIndex.current = endIndex;
     const tmpItems: React.ReactNode[] = [];
     for (let i = startIndex; i <= endIndex; i++) {
       const item = renderItem(
@@ -364,7 +370,7 @@ export default function VirtualizedList({
    */
   function getViewPort(): { startIndex: number; endIndex: number } {
     if (!divHost.current) {
-      return { startIndex: -1, endIndex: -1 };
+      return { startIndex: lastStartIndex.current, endIndex: lastEndIndex.current };
     }
     const scrollPos = divHost.current.scrollTop;
     const result = {

@@ -1,13 +1,9 @@
 import * as React from "react";
-import VirtualizedList, {
+import {
   VirtualizedListApi,
 } from "../../common-ui/VirtualizedList";
 import { CSSProperties } from "styled-components";
-import {
-  SideBarPanelBase,
-  sidebarPlaceholderStyle,
-  SideBarProps,
-} from "../../ide/SideBarPanelBase";
+import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { engineProxy } from "../../ide/engine-proxy";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
@@ -18,79 +14,34 @@ import {
   MemorySection,
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { SvgIcon } from "../../common-ui/SvgIcon";
-import { ideStore } from "../../ide/ideStore";
+import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 
 const TITLE = "Z80 Disassembly";
 const DISASS_LENGTH = 256;
 
 type State = {
-  hasMachine: boolean;
-  selectedIndex: number;
   output?: DisassemblyOutput;
 };
 
 /**
  * Z80 disassembly panel
  */
-export default class Z80DisassemblyPanel extends SideBarPanelBase<
+export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   SideBarProps<{}>,
-  State
+  SideBarState<State>
 > {
   private _listApi: VirtualizedListApi;
 
   title = TITLE;
-
   width = "fit-content";
+  noMacineLine2 = "to see the disassembly";
 
-  constructor(props: SideBarProps<{}>) {
-    super(props);
-    this.state = { selectedIndex: -1, hasMachine: false };
-  }
-
-  async componentDidMount(): Promise<void> {
-    super.componentDidMount();
-    const hasMachine = !!ideStore.getState()?.emulatorPanel?.executionState;
-    this.setState({ hasMachine });
-    if (hasMachine) {
-      this.onRunEvent();
-    }
-  }
-
-  render() {
+  /**
+   * Override to get the number of items
+   */
+  getItemsCount(): number {
     const items = this.state.output?.outputItems ?? [];
-    const numItems = this.state.output
-      ? this.state.output.outputItems.length
-      : 0;
-    return this.state.hasMachine ? (
-      <VirtualizedList
-        itemHeight={18}
-        numItems={numItems}
-        style={listStyle}
-        renderItem={(index: number, style: CSSProperties) =>
-          this.renderItem(index, style, items[index])
-        }
-        onFocus={() => {
-          this.signFocus(true);
-          this._listApi.forceRefresh();
-        }}
-        onBlur={() => {
-          this.signFocus(false);
-          this._listApi.forceRefresh();
-        }}
-        handleKeys={(e) => this.handleKeys(e)}
-        registerApi={(api) => (this._listApi = api)}
-      />
-    ) : (
-      <div
-        style={{
-          ...sidebarPlaceholderStyle,
-          fontFamily: "var(--main-font-family)",
-        }}
-      >
-        <span style={{ textAlign: "center" }}>Turn on the virtual machine</span>
-        <span style={{ textAlign: "center" }}>to see the disassembly</span>
-      </div>
-    );
+    return this.state.output ? this.state.output.outputItems.length : 0;
   }
 
   /**
@@ -99,7 +50,8 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
    * @param style Style to provide
    * @param item Item data
    */
-  renderItem(index: number, style: CSSProperties, item: DisassemblyItem) {
+  renderItem(index: number, style: CSSProperties) {
+    const item = this.state.output.outputItems[index];
     const itemStyle: CSSProperties = {
       ...style,
       display: "flex",
@@ -130,26 +82,26 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
           this._listApi.forceRefresh();
         }}
       >
-        {!item.prefixComment && (
+        {!item?.prefixComment && (
           <>
             <div
               style={{
                 marginLeft: 4,
-                width: 32,
-                color: item.hasLabel
+                width: 30,
+                color: item?.hasLabel
                   ? "var(--console-ansi-bright-magenta)"
                   : "var(--console-ansi-bright-blue)",
-                fontWeight: item.hasLabel ? 600 : 100,
+                fontWeight: item?.hasLabel ? 600 : 100,
               }}
             >
               {item.address.toString(16).padStart(4, "0").toUpperCase()}
             </div>
             {index === 0 ? (
-              <SvgIcon iconName="chevron-right" />
+              <SvgIcon iconName="chevron-right" fill="--console-ansi-green"/>
             ) : (
-              <div style={{ width: 12 }} />
+              <div style={{ width: 14 }} />
             )}
-            <div style={{ width: 106 }}>{item.opCodes}</div>
+            <div style={{ width: 100 }}>{item.opCodes}</div>
             <div
               style={{
                 width: 40,
@@ -158,10 +110,10 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
               }}
             >
               {item.instruction}
-            </div>{" "}
+            </div>
           </>
         )}
-        {item.prefixComment && (
+        {item?.prefixComment && (
           <div style={{ marginLeft: 4, color: "var(--console-ansi-green)" }}>
             -- End of disassembly
           </div>
@@ -174,7 +126,6 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
    * Refresh the disassembly screen
    */
   protected async onRunEvent(): Promise<void> {
-    this.setState({ hasMachine: true });
     const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
     const memory = await engineProxy.getCachedMemoryContents();
     const pcValue = cpuState._pc;
@@ -193,45 +144,6 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
       output: disassemblyOutput,
     });
     this._listApi.forceRefresh(0);
-  }
-
-  /**
-   * Allow moving in the project explorer with keys
-   */
-  handleKeys(e: React.KeyboardEvent): void {
-    let newIndex = -1;
-    const numItems = this.state.output
-      ? this.state.output.outputItems.length
-      : 0;
-    switch (e.code) {
-      case "ArrowUp":
-        if (this.state.selectedIndex <= 0) return;
-        newIndex = this.state.selectedIndex - 1;
-        break;
-
-      case "ArrowDown": {
-        if (this.state.selectedIndex >= numItems - 1) return;
-        newIndex = this.state.selectedIndex + 1;
-        break;
-      }
-      case "Home": {
-        newIndex = 0;
-        break;
-      }
-      case "End": {
-        newIndex = numItems - 1;
-        break;
-      }
-      default:
-        return;
-    }
-    if (newIndex >= 0) {
-      this._listApi.ensureVisible(newIndex);
-      this.setState({
-        selectedIndex: newIndex,
-      });
-      this._listApi.forceRefresh();
-    }
   }
 }
 
@@ -256,7 +168,3 @@ const listStyle: CSSProperties = {
   fontFamily: "var(--console-font)",
   fontSize: "0.8em",
 };
-
-// ============================================================================
-// Helper functions
-// ============================================================================

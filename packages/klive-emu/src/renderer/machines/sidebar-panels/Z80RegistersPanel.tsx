@@ -183,6 +183,7 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   State
 > {
   title = TITLE;
+  noMacineLine2 = "to see the CPU state";
 
   renderContent() {
     const state = this.state?.machineState;
