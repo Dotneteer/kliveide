@@ -7,6 +7,9 @@ import { handleScrollKeys } from "./utils";
 import ReactResizeDetector from "react-resize-detector";
 import { useLayoutEffect } from "react";
 
+// --- Signs the end of the list
+const END_LIST_POSITION = 10_000_000;
+
 /**
  * The function that renders a virtual list item
  */
@@ -25,6 +28,7 @@ export type VirtualizedListProps = {
   itemHeight: number;
   focusable?: boolean;
   integralPosition?: boolean;
+  style?: CSSProperties;
   renderItem: ItemRenderer;
   registerApi?: (api: VirtualizedListApi) => void;
   obtainInitPos?: () => number | null;
@@ -62,6 +66,7 @@ export default function VirtualizedList({
   itemHeight = 20,
   focusable = true,
   integralPosition = true,
+  style,
   renderItem,
   registerApi,
   obtainInitPos,
@@ -147,7 +152,7 @@ export default function VirtualizedList({
       updateDimensions();
       const initPosition = obtainInitPos?.();
       if (initPosition !== null && initPosition !== undefined) {
-        setRequestedPos(initPosition < 0 ? 10_000_000 : initPosition);
+        setRequestedPos(initPosition < 0 ? END_LIST_POSITION : initPosition);
       }
       mounted.current = true;
     }
@@ -179,7 +184,8 @@ export default function VirtualizedList({
             scrolled?.(divHost.current.scrollTop);
             setRequestedIndex(-1);
           } else if (requestedIndex >= endIndex) {
-            divHost.current.scrollTop = (requestedIndex + 1) * itemHeight - resizedHeight + 1
+            divHost.current.scrollTop =
+              (requestedIndex + 1) * itemHeight - resizedHeight + 1;
             scrolled?.(divHost.current.scrollTop);
             setRequestedIndex(-1);
           }
@@ -190,7 +196,7 @@ export default function VirtualizedList({
         break;
     }
   });
-  
+
   return (
     <>
       <div
@@ -198,6 +204,7 @@ export default function VirtualizedList({
         ref={divHost}
         className="scroll"
         style={{
+          ...style,
           overflow: "hidden",
           position: "relative",
           height: resizedHeight ?? "100%",
@@ -304,7 +311,7 @@ export default function VirtualizedList({
   function forceRefresh(position?: number) {
     const reqPos =
       position < 0
-        ? 10_000_000
+        ? END_LIST_POSITION
         : position ?? (divHost.current ? divHost.current.scrollTop : -1);
     setRequestedPos(reqPos);
     setResizedHeight(null);
@@ -342,7 +349,7 @@ export default function VirtualizedList({
    * @param index
    */
   function scrollToEnd(withRefresh = false) {
-    setRequestedPos(10_000_000);
+    setRequestedPos(END_LIST_POSITION);
     if (withRefresh) {
       setResizedHeight(null);
       setResizePhase(ResizePhase.None);

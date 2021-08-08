@@ -44,7 +44,7 @@ export class SideBarPanelBase<
   // --- Override the default rendering
   render() {
     return (
-      <div style={placeholderStyle}>
+      <div style={sidebarPlaceholderStyle}>
         <ScrollablePanel
           scrollBarSize={10}
           sizing={(isSizing) => (this._isSizing = isSizing)}
@@ -94,7 +94,7 @@ export class SideBarPanelBase<
 }
 
 // --- Panel placeholder style
-const placeholderStyle: CSSProperties = {
+export const sidebarPlaceholderStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
   flexGrow: 1,
