@@ -257,7 +257,7 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   }
 
   protected async onRunEvent(): Promise<void> {
-    const cpuState = await engineProxy.getMachineState();
+    const cpuState = await engineProxy.getCachedMachineState();
     this.setState({ machineState: cpuState as Z80CpuState & MachineState });
   }
 }

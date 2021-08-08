@@ -157,7 +157,7 @@ export default class UlaInformationPanel extends SideBarPanelBase<
   }
 
   protected async onRunEvent(): Promise<void> {
-    const state = await engineProxy.getMachineState();
+    const state = await engineProxy.getCachedMachineState();
     this.setState({ machineState: state as SpectrumMachineStateBase });
   }
 }

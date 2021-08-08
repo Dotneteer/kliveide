@@ -78,8 +78,8 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
     isDebug: boolean,
     eventCount: number
   ): Promise<void> {
-    const cpuState = (await engineProxy.getCpuState()) as Z80CpuState;
-    const memory = await engineProxy.getMemoryContents();
+    const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
+    const memory = await engineProxy.getCachedMemoryContents();
     const pcValue = cpuState._pc;
     const disassembler = new Z80Disassembler(
       [new MemorySection(pcValue, pcValue + DISASS_LENGTH)],
