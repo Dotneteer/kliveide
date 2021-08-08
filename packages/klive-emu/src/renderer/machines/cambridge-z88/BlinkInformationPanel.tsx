@@ -416,7 +416,7 @@ export default class BlinkInformationPanel extends SideBarPanelBase<
   }
 
   protected async onRunEvent(): Promise<void> {
-    const state = await engineProxy.getMachineState();
+    const state = await engineProxy.getCachedMachineState();
     this.setState({ machineState: state as CambridgeZ88MachineState });
   }
 }

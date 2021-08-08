@@ -225,6 +225,11 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   }
 
   /**
+   * Gets the addressable memory contents from the machine
+   */
+  abstract getMemoryContents(): Uint8Array;
+
+  /**
    * Handles pressing or releasing a physical key on the keyboard
    * @param keycode Virtual keycode
    * @param isDown Is the key pressed down?

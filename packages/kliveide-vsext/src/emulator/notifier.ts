@@ -186,6 +186,9 @@ async function requestEmulatorInfo(): Promise<void> {
       machineViewProvider = createMachineViewProvider(lastMachineType);
       machineTypeChanged.fire(lastMachineType);
     }
+
+    // --- Remember the last frame information
+    lastFrameInfo = frameInfo;
   } catch (err) {
     // --- Handle changes in connection state
     if (

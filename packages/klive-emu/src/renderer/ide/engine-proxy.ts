@@ -3,12 +3,19 @@ import { ideToEmuMessenger } from "./IdeToEmuMessenger";
 import {
   GetCpuStateResponse,
   GetMachineStateResponse,
+  GetMemoryContentsResponse,
 } from "../../shared/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { ideStore } from "./ideStore";
 import { EmulatorPanelState } from "../../shared/state/AppState";
 import { MachineState } from "../machines/core/vm-core-types";
+import { ThemeProvider } from "styled-components";
+
+/**
+ * Dealy time between two timed run events
+ */
+const RUN_EVENT_DELAY = 800;
 
 /**
  * This class allows to access the virtual machine engine from the IDE process
@@ -17,6 +24,11 @@ class EngineProxy {
   private _lastExecutionState = 0;
   private _running = false;
   private _runEvent = new LiteEvent<RunEventArgs>();
+
+  // --- Keep a few states cached between run events
+  private _cachedCpuState: ICpuState | null = null;
+  private _cachedMachineState: MachineState | null = null;
+  private _cachedMemory: Uint8Array | null = null;
 
   /**
    * Initializes the engine proxy
@@ -29,6 +41,7 @@ class EngineProxy {
     stateAware.stateChanged.on(async (emuPanel) => {
       if (this._lastExecutionState !== emuPanel.executionState) {
         this._lastExecutionState = emuPanel.executionState;
+        this.clearCache();
         this._runEvent.fire({
           execState: this._lastExecutionState,
           isDebug: emuPanel.runsInDebug,
@@ -37,8 +50,9 @@ class EngineProxy {
           // --- Running, periodically fire run events
           this._running = true;
           while (this._running) {
-            await new Promise((r) => setTimeout(r, 200));
+            await new Promise((r) => setTimeout(r, RUN_EVENT_DELAY));
             if (this._running) {
+              this.clearCache();
               this._runEvent.fire({
                 execState: 1,
                 isDebug: emuPanel.runsInDebug,
@@ -62,7 +76,6 @@ class EngineProxy {
 
   /**
    * Gets the current CPU state
-   * @returns
    */
   async getCpuState(): Promise<ICpuState> {
     const result = await ideToEmuMessenger.sendMessage<GetCpuStateResponse>({
@@ -72,8 +85,14 @@ class EngineProxy {
   }
 
   /**
-   * Gets the current CPU state
-   * @returns
+   * Gets the cached CPU state
+   */
+  async getCachedCpuState(): Promise<ICpuState> {
+    return this._cachedCpuState ?? (await this.getCpuState());
+  }
+
+  /**
+   * Gets the current machine state
    */
   async getMachineState(): Promise<MachineState> {
     const result = await ideToEmuMessenger.sendMessage<GetMachineStateResponse>(
@@ -82,6 +101,42 @@ class EngineProxy {
       }
     );
     return result?.state;
+  }
+
+  /**
+   * Gets the cached machine state
+   */
+  async getCachedMachineState(): Promise<MachineState> {
+    return this._cachedMachineState ?? (await this.getMachineState());
+  }
+
+  /**
+   * Gets the memory contents of the machine
+   */
+  async getMemoryContents(): Promise<Uint8Array> {
+    const result =
+      await ideToEmuMessenger.sendMessage<GetMemoryContentsResponse>({
+        type: "GetMemoryContents",
+      });
+    return result?.contents;
+  }
+
+  /**
+   * Gets the cached memory contents of the machine
+   */
+  async getCachedMemoryContents(): Promise<Uint8Array> {
+    return this._cachedMemory ?? (await this.getMemoryContents());
+  }
+
+  // ==========================================================================
+  // Helpers
+  // ==========================================================================
+
+  // --- Dispose cached data
+  private clearCache(): void {
+    this._cachedCpuState = null;
+    this._cachedMachineState = null;
+    this._cachedMemory = null;
   }
 }
 
