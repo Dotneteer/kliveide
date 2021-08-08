@@ -1,16 +1,13 @@
 import * as React from "react";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import {
-  SideBarPanelBase,
   SideBarProps,
   SideBarState,
 } from "../../ide/SideBarPanelBase";
-import VirtualizedList, {
-  VirtualizedListApi,
-} from "../../common-ui/VirtualizedList";
 import { CSSProperties } from "react";
 import { engineProxy } from "../../ide/engine-proxy";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 
 const TITLE = "Memory";
 const BYTES_IN_LINE = 8;
@@ -18,11 +15,10 @@ const BYTES_IN_LINE = 8;
 /**
  * Memory panel
  */
-export default class MemoryPanel extends SideBarPanelBase<
+export default class MemoryPanel extends VirtualizedSideBarPanelBase<
   SideBarProps<{}>,
   SideBarState<{}>
 > {
-  private _listApi: VirtualizedListApi;
   private _memoryContents: Uint8Array | null = null;
   private _cpu: Z80CpuState | null = null;
 
@@ -30,39 +26,17 @@ export default class MemoryPanel extends SideBarPanelBase<
   width = "fit-content";
   noMacineLine2 = "to see the memory content";
 
-  constructor(props: SideBarProps<{}>) {
-    super(props);
-    this.state = { selectedIndex: -1, hasMachine: false };
-  }
-
-  renderPanel() {
-    return (
-      <VirtualizedList
-        itemHeight={18}
-        numItems={0x1_0000 / BYTES_IN_LINE}
-        style={listStyle}
-        renderItem={(index: number, style: CSSProperties) =>
-          this.renderItem(index, style)
-        }
-        onFocus={() => {
-          this.signFocus(true);
-          this._listApi.forceRefresh();
-        }}
-        onBlur={() => {
-          this.signFocus(false);
-          this._listApi.forceRefresh();
-        }}
-        handleKeys={(e) => this.handleKeys(e)}
-        registerApi={(api) => (this._listApi = api)}
-      />
-    );
+  /**
+   * Override to get the number of items
+   */
+  getItemsCount(): number {
+    return 0x1_0000 / BYTES_IN_LINE;
   }
 
   /**
    * Renders an item of the list
    * @param index Index of the item
    * @param style Style to provide
-   * @param item Item data
    */
   renderItem(index: number, style: CSSProperties) {
     const itemStyle: CSSProperties = {
@@ -157,7 +131,7 @@ export default class MemoryPanel extends SideBarPanelBase<
         style={{ ...itemStyle }}
         onClick={() => {
           this.setState({ selectedIndex: index });
-          this._listApi.forceRefresh();
+          this.listApi.forceRefresh();
         }}
       >
         <div
@@ -170,7 +144,7 @@ export default class MemoryPanel extends SideBarPanelBase<
           {baseAddr.toString(16).padStart(4, "0").toUpperCase()}
         </div>
         {byteItems}
-        <div style={{marginLeft: 4}}>{charContents}</div>
+        <div style={{ marginLeft: 4 }}>{charContents}</div>
       </div>
     );
   }
@@ -181,44 +155,7 @@ export default class MemoryPanel extends SideBarPanelBase<
   protected async onRunEvent(): Promise<void> {
     this._memoryContents = await engineProxy.getCachedMemoryContents();
     this._cpu = (await engineProxy.getCachedCpuState()) as Z80CpuState;
-    this._listApi.forceRefresh();
-  }
-
-  /**
-   * Allow moving in the project explorer with keys
-   */
-  handleKeys(e: React.KeyboardEvent): void {
-    let newIndex = -1;
-    const numItems = 0x1_0000 / BYTES_IN_LINE;
-    switch (e.code) {
-      case "ArrowUp":
-        if (this.state.selectedIndex <= 0) return;
-        newIndex = this.state.selectedIndex - 1;
-        break;
-
-      case "ArrowDown": {
-        if (this.state.selectedIndex >= numItems - 1) return;
-        newIndex = this.state.selectedIndex + 1;
-        break;
-      }
-      case "Home": {
-        newIndex = 0;
-        break;
-      }
-      case "End": {
-        newIndex = numItems - 1;
-        break;
-      }
-      default:
-        return;
-    }
-    if (newIndex >= 0) {
-      this._listApi.ensureVisible(newIndex);
-      this.setState({
-        selectedIndex: newIndex,
-      });
-      this._listApi.forceRefresh();
-    }
+    this.listApi.forceRefresh();
   }
 }
 
@@ -237,9 +174,3 @@ export class MemoryPanelDescriptor extends SideBarPanelDescriptorBase {
     return <MemoryPanel descriptor={this} />;
   }
 }
-
-// --- The style of the list
-const listStyle: CSSProperties = {
-  fontFamily: "var(--console-font)",
-  fontSize: "0.8em",
-};
