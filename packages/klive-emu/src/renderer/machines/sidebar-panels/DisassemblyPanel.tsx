@@ -5,8 +5,8 @@ import VirtualizedList, {
 import { CSSProperties } from "styled-components";
 import {
   SideBarPanelBase,
-  sidebarPlaceholderStyle,
   SideBarProps,
+  SideBarState,
 } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { engineProxy } from "../../ide/engine-proxy";
@@ -18,14 +18,11 @@ import {
   MemorySection,
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { SvgIcon } from "../../common-ui/SvgIcon";
-import { ideStore } from "../../ide/ideStore";
 
 const TITLE = "Z80 Disassembly";
 const DISASS_LENGTH = 256;
 
 type State = {
-  hasMachine: boolean;
-  selectedIndex: number;
   output?: DisassemblyOutput;
 };
 
@@ -34,34 +31,25 @@ type State = {
  */
 export default class Z80DisassemblyPanel extends SideBarPanelBase<
   SideBarProps<{}>,
-  State
+  SideBarState<State>
 > {
   private _listApi: VirtualizedListApi;
 
   title = TITLE;
-
   width = "fit-content";
+  noMacineLine2 = "to see the disassembly";
 
   constructor(props: SideBarProps<{}>) {
     super(props);
     this.state = { selectedIndex: -1, hasMachine: false };
   }
 
-  async componentDidMount(): Promise<void> {
-    super.componentDidMount();
-    const hasMachine = !!ideStore.getState()?.emulatorPanel?.executionState;
-    this.setState({ hasMachine });
-    if (hasMachine) {
-      this.onRunEvent();
-    }
-  }
-
-  render() {
+  renderPanel() {
     const items = this.state.output?.outputItems ?? [];
     const numItems = this.state.output
       ? this.state.output.outputItems.length
       : 0;
-    return this.state.hasMachine ? (
+    return (
       <VirtualizedList
         itemHeight={18}
         numItems={numItems}
@@ -80,16 +68,6 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
         handleKeys={(e) => this.handleKeys(e)}
         registerApi={(api) => (this._listApi = api)}
       />
-    ) : (
-      <div
-        style={{
-          ...sidebarPlaceholderStyle,
-          fontFamily: "var(--main-font-family)",
-        }}
-      >
-        <span style={{ textAlign: "center" }}>Turn on the virtual machine</span>
-        <span style={{ textAlign: "center" }}>to see the disassembly</span>
-      </div>
     );
   }
 
@@ -158,7 +136,7 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
               }}
             >
               {item.instruction}
-            </div>{" "}
+            </div>
           </>
         )}
         {item.prefixComment && (
@@ -174,7 +152,6 @@ export default class Z80DisassemblyPanel extends SideBarPanelBase<
    * Refresh the disassembly screen
    */
   protected async onRunEvent(): Promise<void> {
-    this.setState({ hasMachine: true });
     const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
     const memory = await engineProxy.getCachedMemoryContents();
     const pcValue = cpuState._pc;
@@ -256,7 +233,3 @@ const listStyle: CSSProperties = {
   fontFamily: "var(--console-font)",
   fontSize: "0.8em",
 };
-
-// ============================================================================
-// Helper functions
-// ============================================================================

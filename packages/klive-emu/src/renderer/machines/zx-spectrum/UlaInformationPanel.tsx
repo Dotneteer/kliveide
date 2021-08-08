@@ -13,6 +13,7 @@ import { CSSProperties } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 
 const TITLE = "ULA Information";
+
 const BORDER_NAMES = [
   "black",
   "blue",
@@ -109,6 +110,7 @@ export default class UlaInformationPanel extends SideBarPanelBase<
   State
 > {
   title = TITLE;
+  noMacineLine2 = "to see the ULA state";
 
   renderContent() {
     const state = this.state?.machineState;
