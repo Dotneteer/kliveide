@@ -371,14 +371,6 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
     startAddress = 0x8000
   ): void {}
 
-  /**
-   * The virtual machine can provide its custom disassember
-   * @returns The custom disassebler, if supported; otherwise, null
-   */
-  provideCustomDisassembler(): ICustomDisassembler | null {
-    return null;
-  }
-
   // ==========================================================================
   // Lifecycle methods
 
