@@ -414,11 +414,11 @@ export class Z80Disassembler {
    * Fetches the next byte from the stream to disassemble
    */
   private _peek(ahead?: number): FetchResult {
-    let offset = this._offset;
     let overflow = false;
     ahead = ahead ?? 0;
-    if (offset + ahead >= this.memoryContents.length) {
-      offset = (offset + ahead) % this.memoryContents.length;
+    let offset = this._offset + ahead;
+    if (offset >= this.memoryContents.length) {
+      offset = offset % this.memoryContents.length;
       overflow = true;
     }
     const opcode = this.memoryContents[offset];
