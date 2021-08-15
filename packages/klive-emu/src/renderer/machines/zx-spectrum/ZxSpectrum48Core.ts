@@ -14,6 +14,7 @@ import {
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { FloatNumber } from "./FloatNumber";
 import { calcOps } from "./calc-ops";
+import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
 
 /**
  * ZX Spectrum 48 core implementation
@@ -48,6 +49,19 @@ export class ZxSpectrum48Core extends ZxSpectrumCoreBase {
    * Friendly name to display
    */
   readonly displayName = "ZX Spectrum 48K";
+}
+
+/**
+ * Represents the custom tools associated with ZX Spectrum 48
+ */
+export class ZxSpectrum48Tools extends VirtualMachineToolBase {
+  /**
+   * The virtual machine can provide its custom disassember
+   * @returns The custom disassebler, if supported; otherwise, null
+   */
+  provideCustomDisassembler(): ICustomDisassembler | null {
+    return new ZxSpectrum48CustomDisassembler();
+  }
 }
 
 /**

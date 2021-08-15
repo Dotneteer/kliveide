@@ -45,6 +45,9 @@ import "./ide-message-processor";
 import { registerKliveCommands } from "./commands/register-commands";
 import { Z80DisassemblyPanelDescriptor } from "../machines/sidebar-panels/DisassemblyPanel";
 import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
+import { virtualMachineToolsService } from "../machines/core/VitualMachineToolBase";
+import { ZxSpectrum48Tools } from "../machines/zx-spectrum/ZxSpectrum48Core";
+import { CambridgeZ88Tools } from "../machines/cambridge-z88/CambridgeZ88Core";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -310,11 +313,15 @@ export default function IdeApp() {
         new SampleDocumentPanelDescriptor("7", "Long Document #4", "blue")
       );
 
-      // --- Register tools
+      // --- Register tool panels
       toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
       toolAreaService.registerTool(new OutputToolPanelDescriptor());
       outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
       outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
+
+      // --- Register virtual machine tools
+      virtualMachineToolsService.registerTools("sp48", new ZxSpectrum48Tools());
+      virtualMachineToolsService.registerTools("cz88", new CambridgeZ88Tools());
 
       // --- Register available commands
       registerKliveCommands();

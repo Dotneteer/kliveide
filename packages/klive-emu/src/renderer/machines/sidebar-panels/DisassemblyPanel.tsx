@@ -1,7 +1,4 @@
 import * as React from "react";
-import {
-  VirtualizedListApi,
-} from "../../common-ui/VirtualizedList";
 import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
@@ -15,9 +12,11 @@ import {
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
+import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
+import { ideStore } from "../../ide/ideStore";
 
 const TITLE = "Z80 Disassembly";
-const DISASS_LENGTH = 256;
+const DISASS_LENGTH = 2560;
 
 type State = {
   output?: DisassemblyOutput;
@@ -30,8 +29,6 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   SideBarProps<{}>,
   SideBarState<State>
 > {
-  private _listApi: VirtualizedListApi;
-
   title = TITLE;
   width = "fit-content";
   noMacineLine2 = "to see the disassembly";
@@ -79,7 +76,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
         style={{ ...itemStyle }}
         onClick={() => {
           this.setState({ selectedIndex: index });
-          this._listApi.forceRefresh();
+          this.listApi.forceRefresh();
         }}
       >
         {!item?.prefixComment && (
@@ -129,10 +126,23 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
     const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
     const memory = await engineProxy.getCachedMemoryContents();
     const pcValue = cpuState._pc;
+
+    // --- Create the disassebler
     const disassembler = new Z80Disassembler(
       [new MemorySection(pcValue, pcValue + DISASS_LENGTH)],
       memory
     );
+
+    // --- Set up custom disassembler, if available
+    const machineTools = virtualMachineToolsService.getTools(ideStore.getState().machineType);
+    if (machineTools) {
+      const customDisass = machineTools.provideCustomDisassembler();
+      if (customDisass) {
+        disassembler.setCustomDisassembler(customDisass);
+      }
+    }
+
+    // --- Now, create the disassembly
     const disassemblyOutput = await disassembler.disassemble(
       pcValue,
       pcValue + DISASS_LENGTH
@@ -143,7 +153,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
     this.setState({
       output: disassemblyOutput,
     });
-    this._listApi.forceRefresh(0);
+    this.listApi.forceRefresh(0);
   }
 }
 
