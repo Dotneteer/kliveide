@@ -34,4 +34,11 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
    * Friendly name to display
    */
   readonly displayName = "ZX Spectrum 128K";
+
+  /**
+   * Indicates if this model supports the AY-3-8912 PSG chip
+   */
+  get supportsPsg(): boolean {
+    return true;
+  }
 }
