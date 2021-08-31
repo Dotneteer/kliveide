@@ -38,8 +38,11 @@ export default function TestRunnerPanel({ descriptor }: Props) {
  * Descriptor for the sample side bar panel
  */
 export class TestRunnerPanelDescription extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

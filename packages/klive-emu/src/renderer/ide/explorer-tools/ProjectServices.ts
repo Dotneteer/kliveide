@@ -15,14 +15,6 @@ class ProjectServices {
   private _projectTree: ITreeView<ProjectNode> | null = null;
 
   /**
-   * Sets the current project tree
-   * @param tree Project tree to use
-   */
-  setProjectTree(tree: ITreeView<ProjectNode>): void {
-    this._projectTree = tree;
-  }
-
-  /**
    * Gets the current project tree
    * @returns Project tree, if set; otherwise, null
    */
@@ -34,14 +26,18 @@ class ProjectServices {
    * Sets the project folder to the specified one
    * @param name
    */
-  async setProjectFolder(name: string): Promise<void> {
-    const response =
-      await ideToEmuMessenger.sendMessage<GetFolderContentsResponse>({
-        type: "GetFolderContents",
-        folder: name,
-      });
-    const tree = new TreeView(this.createTreeFrom(response.contents));
-    this.setProjectTree(tree);
+  async setProjectFolder(name?: string): Promise<void> {
+    if (name) {
+      const response =
+        await ideToEmuMessenger.sendMessage<GetFolderContentsResponse>({
+          type: "GetFolderContents",
+          folder: name,
+        });
+      const tree = new TreeView(this.createTreeFrom(response.contents));
+      this._projectTree = tree;
+    } else {
+      this._projectTree = null;
+    }
   }
 
   /**
@@ -63,16 +59,16 @@ class ProjectServices {
         folderNode.isExpanded = false;
         root.appendChild(folderNode);
       });
-    contents.files
-      .sort()
-      .forEach((f) => {
-        root.appendChild(new TreeNode<ProjectNode>({
+    contents.files.sort().forEach((f) => {
+      root.appendChild(
+        new TreeNode<ProjectNode>({
           name: f,
           isFolder: false,
           fullPath: `${contents.name}/${f}`,
           children: [],
-        }));
-      });
+        })
+      );
+    });
     return root;
   }
 }

@@ -109,7 +109,6 @@ export default class UlaInformationPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
-  title = TITLE;
   noMacineLine2 = "to see the ULA state";
 
   renderContent() {
@@ -168,8 +167,11 @@ export default class UlaInformationPanel extends SideBarPanelBase<
  * Descriptor for the sample side bar panel
  */
 export class UlaInformationPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

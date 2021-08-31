@@ -178,6 +178,13 @@ export interface CreateKliveProjectRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks the main process to open a folder
+ */
+export interface OpenProjectFolderRequest extends MessageBase {
+  type: "OpenProjectFolder";
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -227,7 +234,8 @@ type IdeToEmuRequests =
 type IdeToMainRequests =
   | GetFolderContentsRequest
   | GetRegisteredMachinesRequest
-  | CreateKliveProjectRequest;
+  | CreateKliveProjectRequest
+  | OpenProjectFolderRequest;
 
 /**
  * Requests send by the main process to Emu
@@ -284,7 +292,7 @@ export interface GetMachineStateResponse extends MessageBase {
 /**
  * The Ide asks Emu for the memory contents of the virtual machine
  */
- export interface GetMemoryContentsResponse extends MessageBase {
+export interface GetMemoryContentsResponse extends MessageBase {
   type: "GetMemoryContentsResponse";
   contents: Uint8Array;
 }

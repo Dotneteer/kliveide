@@ -29,7 +29,6 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   SideBarProps<{}>,
   SideBarState<State>
 > {
-  title = TITLE;
   width = "fit-content";
   noMacineLine2 = "to see the disassembly";
 
@@ -94,7 +93,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
               {item.address.toString(16).padStart(4, "0").toUpperCase()}
             </div>
             {index === 0 ? (
-              <SvgIcon iconName="chevron-right" fill="--console-ansi-green"/>
+              <SvgIcon iconName="chevron-right" fill="--console-ansi-green" />
             ) : (
               <div style={{ width: 14 }} />
             )}
@@ -134,7 +133,9 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
     );
 
     // --- Set up custom disassembler, if available
-    const machineTools = virtualMachineToolsService.getTools(ideStore.getState().machineType);
+    const machineTools = virtualMachineToolsService.getTools(
+      ideStore.getState().machineType
+    );
     if (machineTools) {
       const customDisass = machineTools.provideCustomDisassembler();
       if (customDisass) {
@@ -161,8 +162,11 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
  * Descriptor for the sample side bar panel
  */
 export class Z80DisassemblyPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

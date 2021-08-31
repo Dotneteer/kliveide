@@ -7,16 +7,17 @@ const TITLE = "Open Editors";
 /**
  * Open editors panel
  */
-export default class OpenEditorsPanel extends SideBarPanelBase {
-  title = TITLE;
-}
+export default class OpenEditorsPanel extends SideBarPanelBase {}
 
 /**
  * Descriptor for the sample side bar panel
  */
 export class OpenEditorsPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

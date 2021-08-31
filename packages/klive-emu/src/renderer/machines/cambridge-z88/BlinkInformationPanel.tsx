@@ -376,7 +376,6 @@ export default class BlinkInformationPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
-  title = TITLE;
 
   renderContent() {
     const state = this.state?.machineState;
@@ -425,8 +424,11 @@ export default class BlinkInformationPanel extends SideBarPanelBase<
  * Descriptor for the sample side bar panel
  */
 export class BlinkInformationPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

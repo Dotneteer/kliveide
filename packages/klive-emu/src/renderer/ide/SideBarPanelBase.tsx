@@ -27,9 +27,6 @@ export class SideBarPanelBase<
   private _eventCount = 0;
   private _initialized = false;
 
-  // --- Override the title in other panels
-  title = "(Panel)";
-
   // --- Override this property to set with item width in the scrollable panel
   width: string | number = "fit-content";
 
@@ -57,7 +54,7 @@ export class SideBarPanelBase<
   }
 
   renderContent(): React.ReactNode {
-    return <>{this.title}</>;
+    return <>{this.props.descriptor.title}</>;
   }
 
   // --- Override the default rendering
@@ -165,5 +162,5 @@ export const sidebarPlaceholderStyle: CSSProperties = {
   alignItems: "center",
   fontSize: "0.8em",
   fontFamily: "var(--console-font)",
-  color: "#a0a0a0",
+  color: "#cccccc",
 };

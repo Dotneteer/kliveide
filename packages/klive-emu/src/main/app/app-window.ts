@@ -17,6 +17,8 @@ let windowStateKeeper: any | null = null;
  * Emulator and IDE windows.
  */
 export abstract class AppWindow {
+  static focusedWindow: AppWindow | null = null;
+
   // --- The associated BrowserWindow instance
   private _window: BrowserWindow | null;
 
@@ -161,6 +163,7 @@ export abstract class AppWindow {
    * The window receives the focus
    */
   onFocus(): void {
+    AppWindow.focusedWindow = this;
     electronLocalShortcut.register(
       this._window,
       ["CommandOrControl+R", "CommandOrControl+Shift+R", "F5"],
@@ -172,6 +175,7 @@ export abstract class AppWindow {
    * The window loses the focus
    */
   onBlur(): void {
+    AppWindow.focusedWindow = null;
     electronLocalShortcut.unregisterAll(this._window);
   }
 

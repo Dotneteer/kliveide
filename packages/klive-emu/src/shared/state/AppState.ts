@@ -19,6 +19,7 @@ export type AppState = {
   sideBar?: SideBarState;
   documentFrame?: DocumentFrameState;
   toolFrame?: ToolFrameState;
+  project?: ProjectState;
 };
 
 /**
@@ -131,6 +132,12 @@ export type ToolFrameState = {
   state: Record<string, Record<string, any>>;
 };
 
+export type ProjectState = {
+  path?: string;
+  projectName?: string;
+  hasVm?: boolean;
+}
+
 /**
  * The initial application state
  */
@@ -185,6 +192,11 @@ export function getInitialAppState(): AppState {
       visible: true,
       maximized : false,
       state: {}
+    },
+    project: {
+      path: null,
+      projectName: null,
+      hasVm: false,
     }
   };
 }

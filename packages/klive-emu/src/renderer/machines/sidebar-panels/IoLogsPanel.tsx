@@ -38,9 +38,13 @@ export default function IoLogsPanel({ descriptor }: Props) {
  * Descriptor for the sample side bar panel
  */
 export class IoLogsPanelDescription extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+   get title(): string {
+    return TITLE;
   }
+
 
   /**
    * Creates a node that represents the contents of a side bar panel
