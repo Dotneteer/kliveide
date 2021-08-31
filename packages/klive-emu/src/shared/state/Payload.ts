@@ -43,4 +43,7 @@ export interface Payload {
   maximized?: boolean;
   toolState?: Record<string, Record<string, any>>;
   isWindows?: boolean;
+  path?: string;
+  projectName?: string;
+  hasVm?: boolean;
 }

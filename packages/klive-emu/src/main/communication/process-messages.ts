@@ -10,7 +10,8 @@ import {
   ResponseMessage,
 } from "../../shared/messaging/message-types";
 import { emuForwarder, emuWindow } from "../app/app-menu";
-import { createKliveProject, getFolderContents } from "../utils/file-utils";
+import { createKliveProject } from "../project/project-utils";
+import { getFolderContents } from "../utils/file-utils";
 
 /**
  * Processes the requests arriving from the emulator process

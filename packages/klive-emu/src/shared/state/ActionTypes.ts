@@ -67,4 +67,8 @@ export interface ActionTypes {
   TOOL_FRAME_SHOW: null;
   TOOL_FRAME_MAXIMIZE: null;
   SET_TOOL_FRAME_STATE: null;
+
+  // --- Project actions
+  PROJECT_OPEN: null;
+  PROJECT_CLOSE: null;
 }

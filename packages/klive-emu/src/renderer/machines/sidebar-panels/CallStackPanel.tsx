@@ -8,15 +8,17 @@ const TITLE = "Call Stack";
  * Call stack panel
  */
 export default class CallStackPanel extends SideBarPanelBase {
-  title = TITLE;
 }
 
 /**
  * Descriptor for the sample side bar panel
  */
 export class CallStackPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

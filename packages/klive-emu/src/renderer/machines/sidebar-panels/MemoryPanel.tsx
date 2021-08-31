@@ -1,9 +1,6 @@
 import * as React from "react";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
-import {
-  SideBarProps,
-  SideBarState,
-} from "../../ide/SideBarPanelBase";
+import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { CSSProperties } from "react";
 import { engineProxy } from "../../ide/engine-proxy";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
@@ -22,7 +19,6 @@ export default class MemoryPanel extends VirtualizedSideBarPanelBase<
   private _memoryContents: Uint8Array | null = null;
   private _cpu: Z80CpuState | null = null;
 
-  title = TITLE;
   width = "fit-content";
   noMacineLine2 = "to see the memory content";
 
@@ -163,8 +159,11 @@ export default class MemoryPanel extends VirtualizedSideBarPanelBase<
  * Descriptor for the sample side bar panel
  */
 export class MemoryPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

@@ -13,6 +13,7 @@ import activityBarReducer from "./activity-bar-reducer";
 import sideBarReducer from "./side-bar-reducer";
 import documentFrameReducer from "./document-frame-reducer";
 import toolFrameReducer from "./tool-frame-reducer";
+import projectReducer from "./project-reducer";
 
 /**
  * Represents the reducers
@@ -33,4 +34,5 @@ export const appReducers = {
   sideBar: sideBarReducer,
   documentFrame: documentFrameReducer,
   toolFrame: toolFrameReducer,
+  project: projectReducer,
 };

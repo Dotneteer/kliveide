@@ -38,8 +38,14 @@ import {
 import { EmuWindow } from "./emu-window";
 import { IdeWindow } from "./ide-window";
 import { StateAwareObject } from "../../shared/state/StateAwareObject";
-import { appConfiguration, appSettings } from "../main-state/klive-configuration";
-import { ideHideAction, ideShowAction } from "../../shared/state/show-ide-reducer";
+import {
+  appConfiguration,
+  appSettings,
+} from "../main-state/klive-configuration";
+import {
+  ideHideAction,
+  ideShowAction,
+} from "../../shared/state/show-ide-reducer";
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
@@ -48,6 +54,8 @@ import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
+import { openProjectFolder } from "../project/project-utils";
+import { closeProjectAction } from "../../shared/state/project-reducer";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -126,6 +134,8 @@ export function setIdeMessenger(messenger: MainToIdeMessenger): void {
 }
 
 // --- Menu IDs
+const OPEN_FOLDER = "open_folder";
+const CLOSE_FOLDER = "close_folder";
 const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_TOOLBAR = "toggle_toolbar";
 const TOGGLE_STATUSBAR = "toggle_statusbar";
@@ -174,7 +184,21 @@ export function setupMenu(): void {
   // --- Prepare the File menu
   const fileMenu: MenuItemConstructorOptions = {
     label: "File",
-    submenu: [__DARWIN__ ? { role: "close" } : { role: "quit" }],
+    submenu: [
+      {
+        id: OPEN_FOLDER,
+        label: "Open folder",
+        click: async () => await openProjectFolder(),
+      },
+      {
+        id: CLOSE_FOLDER,
+        label: "Close folder",
+        enabled: !!mainStore.getState()?.project?.path,
+        click: () => mainStore.dispatch(closeProjectAction()),
+      },
+      { type: "separator" },
+      __DARWIN__ ? { role: "close" } : { role: "quit" },
+    ],
   };
 
   // --- Preapre the view menu
@@ -502,13 +526,19 @@ export function watchStateChanges(): void {
 let lastShowIde = false;
 
 /**
- * Processes emulator data changes
- * @param state Emulator state
+ * Processes application state changes
+ * @param fullState Application state
  */
 export function processStateChange(fullState: AppState): void {
   const menu = Menu.getApplicationMenu();
   const viewOptions = fullState.emuViewOptions;
   const emuState = fullState.emulatorPanel;
+
+  // --- File menu state
+  const closeFolder = menu.getMenuItemById(CLOSE_FOLDER);
+  if (closeFolder) {
+    closeFolder.enabled = !!fullState?.project?.path;
+  }
 
   // --- Visibility of the IDE window
   if (lastShowIde !== fullState.showIde) {

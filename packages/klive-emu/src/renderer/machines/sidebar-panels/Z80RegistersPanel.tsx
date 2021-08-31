@@ -5,7 +5,11 @@ import { SvgIcon } from "../../common-ui/SvgIcon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import { engineProxy } from "../../ide/engine-proxy";
-import { labelStyle, valueItemStyle, valueStyle } from "../../ide/utils/content-utils";
+import {
+  labelStyle,
+  valueItemStyle,
+  valueStyle,
+} from "../../ide/utils/content-utils";
 import { MachineState } from "../core/vm-core-types";
 
 const TITLE = "Z80 CPU State";
@@ -182,7 +186,6 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
-  title = TITLE;
   noMacineLine2 = "to see the CPU state";
 
   renderContent() {
@@ -267,8 +270,11 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
  * Descriptor for the sample side bar panel
  */
 export class Z80RegistersPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    return TITLE;
   }
 
   /**

@@ -9,13 +9,15 @@ import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
-
-const TITLE = "Project Files";
+import { ideStore } from "../ideStore";
+import { StateAwareObject } from "../../../shared/state/StateAwareObject";
+import { ProjectState } from "../../../shared/state/AppState";
 
 type State = {
   itemsCount: number;
   selected?: ITreeNode<ProjectNode>;
   selectedIndex: number;
+  refreshCount: number;
 };
 
 /**
@@ -25,23 +27,32 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
+  private _projectAware: StateAwareObject<ProjectState>;
   private _listApi: VirtualizedListApi;
-
-  title = TITLE;
 
   constructor(props: SideBarProps<{}>) {
     super(props);
     this.state = {
       itemsCount: 0,
       selectedIndex: -1,
+      refreshCount: 0,
     };
   }
 
   async componentDidMount(): Promise<void> {
-    await projectServices.setProjectFolder("C:/Temp/z88-native");
+    //await projectServices.setProjectFolder("C:/Temp/z88-native");
+    this._projectAware = new StateAwareObject<ProjectState>(
+      ideStore,
+      "project"
+    );
+    this._projectAware.stateChanged.on(this.onProjectChange);
     this.setState({
       itemsCount: this.itemsCount,
     });
+  }
+
+  componentWillUnmount(): void {
+    this._projectAware.stateChanged.off(this.onProjectChange);
   }
 
   /**
@@ -50,6 +61,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   get itemsCount(): number {
     const tree = projectServices.getProjectTree();
     return tree && tree.rootNode ? tree.rootNode.viewItemCount : 0;
+  }
+
+  /**
+   * Respond to project state changes
+   */
+  onProjectChange(projectState: ProjectState): void {
+    this.setState({ refreshCount: this.state.refreshCount + 1 });
+    console.log("Project state changed");
   }
 
   render() {
@@ -230,8 +249,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
  * Descriptor for the sample side bar panel
  */
 export class ProjectFilesPanelDescriptor extends SideBarPanelDescriptorBase {
-  constructor() {
-    super(TITLE);
+  /**
+   * Panel title
+   */
+  get title(): string {
+    const projectState = ideStore.getState().project;
+    return projectState?.projectName
+      ? `${projectState.projectName}${projectState?.hasVm ? "" : " (No VM)"}`
+      : "No project opened";
   }
 
   /**

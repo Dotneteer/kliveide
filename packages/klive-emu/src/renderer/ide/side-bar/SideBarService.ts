@@ -62,12 +62,10 @@ export interface ISideBarPanel {
 export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
   private _panelState: Record<string, any> = {};
 
-  /**
-   * Instantiates the panel with the specified title
-   * @param title
-   */
-  constructor(public readonly title: string) {}
-
+  get title(): string {
+    return "(Panel)";
+  }
+  
   /**
    * Signs if the specified panel is expanded
    * @param expanded
