@@ -15,7 +15,7 @@ export const darkTheme: ITheme = {
     "--selected-border-color": "#007fd4",
     "--selected-background-color": "#094771",
     "--selection-color": "#007acc",
-    "--information-color": "#c0c0c0",
+    "--information-color": "#cccccc",
     "--hilited-color": "#007acc",
     "--console-font": 'Consolas, "Courier New", monospace',
     

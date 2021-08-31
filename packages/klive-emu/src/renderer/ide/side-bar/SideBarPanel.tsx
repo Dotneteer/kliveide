@@ -6,6 +6,9 @@ import SideBarPanelHeader from "./SideBarPanelHeader";
 import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { MenuItem } from "../../../shared/command/commands";
 import { contextMenuService } from "../context-menu/ContextMenuService";
+import { AppState } from "../../../shared/state/AppState";
+import { StateAwareObject } from "../../../shared/state/StateAwareObject";
+import { ideStore } from "../ideStore";
 
 /**
  * Component properties
@@ -37,7 +40,7 @@ export default function SideBarPanel({
 }: Props) {
   const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
   const [expanded, setExpanded] = useState(descriptor.expanded);
-  const [resizeCount, setResizeCount] = useState(0);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   // --- Create menu items
   const menuItems: MenuItem[] = [
@@ -58,6 +61,24 @@ export default function SideBarPanel({
       },
     },
   ];
+
+  // --- The descriptor can respond to state changes
+  const onStateChange = async (state: AppState) => {
+    await descriptor.onStateChange(state);
+    if (await descriptor.shouldUpdatePanelHeader()) {
+      await new Promise(r => setTimeout(r, 200));
+      setExpanded(descriptor.expanded);
+      setRefreshCount(refreshCount + 1);
+    }
+  };
+
+  useEffect(() => {
+    const stateAware = new StateAwareObject(ideStore);
+    stateAware.stateChanged.on((state) => onStateChange(state));
+    return () => {
+      stateAware.dispose();
+    }
+  });
 
   useEffect(() => {
     // --- Get the initial width
@@ -85,7 +106,7 @@ export default function SideBarPanel({
         expanded={expanded}
         sizeable={sizeable}
         index={index}
-        clicked={async () => {
+        clicked={() => {
           const newExpanded = !expanded;
           setExpanded(newExpanded);
           descriptor.expanded = newExpanded;
@@ -126,7 +147,7 @@ export default function SideBarPanel({
         handleHeight
         onResize={(_width, height) => {
           descriptor.height = height;
-          setResizeCount(resizeCount + 1);
+          setRefreshCount(refreshCount + 1);
         }}
       />
     </div>

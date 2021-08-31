@@ -8,7 +8,7 @@ import { getHomeFolder } from "../utils/file-utils";
 import { KliveProject } from "../main-state/klive-settings";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import { mainStore } from "../main-state/main-store";
-import { openProjectAction } from "../../shared/state/project-reducer";
+import { closeProjectAction, openProjectAction } from "../../shared/state/project-reducer";
 
 /**
  * Name of the project file within the project directory
@@ -23,22 +23,11 @@ export const CODE_DIR_NAME = "code";
 /**
  * Opens the specified folder as a project
  */
-export async function openProject(folder: string): Promise<void> {}
+export async function openProject(projectPath: string): Promise<void> {
+  // --- Close the current project, and wait for a little while
+  mainStore.dispatch(closeProjectAction());
 
-/**
- * Selects a project folder and opens it
- */
-export async function openProjectFolder(): Promise<void> {
-  const result = await dialog.showOpenDialog(AppWindow.focusedWindow.window, {
-    title: "Open project folder",
-    properties: ["openDirectory"],
-  });
-  if (result.canceled) {
-    return;
-  }
-
-  // --- Obtan the project folder and its properties
-  const projectPath = result.filePaths[0];
+  // --- Now, open the project
   const projectName = path.basename(projectPath);
   const projectFile = path.join(projectPath, PROJECT_FILE);
 
@@ -48,6 +37,19 @@ export async function openProjectFolder(): Promise<void> {
 
   // --- Set the state accordingly
   mainStore.dispatch(openProjectAction(projectPath, projectName, hasVm));
+}
+
+/**
+ * Selects a project folder and opens it
+ */
+export async function openProjectFolder(): Promise<void> {
+  const result = await dialog.showOpenDialog(AppWindow.focusedWindow.window, {
+    title: "Open project folder",
+    properties: ["openDirectory"],
+  });
+  if (!result.canceled) {
+    await openProject(result.filePaths[0]);
+  }
 }
 
 /**

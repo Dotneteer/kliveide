@@ -1,6 +1,6 @@
 import * as React from "react";
 import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
-import { SideBarState } from "../../../shared/state/AppState";
+import { AppState, SideBarState } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { activityService } from "../activity-bar/ActivityService";
 import { ideStore } from "../ideStore";
@@ -54,6 +54,17 @@ export interface ISideBarPanel {
    * @param fireImmediate Fire a panelStateLoaded event immediately?
    */
   setPanelState(state: Record<string, any> | null): void;
+
+  /**
+   * Respond to state changes
+   * @param state
+   */
+  onStateChange(state: AppState): Promise<void>;
+
+  /**
+   * Should update the panel header?
+   */
+  shouldUpdatePanelHeader(): Promise<boolean>;
 }
 
 /**
@@ -65,7 +76,7 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
   get title(): string {
     return "(Panel)";
   }
-  
+
   /**
    * Signs if the specified panel is expanded
    * @param expanded
@@ -108,6 +119,19 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
     if (state) {
       this._panelState = { ...this._panelState, ...state };
     }
+  }
+
+  /**
+   * Respond to state changes
+   * @param state
+   */
+  async onStateChange(state: AppState): Promise<void> {}
+
+  /**
+   * Should update the panel header?
+   */
+  async shouldUpdatePanelHeader(): Promise<boolean> {
+    return false;
   }
 }
 

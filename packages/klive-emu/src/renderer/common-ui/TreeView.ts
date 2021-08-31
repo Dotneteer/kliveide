@@ -65,6 +65,9 @@ export class TreeView<TNode> implements ITreeView<TNode> {
   getViewNodeByIndex(index: number): ITreeNode<TNode> | undefined {
     this._checkRootNodeAssigned();
     let currentNode = this._rootNode;
+    if (!currentNode) {
+      return undefined;
+    }
     while (true) {
       // --- If we're right at the indexed node and that is not hidden,
       // --- we found the node.

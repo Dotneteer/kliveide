@@ -162,5 +162,5 @@ export const sidebarPlaceholderStyle: CSSProperties = {
   alignItems: "center",
   fontSize: "0.8em",
   fontFamily: "var(--console-font)",
-  color: "#a0a0a0",
+  color: "#cccccc",
 };

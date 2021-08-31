@@ -10,7 +10,10 @@ import {
   ResponseMessage,
 } from "../../shared/messaging/message-types";
 import { emuForwarder, emuWindow } from "../app/app-menu";
-import { createKliveProject } from "../project/project-utils";
+import {
+  createKliveProject,
+  openProjectFolder,
+} from "../project/project-utils";
 import { getFolderContents } from "../utils/file-utils";
 
 /**
@@ -76,7 +79,13 @@ export async function processIdeRequest(
       return <CreateKliveProjectResponse>{
         type: "CreateKliveProjectResponse",
         error: operation.error,
-        targetFolder: operation.targetFolder
+        targetFolder: operation.targetFolder,
+      };
+
+    case "OpenProjectFolder":
+      await openProjectFolder();
+      return <DefaultResponse>{
+        type: "Ack",
       };
 
     default:

@@ -4,14 +4,19 @@ import VirtualizedList, {
 } from "../../common-ui/VirtualizedList";
 import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
-import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
+import {
+  SideBarPanelBase,
+  sidebarPlaceholderStyle,
+  SideBarProps,
+} from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { ideStore } from "../ideStore";
 import { StateAwareObject } from "../../../shared/state/StateAwareObject";
-import { ProjectState } from "../../../shared/state/AppState";
+import { AppState, ProjectState } from "../../../shared/state/AppState";
+import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 
 type State = {
   itemsCount: number;
@@ -40,19 +45,20 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   }
 
   async componentDidMount(): Promise<void> {
-    //await projectServices.setProjectFolder("C:/Temp/z88-native");
     this._projectAware = new StateAwareObject<ProjectState>(
       ideStore,
       "project"
     );
-    this._projectAware.stateChanged.on(this.onProjectChange);
+    this._projectAware.stateChanged.on(
+      async (state) => await this.onProjectChange(state)
+    );
     this.setState({
       itemsCount: this.itemsCount,
     });
   }
 
   componentWillUnmount(): void {
-    this._projectAware.stateChanged.off(this.onProjectChange);
+    this._projectAware.dispose();
   }
 
   /**
@@ -66,41 +72,85 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   /**
    * Respond to project state changes
    */
-  onProjectChange(projectState: ProjectState): void {
-    this.setState({ refreshCount: this.state.refreshCount + 1 });
-    console.log("Project state changed");
+  async onProjectChange(state: ProjectState): Promise<void> {
+    await projectServices.setProjectFolder(state.path);
+    this.setState({
+      itemsCount: this.itemsCount,
+      refreshCount: this.state.refreshCount,
+    });
   }
 
   render() {
     let slice: ITreeNode<ProjectNode>[];
-    return (
-      <VirtualizedList
-        itemHeight={22}
-        numItems={this.state.itemsCount}
-        integralPosition={false}
-        renderItem={(
-          index: number,
-          style: CSSProperties,
-          startIndex: number,
-          endIndex: number
-        ) => {
-          if (index === startIndex) {
-            slice = this.getListItemRange(startIndex, endIndex);
-          }
-          return this.renderItem(index, style, slice[index - startIndex]);
-        }}
-        registerApi={(api) => (this._listApi = api)}
-        handleKeys={(e) => this.handleKeys(e)}
-        onFocus={() => {
-          this.signFocus(true);
-          this._listApi.forceRefresh();
-        }}
-        onBlur={() => {
-          this.signFocus(false);
-          this._listApi.forceRefresh();
-        }}
-      />
-    );
+    if (this.state.itemsCount > 0) {
+      return (
+        <VirtualizedList
+          itemHeight={22}
+          numItems={this.state.itemsCount}
+          integralPosition={false}
+          renderItem={(
+            index: number,
+            style: CSSProperties,
+            startIndex: number,
+            endIndex: number
+          ) => {
+            if (index === startIndex) {
+              slice = this.getListItemRange(startIndex, endIndex);
+            }
+            return this.renderItem(index, style, slice[index - startIndex]);
+          }}
+          registerApi={(api) => (this._listApi = api)}
+          handleKeys={(e) => this.handleKeys(e)}
+          onFocus={() => {
+            this.signFocus(true);
+            this._listApi.forceRefresh();
+          }}
+          onBlur={() => {
+            this.signFocus(false);
+            this._listApi.forceRefresh();
+          }}
+        />
+      );
+    } else {
+      const panelStyle: CSSProperties = {
+        display: "flex",
+        flexDirection: "column",
+        flexGrow: 1,
+        flexShrink: 1,
+        width: "100%",
+        height: "100%",
+        fontSize: "0.8em",
+        color: "var(--information-color)",
+        paddingLeft: 20,
+        paddingRight: 20,
+      };
+      const buttonStyle: CSSProperties = {
+        backgroundColor: "var(--selected-background-color)",
+        color: "var(--menu-text-color)",
+        width: "100%",
+        border: "none",
+        marginTop: 13,
+        padding: 8,
+        cursor: "pointer",
+      };
+      return (
+        <div style={panelStyle}>
+          <span style={{ marginTop: 13 }}>
+            You have not yet opened a folder.
+          </span>
+          <button
+            style={buttonStyle}
+            onClick={async () => {
+              await ideToEmuMessenger.sendMessage({
+                type: "OpenProjectFolder",
+              });
+            }}
+          >
+            Open Folder
+          </button>
+        </div>
+      );
+    }
   }
 
   renderItem(
@@ -137,7 +187,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       >
         <div
           style={{
-            width: 22 + 12 * item.level + (item.nodeData.isFolder ? 0 : 12),
+            width: 22 + 12 * item.level + (item.nodeData.isFolder ? 0 : 16),
           }}
         ></div>
         {item.nodeData.isFolder && (
@@ -249,6 +299,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
  * Descriptor for the sample side bar panel
  */
 export class ProjectFilesPanelDescriptor extends SideBarPanelDescriptorBase {
+  private _lastProjectState: ProjectState = null;
+  private _shouldRefresh = false;
+
   /**
    * Panel title
    */
@@ -264,5 +317,26 @@ export class ProjectFilesPanelDescriptor extends SideBarPanelDescriptorBase {
    */
   createContentElement(): React.ReactNode {
     return <ProjectFilesPanel descriptor={this} />;
+  }
+
+  /**
+   * Respond to state changes
+   * @param state
+   */
+  async onStateChange(state: AppState): Promise<void> {
+    if (this._lastProjectState !== state.project) {
+      this._lastProjectState = state.project;
+      this.expanded = true;
+      this._shouldRefresh = true;
+      return;
+    }
+    this._shouldRefresh = false;
+  }
+
+  /**
+   * Should update the panel header?
+   */
+  async shouldUpdatePanelHeader(): Promise<boolean> {
+    return this._shouldRefresh;
   }
 }

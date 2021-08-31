@@ -20,7 +20,9 @@ export async function getFolderContents(
 ): Promise<DirectoryContent> {
   // --- Contents of folders already queried
   const foldersRead = new Map<string, DirectoryContent>();
-  return readFolders(folder);
+  const root = await readFolders(folder);
+  root.name = folder;
+  return root;
 
   // --- Carries out reading the folder contents
   async function readFolders(
