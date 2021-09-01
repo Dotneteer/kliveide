@@ -12,7 +12,7 @@ import IdeApp from "./IdeApp";
 registerThemes(ideStore.getState().isWindows ?? false);
 
 ReactDOM.render(
-  <Provider store={ideStore}>
+  <Provider store={ideStore.store}>
     <IdeApp />
   </Provider>,
   document.getElementById("app")

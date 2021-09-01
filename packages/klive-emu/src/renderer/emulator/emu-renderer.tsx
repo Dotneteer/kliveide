@@ -12,7 +12,7 @@ registerThemes(emuStore.getState().isWindows ?? false);
 
 // --- Render the main component of the emulator window
 ReactDOM.render(
-  <Provider store={emuStore}>
+  <Provider store={emuStore.store}>
     <EmuApp></EmuApp>
   </Provider>,
   document.getElementById("app")

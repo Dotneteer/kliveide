@@ -1,5 +1,4 @@
 import { ideStore } from "../../ide/ideStore";
-import { StateAwareObject } from "../../../shared/state/StateAwareObject";
 import { EmulatorPanelState } from "../../../shared/state/AppState";
 import {
   IOutputBuffer,
@@ -21,8 +20,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
 
   constructor() {
     super(ID, TITLE);
-    const vmAware = new StateAwareObject<string>(ideStore, "machineType");
-    vmAware.stateChanged.on((type: string) => {
+    ideStore.machineTypeChanged.on((type) => {
       // --- Change the execution state to "none" whenever the machine type changes
       this._isMachineTypeSet = true;
       this._lastEmuState = null;
@@ -39,11 +37,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
         buffer.resetColor();
       }
     });
-    const emuAware = new StateAwareObject<EmulatorPanelState>(
-      ideStore,
-      "emulatorPanel"
-    );
-    emuAware.stateChanged.on(async (emuPanel: EmulatorPanelState) => {
+    ideStore.emulatorPanelChanged.on(async (emuPanel: EmulatorPanelState) => {
       if (!this._isMachineTypeSet) {
         return;
       }

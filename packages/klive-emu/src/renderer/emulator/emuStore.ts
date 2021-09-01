@@ -9,6 +9,7 @@ import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateFo
 import { getInitialAppState } from "../../shared/state/AppState";
 import { IpcRendereApi } from "../../exposed-apis";
 import { ForwardActionRequest } from "../../shared/messaging/message-types";
+import { KliveStore } from "../../shared/state/KliveStore";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window
@@ -35,11 +36,11 @@ const forwardToMainMiddleware = () => (next: any) => (action: KliveAction) => {
 /**
  * Represents the emuStore replica of the app state
  */
-export const emuStore = createStore(
+export const emuStore = new KliveStore(createStore(
   combineReducers(appReducers),
   getInitialAppState(),
   applyMiddleware(forwardToMainMiddleware)
-);
+));
 
 ipcRenderer?.on(
   RENDERER_STATE_REQUEST_CHANNEL,

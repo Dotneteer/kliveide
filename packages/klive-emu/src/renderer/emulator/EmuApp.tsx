@@ -1,5 +1,4 @@
 import * as React from "react";
-import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { AppState } from "../../shared/state/AppState";
 import { themeService } from "../common-ui/themes/theme-service";
 import { useDispatch, useSelector, useStore } from "react-redux";
@@ -21,6 +20,7 @@ import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";
 // --- We need to import these files to setup the app
 import "./emu-message-processor";
 import "./ide-message-processor";
+import { emuStore } from "./emuStore";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({
@@ -44,35 +44,40 @@ export default function EmuApp() {
   const store = useStore();
   const dispatch = useDispatch();
 
-  // --- Keep track of theme changes
-  let themeAware: StateAwareObject<string>;
-  let windowsAware: StateAwareObject<boolean>;
-
   const emuViewOptions = useSelector((s: AppState) => s.emuViewOptions);
 
   React.useEffect(() => {
+    // --- State change event handlers
+    const isWindowsChanged = (isWindows: boolean) => {
+      themeService.isWindows = isWindows;
+      updateThemeState();
+    };
+    const themeChanged = (theme: string) => {
+      themeService.setTheme(theme);
+      updateThemeState();
+    };
+
     if (!mounted.current) {
       mounted.current = true;
       // --- Mount
       dispatch(emuLoadUiAction());
       updateThemeState();
 
-      // --- Watch for theme changes
-      themeAware = new StateAwareObject(store, "theme");
-      themeAware.stateChanged.on((theme) => {
-        themeService.setTheme(theme);
-        updateThemeState();
-      });
-
-      windowsAware = new StateAwareObject(store, "isWindows");
-      windowsAware.stateChanged.on((isWindows) => {
-        themeService.isWindows = isWindows;
-        updateThemeState();
-      });
+      emuStore.themeChanged.on(themeChanged);
+      emuStore.isWindowsChanged.on(isWindowsChanged);
 
       // --- Register modal dialogs
-      modalDialogService.registerModalDescriptor(Z88_CARDS_DIALOG_ID, cz88CardsDialog);
+      modalDialogService.registerModalDescriptor(
+        Z88_CARDS_DIALOG_ID,
+        cz88CardsDialog
+      );
     }
+
+    return () => {
+      // --- Unsubscribe
+      emuStore.isWindowsChanged.off(isWindowsChanged);
+      emuStore.themeChanged.off(themeChanged);
+    };
   }, [store]);
 
   // --- Apply styles to body so that dialogs, context menus can use it, too.
@@ -97,4 +102,3 @@ export default function EmuApp() {
     setThemeClass(`app-container ${theme.name}-theme`);
   }
 }
-

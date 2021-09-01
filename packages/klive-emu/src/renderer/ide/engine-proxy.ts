@@ -6,11 +6,8 @@ import {
   GetMemoryContentsResponse,
 } from "../../shared/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
-import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { ideStore } from "./ideStore";
-import { EmulatorPanelState } from "../../shared/state/AppState";
 import { MachineState } from "../machines/core/vm-core-types";
-import { ThemeProvider } from "styled-components";
 
 /**
  * Dealy time between two timed run events
@@ -34,11 +31,7 @@ class EngineProxy {
    * Initializes the engine proxy
    */
   constructor() {
-    const stateAware = new StateAwareObject<EmulatorPanelState>(
-      ideStore,
-      "emulatorPanel"
-    );
-    stateAware.stateChanged.on(async (emuPanel) => {
+    ideStore.emulatorPanelChanged.on(async (emuPanel) => {
       if (this._lastExecutionState !== emuPanel.executionState) {
         this._lastExecutionState = emuPanel.executionState;
         this.clearCache();
@@ -64,7 +57,7 @@ class EngineProxy {
           this._running = false;
         }
       }
-    });
+    })
   }
 
   /**

@@ -71,4 +71,5 @@ export interface ActionTypes {
   // --- Project actions
   PROJECT_OPEN: null;
   PROJECT_CLOSE: null;
+  PROJECT_LOADING: null;
 }

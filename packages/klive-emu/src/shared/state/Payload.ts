@@ -46,4 +46,5 @@ export interface Payload {
   path?: string;
   projectName?: string;
   hasVm?: boolean;
+  isLoading?: boolean;
 }

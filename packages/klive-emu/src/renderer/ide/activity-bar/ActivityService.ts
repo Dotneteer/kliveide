@@ -5,7 +5,6 @@ import {
 import { Activity } from "../../../shared/activity/Activity";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { ideStore } from "../ideStore";
-import { StateAwareObject } from "../../../shared/state/StateAwareObject";
 import { ActivityBarState } from "../../../shared/state/AppState";
 
 /**
@@ -18,8 +17,7 @@ class ActivityService {
 
   constructor() {
     this._lastActivityIndex = -1;
-    const stateAware = new StateAwareObject(ideStore, "activityBar");
-    stateAware.stateChanged.on((state) => {
+    ideStore.activityBarChanged.on((state) => {
       // --- Keep trach of changing the activity index
       const activityBarState = state as ActivityBarState;
       this._activities = activityBarState.activities;

@@ -133,6 +133,7 @@ export type ToolFrameState = {
 };
 
 export type ProjectState = {
+  isLoading?: boolean;
   path?: string;
   projectName?: string;
   hasVm?: boolean;
@@ -194,6 +195,7 @@ export function getInitialAppState(): AppState {
       state: {}
     },
     project: {
+      isLoading: false,
       path: null,
       projectName: null,
       hasVm: false,

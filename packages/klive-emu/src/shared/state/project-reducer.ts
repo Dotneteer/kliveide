@@ -12,6 +12,10 @@ export const openProjectAction: ActionCreator = (
   type: "PROJECT_OPEN",
   payload: { path, projectName, hasVm },
 });
+export const projectLoadingAction: ActionCreator = (isLoading: boolean) => ({
+  type: "PROJECT_LOADING",
+  payload: { isLoading },
+});
 export const closeProjectAction: ActionCreator = () => ({
   type: "PROJECT_CLOSE",
 });
@@ -20,6 +24,7 @@ export const closeProjectAction: ActionCreator = () => ({
 // Reducer
 
 const initialState: ProjectState = {
+  isLoading: false,
   path: null,
   projectName: null,
   hasVm: false,
@@ -32,10 +37,13 @@ export default function (
   switch (type) {
     case "PROJECT_OPEN":
       return {
+        ...state,
         path: payload.path,
         projectName: payload.projectName,
         hasVm: payload.hasVm,
       };
+    case "PROJECT_LOADING":
+      return { ...state, isLoading: payload.isLoading };
     case "PROJECT_CLOSE":
       return { ...initialState };
     default:

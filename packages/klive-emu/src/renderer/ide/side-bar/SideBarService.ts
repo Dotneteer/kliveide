@@ -4,7 +4,6 @@ import { AppState, SideBarState } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { activityService } from "../activity-bar/ActivityService";
 import { ideStore } from "../ideStore";
-import { StateAwareObject } from "../../../shared/state/StateAwareObject";
 
 /**
  * Represents an abstract side bar panel
@@ -153,13 +152,19 @@ class SideBarService {
 
   constructor() {
     this.reset();
-    const stateAware = new StateAwareObject<string>(ideStore, "machineType");
-    stateAware.stateChanged.on((type: string) => {
+    ideStore.machineTypeChanged.on((type) => {
       this._machineType = type;
       this._sideBarChanging.fire();
       this.refreshCurrentPanels();
       this._sideBarChanged.fire();
-    });
+    })
+    // const stateAware = new StateAwareObject<string>(ideStore, "machineType");
+    // stateAware.stateChanged.on((type: string) => {
+    //   this._machineType = type;
+    //   this._sideBarChanging.fire();
+    //   this.refreshCurrentPanels();
+    //   this._sideBarChanged.fire();
+    // });
 
     activityService.activityChanged.on((activity) => {
       this.saveSideBarState();

@@ -1,15 +1,10 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import { themeService } from "../common-ui/themes/theme-service";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
-import {
-  AppState,
-  EmuViewOptions,
-  ToolFrameState,
-} from "../../shared/state/AppState";
+import { EmuViewOptions, ToolFrameState } from "../../shared/state/AppState";
 import { useLayoutEffect } from "react";
 import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
@@ -48,6 +43,7 @@ import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
 import { virtualMachineToolsService } from "../machines/core/VitualMachineToolBase";
 import { ZxSpectrum48Tools } from "../machines/zx-spectrum/ZxSpectrum48Core";
 import { CambridgeZ88Tools } from "../machines/cambridge-z88/CambridgeZ88Core";
+import { ideStore } from "./ideStore";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -135,8 +131,31 @@ export default function IdeApp() {
   const [themeClass, setThemeClass] = useState("");
   const [documentFrameVisible, setDocumentFrameVisible] = useState(true);
   const [toolFrameVisible, setToolFrameVisible] = useState(true);
+  const [showStatusBar, setShowStatusBar] = useState(
+    ideStore.getState()?.emuViewOptions?.showStatusBar ?? false
+  );
 
   useEffect(() => {
+    // --- State change event handlers
+    const isWindowsChanged = (isWindows: boolean) => {
+      themeService.isWindows = isWindows;
+      updateThemeState();
+    };
+    const themeChanged = (theme: string) => {
+      themeService.setTheme(theme);
+      updateThemeState();
+    };
+    const viewOptionsChanged = (viewOptions: EmuViewOptions) => {
+      setShowStatusBar(viewOptions.showStatusBar);
+      onResize();
+    };
+    const toolFrameChanged = (toolFrame: ToolFrameState) => {
+      showToolFrame = toolFrame.visible;
+      setToolFrameVisible(showToolFrame);
+      showDocumentFrame = !toolFrame.maximized;
+      setDocumentFrameVisible(showDocumentFrame);
+    };
+
     if (!mounted) {
       // --- Mount logic, executed only once during the app's life cycle
       mounted = true;
@@ -144,42 +163,10 @@ export default function IdeApp() {
       dispatch(ideLoadUiAction());
       updateThemeState();
 
-      // --- Watch for theme changes
-      const themeAware = new StateAwareObject<string>(store, "theme");
-      themeAware.stateChanged.on((theme) => {
-        themeService.setTheme(theme);
-        updateThemeState();
-      });
-
-      // --- Recognize, when we use Klive in Windows
-      const windowsAware = new StateAwareObject<boolean>(store, "isWindows");
-      windowsAware.stateChanged.on((isWindows) => {
-        themeService.isWindows = isWindows;
-        updateThemeState();
-      });
-
-      // --- Re-calculate the layout whenever view options change
-      const viewAware = new StateAwareObject<EmuViewOptions>(
-        store,
-        "emuViewOptions"
-      );
-      viewAware.stateChanged.on(() => {
-        onResize();
-      });
-
-      // --- Re-calculate the layout whenever the visibility of the Document
-      // --- Frame or Tool Frame changes
-      const deskStatusAware = new StateAwareObject<ToolFrameState>(
-        store,
-        "toolFrame"
-      );
-      deskStatusAware.stateChanged.on((toolFrame) => {
-        // --- Set the new state of visibility flags
-        showToolFrame = toolFrame.visible;
-        setToolFrameVisible(showToolFrame);
-        showDocumentFrame = !toolFrame.maximized;
-        setDocumentFrameVisible(showDocumentFrame);
-      });
+      ideStore.themeChanged.on(themeChanged);
+      ideStore.isWindowsChanged.on(isWindowsChanged);
+      ideStore.emuViewOptionsChanged.on(viewOptionsChanged);
+      ideStore.toolFrameChanged.on(toolFrameChanged);
 
       // --- Set up activities
       const activities: Activity[] = [
@@ -329,6 +316,13 @@ export default function IdeApp() {
       // --- Select the file-view activity
       activityService.selectActivity(0);
     }
+    return () => {
+      // --- Unsubscribe
+      ideStore.toolFrameChanged.off(toolFrameChanged);
+      ideStore.emuViewOptionsChanged.off(viewOptionsChanged);
+      ideStore.isWindowsChanged.off(isWindowsChanged);
+      ideStore.themeChanged.off(themeChanged);
+    };
   }, [store]);
 
   // --- Apply styles to body so that dialogs, context menus can use it, too.
@@ -352,9 +346,9 @@ export default function IdeApp() {
   }, [documentFrameVisible, toolFrameVisible]);
 
   // --- Display the status bar when it's visible
-  const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
+  //const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
   const statusBarStyle: CSSProperties = {
-    height: ideViewOptions.showStatusBar ? 28 : 0,
+    height: showStatusBar ? 28 : 0,
     width: "100%",
     backgroundColor: "blue",
   };

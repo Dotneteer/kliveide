@@ -21,6 +21,7 @@ import {
 import { KliveAction } from "../../shared/state/state-core";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import { getInitialAppState } from "../../shared/state/AppState";
+import { KliveStore } from "../../shared/state/KliveStore";
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;
@@ -29,25 +30,26 @@ let isForwarding = false;
  * This middleware function forwards the action originated in the main process
  * to the renderer processes of browser windows.
  */
-const forwardToRendererMiddleware = () => (next: any) => async (
-  action: KliveAction
-) => {
-  if (!isForwarding) {
-    ideStateMessenger?.forwardAction(action);
-    emuStateMessenger?.forwardAction(action);
-  }
+const forwardToRendererMiddleware =
+  () => (next: any) => async (action: KliveAction) => {
+    if (!isForwarding) {
+      ideStateMessenger?.forwardAction(action);
+      emuStateMessenger?.forwardAction(action);
+    }
 
-  // --- Next middleware element
-  return next(action);
-};
+    // --- Next middleware element
+    return next(action);
+  };
 
 /**
  * Represents the master replica of the app state
  */
-export const mainStore = createStore(
-  combineReducers(appReducers),
-  getInitialAppState(),
-  applyMiddleware(forwardToRendererMiddleware)
+export const mainStore = new KliveStore(
+  createStore(
+    combineReducers(appReducers),
+    getInitialAppState(),
+    applyMiddleware(forwardToRendererMiddleware)
+  )
 );
 
 /**

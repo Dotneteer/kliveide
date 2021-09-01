@@ -4,17 +4,12 @@ import VirtualizedList, {
 } from "../../common-ui/VirtualizedList";
 import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
-import {
-  SideBarPanelBase,
-  sidebarPlaceholderStyle,
-  SideBarProps,
-} from "../SideBarPanelBase";
+import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { ideStore } from "../ideStore";
-import { StateAwareObject } from "../../../shared/state/StateAwareObject";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 
@@ -23,6 +18,7 @@ type State = {
   selected?: ITreeNode<ProjectNode>;
   selectedIndex: number;
   refreshCount: number;
+  isLoading: boolean;
 };
 
 /**
@@ -32,8 +28,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
-  private _projectAware: StateAwareObject<ProjectState>;
   private _listApi: VirtualizedListApi;
+  private _onProjectChange: (state: ProjectState) => Promise<void>;
 
   constructor(props: SideBarProps<{}>) {
     super(props);
@@ -41,24 +37,20 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       itemsCount: 0,
       selectedIndex: -1,
       refreshCount: 0,
+      isLoading: false,
     };
+    this._onProjectChange = (state) => this.onProjectChange(state);
   }
 
   async componentDidMount(): Promise<void> {
-    this._projectAware = new StateAwareObject<ProjectState>(
-      ideStore,
-      "project"
-    );
-    this._projectAware.stateChanged.on(
-      async (state) => await this.onProjectChange(state)
-    );
     this.setState({
       itemsCount: this.itemsCount,
     });
+    ideStore.projectChanged.on(this._onProjectChange);
   }
 
   componentWillUnmount(): void {
-    this._projectAware.dispose();
+    ideStore.projectChanged.off(this._onProjectChange);
   }
 
   /**
@@ -73,10 +65,12 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Respond to project state changes
    */
   async onProjectChange(state: ProjectState): Promise<void> {
+    this.setState({ isLoading: true });
     await projectServices.setProjectFolder(state.path);
     this.setState({
       itemsCount: this.itemsCount,
       refreshCount: this.state.refreshCount,
+      isLoading: false,
     });
   }
 
@@ -135,19 +129,23 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       };
       return (
         <div style={panelStyle}>
-          <span style={{ marginTop: 13 }}>
-            You have not yet opened a folder.
-          </span>
-          <button
-            style={buttonStyle}
-            onClick={async () => {
-              await ideToEmuMessenger.sendMessage({
-                type: "OpenProjectFolder",
-              });
-            }}
-          >
-            Open Folder
-          </button>
+          {!this.state.isLoading && (
+            <>
+              <span style={{ marginTop: 13 }}>
+                You have not yet opened a folder.
+              </span>
+              <button
+                style={buttonStyle}
+                onClick={async () => {
+                  await ideToEmuMessenger.sendMessage({
+                    type: "OpenProjectFolder",
+                  });
+                }}
+              >
+                Open Folder
+              </button>
+            </>
+          )}
         </div>
       );
     }
