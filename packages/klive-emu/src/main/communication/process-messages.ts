@@ -4,7 +4,6 @@ import {
   CreateKliveProjectResponse,
   DefaultResponse,
   EmuOpenFileDialogResponse,
-  GetFolderContentsResponse,
   GetRegisteredMachinesResponse,
   RequestMessage,
   ResponseMessage,
@@ -58,12 +57,6 @@ export async function processIdeRequest(
   message: RequestMessage
 ): Promise<ResponseMessage> {
   switch (message.type) {
-    case "GetFolderContents":
-      return <GetFolderContentsResponse>{
-        type: "GetFolderResponse",
-        contents: await getFolderContents(message.folder),
-      };
-
     case "GetRegisteredMachines":
       return <GetRegisteredMachinesResponse>{
         type: "GetRegisteredMachinesResponse",

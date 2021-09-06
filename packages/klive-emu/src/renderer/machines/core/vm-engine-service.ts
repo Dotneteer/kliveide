@@ -1,5 +1,4 @@
 import { setMachineTypeAction } from "../../../shared/state/machine-type-reducer";
-import { StateAwareObject } from "../../../shared/state/StateAwareObject";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { delay } from "../../common-ui/utils";
 import { ZxSpectrum128Core } from "../zx-spectrum/ZxSpectrum128Core";
@@ -33,7 +32,6 @@ class VmEngineService implements IVmController {
   private _vmEngine: VirtualMachineCoreBase | undefined;
   private _appConfig: KliveConfiguration | undefined;;
   private _error: string | null = null;
-  private _stateAware: StateAwareObject<string>;
   private _vmEngineChanged = new LiteEvent<VirtualMachineCoreBase>();
   private _vmScreenRefreshed = new LiteEvent<void>();
 
@@ -78,13 +76,6 @@ class VmEngineService implements IVmController {
   private _lastEngineTime = 0.0;
   private _avgEngineTime = 0.0;
   private _renderedFrames = 0;
-
-  constructor() {
-    this._stateAware = new StateAwareObject<string>(emuStore, "machineType");
-    this._stateAware.stateChanged.on(() => {
-      const state = this._stateAware.state;
-    });
-  }
 
   /**
    * Gets the current engine

@@ -7,7 +7,6 @@ import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { MenuItem } from "../../../shared/command/commands";
 import { contextMenuService } from "../context-menu/ContextMenuService";
 import { AppState } from "../../../shared/state/AppState";
-import { StateAwareObject } from "../../../shared/state/StateAwareObject";
 import { ideStore } from "../ideStore";
 
 /**
@@ -73,10 +72,9 @@ export default function SideBarPanel({
   };
 
   useEffect(() => {
-    const stateAware = new StateAwareObject(ideStore);
-    stateAware.stateChanged.on((state) => onStateChange(state));
+    ideStore.stateChanged.on(onStateChange);
     return () => {
-      stateAware.dispose();
+      ideStore.stateChanged.off(onStateChange);
     }
   });
 

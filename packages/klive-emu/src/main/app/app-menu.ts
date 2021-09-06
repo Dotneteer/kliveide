@@ -37,7 +37,6 @@ import {
 } from "../main-state/main-store";
 import { EmuWindow } from "./emu-window";
 import { IdeWindow } from "./ide-window";
-import { StateAwareObject } from "../../shared/state/StateAwareObject";
 import {
   appConfiguration,
   appSettings,
@@ -60,7 +59,6 @@ import { closeProjectAction } from "../../shared/state/project-reducer";
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
 export let ideWindow: IdeWindow;
-export let stateAware: StateAwareObject;
 
 /**
  * Messenger instance to the emulator window
@@ -104,9 +102,6 @@ export async function setupWindows(): Promise<void> {
   ideWindow.hide();
   ideWindow.load();
   registerIdeWindowForwarder(ideWindow.window);
-
-  // --- Prepare the state change observer
-  stateAware = new StateAwareObject(mainStore);
 }
 
 /**
@@ -518,9 +513,7 @@ export function setupMenu(): void {
  * Sets up state change cathing
  */
 export function watchStateChanges(): void {
-  stateAware.stateChanged.on((state) => {
-    processStateChange(state);
-  });
+  mainStore.subscribe(() => processStateChange(mainStore.getState()))
 }
 
 let lastShowIde = false;

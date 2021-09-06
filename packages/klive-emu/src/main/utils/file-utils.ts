@@ -1,7 +1,7 @@
 import * as path from "path";
 import { promises as fs } from "fs";
-import { DirectoryContent } from "../../shared/messaging/message-types";
 import { __WIN32__ } from "./electron-utils";
+import { DirectoryContent } from "../../shared/state/AppState";
 
 /**
  * Gets the current home folder
