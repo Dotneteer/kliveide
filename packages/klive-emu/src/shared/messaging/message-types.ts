@@ -155,14 +155,6 @@ export interface GetMemoryContentsRequest extends MessageBase {
 /**
  * The Ide asks the main process for the contents of a folder
  */
-export interface GetFolderContentsRequest extends MessageBase {
-  type: "GetFolderContents";
-  folder: string;
-}
-
-/**
- * The Ide asks the main process for the contents of a folder
- */
 export interface GetRegisteredMachinesRequest extends MessageBase {
   type: "GetRegisteredMachines";
 }
@@ -232,7 +224,6 @@ type IdeToEmuRequests =
  * Requests for IDE to Main
  */
 type IdeToMainRequests =
-  | GetFolderContentsRequest
   | GetRegisteredMachinesRequest
   | CreateKliveProjectRequest
   | OpenProjectFolderRequest;
@@ -300,14 +291,6 @@ export interface GetMemoryContentsResponse extends MessageBase {
 /**
  * The Ide asks the main process for the contents of a folder
  */
-export interface GetFolderContentsResponse extends MessageBase {
-  type: "GetFolderResponse";
-  contents: DirectoryContent;
-}
-
-/**
- * The Ide asks the main process for the contents of a folder
- */
 export interface GetRegisteredMachinesResponse extends MessageBase {
   type: "GetRegisteredMachinesResponse";
   machines: string[];
@@ -322,15 +305,6 @@ export interface CreateKliveProjectResponse extends MessageBase {
   targetFolder: string;
 }
 
-/**
- * Describes the contents of a directory
- */
-export type DirectoryContent = {
-  name: string;
-  folders: DirectoryContent[];
-  files: string[];
-};
-
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
@@ -339,7 +313,6 @@ export type ResponseMessage =
   | GetCpuStateResponse
   | GetMachineStateResponse
   | GetMemoryContentsResponse
-  | GetFolderContentsResponse
   | GetRegisteredMachinesResponse
   | CreateKliveProjectResponse;
 

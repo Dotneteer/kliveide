@@ -4,11 +4,14 @@ import { promises as fs } from "fs";
 
 import { dialog } from "electron";
 import { AppWindow } from "../app/app-window";
-import { getHomeFolder } from "../utils/file-utils";
+import { getFolderContents, getHomeFolder } from "../utils/file-utils";
 import { KliveProject } from "../main-state/klive-settings";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import { mainStore } from "../main-state/main-store";
-import { closeProjectAction, openProjectAction } from "../../shared/state/project-reducer";
+import {
+  projectOpenedAction,
+  projectLoadingAction,
+} from "../../shared/state/project-reducer";
 
 /**
  * Name of the project file within the project directory
@@ -25,7 +28,7 @@ export const CODE_DIR_NAME = "code";
  */
 export async function openProject(projectPath: string): Promise<void> {
   // --- Close the current project, and wait for a little while
-  mainStore.dispatch(closeProjectAction());
+  mainStore.dispatch(projectLoadingAction());
 
   // --- Now, open the project
   const projectName = path.basename(projectPath);
@@ -34,9 +37,12 @@ export async function openProject(projectPath: string): Promise<void> {
   // --- Check for project file
   const project = getProjectFile(projectFile);
   const hasVm = project != null;
+  const directoryContents = await getFolderContents(projectPath);
 
   // --- Set the state accordingly
-  mainStore.dispatch(openProjectAction(projectPath, projectName, hasVm));
+  mainStore.dispatch(
+    projectOpenedAction(projectPath, projectName, hasVm, directoryContents)
+  );
 }
 
 /**
@@ -60,7 +66,7 @@ export function getProjectFile(projectFile: string): KliveProject | null {
     if (syncFs.existsSync(projectFile)) {
       const contents = syncFs.readFileSync(projectFile, "utf8");
       const project = JSON.parse(contents) as KliveProject;
-      return (project.machineType && machineRegistry.has(project.machineType))
+      return project.machineType && machineRegistry.has(project.machineType)
         ? project
         : null;
     }
@@ -69,8 +75,6 @@ export function getProjectFile(projectFile: string): KliveProject | null {
   }
   return null;
 }
-
-
 
 /**
  * Creates a Klive project in the specified root folder with the specified name

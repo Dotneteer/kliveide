@@ -69,7 +69,7 @@ export interface ActionTypes {
   SET_TOOL_FRAME_STATE: null;
 
   // --- Project actions
-  PROJECT_OPEN: null;
-  PROJECT_CLOSE: null;
   PROJECT_LOADING: null;
+  PROJECT_OPENED: null;
+  PROJECT_CLOSED: null;
 }

@@ -17,7 +17,6 @@ type State = {
   itemsCount: number;
   selected?: ITreeNode<ProjectNode>;
   selectedIndex: number;
-  refreshCount: number;
   isLoading: boolean;
 };
 
@@ -36,7 +35,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     this.state = {
       itemsCount: 0,
       selectedIndex: -1,
-      refreshCount: 0,
       isLoading: false,
     };
     this._onProjectChange = (state) => this.onProjectChange(state);
@@ -65,13 +63,26 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Respond to project state changes
    */
   async onProjectChange(state: ProjectState): Promise<void> {
-    this.setState({ isLoading: true });
-    await projectServices.setProjectFolder(state.path);
-    this.setState({
-      itemsCount: this.itemsCount,
-      refreshCount: this.state.refreshCount,
-      isLoading: false,
-    });
+    console.log(state);
+    if (state.isLoading) {
+      this.setState({
+        isLoading: true,
+        itemsCount: 0
+      });
+    } else {
+      if (!state.path) {
+        this.setState({
+          isLoading: false,
+          itemsCount: 0
+        });
+      } else {
+        projectServices.setProjectContents(state.directoryContents);
+        this.setState({
+          isLoading: false,
+          itemsCount: this.itemsCount,
+        });
+      }
+    }
   }
 
   render() {

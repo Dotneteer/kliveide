@@ -137,7 +137,18 @@ export type ProjectState = {
   path?: string;
   projectName?: string;
   hasVm?: boolean;
+  directoryContents?: DirectoryContent;
 }
+
+/**
+ * Describes the contents of a directory
+ */
+ export type DirectoryContent = {
+  name: string;
+  folders: DirectoryContent[];
+  files: string[];
+};
+
 
 /**
  * The initial application state

@@ -1,6 +1,7 @@
 import { Activity } from "../activity/Activity";
 import {
   AppState,
+  DirectoryContent,
   DocumentFrameState,
   FrameDiagData,
   SideBarState,
@@ -47,4 +48,5 @@ export interface Payload {
   projectName?: string;
   hasVm?: boolean;
   isLoading?: boolean;
+  directoryContents?: DirectoryContent;
 }

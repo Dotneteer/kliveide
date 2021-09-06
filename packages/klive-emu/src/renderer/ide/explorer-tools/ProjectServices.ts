@@ -1,12 +1,8 @@
 import { ITreeView } from "../../common-ui/ITreeNode";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { ProjectNode } from "./ProjectNode";
-import {
-  DirectoryContent,
-  GetFolderContentsResponse,
-} from "../../../shared/messaging/message-types";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
+import { DirectoryContent } from "../../../shared/state/AppState";
 
 /**
  * This class implements the project services
@@ -26,15 +22,9 @@ class ProjectServices {
    * Sets the project folder to the specified one
    * @param name
    */
-  async setProjectFolder(name?: string): Promise<void> {
-    if (name) {
-      const response =
-        await ideToEmuMessenger.sendMessage<GetFolderContentsResponse>({
-          type: "GetFolderContents",
-          folder: name,
-        });
-      const tree = new TreeView(this.createTreeFrom(response.contents));
-      this._projectTree = tree;
+  async setProjectContents(contents?: DirectoryContent): Promise<void> {
+    if (contents) {
+      this._projectTree = new TreeView(this.createTreeFrom(contents));;
     } else {
       this._projectTree = null;
     }
