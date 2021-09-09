@@ -1,3 +1,6 @@
+import { registerMachineTypeAction } from "../../shared/state/machines-reducer";
+import { mainStore } from "../../main/main-state/main-store";
+import { RegisteredMachine } from "../../shared/state/AppState";
 import { MachineContextProvider } from "./machine-context";
 
 /**
@@ -7,13 +10,16 @@ export const machineRegistry = new Map<string, MachineRegistryInfo>();
 
 /**
  * Get the identifiers of registered machines
- * @returns 
+ * @returns
  */
- export function getRegisteredMachines(): string[] {
-  const result: string[] = [];
+export function getRegisteredMachines(): RegisteredMachine[] {
+  const result: RegisteredMachine[] = [];
   for (var entry of machineRegistry.values()) {
     if (entry.active ?? true) {
-      result.push(entry.id);
+      result.push({
+        id: entry.id,
+        label: entry.label,
+      });
     }
   }
   return result;
@@ -32,8 +38,8 @@ export type MachineInfo = {
  * Registry information about a virtual machine
  */
 export type MachineRegistryInfo = MachineInfo & {
-  implementor: MachineContextProvider
-}
+  implementor: MachineContextProvider;
+};
 
 /**
  * Decorator to annotate a virtual machine context provider
@@ -47,8 +53,14 @@ export function VirtualMachineType(data: MachineInfo) {
       id: data.id,
       label: data.label,
       active: data.active,
-      implementor: constructor as unknown as MachineContextProvider
-    }
+      implementor: constructor as unknown as MachineContextProvider,
+    };
     machineRegistry.set(data.id, info);
+    mainStore.dispatch(
+      registerMachineTypeAction({
+        id: info.id,
+        label: info.label,
+      })
+    );
   };
 }

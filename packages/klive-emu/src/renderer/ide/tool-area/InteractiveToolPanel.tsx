@@ -130,6 +130,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
                 ? "var(--information-color)"
                 : "var(--interactive-input-color)",
               marginRight: 8,
+              marginTop: 2,
             }}
           >
             $
@@ -199,6 +200,7 @@ const separatorStyle: CSSProperties = {
 
 const inputStyle: CSSProperties = {
   marginRight: 10,
+  paddingLeft: 0,
   outline: "none",
   border: "none",
   width: "100%",

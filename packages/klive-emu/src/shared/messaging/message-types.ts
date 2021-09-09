@@ -4,8 +4,9 @@ import {
 } from "../../renderer/machines/core/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
-import { AppState } from "../state/AppState";
+import { AppState, RegisteredMachine } from "../state/AppState";
 import { ICpuState } from "../machines/AbstractCpu";
+import { NewProjectData } from "./dto";
 
 /**
  * The common base for all message types
@@ -116,6 +117,13 @@ export interface SyncMainStateRequest extends MessageBase {
 }
 
 /**
+ * The main process sends a new project request to the IDE window
+ */
+export interface NewProjectRequest extends MessageBase {
+  type: "NewProjectRequest";
+}
+
+/**
  * The Emu ask the main for a file open dialog
  */
 export interface EmuOpenFileDialogRequest extends MessageBase {
@@ -177,6 +185,15 @@ export interface OpenProjectFolderRequest extends MessageBase {
 }
 
 /**
+ * The Emu ask the main for a file open dialog
+ */
+export interface GetFolderDialogRequest extends MessageBase {
+  type: "GetFolderDialog";
+  title?: string;
+  root?: string;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -226,12 +243,13 @@ type IdeToEmuRequests =
 type IdeToMainRequests =
   | GetRegisteredMachinesRequest
   | CreateKliveProjectRequest
-  | OpenProjectFolderRequest;
+  | OpenProjectFolderRequest
+  | GetFolderDialogRequest;
 
 /**
  * Requests send by the main process to Emu
  */
-type MainToIdeRequests = SyncMainStateRequest;
+type MainToIdeRequests = SyncMainStateRequest | NewProjectRequest;
 
 /**
  * Default response for actions
@@ -293,7 +311,7 @@ export interface GetMemoryContentsResponse extends MessageBase {
  */
 export interface GetRegisteredMachinesResponse extends MessageBase {
   type: "GetRegisteredMachinesResponse";
-  machines: string[];
+  machines: RegisteredMachine[];
 }
 
 /**
@@ -305,6 +323,22 @@ export interface CreateKliveProjectResponse extends MessageBase {
   targetFolder: string;
 }
 
+/**
+ * The main process sends a new project request to the IDE window
+ */
+export interface NewProjectResponse extends MessageBase {
+  type: "NewProjectResponse";
+  project?: NewProjectData
+}
+
+/**
+ * The emulator process ask for a file open dialog
+ */
+export interface GetFolderDialogResponse extends MessageBase {
+  type: "GetFolderDialogResponse";
+  filename?: string;
+}
+
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
@@ -314,7 +348,9 @@ export type ResponseMessage =
   | GetMachineStateResponse
   | GetMemoryContentsResponse
   | GetRegisteredMachinesResponse
-  | CreateKliveProjectResponse;
+  | CreateKliveProjectResponse
+  | NewProjectResponse
+  | GetFolderDialogResponse;
 
 /**
  * All messages

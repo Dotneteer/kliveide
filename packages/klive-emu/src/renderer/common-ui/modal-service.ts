@@ -1,4 +1,6 @@
 import * as React from "react";
+import { Store } from "redux";
+import { displayModalAction } from "../../shared/state/modal-reducer";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 
 /**
@@ -114,28 +116,18 @@ class ModalDialogService {
   /**
    * Displays the current modal dialog
    */
-  show(): void {
-    if (this._visible) {
-      return;
-    }
-    this._visible = true;
-    this._visibilityChanged.fire(true);
-  }
-
-  /**
-   * Displays the current modal dialog
-   */
-  hide(result?: unknown): void {
+  hide(store: Store, result?: unknown): void {
     if (!this._visible) {
       return;
     }
+    store.dispatch(displayModalAction(false));
     this._result = result;
     this._visible = false;
     this._visibilityChanged.fire(false);
     this._dialogResolver(result);
   }
 
-  async showModalDialog(id: string, args?: unknown): Promise<unknown> {
+  async showModalDialog(store: Store, id: string, args?: unknown): Promise<unknown> {
     if (this._visible) {
       return;
     }
@@ -145,6 +137,7 @@ class ModalDialogService {
     }
     this._modalDescriptor = descriptor;
     this._args = args;
+    store.dispatch(displayModalAction(true));
     this._modalChanged.fire(descriptor);
     this._visible = true;
     this._visibilityChanged.fire(true);

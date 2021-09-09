@@ -63,7 +63,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Respond to project state changes
    */
   async onProjectChange(state: ProjectState): Promise<void> {
-    console.log(state);
     if (state.isLoading) {
       this.setState({
         isLoading: true,

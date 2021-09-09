@@ -4,6 +4,7 @@ import {
   DirectoryContent,
   DocumentFrameState,
   FrameDiagData,
+  RegisteredMachine,
   SideBarState,
 } from "./AppState";
 
@@ -49,4 +50,6 @@ export interface Payload {
   hasVm?: boolean;
   isLoading?: boolean;
   directoryContents?: DirectoryContent;
+  machine?: RegisteredMachine;
+  modalDisplayed?: boolean,
 }

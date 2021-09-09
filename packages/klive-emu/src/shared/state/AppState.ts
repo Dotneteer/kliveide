@@ -4,11 +4,13 @@ import { Activity } from "../activity/Activity";
  * Represents the application's entire state vector
  */
 export type AppState = {
+  machines: RegisteredMachine[];
   isWindows: boolean;
   emuUiLoaded: boolean;
   ideUiLoaded: boolean;
   emuHasFocus: boolean;
   ideHasFocus: boolean;
+  modalDisplayed: boolean;
   theme: string;
   emuViewOptions: EmuViewOptions;
   machineType?: string;
@@ -149,17 +151,24 @@ export type ProjectState = {
   files: string[];
 };
 
+// --- Represents a machine in the registry
+export type RegisteredMachine = {
+  id: string;
+  label: string;
+}
 
 /**
  * The initial application state
  */
 export function getInitialAppState(): AppState {
   return {
+    machines: [],
     isWindows: false,
     emuUiLoaded: false,
     ideUiLoaded: false,
     emuHasFocus: false,
     ideHasFocus: false,
+    modalDisplayed: false,
     theme: "dark",
     emuViewOptions: {
       showToolbar: true,

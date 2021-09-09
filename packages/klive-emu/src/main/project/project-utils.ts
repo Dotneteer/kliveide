@@ -46,15 +46,27 @@ export async function openProject(projectPath: string): Promise<void> {
 }
 
 /**
+ * Selects a folder form the dialog
+ */
+export async function selectFolder(
+  title: string,
+  defaultPath?: string
+): Promise<string | null> {
+  const result = await dialog.showOpenDialog(AppWindow.focusedWindow.window, {
+    title,
+    defaultPath,
+    properties: ["openDirectory"],
+  });
+  return result.canceled ? null : result.filePaths[0];
+}
+
+/**
  * Selects a project folder and opens it
  */
 export async function openProjectFolder(): Promise<void> {
-  const result = await dialog.showOpenDialog(AppWindow.focusedWindow.window, {
-    title: "Open project folder",
-    properties: ["openDirectory"],
-  });
-  if (!result.canceled) {
-    await openProject(result.filePaths[0]);
+  const result = await selectFolder("Open project folder");
+  if (result) {
+    await openProject(result);
   }
 }
 
@@ -91,6 +103,8 @@ export async function createKliveProject(
   // --- Creat the project folder
   if (!rootFolder) {
     rootFolder = getHomeFolder();
+  } else if (!path.isAbsolute(rootFolder)) {
+    rootFolder = path.join(getHomeFolder(), rootFolder);
   }
   const targetFolder = path.resolve(path.join(rootFolder, projectFolder));
   try {
@@ -98,6 +112,7 @@ export async function createKliveProject(
     if (syncFs.existsSync(targetFolder)) {
       return { error: `Target directory '${targetFolder}' already exists` };
     }
+    console.log(targetFolder);
     await fs.mkdir(targetFolder);
 
     // --- Create the code subfolder

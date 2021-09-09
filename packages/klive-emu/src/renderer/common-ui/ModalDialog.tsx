@@ -1,10 +1,11 @@
 import * as React from "react";
+import { ReactReduxContext } from 'react-redux'
 import {
   ButtonPropsModel,
   DialogComponent,
 } from "@syncfusion/ej2-react-popups";
 import styles from "styled-components";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { IModalDialogDescriptor, modalDialogService } from "./modal-service";
 import { useEffect } from "react";
 
@@ -13,15 +14,17 @@ type Props = {
 };
 
 export default function ModalDialog({ targetId }: Props) {
-  const [show, setShow] = useState(false);
+  const { store } = useContext(ReactReduxContext);
+    const [show, setShow] = useState(false);
   const [modalDialog, setModalDialog] = useState<IModalDialogDescriptor | null>(
     null
   );
   const [buttons, setButtons] = useState<ButtonPropsModel[]>([]);
+  const [refreshCount, setRefreshCount] = useState(0);
 
   const handleClick = (click?: () => void | boolean) => {
     if (click?.()) {
-      modalDialogService.hide();
+      modalDialogService.hide(store);
     }
   };
 
@@ -31,6 +34,8 @@ export default function ModalDialog({ targetId }: Props) {
     if (!modal) {
         return;
     }
+    setRefreshCount(refreshCount + 1);
+
     const buttons: ButtonPropsModel[] = [];
     if (modal.button1Text) {
       buttons.push({
@@ -69,9 +74,9 @@ export default function ModalDialog({ targetId }: Props) {
   const handleVisibilityChanged = (display: boolean) => setShow(display);
 
   // --- Close the dialog if the users decides so
-  const onOverlayClick = () => modalDialogService.hide();
+  const onOverlayClick = () => modalDialogService.hide(store);
   const onDialogClose = () => {
-    modalDialogService.hide();
+    modalDialogService.hide(store);
     modalDialogService.disposeModalDialog();
   };
 
@@ -91,6 +96,7 @@ export default function ModalDialog({ targetId }: Props) {
     modalDialog &&
     buttons.length > 0 && (
       <DialogComponent
+        key={refreshCount}
         width={modalDialog.width}
         height={modalDialog.height}
         target={targetId}

@@ -4,6 +4,7 @@ import {
   CreateKliveProjectResponse,
   DefaultResponse,
   EmuOpenFileDialogResponse,
+  GetFolderDialogResponse,
   GetRegisteredMachinesResponse,
   RequestMessage,
   ResponseMessage,
@@ -12,6 +13,7 @@ import { emuForwarder, emuWindow } from "../app/app-menu";
 import {
   createKliveProject,
   openProjectFolder,
+  selectFolder,
 } from "../project/project-utils";
 import { getFolderContents } from "../utils/file-utils";
 
@@ -79,6 +81,13 @@ export async function processIdeRequest(
       await openProjectFolder();
       return <DefaultResponse>{
         type: "Ack",
+      };
+
+    case "GetFolderDialog":
+      const folder = await selectFolder(message.title, message.root);
+      return <GetFolderDialogResponse>{
+        type: "GetFolderDialogResponse",
+        filename: folder,
       };
 
     default:

@@ -6,6 +6,7 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   Menu,
   MenuItem,
   MenuItemConstructorOptions,
@@ -53,8 +54,14 @@ import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
-import { openProjectFolder } from "../project/project-utils";
+import {
+  createKliveProject,
+  openProject,
+  openProjectFolder,
+} from "../project/project-utils";
 import { closeProjectAction } from "../../shared/state/project-reducer";
+import { NewProjectResponse } from "../../shared/messaging/message-types";
+import { AppWindow } from "./app-window";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -89,6 +96,11 @@ let lastSoundLevel: number | null = null;
  * Was the sound muted?
  */
 let lastMuted: boolean | null = null;
+
+/**
+ * The state of the menu items
+ */
+let menuState: Record<string, boolean> = {};
 
 export async function setupWindows(): Promise<void> {
   // --- Prepare the mulator window
@@ -129,6 +141,7 @@ export function setIdeMessenger(messenger: MainToIdeMessenger): void {
 }
 
 // --- Menu IDs
+const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
 const CLOSE_FOLDER = "close_folder";
 const TOGGLE_KEYBOARD = "toggle_keyboard";
@@ -181,8 +194,44 @@ export function setupMenu(): void {
     label: "File",
     submenu: [
       {
+        id: NEW_PROJECT,
+        label: "New project...",
+        click: async () => {
+          mainStore.dispatch(ideShowAction());
+          ideMessenger.sendMessage({
+            type: "SyncMainState",
+            mainState: { ...mainStore.getState() },
+          });
+          ideWindow.window.focus();
+          const project = (
+            (await ideMessenger.sendMessage({
+              type: "NewProjectRequest",
+            })) as NewProjectResponse
+          ).project;
+          if (project) {
+            const operation = await createKliveProject(
+              project.machineType,
+              project.projectPath,
+              project.projectName
+            );
+            if (operation.error) {
+              await dialog.showMessageBox(AppWindow.focusedWindow.window, {
+                title: "Error while creating a new Klive project",
+                message: operation.error,
+                type: "error",
+              });
+            } else {
+              if (project.open && operation.targetFolder) {
+                await openProject(operation.targetFolder);
+              }
+            }
+          }
+        },
+      },
+      { type: "separator" },
+      {
         id: OPEN_FOLDER,
-        label: "Open folder",
+        label: "Open folder...",
         click: async () => await openProjectFolder(),
       },
       {
@@ -507,16 +556,77 @@ export function setupMenu(): void {
   });
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
+  generateMenuIds();
+}
+
+/**
+ * Traverses all menu items and executed the specified action
+ * @param action Action to execute
+ */
+export function traverseMenu(action: (item: MenuItem) => void): void {
+  const menu = Menu.getApplicationMenu().items;
+  traverseMenu(menu, action);
+
+  function traverseMenu(
+    items: MenuItem[],
+    action: (item: MenuItem) => void
+  ): void {
+    for (let item of items) {
+      action(item);
+      if (item.submenu) {
+        traverseMenu(item.submenu.items, action);
+      }
+    }
+  }
+}
+
+/**
+ * Saves the enabled states of menu items
+ */
+export function generateMenuIds(): void {
+  let counter = 0;
+  traverseMenu((item) => {
+    if (!item.id) {
+      item.id = `__generated__${counter++}`;
+    }
+  });
+}
+
+/**
+ * Saves the enabled states of menu items
+ */
+export function saveMenuEnabledState(): void {
+  menuState = {};
+  traverseMenu((item) => {
+    menuState[item.id] = item.enabled;
+  });
+}
+
+/**
+ * Saves the enabled states of menu items
+ */
+export function disableAppMenu(): void {
+  traverseMenu((item) => (item.enabled = false));
+}
+
+/**
+ * Saves the enabled states of menu items
+ */
+export function restoreEnabledState(): void {
+  traverseMenu((item) => {
+    item.enabled = menuState[item.id];
+  });
 }
 
 /**
  * Sets up state change cathing
  */
 export function watchStateChanges(): void {
-  mainStore.subscribe(() => processStateChange(mainStore.getState()))
+  mainStore.subscribe(() => processStateChange(mainStore.getState()));
 }
 
 let lastShowIde = false;
+let lastModalDisplayed = false;
 
 /**
  * Processes application state changes
@@ -526,6 +636,17 @@ export function processStateChange(fullState: AppState): void {
   const menu = Menu.getApplicationMenu();
   const viewOptions = fullState.emuViewOptions;
   const emuState = fullState.emulatorPanel;
+
+  // --- Modals?
+  if (lastModalDisplayed !== fullState.modalDisplayed) {
+    lastModalDisplayed = fullState.modalDisplayed;
+    if (fullState.modalDisplayed) {
+      saveMenuEnabledState();
+      disableAppMenu();
+      return;
+    }
+    restoreEnabledState();
+  }
 
   // --- File menu state
   const closeFolder = menu.getMenuItemById(CLOSE_FOLDER);
