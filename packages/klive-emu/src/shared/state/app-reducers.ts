@@ -15,6 +15,7 @@ import documentFrameReducer from "./document-frame-reducer";
 import toolFrameReducer from "./tool-frame-reducer";
 import projectReducer from "./project-reducer";
 import machinesReducer from "./machines-reducer";
+import modalReducer from "./modal-reducer";
 
 /**
  * Represents the reducers
@@ -25,6 +26,7 @@ export const appReducers = {
   ideUiLoaded: ideLoadReducer,
   emuHasFocus: emuFocusReducer,
   ideHasFocus: ideFocusReducer,
+  modalDisplayed: modalReducer,
   theme: themeReducer,
   emuViewOptions: emuViewOptionsReducer,
   machineType: machineTypeReducer,

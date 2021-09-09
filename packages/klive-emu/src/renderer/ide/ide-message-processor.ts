@@ -1,5 +1,6 @@
 import {
   DefaultResponse,
+  NewProjectResponse,
   RequestMessage,
   ResponseMessage,
 } from "../../shared/messaging/message-types";
@@ -11,6 +12,7 @@ import { ideStore } from "./ideStore";
 import { ideSyncAction } from "../../shared/state/show-ide-reducer";
 import { modalDialogService } from "../common-ui/modal-service";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
+import { Store } from "redux";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -29,6 +31,7 @@ async function processIdeMessages(
 
     case "NewProjectRequest":
       const result = await modalDialogService.showModalDialog(
+        ideStore as Store,
         NEW_PROJECT_DIALOG_ID,
         {
           machineType: "",
@@ -37,7 +40,7 @@ async function processIdeMessages(
           open: true,
         }
       );
-      return <DefaultResponse>{ type: "Ack" };
+      return <NewProjectResponse>{ type: "NewProjectResponse", project: result };
 
     default:
       return <DefaultResponse>{ type: "Ack" };

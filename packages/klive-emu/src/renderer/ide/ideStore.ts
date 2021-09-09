@@ -46,7 +46,6 @@ const rootReducer = (state: AppState, action: KliveAction) => {
  */
 export const ideStore = new KliveStore(createStore(
   rootReducer,
-  //combineReducers(appReducers),
   getInitialAppState(),
   applyMiddleware(forwardToMainMiddleware)
 ));

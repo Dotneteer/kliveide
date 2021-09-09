@@ -17,6 +17,8 @@ import {
 import { useState } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
+import { emuStore } from "../../emulator/emuStore";
+import { Store } from "redux";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog
@@ -33,7 +35,7 @@ class Cz88CardsDialogDescriptor implements IModalDialogDescriptor {
 
   button3Text = "Ok";
   button3Clicked = () => {
-    modalDialogService.hide(this._result);
+    modalDialogService.hide(emuStore as Store, this._result);
   };
 
   primaryButtonIndex = 3;

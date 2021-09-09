@@ -10,6 +10,7 @@ export type AppState = {
   ideUiLoaded: boolean;
   emuHasFocus: boolean;
   ideHasFocus: boolean;
+  modalDisplayed: boolean;
   theme: string;
   emuViewOptions: EmuViewOptions;
   machineType?: string;
@@ -167,6 +168,7 @@ export function getInitialAppState(): AppState {
     ideUiLoaded: false,
     emuHasFocus: false,
     ideHasFocus: false,
+    modalDisplayed: false,
     theme: "dark",
     emuViewOptions: {
       showToolbar: true,

@@ -490,3 +490,9 @@ input:focus {
 .dialog-field-row {
   display: flex;
 }
+
+.dialog-error {
+  color: var(--console-ansi-bright-red);
+  font-weight: 400;
+  margin-left: 8px;
+}

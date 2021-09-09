@@ -6,6 +6,7 @@ import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
 import { AppState, RegisteredMachine } from "../state/AppState";
 import { ICpuState } from "../machines/AbstractCpu";
+import { NewProjectData } from "./dto";
 
 /**
  * The common base for all message types
@@ -184,6 +185,15 @@ export interface OpenProjectFolderRequest extends MessageBase {
 }
 
 /**
+ * The Emu ask the main for a file open dialog
+ */
+export interface GetFolderDialogRequest extends MessageBase {
+  type: "GetFolderDialog";
+  title?: string;
+  root?: string;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -233,7 +243,8 @@ type IdeToEmuRequests =
 type IdeToMainRequests =
   | GetRegisteredMachinesRequest
   | CreateKliveProjectRequest
-  | OpenProjectFolderRequest;
+  | OpenProjectFolderRequest
+  | GetFolderDialogRequest;
 
 /**
  * Requests send by the main process to Emu
@@ -312,6 +323,22 @@ export interface CreateKliveProjectResponse extends MessageBase {
   targetFolder: string;
 }
 
+/**
+ * The main process sends a new project request to the IDE window
+ */
+export interface NewProjectResponse extends MessageBase {
+  type: "NewProjectResponse";
+  project?: NewProjectData
+}
+
+/**
+ * The emulator process ask for a file open dialog
+ */
+export interface GetFolderDialogResponse extends MessageBase {
+  type: "GetFolderDialogResponse";
+  filename?: string;
+}
+
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
@@ -321,7 +348,9 @@ export type ResponseMessage =
   | GetMachineStateResponse
   | GetMemoryContentsResponse
   | GetRegisteredMachinesResponse
-  | CreateKliveProjectResponse;
+  | CreateKliveProjectResponse
+  | NewProjectResponse
+  | GetFolderDialogResponse;
 
 /**
  * All messages
