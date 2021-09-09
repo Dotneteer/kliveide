@@ -10,6 +10,8 @@ export interface ActionTypes {
   SET_THEME: null;
   SET_WINDOWS: null,
 
+  REGISTER_MACHINE: null,
+
   EMU_SHOW_TOOLBAR: null;
   EMU_HIDE_TOOLBAR: null;
   EMU_SHOW_STATUSBAR: null;

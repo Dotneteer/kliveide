@@ -129,6 +129,7 @@ export function setIdeMessenger(messenger: MainToIdeMessenger): void {
 }
 
 // --- Menu IDs
+const NEW_PROJECT = "new_project";
 const OPEN_FOLDER = "open_folder";
 const CLOSE_FOLDER = "close_folder";
 const TOGGLE_KEYBOARD = "toggle_keyboard";
@@ -181,8 +182,17 @@ export function setupMenu(): void {
     label: "File",
     submenu: [
       {
+        id: NEW_PROJECT,
+        label: "New project...",
+        click: async () =>
+          ideMessenger.sendMessage({
+            type: "NewProjectRequest",
+          }),
+      },
+      { type: "separator" },
+      {
         id: OPEN_FOLDER,
-        label: "Open folder",
+        label: "Open folder...",
         click: async () => await openProjectFolder(),
       },
       {
@@ -513,7 +523,7 @@ export function setupMenu(): void {
  * Sets up state change cathing
  */
 export function watchStateChanges(): void {
-  mainStore.subscribe(() => processStateChange(mainStore.getState()))
+  mainStore.subscribe(() => processStateChange(mainStore.getState()));
 }
 
 let lastShowIde = false;

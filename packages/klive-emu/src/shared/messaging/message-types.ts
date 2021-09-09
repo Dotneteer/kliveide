@@ -4,7 +4,7 @@ import {
 } from "../../renderer/machines/core/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
-import { AppState } from "../state/AppState";
+import { AppState, RegisteredMachine } from "../state/AppState";
 import { ICpuState } from "../machines/AbstractCpu";
 
 /**
@@ -113,6 +113,13 @@ export interface ExecuteMachineCommandRequest extends MessageBase {
 export interface SyncMainStateRequest extends MessageBase {
   type: "SyncMainState";
   mainState: AppState;
+}
+
+/**
+ * The main process sends a new project request to the IDE window
+ */
+export interface NewProjectRequest extends MessageBase {
+  type: "NewProjectRequest";
 }
 
 /**
@@ -231,7 +238,7 @@ type IdeToMainRequests =
 /**
  * Requests send by the main process to Emu
  */
-type MainToIdeRequests = SyncMainStateRequest;
+type MainToIdeRequests = SyncMainStateRequest | NewProjectRequest;
 
 /**
  * Default response for actions
@@ -293,7 +300,7 @@ export interface GetMemoryContentsResponse extends MessageBase {
  */
 export interface GetRegisteredMachinesResponse extends MessageBase {
   type: "GetRegisteredMachinesResponse";
-  machines: string[];
+  machines: RegisteredMachine[];
 }
 
 /**

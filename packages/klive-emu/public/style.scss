@@ -80,7 +80,6 @@ main,
 @import "../node_modules/@syncfusion/ej2-navigations/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-react-dropdowns/styles/bootstrap-dark.css";
 @import "../node_modules/@syncfusion/ej2-react-popups/styles/bootstrap-dark.css";
-
 // ============================================================================
 // CSS overrides for SyncFusion controls
 
@@ -411,6 +410,33 @@ input.e-input.e-control.e-dropdownlist,
   opacity: 0.6;
 }
 
+// ----------------------------------------------------------------------------
+// Checkbox overrides
+
+.e-checkbox-wrapper .e-checkbox + .e-frame,
+.e-css.e-checkbox-wrapper .e-checkbox + .e-frame {
+  border-radius: 0;
+  border-color: var(--selected-border-color);
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+  line-height: 14px;
+  background: var(--selected-background-color);
+  color: var(--information-color);
+
+  &:hover {
+    border-color: var(--selected-border-color);
+    background: var(--selected-background-color);
+  }
+}
+
+.e-checkbox-wrapper .e-checkbox:focus + .e-frame,
+.e-checkbox-wrapper .e-checkbox:focus + .e-frame.e-check {
+  box-shadow: none;
+  border-color: var(--selected-border-color);
+  background: var(--selected-background-color);
+}
+
 // ============================================================================
 // CSS classes for IDE controls
 
@@ -432,10 +458,35 @@ input.e-input.e-control.e-dropdownlist,
   font-style: italic;
 }
 
+input {
+  outline: none;
+  border: 1px solid transparent;
+  background: var(--dropdown-backgound-color);
+  color: var(--information-color);
+  line-height: 20px;
+  padding-left: 8px;
+}
+
+input:focus {
+  border: 1px solid var(--selected-border-color);
+}
+
 // ============================================================================
 // Project Explorer
 
 .listlike:hover {
-  background-color: var(--list-hover-background-color)
+  background-color: var(--list-hover-background-color);
 }
 
+.dialog-label {
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.dialog-field {
+  margin-bottom: 8px;
+}
+
+.dialog-field-row {
+  display: flex;
+}

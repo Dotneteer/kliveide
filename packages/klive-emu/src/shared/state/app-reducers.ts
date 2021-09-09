@@ -14,6 +14,7 @@ import sideBarReducer from "./side-bar-reducer";
 import documentFrameReducer from "./document-frame-reducer";
 import toolFrameReducer from "./tool-frame-reducer";
 import projectReducer from "./project-reducer";
+import machinesReducer from "./machines-reducer";
 
 /**
  * Represents the reducers
@@ -35,4 +36,5 @@ export const appReducers = {
   documentFrame: documentFrameReducer,
   toolFrame: toolFrameReducer,
   project: projectReducer,
+  machines: machinesReducer,
 };

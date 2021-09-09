@@ -46,7 +46,7 @@ export class NewProjectCommand extends CommandBase {
       })
     ).machines;
     this._machineTypeArg = args[0].text;
-    if (!machines.includes(this._machineTypeArg)) {
+    if (!machines.map(m => m.id).includes(this._machineTypeArg)) {
       return {
         type: TraceMessageType.Error,
         message: `Cannot find machine with ID '${this._machineTypeArg}'. Available machine types are: ${machines}`,
