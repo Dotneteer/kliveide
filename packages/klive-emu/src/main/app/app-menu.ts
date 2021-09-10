@@ -232,7 +232,6 @@ export function setupMenu(): void {
           await openIdeWindow();
           await openProjectFolder();
           if (mainStore.getState().project?.path) {
-            console.log("Open project");
             await setProjectMachine();
           }
         },
@@ -737,9 +736,6 @@ export function processStateChange(fullState: AppState): void {
     }
   }
 
-  // --- Take care that custom machine menus are updated
-  emuWindow.machineContextProvider?.updateMenuStatus(fullState);
-
   if (lastMachineType !== fullState.machineType) {
     // --- Current machine types has changed
     lastMachineType = fullState.machineType;
@@ -754,6 +750,9 @@ export function processStateChange(fullState: AppState): void {
     setSoundLevelMenu(lastMuted, lastSoundLevel);
     emuWindow.saveKliveProject();
   }
+
+  // --- Take care that custom machine menus are updated
+  emuWindow.machineContextProvider?.updateMenuStatus(fullState);
 
   // // --- The engine has just saved a ZX Spectrum file
   // if (emuState?.savedData && emuState.savedData.length > 0) {
@@ -893,11 +892,7 @@ async function setProjectMachine(): Promise<void> {
     return;
   }
 
-  console.log("Setting project machine");
-  console.log(projectInfo);
-  console.log(projectInfo.machineType);
   const settings = projectInfo.machineSpecific;
-  console.log(settings);
   await emuWindow.requestMachineType(
     projectInfo.machineType,
     undefined,

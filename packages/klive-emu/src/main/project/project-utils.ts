@@ -43,7 +43,6 @@ export async function openProject(projectPath: string): Promise<void> {
   mainStore.dispatch(
     projectOpenedAction(projectPath, projectName, hasVm, directoryContents)
   );
-  console.log("Project opened");
 }
 
 /**
@@ -78,7 +77,6 @@ export function getProjectFile(projectFile: string): KliveProject | null {
   try {
     if (syncFs.existsSync(projectFile)) {
       const contents = syncFs.readFileSync(projectFile, "utf8");
-      console.log(contents);
       const project = JSON.parse(contents) as KliveProject;
       return project.machineType && machineRegistry.has(project.machineType)
         ? project
@@ -124,7 +122,6 @@ export async function createKliveProject(
     if (syncFs.existsSync(targetFolder)) {
       return { error: `Target directory '${targetFolder}' already exists` };
     }
-    console.log(targetFolder);
     await fs.mkdir(targetFolder);
 
     // --- Create the code subfolder

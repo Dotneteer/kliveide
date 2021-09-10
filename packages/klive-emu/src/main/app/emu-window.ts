@@ -146,7 +146,6 @@ export class EmuWindow extends AppWindow {
       return;
     }
 
-    console.log("Save project file");
     const state = mainStore.getState();
     const machineType = state.machineType.split("_")[0];
     const kliveSettings: KliveProject = {
