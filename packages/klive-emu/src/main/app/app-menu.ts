@@ -56,6 +56,7 @@ import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenge
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 import {
   createKliveProject,
+  getLoadedProjectFile,
   openProject,
   openProjectFolder,
 } from "../project/project-utils";
@@ -197,12 +198,7 @@ export function setupMenu(): void {
         id: NEW_PROJECT,
         label: "New project...",
         click: async () => {
-          mainStore.dispatch(ideShowAction());
-          ideMessenger.sendMessage({
-            type: "SyncMainState",
-            mainState: { ...mainStore.getState() },
-          });
-          ideWindow.window.focus();
+          await openIdeWindow();
           const project = (
             (await ideMessenger.sendMessage({
               type: "NewProjectRequest",
@@ -232,7 +228,14 @@ export function setupMenu(): void {
       {
         id: OPEN_FOLDER,
         label: "Open folder...",
-        click: async () => await openProjectFolder(),
+        click: async () => {
+          await openIdeWindow();
+          await openProjectFolder();
+          if (mainStore.getState().project?.path) {
+            console.log("Open project");
+            await setProjectMachine();
+          }
+        },
       },
       {
         id: CLOSE_FOLDER,
@@ -419,7 +422,10 @@ export function setupMenu(): void {
       label: item.label,
       type: "radio",
       checked: index === 3,
-      click: () => setSoundLevel(item.level),
+      click: () => {
+        setSoundLevel(item.level);
+        emuWindow.saveKliveProject();
+      },
     })
   );
 
@@ -444,6 +450,7 @@ export function setupMenu(): void {
           ` (${((i * baseClockFrequency) / 1_000_000).toFixed(4)}MHz)`,
         click: () => {
           mainStore.dispatch(emuSetClockMultiplierAction(i));
+          emuWindow.saveKliveProject();
         },
       });
     }
@@ -737,12 +744,16 @@ export function processStateChange(fullState: AppState): void {
     // --- Current machine types has changed
     lastMachineType = fullState.machineType;
     setupMenu();
+    emuWindow.saveKliveProject();
   }
 
   // --- Sound level has changed
-  lastSoundLevel = emuState.soundLevel;
-  lastMuted = emuState.muted;
-  setSoundLevelMenu(lastMuted, lastSoundLevel);
+  if (lastSoundLevel !== emuState.soundLevel || lastMuted !== emuState.muted) {
+    lastSoundLevel = emuState.soundLevel;
+    lastMuted = emuState.muted;
+    setSoundLevelMenu(lastMuted, lastSoundLevel);
+    emuWindow.saveKliveProject();
+  }
 
   // // --- The engine has just saved a ZX Spectrum file
   // if (emuState?.savedData && emuState.savedData.length > 0) {
@@ -853,6 +864,45 @@ function checkboxAction(
  */
 function menuIdFromMachineId(machineId: string): string {
   return `machine_${machineId}`;
+}
+
+/**
+ * Opens the IDE window
+ */
+async function openIdeWindow(): Promise<void> {
+  mainStore.dispatch(ideShowAction());
+  await ideMessenger.sendMessage({
+    type: "SyncMainState",
+    mainState: { ...mainStore.getState() },
+  });
+  ideWindow.window.focus();
+}
+
+/**
+ * Sets the machine information from the loaded project
+ */
+async function setProjectMachine(): Promise<void> {
+  if (!mainStore.getState().project?.hasVm) {
+    // --- No Klive project open
+    return;
+  }
+  // --- Create the machine and set its state according to the saved settings
+  const projectInfo = getLoadedProjectFile();
+  if (!projectInfo) {
+    // --- Failed loading the settings
+    return;
+  }
+
+  console.log("Setting project machine");
+  console.log(projectInfo);
+  console.log(projectInfo.machineType);
+  const settings = projectInfo.machineSpecific;
+  console.log(settings);
+  await emuWindow.requestMachineType(
+    projectInfo.machineType,
+    undefined,
+    settings
+  );
 }
 
 /**

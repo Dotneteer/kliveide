@@ -7,7 +7,10 @@ import {
   emuSetClockMultiplierAction,
   emuSetKeyboardLayoutAction,
 } from "../../shared/state/emulator-panel-reducer";
-import { machineIdFromMenuId, menuIdFromMachineId } from "../../main/utils/electron-utils";
+import {
+  machineIdFromMenuId,
+  menuIdFromMachineId,
+} from "../../main/utils/electron-utils";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { mainStore } from "../../main/main-state/main-store";
 import {
@@ -147,7 +150,7 @@ let slotsState: Z88CardsState = {
 @VirtualMachineType({
   id: "cz88",
   label: "Cambridge Z88 (in progress)",
-  active: true
+  active: true,
 })
 export class Cz88ContextProvider extends MachineContextProviderBase {
   /**
@@ -291,55 +294,37 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
             id: UK_KEYBOARD,
             label: "British && American",
             type: "radio",
-            click: () => {
-              kbLayout = "uk";
-              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
-            },
+            click: () => setKbLayout("uk"),
           },
           {
             id: ES_KEYBOARD,
             label: "Spanish",
             type: "radio",
-            click: () => {
-              kbLayout = "es";
-              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
-            },
+            click: () => setKbLayout("es"),
           },
           {
             id: FR_KEYBOARD,
             label: "French",
             type: "radio",
-            click: () => {
-              kbLayout = "fr";
-              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
-            },
+            click: () => setKbLayout("fr"),
           },
           {
             id: DE_KEYBOARD,
             label: "German",
             type: "radio",
-            click: () => {
-              kbLayout = "de";
-              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
-            },
+            click: () => setKbLayout("de"),
           },
           {
             id: DK_KEYBOARD,
             label: "Danish && Norwegian",
             type: "radio",
-            click: () => {
-              kbLayout = "dk";
-              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
-            },
+            click: () => setKbLayout("dk"),
           },
           {
             id: SE_KEYBOARD,
             label: "Swedish && Finish",
             type: "radio",
-            click: () => {
-              kbLayout = "se";
-              mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
-            },
+            click: () => setKbLayout("se"),
           },
         ],
       },
@@ -382,6 +367,12 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         click: async () => await this.insertOrRemoveCards(),
       },
     ];
+
+    function setKbLayout(layout: string): void {
+      kbLayout = layout;
+      mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
+      emuWindow.saveKliveProject();
+    }
   }
 
   /**
@@ -442,6 +433,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   private async requestMachine(): Promise<void> {
     const typeId = "cz88";
     await emuWindow.requestMachineType(typeId, recentOptions);
+    emuWindow.saveKliveProject();
   }
 
   /**
@@ -455,6 +447,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       romFile: recentRoms.length > 0 ? recentRoms[0] : null,
       clockMultiplier: state.clockMultiplier,
       soundLevel: state.soundLevel,
+      muted: state.muted,
       slotsState,
     };
   }
@@ -506,7 +499,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     }
     if (settings.soundLevel) {
       setSoundLevel(settings.soundLevel);
-      setSoundLevelMenu(false, settings.soundLevel);
+      setSoundLevelMenu(settings.muted, settings.soundLevel);
     }
 
     await new Promise((r) => setTimeout(r, 600));
@@ -849,7 +842,8 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         if (useSoftReset) {
           this.executeMachineCommand(CZ88_SOFT_RESET);
         } else {
-          const stateBefore = mainStore.getState().emulatorPanel?.executionState ?? 0;
+          const stateBefore =
+            mainStore.getState().emulatorPanel?.executionState ?? 0;
           await this.requestMachine();
           if (stateBefore) {
             await this.executeMachineCommand(CZ88_HARD_RESET);

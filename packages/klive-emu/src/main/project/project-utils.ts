@@ -5,13 +5,13 @@ import { promises as fs } from "fs";
 import { dialog } from "electron";
 import { AppWindow } from "../app/app-window";
 import { getFolderContents, getHomeFolder } from "../utils/file-utils";
-import { KliveProject } from "../main-state/klive-settings";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import { mainStore } from "../main-state/main-store";
 import {
   projectOpenedAction,
   projectLoadingAction,
 } from "../../shared/state/project-reducer";
+import { KliveProject } from "../main-state/klive-configuration";
 
 /**
  * Name of the project file within the project directory
@@ -43,6 +43,7 @@ export async function openProject(projectPath: string): Promise<void> {
   mainStore.dispatch(
     projectOpenedAction(projectPath, projectName, hasVm, directoryContents)
   );
+  console.log("Project opened");
 }
 
 /**
@@ -77,6 +78,7 @@ export function getProjectFile(projectFile: string): KliveProject | null {
   try {
     if (syncFs.existsSync(projectFile)) {
       const contents = syncFs.readFileSync(projectFile, "utf8");
+      console.log(contents);
       const project = JSON.parse(contents) as KliveProject;
       return project.machineType && machineRegistry.has(project.machineType)
         ? project
@@ -86,6 +88,16 @@ export function getProjectFile(projectFile: string): KliveProject | null {
     console.log(`Cannot read and parse project file: ${err}`);
   }
   return null;
+}
+
+/**
+ * Gets the configuration of the loaded project
+ */
+export function getLoadedProjectFile(): KliveProject | null {
+  const projectPath = mainStore.getState().project?.path;
+  return projectPath
+    ? getProjectFile(path.join(projectPath, PROJECT_FILE))
+    : null;
 }
 
 /**

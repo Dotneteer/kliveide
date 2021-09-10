@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import { app, dialog } from "electron";
 import { AppWindow } from "./app-window";
 import { __DARWIN__ } from "../utils/electron-utils";
@@ -17,18 +19,16 @@ import {
   emuSetExecutionStateAction,
   emuSetExtraFeaturesAction,
 } from "../../shared/state/emulator-panel-reducer";
-import {
-  emuMessenger,
-  setEmuForwarder,
-  setEmuMessenger,
-} from "./app-menu";
+import { emuMessenger, setEmuForwarder, setEmuMessenger } from "./app-menu";
 import { AppState } from "../../shared/state/AppState";
 import {
+  appSettings,
+  KliveProject,
   KliveSettings,
   reloadSettings,
   saveKliveSettings,
+  saveSettingsToFile,
 } from "../main-state/klive-configuration";
-import { appSettings } from "../main-state/klive-settings";
 import { emuFocusAction } from "../../shared/state/emu-focus-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
@@ -38,6 +38,7 @@ import {
 } from "../../extensibility/main/zx-spectrum-context";
 import { Cz88ContextProvider } from "../../extensibility/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
+import { PROJECT_FILE } from "../project/project-utils";
 
 /**
  * These are the context providers we usein the code
@@ -133,6 +134,37 @@ export class EmuWindow extends AppWindow {
     }
     saveKliveSettings(kliveSettings);
     reloadSettings();
+  }
+
+  /**
+   * Saves the project file changes to the current Klive project
+   */
+  saveKliveProject(): void {
+    const project = mainStore.getState().project;
+    if (!project?.hasVm || !project?.path) {
+      // --- No VM in the current project, nothing to save
+      return;
+    }
+
+    console.log("Save project file");
+    const state = mainStore.getState();
+    const machineType = state.machineType.split("_")[0];
+    const kliveSettings: KliveProject = {
+      machineType,
+      viewOptions: {
+        showToolbar: state.emuViewOptions.showToolbar,
+        showFrameInfo: state.emuViewOptions.showFrameInfo,
+        showKeyboard: state.emuViewOptions.showKeyboard,
+        showStatusbar: state.emuViewOptions.showStatusBar,
+        keyboardHeight: state.emulatorPanel.keyboardHeight,
+      },
+    };
+    if (this._machineContextProvider) {
+      kliveSettings.machineSpecific =
+        this._machineContextProvider.getMachineSpecificSettings();
+    }
+    const projectFile = path.join(project.path, PROJECT_FILE);
+    saveSettingsToFile(kliveSettings, projectFile);
   }
 
   // ==========================================================================

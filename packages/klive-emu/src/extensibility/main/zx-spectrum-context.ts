@@ -13,7 +13,11 @@ import {
 } from "../../shared/state/spectrum-specific-reducer";
 import { emuSetClockMultiplierAction } from "../../shared/state/emulator-panel-reducer";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
-import { emuWindow } from "../../main/app/app-menu";
+import {
+  emuWindow,
+  setSoundLevel,
+  setSoundLevelMenu,
+} from "../../main/app/app-menu";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import { VirtualMachineType } from "./machine-registry";
 
@@ -60,15 +64,18 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         label: "Show ULA beam position",
         type: "checkbox",
         checked: true,
-        click: (mi) =>
-          mainStore.dispatch(spectrumBeamPositionAction(mi.checked)),
+        click: (mi) => {
+          mainStore.dispatch(spectrumBeamPositionAction(mi.checked));
+        },
       },
       {
         id: TOGGLE_FAST_LOAD,
         label: "Fast load from tape",
         type: "checkbox",
         checked: true,
-        click: (mi) => mainStore.dispatch(spectrumFastLoadAction(mi.checked)),
+        click: (mi) => {
+          mainStore.dispatch(spectrumFastLoadAction(mi.checked));
+        },
       },
     ];
   }
@@ -125,6 +132,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
       lastTapeFile: this._lastTapeFile,
       clockMultiplier: state.emulatorPanel?.clockMultiplier ?? 1,
       soundLevel: state.emulatorPanel?.soundLevel ?? 1.0,
+      muted: state.emulatorPanel?.muted ?? false,
     };
   }
 
@@ -138,9 +146,8 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
       mainStore.dispatch(emuSetClockMultiplierAction(settings.clockMultiplier));
     }
     if (settings.soundLevel) {
-      // TODO: Implement this
-      //   AppWindow.instance.setSoundLevel(settings.soundLevel);
-      //   AppWindow.instance.setSoundLevelMenu(false, settings.soundLevel);
+      setSoundLevel(settings.soundLevel);
+      setSoundLevelMenu(settings.muted, settings.soundLevel);
     }
     mainStore.dispatch(spectrumFastLoadAction(!!settings.fastLoad));
     mainStore.dispatch(spectrumBeamPositionAction(!!settings.showBeam));
