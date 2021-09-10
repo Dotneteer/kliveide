@@ -5,13 +5,13 @@ import { promises as fs } from "fs";
 import { dialog } from "electron";
 import { AppWindow } from "../app/app-window";
 import { getFolderContents, getHomeFolder } from "../utils/file-utils";
-import { KliveProject } from "../main-state/klive-settings";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import { mainStore } from "../main-state/main-store";
 import {
   projectOpenedAction,
   projectLoadingAction,
 } from "../../shared/state/project-reducer";
+import { KliveProject } from "../main-state/klive-configuration";
 
 /**
  * Name of the project file within the project directory
@@ -89,6 +89,16 @@ export function getProjectFile(projectFile: string): KliveProject | null {
 }
 
 /**
+ * Gets the configuration of the loaded project
+ */
+export function getLoadedProjectFile(): KliveProject | null {
+  const projectPath = mainStore.getState().project?.path;
+  return projectPath
+    ? getProjectFile(path.join(projectPath, PROJECT_FILE))
+    : null;
+}
+
+/**
  * Creates a Klive project in the specified root folder with the specified name
  * @param machineType Virtual machine identifier
  * @param rootFolder Root folder of the project (home directory, if not specified)
@@ -112,7 +122,6 @@ export async function createKliveProject(
     if (syncFs.existsSync(targetFolder)) {
       return { error: `Target directory '${targetFolder}' already exists` };
     }
-    console.log(targetFolder);
     await fs.mkdir(targetFolder);
 
     // --- Create the code subfolder

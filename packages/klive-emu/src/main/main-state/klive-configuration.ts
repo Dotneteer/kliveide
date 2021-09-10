@@ -44,11 +44,16 @@ export interface ViewOptions {
 /**
  * Represents the Klive settings to persist
  */
-export interface KliveSettings {
+export type KliveSettings = {
   machineType?: string;
   viewOptions?: ViewOptions;
   machineSpecific?: Record<string, Record<string, any>>;
-}
+};
+
+/**
+ * Represents the Klive project type
+ */
+export type KliveProject = KliveSettings;
 
 /**
  * Gets the current home folder
@@ -79,8 +84,9 @@ function getKliveConfiguration(): KliveConfiguration | null {
 /**
  * Gets the configuration of Klive Emulator from the user folder
  */
-function getKliveSettings(): KliveSettings | null {
-  const configFile = path.join(getHomeFolder(), SETTINGS_FILE_PATH);
+export function getKliveSettingsFromFile(
+  configFile: string
+): KliveSettings | null {
   const folder = path.dirname(configFile);
   try {
     if (!fs.existsSync(folder)) {
@@ -94,17 +100,28 @@ function getKliveSettings(): KliveSettings | null {
       return config;
     }
   } catch (err) {
-    console.log(`Cannot read and parse Klive settings file: ${err}`);
+    console.log(`Cannot read and parse Klive settings: ${err}`);
   }
   return null;
+}
+
+/**
+ * Gets the configuration of Klive Emulator from the user folder
+ */
+function getKliveSettings(): KliveSettings | null {
+  return getKliveSettingsFromFile(
+    path.join(getHomeFolder(), SETTINGS_FILE_PATH)
+  );
 }
 
 /**
  * Saves the current settings
  * @param settings Settings to save
  */
-export function saveKliveSettings(settings: KliveSettings): void {
-  const settingsFile = path.join(getHomeFolder(), SETTINGS_FILE_PATH);
+export function saveSettingsToFile(
+  settings: KliveSettings,
+  settingsFile: string
+): void {
   const folder = path.dirname(settingsFile);
   try {
     if (!fs.existsSync(folder)) {
@@ -114,8 +131,17 @@ export function saveKliveSettings(settings: KliveSettings): void {
     }
     fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
   } catch (err) {
-    console.log(`Cannot save Klive settings file: ${err}`);
+    console.log(`Cannot save Klive settings: ${err}`);
   }
+}
+
+/**
+ * Saves the current settings
+ * @param settings Settings to save
+ */
+export function saveKliveSettings(settings: KliveSettings): void {
+  const settingsFile = path.join(getHomeFolder(), SETTINGS_FILE_PATH);
+  saveSettingsToFile(settings, settingsFile);
 }
 
 /**
@@ -128,7 +154,8 @@ export function reloadSettings(): void {
 /**
  * The application configuration instance
  */
-export const appConfiguration: KliveConfiguration | null = getKliveConfiguration();
+export const appConfiguration: KliveConfiguration | null =
+  getKliveConfiguration();
 
 /**
  * The application settings instance

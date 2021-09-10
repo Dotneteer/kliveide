@@ -29,6 +29,8 @@ export class KliveStore {
   private _executionStateChanged = new LiteEvent<number>();
   private _machineTypeChanged = new LiteEvent<string>();
   private _projectChanged = new LiteEvent<ProjectState>();
+  private _vmPropertyChanged = new LiteEvent<EmulatorPanelState>();
+
 
   /**
    * Initializes this instance with the specified redux store
