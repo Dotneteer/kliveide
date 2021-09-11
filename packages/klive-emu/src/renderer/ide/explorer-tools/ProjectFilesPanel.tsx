@@ -15,13 +15,11 @@ import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "../../../shared/command/commands";
 import { contextMenuService } from "../context-menu/ContextMenuService";
 import { modalDialogService } from "../../common-ui/modal-service";
-import { newFolderDialog, NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
+import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
-import {
-  CreateFolderResponse,
-  GetFolderContentsResponse,
-} from "../../../shared/messaging/message-types";
+import { CreateFolderResponse } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
+import { TreeNode } from "../../common-ui/TreeNode";
 
 type State = {
   itemsCount: number;
@@ -325,8 +323,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           id: "newFolder",
           text: "New Folder...",
           execute: async () => {
-            console.log("New folder");
-            await this.newFolder(item, !index);
+            await this.newFolder(item, index);
           },
         },
         {
@@ -347,10 +344,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
   }
 
-  async newFolder(
-    node: ITreeNode<ProjectNode>,
-    isRoot: boolean
-  ): Promise<void> {
+  async newFolder(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+    // --- Get the name of the new folder
     const folderData = (await modalDialogService.showModalDialog(
       ideStore as Store,
       NEW_FOLDER_DIALOG_ID,
@@ -358,31 +353,50 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         root: node.nodeData.fullPath,
       }
     )) as NewFileData;
-    if (folderData) {
-      const resp = await ideToEmuMessenger.sendMessage<CreateFolderResponse>({
-        type: "CreateFolder",
-        name: `${folderData.root}/${folderData.name}`,
-      });
-      if (!resp.error) {
-        const contents = (
-          await ideToEmuMessenger.sendMessage<GetFolderContentsResponse>({
-            type: "GetFolderContents",
-            name: node.nodeData.fullPath,
-          })
-        ).contents;
-        if (isRoot) {
-          await projectServices.setProjectContents(contents);
-        } else {
-          const updated = projectServices.createTreeFrom(contents);
-          console.log(updated);
-          node.nodeData = { ...updated.nodeData, name: node.nodeData.name };
-          console.log(node);
-          node.calculateViewItemCount();
-        }
-        this.setState({ itemsCount: this.itemsCount });
-        this._listApi.forceRefresh();
-      }
+
+    if (!folderData) {
+      // --- No folder to create
+      return;
     }
+
+    // --- Create the new folder
+    const newName = folderData.name;
+    const newFullPath = `${folderData.root}/${newName}`;
+    const resp = await ideToEmuMessenger.sendMessage<CreateFolderResponse>({
+      type: "CreateFolder",
+      name: newFullPath,
+    });
+
+    if (resp.error) {
+      // --- Creation failed. The main process has already displayed a message
+      return;
+    }
+
+    // --- Insert the new node into the tree
+    let newPosition = 0;
+    const childCount = node.childCount;
+    for (let i = 0; i < childCount; i++, newPosition++) {
+      const child = node.getChild(i);
+      if (!child.nodeData.isFolder || newName < child.nodeData.name) break;
+    }
+    const newTreeNode = new TreeNode<ProjectNode>({
+      isFolder: true,
+      name: newName,
+      fullPath: newFullPath,
+    });
+    node.insertChildAt(newPosition, newTreeNode);
+    node.isExpanded = true;
+
+    // --- Refresh the view
+    const selectedIndex = index + newPosition + 1;
+    this.setState({
+      selectedIndex,
+      selected: newTreeNode,
+      itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.ensureVisible(selectedIndex);
+    this._listApi.forceRefresh();
   }
 }
 

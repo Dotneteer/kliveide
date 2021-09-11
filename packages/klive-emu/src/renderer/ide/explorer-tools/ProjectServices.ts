@@ -38,7 +38,6 @@ class ProjectServices {
       name: contents.name,
       isFolder: true,
       fullPath: rootPath ? `${rootPath}/${contents.name}` : contents.name,
-      children: [],
     });
     contents.folders
       .sort((a, b) => {
@@ -55,7 +54,6 @@ class ProjectServices {
           name: f,
           isFolder: false,
           fullPath: `${root.nodeData.fullPath}/${f}`,
-          children: [],
         })
       );
     });

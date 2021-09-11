@@ -145,6 +145,37 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
   }
 
   /**
+   * Takes over the specified children
+   * @param children Children to take over
+   */
+  takeOverChildren(children: Array<ITreeNode<TNode>>): void {
+    this._children = [];
+    for (const child of children) {
+      // --- Insert the child
+      this._children.push(child);
+
+      // --- Attach parents
+      (child as TreeNode<TNode>).parentNode = this;
+      if (this.parentTree) {
+        (child as TreeNode<TNode>).setParentTree(this.parentTree);
+      }
+
+      // --- Recalculate level and depth
+      (child as TreeNode<TNode>)._level = this._level + 1;
+      child.forEachDescendant((c) => {
+        (c as TreeNode<TNode>)._level = c.parentNode.level + 1;
+      });
+      this._depth = this._calcDepth();
+      child.forEachParent((p) => {
+        (p as TreeNode<TNode>)._depth = (p as TreeNode<TNode>)._calcDepth();
+      });
+
+      // --- The view item count may have changed
+      this.calculateViewItemCount();
+    }
+  }
+
+  /**
    * This event is raised when a new child has been added to this node. The
    * event argument is a tuple of two values. The first is the new node, the
    * second is its index in the child list.

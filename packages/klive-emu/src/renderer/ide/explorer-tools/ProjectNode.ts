@@ -22,11 +22,6 @@ export interface ProjectNode {
    * The type of the project node
    */
   type?: ProjectNodeType;
-
-  /**
-   * Optional children nodes (for folders)
-   */
-  children?: ProjectNode[];
 }
 
 /**

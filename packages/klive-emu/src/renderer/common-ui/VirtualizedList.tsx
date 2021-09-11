@@ -49,6 +49,7 @@ export type VirtualizedListApi = {
   scrollToEnd: (withRefresh?: boolean) => void;
   getViewPort: () => { startIndex: number; endIndex: number };
   ensureVisible: (index: number) => void;
+  focus: () => void;
 };
 
 // --- Resizing phases
@@ -94,6 +95,7 @@ export default function VirtualizedList({
   const [resizedHeight, setResizedHeight] = useState<number>();
   const [requestedPos, setRequestedPos] = useState(-1);
   const [requestedIndex, setRequestedIndex] = useState(-1);
+  const [requestFocus, setRequestFocus] = useState(false);
 
   // --- Component host element
   const divHost = React.createRef<HTMLDivElement>();
@@ -154,6 +156,7 @@ export default function VirtualizedList({
         scrollToEnd: (withRefresh) => scrollToEnd(withRefresh),
         getViewPort: () => getViewPort(),
         ensureVisible: (index: number) => ensureVisible(index),
+        focus: () => setRequestFocus(true),
       });
       updateDimensions();
       const initPosition = obtainInitPos?.();
@@ -199,6 +202,10 @@ export default function VirtualizedList({
         updateDimensions();
         renderItems();
         setResizePhase(ResizePhase.Rendered);
+        if (requestFocus) {
+          divHost.current.focus();
+          setRequestFocus(false);
+        }
         break;
     }
   });
@@ -370,7 +377,10 @@ export default function VirtualizedList({
    */
   function getViewPort(): { startIndex: number; endIndex: number } {
     if (!divHost.current) {
-      return { startIndex: lastStartIndex.current, endIndex: lastEndIndex.current };
+      return {
+        startIndex: lastStartIndex.current,
+        endIndex: lastEndIndex.current,
+      };
     }
     const scrollPos = divHost.current.scrollTop;
     const result = {

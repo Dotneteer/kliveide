@@ -60,6 +60,8 @@ export default function Splitter({
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
       onMouseDown={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
         if (e.button === 0) {
           startMove(e);
         }
