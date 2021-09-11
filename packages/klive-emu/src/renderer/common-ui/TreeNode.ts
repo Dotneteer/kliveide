@@ -6,7 +6,6 @@ import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
  * @param TNode The type of tree nodes
  */
 export class TreeNode<TNode> implements ITreeNode<TNode> {
-  private _nodeData: TNode;
   private _parentNode: ITreeNode<TNode> | undefined;
   private _parentTree: ITreeView<TNode> | undefined;
   private _children: Array<ITreeNode<TNode>> = [];
@@ -25,25 +24,21 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
    * @param nodeData
    */
   constructor(nodeData: TNode) {
-    this._nodeData = nodeData;
+    this.nodeData = nodeData;
     this._viewItemCount = 1;
   }
 
   /**
    * Tree node data
    */
-  get nodeData(): TNode {
-    return this._nodeData;
-  }
+  nodeData: TNode;
 
   /**
    * Retrieves the string representation of the node's data.
    */
   toString(): string {
     const name =
-      this._nodeData && this._nodeData.toString
-        ? this._nodeData.toString()
-        : "";
+      this.nodeData && this.nodeData.toString ? this.nodeData.toString() : "";
     return name;
   }
 
@@ -150,6 +145,37 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
   }
 
   /**
+   * Takes over the specified children
+   * @param children Children to take over
+   */
+  takeOverChildren(children: Array<ITreeNode<TNode>>): void {
+    this._children = [];
+    for (const child of children) {
+      // --- Insert the child
+      this._children.push(child);
+
+      // --- Attach parents
+      (child as TreeNode<TNode>).parentNode = this;
+      if (this.parentTree) {
+        (child as TreeNode<TNode>).setParentTree(this.parentTree);
+      }
+
+      // --- Recalculate level and depth
+      (child as TreeNode<TNode>)._level = this._level + 1;
+      child.forEachDescendant((c) => {
+        (c as TreeNode<TNode>)._level = c.parentNode.level + 1;
+      });
+      this._depth = this._calcDepth();
+      child.forEachParent((p) => {
+        (p as TreeNode<TNode>)._depth = (p as TreeNode<TNode>)._calcDepth();
+      });
+
+      // --- The view item count may have changed
+      this.calculateViewItemCount();
+    }
+  }
+
+  /**
    * This event is raised when a new child has been added to this node. The
    * event argument is a tuple of two values. The first is the new node, the
    * second is its index in the child list.
@@ -185,7 +211,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
    * event argument is the removed child.
    */
   get childRemoved(): ILiteEvent<ITreeNode<TNode>> {
-      return this._childRemoved;
+    return this._childRemoved;
   }
 
   /**
@@ -207,7 +233,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
   set isExpanded(value: boolean) {
     if (value !== this._isExpanded) {
       this._isExpanded = value;
-      this._calcViewItemCount();
+      this.calculateViewItemCount();
     }
   }
 
@@ -220,7 +246,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
   set isHidden(value: boolean) {
     if (value !== this._isHidden) {
       this._isHidden = value;
-      this._calcViewItemCount();
+      this.calculateViewItemCount();
     }
   }
 
@@ -364,7 +390,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
     });
 
     // --- The view item count may have changed
-    this._calcViewItemCount();
+    this.calculateViewItemCount();
 
     // --- Done
     this._childAdded.fire([child, index]);
@@ -403,7 +429,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
     });
 
     // --- The view item count may have changed
-    this._calcViewItemCount();
+    this.calculateViewItemCount();
 
     // --- Done
     this._childRemoved.fire(child);
@@ -430,7 +456,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
   /**
    * Calculates the `viewItemCount` property value
    */
-  private _calcViewItemCount(): void {
+  calculateViewItemCount(): void {
     const oldViewItemCount = this._viewItemCount;
 
     // --- Hidden items
@@ -451,7 +477,7 @@ export class TreeNode<TNode> implements ITreeNode<TNode> {
     // --- Now, do this for the entire parent chain
     if (oldViewItemCount !== this._viewItemCount) {
       this.forEachParent((parent) =>
-        (parent as TreeNode<TNode>)._calcViewItemCount()
+        (parent as TreeNode<TNode>).calculateViewItemCount()
       );
     }
   }

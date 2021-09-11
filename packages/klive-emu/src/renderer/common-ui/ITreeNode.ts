@@ -8,7 +8,7 @@ export interface ITreeNode<TNode> {
   /**
    * Tree node data
    */
-  readonly nodeData: TNode;
+  nodeData: TNode;
 
   /**
    * The parent of this node
@@ -51,6 +51,11 @@ export interface ITreeNode<TNode> {
   getChild(index: number): ITreeNode<TNode>;
 
   /**
+   * Calculates the `viewItemCount` property value
+   */
+  calculateViewItemCount(): void;
+
+  /**
    * Appends a new child to this child node. Takes care of
    * avoiding circular references.
    * @param child The child to append to this child node.
@@ -66,6 +71,12 @@ export interface ITreeNode<TNode> {
    * @returns The number of child nodes after the operation.
    */
   insertChildAt(index: number, child: ITreeNode<TNode>): number;
+
+  /**
+   * Takes over the specified children
+   * @param children Children to take over
+   */
+  takeOverChildren(children: Array<ITreeNode<TNode>>): void;
 
   /**
    * This event is raised when a new child has been added to this node. The

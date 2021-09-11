@@ -118,7 +118,7 @@ export default function ModalDialog({ targetId }: Props) {
 }
 
 const Placeholder = styles.div`
-  padding: 15px;
+  padding: 8px 15px;
   color: white;
   font-size: 1em;
 `;

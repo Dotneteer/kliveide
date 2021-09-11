@@ -1,9 +1,14 @@
+import * as fs from "fs";
 import { dialog } from "electron";
 import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
 import {
+  CreateFileResponse,
+  CreateFolderResponse,
   CreateKliveProjectResponse,
   DefaultResponse,
   EmuOpenFileDialogResponse,
+  FileExistsResponse,
+  GetFolderContentsResponse,
   GetFolderDialogResponse,
   GetRegisteredMachinesResponse,
   RequestMessage,
@@ -88,6 +93,56 @@ export async function processIdeRequest(
       return <GetFolderDialogResponse>{
         type: "GetFolderDialogResponse",
         filename: folder,
+      };
+
+    case "FileExists":
+      return <FileExistsResponse>{
+        type: "FileExistsResponse",
+        exists: fs.existsSync(message.name),
+      };
+
+    case "GetFolderContents":
+      return <GetFolderContentsResponse>{
+        type: "GetFolderContentsResponse",
+        contents: await getFolderContents(message.name),
+      };
+
+    case "CreateFolder":
+      let folderError: string | undefined;
+      if (fs.existsSync(message.name)) {
+        folderError = `Folder ${message.name} already exists`;
+      } else {
+        try {
+          fs.mkdirSync(message.name, { recursive: true });
+        } catch (err) {
+          folderError = `Cannot create folder: ${err}`;
+        }
+      }
+      if (folderError) {
+        dialog.showErrorBox("Error creating folder", folderError);
+      }
+      return <CreateFolderResponse>{
+        type: "CreateFolderResponse",
+        error: folderError,
+      };
+
+    case "CreateFile":
+      let fileError: string | undefined;
+      if (fs.existsSync(message.name)) {
+        fileError = `File ${message.name} already exists`;
+      } else {
+        try {
+          fs.writeFileSync(message.name, "");
+        } catch (err) {
+          fileError = `Cannot create file: ${err}`;
+        }
+      }
+      if (fileError) {
+        dialog.showErrorBox("Error creating file", fileError);
+      }
+      return <CreateFileResponse>{
+        type: "CreateFileResponse",
+        error: fileError,
       };
 
     default:

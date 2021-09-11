@@ -13,6 +13,13 @@ import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { GetFolderDialogResponse } from "../../../shared/messaging/message-types";
 import { NewProjectData } from "../../../shared/messaging/dto";
 import { Store } from "redux";
+import {
+  ErrorLabel,
+  Field,
+  FieldRow,
+  HintLabel,
+  Label,
+} from "../../common-ui/FormElements";
 
 export const NEW_PROJECT_DIALOG_ID = "NewProjectDialog";
 
@@ -29,7 +36,7 @@ class NewProjectDialogDescriptor implements IModalDialogDescriptor {
   button3Text = "Ok";
   button3Clicked = () => {
     const project = this._result as NewProjectData;
-    if (!hasErrors(project)) {
+    if (project.projectName) {
       modalDialogService.hide(ideStore as Store, this._result);
     }
   };
@@ -50,7 +57,6 @@ type Props = {
 };
 
 const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
-  const [errorText, setErrorText] = useState(hasErrors(newProjectData));
   const [projectName, setProjectName] = useState(newProjectData.projectName);
   const [projectFolder, setProjectFolder] = useState(
     newProjectData.projectPath
@@ -76,13 +82,17 @@ const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
           }}
         ></DropDownListComponent>
       </Field>
-      <Label>Root project folder</Label>
+      <FieldRow>
+        <Label>Root project folder</Label>
+        <HintLabel>{projectFolder ? "" : "(Your home folder)"}</HintLabel>
+      </FieldRow>
       <Field>
         <FieldRow>
           <input
             type="text"
             style={{ width: "100%", marginRight: 4 }}
             value={projectFolder}
+            spellCheck={false}
             onChange={(ev) => {
               setProjectFolder(ev.target.value);
               newProjectData.projectPath = ev.target.value;
@@ -99,6 +109,7 @@ const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
               if (folder) {
                 setProjectFolder(folder);
                 newProjectData.projectPath = folder;
+                console.log(newProjectData);
               }
             }}
           />
@@ -106,17 +117,17 @@ const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
       </Field>
       <FieldRow>
         <Label>Project name</Label>
-        <ErrorLabel>{hasErrors(newProjectData) ? "(specify!)" : ""}</ErrorLabel>
+        <ErrorLabel>{projectName ? "" : "(Specify!)"}</ErrorLabel>
       </FieldRow>
       <Field>
         <input
           type="text"
           style={{ width: 240 }}
           value={projectName}
+          spellCheck={false}
           onChange={(ev) => {
             setProjectName(ev.target.value);
             newProjectData.projectName = ev.target.value;
-            setErrorText(hasErrors(newProjectData));
           }}
         />
       </Field>
@@ -133,26 +144,6 @@ const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
     </div>
   );
 };
-
-const Label: React.FC = (props) => {
-  return <label className="dialog-label">{props.children}</label>;
-};
-
-const ErrorLabel: React.FC = (props) => {
-  return <label className="dialog-label dialog-error">{props.children}</label>;
-};
-
-const Field: React.FC = (props) => {
-  return <div className="dialog-field">{props.children}</div>;
-};
-
-const FieldRow: React.FC = (props) => {
-  return <div className="dialog-field-row">{props.children}</div>;
-};
-
-function hasErrors(project: NewProjectData): string | null {
-  return project.projectName ? null : "Specify the name of the project";
-}
 
 /**
  * The singleton instance of the dialog

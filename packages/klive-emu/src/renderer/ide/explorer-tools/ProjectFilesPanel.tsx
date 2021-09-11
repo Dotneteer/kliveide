@@ -12,6 +12,15 @@ import { SvgIcon } from "../../common-ui/SvgIcon";
 import { ideStore } from "../ideStore";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
+import { MenuItem } from "../../../shared/command/commands";
+import { contextMenuService } from "../context-menu/ContextMenuService";
+import { modalDialogService } from "../../common-ui/modal-service";
+import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
+import { Store } from "redux";
+import { CreateFileResponse, CreateFolderResponse } from "../../../shared/messaging/message-types";
+import { NewFileData } from "../../../shared/messaging/dto";
+import { TreeNode } from "../../common-ui/TreeNode";
+import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 
 type State = {
   itemsCount: number;
@@ -66,13 +75,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     if (state.isLoading) {
       this.setState({
         isLoading: true,
-        itemsCount: 0
+        itemsCount: 0,
       });
     } else {
       if (!state.path) {
         this.setState({
           isLoading: false,
-          itemsCount: 0
+          itemsCount: 0,
         });
       } else {
         projectServices.setProjectContents(state.directoryContents);
@@ -191,6 +200,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         key={index}
         className="listlike"
         style={{ ...style, ...itemStyle }}
+        onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
         onClick={() => this.collapseExpand(index, item)}
       >
         <div
@@ -300,6 +310,160 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       });
       this._listApi.forceRefresh();
     }
+  }
+
+  async onContextMenu(
+    ev: React.MouseEvent,
+    index: number,
+    item: ITreeNode<ProjectNode>
+  ): Promise<void> {
+    if (item.nodeData.isFolder) {
+      // --- Create menu items
+      const menuItems: MenuItem[] = [
+        {
+          id: "newFolder",
+          text: "New Folder...",
+          execute: async () => {
+            await this.newFolder(item, index);
+          },
+        },
+        {
+          id: "newFile",
+          text: "New File...",
+          execute: async () => {
+            await this.newFile(item, index);
+          },
+        },
+      ];
+      const rect = (ev.target as HTMLElement).getBoundingClientRect();
+      await contextMenuService.openMenu(
+        menuItems,
+        rect.y + 22,
+        rect.x,
+        ev.target as HTMLElement
+      );
+    }
+  }
+
+  /**
+   * Creates a new folder in the specified folder node
+   * @param node Folder node
+   * @param index Node index
+   */
+  async newFolder(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+    // --- Get the name of the new folder
+    const folderData = (await modalDialogService.showModalDialog(
+      ideStore as Store,
+      NEW_FOLDER_DIALOG_ID,
+      {
+        root: node.nodeData.fullPath,
+      }
+    )) as NewFileData;
+
+    if (!folderData) {
+      // --- No folder to create
+      return;
+    }
+
+    // --- Create the new folder
+    const newName = folderData.name;
+    const newFullPath = `${folderData.root}/${newName}`;
+    const resp = await ideToEmuMessenger.sendMessage<CreateFolderResponse>({
+      type: "CreateFolder",
+      name: newFullPath,
+    });
+
+    if (resp.error) {
+      // --- Creation failed. The main process has already displayed a message
+      return;
+    }
+
+    // --- Insert the new node into the tree
+    let newPosition = 0;
+    const childCount = node.childCount;
+    for (let i = 0; i < childCount; i++, newPosition++) {
+      const child = node.getChild(i);
+      if (!child.nodeData.isFolder || newName < child.nodeData.name) break;
+    }
+    const newTreeNode = new TreeNode<ProjectNode>({
+      isFolder: true,
+      name: newName,
+      fullPath: newFullPath,
+    });
+    node.insertChildAt(newPosition, newTreeNode);
+    node.isExpanded = true;
+
+    // --- Refresh the view
+    const selectedIndex = index + newPosition + 1;
+    this.setState({
+      selectedIndex,
+      selected: newTreeNode,
+      itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.ensureVisible(selectedIndex);
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Creates a new file in the specified folder node
+   * @param node Folder node
+   * @param index Node index
+   */
+   async newFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+    // --- Get the name of the new folder
+    const fileData = (await modalDialogService.showModalDialog(
+      ideStore as Store,
+      NEW_FILE_DIALOG_ID,
+      {
+        root: node.nodeData.fullPath,
+      }
+    )) as NewFileData;
+
+    if (!fileData) {
+      // --- No folder to create
+      return;
+    }
+
+    // --- Create the new file
+    const newName = fileData.name;
+    const newFullPath = `${fileData.root}/${newName}`;
+    const resp = await ideToEmuMessenger.sendMessage<CreateFileResponse>({
+      type: "CreateFile",
+      name: newFullPath,
+    });
+
+    if (resp.error) {
+      // --- Creation failed. The main process has already displayed a message
+      return;
+    }
+
+    // --- Insert the new node into the tree
+    let newPosition = 0;
+    const childCount = node.childCount;
+    for (let i = 0; i < childCount; i++, newPosition++) {
+      const child = node.getChild(i);
+      if (child.nodeData.isFolder) continue;
+      if (newName < child.nodeData.name) break;
+    }
+    const newTreeNode = new TreeNode<ProjectNode>({
+      isFolder: false,
+      name: newName,
+      fullPath: newFullPath,
+    });
+    node.insertChildAt(newPosition, newTreeNode);
+    node.isExpanded = true;
+
+    // --- Refresh the view
+    const selectedIndex = index + newPosition + 1;
+    this.setState({
+      selectedIndex,
+      selected: newTreeNode,
+      itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.ensureVisible(selectedIndex);
+    this._listApi.forceRefresh();
   }
 }
 
