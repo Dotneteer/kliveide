@@ -33,11 +33,11 @@ class ProjectServices {
   /**
    * Creates a tree view from the specified contents
    */
-  private createTreeFrom(contents: DirectoryContent): TreeNode<ProjectNode> {
+  createTreeFrom(contents: DirectoryContent, rootPath: string = null): TreeNode<ProjectNode> {
     const root = new TreeNode<ProjectNode>({
       name: contents.name,
       isFolder: true,
-      fullPath: contents.name,
+      fullPath: rootPath ? `${rootPath}/${contents.name}` : contents.name,
       children: [],
     });
     contents.folders
@@ -45,7 +45,7 @@ class ProjectServices {
         return a.name > b.name ? 1 : a.name < b.name ? 1 : 0;
       })
       .forEach((f) => {
-        const folderNode = this.createTreeFrom(f);
+        const folderNode = this.createTreeFrom(f, root.nodeData.fullPath);
         folderNode.isExpanded = false;
         root.appendChild(folderNode);
       });
@@ -54,7 +54,7 @@ class ProjectServices {
         new TreeNode<ProjectNode>({
           name: f,
           isFolder: false,
-          fullPath: `${contents.name}/${f}`,
+          fullPath: `${root.nodeData.fullPath}/${f}`,
           children: [],
         })
       );

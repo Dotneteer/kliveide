@@ -4,7 +4,7 @@ import {
 } from "../../renderer/machines/core/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
-import { AppState, RegisteredMachine } from "../state/AppState";
+import { AppState, DirectoryContent, RegisteredMachine } from "../state/AppState";
 import { ICpuState } from "../machines/AbstractCpu";
 import { NewProjectData } from "./dto";
 
@@ -194,6 +194,38 @@ export interface GetFolderDialogRequest extends MessageBase {
 }
 
 /**
+ * The Emu ask the main for checking the existence of a file
+ */
+ export interface FileExistsRequest extends MessageBase {
+  type: "FileExists";
+  name: string;
+}
+
+/**
+ * The Emu ask the main for obtaining the contents of a folder
+ */
+ export interface GetFolderContentsRequest extends MessageBase {
+  type: "GetFolderContents";
+  name: string;
+}
+
+/**
+ * The Emu ask the main for creating a folder
+ */
+ export interface CreateFolderRequest extends MessageBase {
+  type: "CreateFolder";
+  name: string;
+}
+
+/**
+ * The Emu ask the main for creating a file
+ */
+ export interface CreateFileRequest extends MessageBase {
+  type: "CreateFile";
+  name: string;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -244,10 +276,14 @@ type IdeToMainRequests =
   | GetRegisteredMachinesRequest
   | CreateKliveProjectRequest
   | OpenProjectFolderRequest
-  | GetFolderDialogRequest;
+  | GetFolderDialogRequest
+  | FileExistsRequest
+  | GetFolderContentsRequest
+  | CreateFolderRequest
+  | CreateFileRequest;
 
 /**
- * Requests send by the main process to Emu
+ * Requests send by the main process to Ide
  */
 type MainToIdeRequests = SyncMainStateRequest | NewProjectRequest;
 
@@ -339,6 +375,38 @@ export interface GetFolderDialogResponse extends MessageBase {
   filename?: string;
 }
 
+/**
+ * The Emu ask the main for checking the existence of a file
+ */
+ export interface FileExistsResponse extends MessageBase {
+  type: "FileExistsResponse";
+  exists: boolean;
+}
+
+/**
+ * The Emu ask the main for obtaining the contents of a folder
+ */
+ export interface GetFolderContentsResponse extends MessageBase {
+  type: "GetFolderContentsResponse";
+  contents: DirectoryContent;
+}
+
+/**
+ * The Emu ask the main for creating a folder
+ */
+ export interface CreateFolderResponse extends MessageBase {
+  type: "CreateFolderResponse";
+  error?: string;
+}
+
+/**
+ * The Emu ask the main for creating a folder
+ */
+ export interface CreateFileResponse extends MessageBase {
+  type: "CreateFileResponse";
+  error?: string;
+}
+
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
@@ -350,7 +418,11 @@ export type ResponseMessage =
   | GetRegisteredMachinesResponse
   | CreateKliveProjectResponse
   | NewProjectResponse
-  | GetFolderDialogResponse;
+  | GetFolderDialogResponse
+  | FileExistsResponse
+  | GetFolderContentsResponse
+  | CreateFolderResponse
+  | CreateFileResponse
 
 /**
  * All messages

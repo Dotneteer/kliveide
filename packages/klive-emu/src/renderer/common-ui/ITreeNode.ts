@@ -8,7 +8,7 @@ export interface ITreeNode<TNode> {
   /**
    * Tree node data
    */
-  readonly nodeData: TNode;
+  nodeData: TNode;
 
   /**
    * The parent of this node
@@ -50,6 +50,11 @@ export interface ITreeNode<TNode> {
    */
   getChild(index: number): ITreeNode<TNode>;
 
+  /**
+   * Calculates the `viewItemCount` property value
+   */
+   calculateViewItemCount(): void;
+   
   /**
    * Appends a new child to this child node. Takes care of
    * avoiding circular references.

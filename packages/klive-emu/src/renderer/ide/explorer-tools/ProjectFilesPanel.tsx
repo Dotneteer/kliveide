@@ -12,6 +12,16 @@ import { SvgIcon } from "../../common-ui/SvgIcon";
 import { ideStore } from "../ideStore";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
+import { MenuItem } from "../../../shared/command/commands";
+import { contextMenuService } from "../context-menu/ContextMenuService";
+import { modalDialogService } from "../../common-ui/modal-service";
+import { newFolderDialog, NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
+import { Store } from "redux";
+import {
+  CreateFolderResponse,
+  GetFolderContentsResponse,
+} from "../../../shared/messaging/message-types";
+import { NewFileData } from "../../../shared/messaging/dto";
 
 type State = {
   itemsCount: number;
@@ -66,13 +76,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     if (state.isLoading) {
       this.setState({
         isLoading: true,
-        itemsCount: 0
+        itemsCount: 0,
       });
     } else {
       if (!state.path) {
         this.setState({
           isLoading: false,
-          itemsCount: 0
+          itemsCount: 0,
         });
       } else {
         projectServices.setProjectContents(state.directoryContents);
@@ -191,6 +201,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         key={index}
         className="listlike"
         style={{ ...style, ...itemStyle }}
+        onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
         onClick={() => this.collapseExpand(index, item)}
       >
         <div
@@ -299,6 +310,78 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         selected: tree.getViewNodeByIndex(newIndex),
       });
       this._listApi.forceRefresh();
+    }
+  }
+
+  async onContextMenu(
+    ev: React.MouseEvent,
+    index: number,
+    item: ITreeNode<ProjectNode>
+  ): Promise<void> {
+    if (item.nodeData.isFolder) {
+      // --- Create menu items
+      const menuItems: MenuItem[] = [
+        {
+          id: "newFolder",
+          text: "New Folder...",
+          execute: async () => {
+            console.log("New folder");
+            await this.newFolder(item, !index);
+          },
+        },
+        {
+          id: "newFile",
+          text: "New File...",
+          execute: () => {
+            console.log("New file");
+          },
+        },
+      ];
+      const rect = (ev.target as HTMLElement).getBoundingClientRect();
+      await contextMenuService.openMenu(
+        menuItems,
+        rect.y + 22,
+        rect.x,
+        ev.target as HTMLElement
+      );
+    }
+  }
+
+  async newFolder(
+    node: ITreeNode<ProjectNode>,
+    isRoot: boolean
+  ): Promise<void> {
+    const folderData = (await modalDialogService.showModalDialog(
+      ideStore as Store,
+      NEW_FOLDER_DIALOG_ID,
+      {
+        root: node.nodeData.fullPath,
+      }
+    )) as NewFileData;
+    if (folderData) {
+      const resp = await ideToEmuMessenger.sendMessage<CreateFolderResponse>({
+        type: "CreateFolder",
+        name: `${folderData.root}/${folderData.name}`,
+      });
+      if (!resp.error) {
+        const contents = (
+          await ideToEmuMessenger.sendMessage<GetFolderContentsResponse>({
+            type: "GetFolderContents",
+            name: node.nodeData.fullPath,
+          })
+        ).contents;
+        if (isRoot) {
+          await projectServices.setProjectContents(contents);
+        } else {
+          const updated = projectServices.createTreeFrom(contents);
+          console.log(updated);
+          node.nodeData = { ...updated.nodeData, name: node.nodeData.name };
+          console.log(node);
+          node.calculateViewItemCount();
+        }
+        this.setState({ itemsCount: this.itemsCount });
+        this._listApi.forceRefresh();
+      }
     }
   }
 }

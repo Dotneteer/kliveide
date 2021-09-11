@@ -49,6 +49,7 @@ import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,
 } from "./explorer-tools/NewProjectDialog";
+import { newFolderDialog, NEW_FOLDER_DIALOG_ID } from "./explorer-tools/NewFolderDialog";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -319,6 +320,10 @@ export default function IdeApp() {
       modalDialogService.registerModalDescriptor(
         NEW_PROJECT_DIALOG_ID,
         newProjectDialog
+      );
+      modalDialogService.registerModalDescriptor(
+        NEW_FOLDER_DIALOG_ID,
+        newFolderDialog
       );
 
       // --- Register available commands

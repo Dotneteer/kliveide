@@ -357,6 +357,7 @@ input.e-input.e-control.e-dropdownlist,
 
 .e-dialog .e-dlg-header-content {
   border-radius: 0;
+  padding: 8px 15px;
 }
 
 .e-dialog .e-dlg-header-content,
@@ -404,6 +405,10 @@ input.e-input.e-control.e-dropdownlist,
 
 .e-dialog .e-dlg-content {
   padding: 0;
+}
+
+.e-dialog .e-footer-content {
+  padding: 8px 15px 15px 15px;
 }
 
 .e-dlg-overlay {
@@ -493,6 +498,11 @@ input:focus {
 
 .dialog-error {
   color: var(--console-ansi-bright-red);
+  margin-left: 8px;
+}
+
+.dialog-hint {
+  color: var(--console-ansi-cyan);
   font-weight: 400;
   margin-left: 8px;
 }
