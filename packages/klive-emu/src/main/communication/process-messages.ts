@@ -2,6 +2,7 @@ import * as fs from "fs";
 import { dialog } from "electron";
 import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
 import {
+  CreateFileResponse,
   CreateFolderResponse,
   CreateKliveProjectResponse,
   DefaultResponse,
@@ -107,27 +108,42 @@ export async function processIdeRequest(
       };
 
     case "CreateFolder":
-      let error: string | undefined;
+      let folderError: string | undefined;
       if (fs.existsSync(message.name)) {
-        error = `Folder ${message.name} already exists`;
+        folderError = `Folder ${message.name} already exists`;
       } else {
         try {
           fs.mkdirSync(message.name, { recursive: true });
         } catch (err) {
-          error = `Cannot create folder: ${err}`;
+          folderError = `Cannot create folder: ${err}`;
         }
       }
-      if (error) {
-        dialog.showErrorBox("Error creating folder", error);
+      if (folderError) {
+        dialog.showErrorBox("Error creating folder", folderError);
       }
       return <CreateFolderResponse>{
         type: "CreateFolderResponse",
-        error,
+        error: folderError,
       };
 
     case "CreateFile":
-      // TODO: Implement this
-      break;
+      let fileError: string | undefined;
+      if (fs.existsSync(message.name)) {
+        fileError = `File ${message.name} already exists`;
+      } else {
+        try {
+          fs.writeFileSync(message.name, "");
+        } catch (err) {
+          fileError = `Cannot create file: ${err}`;
+        }
+      }
+      if (fileError) {
+        dialog.showErrorBox("Error creating file", fileError);
+      }
+      return <CreateFileResponse>{
+        type: "CreateFileResponse",
+        error: fileError,
+      };
 
     default:
       // --- If the main does not recofnize a request, it forwards it to Emu

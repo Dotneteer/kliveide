@@ -18,15 +18,15 @@ import {
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileExistsResponse } from "../../../shared/messaging/message-types";
 
-export const NEW_FOLDER_DIALOG_ID = "NewFolderDialog";
+export const NEW_FILE_DIALOG_ID = "NewFileDialog";
 
 const SPECIFY_MSG = "(Specify!)";
-const EXISTS_MSG = "(Folder already exists)";
+const EXISTS_MSG = "(File already exists)";
 
-class NewFolderDialogDescriptor implements IModalDialogDescriptor {
+class NewFileDialogDescriptor implements IModalDialogDescriptor {
   private _result: NewFileData;
 
-  title = "Add New Folder";
+  title = "Add New File";
   width = 480;
   height = "auto";
 
@@ -35,8 +35,8 @@ class NewFolderDialogDescriptor implements IModalDialogDescriptor {
 
   button3Text = "Ok";
   button3Clicked = () => {
-    const folder = this._result as NewFileData;
-    if (!folder.error) {
+    const file = this._result as NewFileData;
+    if (!file.error) {
       modalDialogService.hide(ideStore as Store, this._result);
     }
   };
@@ -48,7 +48,7 @@ class NewFolderDialogDescriptor implements IModalDialogDescriptor {
    */
   createContentElement(args?: NewFileData): React.ReactNode {
     this._result = { ...args };
-    return <NewFolderDialog newFolderData={this._result} />;
+    return <NewFileDialog newFolderData={this._result} />;
   }
 }
 
@@ -56,8 +56,8 @@ type Props = {
   newFolderData: NewFileData;
 };
 
-const NewFolderDialog: React.FC<Props> = ({ newFolderData }: Props) => {
-  const [folderName, setFolderName] = useState(newFolderData.name);
+const NewFileDialog: React.FC<Props> = ({ newFolderData: newFileData }: Props) => {
+  const [filename, setFilename] = useState(newFileData.name);
   const [nameError, setNameError] = useState(SPECIFY_MSG);
   const containerStyle: CSSProperties = {
     display: "flex",
@@ -65,19 +65,19 @@ const NewFolderDialog: React.FC<Props> = ({ newFolderData }: Props) => {
   };
 
   const onNameChanged = async (ev: React.ChangeEvent<HTMLInputElement>) => {
-    setFolderName(ev.target.value);
-    newFolderData.name = ev.target.value;
-    newFolderData.error = false;
-    if (!newFolderData.name) {
+    setFilename(ev.target.value);
+    newFileData.name = ev.target.value;
+    newFileData.error = false;
+    if (!newFileData.name) {
       setNameError(SPECIFY_MSG);
-      newFolderData.error = true;
+      newFileData.error = true;
     } else {
       const response =
         await ideToEmuMessenger.sendMessage<FileExistsResponse>({
           type: "FileExists",
-          name: `${newFolderData.root}/${newFolderData.name}`,
+          name: `${newFileData.root}/${newFileData.name}`,
         });
-      newFolderData.error = response.exists;
+      newFileData.error = response.exists;
       setNameError(response.exists ? EXISTS_MSG : "");
     }
   }
@@ -86,10 +86,10 @@ const NewFolderDialog: React.FC<Props> = ({ newFolderData }: Props) => {
     <div style={containerStyle}>
       <FieldRow>
         <Label>Root folder:</Label>
-        <HintLabel>{newFolderData.root}</HintLabel>
+        <HintLabel>{newFileData.root}</HintLabel>
       </FieldRow>
       <FieldRow>
-        <Label>New folder name</Label>
+        <Label>New file name</Label>
         <ErrorLabel>{nameError}</ErrorLabel>
       </FieldRow>
       <Field>
@@ -97,7 +97,7 @@ const NewFolderDialog: React.FC<Props> = ({ newFolderData }: Props) => {
           type="text"
           style={{ width: "100%" }}
           spellCheck={false}
-          value={folderName}
+          value={filename}
           onChange={async (ev) => await onNameChanged(ev)}
         />
       </Field>
@@ -108,4 +108,4 @@ const NewFolderDialog: React.FC<Props> = ({ newFolderData }: Props) => {
 /**
  * The singleton instance of the dialog
  */
-export const newFolderDialog = new NewFolderDialogDescriptor();
+export const newFileDialog = new NewFileDialogDescriptor();

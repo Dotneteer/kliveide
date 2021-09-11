@@ -17,9 +17,10 @@ import { contextMenuService } from "../context-menu/ContextMenuService";
 import { modalDialogService } from "../../common-ui/modal-service";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
-import { CreateFolderResponse } from "../../../shared/messaging/message-types";
+import { CreateFileResponse, CreateFolderResponse } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
+import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 
 type State = {
   itemsCount: number;
@@ -329,8 +330,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "newFile",
           text: "New File...",
-          execute: () => {
-            console.log("New file");
+          execute: async () => {
+            await this.newFile(item, index);
           },
         },
       ];
@@ -344,6 +345,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
   }
 
+  /**
+   * Creates a new folder in the specified folder node
+   * @param node Folder node
+   * @param index Node index
+   */
   async newFolder(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
     const folderData = (await modalDialogService.showModalDialog(
@@ -381,6 +387,67 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
     const newTreeNode = new TreeNode<ProjectNode>({
       isFolder: true,
+      name: newName,
+      fullPath: newFullPath,
+    });
+    node.insertChildAt(newPosition, newTreeNode);
+    node.isExpanded = true;
+
+    // --- Refresh the view
+    const selectedIndex = index + newPosition + 1;
+    this.setState({
+      selectedIndex,
+      selected: newTreeNode,
+      itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.ensureVisible(selectedIndex);
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Creates a new file in the specified folder node
+   * @param node Folder node
+   * @param index Node index
+   */
+   async newFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+    // --- Get the name of the new folder
+    const fileData = (await modalDialogService.showModalDialog(
+      ideStore as Store,
+      NEW_FILE_DIALOG_ID,
+      {
+        root: node.nodeData.fullPath,
+      }
+    )) as NewFileData;
+
+    if (!fileData) {
+      // --- No folder to create
+      return;
+    }
+
+    // --- Create the new file
+    const newName = fileData.name;
+    const newFullPath = `${fileData.root}/${newName}`;
+    const resp = await ideToEmuMessenger.sendMessage<CreateFileResponse>({
+      type: "CreateFile",
+      name: newFullPath,
+    });
+
+    if (resp.error) {
+      // --- Creation failed. The main process has already displayed a message
+      return;
+    }
+
+    // --- Insert the new node into the tree
+    let newPosition = 0;
+    const childCount = node.childCount;
+    for (let i = 0; i < childCount; i++, newPosition++) {
+      const child = node.getChild(i);
+      if (child.nodeData.isFolder) continue;
+      if (newName < child.nodeData.name) break;
+    }
+    const newTreeNode = new TreeNode<ProjectNode>({
+      isFolder: false,
       name: newName,
       fullPath: newFullPath,
     });
