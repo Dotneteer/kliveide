@@ -437,32 +437,8 @@ export interface GetFolderContentsResponse extends MessageBase {
 /**
  * The Emu ask the main for creating a folder
  */
-export interface CreateFolderResponse extends MessageBase {
-  type: "CreateFolderResponse";
-  error?: string;
-}
-
-/**
- * The Emu ask the main for creating a file
- */
-export interface CreateFileResponse extends MessageBase {
-  type: "CreateFileResponse";
-  error?: string;
-}
-
-/**
- * The Emu ask the main for deleting a folder
- */
-export interface DeleteFolderResponse extends MessageBase {
-  type: "DeleteFolderResponse";
-  error?: string;
-}
-
-/**
- * The Emu ask the main for deleting a file
- */
-export interface DeleteFileResponse extends MessageBase {
-  type: "DeleteFileResponse";
+export interface FileOperationResponse extends MessageBase {
+  type: "FileOperationResponse";
   error?: string;
 }
 
@@ -472,14 +448,6 @@ export interface DeleteFileResponse extends MessageBase {
 export interface ConfirmDialogResponse extends MessageBase {
   type: "ConfirmDialogResponse";
   confirmed?: boolean;
-}
-
-/**
- * The Emu ask the main for renaming a file
- */
-export interface RenameFileResponse extends MessageBase {
-  type: "RenameFileResponse";
-  error?: string;
 }
 
 export type ResponseMessage =
@@ -496,12 +464,8 @@ export type ResponseMessage =
   | GetFolderDialogResponse
   | FileExistsResponse
   | GetFolderContentsResponse
-  | CreateFolderResponse
-  | CreateFileResponse
-  | ConfirmDialogResponse
-  | DeleteFolderResponse
-  | DeleteFileResponse
-  | RenameFileResponse;
+  | FileOperationResponse
+  | ConfirmDialogResponse;
 
 /**
  * All messages

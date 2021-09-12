@@ -19,16 +19,13 @@ import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
   ConfirmDialogResponse,
-  CreateFileResponse,
-  CreateFolderResponse,
-  DeleteFileResponse,
-  DeleteFolderResponse,
-  RenameFileResponse,
+  FileOperationResponse,
 } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
+import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 
 type State = {
   itemsCount: number;
@@ -357,9 +354,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "renameFolder",
           text: "Rename",
-          execute: async () => {
-            console.log("Rename");
-          },
+          execute: async () => await this.renameFileOrFolder(item, index, true),
         },
         {
           id: "deleteFolder",
@@ -383,7 +378,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "renameFile",
           text: "Rename",
-          execute: async () => await this.renameFile(item, index),
+          execute: async () => await this.renameFileOrFolder(item, index),
         },
         {
           id: "deleteFile",
@@ -424,7 +419,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new folder
     const newName = folderData.name;
     const newFullPath = `${folderData.root}/${newName}`;
-    const resp = await ideToEmuMessenger.sendMessage<CreateFolderResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "CreateFolder",
       name: newFullPath,
     });
@@ -484,7 +479,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new file
     const newName = fileData.name;
     const newFullPath = `${fileData.root}/${newName}`;
-    const resp = await ideToEmuMessenger.sendMessage<CreateFileResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "CreateFile",
       name: newFullPath,
     });
@@ -540,7 +535,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await ideToEmuMessenger.sendMessage<DeleteFileResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "DeleteFile",
       name: node.nodeData.fullPath,
     });
@@ -579,7 +574,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await ideToEmuMessenger.sendMessage<DeleteFolderResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "DeleteFolder",
       name: node.nodeData.fullPath,
     });
@@ -602,7 +597,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * @param node File node
    * @param index Node index
    */
-  async renameFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+  async renameFileOrFolder(node: ITreeNode<ProjectNode>, index: number, isFolder: boolean = false): Promise<void> {
     // --- Get the new name
     const oldPath = node.nodeData.fullPath.substr(
       0,
@@ -610,7 +605,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     );
     const fileData = (await modalDialogService.showModalDialog(
       ideStore as Store,
-      RENAME_FILE_DIALOG_ID,
+      isFolder ? RENAME_FOLDER_DIALOG_ID : RENAME_FILE_DIALOG_ID,
       {
         root: oldPath,
         name: node.nodeData.name,
@@ -625,7 +620,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
 
     // --- Rename the file
     const newFullName = `${oldPath}/${fileData.name}`;
-    const resp = await ideToEmuMessenger.sendMessage<RenameFileResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "RenameFile",
       oldName: node.nodeData.fullPath,
       newName: newFullName,
@@ -637,11 +632,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
 
     // --- Refresh the view
     node.nodeData.name = fileData.name;
-    node.nodeData.fullPath = newFullName
+    node.nodeData.fullPath = newFullName;
     this.setState({
       itemsCount: this.itemsCount,
       selectedIndex: index,
-      selected: node
+      selected: node,
     });
     this._listApi.focus();
     this._listApi.forceRefresh();

@@ -52,6 +52,7 @@ import {
 import { newFolderDialog, NEW_FOLDER_DIALOG_ID } from "./explorer-tools/NewFolderDialog";
 import { newFileDialog, NEW_FILE_DIALOG_ID } from "./explorer-tools/NewFileDialog";
 import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/RenameFileDialog";
+import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -334,6 +335,10 @@ export default function IdeApp() {
       modalDialogService.registerModalDescriptor(
         RENAME_FILE_DIALOG_ID,
         renameFileDialog
+      );
+      modalDialogService.registerModalDescriptor(
+        RENAME_FOLDER_DIALOG_ID,
+        renameFolderDialog
       );
 
       // --- Register available commands

@@ -3,18 +3,14 @@ import { dialog } from "electron";
 import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
 import {
   ConfirmDialogResponse,
-  CreateFileResponse,
-  CreateFolderResponse,
+  FileOperationResponse,
   CreateKliveProjectResponse,
   DefaultResponse,
-  DeleteFileResponse,
-  DeleteFolderResponse,
   EmuOpenFileDialogResponse,
   FileExistsResponse,
   GetFolderContentsResponse,
   GetFolderDialogResponse,
   GetRegisteredMachinesResponse,
-  RenameFileResponse,
   RequestMessage,
   ResponseMessage,
 } from "../../shared/messaging/message-types";
@@ -125,8 +121,8 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error creating folder", error);
       }
-      return <CreateFolderResponse>{
-        type: "CreateFolderResponse",
+      return <FileOperationResponse>{
+        type: "FileOperationResponse",
         error,
       };
     }
@@ -145,8 +141,8 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error creating file", error);
       }
-      return <CreateFileResponse>{
-        type: "CreateFileResponse",
+      return <FileOperationResponse>{
+        type: "FileOperationResponse",
         error: error,
       };
     }
@@ -175,8 +171,8 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error deleting file", error);
       }
-      return <DeleteFileResponse>{
-        type: "DeleteFileResponse",
+      return <FileOperationResponse>{
+        type: "FileOperationResponse",
         error: error,
       };
     }
@@ -191,8 +187,8 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error deleting folder", error);
       }
-      return <DeleteFolderResponse>{
-        type: "DeleteFolderResponse",
+      return <FileOperationResponse>{
+        type: "FileOperationResponse",
         error: error,
       };
     }
@@ -202,13 +198,13 @@ export async function processIdeRequest(
       try {
         fs.renameSync(message.oldName, message.newName);
       } catch (err) {
-        error = `Cannot rename file: ${err}`;
+        error = `Cannot rename file or folder: ${err}`;
       }
       if (error) {
-        dialog.showErrorBox("Error renaming file", error);
+        dialog.showErrorBox("Error renaming file or folder", error);
       }
-      return <RenameFileResponse>{
-        type: "RenameFileResponse",
+      return <FileOperationResponse>{
+        type: "FileOperationResponse",
         error: error,
       };
     }
