@@ -17,7 +17,13 @@ import { contextMenuService } from "../context-menu/ContextMenuService";
 import { modalDialogService } from "../../common-ui/modal-service";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
-import { CreateFileResponse, CreateFolderResponse } from "../../../shared/messaging/message-types";
+import {
+  ConfirmDialogResponse,
+  CreateFileResponse,
+  CreateFolderResponse,
+  DeleteFileResponse,
+  DeleteFolderResponse,
+} from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
@@ -317,9 +323,10 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     index: number,
     item: ITreeNode<ProjectNode>
   ): Promise<void> {
+    let menuItems: MenuItem[];
     if (item.nodeData.isFolder) {
       // --- Create menu items
-      const menuItems: MenuItem[] = [
+      menuItems = [
         {
           id: "newFolder",
           text: "New Folder...",
@@ -334,15 +341,64 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             await this.newFile(item, index);
           },
         },
+        "separator",
+        {
+          id: "copyPath",
+          text: "Copy Path",
+          execute: async () => {
+            await navigator.clipboard.writeText(
+              item.nodeData.fullPath.replace(/\\/g, "/")
+            );
+          },
+        },
+        "separator",
+        {
+          id: "renameFolder",
+          text: "Rename",
+          execute: async () => {
+            console.log("Rename");
+          },
+        },
+        {
+          id: "deleteFolder",
+          text: "Delete",
+          enabled: index !== 0,
+          execute: async () => await this.deleteFolder(item, index),
+        },
       ];
-      const rect = (ev.target as HTMLElement).getBoundingClientRect();
-      await contextMenuService.openMenu(
-        menuItems,
-        rect.y + 22,
-        rect.x,
-        ev.target as HTMLElement
-      );
+    } else {
+      menuItems = [
+        {
+          id: "copyPath",
+          text: "Copy Path",
+          execute: async () => {
+            await navigator.clipboard.writeText(
+              item.nodeData.fullPath.replace(/\\/g, "/")
+            );
+          },
+        },
+        "separator",
+        {
+          id: "renameFile",
+          text: "Rename",
+          execute: async () => {
+            console.log("Rename");
+          },
+        },
+        {
+          id: "deleteFile",
+          text: "Delete",
+          execute: async () => await this.deleteFile(item, index),
+        },
+      ];
     }
+    const rect = (ev.target as HTMLElement).getBoundingClientRect();
+    await contextMenuService.openMenu(
+      menuItems,
+      rect.y + 22,
+      ev.clientX,
+      ev.target as HTMLElement
+    );
   }
 
   /**
@@ -410,7 +466,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * @param node Folder node
    * @param index Node index
    */
-   async newFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+  async newFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
     const fileData = (await modalDialogService.showModalDialog(
       ideStore as Store,
@@ -463,6 +519,81 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     });
     this._listApi.focus();
     this._listApi.ensureVisible(selectedIndex);
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Deletes the specified file
+   * @param node File node
+   * @param index Node index
+   */
+  async deleteFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+    // --- Confirm delete
+    const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
+      type: "ConfirmDialog",
+      title: "Confirm delete",
+      question: `Are you sure you want to delete the ${node.nodeData.fullPath} file?`,
+    });
+    if (!result.confirmed) {
+      // --- Delete aborted
+      return;
+    }
+
+    // --- Delete the file
+    const resp = await ideToEmuMessenger.sendMessage<DeleteFileResponse>({
+      type: "DeleteFile",
+      name: node.nodeData.fullPath,
+    });
+    if (resp.error) {
+      // --- Delete failed
+      return;
+    }
+
+    // --- Refresh the view
+    node.parentNode.removeChild(node);
+    this.setState({
+      itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Deletes the specified file
+   * @param node File node
+   * @param index Node index
+   */
+  async deleteFolder(
+    node: ITreeNode<ProjectNode>,
+    index: number
+  ): Promise<void> {
+    // --- Confirm delete
+    const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
+      type: "ConfirmDialog",
+      title: "Confirm delete",
+      question: `Are you sure you want to delete the ${node.nodeData.fullPath} folder?`,
+    });
+    if (!result.confirmed) {
+      // --- Delete aborted
+      return;
+    }
+
+    // --- Delete the file
+    const resp = await ideToEmuMessenger.sendMessage<DeleteFolderResponse>({
+      type: "DeleteFolder",
+      name: node.nodeData.fullPath,
+    });
+    if (resp.error) {
+      // --- Delete failed
+      return;
+    }
+
+    // --- Refresh the view
+    node.parentNode.removeChild(node);
+    this.setState({
+      itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
     this._listApi.forceRefresh();
   }
 }

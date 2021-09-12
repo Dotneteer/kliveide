@@ -4,7 +4,11 @@ import {
 } from "../../renderer/machines/core/vm-core-types";
 import { KliveAction } from "../state/state-core";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
-import { AppState, DirectoryContent, RegisteredMachine } from "../state/AppState";
+import {
+  AppState,
+  DirectoryContent,
+  RegisteredMachine,
+} from "../state/AppState";
 import { ICpuState } from "../machines/AbstractCpu";
 import { NewProjectData } from "./dto";
 
@@ -196,7 +200,7 @@ export interface GetFolderDialogRequest extends MessageBase {
 /**
  * The Emu ask the main for checking the existence of a file
  */
- export interface FileExistsRequest extends MessageBase {
+export interface FileExistsRequest extends MessageBase {
   type: "FileExists";
   name: string;
 }
@@ -204,7 +208,7 @@ export interface GetFolderDialogRequest extends MessageBase {
 /**
  * The Emu ask the main for obtaining the contents of a folder
  */
- export interface GetFolderContentsRequest extends MessageBase {
+export interface GetFolderContentsRequest extends MessageBase {
   type: "GetFolderContents";
   name: string;
 }
@@ -212,7 +216,7 @@ export interface GetFolderDialogRequest extends MessageBase {
 /**
  * The Emu ask the main for creating a folder
  */
- export interface CreateFolderRequest extends MessageBase {
+export interface CreateFolderRequest extends MessageBase {
   type: "CreateFolder";
   name: string;
 }
@@ -220,8 +224,34 @@ export interface GetFolderDialogRequest extends MessageBase {
 /**
  * The Emu ask the main for creating a file
  */
- export interface CreateFileRequest extends MessageBase {
+export interface CreateFileRequest extends MessageBase {
   type: "CreateFile";
+  name: string;
+}
+
+/**
+ * The Emu ask the main for displaying a confirm dialog
+ */
+export interface ConfirmDialogRequest extends MessageBase {
+  type: "ConfirmDialog";
+  title?: string;
+  question: string;
+  defaultYes?: boolean;
+}
+
+/**
+ * The Emu ask the main for deleting a folder
+ */
+export interface DeleteFolderRequest extends MessageBase {
+  type: "DeleteFolder";
+  name: string;
+}
+
+/**
+ * The Emu ask the main for deleting a file
+ */
+export interface DeleteFileRequest extends MessageBase {
+  type: "DeleteFile";
   name: string;
 }
 
@@ -280,7 +310,10 @@ type IdeToMainRequests =
   | FileExistsRequest
   | GetFolderContentsRequest
   | CreateFolderRequest
-  | CreateFileRequest;
+  | CreateFileRequest
+  | ConfirmDialogRequest
+  | DeleteFolderRequest
+  | DeleteFileRequest;
 
 /**
  * Requests send by the main process to Ide
@@ -364,7 +397,7 @@ export interface CreateKliveProjectResponse extends MessageBase {
  */
 export interface NewProjectResponse extends MessageBase {
   type: "NewProjectResponse";
-  project?: NewProjectData
+  project?: NewProjectData;
 }
 
 /**
@@ -378,7 +411,7 @@ export interface GetFolderDialogResponse extends MessageBase {
 /**
  * The Emu ask the main for checking the existence of a file
  */
- export interface FileExistsResponse extends MessageBase {
+export interface FileExistsResponse extends MessageBase {
   type: "FileExistsResponse";
   exists: boolean;
 }
@@ -386,7 +419,7 @@ export interface GetFolderDialogResponse extends MessageBase {
 /**
  * The Emu ask the main for obtaining the contents of a folder
  */
- export interface GetFolderContentsResponse extends MessageBase {
+export interface GetFolderContentsResponse extends MessageBase {
   type: "GetFolderContentsResponse";
   contents: DirectoryContent;
 }
@@ -394,17 +427,41 @@ export interface GetFolderDialogResponse extends MessageBase {
 /**
  * The Emu ask the main for creating a folder
  */
- export interface CreateFolderResponse extends MessageBase {
+export interface CreateFolderResponse extends MessageBase {
   type: "CreateFolderResponse";
   error?: string;
 }
 
 /**
- * The Emu ask the main for creating a folder
+ * The Emu ask the main for creating a file
  */
- export interface CreateFileResponse extends MessageBase {
+export interface CreateFileResponse extends MessageBase {
   type: "CreateFileResponse";
   error?: string;
+}
+
+/**
+ * The Emu ask the main for deleting a folder
+ */
+export interface DeleteFolderResponse extends MessageBase {
+  type: "DeleteFolderResponse";
+  error?: string;
+}
+
+/**
+ * The Emu ask the main for deleting a file
+ */
+export interface DeleteFileResponse extends MessageBase {
+  type: "DeleteFileResponse";
+  error?: string;
+}
+
+/**
+ * The Emu ask the main for displaying a confirm dialog
+ */
+export interface ConfirmDialogResponse extends MessageBase {
+  type: "ConfirmDialogResponse";
+  confirmed?: boolean;
 }
 
 export type ResponseMessage =
@@ -423,6 +480,9 @@ export type ResponseMessage =
   | GetFolderContentsResponse
   | CreateFolderResponse
   | CreateFileResponse
+  | ConfirmDialogResponse
+  | DeleteFolderResponse
+  | DeleteFileResponse;
 
 /**
  * All messages
