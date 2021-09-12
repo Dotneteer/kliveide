@@ -19,14 +19,13 @@ import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
   ConfirmDialogResponse,
-  CreateFileResponse,
-  CreateFolderResponse,
-  DeleteFileResponse,
-  DeleteFolderResponse,
+  FileOperationResponse,
 } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
+import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
+import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 
 type State = {
   itemsCount: number;
@@ -355,9 +354,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "renameFolder",
           text: "Rename",
-          execute: async () => {
-            console.log("Rename");
-          },
+          execute: async () => await this.renameFileOrFolder(item, index, true),
         },
         {
           id: "deleteFolder",
@@ -381,9 +378,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "renameFile",
           text: "Rename",
-          execute: async () => {
-            console.log("Rename");
-          },
+          execute: async () => await this.renameFileOrFolder(item, index),
         },
         {
           id: "deleteFile",
@@ -424,7 +419,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new folder
     const newName = folderData.name;
     const newFullPath = `${folderData.root}/${newName}`;
-    const resp = await ideToEmuMessenger.sendMessage<CreateFolderResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "CreateFolder",
       name: newFullPath,
     });
@@ -484,7 +479,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new file
     const newName = fileData.name;
     const newFullPath = `${fileData.root}/${newName}`;
-    const resp = await ideToEmuMessenger.sendMessage<CreateFileResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "CreateFile",
       name: newFullPath,
     });
@@ -540,7 +535,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await ideToEmuMessenger.sendMessage<DeleteFileResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "DeleteFile",
       name: node.nodeData.fullPath,
     });
@@ -579,7 +574,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await ideToEmuMessenger.sendMessage<DeleteFolderResponse>({
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "DeleteFolder",
       name: node.nodeData.fullPath,
     });
@@ -592,6 +587,56 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     node.parentNode.removeChild(node);
     this.setState({
       itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Renames the specified file
+   * @param node File node
+   * @param index Node index
+   */
+  async renameFileOrFolder(node: ITreeNode<ProjectNode>, index: number, isFolder: boolean = false): Promise<void> {
+    // --- Get the new name
+    const oldPath = node.nodeData.fullPath.substr(
+      0,
+      node.nodeData.fullPath.length - node.nodeData.name.length - 1
+    );
+    const fileData = (await modalDialogService.showModalDialog(
+      ideStore as Store,
+      isFolder ? RENAME_FOLDER_DIALOG_ID : RENAME_FILE_DIALOG_ID,
+      {
+        root: oldPath,
+        name: node.nodeData.name,
+        newName: node.nodeData.name,
+      }
+    )) as NewFileData;
+
+    if (!fileData) {
+      // --- No file to rename
+      return;
+    }
+
+    // --- Rename the file
+    const newFullName = `${oldPath}/${fileData.name}`;
+    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+      type: "RenameFile",
+      oldName: node.nodeData.fullPath,
+      newName: newFullName,
+    });
+    if (resp.error) {
+      // --- Rename failed
+      return;
+    }
+
+    // --- Refresh the view
+    node.nodeData.name = fileData.name;
+    node.nodeData.fullPath = newFullName;
+    this.setState({
+      itemsCount: this.itemsCount,
+      selectedIndex: index,
+      selected: node,
     });
     this._listApi.focus();
     this._listApi.forceRefresh();

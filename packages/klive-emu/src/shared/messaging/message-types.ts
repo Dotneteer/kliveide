@@ -256,6 +256,15 @@ export interface DeleteFileRequest extends MessageBase {
 }
 
 /**
+ * The Emu ask the main for renaming a file
+ */
+export interface RenameFileRequest extends MessageBase {
+  type: "RenameFile";
+  oldName: string;
+  newName: string;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -313,7 +322,8 @@ type IdeToMainRequests =
   | CreateFileRequest
   | ConfirmDialogRequest
   | DeleteFolderRequest
-  | DeleteFileRequest;
+  | DeleteFileRequest
+  | RenameFileRequest;
 
 /**
  * Requests send by the main process to Ide
@@ -427,32 +437,8 @@ export interface GetFolderContentsResponse extends MessageBase {
 /**
  * The Emu ask the main for creating a folder
  */
-export interface CreateFolderResponse extends MessageBase {
-  type: "CreateFolderResponse";
-  error?: string;
-}
-
-/**
- * The Emu ask the main for creating a file
- */
-export interface CreateFileResponse extends MessageBase {
-  type: "CreateFileResponse";
-  error?: string;
-}
-
-/**
- * The Emu ask the main for deleting a folder
- */
-export interface DeleteFolderResponse extends MessageBase {
-  type: "DeleteFolderResponse";
-  error?: string;
-}
-
-/**
- * The Emu ask the main for deleting a file
- */
-export interface DeleteFileResponse extends MessageBase {
-  type: "DeleteFileResponse";
+export interface FileOperationResponse extends MessageBase {
+  type: "FileOperationResponse";
   error?: string;
 }
 
@@ -478,11 +464,8 @@ export type ResponseMessage =
   | GetFolderDialogResponse
   | FileExistsResponse
   | GetFolderContentsResponse
-  | CreateFolderResponse
-  | CreateFileResponse
-  | ConfirmDialogResponse
-  | DeleteFolderResponse
-  | DeleteFileResponse;
+  | FileOperationResponse
+  | ConfirmDialogResponse;
 
 /**
  * All messages
