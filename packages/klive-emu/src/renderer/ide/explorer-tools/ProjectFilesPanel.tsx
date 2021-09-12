@@ -22,6 +22,7 @@ import {
   CreateFileResponse,
   CreateFolderResponse,
   DeleteFileResponse,
+  DeleteFolderResponse,
 } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
@@ -362,9 +363,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           id: "deleteFolder",
           text: "Delete",
           enabled: index !== 0,
-          execute: async () => {
-            console.log("Delete");
-          },
+          execute: async () => await this.deleteFolder(item, index),
         },
       ];
     } else {
@@ -533,8 +532,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
       type: "ConfirmDialog",
       title: "Confirm delete",
-      question: `Are you sure you want to delete the ${node.nodeData.fullPath} file?`
-    })
+      question: `Are you sure you want to delete the ${node.nodeData.fullPath} file?`,
+    });
     if (!result.confirmed) {
       // --- Delete aborted
       return;
@@ -543,6 +542,45 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Delete the file
     const resp = await ideToEmuMessenger.sendMessage<DeleteFileResponse>({
       type: "DeleteFile",
+      name: node.nodeData.fullPath,
+    });
+    if (resp.error) {
+      // --- Delete failed
+      return;
+    }
+
+    // --- Refresh the view
+    node.parentNode.removeChild(node);
+    this.setState({
+      itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Deletes the specified file
+   * @param node File node
+   * @param index Node index
+   */
+  async deleteFolder(
+    node: ITreeNode<ProjectNode>,
+    index: number
+  ): Promise<void> {
+    // --- Confirm delete
+    const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
+      type: "ConfirmDialog",
+      title: "Confirm delete",
+      question: `Are you sure you want to delete the ${node.nodeData.fullPath} folder?`,
+    });
+    if (!result.confirmed) {
+      // --- Delete aborted
+      return;
+    }
+
+    // --- Delete the file
+    const resp = await ideToEmuMessenger.sendMessage<DeleteFolderResponse>({
+      type: "DeleteFolder",
       name: node.nodeData.fullPath,
     });
     if (resp.error) {

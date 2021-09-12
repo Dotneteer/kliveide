@@ -8,6 +8,7 @@ import {
   CreateKliveProjectResponse,
   DefaultResponse,
   DeleteFileResponse,
+  DeleteFolderResponse,
   EmuOpenFileDialogResponse,
   FileExistsResponse,
   GetFolderContentsResponse,
@@ -174,6 +175,21 @@ export async function processIdeRequest(
       return <DeleteFileResponse>{
         type: "DeleteFileResponse",
         error: deleteFileError,
+      };
+
+    case "DeleteFolder":
+      let deleteFolderError: string | undefined;
+      try {
+        await fs.promises.rm(message.name, { recursive: true });
+      } catch (err) {
+        deleteFolderError = `Cannot delete folder: ${err}`;
+      }
+      if (deleteFolderError) {
+        dialog.showErrorBox("Error deleting folder", deleteFolderError);
+      }
+      return <DeleteFolderResponse>{
+        type: "DeleteFolderResponse",
+        error: deleteFolderError,
       };
 
     default:
