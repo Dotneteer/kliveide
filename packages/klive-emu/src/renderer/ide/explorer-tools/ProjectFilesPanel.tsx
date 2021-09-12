@@ -23,10 +23,12 @@ import {
   CreateFolderResponse,
   DeleteFileResponse,
   DeleteFolderResponse,
+  RenameFileResponse,
 } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
+import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 
 type State = {
   itemsCount: number;
@@ -381,9 +383,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "renameFile",
           text: "Rename",
-          execute: async () => {
-            console.log("Rename");
-          },
+          execute: async () => await this.renameFile(item, index),
         },
         {
           id: "deleteFile",
@@ -592,6 +592,56 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     node.parentNode.removeChild(node);
     this.setState({
       itemsCount: this.itemsCount,
+    });
+    this._listApi.focus();
+    this._listApi.forceRefresh();
+  }
+
+  /**
+   * Renames the specified file
+   * @param node File node
+   * @param index Node index
+   */
+  async renameFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+    // --- Get the new name
+    const oldPath = node.nodeData.fullPath.substr(
+      0,
+      node.nodeData.fullPath.length - node.nodeData.name.length - 1
+    );
+    const fileData = (await modalDialogService.showModalDialog(
+      ideStore as Store,
+      RENAME_FILE_DIALOG_ID,
+      {
+        root: oldPath,
+        name: node.nodeData.name,
+        newName: node.nodeData.name,
+      }
+    )) as NewFileData;
+
+    if (!fileData) {
+      // --- No file to rename
+      return;
+    }
+
+    // --- Rename the file
+    const newFullName = `${oldPath}/${fileData.name}`;
+    const resp = await ideToEmuMessenger.sendMessage<RenameFileResponse>({
+      type: "RenameFile",
+      oldName: node.nodeData.fullPath,
+      newName: newFullName,
+    });
+    if (resp.error) {
+      // --- Rename failed
+      return;
+    }
+
+    // --- Refresh the view
+    node.nodeData.name = fileData.name;
+    node.nodeData.fullPath = newFullName
+    this.setState({
+      itemsCount: this.itemsCount,
+      selectedIndex: index,
+      selected: node
     });
     this._listApi.focus();
     this._listApi.forceRefresh();

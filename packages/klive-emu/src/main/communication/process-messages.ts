@@ -14,6 +14,7 @@ import {
   GetFolderContentsResponse,
   GetFolderDialogResponse,
   GetRegisteredMachinesResponse,
+  RenameFileResponse,
   RequestMessage,
   ResponseMessage,
 } from "../../shared/messaging/message-types";
@@ -110,43 +111,45 @@ export async function processIdeRequest(
         contents: await getFolderContents(message.name),
       };
 
-    case "CreateFolder":
-      let folderError: string | undefined;
+    case "CreateFolder": {
+      let error: string | undefined;
       if (fs.existsSync(message.name)) {
-        folderError = `Folder ${message.name} already exists`;
+        error = `Folder ${message.name} already exists`;
       } else {
         try {
           fs.mkdirSync(message.name, { recursive: true });
         } catch (err) {
-          folderError = `Cannot create folder: ${err}`;
+          error = `Cannot create folder: ${err}`;
         }
       }
-      if (folderError) {
-        dialog.showErrorBox("Error creating folder", folderError);
+      if (error) {
+        dialog.showErrorBox("Error creating folder", error);
       }
       return <CreateFolderResponse>{
         type: "CreateFolderResponse",
-        error: folderError,
+        error,
       };
+    }
 
-    case "CreateFile":
-      let fileError: string | undefined;
+    case "CreateFile": {
+      let error: string | undefined;
       if (fs.existsSync(message.name)) {
-        fileError = `File ${message.name} already exists`;
+        error = `File ${message.name} already exists`;
       } else {
         try {
           fs.writeFileSync(message.name, "");
         } catch (err) {
-          fileError = `Cannot create file: ${err}`;
+          error = `Cannot create file: ${err}`;
         }
       }
-      if (fileError) {
-        dialog.showErrorBox("Error creating file", fileError);
+      if (error) {
+        dialog.showErrorBox("Error creating file", error);
       }
       return <CreateFileResponse>{
         type: "CreateFileResponse",
-        error: fileError,
+        error: error,
       };
+    }
 
     case "ConfirmDialog":
       const confirmResult = await dialog.showMessageBox({
@@ -162,35 +165,53 @@ export async function processIdeRequest(
         confirmed: confirmResult.response === 1,
       };
 
-    case "DeleteFile":
-      let deleteFileError: string | undefined;
+    case "DeleteFile": {
+      let error: string | undefined;
       try {
         fs.unlinkSync(message.name);
       } catch (err) {
-        deleteFileError = `Cannot delete file: ${err}`;
+        error = `Cannot delete file: ${err}`;
       }
-      if (deleteFileError) {
-        dialog.showErrorBox("Error deleting file", deleteFileError);
+      if (error) {
+        dialog.showErrorBox("Error deleting file", error);
       }
       return <DeleteFileResponse>{
         type: "DeleteFileResponse",
-        error: deleteFileError,
+        error: error,
       };
+    }
 
-    case "DeleteFolder":
-      let deleteFolderError: string | undefined;
+    case "DeleteFolder": {
+      let error: string | undefined;
       try {
         await fs.promises.rm(message.name, { recursive: true });
       } catch (err) {
-        deleteFolderError = `Cannot delete folder: ${err}`;
+        error = `Cannot delete folder: ${err}`;
       }
-      if (deleteFolderError) {
-        dialog.showErrorBox("Error deleting folder", deleteFolderError);
+      if (error) {
+        dialog.showErrorBox("Error deleting folder", error);
       }
       return <DeleteFolderResponse>{
         type: "DeleteFolderResponse",
-        error: deleteFolderError,
+        error: error,
       };
+    }
+
+    case "RenameFile": {
+      let error: string | undefined;
+      try {
+        fs.renameSync(message.oldName, message.newName);
+      } catch (err) {
+        error = `Cannot rename file: ${err}`;
+      }
+      if (error) {
+        dialog.showErrorBox("Error renaming file", error);
+      }
+      return <RenameFileResponse>{
+        type: "RenameFileResponse",
+        error: error,
+      };
+    }
 
     default:
       // --- If the main does not recofnize a request, it forwards it to Emu
