@@ -2,10 +2,12 @@ import * as fs from "fs";
 import { dialog } from "electron";
 import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
 import {
+  ConfirmDialogResponse,
   CreateFileResponse,
   CreateFolderResponse,
   CreateKliveProjectResponse,
   DefaultResponse,
+  DeleteFileResponse,
   EmuOpenFileDialogResponse,
   FileExistsResponse,
   GetFolderContentsResponse,
@@ -14,7 +16,7 @@ import {
   RequestMessage,
   ResponseMessage,
 } from "../../shared/messaging/message-types";
-import { emuForwarder, emuWindow } from "../app/app-menu";
+import { emuForwarder, emuWindow, ideWindow } from "../app/app-menu";
 import {
   createKliveProject,
   openProjectFolder,
@@ -143,6 +145,35 @@ export async function processIdeRequest(
       return <CreateFileResponse>{
         type: "CreateFileResponse",
         error: fileError,
+      };
+
+    case "ConfirmDialog":
+      const confirmResult = await dialog.showMessageBox({
+        title: message.title ? message.title : "Confirmation",
+        type: "question",
+        message: message.question,
+        buttons: ["No", "Yes"],
+        defaultId: 0,
+        noLink: false,
+      });
+      return <ConfirmDialogResponse>{
+        type: "ConfirmDialogResponse",
+        confirmed: confirmResult.response === 1,
+      };
+
+    case "DeleteFile":
+      let deleteFileError: string | undefined;
+      try {
+        fs.unlinkSync(message.name);
+      } catch (err) {
+        deleteFileError = `Cannot delete file: ${err}`;
+      }
+      if (deleteFileError) {
+        dialog.showErrorBox("Error deleting file", deleteFileError);
+      }
+      return <DeleteFileResponse>{
+        type: "DeleteFileResponse",
+        error: deleteFileError,
       };
 
     default:

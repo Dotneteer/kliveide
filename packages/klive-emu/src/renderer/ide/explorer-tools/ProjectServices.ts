@@ -24,7 +24,7 @@ class ProjectServices {
    */
   async setProjectContents(contents?: DirectoryContent): Promise<void> {
     if (contents) {
-      this._projectTree = new TreeView(this.createTreeFrom(contents));;
+      this._projectTree = new TreeView(this.createTreeFrom(contents));
     } else {
       this._projectTree = null;
     }
@@ -33,11 +33,17 @@ class ProjectServices {
   /**
    * Creates a tree view from the specified contents
    */
-  createTreeFrom(contents: DirectoryContent, rootPath: string = null): TreeNode<ProjectNode> {
+  createTreeFrom(
+    contents: DirectoryContent,
+    rootPath: string = null
+  ): TreeNode<ProjectNode> {
     const root = new TreeNode<ProjectNode>({
-      name: contents.name,
+      name: contents.name.replace(/\\/g, "/"),
       isFolder: true,
-      fullPath: rootPath ? `${rootPath}/${contents.name}` : contents.name,
+      fullPath: (rootPath
+        ? `${rootPath}/${contents.name}`
+        : contents.name
+      ).replace(/\\/g, "/"),
     });
     contents.folders
       .sort((a, b) => {
