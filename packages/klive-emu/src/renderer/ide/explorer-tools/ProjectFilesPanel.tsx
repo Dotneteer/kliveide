@@ -20,6 +20,7 @@ import { Store } from "redux";
 import {
   ConfirmDialogResponse,
   FileOperationResponse,
+  GetFileContentsResponse,
 } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
@@ -207,8 +208,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         className="listlike"
         style={{ ...style, ...itemStyle }}
         onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
-        onClick={() => this.onClick(index, item)}
-        onDoubleClick={() => this.onClick(index, item, true)}
+        onClick={() => this.onClick(index, item, true)}
+        onDoubleClick={() => this.onClick(index, item)}
       >
         <div
           style={{
@@ -322,7 +323,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   async onClick(
     index: number,
     item: ITreeNode<ProjectNode>,
-    isDouble: boolean = false
+    isTemporary: boolean = false
   ): Promise<void> {
     if (item.nodeData.isFolder) {
       this.collapseExpand(index, item);
@@ -337,22 +338,36 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       const id = item.nodeData.fullPath;
       const document = documentService.getDocumentById(id);
       if (document) {
+        if (!isTemporary) {
+          document.temporary = false;
+        }
         documentService.setActiveDocument(document);
         return;
       }
 
       // --- Create a new document
-      const factory = documentService.getResourceFactory(
-        item.nodeData.fullPath
-      );
+      const resource = item.nodeData.fullPath;
+      const factory = documentService.getResourceFactory(resource);
       if (factory) {
-        console.log(documentService.getActiveDocument());
-        const panel = factory.createDocumentPanel(item.nodeData.fullPath, "");
-        documentService.registerDocument(
-          panel,
-          true,
-          documentService.getActiveDocument()?.index ?? null
-        );
+        const contentsResp =
+          await ideToEmuMessenger.sendMessage<GetFileContentsResponse>({
+            type: "GetFileContents",
+            name: resource,
+          });
+        const sourceText = contentsResp?.contents
+          ? (contentsResp.contents as string)
+          : "";
+        const panel = await factory.createDocumentPanel(resource, sourceText);
+        let index = documentService.getActiveDocument()?.index ?? null;
+        panel.temporary = isTemporary;
+        if (isTemporary) {
+          const tempDocument = documentService.getTemporaryDocument();
+          if (tempDocument) {
+            index = tempDocument.index;
+            documentService.unregisterDocument(tempDocument);
+          }
+        }
+        documentService.registerDocument(panel, true, index);
       }
     }
   }
@@ -602,9 +617,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Deletes the specified file
    * @param node File node
    */
-  async deleteFolder(
-    node: ITreeNode<ProjectNode>
-  ): Promise<void> {
+  async deleteFolder(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
     const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
       type: "ConfirmDialog",

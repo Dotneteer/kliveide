@@ -10,7 +10,7 @@ export interface IDocumentFactory {
   createDocumentPanel(
     resource: string,
     contents: string | Buffer
-  ): IDocumentPanel;
+  ): Promise<IDocumentPanel>;
 }
 
 /**
@@ -31,6 +31,11 @@ export interface IDocumentPanel {
    * Is this the active panel?
    */
   active: boolean;
+
+  /**
+   * Is the panel temporary?
+   */
+  temporary: boolean;
 
   /**
    * The title of the panel
@@ -83,6 +88,11 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
    * Is this the active panel?
    */
   active: boolean;
+
+  /**
+   * Is the panel temporary?
+   */
+  temporary: boolean;
 
   /**
    * Creates a node that represents the contents of a side bar panel

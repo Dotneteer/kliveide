@@ -265,6 +265,15 @@ export interface RenameFileRequest extends MessageBase {
 }
 
 /**
+ * The Emu ask the main for getting the contents of a file
+ */
+ export interface GetFileContentsRequest extends MessageBase {
+  type: "GetFileContents";
+  name: string;
+  asBuffer?: boolean;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -323,7 +332,8 @@ type IdeToMainRequests =
   | ConfirmDialogRequest
   | DeleteFolderRequest
   | DeleteFileRequest
-  | RenameFileRequest;
+  | RenameFileRequest
+  | GetFileContentsRequest;
 
 /**
  * Requests send by the main process to Ide
@@ -450,6 +460,15 @@ export interface ConfirmDialogResponse extends MessageBase {
   confirmed?: boolean;
 }
 
+/**
+ * The Emu ask the main for getting the contents of a file
+ */
+ export interface GetFileContentsResponse extends MessageBase {
+  type: "GetFileContentsResponse";
+  contents?: string | Buffer;
+}
+
+
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
@@ -465,7 +484,8 @@ export type ResponseMessage =
   | FileExistsResponse
   | GetFolderContentsResponse
   | FileOperationResponse
-  | ConfirmDialogResponse;
+  | ConfirmDialogResponse
+  | GetFileContentsResponse;
 
 /**
  * All messages

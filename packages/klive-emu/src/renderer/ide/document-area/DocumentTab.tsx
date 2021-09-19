@@ -4,7 +4,7 @@ import { themeService } from "../../common-ui/themes/theme-service";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { documentService } from "./DocumentService";
-import { contextMenuService} from "../context-menu/ContextMenuService";
+import { contextMenuService } from "../context-menu/ContextMenuService";
 import { MenuItem } from "../../../shared/command/commands";
 import { IDocumentPanel } from "./DocumentFactory";
 
@@ -127,7 +127,15 @@ export default function DocumentTab({
       onMouseLeave={() => setPointed(false)}
     >
       <SvgIcon iconName="file-code" width={16} height={16} />
-      <span style={{ marginLeft: 6, marginRight: 6 }}>{title}</span>
+      <span
+        style={{
+          marginLeft: 6,
+          marginRight: 6,
+          fontStyle: document.temporary ? "italic" : "normal",
+        }}
+      >
+        {title}
+      </span>
       <CommandIconButton
         iconName="close"
         title="Close"

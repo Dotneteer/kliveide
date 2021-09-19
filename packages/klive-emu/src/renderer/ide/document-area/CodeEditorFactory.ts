@@ -1,4 +1,6 @@
+import { GetFileContentsResponse } from "../../../shared/messaging/message-types";
 import { EditorDocumentPanelDescriptor } from "../editor/EditorDocument";
+import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { IDocumentFactory, IDocumentPanel } from "./DocumentFactory";
 
 /**
@@ -16,10 +18,10 @@ export class CodeEditorFactory implements IDocumentFactory {
    * @param resource Resosurce name
    * @param contents Contents of the document
    */
-  createDocumentPanel(
+  async createDocumentPanel(
     resource: string,
     contents: string | Buffer
-  ): IDocumentPanel {
+  ): Promise<IDocumentPanel> {
     // --- Get the field name from the full resource name
     const parts = resource.split("/");
     const filename = parts.length > 0 ? parts[parts.length - 1] : "";

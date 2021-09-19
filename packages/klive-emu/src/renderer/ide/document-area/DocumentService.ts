@@ -126,7 +126,6 @@ class DocumentService {
     } else {
       index = index + 1;
     }
-    console.log(index);
 
     // --- Insert the document and activate it
     this._documents.splice(index, 0, doc);
@@ -238,6 +237,13 @@ class DocumentService {
    */
   getDocumentById(id: string) : IDocumentPanel | null {
     return this._documents.find(d => d.id === id) ?? null;
+  }
+
+  /**
+   * Gets the temporary document
+   */
+  getTemporaryDocument(): IDocumentPanel | null {
+    return this._documents.find(d => d.temporary) ?? null;
   }
 
   /**

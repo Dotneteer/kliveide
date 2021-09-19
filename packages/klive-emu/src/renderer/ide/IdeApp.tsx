@@ -46,10 +46,23 @@ import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,
 } from "./explorer-tools/NewProjectDialog";
-import { newFolderDialog, NEW_FOLDER_DIALOG_ID } from "./explorer-tools/NewFolderDialog";
-import { newFileDialog, NEW_FILE_DIALOG_ID } from "./explorer-tools/NewFileDialog";
-import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/RenameFileDialog";
-import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
+import {
+  newFolderDialog,
+  NEW_FOLDER_DIALOG_ID,
+} from "./explorer-tools/NewFolderDialog";
+import {
+  newFileDialog,
+  NEW_FILE_DIALOG_ID,
+} from "./explorer-tools/NewFileDialog";
+import {
+  renameFileDialog,
+  RENAME_FILE_DIALOG_ID,
+} from "./explorer-tools/RenameFileDialog";
+import {
+  renameFolderDialog,
+  RENAME_FOLDER_DIALOG_ID,
+} from "./explorer-tools/RenameFolderDialog";
+import { documentService } from "./document-area/DocumentService";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -288,6 +301,12 @@ export default function IdeApp() {
       toolAreaService.registerTool(new OutputToolPanelDescriptor());
       outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
       outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
+
+      // --- Register document panels and editors
+
+      documentService.registerCodeEditor(".project", {
+        language: "json",
+      });
 
       // --- Register virtual machine tools
       virtualMachineToolsService.registerTools("sp48", new ZxSpectrum48Tools());
