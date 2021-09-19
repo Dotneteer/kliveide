@@ -1,9 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
-import {
-  DocumentPanelDescriptorBase,
-  IDocumentPanel,
-} from "./document-area/DocumentService";
+import { DocumentPanelDescriptorBase, IDocumentPanel } from "./document-area/DocumentFactory";
 
 /**
  * Component properties

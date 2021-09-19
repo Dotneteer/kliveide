@@ -20,12 +20,14 @@ import { Store } from "redux";
 import {
   ConfirmDialogResponse,
   FileOperationResponse,
+  GetFileContentsResponse,
 } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
+import { documentService } from "../document-area/DocumentService";
 
 type State = {
   itemsCount: number;
@@ -206,7 +208,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         className="listlike"
         style={{ ...style, ...itemStyle }}
         onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
-        onClick={() => this.collapseExpand(index, item)}
+        onClick={() => this.onClick(index, item, true)}
+        onDoubleClick={() => this.onClick(index, item)}
       >
         <div
           style={{
@@ -317,6 +320,64 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
   }
 
+  async onClick(
+    index: number,
+    item: ITreeNode<ProjectNode>,
+    isTemporary: boolean = false
+  ): Promise<void> {
+    if (item.nodeData.isFolder) {
+      this.collapseExpand(index, item);
+    } else {
+      this.setState({
+        selected: item,
+        selectedIndex: index,
+      });
+      this._listApi.forceRefresh();
+
+      // --- Test if the specified document is already open
+      const id = item.nodeData.fullPath;
+      const document = documentService.getDocumentById(id);
+      if (document) {
+        if (!isTemporary) {
+          document.temporary = false;
+        }
+        documentService.setActiveDocument(document);
+        return;
+      }
+
+      // --- Create a new document
+      const resource = item.nodeData.fullPath;
+      const factory = documentService.getResourceFactory(resource);
+      if (factory) {
+        const contentsResp =
+          await ideToEmuMessenger.sendMessage<GetFileContentsResponse>({
+            type: "GetFileContents",
+            name: resource,
+          });
+        const sourceText = contentsResp?.contents
+          ? (contentsResp.contents as string)
+          : "";
+        const panel = await factory.createDocumentPanel(resource, sourceText);
+        let index = documentService.getActiveDocument()?.index ?? null;
+        panel.temporary = isTemporary;
+        if (isTemporary) {
+          const tempDocument = documentService.getTemporaryDocument();
+          if (tempDocument) {
+            index = tempDocument.index;
+            documentService.unregisterDocument(tempDocument);
+          }
+        }
+        documentService.registerDocument(panel, true, index);
+      }
+    }
+  }
+
+  /**
+   * Handles the context menu click of the specified item
+   * @param ev Event information
+   * @param index Item index
+   * @param item Item data
+   */
   async onContextMenu(
     ev: React.MouseEvent,
     index: number,
@@ -360,7 +421,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           id: "deleteFolder",
           text: "Delete",
           enabled: index !== 0,
-          execute: async () => await this.deleteFolder(item, index),
+          execute: async () => await this.deleteFolder(item),
         },
       ];
     } else {
@@ -383,7 +444,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "deleteFile",
           text: "Delete",
-          execute: async () => await this.deleteFile(item, index),
+          execute: async () => await this.deleteFile(item),
         },
       ];
     }
@@ -520,9 +581,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   /**
    * Deletes the specified file
    * @param node File node
-   * @param index Node index
    */
-  async deleteFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+  async deleteFile(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
     const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
       type: "ConfirmDialog",
@@ -556,12 +616,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   /**
    * Deletes the specified file
    * @param node File node
-   * @param index Node index
    */
-  async deleteFolder(
-    node: ITreeNode<ProjectNode>,
-    index: number
-  ): Promise<void> {
+  async deleteFolder(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
     const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
       type: "ConfirmDialog",
@@ -597,7 +653,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * @param node File node
    * @param index Node index
    */
-  async renameFileOrFolder(node: ITreeNode<ProjectNode>, index: number, isFolder: boolean = false): Promise<void> {
+  async renameFileOrFolder(
+    node: ITreeNode<ProjectNode>,
+    index: number,
+    isFolder: boolean = false
+  ): Promise<void> {
     // --- Get the new name
     const oldPath = node.nodeData.fullPath.substr(
       0,

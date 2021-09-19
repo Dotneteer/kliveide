@@ -2,11 +2,11 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
+import { IDocumentPanel } from "./DocumentFactory";
 
 import {
   documentService,
   DocumentsInfo,
-  IDocumentPanel,
 } from "./DocumentService";
 import DocumentTab from "./DocumentTab";
 

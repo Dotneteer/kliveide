@@ -13,8 +13,9 @@ import {
   GetRegisteredMachinesResponse,
   RequestMessage,
   ResponseMessage,
+  GetFileContentsResponse,
 } from "../../shared/messaging/message-types";
-import { emuForwarder, emuWindow, ideWindow } from "../app/app-menu";
+import { emuForwarder, emuWindow } from "../app/app-menu";
 import {
   createKliveProject,
   openProjectFolder,
@@ -206,6 +207,26 @@ export async function processIdeRequest(
       return <FileOperationResponse>{
         type: "FileOperationResponse",
         error: error,
+      };
+    }
+
+    case "GetFileContents": {
+      let error: string | undefined;
+      let contents: string | Buffer | undefined;
+      try {
+        contents = fs.readFileSync(
+          message.name,
+          message.asBuffer ? {} : { encoding: "utf8" }
+        );
+      } catch (err) {
+        error = `Cannot read file: ${err}`;
+      }
+      if (error) {
+        dialog.showErrorBox("Error reading file", error);
+      }
+      return <GetFileContentsResponse>{
+        type: "GetFileContentsResponse",
+        contents,
       };
     }
 
