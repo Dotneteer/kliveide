@@ -1,26 +1,27 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
-import {
-  DocumentPanelDescriptorBase,
-  IDocumentPanel,
-} from "../document-area/DocumentService";
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
 import { editorService } from "./editorService";
+import {
+  DocumentPanelDescriptorBase,
+  IDocumentPanel,
+} from "../document-area/DocumentFactory";
 
 /**
  * Component properties
  */
 interface Props {
   descriptor: IDocumentPanel;
+  sourceCode: string;
+  language: string;
 }
 
 /**
  * Component state
  */
 interface State {
-  code: string;
   width: string;
   height: string;
   show: boolean;
@@ -36,7 +37,6 @@ export default class EditorDocument extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      code: "// My code",
       width: "100%",
       height: "100%",
       show: false,
@@ -48,7 +48,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     monaco: typeof monacoEditor
   ) {
     this._editor = editor;
-    const state = editorService.loadState(this.props.descriptor.id)    
+    const state = editorService.loadState(this.props.descriptor.id);
     if (state) {
       this._editor.setValue(state.text);
       this._editor.restoreViewState(state.viewState);
@@ -59,8 +59,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   onChange(
     newValue: string,
     e: monacoEditor.editor.IModelContentChangedEvent
-  ) {
-  }
+  ) {}
 
   componentDidMount(): void {
     this.setState({ show: true });
@@ -69,7 +68,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   componentWillUnmount(): void {
     editorService.saveState(this.props.descriptor.id, {
       text: this._editor.getValue(),
-      viewState: this._editor.saveViewState()
+      viewState: this._editor.saveViewState(),
     });
   }
 
@@ -83,7 +82,6 @@ export default class EditorDocument extends React.Component<Props, State> {
       height: "100%",
       overflow: "hidden",
     };
-    const code = this.state.code;
     const options = {
       selectOnLineNumbers: true,
     };
@@ -92,9 +90,9 @@ export default class EditorDocument extends React.Component<Props, State> {
         <div ref={this.divHost} style={placeholderStyle}>
           {this.state.show && (
             <MonacoEditor
-              language="javascript"
+              language={this.props.language}
               theme="vs-dark"
-              value={code}
+              value={this.props.sourceCode}
               options={options}
               onChange={(value, e) => this.onChange(value, e)}
               editorDidMount={(editor, monaco) =>
@@ -119,7 +117,12 @@ export default class EditorDocument extends React.Component<Props, State> {
  * Descriptor for the sample side bar panel
  */
 export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
-  constructor(public readonly id: string, public readonly title: string) {
+  constructor(
+    public readonly id: string,
+    public readonly title: string,
+    public readonly language: string,
+    public readonly contents: string
+  ) {
     super(id, title);
   }
 
@@ -127,6 +130,13 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode {
-    return <EditorDocument descriptor={this} />;
+    return (
+      <EditorDocument
+        descriptor={this}
+        sourceCode={this.contents}
+        language={this.language}
+      />
+    );
   }
 }
+

@@ -19,9 +19,6 @@ import { BlinkInformationPanelDescriptor } from "../machines/cambridge-z88/Blink
 import { CallStackPanelDescriptor } from "../machines/sidebar-panels/CallStackPanel";
 import { IoLogsPanelDescription } from "../machines/sidebar-panels/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
-import { documentService } from "./document-area/DocumentService";
-import { EditorDocumentPanelDescriptor } from "./editor/EditorDocument";
-import { SampleDocumentPanelDescriptor } from "./SampleDocument";
 import { toolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
@@ -284,29 +281,6 @@ export default function IdeApp() {
       sideBarService.registerSideBarPanel(
         "test-view",
         new TestRunnerPanelDescription()
-      );
-
-      // --- Register sample documents
-      documentService.registerDocument(
-        new EditorDocumentPanelDescriptor("1", "Doc 1")
-      );
-      documentService.registerDocument(
-        new SampleDocumentPanelDescriptor("2", "Memory", "green")
-      );
-      documentService.registerDocument(
-        new SampleDocumentPanelDescriptor("3", "Disassembly", "blue")
-      );
-      documentService.registerDocument(
-        new SampleDocumentPanelDescriptor("4", "Long Document #1", "blue")
-      );
-      documentService.registerDocument(
-        new SampleDocumentPanelDescriptor("5", "Long Document #2", "blue")
-      );
-      documentService.registerDocument(
-        new SampleDocumentPanelDescriptor("6", "Long Document #3", "blue")
-      );
-      documentService.registerDocument(
-        new SampleDocumentPanelDescriptor("7", "Long Document #4", "blue")
       );
 
       // --- Register tool panels

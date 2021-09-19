@@ -26,6 +26,7 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
+import { documentService } from "../document-area/DocumentService";
 
 type State = {
   itemsCount: number;
@@ -206,7 +207,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         className="listlike"
         style={{ ...style, ...itemStyle }}
         onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
-        onClick={() => this.collapseExpand(index, item)}
+        onClick={() => this.onClick(index, item)}
+        onDoubleClick={() => this.onClick(index, item, true)}
       >
         <div
           style={{
@@ -317,6 +319,50 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
   }
 
+  async onClick(
+    index: number,
+    item: ITreeNode<ProjectNode>,
+    isDouble: boolean = false
+  ): Promise<void> {
+    if (item.nodeData.isFolder) {
+      this.collapseExpand(index, item);
+    } else {
+      this.setState({
+        selected: item,
+        selectedIndex: index,
+      });
+      this._listApi.forceRefresh();
+
+      // --- Test if the specified document is already open
+      const id = item.nodeData.fullPath;
+      const document = documentService.getDocumentById(id);
+      if (document) {
+        documentService.setActiveDocument(document);
+        return;
+      }
+
+      // --- Create a new document
+      const factory = documentService.getResourceFactory(
+        item.nodeData.fullPath
+      );
+      if (factory) {
+        console.log(documentService.getActiveDocument());
+        const panel = factory.createDocumentPanel(item.nodeData.fullPath, "");
+        documentService.registerDocument(
+          panel,
+          true,
+          documentService.getActiveDocument()?.index ?? null
+        );
+      }
+    }
+  }
+
+  /**
+   * Handles the context menu click of the specified item
+   * @param ev Event information
+   * @param index Item index
+   * @param item Item data
+   */
   async onContextMenu(
     ev: React.MouseEvent,
     index: number,
@@ -360,7 +406,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           id: "deleteFolder",
           text: "Delete",
           enabled: index !== 0,
-          execute: async () => await this.deleteFolder(item, index),
+          execute: async () => await this.deleteFolder(item),
         },
       ];
     } else {
@@ -383,7 +429,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         {
           id: "deleteFile",
           text: "Delete",
-          execute: async () => await this.deleteFile(item, index),
+          execute: async () => await this.deleteFile(item),
         },
       ];
     }
@@ -520,9 +566,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   /**
    * Deletes the specified file
    * @param node File node
-   * @param index Node index
    */
-  async deleteFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
+  async deleteFile(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
     const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
       type: "ConfirmDialog",
@@ -556,11 +601,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   /**
    * Deletes the specified file
    * @param node File node
-   * @param index Node index
    */
   async deleteFolder(
-    node: ITreeNode<ProjectNode>,
-    index: number
+    node: ITreeNode<ProjectNode>
   ): Promise<void> {
     // --- Confirm delete
     const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
@@ -597,7 +640,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * @param node File node
    * @param index Node index
    */
-  async renameFileOrFolder(node: ITreeNode<ProjectNode>, index: number, isFolder: boolean = false): Promise<void> {
+  async renameFileOrFolder(
+    node: ITreeNode<ProjectNode>,
+    index: number,
+    isFolder: boolean = false
+  ): Promise<void> {
     // --- Get the new name
     const oldPath = node.nodeData.fullPath.substr(
       0,

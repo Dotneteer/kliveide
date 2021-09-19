@@ -3,9 +3,10 @@ import { CSSProperties, useState } from "react";
 import { themeService } from "../../common-ui/themes/theme-service";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { documentService, IDocumentPanel } from "./DocumentService";
+import { documentService } from "./DocumentService";
 import { contextMenuService} from "../context-menu/ContextMenuService";
 import { MenuItem } from "../../../shared/command/commands";
+import { IDocumentPanel } from "./DocumentFactory";
 
 interface Props {
   title: string;

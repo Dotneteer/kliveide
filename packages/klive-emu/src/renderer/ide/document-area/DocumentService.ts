@@ -1,93 +1,12 @@
 import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { ideStore } from "../ideStore";
-
-/**
- * Represents a document panel
- */
-export interface IDocumentPanel {
-  /**
-   * The document identifier
-   */
-  id: string;
-
-  /**
-   * The index of the panel
-   */
-  index: number;
-
-  /**
-   * Is this the active panel?
-   */
-  active: boolean;
-
-  /**
-   * The title of the panel
-   */
-  title: string;
-
-  /**
-   * Creates a node that represents the contents of a side bar panel
-   */
-  createContentElement(): React.ReactNode;
-
-  /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any>;
-
-  /**
-   * Sets the state of the side bar
-   * @param state Optional state to set
-   * @param fireImmediate Fire a panelStateLoaded event immediately?
-   */
-  setPanelState(state: Record<string, any> | null): void;
-}
-
-/**
- * A base class for document panel descriptors
- */
-export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
-  private _panelState: Record<string, any> = {};
-
-  /**
-   * Instantiates the panel with the specified title
-   * @param title
-   */
-  constructor(public readonly id: string, public readonly title: string) {}
-
-  /**
-   * The index of the panel
-   */
-  index: number;
-
-  /**
-   * Is this the active panel?
-   */
-  active: boolean;
-
-  /**
-   * Creates a node that represents the contents of a side bar panel
-   */
-  abstract createContentElement(): React.ReactNode;
-
-  /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any> {
-    return this._panelState;
-  }
-
-  /**
-   * Sets the state of the side bar panel
-   * @param state Optional state to set
-   */
-  setPanelState(state: Record<string, any> | null): void {
-    if (state) {
-      this._panelState = { ...this._panelState, ...state };
-    }
-  }
-}
+import { CodeEditorFactory } from "./CodeEditorFactory";
+import {
+  CodeEditorInfo,
+  IDocumentFactory,
+  IDocumentPanel,
+} from "./DocumentFactory";
 
 /**
  * Represenst a service that handles document panels
@@ -101,6 +20,9 @@ class DocumentService {
   private _activeDocumentChanging = new LiteEvent<IDocumentPanel | null>();
   private _activeDocumentChanged = new LiteEvent<IDocumentPanel | null>();
   private _documentsChanged = new LiteEvent<DocumentsInfo>();
+  private _fileBoundFactories = new Map<string, IDocumentFactory>();
+  private _extensionBoundFactories = new Map<string, IDocumentFactory>();
+  private _editorExtensions = new Map<string, CodeEditorInfo>();
 
   constructor() {
     this._documents = [];
@@ -113,6 +35,74 @@ class DocumentService {
    */
   getDocuments(): IDocumentPanel[] {
     return this._documents;
+  }
+
+  /**
+   * Registers a factory for the specified file name
+   * @param filename Filename to use as the key for the factory
+   * @param factory Factory instance
+   */
+  registerFileBoundFactory(filename: string, factory: IDocumentFactory): void {
+    this._fileBoundFactories.set(filename, factory);
+  }
+
+  /**
+   * Registers a factory for the specified file extension
+   * @param extension File extension the factory belongs to
+   * @param factory factory isntance
+   */
+  registerExtensionBoundFactory(
+    extension: string,
+    factory: IDocumentFactory
+  ): void {
+    this._extensionBoundFactories.set(extension, factory);
+  }
+
+  /**
+   * Registers a code editor for the specified extension
+   * @param extension File extendion
+   * @param editorInfo Editor information
+   */
+  registerCodeEditor(extension: string, editorInfo: CodeEditorInfo): void {
+    this._editorExtensions.set(extension, editorInfo);
+  }
+
+  /**
+   * Gets a factory for the specified resource
+   * @param resource Resouce name
+   */
+  getResourceFactory(resource: string): IDocumentFactory | null {
+    // --- Get the field name from the full resource name
+    const parts = resource.split("/");
+    const filename = parts.length > 0 ? parts[parts.length - 1] : "";
+    if (!filename) {
+      return null;
+    }
+
+    // --- Get the extension from the file name
+    const segments = filename.split(".");
+    const extension =
+      segments.length > 0 ? "." + segments.slice(1).join(".") : "";
+
+    // --- Test if the file has a factory
+    const fileNameFactory = this._fileBoundFactories.get(filename);
+    if (fileNameFactory) {
+      return fileNameFactory;
+    }
+
+    // --- Test if the extension has a factory
+    if (!extension) {
+      return null;
+    }
+    const extensionFactory = this._extensionBoundFactories.get(extension);
+    if (extensionFactory) {
+      return extensionFactory;
+    }
+
+    // --- Test if extension has an editor factory
+    const codeEditorInfo = this._editorExtensions.get(extension);
+    const language = codeEditorInfo?.language ?? "";
+    return new CodeEditorFactory(language);
   }
 
   /**
@@ -133,7 +123,10 @@ class DocumentService {
       index = 0;
     } else if (index > this._documents.length - 1) {
       index = this._documents.length;
+    } else {
+      index = index + 1;
     }
+    console.log(index);
 
     // --- Insert the document and activate it
     this._documents.splice(index, 0, doc);
@@ -237,6 +230,14 @@ class DocumentService {
    */
   getActiveDocument(): IDocumentPanel | null {
     return this._activeDocument;
+  }
+
+  /**
+   * Gets the document with the specified identifier
+   * @param id Document ID to search for
+   */
+  getDocumentById(id: string) : IDocumentPanel | null {
+    return this._documents.find(d => d.id === id) ?? null;
   }
 
   /**

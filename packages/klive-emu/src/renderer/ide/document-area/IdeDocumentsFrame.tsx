@@ -7,12 +7,12 @@ import { useEffect, useState } from "react";
 import {
   documentService,
   DocumentsInfo,
-  IDocumentPanel,
 } from "./DocumentService";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
+import { IDocumentPanel } from "./DocumentFactory";
 
 // --- Document Frame IDs
 const DOC_CONTAINER_ID = "ideDocumentContainer";
