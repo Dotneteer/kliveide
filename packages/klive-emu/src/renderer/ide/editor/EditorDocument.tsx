@@ -8,6 +8,7 @@ import {
   DocumentPanelDescriptorBase,
   IDocumentPanel,
 } from "../document-area/DocumentFactory";
+import { documentService } from "../document-area/DocumentService";
 
 /**
  * Component properties
@@ -43,10 +44,39 @@ export default class EditorDocument extends React.Component<Props, State> {
     };
   }
 
+  editorWillMount(monaco: typeof monacoEditor): void {
+    if (
+      !monaco.languages
+        .getLanguages()
+        .some(({ id }) => id === this.props.language)
+    ) {
+      console.log(`New language: ${this.props.language}`)
+      const languageInfo = documentService.getCustomLanguage(
+        this.props.language
+      );
+      console.log(languageInfo);
+      if (languageInfo) {
+        // --- Register a new language
+        monaco.languages.register({ id: languageInfo.id });
+        // --- Register a tokens provider for the language
+        monaco.languages.setMonarchTokensProvider(
+          languageInfo.id,
+          languageInfo.languageDef
+        );
+        // Set the editing configuration for the language
+        monaco.languages.setLanguageConfiguration(
+          languageInfo.id,
+          languageInfo.options
+        );
+      }
+    }
+  }
+
   editorDidMount(
     editor: monacoEditor.editor.IStandaloneCodeEditor,
     monaco: typeof monacoEditor
   ) {
+    monaco.languages.setMonarchTokensProvider;
     this._editor = editor;
     const state = editorService.loadState(this.props.descriptor.id);
     if (state) {
@@ -95,6 +125,7 @@ export default class EditorDocument extends React.Component<Props, State> {
               value={this.props.sourceCode}
               options={options}
               onChange={(value, e) => this.onChange(value, e)}
+              editorWillMount={(editor) => this.editorWillMount(editor)}
               editorDidMount={(editor, monaco) =>
                 this.editorDidMount(editor, monaco)
               }
@@ -139,4 +170,3 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
     );
   }
 }
-
