@@ -76,6 +76,8 @@ export type CustomLanguageInfo = {
   id: string;
   options?: monacoEditor.languages.LanguageConfiguration;
   languageDef?: monacoEditor.languages.IMonarchLanguage;
+  lightTheme?: monacoEditor.editor.IStandaloneThemeData;
+  darkTheme?: monacoEditor.editor.IStandaloneThemeData;
 }
 
 /**

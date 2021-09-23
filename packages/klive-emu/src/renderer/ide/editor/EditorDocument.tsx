@@ -68,6 +68,15 @@ export default class EditorDocument extends React.Component<Props, State> {
           languageInfo.id,
           languageInfo.options
         );
+        monaco.editor.defineTheme("myTheme", {
+          base: "vs-dark",
+          inherit: true,
+          rules: [{
+            token: "escapes",
+            foreground: 'ffff00'
+          }],
+          colors: {}
+        })
       }
     }
   }
@@ -121,7 +130,7 @@ export default class EditorDocument extends React.Component<Props, State> {
           {this.state.show && (
             <MonacoEditor
               language={this.props.language}
-              theme="vs-dark"
+              theme="myTheme"
               value={this.props.sourceCode}
               options={options}
               onChange={(value, e) => this.onChange(value, e)}
