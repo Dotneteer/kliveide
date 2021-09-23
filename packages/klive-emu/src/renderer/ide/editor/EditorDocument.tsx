@@ -10,6 +10,11 @@ import {
 } from "../document-area/DocumentFactory";
 import { documentService } from "../document-area/DocumentService";
 import { themeService } from "../../common-ui/themes/theme-service";
+import { ideToEmuMessenger } from "../IdeToEmuMessenger";
+import { FileOperationResponse } from "../../../shared/messaging/message-types";
+
+// --- Wait 1000 ms before saving the document being edited
+const SAVE_DEBOUNCE = 1000;
 
 /**
  * Component properties
@@ -35,6 +40,7 @@ interface State {
 export default class EditorDocument extends React.Component<Props, State> {
   private divHost = React.createRef<HTMLDivElement>();
   private _editor: monacoEditor.editor.IStandaloneCodeEditor;
+  private _unsavedChangeCounter = 0;
 
   constructor(props: Props) {
     super(props);
@@ -108,20 +114,31 @@ export default class EditorDocument extends React.Component<Props, State> {
     window.requestAnimationFrame(() => this._editor.focus());
   }
 
-  onChange(
+  async onChange(
     newValue: string,
     e: monacoEditor.editor.IModelContentChangedEvent
-  ) {}
+  ) {
+    this._unsavedChangeCounter++;
+    await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
+    if (this._unsavedChangeCounter === 1 && this._editor?.getModel()?.getValue()) {
+      await this.saveDocument(this._editor.getModel().getValue());
+    }
+    this._unsavedChangeCounter--;
+  }
 
   componentDidMount(): void {
     this.setState({ show: true });
   }
 
-  componentWillUnmount(): void {
+  async componentWillUnmount(): Promise<void> {
+    const text = this._editor.getValue();
     editorService.saveState(this.props.descriptor.id, {
       text: this._editor.getValue(),
       viewState: this._editor.saveViewState(),
     });
+    if (this._unsavedChangeCounter > 0) {
+      await this.saveDocument(text);
+    }
   }
 
   render() {
@@ -142,12 +159,11 @@ export default class EditorDocument extends React.Component<Props, State> {
     const languageInfo = documentService.getCustomLanguage(this.props.language);
     let theme = tone === "light" ? "vs" : "vs-dark";
     if (
-      (languageInfo.lightTheme && tone === "light") ||
-      (languageInfo.darkTheme && tone === "dark")
+      (languageInfo?.lightTheme && tone === "light") ||
+      (languageInfo?.darkTheme && tone === "dark")
     ) {
       theme = `${this.props.language}-${tone}`;
     }
-    console.log(tone, theme);
     return (
       <>
         <div ref={this.divHost} style={placeholderStyle}>
@@ -174,6 +190,17 @@ export default class EditorDocument extends React.Component<Props, State> {
         />
       </>
     );
+  }
+
+  async saveDocument(documentText: string): Promise<void> {
+    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+      type: "SaveFileContents",
+      name: this.props.descriptor.id,
+      contents: documentText
+    });
+    if (result.error) {
+      console.error(result.error);
+    }
   }
 }
 
