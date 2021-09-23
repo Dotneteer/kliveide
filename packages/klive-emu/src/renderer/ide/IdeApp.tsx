@@ -311,7 +311,7 @@ export default function IdeApp() {
         language: "json",
       });
       documentService.registerCodeEditor(".asm.z80", {
-        language: "asm.z80",
+        language: "asm-z80",
       });
 
       // --- Register virtual machine tools

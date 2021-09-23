@@ -5,6 +5,7 @@ import { ITheme } from "./theme-core";
  */
 export const darkTheme: ITheme = {
   name: "dark",
+  tone: "dark",
   properties: {
     "--shell-font-family":
       "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",

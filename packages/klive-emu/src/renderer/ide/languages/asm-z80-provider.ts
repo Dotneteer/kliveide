@@ -4,7 +4,7 @@ import { CustomLanguageInfo } from "../document-area/DocumentFactory";
  * Language provider for the .asm.z80 extension
  */
 export const asmZ80LanguageProvider: CustomLanguageInfo = {
-  id: "asm.z80",
+  id: "asm-z80",
   options: {
     comments: {
       lineComment: ";",
@@ -189,6 +189,7 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
       "brlc",
       "BRLC",
     ],
+
     registers: [
       "af",
       "af'",
@@ -247,6 +248,7 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
       "IYl",
       "IY",
     ],
+
     directives: [
       "#ifdef",
       "#ifndef",
@@ -260,6 +262,7 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
       "#include",
       "#line",
     ],
+
     pragmas: [
       ".org",
       ".ORG",
@@ -721,17 +724,17 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
         // --- Character literal
         [/'.'/, "string"],
 
+        // --- Special functions
+        [/\$cnt|\$CNT/, "identifier"],
+
+        // --- Special registers
+        [/af'|AF'/, "register"],
+
         // --- Real literal
         [/[0-9]*(\.[0-9]+)([eE][+-]?[0-9]+)?/, "number"],
 
         // --- Hexadecimal literal
         [/((\$|#|0x)[0-9A-Fa-f]{1,4}|[0-9][0-9A-Fa-f]{1,4}(h|H))/, "number"],
-
-        // --- Special registers
-        [/af'|AF'/, "keyword"],
-
-        // --- Special functions
-        [/\$cnt|\$CNT/, "type.identifier"],
 
         // --- Keyword-like tokens
         [
@@ -739,12 +742,12 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
           {
             cases: {
               "@keywords": "keyword",
-              "@pragmas": "type.identifier",
-              "@registers": "type.identifier",
+              "@pragmas": "pragma",
+              "@registers": "register",
               "@boolLiterals": "number",
-              "@statements": "type.identifier",
-              "@functions": "type.identifier",
-              "@conditions": "type.identifier",
+              "@statements": "statement",
+              "@functions": "function",
+              "@conditions": "condition",
               "@default": "identifier",
             },
           },
@@ -777,10 +780,10 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
         [/[()\[\]]/, "@brackets"],
 
         // --- Various operators
-        [/@symbols/, { cases: { "@operators": "string", "@default": "" } }],
+        [/@symbols/, { cases: { "@operators": "operator", "@default": "" } }],
 
         // --- Macro parameter
-        [/{{/, { token: "string", next: "@macroParam", log: "mp-beg" }],
+        [/{{/, { token: "macroparam", next: "@macroParam", log: "mp-beg" }],
 
         // strings
         [/"([^"\\]|\\.)*$/, "string.invalid"], // non-teminated string
@@ -797,7 +800,7 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
 
       string: [
         [/[^\\"]+/, "string"],
-        [/@escapes/, "escapes"],
+        [/@escapes/, "escape"],
         [/\\./, "string.escape.invalid"],
         [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
       ],
@@ -810,14 +813,62 @@ export const asmZ80LanguageProvider: CustomLanguageInfo = {
       ],
 
       macroParam: [
-        [/}}/, { token: "string", next: "@pop", log: "mp-end" }],
-        [/[\._@`a-zA-Z][_@!?\.0-9A-Za-z]*$/, "string", "@pop"],
-        [/[\._@`a-zA-Z][_@!?\.0-9A-Za-z]*/, "string"],
-        [/}[^}]/, { token: "", next: "@pop", log: "}" }],
-        [/}/, "string"],
+        [/}}/, "macroparam", "@pop"],
+        [/[\._@`a-zA-Z][_@!?\.0-9A-Za-z]*$/, "macroparam", "@pop"],
+        [/[\._@`a-zA-Z][_@!?\.0-9A-Za-z]*/, "macroparam"],
+        [/}[^}]/, "", "@pop"],
+        [/}/, "macroparam"],
       ],
 
-      specialReg: [[/af'|AF'/, "keyword"]],
+      specialReg: [[/af'|AF'/, "register"]],
     },
+  },
+  darkTheme: {
+    rules: [
+      {
+        token: "comment",
+        foreground: "6a9955",
+      },
+      {
+        token: "keyword",
+        foreground: "569cd6",
+        fontStyle: "bold",
+      },
+      {
+        token: "statement",
+        foreground: "c586c0",
+        fontStyle: "bold",
+      },
+      {
+        token: "pragma",
+        foreground: "c586c0",
+      },
+      {
+        token: "identifier",
+        foreground: "dcdcaa",
+      },
+      {
+        token: "register",
+        foreground: "9cdcfe",
+      },
+      {
+        token: "condition",
+        foreground: "9cdcfe",
+      },
+      {
+        token: "function",
+        foreground: "4fc1ff",
+      },
+      {
+        token: "macroparam",
+        foreground: "c586c0",
+        fontStyle: "italic",
+      },
+      {
+        token: "escape",
+        foreground: "d7ba7d",
+      },
+    ],
+    colors: {},
   },
 };

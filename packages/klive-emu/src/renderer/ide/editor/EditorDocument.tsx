@@ -9,6 +9,7 @@ import {
   IDocumentPanel,
 } from "../document-area/DocumentFactory";
 import { documentService } from "../document-area/DocumentService";
+import { themeService } from "../../common-ui/themes/theme-service";
 
 /**
  * Component properties
@@ -50,33 +51,45 @@ export default class EditorDocument extends React.Component<Props, State> {
         .getLanguages()
         .some(({ id }) => id === this.props.language)
     ) {
-      console.log(`New language: ${this.props.language}`)
       const languageInfo = documentService.getCustomLanguage(
         this.props.language
       );
-      console.log(languageInfo);
       if (languageInfo) {
         // --- Register a new language
         monaco.languages.register({ id: languageInfo.id });
+
         // --- Register a tokens provider for the language
         monaco.languages.setMonarchTokensProvider(
           languageInfo.id,
           languageInfo.languageDef
         );
-        // Set the editing configuration for the language
+
+        // --- Set the editing configuration for the language
         monaco.languages.setLanguageConfiguration(
           languageInfo.id,
           languageInfo.options
         );
-        monaco.editor.defineTheme("myTheme", {
-          base: "vs-dark",
-          inherit: true,
-          rules: [{
-            token: "escapes",
-            foreground: 'ffff00'
-          }],
-          colors: {}
-        })
+
+        // --- Define light theme for the language
+        if (languageInfo.lightTheme) {
+          monaco.editor.defineTheme(`${languageInfo.id}-light`, {
+            base: "vs",
+            inherit: true,
+            rules: languageInfo.lightTheme.rules,
+            encodedTokensColors: languageInfo.lightTheme.encodedTokensColors,
+            colors: languageInfo.lightTheme.colors,
+          });
+        }
+        // --- Define dark theme for the language
+        if (languageInfo.darkTheme) {
+          monaco.editor.defineTheme(`${languageInfo.id}-dark`, {
+            base: "vs-dark",
+            inherit: true,
+            rules: languageInfo.darkTheme.rules,
+            encodedTokensColors: languageInfo.darkTheme.encodedTokensColors,
+            colors: languageInfo.darkTheme.colors,
+          });
+        }
       }
     }
   }
@@ -124,13 +137,24 @@ export default class EditorDocument extends React.Component<Props, State> {
     const options = {
       selectOnLineNumbers: true,
     };
+
+    const tone = themeService.getActiveTheme().tone;
+    const languageInfo = documentService.getCustomLanguage(this.props.language);
+    let theme = tone === "light" ? "vs" : "vs-dark";
+    if (
+      (languageInfo.lightTheme && tone === "light") ||
+      (languageInfo.darkTheme && tone === "dark")
+    ) {
+      theme = `${this.props.language}-${tone}`;
+    }
+    console.log(tone, theme);
     return (
       <>
         <div ref={this.divHost} style={placeholderStyle}>
           {this.state.show && (
             <MonacoEditor
               language={this.props.language}
-              theme="myTheme"
+              theme={theme}
               value={this.props.sourceCode}
               options={options}
               onChange={(value, e) => this.onChange(value, e)}
