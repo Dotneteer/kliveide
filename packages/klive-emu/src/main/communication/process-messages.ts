@@ -230,6 +230,24 @@ export async function processIdeRequest(
       };
     }
 
+    case "SaveFileContents": {
+      let error: string | undefined;
+      try {
+        fs.writeFileSync(
+          message.name,
+          message.contents, {
+            encoding: "utf8"
+          }
+        );
+      } catch (err) {
+        error = `Cannot save file: ${err}`;
+      }
+      return <FileOperationResponse>{
+        type: "FileOperationResponse",
+        error: error,
+      };
+    }
+
     default:
       // --- If the main does not recofnize a request, it forwards it to Emu
       return await emuForwarder.sendMessage(message);

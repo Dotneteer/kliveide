@@ -274,6 +274,16 @@ export interface RenameFileRequest extends MessageBase {
 }
 
 /**
+ * The Emu ask the main for getting the contents of a file
+ */
+export interface SaveFileContentsRequest extends MessageBase {
+  type: "SaveFileContents";
+  name: string;
+  contents: string;
+}
+
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -333,7 +343,8 @@ type IdeToMainRequests =
   | DeleteFolderRequest
   | DeleteFileRequest
   | RenameFileRequest
-  | GetFileContentsRequest;
+  | GetFileContentsRequest
+  | SaveFileContentsRequest;
 
 /**
  * Requests send by the main process to Ide
