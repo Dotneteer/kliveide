@@ -5,6 +5,7 @@ import { IThemeProperties } from "./IThemeProperties";
  */
 export interface ITheme {
   name: string;
+  tone: "light" | "dark";
   properties: IThemeProperties;
 }
 

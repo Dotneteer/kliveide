@@ -69,6 +69,13 @@ export type CodeEditorInfo = {
   language: string;
 };
 
+type EditorThemeBody = {
+  rules: monacoEditor.editor.ITokenThemeRule[];
+  encodedTokensColors?: string[];
+  colors: monacoEditor.editor.IColors;
+
+}
+
 /**
  * Represents information about a custom language
  */
@@ -76,8 +83,8 @@ export type CustomLanguageInfo = {
   id: string;
   options?: monacoEditor.languages.LanguageConfiguration;
   languageDef?: monacoEditor.languages.IMonarchLanguage;
-  lightTheme?: monacoEditor.editor.IStandaloneThemeData;
-  darkTheme?: monacoEditor.editor.IStandaloneThemeData;
+  lightTheme?: EditorThemeBody
+  darkTheme?: EditorThemeBody
 }
 
 /**

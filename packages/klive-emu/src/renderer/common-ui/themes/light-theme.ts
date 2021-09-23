@@ -5,6 +5,7 @@ import { ITheme } from "./theme-core";
  */
 export const lightTheme: ITheme = {
   name: "light",
+  tone: "light",
   properties: {
     "--shell-font-family": "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",
     "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
