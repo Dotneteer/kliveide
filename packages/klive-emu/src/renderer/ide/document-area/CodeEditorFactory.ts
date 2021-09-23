@@ -1,6 +1,4 @@
-import { GetFileContentsResponse } from "../../../shared/messaging/message-types";
 import { EditorDocumentPanelDescriptor } from "../editor/EditorDocument";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { IDocumentFactory, IDocumentPanel } from "./DocumentFactory";
 
 /**

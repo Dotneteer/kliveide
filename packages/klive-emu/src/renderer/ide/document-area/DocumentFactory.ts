@@ -1,3 +1,5 @@
+import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+
 /**
  * A factory that can create a document panel
  */
@@ -66,6 +68,17 @@ export interface IDocumentPanel {
 export type CodeEditorInfo = {
   language: string;
 };
+
+/**
+ * Represents information about a custom language
+ */
+export type CustomLanguageInfo = {
+  id: string;
+  options?: monacoEditor.languages.LanguageConfiguration;
+  languageDef?: monacoEditor.languages.IMonarchLanguage;
+  lightTheme?: monacoEditor.editor.IStandaloneThemeData;
+  darkTheme?: monacoEditor.editor.IStandaloneThemeData;
+}
 
 /**
  * A base class for document panel descriptors

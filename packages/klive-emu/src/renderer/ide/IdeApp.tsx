@@ -63,6 +63,7 @@ import {
   RENAME_FOLDER_DIALOG_ID,
 } from "./explorer-tools/RenameFolderDialog";
 import { documentService } from "./document-area/DocumentService";
+import { asmZ80LanguageProvider } from "./languages/asm-z80-provider";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -302,10 +303,15 @@ export default function IdeApp() {
       outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
       outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
 
-      // --- Register document panels and editors
+      // --- Register custom languages
+      documentService.registerCustomLanguage(asmZ80LanguageProvider);
 
+      // --- Register document panels and editors
       documentService.registerCodeEditor(".project", {
         language: "json",
+      });
+      documentService.registerCodeEditor(".asm.z80", {
+        language: "asm.z80",
       });
 
       // --- Register virtual machine tools

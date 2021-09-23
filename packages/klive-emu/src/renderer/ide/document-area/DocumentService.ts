@@ -4,6 +4,7 @@ import { ideStore } from "../ideStore";
 import { CodeEditorFactory } from "./CodeEditorFactory";
 import {
   CodeEditorInfo,
+  CustomLanguageInfo,
   IDocumentFactory,
   IDocumentPanel,
 } from "./DocumentFactory";
@@ -23,6 +24,7 @@ class DocumentService {
   private _fileBoundFactories = new Map<string, IDocumentFactory>();
   private _extensionBoundFactories = new Map<string, IDocumentFactory>();
   private _editorExtensions = new Map<string, CodeEditorInfo>();
+  private _languageExtensions = new Map<string, CustomLanguageInfo>()
 
   constructor() {
     this._documents = [];
@@ -65,6 +67,22 @@ class DocumentService {
    */
   registerCodeEditor(extension: string, editorInfo: CodeEditorInfo): void {
     this._editorExtensions.set(extension, editorInfo);
+  }
+
+  /**
+   * Registers a custom language
+   * @param language Language definition
+   */
+  registerCustomLanguage(language: CustomLanguageInfo): void {
+    this._languageExtensions.set(language.id, language);
+  }
+
+  /**
+   * Gets a custom language extension
+   * @param id Language id
+   */
+  getCustomLanguage(id: string): CustomLanguageInfo | undefined {
+    return this._languageExtensions.get(id);
   }
 
   /**
