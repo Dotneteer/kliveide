@@ -2,12 +2,10 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
+import { FileChange, projectServices } from "../explorer-tools/ProjectServices";
 import { IDocumentPanel } from "./DocumentFactory";
 
-import {
-  documentService,
-  DocumentsInfo,
-} from "./DocumentService";
+import { documentService, DocumentsInfo } from "./DocumentService";
 import DocumentTab from "./DocumentTab";
 
 /**
@@ -24,15 +22,79 @@ export default function DocumentTabBar() {
     setActiveDoc(info.active);
   };
 
+  // --- Rename document tab is the document file has been renamed
+  const fileRenamed = (args: FileChange) => {
+    for (const doc of currentDocs) {
+      if (doc.id === args.oldName) {
+        doc.id = args.newName;
+        const segments = doc.id.split("/");
+        doc.title = segments[segments.length - 1];
+        documentService.fireChanges();
+        console.log(`renamed to ${doc.id}, ${doc.title}`);
+        break;
+      }
+    }
+  };
+
+  // --- Change the path of documents if their folder has been renamed
+  const folderRenamed = (args: FileChange) => {
+    let changed = false;
+    for (const doc of currentDocs) {
+      if (doc.id.startsWith(`${args.oldName}/`)) {
+        doc.id = `${args.newName}${doc.id.substr(args.oldName.length)}`;
+        const segments = doc.id.split("/");
+        doc.title = segments[segments.length - 1];
+        changed = true;
+        console.log(`renamed to ${doc.id}, ${doc.title}`);
+      }
+    }
+    if (changed) {
+      documentService.fireChanges();
+    }
+  };
+
+  // --- Remove this tab if the document file has been deleted
+  const fileDeleted = (name: string) => {
+    for (const doc of currentDocs) {
+      if (doc.id === name) {
+        documentService.unregisterDocument(doc);
+        setCurrentDocs(documentService.getDocuments());
+        break;
+      }
+    }
+  };
+
+  // --- Remove this tab if the document's folder has been deleted
+  const folderDeleted = (name: string) => {
+    let changed = false;
+    for (const doc of currentDocs.slice(0)) {
+      if (doc.id.startsWith(`${name}/`)) {
+        documentService.unregisterDocument(doc);
+        changed = true;
+      }
+    }
+    if (changed) {
+      setCurrentDocs(documentService.getDocuments());
+    }
+  };
+
   useEffect(() => {
     // --- Mount
     setCurrentDocs(documentService.getDocuments());
     setActiveDoc(documentService.getActiveDocument());
     documentService.documentsChanged.on(refreshDocs);
+    projectServices.folderDeleted.on(folderDeleted);
+    projectServices.fileRenamed.on(fileRenamed);
+    projectServices.folderRenamed.on(folderRenamed);
+    projectServices.fileDeleted.on(fileDeleted);
 
     return () => {
       // --- Unmount
       documentService.documentsChanged.off(refreshDocs);
+      projectServices.fileRenamed.off(fileRenamed);
+      projectServices.folderRenamed.off(folderRenamed);
+      projectServices.fileDeleted.off(fileDeleted);
+      projectServices.folderDeleted.off(folderDeleted);
     };
   });
 
