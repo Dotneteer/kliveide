@@ -480,12 +480,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new folder
     const newName = folderData.name;
     const newFullPath = `${folderData.root}/${newName}`;
-    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
-      type: "CreateFolder",
-      name: newFullPath,
-    });
+    const resp = await projectServices.createFolder(newFullPath);
 
-    if (resp.error) {
+    if (resp) {
       // --- Creation failed. The main process has already displayed a message
       return;
     }
@@ -540,12 +537,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new file
     const newName = fileData.name;
     const newFullPath = `${fileData.root}/${newName}`;
-    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
-      type: "CreateFile",
-      name: newFullPath,
-    });
+    const resp = await projectServices.createFile(newFullPath);
 
-    if (resp.error) {
+    if (resp) {
       // --- Creation failed. The main process has already displayed a message
       return;
     }
@@ -576,6 +570,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     this._listApi.focus();
     this._listApi.ensureVisible(selectedIndex);
     this._listApi.forceRefresh();
+
+    // --- Emulate clicking the item
+    this.onClick(selectedIndex, newTreeNode);
   }
 
   /**
@@ -595,11 +592,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
-      type: "DeleteFile",
-      name: node.nodeData.fullPath,
-    });
-    if (resp.error) {
+    const resp = await projectServices.deleteFile(node.nodeData.fullPath);
+    if (resp) {
       // --- Delete failed
       return;
     }
@@ -630,11 +624,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
-      type: "DeleteFolder",
-      name: node.nodeData.fullPath,
-    });
-    if (resp.error) {
+    const resp = await projectServices.deleteFolder(node.nodeData.fullPath);
+    if (resp) {
       // --- Delete failed
       return;
     }
@@ -680,15 +671,21 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
 
     // --- Rename the file
     const newFullName = `${oldPath}/${fileData.name}`;
-    const resp = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
-      type: "RenameFile",
-      oldName: node.nodeData.fullPath,
-      newName: newFullName,
-    });
-    if (resp.error) {
+    const resp = isFolder
+      ? await projectServices.renameFolder(node.nodeData.fullPath, newFullName)
+      : await projectServices.renameFile(node.nodeData.fullPath, newFullName);
+    if (resp) {
       // --- Rename failed
       return;
     }
+
+    // --- Rename folder children
+    projectServices.renameProjectNode(
+      node,
+      node.nodeData.fullPath,
+      newFullName,
+      isFolder
+    );
 
     // --- Refresh the view
     node.nodeData.name = fileData.name;

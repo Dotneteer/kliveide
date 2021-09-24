@@ -111,6 +111,7 @@ export default function DocumentTab({
     <div
       ref={hostElement}
       style={style}
+      title={document.id}
       onMouseDown={async (e: React.MouseEvent) => {
         if (e.button === 0) {
           clicked?.();

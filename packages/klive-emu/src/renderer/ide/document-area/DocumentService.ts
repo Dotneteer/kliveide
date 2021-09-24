@@ -370,7 +370,7 @@ class DocumentService {
   /**
    * Fires the documents changed event
    */
-  private fireChanges(): void {
+  fireChanges(): void {
     this._documentsChanged.fire({
       docs: this._documents.slice(0),
       active: this._activeDocument,
