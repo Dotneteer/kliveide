@@ -1,10 +1,10 @@
 import { CustomLanguageInfo } from "../document-area/DocumentFactory";
 
 /**
- * Language provider for the .asm.z80 extension
+ * Language provider for the .mpm.z80 extension
  */
-export const asmkZ80LanguageProvider: CustomLanguageInfo = {
-  id: "asm-kz80",
+export const mpmZ80LanguageProvider: CustomLanguageInfo = {
+  id: "mpm-z80",
   options: {
     comments: {
       lineComment: ";",
@@ -12,6 +12,7 @@ export const asmkZ80LanguageProvider: CustomLanguageInfo = {
   },
   languageDef: {
     keywords: [
+      "mpm", // Please remove this
       "nop",
       "NOP",
       "rlca",

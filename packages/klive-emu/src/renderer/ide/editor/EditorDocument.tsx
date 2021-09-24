@@ -118,6 +118,15 @@ export default class EditorDocument extends React.Component<Props, State> {
     newValue: string,
     e: monacoEditor.editor.IModelContentChangedEvent
   ) {
+    // --- Make the document permanent
+    const currentDoc = documentService.getDocumentById(this.props.descriptor.id);
+    if (currentDoc?.temporary) {
+      // --- Make this document permanent
+      currentDoc.temporary = false;
+      documentService.registerDocument(currentDoc, true);
+    }
+
+    // --- Save document after the change
     this._unsavedChangeCounter++;
     await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
     if (this._unsavedChangeCounter === 1 && this._editor?.getModel()?.getValue()) {

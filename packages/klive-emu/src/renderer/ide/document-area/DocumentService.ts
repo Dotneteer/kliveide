@@ -24,7 +24,7 @@ class DocumentService {
   private _fileBoundFactories = new Map<string, IDocumentFactory>();
   private _extensionBoundFactories = new Map<string, IDocumentFactory>();
   private _editorExtensions = new Map<string, CodeEditorInfo>();
-  private _languageExtensions = new Map<string, CustomLanguageInfo>()
+  private _languageExtensions = new Map<string, CustomLanguageInfo>();
 
   constructor() {
     this._documents = [];
@@ -134,27 +134,36 @@ class DocumentService {
     makeActive: boolean = true,
     index?: number
   ): void {
-    // --- Fix the insert position
-    if (index === undefined || index === null) {
-      index = this._documents.length;
-    } else if (index < 0) {
-      index = 0;
-    } else if (index > this._documents.length - 1) {
-      index = this._documents.length;
-    } else {
-      index = index + 1;
-    }
+    // --- Do not register a document already registered
+    const existingDoc = this.getDocumentById(doc.id);
+    if (!existingDoc) {
+      // --- Fix the insert position
+      if (index === undefined || index === null) {
+        index = this._documents.length;
+      } else if (index < 0) {
+        index = 0;
+      } else if (index > this._documents.length - 1) {
+        index = this._documents.length;
+      } else {
+        index = index + 1;
+      }
 
-    // --- Insert the document and activate it
-    this._documents.splice(index, 0, doc);
-    this._documents = this._documents.slice(0);
-    doc.index = index;
-    this._documentRegistered.fire(doc);
-    if (makeActive || !this._activeDocument) {
-      this.setActiveDocument(doc);
+      // --- Insert the document and activate it
+      this._documents.splice(index, 0, doc);
+      this._documents = this._documents.slice(0);
+      doc.index = index;
+      this._documentRegistered.fire(doc);
+
+      if (makeActive || !this._activeDocument) {
+        this.setActiveDocument(doc);
+      }
+      this._activationStack.push(doc);
+      this.fireChanges();
+    } else {
+      if (makeActive || !this._activeDocument) {
+        this.setActiveDocument(existingDoc);
+      }
     }
-    this._activationStack.push(doc);
-    this.fireChanges();
   }
 
   /**
@@ -253,15 +262,15 @@ class DocumentService {
    * Gets the document with the specified identifier
    * @param id Document ID to search for
    */
-  getDocumentById(id: string) : IDocumentPanel | null {
-    return this._documents.find(d => d.id === id) ?? null;
+  getDocumentById(id: string): IDocumentPanel | null {
+    return this._documents.find((d) => d.id === id) ?? null;
   }
 
   /**
    * Gets the temporary document
    */
   getTemporaryDocument(): IDocumentPanel | null {
-    return this._documents.find(d => d.temporary) ?? null;
+    return this._documents.find((d) => d.temporary) ?? null;
   }
 
   /**

@@ -125,6 +125,10 @@ export default function DocumentTab({
       }}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
+      onDoubleClick={() => {
+        document.temporary = false;
+        setPointed(false);
+      }}
     >
       <SvgIcon iconName="file-code" width={16} height={16} />
       <span
