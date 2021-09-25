@@ -108,6 +108,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     this._editor = editor;
     const state = editorService.loadState(this.props.descriptor.id);
     if (state) {
+      console.log("Editor state found", this.props.descriptor.id, state);
       this._editor.setValue(state.text);
       this._editor.restoreViewState(state.viewState);
     }
@@ -119,7 +120,9 @@ export default class EditorDocument extends React.Component<Props, State> {
     e: monacoEditor.editor.IModelContentChangedEvent
   ) {
     // --- Make the document permanent
-    const currentDoc = documentService.getDocumentById(this.props.descriptor.id);
+    const currentDoc = documentService.getDocumentById(
+      this.props.descriptor.id
+    );
     if (currentDoc?.temporary) {
       // --- Make this document permanent
       currentDoc.temporary = false;
@@ -129,7 +132,10 @@ export default class EditorDocument extends React.Component<Props, State> {
     // --- Save document after the change
     this._unsavedChangeCounter++;
     await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
-    if (this._unsavedChangeCounter === 1 && this._editor?.getModel()?.getValue()) {
+    if (
+      this._unsavedChangeCounter === 1 &&
+      this._editor?.getModel()?.getValue()
+    ) {
       await this.saveDocument(this._editor.getModel().getValue());
     }
     this._unsavedChangeCounter--;
@@ -140,13 +146,19 @@ export default class EditorDocument extends React.Component<Props, State> {
   }
 
   async componentWillUnmount(): Promise<void> {
-    const text = this._editor.getValue();
-    editorService.saveState(this.props.descriptor.id, {
-      text: this._editor.getValue(),
-      viewState: this._editor.saveViewState(),
-    });
-    if (this._unsavedChangeCounter > 0) {
-      await this.saveDocument(text);
+    // --- Check if this document is still registered
+    const docId = this.props.descriptor.id;
+    const doc = documentService.getDocumentById(docId);
+    if (doc) {
+      const text = this._editor.getValue();
+      editorService.saveState(this.props.descriptor.id, {
+        text: this._editor.getValue(),
+        viewState: this._editor.saveViewState(),
+      });
+      console.log(`editor state saved ${this.props.descriptor.id}`);
+      if (this._unsavedChangeCounter > 0) {
+        await this.saveDocument(text);
+      }
     }
   }
 
@@ -205,7 +217,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
       type: "SaveFileContents",
       name: this.props.descriptor.id,
-      contents: documentText
+      contents: documentText,
     });
     if (result.error) {
       console.error(result.error);

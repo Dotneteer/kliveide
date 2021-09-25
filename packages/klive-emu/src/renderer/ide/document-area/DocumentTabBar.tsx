@@ -2,6 +2,7 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
+import { editorService } from "../editor/editorService";
 import { FileChange, projectServices } from "../explorer-tools/ProjectServices";
 import { IDocumentPanel } from "./DocumentFactory";
 
@@ -115,6 +116,8 @@ export default function DocumentTabBar() {
           }
         }}
         closed={() => {
+          editorService.clearState(d.id);
+          console.log("clear state of", d.id);
           documentService.unregisterDocument(d);
         }}
       />

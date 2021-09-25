@@ -218,6 +218,7 @@ export async function processIdeRequest(
           message.name,
           message.asBuffer ? {} : { encoding: "utf8" }
         );
+        console.log(contents);
       } catch (err) {
         error = `Cannot read file: ${err}`;
       }

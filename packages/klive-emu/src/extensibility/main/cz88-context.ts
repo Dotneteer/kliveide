@@ -371,7 +371,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     function setKbLayout(layout: string): void {
       kbLayout = layout;
       mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
-      emuWindow.saveKliveProject();
     }
   }
 
@@ -433,7 +432,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
   private async requestMachine(): Promise<void> {
     const typeId = "cz88";
     await emuWindow.requestMachineType(typeId, recentOptions);
-    emuWindow.saveKliveProject();
   }
 
   /**

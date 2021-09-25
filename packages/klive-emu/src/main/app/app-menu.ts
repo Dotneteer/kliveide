@@ -404,12 +404,13 @@ export function setupMenu(): void {
       enabled: value.active ?? true,
       click: async (mi) => {
         try {
+          const machineType = mi.id.split("_")[1];
+          await emuWindow.requestMachineType(machineType);
           emuWindow.saveAppSettings();
+          emuWindow.saveKliveProject();
         } catch {
           // --- Intentionally ignored
         }
-        const machineType = mi.id.split("_")[1];
-        await emuWindow.requestMachineType(machineType);
       },
     });
   }
@@ -424,6 +425,7 @@ export function setupMenu(): void {
       click: () => {
         setSoundLevel(item.level);
         emuWindow.saveKliveProject();
+        console.log("sound level");
       },
     })
   );
@@ -449,6 +451,7 @@ export function setupMenu(): void {
           ` (${((i * baseClockFrequency) / 1_000_000).toFixed(4)}MHz)`,
         click: () => {
           mainStore.dispatch(emuSetClockMultiplierAction(i));
+          console.log("clock multiplier");
           emuWindow.saveKliveProject();
         },
       });
@@ -740,7 +743,6 @@ export function processStateChange(fullState: AppState): void {
     // --- Current machine types has changed
     lastMachineType = fullState.machineType;
     setupMenu();
-    emuWindow.saveKliveProject();
   }
 
   // --- Sound level has changed
@@ -748,7 +750,6 @@ export function processStateChange(fullState: AppState): void {
     lastSoundLevel = emuState.soundLevel;
     lastMuted = emuState.muted;
     setSoundLevelMenu(lastMuted, lastSoundLevel);
-    emuWindow.saveKliveProject();
   }
 
   // --- Take care that custom machine menus are updated
@@ -898,6 +899,8 @@ async function setProjectMachine(): Promise<void> {
     undefined,
     settings
   );
+  console.log(projectInfo.machineType);
+  console.log(JSON.stringify(settings));
 }
 
 /**

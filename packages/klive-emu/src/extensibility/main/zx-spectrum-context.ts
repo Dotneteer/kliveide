@@ -101,12 +101,10 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     const toggleBeam = menu.getMenuItemById(TOGGLE_BEAM);
     if (toggleBeam) {
       toggleBeam.checked = !!state.spectrumSpecific?.showBeamPosition;
-      emuWindow.saveKliveProject();
     }
     const toggleFastLoad = menu.getMenuItemById(TOGGLE_FAST_LOAD);
     if (toggleFastLoad) {
       toggleFastLoad.checked = !!state.spectrumSpecific?.fastLoad;
-      emuWindow.saveKliveProject();
     }
   }
 

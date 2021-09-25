@@ -31,6 +31,14 @@ class EditorService {
   loadState(id: string): EditorState | undefined {
     return this._states.get(id);
   }
+
+  /**
+   * Deletes the state of the specified editor
+   * @param id 
+   */
+  clearState(id: string): void {
+    this._states.delete(id);
+  }
 }
 
 /**
