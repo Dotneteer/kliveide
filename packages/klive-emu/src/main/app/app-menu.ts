@@ -878,6 +878,7 @@ function menuIdFromMachineId(machineId: string): string {
  */
 async function openIdeWindow(): Promise<void> {
   mainStore.dispatch(ideShowAction());
+  await new Promise(r => setTimeout(r, 200));
   await ideMessenger.sendMessage({
     type: "SyncMainState",
     mainState: { ...mainStore.getState() },

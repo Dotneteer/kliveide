@@ -11,7 +11,7 @@ import {
   spectrumFastLoadAction,
   spectrumTapeContentsAction,
 } from "../../shared/state/spectrum-specific-reducer";
-import { emuSetClockMultiplierAction } from "../../shared/state/emulator-panel-reducer";
+import { emuSetClockMultiplierAction, emuSetKeyboardLayoutAction } from "../../shared/state/emulator-panel-reducer";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
 import {
   emuWindow,
@@ -47,6 +47,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    */
   constructor(options?: Record<string, any>) {
     super(options);
+    mainStore.dispatch(emuSetKeyboardLayoutAction(""));
   }
 
   /**

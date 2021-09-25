@@ -195,38 +195,11 @@ export default function IdeApp() {
           id: "file-view",
           title: "Explorer",
           iconName: "files",
-          commands: [
-            {
-              id: "explorer-cmds",
-              text: "",
-              items: [
-                {
-                  id: "cmd-1",
-                  text: "Command #1",
-                },
-                {
-                  id: "cmd-2",
-                  text: "Command #2",
-                },
-              ],
-            },
-          ],
         },
         {
           id: "debug-view",
           title: "Run and debug",
           iconName: "debug-alt",
-          commands: [
-            {
-              id: "cmd-1",
-              iconName: "play",
-              text: "Command #1",
-            },
-            {
-              id: "cmd-2",
-              text: "Command #2",
-            },
-          ],
         },
         {
           id: "log-view",
@@ -299,10 +272,10 @@ export default function IdeApp() {
       );
 
       // --- Register tool panels
-      toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
       toolAreaService.registerTool(new OutputToolPanelDescriptor());
       outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
       outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
+      toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
 
       // --- Register custom languages
       documentService.registerCustomLanguage(asmkZ80LanguageProvider);
