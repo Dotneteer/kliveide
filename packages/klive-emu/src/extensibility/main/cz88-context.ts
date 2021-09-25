@@ -378,6 +378,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     function setKbLayout(layout: string): void {
       kbLayout = layout;
       mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
+      emuWindow.saveKliveProject();
     }
   }
 
@@ -592,6 +593,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     recentOptions = { ...recentOptions, scw, sch };
     await this.requestMachine();
     this.setContext();
+    emuWindow.saveKliveProject();
   }
 
   /**

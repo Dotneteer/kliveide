@@ -6,6 +6,7 @@ import { DirectoryContent } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { FileOperationResponse } from "../../../shared/messaging/message-types";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
+import { ideStore } from "../ideStore";
 
 /**
  * This class implements the project services
@@ -19,12 +20,28 @@ class ProjectServices {
   private _folderDeleted = new LiteEvent<string>();
   private _fileDeleted = new LiteEvent<string>();
 
+  constructor() {
+    // --- Close the project tree whenever the project is closed
+    ideStore.projectChanged.on(ps => {
+      if (!ps.path || !ps.hasVm) {
+        this.closeProjectTree();
+      }
+    })
+  }
+
   /**
    * Gets the current project tree
    * @returns Project tree, if set; otherwise, null
    */
   getProjectTree(): ITreeView<ProjectNode> | null {
     return this._projectTree;
+  }
+
+  /**
+   * Close the current project tree
+   */
+  closeProjectTree(): void {
+    this._projectTree = null;
   }
 
   /**

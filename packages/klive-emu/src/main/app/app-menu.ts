@@ -240,7 +240,9 @@ export function setupMenu(): void {
         id: CLOSE_FOLDER,
         label: "Close folder",
         enabled: !!mainStore.getState()?.project?.path,
-        click: () => mainStore.dispatch(closeProjectAction()),
+        click: () => {
+          mainStore.dispatch(closeProjectAction());
+        },
       },
       { type: "separator" },
       __DARWIN__ ? { role: "close" } : { role: "quit" },
