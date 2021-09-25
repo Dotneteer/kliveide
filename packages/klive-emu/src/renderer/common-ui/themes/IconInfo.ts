@@ -1,7 +1,7 @@
 /**
  * Represents information about an icon in the registry.
  */
-export interface IconInfo {
+export type IconInfo = {
   /**
    * The name (alias) of the icon.
    */

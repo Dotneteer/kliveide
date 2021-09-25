@@ -9,6 +9,7 @@ import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
+import { CommonIcon } from "../../common-ui/CommonIcon";
 import { ideStore } from "../ideStore";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
@@ -19,7 +20,6 @@ import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
   ConfirmDialogResponse,
-  FileOperationResponse,
   GetFileContentsResponse,
 } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
@@ -217,18 +217,18 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           }}
         ></div>
         {item.nodeData.isFolder && (
-          <SvgIcon
+          <CommonIcon
             iconName="chevron-right"
             width={16}
             height={16}
             rotate={item.isExpanded ? 90 : 0}
           />
         )}
-        <SvgIcon
-          iconName={
+        <CommonIcon
+          imageName={
             item.nodeData.isFolder
               ? item.isExpanded
-                ? "folder-opened"
+                ? "folder-open"
                 : "folder"
               : "file-code"
           }
@@ -241,7 +241,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               : "--explorer-file-color"
           }
         />
-        <span>{item.nodeData.name}</span>
+        <span style={{marginLeft: 4}}>{item.nodeData.name}</span>
       </div>
     );
   }
