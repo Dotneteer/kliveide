@@ -1,10 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
-import { readTextFile } from "../../utils/file-utils";
 
-import { ErrorCodes, errorMessages, ParserErrorMessage } from "../errors";
-import { InputStream } from "../parser/input-stream";
-import { TokenStream } from "../parser/token-stream";
+import { ErrorCodes, errorMessages, ParserErrorMessage } from "./errors";
+import { InputStream } from "./input-stream";
+import { TokenStream } from "./token-stream";
 
 import {
   AdcInstruction,
@@ -91,14 +90,15 @@ import {
   XorgPragma,
   XorInstruction,
   Z80AssemblyLine,
-} from "../parser/tree-nodes";
-import { Z80AsmParser } from "../parser/z80-asm-parser";
-import { convertSpectrumString } from "../utils";
+} from "./tree-nodes";
+import { Z80AsmParser } from "./z80-asm-parser";
+import { convertSpectrumString, readTextFile } from "./utils";
 import {
   AssemblerErrorInfo,
   AssemblerOptions,
   AssemblerOutput,
   BinarySegment,
+  FileLine,
   ListFileItem,
   SourceFileItem,
   SpectrumModelType,

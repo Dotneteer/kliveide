@@ -40,6 +40,8 @@ import { Cz88ContextProvider } from "../../extensibility/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { PROJECT_FILE } from "../project/project-utils";
 
+import { Z80Assembler } from "../z80-compiler/assembler";
+
 /**
  * These are the context providers we usein the code
  */
