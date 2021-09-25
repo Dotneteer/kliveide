@@ -1,5 +1,7 @@
 import { IconDefs } from "./IconDefs";
 import { IconInfo } from "./IconInfo";
+import { ImageIconDefs } from "./ImageDefs";
+import { ImageInfo } from "./ImageInfo";
 import { IThemeProperties } from "./IThemeProperties";
 import { ITheme } from "./theme-core";
 
@@ -10,10 +12,12 @@ class ThemeService {
   private readonly _themes: ITheme[] = [];
   private _activeTheme: ITheme | null;
   private _icons = new Map<string, IconInfo>();
+  private _imageIcons = new Map<string, ImageInfo>();
   private _isWindows: boolean = false;
 
   constructor() {
     IconDefs.forEach((def) => this._icons.set(def.name, def));
+    ImageIconDefs.forEach((def) => this._imageIcons.set(def.name, def));
   }
 
   /**
@@ -60,11 +64,15 @@ class ThemeService {
   }
 
   /**
-   * Registers the specified icon information
-   * @param iconInfo Icon information
+   * Gets the specified image icon information
+   * @param name Icon name
    */
-  registerIcon(iconInfo: IconInfo): void {
-    this._icons.set(iconInfo.name, iconInfo);
+   getImageIcon(name: string): ImageInfo {
+    const iconInfo = this._imageIcons.get(name);
+    if (!iconInfo) {
+      throw new Error(`Image icon not found: '${name}'`);
+    }
+    return iconInfo;
   }
 
   /**
