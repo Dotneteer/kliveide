@@ -66,6 +66,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         checked: true,
         click: (mi) => {
           mainStore.dispatch(spectrumBeamPositionAction(mi.checked));
+          emuWindow.saveKliveProject();
         },
       },
       {
@@ -75,6 +76,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         checked: true,
         click: (mi) => {
           mainStore.dispatch(spectrumFastLoadAction(mi.checked));
+          emuWindow.saveKliveProject();
         },
       },
     ];
@@ -88,7 +90,10 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
       {
         id: SET_TAPE_FILE,
         label: "Set tape file...",
-        click: async () => await this.selectTapeFile(),
+        click: async () => {
+          await this.selectTapeFile();
+          emuWindow.saveKliveProject();
+        },
       },
     ];
   }
@@ -101,10 +106,12 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     const toggleBeam = menu.getMenuItemById(TOGGLE_BEAM);
     if (toggleBeam) {
       toggleBeam.checked = !!state.spectrumSpecific?.showBeamPosition;
+      emuWindow.saveKliveProject();
     }
     const toggleFastLoad = menu.getMenuItemById(TOGGLE_FAST_LOAD);
     if (toggleFastLoad) {
       toggleFastLoad.checked = !!state.spectrumSpecific?.fastLoad;
+      emuWindow.saveKliveProject();
     }
   }
 

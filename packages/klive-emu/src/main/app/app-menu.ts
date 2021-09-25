@@ -272,8 +272,10 @@ export function setupMenu(): void {
       label: "Show keyboard",
       type: "checkbox",
       checked: false,
-      click: (mi) =>
-        checkboxAction(mi, emuShowKeyboardAction(), emuHideKeyboardAction()),
+      click: (mi) => {
+        checkboxAction(mi, emuShowKeyboardAction(), emuHideKeyboardAction());
+        emuWindow.saveKliveProject();
+      },
     },
     { type: "separator" },
   ];
@@ -291,16 +293,20 @@ export function setupMenu(): void {
       label: "Show toolbar",
       type: "checkbox",
       checked: viewOptions.showToolbar ?? true,
-      click: (mi) =>
-        checkboxAction(mi, emuShowToolbarAction(), emuHideToolbarAction()),
+      click: (mi) => {
+        checkboxAction(mi, emuShowToolbarAction(), emuHideToolbarAction());
+        emuWindow.saveKliveProject();
+      },
     },
     {
       id: TOGGLE_STATUSBAR,
       label: "Show statusbar",
       type: "checkbox",
       checked: viewOptions.showStatusbar ?? true,
-      click: (mi) =>
-        checkboxAction(mi, emuShowStatusbarAction(), emuHideStatusbarAction()),
+      click: (mi) => {
+        checkboxAction(mi, emuShowStatusbarAction(), emuHideStatusbarAction());
+        emuWindow.saveKliveProject();
+      },
     },
     {
       id: TOGGLE_FRAMES,
@@ -313,6 +319,7 @@ export function setupMenu(): void {
         } else {
           mainStore.dispatch(emuHideFrameInfoAction());
         }
+        emuWindow.saveKliveProject();
       },
     }
   );
