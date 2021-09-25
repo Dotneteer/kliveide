@@ -31,7 +31,6 @@ export default function DocumentTabBar() {
         const segments = doc.id.split("/");
         doc.title = segments[segments.length - 1];
         documentService.fireChanges();
-        console.log(`renamed to ${doc.id}, ${doc.title}`);
         break;
       }
     }
@@ -46,7 +45,6 @@ export default function DocumentTabBar() {
         const segments = doc.id.split("/");
         doc.title = segments[segments.length - 1];
         changed = true;
-        console.log(`renamed to ${doc.id}, ${doc.title}`);
       }
     }
     if (changed) {
@@ -117,7 +115,6 @@ export default function DocumentTabBar() {
         }}
         closed={() => {
           editorService.clearState(d.id);
-          console.log("clear state of", d.id);
           documentService.unregisterDocument(d);
         }}
       />

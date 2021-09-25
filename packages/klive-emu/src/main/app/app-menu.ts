@@ -425,7 +425,6 @@ export function setupMenu(): void {
       click: () => {
         setSoundLevel(item.level);
         emuWindow.saveKliveProject();
-        console.log("sound level");
       },
     })
   );
@@ -451,7 +450,6 @@ export function setupMenu(): void {
           ` (${((i * baseClockFrequency) / 1_000_000).toFixed(4)}MHz)`,
         click: () => {
           mainStore.dispatch(emuSetClockMultiplierAction(i));
-          console.log("clock multiplier");
           emuWindow.saveKliveProject();
         },
       });
@@ -899,8 +897,6 @@ async function setProjectMachine(): Promise<void> {
     undefined,
     settings
   );
-  console.log(projectInfo.machineType);
-  console.log(JSON.stringify(settings));
 }
 
 /**

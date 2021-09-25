@@ -110,6 +110,8 @@ let lcdLabel = "640x64";
 
 // The name of the recent ROM
 let recentRomName: string | null = null;
+// The current ROM file (null, if default is used)
+let usedRomFile: string | null = null;
 // The current ROM size
 let romSize = 512;
 // The current RAM size
@@ -210,6 +212,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       click: (mi) => {
         mi.checked = true;
         recentRomSelected = false;
+        usedRomFile = null;
         const lastRomId = `${USE_ROM_FILE}_0`;
         const item = Menu.getApplicationMenu().getMenuItemById(lastRomId);
         if (item) {
@@ -221,6 +224,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
           this.requestMachine();
         }
         this.setContext();
+        emuWindow.saveKliveProject();
       },
     });
     if (recentRoms.length > 0) {
@@ -231,7 +235,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
           label: path.basename(recentRoms[i]),
           type: i === 0 ? "checkbox" : "normal",
           checked: i === 0 && recentRomSelected,
-          click: () => this.selectRecentRomItem(i),
+          click: async () => {
+            await this.selectRecentRomItem(i);
+            emuWindow.saveKliveProject();
+          },
         });
       }
     }
@@ -240,7 +247,10 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
       {
         id: SELECT_ROM_FILE,
         label: "Select ROM file...",
-        click: async () => await this.selectRomFileToUse(),
+        click: async () => {
+          await this.selectRomFileToUse();
+          emuWindow.saveKliveProject();
+        },
       }
     );
     return [
@@ -442,7 +452,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     return {
       lcd: lcdLabel,
       kbLayout,
-      romFile: recentRoms.length > 0 ? recentRoms[0] : null,
+      romFile: usedRomFile,
       clockMultiplier: state.clockMultiplier,
       soundLevel: state.soundLevel,
       muted: state.muted,
@@ -616,6 +626,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     if (recentFileIdx >= 0) {
       recentRoms.splice(recentFileIdx, 1);
     }
+    usedRomFile = filename;
     recentRoms.unshift(filename);
     recentRoms.splice(4);
 
@@ -736,12 +747,12 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Selects one of the recent ROM items
    * @param idx Selected ROM index
    */
-  private selectRecentRomItem(idx: number): void {
+  private async selectRecentRomItem(idx: number): Promise<void> {
     if (idx < 0 || idx >= recentRoms.length) {
       return;
     }
 
-    this.selectRomFileToUse(recentRoms[idx]);
+    await this.selectRomFileToUse(recentRoms[idx]);
   }
 
   /**

@@ -108,7 +108,6 @@ export default class EditorDocument extends React.Component<Props, State> {
     this._editor = editor;
     const state = editorService.loadState(this.props.descriptor.id);
     if (state) {
-      console.log("Editor state found", this.props.descriptor.id, state);
       this._editor.setValue(state.text);
       this._editor.restoreViewState(state.viewState);
     }
@@ -155,7 +154,6 @@ export default class EditorDocument extends React.Component<Props, State> {
         text: this._editor.getValue(),
         viewState: this._editor.saveViewState(),
       });
-      console.log(`editor state saved ${this.props.descriptor.id}`);
       if (this._unsavedChangeCounter > 0) {
         await this.saveDocument(text);
       }
