@@ -108,8 +108,6 @@ const z88Links: LinkDescriptor[] = [
 let recentLcdType = machineIdFromMenuId(Z88_640_64);
 let lcdLabel = "640x64";
 
-// The name of the recent ROM
-let recentRomName: string | null = null;
 // The current ROM file (null, if default is used)
 let usedRomFile: string | null = null;
 // The current ROM size
@@ -187,7 +185,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    */
   getMachineContextDescription(): string {
     return `Screen: ${lcdLabel}, ROM: ${
-      recentRomName ?? DEFAULT_ROM
+      usedRomFile ? path.basename(usedRomFile) : DEFAULT_ROM
     } (${romSize}KB), RAM: ${ramSize}KB`;
   }
 
@@ -219,7 +217,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
           item.checked = false;
         }
         if (recentOptions?.firmware) {
-          recentRomName = null;
           recentOptions = { ...recentOptions, firmware: undefined };
           this.requestMachine();
         }
@@ -631,7 +628,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     recentRoms.splice(4);
 
     // --- Now set the ROM name and refresh the menu
-    recentRomName = path.basename(filename);
     recentRomSelected = true;
     setupMenu();
 
