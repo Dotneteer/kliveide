@@ -4,7 +4,9 @@ import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import { editorService } from "../editor/editorService";
 import { FileChange, projectServices } from "../explorer-tools/ProjectServices";
+import { ideStore } from "../ideStore";
 import { IDocumentPanel } from "./DocumentFactory";
+import { ProjectState } from "../../../shared/state/AppState";
 
 import { documentService, DocumentsInfo } from "./DocumentService";
 import DocumentTab from "./DocumentTab";
@@ -77,6 +79,16 @@ export default function DocumentTabBar() {
     }
   };
 
+  // --- Close open documents whenever the project is closed
+  const projectChanged = (projectState: ProjectState) => {
+    if (!projectState.isLoading && !projectState.path) {
+      currentDocs
+        .slice(0)
+        .forEach((doc) => documentService.unregisterDocument(doc));
+      setCurrentDocs(documentService.getDocuments());
+    }
+  };
+
   useEffect(() => {
     // --- Mount
     setCurrentDocs(documentService.getDocuments());
@@ -86,6 +98,7 @@ export default function DocumentTabBar() {
     projectServices.fileRenamed.on(fileRenamed);
     projectServices.folderRenamed.on(folderRenamed);
     projectServices.fileDeleted.on(fileDeleted);
+    ideStore.projectChanged.on(projectChanged);
 
     return () => {
       // --- Unmount
@@ -94,6 +107,7 @@ export default function DocumentTabBar() {
       projectServices.folderRenamed.off(folderRenamed);
       projectServices.fileDeleted.off(fileDeleted);
       projectServices.folderDeleted.off(folderDeleted);
+      ideStore.projectChanged.off(projectChanged);
     };
   });
 
