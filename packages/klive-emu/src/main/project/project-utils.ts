@@ -12,6 +12,7 @@ import {
   projectLoadingAction,
 } from "../../shared/state/project-reducer";
 import { KliveProject } from "../main-state/klive-configuration";
+import { emuWindow, setupMenu } from "../app/app-menu";
 
 /**
  * Name of the project file within the project directory
@@ -43,6 +44,10 @@ export async function openProject(projectPath: string): Promise<void> {
   mainStore.dispatch(
     projectOpenedAction(projectPath, projectName, hasVm, directoryContents)
   );
+  if (project?.machineType) {
+    await emuWindow.requestMachineType(project.machineType, undefined, project);
+    setupMenu();
+  }
 }
 
 /**

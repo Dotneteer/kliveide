@@ -240,7 +240,9 @@ export function setupMenu(): void {
         id: CLOSE_FOLDER,
         label: "Close folder",
         enabled: !!mainStore.getState()?.project?.path,
-        click: () => mainStore.dispatch(closeProjectAction()),
+        click: () => {
+          mainStore.dispatch(closeProjectAction());
+        },
       },
       { type: "separator" },
       __DARWIN__ ? { role: "close" } : { role: "quit" },
@@ -270,8 +272,10 @@ export function setupMenu(): void {
       label: "Show keyboard",
       type: "checkbox",
       checked: false,
-      click: (mi) =>
-        checkboxAction(mi, emuShowKeyboardAction(), emuHideKeyboardAction()),
+      click: (mi) => {
+        checkboxAction(mi, emuShowKeyboardAction(), emuHideKeyboardAction());
+        emuWindow.saveKliveProject();
+      },
     },
     { type: "separator" },
   ];
@@ -289,16 +293,20 @@ export function setupMenu(): void {
       label: "Show toolbar",
       type: "checkbox",
       checked: viewOptions.showToolbar ?? true,
-      click: (mi) =>
-        checkboxAction(mi, emuShowToolbarAction(), emuHideToolbarAction()),
+      click: (mi) => {
+        checkboxAction(mi, emuShowToolbarAction(), emuHideToolbarAction());
+        emuWindow.saveKliveProject();
+      },
     },
     {
       id: TOGGLE_STATUSBAR,
       label: "Show statusbar",
       type: "checkbox",
       checked: viewOptions.showStatusbar ?? true,
-      click: (mi) =>
-        checkboxAction(mi, emuShowStatusbarAction(), emuHideStatusbarAction()),
+      click: (mi) => {
+        checkboxAction(mi, emuShowStatusbarAction(), emuHideStatusbarAction());
+        emuWindow.saveKliveProject();
+      },
     },
     {
       id: TOGGLE_FRAMES,
@@ -311,6 +319,7 @@ export function setupMenu(): void {
         } else {
           mainStore.dispatch(emuHideFrameInfoAction());
         }
+        emuWindow.saveKliveProject();
       },
     }
   );
@@ -404,12 +413,13 @@ export function setupMenu(): void {
       enabled: value.active ?? true,
       click: async (mi) => {
         try {
+          const machineType = mi.id.split("_")[1];
+          await emuWindow.requestMachineType(machineType);
           emuWindow.saveAppSettings();
+          emuWindow.saveKliveProject();
         } catch {
           // --- Intentionally ignored
         }
-        const machineType = mi.id.split("_")[1];
-        await emuWindow.requestMachineType(machineType);
       },
     });
   }
@@ -740,7 +750,6 @@ export function processStateChange(fullState: AppState): void {
     // --- Current machine types has changed
     lastMachineType = fullState.machineType;
     setupMenu();
-    emuWindow.saveKliveProject();
   }
 
   // --- Sound level has changed
@@ -748,7 +757,6 @@ export function processStateChange(fullState: AppState): void {
     lastSoundLevel = emuState.soundLevel;
     lastMuted = emuState.muted;
     setSoundLevelMenu(lastMuted, lastSoundLevel);
-    emuWindow.saveKliveProject();
   }
 
   // --- Take care that custom machine menus are updated
@@ -870,6 +878,7 @@ function menuIdFromMachineId(machineId: string): string {
  */
 async function openIdeWindow(): Promise<void> {
   mainStore.dispatch(ideShowAction());
+  await new Promise(r => setTimeout(r, 200));
   await ideMessenger.sendMessage({
     type: "SyncMainState",
     mainState: { ...mainStore.getState() },

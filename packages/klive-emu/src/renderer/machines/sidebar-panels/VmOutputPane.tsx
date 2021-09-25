@@ -11,6 +11,8 @@ import { engineProxy } from "../../ide/engine-proxy";
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";
 
+let eventCount = 0;
+
 /**
  * Descriptor for the sample side bar panel
  */
@@ -29,7 +31,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
         const buffer = pane.buffer;
         buffer.resetColor();
         buffer.writeLine();
-        buffer.write("Virtual machine model changed to ");
+        buffer.write("--> Virtual machine model: ");
         buffer.bold(true);
         buffer.color("bright-blue");
         buffer.write(type);
@@ -83,15 +85,39 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
           }
         }
 
-        // --- Check clock frequency changes
+        // --- Check clock multiplier changes
         if (
-          this._lastEmuState?.clockMultiplier !== emuPanel.clockMultiplier &&
-          emuPanel.clockMultiplier &&
-          emuPanel.baseClockFrequency
+          (this._lastEmuState?.clockMultiplier !== emuPanel.clockMultiplier &&
+            emuPanel.clockMultiplier &&
+            emuPanel.baseClockFrequency) ||
+          !eventCount
         ) {
           displayEntry(
             buffer,
-            "CPU frequency: ",
+            "Clock multiplier: ",
+            "bright-magenta",
+            `${emuPanel.clockMultiplier}`
+          );
+        }
+
+        // --- Check clock frequency changes
+        if (
+          (this._lastEmuState?.baseClockFrequency &&
+            this._lastEmuState.baseClockFrequency !==
+              emuPanel.baseClockFrequency &&
+            emuPanel.clockMultiplier &&
+            emuPanel.baseClockFrequency) ||
+          !eventCount
+        ) {
+          displayEntry(
+            buffer,
+            "Base clock frequency: ",
+            "bright-magenta",
+            `${(emuPanel.baseClockFrequency / 1000000).toFixed(4)}Mhz`
+          );
+          displayEntry(
+            buffer,
+            "Clock frequency: ",
             "bright-magenta",
             `${(
               (emuPanel.baseClockFrequency * emuPanel.clockMultiplier) /
@@ -120,19 +146,21 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
           );
         }
 
-        if (this._lastEmuState?.keyboardLayout !== emuPanel.keyboardLayout) {
-          if (this._lastEmuState?.soundLevel !== emuPanel.soundLevel) {
-            displayEntry(
-              buffer,
-              "Keyboard: ",
-              "bright-magenta",
-              emuPanel.keyboardLayout
-            );
-          }
+        if (
+          this._lastEmuState?.keyboardLayout !== emuPanel.keyboardLayout &&
+          emuPanel.keyboardLayout
+        ) {
+          displayEntry(
+            buffer,
+            "Keyboard: ",
+            "bright-magenta",
+            emuPanel.keyboardLayout
+          );
         }
       }
 
       this._lastEmuState = { ...emuPanel };
+      eventCount++;
 
       // --- Get the current PC value
       async function getPcInfo(): Promise<string> {

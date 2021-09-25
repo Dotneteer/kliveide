@@ -11,7 +11,7 @@ import {
   spectrumFastLoadAction,
   spectrumTapeContentsAction,
 } from "../../shared/state/spectrum-specific-reducer";
-import { emuSetClockMultiplierAction } from "../../shared/state/emulator-panel-reducer";
+import { emuSetClockMultiplierAction, emuSetKeyboardLayoutAction } from "../../shared/state/emulator-panel-reducer";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
 import {
   emuWindow,
@@ -47,6 +47,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    */
   constructor(options?: Record<string, any>) {
     super(options);
+    mainStore.dispatch(emuSetKeyboardLayoutAction(""));
   }
 
   /**
@@ -66,6 +67,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         checked: true,
         click: (mi) => {
           mainStore.dispatch(spectrumBeamPositionAction(mi.checked));
+          emuWindow.saveKliveProject();
         },
       },
       {
@@ -75,6 +77,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         checked: true,
         click: (mi) => {
           mainStore.dispatch(spectrumFastLoadAction(mi.checked));
+          emuWindow.saveKliveProject();
         },
       },
     ];
@@ -88,7 +91,10 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
       {
         id: SET_TAPE_FILE,
         label: "Set tape file...",
-        click: async () => await this.selectTapeFile(),
+        click: async () => {
+          await this.selectTapeFile();
+          emuWindow.saveKliveProject();
+        },
       },
     ];
   }

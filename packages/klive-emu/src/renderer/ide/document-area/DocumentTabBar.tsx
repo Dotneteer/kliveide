@@ -2,6 +2,7 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
+import { editorService } from "../editor/editorService";
 import { FileChange, projectServices } from "../explorer-tools/ProjectServices";
 import { IDocumentPanel } from "./DocumentFactory";
 
@@ -30,7 +31,6 @@ export default function DocumentTabBar() {
         const segments = doc.id.split("/");
         doc.title = segments[segments.length - 1];
         documentService.fireChanges();
-        console.log(`renamed to ${doc.id}, ${doc.title}`);
         break;
       }
     }
@@ -45,7 +45,6 @@ export default function DocumentTabBar() {
         const segments = doc.id.split("/");
         doc.title = segments[segments.length - 1];
         changed = true;
-        console.log(`renamed to ${doc.id}, ${doc.title}`);
       }
     }
     if (changed) {
@@ -115,6 +114,7 @@ export default function DocumentTabBar() {
           }
         }}
         closed={() => {
+          editorService.clearState(d.id);
           documentService.unregisterDocument(d);
         }}
       />
