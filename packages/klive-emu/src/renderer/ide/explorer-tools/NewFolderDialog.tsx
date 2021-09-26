@@ -5,7 +5,6 @@ import {
 } from "../../common-ui/modal-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { ideStore } from "../ideStore";
 import { NewFileData } from "../../../shared/messaging/dto";
 import { Store } from "redux";
 import {
@@ -17,6 +16,7 @@ import {
 } from "../../common-ui/FormElements";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileExistsResponse } from "../../../shared/messaging/message-types";
+import { getStore } from "../../../shared/services/store-helpers";
 
 export const NEW_FOLDER_DIALOG_ID = "NewFolderDialog";
 
@@ -37,7 +37,7 @@ class NewFolderDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const folder = this._result as NewFileData;
     if (!folder.error) {
-      modalDialogService.hide(ideStore as Store, this._result);
+      modalDialogService.hide(getStore() as Store, this._result);
     }
   };
 

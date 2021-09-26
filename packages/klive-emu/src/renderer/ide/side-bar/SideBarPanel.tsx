@@ -7,7 +7,7 @@ import { ISideBarPanel, sideBarService } from "./SideBarService";
 import { MenuItem } from "../../../shared/command/commands";
 import { contextMenuService } from "../context-menu/ContextMenuService";
 import { AppState } from "../../../shared/state/AppState";
-import { ideStore } from "../ideStore";
+import { getStore } from "../../../main/main-state/main-store";
 
 /**
  * Component properties
@@ -72,9 +72,9 @@ export default function SideBarPanel({
   };
 
   useEffect(() => {
-    ideStore.stateChanged.on(onStateChange);
+    getStore().stateChanged.on(onStateChange);
     return () => {
-      ideStore.stateChanged.off(onStateChange);
+      getStore().stateChanged.off(onStateChange);
     }
   });
 

@@ -8,11 +8,11 @@ import {
 import { AppState } from "../../../shared/state/AppState";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { ideStore } from "../ideStore";
 import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
+import { dispatch } from "../../../shared/services/store-helpers";
 
 /**
  * Represents the statusbar of the emulator
@@ -147,13 +147,13 @@ function ToolCommandBar() {
         iconName={maximized ? "chevron-down" : "chevron-up"}
         title={maximized ? "Restore panel size" : "Maximize panel size"}
         clicked={() =>
-          ideStore.dispatch(ideToolFrameMaximizeAction(!maximized))
+          dispatch(ideToolFrameMaximizeAction(!maximized))
         }
       />
       <CommandIconButton
         iconName="close"
         title="Close"
-        clicked={() => ideStore.dispatch(ideToolFrameShowAction(false))}
+        clicked={() => dispatch(ideToolFrameShowAction(false))}
       />
     </div>
   );

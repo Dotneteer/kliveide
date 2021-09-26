@@ -10,6 +10,10 @@ import { AppState, getInitialAppState } from "../../shared/state/AppState";
 import { IpcRendereApi } from "../../exposed-apis";
 import { ForwardActionRequest } from "../../shared/messaging/message-types";
 import { KliveStore } from "../../shared/state/KliveStore";
+import {
+  registerService,
+  STORE_SERVICE,
+} from "../../shared/services/service-registry";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -24,9 +28,7 @@ let isForwarding = false;
  * This middleware function forwards the action originated in the main process
  * to the renderer processes of browser windows.
  */
-const forwardToMainMiddleware = () => (next: any) => (
-  action: KliveAction
-) => {
+const forwardToMainMiddleware = () => (next: any) => (action: KliveAction) => {
   if (!isForwarding) {
     forwarder.forwardAction(action);
   }
@@ -36,25 +38,30 @@ const forwardToMainMiddleware = () => (next: any) => (
 const appReducer = combineReducers(appReducers);
 const rootReducer = (state: AppState, action: KliveAction) => {
   if (action.type === "IDE_SYNC") {
-    return appReducer({...action.payload.appState} as any, action)
+    return appReducer({ ...action.payload.appState } as any, action);
   }
   return appReducer(state as any, action);
-}
+};
 
 /**
  * Represents the emuStore replica of the app state
  */
-export const ideStore = new KliveStore(createStore(
-  rootReducer,
-  getInitialAppState(),
-  applyMiddleware(forwardToMainMiddleware)
-));
+export const ideStore = new KliveStore(
+  createStore(
+    rootReducer,
+    getInitialAppState(),
+    applyMiddleware(forwardToMainMiddleware)
+  )
+);
 
-ipcRenderer.on(RENDERER_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
-  isForwarding = true;
-  try {
-    ideStore.dispatch(msg.action);
-  } finally {
-    isForwarding = false;
+ipcRenderer.on(
+  RENDERER_STATE_REQUEST_CHANNEL,
+  (_ev, msg: ForwardActionRequest) => {
+    isForwarding = true;
+    try {
+      ideStore.dispatch(msg.action);
+    } finally {
+      isForwarding = false;
+    }
   }
-});
+);

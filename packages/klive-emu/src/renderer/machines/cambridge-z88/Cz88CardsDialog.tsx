@@ -18,7 +18,7 @@ import { useState } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
 import { Store } from "redux";
-import { getStore } from "../../emulator/emuStore";
+import { getStore } from "../../../shared/services/store-helpers";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog

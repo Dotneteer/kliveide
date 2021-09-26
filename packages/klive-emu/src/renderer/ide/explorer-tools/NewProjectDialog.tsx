@@ -7,7 +7,6 @@ import {
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
-import { ideStore } from "../ideStore";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { GetFolderDialogResponse } from "../../../shared/messaging/message-types";
@@ -20,6 +19,7 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
+import { getState, getStore } from "../../../shared/services/store-helpers";
 
 export const NEW_PROJECT_DIALOG_ID = "NewProjectDialog";
 
@@ -37,7 +37,7 @@ class NewProjectDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const project = this._result as NewProjectData;
     if (project.projectName) {
-      modalDialogService.hide(ideStore as Store, this._result);
+      modalDialogService.hide(getStore() as Store, this._result);
     }
   };
 
@@ -66,7 +66,7 @@ const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
     flexDirection: "column",
   };
 
-  const machines = ideStore.getState().machines;
+  const machines = getState().machines;
   newProjectData.machineType = machines[0].id;
   return (
     <div style={containerStyle}>

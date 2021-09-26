@@ -37,7 +37,7 @@ import {
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
 import { Store } from "redux";
-import { getStore } from "../../emulator/emuStore";
+import { getStore } from "../../../shared/services/store-helpers";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 

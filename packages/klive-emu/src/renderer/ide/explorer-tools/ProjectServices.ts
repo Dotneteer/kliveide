@@ -6,7 +6,7 @@ import { DirectoryContent } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { FileOperationResponse } from "../../../shared/messaging/message-types";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { ideStore } from "../ideStore";
+import { getStore } from "../../../shared/services/store-helpers";
 
 /**
  * This class implements the project services
@@ -22,7 +22,7 @@ class ProjectServices {
 
   constructor() {
     // --- Close the project tree whenever the project is closed
-    ideStore.projectChanged.on(ps => {
+    getStore().projectChanged.on(ps => {
       if (!ps.path || !ps.hasVm) {
         this.closeProjectTree();
       }

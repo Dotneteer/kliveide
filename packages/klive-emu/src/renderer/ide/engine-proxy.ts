@@ -6,8 +6,8 @@ import {
   GetMemoryContentsResponse,
 } from "../../shared/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
-import { ideStore } from "./ideStore";
 import { MachineState } from "../machines/core/vm-core-types";
+import { getStore } from "../../shared/services/store-helpers";
 
 /**
  * Dealy time between two timed run events
@@ -31,7 +31,7 @@ class EngineProxy {
    * Initializes the engine proxy
    */
   constructor() {
-    ideStore.emulatorPanelChanged.on(async (emuPanel) => {
+    getStore().emulatorPanelChanged.on(async (emuPanel) => {
       if (this._lastExecutionState !== emuPanel.executionState) {
         this._lastExecutionState = emuPanel.executionState;
         this.clearCache();

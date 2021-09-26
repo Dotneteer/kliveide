@@ -5,7 +5,6 @@ import {
 } from "../../common-ui/modal-service";
 import { useRef, useState } from "react";
 import { CSSProperties } from "styled-components";
-import { ideStore } from "../ideStore";
 import { Store } from "redux";
 import {
   ErrorLabel,
@@ -17,6 +16,7 @@ import {
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileExistsResponse } from "../../../shared/messaging/message-types";
 import { NewFileData } from "../../../shared/messaging/dto";
+import { getStore } from "../../../shared/services/store-helpers";
 
 export const RENAME_FOLDER_DIALOG_ID = "RenameFolderDialog";
 
@@ -37,7 +37,7 @@ class RenameFolderDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const file = this._result as NewFileData;
     if (!file.error) {
-      modalDialogService.hide(ideStore as Store, this._result);
+      modalDialogService.hide(getStore() as Store, this._result);
     }
   };
 

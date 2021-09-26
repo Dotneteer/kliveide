@@ -4,12 +4,12 @@ import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import { editorService } from "../editor/editorService";
 import { FileChange, projectServices } from "../explorer-tools/ProjectServices";
-import { ideStore } from "../ideStore";
 import { IDocumentPanel } from "./DocumentFactory";
 import { ProjectState } from "../../../shared/state/AppState";
 
 import { documentService, DocumentsInfo } from "./DocumentService";
 import DocumentTab from "./DocumentTab";
+import { getStore } from "../../../shared/services/store-helpers";
 
 /**
  * Represents the statusbar of the emulator
@@ -98,7 +98,7 @@ export default function DocumentTabBar() {
     projectServices.fileRenamed.on(fileRenamed);
     projectServices.folderRenamed.on(folderRenamed);
     projectServices.fileDeleted.on(fileDeleted);
-    ideStore.projectChanged.on(projectChanged);
+    getStore().projectChanged.on(projectChanged);
 
     return () => {
       // --- Unmount
@@ -107,7 +107,7 @@ export default function DocumentTabBar() {
       projectServices.folderRenamed.off(folderRenamed);
       projectServices.fileDeleted.off(fileDeleted);
       projectServices.folderDeleted.off(folderDeleted);
-      ideStore.projectChanged.off(projectChanged);
+      getStore().projectChanged.off(projectChanged);
     };
   });
 

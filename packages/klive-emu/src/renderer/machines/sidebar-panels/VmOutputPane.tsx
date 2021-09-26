@@ -1,4 +1,3 @@
-import { ideStore } from "../../ide/ideStore";
 import { EmulatorPanelState } from "../../../shared/state/AppState";
 import {
   IOutputBuffer,
@@ -7,6 +6,7 @@ import {
   outputPaneService,
 } from "../../ide/tool-area/OutputPaneService";
 import { engineProxy } from "../../ide/engine-proxy";
+import { getStore } from "../../../shared/services/store-helpers";
 
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";
@@ -22,7 +22,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
 
   constructor() {
     super(ID, TITLE);
-    ideStore.machineTypeChanged.on((type) => {
+    getStore().machineTypeChanged.on((type) => {
       // --- Change the execution state to "none" whenever the machine type changes
       this._isMachineTypeSet = true;
       this._lastEmuState = null;
@@ -39,7 +39,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
         buffer.resetColor();
       }
     });
-    ideStore.emulatorPanelChanged.on(async (emuPanel: EmulatorPanelState) => {
+    getStore().emulatorPanelChanged.on(async (emuPanel: EmulatorPanelState) => {
       if (!this._isMachineTypeSet) {
         return;
       }

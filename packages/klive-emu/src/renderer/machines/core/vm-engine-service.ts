@@ -23,7 +23,7 @@ import {
 import { FrameDiagData } from "../../../shared/state/AppState";
 import { CambridgeZ88Core } from "../cambridge-z88/CambridgeZ88Core";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
-import { dispatch, getState } from "../../emulator/emuStore";
+import { dispatch, getState } from "../../../shared/services/store-helpers";
 
 /**
  * This class is responsible for controlling the singleton virtual machine

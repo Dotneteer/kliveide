@@ -40,7 +40,7 @@ import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
 import { virtualMachineToolsService } from "../machines/core/VitualMachineToolBase";
 import { ZxSpectrum48Tools } from "../machines/zx-spectrum/ZxSpectrum48Core";
 import { CambridgeZ88Tools } from "../machines/cambridge-z88/CambridgeZ88Core";
-import { ideStore } from "./ideStore";
+import { getStore, getState } from "../../shared/services/store-helpers";
 import { modalDialogService } from "../common-ui/modal-service";
 import {
   newProjectDialog,
@@ -153,7 +153,7 @@ export default function IdeApp() {
   const [documentFrameVisible, setDocumentFrameVisible] = useState(true);
   const [toolFrameVisible, setToolFrameVisible] = useState(true);
   const [showStatusBar, setShowStatusBar] = useState(
-    ideStore.getState()?.emuViewOptions?.showStatusBar ?? false
+    getState()?.emuViewOptions?.showStatusBar ?? false
   );
 
   useEffect(() => {
@@ -184,10 +184,10 @@ export default function IdeApp() {
       dispatch(ideLoadUiAction());
       updateThemeState();
 
-      ideStore.themeChanged.on(themeChanged);
-      ideStore.isWindowsChanged.on(isWindowsChanged);
-      ideStore.emuViewOptionsChanged.on(viewOptionsChanged);
-      ideStore.toolFrameChanged.on(toolFrameChanged);
+      getStore().themeChanged.on(themeChanged);
+      getStore().isWindowsChanged.on(isWindowsChanged);
+      getStore().emuViewOptionsChanged.on(viewOptionsChanged);
+      getStore().toolFrameChanged.on(toolFrameChanged);
 
       // --- Set up activities
       const activities: Activity[] = [
@@ -327,10 +327,10 @@ export default function IdeApp() {
     }
     return () => {
       // --- Unsubscribe
-      ideStore.toolFrameChanged.off(toolFrameChanged);
-      ideStore.emuViewOptionsChanged.off(viewOptionsChanged);
-      ideStore.isWindowsChanged.off(isWindowsChanged);
-      ideStore.themeChanged.off(themeChanged);
+      getStore().toolFrameChanged.off(toolFrameChanged);
+      getStore().emuViewOptionsChanged.off(viewOptionsChanged);
+      getStore().isWindowsChanged.off(isWindowsChanged);
+      getStore().themeChanged.off(themeChanged);
     };
   }, [store]);
 
@@ -340,7 +340,7 @@ export default function IdeApp() {
 
   // --- Take care of resizing IdeApp whenever the window size changes
   useLayoutEffect(() => {
-    const _onResize = () => onResize();
+    const _onResize = async () => onResize();
     window.addEventListener("resize", _onResize);
 
     // --- Recognize when both Frames are visible so that their dimensions

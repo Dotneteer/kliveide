@@ -3,7 +3,7 @@ import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
 import { AppState, SideBarState } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { activityService } from "../activity-bar/ActivityService";
-import { ideStore } from "../ideStore";
+import { dispatch, getState, getStore } from "../../../shared/services/store-helpers";
 
 /**
  * Represents an abstract side bar panel
@@ -152,7 +152,7 @@ class SideBarService {
 
   constructor() {
     this.reset();
-    ideStore.machineTypeChanged.on((type) => {
+    getStore().machineTypeChanged.on((type) => {
       this._machineType = type;
       this._sideBarChanging.fire();
       this.refreshCurrentPanels();
@@ -331,16 +331,16 @@ class SideBarService {
       state[`${this.activity}-${i}`] = panel.getPanelState() ?? {};
     }
     if (this.activity) {
-      const fullState = Object.assign({}, ideStore.getState().sideBar ?? {}, {
+      const fullState = Object.assign({}, getState().sideBar ?? {}, {
         [this.activity]: state,
       });
-      ideStore.dispatch(setSideBarStateAction(fullState));
+      dispatch(setSideBarStateAction(fullState));
     }
   }
 
   private applySideBarState(): void {
     const panels = this._currentPanels;
-    const sideBarState = (ideStore.getState().sideBar ?? {})[this.activity];
+    const sideBarState = (getState().sideBar ?? {})[this.activity];
     for (let i = 0; i < panels.length; i++) {
       const panel = panels[i];
       const panelState = sideBarState?.[`${this.activity}-${i}`];

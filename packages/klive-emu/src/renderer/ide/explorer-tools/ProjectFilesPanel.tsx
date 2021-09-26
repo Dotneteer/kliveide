@@ -9,7 +9,6 @@ import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
 import { CommonIcon } from "../../common-ui/CommonIcon";
-import { ideStore } from "../ideStore";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "../../../shared/command/commands";
@@ -27,7 +26,7 @@ import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { documentService } from "../document-area/DocumentService";
-import { template } from "lodash";
+import { getState, getStore } from "../../../shared/services/store-helpers";
 
 type State = {
   itemsCount: number;
@@ -60,11 +59,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     this.setState({
       itemsCount: this.itemsCount,
     });
-    ideStore.projectChanged.on(this._onProjectChange);
+    getStore().projectChanged.on(this._onProjectChange);
   }
 
   componentWillUnmount(): void {
-    ideStore.projectChanged.off(this._onProjectChange);
+    getStore().projectChanged.off(this._onProjectChange);
   }
 
   /**
@@ -514,7 +513,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   async newFolder(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
     const folderData = (await modalDialogService.showModalDialog(
-      ideStore as Store,
+      getStore() as Store,
       NEW_FOLDER_DIALOG_ID,
       {
         root: node.nodeData.fullPath,
@@ -571,7 +570,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   async newFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
     const fileData = (await modalDialogService.showModalDialog(
-      ideStore as Store,
+      getStore() as Store,
       NEW_FILE_DIALOG_ID,
       {
         root: node.nodeData.fullPath,
@@ -704,7 +703,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       node.nodeData.fullPath.length - node.nodeData.name.length - 1
     );
     const fileData = (await modalDialogService.showModalDialog(
-      ideStore as Store,
+      getStore() as Store,
       isFolder ? RENAME_FOLDER_DIALOG_ID : RENAME_FILE_DIALOG_ID,
       {
         root: oldPath,
@@ -760,7 +759,7 @@ export class ProjectFilesPanelDescriptor extends SideBarPanelDescriptorBase {
    * Panel title
    */
   get title(): string {
-    const projectState = ideStore.getState().project;
+    const projectState = getState().project;
     return projectState?.projectName
       ? `${projectState.projectName}${projectState?.hasVm ? "" : " (No VM)"}`
       : "No project opened";

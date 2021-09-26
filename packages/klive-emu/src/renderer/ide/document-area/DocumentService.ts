@@ -1,7 +1,7 @@
+import { dispatch, getState } from "../../../shared/services/store-helpers";
 import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
-import { ideStore } from "../ideStore";
 import { CodeEditorFactory } from "./CodeEditorFactory";
 import {
   CodeEditorInfo,
@@ -209,12 +209,12 @@ class DocumentService {
     if (this._activeDocument) {
       const fullState = Object.assign(
         {},
-        ideStore.getState().documentFrame ?? {},
+        getState().documentFrame ?? {},
         {
           [this._activeDocument.id]: this._activeDocument.getPanelState(),
         }
       );
-      ideStore.dispatch(setDocumentFrameStateAction(fullState));
+      dispatch(setDocumentFrameStateAction(fullState));
     }
 
     // --- Invoke custom action
@@ -244,7 +244,7 @@ class DocumentService {
     doc.active = true;
 
     // --- Load the state of the active document
-    const documentsState = ideStore.getState().documentFrame ?? {};
+    const documentsState = getState().documentFrame ?? {};
     const documentState = documentsState?.[this._activeDocument.id];
     if (documentState) {
       this._activeDocument.setPanelState(documentState);

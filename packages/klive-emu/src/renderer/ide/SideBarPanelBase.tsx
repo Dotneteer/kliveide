@@ -2,9 +2,9 @@ import * as React from "react";
 import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../common-ui/ScrollablePanel";
 import { engineProxy, RunEventArgs } from "./engine-proxy";
-import { ideStore } from "./ideStore";
 import { ISideBarPanel } from "./side-bar/SideBarService";
 import { scrollableContentType } from "./utils/content-utils";
+import { getState } from "../../shared/services/store-helpers";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;
@@ -43,7 +43,7 @@ export class SideBarPanelBase<
   componentDidMount(): void {
     engineProxy.runEvent.on(this.runEvent);
     this.setState({
-      hasMachine: !!ideStore.getState()?.emulatorPanel?.executionState as any,
+      hasMachine: !!getState()?.emulatorPanel?.executionState as any,
       selectedIndex: -1 as any,
     });
   }
@@ -65,7 +65,7 @@ export class SideBarPanelBase<
       this.props.descriptor.expanded
     ) {
       this._initialized = true;
-      const emuPanelState = ideStore.getState()?.emulatorPanel;
+      const emuPanelState = getState()?.emulatorPanel;
       const hasMachine = !!emuPanelState?.executionState;
       if (hasMachine) {
         this.onRunEvent(

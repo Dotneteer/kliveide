@@ -4,7 +4,7 @@ import {
 } from "../../../shared/state/activity-bar-reducer";
 import { Activity } from "../../../shared/activity/Activity";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { ideStore } from "../ideStore";
+import { dispatch, getState, getStore } from "../../../shared/services/store-helpers";
 import { ActivityBarState } from "../../../shared/state/AppState";
 
 /**
@@ -17,7 +17,8 @@ class ActivityService {
 
   constructor() {
     this._lastActivityIndex = -1;
-    ideStore.activityBarChanged.on((state) => {
+    getStore().activityBarChanged.on((state) => {
+      //console.log(state);
       // --- Keep trach of changing the activity index
       const activityBarState = state as ActivityBarState;
       this._activities = activityBarState.activities;
@@ -40,7 +41,7 @@ class ActivityService {
    * Gets the curent activity
    */
   get activeActivity(): Activity | null {
-    const currentActivity = ideStore.getState().activityBar?.activeIndex ?? -1;
+    const currentActivity = getState().activityBar?.activeIndex ?? -1;
     if (!this._activities || currentActivity < 0) {
       return null;
     }
@@ -48,11 +49,11 @@ class ActivityService {
   }
 
   selectActivity(index: number): void {
-    ideStore.dispatch(changeActivityAction(index));
+    dispatch(changeActivityAction(index));
   }
 
   pointActivity(index: number): void {
-    ideStore.dispatch(pointActivityAction(index));
+    dispatch(pointActivityAction(index));
   }
 }
 

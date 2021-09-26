@@ -1,4 +1,4 @@
-import { getState } from "../../emulator/emuStore";
+import { getState } from "../../../shared/services/store-helpers";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
 
 export class CambridgeZ88StateManager implements ICambridgeZ88StateManager {
