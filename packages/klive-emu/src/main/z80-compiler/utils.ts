@@ -125,7 +125,7 @@ enum StrParseState {
  * @param filename File name
  * @param Handles UTF-8 with and without BOM header
  */
-export function readTextFile(filename: string): string {
+ export function readTextFile(filename: string): string {
   const sourceText = fs.readFileSync(filename, "utf8");
   if (sourceText.length < 4) {
     return sourceText;
