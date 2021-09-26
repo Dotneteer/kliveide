@@ -8,11 +8,11 @@ import {
 import { useSelector } from "react-redux";
 import { AppState } from "../../shared/state/AppState";
 import EmulatorPanel from "./EmulatorPanel";
-import { emuStore } from "./emuStore";
 import KeyboardPanel from "./KeyboardPanel";
 import { vmEngineService } from "../machines/core/vm-engine-service";
 import { emuKeyboardHeightAction } from "../../shared/state/emulator-panel-reducer";
 import styles from "styled-components";
+import { dispatch } from "./emuStore";
 
 /**
  * Represents the main canvas of the emulator
@@ -44,7 +44,7 @@ export default function MainPanel() {
   const handleResizing = (children: number[]) => {
     if (children.length > 0) {
       const height = children[children.length - 1];
-      emuStore.dispatch(emuKeyboardHeightAction(height));
+      dispatch(emuKeyboardHeightAction(height));
     }
   };
 

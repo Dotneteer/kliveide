@@ -12,7 +12,6 @@ import {
   MachineCreationOptions,
   MachineState,
 } from "./vm-core-types";
-import { emuStore } from "../../emulator/emuStore";
 import { IVmController } from "./IVmController";
 import { EmulatedKeyStroke } from "./keyboard";
 import {
@@ -24,6 +23,7 @@ import {
 import { FrameDiagData } from "../../../shared/state/AppState";
 import { CambridgeZ88Core } from "../cambridge-z88/CambridgeZ88Core";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
+import { dispatch, getState } from "../../emulator/emuStore";
 
 /**
  * This class is responsible for controlling the singleton virtual machine
@@ -107,8 +107,8 @@ class VmEngineService implements IVmController {
     this._vmEngine = engine;
 
     // --- Modify the app state
-    emuStore.dispatch(setMachineTypeAction(id));
-    emuStore.dispatch(
+    dispatch(setMachineTypeAction(id));
+    dispatch(
       emuSetDiagDataAction(this.getFrameDiagData(engine.getMachineState()))
     );
 
@@ -191,7 +191,7 @@ class VmEngineService implements IVmController {
     );
 
     // --- State the new execution state
-    emuStore.dispatch(emuSetExecutionStateAction(this._vmState));
+    dispatch(emuSetExecutionStateAction(this._vmState));
   }
 
   /**
@@ -336,7 +336,7 @@ class VmEngineService implements IVmController {
 
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
-    emuStore.dispatch(emuSetDebugModeAction(this._isDebugging));
+    dispatch(emuSetDebugModeAction(this._isDebugging));
 
     // --- Execute a single cycle
     this.executionState = VmState.Running;
@@ -511,7 +511,7 @@ class VmEngineService implements IVmController {
       }
 
       // --- Set data frequently queried
-      emuStore.dispatch(
+      dispatch(
         emuSetFrameIdAction(this._startCount, resultState.frameCount)
       );
 
@@ -549,7 +549,7 @@ class VmEngineService implements IVmController {
       this._sumFrameTime += this._lastFrameTime;
       this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
       toWait = Math.floor(nextFrameTime - curTime);
-      emuStore.dispatch(
+      dispatch(
         emuSetDiagDataAction(this.getFrameDiagData(resultState))
       );
 
@@ -564,7 +564,7 @@ class VmEngineService implements IVmController {
       nextFrameTime += nextFrameGap;
 
       // --- Use the current clock multiplier
-      const emuState = emuStore.getState().emulatorPanel;
+      const emuState = getState().emulatorPanel;
       engine.setClockMultiplier(emuState.clockMultiplier ?? 1);
     }
   }

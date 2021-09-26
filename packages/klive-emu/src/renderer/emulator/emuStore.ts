@@ -10,6 +10,8 @@ import { getInitialAppState } from "../../shared/state/AppState";
 import { IpcRendereApi } from "../../exposed-apis";
 import { ForwardActionRequest } from "../../shared/messaging/message-types";
 import { KliveStore } from "../../shared/state/KliveStore";
+import { registerService, STORE_SERVICE } from "../../shared/services/service-registry";
+export { getStore, dispatch, getState } from "../../shared/services/store-helpers";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window
@@ -36,11 +38,14 @@ const forwardToMainMiddleware = () => (next: any) => (action: KliveAction) => {
 /**
  * Represents the emuStore replica of the app state
  */
-export const emuStore = new KliveStore(createStore(
+const emuStore = new KliveStore(createStore(
   combineReducers(appReducers),
   getInitialAppState(),
   applyMiddleware(forwardToMainMiddleware)
 ));
+
+// --- Register the store service
+registerService(STORE_SERVICE, emuStore);
 
 ipcRenderer?.on(
   RENDERER_STATE_REQUEST_CHANNEL,

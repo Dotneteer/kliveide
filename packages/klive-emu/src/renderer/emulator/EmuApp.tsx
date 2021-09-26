@@ -20,7 +20,7 @@ import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";
 // --- We need to import these files to setup the app
 import "./emu-message-processor";
 import "./ide-message-processor";
-import { emuStore } from "./emuStore";
+import { getStore } from "../../shared/services/store-helpers";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({
@@ -63,8 +63,9 @@ export default function EmuApp() {
       dispatch(emuLoadUiAction());
       updateThemeState();
 
-      emuStore.themeChanged.on(themeChanged);
-      emuStore.isWindowsChanged.on(isWindowsChanged);
+      const store = getStore();
+      store.themeChanged.on(themeChanged);
+      store.isWindowsChanged.on(isWindowsChanged);
 
       // --- Register modal dialogs
       modalDialogService.registerModalDescriptor(
@@ -75,8 +76,9 @@ export default function EmuApp() {
 
     return () => {
       // --- Unsubscribe
-      emuStore.isWindowsChanged.off(isWindowsChanged);
-      emuStore.themeChanged.off(themeChanged);
+      const store = getStore();
+      store.isWindowsChanged.off(isWindowsChanged);
+      store.themeChanged.off(themeChanged);
     };
   }, [store]);
 

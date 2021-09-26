@@ -36,8 +36,8 @@ import {
   MemorySection,
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
-import { emuStore } from "../../emulator/emuStore";
 import { Store } from "redux";
+import { getStore } from "../../emulator/emuStore";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 
@@ -453,7 +453,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
 
       case CZ88_CARDS:
         const result = await modalDialogService.showModalDialog(
-          emuStore as Store,
+          getStore() as Store,
           Z88_CARDS_DIALOG_ID,
           args
         );
