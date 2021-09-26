@@ -287,6 +287,7 @@ export default function IdeApp() {
       });
       documentService.registerCodeEditor(".asm.kz80", {
         language: "asm-kz80",
+        allowBuildRoot: true,
       });
       documentService.registerCodeEditor(".mpm.z80", {
         language: "mpm-z80",

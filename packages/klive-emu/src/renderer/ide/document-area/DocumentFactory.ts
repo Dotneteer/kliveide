@@ -66,7 +66,15 @@ export interface IDocumentPanel {
  * Represents the information about a code editor
  */
 export type CodeEditorInfo = {
+  /**
+   * Langauge to use with the editor
+   */
   language: string;
+
+  /**
+   * Can be promoted to build root?
+   */
+  allowBuildRoot?: boolean;
 };
 
 type EditorThemeBody = {

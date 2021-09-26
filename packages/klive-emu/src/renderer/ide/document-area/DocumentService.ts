@@ -1,5 +1,6 @@
 import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
 import { ideStore } from "../ideStore";
 import { CodeEditorFactory } from "./CodeEditorFactory";
 import {
@@ -78,6 +79,15 @@ class DocumentService {
   }
 
   /**
+   * Gets code editor information for the specified resouce
+   * @param resource Resource namse
+   * @returns Code editor, if found; otherwise, undefined
+   */
+  getCodeEditorInfo(resource: string): CodeEditorInfo | undefined {
+    return this._editorExtensions.get(getNodeExtension(resource));
+  }
+
+  /**
    * Gets a custom language extension
    * @param id Language id
    */
@@ -90,17 +100,9 @@ class DocumentService {
    * @param resource Resouce name
    */
   getResourceFactory(resource: string): IDocumentFactory | null {
-    // --- Get the field name from the full resource name
-    const parts = resource.split("/");
-    const filename = parts.length > 0 ? parts[parts.length - 1] : "";
-    if (!filename) {
-      return null;
-    }
-
-    // --- Get the extension from the file name
-    const segments = filename.split(".");
-    const extension =
-      segments.length > 0 ? "." + segments.slice(1).join(".") : "";
+    // --- Get the file name from the full resource name
+    const filename = getNodeFile(resource);
+    const extension = getNodeExtension(resource);
 
     // --- Test if the file has a factory
     const fileNameFactory = this._fileBoundFactories.get(filename);

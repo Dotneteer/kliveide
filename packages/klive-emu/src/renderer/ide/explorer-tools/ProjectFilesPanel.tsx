@@ -8,7 +8,6 @@ import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
 import { projectServices } from "./ProjectServices";
 import { CSSProperties } from "react";
-import { SvgIcon } from "../../common-ui/SvgIcon";
 import { CommonIcon } from "../../common-ui/CommonIcon";
 import { ideStore } from "../ideStore";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
@@ -188,6 +187,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       width: "100%",
       height: 22,
       fontSize: "0.8em",
+      paddingRight: 16,
       cursor: "pointer",
       background:
         item === this.state.selected
@@ -214,6 +214,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         <div
           style={{
             width: 22 + 12 * item.level + (item.nodeData.isFolder ? 0 : 16),
+            flexShrink: 0,
+            flexGrow: 0,
           }}
         ></div>
         {item.nodeData.isFolder && (
@@ -222,6 +224,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             width={16}
             height={16}
             rotate={item.isExpanded ? 90 : 0}
+            style={{ flexShrink: 0, flexGrow: 0 }}
           />
         )}
         <CommonIcon
@@ -234,14 +237,34 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           }
           width={16}
           height={16}
-          style={{ marginLeft: 4, marginRight: 4 }}
+          style={{ marginLeft: 4, marginRight: 4, flexShrink: 0, flexGrow: 0 }}
           fill={
             item.nodeData.isFolder
               ? "--explorer-folder-color"
               : "--explorer-file-color"
           }
         />
-        <span style={{marginLeft: 4}}>{item.nodeData.name}</span>
+        <div
+          style={{
+            marginLeft: 4,
+            width: "100%",
+            flexShrink: 1,
+            flexGrow: 1,
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {item.nodeData.name}
+        </div>
+        {item.nodeData.buildRoot && (
+          <CommonIcon
+            iconName="combine"
+            width={16}
+            height={16}
+            style={{ flexShrink: 0, flexGrow: 0 }}
+          />
+        )}
       </div>
     );
   }
@@ -447,6 +470,29 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           execute: async () => await this.deleteFile(item),
         },
       ];
+      const editor = documentService.getCodeEditorInfo(item.nodeData.fullPath);
+      if (editor?.allowBuildRoot) {
+        menuItems.push("separator");
+        if (item.nodeData.buildRoot) {
+          menuItems.push({
+            id: "removeBuildRoot",
+            text: "Remove Build root",
+            execute: async () => {
+              delete item.nodeData.buildRoot;
+              this._listApi.forceRefresh();
+            },
+          });
+        } else {
+          menuItems.push({
+            id: "markBuildRoot",
+            text: "Mark as Build root",
+            execute: async () => {
+              item.nodeData.buildRoot = true;
+              this._listApi.forceRefresh();
+            },
+          });
+        }
+      }
     }
     const rect = (ev.target as HTMLElement).getBoundingClientRect();
     await contextMenuService.openMenu(
