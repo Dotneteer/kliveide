@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AppState } from "../../shared/state/AppState";
-import { themeService } from "../common-ui/themes/theme-service";
+import { getThemeService } from "../../shared/services/store-helpers";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
@@ -48,6 +48,7 @@ export default function EmuApp() {
 
   React.useEffect(() => {
     // --- State change event handlers
+    const themeService = getThemeService();
     const isWindowsChanged = (isWindows: boolean) => {
       themeService.isWindows = isWindows;
       updateThemeState();
@@ -96,6 +97,7 @@ export default function EmuApp() {
   );
 
   function updateThemeState(): void {
+    const themeService = getThemeService();
     const theme = themeService.getActiveTheme();
     if (!theme) {
       return;

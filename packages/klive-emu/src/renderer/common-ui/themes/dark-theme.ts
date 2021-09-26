@@ -1,4 +1,4 @@
-import { ITheme } from "./theme-core";
+import { ITheme } from "../../../shared/services/IThemeService";
 
 /**
  * This constant value defins the propertief of the 'dark' theme.

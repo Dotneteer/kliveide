@@ -9,7 +9,7 @@ import {
   IDocumentPanel,
 } from "../document-area/DocumentFactory";
 import { documentService } from "../document-area/DocumentService";
-import { themeService } from "../../common-ui/themes/theme-service";
+import { getThemeService } from "../../../shared/services/store-helpers"
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileOperationResponse } from "../../../shared/messaging/message-types";
 
@@ -191,7 +191,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       selectOnLineNumbers: true,
     };
 
-    const tone = themeService.getActiveTheme().tone;
+    const tone = getThemeService().getActiveTheme().tone;
     const languageInfo = documentService.getCustomLanguage(this.props.language);
     let theme = tone === "light" ? "vs" : "vs-dark";
     if (

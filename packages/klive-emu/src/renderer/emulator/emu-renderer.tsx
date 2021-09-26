@@ -8,6 +8,7 @@ import EmuApp from "./EmuApp";
 import {
   registerService,
   STORE_SERVICE,
+  THEME_SERVICE,
 } from "../../shared/services/service-registry";
 import { dispatch, getState, getStore } from "../../shared/services/store-helpers";
 import { KliveStore } from "../../shared/state/KliveStore";
@@ -19,6 +20,7 @@ import { ForwardActionRequest } from "../../shared/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
 import { KliveAction } from "../../shared/state/state-core";
+import { ThemeService } from "../common-ui/themes/theme-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -58,6 +60,9 @@ registerService(
     )
   )
 );
+
+// --- Register additional services
+registerService(THEME_SERVICE, new ThemeService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

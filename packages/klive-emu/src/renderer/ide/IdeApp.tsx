@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { themeService } from "../common-ui/themes/theme-service";
+import { getThemeService } from "../../shared/services/store-helpers";
 import { useDispatch, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
@@ -157,6 +157,7 @@ export default function IdeApp() {
   );
 
   useEffect(() => {
+    const themeService = getThemeService();
     // --- State change event handlers
     const isWindowsChanged = (isWindows: boolean) => {
       themeService.isWindows = isWindows;
@@ -420,6 +421,7 @@ export default function IdeApp() {
    * @returns
    */
   function updateThemeState(): void {
+    const themeService = getThemeService();
     const theme = themeService.getActiveTheme();
     if (!theme) {
       return;

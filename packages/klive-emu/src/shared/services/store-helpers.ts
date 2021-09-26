@@ -6,6 +6,7 @@ import { IContextMenuService } from "./IContextMenuService";
 import { IEngineProxyService } from "./IEngineProxyService";
 import { IProjectService } from "./IProjectService";
 import { ISideBarService } from "./ISidebarService";
+import { IThemeService } from "./IThemeService";
 import {
   ACTIVITY_SERVICE,
   CONTEXT_MENU_SERVICE,
@@ -14,6 +15,7 @@ import {
   PROJECT_SERVICE,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
+  THEME_SERVICE,
 } from "./service-registry";
 
 /**
@@ -39,6 +41,14 @@ export function dispatch(action: KliveAction): KliveAction {
  */
 export function getState(): AppState {
   return getStore().getState();
+}
+
+/**
+ * Gets the theme service instance
+ * @returns
+ */
+export function getThemeService(): IThemeService {
+  return getService(THEME_SERVICE) as IThemeService;
 }
 
 /**

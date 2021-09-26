@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { themeService } from "../../common-ui/themes/theme-service";
+import { getThemeService } from "../../../shared/services/store-helpers";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { documentService } from "./DocumentService";
@@ -33,6 +33,7 @@ export default function DocumentTab({
   const [pointed, setPointed] = useState(false);
   const hostElement = React.createRef<HTMLDivElement>();
 
+  const themeService = getThemeService();
   const normalColor = themeService.getProperty("--document-tab-color");
   const activeColor = themeService.getProperty("--document-tab-active-color");
 

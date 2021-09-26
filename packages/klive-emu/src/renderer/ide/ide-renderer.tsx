@@ -13,6 +13,7 @@ import {
   registerService,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
+  THEME_SERVICE,
 } from "../../shared/services/service-registry";
 import {
   dispatch,
@@ -36,6 +37,7 @@ import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";
+import { ThemeService } from "../common-ui/themes/theme-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -83,6 +85,7 @@ registerService(
 );
 
 // --- Register additional services
+registerService(THEME_SERVICE, new ThemeService());
 registerService(ACTIVITY_SERVICE, new ActivityService());
 registerService(SIDE_BAR_SERVICE, new SideBarService());
 registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());

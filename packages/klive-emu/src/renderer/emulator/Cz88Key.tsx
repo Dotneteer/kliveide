@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { Cz88KeyView } from "../machines/cambridge-z88/cz88-keys";
-import { themeService } from "../common-ui/themes/theme-service";
+import { getThemeService } from "../../shared/services/store-helpers";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 
 const NORMAL_WIDTH = 100;
@@ -38,6 +38,7 @@ export default function Cz88Key(props: Props) {
   let iconCount = 0;
 
   // --- Invariant display properties
+  const themeService = getThemeService();
   const keyBackground = themeService.getProperty("--key-cz88-background-color");
   const mainKeyColor = themeService.getProperty("--key-cz88-main-color");
   const keyStrokeColor = themeService.getProperty("--key-cz88-stroke-color");
