@@ -3,7 +3,6 @@ import * as path from "path";
 import { app, dialog } from "electron";
 import { AppWindow } from "./app-window";
 import { __DARWIN__ } from "../utils/electron-utils";
-import { mainStore } from "../main-state/main-store";
 import {
   RequestMessage,
   StopVmRequest,
@@ -39,8 +38,7 @@ import {
 import { Cz88ContextProvider } from "../../extensibility/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { PROJECT_FILE } from "../project/project-utils";
-
-import { Z80Assembler } from "../z80-compiler/assembler";
+import { dispatch, getState } from "../main-state/main-store";
 
 /**
  * These are the context providers we usein the code
@@ -99,7 +97,7 @@ export class EmuWindow extends AppWindow {
    */
   onFocus() {
     super.onFocus();
-    mainStore.dispatch(emuFocusAction(true));
+    dispatch(emuFocusAction(true));
   }
 
   /**
@@ -107,14 +105,14 @@ export class EmuWindow extends AppWindow {
    */
   onBlur() {
     super.onBlur();
-    mainStore.dispatch(emuFocusAction(false));
+    dispatch(emuFocusAction(false));
   }
 
   /**
    * Saves the current application settings
    */
   saveAppSettings(): void {
-    const state = mainStore.getState() as AppState;
+    const state = getState() as AppState;
     const machineType = state.machineType.split("_")[0];
     const kliveSettings: KliveSettings = {
       machineType,
@@ -142,13 +140,13 @@ export class EmuWindow extends AppWindow {
    * Saves the project file changes to the current Klive project
    */
   saveKliveProject(): void {
-    const project = mainStore.getState().project;
+    const project = getState().project;
     if (!project?.hasVm || !project?.path) {
       // --- No VM in the current project, nothing to save
       return;
     }
 
-    const state = mainStore.getState();
+    const state = getState();
     const machineType = state.machineType.split("_")[0];
     const kliveSettings: KliveProject = {
       machineType,
@@ -236,26 +234,26 @@ export class EmuWindow extends AppWindow {
     await emuMessenger.sendMessage(requestMessage);
 
     // #4: Sign extra machine features
-    mainStore.dispatch(
+    dispatch(
       emuSetExtraFeaturesAction(
         this._machineContextProvider.getExtraMachineFeatures()
       )
     );
 
     // #5: Set up the machine specific description
-    mainStore.dispatch(
+    dispatch(
       emuMachineContextAction(
         this._machineContextProvider.getMachineContextDescription()
       )
     );
-    mainStore.dispatch(
+    dispatch(
       emuSetBaseFrequencyAction(
         this._machineContextProvider.getNormalCpuFrequency()
       )
     );
 
     // #6: Set the default execution state
-    mainStore.dispatch(emuSetExecutionStateAction(0));
+    dispatch(emuSetExecutionStateAction(0));
   }
 
   // ==========================================================================
@@ -267,7 +265,7 @@ export class EmuWindow extends AppWindow {
   async ensureStarted(): Promise<void> {
     return new Promise<void>((resolve) => {
       const interval = setInterval(() => {
-        if (mainStore.getState().emuUiLoaded) {
+        if (getState().emuUiLoaded) {
           clearInterval(interval);
           resolve();
         }

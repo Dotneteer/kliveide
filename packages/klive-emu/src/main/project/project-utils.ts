@@ -6,13 +6,13 @@ import { dialog } from "electron";
 import { AppWindow } from "../app/app-window";
 import { getFolderContents, getHomeFolder } from "../utils/file-utils";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
-import { mainStore } from "../main-state/main-store";
 import {
   projectOpenedAction,
   projectLoadingAction,
 } from "../../shared/state/project-reducer";
 import { KliveProject } from "../main-state/klive-configuration";
 import { emuWindow, setupMenu } from "../app/app-menu";
+import { dispatch, getState } from "../main-state/main-store";
 
 /**
  * Name of the project file within the project directory
@@ -29,7 +29,7 @@ export const CODE_DIR_NAME = "code";
  */
 export async function openProject(projectPath: string): Promise<void> {
   // --- Close the current project, and wait for a little while
-  mainStore.dispatch(projectLoadingAction());
+  dispatch(projectLoadingAction());
 
   // --- Now, open the project
   const projectName = path.basename(projectPath);
@@ -41,7 +41,7 @@ export async function openProject(projectPath: string): Promise<void> {
   const directoryContents = await getFolderContents(projectPath);
 
   // --- Set the state accordingly
-  mainStore.dispatch(
+  dispatch(
     projectOpenedAction(projectPath, projectName, hasVm, directoryContents)
   );
   if (project?.machineType) {
@@ -97,7 +97,7 @@ export function getProjectFile(projectFile: string): KliveProject | null {
  * Gets the configuration of the loaded project
  */
 export function getLoadedProjectFile(): KliveProject | null {
-  const projectPath = mainStore.getState().project?.path;
+  const projectPath = getState().project?.path;
   return projectPath
     ? getProjectFile(path.join(projectPath, PROJECT_FILE))
     : null;

@@ -1,9 +1,9 @@
 import { AppWindow } from "./app-window";
-import { mainStore } from "../main-state/main-store";
 import { ideHideAction } from "../../shared/state/show-ide-reducer";
 import { setIdeMessenger } from "./app-menu";
 import { ideFocusAction } from "../../shared/state/ide-focus-reducer";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
+import { dispatch } from "../main-state/main-store";
 
 /**
  * Represents the singleton IDE window
@@ -20,7 +20,7 @@ export class IdeWindow extends AppWindow {
       if (this.allowClose) {
         return;
       }
-      mainStore.dispatch(ideHideAction());
+      dispatch(ideHideAction());
       e.preventDefault();
     });
     this.allowClose = false;
@@ -45,7 +45,7 @@ export class IdeWindow extends AppWindow {
    */
   onFocus() {
     super.onFocus();
-    mainStore.dispatch(ideFocusAction(true));
+    dispatch(ideFocusAction(true));
   }
 
   /**
@@ -53,6 +53,6 @@ export class IdeWindow extends AppWindow {
    */
   onBlur() {
     super.onBlur();
-    mainStore.dispatch(ideFocusAction(false));
+    dispatch(ideFocusAction(false));
   }
 }

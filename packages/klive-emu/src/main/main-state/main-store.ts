@@ -20,8 +20,9 @@ import {
 } from "../../shared/messaging/channels";
 import { KliveAction } from "../../shared/state/state-core";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
-import { getInitialAppState } from "../../shared/state/AppState";
+import { AppState, getInitialAppState } from "../../shared/state/AppState";
 import { KliveStore } from "../../shared/state/KliveStore";
+import { getService, registerService, STORE_SERVICE } from "../../shared/services/service-registry";
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;
@@ -44,13 +45,16 @@ const forwardToRendererMiddleware =
 /**
  * Represents the master replica of the app state
  */
-export const mainStore = new KliveStore(
+const mainStore = new KliveStore(
   createStore(
     combineReducers(appReducers),
     getInitialAppState(),
     applyMiddleware(forwardToRendererMiddleware)
   )
 );
+
+// --- Register the services used within the main process
+registerService(STORE_SERVICE, mainStore);
 
 /**
  * This class forwards state changes in main to a particular renderer
@@ -142,3 +146,33 @@ export function forwardRendererState(
     isForwarding = false;
   }
 }
+
+
+// ----------------------------------------------------------------------------
+// Helper methods for store management
+
+/**
+ * Gets the service instance that provides the application state store
+ * @returns 
+ */
+ export function getStore(): KliveStore {
+  return getService(STORE_SERVICE) as KliveStore
+}
+
+/**
+ * Dsipatches the specified action
+ * @param action Action to dispatch
+ * @returns Dispatched action
+ */
+export function dispatch(action: KliveAction): KliveAction {
+  return getStore().dispatch(action);
+}
+
+/**
+ * Gets the application state
+ * @returns 
+ */
+export function getState(): AppState {
+  return getStore().getState();
+}
+

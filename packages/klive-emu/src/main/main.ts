@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { BrowserWindow, app, ipcMain } from "electron";
-import { forwardRendererState, mainStore } from "./main-state/main-store";
+import { dispatch, forwardRendererState } from "./main-state/main-store";
 import {
   EMU_TO_MAIN_REQUEST_CHANNEL,
   EMU_TO_MAIN_RESPONSE_CHANNEL,
@@ -20,7 +20,10 @@ import {
   setupWindows,
   watchStateChanges,
 } from "./app/app-menu";
-import { appConfiguration, appSettings } from "./main-state/klive-configuration";
+import {
+  appConfiguration,
+  appSettings,
+} from "./main-state/klive-configuration";
 import {
   emuHideFrameInfoAction,
   emuHideKeyboardAction,
@@ -33,7 +36,10 @@ import {
 } from "../shared/state/emu-view-options-reducer";
 import { __WIN32__ } from "./utils/electron-utils";
 import { setWindowsAction } from "../shared/state/is-windows-reducer";
-import { processEmulatorRequest, processIdeRequest } from "./communication/process-messages";
+import {
+  processEmulatorRequest,
+  processIdeRequest,
+} from "./communication/process-messages";
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.
@@ -43,28 +49,28 @@ app.on("ready", async () => {
   await setupWindows();
   watchStateChanges();
   setupMenu();
-  mainStore.dispatch(setWindowsAction(__WIN32__));
+  dispatch(setWindowsAction(__WIN32__));
 
   // --- Set up application state according to saved settings
   if (appSettings) {
     const viewOptions = appSettings.viewOptions;
     if (viewOptions) {
-      mainStore.dispatch(
+      dispatch(
         viewOptions.showToolbar
           ? emuShowToolbarAction()
           : emuHideToolbarAction()
       );
-      mainStore.dispatch(
+      dispatch(
         viewOptions.showStatusbar
           ? emuShowStatusbarAction()
           : emuHideStatusbarAction()
       );
-      mainStore.dispatch(
+      dispatch(
         viewOptions.showFrameInfo
           ? emuShowFrameInfoAction()
           : emuHideFrameInfoAction()
       );
-      mainStore.dispatch(
+      dispatch(
         viewOptions.showKeyboard
           ? emuShowKeyboardAction()
           : emuHideKeyboardAction()

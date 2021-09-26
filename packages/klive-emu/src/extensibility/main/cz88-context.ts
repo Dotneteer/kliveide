@@ -12,7 +12,6 @@ import {
   menuIdFromMachineId,
 } from "../../main/utils/electron-utils";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
-import { mainStore } from "../../main/main-state/main-store";
 import {
   emuMessenger,
   emuWindow,
@@ -39,6 +38,7 @@ import {
 import { ExecuteMachineCommandResponse } from "../../shared/messaging/message-types";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
+import { dispatch, getState } from "../../main/main-state/main-store";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";
@@ -377,7 +377,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
 
     function setKbLayout(layout: string): void {
       kbLayout = layout;
-      mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
+      dispatch(emuSetKeyboardLayoutAction(kbLayout));
       emuWindow.saveKliveProject();
     }
   }
@@ -446,7 +446,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Override this method to get the machine-specific settings
    */
   getMachineSpecificSettings(): Record<string, any> {
-    const state = mainStore.getState().emulatorPanel;
+    const state = getState().emulatorPanel;
     return {
       lcd: lcdLabel,
       kbLayout,
@@ -496,12 +496,12 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         case "dk":
         case "se":
           kbLayout = settings.kbLayout;
-          mainStore.dispatch(emuSetKeyboardLayoutAction(kbLayout));
+          dispatch(emuSetKeyboardLayoutAction(kbLayout));
           break;
       }
     }
     if (settings.clockMultiplier) {
-      mainStore.dispatch(emuSetClockMultiplierAction(settings.clockMultiplier));
+      dispatch(emuSetClockMultiplierAction(settings.clockMultiplier));
     }
     if (settings.soundLevel) {
       setSoundLevel(settings.soundLevel);
@@ -849,8 +849,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
         if (useSoftReset) {
           this.executeMachineCommand(CZ88_SOFT_RESET);
         } else {
-          const stateBefore =
-            mainStore.getState().emulatorPanel?.executionState ?? 0;
+          const stateBefore = getState().emulatorPanel?.executionState ?? 0;
           await this.requestMachine();
           if (stateBefore) {
             await this.executeMachineCommand(CZ88_HARD_RESET);
@@ -921,8 +920,6 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
    * Sets the current machine context
    */
   setContext(): void {
-    mainStore.dispatch(
-      emuMachineContextAction(this.getMachineContextDescription())
-    );
+    dispatch(emuMachineContextAction(this.getMachineContextDescription()));
   }
 }
