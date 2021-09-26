@@ -127,7 +127,6 @@ export default function DocumentTabBar() {
             documentService.setActiveDocument(d);
           }
           d.initialFocus = true;
-          d.signDescriptorChange();
         }}
         closed={() => {
           editorService.clearState(d.id);

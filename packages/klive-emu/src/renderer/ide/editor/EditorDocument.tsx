@@ -173,7 +173,6 @@ export default class EditorDocument extends React.Component<Props, State> {
    */
   descriptorChanged(): void {
     if (this.props.descriptor.initialFocus) {
-      console.log("Set initial focus");
       window.requestAnimationFrame(() => this._editor.focus());
     }
   }
@@ -246,8 +245,8 @@ export default class EditorDocument extends React.Component<Props, State> {
  */
 export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
   constructor(
-    public readonly id: string,
-    public readonly title: string,
+    id: string,
+    title: string,
     public readonly language: string,
     public readonly contents: string
   ) {

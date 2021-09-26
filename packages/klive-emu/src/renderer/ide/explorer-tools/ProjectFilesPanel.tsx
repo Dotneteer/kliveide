@@ -364,9 +364,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       if (document) {
         if (!isTemporary) {
           document.temporary = false;
-          console.log("Initiate focus");
           document.initialFocus = true;
-          document.signDescriptorChange();
         }
         documentService.setActiveDocument(document);
         return;
