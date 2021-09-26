@@ -6,7 +6,8 @@ import {
 } from "@syncfusion/ej2-react-popups";
 import styles from "styled-components";
 import { useContext, useState } from "react";
-import { IModalDialogDescriptor, modalDialogService } from "./modal-service";
+import { getModalDialogService } from "../../shared/services/store-helpers";
+import { IModalDialogDescriptor } from "../../shared/services/IModalDialogService";
 import { useEffect } from "react";
 
 type Props = {
@@ -24,7 +25,7 @@ export default function ModalDialog({ targetId }: Props) {
 
   const handleClick = (click?: () => void | boolean) => {
     if (click?.()) {
-      modalDialogService.hide(store);
+      getModalDialogService().hide(store);
     }
   };
 
@@ -74,6 +75,7 @@ export default function ModalDialog({ targetId }: Props) {
   const handleVisibilityChanged = (display: boolean) => setShow(display);
 
   // --- Close the dialog if the users decides so
+  const modalDialogService = getModalDialogService();
   const onOverlayClick = () => modalDialogService.hide(store);
   const onDialogClose = () => {
     modalDialogService.hide(store);

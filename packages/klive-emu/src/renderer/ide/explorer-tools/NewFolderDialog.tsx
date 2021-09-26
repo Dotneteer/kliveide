@@ -1,8 +1,6 @@
 import * as React from "react";
-import {
-  IModalDialogDescriptor,
-  modalDialogService,
-} from "../../common-ui/modal-service";
+import { getModalDialogService } from "../../../shared/services/store-helpers";
+import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
 import { NewFileData } from "../../../shared/messaging/dto";
@@ -37,7 +35,7 @@ class NewFolderDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const folder = this._result as NewFileData;
     if (!folder.error) {
-      modalDialogService.hide(getStore() as Store, this._result);
+      getModalDialogService().hide(getStore() as Store, this._result);
     }
   };
 

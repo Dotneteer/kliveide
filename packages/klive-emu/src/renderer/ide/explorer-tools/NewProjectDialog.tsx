@@ -1,9 +1,7 @@
 import * as React from "react";
 import { CheckBoxComponent } from "@syncfusion/ej2-react-buttons";
-import {
-  IModalDialogDescriptor,
-  modalDialogService,
-} from "../../common-ui/modal-service";
+import { getModalDialogService } from "../../../shared/services/store-helpers";
+import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
@@ -37,7 +35,7 @@ class NewProjectDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const project = this._result as NewProjectData;
     if (project.projectName) {
-      modalDialogService.hide(getStore() as Store, this._result);
+      getModalDialogService().hide(getStore() as Store, this._result);
     }
   };
 

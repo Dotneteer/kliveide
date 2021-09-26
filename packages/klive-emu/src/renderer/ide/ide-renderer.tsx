@@ -9,6 +9,7 @@ import {
   ACTIVITY_SERVICE,
   CONTEXT_MENU_SERVICE,
   ENGINE_PROXY_SERVICE,
+  MODAL_DIALOG_SERVICE,
   PROJECT_SERVICE,
   registerService,
   SIDE_BAR_SERVICE,
@@ -38,6 +39,7 @@ import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";
 import { ThemeService } from "../common-ui/themes/theme-service";
+import { ModalDialogService } from "../common-ui/modal-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -86,6 +88,7 @@ registerService(
 
 // --- Register additional services
 registerService(THEME_SERVICE, new ThemeService());
+registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
 registerService(ACTIVITY_SERVICE, new ActivityService());
 registerService(SIDE_BAR_SERVICE, new SideBarService());
 registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());

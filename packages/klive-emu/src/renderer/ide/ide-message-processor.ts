@@ -9,7 +9,7 @@ import { MAIN_TO_IDE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
 import { MAIN_TO_IDE_RESPONE_CHANNEL } from "../../shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
 import { ideSyncAction } from "../../shared/state/show-ide-reducer";
-import { modalDialogService } from "../common-ui/modal-service";
+import { getModalDialogService } from "../../shared/services/store-helpers";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
 import { Store } from "redux";
 import { dispatch, getStore } from "../../shared/services/store-helpers";
@@ -30,7 +30,7 @@ async function processIdeMessages(
       return <DefaultResponse>{ type: "Ack" };
 
     case "NewProjectRequest":
-      const result = await modalDialogService.showModalDialog(
+      const result = await getModalDialogService().showModalDialog(
         getStore() as Store,
         NEW_PROJECT_DIALOG_ID,
         {

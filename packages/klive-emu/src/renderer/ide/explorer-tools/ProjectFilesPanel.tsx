@@ -13,7 +13,7 @@ import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "../../../shared/command/commands";
 import { getContextMenuService } from "../../../shared/services/store-helpers";
-import { modalDialogService } from "../../common-ui/modal-service";
+import { getModalDialogService } from "../../../shared/services/store-helpers";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
@@ -515,7 +515,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    */
   async newFolder(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
-    const folderData = (await modalDialogService.showModalDialog(
+    const folderData = (await getModalDialogService().showModalDialog(
       getStore() as Store,
       NEW_FOLDER_DIALOG_ID,
       {
@@ -572,7 +572,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    */
   async newFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
-    const fileData = (await modalDialogService.showModalDialog(
+    const fileData = (await getModalDialogService().showModalDialog(
       getStore() as Store,
       NEW_FILE_DIALOG_ID,
       {
@@ -705,7 +705,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       0,
       node.nodeData.fullPath.length - node.nodeData.name.length - 1
     );
-    const fileData = (await modalDialogService.showModalDialog(
+    const fileData = (await getModalDialogService().showModalDialog(
       getStore() as Store,
       isFolder ? RENAME_FOLDER_DIALOG_ID : RENAME_FILE_DIALOG_ID,
       {

@@ -4,6 +4,7 @@ import { KliveAction } from "../state/state-core";
 import { IActivityService } from "./IActivityService";
 import { IContextMenuService } from "./IContextMenuService";
 import { IEngineProxyService } from "./IEngineProxyService";
+import { IModalDialogService } from "./IModalDialogService";
 import { IProjectService } from "./IProjectService";
 import { ISideBarService } from "./ISidebarService";
 import { IThemeService } from "./IThemeService";
@@ -12,6 +13,7 @@ import {
   CONTEXT_MENU_SERVICE,
   ENGINE_PROXY_SERVICE,
   getService,
+  MODAL_DIALOG_SERVICE,
   PROJECT_SERVICE,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
@@ -49,6 +51,14 @@ export function getState(): AppState {
  */
 export function getThemeService(): IThemeService {
   return getService(THEME_SERVICE) as IThemeService;
+}
+
+/**
+ * Gets the modal dialog service instance
+ * @returns
+ */
+ export function getModalDialogService(): IModalDialogService {
+  return getService(MODAL_DIALOG_SERVICE) as IModalDialogService;
 }
 
 /**

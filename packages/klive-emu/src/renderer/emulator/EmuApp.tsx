@@ -13,7 +13,7 @@ import { setEngineDependencies } from "../machines/core/vm-engine-dependencies";
 import { useRef, useState } from "react";
 import ModalDialog from "../common-ui/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
-import { modalDialogService } from "../common-ui/modal-service";
+import { getModalDialogService } from "../../shared/services/store-helpers";
 import { Z88_CARDS_DIALOG_ID } from "../machines/cambridge-z88/CambridgeZ88Core";
 import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";
 
@@ -69,7 +69,7 @@ export default function EmuApp() {
       store.isWindowsChanged.on(isWindowsChanged);
 
       // --- Register modal dialogs
-      modalDialogService.registerModalDescriptor(
+      getModalDialogService().registerModalDescriptor(
         Z88_CARDS_DIALOG_ID,
         cz88CardsDialog
       );

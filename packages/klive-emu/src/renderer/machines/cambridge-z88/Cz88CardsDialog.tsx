@@ -3,10 +3,6 @@ import {
   DropDownListComponent,
   SelectEventArgs,
 } from "@syncfusion/ej2-react-dropdowns";
-import {
-  IModalDialogDescriptor,
-  modalDialogService,
-} from "../../common-ui/modal-service";
 import { Cell, CenteredRow, Grid } from "../../common-ui/grid-styles";
 import { emuToMainMessenger } from "../../emulator/EmuToMainMessenger";
 import {
@@ -19,6 +15,8 @@ import { SvgIcon } from "../../common-ui/SvgIcon";
 import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
 import { Store } from "redux";
 import { getStore } from "../../../shared/services/store-helpers";
+import { getModalDialogService } from "../../../shared/services/store-helpers";
+import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog
@@ -35,7 +33,7 @@ class Cz88CardsDialogDescriptor implements IModalDialogDescriptor {
 
   button3Text = "Ok";
   button3Clicked = () => {
-    modalDialogService.hide(getStore() as Store, this._result);
+    getModalDialogService().hide(getStore() as Store, this._result);
   };
 
   primaryButtonIndex = 3;

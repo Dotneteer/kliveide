@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import { registerThemes } from "../common-ui/register-themes";
 import EmuApp from "./EmuApp";
 import {
+  MODAL_DIALOG_SERVICE,
   registerService,
   STORE_SERVICE,
   THEME_SERVICE,
@@ -21,6 +22,7 @@ import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
 import { KliveAction } from "../../shared/state/state-core";
 import { ThemeService } from "../common-ui/themes/theme-service";
+import { ModalDialogService } from "../common-ui/modal-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -63,6 +65,7 @@ registerService(
 
 // --- Register additional services
 registerService(THEME_SERVICE, new ThemeService());
+registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

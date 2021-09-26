@@ -24,7 +24,7 @@ import {
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
-import { modalDialogService } from "../../common-ui/modal-service";
+import { getModalDialogService } from "../../../shared/services/store-helpers";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
@@ -452,7 +452,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
         return;
 
       case CZ88_CARDS:
-        const result = await modalDialogService.showModalDialog(
+        const result = await getModalDialogService().showModalDialog(
           getStore() as Store,
           Z88_CARDS_DIALOG_ID,
           args

@@ -41,7 +41,7 @@ import { virtualMachineToolsService } from "../machines/core/VitualMachineToolBa
 import { ZxSpectrum48Tools } from "../machines/zx-spectrum/ZxSpectrum48Core";
 import { CambridgeZ88Tools } from "../machines/cambridge-z88/CambridgeZ88Core";
 import { getStore, getState } from "../../shared/services/store-helpers";
-import { modalDialogService } from "../common-ui/modal-service";
+import { getModalDialogService } from "../../shared/services/store-helpers";
 import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,
@@ -301,6 +301,7 @@ export default function IdeApp() {
       virtualMachineToolsService.registerTools("cz88", new CambridgeZ88Tools());
 
       // --- Register modal dialogs
+      const modalDialogService = getModalDialogService();
       modalDialogService.registerModalDescriptor(
         NEW_PROJECT_DIALOG_ID,
         newProjectDialog
