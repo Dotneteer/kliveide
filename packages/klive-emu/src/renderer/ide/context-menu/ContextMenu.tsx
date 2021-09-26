@@ -8,10 +8,8 @@ import {
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 import { animationTick } from "../../common-ui/utils";
-import {
-  ContextMenuOpenTarget,
-  contextMenuService,
-} from "./ContextMenuService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
+
 import { useState } from "react";
 import { useEffect } from "react";
 import {
@@ -20,6 +18,7 @@ import {
   isCommandGroup,
   MenuItem,
 } from "../../../shared/command/commands";
+import { ContextMenuOpenTarget } from "../../../shared/services/IContextMenuService";
 
 type Props = {
   target: string;
@@ -32,7 +31,7 @@ export default function IdeContextMenu({ target }: Props) {
 
   // --- Refresh menu items
   const menuItemsChanged = () => {
-    setItems(contextMenuService.getContextMenu());
+    setItems(getContextMenuService().getContextMenu());
   };
   const openRequested = ({ top, left, target }: ContextMenuOpenTarget) => {
     thisComponent?.open(top, left, target);
@@ -40,6 +39,7 @@ export default function IdeContextMenu({ target }: Props) {
 
   useEffect(() => {
     // --- Mount
+    const contextMenuService = getContextMenuService();
     contextMenuService.menuChanged.on(menuItemsChanged);
     contextMenuService.openRequested.on(openRequested);
 
@@ -53,7 +53,7 @@ export default function IdeContextMenu({ target }: Props) {
   const menuItems = mapToMenuItems(items);
 
   const beforeOpen = (args: BeforeOpenCloseMenuEventArgs) => {
-    if (!contextMenuService.isOpen) {
+    if (!getContextMenuService().isOpen) {
       args.cancel = true;
     }
     thisComponent.enableItems(
@@ -71,6 +71,7 @@ export default function IdeContextMenu({ target }: Props) {
   };
 
   const onClose = async () => {
+    const contextMenuService = getContextMenuService();
     if (contextMenuService.isOpen) {
       await new Promise((r) => setTimeout(r, 50));
       contextMenuService.close();

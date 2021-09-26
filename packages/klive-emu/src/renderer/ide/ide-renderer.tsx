@@ -7,6 +7,7 @@ import { registerThemes } from "../common-ui/register-themes";
 import IdeApp from "./IdeApp";
 import {
   ACTIVITY_SERVICE,
+  CONTEXT_MENU_SERVICE,
   ENGINE_PROXY_SERVICE,
   PROJECT_SERVICE,
   registerService,
@@ -34,6 +35,7 @@ import { ActivityService } from "./activity-bar/ActivityService";
 import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
+import { ContextMenuService } from "./context-menu/ContextMenuService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -84,7 +86,8 @@ registerService(
 registerService(ACTIVITY_SERVICE, new ActivityService());
 registerService(SIDE_BAR_SERVICE, new SideBarService());
 registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());
-registerService(PROJECT_SERVICE, new ProjectService())
+registerService(PROJECT_SERVICE, new ProjectService());
+registerService(CONTEXT_MENU_SERVICE, new ContextMenuService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

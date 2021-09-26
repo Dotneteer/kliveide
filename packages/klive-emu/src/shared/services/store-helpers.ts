@@ -2,11 +2,13 @@ import { AppState } from "../state/AppState";
 import { KliveStore } from "../state/KliveStore";
 import { KliveAction } from "../state/state-core";
 import { IActivityService } from "./IActivityService";
+import { IContextMenuService } from "./IContextMenuService";
 import { IEngineProxyService } from "./IEngineProxyService";
 import { IProjectService } from "./IProjectService";
 import { ISideBarService } from "./ISidebarService";
 import {
   ACTIVITY_SERVICE,
+  CONTEXT_MENU_SERVICE,
   ENGINE_PROXY_SERVICE,
   getService,
   PROJECT_SERVICE,
@@ -69,4 +71,12 @@ export function getEngineProxyService(): IEngineProxyService {
  */
 export function getProjectService(): IProjectService {
   return getService(PROJECT_SERVICE) as IProjectService;
+}
+
+/**
+ * Gets the context menu service instance
+ * @returns
+ */
+export function getContextMenuService(): IContextMenuService {
+  return getService(CONTEXT_MENU_SERVICE) as IContextMenuService;
 }

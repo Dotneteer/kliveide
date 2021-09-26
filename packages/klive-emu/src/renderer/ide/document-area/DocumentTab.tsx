@@ -4,7 +4,7 @@ import { themeService } from "../../common-ui/themes/theme-service";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { documentService } from "./DocumentService";
-import { contextMenuService } from "../context-menu/ContextMenuService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
 import { MenuItem } from "../../../shared/command/commands";
 import { IDocumentPanel } from "./DocumentFactory";
 
@@ -116,7 +116,7 @@ export default function DocumentTab({
         if (e.button === 0) {
           clicked?.();
         } else if (e.button === 2) {
-          await contextMenuService.openMenu(
+          await getContextMenuService().openMenu(
             menuItems,
             e.clientY,
             e.clientX,

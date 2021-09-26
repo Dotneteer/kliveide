@@ -5,7 +5,7 @@ import styles from "styled-components";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { isCommandGroup, MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../context-menu/ContextMenuService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
 
 type Props = {
   activity: Activity;
@@ -82,7 +82,7 @@ function CommandBar({ commands }: CommandBarProps) {
             title={cmd.text}
             clicked={async (e: React.MouseEvent) => {
               const rect = (e.target as HTMLElement).getBoundingClientRect();
-              await contextMenuService.openMenu(
+              await getContextMenuService().openMenu(
                 cmd.items,
                 rect.y + 20,
                 rect.x,

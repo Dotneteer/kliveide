@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../context-menu/ContextMenuService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
 import { IToolPanel, toolAreaService } from "./ToolAreaService";
 
 interface Props {
@@ -77,7 +77,7 @@ export default function ToolTab({
         if (e.button === 0) {
           clicked?.();
         } else if (e.button === 2) {
-          await contextMenuService.openMenu(
+          await getContextMenuService().openMenu(
             menuItems,
             e.clientY,
             e.clientX,

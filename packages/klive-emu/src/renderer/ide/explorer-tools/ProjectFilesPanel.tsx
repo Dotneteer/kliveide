@@ -12,7 +12,7 @@ import { CommonIcon } from "../../common-ui/CommonIcon";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../context-menu/ContextMenuService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
 import { modalDialogService } from "../../common-ui/modal-service";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
@@ -500,7 +500,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       }
     }
     const rect = (ev.target as HTMLElement).getBoundingClientRect();
-    await contextMenuService.openMenu(
+    await getContextMenuService().openMenu(
       menuItems,
       rect.y + 22,
       ev.clientX,

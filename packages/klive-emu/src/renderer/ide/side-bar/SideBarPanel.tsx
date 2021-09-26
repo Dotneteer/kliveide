@@ -5,7 +5,7 @@ import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
 import { getSideBarService } from "../../../shared/services/store-helpers";
 import { MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../context-menu/ContextMenuService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
 import { AppState } from "../../../shared/state/AppState";
 import { getStore } from "../../../shared/services/store-helpers";
 import { ISideBarPanel } from "../../../shared/services/ISidebarService";
@@ -114,7 +114,7 @@ export default function SideBarPanel({
           visibilityChanged(index);
         }}
         rightClicked={async (e) => {
-          await contextMenuService.openMenu(
+          await getContextMenuService().openMenu(
             menuItems,
             e.clientY,
             e.clientX,
