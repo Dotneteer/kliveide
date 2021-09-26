@@ -27,6 +27,7 @@ import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { documentService } from "../document-area/DocumentService";
+import { template } from "lodash";
 
 type State = {
   itemsCount: number;
@@ -208,8 +209,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         className="listlike"
         style={{ ...style, ...itemStyle }}
         onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
-        onClick={() => this.onClick(index, item, true)}
-        onDoubleClick={() => this.onClick(index, item)}
+        onClick={() => this.openDocument(index, item, true)}
+        onDoubleClick={() => this.openDocument(index, item)}
       >
         <div
           style={{
@@ -343,7 +344,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
   }
 
-  async onClick(
+  async openDocument(
     index: number,
     item: ITreeNode<ProjectNode>,
     isTemporary: boolean = false
@@ -363,6 +364,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       if (document) {
         if (!isTemporary) {
           document.temporary = false;
+          console.log("Initiate focus");
+          document.initialFocus = true;
+          document.signDescriptorChange();
         }
         documentService.setActiveDocument(document);
         return;
@@ -380,9 +384,10 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         const sourceText = contentsResp?.contents
           ? (contentsResp.contents as string)
           : "";
-        const panel = await factory.createDocumentPanel(resource, sourceText);
+        let panel = await factory.createDocumentPanel(resource, sourceText);
         let index = documentService.getActiveDocument()?.index ?? null;
         panel.temporary = isTemporary;
+        panel.initialFocus = !isTemporary;
         if (isTemporary) {
           const tempDocument = documentService.getTemporaryDocument();
           if (tempDocument) {
@@ -618,7 +623,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     this._listApi.forceRefresh();
 
     // --- Emulate clicking the item
-    this.onClick(selectedIndex, newTreeNode);
+    this.openDocument(selectedIndex, newTreeNode);
   }
 
   /**

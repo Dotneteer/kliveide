@@ -135,10 +135,11 @@ class DocumentService {
     doc: IDocumentPanel,
     makeActive: boolean = true,
     index?: number
-  ): void {
+  ): IDocumentPanel {
     // --- Do not register a document already registered
-    const existingDoc = this.getDocumentById(doc.id);
+    let existingDoc = this.getDocumentById(doc.id);
     if (!existingDoc) {
+      existingDoc = doc;
       // --- Fix the insert position
       if (index === undefined || index === null) {
         index = this._documents.length;
@@ -166,6 +167,7 @@ class DocumentService {
         this.setActiveDocument(existingDoc);
       }
     }
+    return existingDoc;
   }
 
   /**

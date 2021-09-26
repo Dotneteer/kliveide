@@ -1,4 +1,5 @@
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 
 /**
  * A factory that can create a document panel
@@ -45,6 +46,11 @@ export interface IDocumentPanel {
   title: string;
 
   /**
+   * Indicates if the document should have initial focus
+   */
+  initialFocus?: boolean;
+
+  /**
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode;
@@ -60,6 +66,16 @@ export interface IDocumentPanel {
    * @param fireImmediate Fire a panelStateLoaded event immediately?
    */
   setPanelState(state: Record<string, any> | null): void;
+
+  /**
+   * Sign that the document descriptor has changed
+   */
+  signDescriptorChange(): void;
+
+  /**
+   * Signs that the document descriptor has changed
+   */
+  readonly documentDescriptorChanged: ILiteEvent<void>;
 }
 
 /**
@@ -81,8 +97,7 @@ type EditorThemeBody = {
   rules: monacoEditor.editor.ITokenThemeRule[];
   encodedTokensColors?: string[];
   colors: monacoEditor.editor.IColors;
-
-}
+};
 
 /**
  * Represents information about a custom language
@@ -91,15 +106,16 @@ export type CustomLanguageInfo = {
   id: string;
   options?: monacoEditor.languages.LanguageConfiguration;
   languageDef?: monacoEditor.languages.IMonarchLanguage;
-  lightTheme?: EditorThemeBody
-  darkTheme?: EditorThemeBody
-}
+  lightTheme?: EditorThemeBody;
+  darkTheme?: EditorThemeBody;
+};
 
 /**
  * A base class for document panel descriptors
  */
 export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
   private _panelState: Record<string, any> = {};
+  private _documentDescriptorChanged = new LiteEvent<void>();
 
   /**
    * Instantiates the panel with the specified title
@@ -142,5 +158,19 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
     if (state) {
       this._panelState = { ...this._panelState, ...state };
     }
+  }
+
+  /**
+   * Sign that the document descriptor has changed
+   */
+  signDescriptorChange(): void {
+    this._documentDescriptorChanged.fire();
+  }
+
+  /**
+   * Signs that the document descriptor has changed
+   */
+  get documentDescriptorChanged(): ILiteEvent<void> {
+    return this._documentDescriptorChanged;
   }
 }

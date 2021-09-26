@@ -41,6 +41,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   private divHost = React.createRef<HTMLDivElement>();
   private _editor: monacoEditor.editor.IStandaloneCodeEditor;
   private _unsavedChangeCounter = 0;
+  private _descriptorChanged: () => void;
 
   constructor(props: Props) {
     super(props);
@@ -49,6 +50,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       height: "100%",
       show: false,
     };
+    this._descriptorChanged = () => this.descriptorChanged();
   }
 
   editorWillMount(monaco: typeof monacoEditor): void {
@@ -111,7 +113,9 @@ export default class EditorDocument extends React.Component<Props, State> {
       this._editor.setValue(state.text);
       this._editor.restoreViewState(state.viewState);
     }
-    window.requestAnimationFrame(() => this._editor.focus());
+    if (this.props.descriptor.initialFocus) {
+      window.requestAnimationFrame(() => this._editor.focus());
+    }
   }
 
   async onChange(
@@ -142,9 +146,13 @@ export default class EditorDocument extends React.Component<Props, State> {
 
   componentDidMount(): void {
     this.setState({ show: true });
+    this.props.descriptor.documentDescriptorChanged.on(this._descriptorChanged);
   }
 
   async componentWillUnmount(): Promise<void> {
+    // --- Dispose event handler
+    this.props.descriptor.documentDescriptorChanged.off(this._descriptorChanged);
+
     // --- Check if this document is still registered
     const docId = this.props.descriptor.id;
     const doc = documentService.getDocumentById(docId);
@@ -157,6 +165,16 @@ export default class EditorDocument extends React.Component<Props, State> {
       if (this._unsavedChangeCounter > 0) {
         await this.saveDocument(text);
       }
+    }
+  }
+
+  /**
+   * Make the editor focused when the descriptor changes to focused
+   */
+  descriptorChanged(): void {
+    if (this.props.descriptor.initialFocus) {
+      console.log("Set initial focus");
+      window.requestAnimationFrame(() => this._editor.focus());
     }
   }
 
