@@ -7,7 +7,7 @@ import { getSideBarService } from "../../../shared/services/store-helpers";
 import { MenuItem } from "../../../shared/command/commands";
 import { contextMenuService } from "../context-menu/ContextMenuService";
 import { AppState } from "../../../shared/state/AppState";
-import { getStore } from "../../../main/main-state/main-store";
+import { getStore } from "../../../shared/services/store-helpers";
 import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 
 /**

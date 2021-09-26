@@ -6,7 +6,7 @@ import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
-import { projectServices } from "./ProjectServices";
+import { getProjectService } from "../../../shared/services/store-helpers";
 import { CSSProperties } from "react";
 import { CommonIcon } from "../../common-ui/CommonIcon";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
@@ -27,6 +27,7 @@ import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { documentService } from "../document-area/DocumentService";
 import { getState, getStore } from "../../../shared/services/store-helpers";
+import { IProjectService } from "../../../shared/services/IProjectService";
 
 type State = {
   itemsCount: number;
@@ -43,6 +44,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   State
 > {
   private _listApi: VirtualizedListApi;
+  private _projectService: IProjectService
   private _onProjectChange: (state: ProjectState) => Promise<void>;
 
   constructor(props: SideBarProps<{}>) {
@@ -52,6 +54,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       selectedIndex: -1,
       isLoading: false,
     };
+    this._projectService = getProjectService();
     this._onProjectChange = (state) => this.onProjectChange(state);
   }
 
@@ -70,7 +73,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Gets the number of items in the list
    */
   get itemsCount(): number {
-    const tree = projectServices.getProjectTree();
+    const tree = this._projectService.getProjectTree();
     return tree && tree.rootNode ? tree.rootNode.viewItemCount : 0;
   }
 
@@ -90,7 +93,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           itemsCount: 0,
         });
       } else {
-        projectServices.setProjectContents(state.directoryContents);
+        this._projectService.setProjectContents(state.directoryContents);
         this.setState({
           isLoading: false,
           itemsCount: this.itemsCount,
@@ -277,7 +280,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     end: number,
     topHidden?: number
   ): ITreeNode<ProjectNode>[] {
-    const tree = projectServices.getProjectTree();
+    const tree = this._projectService.getProjectTree();
     const offset = topHidden || 0;
     if (!tree) {
       return [];
@@ -304,7 +307,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Allow moving in the project explorer with keys
    */
   handleKeys(e: React.KeyboardEvent): void {
-    const tree = projectServices.getProjectTree();
+    const tree = this._projectService.getProjectTree();
     let newIndex = -1;
     switch (e.code) {
       case "ArrowUp":
@@ -528,7 +531,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new folder
     const newName = folderData.name;
     const newFullPath = `${folderData.root}/${newName}`;
-    const resp = await projectServices.createFolder(newFullPath);
+    const resp = await this._projectService.createFolder(newFullPath);
 
     if (resp) {
       // --- Creation failed. The main process has already displayed a message
@@ -585,7 +588,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Create the new file
     const newName = fileData.name;
     const newFullPath = `${fileData.root}/${newName}`;
-    const resp = await projectServices.createFile(newFullPath);
+    const resp = await this._projectService.createFile(newFullPath);
 
     if (resp) {
       // --- Creation failed. The main process has already displayed a message
@@ -640,7 +643,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await projectServices.deleteFile(node.nodeData.fullPath);
+    const resp = await this._projectService.deleteFile(node.nodeData.fullPath);
     if (resp) {
       // --- Delete failed
       return;
@@ -672,7 +675,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await projectServices.deleteFolder(node.nodeData.fullPath);
+    const resp = await this._projectService.deleteFolder(node.nodeData.fullPath);
     if (resp) {
       // --- Delete failed
       return;
@@ -720,15 +723,15 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Rename the file
     const newFullName = `${oldPath}/${fileData.name}`;
     const resp = isFolder
-      ? await projectServices.renameFolder(node.nodeData.fullPath, newFullName)
-      : await projectServices.renameFile(node.nodeData.fullPath, newFullName);
+      ? await this._projectService.renameFolder(node.nodeData.fullPath, newFullName)
+      : await this._projectService.renameFile(node.nodeData.fullPath, newFullName);
     if (resp) {
       // --- Rename failed
       return;
     }
 
     // --- Rename folder children
-    projectServices.renameProjectNode(
+    this._projectService.renameProjectNode(
       node,
       node.nodeData.fullPath,
       newFullName,

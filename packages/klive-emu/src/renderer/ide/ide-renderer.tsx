@@ -8,6 +8,7 @@ import IdeApp from "./IdeApp";
 import {
   ACTIVITY_SERVICE,
   ENGINE_PROXY_SERVICE,
+  PROJECT_SERVICE,
   registerService,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
@@ -32,6 +33,7 @@ import { ForwardActionRequest } from "../../shared/messaging/message-types";
 import { ActivityService } from "./activity-bar/ActivityService";
 import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";
+import { ProjectService } from "./explorer-tools/ProjectService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -82,6 +84,7 @@ registerService(
 registerService(ACTIVITY_SERVICE, new ActivityService());
 registerService(SIDE_BAR_SERVICE, new SideBarService());
 registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());
+registerService(PROJECT_SERVICE, new ProjectService())
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

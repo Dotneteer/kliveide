@@ -11,7 +11,7 @@ import { getStore } from "../../../shared/services/store-helpers";
 /**
  * This class implements the project services
  */
-class ProjectServices {
+export class ProjectService {
   private _projectTree: ITreeView<ProjectNode> | null = null;
   private _folderCreated = new LiteEvent<string>();
   private _fileCreated = new LiteEvent<string>();
@@ -266,11 +266,6 @@ class ProjectServices {
     return this._folderDeleted;
   }
 }
-
-/**
- * The singleton instance of project services
- */
-export const projectServices = new ProjectServices();
 
 /**
  * Event parameters for file or folder name changes

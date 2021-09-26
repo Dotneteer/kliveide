@@ -3,11 +3,13 @@ import { KliveStore } from "../state/KliveStore";
 import { KliveAction } from "../state/state-core";
 import { IActivityService } from "./IActivityService";
 import { IEngineProxyService } from "./IEngineProxyService";
+import { IProjectService } from "./IProjectService";
 import { ISideBarService } from "./ISidebarService";
 import {
   ACTIVITY_SERVICE,
   ENGINE_PROXY_SERVICE,
   getService,
+  PROJECT_SERVICE,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
 } from "./service-registry";
@@ -59,4 +61,12 @@ export function getSideBarService(): ISideBarService {
  */
 export function getEngineProxyService(): IEngineProxyService {
   return getService(ENGINE_PROXY_SERVICE) as IEngineProxyService;
+}
+
+/**
+ * Gets the project service instance
+ * @returns
+ */
+export function getProjectService(): IProjectService {
+  return getService(PROJECT_SERVICE) as IProjectService;
 }

@@ -3,13 +3,13 @@ import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import { editorService } from "../editor/editorService";
-import { FileChange, projectServices } from "../explorer-tools/ProjectServices";
+import { FileChange } from "../explorer-tools/ProjectService";
 import { IDocumentPanel } from "./DocumentFactory";
 import { ProjectState } from "../../../shared/state/AppState";
 
 import { documentService, DocumentsInfo } from "./DocumentService";
 import DocumentTab from "./DocumentTab";
-import { getStore } from "../../../shared/services/store-helpers";
+import { getProjectService, getStore } from "../../../shared/services/store-helpers";
 
 /**
  * Represents the statusbar of the emulator
@@ -94,19 +94,21 @@ export default function DocumentTabBar() {
     setCurrentDocs(documentService.getDocuments());
     setActiveDoc(documentService.getActiveDocument());
     documentService.documentsChanged.on(refreshDocs);
-    projectServices.folderDeleted.on(folderDeleted);
-    projectServices.fileRenamed.on(fileRenamed);
-    projectServices.folderRenamed.on(folderRenamed);
-    projectServices.fileDeleted.on(fileDeleted);
+    const projectService = getProjectService();
+    projectService.folderDeleted.on(folderDeleted);
+    projectService.fileRenamed.on(fileRenamed);
+    projectService.folderRenamed.on(folderRenamed);
+    projectService.fileDeleted.on(fileDeleted);
     getStore().projectChanged.on(projectChanged);
 
     return () => {
       // --- Unmount
+      const projectService = getProjectService();
       documentService.documentsChanged.off(refreshDocs);
-      projectServices.fileRenamed.off(fileRenamed);
-      projectServices.folderRenamed.off(folderRenamed);
-      projectServices.fileDeleted.off(fileDeleted);
-      projectServices.folderDeleted.off(folderDeleted);
+      projectService.fileRenamed.off(fileRenamed);
+      projectService.folderRenamed.off(folderRenamed);
+      projectService.fileDeleted.off(fileDeleted);
+      projectService.folderDeleted.off(folderDeleted);
       getStore().projectChanged.off(projectChanged);
     };
   });
