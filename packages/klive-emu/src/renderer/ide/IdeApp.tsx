@@ -62,7 +62,7 @@ import {
   renameFolderDialog,
   RENAME_FOLDER_DIALOG_ID,
 } from "./explorer-tools/RenameFolderDialog";
-import { documentService } from "./document-area/DocumentService";
+import { getDocumentService } from "../../shared/services/store-helpers";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
 
@@ -281,6 +281,7 @@ export default function IdeApp() {
       toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
 
       // --- Register custom languages
+      const documentService = getDocumentService();
       documentService.registerCustomLanguage(asmkZ80LanguageProvider);
       documentService.registerCustomLanguage(mpmZ80LanguageProvider);
 

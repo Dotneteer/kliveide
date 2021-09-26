@@ -3,6 +3,7 @@ import { KliveStore } from "../state/KliveStore";
 import { KliveAction } from "../state/state-core";
 import { IActivityService } from "./IActivityService";
 import { IContextMenuService } from "./IContextMenuService";
+import { IDocumentService } from "./IDocumentService";
 import { IEngineProxyService } from "./IEngineProxyService";
 import { IModalDialogService } from "./IModalDialogService";
 import { IProjectService } from "./IProjectService";
@@ -11,6 +12,7 @@ import { IThemeService } from "./IThemeService";
 import {
   ACTIVITY_SERVICE,
   CONTEXT_MENU_SERVICE,
+  DOCUMENT_SERVICE,
   ENGINE_PROXY_SERVICE,
   getService,
   MODAL_DIALOG_SERVICE,
@@ -57,7 +59,7 @@ export function getThemeService(): IThemeService {
  * Gets the modal dialog service instance
  * @returns
  */
- export function getModalDialogService(): IModalDialogService {
+export function getModalDialogService(): IModalDialogService {
   return getService(MODAL_DIALOG_SERVICE) as IModalDialogService;
 }
 
@@ -99,4 +101,12 @@ export function getProjectService(): IProjectService {
  */
 export function getContextMenuService(): IContextMenuService {
   return getService(CONTEXT_MENU_SERVICE) as IContextMenuService;
+}
+
+/**
+ * Gets the document service instance
+ * @returns
+ */
+export function getDocumentService(): IDocumentService {
+  return getService(DOCUMENT_SERVICE) as IDocumentService;
 }

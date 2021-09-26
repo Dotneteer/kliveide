@@ -1,5 +1,5 @@
+import { IDocumentFactory, IDocumentPanel } from "../../../shared/services/IDocumentService";
 import { EditorDocumentPanelDescriptor } from "../editor/EditorDocument";
-import { IDocumentFactory, IDocumentPanel } from "./DocumentFactory";
 
 /**
  * Creates a code editor factory that uses a particular language

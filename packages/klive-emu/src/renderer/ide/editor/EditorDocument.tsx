@@ -6,12 +6,12 @@ import ReactResizeDetector from "react-resize-detector";
 import { editorService } from "./editorService";
 import {
   DocumentPanelDescriptorBase,
-  IDocumentPanel,
 } from "../document-area/DocumentFactory";
-import { documentService } from "../document-area/DocumentService";
+import { getDocumentService } from "../../../shared/services/store-helpers";
 import { getThemeService } from "../../../shared/services/store-helpers"
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileOperationResponse } from "../../../shared/messaging/message-types";
+import { IDocumentPanel } from "../../../shared/services/IDocumentService";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -59,7 +59,7 @@ export default class EditorDocument extends React.Component<Props, State> {
         .getLanguages()
         .some(({ id }) => id === this.props.language)
     ) {
-      const languageInfo = documentService.getCustomLanguage(
+      const languageInfo = getDocumentService().getCustomLanguage(
         this.props.language
       );
       if (languageInfo) {
@@ -123,6 +123,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     e: monacoEditor.editor.IModelContentChangedEvent
   ) {
     // --- Make the document permanent
+    const documentService = getDocumentService();
     const currentDoc = documentService.getDocumentById(
       this.props.descriptor.id
     );
@@ -155,7 +156,7 @@ export default class EditorDocument extends React.Component<Props, State> {
 
     // --- Check if this document is still registered
     const docId = this.props.descriptor.id;
-    const doc = documentService.getDocumentById(docId);
+    const doc = getDocumentService().getDocumentById(docId);
     if (doc) {
       const text = this._editor.getValue();
       editorService.saveState(this.props.descriptor.id, {
@@ -192,7 +193,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     };
 
     const tone = getThemeService().getActiveTheme().tone;
-    const languageInfo = documentService.getCustomLanguage(this.props.language);
+    const languageInfo = getDocumentService().getCustomLanguage(this.props.language);
     let theme = tone === "light" ? "vs" : "vs-dark";
     if (
       (languageInfo?.lightTheme && tone === "light") ||

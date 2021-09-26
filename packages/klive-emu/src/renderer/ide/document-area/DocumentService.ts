@@ -1,19 +1,21 @@
+import {
+  CodeEditorInfo,
+  CustomLanguageInfo,
+  DocumentsInfo,
+  IDocumentFactory,
+  IDocumentPanel,
+  IDocumentService,
+} from "../../../shared/services/IDocumentService";
 import { dispatch, getState } from "../../../shared/services/store-helpers";
 import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
 import { CodeEditorFactory } from "./CodeEditorFactory";
-import {
-  CodeEditorInfo,
-  CustomLanguageInfo,
-  IDocumentFactory,
-  IDocumentPanel,
-} from "./DocumentFactory";
 
 /**
  * Represenst a service that handles document panels
  */
-class DocumentService {
+export class DocumentService implements IDocumentService {
   private _documents: IDocumentPanel[];
   private _activeDocument: IDocumentPanel | null;
   private _activationStack: IDocumentPanel[];
@@ -207,13 +209,9 @@ class DocumentService {
   setActiveDocument(doc: IDocumentPanel | null): void {
     // --- Save the state of the active panel
     if (this._activeDocument) {
-      const fullState = Object.assign(
-        {},
-        getState().documentFrame ?? {},
-        {
-          [this._activeDocument.id]: this._activeDocument.getPanelState(),
-        }
-      );
+      const fullState = Object.assign({}, getState().documentFrame ?? {}, {
+        [this._activeDocument.id]: this._activeDocument.getPanelState(),
+      });
       dispatch(setDocumentFrameStateAction(fullState));
     }
 
@@ -381,16 +379,3 @@ class DocumentService {
     });
   }
 }
-
-/**
- * Represents the document information
- */
-export type DocumentsInfo = {
-  docs: IDocumentPanel[];
-  active: IDocumentPanel | null;
-};
-
-/**
- * The singleton instance of the service
- */
-export const documentService = new DocumentService();

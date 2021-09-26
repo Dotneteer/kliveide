@@ -4,12 +4,12 @@ import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import { editorService } from "../editor/editorService";
 import { FileChange } from "../explorer-tools/ProjectService";
-import { IDocumentPanel } from "./DocumentFactory";
 import { ProjectState } from "../../../shared/state/AppState";
 
-import { documentService, DocumentsInfo } from "./DocumentService";
+import { getDocumentService } from "../../../shared/services/store-helpers";
 import DocumentTab from "./DocumentTab";
 import { getProjectService, getStore } from "../../../shared/services/store-helpers";
+import { DocumentsInfo, IDocumentPanel } from "../../../shared/services/IDocumentService";
 
 /**
  * Represents the statusbar of the emulator
@@ -20,6 +20,7 @@ export default function DocumentTabBar() {
   const [currentDocs, setCurrentDocs] = useState<IDocumentPanel[]>([]);
 
   // --- Refresh the documents when any changes occur
+  const documentService = getDocumentService();
   const refreshDocs = (info: DocumentsInfo) => {
     setCurrentDocs(info.docs);
     setActiveDoc(info.active);

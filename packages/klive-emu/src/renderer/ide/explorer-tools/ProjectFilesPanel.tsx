@@ -25,7 +25,7 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
-import { documentService } from "../document-area/DocumentService";
+import { getDocumentService } from "../../../shared/services/store-helpers";
 import { getState, getStore } from "../../../shared/services/store-helpers";
 import { IProjectService } from "../../../shared/services/IProjectService";
 
@@ -362,6 +362,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
 
       // --- Test if the specified document is already open
       const id = item.nodeData.fullPath;
+      const documentService = getDocumentService();
       const document = documentService.getDocumentById(id);
       if (document) {
         if (!isTemporary) {
@@ -475,7 +476,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           execute: async () => await this.deleteFile(item),
         },
       ];
-      const editor = documentService.getCodeEditorInfo(item.nodeData.fullPath);
+      const editor = getDocumentService().getCodeEditorInfo(item.nodeData.fullPath);
       if (editor?.allowBuildRoot) {
         menuItems.push("separator");
         if (item.nodeData.buildRoot) {

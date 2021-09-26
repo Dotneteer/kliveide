@@ -55,3 +55,4 @@ export const SIDE_BAR_SERVICE = "side-bar-service";
 export const ENGINE_PROXY_SERVICE = "engine-proxy-service";
 export const PROJECT_SERVICE = "project-service";
 export const CONTEXT_MENU_SERVICE = "context-menu-service";
+export const DOCUMENT_SERVICE = "document-service";

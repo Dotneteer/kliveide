@@ -8,6 +8,7 @@ import IdeApp from "./IdeApp";
 import {
   ACTIVITY_SERVICE,
   CONTEXT_MENU_SERVICE,
+  DOCUMENT_SERVICE,
   ENGINE_PROXY_SERVICE,
   MODAL_DIALOG_SERVICE,
   PROJECT_SERVICE,
@@ -40,6 +41,7 @@ import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";
 import { ThemeService } from "../common-ui/themes/theme-service";
 import { ModalDialogService } from "../common-ui/modal-service";
+import { DocumentService } from "./document-area/DocumentService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -94,6 +96,7 @@ registerService(SIDE_BAR_SERVICE, new SideBarService());
 registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());
 registerService(PROJECT_SERVICE, new ProjectService());
 registerService(CONTEXT_MENU_SERVICE, new ContextMenuService());
+registerService(DOCUMENT_SERVICE, new DocumentService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

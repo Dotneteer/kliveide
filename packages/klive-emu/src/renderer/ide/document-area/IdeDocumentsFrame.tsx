@@ -4,15 +4,12 @@ import DocumentTabBar from "./DocumentTabBar";
 import ReactResizeDetector from "react-resize-detector";
 
 import { useEffect, useState } from "react";
-import {
-  documentService,
-  DocumentsInfo,
-} from "./DocumentService";
+import { getDocumentService } from "../../../shared/services/store-helpers";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
-import { IDocumentPanel } from "./DocumentFactory";
+import { DocumentsInfo, IDocumentPanel } from "../../../shared/services/IDocumentService";
 
 // --- Document Frame IDs
 const DOC_CONTAINER_ID = "ideDocumentContainer";
@@ -24,6 +21,7 @@ const DOC_PLACEHOLDER_ID = "ideDocumentPlaceHolder";
  */
 export default function IdeDocumentFrame() {
   const mounted = useRef(false);
+  const documentService = getDocumentService();
 
   const [tabBarVisible, setTabBarVisible] = useState(true);
   const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(
@@ -143,7 +141,7 @@ function DocumentCommandBar() {
         iconName="close"
         title="Close All"
         clicked={() => {
-          documentService.closeAll();
+          getDocumentService().closeAll();
         }}
       />
     </div>
