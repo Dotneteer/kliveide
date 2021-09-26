@@ -4,13 +4,18 @@ import {
 } from "../../../shared/state/activity-bar-reducer";
 import { Activity } from "../../../shared/activity/Activity";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { dispatch, getState, getStore } from "../../../shared/services/store-helpers";
+import {
+  dispatch,
+  getState,
+  getStore,
+} from "../../../shared/services/store-helpers";
 import { ActivityBarState } from "../../../shared/state/AppState";
+import { IActivityService } from "../../../shared/services/IActivityService";
 
 /**
  * This class provides services for the activity bar
  */
-class ActivityService {
+export class ActivityService implements IActivityService {
   private _activities: Activity[] = [];
   private readonly _activityChanged = new LiteEvent<string | null>();
   private _lastActivityIndex: number;
@@ -18,8 +23,7 @@ class ActivityService {
   constructor() {
     this._lastActivityIndex = -1;
     getStore().activityBarChanged.on((state) => {
-      //console.log(state);
-      // --- Keep trach of changing the activity index
+      // --- Keep track of changing the activity index
       const activityBarState = state as ActivityBarState;
       this._activities = activityBarState.activities;
       if (activityBarState.activeIndex !== this._lastActivityIndex) {
@@ -48,16 +52,19 @@ class ActivityService {
     return this._activities[currentActivity] ?? null;
   }
 
+  /**
+   * Selects the specified activity
+   * @param index Index of activity to select
+   */
   selectActivity(index: number): void {
     dispatch(changeActivityAction(index));
   }
 
+  /**
+   * Marks the specified activity as the pointed one
+   * @param index Pointed activity index
+   */
   pointActivity(index: number): void {
     dispatch(pointActivityAction(index));
   }
 }
-
-/**
- * The singleton instance of the service
- */
-export const activityService = new ActivityService();

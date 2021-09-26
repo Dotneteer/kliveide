@@ -3,11 +3,12 @@ import ReactResizeDetector from "react-resize-detector";
 import { useEffect, useState } from "react";
 import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
-import { ISideBarPanel, sideBarService } from "./SideBarService";
+import { getSideBarService } from "../../../shared/services/store-helpers";
 import { MenuItem } from "../../../shared/command/commands";
 import { contextMenuService } from "../context-menu/ContextMenuService";
 import { AppState } from "../../../shared/state/AppState";
 import { getStore } from "../../../main/main-state/main-store";
+import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 
 /**
  * Component properties
@@ -41,6 +42,8 @@ export default function SideBarPanel({
   const [expanded, setExpanded] = useState(descriptor.expanded);
   const [refreshCount, setRefreshCount] = useState(0);
 
+  const sideBarService = getSideBarService();
+  
   // --- Create menu items
   const menuItems: MenuItem[] = [
     {

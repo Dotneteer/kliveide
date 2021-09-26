@@ -4,7 +4,7 @@ import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
-import { engineProxy } from "../../ide/engine-proxy";
+import { getEngineProxyService } from "../../../shared/services/store-helpers";
 import {
   labelStyle,
   valueItemStyle,
@@ -261,7 +261,7 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
   }
 
   protected async onRunEvent(): Promise<void> {
-    const cpuState = await engineProxy.getCachedMachineState();
+    const cpuState = await getEngineProxyService().getCachedMachineState();
     this.setState({ machineState: cpuState as Z80CpuState & MachineState });
   }
 }

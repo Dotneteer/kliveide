@@ -1,7 +1,16 @@
 import { AppState } from "../state/AppState";
 import { KliveStore } from "../state/KliveStore";
 import { KliveAction } from "../state/state-core";
-import { getService, STORE_SERVICE } from "./service-registry";
+import { IActivityService } from "./IActivityService";
+import { IEngineProxyService } from "./IEngineProxyService";
+import { ISideBarService } from "./ISidebarService";
+import {
+  ACTIVITY_SERVICE,
+  ENGINE_PROXY_SERVICE,
+  getService,
+  SIDE_BAR_SERVICE,
+  STORE_SERVICE,
+} from "./service-registry";
 
 /**
  * Gets the service instance that provides the application state store
@@ -26,4 +35,28 @@ export function dispatch(action: KliveAction): KliveAction {
  */
 export function getState(): AppState {
   return getStore().getState();
+}
+
+/**
+ * Gets the activity service instance
+ * @returns
+ */
+export function getActivityService(): IActivityService {
+  return getService(ACTIVITY_SERVICE) as IActivityService;
+}
+
+/**
+ * Gets the side bar service instance
+ * @returns
+ */
+export function getSideBarService(): ISideBarService {
+  return getService(SIDE_BAR_SERVICE) as ISideBarService;
+}
+
+/**
+ * Gets the engine proxy service instance
+ * @returns
+ */
+export function getEngineProxyService(): IEngineProxyService {
+  return getService(ENGINE_PROXY_SERVICE) as IEngineProxyService;
 }

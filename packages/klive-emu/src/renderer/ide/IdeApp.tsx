@@ -10,7 +10,7 @@ import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
 import { Activity } from "../../shared/activity/Activity";
 import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
-import { sideBarService } from "./side-bar/SideBarService";
+import { getSideBarService } from "../../shared/services/store-helpers";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";
@@ -30,7 +30,7 @@ import ModalDialog from "../common-ui/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";
-import { activityService } from "./activity-bar/ActivityService";
+import { getActivityService } from "../../shared/services/store-helpers";
 import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
 import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
@@ -221,6 +221,8 @@ export default function IdeApp() {
       store.dispatch(setActivitiesAction(activities));
 
       // --- Register side bar panels
+      const sideBarService = getSideBarService();
+      
       // (Explorer)
       sideBarService.registerSideBarPanel(
         "file-view",
@@ -323,7 +325,7 @@ export default function IdeApp() {
       registerKliveCommands();
 
       // --- Select the file-view activity
-      activityService.selectActivity(0);
+      getActivityService().selectActivity(0);
     }
     return () => {
       // --- Unsubscribe

@@ -1,9 +1,9 @@
 import * as React from "react";
+import { ISideBarPanel } from "../../shared/services/ISidebarService";
 import { CSSProperties } from "styled-components";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../common-ui/VirtualizedList";
-import { ISideBarPanel } from "./side-bar/SideBarService";
 import {
   SideBarPanelBase,
   SideBarProps,

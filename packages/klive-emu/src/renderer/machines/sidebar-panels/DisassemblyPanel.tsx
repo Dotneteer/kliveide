@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
-import { engineProxy } from "../../ide/engine-proxy";
+import { getEngineProxyService } from "../../../shared/services/store-helpers";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { Z80Disassembler } from "../../../shared/z80/disassembler/z80-disassembler";
 import {
@@ -122,6 +122,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
    * Refresh the disassembly screen
    */
   protected async onRunEvent(): Promise<void> {
+    const engineProxy = getEngineProxyService();
     const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
     const memory = await engineProxy.getCachedMemoryContents();
     const pcValue = cpuState._pc;

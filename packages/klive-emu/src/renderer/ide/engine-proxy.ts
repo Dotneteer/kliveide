@@ -8,6 +8,7 @@ import {
 import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
 import { MachineState } from "../machines/core/vm-core-types";
 import { getStore } from "../../shared/services/store-helpers";
+import { IEngineProxyService, RunEventArgs } from "../../shared/services/IEngineProxyService";
 
 /**
  * Dealy time between two timed run events
@@ -17,7 +18,7 @@ const RUN_EVENT_DELAY = 800;
 /**
  * This class allows to access the virtual machine engine from the IDE process
  */
-class EngineProxy {
+export class EngineProxyService implements IEngineProxyService {
   private _lastExecutionState = 0;
   private _running = false;
   private _runEvent = new LiteEvent<RunEventArgs>();
@@ -132,13 +133,3 @@ class EngineProxy {
     this._cachedMemory = null;
   }
 }
-
-/**
- * The singleton instance of the engine proxy
- */
-export const engineProxy = new EngineProxy();
-
-/**
- * Arguments of RunEvent
- */
-export type RunEventArgs = { execState: number; isDebug: boolean };

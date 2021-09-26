@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
-import { engineProxy } from "../../ide/engine-proxy";
+import { getEngineProxyService } from "../../../shared/services/store-helpers";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import { separatorLine, valueItemStyle } from "../../ide/utils/content-utils";
@@ -376,7 +376,6 @@ export default class BlinkInformationPanel extends SideBarPanelBase<
   SideBarProps<{}>,
   State
 > {
-
   renderContent() {
     const state = this.state?.machineState;
     return (
@@ -415,7 +414,7 @@ export default class BlinkInformationPanel extends SideBarPanelBase<
   }
 
   protected async onRunEvent(): Promise<void> {
-    const state = await engineProxy.getCachedMachineState();
+    const state = await getEngineProxyService().getCachedMachineState();
     this.setState({ machineState: state as CambridgeZ88MachineState });
   }
 }

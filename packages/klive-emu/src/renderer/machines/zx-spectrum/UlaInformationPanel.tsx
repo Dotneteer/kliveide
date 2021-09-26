@@ -1,6 +1,6 @@
 import * as React from "react";
 import { SpectrumMachineStateBase } from "./ZxSpectrumCoreBase";
-import { engineProxy } from "../../ide/engine-proxy";
+import { getEngineProxyService } from "../../../shared/services/store-helpers";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import {
@@ -158,7 +158,7 @@ export default class UlaInformationPanel extends SideBarPanelBase<
   }
 
   protected async onRunEvent(): Promise<void> {
-    const state = await engineProxy.getCachedMachineState();
+    const state = await getEngineProxyService().getCachedMachineState();
     this.setState({ machineState: state as SpectrumMachineStateBase });
   }
 }

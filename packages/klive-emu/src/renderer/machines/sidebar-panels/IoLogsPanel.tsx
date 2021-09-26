@@ -1,9 +1,7 @@
 import * as React from "react";
+import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 import { CSSProperties } from "styled-components";
-import {
-  ISideBarPanel,
-  SideBarPanelDescriptorBase,
-} from "../../ide/side-bar/SideBarService";
+import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 
 const TITLE = "I/O Operations";
 
@@ -41,10 +39,9 @@ export class IoLogsPanelDescription extends SideBarPanelDescriptorBase {
   /**
    * Panel title
    */
-   get title(): string {
+  get title(): string {
     return TITLE;
   }
-
 
   /**
    * Creates a node that represents the contents of a side bar panel

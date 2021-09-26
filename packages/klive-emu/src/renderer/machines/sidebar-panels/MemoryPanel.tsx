@@ -2,7 +2,7 @@ import * as React from "react";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { CSSProperties } from "react";
-import { engineProxy } from "../../ide/engine-proxy";
+import { getEngineProxyService } from "../../../shared/services/store-helpers";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 
@@ -149,6 +149,7 @@ export default class MemoryPanel extends VirtualizedSideBarPanelBase<
    * Refresh the disassembly screen
    */
   protected async onRunEvent(): Promise<void> {
+    const engineProxy = getEngineProxyService();
     this._memoryContents = await engineProxy.getCachedMemoryContents();
     this._cpu = (await engineProxy.getCachedCpuState()) as Z80CpuState;
     this.listApi.forceRefresh();

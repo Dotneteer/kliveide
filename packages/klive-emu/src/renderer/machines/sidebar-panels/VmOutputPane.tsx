@@ -5,7 +5,7 @@ import {
   OutputPaneDescriptorBase,
   outputPaneService,
 } from "../../ide/tool-area/OutputPaneService";
-import { engineProxy } from "../../ide/engine-proxy";
+import { getEngineProxyService } from "../../../shared/services/store-helpers";
 import { getStore } from "../../../shared/services/store-helpers";
 
 const ID = "VmOutputPane";
@@ -164,7 +164,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
 
       // --- Get the current PC value
       async function getPcInfo(): Promise<string> {
-        const cpuState = await engineProxy.getMachineState();
+        const cpuState = await getEngineProxyService().getMachineState();
         const pcLabel = emuPanel.frameDiagData?.pcInfo?.label ?? "PC";
         return `${pcLabel}: ${(cpuState as any)._pc
           .toString(16)
