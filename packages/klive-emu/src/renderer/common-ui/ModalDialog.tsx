@@ -6,7 +6,7 @@ import {
 } from "@syncfusion/ej2-react-popups";
 import styles from "styled-components";
 import { useContext, useState } from "react";
-import { getModalDialogService } from "../../abstractions/service-helpers";
+import { getModalDialogService } from "@abstractions/service-helpers";
 import { IModalDialogDescriptor } from "../../shared/services/IModalDialogService";
 import { useEffect } from "react";
 

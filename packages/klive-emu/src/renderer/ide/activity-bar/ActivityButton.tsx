@@ -1,7 +1,7 @@
 import * as React from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import styles from "styled-components";
-import { getThemeService } from "../../../abstractions/service-helpers";
+import { getThemeService } from "@abstractions/service-helpers";
 import { Activity } from "@abstractions/activity-service";
 
 /**

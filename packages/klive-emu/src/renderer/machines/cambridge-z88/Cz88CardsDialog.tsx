@@ -14,8 +14,8 @@ import { useState } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
 import { Store } from "redux";
-import { getStore } from "../../../abstractions/service-helpers";
-import { getModalDialogService } from "../../../abstractions/service-helpers";
+import { getStore } from "@abstractions/service-helpers";
+import { getModalDialogService } from "@abstractions/service-helpers";
 import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
 
 /**

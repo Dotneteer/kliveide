@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
-import { AppState } from "../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import { VirtualMachineCoreBase } from "../machines/core/VirtualMachineCoreBase";
 import { vmEngineService } from "../machines/core/vm-engine-service";
 import BeamOverlay from "./BeamOverlay";

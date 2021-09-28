@@ -4,7 +4,7 @@ import styles from "styled-components";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { isCommandGroup, MenuItem } from "../../../shared/command/commands";
-import { getContextMenuService } from "../../../abstractions/service-helpers";
+import { getContextMenuService } from "@abstractions/service-helpers";
 import { Activity } from "@abstractions/activity-service";
 
 type Props = {

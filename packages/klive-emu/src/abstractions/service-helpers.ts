@@ -5,9 +5,9 @@
 // You can cache the service instance within a class or a method.
 // ============================================================================
 
-import { AppState } from "../shared/state/AppState";
-import { KliveStore } from "../shared/state/KliveStore";
-import { KliveAction } from "../shared/state/state-core";
+import { AppState } from "@state/AppState";
+import { KliveStore } from "@state/KliveStore";
+import { KliveAction } from "@state/state-core";
 import { IActivityService } from "./activity-service";
 import { ICommandService } from "../shared/services/ICommandService";
 import { IContextMenuService } from "../shared/services/IContextMenuService";

@@ -4,7 +4,7 @@
   import EmulatorPanel from "./EmulatorPanel.svelte";
   import KeyboardPanel from "./KeyboardPanel.svelte";
   import { createRendererProcessStateAware } from "../rendererProcessStore";
-  import { emulatorKeyboardHeightAction } from "../../shared/state/redux-emulator-state";
+  import { emulatorKeyboardHeightAction } from "@state/redux-emulator-state";
   import { init } from "svelte/internal";
 
   // --- The virtual machine instance

@@ -1,4 +1,4 @@
-import { emulatorRequestTypeAction } from "../shared/state/redux-emulator-state";
+import { emulatorRequestTypeAction } from "@state/redux-emulator-state";
 import {
   RequestMessage,
   DefaultResponse,

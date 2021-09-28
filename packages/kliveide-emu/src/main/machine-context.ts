@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { MenuItemConstructorOptions, shell } from "electron";
-import { EmulatorPanelState } from "../shared/state/AppState";
+import { EmulatorPanelState } from "@state/AppState";
 
 /**
  * Describes the responsibility of a menu provider for a particular machine

@@ -1,4 +1,4 @@
-import { ProgramCounterInfo } from "../../../shared/state/AppState";
+import { ProgramCounterInfo } from "@state/AppState";
 import { IVmController } from "./IVmController";
 import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "../wa-interop/memory-helpers";

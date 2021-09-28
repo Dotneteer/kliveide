@@ -4,15 +4,15 @@ import { useSelector } from "react-redux";
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
-} from "../../../shared/state/tool-frame-reducer";
-import { AppState } from "../../../shared/state/AppState";
+} from "@state/tool-frame-reducer";
+import { AppState } from "@state/AppState";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { getToolAreaService } from "../../../abstractions/service-helpers";
+import { getToolAreaService } from "@abstractions/service-helpers";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
-import { dispatch } from "../../../abstractions/service-helpers";
+import { dispatch } from "@abstractions/service-helpers";
 import { IToolPanel, ToolsInfo } from "../../../shared/services/IToolAreaService";
 
 /**

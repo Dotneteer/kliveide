@@ -4,7 +4,7 @@ import { ZxSpectrum48 } from "./machines/spectrum/ZxSpectrum48";
 import { ZxSpectrum128 } from "./machines/spectrum/ZxSpectrum128";
 import { rendererProcessStore } from "./rendererProcessStore";
 import { MemoryHelper } from "./machines/memory-helpers";
-import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
+import { emulatorSetSavedDataAction } from "@state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "./machines/memory-map";
 import { FrameBoundZ80Machine } from "./machines/FrameBoundZ80Machine";
 import { AudioRenderer } from "./machines/AudioRenderer";

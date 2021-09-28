@@ -6,7 +6,7 @@ import {
   emuMachineContextAction,
   emuSetClockMultiplierAction,
   emuSetKeyboardLayoutAction,
-} from "../../shared/state/emulator-panel-reducer";
+} from "@state/emulator-panel-reducer";
 import {
   machineIdFromMenuId,
   menuIdFromMachineId,
@@ -20,7 +20,7 @@ import {
   setupMenu,
 } from "../../main/app/app-menu";
 import { dialog } from "electron";
-import { AppState } from "../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import {
   CZ88_BATTERY_LOW,

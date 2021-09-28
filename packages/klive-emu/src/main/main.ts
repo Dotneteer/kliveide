@@ -33,9 +33,9 @@ import {
   emuShowKeyboardAction,
   emuShowStatusbarAction,
   emuShowToolbarAction,
-} from "../shared/state/emu-view-options-reducer";
+} from "@state/emu-view-options-reducer";
 import { __WIN32__ } from "./utils/electron-utils";
-import { setWindowsAction } from "../shared/state/is-windows-reducer";
+import { setWindowsAction } from "@state/is-windows-reducer";
 import {
   processEmulatorRequest,
   processIdeRequest,

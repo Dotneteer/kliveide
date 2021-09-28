@@ -4,9 +4,9 @@ import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
 } from "../../common-ui/PanelStyles";
-import { getActivityService } from "../../../abstractions/service-helpers";
+import { getActivityService } from "@abstractions/service-helpers";
 import { useSelector } from "react-redux";
-import { AppState } from "../../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 
 /**
  * Represents the statusbar of the emulator

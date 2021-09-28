@@ -1,4 +1,4 @@
-import { AppState } from "../../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 
 /**
  * Defines the responsibilities of a state manager for a ZxSpectrumBase

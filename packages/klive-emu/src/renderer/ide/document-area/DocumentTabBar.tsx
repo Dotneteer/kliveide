@@ -2,13 +2,13 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
-import { getEditorService } from "../../../abstractions/service-helpers";
+import { getEditorService } from "@abstractions/service-helpers";
 import { FileChange } from "../explorer-tools/ProjectService";
-import { ProjectState } from "../../../shared/state/AppState";
+import { ProjectState } from "@state/AppState";
 
-import { getDocumentService } from "../../../abstractions/service-helpers";
+import { getDocumentService } from "@abstractions/service-helpers";
 import DocumentTab from "./DocumentTab";
-import { getProjectService, getStore } from "../../../abstractions/service-helpers";
+import { getProjectService, getStore } from "@abstractions/service-helpers";
 import { DocumentsInfo, IDocumentPanel } from "../../../shared/services/IDocumentService";
 
 /**

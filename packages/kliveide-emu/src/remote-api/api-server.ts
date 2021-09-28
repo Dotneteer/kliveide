@@ -6,13 +6,13 @@ import { mainProcessStore } from "../main/mainProcessStore";
 import {
   emulatorSetTapeContenstAction,
   emulatorRequestTypeAction,
-} from "../shared/state/redux-emulator-state";
+} from "@state/redux-emulator-state";
 import { checkTapeFile } from "../shared/tape/readers";
 import { BinaryReader } from "../shared/utils/BinaryReader";
-import { IdeConfiguration } from "../shared/state/AppState";
-import { ideConfigSetAction } from "../shared/state/redux-ide-config-state";
+import { IdeConfiguration } from "@state/AppState";
+import { ideConfigSetAction } from "@state/redux-ide-config-state";
 import { appConfiguration } from "../main/klive-configuration";
-import { ideConnectsAction } from "../shared/state/redux-ide-connection.state";
+import { ideConnectsAction } from "@state/redux-ide-connection.state";
 import { AppWindow } from "../main/AppWindow";
 import {
   AddDiagnosticsFrameDataResponse,

@@ -1,5 +1,5 @@
-import { registerMachineTypeAction } from "../../shared/state/machines-reducer";
-import { RegisteredMachine } from "../../shared/state/AppState";
+import { registerMachineTypeAction } from "@state/machines-reducer";
+import { RegisteredMachine } from "@state/AppState";
 import { MachineContextProvider } from "./machine-context";
 import { dispatch } from "../../main/main-state/main-store";
 

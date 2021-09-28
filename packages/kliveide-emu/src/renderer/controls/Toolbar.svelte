@@ -14,7 +14,7 @@
     emulatorToggleFastLoadAction,
     emulatorMuteAction,
     emulatorUnmuteAction,
-  } from "../../shared/state/redux-emulator-state";
+  } from "@state/redux-emulator-state";
 
   // --- The virtual machine instance
   export let vmEngine;

@@ -3,7 +3,7 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
-import { getOutputPaneService, getToolAreaService } from "../../../abstractions/service-helpers";
+import { getOutputPaneService, getToolAreaService } from "@abstractions/service-helpers";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common-ui/VirtualizedList";

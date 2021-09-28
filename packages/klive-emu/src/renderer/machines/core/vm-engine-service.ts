@@ -1,4 +1,4 @@
-import { setMachineTypeAction } from "../../../shared/state/machine-type-reducer";
+import { setMachineTypeAction } from "@state/machine-type-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { delay } from "../../common-ui/utils";
 import { ZxSpectrum128Core } from "../zx-spectrum/ZxSpectrum128Core";
@@ -19,11 +19,11 @@ import {
   emuSetDiagDataAction,
   emuSetExecutionStateAction,
   emuSetFrameIdAction,
-} from "../../../shared/state/emulator-panel-reducer";
-import { FrameDiagData } from "../../../shared/state/AppState";
+} from "@state/emulator-panel-reducer";
+import { FrameDiagData } from "@state/AppState";
 import { CambridgeZ88Core } from "../cambridge-z88/CambridgeZ88Core";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
-import { dispatch, getState } from "../../../abstractions/service-helpers";
+import { dispatch, getState } from "@abstractions/service-helpers";
 
 /**
  * This class is responsible for controlling the singleton virtual machine

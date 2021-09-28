@@ -2,10 +2,10 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
-import { EmulatorPanelState } from "../shared/state/AppState";
+import { EmulatorPanelState } from "@state/AppState";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { mainProcessStore } from "./mainProcessStore";
-import { machineCommandAction } from "../shared/state/redux-machine-command-state";
+import { machineCommandAction } from "@state/redux-machine-command-state";
 import {
   CZ88_BATTERY_LOW,
   CZ88_HARD_RESET,
@@ -21,7 +21,7 @@ import {
   emulatorSetClockMultiplierAction,
   emulatorSetKeyboardAction,
   emulatorSetMachineContextAction,
-} from "../shared/state/redux-emulator-state";
+} from "@state/redux-emulator-state";
 import { AppWindow } from "./AppWindow";
 
 // --- Default ROM file

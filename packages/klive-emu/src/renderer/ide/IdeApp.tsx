@@ -12,13 +12,13 @@ import {
   getToolAreaService,
 } from "@abstractions/service-helpers";
 import { useDispatch, useStore } from "react-redux";
-import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
+import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
-import { EmuViewOptions, ToolFrameState } from "../../shared/state/AppState";
+import { EmuViewOptions, ToolFrameState } from "@state/AppState";
 import { useLayoutEffect } from "react";
 import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
-import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
+import { setActivitiesAction } from "@state/activity-bar-reducer";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";

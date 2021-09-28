@@ -21,13 +21,13 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   TOOL_AREA_SERVICE,
-} from "../../abstractions/service-registry";
+} from "@abstractions/service-registry";
 import {
   dispatch,
   getState,
   getStore,
-} from "../../abstractions/service-helpers";
-import { KliveStore } from "../../shared/state/KliveStore";
+} from "@abstractions/service-helpers";
+import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
@@ -35,9 +35,9 @@ import {
   IDE_SOURCE,
   RENDERER_STATE_REQUEST_CHANNEL,
 } from "../../shared/messaging/channels";
-import { KliveAction } from "../../shared/state/state-core";
-import { appReducers } from "../../shared/state/app-reducers";
-import { AppState, getInitialAppState } from "../../shared/state/AppState";
+import { KliveAction } from "@state/state-core";
+import { appReducers } from "@state/app-reducers";
+import { AppState, getInitialAppState } from "@state/AppState";
 import { ForwardActionRequest } from "../../shared/messaging/message-types";
 import { ActivityService } from "./activity-bar/ActivityService";
 import { SideBarService } from "./side-bar/SideBarService";

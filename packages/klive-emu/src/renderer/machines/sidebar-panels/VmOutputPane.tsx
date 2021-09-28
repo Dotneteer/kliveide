@@ -1,9 +1,9 @@
-import { EmulatorPanelState } from "../../../shared/state/AppState";
+import { EmulatorPanelState } from "@state/AppState";
 import {
   OutputPaneDescriptorBase,
 } from "../../ide/tool-area/OutputPaneService";
-import { getEngineProxyService, getOutputPaneService } from "../../../abstractions/service-helpers";
-import { getStore } from "../../../abstractions/service-helpers";
+import { getEngineProxyService, getOutputPaneService } from "@abstractions/service-helpers";
+import { getStore } from "@abstractions/service-helpers";
 import { IOutputBuffer, OutputColor } from "../../../shared/services/IOutputPaneService";
 
 const ID = "VmOutputPane";

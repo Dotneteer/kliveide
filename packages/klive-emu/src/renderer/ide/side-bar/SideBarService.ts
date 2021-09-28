@@ -1,9 +1,9 @@
 import * as React from "react";
-import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
-import { AppState, SideBarState } from "../../../shared/state/AppState";
+import { setSideBarStateAction } from "@state/side-bar-reducer";
+import { AppState, SideBarState } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { getActivityService } from "../../../abstractions/service-helpers"
-import { dispatch, getState, getStore } from "../../../abstractions/service-helpers";
+import { getActivityService } from "@abstractions/service-helpers"
+import { dispatch, getState, getStore } from "@abstractions/service-helpers";
 import { ISideBarPanel, ISideBarService } from "../../../shared/services/ISidebarService";
 
 /**

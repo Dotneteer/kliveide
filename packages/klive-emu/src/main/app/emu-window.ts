@@ -17,9 +17,9 @@ import {
   emuSetBaseFrequencyAction,
   emuSetExecutionStateAction,
   emuSetExtraFeaturesAction,
-} from "../../shared/state/emulator-panel-reducer";
+} from "@state/emulator-panel-reducer";
 import { emuMessenger, setEmuForwarder, setEmuMessenger } from "./app-menu";
-import { AppState } from "../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import {
   appSettings,
   KliveProject,
@@ -28,7 +28,7 @@ import {
   saveKliveSettings,
   saveSettingsToFile,
 } from "../main-state/klive-configuration";
-import { emuFocusAction } from "../../shared/state/emu-focus-reducer";
+import { emuFocusAction } from "@state/emu-focus-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import {

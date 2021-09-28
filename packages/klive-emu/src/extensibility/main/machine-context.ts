@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { MenuItemConstructorOptions, shell } from "electron";
-import { AppState } from "../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 

@@ -1,14 +1,14 @@
 import {
   changeActivityAction,
   pointActivityAction,
-} from "../../../shared/state/activity-bar-reducer";
+} from "@state/activity-bar-reducer";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import {
   dispatch,
   getState,
   getStore,
-} from "../../../abstractions/service-helpers";
-import { ActivityBarState } from "../../../shared/state/AppState";
+} from "@abstractions/service-helpers";
+import { ActivityBarState } from "@state/AppState";
 import { Activity, IActivityService } from "@abstractions/activity-service";
 
 /**

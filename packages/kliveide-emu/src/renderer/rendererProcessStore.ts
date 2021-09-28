@@ -1,7 +1,7 @@
 import { combineReducers, createStore, applyMiddleware } from "redux";
-import { appReducers } from "../shared/state/app-reducers";
-import { AppState, getDefaultAppState } from "../shared/state/AppState";
-import { StateAwareObject } from "../shared/state/StateAwareObject";
+import { appReducers } from "@state/app-reducers";
+import { AppState, getDefaultAppState } from "@state/AppState";
+import { StateAwareObject } from "@state/StateAwareObject";
 import { REDUX_ACTION_CHANNEL } from "../shared/utils/channel-ids";
 import { IpcRendereApi } from "../exposed-apis";
 

@@ -1,4 +1,4 @@
-import { ProgramCounterInfo } from "../../../shared/state/AppState";
+import { ProgramCounterInfo } from "@state/AppState";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { IAudioRenderer } from "../audio/IAudioRenderer";
 import { MachineCreationOptions, MachineState } from "../core/vm-core-types";
@@ -24,7 +24,7 @@ import {
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
-import { getModalDialogService } from "../../../abstractions/service-helpers";
+import { getModalDialogService } from "@abstractions/service-helpers";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
@@ -37,7 +37,7 @@ import {
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
 import { Store } from "redux";
-import { getStore } from "../../../abstractions/service-helpers";
+import { getStore } from "@abstractions/service-helpers";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 

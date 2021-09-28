@@ -16,7 +16,7 @@ import { IAudioRenderer } from "../audio/IAudioRenderer";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import { KeyMapping } from "../core/keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
-import { ProgramCounterInfo } from "../../../shared/state/AppState";
+import { ProgramCounterInfo } from "@state/AppState";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
 
 /**
