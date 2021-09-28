@@ -4,7 +4,7 @@ import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
-import { getEngineProxyService } from "../../../shared/services/store-helpers";
+import { getEngineProxyService } from "../../../abstractions/service-helpers";
 import {
   labelStyle,
   valueItemStyle,

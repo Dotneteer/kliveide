@@ -21,12 +21,12 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   TOOL_AREA_SERVICE,
-} from "../../shared/services/service-registry";
+} from "../../abstractions/service-registry";
 import {
   dispatch,
   getState,
   getStore,
-} from "../../shared/services/store-helpers";
+} from "../../abstractions/service-helpers";
 import { KliveStore } from "../../shared/state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { IpcRendereApi } from "../../exposed-apis";

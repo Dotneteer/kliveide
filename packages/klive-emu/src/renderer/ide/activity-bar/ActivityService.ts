@@ -2,15 +2,14 @@ import {
   changeActivityAction,
   pointActivityAction,
 } from "../../../shared/state/activity-bar-reducer";
-import { Activity } from "../../../shared/activity/Activity";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import {
   dispatch,
   getState,
   getStore,
-} from "../../../shared/services/store-helpers";
+} from "../../../abstractions/service-helpers";
 import { ActivityBarState } from "../../../shared/state/AppState";
-import { IActivityService } from "../../../shared/services/IActivityService";
+import { Activity, IActivityService } from "@abstractions/activity-service";
 
 /**
  * This class provides services for the activity bar

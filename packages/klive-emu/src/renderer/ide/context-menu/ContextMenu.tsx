@@ -8,7 +8,7 @@ import {
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 import { animationTick } from "../../common-ui/utils";
-import { getContextMenuService } from "../../../shared/services/store-helpers";
+import { getContextMenuService } from "../../../abstractions/service-helpers";
 
 import { useState } from "react";
 import { useEffect } from "react";

@@ -17,7 +17,7 @@ import {
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
-import { dispatch } from "../../shared/services/store-helpers";
+import { dispatch } from "../../abstractions/service-helpers";
 
 const Root = styles.div`
   display: flex;

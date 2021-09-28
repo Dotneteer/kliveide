@@ -3,12 +3,12 @@ import { CSSProperties } from "styled-components";
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
-import { getEditorService } from "../../../shared/services/store-helpers";
 import {
-  DocumentPanelDescriptorBase,
-} from "../document-area/DocumentFactory";
-import { getDocumentService } from "../../../shared/services/store-helpers";
-import { getThemeService } from "../../../shared/services/store-helpers"
+  getEditorService,
+  getDocumentService,
+  getThemeService,
+} from "@abstractions/service-helpers";
+import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileOperationResponse } from "../../../shared/messaging/message-types";
 import { IDocumentPanel } from "../../../shared/services/IDocumentService";
@@ -152,7 +152,9 @@ export default class EditorDocument extends React.Component<Props, State> {
 
   async componentWillUnmount(): Promise<void> {
     // --- Dispose event handler
-    this.props.descriptor.documentDescriptorChanged.off(this._descriptorChanged);
+    this.props.descriptor.documentDescriptorChanged.off(
+      this._descriptorChanged
+    );
 
     // --- Check if this document is still registered
     const docId = this.props.descriptor.id;
@@ -193,7 +195,9 @@ export default class EditorDocument extends React.Component<Props, State> {
     };
 
     const tone = getThemeService().getActiveTheme().tone;
-    const languageInfo = getDocumentService().getCustomLanguage(this.props.language);
+    const languageInfo = getDocumentService().getCustomLanguage(
+      this.props.language
+    );
     let theme = tone === "light" ? "vs" : "vs-dark";
     if (
       (languageInfo?.lightTheme && tone === "light") ||

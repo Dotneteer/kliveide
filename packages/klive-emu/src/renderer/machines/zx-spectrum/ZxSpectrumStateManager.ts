@@ -5,7 +5,7 @@ import {
   spectrumTapeLoadedAction,
 } from "../../../shared/state/spectrum-specific-reducer";
 import { emuSetMessageAction } from "../../../shared/state/emulator-panel-reducer";
-import { dispatch, getState } from "../../../shared/services/store-helpers";
+import { dispatch, getState } from "../../../abstractions/service-helpers";
 
 export class ZxSpectrumStateManager implements IZxSpectrumStateManager {
   /**

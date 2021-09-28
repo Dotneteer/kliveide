@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AppState } from "../../shared/state/AppState";
-import { getThemeService } from "../../shared/services/store-helpers";
+import { getThemeService } from "../../abstractions/service-helpers";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
@@ -13,14 +13,14 @@ import { setEngineDependencies } from "../machines/core/vm-engine-dependencies";
 import { useRef, useState } from "react";
 import ModalDialog from "../common-ui/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
-import { getModalDialogService } from "../../shared/services/store-helpers";
+import { getModalDialogService } from "../../abstractions/service-helpers";
 import { Z88_CARDS_DIALOG_ID } from "../machines/cambridge-z88/CambridgeZ88Core";
 import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";
 
 // --- We need to import these files to setup the app
 import "./emu-message-processor";
 import "./ide-message-processor";
-import { getStore } from "../../shared/services/store-helpers";
+import { getStore } from "../../abstractions/service-helpers";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({

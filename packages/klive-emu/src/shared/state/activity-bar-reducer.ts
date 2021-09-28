@@ -1,4 +1,4 @@
-import { Activity } from "../activity/Activity";
+import { Activity } from "@abstractions/activity-service";
 import { ActivityBarState, AppState } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
 

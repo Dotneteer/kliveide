@@ -8,11 +8,11 @@ import {
 import { AppState } from "../../../shared/state/AppState";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { getToolAreaService } from "../../../shared/services/store-helpers";
+import { getToolAreaService } from "../../../abstractions/service-helpers";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
-import { dispatch } from "../../../shared/services/store-helpers";
+import { dispatch } from "../../../abstractions/service-helpers";
 import { IToolPanel, ToolsInfo } from "../../../shared/services/IToolAreaService";
 
 /**

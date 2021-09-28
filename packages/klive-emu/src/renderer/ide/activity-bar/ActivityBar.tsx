@@ -4,7 +4,7 @@ import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
 } from "../../common-ui/PanelStyles";
-import { getActivityService } from "../../../shared/services/store-helpers";
+import { getActivityService } from "../../../abstractions/service-helpers";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 

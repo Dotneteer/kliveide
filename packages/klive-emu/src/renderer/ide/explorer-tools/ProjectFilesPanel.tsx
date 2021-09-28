@@ -6,14 +6,14 @@ import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
-import { getProjectService } from "../../../shared/services/store-helpers";
+import { getProjectService } from "../../../abstractions/service-helpers";
 import { CSSProperties } from "react";
 import { CommonIcon } from "../../common-ui/CommonIcon";
 import { AppState, ProjectState } from "../../../shared/state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "../../../shared/command/commands";
-import { getContextMenuService } from "../../../shared/services/store-helpers";
-import { getModalDialogService } from "../../../shared/services/store-helpers";
+import { getContextMenuService } from "../../../abstractions/service-helpers";
+import { getModalDialogService } from "../../../abstractions/service-helpers";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
@@ -25,8 +25,8 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
-import { getDocumentService } from "../../../shared/services/store-helpers";
-import { getState, getStore } from "../../../shared/services/store-helpers";
+import { getDocumentService } from "../../../abstractions/service-helpers";
+import { getState, getStore } from "../../../abstractions/service-helpers";
 import { IProjectService } from "../../../shared/services/IProjectService";
 
 type State = {

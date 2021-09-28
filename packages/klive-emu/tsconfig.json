@@ -13,7 +13,9 @@
     "baseUrl": ".",
     "downlevelIteration": true,
     "paths": {
-      "*": ["node_modules/*"]
+      "*": ["node_modules/*"],
+      "@abstractions/*": ["src/abstractions/*"],
+      "@state/*": ["src/shared/state/*"]
     }
   },
   "include": ["src/**/*"],

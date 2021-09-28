@@ -1,4 +1,4 @@
-import { Activity } from "../activity/Activity";
+import { Activity } from "@abstractions/activity-service";
 import {
   AppState,
   DirectoryContent,

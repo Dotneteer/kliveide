@@ -6,7 +6,7 @@ import { DirectoryContent } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { FileOperationResponse } from "../../../shared/messaging/message-types";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { getStore } from "../../../shared/services/store-helpers";
+import { getStore } from "../../../abstractions/service-helpers";
 
 /**
  * This class implements the project services

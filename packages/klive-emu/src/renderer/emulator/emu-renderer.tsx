@@ -10,8 +10,8 @@ import {
   registerService,
   STORE_SERVICE,
   THEME_SERVICE,
-} from "../../shared/services/service-registry";
-import { dispatch, getState, getStore } from "../../shared/services/store-helpers";
+} from "../../abstractions/service-registry";
+import { dispatch, getState, getStore } from "../../abstractions/service-helpers";
 import { KliveStore } from "../../shared/state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { getInitialAppState } from "../../shared/state/AppState";

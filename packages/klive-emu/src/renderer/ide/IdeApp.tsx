@@ -1,6 +1,16 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { getThemeService } from "../../shared/services/store-helpers";
+import {
+  getActivityService,
+  getDocumentService,
+  getModalDialogService,
+  getOutputPaneService,
+  getSideBarService,
+  getState,
+  getStore,
+  getThemeService,
+  getToolAreaService,
+} from "@abstractions/service-helpers";
 import { useDispatch, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
@@ -8,9 +18,7 @@ import { EmuViewOptions, ToolFrameState } from "../../shared/state/AppState";
 import { useLayoutEffect } from "react";
 import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
-import { Activity } from "../../shared/activity/Activity";
 import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
-import { getSideBarService } from "../../shared/services/store-helpers";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";
@@ -19,10 +27,8 @@ import { BlinkInformationPanelDescriptor } from "../machines/cambridge-z88/Blink
 import { CallStackPanelDescriptor } from "../machines/sidebar-panels/CallStackPanel";
 import { IoLogsPanelDescription } from "../machines/sidebar-panels/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
-import { getToolAreaService } from "../../shared/services/store-helpers";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
-import { getOutputPaneService } from "../../shared/services/store-helpers";
 import { VmOutputPanelDescriptor } from "../machines/sidebar-panels/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
 import IdeContextMenu from "./context-menu/ContextMenu";
@@ -30,7 +36,6 @@ import ModalDialog from "../common-ui/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";
-import { getActivityService } from "../../shared/services/store-helpers";
 import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
 import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
@@ -40,8 +45,6 @@ import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
 import { virtualMachineToolsService } from "../machines/core/VitualMachineToolBase";
 import { ZxSpectrum48Tools } from "../machines/zx-spectrum/ZxSpectrum48Core";
 import { CambridgeZ88Tools } from "../machines/cambridge-z88/CambridgeZ88Core";
-import { getStore, getState } from "../../shared/services/store-helpers";
-import { getModalDialogService } from "../../shared/services/store-helpers";
 import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,
@@ -62,9 +65,9 @@ import {
   renameFolderDialog,
   RENAME_FOLDER_DIALOG_ID,
 } from "./explorer-tools/RenameFolderDialog";
-import { getDocumentService } from "../../shared/services/store-helpers";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
+import { Activity } from "@abstractions/activity-service";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -223,7 +226,7 @@ export default function IdeApp() {
 
       // --- Register side bar panels
       const sideBarService = getSideBarService();
-      
+
       // (Explorer)
       sideBarService.registerSideBarPanel(
         "file-view",

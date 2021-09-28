@@ -25,8 +25,8 @@ import { KliveStore } from "../../shared/state/KliveStore";
 import {
   registerService,
   STORE_SERVICE,
-} from "../../shared/services/service-registry";
-export { getStore, dispatch, getState } from "../../shared/services/store-helpers";
+} from "../../abstractions/service-registry";
+export { getStore, dispatch, getState } from "../../abstractions/service-helpers";
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;

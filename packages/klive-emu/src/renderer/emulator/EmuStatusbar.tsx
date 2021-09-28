@@ -4,7 +4,7 @@ import { getVersion } from "../../version";
 import { AppState } from "../../shared/state/AppState";
 import { SvgIcon } from "../common-ui/SvgIcon";
 import { vmEngineService } from "../machines/core/vm-engine-service";
-import { getThemeService } from "../../shared/services/store-helpers";
+import { getThemeService } from "../../abstractions/service-helpers";
 import { Root, Gap, Section, Label } from "../common-ui/StatusbarStyles";
 
 /**

@@ -23,6 +23,7 @@ const commonConfig = {
   node: { __dirname: false, __filename: false },
   resolve: {
     alias: {
+      "@abstractions": srcPaths("src/abstractions"),
       _: srcPaths("src"),
       _main: srcPaths("src/main"),
       _models: srcPaths("src/models"),

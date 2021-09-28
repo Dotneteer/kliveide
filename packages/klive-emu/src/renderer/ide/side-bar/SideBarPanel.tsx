@@ -3,11 +3,11 @@ import ReactResizeDetector from "react-resize-detector";
 import { useEffect, useState } from "react";
 import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
-import { getSideBarService } from "../../../shared/services/store-helpers";
+import { getSideBarService } from "../../../abstractions/service-helpers";
 import { MenuItem } from "../../../shared/command/commands";
-import { getContextMenuService } from "../../../shared/services/store-helpers";
+import { getContextMenuService } from "../../../abstractions/service-helpers";
 import { AppState } from "../../../shared/state/AppState";
-import { getStore } from "../../../shared/services/store-helpers";
+import { getStore } from "../../../abstractions/service-helpers";
 import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 
 /**

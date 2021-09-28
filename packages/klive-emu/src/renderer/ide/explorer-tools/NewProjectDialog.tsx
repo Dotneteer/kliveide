@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CheckBoxComponent } from "@syncfusion/ej2-react-buttons";
-import { getModalDialogService } from "../../../shared/services/store-helpers";
+import { getModalDialogService } from "../../../abstractions/service-helpers";
 import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
@@ -17,7 +17,7 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
-import { getState, getStore } from "../../../shared/services/store-helpers";
+import { getState, getStore } from "../../../abstractions/service-helpers";
 
 export const NEW_PROJECT_DIALOG_ID = "NewProjectDialog";
 

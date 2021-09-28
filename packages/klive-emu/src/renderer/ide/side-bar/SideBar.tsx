@@ -1,10 +1,10 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import SideBarPanel from "./SideBarPanel";
-import { getSideBarService } from "../../../shared/services/store-helpers";
+import { getSideBarService } from "../../../abstractions/service-helpers";
 import { useRef, useState, useEffect } from "react";
 import SideBarHeader from "./SideBarHeader";
-import { getActivityService } from "../../../shared/services/store-helpers";
+import { getActivityService } from "../../../abstractions/service-helpers";
 import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 
 /**
