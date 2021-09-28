@@ -5,7 +5,6 @@ import { AppState } from "../../shared/state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
 import { vmEngineService } from "../machines/core/vm-engine-service";
-import { emuStore } from "./emuStore";
 import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
 import {
   emuMuteSoundAction,
@@ -18,6 +17,7 @@ import {
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
+import { dispatch } from "../../shared/services/store-helpers";
 
 const Root = styles.div`
   display: flex;
@@ -157,7 +157,7 @@ export class Toolbar extends React.Component<Props, State> {
         iconName="keyboard"
         title="Toggle keyboard"
         selected={this.props.showKeyboard}
-        clicked={() => emuStore.dispatch(emuToggleKeyboardAction())}
+        clicked={() => dispatch(emuToggleKeyboardAction())}
         highlightSize={32}
       />,
       <ToolbarSeparator key="sep-2" />,
@@ -169,14 +169,14 @@ export class Toolbar extends React.Component<Props, State> {
               key="unmute"
               iconName="unmute"
               title="Unmute sound"
-              clicked={() => emuStore.dispatch(emuUnmuteSoundAction())}
+              clicked={() => dispatch(emuUnmuteSoundAction())}
             />
           ) : (
             <ToolbarIconButton
               key="mute"
               iconName="mute"
               title="Mute sound"
-              clicked={() => emuStore.dispatch(emuMuteSoundAction())}
+              clicked={() => dispatch(emuMuteSoundAction())}
             />
           ),
           <ToolbarSeparator key="sep3" />,
@@ -191,7 +191,7 @@ export class Toolbar extends React.Component<Props, State> {
             title="Show ULA position"
             selected={this.props.showBeam}
             clicked={() =>
-              emuStore.dispatch(
+              dispatch(
                 spectrumBeamPositionAction(!this.props.showBeam)
               )
             }
@@ -207,7 +207,7 @@ export class Toolbar extends React.Component<Props, State> {
             title="Fast LOAD mode"
             selected={this.props.fastLoad}
             clicked={() =>
-              emuStore.dispatch(spectrumFastLoadAction(!this.props.fastLoad))
+              dispatch(spectrumFastLoadAction(!this.props.fastLoad))
             }
           />,
           <ToolbarIconButton

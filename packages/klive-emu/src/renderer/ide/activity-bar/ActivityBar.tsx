@@ -4,7 +4,7 @@ import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
 } from "../../common-ui/PanelStyles";
-import { activityService } from "./ActivityService";
+import { getActivityService } from "../../../shared/services/store-helpers";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../shared/state/AppState";
 
@@ -19,6 +19,7 @@ export default function ActivityBar() {
   );
   const appButtons: JSX.Element[] = [];
   const sysButtons: JSX.Element[] = [];
+  const activityService = getActivityService();
   activities?.forEach((a, index) => {
     const destination = a.isSystemActivity ? sysButtons : appButtons;
     destination.push(

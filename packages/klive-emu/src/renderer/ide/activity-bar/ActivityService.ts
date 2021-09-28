@@ -4,21 +4,26 @@ import {
 } from "../../../shared/state/activity-bar-reducer";
 import { Activity } from "../../../shared/activity/Activity";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { ideStore } from "../ideStore";
+import {
+  dispatch,
+  getState,
+  getStore,
+} from "../../../shared/services/store-helpers";
 import { ActivityBarState } from "../../../shared/state/AppState";
+import { IActivityService } from "../../../shared/services/IActivityService";
 
 /**
  * This class provides services for the activity bar
  */
-class ActivityService {
+export class ActivityService implements IActivityService {
   private _activities: Activity[] = [];
   private readonly _activityChanged = new LiteEvent<string | null>();
   private _lastActivityIndex: number;
 
   constructor() {
     this._lastActivityIndex = -1;
-    ideStore.activityBarChanged.on((state) => {
-      // --- Keep trach of changing the activity index
+    getStore().activityBarChanged.on((state) => {
+      // --- Keep track of changing the activity index
       const activityBarState = state as ActivityBarState;
       this._activities = activityBarState.activities;
       if (activityBarState.activeIndex !== this._lastActivityIndex) {
@@ -40,23 +45,26 @@ class ActivityService {
    * Gets the curent activity
    */
   get activeActivity(): Activity | null {
-    const currentActivity = ideStore.getState().activityBar?.activeIndex ?? -1;
+    const currentActivity = getState().activityBar?.activeIndex ?? -1;
     if (!this._activities || currentActivity < 0) {
       return null;
     }
     return this._activities[currentActivity] ?? null;
   }
 
+  /**
+   * Selects the specified activity
+   * @param index Index of activity to select
+   */
   selectActivity(index: number): void {
-    ideStore.dispatch(changeActivityAction(index));
+    dispatch(changeActivityAction(index));
   }
 
+  /**
+   * Marks the specified activity as the pointed one
+   * @param index Pointed activity index
+   */
   pointActivity(index: number): void {
-    ideStore.dispatch(pointActivityAction(index));
+    dispatch(pointActivityAction(index));
   }
 }
-
-/**
- * The singleton instance of the service
- */
-export const activityService = new ActivityService();

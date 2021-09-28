@@ -1,8 +1,9 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
+import { IToolPanel } from "../../../shared/services/IToolAreaService";
 import { MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../context-menu/ContextMenuService";
-import { IToolPanel, toolAreaService } from "./ToolAreaService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
+import { getToolAreaService } from "../../../shared/services/store-helpers";
 
 interface Props {
   title: string;
@@ -50,6 +51,7 @@ export default function ToolTab({
   };
 
   // --- Create menu items
+  const toolAreaService = getToolAreaService();
   const menuItems: MenuItem[] = [
     {
       id: "moveLeft",
@@ -77,7 +79,7 @@ export default function ToolTab({
         if (e.button === 0) {
           clicked?.();
         } else if (e.button === 2) {
-          await contextMenuService.openMenu(
+          await getContextMenuService().openMenu(
             menuItems,
             e.clientY,
             e.clientX,

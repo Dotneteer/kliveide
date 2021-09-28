@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { themeService } from "../common-ui/themes/theme-service";
+import { getThemeService } from "../../shared/services/store-helpers";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
 
 const NORMAL_WIDTH = 100;
@@ -41,6 +41,7 @@ export default function Sp48Key(props: Props) {
   const [mouseOverGlyph, setMouseOverGlyph] = useState(false);
 
   // --- Invariant display properties
+  const themeService = getThemeService();
   const keyBackground = themeService.getProperty("--key-background-color");
   const mainKeyColor = themeService.getProperty("--key-main-color");
   const symbolKeyColor = themeService.getProperty("--key-symbol-color");

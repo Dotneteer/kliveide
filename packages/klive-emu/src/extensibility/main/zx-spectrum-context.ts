@@ -5,7 +5,6 @@ import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { AppState } from "../../shared/state/AppState";
 import { BinaryReader } from "../../shared/utils/BinaryReader";
 import { checkTapeFile } from "../../shared/tape/readers";
-import { mainStore } from "../../main/main-state/main-store";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
@@ -20,6 +19,7 @@ import {
 } from "../../main/app/app-menu";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import { VirtualMachineType } from "./machine-registry";
+import { dispatch, getState } from "../../main/main-state/main-store";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";
@@ -47,7 +47,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    */
   constructor(options?: Record<string, any>) {
     super(options);
-    mainStore.dispatch(emuSetKeyboardLayoutAction(""));
+    dispatch(emuSetKeyboardLayoutAction(""));
   }
 
   /**
@@ -66,7 +66,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         type: "checkbox",
         checked: true,
         click: (mi) => {
-          mainStore.dispatch(spectrumBeamPositionAction(mi.checked));
+          dispatch(spectrumBeamPositionAction(mi.checked));
           emuWindow.saveKliveProject();
         },
       },
@@ -76,7 +76,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         type: "checkbox",
         checked: true,
         click: (mi) => {
-          mainStore.dispatch(spectrumFastLoadAction(mi.checked));
+          dispatch(spectrumFastLoadAction(mi.checked));
           emuWindow.saveKliveProject();
         },
       },
@@ -132,7 +132,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    * Override this method to get the machine-specific settings
    */
   getMachineSpecificSettings(): Record<string, any> {
-    const state = mainStore.getState();
+    const state = getState();
     const spectrum = state.spectrumSpecific;
     return {
       fastLoad: !!spectrum?.fastLoad,
@@ -151,26 +151,26 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     settings: Record<string, any>
   ): Promise<MachineCreationOptions | null> {
     if (settings.clockMultiplier) {
-      mainStore.dispatch(emuSetClockMultiplierAction(settings.clockMultiplier));
+      dispatch(emuSetClockMultiplierAction(settings.clockMultiplier));
     }
     if (settings.soundLevel) {
       setSoundLevel(settings.soundLevel);
       setSoundLevelMenu(settings.muted, settings.soundLevel);
     }
-    mainStore.dispatch(spectrumFastLoadAction(!!settings.fastLoad));
-    mainStore.dispatch(spectrumBeamPositionAction(!!settings.showBeam));
+    dispatch(spectrumFastLoadAction(!!settings.fastLoad));
+    dispatch(spectrumBeamPositionAction(!!settings.showBeam));
     this._lastTapeFile = settings.lastTapeFile;
     if (settings.lastTapeFile) {
       try {
         const contents = fs.readFileSync(settings.lastTapeFile);
         if (checkTapeFile(new BinaryReader(contents))) {
-          mainStore.dispatch(spectrumTapeContentsAction(contents));
+          dispatch(spectrumTapeContentsAction(contents));
         }
       } catch {
         // --- This error is intentionally ignored
       }
     } else {
-      mainStore.dispatch(spectrumTapeContentsAction(new Uint8Array(0)));
+      dispatch(spectrumTapeContentsAction(new Uint8Array(0)));
     }
     return null;
   }
@@ -200,7 +200,7 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
         tapeFile = result.filePaths[0];
         const contents = fs.readFileSync(tapeFile);
         if (checkTapeFile(new BinaryReader(contents))) {
-          mainStore.dispatch(spectrumTapeContentsAction(contents));
+          dispatch(spectrumTapeContentsAction(contents));
           this._lastTapeFile = tapeFile;
           await dialog.showMessageBox(window, {
             title: `Tape file loaded`,

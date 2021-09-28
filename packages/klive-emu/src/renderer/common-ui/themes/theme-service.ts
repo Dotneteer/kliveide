@@ -1,14 +1,12 @@
+import { IconInfo, ImageInfo, ITheme, IThemeService } from "../../../shared/services/IThemeService";
 import { IconDefs } from "./IconDefs";
-import { IconInfo } from "./IconInfo";
 import { ImageIconDefs } from "./ImageDefs";
-import { ImageInfo } from "./ImageInfo";
 import { IThemeProperties } from "./IThemeProperties";
-import { ITheme } from "./theme-core";
 
 /**
  * Creates a store that handles the application's themes.
  */
-class ThemeService {
+export class ThemeService implements IThemeService {
   private readonly _themes: ITheme[] = [];
   private _activeTheme: ITheme | null;
   private _icons = new Map<string, IconInfo>();
@@ -113,8 +111,3 @@ class ThemeService {
     return theme;
   }
 }
-
-/**
- * The singleton store instance
- */
-export const themeService = new ThemeService();

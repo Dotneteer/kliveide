@@ -2,14 +2,14 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
-import { editorService } from "../editor/editorService";
-import { FileChange, projectServices } from "../explorer-tools/ProjectServices";
-import { ideStore } from "../ideStore";
-import { IDocumentPanel } from "./DocumentFactory";
+import { getEditorService } from "../../../shared/services/store-helpers";
+import { FileChange } from "../explorer-tools/ProjectService";
 import { ProjectState } from "../../../shared/state/AppState";
 
-import { documentService, DocumentsInfo } from "./DocumentService";
+import { getDocumentService } from "../../../shared/services/store-helpers";
 import DocumentTab from "./DocumentTab";
+import { getProjectService, getStore } from "../../../shared/services/store-helpers";
+import { DocumentsInfo, IDocumentPanel } from "../../../shared/services/IDocumentService";
 
 /**
  * Represents the statusbar of the emulator
@@ -20,6 +20,7 @@ export default function DocumentTabBar() {
   const [currentDocs, setCurrentDocs] = useState<IDocumentPanel[]>([]);
 
   // --- Refresh the documents when any changes occur
+  const documentService = getDocumentService();
   const refreshDocs = (info: DocumentsInfo) => {
     setCurrentDocs(info.docs);
     setActiveDoc(info.active);
@@ -94,20 +95,22 @@ export default function DocumentTabBar() {
     setCurrentDocs(documentService.getDocuments());
     setActiveDoc(documentService.getActiveDocument());
     documentService.documentsChanged.on(refreshDocs);
-    projectServices.folderDeleted.on(folderDeleted);
-    projectServices.fileRenamed.on(fileRenamed);
-    projectServices.folderRenamed.on(folderRenamed);
-    projectServices.fileDeleted.on(fileDeleted);
-    ideStore.projectChanged.on(projectChanged);
+    const projectService = getProjectService();
+    projectService.folderDeleted.on(folderDeleted);
+    projectService.fileRenamed.on(fileRenamed);
+    projectService.folderRenamed.on(folderRenamed);
+    projectService.fileDeleted.on(fileDeleted);
+    getStore().projectChanged.on(projectChanged);
 
     return () => {
       // --- Unmount
+      const projectService = getProjectService();
       documentService.documentsChanged.off(refreshDocs);
-      projectServices.fileRenamed.off(fileRenamed);
-      projectServices.folderRenamed.off(folderRenamed);
-      projectServices.fileDeleted.off(fileDeleted);
-      projectServices.folderDeleted.off(folderDeleted);
-      ideStore.projectChanged.off(projectChanged);
+      projectService.fileRenamed.off(fileRenamed);
+      projectService.folderRenamed.off(folderRenamed);
+      projectService.fileDeleted.off(fileDeleted);
+      projectService.folderDeleted.off(folderDeleted);
+      getStore().projectChanged.off(projectChanged);
     };
   });
 
@@ -129,7 +132,7 @@ export default function DocumentTabBar() {
           d.initialFocus = true;
         }}
         closed={() => {
-          editorService.clearState(d.id);
+          getEditorService().clearState(d.id);
           documentService.unregisterDocument(d);
         }}
       />

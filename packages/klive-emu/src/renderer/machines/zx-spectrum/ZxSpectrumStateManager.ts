@@ -1,14 +1,18 @@
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
-import { spectrumLoadModeAction, spectrumTapeContentsAction, spectrumTapeLoadedAction } from "../../../shared/state/spectrum-specific-reducer";
-import { emuStore } from "../../emulator/emuStore";
+import {
+  spectrumLoadModeAction,
+  spectrumTapeContentsAction,
+  spectrumTapeLoadedAction,
+} from "../../../shared/state/spectrum-specific-reducer";
 import { emuSetMessageAction } from "../../../shared/state/emulator-panel-reducer";
+import { dispatch, getState } from "../../../shared/services/store-helpers";
 
 export class ZxSpectrumStateManager implements IZxSpectrumStateManager {
   /**
    * Gets the current state
    */
   getState(): any {
-    return emuStore.getState();
+    return getState();
   }
 
   /**
@@ -16,7 +20,7 @@ export class ZxSpectrumStateManager implements IZxSpectrumStateManager {
    * @param contents Tape contents
    */
   setTapeContents(contents: Uint8Array): void {
-    emuStore.dispatch(spectrumTapeContentsAction(contents));
+    dispatch(spectrumTapeContentsAction(contents));
   }
 
   /**
@@ -24,7 +28,7 @@ export class ZxSpectrumStateManager implements IZxSpectrumStateManager {
    * @param message Panel message
    */
   setPanelMessage(message: string): void {
-    emuStore.dispatch(emuSetMessageAction(message));
+    dispatch(emuSetMessageAction(message));
   }
 
   /**
@@ -32,13 +36,13 @@ export class ZxSpectrumStateManager implements IZxSpectrumStateManager {
    * @param isLoad Is in load mode?
    */
   setLoadMode(isLoad: boolean): void {
-    emuStore.dispatch(spectrumLoadModeAction(isLoad));
+    dispatch(spectrumLoadModeAction(isLoad));
   }
 
   /**
    * Initiates the loading of the tape
    */
   initiateTapeLoading(): void {
-    emuStore.dispatch(spectrumTapeLoadedAction());
+    dispatch(spectrumTapeLoadedAction());
   }
 }

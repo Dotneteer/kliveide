@@ -1,10 +1,11 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../common-ui/ScrollablePanel";
-import { engineProxy, RunEventArgs } from "./engine-proxy";
-import { ideStore } from "./ideStore";
-import { ISideBarPanel } from "./side-bar/SideBarService";
+import { getEngineProxyService } from "../../shared/services/store-helpers";
 import { scrollableContentType } from "./utils/content-utils";
+import { getState } from "../../shared/services/store-helpers";
+import { ISideBarPanel } from "../../shared/services/ISidebarService";
+import { RunEventArgs } from "../../shared/services/IEngineProxyService";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;
@@ -41,16 +42,16 @@ export class SideBarPanelBase<
 
   // --- Listen to run events
   componentDidMount(): void {
-    engineProxy.runEvent.on(this.runEvent);
+    getEngineProxyService().runEvent.on(this.runEvent);
     this.setState({
-      hasMachine: !!ideStore.getState()?.emulatorPanel?.executionState as any,
+      hasMachine: !!getState()?.emulatorPanel?.executionState as any,
       selectedIndex: -1 as any,
     });
   }
 
   // --- Stop listening to run events
   componentWillUnmount(): void {
-    engineProxy.runEvent.off(this.runEvent);
+    getEngineProxyService().runEvent.off(this.runEvent);
   }
 
   renderContent(): React.ReactNode {
@@ -65,7 +66,7 @@ export class SideBarPanelBase<
       this.props.descriptor.expanded
     ) {
       this._initialized = true;
-      const emuPanelState = ideStore.getState()?.emulatorPanel;
+      const emuPanelState = getState()?.emulatorPanel;
       const hasMachine = !!emuPanelState?.executionState;
       if (hasMachine) {
         this.onRunEvent(
@@ -164,3 +165,4 @@ export const sidebarPlaceholderStyle: CSSProperties = {
   fontFamily: "var(--console-font)",
   color: "#cccccc",
 };
+

@@ -24,7 +24,7 @@ import {
   CZ88_SOFT_RESET,
 } from "../../../shared/machines/macine-commands";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
-import { modalDialogService } from "../../common-ui/modal-service";
+import { getModalDialogService } from "../../../shared/services/store-helpers";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
@@ -36,8 +36,8 @@ import {
   MemorySection,
 } from "../../../shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
-import { emuStore } from "../../emulator/emuStore";
 import { Store } from "redux";
+import { getStore } from "../../../shared/services/store-helpers";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 
@@ -452,8 +452,8 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
         return;
 
       case CZ88_CARDS:
-        const result = await modalDialogService.showModalDialog(
-          emuStore as Store,
+        const result = await getModalDialogService().showModalDialog(
+          getStore() as Store,
           Z88_CARDS_DIALOG_ID,
           args
         );

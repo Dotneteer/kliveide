@@ -1,19 +1,21 @@
-import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
-import { ideStore } from "../ideStore";
-import { CodeEditorFactory } from "./CodeEditorFactory";
 import {
   CodeEditorInfo,
   CustomLanguageInfo,
+  DocumentsInfo,
   IDocumentFactory,
   IDocumentPanel,
-} from "./DocumentFactory";
+  IDocumentService,
+} from "../../../shared/services/IDocumentService";
+import { dispatch, getState } from "../../../shared/services/store-helpers";
+import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
+import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
+import { CodeEditorFactory } from "./CodeEditorFactory";
 
 /**
  * Represenst a service that handles document panels
  */
-class DocumentService {
+export class DocumentService implements IDocumentService {
   private _documents: IDocumentPanel[];
   private _activeDocument: IDocumentPanel | null;
   private _activationStack: IDocumentPanel[];
@@ -207,14 +209,10 @@ class DocumentService {
   setActiveDocument(doc: IDocumentPanel | null): void {
     // --- Save the state of the active panel
     if (this._activeDocument) {
-      const fullState = Object.assign(
-        {},
-        ideStore.getState().documentFrame ?? {},
-        {
-          [this._activeDocument.id]: this._activeDocument.getPanelState(),
-        }
-      );
-      ideStore.dispatch(setDocumentFrameStateAction(fullState));
+      const fullState = Object.assign({}, getState().documentFrame ?? {}, {
+        [this._activeDocument.id]: this._activeDocument.getPanelState(),
+      });
+      dispatch(setDocumentFrameStateAction(fullState));
     }
 
     // --- Invoke custom action
@@ -244,7 +242,7 @@ class DocumentService {
     doc.active = true;
 
     // --- Load the state of the active document
-    const documentsState = ideStore.getState().documentFrame ?? {};
+    const documentsState = getState().documentFrame ?? {};
     const documentState = documentsState?.[this._activeDocument.id];
     if (documentState) {
       this._activeDocument.setPanelState(documentState);
@@ -381,16 +379,3 @@ class DocumentService {
     });
   }
 }
-
-/**
- * Represents the document information
- */
-export type DocumentsInfo = {
-  docs: IDocumentPanel[];
-  active: IDocumentPanel | null;
-};
-
-/**
- * The singleton instance of the service
- */
-export const documentService = new DocumentService();

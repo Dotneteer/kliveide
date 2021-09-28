@@ -1,16 +1,10 @@
-import {
-  CommandBase,
-  CommandContext,
-  CommandResult,
-  TraceMessage,
-  TraceMessageType,
-} from "../tool-area/CommandService";
 import { Token, TokenType } from "../../../shared/command-parser/token-stream";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import {
   CreateKliveProjectResponse,
   GetRegisteredMachinesResponse,
 } from "../../../shared/messaging/message-types";
+import { CommandBase, CommandResult, TraceMessage, TraceMessageType } from "../../../shared/services/ICommandService";
 
 /**
  * Creates a new Klive project

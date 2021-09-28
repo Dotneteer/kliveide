@@ -1,10 +1,11 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import SideBarPanel from "./SideBarPanel";
-import { ISideBarPanel, sideBarService } from "./SideBarService";
+import { getSideBarService } from "../../../shared/services/store-helpers";
 import { useRef, useState, useEffect } from "react";
 import SideBarHeader from "./SideBarHeader";
-import { activityService } from "../activity-bar/ActivityService";
+import { getActivityService } from "../../../shared/services/store-helpers";
+import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 
 /**
  * The minimum height an expanded panel can have
@@ -20,7 +21,8 @@ export default function SideBar() {
   const sizedPanelHeight = useRef(-1);
   const abovePanelHeight = useRef(-1);
   const panelPercentage = useRef(-1);
-
+  const sideBarService = getSideBarService();
+  
   // --- Component state
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
   let activityName = "";
@@ -70,6 +72,8 @@ export default function SideBar() {
       );
     }
   }
+
+  const activityService = getActivityService();
   return (
     activityService.activeActivity && (
       <>

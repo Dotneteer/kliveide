@@ -1,4 +1,4 @@
-import { ITheme } from "./theme-core";
+import { ITheme } from "../../../shared/services/IThemeService";
 
 /**
  * This constant value defines the propertief of the 'light' theme.

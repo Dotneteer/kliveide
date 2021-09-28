@@ -2,7 +2,7 @@ import * as React from "react";
 import { Activity } from "../../../shared/activity/Activity";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import styles from "styled-components";
-import { themeService } from "../../common-ui/themes/theme-service";
+import { getThemeService } from "../../../shared/services/store-helpers";
 
 /**
  * Component properties
@@ -48,7 +48,7 @@ export default function ActivityButton({
         iconName={activity.iconName}
         width={24}
         height={24}
-        fill={themeService.getProperty(
+        fill={getThemeService().getProperty(
           active || pointed
             ? "--activity-current-icon-color"
             : "--activity-icon-color"

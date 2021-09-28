@@ -3,11 +3,12 @@ import ReactResizeDetector from "react-resize-detector";
 import { useEffect, useState } from "react";
 import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
-import { ISideBarPanel, sideBarService } from "./SideBarService";
+import { getSideBarService } from "../../../shared/services/store-helpers";
 import { MenuItem } from "../../../shared/command/commands";
-import { contextMenuService } from "../context-menu/ContextMenuService";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
 import { AppState } from "../../../shared/state/AppState";
-import { ideStore } from "../ideStore";
+import { getStore } from "../../../shared/services/store-helpers";
+import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 
 /**
  * Component properties
@@ -41,6 +42,8 @@ export default function SideBarPanel({
   const [expanded, setExpanded] = useState(descriptor.expanded);
   const [refreshCount, setRefreshCount] = useState(0);
 
+  const sideBarService = getSideBarService();
+  
   // --- Create menu items
   const menuItems: MenuItem[] = [
     {
@@ -72,9 +75,9 @@ export default function SideBarPanel({
   };
 
   useEffect(() => {
-    ideStore.stateChanged.on(onStateChange);
+    getStore().stateChanged.on(onStateChange);
     return () => {
-      ideStore.stateChanged.off(onStateChange);
+      getStore().stateChanged.off(onStateChange);
     }
   });
 
@@ -111,7 +114,7 @@ export default function SideBarPanel({
           visibilityChanged(index);
         }}
         rightClicked={async (e) => {
-          await contextMenuService.openMenu(
+          await getContextMenuService().openMenu(
             menuItems,
             e.clientY,
             e.clientX,

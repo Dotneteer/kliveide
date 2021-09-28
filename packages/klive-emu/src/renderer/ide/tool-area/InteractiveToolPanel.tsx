@@ -5,9 +5,11 @@ import VirtualizedList, {
 } from "../../common-ui/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
-import { CommandResult, commandService } from "./CommandService";
-import { interactivePaneService } from "./InteractiveService";
-import { toolAreaService, ToolPanelDescriptorBase } from "./ToolAreaService";
+import { getCommandService } from "../../../shared/services/store-helpers";
+import { getInteractivePaneService } from "../../../shared/services/store-helpers";
+import { ToolPanelDescriptorBase } from "./ToolAreaService";
+import { getToolAreaService } from "../../../shared/services/store-helpers";
+import { CommandResult } from "../../../shared/services/ICommandService";
 
 const TITLE = "Interactive";
 
@@ -40,6 +42,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
       this.onCommandSubmitted(command);
     this._onCommandExecuted = (command) => this.onCommandExecuted(command);
     this._onFocusRequested = () => this.onFocusRequested();
+    const interactivePaneService = getInteractivePaneService();
     this.state = {
       refreshCount: 0,
       initPosition: -1,
@@ -51,6 +54,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   title = TITLE;
 
   componentDidMount() {
+    const interactivePaneService = getInteractivePaneService();
     const buffer = interactivePaneService.getOutputBuffer();
     buffer.contentsChanged.on(this._onContentsChanged);
     interactivePaneService.commandSubmitted.on(this._onCommandSubmitted);
@@ -60,6 +64,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   }
 
   componentWillUnmount() {
+    const interactivePaneService = getInteractivePaneService();
     interactivePaneService.focusRequested.off(this._onFocusRequested);
     interactivePaneService.commandExecuted.off(this._onCommandExecuted);
     interactivePaneService.commandSubmitted.off(this._onCommandSubmitted);
@@ -70,23 +75,24 @@ export default class InteractiveToolPanel extends ToolPanelBase<
 
   onContentsChanged(): void {
     this.setState({
-      buffer: interactivePaneService.getOutputBuffer().getContents(),
+      buffer: getInteractivePaneService().getOutputBuffer().getContents(),
       initPosition: -1,
     });
     this._listApi.scrollToEnd();
   }
 
   async onCommandSubmitted(command: string): Promise<void> {
+    const interactivePaneService = getInteractivePaneService();
     const buffer = interactivePaneService.getOutputBuffer();
     buffer.resetColor();
     buffer.writeLine(`$ ${command}`);
-    const result = await commandService.executeCommand(command, buffer);
+    const result = await getCommandService().executeCommand(command, buffer);
     interactivePaneService.signCommandExecuted(result);
   }
 
   onCommandExecuted(result: CommandResult): void {
     this.setState({ inputEnabled: true });
-    const buffer = interactivePaneService.getOutputBuffer();
+    const buffer = getInteractivePaneService().getOutputBuffer();
     buffer.color(result.success ? "bright-green" : "bright-red");
     if (result.finalMessage) {
       buffer.writeLine(result.finalMessage);
@@ -100,7 +106,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   }
 
   renderContent() {
-    const isExecuting = interactivePaneService.isCommandExecuting();
+    const isExecuting = getInteractivePaneService().isCommandExecuting();
     return (
       <>
         <VirtualizedList
@@ -119,7 +125,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
           }}
           registerApi={(api) => (this._listApi = api)}
           obtainInitPos={() => this.state.initPosition}
-          scrolled={(pos) => toolAreaService.scrollActivePane(pos)}
+          scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
         />
         <div style={separatorStyle}></div>
         <div style={{ display: "flex" }}>
@@ -154,6 +160,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
    */
   keyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
     const input = e.target as HTMLInputElement;
+    const interactivePaneService = getInteractivePaneService();
     switch (e.key) {
       case "ArrowUp":
       case "ArrowDown":
@@ -221,6 +228,7 @@ export class InteractiveToolPanelDescriptor extends ToolPanelDescriptorBase {
   }
 
   createHeaderElement(): React.ReactNode {
+    const interactivePaneService = getInteractivePaneService();
     return (
       <div>
         <CommandIconButton

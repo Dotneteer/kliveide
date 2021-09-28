@@ -1,7 +1,7 @@
 import * as React from "react";
-import { CSSProperties } from "styled-components";
+import { CSSProperties } from "react";
+import { ISideBarPanel } from "../../../shared/services/ISidebarService";
 import {
-  ISideBarPanel,
   SideBarPanelDescriptorBase,
 } from "../side-bar/SideBarService";
 

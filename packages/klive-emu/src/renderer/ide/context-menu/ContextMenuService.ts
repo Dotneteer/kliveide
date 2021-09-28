@@ -1,11 +1,11 @@
-import { animationTick } from "../../common-ui/utils";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { MenuItem } from "../../../shared/command/commands";
+import { ContextMenuOpenTarget, IContextMenuService } from "../../../shared/services/IContextMenuService";
 
 /**
  * Represents the context menu service
  */
-class ContextMenuService {
+export class ContextMenuService implements IContextMenuService{
   private _menuItems: MenuItem[] = [];
   private _menuChanged = new LiteEvent<void>();
   private _openRequested = new LiteEvent<ContextMenuOpenTarget>();
@@ -86,17 +86,3 @@ class ContextMenuService {
     return this._openRequested;
   }
 }
-
-/**
- * Declares the target of a context menu
- */
-export type ContextMenuOpenTarget = {
-  top: number;
-  left: number;
-  target: HTMLElement;
-};
-
-/**
- * The singleton instance of the context menu service
- */
-export const contextMenuService = new ContextMenuService();

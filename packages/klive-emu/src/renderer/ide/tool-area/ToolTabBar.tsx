@@ -1,7 +1,8 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
+import { IToolPanel, ToolsInfo } from "../../../shared/services/IToolAreaService";
+import { getToolAreaService } from "../../../shared/services/store-helpers";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
-import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";
 import ToolTab from "./ToolTab";
 
 /**
@@ -19,6 +20,7 @@ export default function ToolTabBar() {
   };
 
   useEffect(() => {
+    const toolAreaService = getToolAreaService();
     // --- Mount
     setCurrentTools(toolAreaService.getTools());
     setActiveTool(toolAreaService.getActiveTool());
@@ -43,7 +45,7 @@ export default function ToolTabBar() {
         isLast={index >= currentTools.length - 1}
         clicked={() => {
           if (activeTool !== d) {
-            toolAreaService.setActiveTool(d);
+            getToolAreaService().setActiveTool(d);
           }
         }}
       />

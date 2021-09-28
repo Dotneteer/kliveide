@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { themeService } from "../common-ui/themes/theme-service";
+import { getThemeService } from "../../shared/services/store-helpers";
 import { useDispatch, useStore } from "react-redux";
 import { ideLoadUiAction } from "../../shared/state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
@@ -10,7 +10,7 @@ import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
 import { Activity } from "../../shared/activity/Activity";
 import { setActivitiesAction } from "../../shared/state/activity-bar-reducer";
-import { sideBarService } from "./side-bar/SideBarService";
+import { getSideBarService } from "../../shared/services/store-helpers";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";
@@ -19,10 +19,10 @@ import { BlinkInformationPanelDescriptor } from "../machines/cambridge-z88/Blink
 import { CallStackPanelDescriptor } from "../machines/sidebar-panels/CallStackPanel";
 import { IoLogsPanelDescription } from "../machines/sidebar-panels/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
-import { toolAreaService } from "./tool-area/ToolAreaService";
+import { getToolAreaService } from "../../shared/services/store-helpers";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
-import { outputPaneService } from "./tool-area/OutputPaneService";
+import { getOutputPaneService } from "../../shared/services/store-helpers";
 import { VmOutputPanelDescriptor } from "../machines/sidebar-panels/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
 import IdeContextMenu from "./context-menu/ContextMenu";
@@ -30,7 +30,7 @@ import ModalDialog from "../common-ui/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";
-import { activityService } from "./activity-bar/ActivityService";
+import { getActivityService } from "../../shared/services/store-helpers";
 import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
 import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
@@ -40,8 +40,8 @@ import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
 import { virtualMachineToolsService } from "../machines/core/VitualMachineToolBase";
 import { ZxSpectrum48Tools } from "../machines/zx-spectrum/ZxSpectrum48Core";
 import { CambridgeZ88Tools } from "../machines/cambridge-z88/CambridgeZ88Core";
-import { ideStore } from "./ideStore";
-import { modalDialogService } from "../common-ui/modal-service";
+import { getStore, getState } from "../../shared/services/store-helpers";
+import { getModalDialogService } from "../../shared/services/store-helpers";
 import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,
@@ -62,7 +62,7 @@ import {
   renameFolderDialog,
   RENAME_FOLDER_DIALOG_ID,
 } from "./explorer-tools/RenameFolderDialog";
-import { documentService } from "./document-area/DocumentService";
+import { getDocumentService } from "../../shared/services/store-helpers";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
 
@@ -153,10 +153,11 @@ export default function IdeApp() {
   const [documentFrameVisible, setDocumentFrameVisible] = useState(true);
   const [toolFrameVisible, setToolFrameVisible] = useState(true);
   const [showStatusBar, setShowStatusBar] = useState(
-    ideStore.getState()?.emuViewOptions?.showStatusBar ?? false
+    getState()?.emuViewOptions?.showStatusBar ?? false
   );
 
   useEffect(() => {
+    const themeService = getThemeService();
     // --- State change event handlers
     const isWindowsChanged = (isWindows: boolean) => {
       themeService.isWindows = isWindows;
@@ -184,10 +185,10 @@ export default function IdeApp() {
       dispatch(ideLoadUiAction());
       updateThemeState();
 
-      ideStore.themeChanged.on(themeChanged);
-      ideStore.isWindowsChanged.on(isWindowsChanged);
-      ideStore.emuViewOptionsChanged.on(viewOptionsChanged);
-      ideStore.toolFrameChanged.on(toolFrameChanged);
+      getStore().themeChanged.on(themeChanged);
+      getStore().isWindowsChanged.on(isWindowsChanged);
+      getStore().emuViewOptionsChanged.on(viewOptionsChanged);
+      getStore().toolFrameChanged.on(toolFrameChanged);
 
       // --- Set up activities
       const activities: Activity[] = [
@@ -221,6 +222,8 @@ export default function IdeApp() {
       store.dispatch(setActivitiesAction(activities));
 
       // --- Register side bar panels
+      const sideBarService = getSideBarService();
+      
       // (Explorer)
       sideBarService.registerSideBarPanel(
         "file-view",
@@ -272,12 +275,15 @@ export default function IdeApp() {
       );
 
       // --- Register tool panels
-      toolAreaService.registerTool(new OutputToolPanelDescriptor());
+      const toolAreaService = getToolAreaService();
+      toolAreaService.registerTool(new OutputToolPanelDescriptor(), false);
+      const outputPaneService = getOutputPaneService();
       outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
       outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
-      toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
+      toolAreaService.registerTool(new InteractiveToolPanelDescriptor(), true);
 
       // --- Register custom languages
+      const documentService = getDocumentService();
       documentService.registerCustomLanguage(asmkZ80LanguageProvider);
       documentService.registerCustomLanguage(mpmZ80LanguageProvider);
 
@@ -298,6 +304,7 @@ export default function IdeApp() {
       virtualMachineToolsService.registerTools("cz88", new CambridgeZ88Tools());
 
       // --- Register modal dialogs
+      const modalDialogService = getModalDialogService();
       modalDialogService.registerModalDescriptor(
         NEW_PROJECT_DIALOG_ID,
         newProjectDialog
@@ -323,14 +330,14 @@ export default function IdeApp() {
       registerKliveCommands();
 
       // --- Select the file-view activity
-      activityService.selectActivity(0);
+      getActivityService().selectActivity(0);
     }
     return () => {
       // --- Unsubscribe
-      ideStore.toolFrameChanged.off(toolFrameChanged);
-      ideStore.emuViewOptionsChanged.off(viewOptionsChanged);
-      ideStore.isWindowsChanged.off(isWindowsChanged);
-      ideStore.themeChanged.off(themeChanged);
+      getStore().toolFrameChanged.off(toolFrameChanged);
+      getStore().emuViewOptionsChanged.off(viewOptionsChanged);
+      getStore().isWindowsChanged.off(isWindowsChanged);
+      getStore().themeChanged.off(themeChanged);
     };
   }, [store]);
 
@@ -340,7 +347,7 @@ export default function IdeApp() {
 
   // --- Take care of resizing IdeApp whenever the window size changes
   useLayoutEffect(() => {
-    const _onResize = () => onResize();
+    const _onResize = async () => onResize();
     window.addEventListener("resize", _onResize);
 
     // --- Recognize when both Frames are visible so that their dimensions
@@ -418,6 +425,7 @@ export default function IdeApp() {
    * @returns
    */
   function updateThemeState(): void {
+    const themeService = getThemeService();
     const theme = themeService.getActiveTheme();
     if (!theme) {
       return;

@@ -32,7 +32,9 @@ import {
 } from "../../shared/state/emu-view-options-reducer";
 import { __DARWIN__ } from "../utils/electron-utils";
 import {
-  mainStore,
+  dispatch,
+  getState,
+  getStore,
   registerEmuWindowForwarder,
   registerIdeWindowForwarder,
 } from "../main-state/main-store";
@@ -231,7 +233,7 @@ export function setupMenu(): void {
         click: async () => {
           await openIdeWindow();
           await openProjectFolder();
-          if (mainStore.getState().project?.path) {
+          if (getState().project?.path) {
             await setProjectMachine();
           }
         },
@@ -239,9 +241,9 @@ export function setupMenu(): void {
       {
         id: CLOSE_FOLDER,
         label: "Close folder",
-        enabled: !!mainStore.getState()?.project?.path,
+        enabled: !!getState()?.project?.path,
         click: () => {
-          mainStore.dispatch(closeProjectAction());
+          dispatch(closeProjectAction());
         },
       },
       { type: "separator" },
@@ -315,9 +317,9 @@ export function setupMenu(): void {
       checked: viewOptions.showFrameInfo ?? true,
       click: (mi) => {
         if (mi.checked) {
-          mainStore.dispatch(emuShowFrameInfoAction());
+          dispatch(emuShowFrameInfoAction());
         } else {
-          mainStore.dispatch(emuHideFrameInfoAction());
+          dispatch(emuHideFrameInfoAction());
         }
         emuWindow.saveKliveProject();
       },
@@ -403,7 +405,7 @@ export function setupMenu(): void {
 
   // --- Prepare the machine menu
   const machineSubMenu: MenuItemConstructorOptions[] = [];
-  const machineType = mainStore.getState()?.machineType?.split("_")[0];
+  const machineType = getState()?.machineType?.split("_")[0];
   for (var [_, value] of machineRegistry) {
     machineSubMenu.push({
       id: menuIdFromMachineId(value.id),
@@ -458,7 +460,7 @@ export function setupMenu(): void {
           (i > 1 ? `${i}x` : `Normal`) +
           ` (${((i * baseClockFrequency) / 1_000_000).toFixed(4)}MHz)`,
         click: () => {
-          mainStore.dispatch(emuSetClockMultiplierAction(i));
+          dispatch(emuSetClockMultiplierAction(i));
           emuWindow.saveKliveProject();
         },
       });
@@ -508,7 +510,7 @@ export function setupMenu(): void {
           if (mi.checked) {
             ideMessenger.sendMessage({
               type: "SyncMainState",
-              mainState: { ...mainStore.getState() },
+              mainState: { ...getState() },
             });
           }
         },
@@ -518,19 +520,19 @@ export function setupMenu(): void {
         id: SHOW_IDE_TOOLS,
         label: "Show Tools",
         type: "checkbox",
-        checked: mainStore.getState()?.toolFrame?.visible ?? false,
+        checked: getState()?.toolFrame?.visible ?? false,
         enabled: true,
         click: async (mi) => {
-          const toolsMaximized = !!mainStore.getState().toolFrame?.maximized;
-          const toolsVisible = !!mainStore.getState()?.toolFrame?.visible;
+          const toolsMaximized = !!getState().toolFrame?.maximized;
+          const toolsVisible = !!getState()?.toolFrame?.visible;
           if (toolsMaximized) {
-            mainStore.dispatch(ideToolFrameMaximizeAction(false));
+            dispatch(ideToolFrameMaximizeAction(false));
             await new Promise((r) => setTimeout(r, 20));
           }
-          mainStore.dispatch(ideToolFrameShowAction(!toolsVisible));
+          dispatch(ideToolFrameShowAction(!toolsVisible));
           if (toolsMaximized) {
             await new Promise((r) => setTimeout(r, 20));
-            mainStore.dispatch(ideToolFrameMaximizeAction(true));
+            dispatch(ideToolFrameMaximizeAction(true));
           }
         },
       },
@@ -638,7 +640,7 @@ export function restoreEnabledState(): void {
  * Sets up state change cathing
  */
 export function watchStateChanges(): void {
-  mainStore.subscribe(() => processStateChange(mainStore.getState()));
+  getStore().subscribe(() => processStateChange(getState()));
 }
 
 let lastShowIde = false;
@@ -808,10 +810,10 @@ export function processStateChange(fullState: AppState): void {
  */
 export function setSoundLevel(level: number): void {
   if (level === 0) {
-    mainStore.dispatch(emuMuteSoundAction());
+    dispatch(emuMuteSoundAction());
   } else {
-    mainStore.dispatch(emuUnmuteSoundAction());
-    mainStore.dispatch(emuSetSoundLevelAction(level));
+    dispatch(emuUnmuteSoundAction());
+    dispatch(emuSetSoundLevelAction(level));
   }
 }
 
@@ -862,7 +864,7 @@ function checkboxAction(
   showAction: KliveAction,
   hideAction: KliveAction
 ): void {
-  mainStore.dispatch(menuItem.checked ? showAction : hideAction);
+  dispatch(menuItem.checked ? showAction : hideAction);
 }
 
 /**
@@ -877,11 +879,11 @@ function menuIdFromMachineId(machineId: string): string {
  * Opens the IDE window
  */
 async function openIdeWindow(): Promise<void> {
-  mainStore.dispatch(ideShowAction());
+  dispatch(ideShowAction());
   await new Promise(r => setTimeout(r, 200));
   await ideMessenger.sendMessage({
     type: "SyncMainState",
-    mainState: { ...mainStore.getState() },
+    mainState: { ...getState() },
   });
   ideWindow.window.focus();
 }
@@ -890,7 +892,7 @@ async function openIdeWindow(): Promise<void> {
  * Sets the machine information from the loaded project
  */
 async function setProjectMachine(): Promise<void> {
-  if (!mainStore.getState().project?.hasVm) {
+  if (!getState().project?.hasVm) {
     // --- No Klive project open
     return;
   }

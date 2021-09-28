@@ -2,69 +2,9 @@ import * as React from "react";
 import { setSideBarStateAction } from "../../../shared/state/side-bar-reducer";
 import { AppState, SideBarState } from "../../../shared/state/AppState";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { activityService } from "../activity-bar/ActivityService";
-import { ideStore } from "../ideStore";
-
-/**
- * Represents an abstract side bar panel
- */
-export interface ISideBarPanel {
-  /**
-   * The title of the side bar panel
-   */
-  readonly title: string;
-
-  /**
-   * Signs if the specified panel is expanded
-   * @param expanded
-   */
-  expanded: boolean;
-
-  /**
-   * Signs if the panel is focused
-   */
-  focused: boolean;
-
-  /**
-   * The current height of the panel. Set when the rendering engine
-   * updates the related DOM element
-   */
-  height: number;
-
-  /**
-   * The current percentage height of the panel. Set when the panel
-   * is resized.
-   */
-  heightPercentage: number;
-
-  /**
-   * Creates a node that represents the contents of a side bar panel
-   */
-  createContentElement(): React.ReactNode;
-
-  /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any>;
-
-  /**
-   * Sets the state of the side bar
-   * @param state Optional state to set
-   * @param fireImmediate Fire a panelStateLoaded event immediately?
-   */
-  setPanelState(state: Record<string, any> | null): void;
-
-  /**
-   * Respond to state changes
-   * @param state
-   */
-  onStateChange(state: AppState): Promise<void>;
-
-  /**
-   * Should update the panel header?
-   */
-  shouldUpdatePanelHeader(): Promise<boolean>;
-}
+import { getActivityService } from "../../../shared/services/store-helpers"
+import { dispatch, getState, getStore } from "../../../shared/services/store-helpers";
+import { ISideBarPanel, ISideBarService } from "../../../shared/services/ISidebarService";
 
 /**
  * The base class for all side bar panel descriptors
@@ -138,10 +78,11 @@ type SideBarEntry = {
   panel: ISideBarPanel;
   machines?: string[];
 };
+
 /**
  * Represents a service that handles side bar panels
  */
-class SideBarService {
+export class SideBarService implements ISideBarService {
   private readonly _registeredPanels = new Map<string, SideBarEntry[]>();
   private readonly _sortedPanels = new Map<string, ISideBarPanel[]>();
   private readonly _sideBarChanging = new LiteEvent<void>();
@@ -152,21 +93,14 @@ class SideBarService {
 
   constructor() {
     this.reset();
-    ideStore.machineTypeChanged.on((type) => {
+    getStore().machineTypeChanged.on((type) => {
       this._machineType = type;
       this._sideBarChanging.fire();
       this.refreshCurrentPanels();
       this._sideBarChanged.fire();
     })
-    // const stateAware = new StateAwareObject<string>(ideStore, "machineType");
-    // stateAware.stateChanged.on((type: string) => {
-    //   this._machineType = type;
-    //   this._sideBarChanging.fire();
-    //   this.refreshCurrentPanels();
-    //   this._sideBarChanged.fire();
-    // });
 
-    activityService.activityChanged.on((activity) => {
+    getActivityService().activityChanged.on((activity) => {
       this.saveSideBarState();
       this._sideBarChanging.fire();
       this._activity = activity;
@@ -331,16 +265,16 @@ class SideBarService {
       state[`${this.activity}-${i}`] = panel.getPanelState() ?? {};
     }
     if (this.activity) {
-      const fullState = Object.assign({}, ideStore.getState().sideBar ?? {}, {
+      const fullState = Object.assign({}, getState().sideBar ?? {}, {
         [this.activity]: state,
       });
-      ideStore.dispatch(setSideBarStateAction(fullState));
+      dispatch(setSideBarStateAction(fullState));
     }
   }
 
   private applySideBarState(): void {
     const panels = this._currentPanels;
-    const sideBarState = (ideStore.getState().sideBar ?? {})[this.activity];
+    const sideBarState = (getState().sideBar ?? {})[this.activity];
     for (let i = 0; i < panels.length; i++) {
       const panel = panels[i];
       const panelState = sideBarState?.[`${this.activity}-${i}`];
@@ -350,8 +284,3 @@ class SideBarService {
     }
   }
 }
-
-/**
- * The singleton instance of the service
- */
-export const sideBarService = new SideBarService();

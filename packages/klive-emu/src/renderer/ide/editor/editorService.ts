@@ -1,4 +1,5 @@
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+import { IEditorService } from "../../../shared/services/IEditorService";
 
 /**
  * Represents the state of the editor
@@ -11,7 +12,7 @@ export type EditorState = {
 /**
  * This class implements the services we use with a code editor
  */
-class EditorService {
+export class EditorService implements IEditorService {
   private _states = new Map<string, EditorState>();
 
   /**
@@ -40,8 +41,3 @@ class EditorService {
     this._states.delete(id);
   }
 }
-
-/**
- * The singleton instance of the service managing the editor
- */
-export const editorService = new EditorService();

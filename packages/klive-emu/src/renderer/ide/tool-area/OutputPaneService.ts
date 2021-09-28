@@ -1,96 +1,12 @@
-import { CSSProperties } from "styled-components";
+import { CSSProperties } from "react";
+import { IOutputBuffer, IOutputPane, OutputColor } from "../../../shared/services/IOutputPaneService";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
 import { toStyleString } from "../utils/css-utils";
-
-export type OutputColor =
-  | "black"
-  | "red"
-  | "green"
-  | "yellow"
-  | "blue"
-  | "magenta"
-  | "cyan"
-  | "white"
-  | "bright-black"
-  | "bright-red"
-  | "bright-green"
-  | "bright-yellow"
-  | "bright-blue"
-  | "bright-magenta"
-  | "bright-cyan"
-  | "bright-white";
-
-/**
- * Represents a buffer for an output pane
- */
-export interface IOutputBuffer {
-  /**
-   * Clears the contents of the buffer
-   */
-  clear(): void;
-
-  /**
-   * Gets the contents of the buffer
-   */
-  getContents(): string[];
-
-  /**
-   * Sets the default color
-   */
-  resetColor(): void;
-
-  /**
-   * Sets the output to the specified color
-   * @param color
-   */
-  color(color: OutputColor): void;
-
-  /**
-   * Indicates if the font is to be used in bold
-   * @param use
-   */
-  bold(use: boolean): void;
-
-  /**
-   * Indicates if the font is to be used in italic
-   * @param use
-   */
-  italic(use: boolean): void;
-
-  /**
-   * Indicates if the font is to be used with underline
-   * @param use
-   */
-  underline(use: boolean): void;
-
-  /**
-   * Indicates if the font is to be used with strikethru
-   * @param use
-   */
-  strikethru(use: boolean): void;
-
-  /**
-   * Writes a new entry to the output
-   * @param message Message to write
-   */
-  write(message: string): void;
-
-  /**
-   * Writes a message and adds a new output line
-   * @param message
-   */
-  writeLine(message?: string): void;
-
-  /**
-   * This event fires when the contents of the buffer changes.
-   */
-  readonly contentsChanged: ILiteEvent<void>;
-}
 
 /**
  * Implements a simple buffer to write the contents of the output pane to
  */
-export class OutputPaneBuffer implements IOutputBuffer {
+ export class OutputPaneBuffer implements IOutputBuffer {
   private _buffer: string[] = [];
   private _currentLineIndex: number = -1;
   private _color: OutputColor | null = null;
@@ -210,11 +126,10 @@ export class OutputPaneBuffer implements IOutputBuffer {
     }
     this._buffer[this._currentLineIndex] = "";
   }
-
   /**
    * This event fires when the contents of the buffer changes.
    */
-  get contentsChanged(): ILiteEvent<void> {
+   get contentsChanged(): ILiteEvent<void> {
     return this._contentsChanged;
   }
 
@@ -251,37 +166,6 @@ export class OutputPaneBuffer implements IOutputBuffer {
   }
 }
 
-/**
- * Represents an output pane
- */
-export interface IOutputPane {
-  /**
-   * The identifier of the pane
-   */
-  id: number | string;
-
-  /**
-   * The title of the panel
-   */
-  title: string;
-
-  /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any>;
-
-  /**
-   * Sets the state of the side bar
-   * @param state Optional state to set
-   * @param fireImmediate Fire a panelStateLoaded event immediately?
-   */
-  setPanelState(state: Record<string, any> | null): void;
-
-  /**
-   * Gets the buffer of the pane
-   */
-  get buffer(): IOutputBuffer;
-}
 
 /**
  * A base class for document panel descriptors
@@ -331,7 +215,7 @@ export abstract class OutputPaneDescriptorBase implements IOutputPane {
 /**
  * The service that manages output panes
  */
-class OutputPaneService {
+export class OutputPaneService {
   private _panes: IOutputPane[] = [];
   private _paneMap = new Map<string | number, IOutputPane>();
   private _panesChanged = new LiteEvent<IOutputPane[]>();
@@ -428,8 +312,3 @@ class OutputPaneService {
     return this._paneContentsChanged;
   }
 }
-
-/**
- * The singleton instance of the output pane service
- */
-export const outputPaneService = new OutputPaneService();

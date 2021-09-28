@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "react";
-import { themeService } from "./themes/theme-service";
+import { getThemeService } from "../../shared/services/store-helpers";
 
 /**
  * CommonIcon properties
@@ -61,6 +61,7 @@ export function CommonIcon({
   style,
   children,
 }: React.PropsWithChildren<Props>) {
+  const themeService = getThemeService();
   const fillValue =
     fill === null || fill === undefined
       ? "white"

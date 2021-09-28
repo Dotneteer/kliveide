@@ -1,12 +1,10 @@
-import { ideStore } from "../../ide/ideStore";
 import { EmulatorPanelState } from "../../../shared/state/AppState";
 import {
-  IOutputBuffer,
-  OutputColor,
   OutputPaneDescriptorBase,
-  outputPaneService,
 } from "../../ide/tool-area/OutputPaneService";
-import { engineProxy } from "../../ide/engine-proxy";
+import { getEngineProxyService, getOutputPaneService } from "../../../shared/services/store-helpers";
+import { getStore } from "../../../shared/services/store-helpers";
+import { IOutputBuffer, OutputColor } from "../../../shared/services/IOutputPaneService";
 
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";
@@ -22,7 +20,8 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
 
   constructor() {
     super(ID, TITLE);
-    ideStore.machineTypeChanged.on((type) => {
+    const outputPaneService = getOutputPaneService();
+    getStore().machineTypeChanged.on((type) => {
       // --- Change the execution state to "none" whenever the machine type changes
       this._isMachineTypeSet = true;
       this._lastEmuState = null;
@@ -39,7 +38,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
         buffer.resetColor();
       }
     });
-    ideStore.emulatorPanelChanged.on(async (emuPanel: EmulatorPanelState) => {
+    getStore().emulatorPanelChanged.on(async (emuPanel: EmulatorPanelState) => {
       if (!this._isMachineTypeSet) {
         return;
       }
@@ -164,7 +163,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
 
       // --- Get the current PC value
       async function getPcInfo(): Promise<string> {
-        const cpuState = await engineProxy.getMachineState();
+        const cpuState = await getEngineProxyService().getMachineState();
         const pcLabel = emuPanel.frameDiagData?.pcInfo?.label ?? "PC";
         return `${pcLabel}: ${(cpuState as any)._pc
           .toString(16)

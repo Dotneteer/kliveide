@@ -22,6 +22,11 @@ import { KliveAction } from "../../shared/state/state-core";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import { getInitialAppState } from "../../shared/state/AppState";
 import { KliveStore } from "../../shared/state/KliveStore";
+import {
+  registerService,
+  STORE_SERVICE,
+} from "../../shared/services/service-registry";
+export { getStore, dispatch, getState } from "../../shared/services/store-helpers";
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;
@@ -44,13 +49,16 @@ const forwardToRendererMiddleware =
 /**
  * Represents the master replica of the app state
  */
-export const mainStore = new KliveStore(
+const mainStore = new KliveStore(
   createStore(
     combineReducers(appReducers),
     getInitialAppState(),
     applyMiddleware(forwardToRendererMiddleware)
   )
 );
+
+// --- Register the store service
+registerService(STORE_SERVICE, mainStore);
 
 /**
  * This class forwards state changes in main to a particular renderer

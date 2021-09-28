@@ -2,12 +2,13 @@ import * as React from "react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
-import { toolAreaService, ToolPanelDescriptorBase } from "./ToolAreaService";
-import { IOutputPane, outputPaneService } from "./OutputPaneService";
+import { ToolPanelDescriptorBase } from "./ToolAreaService";
+import { getOutputPaneService, getToolAreaService } from "../../../shared/services/store-helpers";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common-ui/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
+import { IOutputPane } from "../../../shared/services/IOutputPaneService";
 
 const TITLE = "Output";
 
@@ -42,6 +43,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   title = TITLE;
 
   componentDidMount() {
+    const outputPaneService = getOutputPaneService();
     outputPaneService.activePaneChanged.on(this._onPaneChanged);
     outputPaneService.paneContentsChanged.on(this._onContentsChanged);
     const activePane = outputPaneService.getActivePane();
@@ -53,6 +55,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   }
 
   componentWillUnmount() {
+    const outputPaneService = getOutputPaneService();
     outputPaneService.activePaneChanged.off(this._onContentsChanged);
     outputPaneService.paneContentsChanged.off(this._onPaneChanged);
   }
@@ -66,7 +69,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   }
 
   onContentsChanged(pane: IOutputPane): void {
-    if (pane === outputPaneService.getActivePane()) {
+    if (pane === getOutputPaneService().getActivePane()) {
       this.setState({
         buffer: pane.buffer.getContents(),
         initPosition: -1,
@@ -92,7 +95,7 @@ export default class OutputToolPanel extends ToolPanelBase<
         }}
         registerApi={(api) => (this._listApi = api)}
         obtainInitPos={() => this.state.initPosition}
-        scrolled={(pos) => toolAreaService.scrollActivePane(pos)}
+        scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
       />
     );
   }
@@ -109,6 +112,7 @@ function OutputPanesPropertyBar() {
   const [panesData, setPanesData] = useState<PaneData[]>();
 
   useEffect(() => {
+    const outputPaneService = getOutputPaneService();
     if (!mounted.current) {
       // --- Mount
       setPanesData(
@@ -125,6 +129,7 @@ function OutputPanesPropertyBar() {
   });
 
   const selectPane = () => {
+    const outputPaneService = getOutputPaneService();
     if (paneListComponent?.value) {
       const selectedPanel = outputPaneService.getPaneById(
         paneListComponent.value.toString()
@@ -152,7 +157,7 @@ function OutputPanesPropertyBar() {
       <CommandIconButton
         iconName="clear-all"
         title={"Clear Output"}
-        clicked={() => outputPaneService.clearActivePane()}
+        clicked={() => getOutputPaneService().clearActivePane()}
       />
     </div>
   );

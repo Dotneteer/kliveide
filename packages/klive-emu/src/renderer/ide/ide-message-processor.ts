@@ -8,11 +8,11 @@ import { IpcRendereApi } from "../../exposed-apis";
 import { MAIN_TO_IDE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
 import { MAIN_TO_IDE_RESPONE_CHANNEL } from "../../shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { ideStore } from "./ideStore";
 import { ideSyncAction } from "../../shared/state/show-ide-reducer";
-import { modalDialogService } from "../common-ui/modal-service";
+import { getModalDialogService } from "../../shared/services/store-helpers";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
 import { Store } from "redux";
+import { dispatch, getStore } from "../../shared/services/store-helpers";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -26,12 +26,12 @@ async function processIdeMessages(
 ): Promise<ResponseMessage> {
   switch (message.type) {
     case "SyncMainState":
-      ideStore.dispatch(ideSyncAction(message.mainState));
+      dispatch(ideSyncAction(message.mainState));
       return <DefaultResponse>{ type: "Ack" };
 
     case "NewProjectRequest":
-      const result = await modalDialogService.showModalDialog(
-        ideStore as Store,
+      const result = await getModalDialogService().showModalDialog(
+        getStore() as Store,
         NEW_PROJECT_DIALOG_ID,
         {
           machineType: "",

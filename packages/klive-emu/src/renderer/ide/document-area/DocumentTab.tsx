@@ -1,12 +1,12 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { themeService } from "../../common-ui/themes/theme-service";
+import { getThemeService } from "../../../shared/services/store-helpers";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { documentService } from "./DocumentService";
-import { contextMenuService } from "../context-menu/ContextMenuService";
+import { getDocumentService } from "../../../shared/services/store-helpers";
+import { getContextMenuService } from "../../../shared/services/store-helpers";
 import { MenuItem } from "../../../shared/command/commands";
-import { IDocumentPanel } from "./DocumentFactory";
+import { IDocumentPanel } from "../../../shared/services/IDocumentService";
 
 interface Props {
   title: string;
@@ -33,6 +33,8 @@ export default function DocumentTab({
   const [pointed, setPointed] = useState(false);
   const hostElement = React.createRef<HTMLDivElement>();
 
+  const themeService = getThemeService();
+  const documentService = getDocumentService();
   const normalColor = themeService.getProperty("--document-tab-color");
   const activeColor = themeService.getProperty("--document-tab-active-color");
 
@@ -116,7 +118,7 @@ export default function DocumentTab({
         if (e.button === 0) {
           clicked?.();
         } else if (e.button === 2) {
-          await contextMenuService.openMenu(
+          await getContextMenuService().openMenu(
             menuItems,
             e.clientY,
             e.clientX,

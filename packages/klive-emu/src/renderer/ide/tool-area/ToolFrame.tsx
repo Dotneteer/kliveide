@@ -8,11 +8,12 @@ import {
 import { AppState } from "../../../shared/state/AppState";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { ideStore } from "../ideStore";
-import { IToolPanel, toolAreaService, ToolsInfo } from "./ToolAreaService";
+import { getToolAreaService } from "../../../shared/services/store-helpers";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
+import { dispatch } from "../../../shared/services/store-helpers";
+import { IToolPanel, ToolsInfo } from "../../../shared/services/IToolAreaService";
 
 /**
  * Represents the statusbar of the emulator
@@ -20,6 +21,7 @@ import ToolTabBar from "./ToolTabBar";
 export default function ToolFrame() {
   const headerHost = React.createRef<HTMLDivElement>();
   const mounted = useRef(false);
+  const toolAreaService = getToolAreaService();
 
   // --- Component state
   const [activeTool, setActiveTool] = useState<IToolPanel | null>(
@@ -147,13 +149,13 @@ function ToolCommandBar() {
         iconName={maximized ? "chevron-down" : "chevron-up"}
         title={maximized ? "Restore panel size" : "Maximize panel size"}
         clicked={() =>
-          ideStore.dispatch(ideToolFrameMaximizeAction(!maximized))
+          dispatch(ideToolFrameMaximizeAction(!maximized))
         }
       />
       <CommandIconButton
         iconName="close"
         title="Close"
-        clicked={() => ideStore.dispatch(ideToolFrameShowAction(false))}
+        clicked={() => dispatch(ideToolFrameShowAction(false))}
       />
     </div>
   );

@@ -1,7 +1,7 @@
 import { registerMachineTypeAction } from "../../shared/state/machines-reducer";
-import { mainStore } from "../../main/main-state/main-store";
 import { RegisteredMachine } from "../../shared/state/AppState";
 import { MachineContextProvider } from "./machine-context";
+import { dispatch } from "../../main/main-state/main-store";
 
 /**
  * Holds the registry of virtual machine context providers
@@ -56,7 +56,7 @@ export function VirtualMachineType(data: MachineInfo) {
       implementor: constructor as unknown as MachineContextProvider,
     };
     machineRegistry.set(data.id, info);
-    mainStore.dispatch(
+    dispatch(
       registerMachineTypeAction({
         id: info.id,
         label: info.label,

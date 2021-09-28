@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AppState } from "../../shared/state/AppState";
-import { themeService } from "../common-ui/themes/theme-service";
+import { getThemeService } from "../../shared/services/store-helpers";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
@@ -13,14 +13,14 @@ import { setEngineDependencies } from "../machines/core/vm-engine-dependencies";
 import { useRef, useState } from "react";
 import ModalDialog from "../common-ui/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
-import { modalDialogService } from "../common-ui/modal-service";
+import { getModalDialogService } from "../../shared/services/store-helpers";
 import { Z88_CARDS_DIALOG_ID } from "../machines/cambridge-z88/CambridgeZ88Core";
 import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";
 
 // --- We need to import these files to setup the app
 import "./emu-message-processor";
 import "./ide-message-processor";
-import { emuStore } from "./emuStore";
+import { getStore } from "../../shared/services/store-helpers";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({
@@ -48,6 +48,7 @@ export default function EmuApp() {
 
   React.useEffect(() => {
     // --- State change event handlers
+    const themeService = getThemeService();
     const isWindowsChanged = (isWindows: boolean) => {
       themeService.isWindows = isWindows;
       updateThemeState();
@@ -63,11 +64,12 @@ export default function EmuApp() {
       dispatch(emuLoadUiAction());
       updateThemeState();
 
-      emuStore.themeChanged.on(themeChanged);
-      emuStore.isWindowsChanged.on(isWindowsChanged);
+      const store = getStore();
+      store.themeChanged.on(themeChanged);
+      store.isWindowsChanged.on(isWindowsChanged);
 
       // --- Register modal dialogs
-      modalDialogService.registerModalDescriptor(
+      getModalDialogService().registerModalDescriptor(
         Z88_CARDS_DIALOG_ID,
         cz88CardsDialog
       );
@@ -75,8 +77,9 @@ export default function EmuApp() {
 
     return () => {
       // --- Unsubscribe
-      emuStore.isWindowsChanged.off(isWindowsChanged);
-      emuStore.themeChanged.off(themeChanged);
+      const store = getStore();
+      store.isWindowsChanged.off(isWindowsChanged);
+      store.themeChanged.off(themeChanged);
     };
   }, [store]);
 
@@ -94,6 +97,7 @@ export default function EmuApp() {
   );
 
   function updateThemeState(): void {
+    const themeService = getThemeService();
     const theme = themeService.getActiveTheme();
     if (!theme) {
       return;
