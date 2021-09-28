@@ -1,4 +1,4 @@
-import { BinaryReader } from "../../../shared/utils/BinaryReader";
+import { BinaryReader } from "@shared/utils/BinaryReader";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import {
@@ -10,8 +10,8 @@ import {
 } from "../wa-interop/memory-map";
 import { MachineCreationOptions, MachineState } from "../core/vm-core-types";
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
-import { TzxReader } from "../../../shared/tape/tzx-file";
-import { TapReader } from "../../../shared/tape/tap-file";
+import { TzxReader } from "@shared/tape/tzx-file";
+import { TapReader } from "@shared/tape/tap-file";
 import { IAudioRenderer } from "../audio/IAudioRenderer";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import { KeyMapping } from "../core/keyboard";

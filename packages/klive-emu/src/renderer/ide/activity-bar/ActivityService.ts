@@ -2,7 +2,7 @@ import {
   changeActivityAction,
   pointActivityAction,
 } from "@state/activity-bar-reducer";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import {
   dispatch,
   getState,

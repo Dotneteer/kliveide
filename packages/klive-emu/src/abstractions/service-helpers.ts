@@ -9,18 +9,18 @@ import { AppState } from "@state/AppState";
 import { KliveStore } from "@state/KliveStore";
 import { KliveAction } from "@state/state-core";
 import { IActivityService } from "./activity-service";
-import { ICommandService } from "../shared/services/ICommandService";
-import { IContextMenuService } from "../shared/services/IContextMenuService";
-import { IDocumentService } from "../shared/services/IDocumentService";
-import { IEditorService } from "../shared/services/IEditorService";
-import { IEngineProxyService } from "../shared/services/IEngineProxyService";
-import { IInteractivePaneService } from "../shared/services/IInteractivePaneService";
-import { IModalDialogService } from "../shared/services/IModalDialogService";
-import { IOutputPaneService } from "../shared/services/IOutputPaneService";
-import { IProjectService } from "../shared/services/IProjectService";
-import { ISideBarService } from "../shared/services/ISidebarService";
-import { IThemeService } from "../shared/services/IThemeService";
-import { IToolAreaService } from "../shared/services/IToolAreaService";
+import { ICommandService } from "@shared/services/ICommandService";
+import { IContextMenuService } from "@shared/services/IContextMenuService";
+import { IDocumentService } from "@shared/services/IDocumentService";
+import { IEditorService } from "@shared/services/IEditorService";
+import { IEngineProxyService } from "@shared/services/IEngineProxyService";
+import { IInteractivePaneService } from "@shared/services/IInteractivePaneService";
+import { IModalDialogService } from "@shared/services/IModalDialogService";
+import { IOutputPaneService } from "@shared/services/IOutputPaneService";
+import { IProjectService } from "@shared/services/IProjectService";
+import { ISideBarService } from "@shared/services/ISidebarService";
+import { IThemeService } from "@shared/services/IThemeService";
+import { IToolAreaService } from "@shared/services/IToolAreaService";
 import {
   ACTIVITY_SERVICE,
   COMMAND_SERVICE,

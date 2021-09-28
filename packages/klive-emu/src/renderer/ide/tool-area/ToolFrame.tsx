@@ -13,7 +13,7 @@ import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
 import { dispatch } from "@abstractions/service-helpers";
-import { IToolPanel, ToolsInfo } from "../../../shared/services/IToolAreaService";
+import { IToolPanel, ToolsInfo } from "@shared/services/IToolAreaService";
 
 /**
  * Represents the statusbar of the emulator

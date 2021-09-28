@@ -1,5 +1,5 @@
 import { MachineApi } from "./wa-api";
-import { MachineState } from "../../shared/machines/machine-state";
+import { MachineState } from "@shared/machines/machine-state";
 import { MemoryHelper } from "./memory-helpers";
 import {
   BREAKPOINTS_MAP,
@@ -9,7 +9,7 @@ import {
   REG_AREA_INDEX,
 } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";
-import { BreakpointDefinition } from "../../shared/machines/api-data";
+import { BreakpointDefinition } from "@shared/machines/api-data";
 import { KeyMapping } from "./keyboard";
 
 /**

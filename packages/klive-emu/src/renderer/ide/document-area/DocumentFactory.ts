@@ -1,5 +1,5 @@
-import { IDocumentPanel } from "../../../shared/services/IDocumentService";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { IDocumentPanel } from "@shared/services/IDocumentService";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 
 /**
  * A base class for document panel descriptors

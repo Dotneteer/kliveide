@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
 import { getSideBarService } from "@abstractions/service-helpers";
-import { MenuItem } from "../../../shared/command/commands";
+import { MenuItem } from "@shared/command/commands";
 import { getContextMenuService } from "@abstractions/service-helpers";
 import { AppState } from "@state/AppState";
 import { getStore } from "@abstractions/service-helpers";
-import { ISideBarPanel } from "../../../shared/services/ISidebarService";
+import { ISideBarPanel } from "@shared/services/ISidebarService";
 
 /**
  * Component properties

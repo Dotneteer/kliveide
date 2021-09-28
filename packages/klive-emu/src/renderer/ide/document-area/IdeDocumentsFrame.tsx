@@ -9,7 +9,7 @@ import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
-import { DocumentsInfo, IDocumentPanel } from "../../../shared/services/IDocumentService";
+import { DocumentsInfo, IDocumentPanel } from "@shared/services/IDocumentService";
 
 // --- Document Frame IDs
 const DOC_CONTAINER_ID = "ideDocumentContainer";

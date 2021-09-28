@@ -34,11 +34,11 @@ import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateFo
 import {
   IDE_SOURCE,
   RENDERER_STATE_REQUEST_CHANNEL,
-} from "../../shared/messaging/channels";
+} from "@shared/messaging/channels";
 import { KliveAction } from "@state/state-core";
 import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
-import { ForwardActionRequest } from "../../shared/messaging/message-types";
+import { ForwardActionRequest } from "@shared/messaging/message-types";
 import { ActivityService } from "./activity-bar/ActivityService";
 import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";

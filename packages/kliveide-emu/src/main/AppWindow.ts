@@ -37,7 +37,7 @@ import {
 import {
   RequestMessage,
   ResponseMessage,
-} from "../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
 import {
   RENDERER_REQUEST_CHANNEL,
   MAIN_RESPONSE_CHANNEL,
@@ -64,8 +64,8 @@ import {
   emulatorSetMachineContextAction,
   emulatorKeyboardHeightAction,
 } from "@state/redux-emulator-state";
-import { BinaryWriter } from "../shared/utils/BinaryWriter";
-import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
+import { BinaryWriter } from "@shared/utils/BinaryWriter";
+import { TzxHeader, TzxStandardSpeedDataBlock } from "@shared/tape/tzx-file";
 import { ideDisconnectsAction } from "@state/redux-ide-connection.state";
 import { MachineContextProvider } from "./machine-context";
 import {
@@ -80,7 +80,7 @@ import {
   reloadSettings,
   saveKliveSettings,
 } from "./klive-configuration";
-import { KliveSettings } from "../shared/messaging/emu-configurations";
+import { KliveSettings } from "@shared/messaging/emu-configurations";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.

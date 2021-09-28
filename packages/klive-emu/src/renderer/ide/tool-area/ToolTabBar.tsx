@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { IToolPanel, ToolsInfo } from "../../../shared/services/IToolAreaService";
+import { IToolPanel, ToolsInfo } from "@shared/services/IToolAreaService";
 import { getToolAreaService } from "@abstractions/service-helpers";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import ToolTab from "./ToolTab";

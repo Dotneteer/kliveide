@@ -11,7 +11,7 @@ import {
   CZ88_HARD_RESET,
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
-} from "../shared/machines/macine-commands";
+} from "@shared/machines/macine-commands";
 import { IAppWindow } from "./IAppWindows";
 import {
   machineIdFromMenuId,

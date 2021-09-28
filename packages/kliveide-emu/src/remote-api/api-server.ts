@@ -7,8 +7,8 @@ import {
   emulatorSetTapeContenstAction,
   emulatorRequestTypeAction,
 } from "@state/redux-emulator-state";
-import { checkTapeFile } from "../shared/tape/readers";
-import { BinaryReader } from "../shared/utils/BinaryReader";
+import { checkTapeFile } from "@shared/tape/readers";
+import { BinaryReader } from "@shared/utils/BinaryReader";
 import { IdeConfiguration } from "@state/AppState";
 import { ideConfigSetAction } from "@state/redux-ide-config-state";
 import { appConfiguration } from "../main/klive-configuration";
@@ -20,8 +20,8 @@ import {
   GetMachineStateResponse,
   GetMemoryContentsResponse,
   GetMemoryPartitionResponse,
-} from "../shared/messaging/message-types";
-import { DiagViewFrame } from "../shared/machines/diag-info";
+} from "@shared/messaging/message-types";
+import { DiagViewFrame } from "@shared/machines/diag-info";
 
 /**
  * Starts the web server that provides an API to manage the Klive emulator

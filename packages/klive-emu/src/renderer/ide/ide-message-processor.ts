@@ -3,10 +3,10 @@ import {
   NewProjectResponse,
   RequestMessage,
   ResponseMessage,
-} from "../../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { MAIN_TO_IDE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
-import { MAIN_TO_IDE_RESPONE_CHANNEL } from "../../shared/messaging/channels";
+import { MAIN_TO_IDE_REQUEST_CHANNEL } from "@shared/messaging/channels";
+import { MAIN_TO_IDE_RESPONE_CHANNEL } from "@shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
 import { ideSyncAction } from "@state/show-ide-reducer";
 import { getModalDialogService } from "@abstractions/service-helpers";

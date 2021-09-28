@@ -10,8 +10,8 @@ import {
 } from "@abstractions/service-helpers";
 import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { FileOperationResponse } from "../../../shared/messaging/message-types";
-import { IDocumentPanel } from "../../../shared/services/IDocumentService";
+import { FileOperationResponse } from "@shared/messaging/message-types";
+import { IDocumentPanel } from "@shared/services/IDocumentService";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;

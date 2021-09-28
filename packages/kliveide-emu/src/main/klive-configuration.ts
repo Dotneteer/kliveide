@@ -3,7 +3,7 @@ import * as fs from "fs";
 import {
   KliveConfiguration,
   KliveSettings,
-} from "../shared/messaging/emu-configurations";
+} from "@shared/messaging/emu-configurations";
 
 /**
  * The file that stores the Klive Emulator configuration

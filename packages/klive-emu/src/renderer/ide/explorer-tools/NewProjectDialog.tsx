@@ -1,14 +1,14 @@
 import * as React from "react";
 import { CheckBoxComponent } from "@syncfusion/ej2-react-buttons";
 import { getModalDialogService } from "@abstractions/service-helpers";
-import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
+import { IModalDialogDescriptor } from "@shared/services/IModalDialogService";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { GetFolderDialogResponse } from "../../../shared/messaging/message-types";
-import { NewProjectData } from "../../../shared/messaging/dto";
+import { GetFolderDialogResponse } from "@shared/messaging/message-types";
+import { NewProjectData } from "@shared/messaging/dto";
 import { Store } from "redux";
 import {
   ErrorLabel,

@@ -9,7 +9,7 @@ import { getCommandService } from "@abstractions/service-helpers";
 import { getInteractivePaneService } from "@abstractions/service-helpers";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { getToolAreaService } from "@abstractions/service-helpers";
-import { CommandResult } from "../../../shared/services/ICommandService";
+import { CommandResult } from "@shared/services/ICommandService";
 
 const TITLE = "Interactive";
 

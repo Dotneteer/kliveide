@@ -6,12 +6,12 @@ import {
   TreeItem,
   TreeItemCollapsibleState,
 } from "vscode";
-import { MachineState } from "../shared/machines/machine-state";
+import { MachineState } from "@shared/machines/machine-state";
 import {
   getMachineViewProvider,
   onMachineTypeChanged,
 } from "../emulator/notifier";
-import { Z80SignalStateFlags } from "../shared/machines/z80-helpers";
+import { Z80SignalStateFlags } from "@shared/machines/z80-helpers";
 import { communicatorInstance } from "../emulator/communicator";
 
 export /**

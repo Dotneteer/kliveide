@@ -1,4 +1,4 @@
-import { BreakpointType } from "../shared/machines/api-data";
+import { BreakpointType } from "@shared/machines/api-data";
 
 /**
  * Aggregate type for all Klive command nodes

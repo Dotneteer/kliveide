@@ -5,8 +5,8 @@ import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { getDocumentService } from "@abstractions/service-helpers";
 import { getContextMenuService } from "@abstractions/service-helpers";
-import { MenuItem } from "../../../shared/command/commands";
-import { IDocumentPanel } from "../../../shared/services/IDocumentService";
+import { MenuItem } from "@shared/command/commands";
+import { IDocumentPanel } from "@shared/services/IDocumentService";
 
 interface Props {
   title: string;

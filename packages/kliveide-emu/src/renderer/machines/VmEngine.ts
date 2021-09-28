@@ -1,5 +1,5 @@
 import { FrameBoundZ80Machine } from "./FrameBoundZ80Machine";
-import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import {
   ExecuteCycleOptions,
   ExecutionCompletionReason,
@@ -7,7 +7,7 @@ import {
   DebugStepMode,
   Z80MachineStateBase,
   SpectrumMachineStateBase,
-} from "../../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import { EmulatedKeyStroke } from "./keyboard";
 import { MemoryHelper } from "./memory-helpers";
 import {
@@ -25,7 +25,7 @@ import {
   BreakpointDefinition,
   CodeToInject,
   RegisterData,
-} from "../../shared/machines/api-data";
+} from "@shared/machines/api-data";
 import { vmSetRegistersAction } from "@state/redux-vminfo-state";
 import { BANK_0_OFFSET } from "./memory-map";
 import { IVmEngineController } from "./IVmEngineController";

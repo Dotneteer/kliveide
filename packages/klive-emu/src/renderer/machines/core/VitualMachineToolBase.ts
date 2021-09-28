@@ -1,4 +1,4 @@
-import { ICustomDisassembler } from "../../../shared/z80/disassembler/custom-disassembly";
+import { ICustomDisassembler } from "@shared/z80/disassembler/custom-disassembly";
 
 /**
  * This class represent tools associated with a particular virtual machine

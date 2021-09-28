@@ -1,14 +1,14 @@
-import { ICpuState } from "../../shared/machines/AbstractCpu";
+import { ICpuState } from "@shared/machines/AbstractCpu";
 import { ideToEmuMessenger } from "./IdeToEmuMessenger";
 import {
   GetCpuStateResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
-} from "../../shared/messaging/message-types";
-import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
+} from "@shared/messaging/message-types";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { MachineState } from "../machines/core/vm-core-types";
 import { getStore } from "@abstractions/service-helpers";
-import { IEngineProxyService, RunEventArgs } from "../../shared/services/IEngineProxyService";
+import { IEngineProxyService, RunEventArgs } from "@shared/services/IEngineProxyService";
 
 /**
  * Dealy time between two timed run events

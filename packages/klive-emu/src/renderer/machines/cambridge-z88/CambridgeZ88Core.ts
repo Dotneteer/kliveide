@@ -22,19 +22,19 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "../../../shared/machines/macine-commands";
+} from "@shared/machines/macine-commands";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
 import { getModalDialogService } from "@abstractions/service-helpers";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
-} from "../../../shared/z80/disassembler/custom-disassembly";
+} from "@shared/z80/disassembler/custom-disassembly";
 import {
   DisassemblyItem,
   FetchResult,
   intToX2,
   MemorySection,
-} from "../../../shared/z80/disassembler/disassembly-helper";
+} from "@shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
 import { Store } from "redux";
 import { getStore } from "@abstractions/service-helpers";

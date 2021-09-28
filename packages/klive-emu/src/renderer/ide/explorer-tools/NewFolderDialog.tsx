@@ -1,9 +1,9 @@
 import * as React from "react";
 import { getModalDialogService } from "@abstractions/service-helpers";
-import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
+import { IModalDialogDescriptor } from "@shared/services/IModalDialogService";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { NewFileData } from "../../../shared/messaging/dto";
+import { NewFileData } from "@shared/messaging/dto";
 import { Store } from "redux";
 import {
   ErrorLabel,
@@ -13,7 +13,7 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { FileExistsResponse } from "../../../shared/messaging/message-types";
+import { FileExistsResponse } from "@shared/messaging/message-types";
 import { getStore } from "@abstractions/service-helpers";
 
 export const NEW_FOLDER_DIALOG_ID = "NewFolderDialog";

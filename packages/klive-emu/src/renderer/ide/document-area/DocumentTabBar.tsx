@@ -9,7 +9,7 @@ import { ProjectState } from "@state/AppState";
 import { getDocumentService } from "@abstractions/service-helpers";
 import DocumentTab from "./DocumentTab";
 import { getProjectService, getStore } from "@abstractions/service-helpers";
-import { DocumentsInfo, IDocumentPanel } from "../../../shared/services/IDocumentService";
+import { DocumentsInfo, IDocumentPanel } from "@shared/services/IDocumentService";
 
 /**
  * Represents the statusbar of the emulator

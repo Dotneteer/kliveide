@@ -1,7 +1,7 @@
 import {
   BreakpointDefinition,
   BreakpointType,
-} from "../shared/machines/api-data";
+} from "@shared/machines/api-data";
 
 /**
  * Encapsulates the breakpoints functionality

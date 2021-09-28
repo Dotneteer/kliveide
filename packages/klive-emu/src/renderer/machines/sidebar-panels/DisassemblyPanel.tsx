@@ -4,12 +4,12 @@ import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { getEngineProxyService } from "@abstractions/service-helpers";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
-import { Z80Disassembler } from "../../../shared/z80/disassembler/z80-disassembler";
+import { Z80Disassembler } from "@shared/z80/disassembler/z80-disassembler";
 import {
   DisassemblyItem,
   DisassemblyOutput,
   MemorySection,
-} from "../../../shared/z80/disassembler/disassembly-helper";
+} from "@shared/z80/disassembler/disassembly-helper";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { virtualMachineToolsService } from "../core/VitualMachineToolBase";

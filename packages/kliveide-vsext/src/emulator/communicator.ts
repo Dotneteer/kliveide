@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import fetch, { RequestInit, Response } from "node-fetch";
 import { KLIVEIDE, EMU_PORT, SAVE_FOLDER } from "../config/sections";
-import { MachineState } from "../shared/machines/machine-state";
-import { DiagViewFrame } from "../shared/machines/diag-info";
-import { BreakpointDefinition } from "../shared/machines/api-data";
+import { MachineState } from "@shared/machines/machine-state";
+import { DiagViewFrame } from "@shared/machines/diag-info";
+import { BreakpointDefinition } from "@shared/machines/api-data";
 
 /**
  * This class is responsible for communicating with the Klive Emulator

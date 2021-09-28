@@ -1,5 +1,5 @@
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
-import { IEditorService } from "../../../shared/services/IEditorService";
+import { IEditorService } from "@shared/services/IEditorService";
 
 /**
  * Represents the state of the editor

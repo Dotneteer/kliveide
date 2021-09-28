@@ -5,7 +5,7 @@ import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
 import { vmEngineService } from "../machines/core/vm-engine-service";
-import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
+import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import {
   emuMuteSoundAction,
   emuUnmuteSoundAction,

@@ -6,7 +6,7 @@ import { __DARWIN__ } from "../utils/electron-utils";
 import {
   RequestMessage,
   StopVmRequest,
-} from "../../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
 import {
   MachineContextProvider,
   MachineContextProviderBase,

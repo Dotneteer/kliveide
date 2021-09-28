@@ -1,6 +1,6 @@
 import * as React from "react";
 import { getModalDialogService } from "@abstractions/service-helpers";
-import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
+import { IModalDialogDescriptor } from "@shared/services/IModalDialogService";
 import { useRef, useState } from "react";
 import { CSSProperties } from "styled-components";
 import { Store } from "redux";
@@ -12,8 +12,8 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { FileExistsResponse } from "../../../shared/messaging/message-types";
-import { NewFileData } from "../../../shared/messaging/dto";
+import { FileExistsResponse } from "@shared/messaging/message-types";
+import { NewFileData } from "@shared/messaging/dto";
 import { getStore } from "@abstractions/service-helpers";
 
 export const RENAME_FILE_DIALOG_ID = "RenameFileDialog";

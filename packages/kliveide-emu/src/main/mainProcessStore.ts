@@ -4,7 +4,7 @@ import { appReducers } from "@state/app-reducers";
 import { triggerAlias, SpectNetAction } from "@state/redux-core";
 import { StateAwareObject } from "@state/StateAwareObject";
 import { ipcMain, webContents } from "electron";
-import { REDUX_ACTION_CHANNEL } from "../shared/utils/channel-ids";
+import { REDUX_ACTION_CHANNEL } from "@shared/utils/channel-ids";
 
 /**
  * The name of the function that serializes the redux state.

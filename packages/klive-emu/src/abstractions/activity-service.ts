@@ -1,5 +1,5 @@
-import { MenuItem } from "../shared/command/commands";
-import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { MenuItem } from "@shared/command/commands";
+import { ILiteEvent } from "@shared/utils/LiteEvent";
 
 /**
  * IActivityService provides helper functionality around the redux store to

@@ -12,10 +12,10 @@ import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
 import {
   MachineState,
   SpectrumMachineStateBase,
-} from "../../../shared/machines/machine-state";
-import { BinaryReader } from "../../../shared/utils/BinaryReader";
-import { TzxReader } from "../../../shared/tape/tzx-file";
-import { TapReader } from "../../../shared/tape/tap-file";
+} from "@shared/machines/machine-state";
+import { BinaryReader } from "@shared/utils/BinaryReader";
+import { TzxReader } from "@shared/tape/tzx-file";
+import { TapReader } from "@shared/tape/tap-file";
 import { IAudioRenderer } from "../IAudioRenderer";
 import { IZxSpectrumBaseStateManager } from "../IZxSpectrumBaseStateManager";
 import { KeyMapping } from "../keyboard";

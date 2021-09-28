@@ -4,7 +4,7 @@ import { breakpointDefinitions } from "./breakpoints";
 import {
   BreakpointDefinition,
   BreakpointType,
-} from "../shared/machines/api-data";
+} from "@shared/machines/api-data";
 import { communicatorInstance } from "./communicator";
 
 /**
