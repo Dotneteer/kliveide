@@ -40,6 +40,8 @@ import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenge
 import { PROJECT_FILE } from "../project/project-utils";
 import { dispatch, getState } from "../main-state/main-store";
 
+import { Z80Assembler } from "../z80-compiler/assembler";
+
 /**
  * These are the context providers we usein the code
  */
