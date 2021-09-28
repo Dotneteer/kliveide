@@ -1,47 +1,10 @@
 import React from "react";
+import {
+  IToolAreaService,
+  IToolPanel,
+  ToolsInfo,
+} from "../../../shared/services/IToolAreaService";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-
-/**
- * Represents an output panel
- */
-export interface IToolPanel {
-  /**
-   * The index of the panel
-   */
-  index: number;
-
-  /**
-   * Is this the active panel?
-   */
-  active: boolean;
-
-  /**
-   * The title of the panel
-   */
-  title: string;
-
-  /**
-   * Creates a header element for the panel
-   */
-  createHeaderElement(): React.ReactNode;
-
-  /**
-   * Creates a node that represents the contents of a side bar panel
-   */
-  createContentElement(): React.ReactNode;
-
-  /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any>;
-
-  /**
-   * Sets the state of the side bar
-   * @param state Optional state to set
-   * @param fireImmediate Fire a panelStateLoaded event immediately?
-   */
-  setPanelState(state: Record<string, any> | null): void;
-}
 
 /**
  * A base class for document panel descriptors
@@ -96,7 +59,7 @@ export abstract class ToolPanelDescriptorBase implements IToolPanel {
 /**
  * Represents the service that handles the output area
  */
-class ToolAreaService {
+export class ToolAreaService implements IToolAreaService {
   private _tools: IToolPanel[];
   private _activeTool: IToolPanel | null;
   private _toolsRegistered = new LiteEvent<IToolPanel>();
@@ -153,18 +116,6 @@ class ToolAreaService {
    * @param doc Document to activate
    */
   setActiveTool(doc: IToolPanel | null): void {
-    // --- Save the state of the active panel
-    if (this._activeTool) {
-      // const fullState = Object.assign(
-      //   {},
-      //   ideStore.getState().documentFrame ?? {},
-      //   {
-      //     [this._activeTool.id]: this._activeTool.getPanelState(),
-      //   }
-      // );
-      // ideStore.dispatch(setDocumentFrameStateAction(fullState));
-    }
-
     // --- Invoke custom action
     this._activeToolChanging.fire(doc);
 
@@ -189,13 +140,6 @@ class ToolAreaService {
     this._activeTool = doc;
     this._tools.forEach((d) => (d.active = false));
     doc.active = true;
-
-    // --- Load the state of the active document
-    // const documentsState = ideStore.getState().documentFrame ?? {};
-    // const documentState = documentsState?.[this._activeTool.id];
-    // if (documentState) {
-    //   this._activeTool.setPanelState(documentState);
-    // }
 
     // --- Invoke custom action
     this._activeToolChanged.fire(doc);
@@ -292,13 +236,3 @@ class ToolAreaService {
     });
   }
 }
-
-/**
- * Represents the document information
- */
-export type ToolsInfo = {
-  tools: IToolPanel[];
-  active: IToolPanel | null;
-};
-
-export const toolAreaService = new ToolAreaService();

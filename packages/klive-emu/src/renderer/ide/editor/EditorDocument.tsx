@@ -3,7 +3,7 @@ import { CSSProperties } from "styled-components";
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
-import { editorService } from "./editorService";
+import { getEditorService } from "../../../shared/services/store-helpers";
 import {
   DocumentPanelDescriptorBase,
 } from "../document-area/DocumentFactory";
@@ -108,7 +108,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   ) {
     monaco.languages.setMonarchTokensProvider;
     this._editor = editor;
-    const state = editorService.loadState(this.props.descriptor.id);
+    const state = getEditorService().loadState(this.props.descriptor.id);
     if (state) {
       this._editor.setValue(state.text);
       this._editor.restoreViewState(state.viewState);
@@ -159,7 +159,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     const doc = getDocumentService().getDocumentById(docId);
     if (doc) {
       const text = this._editor.getValue();
-      editorService.saveState(this.props.descriptor.id, {
+      getEditorService().saveState(this.props.descriptor.id, {
         text: this._editor.getValue(),
         viewState: this._editor.saveViewState(),
       });

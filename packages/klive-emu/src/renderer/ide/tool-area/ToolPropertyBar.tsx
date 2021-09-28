@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { CSSProperties } from "react";
-import { IToolPanel } from "./ToolAreaService";
+import { IToolPanel } from "../../../shared/services/IToolAreaService";
 
 type Props = {
   tool?: IToolPanel;

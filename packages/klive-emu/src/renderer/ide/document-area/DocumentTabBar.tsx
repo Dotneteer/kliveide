@@ -2,7 +2,7 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useState } from "react";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
-import { editorService } from "../editor/editorService";
+import { getEditorService } from "../../../shared/services/store-helpers";
 import { FileChange } from "../explorer-tools/ProjectService";
 import { ProjectState } from "../../../shared/state/AppState";
 
@@ -132,7 +132,7 @@ export default function DocumentTabBar() {
           d.initialFocus = true;
         }}
         closed={() => {
-          editorService.clearState(d.id);
+          getEditorService().clearState(d.id);
           documentService.unregisterDocument(d);
         }}
       />

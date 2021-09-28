@@ -1,13 +1,15 @@
+import { IOutputBuffer } from "../../../shared/services/IOutputPaneService";
+import { IInteractivePaneService } from "../../../shared/services/IInteractivePaneService";
 import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { CommandResult } from "./CommandService";
-import { IOutputBuffer, OutputPaneBuffer } from "./OutputPaneService";
+import { OutputPaneBuffer } from "./OutputPaneService";
+import { CommandResult } from "../../../shared/services/ICommandService";
 
 const MAX_HISTORY = 1024;
 
 /**
  * This class implements the functionality of the interactive pane service
  */
-class InteractivePaneService {
+export class InteractivePaneService implements IInteractivePaneService {
   private _outputBuffer: IOutputBuffer = new OutputPaneBuffer();
   private _outputContentChanged = new LiteEvent<void>();
   private _history: string[] = [];
@@ -132,8 +134,3 @@ class InteractivePaneService {
     return this._focusRequested;
   }
 }
-
-/**
- * Te singleton instance of the output pane service
- */
-export const interactivePaneService = new InteractivePaneService();

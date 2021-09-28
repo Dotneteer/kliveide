@@ -7,15 +7,20 @@ import { registerThemes } from "../common-ui/register-themes";
 import IdeApp from "./IdeApp";
 import {
   ACTIVITY_SERVICE,
+  COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
   DOCUMENT_SERVICE,
+  EDITOR_SERVICE,
   ENGINE_PROXY_SERVICE,
+  INTERACTIVE_PANE_SERVICE,
   MODAL_DIALOG_SERVICE,
+  OUTPUT_PANE_SERVICE,
   PROJECT_SERVICE,
   registerService,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
   THEME_SERVICE,
+  TOOL_AREA_SERVICE,
 } from "../../shared/services/service-registry";
 import {
   dispatch,
@@ -42,6 +47,11 @@ import { ContextMenuService } from "./context-menu/ContextMenuService";
 import { ThemeService } from "../common-ui/themes/theme-service";
 import { ModalDialogService } from "../common-ui/modal-service";
 import { DocumentService } from "./document-area/DocumentService";
+import { EditorService } from "./editor/editorService";
+import { InteractivePaneService } from "./tool-area/InteractiveService";
+import { OutputPaneService } from "./tool-area/OutputPaneService";
+import { ToolAreaService } from "./tool-area/ToolAreaService";
+import { CommandService } from "./tool-area/CommandService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -97,6 +107,11 @@ registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());
 registerService(PROJECT_SERVICE, new ProjectService());
 registerService(CONTEXT_MENU_SERVICE, new ContextMenuService());
 registerService(DOCUMENT_SERVICE, new DocumentService());
+registerService(EDITOR_SERVICE, new EditorService());
+registerService(INTERACTIVE_PANE_SERVICE, new InteractivePaneService());
+registerService(OUTPUT_PANE_SERVICE, new OutputPaneService());
+registerService(TOOL_AREA_SERVICE, new ToolAreaService());
+registerService(COMMAND_SERVICE, new CommandService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

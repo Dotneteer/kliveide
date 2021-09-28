@@ -1,12 +1,10 @@
 import { EmulatorPanelState } from "../../../shared/state/AppState";
 import {
-  IOutputBuffer,
-  OutputColor,
   OutputPaneDescriptorBase,
-  outputPaneService,
 } from "../../ide/tool-area/OutputPaneService";
-import { getEngineProxyService } from "../../../shared/services/store-helpers";
+import { getEngineProxyService, getOutputPaneService } from "../../../shared/services/store-helpers";
 import { getStore } from "../../../shared/services/store-helpers";
+import { IOutputBuffer, OutputColor } from "../../../shared/services/IOutputPaneService";
 
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";
@@ -22,6 +20,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
 
   constructor() {
     super(ID, TITLE);
+    const outputPaneService = getOutputPaneService();
     getStore().machineTypeChanged.on((type) => {
       // --- Change the execution state to "none" whenever the machine type changes
       this._isMachineTypeSet = true;

@@ -19,10 +19,10 @@ import { BlinkInformationPanelDescriptor } from "../machines/cambridge-z88/Blink
 import { CallStackPanelDescriptor } from "../machines/sidebar-panels/CallStackPanel";
 import { IoLogsPanelDescription } from "../machines/sidebar-panels/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
-import { toolAreaService } from "./tool-area/ToolAreaService";
+import { getToolAreaService } from "../../shared/services/store-helpers";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
-import { outputPaneService } from "./tool-area/OutputPaneService";
+import { getOutputPaneService } from "../../shared/services/store-helpers";
 import { VmOutputPanelDescriptor } from "../machines/sidebar-panels/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
 import IdeContextMenu from "./context-menu/ContextMenu";
@@ -275,10 +275,12 @@ export default function IdeApp() {
       );
 
       // --- Register tool panels
-      toolAreaService.registerTool(new OutputToolPanelDescriptor());
+      const toolAreaService = getToolAreaService();
+      toolAreaService.registerTool(new OutputToolPanelDescriptor(), false);
+      const outputPaneService = getOutputPaneService();
       outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
       outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
-      toolAreaService.registerTool(new InteractiveToolPanelDescriptor());
+      toolAreaService.registerTool(new InteractiveToolPanelDescriptor(), true);
 
       // --- Register custom languages
       const documentService = getDocumentService();
