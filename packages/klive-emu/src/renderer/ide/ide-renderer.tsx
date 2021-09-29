@@ -33,11 +33,11 @@ import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateFo
 import {
   IDE_SOURCE,
   RENDERER_STATE_REQUEST_CHANNEL,
-} from "@shared/messaging/channels";
+} from "../../extensibility/messaging/channels";
 import { KliveAction } from "@state/state-core";
 import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
-import { ForwardActionRequest } from "@shared/messaging/message-types";
+import { ForwardActionRequest } from "../../extensibility/messaging/message-types";
 import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
@@ -50,6 +50,7 @@ import { InteractivePaneService } from "./tool-area/InteractiveService";
 import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
+import { registerSite } from "@abstractions/process-site";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -80,6 +81,12 @@ const rootReducer = (state: AppState, action: KliveAction) => {
   }
   return appReducer(state as any, action);
 };
+
+// ------------------------------------------------------------------------------
+// --- Sign we are in the emulator renderer process
+
+registerSite("ide");
+
 
 // ------------------------------------------------------------------------------
 // --- Register the main services

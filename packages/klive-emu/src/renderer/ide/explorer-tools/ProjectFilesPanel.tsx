@@ -19,8 +19,8 @@ import { Store } from "redux";
 import {
   ConfirmDialogResponse,
   GetFileContentsResponse,
-} from "@shared/messaging/message-types";
-import { NewFileData } from "@shared/messaging/dto";
+} from "../../../extensibility/messaging/message-types";
+import { NewFileData } from "../../../extensibility/messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";

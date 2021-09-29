@@ -7,8 +7,8 @@ import { CSSProperties } from "styled-components";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { GetFolderDialogResponse } from "@shared/messaging/message-types";
-import { NewProjectData } from "@shared/messaging/dto";
+import { GetFolderDialogResponse } from "../../../extensibility/messaging/message-types";
+import { NewProjectData } from "../../../extensibility/messaging/dto";
 import { Store } from "redux";
 import {
   ErrorLabel,

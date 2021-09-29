@@ -2,14 +2,14 @@ import {
   MachineCreationOptions,
   MachineState,
 } from "../../renderer/machines/core/vm-core-types";
-import { KliveAction } from "../state/state-core";
+import { KliveAction } from "../../shared/state/state-core";
 import { KliveConfiguration } from "../../main/main-state/klive-configuration";
 import {
   AppState,
   DirectoryContent,
   RegisteredMachine,
-} from "../state/AppState";
-import { ICpuState } from "../machines/AbstractCpu";
+} from "../../shared/state/AppState";
+import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { NewProjectData } from "./dto";
 
 /**

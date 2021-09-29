@@ -12,8 +12,8 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { FileExistsResponse } from "@shared/messaging/message-types";
-import { NewFileData } from "@shared/messaging/dto";
+import { FileExistsResponse } from "../../../extensibility/messaging/message-types";
+import { NewFileData } from "../../../extensibility/messaging/dto";
 import { getStore } from "@abstractions/service-helpers";
 
 export const RENAME_FILE_DIALOG_ID = "RenameFileDialog";

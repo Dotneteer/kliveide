@@ -14,7 +14,7 @@ import {
   RequestMessage,
   ResponseMessage,
   GetFileContentsResponse,
-} from "@shared/messaging/message-types";
+} from "../../extensibility/messaging/message-types";
 import { emuForwarder, emuWindow } from "../app/app-menu";
 import {
   createKliveProject,

@@ -10,8 +10,8 @@ import {
   IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
   IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
   MAIN_STATE_REQUEST_CHANNEL,
-} from "@shared/messaging/channels";
-import { ForwardActionRequest } from "@shared/messaging/message-types";
+} from "../extensibility/messaging/channels";
+import { ForwardActionRequest } from "../extensibility/messaging/message-types";
 import {
   emuMessenger,
   emuWindow,
@@ -40,6 +40,10 @@ import {
   processEmulatorRequest,
   processIdeRequest,
 } from "./communication/process-messages";
+import { registerSite } from "@abstractions/process-site";
+
+// --- Sign that this process is the main process
+registerSite("main");
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.

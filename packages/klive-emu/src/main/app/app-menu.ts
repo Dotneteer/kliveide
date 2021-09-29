@@ -63,7 +63,7 @@ import {
   openProjectFolder,
 } from "../project/project-utils";
 import { closeProjectAction } from "@state/project-reducer";
-import { NewProjectResponse } from "@shared/messaging/message-types";
+import { NewProjectResponse } from "../../extensibility/messaging/message-types";
 import { AppWindow } from "./app-window";
 
 // --- Global reference to the mainwindow
