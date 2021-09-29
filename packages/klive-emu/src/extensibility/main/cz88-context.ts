@@ -35,7 +35,7 @@ import {
   SlotContent,
   Z88CardsState,
 } from "@shared/machines/cz88-specific";
-import { ExecuteMachineCommandResponse } from "../../extensibility/messaging/message-types";
+import { ExecuteMachineCommandResponse } from "@messaging/message-types";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
 import { dispatch, getState } from "../../main/main-state/main-store";

@@ -10,8 +10,8 @@ import {
   IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
   IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
   MAIN_STATE_REQUEST_CHANNEL,
-} from "../extensibility/messaging/channels";
-import { ForwardActionRequest } from "../extensibility/messaging/message-types";
+} from "@messaging/channels";
+import { ForwardActionRequest } from "@messaging/message-types";
 import {
   emuMessenger,
   emuWindow,

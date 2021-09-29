@@ -5,12 +5,12 @@ import {
   GetMemoryContentsResponse,
   RequestMessage,
   ResponseMessage,
-} from "../../extensibility/messaging/message-types";
+} from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import {
   IDE_TO_EMU_EMU_REQUEST_CHANNEL,
   IDE_TO_EMU_EMU_RESPONSE_CHANNEL,
-} from "../../extensibility/messaging/channels";
+} from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
 import { vmEngineService } from "../machines/core/vm-engine-service";
 

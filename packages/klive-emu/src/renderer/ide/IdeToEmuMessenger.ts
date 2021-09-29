@@ -3,12 +3,12 @@ import { IpcRendereApi } from "../../exposed-apis";
 import {
   RequestMessage,
   ResponseMessage,
-} from "../../extensibility/messaging/message-types";
+} from "@messaging/message-types";
 import {
   IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
   IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
-} from "../../extensibility/messaging/channels";
-import { MessengerBase } from "../../extensibility/messaging/MessengerBase";
+} from "@messaging/channels";
+import { MessengerBase } from "@messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window

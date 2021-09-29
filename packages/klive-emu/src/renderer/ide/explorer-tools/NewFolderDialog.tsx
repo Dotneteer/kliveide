@@ -3,7 +3,7 @@ import { getModalDialogService } from "@abstractions/service-helpers";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { NewFileData } from "../../../extensibility/messaging/dto";
+import { NewFileData } from "@messaging/dto";
 import { Store } from "redux";
 import {
   ErrorLabel,
@@ -13,7 +13,7 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { FileExistsResponse } from "../../../extensibility/messaging/message-types";
+import { FileExistsResponse } from "@messaging/message-types";
 import { getStore } from "@abstractions/service-helpers";
 
 export const NEW_FOLDER_DIALOG_ID = "NewFolderDialog";

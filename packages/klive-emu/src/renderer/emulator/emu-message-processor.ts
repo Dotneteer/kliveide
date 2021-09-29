@@ -4,9 +4,9 @@ import {
   ExecuteMachineCommandResponse,
   RequestMessage,
   ResponseMessage,
-} from "../../extensibility/messaging/message-types";
+} from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { MAIN_TO_EMU_REQUEST_CHANNEL, MAIN_TO_EMU_RESPONE_CHANNEL } from "../../extensibility/messaging/channels";
+import { MAIN_TO_EMU_REQUEST_CHANNEL, MAIN_TO_EMU_RESPONE_CHANNEL } from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
 import { vmEngineService } from "../machines/core/vm-engine-service";
 

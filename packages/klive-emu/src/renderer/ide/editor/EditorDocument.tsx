@@ -10,7 +10,7 @@ import {
 } from "@abstractions/service-helpers";
 import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { FileOperationResponse } from "../../../extensibility/messaging/message-types";
+import { FileOperationResponse } from "@messaging/message-types";
 import { IDocumentPanel } from "@abstractions/document-service";
 
 // --- Wait 1000 ms before saving the document being edited

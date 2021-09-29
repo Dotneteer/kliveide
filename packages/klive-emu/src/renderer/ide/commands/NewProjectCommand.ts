@@ -3,7 +3,7 @@ import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import {
   CreateKliveProjectResponse,
   GetRegisteredMachinesResponse,
-} from "../../../extensibility/messaging/message-types";
+} from "@messaging/message-types";
 import { InteractiveCommandBase, InteractiveCommandResult, TraceMessage, TraceMessageType } from "@abstractions/interactive-command";
 
 /**

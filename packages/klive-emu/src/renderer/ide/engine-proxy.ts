@@ -4,7 +4,7 @@ import {
   GetCpuStateResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
-} from "../../extensibility/messaging/message-types";
+} from "@messaging/message-types";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { MachineState } from "../machines/core/vm-core-types";
 import { getStore } from "@abstractions/service-helpers";

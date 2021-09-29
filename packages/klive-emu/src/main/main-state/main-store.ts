@@ -4,20 +4,20 @@
 
 import { combineReducers, createStore, applyMiddleware } from "redux";
 import { appReducers } from "@state/app-reducers";
-import { MessengerBase } from "../../extensibility/messaging/MessengerBase";
+import { MessengerBase } from "@messaging/MessengerBase";
 import {
   DefaultResponse,
   ForwardActionRequest,
   RequestMessage,
   ResponseMessage,
-} from "../../extensibility/messaging/message-types";
+} from "@messaging/message-types";
 import {
   EMU_SOURCE,
   IDE_SOURCE,
   MAIN_SOURCE,
   MAIN_STATE_RESPONSE_CHANNEL,
   RENDERER_STATE_REQUEST_CHANNEL,
-} from "../../extensibility/messaging/channels";
+} from "@messaging/channels";
 import { KliveAction } from "@state/state-core";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import { getInitialAppState } from "@state/AppState";

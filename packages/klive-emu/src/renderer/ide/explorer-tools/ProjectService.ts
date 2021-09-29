@@ -4,7 +4,7 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
 import { DirectoryContent } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
-import { FileOperationResponse } from "../../../extensibility/messaging/message-types";
+import { FileOperationResponse } from "@messaging/message-types";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { getStore } from "@abstractions/service-helpers";
 

@@ -12,7 +12,7 @@ import {
 } from "@shared/machines/cz88-specific";
 import { useState } from "react";
 import { Icon } from "../../common-ui/Icon";
-import { EmuOpenFileDialogResponse } from "../../../extensibility/messaging/message-types";
+import { EmuOpenFileDialogResponse } from "@messaging/message-types";
 import { Store } from "redux";
 import { getStore } from "@abstractions/service-helpers";
 import { getModalDialogService } from "@abstractions/service-helpers";
