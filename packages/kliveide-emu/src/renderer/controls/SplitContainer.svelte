@@ -16,7 +16,7 @@
     calculateInitialSizes,
     removeGutters
   } from "./SplitContainer";
-  import { isDescendant } from "../../shared/utils/html-utils";
+  import { isDescendant } from "@shared/utils/html-utils";
 
   // ==========================================================================
   // Component parameters

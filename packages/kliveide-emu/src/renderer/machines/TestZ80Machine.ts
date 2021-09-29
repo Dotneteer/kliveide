@@ -5,7 +5,7 @@ import {
   REG_AREA_INDEX,
   CPU_STATE_BUFFER,
 } from "./memory-map";
-import { FlagsSetMask, Z80CpuState } from "../../shared/machines/z80-helpers";
+import { FlagsSetMask, Z80CpuState } from "@shared/machines/z80-helpers";
 
 const TEST_INPUT_BUFFER = 0x01000de3;
 const IO_OPERATION_LOG = 0x01000ee3;

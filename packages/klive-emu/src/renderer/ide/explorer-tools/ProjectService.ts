@@ -2,11 +2,11 @@ import { ITreeNode, ITreeView } from "../../common-ui/ITreeNode";
 import { ProjectNode } from "./ProjectNode";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
-import { DirectoryContent } from "../../../shared/state/AppState";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
-import { FileOperationResponse } from "../../../shared/messaging/message-types";
+import { DirectoryContent } from "@state/AppState";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { FileOperationResponse } from "@shared/messaging/message-types";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { getStore } from "../../../shared/services/store-helpers";
+import { getStore } from "@abstractions/service-helpers";
 
 /**
  * This class implements the project services

@@ -4,9 +4,13 @@ import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
 } from "../../common-ui/PanelStyles";
-import { getActivityService } from "../../../shared/services/store-helpers";
+import { dispatch } from "@abstractions/service-helpers";
 import { useSelector } from "react-redux";
-import { AppState } from "../../../shared/state/AppState";
+import { AppState } from "@state/AppState";
+import {
+  changeActivityAction,
+  pointActivityAction,
+} from "@state/activity-bar-reducer";
 
 /**
  * Represents the statusbar of the emulator
@@ -19,7 +23,6 @@ export default function ActivityBar() {
   );
   const appButtons: JSX.Element[] = [];
   const sysButtons: JSX.Element[] = [];
-  const activityService = getActivityService();
   activities?.forEach((a, index) => {
     const destination = a.isSystemActivity ? sysButtons : appButtons;
     destination.push(
@@ -29,9 +32,9 @@ export default function ActivityBar() {
         activity={a}
         active={activeIndex === index}
         pointed={pointedIndex === index}
-        clicked={() => activityService.selectActivity(index)}
-        point={() => activityService.pointActivity(index)}
-        unpoint={() => activityService.pointActivity(-1)}
+        clicked={() => dispatch(changeActivityAction(index))}
+        point={() => dispatch(pointActivityAction(index))}
+        unpoint={() => dispatch(pointActivityAction(-1))}
       />
     );
   });

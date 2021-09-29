@@ -5,10 +5,10 @@ import {
   ExecuteCycleOptions,
   MachineState,
   Z80MachineStateBase,
-} from "../../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import { BLOCK_LOOKUP_TABLE, EXEC_OPTIONS_BUFFER } from "./memory-map";
-import { CodeToInject } from "../../shared/machines/api-data";
-import { DiagViewFrame } from "../../shared/machines/diag-info";
+import { CodeToInject } from "@shared/machines/api-data";
+import { DiagViewFrame } from "@shared/machines/diag-info";
 
 /**
  * Represents a Z80 machine that uses execution frames (generally bound to screen rendering)

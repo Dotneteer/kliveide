@@ -6,7 +6,7 @@ import {
   ExecuteCycleOptions,
   EmulationMode,
   DebugStepMode,
-} from "../../../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import {
   BANK_0_OFFSET,
   CPU_STATE_BUFFER,

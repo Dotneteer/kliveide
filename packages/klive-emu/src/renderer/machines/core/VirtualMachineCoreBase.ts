@@ -1,4 +1,4 @@
-import { ProgramCounterInfo } from "../../../shared/state/AppState";
+import { ProgramCounterInfo } from "@state/AppState";
 import { IVmController } from "./IVmController";
 import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
@@ -11,8 +11,8 @@ import {
 } from "./vm-core-types";
 import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "../wa-interop/wa-api";
-import { ICpu } from "../../../shared/machines/AbstractCpu";
-import { ICustomDisassembler } from "../../../shared/z80/disassembler/custom-disassembly";
+import { ICpu } from "@shared/machines/AbstractCpu";
+import { ICustomDisassembler } from "@shared/z80/disassembler/custom-disassembly";
 
 /**
  * Represents the core abstraction of a virtual machine.

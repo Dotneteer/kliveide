@@ -9,7 +9,7 @@ import { machineRegistry } from "../../extensibility/main/machine-registry";
 import {
   projectOpenedAction,
   projectLoadingAction,
-} from "../../shared/state/project-reducer";
+} from "@state/project-reducer";
 import { KliveProject } from "../main-state/klive-configuration";
 import { emuWindow, setupMenu } from "../app/app-menu";
 import { dispatch, getState } from "../main-state/main-store";

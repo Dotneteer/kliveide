@@ -4,15 +4,15 @@ import { ZxSpectrum48 } from "./machines/spectrum/ZxSpectrum48";
 import { ZxSpectrum128 } from "./machines/spectrum/ZxSpectrum128";
 import { rendererProcessStore } from "./rendererProcessStore";
 import { MemoryHelper } from "./machines/memory-helpers";
-import { emulatorSetSavedDataAction } from "../shared/state/redux-emulator-state";
+import { emulatorSetSavedDataAction } from "@state/redux-emulator-state";
 import { TAPE_SAVE_BUFFER } from "./machines/memory-map";
 import { FrameBoundZ80Machine } from "./machines/FrameBoundZ80Machine";
 import { AudioRenderer } from "./machines/AudioRenderer";
 import { ZxSpectrumBaseStateManager } from "./machines/spectrum/ZxSpectrumBaseStateManager";
 import { CambridgeZ88 } from "./machines/cz88/CambridgeZ88";
-import { KliveConfiguration } from "../shared/messaging/emu-configurations";
-import { sendMessageToMain } from "../shared/messaging/renderer-to-main-comm";
-import { GetMachineRomsResponse } from "../shared/messaging/message-types";
+import { KliveConfiguration } from "@shared/messaging/emu-configurations";
+import { sendMessageToMain } from "@shared/messaging/renderer-to-main-comm";
+import { GetMachineRomsResponse } from "@shared/messaging/message-types";
 import { CambridgeZ88BaseStateManager } from "./machines/cz88/CambridgeZ88BaseStateManager";
 
 /**

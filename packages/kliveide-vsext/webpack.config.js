@@ -20,6 +20,9 @@ function createConfig(source, dest) {
     resolve: {
       alias: {
         "@": srcPaths("src"),
+        "@abstractions": srcPaths("src/abstractions"),
+        "@state": srcPaths("src/shared/state"),
+        "@shared": srcPaths("src/shared"),
       },
       extensions: [".mjs", ".js", ".json", ".ts"],
       mainFields: ["svelte", "browser", "module", "main"],
@@ -65,12 +68,6 @@ module.exports = [
     "./src/custom-editors/disassembly/disassembly.js",
     "disass.bundle.js"
   ),
-  createConfig(
-    "./src/custom-editors/memory/memory.js",
-    "memory.bundle.js"
-  ),
-  createConfig(
-    "./src/custom-editors/basic/basic.js",
-    "basic.bundle.js"
-  ),
+  createConfig("./src/custom-editors/memory/memory.js", "memory.bundle.js"),
+  createConfig("./src/custom-editors/basic/basic.js", "basic.bundle.js"),
 ];

@@ -1,21 +1,26 @@
-import { AppState } from "../state/AppState";
-import { KliveStore } from "../state/KliveStore";
-import { KliveAction } from "../state/state-core";
-import { IActivityService } from "./IActivityService";
-import { ICommandService } from "./ICommandService";
-import { IContextMenuService } from "./IContextMenuService";
-import { IDocumentService } from "./IDocumentService";
-import { IEditorService } from "./IEditorService";
-import { IEngineProxyService } from "./IEngineProxyService";
-import { IInteractivePaneService } from "./IInteractivePaneService";
-import { IModalDialogService } from "./IModalDialogService";
-import { IOutputPaneService } from "./IOutputPaneService";
-import { IProjectService } from "./IProjectService";
-import { ISideBarService } from "./ISidebarService";
-import { IThemeService } from "./IThemeService";
-import { IToolAreaService } from "./IToolAreaService";
+// ============================================================================
+// This file contains helper methods to access the service instances. Each 
+// service has a related `get<ServiceName>` method to query the service instance.
+//
+// You can cache the service instance within a class or a method.
+// ============================================================================
+
+import { AppState } from "@state/AppState";
+import { KliveStore } from "@state/KliveStore";
+import { KliveAction } from "@state/state-core";
+import { ICommandService } from "@shared/services/ICommandService";
+import { IContextMenuService } from "@shared/services/IContextMenuService";
+import { IDocumentService } from "@shared/services/IDocumentService";
+import { IEditorService } from "@shared/services/IEditorService";
+import { IEngineProxyService } from "@shared/services/IEngineProxyService";
+import { IInteractivePaneService } from "@shared/services/IInteractivePaneService";
+import { IModalDialogService } from "@shared/services/IModalDialogService";
+import { IOutputPaneService } from "@shared/services/IOutputPaneService";
+import { IProjectService } from "@shared/services/IProjectService";
+import { ISideBarService } from "@shared/services/ISidebarService";
+import { IThemeService } from "@shared/services/IThemeService";
+import { IToolAreaService } from "@shared/services/IToolAreaService";
 import {
-  ACTIVITY_SERVICE,
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
   DOCUMENT_SERVICE,
@@ -30,7 +35,7 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   TOOL_AREA_SERVICE,
-} from "./service-registry";
+} from "@abstractions/service-registry";
 
 /**
  * Gets the service instance that provides the application state store
@@ -68,13 +73,6 @@ export function getThemeService(): IThemeService {
  */
 export function getModalDialogService(): IModalDialogService {
   return getService(MODAL_DIALOG_SERVICE) as IModalDialogService;
-}
-
-/**
- * Gets the activity service instance
- */
-export function getActivityService(): IActivityService {
-  return getService(ACTIVITY_SERVICE) as IActivityService;
 }
 
 /**

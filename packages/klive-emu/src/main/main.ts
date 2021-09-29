@@ -10,8 +10,8 @@ import {
   IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
   IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
   MAIN_STATE_REQUEST_CHANNEL,
-} from "../shared/messaging/channels";
-import { ForwardActionRequest } from "../shared/messaging/message-types";
+} from "@shared/messaging/channels";
+import { ForwardActionRequest } from "@shared/messaging/message-types";
 import {
   emuMessenger,
   emuWindow,
@@ -33,9 +33,9 @@ import {
   emuShowKeyboardAction,
   emuShowStatusbarAction,
   emuShowToolbarAction,
-} from "../shared/state/emu-view-options-reducer";
+} from "@state/emu-view-options-reducer";
 import { __WIN32__ } from "./utils/electron-utils";
-import { setWindowsAction } from "../shared/state/is-windows-reducer";
+import { setWindowsAction } from "@state/is-windows-reducer";
 import {
   processEmulatorRequest,
   processIdeRequest,

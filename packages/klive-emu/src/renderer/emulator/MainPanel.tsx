@@ -6,13 +6,13 @@ import {
 } from "@syncfusion/ej2-react-layouts";
 
 import { useSelector } from "react-redux";
-import { AppState } from "../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import EmulatorPanel from "./EmulatorPanel";
 import KeyboardPanel from "./KeyboardPanel";
 import { vmEngineService } from "../machines/core/vm-engine-service";
-import { emuKeyboardHeightAction } from "../../shared/state/emulator-panel-reducer";
+import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
 import styles from "styled-components";
-import { dispatch } from "../../shared/services/store-helpers";
+import { dispatch } from "@abstractions/service-helpers";
 
 /**
  * Represents the main canvas of the emulator

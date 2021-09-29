@@ -2,18 +2,18 @@ import * as React from "react";
 import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
-import { getEngineProxyService } from "../../../shared/services/store-helpers";
+import { getEngineProxyService } from "@abstractions/service-helpers";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
-import { Z80Disassembler } from "../../../shared/z80/disassembler/z80-disassembler";
+import { Z80Disassembler } from "@shared/z80/disassembler/z80-disassembler";
 import {
   DisassemblyItem,
   DisassemblyOutput,
   MemorySection,
-} from "../../../shared/z80/disassembler/disassembly-helper";
+} from "@shared/z80/disassembler/disassembly-helper";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
-import { getState } from "../../../shared/services/store-helpers";
+import { getState } from "@abstractions/service-helpers";
 
 const TITLE = "Z80 Disassembly";
 const DISASS_LENGTH = 2560;

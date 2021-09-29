@@ -6,9 +6,9 @@ import {
   ExecuteCycleOptions,
   EmulationMode,
   DebugStepMode,
-} from "../../../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import { ROM_48_OFFSET } from "../memory-map";
-import { CodeToInject } from "../../../shared/machines/api-data";
+import { CodeToInject } from "@shared/machines/api-data";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point

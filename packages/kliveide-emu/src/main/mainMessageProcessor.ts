@@ -1,11 +1,11 @@
-import { emulatorRequestTypeAction } from "../shared/state/redux-emulator-state";
+import { emulatorRequestTypeAction } from "@state/redux-emulator-state";
 import {
   RequestMessage,
   DefaultResponse,
   AppConfigResponse,
   GetMachineRomsResponse,
-} from "../shared/messaging/message-types";
-import { ResponseMessage } from "../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
+import { ResponseMessage } from "@shared/messaging/message-types";
 import { appConfiguration, appSettings } from "./klive-configuration";
 import { mainProcessStore } from "./mainProcessStore";
 import { AppWindow } from "./AppWindow";

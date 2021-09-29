@@ -1,4 +1,4 @@
-import { ImageInfo } from "../../../shared/services/IThemeService";
+import { ImageInfo } from "@shared/services/IThemeService";
 
 /**
  * Definitions of stock image icons

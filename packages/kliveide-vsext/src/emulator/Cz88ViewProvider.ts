@@ -8,7 +8,7 @@ import { ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
 import {
   CambridgeZ88MachineState,
   MachineState,
-} from "../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import { Z80MachineViewProviderBase } from "./Z80MachineViewProviderBase";
 
 /**

@@ -1,10 +1,10 @@
-import { EmulatorPanelState } from "../../../shared/state/AppState";
+import { EmulatorPanelState } from "@state/AppState";
 import {
   OutputPaneDescriptorBase,
 } from "../../ide/tool-area/OutputPaneService";
-import { getEngineProxyService, getOutputPaneService } from "../../../shared/services/store-helpers";
-import { getStore } from "../../../shared/services/store-helpers";
-import { IOutputBuffer, OutputColor } from "../../../shared/services/IOutputPaneService";
+import { getEngineProxyService, getOutputPaneService } from "@abstractions/service-helpers";
+import { getStore } from "@abstractions/service-helpers";
+import { IOutputBuffer, OutputColor } from "@shared/services/IOutputPaneService";
 
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";

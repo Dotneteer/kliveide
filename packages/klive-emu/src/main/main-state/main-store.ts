@@ -3,30 +3,30 @@
 // ============================================================================
 
 import { combineReducers, createStore, applyMiddleware } from "redux";
-import { appReducers } from "../../shared/state/app-reducers";
-import { MessengerBase } from "../../shared/messaging/MessengerBase";
+import { appReducers } from "@state/app-reducers";
+import { MessengerBase } from "@shared/messaging/MessengerBase";
 import {
   DefaultResponse,
   ForwardActionRequest,
   RequestMessage,
   ResponseMessage,
-} from "../../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
 import {
   EMU_SOURCE,
   IDE_SOURCE,
   MAIN_SOURCE,
   MAIN_STATE_RESPONSE_CHANNEL,
   RENDERER_STATE_REQUEST_CHANNEL,
-} from "../../shared/messaging/channels";
-import { KliveAction } from "../../shared/state/state-core";
+} from "@shared/messaging/channels";
+import { KliveAction } from "@state/state-core";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
-import { getInitialAppState } from "../../shared/state/AppState";
-import { KliveStore } from "../../shared/state/KliveStore";
+import { getInitialAppState } from "@state/AppState";
+import { KliveStore } from "@state/KliveStore";
 import {
   registerService,
   STORE_SERVICE,
-} from "../../shared/services/service-registry";
-export { getStore, dispatch, getState } from "../../shared/services/store-helpers";
+} from "@abstractions/service-registry";
+export { getStore, dispatch, getState } from "@abstractions/service-helpers";
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;

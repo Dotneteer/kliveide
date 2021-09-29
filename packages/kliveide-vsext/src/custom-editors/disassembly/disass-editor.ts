@@ -31,7 +31,7 @@ import {
   MemorySectionType,
 } from "../../disassembler/disassembly-helper";
 import { Z80Disassembler } from "../../disassembler/z80-disassembler";
-import { DiagViewFrame } from "../../shared/machines/diag-info";
+import { DiagViewFrame } from "@shared/machines/diag-info";
 import { breakpointDefinitions } from "../../emulator/breakpoints";
 import { onCommandExecuted } from "../../emulator/command-handler";
 import { CmdNode } from "../../command-parser/command-line-nodes";

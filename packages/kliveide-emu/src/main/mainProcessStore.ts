@@ -1,10 +1,10 @@
 import { combineReducers, createStore, applyMiddleware } from "redux";
-import { AppState, getDefaultAppState } from "../shared/state/AppState";
-import { appReducers } from "../shared/state/app-reducers";
-import { triggerAlias, SpectNetAction } from "../shared/state/redux-core";
-import { StateAwareObject } from "../shared/state/StateAwareObject";
+import { AppState, getDefaultAppState } from "@state/AppState";
+import { appReducers } from "@state/app-reducers";
+import { triggerAlias, SpectNetAction } from "@state/redux-core";
+import { StateAwareObject } from "@state/StateAwareObject";
 import { ipcMain, webContents } from "electron";
-import { REDUX_ACTION_CHANNEL } from "../shared/utils/channel-ids";
+import { REDUX_ACTION_CHANNEL } from "@shared/utils/channel-ids";
 
 /**
  * The name of the function that serializes the redux state.

@@ -1,16 +1,16 @@
 import { IpcRendererEvent } from "electron";
-import { KliveAction } from "../../shared/state/state-core";
+import { KliveAction } from "@state/state-core";
 import { IpcRendereApi } from "../../exposed-apis";
 import {
   MAIN_STATE_REQUEST_CHANNEL,
   RENDERER_STATE_RESPONSE_CHANNEL,
-} from "../../shared/messaging/channels";
+} from "@shared/messaging/channels";
 import {
   DefaultResponse,
   RequestMessage,
   ResponseMessage,
-} from "../../shared/messaging/message-types";
-import { MessengerBase } from "../../shared/messaging/MessengerBase";
+} from "@shared/messaging/message-types";
+import { MessengerBase } from "@shared/messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window

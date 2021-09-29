@@ -9,11 +9,11 @@ import {
   emulatorHideBeamPositionAction,
   emulatorSetClockMultiplierAction,
   emulatorSetTapeContenstAction,
-} from "../shared/state/redux-emulator-state";
-import { emulatorShowBeamPositionAction } from "../shared/state/redux-emulator-state";
-import { EmulatorPanelState } from "../shared/state/AppState";
-import { BinaryReader } from "../shared/utils/BinaryReader";
-import { checkTapeFile } from "../shared/tape/readers";
+} from "@state/redux-emulator-state";
+import { emulatorShowBeamPositionAction } from "@state/redux-emulator-state";
+import { EmulatorPanelState } from "@state/AppState";
+import { BinaryReader } from "@shared/utils/BinaryReader";
+import { checkTapeFile } from "@shared/tape/readers";
 import { IAppWindow } from "./IAppWindows";
 import { AppWindow } from "./AppWindow";
 

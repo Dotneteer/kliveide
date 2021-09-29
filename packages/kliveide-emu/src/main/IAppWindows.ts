@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron";
-import { RequestMessage } from "../shared/messaging/message-types";
+import { RequestMessage } from "@shared/messaging/message-types";
 
 /**
  * Defines the available services of AppWindow

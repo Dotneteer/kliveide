@@ -1,8 +1,8 @@
 import * as React from "react";
-import { Activity } from "../../../shared/activity/Activity";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import styles from "styled-components";
-import { getThemeService } from "../../../shared/services/store-helpers";
+import { getThemeService } from "@abstractions/service-helpers";
+import { Activity } from "@abstractions/activity-service";
 
 /**
  * Component properties

@@ -1,4 +1,4 @@
-import { CustomLanguageInfo } from "../../../shared/services/IDocumentService";
+import { CustomLanguageInfo } from "@shared/services/IDocumentService";
 
 /**
  * Language provider for the .mpm.z80 extension

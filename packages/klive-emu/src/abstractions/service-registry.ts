@@ -50,7 +50,6 @@ export function getService(id: string): any {
 export const STORE_SERVICE = "store-service";
 export const THEME_SERVICE = "theme-service";
 export const MODAL_DIALOG_SERVICE = "modal-dialog-service";
-export const ACTIVITY_SERVICE = "activity-service";
 export const SIDE_BAR_SERVICE = "side-bar-service";
 export const ENGINE_PROXY_SERVICE = "engine-proxy-service";
 export const PROJECT_SERVICE = "project-service";

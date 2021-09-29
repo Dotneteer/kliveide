@@ -1,23 +1,23 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { emuToggleKeyboardAction } from "../../shared/state/emu-view-options-reducer";
-import { AppState } from "../../shared/state/AppState";
+import { emuToggleKeyboardAction } from "@state/emu-view-options-reducer";
+import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
 import { vmEngineService } from "../machines/core/vm-engine-service";
-import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
+import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import {
   emuMuteSoundAction,
   emuUnmuteSoundAction,
-} from "../../shared/state/emulator-panel-reducer";
+} from "@state/emulator-panel-reducer";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
-} from "../../shared/state/spectrum-specific-reducer";
+} from "@state/spectrum-specific-reducer";
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
-import { dispatch } from "../../shared/services/store-helpers";
+import { dispatch } from "@abstractions/service-helpers";
 
 const Root = styles.div`
   display: flex;

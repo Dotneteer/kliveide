@@ -5,11 +5,11 @@ import VirtualizedList, {
 } from "../../common-ui/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
-import { getCommandService } from "../../../shared/services/store-helpers";
-import { getInteractivePaneService } from "../../../shared/services/store-helpers";
+import { getCommandService } from "@abstractions/service-helpers";
+import { getInteractivePaneService } from "@abstractions/service-helpers";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
-import { getToolAreaService } from "../../../shared/services/store-helpers";
-import { CommandResult } from "../../../shared/services/ICommandService";
+import { getToolAreaService } from "@abstractions/service-helpers";
+import { CommandResult } from "@shared/services/ICommandService";
 
 const TITLE = "Interactive";
 

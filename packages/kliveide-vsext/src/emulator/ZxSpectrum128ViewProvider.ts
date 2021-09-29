@@ -5,7 +5,7 @@ import { ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
 import {
   MachineState,
   Spectrum128MachineState,
-} from "../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import { ZxSpectrumViewProviderBase } from "./ZxSpectrumViewProviderBase";
 
 /**

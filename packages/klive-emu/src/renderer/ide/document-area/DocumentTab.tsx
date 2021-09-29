@@ -1,12 +1,12 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { getThemeService } from "../../../shared/services/store-helpers";
+import { getThemeService } from "@abstractions/service-helpers";
 import { SvgIcon } from "../../common-ui/SvgIcon";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { getDocumentService } from "../../../shared/services/store-helpers";
-import { getContextMenuService } from "../../../shared/services/store-helpers";
-import { MenuItem } from "../../../shared/command/commands";
-import { IDocumentPanel } from "../../../shared/services/IDocumentService";
+import { getDocumentService } from "@abstractions/service-helpers";
+import { getContextMenuService } from "@abstractions/service-helpers";
+import { MenuItem } from "@shared/command/commands";
+import { IDocumentPanel } from "@shared/services/IDocumentService";
 
 interface Props {
   title: string;

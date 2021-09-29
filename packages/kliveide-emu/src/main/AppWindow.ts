@@ -37,7 +37,7 @@ import {
 import {
   RequestMessage,
   ResponseMessage,
-} from "../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
 import {
   RENDERER_REQUEST_CHANNEL,
   MAIN_RESPONSE_CHANNEL,
@@ -45,7 +45,7 @@ import {
   RENDERER_RESPONSE_CHANNEL,
 } from "../../src/shared/utils/channel-ids";
 import { processMessageFromRenderer } from "./mainMessageProcessor";
-import { AppState, IdeConnection } from "../shared/state/AppState";
+import { AppState, IdeConnection } from "@state/AppState";
 import {
   emulatorSetSavedDataAction,
   emulatorRequestTypeAction,
@@ -63,10 +63,10 @@ import {
   emulatorHideToolbarAction,
   emulatorSetMachineContextAction,
   emulatorKeyboardHeightAction,
-} from "../shared/state/redux-emulator-state";
-import { BinaryWriter } from "../shared/utils/BinaryWriter";
-import { TzxHeader, TzxStandardSpeedDataBlock } from "../shared/tape/tzx-file";
-import { ideDisconnectsAction } from "../shared/state/redux-ide-connection.state";
+} from "@state/redux-emulator-state";
+import { BinaryWriter } from "@shared/utils/BinaryWriter";
+import { TzxHeader, TzxStandardSpeedDataBlock } from "@shared/tape/tzx-file";
+import { ideDisconnectsAction } from "@state/redux-ide-connection.state";
 import { MachineContextProvider } from "./machine-context";
 import {
   ZxSpectrum128ContextProvider,
@@ -80,7 +80,7 @@ import {
   reloadSettings,
   saveKliveSettings,
 } from "./klive-configuration";
-import { KliveSettings } from "../shared/messaging/emu-configurations";
+import { KliveSettings } from "@shared/messaging/emu-configurations";
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.

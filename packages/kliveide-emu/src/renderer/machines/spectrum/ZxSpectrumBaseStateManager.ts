@@ -4,7 +4,7 @@ import {
   emulatorSetLoadModeAction,
   emulatorSetPanelMessageAction,
   emulatorSetTapeContenstAction,
-} from "../../../shared/state/redux-emulator-state";
+} from "@state/redux-emulator-state";
 import { rendererProcessStore } from "../../rendererProcessStore";
 import { IZxSpectrumBaseStateManager } from "../IZxSpectrumBaseStateManager";
 

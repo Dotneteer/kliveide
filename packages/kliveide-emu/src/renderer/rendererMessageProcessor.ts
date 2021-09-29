@@ -2,7 +2,7 @@ import { IpcRendererEvent } from "electron";
 import {
   MAIN_REQUEST_CHANNEL,
   RENDERER_RESPONSE_CHANNEL,
-} from "../shared/utils/channel-ids";
+} from "@shared/utils/channel-ids";
 import {
   AddDiagnosticsFrameDataResponse,
   DefaultResponse,
@@ -11,9 +11,9 @@ import {
   GetMemoryPartitionResponse,
   RequestMessage,
   ResponseMessage,
-} from "../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
 import { getVmEngine } from "./machine-loader";
-import { MachineState } from "../shared/machines/machine-state";
+import { MachineState } from "@shared/machines/machine-state";
 import { IpcRendereApi } from "../exposed-apis";
 
 // --- Electron APIs exposed for the renderer process

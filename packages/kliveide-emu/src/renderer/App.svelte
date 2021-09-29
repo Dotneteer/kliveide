@@ -18,8 +18,8 @@
     setEmulatorAppConfig,
   } from "./machine-loader";
   import { createRendererProcessStateAware } from "./rendererProcessStore";
-  import { emulatorSetupTypeAction } from "../shared/state/redux-emulator-state";
-  import { sendMessageToMain } from "../shared/messaging/renderer-to-main-comm";
+  import { emulatorSetupTypeAction } from "@state/redux-emulator-state";
+  import { sendMessageToMain } from "@shared/messaging/renderer-to-main-comm";
   import "./rendererMessageProcessor";
 
   // --- Manage themes and theme changes

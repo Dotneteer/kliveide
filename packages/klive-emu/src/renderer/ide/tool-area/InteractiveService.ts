@@ -1,8 +1,8 @@
-import { IOutputBuffer } from "../../../shared/services/IOutputPaneService";
-import { IInteractivePaneService } from "../../../shared/services/IInteractivePaneService";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { IOutputBuffer } from "@shared/services/IOutputPaneService";
+import { IInteractivePaneService } from "@shared/services/IInteractivePaneService";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { OutputPaneBuffer } from "./OutputPaneService";
-import { CommandResult } from "../../../shared/services/ICommandService";
+import { CommandResult } from "@shared/services/ICommandService";
 
 const MAX_HISTORY = 1024;
 

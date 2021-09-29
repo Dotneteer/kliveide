@@ -1,4 +1,4 @@
-import { getCommandService } from "../../../shared/services/store-helpers";
+import { getCommandService } from "@abstractions/service-helpers";
 import { NewProjectCommand } from "./NewProjectCommand";
 
 /**

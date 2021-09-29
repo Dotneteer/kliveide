@@ -1,9 +1,10 @@
-import { MenuItem } from "../command/commands";
+import { MenuItem } from "@shared/command/commands";
+import { ILiteEvent } from "@shared/utils/LiteEvent";
 
 /**
  * Describes an activity in the Activity bar
  */
-export type Activity = {
+ export type Activity = {
   /**
    * The identifier of the activity.
    */

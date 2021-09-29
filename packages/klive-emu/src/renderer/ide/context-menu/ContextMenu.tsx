@@ -6,9 +6,9 @@ import {
   MenuItemModel,
 } from "@syncfusion/ej2-react-navigations";
 import { useSelector } from "react-redux";
-import { AppState } from "../../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import { animationTick } from "../../common-ui/utils";
-import { getContextMenuService } from "../../../shared/services/store-helpers";
+import { getContextMenuService } from "@abstractions/service-helpers";
 
 import { useState } from "react";
 import { useEffect } from "react";
@@ -17,8 +17,8 @@ import {
   CommandGroup,
   isCommandGroup,
   MenuItem,
-} from "../../../shared/command/commands";
-import { ContextMenuOpenTarget } from "../../../shared/services/IContextMenuService";
+} from "@shared/command/commands";
+import { ContextMenuOpenTarget } from "@shared/services/IContextMenuService";
 
 type Props = {
   target: string;

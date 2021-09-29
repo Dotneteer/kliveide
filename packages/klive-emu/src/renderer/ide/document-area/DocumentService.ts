@@ -5,10 +5,10 @@ import {
   IDocumentFactory,
   IDocumentPanel,
   IDocumentService,
-} from "../../../shared/services/IDocumentService";
-import { dispatch, getState } from "../../../shared/services/store-helpers";
-import { setDocumentFrameStateAction } from "../../../shared/state/document-frame-reducer";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+} from "@shared/services/IDocumentService";
+import { dispatch, getState } from "@abstractions/service-helpers";
+import { setDocumentFrameStateAction } from "@state/document-frame-reducer";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
 import { CodeEditorFactory } from "./CodeEditorFactory";
 

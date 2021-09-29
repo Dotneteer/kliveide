@@ -2,16 +2,16 @@ import * as fs from "fs";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
-import { AppState } from "../../shared/state/AppState";
-import { BinaryReader } from "../../shared/utils/BinaryReader";
-import { checkTapeFile } from "../../shared/tape/readers";
+import { AppState } from "@state/AppState";
+import { BinaryReader } from "@shared/utils/BinaryReader";
+import { checkTapeFile } from "@shared/tape/readers";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
   spectrumTapeContentsAction,
-} from "../../shared/state/spectrum-specific-reducer";
-import { emuSetClockMultiplierAction, emuSetKeyboardLayoutAction } from "../../shared/state/emulator-panel-reducer";
-import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
+} from "@state/spectrum-specific-reducer";
+import { emuSetClockMultiplierAction, emuSetKeyboardLayoutAction } from "@state/emulator-panel-reducer";
+import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import {
   emuWindow,
   setSoundLevel,

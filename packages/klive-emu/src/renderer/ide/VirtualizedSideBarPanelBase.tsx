@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ISideBarPanel } from "../../shared/services/ISidebarService";
+import { ISideBarPanel } from "@shared/services/ISidebarService";
 import { CSSProperties } from "styled-components";
 import VirtualizedList, {
   VirtualizedListApi,

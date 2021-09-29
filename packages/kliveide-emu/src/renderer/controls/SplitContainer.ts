@@ -1,4 +1,4 @@
-import { ILiteEvent, LiteEvent } from "../../shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 
 const splitterMovedInternal = new LiteEvent<Node>();
 

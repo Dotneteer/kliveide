@@ -3,16 +3,16 @@ import {
   NewProjectResponse,
   RequestMessage,
   ResponseMessage,
-} from "../../shared/messaging/message-types";
+} from "@shared/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { MAIN_TO_IDE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
-import { MAIN_TO_IDE_RESPONE_CHANNEL } from "../../shared/messaging/channels";
+import { MAIN_TO_IDE_REQUEST_CHANNEL } from "@shared/messaging/channels";
+import { MAIN_TO_IDE_RESPONE_CHANNEL } from "@shared/messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { ideSyncAction } from "../../shared/state/show-ide-reducer";
-import { getModalDialogService } from "../../shared/services/store-helpers";
+import { ideSyncAction } from "@state/show-ide-reducer";
+import { getModalDialogService } from "@abstractions/service-helpers";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
 import { Store } from "redux";
-import { dispatch, getStore } from "../../shared/services/store-helpers";
+import { dispatch, getStore } from "@abstractions/service-helpers";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;

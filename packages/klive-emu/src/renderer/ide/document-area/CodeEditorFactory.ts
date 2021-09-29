@@ -1,4 +1,4 @@
-import { IDocumentFactory, IDocumentPanel } from "../../../shared/services/IDocumentService";
+import { IDocumentFactory, IDocumentPanel } from "@shared/services/IDocumentService";
 import { EditorDocumentPanelDescriptor } from "../editor/EditorDocument";
 
 /**

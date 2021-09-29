@@ -17,9 +17,9 @@ import {
   emuSetClockMultiplierAction,
   emuSetSoundLevelAction,
   emuUnmuteSoundAction,
-} from "../../shared/state/emulator-panel-reducer";
-import { KliveAction } from "../../shared/state/state-core";
-import { AppState } from "../../shared/state/AppState";
+} from "@state/emulator-panel-reducer";
+import { KliveAction } from "@state/state-core";
+import { AppState } from "@state/AppState";
 import {
   emuHideFrameInfoAction,
   emuHideKeyboardAction,
@@ -29,7 +29,7 @@ import {
   emuShowKeyboardAction,
   emuShowStatusbarAction,
   emuShowToolbarAction,
-} from "../../shared/state/emu-view-options-reducer";
+} from "@state/emu-view-options-reducer";
 import { __DARWIN__ } from "../utils/electron-utils";
 import {
   dispatch,
@@ -47,11 +47,11 @@ import {
 import {
   ideHideAction,
   ideShowAction,
-} from "../../shared/state/show-ide-reducer";
+} from "@state/show-ide-reducer";
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
-} from "../../shared/state/tool-frame-reducer";
+} from "@state/tool-frame-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
@@ -62,8 +62,8 @@ import {
   openProject,
   openProjectFolder,
 } from "../project/project-utils";
-import { closeProjectAction } from "../../shared/state/project-reducer";
-import { NewProjectResponse } from "../../shared/messaging/message-types";
+import { closeProjectAction } from "@state/project-reducer";
+import { NewProjectResponse } from "@shared/messaging/message-types";
 import { AppWindow } from "./app-window";
 
 // --- Global reference to the mainwindow

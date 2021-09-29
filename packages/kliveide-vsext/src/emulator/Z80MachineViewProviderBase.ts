@@ -1,4 +1,4 @@
-import { MachineState } from "../shared/machines/machine-state";
+import { MachineState } from "@shared/machines/machine-state";
 import { TreeItem } from "vscode";
 
 /**

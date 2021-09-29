@@ -4,12 +4,12 @@ import DocumentTabBar from "./DocumentTabBar";
 import ReactResizeDetector from "react-resize-detector";
 
 import { useEffect, useState } from "react";
-import { getDocumentService } from "../../../shared/services/store-helpers";
+import { getDocumentService } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
-import { DocumentsInfo, IDocumentPanel } from "../../../shared/services/IDocumentService";
+import { DocumentsInfo, IDocumentPanel } from "@shared/services/IDocumentService";
 
 // --- Document Frame IDs
 const DOC_CONTAINER_ID = "ideDocumentContainer";

@@ -5,7 +5,7 @@ import {
   MemoryPageInfo,
 } from "./communicator";
 import { machineConfigurationInstance } from "./machine-config";
-import { DiagViewFrame } from "../shared/machines/diag-info";
+import { DiagViewFrame } from "@shared/machines/diag-info";
 import { createMachineViewProvider, MachineViewProvider } from "./machines";
 
 // ============================================================================

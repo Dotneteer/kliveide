@@ -1,11 +1,11 @@
-import { IOutputBuffer } from "../../../shared/services/IOutputPaneService";
-import { parseCommand } from "../../../shared/command-parser/token-stream";
+import { IOutputBuffer } from "@shared/services/IOutputPaneService";
+import { parseCommand } from "@shared/command-parser/token-stream";
 import {
   CommandContext,
   CommandInfo,
   CommandResult,
   ICommandService,
-} from "../../../shared/services/ICommandService";
+} from "@shared/services/ICommandService";
 
 /**
  * This class is responsible to execute commands

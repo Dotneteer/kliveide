@@ -1,7 +1,7 @@
 import { AppWindow } from "./app-window";
-import { ideHideAction } from "../../shared/state/show-ide-reducer";
+import { ideHideAction } from "@state/show-ide-reducer";
 import { setIdeMessenger } from "./app-menu";
-import { ideFocusAction } from "../../shared/state/ide-focus-reducer";
+import { ideFocusAction } from "@state/ide-focus-reducer";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 import { dispatch } from "../main-state/main-store";
 

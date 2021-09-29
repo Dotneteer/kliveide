@@ -1,11 +1,11 @@
 import * as React from "react";
 import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../common-ui/ScrollablePanel";
-import { getEngineProxyService } from "../../shared/services/store-helpers";
+import { getEngineProxyService } from "@abstractions/service-helpers";
 import { scrollableContentType } from "./utils/content-utils";
-import { getState } from "../../shared/services/store-helpers";
-import { ISideBarPanel } from "../../shared/services/ISidebarService";
-import { RunEventArgs } from "../../shared/services/IEngineProxyService";
+import { getState } from "@abstractions/service-helpers";
+import { ISideBarPanel } from "@shared/services/ISidebarService";
+import { RunEventArgs } from "@shared/services/IEngineProxyService";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;

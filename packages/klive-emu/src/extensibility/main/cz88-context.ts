@@ -6,7 +6,7 @@ import {
   emuMachineContextAction,
   emuSetClockMultiplierAction,
   emuSetKeyboardLayoutAction,
-} from "../../shared/state/emulator-panel-reducer";
+} from "@state/emulator-panel-reducer";
 import {
   machineIdFromMenuId,
   menuIdFromMachineId,
@@ -20,7 +20,7 @@ import {
   setupMenu,
 } from "../../main/app/app-menu";
 import { dialog } from "electron";
-import { AppState } from "../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import {
   CZ88_BATTERY_LOW,
@@ -29,14 +29,14 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "../../shared/machines/macine-commands";
+} from "@shared/machines/macine-commands";
 import {
   Cz88ContructionOptions,
   SlotContent,
   Z88CardsState,
-} from "../../shared/machines/cz88-specific";
-import { ExecuteMachineCommandResponse } from "../../shared/messaging/message-types";
-import { ExtraMachineFeatures } from "../../shared/machines/machine-specfic";
+} from "@shared/machines/cz88-specific";
+import { ExecuteMachineCommandResponse } from "@shared/messaging/message-types";
+import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
 import { dispatch, getState } from "../../main/main-state/main-store";
 

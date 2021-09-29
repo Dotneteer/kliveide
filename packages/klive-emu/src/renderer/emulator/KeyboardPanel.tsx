@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
-import { AppState } from "../../shared/state/AppState";
+import { AppState } from "@state/AppState";
 import ReactResizeDetector from "react-resize-detector";
 import Sp48Keyboard from "./Sp48Keyboard";
 import Cz88Keyboard from "./Cz88Keyboard";

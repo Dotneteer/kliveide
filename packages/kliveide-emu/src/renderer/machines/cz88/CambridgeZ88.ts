@@ -11,7 +11,7 @@ import { FrameBoundZ80Machine } from "../FrameBoundZ80Machine";
 import {
   CambridgeZ88MachineState,
   MachineState,
-} from "../../../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import { KeyMapping } from "../keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
 import { ExtraMachineFeatures } from "../Z80MachineBase";
@@ -20,7 +20,7 @@ import {
   CZ88_HARD_RESET,
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_SOFT_RESET,
-} from "../../../shared/machines/macine-commands";
+} from "@shared/machines/macine-commands";
 import { IVmEngineController } from "../IVmEngineController";
 import { IAudioRenderer } from "../IAudioRenderer";
 import { ICambridgeZ88BaseStateManager } from "./ICambrideZ88BaseStateMananger";

@@ -3,7 +3,7 @@ import { ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
-} from "../../../shared/z80/disassembler/custom-disassembly";
+} from "@shared/z80/disassembler/custom-disassembly";
 import {
   MemorySection,
   FetchResult,
@@ -11,7 +11,7 @@ import {
   intToX2,
   toSbyte,
   intToX4,
-} from "../../../shared/z80/disassembler/disassembly-helper";
+} from "@shared/z80/disassembler/disassembly-helper";
 import { FloatNumber } from "./FloatNumber";
 import { calcOps } from "./calc-ops";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";

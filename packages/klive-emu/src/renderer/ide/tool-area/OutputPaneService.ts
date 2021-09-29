@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
-import { IOutputBuffer, IOutputPane, OutputColor } from "../../../shared/services/IOutputPaneService";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+import { IOutputBuffer, IOutputPane, OutputColor } from "@shared/services/IOutputPaneService";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { toStyleString } from "../utils/css-utils";
 
 /**

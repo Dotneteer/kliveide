@@ -9,14 +9,14 @@ import {
   SlotContent,
   SlotState,
   Z88CardsState,
-} from "../../../shared/machines/cz88-specific";
+} from "@shared/machines/cz88-specific";
 import { useState } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
-import { EmuOpenFileDialogResponse } from "../../../shared/messaging/message-types";
+import { EmuOpenFileDialogResponse } from "@shared/messaging/message-types";
 import { Store } from "redux";
-import { getStore } from "../../../shared/services/store-helpers";
-import { getModalDialogService } from "../../../shared/services/store-helpers";
-import { IModalDialogDescriptor } from "../../../shared/services/IModalDialogService";
+import { getStore } from "@abstractions/service-helpers";
+import { getModalDialogService } from "@abstractions/service-helpers";
+import { IModalDialogDescriptor } from "@shared/services/IModalDialogService";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog

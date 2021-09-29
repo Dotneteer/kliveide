@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 import { SvgIcon } from "../../common-ui/SvgIcon";
-import { getEngineProxyService } from "../../../shared/services/store-helpers";
+import { getEngineProxyService } from "@abstractions/service-helpers";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import { separatorLine, valueItemStyle } from "../../ide/utils/content-utils";

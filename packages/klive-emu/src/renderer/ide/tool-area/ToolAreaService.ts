@@ -3,8 +3,8 @@ import {
   IToolAreaService,
   IToolPanel,
   ToolsInfo,
-} from "../../../shared/services/IToolAreaService";
-import { ILiteEvent, LiteEvent } from "../../../shared/utils/LiteEvent";
+} from "@shared/services/IToolAreaService";
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 
 /**
  * A base class for document panel descriptors

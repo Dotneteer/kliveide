@@ -4,7 +4,7 @@ import { ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
 import {
   MachineState,
   SpectrumMachineStateBase,
-} from "../shared/machines/machine-state";
+} from "@shared/machines/machine-state";
 import {
   RegisterItem,
   TactsItem,

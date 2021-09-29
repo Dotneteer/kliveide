@@ -10,17 +10,17 @@ import {
   registerService,
   STORE_SERVICE,
   THEME_SERVICE,
-} from "../../shared/services/service-registry";
-import { dispatch, getState, getStore } from "../../shared/services/store-helpers";
-import { KliveStore } from "../../shared/state/KliveStore";
+} from "@abstractions/service-registry";
+import { dispatch, getState, getStore } from "@abstractions/service-helpers";
+import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
-import { getInitialAppState } from "../../shared/state/AppState";
-import { appReducers } from "../../shared/state/app-reducers";
-import { EMU_SOURCE, RENDERER_STATE_REQUEST_CHANNEL } from "../../shared/messaging/channels";
-import { ForwardActionRequest } from "../../shared/messaging/message-types";
+import { getInitialAppState } from "@state/AppState";
+import { appReducers } from "@state/app-reducers";
+import { EMU_SOURCE, RENDERER_STATE_REQUEST_CHANNEL } from "@shared/messaging/channels";
+import { ForwardActionRequest } from "@shared/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
-import { KliveAction } from "../../shared/state/state-core";
+import { KliveAction } from "@state/state-core";
 import { ThemeService } from "../common-ui/themes/theme-service";
 import { ModalDialogService } from "../common-ui/modal-service";
 
