@@ -10,7 +10,7 @@ import {
   DisassemblyOutput,
   MemorySection,
 } from "@shared/z80/disassembler/disassembly-helper";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
 import { getState } from "@abstractions/service-helpers";
@@ -93,7 +93,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
               {item.address.toString(16).padStart(4, "0").toUpperCase()}
             </div>
             {index === 0 ? (
-              <SvgIcon iconName="chevron-right" fill="--console-ansi-green" />
+              <Icon iconName="chevron-right" fill="--console-ansi-green" />
             ) : (
               <div style={{ width: 14 }} />
             )}

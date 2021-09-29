@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "react";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 import { getEngineProxyService } from "@abstractions/service-helpers";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
@@ -87,7 +87,7 @@ function kbLine(line: number, value: number) {
   function kbFlag(pos: number) {
     return (
       <div style={flagValueStyle(16)} title={`line ${line}/bit ${pos}`}>
-        <SvgIcon
+        <Icon
           iconName={
             (value >> pos) & 0x01
               ? "circle-large-outline"
@@ -126,7 +126,7 @@ function kbLine(line: number, value: number) {
 function flag(value: number, set: string, clr: string) {
   return (
     <div style={flagValueStyle()} title={value ? `${set} (1) ` : `${clr} (0)`}>
-      <SvgIcon
+      <Icon
         iconName={value ? "circle-large-filled" : "circle-large-outline"}
         width={10}
         height={10}

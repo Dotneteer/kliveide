@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useState } from "react";
-import { SvgIcon } from "./SvgIcon";
+import { Icon } from "./Icon";
 
 const DEFAULT_SIZE = 22;
 const DEFAULT_HILITE_SIZE = 28;
@@ -43,7 +43,7 @@ export function ToolbarIconButton(props: Props) {
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
     >
-      <SvgIcon
+      <Icon
         iconName={props.iconName}
         fill={
           props.enable ?? true ? props.fill : "--toolbar-button-disabled-fill"

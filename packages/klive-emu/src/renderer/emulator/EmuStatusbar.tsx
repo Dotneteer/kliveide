@@ -2,7 +2,7 @@ import * as React from "react";
 import { useSelector } from "react-redux";
 import { getVersion } from "../../version";
 import { AppState } from "@state/AppState";
-import { SvgIcon } from "../common-ui/SvgIcon";
+import { Icon } from "../common-ui/Icon";
 import { vmEngineService } from "../machines/core/vm-engine-service";
 import { getThemeService } from "@abstractions/service-helpers";
 import { Root, Gap, Section, Label } from "../common-ui/StatusbarStyles";
@@ -62,19 +62,19 @@ export default function Statusbar() {
 
   const frameInformation = [
     <Section key="1">
-      <SvgIcon iconName="vm-running" width={16} height={16} fill={fillValue} />
+      <Icon iconName="vm-running" width={16} height={16} fill={fillValue} />
       <Label>
         {avgEngineTime} / {lastEngineTime}
       </Label>
     </Section>,
     <Section key="2" title="Total time per frame (average/last)">
-      <SvgIcon iconName="vm" width={16} height={16} fill={fillValue} />
+      <Icon iconName="vm" width={16} height={16} fill={fillValue} />
       <Label>
         {avgFrameTime} / {lastFrameTime}
       </Label>
     </Section>,
     <Section key="3" title="# of frames rendered since start">
-      <SvgIcon iconName="window" width={16} height={16} fill={fillValue} />
+      <Icon iconName="window" width={16} height={16} fill={fillValue} />
       <Label>{renderedFrames}</Label>
     </Section>,
     <Section key="4" title="The value of Program Counter">

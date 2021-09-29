@@ -11,7 +11,7 @@ import {
   Z88CardsState,
 } from "@shared/machines/cz88-specific";
 import { useState } from "react";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 import { EmuOpenFileDialogResponse } from "@shared/messaging/message-types";
 import { Store } from "redux";
 import { getStore } from "@abstractions/service-helpers";
@@ -129,7 +129,7 @@ function CardColumn({ slot, initialState, changed }: CardColumnProps) {
           <span style={{ marginRight: 4 }}>Slot {slot}</span>
           {(state.content !== initialState.content ||
             state.epromFile !== initialState.epromFile) && (
-            <SvgIcon iconName="circle-filled" width={16} height={16} />
+            <Icon iconName="circle-filled" width={16} height={16} />
           )}
         </CenteredRow>
       </Cell>
@@ -178,7 +178,7 @@ function Filename({ file, changed }: FileNameProps) {
         }
       }}
     >
-      <SvgIcon iconName="file-code" width={20} height={20} />
+      <Icon iconName="file-code" width={20} height={20} />
       <span
         title={file}
         style={{

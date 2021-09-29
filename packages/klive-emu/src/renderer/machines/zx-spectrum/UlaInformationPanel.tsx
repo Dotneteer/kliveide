@@ -10,7 +10,7 @@ import {
   valueStyle,
 } from "../../ide/utils/content-utils";
 import { CSSProperties } from "react";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 
 const TITLE = "ULA Information";
 
@@ -68,7 +68,7 @@ function kbLine(line: number, title: string, value: number) {
   function kbFlag(pos: number) {
     return (
       <div style={flagValueStyle} title={`line ${line}/bit ${pos}`}>
-        <SvgIcon
+        <Icon
           iconName={
             (value >> pos) & 0x01
               ? "circle-large-outline"

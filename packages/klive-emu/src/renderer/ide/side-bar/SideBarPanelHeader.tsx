@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import styles from "styled-components";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 import { useState } from "react";
 import { CSSProperties } from "react";
 
@@ -112,12 +112,12 @@ export default function SideBarPanelHeader({
           }
         }}
       >
-        <SvgIcon
+        <Icon
           iconName="chevron-right"
           width={16}
           height={16}
           rotate={expanded ? 90 : 0}
-        ></SvgIcon>
+        />
         <Text>{title.toUpperCase()}</Text>
       </Caption>
     </Root>
