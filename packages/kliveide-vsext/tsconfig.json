@@ -15,12 +15,13 @@
       "*": ["node_modules/*"],
       "@abstractions/*": ["src/abstractions/*"],
       "@state/*": ["src/shared/state/*"],
-      "@shared/*": ["src/shared/*"],
+      "@shared/*": ["src/shared/*"]
     }
   },
   "include": [
     "src/**/*.ts",
     "./node_modules/vscode/vscode.d.ts",
-    "./node_modules/vscode/lib/*", "src/custom-editors/disassembly/disassembly.js"
+    "./node_modules/vscode/lib/*",
+    "src/custom-editors/disassembly/disassembly.js"
   ]
 }

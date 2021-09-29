@@ -14,7 +14,7 @@
       "*": ["node_modules/*"],
       "@abstractions/*": ["src/abstractions/*"],
       "@state/*": ["src/shared/state/*"],
-      "@shared/*": ["src/shared/*"],
+      "@shared/*": ["src/shared/*"]
     }
   },
   "include": ["src/**/*"],

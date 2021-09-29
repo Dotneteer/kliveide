@@ -26,7 +26,7 @@
     "build:sp128": "tpwatson ./src/wats/sp128-core/sp128.wats ./build/sp128.wat && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",
     "build:cz88": "tpwatson ./src/wats/cz88-core/cz88.wats ./build/cz88.wat && wat2wasm ./build/cz88.wat -o ./build/cz88.wasm",
     "build:tz80": "tpwatson ./src/wats/tz80-core/tz80.wats ./build/tz80.wat && wat2wasm ./build/tz80.wat -o ./build/tz80.wasm",
-    "test": "ts-mocha -p ./tsconfig.json ./test/**/*.test.ts",
+    "test": "mocha -r ts-node/register -r tsconfig-paths/register \"test/**/*.test.ts\"",
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
     "build:linux": "npm run build && electron-builder build --linux --x64",
