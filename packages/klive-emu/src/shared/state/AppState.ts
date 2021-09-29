@@ -1,4 +1,4 @@
-import { Activity } from "@abstractions/activity-service";
+import { Activity } from "@abstractions/activity";
 
 /**
  * Represents the application's entire state vector

@@ -1,5 +1,5 @@
 import { Store } from "redux";
-import { IModalDialogDescriptor, IModalDialogService } from "@shared/services/IModalDialogService";
+import { IModalDialogDescriptor, IModalDialogService } from "@abstractions/modal-dialog-service";
 import { displayModalAction } from "@state/modal-reducer";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 

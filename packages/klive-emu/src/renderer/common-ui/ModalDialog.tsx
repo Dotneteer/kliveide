@@ -7,7 +7,7 @@ import {
 import styles from "styled-components";
 import { useContext, useState } from "react";
 import { getModalDialogService } from "@abstractions/service-helpers";
-import { IModalDialogDescriptor } from "@shared/services/IModalDialogService";
+import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useEffect } from "react";
 
 type Props = {

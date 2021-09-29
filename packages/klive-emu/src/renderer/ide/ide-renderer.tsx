@@ -49,7 +49,7 @@ import { EditorService } from "./editor/editorService";
 import { InteractivePaneService } from "./tool-area/InteractiveService";
 import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
-import { CommandService } from "./tool-area/CommandService";
+import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -108,7 +108,7 @@ registerService(EDITOR_SERVICE, new EditorService());
 registerService(INTERACTIVE_PANE_SERVICE, new InteractivePaneService());
 registerService(OUTPUT_PANE_SERVICE, new OutputPaneService());
 registerService(TOOL_AREA_SERVICE, new ToolAreaService());
-registerService(COMMAND_SERVICE, new CommandService());
+registerService(COMMAND_SERVICE, new InteractiveCommandService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

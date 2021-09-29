@@ -8,7 +8,7 @@ import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common-ui/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { IOutputPane } from "@shared/services/IOutputPaneService";
+import { IOutputPane } from "@abstractions/output-pane-service";
 
 const TITLE = "Output";
 

@@ -1,12 +1,17 @@
 import { CSSProperties } from "react";
-import { IOutputBuffer, IOutputPane, OutputColor } from "@shared/services/IOutputPaneService";
+import {
+  IOutputBuffer,
+  IOutputPane,
+  IOutputPaneService,
+  OutputColor,
+} from "@abstractions/output-pane-service";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { toStyleString } from "../utils/css-utils";
 
 /**
  * Implements a simple buffer to write the contents of the output pane to
  */
- export class OutputPaneBuffer implements IOutputBuffer {
+export class OutputPaneBuffer implements IOutputBuffer {
   private _buffer: string[] = [];
   private _currentLineIndex: number = -1;
   private _color: OutputColor | null = null;
@@ -94,9 +99,7 @@ import { toStyleString } from "../utils/css-utils";
       this._buffer[0] = "";
     }
 
-    let innerMessage = message
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+    let innerMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
     if (this.isStyled()) {
       message = `<span style="${toStyleString(
@@ -129,7 +132,7 @@ import { toStyleString } from "../utils/css-utils";
   /**
    * This event fires when the contents of the buffer changes.
    */
-   get contentsChanged(): ILiteEvent<void> {
+  get contentsChanged(): ILiteEvent<void> {
     return this._contentsChanged;
   }
 
@@ -165,7 +168,6 @@ import { toStyleString } from "../utils/css-utils";
     return style;
   }
 }
-
 
 /**
  * A base class for document panel descriptors
@@ -215,7 +217,7 @@ export abstract class OutputPaneDescriptorBase implements IOutputPane {
 /**
  * The service that manages output panes
  */
-export class OutputPaneService {
+export class OutputPaneService implements IOutputPaneService {
   private _panes: IOutputPane[] = [];
   private _paneMap = new Map<string | number, IOutputPane>();
   private _panesChanged = new LiteEvent<IOutputPane[]>();
@@ -276,7 +278,7 @@ export class OutputPaneService {
   }
 
   /**
-   *
+   * Gets a pane by its ID
    * @param id Gets the pane with the specified id
    */
   getPaneById(id: string | number): IOutputPane | undefined {

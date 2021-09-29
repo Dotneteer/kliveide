@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ISideBarPanel } from "@shared/services/ISidebarService";
+import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { CSSProperties } from "styled-components";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 

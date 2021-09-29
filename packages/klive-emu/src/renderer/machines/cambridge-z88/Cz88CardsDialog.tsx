@@ -16,7 +16,7 @@ import { EmuOpenFileDialogResponse } from "@shared/messaging/message-types";
 import { Store } from "redux";
 import { getStore } from "@abstractions/service-helpers";
 import { getModalDialogService } from "@abstractions/service-helpers";
-import { IModalDialogDescriptor } from "@shared/services/IModalDialogService";
+import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog

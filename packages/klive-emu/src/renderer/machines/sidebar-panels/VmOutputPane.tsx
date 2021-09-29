@@ -4,7 +4,7 @@ import {
 } from "../../ide/tool-area/OutputPaneService";
 import { getEngineProxyService, getOutputPaneService } from "@abstractions/service-helpers";
 import { getStore } from "@abstractions/service-helpers";
-import { IOutputBuffer, OutputColor } from "@shared/services/IOutputPaneService";
+import { IOutputBuffer, OutputColor } from "@abstractions/output-pane-service";
 
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";

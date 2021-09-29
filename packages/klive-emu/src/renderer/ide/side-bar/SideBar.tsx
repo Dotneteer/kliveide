@@ -4,7 +4,7 @@ import SideBarPanel from "./SideBarPanel";
 import { getSideBarService, getState } from "@abstractions/service-helpers";
 import { useRef, useState, useEffect } from "react";
 import SideBarHeader from "./SideBarHeader";
-import { ISideBarPanel } from "@shared/services/ISidebarService";
+import { ISideBarPanel } from "@abstractions/side-bar-service";
 
 /**
  * The minimum height an expanded panel can have

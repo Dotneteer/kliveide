@@ -3,7 +3,7 @@ import { setSideBarStateAction } from "@state/side-bar-reducer";
 import { AppState, SideBarState } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { dispatch, getState, getStore } from "@abstractions/service-helpers";
-import { ISideBarPanel, ISideBarService } from "@shared/services/ISidebarService";
+import { ISideBarPanel, ISideBarService } from "@abstractions/side-bar-service";
 
 /**
  * The base class for all side bar panel descriptors

@@ -8,18 +8,18 @@
 import { AppState } from "@state/AppState";
 import { KliveStore } from "@state/KliveStore";
 import { KliveAction } from "@state/state-core";
-import { ICommandService } from "@shared/services/ICommandService";
-import { IContextMenuService } from "@shared/services/IContextMenuService";
-import { IDocumentService } from "@shared/services/IDocumentService";
-import { IEditorService } from "@shared/services/IEditorService";
-import { IEngineProxyService } from "@shared/services/IEngineProxyService";
-import { IInteractivePaneService } from "@shared/services/IInteractivePaneService";
-import { IModalDialogService } from "@shared/services/IModalDialogService";
-import { IOutputPaneService } from "@shared/services/IOutputPaneService";
-import { IProjectService } from "@shared/services/IProjectService";
-import { ISideBarService } from "@shared/services/ISidebarService";
-import { IThemeService } from "@shared/services/IThemeService";
-import { IToolAreaService } from "@shared/services/IToolAreaService";
+import { IInteractiveCommandService } from "@abstractions/interactive-command";
+import { IContextMenuService } from "@abstractions/context-menu-service";
+import { IDocumentService } from "@abstractions/document-service";
+import { IEditorService } from "@abstractions/editor-service";
+import { IEngineProxyService } from "@abstractions/engine-proxy-service";
+import { IInteractivePaneService } from "@abstractions/interactive-pane-service";
+import { IModalDialogService } from "@abstractions/modal-dialog-service";
+import { IOutputPaneService } from "@abstractions/output-pane-service";
+import { IProjectService } from "@abstractions/project-service";
+import { ISideBarService } from "@abstractions/side-bar-service";
+import { IThemeService } from "@abstractions/theme-service";
+import { IToolAreaService } from "@abstractions/tool-area-service";
 import {
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
@@ -141,6 +141,6 @@ export function getToolAreaService(): IToolAreaService {
 /**
  * Gets the command service instance
  */
-export function getCommandService(): ICommandService {
-  return getService(COMMAND_SERVICE) as ICommandService;
+export function getCommandService(): IInteractiveCommandService {
+  return getService(COMMAND_SERVICE) as IInteractiveCommandService;
 }

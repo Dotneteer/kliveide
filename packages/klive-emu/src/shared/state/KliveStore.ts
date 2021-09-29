@@ -10,7 +10,7 @@ import {
   ToolFrameState,
 } from "./AppState";
 import { KliveAction } from "./state-core";
-import { Activity } from "@abstractions/activity-service";
+import { Activity } from "@abstractions/activity";
 
 /**
  * Represents a store instance that handles Klive application state

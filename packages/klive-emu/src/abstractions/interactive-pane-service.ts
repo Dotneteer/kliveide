@@ -1,6 +1,6 @@
-import { ILiteEvent } from "../utils/LiteEvent";
-import { CommandResult } from "./ICommandService";
-import { IOutputBuffer } from "./IOutputPaneService";
+import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { InteractiveCommandResult } from "./interactive-command";
+import { IOutputBuffer } from "./output-pane-service";
 
 /**
  * This class implements the functionality of the interactive pane service
@@ -55,7 +55,7 @@ export interface IInteractivePaneService {
   /**
    * Signs that the last submitted command has been completed
    */
-  signCommandExecuted(result: CommandResult): void;
+  signCommandExecuted(result: InteractiveCommandResult): void;
 
   /**
    * Request the focus to set to the prompt
@@ -75,7 +75,7 @@ export interface IInteractivePaneService {
   /**
    * Fires when a command has been executed
    */
-  get commandExecuted(): ILiteEvent<CommandResult>;
+  get commandExecuted(): ILiteEvent<InteractiveCommandResult>;
 
   /**
    * This event is raised when the interactive pane is requested to get the focus

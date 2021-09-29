@@ -9,7 +9,7 @@ import { getCommandService } from "@abstractions/service-helpers";
 import { getInteractivePaneService } from "@abstractions/service-helpers";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { getToolAreaService } from "@abstractions/service-helpers";
-import { CommandResult } from "@shared/services/ICommandService";
+import { InteractiveCommandResult } from "@abstractions/interactive-command";
 
 const TITLE = "Interactive";
 
@@ -31,7 +31,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   private _listApi: VirtualizedListApi;
   private _onContentsChanged: () => void;
   private _onCommandSubmitted: (command: string) => void;
-  private _onCommandExecuted: (result: CommandResult) => void;
+  private _onCommandExecuted: (result: InteractiveCommandResult) => void;
   private _onFocusRequested: () => void;
   private _historyIndex = -1;
 
@@ -90,7 +90,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     interactivePaneService.signCommandExecuted(result);
   }
 
-  onCommandExecuted(result: CommandResult): void {
+  onCommandExecuted(result: InteractiveCommandResult): void {
     this.setState({ inputEnabled: true });
     const buffer = getInteractivePaneService().getOutputBuffer();
     buffer.color(result.success ? "bright-green" : "bright-red");

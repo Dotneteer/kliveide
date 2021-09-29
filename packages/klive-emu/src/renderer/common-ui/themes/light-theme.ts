@@ -1,4 +1,4 @@
-import { ITheme } from "@shared/services/IThemeService";
+import { ITheme } from "@abstractions/theme-service";
 
 /**
  * This constant value defines the propertief of the 'light' theme.

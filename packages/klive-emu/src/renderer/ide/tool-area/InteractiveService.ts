@@ -1,8 +1,8 @@
-import { IOutputBuffer } from "@shared/services/IOutputPaneService";
-import { IInteractivePaneService } from "@shared/services/IInteractivePaneService";
+import { IOutputBuffer } from "@abstractions/output-pane-service";
+import { IInteractivePaneService } from "@abstractions/interactive-pane-service";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { OutputPaneBuffer } from "./OutputPaneService";
-import { CommandResult } from "@shared/services/ICommandService";
+import { InteractiveCommandResult } from "@abstractions/interactive-command";
 
 const MAX_HISTORY = 1024;
 
@@ -15,7 +15,7 @@ export class InteractivePaneService implements IInteractivePaneService {
   private _history: string[] = [];
   private _commandSubmitted = new LiteEvent<string>();
   private _commandExecuting = false;
-  private _commandExecuted = new LiteEvent<CommandResult>();
+  private _commandExecuted = new LiteEvent<InteractiveCommandResult>();
   private _focusRequested = new LiteEvent<void>();
 
   /**
@@ -92,7 +92,7 @@ export class InteractivePaneService implements IInteractivePaneService {
   /**
    * Signs that the last submitted command has been completed
    */
-  signCommandExecuted(result: CommandResult): void {
+  signCommandExecuted(result: InteractiveCommandResult): void {
     if (this._commandExecuting) {
       this._commandExecuting = false;
       this._commandExecuted.fire(result);
@@ -123,7 +123,7 @@ export class InteractivePaneService implements IInteractivePaneService {
   /**
    * Fires when a command has been executed
    */
-  get commandExecuted(): ILiteEvent<CommandResult> {
+  get commandExecuted(): ILiteEvent<InteractiveCommandResult> {
     return this._commandExecuted;
   }
 
