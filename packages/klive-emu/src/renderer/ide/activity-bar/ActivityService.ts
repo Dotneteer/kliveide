@@ -1,10 +1,5 @@
-import {
-  changeActivityAction,
-  pointActivityAction,
-} from "@state/activity-bar-reducer";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import {
-  dispatch,
   getState,
   getStore,
 } from "@abstractions/service-helpers";
@@ -12,13 +7,17 @@ import { ActivityBarState } from "@state/AppState";
 import { Activity, IActivityService } from "@abstractions/activity-service";
 
 /**
- * This class provides services for the activity bar
+ * Provides helper functionality around the redux store to
+ * manage changes of the activity bar state.
  */
 export class ActivityService implements IActivityService {
   private _activities: Activity[] = [];
   private readonly _activityChanged = new LiteEvent<string | null>();
   private _lastActivityIndex: number;
 
+  /**
+   * Initialize the service instance to watch activity bar state changes
+   */
   constructor() {
     this._lastActivityIndex = -1;
     getStore().activityBarChanged.on((state) => {
@@ -38,32 +37,5 @@ export class ActivityService implements IActivityService {
    */
   get activityChanged(): ILiteEvent<string | null> {
     return this._activityChanged;
-  }
-
-  /**
-   * Gets the curent activity
-   */
-  get activeActivity(): Activity | null {
-    const currentActivity = getState().activityBar?.activeIndex ?? -1;
-    if (!this._activities || currentActivity < 0) {
-      return null;
-    }
-    return this._activities[currentActivity] ?? null;
-  }
-
-  /**
-   * Selects the specified activity
-   * @param index Index of activity to select
-   */
-  selectActivity(index: number): void {
-    dispatch(changeActivityAction(index));
-  }
-
-  /**
-   * Marks the specified activity as the pointed one
-   * @param index Pointed activity index
-   */
-  pointActivity(index: number): void {
-    dispatch(pointActivityAction(index));
   }
 }

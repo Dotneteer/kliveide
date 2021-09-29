@@ -18,7 +18,7 @@ import { EmuViewOptions, ToolFrameState } from "@state/AppState";
 import { useLayoutEffect } from "react";
 import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
-import { setActivitiesAction } from "@state/activity-bar-reducer";
+import { changeActivityAction, setActivitiesAction } from "@state/activity-bar-reducer";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";
@@ -333,7 +333,7 @@ export default function IdeApp() {
       registerKliveCommands();
 
       // --- Select the file-view activity
-      getActivityService().selectActivity(0);
+      dispatch(changeActivityAction(0));
     }
     return () => {
       // --- Unsubscribe

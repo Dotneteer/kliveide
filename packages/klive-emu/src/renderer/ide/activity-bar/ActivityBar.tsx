@@ -4,9 +4,13 @@ import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
 } from "../../common-ui/PanelStyles";
-import { getActivityService } from "@abstractions/service-helpers";
+import { dispatch, getActivityService } from "@abstractions/service-helpers";
 import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";
+import {
+  changeActivityAction,
+  pointActivityAction,
+} from "@state/activity-bar-reducer";
 
 /**
  * Represents the statusbar of the emulator
@@ -29,9 +33,9 @@ export default function ActivityBar() {
         activity={a}
         active={activeIndex === index}
         pointed={pointedIndex === index}
-        clicked={() => activityService.selectActivity(index)}
-        point={() => activityService.pointActivity(index)}
-        unpoint={() => activityService.pointActivity(-1)}
+        clicked={() => dispatch(changeActivityAction(index))}
+        point={() => dispatch(pointActivityAction(index))}
+        unpoint={() => dispatch(pointActivityAction(-1))}
       />
     );
   });
