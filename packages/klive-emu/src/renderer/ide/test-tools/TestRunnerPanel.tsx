@@ -1,6 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "react";
-import { ISideBarPanel } from "@shared/services/ISidebarService";
+import { ISideBarPanel } from "@abstractions/side-bar-service";
 import {
   SideBarPanelDescriptorBase,
 } from "../side-bar/SideBarService";

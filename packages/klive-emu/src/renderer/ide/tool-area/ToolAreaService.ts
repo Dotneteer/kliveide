@@ -3,7 +3,7 @@ import {
   IToolAreaService,
   IToolPanel,
   ToolsInfo,
-} from "@shared/services/IToolAreaService";
+} from "@abstractions/tool-area-service";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 
 /**

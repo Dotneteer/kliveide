@@ -8,7 +8,7 @@ import {
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { MachineState } from "../machines/core/vm-core-types";
 import { getStore } from "@abstractions/service-helpers";
-import { IEngineProxyService, RunEventArgs } from "@shared/services/IEngineProxyService";
+import { IEngineProxyService, RunEventArgs } from "@abstractions/engine-proxy-service";
 
 /**
  * Dealy time between two timed run events

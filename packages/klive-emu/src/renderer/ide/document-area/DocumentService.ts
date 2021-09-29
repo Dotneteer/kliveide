@@ -5,7 +5,7 @@ import {
   IDocumentFactory,
   IDocumentPanel,
   IDocumentService,
-} from "@shared/services/IDocumentService";
+} from "@abstractions/document-service";
 import { dispatch, getState } from "@abstractions/service-helpers";
 import { setDocumentFrameStateAction } from "@state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
@@ -19,10 +19,6 @@ export class DocumentService implements IDocumentService {
   private _documents: IDocumentPanel[];
   private _activeDocument: IDocumentPanel | null;
   private _activationStack: IDocumentPanel[];
-  private _documentRegistered = new LiteEvent<IDocumentPanel>();
-  private _documentUnregistered = new LiteEvent<IDocumentPanel>();
-  private _activeDocumentChanging = new LiteEvent<IDocumentPanel | null>();
-  private _activeDocumentChanged = new LiteEvent<IDocumentPanel | null>();
   private _documentsChanged = new LiteEvent<DocumentsInfo>();
   private _fileBoundFactories = new Map<string, IDocumentFactory>();
   private _extensionBoundFactories = new Map<string, IDocumentFactory>();
@@ -157,7 +153,6 @@ export class DocumentService implements IDocumentService {
       this._documents.splice(index, 0, doc);
       this._documents = this._documents.slice(0);
       doc.index = index;
-      this._documentRegistered.fire(doc);
 
       if (makeActive || !this._activeDocument) {
         this.setActiveDocument(doc);
@@ -187,7 +182,6 @@ export class DocumentService implements IDocumentService {
     this._documents.splice(position, 1);
     this._documents = this._documents.slice(0);
     this._activationStack = this._activationStack.filter((d) => d !== doc);
-    this._documentUnregistered.fire(doc);
 
     // --- Activate a document
     if (this._activationStack.length > 0) {
@@ -215,15 +209,11 @@ export class DocumentService implements IDocumentService {
       dispatch(setDocumentFrameStateAction(fullState));
     }
 
-    // --- Invoke custom action
-    this._activeDocumentChanging.fire(doc);
-
     if (!doc) {
       // --- There is no active document
       const oldDocument = this._activeDocument;
       this._activeDocument = null;
       if (!oldDocument) {
-        this._activeDocumentChanged.fire(null);
         this.fireChanges();
         return;
       }
@@ -249,7 +239,6 @@ export class DocumentService implements IDocumentService {
     }
 
     // --- Invoke custom action
-    this._activeDocumentChanged.fire(doc);
     this.fireChanges();
   }
 
@@ -332,34 +321,6 @@ export class DocumentService implements IDocumentService {
       const rightDocs = this._documents.slice(index + 1);
       rightDocs.forEach((d) => this.unregisterDocument(d));
     }
-  }
-
-  /**
-   * Fires when a new document has been registered
-   */
-  get documentRegistered(): ILiteEvent<IDocumentPanel> {
-    return this._documentRegistered;
-  }
-
-  /**
-   * Fires when a new document has been unregistered
-   */
-  get documentUnregistered(): ILiteEvent<IDocumentPanel> {
-    return this._documentUnregistered;
-  }
-
-  /**
-   * Fires when the active document is about to change
-   */
-  get activeDocumentChanging(): ILiteEvent<IDocumentPanel | null> {
-    return this._activeDocumentChanging;
-  }
-
-  /**
-   * Fires when the active document has been changed
-   */
-  get activeDocumentChanged(): ILiteEvent<IDocumentPanel | null> {
-    return this._activeDocumentChanged;
   }
 
   /**

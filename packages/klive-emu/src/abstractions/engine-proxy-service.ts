@@ -1,6 +1,6 @@
-import { MachineState } from "../../renderer/machines/core/vm-core-types";
-import { ICpuState } from "../machines/AbstractCpu";
-import { ILiteEvent } from "../utils/LiteEvent";
+import { MachineState } from "../renderer/machines/core/vm-core-types";
+import { ICpuState } from "../shared/machines/AbstractCpu";
+import { ILiteEvent } from "../shared/utils/LiteEvent";
 
 /**
  * Arguments of RunEvent
@@ -8,7 +8,8 @@ import { ILiteEvent } from "../utils/LiteEvent";
 export type RunEventArgs = { execState: number; isDebug: boolean };
 
 /**
- * Defines the interface of the service handling the engine proxy
+ * IEngineProxyService declares helper methods that allow the IDE process
+ * to access the virtual machine engine running in the Emulator proces
  */
 export interface IEngineProxyService {
   /**

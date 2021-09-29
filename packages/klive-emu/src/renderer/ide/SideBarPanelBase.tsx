@@ -4,8 +4,8 @@ import ScrollablePanel from "../common-ui/ScrollablePanel";
 import { getEngineProxyService } from "@abstractions/service-helpers";
 import { scrollableContentType } from "./utils/content-utils";
 import { getState } from "@abstractions/service-helpers";
-import { ISideBarPanel } from "@shared/services/ISidebarService";
-import { RunEventArgs } from "@shared/services/IEngineProxyService";
+import { ISideBarPanel } from "@abstractions/side-bar-service";
+import { RunEventArgs } from "@abstractions/engine-proxy-service";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;

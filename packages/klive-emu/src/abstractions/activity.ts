@@ -1,5 +1,4 @@
 import { MenuItem } from "@shared/command/commands";
-import { ILiteEvent } from "@shared/utils/LiteEvent";
 
 /**
  * Describes an activity in the Activity bar

@@ -1,4 +1,4 @@
-import { CustomLanguageInfo } from "@shared/services/IDocumentService";
+import { CustomLanguageInfo } from "@abstractions/document-service";
 
 /**
  * Language provider for the .asm.z80 extension

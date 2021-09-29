@@ -6,7 +6,7 @@ import CommandIconButton from "../context-menu/CommandIconButton";
 import { getDocumentService } from "@abstractions/service-helpers";
 import { getContextMenuService } from "@abstractions/service-helpers";
 import { MenuItem } from "@shared/command/commands";
-import { IDocumentPanel } from "@shared/services/IDocumentService";
+import { IDocumentPanel } from "@abstractions/document-service";
 
 interface Props {
   title: string;

@@ -1,23 +1,23 @@
-import { IOutputBuffer } from "@shared/services/IOutputPaneService";
+import { IOutputBuffer } from "@abstractions/output-pane-service";
 import { parseCommand } from "@shared/command-parser/token-stream";
 import {
-  CommandContext,
-  CommandInfo,
-  CommandResult,
-  ICommandService,
-} from "@shared/services/ICommandService";
+  InteractiveCommandContext,
+  InteractiveCommandInfo,
+  InteractiveCommandResult,
+  IInteractiveCommandService,
+} from "@abstractions/interactive-command";
 
 /**
  * This class is responsible to execute commands
  */
-export class CommandService implements ICommandService {
-  private readonly _commands = new Map<string, CommandInfo>();
+export class InteractiveCommandService implements IInteractiveCommandService {
+  private readonly _commands = new Map<string, InteractiveCommandInfo>();
 
   /**
    * Registers a command
    * @param command Command to register
    */
-  registerCommand(command: CommandInfo): void {
+  registerCommand(command: InteractiveCommandInfo): void {
     if (this._commands.has(command.id)) {
       throw new Error(
         `Command with ID ${command.id} has already been registered.`
@@ -31,7 +31,7 @@ export class CommandService implements ICommandService {
    * @param id Command identifier
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandInfo(id: string): CommandInfo | undefined {
+  getCommandInfo(id: string): InteractiveCommandInfo | undefined {
     return this._commands.get(id);
   }
 
@@ -42,7 +42,7 @@ export class CommandService implements ICommandService {
   async executeCommand(
     command: string,
     buffer: IOutputBuffer
-  ): Promise<CommandResult> {
+  ): Promise<InteractiveCommandResult> {
     const tokens = parseCommand(command);
     if (tokens.length === 0) {
       // --- No token, no command to execute
@@ -63,7 +63,7 @@ export class CommandService implements ICommandService {
     }
 
     // --- Execute the registered command
-    const context: CommandContext = {
+    const context: InteractiveCommandContext = {
       argTokens: tokens.slice(1),
       output: buffer,
     };

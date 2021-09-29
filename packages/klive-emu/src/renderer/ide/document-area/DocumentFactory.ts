@@ -1,4 +1,4 @@
-import { IDocumentPanel } from "@shared/services/IDocumentService";
+import { IDocumentPanel } from "@abstractions/document-service";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 
 /**

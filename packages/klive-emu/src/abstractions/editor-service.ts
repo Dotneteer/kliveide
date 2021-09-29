@@ -9,7 +9,8 @@ export type EditorState = {
 };
 
 /**
- * This class implements the services we use with a code editor
+ * IEditorService takes care of saving and restoring the state of the opened
+ * code editors
  */
 export interface IEditorService {
   /**

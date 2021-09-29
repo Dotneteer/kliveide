@@ -27,7 +27,7 @@ import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { getDocumentService } from "@abstractions/service-helpers";
 import { getState, getStore } from "@abstractions/service-helpers";
-import { IProjectService } from "@shared/services/IProjectService";
+import { IProjectService } from "@abstractions/project-service";
 
 type State = {
   itemsCount: number;

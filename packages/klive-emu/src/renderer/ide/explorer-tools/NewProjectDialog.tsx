@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CheckBoxComponent } from "@syncfusion/ej2-react-buttons";
 import { getModalDialogService } from "@abstractions/service-helpers";
-import { IModalDialogDescriptor } from "@shared/services/IModalDialogService";
+import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";

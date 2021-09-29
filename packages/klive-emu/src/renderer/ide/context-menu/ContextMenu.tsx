@@ -18,7 +18,7 @@ import {
   isCommandGroup,
   MenuItem,
 } from "@shared/command/commands";
-import { ContextMenuOpenTarget } from "@shared/services/IContextMenuService";
+import { ContextMenuOpenTarget } from "@abstractions/context-menu-service";
 
 type Props = {
   target: string;

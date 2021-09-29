@@ -1,4 +1,4 @@
-import { IconInfo, ImageInfo, ITheme, IThemeService } from "@shared/services/IThemeService";
+import { IconInfo, ImageInfo, ITheme, IThemeService } from "@abstractions/theme-service";
 import { IconDefs } from "./IconDefs";
 import { ImageIconDefs } from "./ImageDefs";
 import { IThemeProperties } from "./IThemeProperties";

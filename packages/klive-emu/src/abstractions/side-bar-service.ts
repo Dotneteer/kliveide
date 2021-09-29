@@ -1,5 +1,5 @@
-import { AppState } from "../state/AppState";
-import { ILiteEvent } from "../utils/LiteEvent";
+import { AppState } from "../shared/state/AppState";
+import { ILiteEvent } from "../shared/utils/LiteEvent";
 
 /**
  * Represents an abstract side bar panel

@@ -66,7 +66,7 @@ import {
 } from "./explorer-tools/RenameFolderDialog";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
-import { Activity } from "@abstractions/activity-service";
+import { Activity } from "@abstractions/activity";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";

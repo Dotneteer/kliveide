@@ -1,6 +1,6 @@
 import { CSSProperties } from "react";
-import { toStyleString } from "../../renderer/ide/utils/css-utils";
-import { ILiteEvent, LiteEvent } from "../utils/LiteEvent";
+import { toStyleString } from "../renderer/ide/utils/css-utils";
+import { ILiteEvent, LiteEvent } from "../shared/utils/LiteEvent";
 
 /**
  * Available output colors
@@ -155,7 +155,7 @@ export interface IOutputPaneService {
   clearActivePane(): void;
 
   /**
-   *
+   * Gets a pane by its ID
    * @param id Gets the pane with the specified id
    */
   getPaneById(id: string | number): IOutputPane | undefined;

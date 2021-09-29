@@ -1,5 +1,5 @@
 import * as React from "react";
-import { IToolPanel } from "@shared/services/IToolAreaService";
+import { IToolPanel } from "@abstractions/tool-area-service";
 import { CSSProperties } from "styled-components";
 
 export type ToolPanelProps<P> = P & {

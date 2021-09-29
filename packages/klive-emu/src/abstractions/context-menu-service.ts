@@ -1,5 +1,5 @@
-import { MenuItem } from "../command/commands";
-import { ILiteEvent } from "../utils/LiteEvent";
+import { MenuItem } from "../shared/command/commands";
+import { ILiteEvent } from "../shared/utils/LiteEvent";
 
 /**
  * Declares the target of a context menu
@@ -11,7 +11,7 @@ export type ContextMenuOpenTarget = {
 };
 
 /**
- * Defines the interface of the service that handles contex menus
+ * IContextMenuService provides methods to display context menus
  */
 export interface IContextMenuService {
   /**

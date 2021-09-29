@@ -1,10 +1,10 @@
-import { Token } from "../command-parser/token-stream";
-import { IOutputBuffer } from "./IOutputPaneService";
+import { Token } from "../shared/command-parser/token-stream";
+import { IOutputBuffer } from "./output-pane-service";
 
 /**
  * This class represents information about commands
  */
-export type CommandInfo = {
+export type InteractiveCommandInfo = {
   /**
    * The unique identifier of the command
    */
@@ -13,13 +13,13 @@ export type CommandInfo = {
   /**
    * Executes the command within the specified context
    */
-  execute: (context: CommandContext) => Promise<CommandResult>;
+  execute: (context: InteractiveCommandContext) => Promise<InteractiveCommandResult>;
 };
 
 /**
  * Describes the execution context of a command
  */
-export type CommandContext = {
+export type InteractiveCommandContext = {
   /**
    * The set of tokens used as command arguments
    */
@@ -34,7 +34,7 @@ export type CommandContext = {
 /**
  * Describes the result of a command
  */
-export type CommandResult = {
+export type InteractiveCommandResult = {
   /**
    * Indicates if the command execution was successful
    */
@@ -64,9 +64,10 @@ export type TraceMessage = {
 };
 
 /**
- * This class is intended to be the base class of all commands
+ * IInteractiveCommandService is responsible for keeping a registry of 
+ * commands that can be executed in the Interactive window pane.
  */
-export abstract class CommandBase {
+export abstract class InteractiveCommandBase {
   /**
    * The unique identifier of the command
    */
@@ -80,7 +81,7 @@ export abstract class CommandBase {
   /**
    * Executes the command within the specified context
    */
-  async execute(context: CommandContext): Promise<CommandResult> {
+  async execute(context: InteractiveCommandContext): Promise<InteractiveCommandResult> {
     // --- Validate the arguments and display potential issues
     const received = await this.validateArgs(context.argTokens);
     const validationMessages = Array.isArray(received) ? received : [received];
@@ -115,7 +116,7 @@ export abstract class CommandBase {
    * Executes the command after argument validation
    * @param context Command execution context
    */
-  async doExecute(context: CommandContext): Promise<CommandResult> {
+  async doExecute(context: InteractiveCommandContext): Promise<InteractiveCommandResult> {
     return {
       success: true,
       finalMessage: "This command has been executed successfully.",
@@ -151,19 +152,19 @@ export abstract class CommandBase {
 /**
  * This class is responsible to execute commands
  */
-export interface ICommandService {
+export interface IInteractiveCommandService {
   /**
    * Registers a command
    * @param command Command to register
    */
-  registerCommand(command: CommandInfo): void;
+  registerCommand(command: InteractiveCommandInfo): void;
 
   /**
    * Gets the information about the command with the specified ID
    * @param id Command identifier
    * @returns Command information, if found; otherwise, undefined
    */
-  getCommandInfo(id: string): CommandInfo | undefined;
+  getCommandInfo(id: string): InteractiveCommandInfo | undefined;
 
   /**
    * Executes the specified command line
@@ -172,5 +173,5 @@ export interface ICommandService {
   executeCommand(
     command: string,
     buffer: IOutputBuffer
-  ): Promise<CommandResult>;
+  ): Promise<InteractiveCommandResult>;
 }

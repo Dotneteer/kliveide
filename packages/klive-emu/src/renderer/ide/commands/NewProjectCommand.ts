@@ -4,12 +4,12 @@ import {
   CreateKliveProjectResponse,
   GetRegisteredMachinesResponse,
 } from "@shared/messaging/message-types";
-import { CommandBase, CommandResult, TraceMessage, TraceMessageType } from "@shared/services/ICommandService";
+import { InteractiveCommandBase, InteractiveCommandResult, TraceMessage, TraceMessageType } from "@abstractions/interactive-command";
 
 /**
  * Creates a new Klive project
  */
-export class NewProjectCommand extends CommandBase {
+export class NewProjectCommand extends InteractiveCommandBase {
   readonly id = "new-project";
   readonly usage =
     "Usage: new-project <machine-id> [<root-folder>] <project-name>";
@@ -83,7 +83,7 @@ export class NewProjectCommand extends CommandBase {
   /**
    * Executes the command within the specified context
    */
-  async doExecute(): Promise<CommandResult> {
+  async doExecute(): Promise<InteractiveCommandResult> {
     const operation =
       await ideToEmuMessenger.sendMessage<CreateKliveProjectResponse>({
         type: "CreateKliveProject",

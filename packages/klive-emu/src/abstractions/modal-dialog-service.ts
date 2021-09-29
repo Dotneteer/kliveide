@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Store } from "redux";
-import { ILiteEvent } from "../utils/LiteEvent";
+import { ILiteEvent } from "../shared/utils/LiteEvent";
 
 /**
  * Describes a modal dialog
@@ -98,6 +98,12 @@ export interface IModalDialogService {
    */
   hide(store: Store, result?: unknown): void;
 
+  /**
+   * Shows the specified modal dialog
+   * @param store Application state store
+   * @param id Modal dialog ID
+   * @param args Modal dialog arguments
+   */
   showModalDialog(store: Store, id: string, args?: unknown): Promise<unknown>;
 
   /**

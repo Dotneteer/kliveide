@@ -8,7 +8,7 @@ import { MenuItem } from "@shared/command/commands";
 import { getContextMenuService } from "@abstractions/service-helpers";
 import { AppState } from "@state/AppState";
 import { getStore } from "@abstractions/service-helpers";
-import { ISideBarPanel } from "@shared/services/ISidebarService";
+import { ISideBarPanel } from "@abstractions/side-bar-service";
 
 /**
  * Component properties
