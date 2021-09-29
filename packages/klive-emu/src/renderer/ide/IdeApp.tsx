@@ -1,7 +1,6 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
 import {
-  getActivityService,
   getDocumentService,
   getModalDialogService,
   getOutputPaneService,

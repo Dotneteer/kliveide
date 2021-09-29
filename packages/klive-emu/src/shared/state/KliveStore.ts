@@ -10,6 +10,7 @@ import {
   ToolFrameState,
 } from "./AppState";
 import { KliveAction } from "./state-core";
+import { Activity } from "@abstractions/activity-service";
 
 /**
  * Represents a store instance that handles Klive application state
@@ -25,13 +26,13 @@ export class KliveStore {
   private _isWindowsChanged = new LiteEvent<boolean>();
   private _emuViewOptionsChanged = new LiteEvent<EmuViewOptions>();
   private _toolFrameChanged = new LiteEvent<ToolFrameState>();
+  private _currentActivityChanged = new LiteEvent<Activity>();
   private _activityBarChanged = new LiteEvent<ActivityBarState>();
   private _emulatorPanelChanged = new LiteEvent<EmulatorPanelState>();
   private _executionStateChanged = new LiteEvent<number>();
   private _machineTypeChanged = new LiteEvent<string>();
   private _projectChanged = new LiteEvent<ProjectState>();
   private _vmPropertyChanged = new LiteEvent<EmulatorPanelState>();
-
 
   /**
    * Initializes this instance with the specified redux store
@@ -139,6 +140,13 @@ export class KliveStore {
   }
 
   /**
+   * Fires when the `activityBar` state property changes
+   */
+   get currentActivityChanged(): ILiteEvent<Activity> {
+    return this._currentActivityChanged;
+  }
+
+  /**
    * Fires when the `emulatorPanel` state property changes
    */
   get emulatorPanelChanged(): ILiteEvent<EmulatorPanelState> {
@@ -162,7 +170,7 @@ export class KliveStore {
   /**
    * Fires when the `projectState` state property changes
    */
-   get projectChanged(): ILiteEvent<ProjectState> {
+  get projectChanged(): ILiteEvent<ProjectState> {
     return this._projectChanged;
   }
 
@@ -199,8 +207,15 @@ export class KliveStore {
     }
 
     // --- activityBar
-    if (state.activityBar !== oldState.activityBar) {
-      this._activityBarChanged.fire(state.activityBar);
+    if (
+      state.activityBar !== oldState.activityBar &&
+      state.activityBar?.activeIndex != oldState.activityBar?.activeIndex
+    ) {
+      const currentActivity =
+        !state.activityBar || typeof state.activityBar.activeIndex !== "number"
+          ? null
+          : state.activityBar.activities[state.activityBar.activeIndex];
+      this._currentActivityChanged.fire(currentActivity);
     }
 
     // --- machineType
@@ -223,7 +238,7 @@ export class KliveStore {
 
     // --- project
     if (state.project !== oldState.project) {
-        this._projectChanged.fire(state.project);
+      this._projectChanged.fire(state.project);
     }
   }
 }

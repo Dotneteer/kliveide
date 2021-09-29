@@ -6,7 +6,6 @@ import { Provider } from "react-redux";
 import { registerThemes } from "../common-ui/register-themes";
 import IdeApp from "./IdeApp";
 import {
-  ACTIVITY_SERVICE,
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
   DOCUMENT_SERVICE,
@@ -39,7 +38,6 @@ import { KliveAction } from "@state/state-core";
 import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
 import { ForwardActionRequest } from "@shared/messaging/message-types";
-import { ActivityService } from "./activity-bar/ActivityService";
 import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
@@ -101,7 +99,6 @@ registerService(
 // --- Register additional services
 registerService(THEME_SERVICE, new ThemeService());
 registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
-registerService(ACTIVITY_SERVICE, new ActivityService());
 registerService(SIDE_BAR_SERVICE, new SideBarService());
 registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());
 registerService(PROJECT_SERVICE, new ProjectService());
