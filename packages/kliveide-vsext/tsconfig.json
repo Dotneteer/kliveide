@@ -12,7 +12,10 @@
     "downlevelIteration": true,
     "resolveJsonModule": true,
     "paths": {
-      "*": ["node_modules/*"]      
+      "*": ["node_modules/*"],
+      "@abstractions/*": ["src/abstractions/*"],
+      "@state/*": ["src/shared/state/*"],
+      "@shared/*": ["src/shared/*"],
     }
   },
   "include": [

@@ -19,6 +19,9 @@ const commonConfig = {
   node: { __dirname: false, __filename: false },
   resolve: {
     alias: {
+      "@abstractions": srcPaths("src/abstractions"),
+      "@state": srcPaths("src/shared/state"),
+      "@shared": srcPaths("src/shared"),
       "@": srcPaths("src"),
       "@main": srcPaths("src/main"),
       "@public": srcPaths("public"),
