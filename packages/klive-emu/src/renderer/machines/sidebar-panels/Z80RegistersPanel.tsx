@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import { getEngineProxyService } from "@abstractions/service-helpers";
@@ -54,7 +54,7 @@ function flagRow(bits: number) {
     };
     return (
       <div style={valueStyle} title={value ? `${set} (1) ` : `${clr} (0)`}>
-        <SvgIcon
+        <Icon
           iconName={value ? "circle-large-filled" : "circle-large-outline"}
           width={10}
           height={10}

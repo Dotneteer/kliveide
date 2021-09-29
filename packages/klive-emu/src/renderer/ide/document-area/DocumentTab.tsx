@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
 import { getThemeService } from "@abstractions/service-helpers";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { getDocumentService } from "@abstractions/service-helpers";
 import { getContextMenuService } from "@abstractions/service-helpers";
@@ -133,7 +133,7 @@ export default function DocumentTab({
         setPointed(false);
       }}
     >
-      <SvgIcon iconName="file-code" width={16} height={16} />
+      <Icon iconName="file-code" width={16} height={16} />
       <span
         style={{
           marginLeft: 6,

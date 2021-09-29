@@ -1,7 +1,6 @@
 import * as React from "react";
-import { useEffect } from "react";
 import { useState } from "react";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 
 interface Props {
   iconName: string;
@@ -73,7 +72,7 @@ export default function CommandIconButton({
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
-      <SvgIcon
+      <Icon
         iconName={iconName}
         fill={enable ?? true ? fill : "--toolbar-button-disabled-fill"}
         width={size}

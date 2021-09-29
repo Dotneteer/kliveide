@@ -8,7 +8,7 @@ import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
 import { getProjectService } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
-import { CommonIcon } from "../../common-ui/CommonIcon";
+import { Icon } from "../../common-ui/Icon";
 import { AppState, ProjectState } from "@state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "@shared/command/commands";
@@ -222,7 +222,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           }}
         ></div>
         {item.nodeData.isFolder && (
-          <CommonIcon
+          <Icon
             iconName="chevron-right"
             width={16}
             height={16}
@@ -230,13 +230,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             style={{ flexShrink: 0, flexGrow: 0 }}
           />
         )}
-        <CommonIcon
-          imageName={
+        <Icon
+          iconName={
             item.nodeData.isFolder
               ? item.isExpanded
-                ? "folder-open"
-                : "folder"
-              : "file-code"
+                ? "@folder-open"
+                : "@folder"
+              : "@file-code"
           }
           width={16}
           height={16}
@@ -261,7 +261,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           {item.nodeData.name}
         </div>
         {item.nodeData.buildRoot && (
-          <CommonIcon
+          <Icon
             iconName="combine"
             width={16}
             height={16}

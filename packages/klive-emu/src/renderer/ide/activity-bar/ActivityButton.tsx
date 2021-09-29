@@ -1,5 +1,5 @@
 import * as React from "react";
-import { SvgIcon } from "../../common-ui/SvgIcon";
+import { Icon } from "../../common-ui/Icon";
 import styles from "styled-components";
 import { getThemeService } from "@abstractions/service-helpers";
 import { Activity } from "@abstractions/activity";
@@ -44,7 +44,7 @@ export default function ActivityButton({
       onMouseLeave={unpoint}
       title={activity.title}
     >
-      <SvgIcon
+      <Icon
         iconName={activity.iconName}
         width={24}
         height={24}

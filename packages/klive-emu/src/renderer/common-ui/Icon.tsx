@@ -3,13 +3,13 @@ import { CSSProperties } from "react";
 import { getThemeService } from "@abstractions/service-helpers";
 
 /**
- * SvgIcon properties
+ * CommonIcon properties
  */
 interface Props {
   /**
    * Name of the stock icon obtained from `themeService`
    */
-  iconName: string;
+  iconName?: string;
 
   /**
    * Additional CSS class of the SVG icon
@@ -45,7 +45,7 @@ interface Props {
 /**
  * Represents an SVG icon from the stock
  */
-export function SvgIcon({
+export function Icon({
   iconName,
   xclass,
   width,
@@ -78,20 +78,32 @@ export function SvgIcon({
     flexShrink: 0,
     flexGrow: 0,
   };
-  const iconInfo = themeService.getIcon(iconName);
-  return (
-    <svg
-      className={xclass}
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ ...styleValue, ...style }}
-      viewBox={"0 0 " + iconInfo.width + " " + iconInfo.height}
-    >
-      {children}
-      <path
-        d={iconInfo.path}
-        fillRule={iconInfo["fill-rule"] as any}
-        clipRule={iconInfo["clip-rule"]}
+  if (iconName?.startsWith("@")) {
+    const imageInfo = themeService.getImageIcon(iconName.substr(1));
+    return (
+      <img
+        src={`data:image/${imageInfo.type};base64,${imageInfo.data}`}
+        style={{ width, height }}
       />
-    </svg>
-  );
+    );
+  }
+  if (iconName) {
+    const iconInfo = themeService.getIcon(iconName);
+    return (
+      <svg
+        className={xclass}
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ ...styleValue, ...style }}
+        viewBox={"0 0 " + iconInfo.width + " " + iconInfo.height}
+      >
+        {children}
+        <path
+          d={iconInfo.path}
+          fillRule={iconInfo["fill-rule"] as any}
+          clipRule={iconInfo["clip-rule"]}
+        />
+      </svg>
+    );
+  }
+  return <div />;
 }
