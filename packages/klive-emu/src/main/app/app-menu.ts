@@ -17,14 +17,7 @@ import {
   emuSetClockMultiplierAction,
   emuSetSoundLevelAction,
 } from "@state/emulator-panel-reducer";
-import { KliveAction } from "@state/state-core";
 import { AppState } from "@state/AppState";
-import {
-  emuShowFrameInfoAction,
-  emuShowKeyboardAction,
-  emuShowStatusbarAction,
-  emuShowToolbarAction,
-} from "@state/emu-view-options-reducer";
 import { __DARWIN__ } from "../utils/electron-utils";
 import {
   dispatch,
@@ -59,6 +52,7 @@ import {
   sendFromMainToEmu,
   sendFromMainToIde,
 } from "@messaging/message-sending";
+import { executeKliveCommand } from "@shared/command/common-commands";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -243,7 +237,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: false,
       click: (mi) => {
-        dispatch(emuShowKeyboardAction(mi.checked));
+        executeKliveCommand(mi.checked ? "showKeyboard" : "hideKeyboard");
         emuWindow.saveKliveProject();
       },
     },
@@ -264,7 +258,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: viewOptions.showToolbar ?? true,
       click: (mi) => {
-        dispatch(emuShowToolbarAction(mi.checked));
+        executeKliveCommand(mi.checked ? "showToolbar" : "hideToolbar");
         emuWindow.saveKliveProject();
       },
     },
@@ -274,7 +268,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: viewOptions.showStatusbar ?? true,
       click: (mi) => {
-        dispatch(emuShowStatusbarAction(mi.checked));
+        executeKliveCommand(mi.checked ? "showStatusBar" : "hideStatusBar");
         emuWindow.saveKliveProject();
       },
     },
@@ -284,7 +278,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: viewOptions.showFrameInfo ?? true,
       click: (mi) => {
-        dispatch(emuShowFrameInfoAction(mi.checked));
+        executeKliveCommand(mi.checked ? "showFrameInfo" : "hideFrameInfo");
         emuWindow.saveKliveProject();
       },
     }

@@ -4,7 +4,13 @@
 // their IDs.
 // ============================================================================
 
-import { IKliveCommand } from "../extensibility/abstractions/command-def";
+import {
+  ExecutionState,
+  IKliveCommand,
+  KliveCommandContext,
+} from "../extensibility/abstractions/command-def";
+import { getSite } from "./process-site";
+import { getState } from "./service-helpers";
 
 // ----------------------------------------------------------------------------
 // Command registry methods
@@ -65,4 +71,50 @@ export function getRegisteredCommands(): IKliveCommand[] {
     result.push(commandRegistry[key]);
   }
   return result;
+}
+
+/**
+ * Executes the specified command
+ * @param id Command ID
+ */
+export async function executeCommand(id: string): Promise<void> {
+  const command = getCommand(id);
+  if (!command) {
+    throw new Error(
+      `Command with ID '${id}' cannot be found in the registry of '${getSite()}'`
+    );
+  }
+
+  // --- Prepare the context
+  const state = getState();
+  let executionState: ExecutionState;
+  switch (state.emulatorPanel?.executionState) {
+    case 1:
+      executionState = "running";
+      break;
+    case 2:
+    case 3:
+      executionState = "paused";
+    case 4:
+    case 5:
+      executionState = "stopped";
+    default:
+      executionState = "none";
+      break;
+  }
+  const context: KliveCommandContext = {
+    process: getSite(),
+    executionState,
+    machineType: state.machineType,
+    resource: state.project?.contextResourceId ?? null,
+    resourceActive: state.project?.contextResourceActive ?? false,
+  };
+
+  // --- Refresh the state of the command
+  command.queryState?.(context);
+
+  // --- Execute only enabled commands
+  if ((command?.enabled ?? true) && command.execute) {
+    await command.execute(context);
+  }
 }

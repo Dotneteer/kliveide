@@ -51,6 +51,7 @@ import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 import { registerSite } from "@abstractions/process-site";
+import { registerCommonCommands } from "@shared/command/common-commands";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -86,6 +87,7 @@ const rootReducer = (state: AppState, action: KliveAction) => {
 // --- Sign we are in the emulator renderer process
 
 registerSite("ide");
+registerCommonCommands();
 
 
 // ------------------------------------------------------------------------------

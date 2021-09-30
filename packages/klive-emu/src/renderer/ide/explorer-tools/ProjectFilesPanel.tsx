@@ -6,14 +6,17 @@ import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
-import { getProjectService } from "@abstractions/service-helpers";
+import { dispatch, getProjectService } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import { Icon } from "../../common-ui/Icon";
 import { AppState, ProjectState } from "@state/AppState";
 import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "@shared/command/commands";
-import { getContextMenuService } from "@abstractions/service-helpers";
-import { getModalDialogService } from "@abstractions/service-helpers";
+import {
+  getContextMenuService,
+  getModalDialogService,
+  getDocumentService,
+} from "@abstractions/service-helpers";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
@@ -25,9 +28,9 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
-import { getDocumentService } from "@abstractions/service-helpers";
 import { getState, getStore } from "@abstractions/service-helpers";
 import { IProjectService } from "@abstractions/project-service";
+import { setProjectContextAction } from "@state/project-reducer";
 
 type State = {
   itemsCount: number;
@@ -44,7 +47,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   State
 > {
   private _listApi: VirtualizedListApi;
-  private _projectService: IProjectService
+  private _projectService: IProjectService;
+  private _lastProjectState: ProjectState | null = null;
   private _onProjectChange: (state: ProjectState) => Promise<void>;
 
   constructor(props: SideBarProps<{}>) {
@@ -81,6 +85,19 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Respond to project state changes
    */
   async onProjectChange(state: ProjectState): Promise<void> {
+    if (this._lastProjectState) {
+      if (
+        this._lastProjectState.isLoading === state.isLoading &&
+        this._lastProjectState.path === state.path &&
+        this._lastProjectState.hasVm === state.hasVm
+      ) {
+        // --- Just the context of the project has changed
+        this._lastProjectState = state;
+        return;
+      }
+    }
+
+    // --- The UI should update itself according to the state change
     if (state.isLoading) {
       this.setState({
         isLoading: true,
@@ -100,6 +117,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         });
       }
     }
+    this._lastProjectState = state;
   }
 
   render() {
@@ -476,7 +494,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           execute: async () => await this.deleteFile(item),
         },
       ];
-      const editor = getDocumentService().getCodeEditorInfo(item.nodeData.fullPath);
+      const editor = getDocumentService().getCodeEditorInfo(
+        item.nodeData.fullPath
+      );
       if (editor?.allowBuildRoot) {
         menuItems.push("separator");
         if (item.nodeData.buildRoot) {
@@ -500,13 +520,26 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         }
       }
     }
-    const rect = (ev.target as HTMLElement).getBoundingClientRect();
-    await getContextMenuService().openMenu(
-      menuItems,
-      rect.y + 22,
-      ev.clientX,
-      ev.target as HTMLElement
+
+    // --- Set the project context
+    dispatch(
+      setProjectContextAction(
+        item.nodeData.fullPath,
+        getDocumentService().getActiveDocument()?.id === item.nodeData.fullPath
+      )
     );
+    const rect = (ev.target as HTMLElement).getBoundingClientRect();
+    try {
+      await getContextMenuService().openMenu(
+        menuItems,
+        rect.y + 22,
+        ev.clientX,
+        ev.target as HTMLElement
+      );
+    } finally {
+      // --- Remove the project context
+      dispatch(setProjectContextAction(undefined, undefined));
+    }
   }
 
   /**
@@ -676,7 +709,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await this._projectService.deleteFolder(node.nodeData.fullPath);
+    const resp = await this._projectService.deleteFolder(
+      node.nodeData.fullPath
+    );
     if (resp) {
       // --- Delete failed
       return;
@@ -724,8 +759,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Rename the file
     const newFullName = `${oldPath}/${fileData.name}`;
     const resp = isFolder
-      ? await this._projectService.renameFolder(node.nodeData.fullPath, newFullName)
-      : await this._projectService.renameFile(node.nodeData.fullPath, newFullName);
+      ? await this._projectService.renameFolder(
+          node.nodeData.fullPath,
+          newFullName
+        )
+      : await this._projectService.renameFile(
+          node.nodeData.fullPath,
+          newFullName
+        );
     if (resp) {
       // --- Rename failed
       return;

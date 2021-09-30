@@ -24,6 +24,7 @@ import { KliveAction } from "@state/state-core";
 import { ThemeService } from "../common-ui/themes/theme-service";
 import { ModalDialogService } from "../common-ui/modal-service";
 import { registerSite } from "@abstractions/process-site";
+import { registerCommonCommands } from "@shared/command/common-commands";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -53,6 +54,7 @@ const forwardToMainMiddleware = () => (next: any) => (action: KliveAction) => {
 // --- Sign we are in the emulator renderer process
 
 registerSite("emu");
+registerCommonCommands();
 
 // ------------------------------------------------------------------------------
 // --- Register the main services

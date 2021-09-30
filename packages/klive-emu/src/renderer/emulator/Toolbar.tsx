@@ -1,6 +1,5 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { emuShowKeyboardAction } from "@state/emu-view-options-reducer";
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
@@ -15,6 +14,7 @@ import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
 import { dispatch } from "@abstractions/service-helpers";
+import { executeKliveCommand } from "@shared/command/common-commands";
 
 const Root = styles.div`
   display: flex;
@@ -51,7 +51,7 @@ export class Toolbar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      hasEngine: false,
+      hasEngine: vmEngineService?.hasEngine,
     };
   }
 
@@ -155,7 +155,9 @@ export class Toolbar extends React.Component<Props, State> {
         title="Toggle keyboard"
         selected={this.props.showKeyboard}
         clicked={() =>
-          dispatch(emuShowKeyboardAction(!this.props.showKeyboard))
+          executeKliveCommand(
+            this.props.showKeyboard ? "hideKeyboard" : "showKeyboard"
+          )
         }
         highlightSize={32}
       />,

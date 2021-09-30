@@ -23,12 +23,6 @@ import {
   appConfiguration,
   appSettings,
 } from "./main-state/klive-configuration";
-import {
-  emuShowFrameInfoAction,
-  emuShowKeyboardAction,
-  emuShowStatusbarAction,
-  emuShowToolbarAction,
-} from "@state/emu-view-options-reducer";
 import { __WIN32__ } from "./utils/electron-utils";
 import { setWindowsAction } from "@state/is-windows-reducer";
 import {
@@ -37,9 +31,11 @@ import {
 } from "./communication/process-messages";
 import { registerSite } from "@abstractions/process-site";
 import { sendFromMainToEmu } from "@messaging/message-sending";
+import { executeKliveCommand, registerCommonCommands } from "@shared/command/common-commands";
 
 // --- Sign that this process is the main process
 registerSite("main");
+registerCommonCommands();
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.
@@ -55,10 +51,10 @@ app.on("ready", async () => {
   if (appSettings) {
     const viewOptions = appSettings.viewOptions;
     if (viewOptions) {
-      dispatch(emuShowToolbarAction(viewOptions.showToolbar));
-      dispatch(emuShowStatusbarAction(viewOptions.showStatusbar));
-      dispatch(emuShowFrameInfoAction(viewOptions.showFrameInfo));
-      dispatch(emuShowKeyboardAction(viewOptions.showKeyboard));
+      executeKliveCommand(viewOptions.showToolbar ? "showToolbar" : "hideToolbar");
+      executeKliveCommand(viewOptions.showStatusbar ? "showStatusBar" : "hideStatusBar");
+      executeKliveCommand(viewOptions.showFrameInfo ? "showFrameInfo" : "hideFrameInfo");
+      executeKliveCommand(viewOptions.showKeyboard ? "showKeyboard" : "hideKeyboard");
     }
   }
 

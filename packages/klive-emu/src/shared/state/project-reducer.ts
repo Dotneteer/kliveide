@@ -19,6 +19,13 @@ export const projectLoadingAction: ActionCreator = () => ({
 export const closeProjectAction: ActionCreator = () => ({
   type: "PROJECT_CLOSED",
 });
+export const setProjectContextAction: ActionCreator = (
+  resource?: string,
+  hasFocus?: boolean
+) => ({
+  type: "PROJECT_SET_CONTEXT",
+  payload: { resource, hasFocus },
+});
 
 // ============================================================================
 // Reducer
@@ -48,6 +55,12 @@ export default function (
       return { ...state, isLoading: true };
     case "PROJECT_CLOSED":
       return { ...initialState };
+    case "PROJECT_SET_CONTEXT":
+      return {
+        ...state,
+        contextResourceId: payload.resource,
+        contextResourceActive: payload.hasFocus,
+      };
     default:
       return state;
   }

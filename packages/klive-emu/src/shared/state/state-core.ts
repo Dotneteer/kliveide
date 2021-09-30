@@ -68,6 +68,7 @@ export interface ActionTypes {
   PROJECT_LOADING: null;
   PROJECT_OPENED: null;
   PROJECT_CLOSED: null;
+  PROJECT_SET_CONTEXT: null;
 }
 
 import { Activity } from "@abstractions/activity";
@@ -120,6 +121,7 @@ export interface Payload {
   path?: string;
   projectName?: string;
   hasVm?: boolean;
+  resource?: string;
   isLoading?: boolean;
   directoryContents?: DirectoryContent;
   machine?: RegisteredMachine;
