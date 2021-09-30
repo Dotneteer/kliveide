@@ -14,14 +14,9 @@ export interface ActionTypes {
   REGISTER_MACHINE: null,
 
   EMU_SHOW_TOOLBAR: null;
-  EMU_HIDE_TOOLBAR: null;
   EMU_SHOW_STATUSBAR: null;
-  EMU_HIDE_STATUSBAR: null;
   EMU_SHOW_KEYBOARD: null;
-  EMU_HIDE_KEYBOARD: null;
-  EMU_TOGGLE_KEYBOARD: null;
   EMU_SHOW_FRAME_INFO: null;
-  EMU_HIDE_FRAME_INFO: null;
 
   EMU_SET_MACINE_TYPE: null;
 
@@ -30,7 +25,6 @@ export interface ActionTypes {
   EMU_SET_EXEC_STATE: null;
   EMU_SET_FRAME_ID: null;
   EMU_MUTE: null;
-  EMU_UNMUTE: null;
   EMU_SET_DEBUG: null;
   EMU_SET_MESSAGE: null;
   EMU_SET_SOUND_LEVEL: null;

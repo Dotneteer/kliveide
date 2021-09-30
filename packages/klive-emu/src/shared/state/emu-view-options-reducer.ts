@@ -4,32 +4,21 @@ import { ActionCreator, KliveAction } from "./state-core";
 // ============================================================================
 // Actions
 
-export const emuShowToolbarAction: ActionCreator = () => ({
+export const emuShowToolbarAction: ActionCreator = (flag: boolean) => ({
   type: "EMU_SHOW_TOOLBAR",
+  payload: { flag },
 });
-export const emuHideToolbarAction: ActionCreator = () => ({
-  type: "EMU_HIDE_TOOLBAR",
-});
-export const emuShowStatusbarAction: ActionCreator = () => ({
+export const emuShowStatusbarAction: ActionCreator = (flag: boolean) => ({
   type: "EMU_SHOW_STATUSBAR",
+  payload: { flag },
 });
-export const emuHideStatusbarAction: ActionCreator = () => ({
-  type: "EMU_HIDE_STATUSBAR",
-});
-export const emuShowKeyboardAction: ActionCreator = () => ({
+export const emuShowKeyboardAction: ActionCreator = (flag: boolean) => ({
   type: "EMU_SHOW_KEYBOARD",
+  payload: { flag },
 });
-export const emuHideKeyboardAction: ActionCreator = () => ({
-  type: "EMU_HIDE_KEYBOARD",
-});
-export const emuToggleKeyboardAction: ActionCreator = () => ({
-  type: "EMU_TOGGLE_KEYBOARD",
-});
-export const emuShowFrameInfoAction: ActionCreator = () => ({
+export const emuShowFrameInfoAction: ActionCreator = (flag: boolean) => ({
   type: "EMU_SHOW_FRAME_INFO",
-});
-export const emuHideFrameInfoAction: ActionCreator = () => ({
-  type: "EMU_HIDE_FRAME_INFO",
+  payload: { flag },
 });
 
 // ============================================================================
@@ -39,27 +28,17 @@ const initialState: EmuViewOptions = {};
 
 export default function (
   state = initialState,
-  { type }: KliveAction
+  { type, payload }: KliveAction
 ): EmuViewOptions {
   switch (type) {
     case "EMU_SHOW_TOOLBAR":
-      return { ...state, showToolbar: true };
-    case "EMU_HIDE_TOOLBAR":
-      return { ...state, showToolbar: false };
+      return { ...state, showToolbar: payload.flag };
     case "EMU_SHOW_STATUSBAR":
-      return { ...state, showStatusBar: true };
-    case "EMU_HIDE_STATUSBAR":
-      return { ...state, showStatusBar: false };
+      return { ...state, showStatusBar: payload.flag };
     case "EMU_SHOW_KEYBOARD":
-      return { ...state, showKeyboard: true };
-    case "EMU_HIDE_KEYBOARD":
-      return { ...state, showKeyboard: false };
-    case "EMU_TOGGLE_KEYBOARD":
-      return { ...state, showKeyboard: !state.showKeyboard };
+      return { ...state, showKeyboard: payload.flag };
     case "EMU_SHOW_FRAME_INFO":
-      return { ...state, showFrameInfo: true };
-    case "EMU_HIDE_FRAME_INFO":
-      return { ...state, showFrameInfo: false };
+      return { ...state, showFrameInfo: payload.flag };
     default:
       return state;
   }

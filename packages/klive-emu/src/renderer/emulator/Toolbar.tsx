@@ -1,15 +1,12 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { emuToggleKeyboardAction } from "@state/emu-view-options-reducer";
+import { emuShowKeyboardAction } from "@state/emu-view-options-reducer";
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
 import { vmEngineService } from "../machines/core/vm-engine-service";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
-import {
-  emuMuteSoundAction,
-  emuUnmuteSoundAction,
-} from "@state/emulator-panel-reducer";
+import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
@@ -157,7 +154,9 @@ export class Toolbar extends React.Component<Props, State> {
         iconName="keyboard"
         title="Toggle keyboard"
         selected={this.props.showKeyboard}
-        clicked={() => dispatch(emuToggleKeyboardAction())}
+        clicked={() =>
+          dispatch(emuShowKeyboardAction(!this.props.showKeyboard))
+        }
         highlightSize={32}
       />,
       <ToolbarSeparator key="sep-2" />,
@@ -169,14 +168,14 @@ export class Toolbar extends React.Component<Props, State> {
               key="unmute"
               iconName="unmute"
               title="Unmute sound"
-              clicked={() => dispatch(emuUnmuteSoundAction())}
+              clicked={() => dispatch(emuMuteSoundAction(false))}
             />
           ) : (
             <ToolbarIconButton
               key="mute"
               iconName="mute"
               title="Mute sound"
-              clicked={() => dispatch(emuMuteSoundAction())}
+              clicked={() => dispatch(emuMuteSoundAction(true))}
             />
           ),
           <ToolbarSeparator key="sep3" />,
@@ -191,9 +190,7 @@ export class Toolbar extends React.Component<Props, State> {
             title="Show ULA position"
             selected={this.props.showBeam}
             clicked={() =>
-              dispatch(
-                spectrumBeamPositionAction(!this.props.showBeam)
-              )
+              dispatch(spectrumBeamPositionAction(!this.props.showBeam))
             }
           />,
           <ToolbarSeparator key="sep-4" />,

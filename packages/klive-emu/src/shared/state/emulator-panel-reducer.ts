@@ -18,10 +18,9 @@ export const emuSetFrameIdAction: ActionCreator = (
   frameCount: number
 ) => ({ type: "EMU_SET_FRAME_ID", payload: { startCount, frameCount } });
 
-export const emuMuteSoundAction: ActionCreator = () => ({ type: "EMU_MUTE" });
-
-export const emuUnmuteSoundAction: ActionCreator = () => ({
-  type: "EMU_UNMUTE",
+export const emuMuteSoundAction: ActionCreator = (flag: boolean) => ({
+  type: "EMU_MUTE",
+  payload: { flag },
 });
 
 export const emuSetDebugModeAction: ActionCreator = (runsInDebug: boolean) => ({
@@ -116,9 +115,7 @@ export default function (
         frameCount: payload.frameCount,
       };
     case "EMU_MUTE":
-      return { ...state, muted: true };
-    case "EMU_UNMUTE":
-      return { ...state, muted: false };
+      return { ...state, muted: payload.flag };
     case "EMU_SET_DEBUG":
       return { ...state, runsInDebug: payload.runsInDebug };
     case "EMU_SET_MESSAGE":

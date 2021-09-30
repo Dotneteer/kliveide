@@ -16,15 +16,10 @@ import {
   emuMuteSoundAction,
   emuSetClockMultiplierAction,
   emuSetSoundLevelAction,
-  emuUnmuteSoundAction,
 } from "@state/emulator-panel-reducer";
 import { KliveAction } from "@state/state-core";
 import { AppState } from "@state/AppState";
 import {
-  emuHideFrameInfoAction,
-  emuHideKeyboardAction,
-  emuHideStatusbarAction,
-  emuHideToolbarAction,
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
   emuShowStatusbarAction,
@@ -54,8 +49,6 @@ import {
 } from "@state/tool-frame-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
-import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
-import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 import {
   createKliveProject,
   getLoadedProjectFile,
@@ -65,7 +58,7 @@ import {
 import { closeProjectAction } from "@state/project-reducer";
 import { NewProjectResponse } from "@messaging/message-types";
 import { AppWindow } from "./app-window";
-import { getMainToEmuMessenger, sendFromMainToEmu, sendFromMainToIde } from "@messaging/message-sending";
+import { sendFromMainToEmu, sendFromMainToIde } from "@messaging/message-sending";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -250,7 +243,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: false,
       click: (mi) => {
-        checkboxAction(mi, emuShowKeyboardAction(), emuHideKeyboardAction());
+        dispatch(emuShowKeyboardAction(mi.checked));
         emuWindow.saveKliveProject();
       },
     },
@@ -271,7 +264,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: viewOptions.showToolbar ?? true,
       click: (mi) => {
-        checkboxAction(mi, emuShowToolbarAction(), emuHideToolbarAction());
+        dispatch(emuShowToolbarAction(mi.checked));
         emuWindow.saveKliveProject();
       },
     },
@@ -281,7 +274,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: viewOptions.showStatusbar ?? true,
       click: (mi) => {
-        checkboxAction(mi, emuShowStatusbarAction(), emuHideStatusbarAction());
+        dispatch(emuShowStatusbarAction(mi.checked));
         emuWindow.saveKliveProject();
       },
     },
@@ -291,11 +284,7 @@ export function setupMenu(): void {
       type: "checkbox",
       checked: viewOptions.showFrameInfo ?? true,
       click: (mi) => {
-        if (mi.checked) {
-          dispatch(emuShowFrameInfoAction());
-        } else {
-          dispatch(emuHideFrameInfoAction());
-        }
+        dispatch(emuShowFrameInfoAction(mi.checked));
         emuWindow.saveKliveProject();
       },
     }
@@ -785,9 +774,9 @@ export function processStateChange(fullState: AppState): void {
  */
 export function setSoundLevel(level: number): void {
   if (level === 0) {
-    dispatch(emuMuteSoundAction());
+    dispatch(emuMuteSoundAction(true));
   } else {
-    dispatch(emuUnmuteSoundAction());
+    dispatch(emuMuteSoundAction(false));
     dispatch(emuSetSoundLevelAction(level));
   }
 }

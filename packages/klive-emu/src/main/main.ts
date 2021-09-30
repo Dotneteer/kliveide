@@ -24,10 +24,6 @@ import {
   appSettings,
 } from "./main-state/klive-configuration";
 import {
-  emuHideFrameInfoAction,
-  emuHideKeyboardAction,
-  emuHideStatusbarAction,
-  emuHideToolbarAction,
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
   emuShowStatusbarAction,
@@ -59,26 +55,10 @@ app.on("ready", async () => {
   if (appSettings) {
     const viewOptions = appSettings.viewOptions;
     if (viewOptions) {
-      dispatch(
-        viewOptions.showToolbar
-          ? emuShowToolbarAction()
-          : emuHideToolbarAction()
-      );
-      dispatch(
-        viewOptions.showStatusbar
-          ? emuShowStatusbarAction()
-          : emuHideStatusbarAction()
-      );
-      dispatch(
-        viewOptions.showFrameInfo
-          ? emuShowFrameInfoAction()
-          : emuHideFrameInfoAction()
-      );
-      dispatch(
-        viewOptions.showKeyboard
-          ? emuShowKeyboardAction()
-          : emuHideKeyboardAction()
-      );
+      dispatch(emuShowToolbarAction(viewOptions.showToolbar));
+      dispatch(emuShowStatusbarAction(viewOptions.showStatusbar));
+      dispatch(emuShowFrameInfoAction(viewOptions.showFrameInfo));
+      dispatch(emuShowKeyboardAction(viewOptions.showKeyboard));
     }
   }
 

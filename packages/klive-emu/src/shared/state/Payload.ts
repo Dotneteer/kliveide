@@ -52,4 +52,5 @@ export interface Payload {
   directoryContents?: DirectoryContent;
   machine?: RegisteredMachine;
   modalDisplayed?: boolean,
+  flag?: boolean;
 }
