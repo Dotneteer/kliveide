@@ -13,7 +13,6 @@ import {
 } from "@messaging/channels";
 import { ForwardActionRequest } from "@messaging/message-types";
 import {
-  emuMessenger,
   emuWindow,
   ideWindow,
   setupMenu,
@@ -41,6 +40,7 @@ import {
   processIdeRequest,
 } from "./communication/process-messages";
 import { registerSite } from "@abstractions/process-site";
+import { sendFromMainToEmu } from "@messaging/message-sending";
 
 // --- Sign that this process is the main process
 registerSite("main");
@@ -83,7 +83,7 @@ app.on("ready", async () => {
   }
 
   // --- Make sure that application configuration is sent to renderers
-  emuMessenger.sendMessage({
+  sendFromMainToEmu({
     type: "ForwardAppConfig",
     config: appConfiguration,
   });

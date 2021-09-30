@@ -65,6 +65,7 @@ import {
 import { closeProjectAction } from "@state/project-reducer";
 import { NewProjectResponse } from "@messaging/message-types";
 import { AppWindow } from "./app-window";
+import { getMainToEmuMessenger, sendFromMainToEmu, sendFromMainToIde } from "@messaging/message-sending";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -73,17 +74,7 @@ export let ideWindow: IdeWindow;
 /**
  * Messenger instance to the emulator window
  */
-export let emuMessenger: MainToEmulatorMessenger;
-
-/**
- * Messenger instance to the emulator window
- */
 export let emuForwarder: MainToEmuForwarder;
-
-/**
- * Messenger instance to the IDE window
- */
-export let ideMessenger: MainToIdeMessenger;
 
 /**
  * Last known machine type
@@ -120,27 +111,11 @@ export async function setupWindows(): Promise<void> {
 }
 
 /**
- * Sets the messenger to the emulator window
- * @param messenger
- */
-export function setEmuMessenger(messenger: MainToEmulatorMessenger): void {
-  emuMessenger = messenger;
-}
-
-/**
  * Sets the forwarder to the emulator window
  * @param forwarder
  */
 export function setEmuForwarder(forwarder: MainToEmuForwarder): void {
   emuForwarder = forwarder;
-}
-
-/**
- * Sets the messenger to the IDE window
- * @param messenger
- */
-export function setIdeMessenger(messenger: MainToIdeMessenger): void {
-  ideMessenger = messenger;
 }
 
 // --- Menu IDs
@@ -202,7 +177,7 @@ export function setupMenu(): void {
         click: async () => {
           await openIdeWindow();
           const project = (
-            (await ideMessenger.sendMessage({
+            (await sendFromMainToIde({
               type: "NewProjectRequest",
             })) as NewProjectResponse
           ).project;
@@ -342,7 +317,7 @@ export function setupMenu(): void {
         accelerator: "F5",
         enabled: true,
         click: async () => {
-          await emuMessenger.sendMessage({ type: "StartVm" });
+          await sendFromMainToEmu({ type: "StartVm" });
         },
       },
       {
@@ -350,14 +325,14 @@ export function setupMenu(): void {
         label: "Pause",
         accelerator: "Shift+F5",
         enabled: false,
-        click: async () => await emuMessenger.sendMessage({ type: "PauseVm" }),
+        click: async () => await sendFromMainToEmu({ type: "PauseVm" }),
       },
       {
         id: STOP_VM,
         label: "Stop",
         accelerator: "F4",
         enabled: false,
-        click: async () => await emuMessenger.sendMessage({ type: "StopVm" }),
+        click: async () => await sendFromMainToEmu({ type: "StopVm" }),
       },
       {
         id: RESTART_VM,
@@ -365,7 +340,7 @@ export function setupMenu(): void {
         accelerator: "Shift+F4",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "RestartVm" }),
+          await sendFromMainToEmu({ type: "RestartVm" }),
       },
       { type: "separator" },
       {
@@ -373,7 +348,7 @@ export function setupMenu(): void {
         label: "Start with debugging",
         accelerator: "Ctrl+F5",
         enabled: true,
-        click: async () => await emuMessenger.sendMessage({ type: "DebugVm" }),
+        click: async () => await sendFromMainToEmu({ type: "DebugVm" }),
       },
       {
         id: STEP_INTO_VM,
@@ -381,7 +356,7 @@ export function setupMenu(): void {
         accelerator: "F3",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "StepIntoVm" }),
+          await sendFromMainToEmu({ type: "StepIntoVm" }),
       },
       {
         id: STEP_OVER_VM,
@@ -389,7 +364,7 @@ export function setupMenu(): void {
         accelerator: "Shift+F3",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "StepOverVm" }),
+          await sendFromMainToEmu({ type: "StepOverVm" }),
       },
       {
         id: STEP_OUT_VM,
@@ -397,7 +372,7 @@ export function setupMenu(): void {
         accelerator: "Ctrl+F3",
         enabled: false,
         click: async () =>
-          await emuMessenger.sendMessage({ type: "StepOutVm" }),
+          await sendFromMainToEmu({ type: "StepOutVm" }),
       },
     ],
   };
@@ -508,7 +483,7 @@ export function setupMenu(): void {
         click: async (mi) => {
           checkboxAction(mi, ideShowAction(), ideHideAction());
           if (mi.checked) {
-            ideMessenger.sendMessage({
+            sendFromMainToIde({
               type: "SyncMainState",
               mainState: { ...getState() },
             });
@@ -881,7 +856,7 @@ function menuIdFromMachineId(machineId: string): string {
 async function openIdeWindow(): Promise<void> {
   dispatch(ideShowAction());
   await new Promise(r => setTimeout(r, 200));
-  await ideMessenger.sendMessage({
+  await sendFromMainToIde({
     type: "SyncMainState",
     mainState: { ...getState() },
   });

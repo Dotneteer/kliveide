@@ -13,7 +13,6 @@ import {
 } from "../../main/utils/electron-utils";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import {
-  emuMessenger,
   emuWindow,
   setSoundLevel,
   setSoundLevelMenu,
@@ -39,6 +38,7 @@ import { ExecuteMachineCommandResponse } from "@messaging/message-types";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
 import { dispatch, getState } from "../../main/main-state/main-store";
+import { sendFromMainToEmu } from "@messaging/message-sending";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";
@@ -880,7 +880,7 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     command: string,
     args?: unknown
   ): Promise<unknown> {
-    const response = (await emuMessenger.sendMessage({
+    const response = (await sendFromMainToEmu({
       type: "ExecuteMachineCommand",
       command,
       args,
