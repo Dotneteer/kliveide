@@ -39,10 +39,7 @@ import {
   appConfiguration,
   appSettings,
 } from "../main-state/klive-configuration";
-import {
-  ideHideAction,
-  ideShowAction,
-} from "@state/show-ide-reducer";
+import { ideShowAction } from "@state/show-ide-reducer";
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
@@ -58,7 +55,10 @@ import {
 import { closeProjectAction } from "@state/project-reducer";
 import { NewProjectResponse } from "@messaging/message-types";
 import { AppWindow } from "./app-window";
-import { sendFromMainToEmu, sendFromMainToIde } from "@messaging/message-sending";
+import {
+  sendFromMainToEmu,
+  sendFromMainToIde,
+} from "@messaging/message-sending";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;
@@ -328,8 +328,7 @@ export function setupMenu(): void {
         label: "Restart",
         accelerator: "Shift+F4",
         enabled: false,
-        click: async () =>
-          await sendFromMainToEmu({ type: "RestartVm" }),
+        click: async () => await sendFromMainToEmu({ type: "RestartVm" }),
       },
       { type: "separator" },
       {
@@ -344,24 +343,21 @@ export function setupMenu(): void {
         label: "Step into",
         accelerator: "F3",
         enabled: false,
-        click: async () =>
-          await sendFromMainToEmu({ type: "StepIntoVm" }),
+        click: async () => await sendFromMainToEmu({ type: "StepIntoVm" }),
       },
       {
         id: STEP_OVER_VM,
         label: "Step over",
         accelerator: "Shift+F3",
         enabled: false,
-        click: async () =>
-          await sendFromMainToEmu({ type: "StepOverVm" }),
+        click: async () => await sendFromMainToEmu({ type: "StepOverVm" }),
       },
       {
         id: STEP_OUT_VM,
         label: "Step out",
         accelerator: "Ctrl+F3",
         enabled: false,
-        click: async () =>
-          await sendFromMainToEmu({ type: "StepOutVm" }),
+        click: async () => await sendFromMainToEmu({ type: "StepOutVm" }),
       },
     ],
   };
@@ -470,7 +466,7 @@ export function setupMenu(): void {
         checked: false,
         enabled: true,
         click: async (mi) => {
-          checkboxAction(mi, ideShowAction(), ideHideAction());
+          dispatch(ideShowAction(mi.checked));
           if (mi.checked) {
             sendFromMainToIde({
               type: "SyncMainState",
@@ -818,20 +814,6 @@ export function setSoundLevelMenu(muted: boolean, level: number): void {
 // Helper types and methods
 
 /**
- * Executes a checkbox action
- * @param menuItem Menu item
- * @param showAction Action on show
- * @param hideAction Action on hide
- */
-function checkboxAction(
-  menuItem: MenuItem,
-  showAction: KliveAction,
-  hideAction: KliveAction
-): void {
-  dispatch(menuItem.checked ? showAction : hideAction);
-}
-
-/**
  * Creates a menu ID from a machine ID
  * @param machineId Machine ID
  */
@@ -843,8 +825,8 @@ function menuIdFromMachineId(machineId: string): string {
  * Opens the IDE window
  */
 async function openIdeWindow(): Promise<void> {
-  dispatch(ideShowAction());
-  await new Promise(r => setTimeout(r, 200));
+  dispatch(ideShowAction(true));
+  await new Promise((r) => setTimeout(r, 200));
   await sendFromMainToIde({
     type: "SyncMainState",
     mainState: { ...getState() },

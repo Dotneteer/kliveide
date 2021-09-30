@@ -163,21 +163,12 @@ export class Toolbar extends React.Component<Props, State> {
     ];
     const soundButtons = this.props.extraFeatures.includes("Sound")
       ? [
-          this.props.muted ? (
-            <ToolbarIconButton
-              key="unmute"
-              iconName="unmute"
-              title="Unmute sound"
-              clicked={() => dispatch(emuMuteSoundAction(false))}
-            />
-          ) : (
-            <ToolbarIconButton
-              key="mute"
-              iconName="mute"
-              title="Mute sound"
-              clicked={() => dispatch(emuMuteSoundAction(true))}
-            />
-          ),
+          <ToolbarIconButton
+            key="mute"
+            iconName={this.props.muted ? "unmute" : "mute"}
+            title={this.props.muted ? "Unmute sound" : "Mute sound"}
+            clicked={() => dispatch(emuMuteSoundAction(!this.props.muted))}
+          />,
           <ToolbarSeparator key="sep3" />,
         ]
       : null;

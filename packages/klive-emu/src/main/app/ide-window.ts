@@ -1,9 +1,9 @@
 import { AppWindow } from "./app-window";
-import { ideHideAction } from "@state/show-ide-reducer";
 import { ideFocusAction } from "@state/ide-focus-reducer";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 import { dispatch } from "../main-state/main-store";
 import { registerMainToIdeMessenger } from "@messaging/message-sending";
+import { ideShowAction } from "@state/show-ide-reducer";
 
 /**
  * Represents the singleton IDE window
@@ -20,7 +20,7 @@ export class IdeWindow extends AppWindow {
       if (this.allowClose) {
         return;
       }
-      dispatch(ideHideAction());
+      dispatch(ideShowAction(false));
       e.preventDefault();
     });
     this.allowClose = false;
