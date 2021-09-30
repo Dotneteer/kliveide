@@ -12,7 +12,7 @@ import {
   IDE_TO_EMU_EMU_RESPONSE_CHANNEL,
 } from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -24,6 +24,7 @@ const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
 async function processIdeMessages(
   message: RequestMessage
 ): Promise<ResponseMessage> {
+  const vmEngineService = getVmEngineService();
   switch (message.type) {
     case "GetCpuState":
       return <GetCpuStateResponse>{

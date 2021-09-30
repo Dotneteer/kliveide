@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
 import { AppState } from "@state/AppState";
 import { VirtualMachineCoreBase } from "../machines/core/VirtualMachineCoreBase";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import { useEffect, useRef, useState } from "react";
@@ -61,6 +61,7 @@ export default function EmulatorPanel() {
     window.addEventListener("keyup", handleKeyUp);
 
     // --- Respond to exngine changes
+    const vmEngineService = getVmEngineService();
     vmEngineService.vmEngineChanged.on(vmChange);
 
     // --- Set up the virtual machine's view according to its
@@ -151,6 +152,7 @@ export default function EmulatorPanel() {
   );
 
   function vmChange(): void {
+    const vmEngineService = getVmEngineService();
     if (engine) {
       vmEngineService.screenRefreshed.off(displayScreenData);
     }
@@ -173,6 +175,7 @@ export default function EmulatorPanel() {
 
   // --- Calculate the dimensions so that the virtual machine display fits the screen
   function calculateDimensions(): void {
+    const vmEngineService = getVmEngineService();
     if (
       !hostElement?.current ||
       !screenElement?.current ||

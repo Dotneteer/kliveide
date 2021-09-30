@@ -1,6 +1,7 @@
 import * as React from "react";
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
+
 import Key from "./Sp48Key";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
 import styles from "styled-components";
@@ -441,6 +442,7 @@ export default function Sp48Keyboard(props: Props) {
     );
 
   function handleClick(e: Sp48ButtonClickArgs): void {
+    const vmEngineService = getVmEngineService();
     if (!vmEngineService.hasEngine) {
       // --- No engine
       return;

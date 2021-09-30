@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";
 import EmulatorPanel from "./EmulatorPanel";
 import KeyboardPanel from "./KeyboardPanel";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
 import styles from "styled-components";
 import { dispatch } from "@abstractions/service-helpers";
@@ -19,6 +19,7 @@ import { dispatch } from "@abstractions/service-helpers";
  */
 export default function MainPanel() {
   // --- App state bindings
+  const vmEngineService = getVmEngineService();
   const type = useSelector((s: AppState) =>
     vmEngineService.hasEngine ? vmEngineService.getEngine().keyboardType : null
   );

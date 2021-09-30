@@ -14,7 +14,7 @@ import {
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import { KeyMapping } from "../core/keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
-import { vmEngineService } from "../core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import {
   CZ88_BATTERY_LOW,
   CZ88_CARDS,
@@ -378,6 +378,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
     toWait: number
   ): Promise<void> {
     const state = resultState as CambridgeZ88MachineState;
+    const vmEngineService = getVmEngineService();
     vmEngineService.setUiMessage(
       state.lcdWentOff
         ? "Z88 turned the LCD off (no activity). Press F6 to use Z88 again."
@@ -422,6 +423,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
     command: string,
     args?: unknown
   ): Promise<unknown> {
+    const vmEngineService = getVmEngineService();
     switch (command) {
       case CZ88_SOFT_RESET:
         vmEngineService.resetCpu();

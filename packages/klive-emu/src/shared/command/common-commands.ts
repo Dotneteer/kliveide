@@ -9,6 +9,7 @@ import {
   emuShowStatusbarAction as emuShowStatusBarAction,
   emuShowToolbarAction,
 } from "@state/emu-view-options-reducer";
+import { ideShowAction } from "@state/show-ide-reducer";
 import { IKliveCommand } from "../../extensibility/abstractions/command-def";
 
 /**
@@ -22,7 +23,10 @@ type CoreKliveCommand =
   | "showFrameInfo"
   | "hideFrameInfo"
   | "showKeyboard"
-  | "hideKeyboard";
+  | "hideKeyboard"
+  | "showIde"
+  | "hideIde"
+  | "startVm"
 
 /**
  * Registers common Klive commands that can be executed from any processes
@@ -36,6 +40,10 @@ export function registerCommonCommands(): void {
   registerCommand(hideFrameInfoCommand);
   registerCommand(showKeyboardCommand);
   registerCommand(hideKeyboardCommand);
+  registerCommand(showIdeCommand);
+  registerCommand(hideIdeCommand);
+
+  registerCommand(startVmCommand);
 }
 
 /**
@@ -123,5 +131,38 @@ const hideKeyboardCommand: IKliveCommand = {
   id: "klive.hideKeyboard",
   execute: async () => {
     dispatch(emuShowKeyboardAction(false));
+  },
+};
+
+/**
+ * This command shows the Ide window
+ */
+const showIdeCommand: IKliveCommand = {
+  id: "klive.showIde",
+  execute: async () => {
+    dispatch(ideShowAction(true));
+  },
+};
+
+/**
+ * This command hides the Ide window
+ */
+const hideIdeCommand: IKliveCommand = {
+  id: "klive.hideIde",
+  execute: async () => {
+    dispatch(ideShowAction(false));
+  },
+};
+
+/**
+ * This command hides the Ide window
+ */
+const startVmCommand: IKliveCommand = {
+  id: "klive.startVm",
+  execute: async (context) => {
+    switch (context.process) {
+      case "emu":
+        break;
+    }
   },
 };

@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
 import {
@@ -51,20 +51,20 @@ export class Toolbar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      hasEngine: vmEngineService?.hasEngine,
+      hasEngine: getVmEngineService()?.hasEngine,
     };
   }
 
   componentDidMount(): void {
-    vmEngineService.vmEngineChanged.on(this.vmChange);
+    getVmEngineService().vmEngineChanged.on(this.vmChange);
   }
 
   componentWillUnmount(): void {
-    vmEngineService.vmEngineChanged.off(this.vmChange);
+    getVmEngineService().vmEngineChanged.off(this.vmChange);
   }
 
   render() {
-    const engine = vmEngineService;
+    const engine = getVmEngineService();
     const executionState = this.props.executionState ?? 0;
     const machineControlButtons = [
       <ToolbarIconButton

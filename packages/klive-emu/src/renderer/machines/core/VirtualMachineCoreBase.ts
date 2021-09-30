@@ -1,5 +1,5 @@
 import { ProgramCounterInfo } from "@state/AppState";
-import { IVmController } from "./IVmController";
+import { IVmEngineService } from "../../../abstractions/vm-controller-service";
 import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import { EXEC_ENGINE_STATE_BUFFER, EXEC_OPTIONS_BUFFER } from "../wa-interop/memory-map";
@@ -22,7 +22,7 @@ import { ICustomDisassembler } from "@shared/z80/disassembler/custom-disassembly
  */
 export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   private _coreState: MachineCoreState;
-  protected controller: IVmController;
+  protected controller: IVmEngineService;
 
   /**
    * The WA machine API to use the machine core
@@ -51,7 +51,7 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
    * Attaches this machine core to a controller
    * @param controller Controller instance
    */
-  attachToController(controller: IVmController): void {
+  attachToController(controller: IVmEngineService): void {
     this.controller = controller;
   }
 

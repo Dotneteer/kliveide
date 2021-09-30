@@ -10,6 +10,7 @@ import {
   registerService,
   STORE_SERVICE,
   THEME_SERVICE,
+  VM_ENGINE_SERVICE,
 } from "@abstractions/service-registry";
 import { dispatch, getState, getStore } from "@abstractions/service-helpers";
 import { KliveStore } from "@state/KliveStore";
@@ -25,6 +26,7 @@ import { ThemeService } from "../common-ui/themes/theme-service";
 import { ModalDialogService } from "../common-ui/modal-service";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@shared/command/common-commands";
+import { VmEngineService } from "../machines/core/vm-engine-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -74,6 +76,7 @@ registerService(
 // --- Register additional services
 registerService(THEME_SERVICE, new ThemeService());
 registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
+registerService(VM_ENGINE_SERVICE, new VmEngineService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

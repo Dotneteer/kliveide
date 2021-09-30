@@ -32,7 +32,6 @@ import {
   appConfiguration,
   appSettings,
 } from "../main-state/klive-configuration";
-import { ideShowAction } from "@state/show-ide-reducer";
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
@@ -460,7 +459,7 @@ export function setupMenu(): void {
         checked: false,
         enabled: true,
         click: async (mi) => {
-          dispatch(ideShowAction(mi.checked));
+          executeKliveCommand(mi.checked ? "showIde" : "hideIde");
           if (mi.checked) {
             sendFromMainToIde({
               type: "SyncMainState",
@@ -819,7 +818,7 @@ function menuIdFromMachineId(machineId: string): string {
  * Opens the IDE window
  */
 async function openIdeWindow(): Promise<void> {
-  dispatch(ideShowAction(true));
+  executeKliveCommand("showIde");
   await new Promise((r) => setTimeout(r, 200));
   await sendFromMainToIde({
     type: "SyncMainState",

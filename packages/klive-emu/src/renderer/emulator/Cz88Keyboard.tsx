@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 import Key from "./Cz88Key";
 import { defaultZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-default";
@@ -232,6 +232,7 @@ export default function Cz88Keyboard(props: Props) {
   );
 
   function click(e: Z88ButtonClickArgs): void {
+    const vmEngineService = getVmEngineService();
     if (!vmEngineService.hasEngine) {
       // --- No engine
       return;

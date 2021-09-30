@@ -35,7 +35,9 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   TOOL_AREA_SERVICE,
+  VM_ENGINE_SERVICE,
 } from "@abstractions/service-registry";
+import { IVmEngineService as IVmEngineService } from "./vm-controller-service";
 
 /**
  * Gets the service instance that provides the application state store
@@ -143,4 +145,12 @@ export function getToolAreaService(): IToolAreaService {
  */
 export function getCommandService(): IInteractiveCommandService {
   return getService(COMMAND_SERVICE) as IInteractiveCommandService;
+}
+
+
+/**
+ * Gets the virtual machine service instance
+ */
+ export function getVmEngineService(): IVmEngineService {
+  return getService(VM_ENGINE_SERVICE) as IVmEngineService;
 }

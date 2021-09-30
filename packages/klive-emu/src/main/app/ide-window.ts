@@ -3,7 +3,7 @@ import { ideFocusAction } from "@state/ide-focus-reducer";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 import { dispatch } from "../main-state/main-store";
 import { registerMainToIdeMessenger } from "@messaging/message-sending";
-import { ideShowAction } from "@state/show-ide-reducer";
+import { executeKliveCommand } from "@shared/command/common-commands";
 
 /**
  * Represents the singleton IDE window
@@ -20,7 +20,7 @@ export class IdeWindow extends AppWindow {
       if (this.allowClose) {
         return;
       }
-      dispatch(ideShowAction(false));
+      executeKliveCommand("hideIde");
       e.preventDefault();
     });
     this.allowClose = false;
