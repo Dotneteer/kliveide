@@ -199,6 +199,9 @@ const startVmCommand: IKliveCommand = {
         break;
     }
   },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState !== "running";
+  },
 };
 
 /**
@@ -221,6 +224,9 @@ const pauseVmCommand: IKliveCommand = {
         break;
     }
   },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "running";
+  },
 };
 
 /**
@@ -242,6 +248,11 @@ const stopVmCommand: IKliveCommand = {
         await sendFromIdeToEmu({ type: "StopVm" });
         break;
     }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled =
+      context.executionState === "running" ||
+      context.executionState === "paused";
   },
 };
 
@@ -290,6 +301,9 @@ const stepIntoVmCommand: IKliveCommand = {
         break;
     }
   },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "paused";
+  },
 };
 
 /**
@@ -312,6 +326,9 @@ const stepOverVmCommand: IKliveCommand = {
         break;
     }
   },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "paused";
+  },
 };
 
 /**
@@ -333,5 +350,8 @@ const stepOutVmCommand: IKliveCommand = {
         await sendFromIdeToEmu({ type: "StepOutVm" });
         break;
     }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "paused";
   },
 };

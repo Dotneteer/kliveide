@@ -134,9 +134,11 @@ function createCommandContext(command: IKliveCommand): KliveCommandContext {
     case 2:
     case 3:
       executionState = "paused";
+      break;
     case 4:
     case 5:
       executionState = "stopped";
+      break;
     default:
       executionState = "none";
       break;
