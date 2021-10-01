@@ -205,14 +205,45 @@ export default function IdeApp() {
         },
         {
           id: "debug-view",
-          title: "Run and debug",
+          title: "Debug",
           iconName: "debug-alt",
           commands: [
             {
-              id: "startVm",
-              text: "Start the virtual machine",
-              iconName: "play",
-              execute: "klive.startVm",
+              id: "debugVm",
+              text: "Start the virtual machine in debug mode",
+              iconName: "debug",
+              execute: "klive.debugVm",
+            },
+            {
+              id: "pauseVm",
+              text: "Pause the virtual machine",
+              iconName: "pause",
+              execute: "klive.pauseVm",
+            },
+            {
+              id: "stopVm",
+              text: "Stop the virtual machine",
+              iconName: "stop",
+              execute: "klive.stopVm",
+            },
+            {
+              id: "stepInto",
+              text: "Step into",
+              iconName: "step-into",
+              execute: "klive.stepIntoVm",
+            },
+            {
+              id: "stepOver",
+              text: "Step over",
+              iconName: "step-over",
+              execute: "klive.stepOverVm",
+            },
+            {
+              id: "stepOut",
+              text: "Step out",
+              iconName: "step-out",
+              execute: "klive.stepOutVm",
+              enabled: false
             },
           ],
         },

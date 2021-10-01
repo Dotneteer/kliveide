@@ -7,6 +7,7 @@ import { isCommandGroup, MenuItem } from "@shared/command/commands";
 import { getContextMenuService } from "@abstractions/service-helpers";
 import { Activity } from "@abstractions/activity";
 import { COMMAND_SERVICE } from "@abstractions/service-registry";
+import { emuSetDebugModeAction } from "@state/emulator-panel-reducer";
 
 type Props = {
   activity: Activity;
@@ -81,6 +82,7 @@ function CommandBar({ commands }: CommandBarProps) {
             doNotPropagate={true}
             iconName="ellipsis"
             title={cmd.text}
+            enabled={cmd.enabled}
             clicked={async (e: React.MouseEvent) => {
               const rect = (e.target as HTMLElement).getBoundingClientRect();
               await getContextMenuService().openMenu(
@@ -98,6 +100,7 @@ function CommandBar({ commands }: CommandBarProps) {
             key={index}
             doNotPropagate={true}
             iconName={cmd.iconName ?? "question"}
+            enabled={cmd.enabled}
             title={cmd.text}
             clicked={cmd.execute}
           />

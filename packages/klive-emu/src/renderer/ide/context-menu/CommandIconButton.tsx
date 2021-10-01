@@ -8,7 +8,7 @@ interface Props {
   size?: number;
   title?: string;
   fill?: string;
-  enable?: boolean;
+  enabled?: boolean;
   clicked?: ((ev: React.MouseEvent) => void) | string;
   doNotPropagate?: boolean;
 }
@@ -21,7 +21,7 @@ export default function CommandIconButton({
   size = 16,
   title,
   fill,
-  enable,
+  enabled = true,
   clicked,
   doNotPropagate = false,
 }: Props) {
@@ -39,7 +39,7 @@ export default function CommandIconButton({
   };
 
   const handleClick = async (ev: React.MouseEvent) => {
-    if (clicked) {
+    if (clicked && enabled) {
       if (typeof clicked === "string") {
         await executeCommand(clicked);
       } else {
@@ -63,7 +63,7 @@ export default function CommandIconButton({
     >
       <Icon
         iconName={iconName}
-        fill={enable ?? true ? fill : "--toolbar-button-disabled-fill"}
+        fill={enabled ?? true ? fill : "--toolbar-button-disabled-fill"}
         width={size}
         height={size}
       />
