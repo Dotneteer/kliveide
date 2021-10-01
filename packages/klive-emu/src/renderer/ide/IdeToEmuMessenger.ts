@@ -19,7 +19,7 @@ const ipcRenderer = globalThis.window
  * Implements a messenger that forwards IDE messages to the main
  * process
  */
-class IdeToEmuMessenger extends MessengerBase {
+export class IdeToEmuMessenger extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
@@ -54,8 +54,3 @@ class IdeToEmuMessenger extends MessengerBase {
     return IDE_TO_EMU_MAIN_RESPONSE_CHANNEL;
   }
 }
-
-/**
- * The singleton messenger instance
- */
-export const ideToEmuMessenger = new IdeToEmuMessenger();

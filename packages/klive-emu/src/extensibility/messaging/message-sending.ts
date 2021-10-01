@@ -127,7 +127,7 @@ export function hasIdeToEmuMessenger(): boolean {
  * Gets the messenger object to send messages from the Ide process to Emu
  */
 export function getIdeToEmuMessenger(): MessengerBase {
-  if (!ideToMain) {
+  if (!ideToEmu) {
     throw new Error("No messenger object from Ide to Emu has been registered");
   }
   return ideToEmu;
@@ -149,9 +149,19 @@ export async function sendFromMainToEmu<TResp extends ResponseMessage>(
  * @param message Message to send
  * @returns Response
  */
- export async function sendFromMainToIde<TResp extends ResponseMessage>(
-    message: RequestMessage
-  ): Promise<TResp> {
-    return await getMainToIdeMessenger().sendMessage(message);
-  }
-  
+export async function sendFromMainToIde<TResp extends ResponseMessage>(
+  message: RequestMessage
+): Promise<TResp> {
+  return await getMainToIdeMessenger().sendMessage(message);
+}
+
+/**
+ * Sends the specified message from the Ide process to Emu
+ * @param message Message to send
+ * @returns Response
+ */
+export async function sendFromIdeToEmu<TResp extends ResponseMessage>(
+  message: RequestMessage
+): Promise<TResp> {
+  return await getIdeToEmuMessenger().sendMessage(message);
+}

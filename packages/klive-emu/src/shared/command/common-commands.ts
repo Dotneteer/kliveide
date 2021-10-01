@@ -2,7 +2,11 @@ import {
   executeCommand,
   registerCommand,
 } from "@abstractions/command-registry";
-import { dispatch } from "@abstractions/service-helpers";
+import { dispatch, getVmEngineService } from "@abstractions/service-helpers";
+import {
+  sendFromIdeToEmu,
+  sendFromMainToEmu,
+} from "@messaging/message-sending";
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
@@ -26,7 +30,7 @@ type CoreKliveCommand =
   | "hideKeyboard"
   | "showIde"
   | "hideIde"
-  | "startVm"
+  | "startVm";
 
 /**
  * Registers common Klive commands that can be executed from any processes
@@ -161,7 +165,15 @@ const startVmCommand: IKliveCommand = {
   id: "klive.startVm",
   execute: async (context) => {
     switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "StartVm" });
+        break;
       case "emu":
+        await getVmEngineService().start();
+        break;
+      case "ide":
+        console.log("Starting");
+        await sendFromIdeToEmu({ type: "StartVm" });
         break;
     }
   },

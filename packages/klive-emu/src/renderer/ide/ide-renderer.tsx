@@ -52,6 +52,8 @@ import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@shared/command/common-commands";
+import { registerIdeToEmuMessenger } from "@messaging/message-sending";
+import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -118,6 +120,9 @@ registerService(INTERACTIVE_PANE_SERVICE, new InteractivePaneService());
 registerService(OUTPUT_PANE_SERVICE, new OutputPaneService());
 registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
+
+// --- Register meesenger objects
+registerIdeToEmuMessenger(new IdeToEmuMessenger());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

@@ -12,9 +12,9 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileExistsResponse } from "@messaging/message-types";
 import { getStore } from "@abstractions/service-helpers";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 export const NEW_FILE_DIALOG_ID = "NewFileDialog";
 
@@ -71,7 +71,7 @@ const NewFileDialog: React.FC<Props> = ({ newFolderData: newFileData }: Props) =
       newFileData.error = true;
     } else {
       const response =
-        await ideToEmuMessenger.sendMessage<FileExistsResponse>({
+        await sendFromIdeToEmu<FileExistsResponse>({
           type: "FileExists",
           name: `${newFileData.root}/${newFileData.name}`,
         });

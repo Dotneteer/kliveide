@@ -1,10 +1,15 @@
 import { Token, TokenType } from "@shared/command-parser/token-stream";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import {
   CreateKliveProjectResponse,
   GetRegisteredMachinesResponse,
 } from "@messaging/message-types";
-import { InteractiveCommandBase, InteractiveCommandResult, TraceMessage, TraceMessageType } from "@abstractions/interactive-command";
+import {
+  InteractiveCommandBase,
+  InteractiveCommandResult,
+  TraceMessage,
+  TraceMessageType,
+} from "@abstractions/interactive-command";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 /**
  * Creates a new Klive project
@@ -35,12 +40,12 @@ export class NewProjectCommand extends InteractiveCommandBase {
 
     // --- Check virtual machine type
     const machines = (
-      await ideToEmuMessenger.sendMessage<GetRegisteredMachinesResponse>({
+      await sendFromIdeToEmu<GetRegisteredMachinesResponse>({
         type: "GetRegisteredMachines",
       })
     ).machines;
     this._machineTypeArg = args[0].text;
-    if (!machines.map(m => m.id).includes(this._machineTypeArg)) {
+    if (!machines.map((m) => m.id).includes(this._machineTypeArg)) {
       return {
         type: TraceMessageType.Error,
         message: `Cannot find machine with ID '${this._machineTypeArg}'. Available machine types are: ${machines}`,
@@ -85,7 +90,7 @@ export class NewProjectCommand extends InteractiveCommandBase {
    */
   async doExecute(): Promise<InteractiveCommandResult> {
     const operation =
-      await ideToEmuMessenger.sendMessage<CreateKliveProjectResponse>({
+      await sendFromIdeToEmu<CreateKliveProjectResponse>({
         type: "CreateKliveProject",
         machineType: this._machineTypeArg,
         rootFolder: this._rootFolderArg,

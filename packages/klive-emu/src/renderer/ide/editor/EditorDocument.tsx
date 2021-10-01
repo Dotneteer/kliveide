@@ -9,9 +9,9 @@ import {
   getThemeService,
 } from "@abstractions/service-helpers";
 import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileOperationResponse } from "@messaging/message-types";
 import { IDocumentPanel } from "@abstractions/document-service";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -234,7 +234,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   }
 
   async saveDocument(documentText: string): Promise<void> {
-    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+    const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "SaveFileContents",
       name: this.props.descriptor.id,
       contents: documentText,

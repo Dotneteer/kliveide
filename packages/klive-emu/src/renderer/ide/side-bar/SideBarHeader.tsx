@@ -6,6 +6,7 @@ import CommandIconButton from "../context-menu/CommandIconButton";
 import { isCommandGroup, MenuItem } from "@shared/command/commands";
 import { getContextMenuService } from "@abstractions/service-helpers";
 import { Activity } from "@abstractions/activity";
+import { COMMAND_SERVICE } from "@abstractions/service-registry";
 
 type Props = {
   activity: Activity;
@@ -98,6 +99,7 @@ function CommandBar({ commands }: CommandBarProps) {
             doNotPropagate={true}
             iconName={cmd.iconName ?? "question"}
             title={cmd.text}
+            clicked={cmd.execute}
           />
         );
       }

@@ -6,7 +6,6 @@ import { useState } from "react";
 import { CSSProperties } from "styled-components";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { GetFolderDialogResponse } from "@messaging/message-types";
 import { NewProjectData } from "@messaging/dto";
 import { Store } from "redux";
@@ -18,6 +17,7 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { getState, getStore } from "@abstractions/service-helpers";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 export const NEW_PROJECT_DIALOG_ID = "NewProjectDialog";
 
@@ -100,7 +100,7 @@ const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
             iconName="folder"
             clicked={async () => {
               const folder = (
-                await ideToEmuMessenger.sendMessage<GetFolderDialogResponse>({
+                await sendFromIdeToEmu<GetFolderDialogResponse>({
                   type: "GetFolderDialog",
                 })
               ).filename;

@@ -11,10 +11,10 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { FileExistsResponse } from "@messaging/message-types";
 import { NewFileData } from "@messaging/dto";
 import { getStore } from "@abstractions/service-helpers";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 export const RENAME_FILE_DIALOG_ID = "RenameFileDialog";
 
@@ -72,7 +72,7 @@ const RenameFileDialog: React.FC<Props> = ({ fileData }: Props) => {
       fileData.error = true;
     } else {
       const response =
-        await ideToEmuMessenger.sendMessage<FileExistsResponse>({
+        await sendFromIdeToEmu<FileExistsResponse>({
           type: "FileExists",
           name: `${fileData.root}/${fileData.name}`,
         });

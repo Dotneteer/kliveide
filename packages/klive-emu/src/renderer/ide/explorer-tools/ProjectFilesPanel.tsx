@@ -10,7 +10,6 @@ import { dispatch, getProjectService } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import { Icon } from "../../common-ui/Icon";
 import { AppState, ProjectState } from "@state/AppState";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "@shared/command/commands";
 import {
   getContextMenuService,
@@ -31,6 +30,7 @@ import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { getState, getStore } from "@abstractions/service-helpers";
 import { IProjectService } from "@abstractions/project-service";
 import { setProjectContextAction } from "@state/project-reducer";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 type State = {
   itemsCount: number;
@@ -183,7 +183,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               <button
                 style={buttonStyle}
                 onClick={async () => {
-                  await ideToEmuMessenger.sendMessage({
+                  await sendFromIdeToEmu({
                     type: "OpenProjectFolder",
                   });
                 }}
@@ -395,11 +395,10 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       const resource = item.nodeData.fullPath;
       const factory = documentService.getResourceFactory(resource);
       if (factory) {
-        const contentsResp =
-          await ideToEmuMessenger.sendMessage<GetFileContentsResponse>({
-            type: "GetFileContents",
-            name: resource,
-          });
+        const contentsResp = await sendFromIdeToEmu<GetFileContentsResponse>({
+          type: "GetFileContents",
+          name: resource,
+        });
         const sourceText = contentsResp?.contents
           ? (contentsResp.contents as string)
           : "";
@@ -666,7 +665,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    */
   async deleteFile(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
-    const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
+    const result = await sendFromIdeToEmu<ConfirmDialogResponse>({
       type: "ConfirmDialog",
       title: "Confirm delete",
       question: `Are you sure you want to delete the ${node.nodeData.fullPath} file?`,
@@ -698,7 +697,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    */
   async deleteFolder(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
-    const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
+    const result = await sendFromIdeToEmu<ConfirmDialogResponse>({
       type: "ConfirmDialog",
       title: "Confirm delete",
       question: `Are you sure you want to delete the ${node.nodeData.fullPath} folder?`,

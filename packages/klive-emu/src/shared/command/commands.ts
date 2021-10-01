@@ -13,7 +13,7 @@ export type Command = {
   readonly enabled?: boolean;
   readonly iconName?: string;
   readonly checked?: boolean;
-  readonly execute?: (context?: CommandExecutionContext) => void;
+  readonly execute?: ((context?: CommandExecutionContext) => void) | string;
 };
 
 /**

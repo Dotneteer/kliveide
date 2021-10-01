@@ -1,5 +1,4 @@
 import { ICpuState } from "@shared/machines/AbstractCpu";
-import { ideToEmuMessenger } from "./IdeToEmuMessenger";
 import {
   GetCpuStateResponse,
   GetMachineStateResponse,
@@ -9,6 +8,7 @@ import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { MachineState } from "../machines/core/vm-core-types";
 import { getStore } from "@abstractions/service-helpers";
 import { IEngineProxyService, RunEventArgs } from "@abstractions/engine-proxy-service";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 /**
  * Dealy time between two timed run events
@@ -72,7 +72,7 @@ export class EngineProxyService implements IEngineProxyService {
    * Gets the current CPU state
    */
   async getCpuState(): Promise<ICpuState> {
-    const result = await ideToEmuMessenger.sendMessage<GetCpuStateResponse>({
+    const result = await sendFromIdeToEmu<GetCpuStateResponse>({
       type: "GetCpuState",
     });
     return result?.state;
@@ -89,7 +89,7 @@ export class EngineProxyService implements IEngineProxyService {
    * Gets the current machine state
    */
   async getMachineState(): Promise<MachineState> {
-    const result = await ideToEmuMessenger.sendMessage<GetMachineStateResponse>(
+    const result = await sendFromIdeToEmu<GetMachineStateResponse>(
       {
         type: "GetMachineState",
       }
@@ -109,7 +109,7 @@ export class EngineProxyService implements IEngineProxyService {
    */
   async getMemoryContents(): Promise<Uint8Array> {
     const result =
-      await ideToEmuMessenger.sendMessage<GetMemoryContentsResponse>({
+      await sendFromIdeToEmu<GetMemoryContentsResponse>({
         type: "GetMemoryContents",
       });
     return result?.contents;

@@ -142,7 +142,7 @@ export class KliveStore {
   /**
    * Fires when the `activityBar` state property changes
    */
-   get currentActivityChanged(): ILiteEvent<Activity> {
+  get currentActivityChanged(): ILiteEvent<Activity> {
     return this._currentActivityChanged;
   }
 
@@ -212,7 +212,9 @@ export class KliveStore {
       state.activityBar?.activeIndex != oldState.activityBar?.activeIndex
     ) {
       const currentActivity =
-        !state.activityBar || typeof state.activityBar.activeIndex !== "number"
+        !state.activityBar ||
+        !state.activityBar.activities ||
+        typeof state.activityBar.activeIndex !== "number"
           ? null
           : state.activityBar.activities[state.activityBar.activeIndex];
       this._currentActivityChanged.fire(currentActivity);

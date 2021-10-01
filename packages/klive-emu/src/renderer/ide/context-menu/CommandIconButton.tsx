@@ -1,3 +1,4 @@
+import { executeCommand } from "@abstractions/command-registry";
 import * as React from "react";
 import { useState } from "react";
 import { Icon } from "../../common-ui/Icon";
@@ -8,7 +9,7 @@ interface Props {
   title?: string;
   fill?: string;
   enable?: boolean;
-  clicked?: (ev: React.MouseEvent) => void;
+  clicked?: ((ev: React.MouseEvent) => void) | string;
   doNotPropagate?: boolean;
 }
 
@@ -37,24 +38,14 @@ export default function CommandIconButton({
     background: pointed ? "#3d3d3d" : "transparent",
   };
 
-  const handleMouseDown = (ev: React.MouseEvent) => {
-    if (ev.button === 0) {
-      clicked?.(ev);
+  const handleClick = async (ev: React.MouseEvent) => {
+    if (clicked) {
+      if (typeof clicked === "string") {
+        await executeCommand(clicked);
+      } else {
+        clicked(ev);
+      }
     }
-    if (doNotPropagate) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    }
-  };
-
-  const handleMouseUp = (ev: React.MouseEvent) => {
-    if (doNotPropagate) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    }
-  };
-
-  const handleClick = (ev: React.MouseEvent) => {
     if (doNotPropagate) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -66,8 +57,6 @@ export default function CommandIconButton({
       ref={hostElement}
       style={style}
       title={title}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
       onClick={handleClick}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
