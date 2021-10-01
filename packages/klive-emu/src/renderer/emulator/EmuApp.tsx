@@ -21,6 +21,7 @@ import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";
 import "./emu-message-processor";
 import "./ide-message-processor";
 import { getStore } from "@abstractions/service-helpers";
+import { stopCommandStatusQuery } from "@abstractions/command-registry";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({
@@ -80,6 +81,7 @@ export default function EmuApp() {
       const store = getStore();
       store.isWindowsChanged.off(isWindowsChanged);
       store.themeChanged.off(themeChanged);
+      stopCommandStatusQuery();
     };
   }, [store]);
 

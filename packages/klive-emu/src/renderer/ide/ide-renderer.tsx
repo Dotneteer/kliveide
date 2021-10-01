@@ -54,6 +54,7 @@ import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@shared/command/common-commands";
 import { registerIdeToEmuMessenger } from "@messaging/message-sending";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
+import { startCommandStatusQuery } from "@abstractions/command-registry";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -138,6 +139,9 @@ ipcRenderer.on(
     }
   }
 );
+
+// --- Start idle command status refresh
+startCommandStatusQuery();
 
 ReactDOM.render(
   <Provider store={getStore().store}>

@@ -74,9 +74,14 @@ export async function executeKliveCommand(id: CoreKliveCommand): Promise<void> {
  * This command shows the Emulator toolbar
  */
 const showToolbarCommand: IKliveCommand = {
-  id: "klive.showToolbar",
+  commandId: "klive.showToolbar",
   execute: async () => {
     dispatch(emuShowToolbarAction(true));
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = !(
+      context.appState?.emuViewOptions?.showStatusBar ?? false
+    );
   },
 };
 
@@ -84,9 +89,13 @@ const showToolbarCommand: IKliveCommand = {
  * This command shows the Emulator toolbar
  */
 const hideToolbarCommand: IKliveCommand = {
-  id: "klive.hideToolbar",
+  commandId: "klive.hideToolbar",
   execute: async () => {
     dispatch(emuShowToolbarAction(false));
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled =
+      context.appState?.emuViewOptions?.showStatusBar ?? false;
   },
 };
 
@@ -94,7 +103,7 @@ const hideToolbarCommand: IKliveCommand = {
  * This command shows the application status bar
  */
 const showStatusBarCommand: IKliveCommand = {
-  id: "klive.showStatusBar",
+  commandId: "klive.showStatusBar",
   execute: async () => {
     dispatch(emuShowStatusBarAction(true));
   },
@@ -104,7 +113,7 @@ const showStatusBarCommand: IKliveCommand = {
  * This command hides the application status bar
  */
 const hideStatusBarCommand: IKliveCommand = {
-  id: "klive.hideStatusBar",
+  commandId: "klive.hideStatusBar",
   execute: async () => {
     dispatch(emuShowStatusBarAction(false));
   },
@@ -114,7 +123,7 @@ const hideStatusBarCommand: IKliveCommand = {
  * This command shows the frame information in the Emu status bar
  */
 const showFrameInfoCommand: IKliveCommand = {
-  id: "klive.showFrameInfo",
+  commandId: "klive.showFrameInfo",
   execute: async () => {
     dispatch(emuShowFrameInfoAction(true));
   },
@@ -124,7 +133,7 @@ const showFrameInfoCommand: IKliveCommand = {
  * This command hides the frame information in the Emu status bar
  */
 const hideFrameInfoCommand: IKliveCommand = {
-  id: "klive.hideFrameInfo",
+  commandId: "klive.hideFrameInfo",
   execute: async () => {
     dispatch(emuShowFrameInfoAction(false));
   },
@@ -134,7 +143,7 @@ const hideFrameInfoCommand: IKliveCommand = {
  * This command shows the keyboard
  */
 const showKeyboardCommand: IKliveCommand = {
-  id: "klive.showKeyboard",
+  commandId: "klive.showKeyboard",
   execute: async () => {
     dispatch(emuShowKeyboardAction(true));
   },
@@ -144,7 +153,7 @@ const showKeyboardCommand: IKliveCommand = {
  * This command hides the keyboard
  */
 const hideKeyboardCommand: IKliveCommand = {
-  id: "klive.hideKeyboard",
+  commandId: "klive.hideKeyboard",
   execute: async () => {
     dispatch(emuShowKeyboardAction(false));
   },
@@ -154,7 +163,7 @@ const hideKeyboardCommand: IKliveCommand = {
  * This command shows the Ide window
  */
 const showIdeCommand: IKliveCommand = {
-  id: "klive.showIde",
+  commandId: "klive.showIde",
   execute: async () => {
     dispatch(ideShowAction(true));
   },
@@ -164,7 +173,7 @@ const showIdeCommand: IKliveCommand = {
  * This command hides the Ide window
  */
 const hideIdeCommand: IKliveCommand = {
-  id: "klive.hideIde",
+  commandId: "klive.hideIde",
   execute: async () => {
     dispatch(ideShowAction(false));
   },
@@ -174,7 +183,9 @@ const hideIdeCommand: IKliveCommand = {
  * This command starts the virtual machine
  */
 const startVmCommand: IKliveCommand = {
-  id: "klive.startVm",
+  commandId: "klive.startVm",
+  title: "Start",
+  icon: "play",
   execute: async (context) => {
     switch (context.process) {
       case "main":
@@ -194,7 +205,9 @@ const startVmCommand: IKliveCommand = {
  * This command pauses the virtual machine
  */
 const pauseVmCommand: IKliveCommand = {
-  id: "klive.pauseVm",
+  commandId: "klive.pauseVm",
+  title: "Pause",
+  icon: "pause",
   execute: async (context) => {
     switch (context.process) {
       case "main":
@@ -214,7 +227,9 @@ const pauseVmCommand: IKliveCommand = {
  * This command stops the virtual machine
  */
 const stopVmCommand: IKliveCommand = {
-  id: "klive.stopVm",
+  commandId: "klive.stopVm",
+  title: "Stop",
+  icon: "stop",
   execute: async (context) => {
     switch (context.process) {
       case "main":
@@ -234,7 +249,9 @@ const stopVmCommand: IKliveCommand = {
  * This command stops the virtual machine
  */
 const debugVmCommand: IKliveCommand = {
-  id: "klive.debugVm",
+  commandId: "klive.debugVm",
+  title: "Start with debugging",
+  icon: "debug",
   execute: async (context) => {
     switch (context.process) {
       case "main":
@@ -248,13 +265,18 @@ const debugVmCommand: IKliveCommand = {
         break;
     }
   },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState !== "running";
+  },
 };
 
 /**
  * This command executes a step-into operation
  */
 const stepIntoVmCommand: IKliveCommand = {
-  id: "klive.stepIntoVm",
+  commandId: "klive.stepIntoVm",
+  title: "Step into code",
+  icon: "step-into",
   execute: async (context) => {
     switch (context.process) {
       case "main":
@@ -274,7 +296,9 @@ const stepIntoVmCommand: IKliveCommand = {
  * This command executes a step-over operation
  */
 const stepOverVmCommand: IKliveCommand = {
-  id: "klive.stepOverVm",
+  commandId: "klive.stepOverVm",
+  title: "Step over code",
+  icon: "step-over",
   execute: async (context) => {
     switch (context.process) {
       case "main":
@@ -294,7 +318,9 @@ const stepOverVmCommand: IKliveCommand = {
  * This command executes a step-out operation
  */
 const stepOutVmCommand: IKliveCommand = {
-  id: "klive.stepOutVm",
+  commandId: "klive.stepOutVm",
+  title: "Step out code",
+  icon: "step-out",
   execute: async (context) => {
     switch (context.process) {
       case "main":

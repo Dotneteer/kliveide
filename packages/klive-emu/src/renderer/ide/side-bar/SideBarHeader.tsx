@@ -1,13 +1,12 @@
 import * as React from "react";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import styles from "styled-components";
-import { CSSProperties } from "react";
+import { CSSProperties, useEffect, useState } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { isCommandGroup, MenuItem } from "@shared/command/commands";
+import { isCommandGroup, isKliveCommand, MenuItem } from "@shared/command/commands";
 import { getContextMenuService } from "@abstractions/service-helpers";
 import { Activity } from "@abstractions/activity";
-import { COMMAND_SERVICE } from "@abstractions/service-registry";
-import { emuSetDebugModeAction } from "@state/emulator-panel-reducer";
+import { commandStatusChanged } from "@abstractions/command-registry";
 
 type Props = {
   activity: Activity;
@@ -56,6 +55,21 @@ type CommandBarProps = {
 };
 
 function CommandBar({ commands }: CommandBarProps) {
+  const [refreshCount, setRefreshCount] = useState(0);
+
+  // --- Take care to update command status
+  const onCommandStatusChanged = () => {
+    setRefreshCount(refreshCount + 1);
+  }
+
+  // --- Mount/unmount component
+  useEffect(() => {
+    commandStatusChanged.on(onCommandStatusChanged);
+    return () => {
+      commandStatusChanged.off(onCommandStatusChanged);
+    }
+  });
+
   const style: CSSProperties = {
     display: "flex",
     flexDirection: "row",
@@ -92,6 +106,14 @@ function CommandBar({ commands }: CommandBarProps) {
                 e.target as HTMLElement
               );
             }}
+          />
+        );
+      } else if (isKliveCommand(cmd)) {
+        buttons.push(
+          <CommandIconButton
+            key={index}
+            doNotPropagate={true}
+            commandId={cmd.commandId}
           />
         );
       } else {

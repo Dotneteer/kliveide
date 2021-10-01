@@ -1,15 +1,17 @@
-import { executeCommand } from "@abstractions/command-registry";
+import { executeCommand, getCommand } from "@abstractions/command-registry";
 import * as React from "react";
 import { useState } from "react";
+import { IKliveCommand } from "../../../extensibility/abstractions/command-def";
 import { Icon } from "../../common-ui/Icon";
 
 interface Props {
-  iconName: string;
+  commandId?: string;
+  iconName?: string;
   size?: number;
   title?: string;
   fill?: string;
   enabled?: boolean;
-  clicked?: ((ev: React.MouseEvent) => void) | string;
+  clicked?: (ev: React.MouseEvent) => void;
   doNotPropagate?: boolean;
 }
 
@@ -17,16 +19,28 @@ interface Props {
  * Represents the statusbar of the emulator
  */
 export default function CommandIconButton({
+  commandId,
   iconName,
   size = 16,
   title,
   fill,
-  enabled = true,
+  enabled,
   clicked,
   doNotPropagate = false,
 }: Props) {
   const hostElement = React.createRef<HTMLDivElement>();
   const [pointed, setPointed] = useState(false);
+
+  const command: IKliveCommand = commandId ? getCommand(commandId) : null;
+  if (!iconName) {
+    iconName = command?.icon ?? "question";
+  }
+  if (!title) {
+    title = command?.title ?? command?.commandId ?? "<none>";
+  }
+  if (enabled === null || enabled === undefined) {
+    enabled = command?.enabled ?? true;
+  }
 
   const style = {
     display: "flex",
@@ -39,10 +53,10 @@ export default function CommandIconButton({
   };
 
   const handleClick = async (ev: React.MouseEvent) => {
-    if (clicked && enabled) {
-      if (typeof clicked === "string") {
-        await executeCommand(clicked);
-      } else {
+    if (command) {
+      await executeCommand(command.commandId);
+    } else {
+      if (clicked && enabled) {
         clicked(ev);
       }
     }

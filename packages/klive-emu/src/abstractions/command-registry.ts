@@ -4,6 +4,7 @@
 // their IDs.
 // ============================================================================
 
+import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import {
   ExecutionState,
   IKliveCommand,
@@ -16,16 +17,22 @@ import { getState } from "./service-helpers";
 // Command registry methods
 
 let commandRegistry: Record<string, IKliveCommand> = {};
+let statusWatchRunning = false;
+
+/**
+ * This event is raised whenever the status of a command changes
+ */
+export const commandStatusChanged: ILiteEvent<string> = new LiteEvent<string>();
 
 /**
  * Registers the specified command
  * @param command Command object
  */
 export function registerCommand(command: IKliveCommand): void {
-  if (commandRegistry[command.id]) {
-    throw new Error(`Command ${command.id} has already been registered`);
+  if (commandRegistry[command.commandId]) {
+    throw new Error(`Command ${command.commandId} has already been registered`);
   }
-  commandRegistry[command.id] = command;
+  commandRegistry[command.commandId] = command;
 }
 
 /**
@@ -36,7 +43,7 @@ export function unregisterCommand(command: IKliveCommand | string): void {
   if (typeof command === "string") {
     delete commandRegistry[command];
   } else {
-    delete commandRegistry[command.id];
+    delete commandRegistry[command.commandId];
   }
 }
 
@@ -102,13 +109,7 @@ export async function executeCommand(id: string): Promise<void> {
       executionState = "none";
       break;
   }
-  const context: KliveCommandContext = {
-    process: getSite(),
-    executionState,
-    machineType: state.machineType,
-    resource: state.project?.contextResourceId ?? null,
-    resourceActive: state.project?.contextResourceActive ?? false,
-  };
+  const context = createCommandContext(command);
 
   // --- Refresh the state of the command
   command.queryState?.(context);
@@ -117,4 +118,94 @@ export async function executeCommand(id: string): Promise<void> {
   if ((command?.enabled ?? true) && command.execute) {
     await command.execute(context);
   }
+}
+
+/**
+ * Create the command context into which a status query or a command
+ * can run
+ */
+function createCommandContext(command: IKliveCommand): KliveCommandContext {
+  const state = getState();
+  let executionState: ExecutionState;
+  switch (state.emulatorPanel?.executionState) {
+    case 1:
+      executionState = "running";
+      break;
+    case 2:
+    case 3:
+      executionState = "paused";
+    case 4:
+    case 5:
+      executionState = "stopped";
+    default:
+      executionState = "none";
+      break;
+  }
+  return {
+    commandInfo: command,
+    process: getSite(),
+    executionState,
+    machineType: state.machineType,
+    resource: state.project?.contextResourceId ?? null,
+    resourceActive: state.project?.contextResourceActive ?? false,
+    appState: state
+  };
+}
+
+/**
+ * Updates the status of the specified command
+ * @param id ID of the command to update
+ */
+export async function updateCommandStatus(
+  id: string,
+): Promise<void> {
+  const command = getCommand(id);
+  if (!command) {
+    return;
+  }
+  const context = createCommandContext(command);
+  const oldEnabled = command.enabled;
+  const oldVisible = command.visible;
+  const oldChecked = command.checked;
+  await command.queryState?.(context);
+  if (command.enabled !== oldEnabled || command.visible !== oldVisible || command.checked !== oldChecked) {
+    (commandStatusChanged as LiteEvent<string>).fire(command.commandId);
+  }
+}
+
+/**
+ * Updates the state of all registered commands
+ */
+export async function updateAllCommandState(): Promise<void> {
+  getRegisteredCommandIDs().forEach((cmdId) => {
+    try {
+      updateCommandStatus(cmdId);
+    } catch {
+      // --- Ths error is intentionally ignored
+    }
+  });
+}
+
+/**
+ * Starts watching for command status
+ * @returns 
+ */
+export function startCommandStatusQuery(): void {
+  if (statusWatchRunning) {
+    return;
+  }
+  statusWatchRunning = true;
+  (async () => {
+    while (statusWatchRunning) {
+      await new Promise(r => setTimeout(r, 200));
+      await updateAllCommandState();
+    }
+  })();
+}
+
+/**
+ * Stops watching for command status
+ */
+export function stopCommandStatusQuery(): void {
+  statusWatchRunning = false;
 }

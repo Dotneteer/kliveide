@@ -1,7 +1,7 @@
 import { IKliveCommand, KliveCommandContext } from "../../../extensibility/abstractions/command-def";
 
 export const startVmCommand: IKliveCommand = {
-  get id(): string {
+  get commandId(): string {
     return "klive.startVm";
   },
 

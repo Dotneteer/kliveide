@@ -27,6 +27,7 @@ import { ModalDialogService } from "../common-ui/modal-service";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@shared/command/common-commands";
 import { VmEngineService } from "../machines/core/vm-engine-service";
+import { startCommandStatusQuery } from "@abstractions/command-registry";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -95,6 +96,9 @@ ipcRenderer?.on(
     }
   }
 );
+
+// --- Start idle command status refresh
+startCommandStatusQuery();
 
 // --- Render the main component of the emulator window
 ReactDOM.render(

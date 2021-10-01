@@ -1,3 +1,5 @@
+import { AppState } from "@state/AppState";
+
 /**
  * Represents a Klive command that can be executed from a Klive process.
  */
@@ -5,7 +7,17 @@ export interface IKliveCommand {
   /**
    * The ID of the command to register it
    */
-  readonly id: string;
+  readonly commandId: string;
+
+  /**
+   * Optional title of the command
+   */
+  readonly title?: string;
+
+  /**
+   * Optional icon of the command
+   */
+  readonly icon?: string;
 
   /**
    * Indicates if the command is enabled (default: true)
@@ -48,6 +60,11 @@ export type ExecutionState = "none" | "running" | "paused" | "stopped";
  */
 export type KliveCommandContext = {
   /**
+   * The command used within the context
+   */
+  commandInfo: IKliveCommand;
+
+  /**
    * Process executing the command
    */
   process: KliveProcess;
@@ -71,4 +88,9 @@ export type KliveCommandContext = {
    * Indicates if the resource document is active
    */
   resourceActive: boolean;
+
+  /**
+   * The full application state
+   */
+  appState: AppState;
 }
