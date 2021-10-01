@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { getVersion } from "../../version";
 import { AppState } from "@state/AppState";
 import { Icon } from "../common-ui/Icon";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import { getThemeService } from "@abstractions/service-helpers";
 import { Root, Gap, Section, Label } from "../common-ui/StatusbarStyles";
 
@@ -19,6 +19,7 @@ export default function Statusbar() {
     (s: AppState) =>
       s.emulatorPanel.clockMultiplier * s.emulatorPanel.baseClockFrequency
   );
+  const vmEngineService = getVmEngineService();
   const displayName = useSelector(() =>
     vmEngineService.hasEngine
       ? vmEngineService.getEngine()?.displayName ?? ""

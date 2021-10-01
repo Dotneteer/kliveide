@@ -1,6 +1,6 @@
 import * as React from "react";
 import { SpectrumMachineStateBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import styles from "styled-components";
 
 /**
@@ -18,6 +18,7 @@ interface Props {
  * Represents the beam overlay of the emulator
  */
 export default function BeamOverlay(props: Props) {
+  const vmEngineService = getVmEngineService();
   if (!vmEngineService.hasEngine) {
     return null;
   }

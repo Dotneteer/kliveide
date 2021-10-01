@@ -1,5 +1,4 @@
 import * as React from "react";
-import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import DocumentTabBar from "./DocumentTabBar";
 import ReactResizeDetector from "react-resize-detector";
 

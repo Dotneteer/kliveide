@@ -26,6 +26,7 @@ const commonConfig = {
       "@abstractions": srcPaths("src/abstractions"),
       "@state": srcPaths("src/shared/state"),
       "@shared": srcPaths("src/shared"),
+      "@messaging": srcPaths("src/extensibility/messaging"),
       _: srcPaths("src"),
       _main: srcPaths("src/main"),
       _models: srcPaths("src/models"),

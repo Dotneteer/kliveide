@@ -33,11 +33,11 @@ import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateFo
 import {
   IDE_SOURCE,
   RENDERER_STATE_REQUEST_CHANNEL,
-} from "@shared/messaging/channels";
+} from "@messaging/channels";
 import { KliveAction } from "@state/state-core";
 import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
-import { ForwardActionRequest } from "@shared/messaging/message-types";
+import { ForwardActionRequest } from "@messaging/message-types";
 import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
@@ -50,6 +50,11 @@ import { InteractivePaneService } from "./tool-area/InteractiveService";
 import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
+import { registerSite } from "@abstractions/process-site";
+import { registerCommonCommands } from "@shared/command/common-commands";
+import { registerIdeToEmuMessenger } from "@messaging/message-sending";
+import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
+import { startCommandStatusQuery } from "@abstractions/command-registry";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -82,6 +87,13 @@ const rootReducer = (state: AppState, action: KliveAction) => {
 };
 
 // ------------------------------------------------------------------------------
+// --- Sign we are in the emulator renderer process
+
+registerSite("ide");
+registerCommonCommands();
+
+
+// ------------------------------------------------------------------------------
 // --- Register the main services
 
 // --- Register the store service
@@ -110,6 +122,9 @@ registerService(OUTPUT_PANE_SERVICE, new OutputPaneService());
 registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
 
+// --- Register meesenger objects
+registerIdeToEmuMessenger(new IdeToEmuMessenger());
+
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);
 
@@ -124,6 +139,9 @@ ipcRenderer.on(
     }
   }
 );
+
+// --- Start idle command status refresh
+startCommandStatusQuery();
 
 ReactDOM.render(
   <Provider store={getStore().store}>

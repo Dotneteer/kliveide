@@ -1,15 +1,11 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import { emuToggleKeyboardAction } from "@state/emu-view-options-reducer";
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
-import {
-  emuMuteSoundAction,
-  emuUnmuteSoundAction,
-} from "@state/emulator-panel-reducer";
+import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
@@ -18,6 +14,7 @@ import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
 import { dispatch } from "@abstractions/service-helpers";
+import { executeKliveCommand } from "@shared/command/common-commands";
 
 const Root = styles.div`
   display: flex;
@@ -54,20 +51,20 @@ export class Toolbar extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      hasEngine: false,
+      hasEngine: getVmEngineService()?.hasEngine,
     };
   }
 
   componentDidMount(): void {
-    vmEngineService.vmEngineChanged.on(this.vmChange);
+    getVmEngineService().vmEngineChanged.on(this.vmChange);
   }
 
   componentWillUnmount(): void {
-    vmEngineService.vmEngineChanged.off(this.vmChange);
+    getVmEngineService().vmEngineChanged.off(this.vmChange);
   }
 
   render() {
-    const engine = vmEngineService;
+    const engine = getVmEngineService();
     const executionState = this.props.executionState ?? 0;
     const machineControlButtons = [
       <ToolbarIconButton
@@ -80,7 +77,7 @@ export class Toolbar extends React.Component<Props, State> {
           (executionState === 0 || executionState === 3 || executionState === 5)
         }
         clicked={async () => {
-          await engine.start();
+          await executeKliveCommand("startVm");
         }}
       />,
       <ToolbarIconButton
@@ -157,28 +154,23 @@ export class Toolbar extends React.Component<Props, State> {
         iconName="keyboard"
         title="Toggle keyboard"
         selected={this.props.showKeyboard}
-        clicked={() => dispatch(emuToggleKeyboardAction())}
+        clicked={() =>
+          executeKliveCommand(
+            this.props.showKeyboard ? "hideKeyboard" : "showKeyboard"
+          )
+        }
         highlightSize={32}
       />,
       <ToolbarSeparator key="sep-2" />,
     ];
     const soundButtons = this.props.extraFeatures.includes("Sound")
       ? [
-          this.props.muted ? (
-            <ToolbarIconButton
-              key="unmute"
-              iconName="unmute"
-              title="Unmute sound"
-              clicked={() => dispatch(emuUnmuteSoundAction())}
-            />
-          ) : (
-            <ToolbarIconButton
-              key="mute"
-              iconName="mute"
-              title="Mute sound"
-              clicked={() => dispatch(emuMuteSoundAction())}
-            />
-          ),
+          <ToolbarIconButton
+            key="mute"
+            iconName={this.props.muted ? "unmute" : "mute"}
+            title={this.props.muted ? "Unmute sound" : "Mute sound"}
+            clicked={() => dispatch(emuMuteSoundAction(!this.props.muted))}
+          />,
           <ToolbarSeparator key="sep3" />,
         ]
       : null;
@@ -191,9 +183,7 @@ export class Toolbar extends React.Component<Props, State> {
             title="Show ULA position"
             selected={this.props.showBeam}
             clicked={() =>
-              dispatch(
-                spectrumBeamPositionAction(!this.props.showBeam)
-              )
+              dispatch(spectrumBeamPositionAction(!this.props.showBeam))
             }
           />,
           <ToolbarSeparator key="sep-4" />,

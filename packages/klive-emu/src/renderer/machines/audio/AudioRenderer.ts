@@ -1,5 +1,5 @@
 import { IAudioRenderer } from "./IAudioRenderer";
-import { vmEngineService } from "../core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
 
 /**
@@ -22,7 +22,7 @@ export class AudioRenderer implements IAudioRenderer {
    * @param _samplesPerFrame Samples in a single frame
    */
   constructor(private _samplesPerFrame: number) {
-    this._appConfig = vmEngineService.getAppConfiguration();
+    this._appConfig = getVmEngineService().getAppConfiguration();
   }
 
   /**

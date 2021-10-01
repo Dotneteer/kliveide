@@ -3,10 +3,7 @@ import * as path from "path";
 import { app, dialog } from "electron";
 import { AppWindow } from "./app-window";
 import { __DARWIN__ } from "../utils/electron-utils";
-import {
-  RequestMessage,
-  StopVmRequest,
-} from "@shared/messaging/message-types";
+import { RequestMessage, StopVmRequest } from "@messaging/message-types";
 import {
   MachineContextProvider,
   MachineContextProviderBase,
@@ -18,7 +15,7 @@ import {
   emuSetExecutionStateAction,
   emuSetExtraFeaturesAction,
 } from "@state/emulator-panel-reducer";
-import { emuMessenger, setEmuForwarder, setEmuMessenger } from "./app-menu";
+import { setEmuForwarder } from "./app-menu";
 import { AppState } from "@state/AppState";
 import {
   appSettings,
@@ -41,6 +38,10 @@ import { PROJECT_FILE } from "../project/project-utils";
 import { dispatch, getState } from "../main-state/main-store";
 
 import { Z80Assembler } from "../z80-compiler/assembler";
+import {
+  registerMainToEmuMessenger,
+  sendFromMainToEmu,
+} from "@messaging/message-sending";
 
 /**
  * These are the context providers we usein the code
@@ -62,7 +63,7 @@ export class EmuWindow extends AppWindow {
    */
   constructor() {
     super(true);
-    setEmuMessenger(new MainToEmulatorMessenger(this.window));
+    registerMainToEmuMessenger(new MainToEmulatorMessenger(this.window));
     setEmuForwarder(new MainToEmuForwarder(this.window));
   }
 
@@ -188,7 +189,7 @@ export class EmuWindow extends AppWindow {
     settings?: KliveSettings
   ): Promise<void> {
     // Preparation: Stop the current machine
-    emuMessenger.sendMessage(<StopVmRequest>{
+    sendFromMainToEmu(<StopVmRequest>{
       type: "StopVm",
     });
 
@@ -233,7 +234,7 @@ export class EmuWindow extends AppWindow {
       machineId: id,
       options: creationOptions,
     };
-    await emuMessenger.sendMessage(requestMessage);
+    await sendFromMainToEmu(requestMessage);
 
     // #4: Sign extra machine features
     dispatch(

@@ -4,9 +4,9 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
 import { DirectoryContent } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
-import { FileOperationResponse } from "@shared/messaging/message-types";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
+import { FileOperationResponse } from "@messaging/message-types";
 import { getStore } from "@abstractions/service-helpers";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 /**
  * This class implements the project services
@@ -124,7 +124,7 @@ export class ProjectService {
    * @returns Null, if successful; otherwise, error message
    */
   async createFile(name: string): Promise<string | null> {
-    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+    const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "CreateFile",
       name,
     });
@@ -141,7 +141,7 @@ export class ProjectService {
    * @returns Null, if successful; otherwise, error message
    */
   async createFolder(name: string): Promise<string | null> {
-    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+    const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "CreateFolder",
       name,
     });
@@ -158,7 +158,7 @@ export class ProjectService {
    * @returns Null, if successful; otherwise, error message
    */
   async deleteFile(name: string): Promise<string | null> {
-    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+    const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "DeleteFile",
       name,
     });
@@ -175,7 +175,7 @@ export class ProjectService {
    * @returns Null, if successful; otherwise, error message
    */
   async deleteFolder(name: string): Promise<string | null> {
-    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+    const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "DeleteFolder",
       name,
     });
@@ -193,7 +193,7 @@ export class ProjectService {
    * @returns Null, if successful; otherwise, error message
    */
   async renameFile(oldName: string, newName: string): Promise<string | null> {
-    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+    const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "RenameFile",
       oldName,
       newName,
@@ -212,7 +212,7 @@ export class ProjectService {
    * @returns Null, if successful; otherwise, error message
    */
   async renameFolder(oldName: string, newName: string): Promise<string | null> {
-    const result = await ideToEmuMessenger.sendMessage<FileOperationResponse>({
+    const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "RenameFile",
       oldName,
       newName,

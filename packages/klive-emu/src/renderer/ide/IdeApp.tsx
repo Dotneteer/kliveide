@@ -17,7 +17,10 @@ import { EmuViewOptions, ToolFrameState } from "@state/AppState";
 import { useLayoutEffect } from "react";
 import Splitter from "../common-ui/Splitter";
 import { useEffect } from "react";
-import { changeActivityAction, setActivitiesAction } from "@state/activity-bar-reducer";
+import {
+  changeActivityAction,
+  setActivitiesAction,
+} from "@state/activity-bar-reducer";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";
@@ -67,6 +70,7 @@ import {
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
 import { Activity } from "@abstractions/activity";
+import { executeKliveCommand } from "@shared/command/common-commands";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -201,8 +205,28 @@ export default function IdeApp() {
         },
         {
           id: "debug-view",
-          title: "Run and debug",
+          title: "Debug",
           iconName: "debug-alt",
+          commands: [
+            {
+              commandId: "klive.debugVm",
+            },
+            {
+              commandId: "klive.pauseVm",
+            },
+            {
+              commandId: "klive.stopVm",
+            },
+            {
+              commandId: "klive.stepIntoVm",
+            },
+            {
+              commandId: "klive.stepOverVm",
+            },
+            {
+              commandId: "klive.stepOutVm",
+            },
+          ],
         },
         {
           id: "log-view",

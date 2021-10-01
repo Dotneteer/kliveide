@@ -1,13 +1,16 @@
+import { executeCommand, getCommand } from "@abstractions/command-registry";
 import * as React from "react";
 import { useState } from "react";
+import { IKliveCommand } from "../../../extensibility/abstractions/command-def";
 import { Icon } from "../../common-ui/Icon";
 
 interface Props {
-  iconName: string;
+  commandId?: string;
+  iconName?: string;
   size?: number;
   title?: string;
   fill?: string;
-  enable?: boolean;
+  enabled?: boolean;
   clicked?: (ev: React.MouseEvent) => void;
   doNotPropagate?: boolean;
 }
@@ -16,16 +19,28 @@ interface Props {
  * Represents the statusbar of the emulator
  */
 export default function CommandIconButton({
+  commandId,
   iconName,
   size = 16,
   title,
   fill,
-  enable,
+  enabled,
   clicked,
   doNotPropagate = false,
 }: Props) {
   const hostElement = React.createRef<HTMLDivElement>();
   const [pointed, setPointed] = useState(false);
+
+  const command: IKliveCommand = commandId ? getCommand(commandId) : null;
+  if (!iconName) {
+    iconName = command?.icon ?? "question";
+  }
+  if (!title) {
+    title = command?.title ?? command?.commandId ?? "<none>";
+  }
+  if (enabled === null || enabled === undefined) {
+    enabled = command?.enabled ?? true;
+  }
 
   const style = {
     display: "flex",
@@ -37,24 +52,14 @@ export default function CommandIconButton({
     background: pointed ? "#3d3d3d" : "transparent",
   };
 
-  const handleMouseDown = (ev: React.MouseEvent) => {
-    if (ev.button === 0) {
-      clicked?.(ev);
+  const handleClick = async (ev: React.MouseEvent) => {
+    if (command) {
+      await executeCommand(command.commandId);
+    } else {
+      if (clicked && enabled) {
+        clicked(ev);
+      }
     }
-    if (doNotPropagate) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    }
-  };
-
-  const handleMouseUp = (ev: React.MouseEvent) => {
-    if (doNotPropagate) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    }
-  };
-
-  const handleClick = (ev: React.MouseEvent) => {
     if (doNotPropagate) {
       ev.preventDefault();
       ev.stopPropagation();
@@ -66,15 +71,13 @@ export default function CommandIconButton({
       ref={hostElement}
       style={style}
       title={title}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
       onClick={handleClick}
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
     >
       <Icon
         iconName={iconName}
-        fill={enable ?? true ? fill : "--toolbar-button-disabled-fill"}
+        fill={enabled ?? true ? fill : "--toolbar-button-disabled-fill"}
         width={size}
         height={size}
       />

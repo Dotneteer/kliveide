@@ -10,10 +10,9 @@ import {
   IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
   IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
   MAIN_STATE_REQUEST_CHANNEL,
-} from "@shared/messaging/channels";
-import { ForwardActionRequest } from "@shared/messaging/message-types";
+} from "@messaging/channels";
+import { ForwardActionRequest } from "@messaging/message-types";
 import {
-  emuMessenger,
   emuWindow,
   ideWindow,
   setupMenu,
@@ -24,22 +23,19 @@ import {
   appConfiguration,
   appSettings,
 } from "./main-state/klive-configuration";
-import {
-  emuHideFrameInfoAction,
-  emuHideKeyboardAction,
-  emuHideStatusbarAction,
-  emuHideToolbarAction,
-  emuShowFrameInfoAction,
-  emuShowKeyboardAction,
-  emuShowStatusbarAction,
-  emuShowToolbarAction,
-} from "@state/emu-view-options-reducer";
 import { __WIN32__ } from "./utils/electron-utils";
 import { setWindowsAction } from "@state/is-windows-reducer";
 import {
   processEmulatorRequest,
   processIdeRequest,
 } from "./communication/process-messages";
+import { registerSite } from "@abstractions/process-site";
+import { sendFromMainToEmu } from "@messaging/message-sending";
+import { executeKliveCommand, registerCommonCommands } from "@shared/command/common-commands";
+
+// --- Sign that this process is the main process
+registerSite("main");
+registerCommonCommands();
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.
@@ -55,31 +51,15 @@ app.on("ready", async () => {
   if (appSettings) {
     const viewOptions = appSettings.viewOptions;
     if (viewOptions) {
-      dispatch(
-        viewOptions.showToolbar
-          ? emuShowToolbarAction()
-          : emuHideToolbarAction()
-      );
-      dispatch(
-        viewOptions.showStatusbar
-          ? emuShowStatusbarAction()
-          : emuHideStatusbarAction()
-      );
-      dispatch(
-        viewOptions.showFrameInfo
-          ? emuShowFrameInfoAction()
-          : emuHideFrameInfoAction()
-      );
-      dispatch(
-        viewOptions.showKeyboard
-          ? emuShowKeyboardAction()
-          : emuHideKeyboardAction()
-      );
+      executeKliveCommand(viewOptions.showToolbar ? "showToolbar" : "hideToolbar");
+      executeKliveCommand(viewOptions.showStatusbar ? "showStatusBar" : "hideStatusBar");
+      executeKliveCommand(viewOptions.showFrameInfo ? "showFrameInfo" : "hideFrameInfo");
+      executeKliveCommand(viewOptions.showKeyboard ? "showKeyboard" : "hideKeyboard");
     }
   }
 
   // --- Make sure that application configuration is sent to renderers
-  emuMessenger.sendMessage({
+  sendFromMainToEmu({
     type: "ForwardAppConfig",
     config: appConfiguration,
   });

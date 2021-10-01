@@ -6,28 +6,31 @@ import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
-import { getProjectService } from "@abstractions/service-helpers";
+import { dispatch, getProjectService } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import { Icon } from "../../common-ui/Icon";
 import { AppState, ProjectState } from "@state/AppState";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
 import { MenuItem } from "@shared/command/commands";
-import { getContextMenuService } from "@abstractions/service-helpers";
-import { getModalDialogService } from "@abstractions/service-helpers";
+import {
+  getContextMenuService,
+  getModalDialogService,
+  getDocumentService,
+} from "@abstractions/service-helpers";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
   ConfirmDialogResponse,
   GetFileContentsResponse,
-} from "@shared/messaging/message-types";
-import { NewFileData } from "@shared/messaging/dto";
+} from "@messaging/message-types";
+import { NewFileData } from "@messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
-import { getDocumentService } from "@abstractions/service-helpers";
 import { getState, getStore } from "@abstractions/service-helpers";
 import { IProjectService } from "@abstractions/project-service";
+import { setProjectContextAction } from "@state/project-reducer";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 type State = {
   itemsCount: number;
@@ -44,7 +47,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   State
 > {
   private _listApi: VirtualizedListApi;
-  private _projectService: IProjectService
+  private _projectService: IProjectService;
+  private _lastProjectState: ProjectState | null = null;
   private _onProjectChange: (state: ProjectState) => Promise<void>;
 
   constructor(props: SideBarProps<{}>) {
@@ -81,6 +85,19 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    * Respond to project state changes
    */
   async onProjectChange(state: ProjectState): Promise<void> {
+    if (this._lastProjectState) {
+      if (
+        this._lastProjectState.isLoading === state.isLoading &&
+        this._lastProjectState.path === state.path &&
+        this._lastProjectState.hasVm === state.hasVm
+      ) {
+        // --- Just the context of the project has changed
+        this._lastProjectState = state;
+        return;
+      }
+    }
+
+    // --- The UI should update itself according to the state change
     if (state.isLoading) {
       this.setState({
         isLoading: true,
@@ -100,6 +117,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         });
       }
     }
+    this._lastProjectState = state;
   }
 
   render() {
@@ -165,7 +183,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               <button
                 style={buttonStyle}
                 onClick={async () => {
-                  await ideToEmuMessenger.sendMessage({
+                  await sendFromIdeToEmu({
                     type: "OpenProjectFolder",
                   });
                 }}
@@ -265,6 +283,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             iconName="combine"
             width={16}
             height={16}
+            fill="green"
             style={{ flexShrink: 0, flexGrow: 0 }}
           />
         )}
@@ -377,11 +396,10 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       const resource = item.nodeData.fullPath;
       const factory = documentService.getResourceFactory(resource);
       if (factory) {
-        const contentsResp =
-          await ideToEmuMessenger.sendMessage<GetFileContentsResponse>({
-            type: "GetFileContents",
-            name: resource,
-          });
+        const contentsResp = await sendFromIdeToEmu<GetFileContentsResponse>({
+          type: "GetFileContents",
+          name: resource,
+        });
         const sourceText = contentsResp?.contents
           ? (contentsResp.contents as string)
           : "";
@@ -476,7 +494,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           execute: async () => await this.deleteFile(item),
         },
       ];
-      const editor = getDocumentService().getCodeEditorInfo(item.nodeData.fullPath);
+      const editor = getDocumentService().getCodeEditorInfo(
+        item.nodeData.fullPath
+      );
       if (editor?.allowBuildRoot) {
         menuItems.push("separator");
         if (item.nodeData.buildRoot) {
@@ -500,13 +520,26 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         }
       }
     }
-    const rect = (ev.target as HTMLElement).getBoundingClientRect();
-    await getContextMenuService().openMenu(
-      menuItems,
-      rect.y + 22,
-      ev.clientX,
-      ev.target as HTMLElement
+
+    // --- Set the project context
+    dispatch(
+      setProjectContextAction(
+        item.nodeData.fullPath,
+        getDocumentService().getActiveDocument()?.id === item.nodeData.fullPath
+      )
     );
+    const rect = (ev.target as HTMLElement).getBoundingClientRect();
+    try {
+      await getContextMenuService().openMenu(
+        menuItems,
+        rect.y + 22,
+        ev.clientX,
+        ev.target as HTMLElement
+      );
+    } finally {
+      // --- Remove the project context
+      dispatch(setProjectContextAction(undefined, undefined));
+    }
   }
 
   /**
@@ -633,7 +666,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    */
   async deleteFile(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
-    const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
+    const result = await sendFromIdeToEmu<ConfirmDialogResponse>({
       type: "ConfirmDialog",
       title: "Confirm delete",
       question: `Are you sure you want to delete the ${node.nodeData.fullPath} file?`,
@@ -665,7 +698,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
    */
   async deleteFolder(node: ITreeNode<ProjectNode>): Promise<void> {
     // --- Confirm delete
-    const result = await ideToEmuMessenger.sendMessage<ConfirmDialogResponse>({
+    const result = await sendFromIdeToEmu<ConfirmDialogResponse>({
       type: "ConfirmDialog",
       title: "Confirm delete",
       question: `Are you sure you want to delete the ${node.nodeData.fullPath} folder?`,
@@ -676,7 +709,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
-    const resp = await this._projectService.deleteFolder(node.nodeData.fullPath);
+    const resp = await this._projectService.deleteFolder(
+      node.nodeData.fullPath
+    );
     if (resp) {
       // --- Delete failed
       return;
@@ -724,8 +759,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     // --- Rename the file
     const newFullName = `${oldPath}/${fileData.name}`;
     const resp = isFolder
-      ? await this._projectService.renameFolder(node.nodeData.fullPath, newFullName)
-      : await this._projectService.renameFile(node.nodeData.fullPath, newFullName);
+      ? await this._projectService.renameFolder(
+          node.nodeData.fullPath,
+          newFullName
+        )
+      : await this._projectService.renameFile(
+          node.nodeData.fullPath,
+          newFullName
+        );
     if (resp) {
       // --- Rename failed
       return;

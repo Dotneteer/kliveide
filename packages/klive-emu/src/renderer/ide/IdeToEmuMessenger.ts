@@ -3,12 +3,12 @@ import { IpcRendereApi } from "../../exposed-apis";
 import {
   RequestMessage,
   ResponseMessage,
-} from "@shared/messaging/message-types";
-import { MessengerBase } from "@shared/messaging/MessengerBase";
+} from "@messaging/message-types";
 import {
   IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
   IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
-} from "@shared/messaging/channels";
+} from "@messaging/channels";
+import { MessengerBase } from "@messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window
@@ -19,7 +19,7 @@ const ipcRenderer = globalThis.window
  * Implements a messenger that forwards IDE messages to the main
  * process
  */
-class IdeToEmuMessenger extends MessengerBase {
+export class IdeToEmuMessenger extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
@@ -54,8 +54,3 @@ class IdeToEmuMessenger extends MessengerBase {
     return IDE_TO_EMU_MAIN_RESPONSE_CHANNEL;
   }
 }
-
-/**
- * The singleton messenger instance
- */
-export const ideToEmuMessenger = new IdeToEmuMessenger();

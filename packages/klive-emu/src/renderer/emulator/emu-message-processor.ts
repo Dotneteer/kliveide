@@ -4,12 +4,11 @@ import {
   ExecuteMachineCommandResponse,
   RequestMessage,
   ResponseMessage,
-} from "@shared/messaging/message-types";
+} from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { MAIN_TO_EMU_REQUEST_CHANNEL } from "@shared/messaging/channels";
-import { MAIN_TO_EMU_RESPONE_CHANNEL } from "@shared/messaging/channels";
+import { MAIN_TO_EMU_REQUEST_CHANNEL, MAIN_TO_EMU_RESPONE_CHANNEL } from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { vmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@abstractions/service-helpers";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -21,6 +20,7 @@ const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
 async function processEmulatorMessages(
   message: RequestMessage
 ): Promise<ResponseMessage> {
+  const vmEngineService = getVmEngineService();
   switch (message.type) {
     case "CreateMachine":
       await vmEngineService.setEngine(message.machineId, message.options);

@@ -17,6 +17,7 @@
       "@abstractions/*": ["src/abstractions/*"],
       "@state/*": ["src/shared/state/*"],
       "@shared/*": ["src/shared/*"],
+      "@messaging/*": ["src/extensibility/messaging/*"]
     }
   },
   "include": ["src/**/*"],

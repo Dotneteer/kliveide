@@ -3,7 +3,7 @@ import { getModalDialogService } from "@abstractions/service-helpers";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { NewFileData } from "@shared/messaging/dto";
+import { NewFileData } from "@messaging/dto";
 import { Store } from "redux";
 import {
   ErrorLabel,
@@ -12,9 +12,9 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
-import { ideToEmuMessenger } from "../IdeToEmuMessenger";
-import { FileExistsResponse } from "@shared/messaging/message-types";
+import { FileExistsResponse } from "@messaging/message-types";
 import { getStore } from "@abstractions/service-helpers";
+import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 export const NEW_FILE_DIALOG_ID = "NewFileDialog";
 
@@ -71,7 +71,7 @@ const NewFileDialog: React.FC<Props> = ({ newFolderData: newFileData }: Props) =
       newFileData.error = true;
     } else {
       const response =
-        await ideToEmuMessenger.sendMessage<FileExistsResponse>({
+        await sendFromIdeToEmu<FileExistsResponse>({
           type: "FileExists",
           name: `${newFileData.root}/${newFileData.name}`,
         });

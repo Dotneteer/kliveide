@@ -19,8 +19,17 @@ interface Props {
 /**
  * Represents the statusbar of the emulator
  */
-export function ToolbarIconButton(props: Props) {
-  const [currentSize, setCurrentSize] = useState(props.size ?? DEFAULT_SIZE);
+export function ToolbarIconButton({
+  iconName,
+  size,
+  highlightSize,
+  title,
+  fill,
+  enable,
+  selected,
+  clicked
+}: Props) {
+  const [currentSize, setCurrentSize] = useState(size ?? DEFAULT_SIZE);
   const style = {
     display: "flex",
     width: "36px",
@@ -29,8 +38,8 @@ export function ToolbarIconButton(props: Props) {
     margin: "0",
     alignItems: "center",
     justifyContent: "center",
-    cursor: props.enable ? "" : "default",
-    border: props.selected
+    cursor: enable ? "" : "default",
+    border: selected
       ? "2px solid var(--selected-border-color)"
       : "1px solid transparent",
   };
@@ -38,15 +47,15 @@ export function ToolbarIconButton(props: Props) {
   return (
     <div
       style={style}
-      title={props.title}
+      title={title}
       onMouseDown={(ev) => handleMouseDown(ev)}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
     >
       <Icon
-        iconName={props.iconName}
+        iconName={iconName}
         fill={
-          props.enable ?? true ? props.fill : "--toolbar-button-disabled-fill"
+          enable ?? true ? fill : "--toolbar-button-disabled-fill"
         }
         width={currentSize}
         height={currentSize}
@@ -55,18 +64,21 @@ export function ToolbarIconButton(props: Props) {
   );
 
   function handleMouseDown(ev: React.MouseEvent): void {
-    if (ev.button === 0) {
+    if (!(enable ?? true)) {
+      return;
+    }
+    if ( ev.button === 0) {
       updateSize(true);
     }
   }
 
   function handleMouseUp(): void {
     updateSize(false);
-    props?.clicked?.();
+    clicked?.();
   }
 
   function handleMouseLeave(): void {
-    if (!(props.enable ?? true)) {
+    if (!(enable ?? true)) {
       return;
     }
     updateSize(false);
@@ -75,8 +87,8 @@ export function ToolbarIconButton(props: Props) {
   function updateSize(pointed: boolean): void {
     setCurrentSize(
       pointed
-        ? props.highlightSize ?? DEFAULT_HILITE_SIZE
-        : props.size ?? DEFAULT_SIZE
+        ? highlightSize ?? DEFAULT_HILITE_SIZE
+        : size ?? DEFAULT_SIZE
     );
   }
 }

@@ -16,9 +16,11 @@ import {
   Command,
   CommandGroup,
   isCommandGroup,
+  isKliveCommand,
   MenuItem,
 } from "@shared/command/commands";
 import { ContextMenuOpenTarget } from "@abstractions/context-menu-service";
+import { executeCommand } from "@abstractions/command-registry";
 
 type Props = {
   target: string;
@@ -65,9 +67,16 @@ export default function IdeContextMenu({ target }: Props) {
     thisComponent.enableItems(disabledIds, false, true);
   };
 
-  const select = (args: MenuEventArgs) => {
+  const select = async (args: MenuEventArgs) => {
     const command = findCommandById(items, args.item.id);
-    command?.execute?.();
+    if (!command) {
+      return;
+    }
+    if (typeof command.execute === "string") {
+      await executeCommand(command.execute);
+    } else {
+      command.execute?.();
+    }
   };
 
   const onClose = async () => {
@@ -120,7 +129,7 @@ function mapToMenuItems(items: MenuItem[]): MenuItemModel[] {
           items: mapToMenuItems(item.items),
         });
       }
-    } else {
+    } else if (!isKliveCommand(item)) {
       if (item.visible ?? true) {
         menuItems.push({
           id: item.id,
@@ -149,7 +158,7 @@ function collectIds(
         disabledIds.push(item.id);
       }
       disabledIds.push(...collectDisabledIds(item.items));
-    } else {
+    } else if (!isKliveCommand(item)) {
       if (predicate(item)) {
         disabledIds.push(item.id);
       }
@@ -173,7 +182,7 @@ function findCommandById(items: MenuItem[], id: string): Command | null {
       if (command) {
         return command;
       }
-    } else {
+    } else if (!isKliveCommand(item)) {
       if (item.id === id) {
         return item;
       }

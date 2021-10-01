@@ -12,7 +12,7 @@ import {
   MachineCreationOptions,
   MachineState,
 } from "./vm-core-types";
-import { IVmController } from "./IVmController";
+import { IVmEngineService, VmState } from "@abstractions/vm-controller-service";
 import { EmulatedKeyStroke } from "./keyboard";
 import {
   emuSetDebugModeAction,
@@ -28,7 +28,7 @@ import { dispatch, getState } from "@abstractions/service-helpers";
 /**
  * This class is responsible for controlling the singleton virtual machine
  */
-class VmEngineService implements IVmController {
+export class VmEngineService implements IVmEngineService {
   private _vmEngine: VirtualMachineCoreBase | undefined;
   private _appConfig: KliveConfiguration | undefined;;
   private _error: string | null = null;
@@ -674,42 +674,6 @@ class VmEngineService implements IVmController {
 }
 
 /**
- * This class represents the states of the virtual machine as
- * managed by the SpectrumVmController
- */
-enum VmState {
-  /**
-   * The virtual machine has just been created, but has not run yet
-   */
-  None = 0,
-
-  /**
-   * The virtual machine is successfully started
-   */
-  Running = 1,
-
-  /**
-   * The virtual machine is being paused
-   */
-  Pausing = 2,
-
-  /**
-   * The virtual machine has been paused
-   */
-  Paused = 3,
-
-  /**
-   * The virtual machine is being stopped
-   */
-  Stopping = 4,
-
-  /**
-   * The virtual machine has been stopped
-   */
-  Stopped = 5,
-}
-
-/**
  * This class represents the arguments of the event that signs that
  * the state of the virtual machine changes
  */
@@ -725,11 +689,6 @@ export class VmStateChangedArgs {
     public isDebug: boolean
   ) {}
 }
-
-/**
- * The IVmEngineStore instance to use
- */
-export const vmEngineService = new VmEngineService();
 
 /**
  * Registry of virtual machine engines

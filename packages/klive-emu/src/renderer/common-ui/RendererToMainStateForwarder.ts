@@ -4,13 +4,13 @@ import { IpcRendereApi } from "../../exposed-apis";
 import {
   MAIN_STATE_REQUEST_CHANNEL,
   RENDERER_STATE_RESPONSE_CHANNEL,
-} from "@shared/messaging/channels";
+} from "@messaging/channels";
 import {
   DefaultResponse,
   RequestMessage,
   ResponseMessage,
-} from "@shared/messaging/message-types";
-import { MessengerBase } from "@shared/messaging/MessengerBase";
+} from "@messaging/message-types";
+import { MessengerBase } from "@messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window
