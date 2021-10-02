@@ -2141,6 +2141,8 @@ export class Z80Assembler extends ExpressionEvaluator {
           break;
       }
     }
+
+    this._output.traceOutput.push(message);
     if (this._traceHandler) {
       this._traceHandler(message);
     }

@@ -32,6 +32,17 @@ import {
 import { registerSite } from "@abstractions/process-site";
 import { sendFromMainToEmu } from "@messaging/message-sending";
 import { executeKliveCommand, registerCommonCommands } from "@shared/command/common-commands";
+import { Z80CompilerService } from "./z80-compiler/z80-compiler";
+
+const compiler: Z80CompilerService = new Z80CompilerService();
+
+(async () => {
+  const result = await compiler.compile(`
+    ld a,b
+    .trace "Hello"
+  `);
+  console.log(JSON.stringify(result));
+})()
 
 // --- Sign that this process is the main process
 registerSite("main");

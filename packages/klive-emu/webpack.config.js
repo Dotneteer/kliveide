@@ -3,7 +3,7 @@ const lodash = require("lodash");
 
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 
 const APP_DIR = path.resolve(__dirname, "./src");
 const PUBLIC_DIR = path.resolve(__dirname, "./public");
@@ -59,6 +59,10 @@ const commonConfig = {
         options: {
           name: "[path][name].[ext]",
         },
+      },
+      {
+        test: /\.kliveworker\.js$/,
+        use: { loader: "worker-loader" },
       },
       {
         test: /\.worklet\.js$/,
@@ -152,7 +156,7 @@ ideRendererConfig.plugins = [
   }),
   new MonacoWebpackPlugin({
     // available options are documented at https://github.com/Microsoft/monaco-editor-webpack-plugin#options
-    languages: ["json", "javascript"]
+    languages: ["json", "javascript"],
   }),
 ];
 
