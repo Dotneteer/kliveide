@@ -405,6 +405,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           : "";
         let panel = await factory.createDocumentPanel(resource, sourceText);
         let index = documentService.getActiveDocument()?.index ?? null;
+        panel.projectNode = item.nodeData;
         panel.temporary = isTemporary;
         panel.initialFocus = !isTemporary;
         if (isTemporary) {
@@ -506,6 +507,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             execute: async () => {
               delete item.nodeData.buildRoot;
               this._listApi.forceRefresh();
+              getDocumentService().fireChanges();
             },
           });
         } else {
@@ -515,6 +517,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             execute: async () => {
               item.nodeData.buildRoot = true;
               this._listApi.forceRefresh();
+              getDocumentService().fireChanges();
             },
           });
         }

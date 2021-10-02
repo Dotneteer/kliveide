@@ -36,7 +36,10 @@ type CoreKliveCommand =
   | "debugVm"
   | "stepIntoVm"
   | "stepOverVm"
-  | "stepOutVm";
+  | "stepOutVm"
+  | "injectCodeIntoVm"
+  | "injectAndStartVm"
+  | "injectAndDebugVm";
 
 /**
  * Registers common Klive commands that can be executed from any processes
@@ -60,6 +63,10 @@ export function registerCommonCommands(): void {
   registerCommand(stepIntoVmCommand);
   registerCommand(stepOverVmCommand);
   registerCommand(stepOutVmCommand);
+
+  registerCommand(injectCodeIntoVmCommand);
+  registerCommand(injectAndStartVmCommand);
+  registerCommand(injectAndDebugVmCommand);
 }
 
 /**
@@ -353,5 +360,68 @@ const stepOutVmCommand: IKliveCommand = {
   },
   queryState: async (context) => {
     context.commandInfo.enabled = context.executionState === "paused";
+  },
+};
+
+/**
+ * This command injects code into the virtual machine
+ */
+const injectCodeIntoVmCommand: IKliveCommand = {
+  commandId: "klive.injectCodeIntoVm",
+  title: "Injects code into the virtual machine",
+  icon: "inject",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+      case "emu":
+        throw new Error(
+          `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
+        );
+      case "ide":
+        console.log("Inject code");
+        break;
+    }
+  },
+};
+
+/**
+ * This command injects code into the virtual machine and starts it
+ */
+const injectAndStartVmCommand: IKliveCommand = {
+  commandId: "klive.injectAndStartVm",
+  title: "Injects code and starts",
+  icon: "play",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+      case "emu":
+        throw new Error(
+          `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
+        );
+      case "ide":
+        console.log("Inject and start");
+        break;
+    }
+  },
+};
+
+/**
+ * This command injects code into the virtual machine and starts it
+ */
+const injectAndDebugVmCommand: IKliveCommand = {
+  commandId: "klive.injectAndDebugVm",
+  title: "Injects code and starts with debugging",
+  icon: "debug",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+      case "emu":
+        throw new Error(
+          `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
+        );
+      case "ide":
+        console.log("Inject and debug");
+        break;
+    }
   },
 };

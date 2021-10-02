@@ -1,4 +1,5 @@
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
+import { ProjectNode } from "../renderer/ide/explorer-tools/ProjectNode";
 import { ILiteEvent } from "../shared/utils/LiteEvent";
 
 /**
@@ -34,6 +35,11 @@ export interface IDocumentPanel {
    * Indicates if the document should have initial focus
    */
   initialFocus: boolean;
+
+  /**
+   * The project node behind the document panel
+   */
+  projectNode: ProjectNode;
 
   /**
    * Creates a node that represents the contents of a side bar panel

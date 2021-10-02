@@ -70,7 +70,7 @@ export default function DocumentTab({
     },
     {
       id: "closeAll",
-      text: "CloseAll",
+      text: "Close All",
       execute: () => {
         documentService.closeAll();
       },
