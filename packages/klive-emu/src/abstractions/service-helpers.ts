@@ -23,6 +23,7 @@ import { IToolAreaService } from "@abstractions/tool-area-service";
 import {
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
+  DIALOG_SERVICE,
   DOCUMENT_SERVICE,
   EDITOR_SERVICE,
   ENGINE_PROXY_SERVICE,
@@ -40,6 +41,7 @@ import {
 } from "@abstractions/service-registry";
 import { IVmEngineService as IVmEngineService } from "./vm-controller-service";
 import { IZ80CompilerService } from "./z80-compiler-service";
+import { IDialogService } from "./dialog-service";
 
 /**
  * Gets the service instance that provides the application state store
@@ -159,6 +161,13 @@ export function getVmEngineService(): IVmEngineService {
 /**
  * Gets the Z80 compiler service instance
  */
- export function getZ80CompilerService(): IZ80CompilerService {
+export function getZ80CompilerService(): IZ80CompilerService {
   return getService(Z80_COMPILER_SERVICE) as IZ80CompilerService;
+}
+
+/**
+ * Gets the dialog service instance
+ */
+export function getDialogService(): IDialogService {
+  return getService(DIALOG_SERVICE) as IDialogService;
 }

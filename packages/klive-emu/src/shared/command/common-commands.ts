@@ -4,6 +4,8 @@ import {
 } from "@abstractions/command-registry";
 import {
   dispatch,
+  getDialogService,
+  getState,
   getVmEngineService,
   getZ80CompilerService,
 } from "@abstractions/service-helpers";
@@ -83,8 +85,11 @@ export function registerCommonCommands(): void {
  * Executes the specified core Klive command
  * @param id Klive command to execute
  */
-export async function executeKliveCommand(id: CoreKliveCommand): Promise<void> {
-  await executeCommand(`klive.${id}`);
+export async function executeKliveCommand(
+  id: CoreKliveCommand,
+  additionalContext?: any
+): Promise<void> {
+  await executeCommand(`klive.${id}`, additionalContext);
 }
 
 /**
@@ -386,15 +391,13 @@ const compileCodeCommand: IKliveCommand = {
     }
     switch (context.process) {
       case "main":
-        await getZ80CompilerService().compileFile(
-          context.resource
-        );
+        await getZ80CompilerService().compileFile(context.resource);
         break;
       case "emu":
         signInvalidContext(context);
         break;
       case "ide":
-        const result = await sendFromIdeToEmu<CompileFileResponse>({
+        await sendFromIdeToEmu<CompileFileResponse>({
           type: "CompileFile",
           filename: context.resource,
         });
@@ -411,14 +414,14 @@ const injectCodeIntoVmCommand: IKliveCommand = {
   title: "Injects code into the virtual machine",
   icon: "inject",
   execute: async (context) => {
-    switch (context.process) {
-      case "main":
-      case "emu":
-        signInvalidContext(context);
-        break;
-      case "ide":
-        console.log("Inject code");
-        break;
+    await executeKliveCommand("compileCode", context);
+    const result = getState().compilation?.result;
+    if (result?.errors?.length ?? 0 > 0) {
+      await getDialogService().showMessageBox(
+        "Code compilation failed, no program to inject.",
+        "Injecting code",
+        "error"
+      );
     }
   },
 };

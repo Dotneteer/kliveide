@@ -16,7 +16,7 @@ import {
   GetFileContentsResponse,
   CompileFileResponse,
 } from "@messaging/message-types";
-import { emuForwarder, emuWindow } from "../app/app-menu";
+import { emuForwarder, emuWindow, ideWindow } from "../app/app-menu";
 import {
   createKliveProject,
   openProjectFolder,
@@ -24,7 +24,7 @@ import {
 } from "../project/project-utils";
 import { getFolderContents } from "../utils/file-utils";
 import { getZ80CompilerService } from "@abstractions/service-helpers";
-import { CompilerResponseMessage } from "@abstractions/z80-compiler-service";
+import { KliveProcess } from "../../extensibility/abstractions/command-def";
 
 /**
  * Processes the requests arriving from the emulator process
@@ -236,12 +236,9 @@ export async function processIdeRequest(
     case "SaveFileContents": {
       let error: string | undefined;
       try {
-        fs.writeFileSync(
-          message.name,
-          message.contents, {
-            encoding: "utf8"
-          }
-        );
+        fs.writeFileSync(message.name, message.contents, {
+          encoding: "utf8",
+        });
       } catch (err) {
         error = `Cannot save file: ${err}`;
       }
@@ -252,11 +249,22 @@ export async function processIdeRequest(
     }
 
     case "CompileFile":
-      const result = await getZ80CompilerService().compileFile(message.filename);
+      const result = await getZ80CompilerService().compileFile(
+        message.filename
+      );
       return <CompileFileResponse>{
         type: "CompileFileResponse",
         result,
-      }
+      };
+
+    case "ShowMessageBox":
+      const window = message.process === "emu" ? emuWindow : ideWindow;
+      await dialog.showMessageBox(window.window, {
+        message: message.message,
+        title: message.title ?? "Klive",
+        type: message.asError ? "error" : "info",
+      });
+      return <DefaultResponse>{ type: "Ack" };
 
     default:
       // --- If the main does not recognize a request, it forwards it to Emu

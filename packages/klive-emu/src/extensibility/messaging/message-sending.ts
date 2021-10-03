@@ -156,6 +156,17 @@ export async function sendFromMainToIde<TResp extends ResponseMessage>(
 }
 
 /**
+ * Sends the specified message from the Emu process to Main
+ * @param message Message to send
+ * @returns Response
+ */
+export async function sendFromEmuToMain<TResp extends ResponseMessage>(
+  message: RequestMessage
+): Promise<TResp> {
+  return await getEmuToMainMessenger().sendMessage(message);
+}
+
+/**
  * Sends the specified message from the Ide process to Emu
  * @param message Message to send
  * @returns Response

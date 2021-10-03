@@ -8,6 +8,7 @@ import IdeApp from "./IdeApp";
 import {
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
+  DIALOG_SERVICE,
   DOCUMENT_SERVICE,
   EDITOR_SERVICE,
   ENGINE_PROXY_SERVICE,
@@ -55,6 +56,7 @@ import { registerCommonCommands } from "@shared/command/common-commands";
 import { registerIdeToEmuMessenger } from "@messaging/message-sending";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
+import { DialogService } from "../common-ui/DialogService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -121,6 +123,7 @@ registerService(INTERACTIVE_PANE_SERVICE, new InteractivePaneService());
 registerService(OUTPUT_PANE_SERVICE, new OutputPaneService());
 registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
+registerService(DIALOG_SERVICE, new DialogService());
 
 // --- Register meesenger objects
 registerIdeToEmuMessenger(new IdeToEmuMessenger());

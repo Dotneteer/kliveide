@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import { registerThemes } from "../common-ui/register-themes";
 import EmuApp from "./EmuApp";
 import {
+  DIALOG_SERVICE,
   MODAL_DIALOG_SERVICE,
   registerService,
   STORE_SERVICE,
@@ -28,6 +29,7 @@ import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@shared/command/common-commands";
 import { VmEngineService } from "../machines/core/vm-engine-service";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
+import { DialogService } from "../common-ui/DialogService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -78,6 +80,7 @@ registerService(
 registerService(THEME_SERVICE, new ThemeService());
 registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
 registerService(VM_ENGINE_SERVICE, new VmEngineService());
+registerService(DIALOG_SERVICE, new DialogService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

@@ -13,6 +13,7 @@ import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { NewProjectData } from "./dto";
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
+import { KliveProcess } from "../abstractions/command-def";
 
 /**
  * The common base for all message types
@@ -294,6 +295,17 @@ export interface CompileFileRequest extends MessageBase {
 }
 
 /**
+ * The Ide ask the main to show a message box
+ */
+ export interface ShowMessageBoxRequest extends MessageBase {
+  type: "ShowMessageBox";
+  process: KliveProcess;
+  message: string;
+  title?: string;
+  asError?: boolean;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -355,7 +367,9 @@ type IdeToMainRequests =
   | RenameFileRequest
   | GetFileContentsRequest
   | SaveFileContentsRequest
-  | CompileFileRequest;
+  | CompileFileRequest
+  | ShowMessageBoxRequest;
+
 
 /**
  * Requests send by the main process to Ide
