@@ -14,6 +14,7 @@ import {
   RequestMessage,
   ResponseMessage,
   GetFileContentsResponse,
+  CompileFileResponse,
 } from "@messaging/message-types";
 import { emuForwarder, emuWindow } from "../app/app-menu";
 import {
@@ -22,6 +23,8 @@ import {
   selectFolder,
 } from "../project/project-utils";
 import { getFolderContents } from "../utils/file-utils";
+import { getZ80CompilerService } from "@abstractions/service-helpers";
+import { CompilerResponseMessage } from "@abstractions/z80-compiler-service";
 
 /**
  * Processes the requests arriving from the emulator process
@@ -247,6 +250,13 @@ export async function processIdeRequest(
         error: error,
       };
     }
+
+    case "CompileFile":
+      const result = await getZ80CompilerService().compileFile(message.filename);
+      return <CompileFileResponse>{
+        type: "CompileFileResponse",
+        result,
+      }
 
     default:
       // --- If the main does not recofnize a request, it forwards it to Emu

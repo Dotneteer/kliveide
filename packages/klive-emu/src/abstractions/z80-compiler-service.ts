@@ -18,7 +18,7 @@ export interface CompileFileMessage extends CompilerMessageBase {
   type: "CompileFile";
   filename: string;
   options?: AssemblerOptions;
-};
+}
 
 /**
  * Ask the compiler to compile the specified source text
@@ -27,7 +27,7 @@ export interface CompileSourceMessage extends CompilerMessageBase {
   type: "Compile";
   sourceText: string;
   options?: AssemblerOptions;
-};
+}
 
 /**
  * All compiler requests
@@ -45,7 +45,7 @@ export interface AssemblerOutputResponse extends CompilerMessageBase {
 /**
  * All compiler responses
  */
-export type CompilerResponseMessage = AssemblerOutputResponse; 
+export type CompilerResponseMessage = AssemblerOutputResponse;
 
 /**
  * Defines the messages the compiler accepts
@@ -63,7 +63,10 @@ export interface IZ80CompilerService {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  compileFile(filename: string, options?: AssemblerOptions): Promise<AssemblerOutput>;
+  compileFile(
+    filename: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput>;
 
   /**
    * Compiles he passed Z80 Assembly code into Z80 binary code.
@@ -72,5 +75,8 @@ export interface IZ80CompilerService {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  compile(sourceText: string, options?: AssemblerOptions): Promise<AssemblerOutput>;
+  compile(
+    sourceText: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput>;
 }

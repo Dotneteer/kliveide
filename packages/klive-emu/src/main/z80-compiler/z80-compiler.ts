@@ -115,11 +115,4 @@ export class Z80CompilerService implements IZ80CompilerService {
     });
     return response.result;
   }
-
-  /**
-   * Sets the trace handler function
-   * @param handler Trace handler function
-   */
-  setTraceHandler(handler: (message: string) => void): void {
-  }
 }

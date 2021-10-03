@@ -2,7 +2,11 @@ import {
   executeCommand,
   registerCommand,
 } from "@abstractions/command-registry";
-import { dispatch, getVmEngineService } from "@abstractions/service-helpers";
+import {
+  dispatch,
+  getVmEngineService,
+  getZ80CompilerService,
+} from "@abstractions/service-helpers";
 import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
@@ -14,7 +18,10 @@ import {
   emuShowToolbarAction,
 } from "@state/emu-view-options-reducer";
 import { ideShowAction } from "@state/show-ide-reducer";
-import { IKliveCommand } from "../../extensibility/abstractions/command-def";
+import {
+  IKliveCommand,
+  KliveCommandContext,
+} from "../../extensibility/abstractions/command-def";
 
 /**
  * Names of core Klive commands
@@ -37,6 +44,7 @@ type CoreKliveCommand =
   | "stepIntoVm"
   | "stepOverVm"
   | "stepOutVm"
+  | "compileCode"
   | "injectCodeIntoVm"
   | "injectAndStartVm"
   | "injectAndDebugVm";
@@ -64,6 +72,7 @@ export function registerCommonCommands(): void {
   registerCommand(stepOverVmCommand);
   registerCommand(stepOutVmCommand);
 
+  registerCommand(compileCodeCommand);
   registerCommand(injectCodeIntoVmCommand);
   registerCommand(injectAndStartVmCommand);
   registerCommand(injectAndDebugVmCommand);
@@ -366,6 +375,38 @@ const stepOutVmCommand: IKliveCommand = {
 /**
  * This command injects code into the virtual machine
  */
+const compileCodeCommand: IKliveCommand = {
+  commandId: "klive.compileCode",
+  title: "Compiles the code",
+  icon: "combine",
+  execute: async (context) => {
+    console.log("compile", context);
+    if (!context.resource) {
+      return;
+    }
+    switch (context.process) {
+      case "main":
+        await getZ80CompilerService().compileFile(
+          context.resource
+        );
+        break;
+      case "emu":
+        signInvalidContext(context);
+        break;
+      case "ide":
+        const result = await sendFromIdeToEmu({
+          type: "CompileFile",
+          filename: context.resource,
+        });
+        console.log(JSON.stringify(result));
+        break;
+    }
+  },
+};
+
+/**
+ * This command injects code into the virtual machine
+ */
 const injectCodeIntoVmCommand: IKliveCommand = {
   commandId: "klive.injectCodeIntoVm",
   title: "Injects code into the virtual machine",
@@ -374,9 +415,8 @@ const injectCodeIntoVmCommand: IKliveCommand = {
     switch (context.process) {
       case "main":
       case "emu":
-        throw new Error(
-          `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
-        );
+        signInvalidContext(context);
+        break;
       case "ide":
         console.log("Inject code");
         break;
@@ -395,9 +435,8 @@ const injectAndStartVmCommand: IKliveCommand = {
     switch (context.process) {
       case "main":
       case "emu":
-        throw new Error(
-          `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
-        );
+        signInvalidContext(context);
+        break;
       case "ide":
         console.log("Inject and start");
         break;
@@ -416,12 +455,21 @@ const injectAndDebugVmCommand: IKliveCommand = {
     switch (context.process) {
       case "main":
       case "emu":
-        throw new Error(
-          `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
-        );
+        signInvalidContext(context);
+        break;
       case "ide":
         console.log("Inject and debug");
         break;
     }
   },
 };
+
+/**
+ * Signs the specified context as invalid for executing a command
+ * @param context Invalid context
+ */
+function signInvalidContext(context: KliveCommandContext) {
+  throw new Error(
+    `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
+  );
+}

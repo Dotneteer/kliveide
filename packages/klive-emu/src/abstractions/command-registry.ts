@@ -84,7 +84,10 @@ export function getRegisteredCommands(): IKliveCommand[] {
  * Executes the specified command
  * @param id Command ID
  */
-export async function executeCommand(id: string): Promise<void> {
+export async function executeCommand(
+  id: string,
+  additionalContext?: any
+): Promise<void> {
   const command = getCommand(id);
   if (!command) {
     throw new Error(
@@ -92,24 +95,7 @@ export async function executeCommand(id: string): Promise<void> {
     );
   }
 
-  // --- Prepare the context
-  const state = getState();
-  let executionState: ExecutionState;
-  switch (state.emulatorPanel?.executionState) {
-    case 1:
-      executionState = "running";
-      break;
-    case 2:
-    case 3:
-      executionState = "paused";
-    case 4:
-    case 5:
-      executionState = "stopped";
-    default:
-      executionState = "none";
-      break;
-  }
-  const context = createCommandContext(command);
+  const context = { ...createCommandContext(command), additionalContext };
 
   // --- Refresh the state of the command
   command.queryState?.(context);
@@ -150,7 +136,7 @@ function createCommandContext(command: IKliveCommand): KliveCommandContext {
     machineType: state.machineType,
     resource: state.project?.contextResourceId ?? null,
     resourceActive: state.project?.contextResourceActive ?? false,
-    appState: state
+    appState: state,
   };
 }
 
@@ -158,9 +144,7 @@ function createCommandContext(command: IKliveCommand): KliveCommandContext {
  * Updates the status of the specified command
  * @param id ID of the command to update
  */
-export async function updateCommandStatus(
-  id: string,
-): Promise<void> {
+export async function updateCommandStatus(id: string): Promise<void> {
   const command = getCommand(id);
   if (!command) {
     return;
@@ -170,7 +154,11 @@ export async function updateCommandStatus(
   const oldVisible = command.visible;
   const oldChecked = command.checked;
   await command.queryState?.(context);
-  if (command.enabled !== oldEnabled || command.visible !== oldVisible || command.checked !== oldChecked) {
+  if (
+    command.enabled !== oldEnabled ||
+    command.visible !== oldVisible ||
+    command.checked !== oldChecked
+  ) {
     (commandStatusChanged as LiteEvent<string>).fire(command.commandId);
   }
 }
@@ -190,7 +178,7 @@ export async function updateAllCommandState(): Promise<void> {
 
 /**
  * Starts watching for command status
- * @returns 
+ * @returns
  */
 export function startCommandStatusQuery(): void {
   if (statusWatchRunning) {
@@ -199,7 +187,7 @@ export function startCommandStatusQuery(): void {
   statusWatchRunning = true;
   (async () => {
     while (statusWatchRunning) {
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 200));
       await updateAllCommandState();
     }
   })();

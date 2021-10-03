@@ -37,10 +37,7 @@ import { Z80CompilerService } from "./z80-compiler/z80-compiler";
 const compiler: Z80CompilerService = new Z80CompilerService();
 
 (async () => {
-  const result = await compiler.compile(`
-    ld a,b
-    .trace "Hello"
-  `);
+  const result = await compiler.compileFile("C:/Users/dotne/source/repos/kliveide/packages/klive-emu/src/main/test.z80");
   console.log(JSON.stringify(result));
 })()
 

@@ -11,7 +11,6 @@ const assembler = new Z80Assembler();
 parentPort.on("message", (data: CompilerMessage) => {
   switch (data.type) {
     case "Compile":
-      console.log("Compile invoked.");
       parentPort.postMessage(<CompilerResponseMessage>{
         type: "CompileResult",
         correlationId: data.correlationId,
@@ -19,7 +18,11 @@ parentPort.on("message", (data: CompilerMessage) => {
       });
       break;
     case "CompileFile":
-      console.log("CompileFile invoked.");
+      parentPort.postMessage(<CompilerResponseMessage>{
+        type: "CompileResult",
+        correlationId: data.correlationId,
+        result: assembler.compileFile(data.filename, data.options),
+      });
       break;
   }
 });

@@ -129,6 +129,7 @@ function DocumentCommandBar() {
     if (activeDoc) {
       if (activeDoc.projectNode.buildRoot) {
         setBuildRootCommands([
+          { commandId: "klive.compileCode" },
           { commandId: "klive.injectCodeIntoVm" },
           { commandId: "klive.injectAndStartVm" },
           { commandId: "klive.injectAndDebugVm" },

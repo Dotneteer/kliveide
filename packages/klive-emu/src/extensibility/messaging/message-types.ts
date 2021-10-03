@@ -11,6 +11,8 @@ import {
 } from "../../shared/state/AppState";
 import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { NewProjectData } from "./dto";
+import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
+import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 
 /**
  * The common base for all message types
@@ -189,7 +191,7 @@ export interface OpenProjectFolderRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for a file open dialog
+ * The Ide ask the main for a file open dialog
  */
 export interface GetFolderDialogRequest extends MessageBase {
   type: "GetFolderDialog";
@@ -198,7 +200,7 @@ export interface GetFolderDialogRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for checking the existence of a file
+ * The Ide ask the main for checking the existence of a file
  */
 export interface FileExistsRequest extends MessageBase {
   type: "FileExists";
@@ -206,7 +208,7 @@ export interface FileExistsRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for obtaining the contents of a folder
+ * The Ide ask the main for obtaining the contents of a folder
  */
 export interface GetFolderContentsRequest extends MessageBase {
   type: "GetFolderContents";
@@ -214,7 +216,7 @@ export interface GetFolderContentsRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for creating a folder
+ * The Ide ask the main for creating a folder
  */
 export interface CreateFolderRequest extends MessageBase {
   type: "CreateFolder";
@@ -222,7 +224,7 @@ export interface CreateFolderRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for creating a file
+ * The Ide ask the main for creating a file
  */
 export interface CreateFileRequest extends MessageBase {
   type: "CreateFile";
@@ -230,7 +232,7 @@ export interface CreateFileRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for displaying a confirm dialog
+ * The Ide ask the main for displaying a confirm dialog
  */
 export interface ConfirmDialogRequest extends MessageBase {
   type: "ConfirmDialog";
@@ -240,7 +242,7 @@ export interface ConfirmDialogRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for deleting a folder
+ * The Ide ask the main for deleting a folder
  */
 export interface DeleteFolderRequest extends MessageBase {
   type: "DeleteFolder";
@@ -248,7 +250,7 @@ export interface DeleteFolderRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for deleting a file
+ * The Ide ask the main for deleting a file
  */
 export interface DeleteFileRequest extends MessageBase {
   type: "DeleteFile";
@@ -256,7 +258,7 @@ export interface DeleteFileRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for renaming a file
+ * The Ide ask the main for renaming a file
  */
 export interface RenameFileRequest extends MessageBase {
   type: "RenameFile";
@@ -265,16 +267,16 @@ export interface RenameFileRequest extends MessageBase {
 }
 
 /**
- * The Emu ask the main for getting the contents of a file
+ * The Ide ask the main for getting the contents of a file
  */
- export interface GetFileContentsRequest extends MessageBase {
+export interface GetFileContentsRequest extends MessageBase {
   type: "GetFileContents";
   name: string;
   asBuffer?: boolean;
 }
 
 /**
- * The Emu ask the main for getting the contents of a file
+ * The Ide ask the main for getting the contents of a file
  */
 export interface SaveFileContentsRequest extends MessageBase {
   type: "SaveFileContents";
@@ -282,6 +284,14 @@ export interface SaveFileContentsRequest extends MessageBase {
   contents: string;
 }
 
+/**
+ * The Ide ask the main for getting the contents of a file
+ */
+export interface CompileFileRequest extends MessageBase {
+  type: "CompileFile";
+  filename: string;
+  options?: AssemblerOptions;
+}
 
 /**
  * All requests
@@ -344,7 +354,8 @@ type IdeToMainRequests =
   | DeleteFileRequest
   | RenameFileRequest
   | GetFileContentsRequest
-  | SaveFileContentsRequest;
+  | SaveFileContentsRequest
+  | CompileFileRequest;
 
 /**
  * Requests send by the main process to Ide
@@ -474,11 +485,18 @@ export interface ConfirmDialogResponse extends MessageBase {
 /**
  * The Emu ask the main for getting the contents of a file
  */
- export interface GetFileContentsResponse extends MessageBase {
+export interface GetFileContentsResponse extends MessageBase {
   type: "GetFileContentsResponse";
   contents?: string | Buffer;
 }
 
+/**
+ * The Ide ask the main for getting the contents of a file
+ */
+export interface CompileFileResponse extends MessageBase {
+  type: "CompileFileResponse";
+  result: AssemblerOutput;
+}
 
 export type ResponseMessage =
   | DefaultResponse
@@ -496,7 +514,8 @@ export type ResponseMessage =
   | GetFolderContentsResponse
   | FileOperationResponse
   | ConfirmDialogResponse
-  | GetFileContentsResponse;
+  | GetFileContentsResponse
+  | CompileFileResponse;
 
 /**
  * All messages
