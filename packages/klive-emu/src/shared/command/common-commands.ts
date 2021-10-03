@@ -2,11 +2,16 @@ import {
   executeCommand,
   registerCommand,
 } from "@abstractions/command-registry";
-import { dispatch, getVmEngineService } from "@abstractions/service-helpers";
+import {
+  dispatch,
+  getVmEngineService,
+  getZ80CompilerService,
+} from "@abstractions/service-helpers";
 import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
 } from "@messaging/message-sending";
+import { CompileFileResponse } from "@messaging/message-types";
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
@@ -14,7 +19,10 @@ import {
   emuShowToolbarAction,
 } from "@state/emu-view-options-reducer";
 import { ideShowAction } from "@state/show-ide-reducer";
-import { IKliveCommand } from "../../extensibility/abstractions/command-def";
+import {
+  IKliveCommand,
+  KliveCommandContext,
+} from "../../extensibility/abstractions/command-def";
 
 /**
  * Names of core Klive commands
@@ -36,7 +44,11 @@ type CoreKliveCommand =
   | "debugVm"
   | "stepIntoVm"
   | "stepOverVm"
-  | "stepOutVm";
+  | "stepOutVm"
+  | "compileCode"
+  | "injectCodeIntoVm"
+  | "injectAndStartVm"
+  | "injectAndDebugVm";
 
 /**
  * Registers common Klive commands that can be executed from any processes
@@ -60,6 +72,11 @@ export function registerCommonCommands(): void {
   registerCommand(stepIntoVmCommand);
   registerCommand(stepOverVmCommand);
   registerCommand(stepOutVmCommand);
+
+  registerCommand(compileCodeCommand);
+  registerCommand(injectCodeIntoVmCommand);
+  registerCommand(injectAndStartVmCommand);
+  registerCommand(injectAndDebugVmCommand);
 }
 
 /**
@@ -355,3 +372,103 @@ const stepOutVmCommand: IKliveCommand = {
     context.commandInfo.enabled = context.executionState === "paused";
   },
 };
+
+/**
+ * This command injects code into the virtual machine
+ */
+const compileCodeCommand: IKliveCommand = {
+  commandId: "klive.compileCode",
+  title: "Compiles the code",
+  icon: "combine",
+  execute: async (context) => {
+    if (!context.resource) {
+      return;
+    }
+    switch (context.process) {
+      case "main":
+        await getZ80CompilerService().compileFile(
+          context.resource
+        );
+        break;
+      case "emu":
+        signInvalidContext(context);
+        break;
+      case "ide":
+        const result = await sendFromIdeToEmu<CompileFileResponse>({
+          type: "CompileFile",
+          filename: context.resource,
+        });
+        break;
+    }
+  },
+};
+
+/**
+ * This command injects code into the virtual machine
+ */
+const injectCodeIntoVmCommand: IKliveCommand = {
+  commandId: "klive.injectCodeIntoVm",
+  title: "Injects code into the virtual machine",
+  icon: "inject",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+      case "emu":
+        signInvalidContext(context);
+        break;
+      case "ide":
+        console.log("Inject code");
+        break;
+    }
+  },
+};
+
+/**
+ * This command injects code into the virtual machine and starts it
+ */
+const injectAndStartVmCommand: IKliveCommand = {
+  commandId: "klive.injectAndStartVm",
+  title: "Injects code and starts",
+  icon: "play",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+      case "emu":
+        signInvalidContext(context);
+        break;
+      case "ide":
+        console.log("Inject and start");
+        break;
+    }
+  },
+};
+
+/**
+ * This command injects code into the virtual machine and starts it
+ */
+const injectAndDebugVmCommand: IKliveCommand = {
+  commandId: "klive.injectAndDebugVm",
+  title: "Injects code and starts with debugging",
+  icon: "debug",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+      case "emu":
+        signInvalidContext(context);
+        break;
+      case "ide":
+        console.log("Inject and debug");
+        break;
+    }
+  },
+};
+
+/**
+ * Signs the specified context as invalid for executing a command
+ * @param context Invalid context
+ */
+function signInvalidContext(context: KliveCommandContext) {
+  throw new Error(
+    `'${context.commandInfo.commandId}' cannot be executed it the ${context.process} process`
+  );
+}

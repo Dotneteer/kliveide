@@ -12,6 +12,7 @@ interface Props {
   fill?: string;
   enabled?: boolean;
   clicked?: (ev: React.MouseEvent) => void;
+  setContext?: () => any;
   doNotPropagate?: boolean;
 }
 
@@ -26,6 +27,7 @@ export default function CommandIconButton({
   fill,
   enabled,
   clicked,
+  setContext,
   doNotPropagate = false,
 }: Props) {
   const hostElement = React.createRef<HTMLDivElement>();
@@ -54,7 +56,8 @@ export default function CommandIconButton({
 
   const handleClick = async (ev: React.MouseEvent) => {
     if (command) {
-      await executeCommand(command.commandId);
+      const context = setContext ? setContext() : undefined;
+      await executeCommand(command.commandId, context);
     } else {
       if (clicked && enabled) {
         clicked(ev);

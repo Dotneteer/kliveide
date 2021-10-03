@@ -29,7 +29,6 @@ import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { getState, getStore } from "@abstractions/service-helpers";
 import { IProjectService } from "@abstractions/project-service";
-import { setProjectContextAction } from "@state/project-reducer";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 type State = {
@@ -405,6 +404,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           : "";
         let panel = await factory.createDocumentPanel(resource, sourceText);
         let index = documentService.getActiveDocument()?.index ?? null;
+        panel.projectNode = item.nodeData;
         panel.temporary = isTemporary;
         panel.initialFocus = !isTemporary;
         if (isTemporary) {
@@ -506,6 +506,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             execute: async () => {
               delete item.nodeData.buildRoot;
               this._listApi.forceRefresh();
+              getDocumentService().fireChanges();
             },
           });
         } else {
@@ -515,31 +516,20 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             execute: async () => {
               item.nodeData.buildRoot = true;
               this._listApi.forceRefresh();
+              getDocumentService().fireChanges();
             },
           });
         }
       }
     }
 
-    // --- Set the project context
-    dispatch(
-      setProjectContextAction(
-        item.nodeData.fullPath,
-        getDocumentService().getActiveDocument()?.id === item.nodeData.fullPath
-      )
-    );
     const rect = (ev.target as HTMLElement).getBoundingClientRect();
-    try {
-      await getContextMenuService().openMenu(
-        menuItems,
-        rect.y + 22,
-        ev.clientX,
-        ev.target as HTMLElement
-      );
-    } finally {
-      // --- Remove the project context
-      dispatch(setProjectContextAction(undefined, undefined));
-    }
+    await getContextMenuService().openMenu(
+      menuItems,
+      rect.y + 22,
+      ev.clientX,
+      ev.target as HTMLElement
+    );
   }
 
   /**

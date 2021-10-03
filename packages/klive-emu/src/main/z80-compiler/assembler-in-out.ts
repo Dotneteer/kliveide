@@ -16,6 +16,7 @@ export class AssemblerOutput extends AssemblyModule {
     this.addressMap = new Map<FileLine, number[]>();
     this.listFileItems = [];
     this.injectOptions = {};
+    this.traceOutput = [];
   }
 
   /**
@@ -81,6 +82,11 @@ export class AssemblerOutput extends AssemblyModule {
    * The type of the source that resulted in this compilation (for example, ZX BASIC)
    */
   sourceType?: string;
+
+  /**
+   * Trace outputs
+   */
+  readonly traceOutput: string[];
 
   /**
    * Adds the specified information to the address map

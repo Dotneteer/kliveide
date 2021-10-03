@@ -1,5 +1,6 @@
 import { IDocumentPanel } from "@abstractions/document-service";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { ProjectNode } from "../explorer-tools/ProjectNode";
 
 /**
  * A base class for document panel descriptors
@@ -11,6 +12,7 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
   private _active = false;
   private _temporary = false;
   private _initialFocus = false;
+  private _projectNode: ProjectNode;
   private _panelState: Record<string, any> = {};
   private _documentDescriptorChanged = new LiteEvent<void>();
 
@@ -102,6 +104,20 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
   set initialFocus(value: boolean) {
     const oldValue = this._initialFocus;
     this._initialFocus = value;
+    if (oldValue !== value) {
+      this.signDescriptorChange();
+    }
+  }
+
+  /**
+   * The project node behind the document panel
+   */
+  get projectNode(): ProjectNode {
+    return this._projectNode;
+  }
+  set projectNode(value: ProjectNode) {
+    const oldValue = this._projectNode;
+    this._projectNode = value;
     if (oldValue !== value) {
       this.signDescriptorChange();
     }

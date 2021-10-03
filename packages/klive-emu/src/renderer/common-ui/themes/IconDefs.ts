@@ -60,7 +60,7 @@ export const IconDefs: IconInfo[] = [
   },
   {
     name: "play",
-    path: "M4 2v11.82l9-5.94L4 2zm1.5 2.82l4.81 3.06L5.5 11V4.82z",
+    path: "M3.78 2L3 2.41v12l.78.42 9-6V8l-9-6zM4 13.48V3.35l7.6 5.07L4 13.48z",
     width: 16,
     height: 16,
   },
@@ -264,6 +264,27 @@ export const IconDefs: IconInfo[] = [
     name: "combine",
     path:
       "M1.5 1l-.5.5v3l.5.5h3l.5-.5v-3L4.5 1h-3zM2 4V2h2v2H2zm-.5 2l-.5.5v3l.5.5h3l.5-.5v-3L4.5 6h-3zM2 9V7h2v2H2zm-1 2.5l.5-.5h3l.5.5v3l-.5.5h-3l-.5-.5v-3zm1 .5v2h2v-2H2zm10.5-7l-.5.5v6l.5.5h3l.5-.5v-6l-.5-.5h-3zM15 8h-2V6h2v2zm0 3h-2V9h2v2zM9.1 8H6v1h3.1l-1 1 .7.6 1.8-1.8v-.7L8.8 6.3l-.7.7 1 1z",
+    width: 16,
+    height: 16,
+  },
+  {
+    name: "inject",
+    path:
+      "M13.086 7l-2.39-2.398.702-.704L15 7.5l-3.602 3.602-.703-.704 2.383-2.382V8H3V7h10.086zM1 4h1v7H1V4z",
+    width: 16,
+    height: 16,
+  },
+  {
+    name: "check",
+    path:
+      "M14.431 3.323l-8.47 10-.79-.036-3.35-4.77.818-.574 2.978 4.24 8.051-9.506.764.646z",
+    width: 16,
+    height: 16,
+  },
+  {
+    name: "warning",
+    path:
+      "M7.56 1h.88l6.54 12.26-.44.74H1.44L1 13.26 7.56 1zM8 2.28L2.28 13H13.7L8 2.28zM8.625 12v-1h-1.25v1h1.25zm-1.25-2V6h1.25v4h-1.25z",
     width: 16,
     height: 16,
   },

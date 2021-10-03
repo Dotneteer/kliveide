@@ -1,5 +1,5 @@
 // ============================================================================
-// This file contains helper methods to access the service instances. Each 
+// This file contains helper methods to access the service instances. Each
 // service has a related `get<ServiceName>` method to query the service instance.
 //
 // You can cache the service instance within a class or a method.
@@ -36,8 +36,10 @@ import {
   THEME_SERVICE,
   TOOL_AREA_SERVICE,
   VM_ENGINE_SERVICE,
+  Z80_COMPILER_SERVICE,
 } from "@abstractions/service-registry";
 import { IVmEngineService as IVmEngineService } from "./vm-controller-service";
+import { IZ80CompilerService } from "./z80-compiler-service";
 
 /**
  * Gets the service instance that provides the application state store
@@ -147,10 +149,16 @@ export function getCommandService(): IInteractiveCommandService {
   return getService(COMMAND_SERVICE) as IInteractiveCommandService;
 }
 
-
 /**
  * Gets the virtual machine service instance
  */
- export function getVmEngineService(): IVmEngineService {
+export function getVmEngineService(): IVmEngineService {
   return getService(VM_ENGINE_SERVICE) as IVmEngineService;
+}
+
+/**
+ * Gets the Z80 compiler service instance
+ */
+ export function getZ80CompilerService(): IZ80CompilerService {
+  return getService(Z80_COMPILER_SERVICE) as IZ80CompilerService;
 }

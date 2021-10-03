@@ -9,6 +9,7 @@ import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
+import { IKliveCommand } from "../../../extensibility/abstractions/command-def";
 
 // --- Document Frame IDs
 const DOC_CONTAINER_ID = "ideDocumentContainer";
@@ -120,6 +121,34 @@ const placeholderStyle: CSSProperties = {
  * Represents the command bar of the document frame
  */
 function DocumentCommandBar() {
+  const [buildRootCommands, setBuildRootCommands] = useState<IKliveCommand[]>(
+    []
+  );
+  const onActiveDocumentChanged = (info: DocumentsInfo) => {
+    const activeDoc = info.active;
+    if (activeDoc) {
+      if (activeDoc.projectNode.buildRoot) {
+        setBuildRootCommands([
+          { commandId: "klive.compileCode" },
+          { commandId: "klive.injectCodeIntoVm" },
+          { commandId: "klive.injectAndStartVm" },
+          { commandId: "klive.injectAndDebugVm" },
+        ]);
+      } else {
+        setBuildRootCommands([]);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const documentService = getDocumentService();
+    documentService.documentsChanged.on(onActiveDocumentChanged);
+
+    return () => {
+      documentService.documentsChanged.off(onActiveDocumentChanged);
+    };
+  });
+
   const style: CSSProperties = {
     display: "flex",
     flexDirection: "row",
@@ -134,15 +163,16 @@ function DocumentCommandBar() {
     background: "var(--commandbar-background-color)",
   };
 
-  return (
-    <div style={style}>
-      <CommandIconButton
-        iconName="close"
-        title="Close All"
-        clicked={() => {
-          getDocumentService().closeAll();
-        }}
-      />
-    </div>
-  );
+  const commandIcons = buildRootCommands.map((cmd, index) => (
+    <CommandIconButton
+      key={index}
+      commandId={cmd.commandId}
+      setContext={() => ({
+        resource: getDocumentService().getActiveDocument().id,
+        resourceActive: true,
+      })}
+    ></CommandIconButton>
+  ));
+
+  return <div style={style}>{commandIcons}</div>;
 }

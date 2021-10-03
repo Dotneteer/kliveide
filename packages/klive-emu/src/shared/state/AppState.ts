@@ -1,4 +1,5 @@
 import { Activity } from "@abstractions/activity";
+import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 
 /**
  * Represents the application's entire state vector
@@ -22,6 +23,7 @@ export type AppState = {
   documentFrame?: DocumentFrameState;
   toolFrame?: ToolFrameState;
   project?: ProjectState;
+  compilation?: CompilationState;
 };
 
 /**
@@ -140,8 +142,6 @@ export type ProjectState = {
   projectName?: string;
   hasVm?: boolean;
   directoryContents?: DirectoryContent;
-  contextResourceId?: string;
-  contextResourceActive?: boolean;
 }
 
 /**
@@ -152,6 +152,12 @@ export type ProjectState = {
   folders: DirectoryContent[];
   files: string[];
 };
+
+export type CompilationState = {
+  inProgress?: boolean;
+  filename?: string;
+  result?: AssemblerOutput;
+}
 
 // --- Represents a machine in the registry
 export type RegisteredMachine = {
@@ -221,6 +227,11 @@ export function getInitialAppState(): AppState {
       path: null,
       projectName: null,
       hasVm: false,
+    },
+    compilation: {
+      inProgress: false,
+      filename: null,
+      result: null
     }
   };
 }
