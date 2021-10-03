@@ -1,3 +1,5 @@
+import { ILiteEvent } from "@shared/utils/LiteEvent";
+import { CompilationState } from "@state/AppState";
 import {
   AssemblerOptions,
   AssemblerOutput,
@@ -69,7 +71,7 @@ export interface IZ80CompilerService {
   ): Promise<AssemblerOutput>;
 
   /**
-   * Compiles he passed Z80 Assembly code into Z80 binary code.
+   * Compiles the passed Z80 Assembly code into Z80 binary code.
    * binary code.
    * @param sourceText Z80 assembly source code text
    * @param options Compiler options. If not defined, the compiler uses the default options.

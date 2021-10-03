@@ -274,4 +274,18 @@ export const IconDefs: IconInfo[] = [
     width: 16,
     height: 16,
   },
+  {
+    name: "check",
+    path:
+      "M14.431 3.323l-8.47 10-.79-.036-3.35-4.77.818-.574 2.978 4.24 8.051-9.506.764.646z",
+    width: 16,
+    height: 16,
+  },
+  {
+    name: "warning",
+    path:
+      "M7.56 1h.88l6.54 12.26-.44.74H1.44L1 13.26 7.56 1zM8 2.28L2.28 13H13.7L8 2.28zM8.625 12v-1h-1.25v1h1.25zm-1.25-2V6h1.25v4h-1.25z",
+    width: 16,
+    height: 16,
+  },
 ];

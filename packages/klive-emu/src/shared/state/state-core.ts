@@ -1,3 +1,14 @@
+import { Activity } from "@abstractions/activity";
+import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
+import {
+  AppState,
+  DirectoryContent,
+  DocumentFrameState,
+  FrameDiagData,
+  RegisteredMachine,
+  SideBarState,
+} from "./AppState";
+
 /**
  * Available action types
  */
@@ -68,17 +79,11 @@ export interface ActionTypes {
   PROJECT_LOADING: null;
   PROJECT_OPENED: null;
   PROJECT_CLOSED: null;
-}
 
-import { Activity } from "@abstractions/activity";
-import {
-  AppState,
-  DirectoryContent,
-  DocumentFrameState,
-  FrameDiagData,
-  RegisteredMachine,
-  SideBarState,
-} from "./AppState";
+  // --- Compilation
+  START_COMPILE: null;
+  END_COMPILE: null;
+}
 
 /**
  * Represents payload properties
@@ -125,6 +130,8 @@ export interface Payload {
   machine?: RegisteredMachine;
   modalDisplayed?: boolean;
   flag?: boolean;
+  filename?: string;
+  compileResult?: AssemblerOutput;
 }
 
 /**

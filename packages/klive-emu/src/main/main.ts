@@ -35,13 +35,6 @@ import { executeKliveCommand, registerCommonCommands } from "@shared/command/com
 import { Z80CompilerService } from "./z80-compiler/z80-compiler";
 import { registerService, Z80_COMPILER_SERVICE } from "@abstractions/service-registry";
 
-const compiler: Z80CompilerService = new Z80CompilerService();
-
-(async () => {
-  const result = await compiler.compileFile("C:/Users/dotne/source/repos/kliveide/packages/klive-emu/src/main/test.z80");
-  console.log(JSON.stringify(result));
-})()
-
 // --- Sign that this process is the main process
 registerSite("main");
 registerCommonCommands();

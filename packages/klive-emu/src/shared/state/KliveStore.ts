@@ -4,6 +4,7 @@ import { ILiteEvent, LiteEvent } from "../utils/LiteEvent";
 import {
   ActivityBarState,
   AppState,
+  CompilationState,
   EmulatorPanelState,
   EmuViewOptions,
   ProjectState,
@@ -32,7 +33,7 @@ export class KliveStore {
   private _executionStateChanged = new LiteEvent<number>();
   private _machineTypeChanged = new LiteEvent<string>();
   private _projectChanged = new LiteEvent<ProjectState>();
-  private _vmPropertyChanged = new LiteEvent<EmulatorPanelState>();
+  private _compilationChanged = new LiteEvent<CompilationState>();
 
   /**
    * Initializes this instance with the specified redux store
@@ -168,10 +169,17 @@ export class KliveStore {
   }
 
   /**
-   * Fires when the `projectState` state property changes
+   * Fires when the `project` state property changes
    */
   get projectChanged(): ILiteEvent<ProjectState> {
     return this._projectChanged;
+  }
+
+  /**
+   * Fires when the `compilation` state property changes
+   */
+  get compilationChanged(): ILiteEvent<CompilationState> {
+    return this._compilationChanged;
   }
 
   /**
@@ -241,6 +249,11 @@ export class KliveStore {
     // --- project
     if (state.project !== oldState.project) {
       this._projectChanged.fire(state.project);
+    }
+
+    // --- compilation
+    if (state.compilation !== oldState.compilation) {
+      this._compilationChanged.fire(state.compilation);
     }
   }
 }

@@ -11,6 +11,7 @@ import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
 } from "@messaging/message-sending";
+import { CompileFileResponse } from "@messaging/message-types";
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
@@ -393,7 +394,7 @@ const compileCodeCommand: IKliveCommand = {
         signInvalidContext(context);
         break;
       case "ide":
-        await sendFromIdeToEmu({
+        const result = await sendFromIdeToEmu<CompileFileResponse>({
           type: "CompileFile",
           filename: context.resource,
         });

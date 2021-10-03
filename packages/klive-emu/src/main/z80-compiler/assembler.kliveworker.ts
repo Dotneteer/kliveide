@@ -5,7 +5,6 @@ import {
 import { parentPort } from "worker_threads";
 import { Z80Assembler } from "./assembler";
 
-console.log("Assembler worker initialized.");
 const assembler = new Z80Assembler();
 
 parentPort.on("message", (data: CompilerMessage) => {

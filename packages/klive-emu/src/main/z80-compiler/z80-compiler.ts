@@ -8,6 +8,8 @@ import {
 import { AssemblerOptions, AssemblerOutput } from "./assembler-in-out";
 
 import "worker-loader!./assembler.kliveworker.ts";
+import { dispatch } from "@abstractions/service-helpers";
+import { endCompileAction, startCompileAction } from "@state/compilation-reducer";
 
 /**
  * This class implements the operations of the Z80 Compiler service
@@ -89,11 +91,13 @@ export class Z80CompilerService implements IZ80CompilerService {
     filename: string,
     options?: AssemblerOptions
   ): Promise<AssemblerOutput> {
+    dispatch(startCompileAction(filename));
     const response = await this.sendMessage<CompilerResponseMessage>({
       type: "CompileFile",
       filename,
       options,
     });
+    dispatch(endCompileAction(response.result));
     return response.result;
   }
 
@@ -108,11 +112,13 @@ export class Z80CompilerService implements IZ80CompilerService {
     sourceText: string,
     options?: AssemblerOptions
   ): Promise<AssemblerOutput> {
+    dispatch(startCompileAction(null));
     const response = await this.sendMessage<CompilerResponseMessage>({
       type: "Compile",
       sourceText,
       options,
     });
+    dispatch(endCompileAction(response.result));
     return response.result;
   }
 }

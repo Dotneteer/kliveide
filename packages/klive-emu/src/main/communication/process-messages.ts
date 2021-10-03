@@ -252,7 +252,6 @@ export async function processIdeRequest(
     }
 
     case "CompileFile":
-      console.log(`CompileFile: ${JSON.stringify(message)}`);
       const result = await getZ80CompilerService().compileFile(message.filename);
       return <CompileFileResponse>{
         type: "CompileFileResponse",
