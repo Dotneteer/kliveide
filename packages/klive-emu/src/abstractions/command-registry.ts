@@ -95,7 +95,7 @@ export async function executeCommand(
     );
   }
 
-  const context = { ...createCommandContext(command), additionalContext };
+  const context = { ...createCommandContext(command), ...additionalContext };
 
   // --- Refresh the state of the command
   command.queryState?.(context);
@@ -134,8 +134,8 @@ function createCommandContext(command: IKliveCommand): KliveCommandContext {
     process: getSite(),
     executionState,
     machineType: state.machineType,
-    resource: state.project?.contextResourceId ?? null,
-    resourceActive: state.project?.contextResourceActive ?? false,
+    resource: null,
+    resourceActive: false,
     appState: state,
   };
 }

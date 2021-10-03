@@ -164,7 +164,14 @@ function DocumentCommandBar() {
   };
 
   const commandIcons = buildRootCommands.map((cmd, index) => (
-    <CommandIconButton key={index} commandId={cmd.commandId}></CommandIconButton>
+    <CommandIconButton
+      key={index}
+      commandId={cmd.commandId}
+      setContext={() => ({
+        resource: getDocumentService().getActiveDocument().id,
+        resourceActive: true,
+      })}
+    ></CommandIconButton>
   ));
 
   return <div style={style}>{commandIcons}</div>;

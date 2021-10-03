@@ -252,6 +252,7 @@ export async function processIdeRequest(
     }
 
     case "CompileFile":
+      console.log(`CompileFile: ${JSON.stringify(message)}`);
       const result = await getZ80CompilerService().compileFile(message.filename);
       return <CompileFileResponse>{
         type: "CompileFileResponse",
@@ -259,7 +260,7 @@ export async function processIdeRequest(
       }
 
     default:
-      // --- If the main does not recofnize a request, it forwards it to Emu
+      // --- If the main does not recognize a request, it forwards it to Emu
       return await emuForwarder.sendMessage(message);
   }
 }

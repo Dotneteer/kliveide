@@ -140,8 +140,6 @@ export type ProjectState = {
   projectName?: string;
   hasVm?: boolean;
   directoryContents?: DirectoryContent;
-  contextResourceId?: string;
-  contextResourceActive?: boolean;
 }
 
 /**

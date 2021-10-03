@@ -33,6 +33,7 @@ import { registerSite } from "@abstractions/process-site";
 import { sendFromMainToEmu } from "@messaging/message-sending";
 import { executeKliveCommand, registerCommonCommands } from "@shared/command/common-commands";
 import { Z80CompilerService } from "./z80-compiler/z80-compiler";
+import { registerService, Z80_COMPILER_SERVICE } from "@abstractions/service-registry";
 
 const compiler: Z80CompilerService = new Z80CompilerService();
 
@@ -44,6 +45,9 @@ const compiler: Z80CompilerService = new Z80CompilerService();
 // --- Sign that this process is the main process
 registerSite("main");
 registerCommonCommands();
+
+// --- Register services used by the main process
+registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.

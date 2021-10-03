@@ -380,7 +380,6 @@ const compileCodeCommand: IKliveCommand = {
   title: "Compiles the code",
   icon: "combine",
   execute: async (context) => {
-    console.log("compile", context);
     if (!context.resource) {
       return;
     }
@@ -394,11 +393,10 @@ const compileCodeCommand: IKliveCommand = {
         signInvalidContext(context);
         break;
       case "ide":
-        const result = await sendFromIdeToEmu({
+        await sendFromIdeToEmu({
           type: "CompileFile",
           filename: context.resource,
         });
-        console.log(JSON.stringify(result));
         break;
     }
   },

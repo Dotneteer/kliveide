@@ -29,7 +29,6 @@ import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { getState, getStore } from "@abstractions/service-helpers";
 import { IProjectService } from "@abstractions/project-service";
-import { setProjectContextAction } from "@state/project-reducer";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 type State = {
@@ -524,25 +523,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       }
     }
 
-    // --- Set the project context
-    dispatch(
-      setProjectContextAction(
-        item.nodeData.fullPath,
-        getDocumentService().getActiveDocument()?.id === item.nodeData.fullPath
-      )
-    );
     const rect = (ev.target as HTMLElement).getBoundingClientRect();
-    try {
-      await getContextMenuService().openMenu(
-        menuItems,
-        rect.y + 22,
-        ev.clientX,
-        ev.target as HTMLElement
-      );
-    } finally {
-      // --- Remove the project context
-      dispatch(setProjectContextAction(undefined, undefined));
-    }
+    await getContextMenuService().openMenu(
+      menuItems,
+      rect.y + 22,
+      ev.clientX,
+      ev.target as HTMLElement
+    );
   }
 
   /**
