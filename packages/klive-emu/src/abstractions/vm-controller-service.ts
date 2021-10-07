@@ -8,6 +8,7 @@ import {
   MachineState,
 } from "../renderer/machines/core/vm-core-types";
 import { FrameDiagData } from "@state/AppState";
+import { CodeToInject } from "./code-runner-service";
 
 /**
  * This class represents the states of the virtual machine as
@@ -185,6 +186,13 @@ export interface IVmEngineService {
    * Cancels the execution cycle
    */
   cancelRun(): Promise<void>;
+
+  /**
+   * Injects and runs the specified code
+   * @param codeToInject Code to inject into the virtual machine
+   * @param debug Run in debug mode?
+   */
+  runCode(codeToInject: CodeToInject, debug: boolean): Promise<void>;
 
   /**
    * Executes the cycle of the Spectrum virtual machine

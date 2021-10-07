@@ -6,9 +6,13 @@ import {
   ResponseMessage,
 } from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { MAIN_TO_EMU_REQUEST_CHANNEL, MAIN_TO_EMU_RESPONE_CHANNEL } from "@messaging/channels";
+import {
+  MAIN_TO_EMU_REQUEST_CHANNEL,
+  MAIN_TO_EMU_RESPONE_CHANNEL,
+} from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
 import { getVmEngineService } from "@abstractions/service-helpers";
+import { DebugStepMode, EmulationMode } from "../machines/core/vm-core-types";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -34,49 +38,49 @@ async function processEmulatorMessages(
 
     case "StartVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.start();
+        await vmEngineService.start();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "PauseVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.pause();
+        await vmEngineService.pause();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StopVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.stop();
+        await vmEngineService.stop();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "RestartVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.restart();
+        await vmEngineService.restart();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "DebugVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.startDebug();
+        await vmEngineService.startDebug();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StepIntoVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.stepInto();
+        await vmEngineService.stepInto();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StepOverVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.stepOver();
+        await vmEngineService.stepOver();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StepOutVm":
       if (vmEngineService.hasEngine) {
-        vmEngineService.stepOut();
+        await vmEngineService.stepOut();
       }
       return <DefaultResponse>{ type: "Ack" };
 

@@ -38,6 +38,7 @@ import {
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
 import { Store } from "redux";
 import { getStore } from "@abstractions/service-helpers";
+import { CodeToInject } from "@abstractions/code-runner-service";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 
@@ -329,6 +330,29 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    */
   setClockMultiplier(multiplier: number): void {
     this.api.setClockMultiplier(multiplier);
+  }
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  async injectCodeToRun(codeToInject: CodeToInject): Promise<void> {}
+
+  /**
+   * Prepares the engine for code injection
+   * @param _model Model to run in the virtual machine
+   */
+  async prepareForInjection(_model: string): Promise<number> {
+    return 0;
+  }
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine and runs it
+   * @param codeToInject Code to inject into the machine
+   * @param debug Start in debug mode?
+   */
+  async runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void> {
+    // TODO: Implement this method
   }
 
   // ==========================================================================
@@ -702,7 +726,7 @@ export class CambridgeZ88CustomDisassembler implements ICustomDisassembler {
             if (!isFirst) {
               str += ", ";
             }
-            str += `$${intToX2(ch)}`
+            str += `$${intToX2(ch)}`;
             usedString = false;
           }
           isFirst = false;

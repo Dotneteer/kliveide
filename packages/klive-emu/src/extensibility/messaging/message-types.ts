@@ -11,9 +11,10 @@ import {
 } from "../../shared/state/AppState";
 import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { NewProjectData } from "./dto";
-import { AssemblerOptions, CodeToInject } from "../../main/z80-compiler/assembler-in-out";
+import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 import { KliveProcess } from "../abstractions/command-def";
+import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**
  * The common base for all message types
@@ -55,6 +56,16 @@ export interface CreateMachineRequest extends MessageBase {
  */
 export interface StartVmRequest extends MessageBase {
   type: "StartVm";
+}
+
+/**
+ * The main process sends this message to Emu to start the VM and
+ * run to till it reaches the specified termination point
+ */
+export interface RunCodeRequest extends MessageBase {
+  type: "RunCode";
+  codeToInject: CodeToInject;
+  debug: boolean;
 }
 
 /**
@@ -350,6 +361,7 @@ type MainToEmuRequests =
   | StepIntoVmRequest
   | StepOverVmRequest
   | StepOutVmRequest
+  | RunCodeRequest
   | ExecuteMachineCommandRequest;
 
 /**

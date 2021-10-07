@@ -15,7 +15,7 @@ import {
 import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "../wa-interop/wa-api";
 import { ICpu } from "@shared/machines/AbstractCpu";
-import { CodeToInject } from "../../../main/z80-compiler/assembler-in-out";
+import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**
  * Represents the core abstraction of a virtual machine.
@@ -391,9 +391,20 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
    */
-  async injectCodeToRun(codeToInject: CodeToInject): Promise<void> {
-    return;
-  }
+  abstract injectCodeToRun(codeToInject: CodeToInject): Promise<void>;
+
+  /**
+   * Prepares the engine for code injection
+   * @param model Model to run in the virtual machine
+   */
+  abstract prepareForInjection(model: string): Promise<number>;
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine and runs it
+   * @param codeToInject Code to inject into the machine
+   * @param debug Start in debug mode?
+   */
+  abstract runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void>;
 
   // ==========================================================================
   // Lifecycle methods
@@ -410,6 +421,17 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
    * @param _debugging Is started in debug mode?
    */
   async beforeStarted(_debugging: boolean): Promise<void> {}
+
+  /**
+   * Override this method to define an action to run before the injected
+   * code is started
+   * @param _codeToInject The injected code
+   * @param _debug Start in debug mode?
+   */
+  async beforeRunInjected(
+    _codeToInject: CodeToInject,
+    _debug?: boolean
+  ): Promise<void> {}
 
   /**
    * Override this method to define an action after the virtual machine has

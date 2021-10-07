@@ -18,7 +18,7 @@ import { KeyMapping } from "../core/keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
 import { ProgramCounterInfo } from "@state/AppState";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
-import { CodeToInject } from "../../../main/z80-compiler/assembler-in-out";
+import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**
  * ZX Spectrum common core implementation
@@ -313,6 +313,52 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     if (codeToInject.options.cursork) {
       // --- Set the keyboard in "L" mode
       this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
+    }
+  }
+
+  /**
+   * Prepares the engine for code injection
+   * @param _model Model to run in the virtual machine
+   */
+  async prepareForInjection(_model: string): Promise<number> {
+    return 0;
+  }
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine and runs it
+   * @param codeToInject Code to inject into the machine
+   * @param debug Start in debug mode?
+   */
+  async runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void> {
+    const controller = this.controller;
+
+    // --- Stop the running machine
+    await controller.stop();
+
+    // --- Start the machine and run it while it reaches the injection point
+    let mainExec = await this.prepareForInjection(codeToInject.model);
+
+    // --- Inject to code
+    await this.injectCodeToRun(codeToInject);
+
+    // --- Set the continuation point
+    const startPoint =
+      codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
+    this.api.setPC(startPoint);
+
+    // --- Handle subroutine calls
+    if (codeToInject.subroutine) {
+      const spValue = this.getMachineState().sp;
+      this.writeMemory(spValue - 1, mainExec >> 8);
+      this.writeMemory(spValue - 2, mainExec & 0xff);
+      this.api.setSP(spValue - 2);
+    }
+
+    await this.beforeRunInjected(codeToInject, debug);
+    if (debug) {
+      await controller.startDebug();
+    } else {
+      await controller.start();
     }
   }
 

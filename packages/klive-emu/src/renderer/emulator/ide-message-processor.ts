@@ -75,6 +75,12 @@ async function processIdeMessages(
       }
       return <DefaultResponse>{ type: "Ack" };
 
+    case "RunCode":
+      if (vmEngineService.hasEngine) {
+        await vmEngineService.runCode(message.codeToInject, message.debug);
+      }
+      return <DefaultResponse>{ type: "Ack" };
+
     case "GetCpuState":
       return <GetCpuStateResponse>{
         type: "GetCpuStateResponse",

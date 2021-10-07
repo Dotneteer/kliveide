@@ -6,6 +6,7 @@ import { Provider } from "react-redux";
 import { registerThemes } from "../common-ui/register-themes";
 import IdeApp from "./IdeApp";
 import {
+  CODE_RUNNER_SERVICE,
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
   DIALOG_SERVICE,
@@ -57,6 +58,7 @@ import { registerIdeToEmuMessenger } from "@messaging/message-sending";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "../common-ui/DialogService";
+import { CodeRunnerService } from "../machines/CodeRunnerService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -124,6 +126,7 @@ registerService(OUTPUT_PANE_SERVICE, new OutputPaneService());
 registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
 registerService(DIALOG_SERVICE, new DialogService());
+registerService(CODE_RUNNER_SERVICE, new CodeRunnerService());
 
 // --- Register meesenger objects
 registerIdeToEmuMessenger(new IdeToEmuMessenger());
