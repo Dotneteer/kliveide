@@ -18,6 +18,7 @@ import { KeyMapping } from "../core/keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
 import { ProgramCounterInfo } from "@state/AppState";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
+import { CodeToInject } from "../../../main/z80-compiler/assembler-in-out";
 
 /**
  * ZX Spectrum common core implementation
@@ -259,11 +260,21 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
   }
 
   /**
+   * Indicates if the virtual machine supports code injection for the specified
+   * machine mode
+   * @param mode Optional machine mode
+   * @returns True, if the model supports the code injection
+   */
+  supportsCodeInjection(mode?: string): boolean {
+    return true;
+  }
+
+  /**
    * Initializes the machine with the specified code
    * @param runMode Machine run mode
    * @param code Intial code
    */
-   injectCode(
+  injectCode(
     code: number[],
     codeAddress = 0x8000,
     startAddress = 0x8000
@@ -282,7 +293,28 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     this.api.setPC(startAddress);
   }
 
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  async injectCodeToRun(codeToInject: CodeToInject): Promise<void> {
+    for (const segment of codeToInject.segments) {
+      if (segment.bank !== undefined) {
+        // TODO: Implement this
+      } else {
+        const addr = segment.startAddress;
+        for (let i = 0; i < segment.emittedCode.length; i++) {
+          this.writeMemory(addr + i, segment.emittedCode[i]);
+        }
+      }
+    }
 
+    // --- Prepare the run mode
+    if (codeToInject.options.cursork) {
+      // --- Set the keyboard in "L" mode
+      this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
+    }
+  }
 
   /**
    * Extracts saved data

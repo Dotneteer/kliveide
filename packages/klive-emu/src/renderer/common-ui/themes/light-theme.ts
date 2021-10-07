@@ -46,6 +46,8 @@ export const lightTheme: ITheme = {
     "--menu-selected-text-color": "#ffffff",
 
     "--icon-default-size": "14",
+    "--icon-pointed-background": "#3d3d3d",
+    "--icon-mousedown-background": "#2a2d2e",
 
     "--emulator-background-color": "#808080",
     "--keyboard-background-color": "#202020",

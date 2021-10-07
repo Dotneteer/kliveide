@@ -45,6 +45,8 @@ export interface IThemeProperties {
   "--menu-selected-text-color": string;
 
   "--icon-default-size": string;
+  "--icon-pointed-background": string;
+  "--icon-mousedown-background": string;
 
   "--emulator-background-color": string;
 

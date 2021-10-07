@@ -31,9 +31,16 @@ import {
 } from "./communication/process-messages";
 import { registerSite } from "@abstractions/process-site";
 import { sendFromMainToEmu } from "@messaging/message-sending";
-import { executeKliveCommand, registerCommonCommands } from "@shared/command/common-commands";
+import {
+  executeKliveCommand,
+  registerCommonCommands,
+} from "@shared/command/common-commands";
 import { Z80CompilerService } from "./z80-compiler/z80-compiler";
-import { registerService, Z80_COMPILER_SERVICE } from "@abstractions/service-registry";
+import {
+  DIALOG_SERVICE,
+  registerService,
+  Z80_COMPILER_SERVICE,
+} from "@abstractions/service-registry";
 
 // --- Sign that this process is the main process
 registerSite("main");
@@ -56,10 +63,18 @@ app.on("ready", async () => {
   if (appSettings) {
     const viewOptions = appSettings.viewOptions;
     if (viewOptions) {
-      executeKliveCommand(viewOptions.showToolbar ? "showToolbar" : "hideToolbar");
-      executeKliveCommand(viewOptions.showStatusbar ? "showStatusBar" : "hideStatusBar");
-      executeKliveCommand(viewOptions.showFrameInfo ? "showFrameInfo" : "hideFrameInfo");
-      executeKliveCommand(viewOptions.showKeyboard ? "showKeyboard" : "hideKeyboard");
+      executeKliveCommand(
+        viewOptions.showToolbar ? "showToolbar" : "hideToolbar"
+      );
+      executeKliveCommand(
+        viewOptions.showStatusbar ? "showStatusBar" : "hideStatusBar"
+      );
+      executeKliveCommand(
+        viewOptions.showFrameInfo ? "showFrameInfo" : "hideFrameInfo"
+      );
+      executeKliveCommand(
+        viewOptions.showKeyboard ? "showKeyboard" : "hideKeyboard"
+      );
     }
   }
 

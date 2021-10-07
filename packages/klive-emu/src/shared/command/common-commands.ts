@@ -4,6 +4,8 @@ import {
 } from "@abstractions/command-registry";
 import {
   dispatch,
+  getDialogService,
+  getState,
   getVmEngineService,
   getZ80CompilerService,
 } from "@abstractions/service-helpers";
@@ -11,7 +13,10 @@ import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
 } from "@messaging/message-sending";
-import { CompileFileResponse } from "@messaging/message-types";
+import {
+  CompileFileResponse,
+  SupportsCodeInjectionResponse,
+} from "@messaging/message-types";
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
@@ -19,6 +24,10 @@ import {
   emuShowToolbarAction,
 } from "@state/emu-view-options-reducer";
 import { ideShowAction } from "@state/show-ide-reducer";
+import {
+  CodeToInject,
+  SpectrumModelType,
+} from "../../main/z80-compiler/assembler-in-out";
 import {
   IKliveCommand,
   KliveCommandContext,
@@ -83,8 +92,11 @@ export function registerCommonCommands(): void {
  * Executes the specified core Klive command
  * @param id Klive command to execute
  */
-export async function executeKliveCommand(id: CoreKliveCommand): Promise<void> {
-  await executeCommand(`klive.${id}`);
+export async function executeKliveCommand(
+  id: CoreKliveCommand,
+  additionalContext?: any
+): Promise<void> {
+  await executeCommand(`klive.${id}`, additionalContext);
 }
 
 /**
@@ -386,15 +398,13 @@ const compileCodeCommand: IKliveCommand = {
     }
     switch (context.process) {
       case "main":
-        await getZ80CompilerService().compileFile(
-          context.resource
-        );
+        await getZ80CompilerService().compileFile(context.resource);
         break;
       case "emu":
         signInvalidContext(context);
         break;
       case "ide":
-        const result = await sendFromIdeToEmu<CompileFileResponse>({
+        await sendFromIdeToEmu<CompileFileResponse>({
           type: "CompileFile",
           filename: context.resource,
         });
@@ -417,9 +427,96 @@ const injectCodeIntoVmCommand: IKliveCommand = {
         signInvalidContext(context);
         break;
       case "ide":
-        console.log("Inject code");
-        break;
+        await executeKliveCommand("compileCode", context);
+        const compilation = getState().compilation;
+        if (!compilation) {
+          return;
+        }
+        const result = compilation.result;
+        if (result?.errors?.length ?? 0 > 0) {
+          await getDialogService().showMessageBox(
+            "Code compilation failed, no program to inject.",
+            "Injecting code",
+            "error"
+          );
+          return;
+        }
+
+        // TODO: Check compilation model before injection
+
+        let sumCodeLength = 0;
+        result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
+        if (sumCodeLength === 0) {
+          await getDialogService().showMessageBox(
+            "The length of the compiled code is 0, " +
+              "so there is no code to inject into the virtual machine.",
+            "Injecting code"
+          );
+          return;
+        }
+
+        if (context.executionState !== "paused") {
+          await getDialogService().showMessageBox(
+            "To inject the code into the virtual machine, please put it in paused state first.",
+            "Injecting code"
+          );
+          return;
+        }
+
+        // --- Create the code to inject into the emulator
+        const codeToInject: CodeToInject = {
+          model: modelTypeToMachineType(result.modelType),
+          entryAddress: result.entryAddress,
+          subroutine:
+            result.sourceType === "zxbasic" ||
+            result.injectOptions["subroutine"],
+          segments: result.segments.map((s) => ({
+            startAddress: s.startAddress,
+            bank: s.bank,
+            bankOffset: s.bankOffset,
+            emittedCode: s.emittedCode,
+          })),
+          options: result.injectOptions,
+        };
+        await sendFromIdeToEmu({
+          type: "InjectCode",
+          codeToInject,
+        });
+
+        const message = `Successfully injected ${sumCodeLength} bytes in ${
+          codeToInject.segments.length
+        } segment${
+          codeToInject.segments.length > 1 ? "s" : ""
+        } from start address $${codeToInject.segments[0].startAddress
+          .toString(16)
+          .padStart(4, "0")
+          .toUpperCase()}`;
+        await getDialogService().showMessageBox(message, "Injecting code");
+        return;
     }
+
+    function modelTypeToMachineType(model: SpectrumModelType): string {
+      switch (model) {
+        case SpectrumModelType.Spectrum128:
+          return "128";
+        case SpectrumModelType.SpectrumP3:
+          return "p3";
+        case SpectrumModelType.Next:
+          return "next";
+        default:
+          return "48";
+      }
+    }
+  },
+  queryState: async (context) => {
+    let enabled = false;
+    if (context.process === "ide") {
+      const response = await sendFromIdeToEmu<SupportsCodeInjectionResponse>({
+        type: "SupportsCodeInjection",
+      });
+      enabled = response.supports;
+    }
+    context.commandInfo.enabled = enabled;
   },
 };
 

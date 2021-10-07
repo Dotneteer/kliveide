@@ -62,3 +62,4 @@ export const TOOL_AREA_SERVICE = "tool-area-service";
 export const COMMAND_SERVICE = "command-service";
 export const VM_ENGINE_SERVICE = "vm-engine-service";
 export const Z80_COMPILER_SERVICE = "z80-compiler-service";
+export const DIALOG_SERVICE = "dialog-service";

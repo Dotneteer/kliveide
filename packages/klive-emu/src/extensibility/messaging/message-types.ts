@@ -11,8 +11,9 @@ import {
 } from "../../shared/state/AppState";
 import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { NewProjectData } from "./dto";
-import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
+import { AssemblerOptions, CodeToInject } from "../../main/z80-compiler/assembler-in-out";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
+import { KliveProcess } from "../abstractions/command-def";
 
 /**
  * The common base for all message types
@@ -167,6 +168,22 @@ export interface GetMemoryContentsRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks Emu for the code injection support flag
+ */
+export interface SupportsCodeInjectionRequest extends MessageBase {
+  type: "SupportsCodeInjection";
+  mode?: string;
+}
+
+/**
+ * The Ide asks Emu to inject the specified code
+ */
+export interface InjectCodeRequest extends MessageBase {
+  type: "InjectCode";
+  codeToInject: CodeToInject;
+}
+
+/**
  * The Ide asks the main process for the contents of a folder
  */
 export interface GetRegisteredMachinesRequest extends MessageBase {
@@ -294,6 +311,17 @@ export interface CompileFileRequest extends MessageBase {
 }
 
 /**
+ * The Ide ask the main to show a message box
+ */
+export interface ShowMessageBoxRequest extends MessageBase {
+  type: "ShowMessageBox";
+  process: KliveProcess;
+  message: string;
+  title?: string;
+  asError?: boolean;
+}
+
+/**
  * All requests
  */
 export type RequestMessage =
@@ -335,7 +363,9 @@ type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
 type IdeToEmuRequests =
   | GetCpuStateRequest
   | GetMachineStateRequest
-  | GetMemoryContentsRequest;
+  | GetMemoryContentsRequest
+  | SupportsCodeInjectionRequest
+  | InjectCodeRequest;
 
 /**
  * Requests for IDE to Main
@@ -355,7 +385,8 @@ type IdeToMainRequests =
   | RenameFileRequest
   | GetFileContentsRequest
   | SaveFileContentsRequest
-  | CompileFileRequest;
+  | CompileFileRequest
+  | ShowMessageBoxRequest;
 
 /**
  * Requests send by the main process to Ide
@@ -415,6 +446,14 @@ export interface GetMachineStateResponse extends MessageBase {
 export interface GetMemoryContentsResponse extends MessageBase {
   type: "GetMemoryContentsResponse";
   contents: Uint8Array;
+}
+
+/**
+ * The Ide asks Emu for the code injection support flag
+ */
+export interface SupportsCodeInjectionResponse extends MessageBase {
+  type: "SupportsCodeInjectionResponse";
+  supports: boolean;
 }
 
 /**
@@ -515,7 +554,8 @@ export type ResponseMessage =
   | FileOperationResponse
   | ConfirmDialogResponse
   | GetFileContentsResponse
-  | CompileFileResponse;
+  | CompileFileResponse
+  | SupportsCodeInjectionResponse;
 
 /**
  * All messages

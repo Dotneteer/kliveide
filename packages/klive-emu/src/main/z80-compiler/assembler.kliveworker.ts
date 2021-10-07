@@ -5,9 +5,9 @@ import {
 import { parentPort } from "worker_threads";
 import { Z80Assembler } from "./assembler";
 
-const assembler = new Z80Assembler();
 
 parentPort.on("message", (data: CompilerMessage) => {
+  const assembler = new Z80Assembler();
   switch (data.type) {
     case "Compile":
       parentPort.postMessage(<CompilerResponseMessage>{
