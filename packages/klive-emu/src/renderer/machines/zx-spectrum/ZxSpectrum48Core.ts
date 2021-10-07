@@ -1,4 +1,9 @@
-import { MachineCreationOptions } from "../core/vm-core-types";
+import {
+  DebugStepMode,
+  EmulationMode,
+  ExecuteCycleOptions,
+  MachineCreationOptions,
+} from "../core/vm-core-types";
 import { ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
 import {
   ICustomDisassembler,
@@ -15,6 +20,11 @@ import {
 import { FloatNumber } from "./FloatNumber";
 import { calcOps } from "./calc-ops";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
+
+/**
+ * ZX Spectrum 48 main execution cycle entry point
+ */
+const SP48_MAIN_ENTRY = 0x12ac;
 
 /**
  * ZX Spectrum 48 core implementation
@@ -49,6 +59,24 @@ export class ZxSpectrum48Core extends ZxSpectrumCoreBase {
    * Friendly name to display
    */
   readonly displayName = "ZX Spectrum 48K";
+
+  /**
+   * Prepares the engine for code injection
+   * @param _model Model to run in the virtual machine
+   */
+  async prepareForInjection(_model: string): Promise<number> {
+    const controller = this.controller;
+    await controller.start(
+      new ExecuteCycleOptions(
+        EmulationMode.UntilExecutionPoint,
+        DebugStepMode.None,
+        0,
+        SP48_MAIN_ENTRY
+      )
+    );
+    await controller.waitForCycleTermination();
+    return SP48_MAIN_ENTRY;
+  }
 }
 
 /**

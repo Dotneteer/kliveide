@@ -11,9 +11,10 @@ import {
 } from "../../shared/state/AppState";
 import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { NewProjectData } from "./dto";
-import { AssemblerOptions, CodeToInject } from "../../main/z80-compiler/assembler-in-out";
+import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 import { KliveProcess } from "../abstractions/command-def";
+import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**
  * The common base for all message types

@@ -21,6 +21,7 @@ import { ISideBarService } from "@abstractions/side-bar-service";
 import { IThemeService } from "@abstractions/theme-service";
 import { IToolAreaService } from "@abstractions/tool-area-service";
 import {
+  CODE_RUNNER_SERVICE,
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
   DIALOG_SERVICE,
@@ -42,6 +43,7 @@ import {
 import { IVmEngineService as IVmEngineService } from "./vm-controller-service";
 import { IZ80CompilerService } from "./z80-compiler-service";
 import { IDialogService } from "./dialog-service";
+import { ICodeRunnerService } from "./code-runner-service";
 
 /**
  * Gets the service instance that provides the application state store
@@ -170,4 +172,11 @@ export function getZ80CompilerService(): IZ80CompilerService {
  */
 export function getDialogService(): IDialogService {
   return getService(DIALOG_SERVICE) as IDialogService;
+}
+
+/**
+ * Gets the code runner service instance
+ */
+export function getCodeRunnerService(): ICodeRunnerService {
+  return getService(CODE_RUNNER_SERVICE) as ICodeRunnerService;
 }
