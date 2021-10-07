@@ -19,6 +19,7 @@ setEngineDependencies({
 });
 
 describe("Cambridge Z88 - Memory paging", function () {
+  this.timeout(10_000);
   before(async () => {
     machine = new CambridgeZ88Core({
       baseClockFrequency: 3_276_800,
