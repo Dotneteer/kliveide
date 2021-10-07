@@ -59,6 +59,16 @@ export interface StartVmRequest extends MessageBase {
 }
 
 /**
+ * The main process sends this message to Emu to start the VM and
+ * run to till it reaches the specified termination point
+ */
+export interface RunCodeRequest extends MessageBase {
+  type: "RunCode";
+  codeToInject: CodeToInject;
+  debug: boolean;
+}
+
+/**
  * The main process sends this message to Emu to pause the VM
  */
 export interface PauseVmRequest extends MessageBase {
@@ -351,6 +361,7 @@ type MainToEmuRequests =
   | StepIntoVmRequest
   | StepOverVmRequest
   | StepOutVmRequest
+  | RunCodeRequest
   | ExecuteMachineCommandRequest;
 
 /**

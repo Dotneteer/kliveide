@@ -54,12 +54,14 @@ export class CodeRunnerService implements ICodeRunnerService {
         return;
       }
 
-      if (state.emulatorPanel.executionState !== 3) {
-        await getDialogService().showMessageBox(
-          "To inject the code into the virtual machine, please put it in paused state first.",
-          "Injecting code"
-        );
-        return;
+      if (operationType === "inject") {
+        if (state.emulatorPanel.executionState !== 3) {
+          await getDialogService().showMessageBox(
+            "To inject the code into the virtual machine, please put it in paused state first.",
+            "Injecting code"
+          );
+          return;
+        }
       }
 
       // --- Create the code to inject into the emulator
@@ -76,21 +78,38 @@ export class CodeRunnerService implements ICodeRunnerService {
         })),
         options: result.injectOptions,
       };
-      await sendFromIdeToEmu({
-        type: "InjectCode",
-        codeToInject,
-      });
 
-      const message = `Successfully injected ${sumCodeLength} bytes in ${
-        codeToInject.segments.length
-      } segment${
-        codeToInject.segments.length > 1 ? "s" : ""
-      } from start address $${codeToInject.segments[0].startAddress
-        .toString(16)
-        .padStart(4, "0")
-        .toUpperCase()}`;
-      await getDialogService().showMessageBox(message, "Injecting code");
-      return;
+      switch (operationType) {
+        case "inject":
+          await sendFromIdeToEmu({
+            type: "InjectCode",
+            codeToInject,
+          });
+          const message = `Successfully injected ${sumCodeLength} bytes in ${
+            codeToInject.segments.length
+          } segment${
+            codeToInject.segments.length > 1 ? "s" : ""
+          } from start address $${codeToInject.segments[0].startAddress
+            .toString(16)
+            .padStart(4, "0")
+            .toUpperCase()}`;
+          await getDialogService().showMessageBox(message, "Injecting code");
+          break;
+        case "run":
+          await sendFromIdeToEmu({
+            type: "RunCode",
+            codeToInject,
+            debug: false,
+          });
+          break;
+        case "debug":
+            await sendFromIdeToEmu({
+            type: "RunCode",
+            codeToInject,
+            debug: true,
+          });
+          break;
+      }
     }
 
     function modelTypeToMachineType(model: SpectrumModelType): string {

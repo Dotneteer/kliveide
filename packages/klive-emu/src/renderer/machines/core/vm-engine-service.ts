@@ -24,13 +24,14 @@ import { FrameDiagData } from "@state/AppState";
 import { CambridgeZ88Core } from "../cambridge-z88/CambridgeZ88Core";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
 import { dispatch, getState } from "@abstractions/service-helpers";
+import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**
  * This class is responsible for controlling the singleton virtual machine
  */
 export class VmEngineService implements IVmEngineService {
   private _vmEngine: VirtualMachineCoreBase | undefined;
-  private _appConfig: KliveConfiguration | undefined;;
+  private _appConfig: KliveConfiguration | undefined;
   private _error: string | null = null;
   private _vmEngineChanged = new LiteEvent<VirtualMachineCoreBase>();
   private _vmScreenRefreshed = new LiteEvent<void>();
@@ -245,6 +246,15 @@ export class VmEngineService implements IVmEngineService {
    */
   async start(options?: ExecuteCycleOptions): Promise<void> {
     await this.internalStart(options ?? new ExecuteCycleOptions());
+  }
+
+  /**
+   * Injects and runs the specified code
+   * @param codeToInject Code to inject into the virtual machine
+   * @param debug Run in debug mode?
+   */
+  async runCode(codeToInject: CodeToInject, debug: boolean): Promise<void> {
+    await this._vmEngine.runCode(codeToInject, debug);
   }
 
   /**
@@ -511,9 +521,7 @@ export class VmEngineService implements IVmEngineService {
       }
 
       // --- Set data frequently queried
-      dispatch(
-        emuSetFrameIdAction(this._startCount, resultState.frameCount)
-      );
+      dispatch(emuSetFrameIdAction(this._startCount, resultState.frameCount));
 
       // TODO: Check if we need this
       // rendererProcessStore.dispatch(
@@ -549,9 +557,7 @@ export class VmEngineService implements IVmEngineService {
       this._sumFrameTime += this._lastFrameTime;
       this._avgFrameTime = this._sumFrameTime / this._renderedFrames;
       toWait = Math.floor(nextFrameTime - curTime);
-      dispatch(
-        emuSetDiagDataAction(this.getFrameDiagData(resultState))
-      );
+      dispatch(emuSetDiagDataAction(this.getFrameDiagData(resultState)));
 
       // --- Let the machine complete the frame
       await engine.onFrameCompleted(resultState, toWait);
