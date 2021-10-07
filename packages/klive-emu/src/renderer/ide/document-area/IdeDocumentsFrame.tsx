@@ -3,13 +3,14 @@ import DocumentTabBar from "./DocumentTabBar";
 import ReactResizeDetector from "react-resize-detector";
 
 import { useEffect, useState } from "react";
-import { getDocumentService } from "@abstractions/service-helpers";
+import { getDocumentService, getStore } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
 import { IKliveCommand } from "../../../extensibility/abstractions/command-def";
+import { commandStatusChanged } from "@abstractions/command-registry";
 
 // --- Document Frame IDs
 const DOC_CONTAINER_ID = "ideDocumentContainer";
@@ -124,8 +125,8 @@ function DocumentCommandBar() {
   const [buildRootCommands, setBuildRootCommands] = useState<IKliveCommand[]>(
     []
   );
-  const onActiveDocumentChanged = (info: DocumentsInfo) => {
-    const activeDoc = info.active;
+  const refreshCommands = () => {
+    const activeDoc = getDocumentService().getActiveDocument();
     if (activeDoc) {
       if (activeDoc.projectNode.buildRoot) {
         setBuildRootCommands([
@@ -142,10 +143,12 @@ function DocumentCommandBar() {
 
   useEffect(() => {
     const documentService = getDocumentService();
-    documentService.documentsChanged.on(onActiveDocumentChanged);
+    documentService.documentsChanged.on(refreshCommands);
+    commandStatusChanged.on(refreshCommands);
 
     return () => {
-      documentService.documentsChanged.off(onActiveDocumentChanged);
+      documentService.documentsChanged.off(refreshCommands);
+      commandStatusChanged.off(refreshCommands);
     };
   });
 

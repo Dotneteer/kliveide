@@ -47,7 +47,9 @@ export const darkTheme: ITheme = {
     "--menu-selected-text-color": "#ffffff",
 
     "--icon-default-size": "14",
-
+    "--icon-pointed-background": "#3d3d3d",
+    "--icon-mousedown-background": "#5d5d5d",
+  
     "--emulator-background-color": "#808080",
     "--keyboard-background-color": "#202020",
 

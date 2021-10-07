@@ -1,4 +1,6 @@
 import { executeCommand, getCommand } from "@abstractions/command-registry";
+import { getThemeService } from "@abstractions/service-helpers";
+import { getTextNode } from "@syncfusion/ej2-buttons";
 import * as React from "react";
 import { useState } from "react";
 import { IKliveCommand } from "../../../extensibility/abstractions/command-def";
@@ -32,6 +34,7 @@ export default function CommandIconButton({
 }: Props) {
   const hostElement = React.createRef<HTMLDivElement>();
   const [pointed, setPointed] = useState(false);
+  const [mouseDown, setMouseDown] = useState(false);
 
   const command: IKliveCommand = commandId ? getCommand(commandId) : null;
   if (!iconName) {
@@ -44,6 +47,14 @@ export default function CommandIconButton({
     enabled = command?.enabled ?? true;
   }
 
+  const themeService = getThemeService();
+  const pointedBackground = themeService.getProperty(
+    "--icon-pointed-background"
+  );
+  const mouseDownBackground = themeService.getProperty(
+    "--icon-mousedown-background"
+  );
+
   const style = {
     display: "flex",
     padding: "2px 2px",
@@ -51,7 +62,11 @@ export default function CommandIconButton({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 4,
-    background: pointed ? "#3d3d3d" : "transparent",
+    background: pointed
+      ? mouseDown && enabled
+        ? mouseDownBackground
+        : pointedBackground
+      : "transparent",
   };
 
   const handleClick = async (ev: React.MouseEvent) => {
@@ -75,8 +90,13 @@ export default function CommandIconButton({
       style={style}
       title={title}
       onClick={handleClick}
+      onMouseDown={(ev) => setMouseDown(ev.button === 0)}
+      onMouseUp={() => setMouseDown(false)}
       onMouseEnter={() => setPointed(true)}
-      onMouseLeave={() => setPointed(false)}
+      onMouseLeave={() => {
+        setPointed(false);
+        setMouseDown(false);
+      }}
     >
       <Icon
         iconName={iconName}

@@ -5,6 +5,7 @@ import {
   GetMemoryContentsResponse,
   RequestMessage,
   ResponseMessage,
+  SupportsCodeInjectionResponse,
 } from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import {
@@ -90,6 +91,13 @@ async function processIdeMessages(
       return <GetMemoryContentsResponse>{
         type: "GetMemoryContentsResponse",
         contents: vmEngineService.getEngine()?.getMemoryContents(),
+      };
+
+    case "SupportsCodeInjection":
+      console.log("SupportsCodeInjection");
+      return <SupportsCodeInjectionResponse>{
+        type: "SupportsCodeInjectionResponse",
+        supports: vmEngineService.getEngine()?.supportsCodeInjection() ?? false,
       };
 
     default:

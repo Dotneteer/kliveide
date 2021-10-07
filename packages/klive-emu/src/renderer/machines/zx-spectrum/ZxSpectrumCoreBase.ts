@@ -259,11 +259,21 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
   }
 
   /**
+   * Indicates if the virtual machine supports code injection for the specified
+   * machine mode
+   * @param mode Optional machine mode
+   * @returns True, if the model supports the code injection
+   */
+  supportsCodeInjection(mode?: string): boolean {
+    return true;
+  }
+
+  /**
    * Initializes the machine with the specified code
    * @param runMode Machine run mode
    * @param code Intial code
    */
-   injectCode(
+  injectCode(
     code: number[],
     codeAddress = 0x8000,
     startAddress = 0x8000
@@ -281,8 +291,6 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     this.api.resetCpu(true);
     this.api.setPC(startAddress);
   }
-
-
 
   /**
    * Extracts saved data

@@ -361,6 +361,16 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   setClockMultiplier(_multiplier: number): void {}
 
   /**
+   * Indicates if the virtual machine supports code injection for the specified
+   * machine mode
+   * @param mode Optional machine mode
+   * @returns True, if the model supports the code injection
+   */
+  supportsCodeInjection(mode?: string): boolean {
+    return false;
+  }
+
+  /**
    * Initializes the machine with the specified code
    * @param runMode Machine run mode
    * @param code Intial code

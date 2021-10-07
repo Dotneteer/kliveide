@@ -13,7 +13,10 @@ import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
 } from "@messaging/message-sending";
-import { CompileFileResponse } from "@messaging/message-types";
+import {
+  CompileFileResponse,
+  SupportsCodeInjectionResponse,
+} from "@messaging/message-types";
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
@@ -414,15 +417,52 @@ const injectCodeIntoVmCommand: IKliveCommand = {
   title: "Injects code into the virtual machine",
   icon: "inject",
   execute: async (context) => {
-    await executeKliveCommand("compileCode", context);
-    const result = getState().compilation?.result;
-    if (result?.errors?.length ?? 0 > 0) {
-      await getDialogService().showMessageBox(
-        "Code compilation failed, no program to inject.",
-        "Injecting code",
-        "error"
-      );
+    switch (context.process) {
+      case "main":
+      case "emu":
+        signInvalidContext(context);
+        break;
+      case "ide":
+        await executeKliveCommand("compileCode", context);
+        const compilation = getState().compilation;
+        if (!compilation) {
+          return;
+        }
+        const result = compilation.result;
+        if (result?.errors?.length ?? 0 > 0) {
+          await getDialogService().showMessageBox(
+            "Code compilation failed, no program to inject.",
+            "Injecting code",
+            "error"
+          );
+          return;
+        }
+
+        // TODO: Check compilation model before injection
+
+        let sumCodeLength = 0;
+        result.segments.forEach((s) => (sumCodeLength += s.emittedCode.length));
+        if (sumCodeLength === 0) {
+          await getDialogService().showMessageBox(
+            "The length of the compiled code is 0, " +
+              "so there is no code to inject into the virtual machine.",
+            "Injecting code"
+          );
+          return;
+        }
+
+        break;
     }
+  },
+  queryState: async (context) => {
+    let enabled = false;
+    if (context.process === "ide") {
+      const response = await sendFromIdeToEmu<SupportsCodeInjectionResponse>({
+        type: "SupportsCodeInjection",
+      });
+      enabled = response.supports;
+    }
+    context.commandInfo.enabled = enabled;
   },
 };
 

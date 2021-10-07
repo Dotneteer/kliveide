@@ -168,6 +168,24 @@ export interface GetMemoryContentsRequest extends MessageBase {
 }
 
 /**
+ * The Ide asks Emu for the code injection support flag
+ */
+export interface SupportsCodeInjectionRequest extends MessageBase {
+  type: "SupportsCodeInjection";
+  mode?: string;
+}
+
+/**
+ * The Ide asks Emu to inject the specified code
+ */
+export interface InjectCodeRequest extends MessageBase {
+  type: "InjectCode";
+  code: number[];
+  codeAddress?: number;
+  startAddress?: number;
+}
+
+/**
  * The Ide asks the main process for the contents of a folder
  */
 export interface GetRegisteredMachinesRequest extends MessageBase {
@@ -297,7 +315,7 @@ export interface CompileFileRequest extends MessageBase {
 /**
  * The Ide ask the main to show a message box
  */
- export interface ShowMessageBoxRequest extends MessageBase {
+export interface ShowMessageBoxRequest extends MessageBase {
   type: "ShowMessageBox";
   process: KliveProcess;
   message: string;
@@ -347,7 +365,9 @@ type EmuToMainRequests = EmuOpenFileDialogRequest | ManageZ88CardsRequest;
 type IdeToEmuRequests =
   | GetCpuStateRequest
   | GetMachineStateRequest
-  | GetMemoryContentsRequest;
+  | GetMemoryContentsRequest
+  | SupportsCodeInjectionRequest
+  | InjectCodeRequest;
 
 /**
  * Requests for IDE to Main
@@ -369,7 +389,6 @@ type IdeToMainRequests =
   | SaveFileContentsRequest
   | CompileFileRequest
   | ShowMessageBoxRequest;
-
 
 /**
  * Requests send by the main process to Ide
@@ -429,6 +448,14 @@ export interface GetMachineStateResponse extends MessageBase {
 export interface GetMemoryContentsResponse extends MessageBase {
   type: "GetMemoryContentsResponse";
   contents: Uint8Array;
+}
+
+/**
+ * The Ide asks Emu for the code injection support flag
+ */
+export interface SupportsCodeInjectionResponse extends MessageBase {
+  type: "SupportsCodeInjectionResponse";
+  supports: boolean;
 }
 
 /**
@@ -529,7 +556,8 @@ export type ResponseMessage =
   | FileOperationResponse
   | ConfirmDialogResponse
   | GetFileContentsResponse
-  | CompileFileResponse;
+  | CompileFileResponse
+  | SupportsCodeInjectionResponse;
 
 /**
  * All messages
