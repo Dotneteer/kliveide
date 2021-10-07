@@ -2,7 +2,10 @@ import { ProgramCounterInfo } from "@state/AppState";
 import { IVmEngineService } from "../../../abstractions/vm-controller-service";
 import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
-import { EXEC_ENGINE_STATE_BUFFER, EXEC_OPTIONS_BUFFER } from "../wa-interop/memory-map";
+import {
+  EXEC_ENGINE_STATE_BUFFER,
+  EXEC_OPTIONS_BUFFER,
+} from "../wa-interop/memory-map";
 import {
   ExecuteCycleOptions,
   MachineCoreState,
@@ -12,7 +15,7 @@ import {
 import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "../wa-interop/wa-api";
 import { ICpu } from "@shared/machines/AbstractCpu";
-import { ICustomDisassembler } from "@shared/z80/disassembler/custom-disassembly";
+import { CodeToInject } from "../../../main/z80-compiler/assembler-in-out";
 
 /**
  * Represents the core abstraction of a virtual machine.
@@ -147,12 +150,12 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
       },
     };
     const deps = getEngineDependencies();
-    this.api = ((
+    this.api = (
       await WebAssembly.instantiate(
         await deps.waModuleLoader(this.waModuleFile),
         waImportObject
       )
-    ).instance.exports as unknown) as MachineApi;
+    ).instance.exports as unknown as MachineApi;
     if (!this.api) {
       throw new Error("WebAssembly module initialization failed.");
     }
@@ -350,7 +353,10 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
    * @param _command Command to execute
    * @param _args: Optional command arguments
    */
-  async executeMachineCommand(_command: string, _args?: unknown): Promise<unknown> {
+  async executeMachineCommand(
+    _command: string,
+    _args?: unknown
+  ): Promise<unknown> {
     return;
   }
 
@@ -380,6 +386,14 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
     codeAddress = 0x8000,
     startAddress = 0x8000
   ): void {}
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  async injectCodeToRun(codeToInject: CodeToInject): Promise<void> {
+    return;
+  }
 
   // ==========================================================================
   // Lifecycle methods

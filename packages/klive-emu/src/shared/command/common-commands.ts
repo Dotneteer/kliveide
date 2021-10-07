@@ -25,6 +25,10 @@ import {
 } from "@state/emu-view-options-reducer";
 import { ideShowAction } from "@state/show-ide-reducer";
 import {
+  CodeToInject,
+  SpectrumModelType,
+} from "../../main/z80-compiler/assembler-in-out";
+import {
   IKliveCommand,
   KliveCommandContext,
 } from "../../extensibility/abstractions/command-def";
@@ -451,7 +455,57 @@ const injectCodeIntoVmCommand: IKliveCommand = {
           return;
         }
 
-        break;
+        if (context.executionState !== "paused") {
+          await getDialogService().showMessageBox(
+            "To inject the code into the virtual machine, please put it in paused state first.",
+            "Injecting code"
+          );
+          return;
+        }
+
+        // --- Create the code to inject into the emulator
+        const codeToInject: CodeToInject = {
+          model: modelTypeToMachineType(result.modelType),
+          entryAddress: result.entryAddress,
+          subroutine:
+            result.sourceType === "zxbasic" ||
+            result.injectOptions["subroutine"],
+          segments: result.segments.map((s) => ({
+            startAddress: s.startAddress,
+            bank: s.bank,
+            bankOffset: s.bankOffset,
+            emittedCode: s.emittedCode,
+          })),
+          options: result.injectOptions,
+        };
+        await sendFromIdeToEmu({
+          type: "InjectCode",
+          codeToInject,
+        });
+
+        const message = `Successfully injected ${sumCodeLength} bytes in ${
+          codeToInject.segments.length
+        } segment${
+          codeToInject.segments.length > 1 ? "s" : ""
+        } from start address $${codeToInject.segments[0].startAddress
+          .toString(16)
+          .padStart(4, "0")
+          .toUpperCase()}`;
+        await getDialogService().showMessageBox(message, "Injecting code");
+        return;
+    }
+
+    function modelTypeToMachineType(model: SpectrumModelType): string {
+      switch (model) {
+        case SpectrumModelType.Spectrum128:
+          return "128";
+        case SpectrumModelType.SpectrumP3:
+          return "p3";
+        case SpectrumModelType.Next:
+          return "next";
+        default:
+          return "48";
+      }
     }
   },
   queryState: async (context) => {

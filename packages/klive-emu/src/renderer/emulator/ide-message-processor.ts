@@ -94,11 +94,14 @@ async function processIdeMessages(
       };
 
     case "SupportsCodeInjection":
-      console.log("SupportsCodeInjection");
       return <SupportsCodeInjectionResponse>{
         type: "SupportsCodeInjectionResponse",
         supports: vmEngineService.getEngine()?.supportsCodeInjection() ?? false,
       };
+
+    case "InjectCode":
+      vmEngineService.getEngine()?.injectCodeToRun(message.codeToInject);
+      return <DefaultResponse>{ type: "Ack" };
 
     default:
       return <DefaultResponse>{ type: "Ack" };

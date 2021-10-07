@@ -11,7 +11,7 @@ import {
 } from "../../shared/state/AppState";
 import { ICpuState } from "../../shared/machines/AbstractCpu";
 import { NewProjectData } from "./dto";
-import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
+import { AssemblerOptions, CodeToInject } from "../../main/z80-compiler/assembler-in-out";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 import { KliveProcess } from "../abstractions/command-def";
 
@@ -180,9 +180,7 @@ export interface SupportsCodeInjectionRequest extends MessageBase {
  */
 export interface InjectCodeRequest extends MessageBase {
   type: "InjectCode";
-  code: number[];
-  codeAddress?: number;
-  startAddress?: number;
+  codeToInject: CodeToInject;
 }
 
 /**
