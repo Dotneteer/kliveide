@@ -1,4 +1,5 @@
 import { Activity } from "@abstractions/activity";
+import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 import {
   AppState,
@@ -83,6 +84,16 @@ export interface ActionTypes {
   // --- Compilation
   START_COMPILE: null;
   END_COMPILE: null;
+
+  // --- Breakpoints
+  CLEAR_BREAKPOINTS: null;
+  ADD_BREAKPOINT: null;
+  REMOVE_BREAKPOINT: null;
+
+  // --- Builders
+  CLEAR_BUILD_ROOTS: null;
+  ADD_BUILD_ROOT: null;
+  REMOVE_BUILD_ROOT: null;
 }
 
 /**
@@ -132,6 +143,7 @@ export interface Payload {
   flag?: boolean;
   filename?: string;
   compileResult?: AssemblerOutput;
+  breakpoint?: BreakpointDefinition;
 }
 
 /**

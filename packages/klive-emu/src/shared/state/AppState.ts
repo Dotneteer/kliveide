@@ -1,4 +1,5 @@
 import { Activity } from "@abstractions/activity";
+import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 
 /**
@@ -24,6 +25,8 @@ export type AppState = {
   toolFrame?: ToolFrameState;
   project?: ProjectState;
   compilation?: CompilationState;
+  debugger?: DebuggerState;
+  builder?: BuilderState;
 };
 
 /**
@@ -142,12 +145,12 @@ export type ProjectState = {
   projectName?: string;
   hasVm?: boolean;
   directoryContents?: DirectoryContent;
-}
+};
 
 /**
  * Describes the contents of a directory
  */
- export type DirectoryContent = {
+export type DirectoryContent = {
   name: string;
   folders: DirectoryContent[];
   files: string[];
@@ -157,13 +160,23 @@ export type CompilationState = {
   inProgress?: boolean;
   filename?: string;
   result?: AssemblerOutput;
-}
+};
 
 // --- Represents a machine in the registry
 export type RegisteredMachine = {
   id: string;
   label: string;
-}
+};
+
+// --- Represents the state of the debugger
+export type DebuggerState = {
+  breakpoints: BreakpointDefinition[];
+};
+
+// --- Represents the state of the builder
+export type BuilderState = {
+  roots: string[];
+};
 
 /**
  * The initial application state
@@ -219,8 +232,8 @@ export function getInitialAppState(): AppState {
     documentFrame: {},
     toolFrame: {
       visible: true,
-      maximized : false,
-      state: {}
+      maximized: false,
+      state: {},
     },
     project: {
       isLoading: false,
@@ -231,7 +244,13 @@ export function getInitialAppState(): AppState {
     compilation: {
       inProgress: false,
       filename: null,
-      result: null
-    }
+      result: null,
+    },
+    debugger: {
+      breakpoints: [],
+    },
+    builder: {
+      roots: [],
+    },
   };
 }
