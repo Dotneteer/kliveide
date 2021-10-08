@@ -22,6 +22,7 @@
     "dev": "npm run vmbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --color",
     "prod": "rimraf dist && cross-env NODE_ENV=production webpack --progress --color",
     "test": "mocha -r ts-node/register -r tsconfig-paths/register \"test/**/*.test.ts\"",
+    "test:p": "mocha -r ts-node/register -r tsconfig-paths/register \"test/ide/*.test.ts\"",
     "build:sp48": "tpwatson ./src/wats/sp48-core/sp48.wats ./build/sp48.wat && wat2wasm ./build/sp48.wat -o ./build/sp48.wasm",
     "build:sp128": "tpwatson ./src/wats/sp128-core/sp128.wats ./build/sp128.wat && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",
     "build:cz88": "tpwatson ./src/wats/cz88-core/cz88.wats ./build/cz88.wat && wat2wasm ./build/cz88.wat -o ./build/cz88.wasm",

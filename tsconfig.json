@@ -1,11 +1,14 @@
 {
-    "extends": "./tsconfig.build.json",
-  
-    "compilerOptions": {
-      "experimentalDecorators": true,
-      "baseUrl": "./",
-      "paths": {
-        "@dotneteer/*": ["packages/*/src"]
-      }
+  "extends": "./tsconfig.build.json",
+
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "baseUrl": "./",
+    "paths": {
+      "@abstractions/*": ["./packages/klive-emu/src/abstractions/*"],
+      "@state/*": ["./packages/klive-emu/src/shared/state/*"],
+      "@shared/*": ["./packages/klive-emu/src/shared/*"],
+      "@messaging/*": ["./packages/klive-emu/src/extensibility/messaging/*"]
     }
   }
+}

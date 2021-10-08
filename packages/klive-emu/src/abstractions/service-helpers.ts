@@ -40,7 +40,7 @@ import {
   VM_ENGINE_SERVICE,
   Z80_COMPILER_SERVICE,
 } from "@abstractions/service-registry";
-import { IVmEngineService as IVmEngineService } from "./vm-controller-service";
+import { IVmEngineService } from "./vm-controller-service";
 import { IZ80CompilerService } from "./z80-compiler-service";
 import { IDialogService } from "./dialog-service";
 import { ICodeRunnerService } from "./code-runner-service";

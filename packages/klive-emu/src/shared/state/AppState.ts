@@ -1,4 +1,5 @@
 import { Activity } from "@abstractions/activity";
+import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 
 /**
@@ -24,6 +25,7 @@ export type AppState = {
   toolFrame?: ToolFrameState;
   project?: ProjectState;
   compilation?: CompilationState;
+  debugger?: DebuggerState;
 };
 
 /**
@@ -165,6 +167,11 @@ export type RegisteredMachine = {
   label: string;
 }
 
+// --- Represents the state of the debugger
+export type DebuggerState = {
+  breakpoints: BreakpointDefinition[];
+}
+
 /**
  * The initial application state
  */
@@ -232,6 +239,9 @@ export function getInitialAppState(): AppState {
       inProgress: false,
       filename: null,
       result: null
+    },
+    debugger: {
+      breakpoints: []
     }
   };
 }

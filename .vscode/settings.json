@@ -1,8 +1,5 @@
 {
   "mochaExplorer.mochaPath": "node_modules/mocha",
   "mochaExplorer.files": "./packages/**/test/**/*.test.ts",
-  "mochaExplorer.require": "ts-node/register",
-  "mochaExplorer.env": {
-    "TS_NODE_PROJECT": "./tsconfig.json"
-  }
+  "mochaExplorer.require": ["ts-node/register", "tsconfig-paths/register"]
 }

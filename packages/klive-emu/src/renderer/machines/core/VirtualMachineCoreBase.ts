@@ -1,5 +1,5 @@
 import { ProgramCounterInfo } from "@state/AppState";
-import { IVmEngineService } from "../../../abstractions/vm-controller-service";
+import { IVmEngineService } from "@abstractions/vm-controller-service";
 import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import {

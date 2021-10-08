@@ -37,8 +37,47 @@ export class InjectedSegment {
 export type CodeInjectionType = "inject" | "run" | "debug";
 
 /**
+ * Defines a breakpoint in the source code
+ */
+export interface SourceCodeBreakpoint {
+  type: "source",
+
+  /**
+   * File that holds a source code breakpoint
+   */
+  resource?: string;
+
+  /**
+   * Line number within a file
+   */
+  line?: number;
+};
+
+/**
+ * Defines a binary breakpoint
+ */
+export interface BinaryBreakpoint {
+  type: "binary",
+  
+  /**
+   * Optional code partition/page index
+   */
+  partition?: number;
+
+  /**
+   * Location of the breakpoint within the partition
+   */
+  location: number;
+}
+
+/**
+ * Defines a breakpoint for debugging
+ */
+export type BreakpointDefinition = SourceCodeBreakpoint | BinaryBreakpoint;
+
+/**
  * Defines the behavior of the service that can run the code from the IDE
- * 
+ *
  */
 export interface ICodeRunnerService {
   /**
@@ -46,5 +85,8 @@ export interface ICodeRunnerService {
    * @param resource Resource to compile
    * @param operationType Type of operation
    */
-  manageCodeInjection(resource: string, operationType: CodeInjectionType): Promise<void>;
+  manageCodeInjection(
+    resource: string,
+    operationType: CodeInjectionType
+  ): Promise<void>;
 }
