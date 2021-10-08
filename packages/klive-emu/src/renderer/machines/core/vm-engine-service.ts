@@ -1,3 +1,5 @@
+import { dispatch, getState } from "@extensibility/service-registry";
+
 import { setMachineTypeAction } from "@state/machine-type-reducer";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { delay } from "../../common-ui/utils";
@@ -23,7 +25,6 @@ import {
 import { FrameDiagData } from "@state/AppState";
 import { CambridgeZ88Core } from "../cambridge-z88/CambridgeZ88Core";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
-import { dispatch, getState } from "@abstractions/service-helpers";
 import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**

@@ -15,6 +15,7 @@
     "paths": {
       "*": ["node_modules/*"],
       "@abstractions/*": ["src/abstractions/*"],
+      "@extensibility/*": ["src/extensibility/*"],
       "@state/*": ["src/shared/state/*"],
       "@shared/*": ["src/shared/*"],
       "@messaging/*": ["src/extensibility/messaging/*"]

@@ -1,3 +1,5 @@
+import { getStore } from "@extensibility/service-registry";
+
 import { ITreeNode, ITreeView } from "../../common-ui/ITreeNode";
 import { ProjectNode } from "./ProjectNode";
 import { TreeNode } from "../../common-ui/TreeNode";
@@ -5,7 +7,6 @@ import { TreeView } from "../../common-ui/TreeView";
 import { DirectoryContent } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { FileOperationResponse } from "@messaging/message-types";
-import { getStore } from "@abstractions/service-helpers";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 /**

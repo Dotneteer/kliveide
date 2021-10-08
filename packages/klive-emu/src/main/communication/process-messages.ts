@@ -1,5 +1,8 @@
 import * as fs from "fs";
 import { dialog } from "electron";
+
+import { getZ80CompilerService } from "@extensibility/service-registry";
+
 import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
 import {
   ConfirmDialogResponse,
@@ -23,8 +26,6 @@ import {
   selectFolder,
 } from "../project/project-utils";
 import { getFolderContents } from "../utils/file-utils";
-import { getZ80CompilerService } from "@abstractions/service-helpers";
-import { KliveProcess } from "../../extensibility/abstractions/command-def";
 
 /**
  * Processes the requests arriving from the emulator process

@@ -9,7 +9,7 @@ import {
   getStore,
   getThemeService,
   getToolAreaService,
-} from "@abstractions/service-helpers";
+} from "@extensibility/service-registry";
 import { useDispatch, useStore } from "react-redux";
 import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";

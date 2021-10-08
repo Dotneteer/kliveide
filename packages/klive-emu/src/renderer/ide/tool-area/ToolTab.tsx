@@ -1,9 +1,13 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
+
+import {
+  getContextMenuService,
+  getToolAreaService,
+} from "@extensibility/service-registry";
+
 import { IToolPanel } from "@abstractions/tool-area-service";
 import { MenuItem } from "@shared/command/commands";
-import { getContextMenuService } from "@abstractions/service-helpers";
-import { getToolAreaService } from "@abstractions/service-helpers";
 
 interface Props {
   title: string;

@@ -1,10 +1,12 @@
 import * as React from "react";
 import { CSSProperties } from "react";
+
+import { getEngineProxyService } from "@extensibility/service-registry";
+
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { Icon } from "../../common-ui/Icon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
-import { getEngineProxyService } from "@abstractions/service-helpers";
 import {
   labelStyle,
   valueItemStyle,

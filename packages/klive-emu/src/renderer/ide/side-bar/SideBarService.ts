@@ -1,8 +1,10 @@
 import * as React from "react";
+
+import { dispatch, getState, getStore } from "@extensibility/service-registry";
+
 import { setSideBarStateAction } from "@state/side-bar-reducer";
 import { AppState, SideBarState } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
-import { dispatch, getState, getStore } from "@abstractions/service-helpers";
 import { ISideBarPanel, ISideBarService } from "@abstractions/side-bar-service";
 
 /**
@@ -97,7 +99,7 @@ export class SideBarService implements ISideBarService {
       this._sideBarChanging.fire();
       this.refreshCurrentPanels();
       this._sideBarChanged.fire();
-    })
+    });
 
     getStore().currentActivityChanged.on((activity) => {
       this.saveSideBarState();

@@ -1,4 +1,4 @@
-import { getState } from "@abstractions/service-helpers";
+import { getState } from "@extensibility/service-registry";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
 
 export class CambridgeZ88StateManager implements ICambridgeZ88StateManager {

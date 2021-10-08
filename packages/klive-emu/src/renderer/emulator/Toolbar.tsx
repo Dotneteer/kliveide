@@ -1,9 +1,11 @@
 import * as React from "react";
 import { connect } from "react-redux";
+
+import { dispatch, getVmEngineService } from "@extensibility/service-registry";
+
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
-import { getVmEngineService } from "@abstractions/service-helpers";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
 import {
@@ -13,7 +15,6 @@ import {
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
-import { dispatch } from "@abstractions/service-helpers";
 import { executeKliveCommand } from "@shared/command/common-commands";
 
 const Root = styles.div`

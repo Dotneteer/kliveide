@@ -1,6 +1,9 @@
 import * as React from "react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+
+import { dispatch, getToolAreaService } from "@extensibility/service-registry";
+
 import {
   ideToolFrameMaximizeAction,
   ideToolFrameShowAction,
@@ -8,11 +11,9 @@ import {
 import { AppState } from "@state/AppState";
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { getToolAreaService } from "@abstractions/service-helpers";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
-import { dispatch } from "@abstractions/service-helpers";
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
 
 /**
@@ -148,9 +149,7 @@ function ToolCommandBar() {
       <CommandIconButton
         iconName={maximized ? "chevron-down" : "chevron-up"}
         title={maximized ? "Restore panel size" : "Maximize panel size"}
-        clicked={() =>
-          dispatch(ideToolFrameMaximizeAction(!maximized))
-        }
+        clicked={() => dispatch(ideToolFrameMaximizeAction(!maximized))}
       />
       <CommandIconButton
         iconName="close"

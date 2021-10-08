@@ -14,9 +14,8 @@ import { useState } from "react";
 import { Icon } from "../../common-ui/Icon";
 import { EmuOpenFileDialogResponse } from "@messaging/message-types";
 import { Store } from "redux";
-import { getStore } from "@abstractions/service-helpers";
-import { getModalDialogService } from "@abstractions/service-helpers";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
+import { getModalDialogService, getStore } from "@extensibility/service-registry";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog

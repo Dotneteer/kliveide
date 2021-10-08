@@ -1,6 +1,8 @@
 import * as React from "react";
+
+import { getVmEngineService } from "@extensibility/service-registry";
+
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
-import { getVmEngineService } from "@abstractions/service-helpers";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 import Key from "./Cz88Key";
 import { defaultZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-default";

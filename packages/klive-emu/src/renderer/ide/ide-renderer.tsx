@@ -10,9 +10,12 @@ import {
   COMMAND_SERVICE,
   CONTEXT_MENU_SERVICE,
   DIALOG_SERVICE,
+  dispatch,
   DOCUMENT_SERVICE,
   EDITOR_SERVICE,
   ENGINE_PROXY_SERVICE,
+  getState,
+  getStore,
   INTERACTIVE_PANE_SERVICE,
   MODAL_DIALOG_SERVICE,
   OUTPUT_PANE_SERVICE,
@@ -22,12 +25,7 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   TOOL_AREA_SERVICE,
-} from "@abstractions/service-registry";
-import {
-  dispatch,
-  getState,
-  getStore,
-} from "@abstractions/service-helpers";
+} from "@extensibility/service-registry";
 import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { IpcRendereApi } from "../../exposed-apis";

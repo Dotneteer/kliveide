@@ -1,5 +1,7 @@
 import * as React from "react";
-import { getModalDialogService } from "@abstractions/service-helpers";
+
+import { getModalDialogService, getStore } from "@extensibility/service-registry";
+
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useRef, useState } from "react";
 import { CSSProperties } from "styled-components";
@@ -13,7 +15,6 @@ import {
 } from "../../common-ui/FormElements";
 import { FileExistsResponse } from "@messaging/message-types";
 import { NewFileData } from "@messaging/dto";
-import { getStore } from "@abstractions/service-helpers";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 export const RENAME_FILE_DIALOG_ID = "RenameFileDialog";

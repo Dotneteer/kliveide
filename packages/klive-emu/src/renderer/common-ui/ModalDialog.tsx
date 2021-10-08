@@ -4,9 +4,11 @@ import {
   ButtonPropsModel,
   DialogComponent,
 } from "@syncfusion/ej2-react-popups";
+
+import { getModalDialogService } from "@extensibility/service-registry";
+
 import styles from "styled-components";
 import { useContext, useState } from "react";
-import { getModalDialogService } from "@abstractions/service-helpers";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useEffect } from "react";
 

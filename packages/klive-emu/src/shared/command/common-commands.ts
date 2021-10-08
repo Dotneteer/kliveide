@@ -1,15 +1,13 @@
 import {
+  dispatch,
+  getCodeRunnerService,
+  getVmEngineService,
+  getZ80CompilerService,
+} from "@extensibility/service-registry";
+import {
   executeCommand,
   registerCommand,
 } from "@abstractions/command-registry";
-import {
-  dispatch,
-  getCodeRunnerService,
-  getDialogService,
-  getState,
-  getVmEngineService,
-  getZ80CompilerService,
-} from "@abstractions/service-helpers";
 import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
@@ -25,12 +23,10 @@ import {
   emuShowToolbarAction,
 } from "@state/emu-view-options-reducer";
 import { ideShowAction } from "@state/show-ide-reducer";
-import { SpectrumModelType } from "../../main/z80-compiler/assembler-in-out";
 import {
   IKliveCommand,
   KliveCommandContext,
 } from "../../extensibility/abstractions/command-def";
-import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**
  * Names of core Klive commands
@@ -493,7 +489,7 @@ function signInvalidContext(context: KliveCommandContext) {
 
 /**
  * Queries the state of a code injection related command
- * @param context 
+ * @param context
  */
 async function queryInjectionCommandState(
   context: KliveCommandContext

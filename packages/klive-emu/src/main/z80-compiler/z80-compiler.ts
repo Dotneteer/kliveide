@@ -8,8 +8,8 @@ import {
 import { AssemblerOptions, AssemblerOutput } from "./assembler-in-out";
 
 import "worker-loader!./assembler.kliveworker.ts";
-import { dispatch } from "@abstractions/service-helpers";
 import { endCompileAction, startCompileAction } from "@state/compilation-reducer";
+import { dispatch } from "@extensibility/service-registry";
 
 /**
  * This class implements the operations of the Z80 Compiler service

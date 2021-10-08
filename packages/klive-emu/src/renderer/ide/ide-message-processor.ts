@@ -1,3 +1,7 @@
+import { Store } from "redux";
+
+import { dispatch, getModalDialogService, getStore } from "@extensibility/service-registry";
+
 import {
   DefaultResponse,
   NewProjectResponse,
@@ -9,10 +13,7 @@ import { MAIN_TO_IDE_REQUEST_CHANNEL } from "@messaging/channels";
 import { MAIN_TO_IDE_RESPONE_CHANNEL } from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
 import { ideSyncAction } from "@state/show-ide-reducer";
-import { getModalDialogService } from "@abstractions/service-helpers";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
-import { Store } from "redux";
-import { dispatch, getStore } from "@abstractions/service-helpers";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;

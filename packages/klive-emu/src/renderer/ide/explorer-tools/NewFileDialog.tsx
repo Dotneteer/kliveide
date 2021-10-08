@@ -1,5 +1,4 @@
 import * as React from "react";
-import { getModalDialogService } from "@abstractions/service-helpers";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
@@ -13,8 +12,8 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { FileExistsResponse } from "@messaging/message-types";
-import { getStore } from "@abstractions/service-helpers";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { getModalDialogService, getStore } from "@extensibility/service-registry";
 
 export const NEW_FILE_DIALOG_ID = "NewFileDialog";
 

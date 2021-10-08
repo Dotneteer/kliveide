@@ -1,13 +1,15 @@
 import * as React from "react";
+
+import {
+  getDocumentService,
+  getEditorService,
+  getThemeService,
+} from "@extensibility/service-registry";
+
 import { CSSProperties } from "styled-components";
 import MonacoEditor from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
-import {
-  getEditorService,
-  getDocumentService,
-  getThemeService,
-} from "@abstractions/service-helpers";
 import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
 import { FileOperationResponse } from "@messaging/message-types";
 import { IDocumentPanel } from "@abstractions/document-service";

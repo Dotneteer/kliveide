@@ -1,14 +1,18 @@
 import * as React from "react";
 import { CSSProperties } from "react";
+
+import {
+  getCommandService,
+  getInteractivePaneService,
+  getToolAreaService,
+} from "@extensibility/service-registry";
+
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common-ui/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
-import { getCommandService } from "@abstractions/service-helpers";
-import { getInteractivePaneService } from "@abstractions/service-helpers";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
-import { getToolAreaService } from "@abstractions/service-helpers";
 import { InteractiveCommandResult } from "@abstractions/interactive-command";
 
 const TITLE = "Interactive";

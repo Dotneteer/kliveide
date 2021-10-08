@@ -1,9 +1,9 @@
 import { AppWindow } from "./app-window";
 import { ideFocusAction } from "@state/ide-focus-reducer";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
-import { dispatch } from "../main-state/main-store";
 import { registerMainToIdeMessenger } from "@messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
+import { dispatch } from "@extensibility/service-registry";
 
 /**
  * Represents the singleton IDE window

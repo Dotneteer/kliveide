@@ -1,5 +1,10 @@
 import * as React from "react";
-import { getModalDialogService } from "@abstractions/service-helpers";
+
+import {
+  getModalDialogService,
+  getStore,
+} from "@extensibility/service-registry";
+
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
@@ -13,7 +18,6 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { FileExistsResponse } from "@messaging/message-types";
-import { getStore } from "@abstractions/service-helpers";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
 
 export const NEW_FOLDER_DIALOG_ID = "NewFolderDialog";
@@ -70,15 +74,14 @@ const NewFolderDialog: React.FC<Props> = ({ newFolderData }: Props) => {
       setNameError(SPECIFY_MSG);
       newFolderData.error = true;
     } else {
-      const response =
-        await sendFromIdeToEmu<FileExistsResponse>({
-          type: "FileExists",
-          name: `${newFolderData.root}/${newFolderData.name}`,
-        });
+      const response = await sendFromIdeToEmu<FileExistsResponse>({
+        type: "FileExists",
+        name: `${newFolderData.root}/${newFolderData.name}`,
+      });
       newFolderData.error = response.exists;
       setNameError(response.exists ? EXISTS_MSG : "");
     }
-  }
+  };
 
   return (
     <div style={containerStyle}>

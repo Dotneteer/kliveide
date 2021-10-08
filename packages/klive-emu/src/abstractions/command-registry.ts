@@ -4,6 +4,7 @@
 // their IDs.
 // ============================================================================
 
+import { getState } from "@extensibility/service-registry";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import {
   ExecutionState,
@@ -11,7 +12,6 @@ import {
   KliveCommandContext,
 } from "../extensibility/abstractions/command-def";
 import { getSite } from "./process-site";
-import { getState } from "./service-helpers";
 
 // ----------------------------------------------------------------------------
 // Command registry methods

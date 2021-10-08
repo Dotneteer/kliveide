@@ -1,7 +1,9 @@
 import * as React from "react";
+
+import { getSideBarService, getState } from "@extensibility/service-registry";
+
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import SideBarPanel from "./SideBarPanel";
-import { getSideBarService, getState } from "@abstractions/service-helpers";
 import { useRef, useState, useEffect } from "react";
 import SideBarHeader from "./SideBarHeader";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
@@ -21,7 +23,7 @@ export default function SideBar() {
   const abovePanelHeight = useRef(-1);
   const panelPercentage = useRef(-1);
   const sideBarService = getSideBarService();
-  
+
   // --- Component state
   const [panels, setPanels] = useState<ISideBarPanel[]>([]);
   let activityName = "";
@@ -30,7 +32,7 @@ export default function SideBar() {
   const getActiveActivity = () => {
     const activityBar = getState().activityBar;
     const currentActivity = activityBar?.activeIndex ?? -1;
-    return (!activityBar?.activities || currentActivity < 0)
+    return !activityBar?.activities || currentActivity < 0
       ? null
       : activityBar.activities[currentActivity] ?? null;
   };
@@ -178,6 +180,6 @@ export default function SideBar() {
 // --- Component helper tags
 const Root = createSizedStyledPanel({
   others: {
-    "background-color": "var(--sidebar-background-color)"
+    "background-color": "var(--sidebar-background-color)",
   },
 });

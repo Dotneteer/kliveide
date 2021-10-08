@@ -1,4 +1,15 @@
 import * as React from "react";
+
+import {
+  dispatch,
+  getContextMenuService,
+  getDocumentService,
+  getModalDialogService,
+  getProjectService,
+  getState,
+  getStore,
+} from "@extensibility/service-registry";
+
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../common-ui/VirtualizedList";
@@ -6,16 +17,10 @@ import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ProjectNode } from "./ProjectNode";
-import { dispatch, getProjectService } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import { Icon } from "../../common-ui/Icon";
 import { AppState, ProjectState } from "@state/AppState";
 import { MenuItem } from "@shared/command/commands";
-import {
-  getContextMenuService,
-  getModalDialogService,
-  getDocumentService,
-} from "@abstractions/service-helpers";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
@@ -27,11 +32,12 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
-import { getState, getStore } from "@abstractions/service-helpers";
 import { IProjectService } from "@abstractions/project-service";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
-import { addBuildRootAction, removeBuildRootAction } from "@state/builder-reducer";
-import { isBuffer } from "lodash";
+import {
+  addBuildRootAction,
+  removeBuildRootAction,
+} from "@state/builder-reducer";
 
 type State = {
   itemsCount: number;
@@ -224,7 +230,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             : "1px solid transparent"
           : "1px solid transparent",
     };
-    const filename = item.nodeData.fullPath.substr(getState().project.path.length);
+    const filename = item.nodeData.fullPath.substr(
+      getState().project.path.length
+    );
     const isBuildRoot = getState().builder.roots.includes(filename);
     return (
       <div

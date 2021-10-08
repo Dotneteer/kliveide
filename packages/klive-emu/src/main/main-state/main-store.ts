@@ -25,8 +25,7 @@ import { KliveStore } from "@state/KliveStore";
 import {
   registerService,
   STORE_SERVICE,
-} from "@abstractions/service-registry";
-export { getStore, dispatch, getState } from "@abstractions/service-helpers";
+} from "@extensibility/service-registry";
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;
@@ -49,16 +48,13 @@ const forwardToRendererMiddleware =
 /**
  * Represents the master replica of the app state
  */
-const mainStore = new KliveStore(
+export const mainStore = new KliveStore(
   createStore(
     combineReducers(appReducers),
     getInitialAppState(),
     applyMiddleware(forwardToRendererMiddleware)
   )
 );
-
-// --- Register the store service
-registerService(STORE_SERVICE, mainStore);
 
 /**
  * This class forwards state changes in main to a particular renderer

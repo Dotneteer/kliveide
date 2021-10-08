@@ -1,7 +1,9 @@
 import * as React from "react";
 import { CSSProperties } from "react";
+
+import { getEngineProxyService } from "@extensibility/service-registry";
+
 import { Icon } from "../../common-ui/Icon";
-import { getEngineProxyService } from "@abstractions/service-helpers";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import { separatorLine, valueItemStyle } from "../../ide/utils/content-utils";

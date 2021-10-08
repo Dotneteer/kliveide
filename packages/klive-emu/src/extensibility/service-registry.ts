@@ -1,9 +1,15 @@
 // ============================================================================
-// This file contains helper methods to access the service instances. Each
-// service has a related `get<ServiceName>` method to query the service instance.
+// Services are singleton objects that provide communication between unrelated
+// components of the application. These components use service properties, 
+// methods, and events for communication.
 //
-// You can cache the service instance within a class or a method.
+// Each service has a unique identifier string. When the application's 
+// processes start, they must initialize their supported services before any
+// other activities.
 // ============================================================================
+
+// ----------------------------------------------------------------------------
+// Service interface and DTO imports
 
 import { AppState } from "@state/AppState";
 import { KliveStore } from "@state/KliveStore";
@@ -20,35 +26,75 @@ import { IProjectService } from "@abstractions/project-service";
 import { ISideBarService } from "@abstractions/side-bar-service";
 import { IThemeService } from "@abstractions/theme-service";
 import { IToolAreaService } from "@abstractions/tool-area-service";
-import {
-  CODE_RUNNER_SERVICE,
-  COMMAND_SERVICE,
-  CONTEXT_MENU_SERVICE,
-  DIALOG_SERVICE,
-  DOCUMENT_SERVICE,
-  EDITOR_SERVICE,
-  ENGINE_PROXY_SERVICE,
-  getService,
-  INTERACTIVE_PANE_SERVICE,
-  MODAL_DIALOG_SERVICE,
-  OUTPUT_PANE_SERVICE,
-  PROJECT_SERVICE,
-  SIDE_BAR_SERVICE,
-  STORE_SERVICE,
-  THEME_SERVICE,
-  TOOL_AREA_SERVICE,
-  VM_ENGINE_SERVICE,
-  Z80_COMPILER_SERVICE,
-} from "@abstractions/service-registry";
-import { IVmEngineService } from "./vm-controller-service";
-import { IZ80CompilerService } from "./z80-compiler-service";
-import { IDialogService } from "./dialog-service";
-import { ICodeRunnerService } from "./code-runner-service";
+import { IVmEngineService } from "@abstractions/vm-controller-service";
+import { IZ80CompilerService } from "@abstractions/z80-compiler-service";
+import { IDialogService } from "@abstractions/dialog-service";
+import { ICodeRunnerService } from "@abstractions/code-runner-service";
+
+// ----------------------------------------------------------------------------
+// Predefined service IDs
+
+export const STORE_SERVICE = "store-service";
+export const THEME_SERVICE = "theme-service";
+export const MODAL_DIALOG_SERVICE = "modal-dialog-service";
+export const SIDE_BAR_SERVICE = "side-bar-service";
+export const ENGINE_PROXY_SERVICE = "engine-proxy-service";
+export const PROJECT_SERVICE = "project-service";
+export const CONTEXT_MENU_SERVICE = "context-menu-service";
+export const DOCUMENT_SERVICE = "document-service";
+export const EDITOR_SERVICE = "editor-service";
+export const INTERACTIVE_PANE_SERVICE = "interactive-pane-service";
+export const OUTPUT_PANE_SERVICE = "output-pane-service";
+export const TOOL_AREA_SERVICE = "tool-area-service";
+export const COMMAND_SERVICE = "command-service";
+export const VM_ENGINE_SERVICE = "vm-engine-service";
+export const Z80_COMPILER_SERVICE = "z80-compiler-service";
+export const DIALOG_SERVICE = "dialog-service";
+export const CODE_RUNNER_SERVICE = "code-runner-service";
+
+// ----------------------------------------------------------------------------
+// Service registry methods
+
+// --- Store registered service instances here
+const services: Record<string, any> = {};
+
+/**
+ * Registers a service instance
+ * @param id Service ID
+ * @param service Service instance
+ */
+export function registerService(id: string, service: any): void {
+  services[id] = service;
+}
+
+/**
+ * Unregisters the specified service instance
+ * @param id
+ */
+export function unregisterService(id: string): void {
+  delete services[id];
+}
+
+/**
+ * Gets the specified service instance
+ * @param id
+ * @returns
+ */
+export function getService(id: string): any {
+  const service = services[id];
+  if (!service) {
+    throw new Error(`Cannot find '${id}' in the service registry`);
+  }
+  return service;
+}
+
+// ----------------------------------------------------------------------------
+// Service helper methods
 
 /**
  * Gets the service instance that provides the application state store
  */
-export function getStore(): KliveStore {
+ export function getStore(): KliveStore {
   return getService(STORE_SERVICE) as KliveStore;
 }
 

@@ -1,10 +1,14 @@
 import * as React from "react";
 import { CSSProperties, useState } from "react";
-import { getThemeService } from "@abstractions/service-helpers";
+
+import {
+  getContextMenuService,
+  getDocumentService,
+  getThemeService,
+} from "@extensibility/service-registry";
+
 import { Icon } from "../../common-ui/Icon";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { getDocumentService } from "@abstractions/service-helpers";
-import { getContextMenuService } from "@abstractions/service-helpers";
 import { MenuItem } from "@shared/command/commands";
 import { IDocumentPanel } from "@abstractions/document-service";
 

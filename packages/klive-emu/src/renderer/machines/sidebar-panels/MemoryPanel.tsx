@@ -1,8 +1,10 @@
 import * as React from "react";
+
+import { getEngineProxyService } from "@extensibility/service-registry";
+
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { CSSProperties } from "react";
-import { getEngineProxyService } from "@abstractions/service-helpers";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 

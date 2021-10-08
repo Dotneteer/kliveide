@@ -1,9 +1,13 @@
 import * as React from "react";
+
+import {
+  getEngineProxyService,
+  getState,
+} from "@extensibility/service-registry";
+
 import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../common-ui/ScrollablePanel";
-import { getEngineProxyService } from "@abstractions/service-helpers";
 import { scrollableContentType } from "./utils/content-utils";
-import { getState } from "@abstractions/service-helpers";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { RunEventArgs } from "@abstractions/engine-proxy-service";
 
@@ -165,4 +169,3 @@ export const sidebarPlaceholderStyle: CSSProperties = {
   fontFamily: "var(--console-font)",
   color: "#cccccc",
 };
-

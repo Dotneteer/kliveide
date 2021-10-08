@@ -16,7 +16,6 @@ import {
   emuSetExtraFeaturesAction,
 } from "@state/emulator-panel-reducer";
 import { setEmuForwarder } from "./app-menu";
-import { AppState } from "@state/AppState";
 import {
   appSettings,
   KliveProject,
@@ -35,13 +34,11 @@ import {
 import { Cz88ContextProvider } from "../../extensibility/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { PROJECT_FILE } from "../project/project-utils";
-import { dispatch, getState } from "../main-state/main-store";
-
-import { Z80Assembler } from "../z80-compiler/assembler";
 import {
   registerMainToEmuMessenger,
   sendFromMainToEmu,
 } from "@messaging/message-sending";
+import { dispatch, getState } from "@extensibility/service-registry";
 
 /**
  * These are the context providers we usein the code
@@ -115,7 +112,7 @@ export class EmuWindow extends AppWindow {
    * Saves the current application settings
    */
   saveAppSettings(): void {
-    const state = getState() as AppState;
+    const state = getState();
     const machineType = state.machineType.split("_")[0];
     const kliveSettings: KliveSettings = {
       machineType,

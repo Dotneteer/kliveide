@@ -19,13 +19,6 @@ import {
 } from "@state/emulator-panel-reducer";
 import { AppState } from "@state/AppState";
 import { __DARWIN__ } from "../utils/electron-utils";
-import {
-  dispatch,
-  getState,
-  getStore,
-  registerEmuWindowForwarder,
-  registerIdeWindowForwarder,
-} from "../main-state/main-store";
 import { EmuWindow } from "./emu-window";
 import { IdeWindow } from "./ide-window";
 import {
@@ -40,7 +33,6 @@ import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "../../extensibility/main/machine-registry";
 import {
   createKliveProject,
-  getLoadedProjectFile,
   openProject,
   openProjectFolder,
 } from "../project/project-utils";
@@ -52,6 +44,8 @@ import {
   sendFromMainToIde,
 } from "@messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
+import { registerEmuWindowForwarder, registerIdeWindowForwarder } from "../main-state/main-store";
+import { dispatch, getState, getStore } from "@extensibility/service-registry";
 
 // --- Global reference to the mainwindow
 export let emuWindow: EmuWindow;

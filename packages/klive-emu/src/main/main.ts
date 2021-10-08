@@ -2,8 +2,8 @@
 // The startup file of the main Electron process
 // ============================================================================
 
+import { forwardRendererState, mainStore } from "./main-state/main-store";
 import { BrowserWindow, app, ipcMain } from "electron";
-import { dispatch, forwardRendererState } from "./main-state/main-store";
 import {
   EMU_TO_MAIN_REQUEST_CHANNEL,
   EMU_TO_MAIN_RESPONSE_CHANNEL,
@@ -37,16 +37,18 @@ import {
 } from "@shared/command/common-commands";
 import { Z80CompilerService } from "./z80-compiler/z80-compiler";
 import {
-  DIALOG_SERVICE,
+  dispatch,
   registerService,
+  STORE_SERVICE,
   Z80_COMPILER_SERVICE,
-} from "@abstractions/service-registry";
+} from "@extensibility/service-registry";
 
 // --- Sign that this process is the main process
 registerSite("main");
 registerCommonCommands();
 
 // --- Register services used by the main process
+registerService(STORE_SERVICE, mainStore);
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
 
 // --- This method will be called when Electron has finished

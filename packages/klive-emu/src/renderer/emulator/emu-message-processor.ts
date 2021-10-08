@@ -1,3 +1,5 @@
+import { getVmEngineService } from "@extensibility/service-registry";
+
 import {
   CreateMachineResponse,
   DefaultResponse,
@@ -11,8 +13,6 @@ import {
   MAIN_TO_EMU_RESPONE_CHANNEL,
 } from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { getVmEngineService } from "@abstractions/service-helpers";
-import { DebugStepMode, EmulationMode } from "../machines/core/vm-core-types";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;

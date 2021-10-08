@@ -1,3 +1,4 @@
+import { dispatch, getState } from "@extensibility/service-registry";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import {
   spectrumLoadModeAction,
@@ -5,7 +6,6 @@ import {
   spectrumTapeLoadedAction,
 } from "@state/spectrum-specific-reducer";
 import { emuSetMessageAction } from "@state/emulator-panel-reducer";
-import { dispatch, getState } from "@abstractions/service-helpers";
 
 export class ZxSpectrumStateManager implements IZxSpectrumStateManager {
   /**

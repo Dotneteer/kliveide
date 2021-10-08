@@ -19,7 +19,7 @@ import {
 } from "../../main/app/app-menu";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import { VirtualMachineType } from "./machine-registry";
-import { dispatch, getState } from "../../main/main-state/main-store";
+import { dispatch, getState } from "@extensibility/service-registry";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";

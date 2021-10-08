@@ -24,6 +24,7 @@ const commonConfig = {
   resolve: {
     alias: {
       "@abstractions": srcPaths("src/abstractions"),
+      "@extensibility": srcPaths("src/extensibility"),
       "@state": srcPaths("src/shared/state"),
       "@shared": srcPaths("src/shared"),
       "@messaging": srcPaths("src/extensibility/messaging"),

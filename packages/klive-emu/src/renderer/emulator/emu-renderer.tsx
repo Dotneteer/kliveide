@@ -12,8 +12,8 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   VM_ENGINE_SERVICE,
-} from "@abstractions/service-registry";
-import { dispatch, getState, getStore } from "@abstractions/service-helpers";
+} from "@extensibility/service-registry";
+import { dispatch, getState, getStore } from "@extensibility/service-registry";
 import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { getInitialAppState } from "@state/AppState";
