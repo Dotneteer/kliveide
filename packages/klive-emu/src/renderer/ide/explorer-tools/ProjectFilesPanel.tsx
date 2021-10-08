@@ -30,6 +30,8 @@ import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { getState, getStore } from "@abstractions/service-helpers";
 import { IProjectService } from "@abstractions/project-service";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { addBuildRootAction, removeBuildRootAction } from "@state/builder-reducer";
+import { isBuffer } from "lodash";
 
 type State = {
   itemsCount: number;
@@ -222,12 +224,14 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             : "1px solid transparent"
           : "1px solid transparent",
     };
+    const filename = item.nodeData.fullPath.substr(getState().project.path.length);
+    const isBuildRoot = getState().builder.roots.includes(filename);
     return (
       <div
         key={index}
         className="listlike"
         style={{ ...style, ...itemStyle }}
-        onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
+        onContextMenu={(ev) => this.onContextMenu(ev, index, item, isBuildRoot)}
         onClick={() => this.openDocument(index, item, true)}
         onDoubleClick={() => this.openDocument(index, item)}
       >
@@ -277,7 +281,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         >
           {item.nodeData.name}
         </div>
-        {item.nodeData.buildRoot && (
+        {isBuildRoot && (
           <Icon
             iconName="combine"
             width={16}
@@ -428,7 +432,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   async onContextMenu(
     ev: React.MouseEvent,
     index: number,
-    item: ITreeNode<ProjectNode>
+    item: ITreeNode<ProjectNode>,
+    isBuildRoot: boolean
   ): Promise<void> {
     let menuItems: MenuItem[];
     if (item.nodeData.isFolder) {
@@ -499,12 +504,16 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       );
       if (editor?.allowBuildRoot) {
         menuItems.push("separator");
-        if (item.nodeData.buildRoot) {
+        if (isBuildRoot) {
           menuItems.push({
             id: "removeBuildRoot",
             text: "Remove Build root",
             execute: async () => {
-              delete item.nodeData.buildRoot;
+              dispatch(
+                removeBuildRootAction(
+                  item.nodeData.fullPath.substr(getState().project.path.length)
+                )
+              );
               this._listApi.forceRefresh();
               getDocumentService().fireChanges();
             },
@@ -514,7 +523,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             id: "markBuildRoot",
             text: "Mark as Build root",
             execute: async () => {
-              item.nodeData.buildRoot = true;
+              dispatch(
+                addBuildRootAction(
+                  item.nodeData.fullPath.substr(getState().project.path.length)
+                )
+              );
               this._listApi.forceRefresh();
               getDocumentService().fireChanges();
             },

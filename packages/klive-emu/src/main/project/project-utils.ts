@@ -17,6 +17,7 @@ import {
   addBreakpointAction,
   clearBreakpointsAction,
 } from "@state/debugger-reducer";
+import { addBuildRootAction, clearBuildRootsAction } from "@state/builder-reducer";
 
 /**
  * Name of the project file within the project directory
@@ -50,6 +51,13 @@ export async function openProject(projectPath: string): Promise<void> {
     if (breakpoints) {
       dispatch(clearBreakpointsAction());
       breakpoints.forEach((bp) => dispatch(addBreakpointAction(bp)));
+    }
+
+    // --- Set up the builder
+    const roots = project?.builder?.roots;
+    if (roots) {
+      dispatch(clearBuildRootsAction());
+      roots.forEach(r => dispatch(addBuildRootAction(r)));
     }
 
     // --- Last step: setup the loaded machine
@@ -155,6 +163,9 @@ export async function createKliveProject(
       debugger: {
         breakpoints: [],
       },
+      builder: {
+        roots: []
+      }
     };
     await fs.writeFile(
       path.join(targetFolder, PROJECT_FILE),

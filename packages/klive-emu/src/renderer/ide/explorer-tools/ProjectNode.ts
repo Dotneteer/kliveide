@@ -24,11 +24,6 @@ export type ProjectNode = {
   type?: ProjectNodeType;
 
   /**
-   * Indicates if this node is a build root
-   */
-  buildRoot?: boolean;
-
-  /**
    * Optional extender properties
    */
   extenderProps?: Record<string, any>;

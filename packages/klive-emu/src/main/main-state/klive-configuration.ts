@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
-import { DebuggerState } from "@state/AppState";
+import { BuilderState, DebuggerState } from "@state/AppState";
 
 /**
  * The file that stores the Klive Emulator configuration
@@ -56,7 +56,8 @@ export interface KliveSettings {
  * Represents the Klive project type
  */
 export interface KliveProject extends KliveSettings {
-  debugger: DebuggerState
+  debugger: DebuggerState;
+  builder: BuilderState;
 }
 
 /**

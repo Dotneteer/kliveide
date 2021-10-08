@@ -1,5 +1,5 @@
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
-import { addBreakpoint, removeBreakpoint } from "../../renderer/machines/debug-helpers";
+import { addBreakpoint, removeBreakpoint } from "../../renderer/ide/debug-helpers";
 import { DebuggerState } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
 

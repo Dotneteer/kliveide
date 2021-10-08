@@ -3,7 +3,7 @@ import DocumentTabBar from "./DocumentTabBar";
 import ReactResizeDetector from "react-resize-detector";
 
 import { useEffect, useState } from "react";
-import { getDocumentService, getStore } from "@abstractions/service-helpers";
+import { getDocumentService, getState, getStore } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
@@ -128,7 +128,8 @@ function DocumentCommandBar() {
   const refreshCommands = () => {
     const activeDoc = getDocumentService().getActiveDocument();
     if (activeDoc) {
-      if (activeDoc.projectNode.buildRoot) {
+      const filename = activeDoc.projectNode.fullPath.substr(getState().project.path.length);
+      if (getState().builder.roots.includes(filename)) {
         setBuildRootCommands([
           { commandId: "klive.compileCode" },
           { commandId: "klive.injectCodeIntoVm" },
