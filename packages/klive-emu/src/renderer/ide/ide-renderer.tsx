@@ -30,10 +30,6 @@ import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
-import {
-  IDE_SOURCE,
-  RENDERER_STATE_REQUEST_CHANNEL,
-} from "@messaging/channels";
 import { KliveAction } from "@state/state-core";
 import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
@@ -66,7 +62,7 @@ import { CodeRunnerService } from "../machines/CodeRunnerService";
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
 
 // --- This instance forwards renderer actions to the main process
-const forwarder = new RendererToMainStateForwarder(IDE_SOURCE);
+const forwarder = new RendererToMainStateForwarder("ide");
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;
@@ -93,7 +89,6 @@ const rootReducer = (state: AppState, action: KliveAction) => {
 
 registerSite("ide");
 registerCommonCommands();
-
 
 // ------------------------------------------------------------------------------
 // --- Register the main services
@@ -132,17 +127,14 @@ registerIdeToEmuMessenger(new IdeToEmuMessenger());
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);
 
-ipcRenderer.on(
-  RENDERER_STATE_REQUEST_CHANNEL,
-  (_ev, msg: ForwardActionRequest) => {
-    isForwarding = true;
-    try {
-      dispatch(msg.action);
-    } finally {
-      isForwarding = false;
-    }
+ipcRenderer.on("RendererStateRequest", (_ev, msg: ForwardActionRequest) => {
+  isForwarding = true;
+  try {
+    dispatch(msg.action);
+  } finally {
+    isForwarding = false;
   }
-);
+});
 
 // --- Start idle command status refresh
 startCommandStatusQuery();

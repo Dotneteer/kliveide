@@ -8,10 +8,6 @@ import {
   ResponseMessage,
 } from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import {
-  MAIN_TO_EMU_REQUEST_CHANNEL,
-  MAIN_TO_EMU_RESPONE_CHANNEL,
-} from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
 
 // --- Electron APIs exposed for the renderer process
@@ -103,10 +99,10 @@ async function processEmulatorMessages(
 
 // --- Set up message processing
 ipcRenderer.on(
-  MAIN_TO_EMU_REQUEST_CHANNEL,
+  "MainToEmuRequest",
   async (_ev: IpcRendererEvent, message: RequestMessage) => {
     const response = await processEmulatorMessages(message);
     response.correlationId = message.correlationId;
-    ipcRenderer.send(MAIN_TO_EMU_RESPONE_CHANNEL, response);
+    ipcRenderer.send("MainToEmuResponse", response);
   }
 );

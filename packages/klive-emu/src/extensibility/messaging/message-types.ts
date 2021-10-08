@@ -17,12 +17,33 @@ import { KliveProcess } from "../abstractions/command-def";
 import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**
+ * Potential message sources
+ */
+export type MessageSource = "emu" | "ide" | "main";
+
+export type Channel =
+  | "MainStateRequest"
+  | "RendererStateResponse"
+  | "RendererStateRequest"
+  | "MainStateResponse"
+  | "MainToEmuRequest"
+  | "MainToEmuResponse"
+  | "MainToIdeRequest"
+  | "MainToIdeResponse"
+  | "EmuToMainRequest"
+  | "EmuToMainResponse"
+  | "IdeToEmuMainRequest"
+  | "IdeToEmuMainResponse"
+  | "IdeToEmuEmuRequest"
+  | "IdeToEmuEmuResponse";
+
+/**
  * The common base for all message types
  */
 export interface MessageBase {
   type: AnyMessage["type"];
   correlationId?: number;
-  sourceId?: string;
+  sourceId?: MessageSource;
 }
 
 /**
@@ -573,3 +594,10 @@ export type ResponseMessage =
  * All messages
  */
 export type AnyMessage = RequestMessage | ResponseMessage;
+
+// ----------------------------------------------------------------------------
+// Message creators
+
+export function defaultResponse(): DefaultResponse {
+  return { type: "Ack" };
+}

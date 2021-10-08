@@ -45,6 +45,7 @@ import { executeKliveCommand } from "@shared/command/common-commands";
 import { dispatch, getState, getStore } from "@extensibility/service-registry";
 import { ideWindow } from "./ide-window";
 import { emuWindow } from "./emu-window";
+import { Unsubscribe } from "redux";
 
 /**
  * Messenger instance to the emulator window
@@ -560,10 +561,69 @@ export function restoreEnabledState(): void {
 }
 
 /**
- * Sets up state change cathing
+ * Sets the specified sound level
+ * @param level Sound level (between 0.0 and 1.0)
  */
-export function watchStateChanges(): void {
-  getStore().subscribe(() => processStateChange(getState()));
+export function setSoundLevel(level: number): void {
+  if (level === 0) {
+    dispatch(emuMuteSoundAction(true));
+  } else {
+    dispatch(emuMuteSoundAction(false));
+    dispatch(emuSetSoundLevelAction(level));
+  }
+}
+
+/**
+ * Sets the sound menu with the specified level
+ * @param level Sound level
+ */
+export function setSoundLevelMenu(muted: boolean, level: number): void {
+  for (const menuItem of SOUND_MENU_ITEMS) {
+    const item = Menu.getApplicationMenu().getMenuItemById(menuItem.id);
+    if (item) {
+      item.checked = false;
+    }
+  }
+  if (muted) {
+    const soundItem = Menu.getApplicationMenu().getMenuItemById(
+      SOUND_MENU_ITEMS[0].id
+    );
+    if (soundItem) {
+      soundItem.checked = true;
+    }
+  } else {
+    for (let i = 0; i < SOUND_MENU_ITEMS.length; i++) {
+      if (level < SOUND_MENU_ITEMS[i].level + 0.02) {
+        const soundItem = Menu.getApplicationMenu().getMenuItemById(
+          SOUND_MENU_ITEMS[i].id
+        );
+        if (soundItem) {
+          soundItem.checked = true;
+        }
+        break;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Handle state changes affecting the application menu
+
+const stateChangeHandler: () => void = () => processStateChange(getState());
+let unsubscribe: Unsubscribe;
+
+/**
+ * Sets up state change processing
+ */
+export function startStateChangeProcessing(): void {
+  unsubscribe = getStore().subscribe(stateChangeHandler);
+}
+
+/**
+ * Stop state change processing
+ */
+export function stopStateChangeProcessing(): void {
+  unsubscribe();
 }
 
 let lastShowIde = false;
@@ -727,51 +787,7 @@ export function processStateChange(fullState: AppState): void {
   // }
 }
 
-/**
- * Sets the specified sound level
- * @param level Sound level (between 0.0 and 1.0)
- */
-export function setSoundLevel(level: number): void {
-  if (level === 0) {
-    dispatch(emuMuteSoundAction(true));
-  } else {
-    dispatch(emuMuteSoundAction(false));
-    dispatch(emuSetSoundLevelAction(level));
-  }
-}
 
-/**
- * Sets the sound menu with the specified level
- * @param level Sound level
- */
-export function setSoundLevelMenu(muted: boolean, level: number): void {
-  for (const menuItem of SOUND_MENU_ITEMS) {
-    const item = Menu.getApplicationMenu().getMenuItemById(menuItem.id);
-    if (item) {
-      item.checked = false;
-    }
-  }
-  if (muted) {
-    const soundItem = Menu.getApplicationMenu().getMenuItemById(
-      SOUND_MENU_ITEMS[0].id
-    );
-    if (soundItem) {
-      soundItem.checked = true;
-    }
-  } else {
-    for (let i = 0; i < SOUND_MENU_ITEMS.length; i++) {
-      if (level < SOUND_MENU_ITEMS[i].level + 0.02) {
-        const soundItem = Menu.getApplicationMenu().getMenuItemById(
-          SOUND_MENU_ITEMS[i].id
-        );
-        if (soundItem) {
-          soundItem.checked = true;
-        }
-        break;
-      }
-    }
-  }
-}
 
 // ============================================================================
 // Helper types and methods

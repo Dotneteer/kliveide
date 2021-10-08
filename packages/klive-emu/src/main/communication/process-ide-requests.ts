@@ -2,23 +2,8 @@ import * as fs from "fs";
 import { dialog } from "electron";
 
 import { getZ80CompilerService } from "@extensibility/service-registry";
-
 import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
-import {
-  ConfirmDialogResponse,
-  FileOperationResponse,
-  CreateKliveProjectResponse,
-  DefaultResponse,
-  EmuOpenFileDialogResponse,
-  FileExistsResponse,
-  GetFolderContentsResponse,
-  GetFolderDialogResponse,
-  GetRegisteredMachinesResponse,
-  RequestMessage,
-  ResponseMessage,
-  GetFileContentsResponse,
-  CompileFileResponse,
-} from "@messaging/message-types";
+import * as Messages from "@messaging/message-types";
 import { emuForwarder } from "../app/app-menu";
 import {
   createKliveProject,
@@ -30,49 +15,16 @@ import { emuWindow } from "../app/emu-window";
 import { ideWindow } from "../app/ide-window";
 
 /**
- * Processes the requests arriving from the emulator process
- * @param message to process
- * @returns Message response
- */
-export async function processEmulatorRequest(
-  message: RequestMessage
-): Promise<ResponseMessage> {
-  switch (message.type) {
-    case "EmuOpenFileDialog":
-      const result = await dialog.showOpenDialog(emuWindow.window, {
-        title: message.title,
-        filters: message.filters,
-      });
-      return <EmuOpenFileDialogResponse>{
-        type: "EmuOpenFileDialogResponse",
-        filename: result.canceled ? undefined : result.filePaths[0],
-      };
-
-    case "ManageZ88Cards":
-      const manageCardsStub = (emuWindow.machineContextProvider as any)?.[
-        "insertOrRemoveCards"
-      ].bind(emuWindow.machineContextProvider);
-      if (manageCardsStub) {
-        await manageCardsStub();
-      }
-      return <DefaultResponse>{ type: "Ack" };
-
-    default:
-      return <DefaultResponse>{ type: "Ack" };
-  }
-}
-
-/**
  * Processes the requests arriving from the IDE process
  * @param message to process
  * @returns Message response
  */
 export async function processIdeRequest(
-  message: RequestMessage
-): Promise<ResponseMessage> {
+  message: Messages.RequestMessage
+): Promise<Messages.ResponseMessage> {
   switch (message.type) {
     case "GetRegisteredMachines":
-      return <GetRegisteredMachinesResponse>{
+      return <Messages.GetRegisteredMachinesResponse>{
         type: "GetRegisteredMachinesResponse",
         machines: getRegisteredMachines(),
       };
@@ -83,7 +35,7 @@ export async function processIdeRequest(
         message.rootFolder,
         message.projectFolder
       );
-      return <CreateKliveProjectResponse>{
+      return <Messages.CreateKliveProjectResponse>{
         type: "CreateKliveProjectResponse",
         error: operation.error,
         targetFolder: operation.targetFolder,
@@ -91,25 +43,23 @@ export async function processIdeRequest(
 
     case "OpenProjectFolder":
       await openProjectFolder();
-      return <DefaultResponse>{
-        type: "Ack",
-      };
+      return Messages.defaultResponse();
 
     case "GetFolderDialog":
       const folder = await selectFolder(message.title, message.root);
-      return <GetFolderDialogResponse>{
+      return <Messages.GetFolderDialogResponse>{
         type: "GetFolderDialogResponse",
         filename: folder,
       };
 
     case "FileExists":
-      return <FileExistsResponse>{
+      return <Messages.FileExistsResponse>{
         type: "FileExistsResponse",
         exists: fs.existsSync(message.name),
       };
 
     case "GetFolderContents":
-      return <GetFolderContentsResponse>{
+      return <Messages.GetFolderContentsResponse>{
         type: "GetFolderContentsResponse",
         contents: await getFolderContents(message.name),
       };
@@ -128,7 +78,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error creating folder", error);
       }
-      return <FileOperationResponse>{
+      return <Messages.FileOperationResponse>{
         type: "FileOperationResponse",
         error,
       };
@@ -148,7 +98,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error creating file", error);
       }
-      return <FileOperationResponse>{
+      return <Messages.FileOperationResponse>{
         type: "FileOperationResponse",
         error: error,
       };
@@ -163,7 +113,7 @@ export async function processIdeRequest(
         defaultId: 0,
         noLink: false,
       });
-      return <ConfirmDialogResponse>{
+      return <Messages.ConfirmDialogResponse>{
         type: "ConfirmDialogResponse",
         confirmed: confirmResult.response === 1,
       };
@@ -178,7 +128,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error deleting file", error);
       }
-      return <FileOperationResponse>{
+      return <Messages.FileOperationResponse>{
         type: "FileOperationResponse",
         error: error,
       };
@@ -194,7 +144,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error deleting folder", error);
       }
-      return <FileOperationResponse>{
+      return <Messages.FileOperationResponse>{
         type: "FileOperationResponse",
         error: error,
       };
@@ -210,7 +160,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error renaming file or folder", error);
       }
-      return <FileOperationResponse>{
+      return <Messages.FileOperationResponse>{
         type: "FileOperationResponse",
         error: error,
       };
@@ -230,7 +180,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error reading file", error);
       }
-      return <GetFileContentsResponse>{
+      return <Messages.GetFileContentsResponse>{
         type: "GetFileContentsResponse",
         contents,
       };
@@ -245,7 +195,7 @@ export async function processIdeRequest(
       } catch (err) {
         error = `Cannot save file: ${err}`;
       }
-      return <FileOperationResponse>{
+      return <Messages.FileOperationResponse>{
         type: "FileOperationResponse",
         error: error,
       };
@@ -255,7 +205,7 @@ export async function processIdeRequest(
       const result = await getZ80CompilerService().compileFile(
         message.filename
       );
-      return <CompileFileResponse>{
+      return <Messages.CompileFileResponse>{
         type: "CompileFileResponse",
         result,
       };
@@ -267,7 +217,7 @@ export async function processIdeRequest(
         title: message.title ?? "Klive",
         type: message.asError ? "error" : "info",
       });
-      return <DefaultResponse>{ type: "Ack" };
+      return Messages.defaultResponse();
 
     default:
       // --- If the main does not recognize a request, it forwards it to Emu

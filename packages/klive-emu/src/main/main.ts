@@ -2,19 +2,14 @@
 // The startup file of the main Electron process
 // ============================================================================
 
-import { forwardRendererState } from "./main-state/main-store";
 import { BrowserWindow, app, ipcMain } from "electron";
-import {
-  EMU_TO_MAIN_REQUEST_CHANNEL,
-  EMU_TO_MAIN_RESPONSE_CHANNEL,
-  IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
-  IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
-  MAIN_STATE_REQUEST_CHANNEL,
-} from "@messaging/channels";
+
+import { forwardRendererState } from "./main-state/main-store";
 import { ForwardActionRequest } from "@messaging/message-types";
 import {
   setupMenu,
-  watchStateChanges,
+  startStateChangeProcessing,
+  stopStateChangeProcessing,
 } from "./app/app-menu";
 import {
   appConfiguration,
@@ -22,10 +17,8 @@ import {
 } from "./main-state/klive-configuration";
 import { __WIN32__ } from "./utils/electron-utils";
 import { setWindowsAction } from "@state/is-windows-reducer";
-import {
-  processEmulatorRequest,
-  processIdeRequest,
-} from "./communication/process-messages";
+import { processIdeRequest } from "./communication/process-ide-requests";
+import { processEmulatorRequest } from "./communication/process-emulator-requests";
 import { registerSite } from "@abstractions/process-site";
 import { sendFromMainToEmu } from "@messaging/message-sending";
 import {
@@ -42,7 +35,6 @@ import { emuWindow, setupEmuWindow } from "./app/emu-window";
 import { ideWindow, setupIdeWindow } from "./app/ide-window";
 
 // --- Register services used by the main process
-//registerMainStore();
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
 
 // --- Sign that this process is the main process
@@ -92,6 +84,7 @@ app.on("ready", async () => {
 app.on("window-all-closed", () => {
   // --- On OS X it is common for applications and their menu bar
   // --- to stay active until the user quits explicitly with Cmd + Q
+  stopStateChangeProcessing();
   if (process.platform !== "darwin") {
     app.quit();
   }
@@ -111,36 +104,27 @@ app.on("before-quit", () => {
 });
 
 // --- This channel forwards renderer state (Emu or IDE) to the other renderer (IDE or Emu)
-ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
+ipcMain.on("MainStateRequest", (_ev, msg: ForwardActionRequest) => {
   forwardRendererState(msg);
 });
 
 // --- This channel processes requests arriving from the Emu process
-ipcMain.on(
-  EMU_TO_MAIN_REQUEST_CHANNEL,
-  async (_ev, msg: ForwardActionRequest) => {
-    const response = await processEmulatorRequest(msg);
-    response.correlationId = msg.correlationId;
-    if (emuWindow?.window.isDestroyed() === false) {
-      emuWindow.window.webContents.send(EMU_TO_MAIN_RESPONSE_CHANNEL, response);
-    }
+ipcMain.on("EmuToMainRequest", async (_ev, msg: ForwardActionRequest) => {
+  const response = await processEmulatorRequest(msg);
+  response.correlationId = msg.correlationId;
+  if (emuWindow?.window.isDestroyed() === false) {
+    emuWindow.window.webContents.send("EmuToMainResponse", response);
   }
-);
+});
 
 // --- This channel processes requests arriving from the Emu process
-ipcMain.on(
-  IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
-  async (_ev, msg: ForwardActionRequest) => {
-    const response = await processIdeRequest(msg);
-    response.correlationId = msg.correlationId;
-    if (ideWindow?.window.isDestroyed() === false) {
-      ideWindow.window.webContents.send(
-        IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
-        response
-      );
-    }
+ipcMain.on("IdeToEmuMainRequest", async (_ev, msg: ForwardActionRequest) => {
+  const response = await processIdeRequest(msg);
+  response.correlationId = msg.correlationId;
+  if (ideWindow?.window.isDestroyed() === false) {
+    ideWindow.window.webContents.send("IdeToEmuMainResponse", response);
   }
-);
+});
 
 /**
  * Helper function to carry out the setup
@@ -148,7 +132,6 @@ ipcMain.on(
 async function doSetup(): Promise<void> {
   await setupEmuWindow();
   await setupIdeWindow();
-  watchStateChanges();
+  startStateChangeProcessing();
   setupMenu();
-
 }

@@ -6,18 +6,12 @@ import { combineReducers, createStore, applyMiddleware } from "redux";
 import { appReducers } from "@state/app-reducers";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
+  Channel,
   DefaultResponse,
   ForwardActionRequest,
   RequestMessage,
   ResponseMessage,
 } from "@messaging/message-types";
-import {
-  EMU_SOURCE,
-  IDE_SOURCE,
-  MAIN_SOURCE,
-  MAIN_STATE_RESPONSE_CHANNEL,
-  RENDERER_STATE_REQUEST_CHANNEL,
-} from "@messaging/channels";
 import { KliveAction } from "@state/state-core";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import { getInitialAppState } from "@state/AppState";
@@ -79,7 +73,7 @@ class MainToRendererStateForwarder extends MessengerBase {
   async forwardAction(action: KliveAction): Promise<DefaultResponse> {
     return (await this.sendMessage({
       type: "ForwardAction",
-      sourceId: MAIN_SOURCE,
+      sourceId: "main",
       action,
     })) as DefaultResponse;
   }
@@ -99,12 +93,12 @@ class MainToRendererStateForwarder extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  readonly requestChannel = RENDERER_STATE_REQUEST_CHANNEL;
+  readonly requestChannel: Channel = "RendererStateRequest";
 
   /**
    * The channel to listen for responses
    */
-  readonly responseChannel = MAIN_STATE_RESPONSE_CHANNEL;
+  readonly responseChannel: Channel = "MainStateResponse";
 }
 
 // --- Messenger instances
@@ -137,9 +131,9 @@ export function forwardRendererState(
   isForwarding = true;
   try {
     mainStore.dispatch(actionMessage.action);
-    if (actionMessage.sourceId === EMU_SOURCE && ideStateMessenger) {
+    if (actionMessage.sourceId === "emu" && ideStateMessenger) {
       ideStateMessenger.forwardAction(actionMessage.action);
-    } else if (actionMessage.sourceId === IDE_SOURCE && emuStateMessenger) {
+    } else if (actionMessage.sourceId === "ide" && emuStateMessenger) {
       emuStateMessenger.forwardAction(actionMessage.action);
     }
   } finally {

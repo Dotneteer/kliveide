@@ -18,7 +18,6 @@ import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { getInitialAppState } from "@state/AppState";
 import { appReducers } from "@state/app-reducers";
-import { EMU_SOURCE, RENDERER_STATE_REQUEST_CHANNEL } from "@messaging/channels";
 import { ForwardActionRequest } from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
@@ -41,7 +40,7 @@ const ipcRenderer = globalThis.window
   : null;
 
 // --- This instance forwards renderer actions to the main process
-const forwarder = new RendererToMainStateForwarder(EMU_SOURCE);
+const forwarder = new RendererToMainStateForwarder("emu");
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;
@@ -89,7 +88,7 @@ registerThemes(getState().isWindows ?? false);
 // --- from the main process
 
 ipcRenderer?.on(
-  RENDERER_STATE_REQUEST_CHANNEL,
+  "RendererStateRequest",
   (_ev, msg: ForwardActionRequest) => {
     isForwarding = true;
     try {

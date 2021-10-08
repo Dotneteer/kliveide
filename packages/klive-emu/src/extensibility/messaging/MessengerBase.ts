@@ -1,4 +1,4 @@
-import { RequestMessage, ResponseMessage } from "./message-types";
+import { Channel, RequestMessage, ResponseMessage } from "./message-types";
 
 /**
  * Base class for messengers that provide renderer-to-main and
@@ -71,10 +71,10 @@ export abstract class MessengerBase {
   /**
    * The channel to send the request out
    */
-  abstract get requestChannel(): string;
+  abstract get requestChannel(): Channel;
 
   /**
    * The channel to listen for responses
    */
-  abstract get responseChannel(): string;
+  abstract get responseChannel(): Channel;
 }

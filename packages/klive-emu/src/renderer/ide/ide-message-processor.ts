@@ -9,8 +9,6 @@ import {
   ResponseMessage,
 } from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import { MAIN_TO_IDE_REQUEST_CHANNEL } from "@messaging/channels";
-import { MAIN_TO_IDE_RESPONE_CHANNEL } from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
 import { ideSyncAction } from "@state/show-ide-reducer";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
@@ -50,10 +48,10 @@ async function processIdeMessages(
 
 // --- Set up message processing
 ipcRenderer.on(
-  MAIN_TO_IDE_REQUEST_CHANNEL,
+  "MainToIdeRequest",
   async (_ev: IpcRendererEvent, message: RequestMessage) => {
     const response = await processIdeMessages(message);
     response.correlationId = message.correlationId;
-    ipcRenderer.send(MAIN_TO_IDE_RESPONE_CHANNEL, response);
+    ipcRenderer.send("MainToIdeResponse", response);
   }
 );

@@ -1,13 +1,10 @@
 import { IpcRendererEvent } from "electron";
 import { IpcRendereApi } from "../../exposed-apis";
 import {
+  Channel,
   RequestMessage,
   ResponseMessage,
 } from "@messaging/message-types";
-import {
-  IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
-  IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
-} from "@messaging/channels";
 import { MessengerBase } from "@messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
@@ -43,14 +40,14 @@ export class IdeToEmuMessenger extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  get requestChannel(): string {
-    return IDE_TO_EMU_MAIN_REQUEST_CHANNEL;
+  get requestChannel(): Channel {
+    return "IdeToEmuMainRequest";
   }
 
   /**
    * The channel to listen for responses
    */
-  get responseChannel(): string {
-    return IDE_TO_EMU_MAIN_RESPONSE_CHANNEL;
+  get responseChannel(): Channel {
+    return "IdeToEmuMainResponse";
   }
 }

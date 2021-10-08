@@ -10,10 +10,6 @@ import {
   SupportsCodeInjectionResponse,
 } from "@messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import {
-  IDE_TO_EMU_EMU_REQUEST_CHANNEL,
-  IDE_TO_EMU_EMU_RESPONSE_CHANNEL,
-} from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
 
 // --- Electron APIs exposed for the renderer process
@@ -117,10 +113,10 @@ async function processIdeMessages(
 
 // --- Set up message processing
 ipcRenderer.on(
-  IDE_TO_EMU_EMU_REQUEST_CHANNEL,
+  "IdeToEmuEmuRequest",
   async (_ev: IpcRendererEvent, message: RequestMessage) => {
     const response = await processIdeMessages(message);
     response.correlationId = message.correlationId;
-    ipcRenderer.send(IDE_TO_EMU_EMU_RESPONSE_CHANNEL, response);
+    ipcRenderer.send("IdeToEmuEmuResponse", response);
   }
 );

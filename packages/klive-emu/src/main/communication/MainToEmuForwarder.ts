@@ -1,9 +1,6 @@
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import {
-  IDE_TO_EMU_EMU_REQUEST_CHANNEL,
-  IDE_TO_EMU_EMU_RESPONSE_CHANNEL,
-} from "@messaging/channels";
-import {
+  Channel,
   RequestMessage,
   ResponseMessage,
 } from "@messaging/message-types";
@@ -38,10 +35,10 @@ export class MainToEmuForwarder extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  readonly requestChannel = IDE_TO_EMU_EMU_REQUEST_CHANNEL;
+  readonly requestChannel: Channel = "IdeToEmuEmuRequest";
 
   /**
    * The channel to listen for responses
    */
-  readonly responseChannel = IDE_TO_EMU_EMU_RESPONSE_CHANNEL;
+  readonly responseChannel: Channel = "IdeToEmuEmuResponse";
 }
