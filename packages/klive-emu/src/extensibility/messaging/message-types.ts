@@ -10,7 +10,6 @@ import {
   RegisteredMachine,
 } from "../../shared/state/AppState";
 import { ICpuState } from "../../shared/machines/AbstractCpu";
-import { NewProjectData } from "./dto";
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 import { KliveProcess } from "../abstractions/command-def";
@@ -596,8 +595,46 @@ export type ResponseMessage =
 export type AnyMessage = RequestMessage | ResponseMessage;
 
 // ----------------------------------------------------------------------------
+// Message DTOs
+
+/**
+ * Represents the contents of the new project data
+ */
+export type NewProjectData = {
+  machineType: string;
+  projectPath: string;
+  projectName: string;
+  open: boolean;
+};
+
+// ----------------------------------------------------------------------------
 // Message creators
 
 export function defaultResponse(): DefaultResponse {
   return { type: "Ack" };
+}
+
+export function emuOpenFileDialogResponse(
+  filename?: string
+): EmuOpenFileDialogResponse {
+  return {
+    type: "EmuOpenFileDialogResponse",
+    filename,
+  };
+}
+
+export function getRegisteredMachinesResponse(
+  machines: RegisteredMachine[]
+): GetRegisteredMachinesResponse {
+  return {
+    type: "GetRegisteredMachinesResponse",
+    machines,
+  };
+}
+
+export function createKliveProjectResponse(
+  targetFolder: string,
+  error?: string
+): CreateKliveProjectResponse {
+  return { type: "CreateKliveProjectResponse", error, targetFolder };
 }

@@ -1,6 +1,9 @@
 import * as React from "react";
 
-import { getModalDialogService, getStore } from "@extensibility/service-registry";
+import {
+  getModalDialogService,
+  getStore,
+} from "@extensibility/service-registry";
 
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useRef, useState } from "react";
@@ -14,8 +17,8 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { FileExistsResponse } from "@messaging/message-types";
-import { NewFileData } from "@messaging/dto";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { NewFileData } from "./NewFileData";
 
 export const RENAME_FILE_DIALOG_ID = "RenameFileDialog";
 
@@ -72,15 +75,14 @@ const RenameFileDialog: React.FC<Props> = ({ fileData }: Props) => {
       setNameError(SPECIFY_MSG);
       fileData.error = true;
     } else {
-      const response =
-        await sendFromIdeToEmu<FileExistsResponse>({
-          type: "FileExists",
-          name: `${fileData.root}/${fileData.name}`,
-        });
+      const response = await sendFromIdeToEmu<FileExistsResponse>({
+        type: "FileExists",
+        name: `${fileData.root}/${fileData.name}`,
+      });
       fileData.error = response.exists;
       setNameError(response.exists ? EXISTS_MSG : "");
     }
-  }
+  };
 
   return (
     <div style={containerStyle}>

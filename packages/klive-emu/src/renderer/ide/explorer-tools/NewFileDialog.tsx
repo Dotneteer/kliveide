@@ -2,7 +2,6 @@ import * as React from "react";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { NewFileData } from "@messaging/dto";
 import { Store } from "redux";
 import {
   ErrorLabel,
@@ -14,6 +13,7 @@ import {
 import { FileExistsResponse } from "@messaging/message-types";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
 import { getModalDialogService, getStore } from "@extensibility/service-registry";
+import { NewFileData } from "./NewFileData";
 
 export const NEW_FILE_DIALOG_ID = "NewFileDialog";
 

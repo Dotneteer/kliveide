@@ -17,8 +17,8 @@ import {
   Label,
 } from "../../common-ui/FormElements";
 import { FileExistsResponse } from "@messaging/message-types";
-import { NewFileData } from "@messaging/dto";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { NewFileData } from "./NewFileData";
 
 export const RENAME_FOLDER_DIALOG_ID = "RenameFolderDialog";
 

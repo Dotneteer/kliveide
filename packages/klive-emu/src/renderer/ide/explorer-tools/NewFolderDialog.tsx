@@ -8,7 +8,6 @@ import {
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { NewFileData } from "@messaging/dto";
 import { Store } from "redux";
 import {
   ErrorLabel,
@@ -19,6 +18,7 @@ import {
 } from "../../common-ui/FormElements";
 import { FileExistsResponse } from "@messaging/message-types";
 import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { NewFileData } from "./NewFileData";
 
 export const NEW_FOLDER_DIALOG_ID = "NewFolderDialog";
 

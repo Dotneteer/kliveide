@@ -24,10 +24,7 @@ export async function processIdeRequest(
 ): Promise<Messages.ResponseMessage> {
   switch (message.type) {
     case "GetRegisteredMachines":
-      return <Messages.GetRegisteredMachinesResponse>{
-        type: "GetRegisteredMachinesResponse",
-        machines: getRegisteredMachines(),
-      };
+      return Messages.getRegisteredMachinesResponse(getRegisteredMachines());
 
     case "CreateKliveProject":
       const operation = await createKliveProject(
@@ -35,11 +32,10 @@ export async function processIdeRequest(
         message.rootFolder,
         message.projectFolder
       );
-      return <Messages.CreateKliveProjectResponse>{
-        type: "CreateKliveProjectResponse",
-        error: operation.error,
-        targetFolder: operation.targetFolder,
-      };
+      return Messages.createKliveProjectResponse(
+        operation.targetFolder,
+        operation.error
+      );
 
     case "OpenProjectFolder":
       await openProjectFolder();

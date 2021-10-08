@@ -17,10 +17,9 @@ export async function processEmulatorRequest(
         title: message.title,
         filters: message.filters,
       });
-      return <Messages.EmuOpenFileDialogResponse>{
-        type: "EmuOpenFileDialogResponse",
-        filename: result.canceled ? undefined : result.filePaths[0],
-      };
+      return Messages.emuOpenFileDialogResponse(
+        result.canceled ? undefined : result.filePaths[0]
+      );
 
     case "ManageZ88Cards":
       const manageCardsStub = (emuWindow.machineContextProvider as any)?.[

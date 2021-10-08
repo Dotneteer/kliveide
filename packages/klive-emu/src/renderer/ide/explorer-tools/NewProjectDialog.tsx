@@ -12,8 +12,10 @@ import { useState } from "react";
 import { CSSProperties } from "styled-components";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { GetFolderDialogResponse } from "@messaging/message-types";
-import { NewProjectData } from "@messaging/dto";
+import {
+  GetFolderDialogResponse,
+  NewProjectData,
+} from "@messaging/message-types";
 import { Store } from "redux";
 import {
   ErrorLabel,

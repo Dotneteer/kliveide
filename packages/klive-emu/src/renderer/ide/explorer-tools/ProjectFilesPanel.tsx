@@ -27,7 +27,6 @@ import {
   ConfirmDialogResponse,
   GetFileContentsResponse,
 } from "@messaging/message-types";
-import { NewFileData } from "@messaging/dto";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
@@ -38,6 +37,7 @@ import {
   addBuildRootAction,
   removeBuildRootAction,
 } from "@state/builder-reducer";
+import { NewFileData } from "./NewFileData";
 
 type State = {
   itemsCount: number;
