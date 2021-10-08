@@ -19,8 +19,6 @@ import {
 } from "@state/emulator-panel-reducer";
 import { AppState } from "@state/AppState";
 import { __DARWIN__ } from "../utils/electron-utils";
-import { EmuWindow } from "./emu-window";
-import { IdeWindow } from "./ide-window";
 import {
   appConfiguration,
   appSettings,
@@ -44,12 +42,9 @@ import {
   sendFromMainToIde,
 } from "@messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
-import { registerEmuWindowForwarder, registerIdeWindowForwarder } from "../main-state/main-store";
 import { dispatch, getState, getStore } from "@extensibility/service-registry";
-
-// --- Global reference to the mainwindow
-export let emuWindow: EmuWindow;
-export let ideWindow: IdeWindow;
+import { ideWindow } from "./ide-window";
+import { emuWindow } from "./emu-window";
 
 /**
  * Messenger instance to the emulator window
@@ -75,20 +70,6 @@ let lastMuted: boolean | null = null;
  * The state of the menu items
  */
 let menuState: Record<string, boolean> = {};
-
-export async function setupWindows(): Promise<void> {
-  // --- Prepare the mulator window
-  emuWindow = new EmuWindow();
-  emuWindow.load();
-  registerEmuWindowForwarder(emuWindow.window);
-  await emuWindow.ensureStarted();
-
-  // --- Prepare the IDE window
-  ideWindow = new IdeWindow();
-  ideWindow.hide();
-  ideWindow.load();
-  registerIdeWindowForwarder(ideWindow.window);
-}
 
 /**
  * Sets the forwarder to the emulator window

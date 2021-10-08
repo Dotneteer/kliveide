@@ -39,6 +39,7 @@ import {
   sendFromMainToEmu,
 } from "@messaging/message-sending";
 import { dispatch, getState } from "@extensibility/service-registry";
+import { registerEmuWindowForwarder } from "../main-state/main-store";
 
 /**
  * These are the context providers we usein the code
@@ -52,7 +53,7 @@ export const _: typeof MachineContextProviderBase[] = [
 /**
  * Represents the singleton emulator window
  */
-export class EmuWindow extends AppWindow {
+class EmuWindow extends AppWindow {
   private _machineContextProvider: MachineContextProvider;
 
   /**
@@ -286,4 +287,19 @@ export class EmuWindow extends AppWindow {
       type: "error",
     });
   }
+}
+
+/**
+ * The singleton instance of the Emulator window
+ */
+export let emuWindow: EmuWindow;
+
+/**
+ * Completes the setup of the emulator window
+ */
+export async function setupEmuWindow(): Promise<void> {
+  emuWindow = new EmuWindow();
+  emuWindow.load();
+  registerEmuWindowForwarder(emuWindow.window);
+  await emuWindow.ensureStarted();
 }

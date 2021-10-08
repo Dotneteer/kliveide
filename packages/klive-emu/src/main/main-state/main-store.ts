@@ -48,7 +48,7 @@ const forwardToRendererMiddleware =
 /**
  * Represents the master replica of the app state
  */
-export const mainStore = new KliveStore(
+const mainStore = new KliveStore(
   createStore(
     combineReducers(appReducers),
     getInitialAppState(),
@@ -145,4 +145,11 @@ export function forwardRendererState(
   } finally {
     isForwarding = false;
   }
+}
+
+/**
+ * Registers the main store
+ */
+export function registerMainStore() {
+  registerService(STORE_SERVICE, mainStore);
 }

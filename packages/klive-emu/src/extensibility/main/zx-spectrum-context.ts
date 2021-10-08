@@ -13,13 +13,13 @@ import {
 import { emuSetClockMultiplierAction, emuSetKeyboardLayoutAction } from "@state/emulator-panel-reducer";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import {
-  emuWindow,
   setSoundLevel,
   setSoundLevelMenu,
 } from "../../main/app/app-menu";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import { VirtualMachineType } from "./machine-registry";
 import { dispatch, getState } from "@extensibility/service-registry";
+import { emuWindow } from "../../main/app/emu-window";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";

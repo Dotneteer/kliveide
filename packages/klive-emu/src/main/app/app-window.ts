@@ -6,10 +6,9 @@ import {
   BrowserWindowConstructorOptions,
 } from "electron";
 import { __DARWIN__, __LINUX__, __WIN32__ } from "../utils/electron-utils";
-import { registerService, STORE_SERVICE } from "@extensibility/service-registry";
-import { mainStore } from "../main-state/main-store";
+import { registerMainStore } from "../main-state/main-store";
 
-registerService(STORE_SERVICE, mainStore);
+registerMainStore();
 
 /**
  * Stores a reference to the lazily loaded `electron-window-state` package.

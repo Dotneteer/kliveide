@@ -13,12 +13,12 @@ import {
   projectLoadingAction,
 } from "@state/project-reducer";
 import { KliveProject } from "../main-state/klive-configuration";
-import { emuWindow } from "../app/app-menu";
 import {
   addBreakpointAction,
   clearBreakpointsAction,
 } from "@state/debugger-reducer";
 import { addBuildRootAction, clearBuildRootsAction } from "@state/builder-reducer";
+import { emuWindow } from "../app/emu-window";
 
 /**
  * Name of the project file within the project directory

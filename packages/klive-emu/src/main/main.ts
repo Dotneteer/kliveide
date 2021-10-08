@@ -2,7 +2,7 @@
 // The startup file of the main Electron process
 // ============================================================================
 
-import { forwardRendererState, mainStore } from "./main-state/main-store";
+import { forwardRendererState } from "./main-state/main-store";
 import { BrowserWindow, app, ipcMain } from "electron";
 import {
   EMU_TO_MAIN_REQUEST_CHANNEL,
@@ -13,10 +13,7 @@ import {
 } from "@messaging/channels";
 import { ForwardActionRequest } from "@messaging/message-types";
 import {
-  emuWindow,
-  ideWindow,
   setupMenu,
-  setupWindows,
   watchStateChanges,
 } from "./app/app-menu";
 import {
@@ -39,26 +36,24 @@ import { Z80CompilerService } from "./z80-compiler/z80-compiler";
 import {
   dispatch,
   registerService,
-  STORE_SERVICE,
   Z80_COMPILER_SERVICE,
 } from "@extensibility/service-registry";
+import { emuWindow, setupEmuWindow } from "./app/emu-window";
+import { ideWindow, setupIdeWindow } from "./app/ide-window";
+
+// --- Register services used by the main process
+//registerMainStore();
+registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
 
 // --- Sign that this process is the main process
 registerSite("main");
 registerCommonCommands();
 
-// --- Register services used by the main process
-registerService(STORE_SERVICE, mainStore);
-registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
-
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.
 // --- Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
-  // --- Is Klive running on Windows?
-  await setupWindows();
-  watchStateChanges();
-  setupMenu();
+  await doSetup();
   dispatch(setWindowsAction(__WIN32__));
 
   // --- Set up application state according to saved settings
@@ -105,9 +100,7 @@ app.on("window-all-closed", () => {
 // --- Set up windows before the first activation
 app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    await setupWindows();
-    setupMenu();
-    watchStateChanges();
+    await doSetup();
   }
 });
 
@@ -148,3 +141,14 @@ ipcMain.on(
     }
   }
 );
+
+/**
+ * Helper function to carry out the setup
+ */
+async function doSetup(): Promise<void> {
+  await setupEmuWindow();
+  await setupIdeWindow();
+  watchStateChanges();
+  setupMenu();
+
+}

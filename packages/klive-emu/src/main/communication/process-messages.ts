@@ -19,13 +19,15 @@ import {
   GetFileContentsResponse,
   CompileFileResponse,
 } from "@messaging/message-types";
-import { emuForwarder, emuWindow, ideWindow } from "../app/app-menu";
+import { emuForwarder } from "../app/app-menu";
 import {
   createKliveProject,
   openProjectFolder,
   selectFolder,
 } from "../project/project-utils";
 import { getFolderContents } from "../utils/file-utils";
+import { emuWindow } from "../app/emu-window";
+import { ideWindow } from "../app/ide-window";
 
 /**
  * Processes the requests arriving from the emulator process

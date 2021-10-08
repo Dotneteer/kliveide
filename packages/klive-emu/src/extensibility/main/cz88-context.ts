@@ -13,7 +13,6 @@ import {
 } from "../../main/utils/electron-utils";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import {
-  emuWindow,
   setSoundLevel,
   setSoundLevelMenu,
   setupMenu,
@@ -39,6 +38,7 @@ import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
 import { sendFromMainToEmu } from "@messaging/message-sending";
 import { dispatch, getState } from "@extensibility/service-registry";
+import { emuWindow } from "../../main/app/emu-window";
 
 // --- Default ROM file
 const DEFAULT_ROM = "Z88OZ47.rom";

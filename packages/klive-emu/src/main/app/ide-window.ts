@@ -4,11 +4,12 @@ import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
 import { registerMainToIdeMessenger } from "@messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
 import { dispatch } from "@extensibility/service-registry";
+import { registerIdeWindowForwarder } from "../main-state/main-store";
 
 /**
  * Represents the singleton IDE window
  */
-export class IdeWindow extends AppWindow {
+class IdeWindow extends AppWindow {
   allowClose = false;
   /**
    * Initializes the window instance
@@ -55,4 +56,19 @@ export class IdeWindow extends AppWindow {
     super.onBlur();
     dispatch(ideFocusAction(false));
   }
+}
+
+/**
+ * The singleton instance of the Ide window
+ */
+export let ideWindow: IdeWindow;
+
+/**
+ * Completes the setup of the Ide window
+ */
+export async function setupIdeWindow(): Promise<void> {
+  ideWindow = new IdeWindow();
+  ideWindow.hide();
+  ideWindow.load();
+  registerIdeWindowForwarder(ideWindow.window);
 }
