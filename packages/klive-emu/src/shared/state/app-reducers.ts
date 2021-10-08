@@ -17,6 +17,8 @@ import machinesReducer from "./machines-reducer";
 import modalReducer from "./modal-reducer";
 import projectReducer from "./project-reducer";
 import compilationReducer from "./compilation-reducer";
+import debuggerReducer from "./debugger-reducer";
+
 /**
  * Represents the reducers
  */
@@ -40,4 +42,5 @@ export const appReducers = {
   project: projectReducer,
   machines: machinesReducer,
   compilation: compilationReducer,
+  debugger: debuggerReducer,
 };

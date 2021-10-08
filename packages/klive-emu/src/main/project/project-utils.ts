@@ -13,6 +13,10 @@ import {
 import { KliveProject } from "../main-state/klive-configuration";
 import { emuWindow, setupMenu } from "../app/app-menu";
 import { dispatch, getState } from "../main-state/main-store";
+import {
+  addBreakpointAction,
+  clearBreakpointsAction,
+} from "@state/debugger-reducer";
 
 /**
  * Name of the project file within the project directory
@@ -40,14 +44,27 @@ export async function openProject(projectPath: string): Promise<void> {
   const hasVm = project != null;
   const directoryContents = await getFolderContents(projectPath);
 
+  if (hasVm) {
+    // --- Set up the debugger
+    const breakpoints = project?.debugger?.breakpoints;
+    if (breakpoints) {
+      dispatch(clearBreakpointsAction());
+      breakpoints.forEach((bp) => dispatch(addBreakpointAction(bp)));
+    }
+
+    // --- Last step: setup the loaded machine
+    const settings = project.machineSpecific;
+    await emuWindow.requestMachineType(
+      project.machineType,
+      undefined,
+      settings
+    );
+  }
+
   // --- Set the state accordingly
   dispatch(
     projectOpenedAction(projectPath, projectName, hasVm, directoryContents)
   );
-  if (project?.machineType) {
-    await emuWindow.requestMachineType(project.machineType, undefined, project);
-    setupMenu();
-  }
 }
 
 /**
@@ -135,6 +152,9 @@ export async function createKliveProject(
     // --- Create the project file
     const project: KliveProject = {
       machineType,
+      debugger: {
+        breakpoints: [],
+      },
     };
     await fs.writeFile(
       path.join(targetFolder, PROJECT_FILE),

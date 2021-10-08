@@ -194,9 +194,6 @@ export function setupMenu(): void {
         click: async () => {
           await openIdeWindow();
           await openProjectFolder();
-          if (getState().project?.path) {
-            await setProjectMachine();
-          }
         },
       },
       {
@@ -823,29 +820,6 @@ async function openIdeWindow(): Promise<void> {
     mainState: { ...getState() },
   });
   ideWindow.window.focus();
-}
-
-/**
- * Sets the machine information from the loaded project
- */
-async function setProjectMachine(): Promise<void> {
-  if (!getState().project?.hasVm) {
-    // --- No Klive project open
-    return;
-  }
-  // --- Create the machine and set its state according to the saved settings
-  const projectInfo = getLoadedProjectFile();
-  if (!projectInfo) {
-    // --- Failed loading the settings
-    return;
-  }
-
-  const settings = projectInfo.machineSpecific;
-  await emuWindow.requestMachineType(
-    projectInfo.machineType,
-    undefined,
-    settings
-  );
 }
 
 /**

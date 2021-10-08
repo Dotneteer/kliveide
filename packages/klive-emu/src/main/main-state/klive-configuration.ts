@@ -1,5 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
+import { BreakpointDefinition } from "@abstractions/code-runner-service";
+import { DebuggerState } from "@state/AppState";
 
 /**
  * The file that stores the Klive Emulator configuration
@@ -44,7 +46,7 @@ export interface ViewOptions {
 /**
  * Represents the Klive settings to persist
  */
-export type KliveSettings = {
+export interface KliveSettings {
   machineType?: string;
   viewOptions?: ViewOptions;
   machineSpecific?: Record<string, Record<string, any>>;
@@ -53,7 +55,9 @@ export type KliveSettings = {
 /**
  * Represents the Klive project type
  */
-export type KliveProject = KliveSettings;
+export interface KliveProject extends KliveSettings {
+  debugger: DebuggerState
+}
 
 /**
  * Gets the current home folder
