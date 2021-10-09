@@ -11,7 +11,7 @@ import { SpectrumMachineStateBase } from "../../../src/renderer/machines/zx-spec
 import {
   EmulationMode,
   ExecuteCycleOptions,
-} from "../../../src/renderer/machines/core/vm-core-types";
+} from "../../../src/core/abstractions/vm-core-types";
 import { MemoryHelper } from "../../../src/renderer/machines/wa-interop/memory-helpers";
 import { BEEPER_SAMPLE_BUFFER } from "../../../src/renderer/machines/wa-interop/memory-map";
 

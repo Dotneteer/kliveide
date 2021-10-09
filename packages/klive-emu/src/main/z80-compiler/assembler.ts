@@ -123,12 +123,10 @@ import {
 import {
   ExpressionEvaluator,
   ExpressionValue,
-  ExpressionValueType,
   setRandomSeed,
-  SymbolValueMap,
-  ValueInfo,
 } from "./expressions";
 import { FixupEntry, FixupType } from "./fixups";
+import { ExpressionValueType, IExpressionValue, SymbolValueMap, ValueInfo } from "@abstractions/z80-compiler-service";
 
 /**
  * The file name of a direct text compilation
@@ -902,7 +900,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param opLine Assembly line that contains the expression
    * @param expr Expression to evaluate
    */
-  evaluateExpr(expr: Expression): ExpressionValue {
+  evaluateExpr(expr: Expression): IExpressionValue {
     if (!this.readyToEvaluate(expr)) {
       return ExpressionValue.NonEvaluated;
     }
@@ -913,7 +911,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Immediately evaluates the specified expression
    * @param expr Expression to evaluate
    */
-  evaluateExprImmediate(expr: Expression): ExpressionValue {
+  evaluateExprImmediate(expr: Expression): IExpressionValue {
     return this.doEvalExpression(expr);
   }
 
@@ -1259,7 +1257,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   private addSymbol(
     symbol: string,
     line: Z80AssemblyLine,
-    value: ExpressionValue
+    value: IExpressionValue
   ): void {
     const assembler = this;
 
@@ -1384,7 +1382,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param name Variable name
    * @param value Variable value
    */
-  private setVariable(name: string, value: ExpressionValue): void {
+  private setVariable(name: string, value: IExpressionValue): void {
     // --- Search for the variable from inside out
     for (const scope of this._currentModule.localScopes) {
       const symbolInfo = scope.getSymbol(name);
@@ -2456,7 +2454,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     this._macroInvocations.push(macroOrStructStmt);
 
     // --- Evaluate arguments
-    const macroArgs: { [key: string]: ExpressionValue } = {};
+    const macroArgs: Record<string, IExpressionValue> = {};
     let errorFound = false;
     const emptyArgValue = new ExpressionValue("$<none>$");
     for (let i = 0; i < macroDef.argNames.length; i++) {
@@ -2465,7 +2463,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         continue;
       }
       var op = macroOrStructStmt.operands[i];
-      let argValue: ExpressionValue;
+      let argValue: IExpressionValue;
       switch (op.operandType) {
         case OperandType.Reg8:
         case OperandType.Reg8Idx:
@@ -3524,7 +3522,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       return;
     }
 
-    let stepValue = new ExpressionValue(1);
+    let stepValue: IExpressionValue = new ExpressionValue(1);
     if (forStmt.stepExpr) {
       stepValue = this.evaluateExprImmediate(forStmt.stepExpr);
       if (!stepValue.isValid) {
@@ -3721,7 +3719,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     let sectionToCompile: IfSection | undefined;
     for (const ifSection of ifDef.definition.ifSections) {
       // --- Evaluate the condition
-      let conditionValue: ExpressionValue;
+      let conditionValue: IExpressionValue;
       if (ifSection.ifStatement.type === "ElseIfStatement") {
         conditionValue = this.evaluateExprImmediate(ifSection.ifStatement.expr);
       } else {
@@ -5541,7 +5539,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param emitAction Action to emit a code byte
    */
   private emitString(
-    message: ExpressionValue,
+    message: IExpressionValue,
     bit7Terminator: boolean,
     nullTerminator: boolean,
     emitAction?: (byte: number) => void
@@ -5640,8 +5638,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     fixup: FixupEntry,
     numericOnly: boolean,
     signNotEvaluable: boolean
-  ): { success: boolean; value: ExpressionValue } {
-    let exprValue = new ExpressionValue(0);
+  ): { success: boolean; value: IExpressionValue } {
+    let exprValue: IExpressionValue = new ExpressionValue(0);
     if (!this.readyToEvaluate(fixup.expression)) {
       if (!signNotEvaluable) {
         return {

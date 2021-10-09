@@ -1,7 +1,6 @@
 import { ErrorCodes } from "./errors";
 import {
   BinaryExpression,
-  BooleanLiteral,
   MacroTimeFunctionInvocation,
   ConditionalExpression,
   Expression,
@@ -9,12 +8,11 @@ import {
   IdentifierNode,
   NodePosition,
   OperandType,
-  PartialZ80AssemblyLine,
   Symbol,
   UnaryExpression,
   Z80AssemblyLine,
 } from "./tree-nodes";
-import { HasUsageInfo } from "./assembler-types";
+import { ExpressionValueType, IHasUsageInfo, IExpressionValue, ValueInfo } from "@abstractions/z80-compiler-service";
 
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";
@@ -25,21 +23,9 @@ const COMPARE_ERROR = "Cannot compare a number with a string";
 const COMPARE_STRING_ERROR = "String can be compared only to another string";
 
 /**
- * Represents the possible types of an expression value
- */
-export enum ExpressionValueType {
-  Error = 0,
-  Bool,
-  Integer,
-  Real,
-  String,
-  NonEvaluated,
-}
-
-/**
  * Represents the value of an evaluated expression
  */
-export class ExpressionValue {
+export class ExpressionValue implements IExpressionValue {
   private _type: ExpressionValueType;
   private _value: boolean | number | string | undefined;
 
@@ -202,26 +188,6 @@ export class ExpressionValue {
 }
 
 /**
- * Map of symbols
- */
-export type SymbolValueMap = { [key: string]: ExpressionValue };
-
-/**
- * Information about a symbol's value
- */
-export interface ValueInfo {
-  /**
-   * The value of the symbol
-   */
-  value: ExpressionValue;
-
-  /**
-   * Symbol usage information
-   */
-  usageInfo: HasUsageInfo;
-}
-
-/**
  * Represents the context in which an expression is evaluated
  */
 export interface EvaluationContext {
@@ -251,14 +217,14 @@ export interface EvaluationContext {
   /**
    * Gets the current loop counter value
    */
-  getLoopCounterValue(): ExpressionValue;
+  getLoopCounterValue(): IExpressionValue;
 
   /**
    * Evaluates the value if the specified expression node
    * @param expr Expression to evaluate
    * @param context: Evaluation context
    */
-  doEvalExpression(expr: Expression): ExpressionValue;
+  doEvalExpression(expr: Expression): IExpressionValue;
 
   /**
    * Reports an error during evaluation
@@ -306,7 +272,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
   /**
    * Gets the current loop counter value
    */
-  abstract getLoopCounterValue(): ExpressionValue;
+  abstract getLoopCounterValue(): IExpressionValue;
 
   /**
    * Evaluates the value if the specified expression node
@@ -318,7 +284,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
    * @param context The context to evaluate the expression
    * @param expr Expression to evaluate
    */
-  doEvalExpression(expr: Expression): ExpressionValue {
+  doEvalExpression(expr: Expression): IExpressionValue {
     try {
       switch (expr.type) {
         case "Identifier":
@@ -361,7 +327,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
     function evalIdentifierValue(
       context: EvaluationContext,
       expr: IdentifierNode
-    ): ExpressionValue {
+    ): IExpressionValue {
       var valueInfo = context.getSymbolValue(expr.name);
       if (valueInfo !== null) {
         if (valueInfo.usageInfo !== null) {
@@ -381,7 +347,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
     function evalSymbolValue(
       context: EvaluationContext,
       expr: Symbol
-    ): ExpressionValue {
+    ): IExpressionValue {
       var valueInfo = context.getSymbolValue(
         expr.identifier.name,
         expr.startsFromGlobal
@@ -1089,7 +1055,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
     function evalUnaryOperationValue(
       context: EvaluationContext,
       expr: UnaryExpression
-    ): ExpressionValue {
+    ): IExpressionValue {
       const operand = context.doEvalExpression(expr.operand);
       if (!operand.isValid) {
         return ExpressionValue.NonEvaluated;
@@ -1156,7 +1122,7 @@ export abstract class ExpressionEvaluator implements EvaluationContext {
     function evalConditionalOperationValue(
       context: EvaluationContext,
       expr: ConditionalExpression
-    ): ExpressionValue {
+    ): IExpressionValue {
       const cond = context.doEvalExpression(expr.condition);
       if (!cond.isValid) {
         return ExpressionValue.NonEvaluated;
@@ -1244,7 +1210,7 @@ export function setRandomSeed(seed: number): void {
  */
 class FunctionEvaluator {
   constructor(
-    public readonly evaluateFunc: (args: ExpressionValue[]) => ExpressionValue,
+    public readonly evaluateFunc: (args: IExpressionValue[]) => IExpressionValue,
     public readonly argTypes: ExpressionValueType[]
   ) {}
 }
@@ -1685,10 +1651,9 @@ const FUNCTION_EVALUATORS: { [key: string]: FunctionEvaluator[] } = {
 export function evalFunctionInvocationValue(
   context: EvaluationContext,
   funcExpr: FunctionInvocation
-): ExpressionValue {
+): IExpressionValue {
   // --- Evaluate all arguments from left to right
-  const argValues: ExpressionValue[] = [];
-  let errorMessage = "";
+  const argValues: IExpressionValue[] = [];
   let index = 0;
   let errCount = 0;
   for (const expr of funcExpr.args) {
@@ -1785,7 +1750,7 @@ export function evalFunctionInvocationValue(
 export function evalMacroTimeFunctionInvocationValue(
   context: EvaluationContext,
   funcExpr: MacroTimeFunctionInvocation
-): ExpressionValue {
+): IExpressionValue {
   switch (funcExpr.functionName.toLowerCase()) {
     case "def":
       return new ExpressionValue(

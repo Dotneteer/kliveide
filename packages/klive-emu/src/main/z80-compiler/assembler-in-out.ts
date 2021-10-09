@@ -1,6 +1,6 @@
 import { ErrorCodes } from "./errors";
 import { AssemblyModule } from "./assembly-module";
-import { SymbolValueMap } from "./expressions";
+import { SymbolValueMap } from "@abstractions/z80-compiler-service";
 
 /**
  * This class represents the output of the Z80 assembler

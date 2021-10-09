@@ -1,15 +1,6 @@
 import { CompareBinPragma, IdentifierNode, Statement } from "./tree-nodes";
 import { BinarySegment } from "./assembler-in-out";
-
-/**
- * Objects implementing this interface have usage information
- */
-export interface HasUsageInfo {
-  /**
-   * Signs if the object has been used
-   */
-  isUsed: boolean;
-}
+import { IHasUsageInfo } from "@abstractions/z80-compiler-service";
 
 /**
  * Defines a section of assembly lines
@@ -126,7 +117,7 @@ export class StructDefinition {
 /**
  * Defines a fiels of a structure
  */
-export class FieldDefinition implements HasUsageInfo {
+export class FieldDefinition implements IHasUsageInfo {
   constructor(public readonly offset: number) {}
 
   /**

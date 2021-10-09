@@ -1,16 +1,11 @@
 import { ErrorCodes } from "./errors";
-import {
-  Expression,
-  NodePosition,
-  Z80AssemblyLine,
-} from "./tree-nodes";
+import { Expression, NodePosition, Z80AssemblyLine } from "./tree-nodes";
 import { AssemblyModule } from "./assembly-module";
+import { EvaluationContext, ExpressionEvaluator } from "./expressions";
 import {
-  EvaluationContext,
-  ExpressionEvaluator,
-  ExpressionValue,
+  IExpressionValue,
   ValueInfo,
-} from "./expressions";
+} from "@abstractions/z80-compiler-service";
 
 /**
  * This class represents a fixup that recalculates and replaces
@@ -84,7 +79,7 @@ export class FixupEntry extends ExpressionEvaluator {
   /**
    * Gets the current loop counter value
    */
-  getLoopCounterValue(): ExpressionValue {
+  getLoopCounterValue(): IExpressionValue {
     return this.parentContext.getLoopCounterValue();
   }
 

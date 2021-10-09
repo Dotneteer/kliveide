@@ -1,16 +1,16 @@
 import { ErrorCodes } from "./errors";
-import { HasUsageInfo } from "./assembler-types";
 import { ExpressionValue } from "./expressions";
 import { FixupEntry } from "./fixups";
+import { IHasUsageInfo, IExpressionValue } from "@abstractions/z80-compiler-service";
 
 /**
  * This class represents an assembly symbol
  */
-export class AssemblySymbolInfo implements HasUsageInfo {
+export class AssemblySymbolInfo implements IHasUsageInfo {
   constructor(
     public readonly name: string,
     public readonly type: SymbolType,
-    public value: ExpressionValue
+    public value: IExpressionValue
   ) {
     this.isModuleLocal = name.startsWith("@");
     this.isShortTerm = name.startsWith("`");
@@ -37,7 +37,7 @@ export class AssemblySymbolInfo implements HasUsageInfo {
    * @param name Label name
    * @param value Label value
    */
-  static createLabel(name: string, value: ExpressionValue): AssemblySymbolInfo {
+  static createLabel(name: string, value: IExpressionValue): AssemblySymbolInfo {
     return new AssemblySymbolInfo(name, SymbolType.Label, value);
   }
 
@@ -46,7 +46,7 @@ export class AssemblySymbolInfo implements HasUsageInfo {
    * @param name Variable name
    * @param value Variable value
    */
-  static createVar(name: string, value: ExpressionValue): AssemblySymbolInfo {
+  static createVar(name: string, value: IExpressionValue): AssemblySymbolInfo {
     return new AssemblySymbolInfo(name, SymbolType.Var, value);
   }
 }
@@ -153,7 +153,7 @@ export class SymbolScope implements ISymbolScope {
   /**
    * Optional macro arguments
    */
-  macroArguments: { [key: string]: ExpressionValue } | null = null;
+  macroArguments: Record<string, IExpressionValue> | null = null;
 
   /**
    * Tests if this context is a macro context

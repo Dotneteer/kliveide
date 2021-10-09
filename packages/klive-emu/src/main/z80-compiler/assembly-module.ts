@@ -1,6 +1,7 @@
+import { ValueInfo } from "@abstractions/z80-compiler-service";
 import { MacroDefinition, StructDefinition } from "./assembler-types";
 import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
-import { ExpressionValue, ValueInfo } from "./expressions";
+import { ExpressionValue } from "./expressions";
 import { FixupEntry } from "./fixups";
 
 /**

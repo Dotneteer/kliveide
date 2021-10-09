@@ -6,7 +6,7 @@ import { ZxSpectrum48Core } from "../../../src/renderer/machines/zx-spectrum/ZxS
 import {
   EmulationMode,
   ExecuteCycleOptions,
-} from "../../../src/renderer/machines/core/vm-core-types";
+} from "../../../src/core/abstractions/vm-core-types";
 
 let machine: ZxSpectrum48Core;
 
