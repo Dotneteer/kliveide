@@ -1,6 +1,5 @@
 import {
   getModalDialogService,
-  getStore,
   getVmEngineService,
 } from "@core/service-registry";
 
@@ -40,7 +39,6 @@ import {
   MemorySection,
 } from "@shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
-import { Store } from "redux";
 import { CodeToInject } from "@abstractions/code-runner-service";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
@@ -482,7 +480,6 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
 
       case CZ88_CARDS:
         const result = await getModalDialogService().showModalDialog(
-          getStore() as Store,
           Z88_CARDS_DIALOG_ID,
           args
         );

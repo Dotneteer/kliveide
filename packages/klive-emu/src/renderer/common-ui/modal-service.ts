@@ -1,7 +1,7 @@
-import { Store } from "redux";
 import { IModalDialogDescriptor, IModalDialogService } from "@abstractions/modal-dialog-service";
 import { displayModalAction } from "@state/modal-reducer";
 import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { dispatch } from "@core/service-registry";
 
 /**
  * Implements the logic that controls modal dialogs
@@ -56,18 +56,18 @@ export class ModalDialogService implements IModalDialogService {
   /**
    * Displays the current modal dialog
    */
-  hide(store: Store, result?: unknown): void {
+  hide(result?: unknown): void {
     if (!this._visible) {
       return;
     }
-    store.dispatch(displayModalAction(false));
+    dispatch(displayModalAction(false));
     this._result = result;
     this._visible = false;
     this._visibilityChanged.fire(false);
     this._dialogResolver(result);
   }
 
-  async showModalDialog(store: Store, id: string, args?: unknown): Promise<unknown> {
+  async showModalDialog(id: string, args?: unknown): Promise<unknown> {
     if (this._visible) {
       return;
     }
@@ -77,7 +77,7 @@ export class ModalDialogService implements IModalDialogService {
     }
     this._modalDescriptor = descriptor;
     this._args = args;
-    store.dispatch(displayModalAction(true));
+    dispatch(displayModalAction(true));
     this._modalChanged.fire(descriptor);
     this._visible = true;
     this._visibilityChanged.fire(true);

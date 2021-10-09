@@ -1,6 +1,4 @@
-import { Store } from "redux";
-
-import { dispatch, getModalDialogService, getStore } from "@core/service-registry";
+import { dispatch, getModalDialogService } from "@core/service-registry";
 
 import {
   DefaultResponse,
@@ -30,7 +28,6 @@ async function processIdeMessages(
 
     case "NewProjectRequest":
       const result = await getModalDialogService().showModalDialog(
-        getStore() as Store,
         NEW_PROJECT_DIALOG_ID,
         {
           machineType: "",

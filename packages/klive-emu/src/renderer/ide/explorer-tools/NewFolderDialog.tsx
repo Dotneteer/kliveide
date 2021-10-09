@@ -1,14 +1,10 @@
 import * as React from "react";
 
-import {
-  getModalDialogService,
-  getStore,
-} from "@core/service-registry";
+import { getModalDialogService } from "@core/service-registry";
 
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { Store } from "redux";
 import {
   ErrorLabel,
   Field,
@@ -39,7 +35,7 @@ class NewFolderDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const folder = this._result as NewFileData;
     if (!folder.error) {
-      getModalDialogService().hide(getStore() as Store, this._result);
+      getModalDialogService().hide(this._result);
     }
   };
 

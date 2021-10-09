@@ -1,5 +1,3 @@
-import * as React from "react";
-import { Store } from "redux";
 import { ILiteEvent } from "@core/LiteEvent";
 
 /**
@@ -96,15 +94,14 @@ export interface IModalDialogService {
   /**
    * Displays the current modal dialog
    */
-  hide(store: Store, result?: unknown): void;
+  hide(result?: unknown): void;
 
   /**
    * Shows the specified modal dialog
-   * @param store Application state store
    * @param id Modal dialog ID
    * @param args Modal dialog arguments
    */
-  showModalDialog(store: Store, id: string, args?: unknown): Promise<unknown>;
+  showModalDialog(id: string, args?: unknown): Promise<unknown>;
 
   /**
    * This event signs that the modal dialog has changed

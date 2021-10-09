@@ -1,11 +1,7 @@
 import * as React from "react";
 import { CheckBoxComponent } from "@syncfusion/ej2-react-buttons";
 
-import {
-  getModalDialogService,
-  getState,
-  getStore,
-} from "@core/service-registry";
+import { getModalDialogService, getState } from "@core/service-registry";
 
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
@@ -16,7 +12,6 @@ import {
   GetFolderDialogResponse,
   NewProjectData,
 } from "@core/messaging/message-types";
-import { Store } from "redux";
 import {
   ErrorLabel,
   Field,
@@ -42,7 +37,7 @@ class NewProjectDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const project = this._result as NewProjectData;
     if (project.projectName) {
-      getModalDialogService().hide(getStore() as Store, this._result);
+      getModalDialogService().hide(this._result);
     }
   };
 

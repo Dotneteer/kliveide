@@ -2,7 +2,6 @@ import * as React from "react";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
 import { CSSProperties } from "styled-components";
-import { Store } from "redux";
 import {
   ErrorLabel,
   Field,
@@ -12,7 +11,7 @@ import {
 } from "../../common-ui/FormElements";
 import { FileExistsResponse } from "@core/messaging/message-types";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
-import { getModalDialogService, getStore } from "@core/service-registry";
+import { getModalDialogService } from "@core/service-registry";
 import { NewFileData } from "./NewFileData";
 
 export const NEW_FILE_DIALOG_ID = "NewFileDialog";
@@ -34,7 +33,7 @@ class NewFileDialogDescriptor implements IModalDialogDescriptor {
   button3Clicked = () => {
     const file = this._result as NewFileData;
     if (!file.error) {
-      getModalDialogService().hide(getStore() as Store, this._result);
+      getModalDialogService().hide(this._result);
     }
   };
 

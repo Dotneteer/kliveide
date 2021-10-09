@@ -21,7 +21,6 @@ import { CSSProperties } from "react";
 import { Icon } from "../../common-ui/Icon";
 import { AppState, ProjectState } from "@state/AppState";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
-import { Store } from "redux";
 import {
   ConfirmDialogResponse,
   GetFileContentsResponse,
@@ -561,14 +560,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   async newFolder(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
     const folderData = (await getModalDialogService().showModalDialog(
-      getStore() as Store,
       NEW_FOLDER_DIALOG_ID,
       {
         root: node.nodeData.fullPath,
       }
     )) as NewFileData;
 
-    if (!folderData) {
+    if (!folderData?.name) {
       // --- No folder to create
       return;
     }
@@ -618,14 +616,13 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
   async newFile(node: ITreeNode<ProjectNode>, index: number): Promise<void> {
     // --- Get the name of the new folder
     const fileData = (await getModalDialogService().showModalDialog(
-      getStore() as Store,
       NEW_FILE_DIALOG_ID,
       {
         root: node.nodeData.fullPath,
       }
     )) as NewFileData;
 
-    if (!fileData) {
+    if (!fileData?.name) {
       // --- No folder to create
       return;
     }
@@ -753,7 +750,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       node.nodeData.fullPath.length - node.nodeData.name.length - 1
     );
     const fileData = (await getModalDialogService().showModalDialog(
-      getStore() as Store,
       isFolder ? RENAME_FOLDER_DIALOG_ID : RENAME_FILE_DIALOG_ID,
       {
         root: oldPath,
