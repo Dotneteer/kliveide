@@ -1,5 +1,4 @@
 import { ProgramCounterInfo } from "@state/AppState";
-import { IVmEngineService } from "@abstractions/vm-controller-service";
 import { KeyMapping } from "./keyboard";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import {
@@ -11,11 +10,12 @@ import {
   MachineCoreState,
   MachineCreationOptions,
   MachineState,
-} from "./vm-core-types";
+} from "../../../core/abstractions/vm-core-types";
 import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "../wa-interop/wa-api";
-import { ICpu } from "@shared/machines/AbstractCpu";
+import { ICpu } from "@abstractions/abstract-cpu";
 import { CodeToInject } from "@abstractions/code-runner-service";
+import { IVmEngineService } from "./vm-engine-service";
 
 /**
  * Represents the core abstraction of a virtual machine.

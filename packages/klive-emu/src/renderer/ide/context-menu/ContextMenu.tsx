@@ -1,26 +1,22 @@
 import * as React from "react";
+import { useSelector } from "react-redux";
 import {
   BeforeOpenCloseMenuEventArgs,
   ContextMenuComponent,
   MenuEventArgs,
   MenuItemModel,
 } from "@syncfusion/ej2-react-navigations";
-import { useSelector } from "react-redux";
+
+import { getContextMenuService } from "@core/service-registry";
+
 import { AppState } from "@state/AppState";
 import { animationTick } from "../../common-ui/utils";
-import { getContextMenuService } from "@abstractions/service-helpers";
 
 import { useState } from "react";
 import { useEffect } from "react";
-import {
-  Command,
-  CommandGroup,
-  isCommandGroup,
-  isKliveCommand,
-  MenuItem,
-} from "@shared/command/commands";
 import { ContextMenuOpenTarget } from "@abstractions/context-menu-service";
 import { executeCommand } from "@abstractions/command-registry";
+import { Command, CommandGroup, isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-def";
 
 type Props = {
   target: string;

@@ -1,10 +1,10 @@
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
-import { MessengerBase } from "@messaging/MessengerBase";
+import { MessengerBase } from "@core/messaging/MessengerBase";
 import {
+  Channel,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
-import { MAIN_TO_EMU_REQUEST_CHANNEL, MAIN_TO_EMU_RESPONE_CHANNEL } from "@messaging/channels";
+} from "@core/messaging/message-types";
 
 /**
  * This class sends messages from main to the emulator window
@@ -35,10 +35,10 @@ export class MainToEmulatorMessenger extends MessengerBase {
   /**
    * The channel to send the request out
    */
-  readonly requestChannel = MAIN_TO_EMU_REQUEST_CHANNEL;
+  readonly requestChannel: Channel = "MainToEmuRequest";
 
   /**
    * The channel to listen for responses
    */
-  readonly responseChannel = MAIN_TO_EMU_RESPONE_CHANNEL;
+  readonly responseChannel: Channel = "MainToEmuResponse";
 }

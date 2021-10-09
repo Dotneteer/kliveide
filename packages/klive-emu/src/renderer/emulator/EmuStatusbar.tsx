@@ -1,11 +1,15 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
+
+import {
+  getThemeService,
+} from "@core/service-registry";
+
 import { getVersion } from "../../version";
 import { AppState } from "@state/AppState";
 import { Icon } from "../common-ui/Icon";
-import { getVmEngineService } from "@abstractions/service-helpers";
-import { getThemeService } from "@abstractions/service-helpers";
 import { Root, Gap, Section, Label } from "../common-ui/StatusbarStyles";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 /**
  * Represents the statusbar of the emulator
@@ -59,7 +63,9 @@ export default function Statusbar() {
     (s: AppState) => s.emulatorPanel.frameDiagData.pcInfo
   );
 
-  const fillValue = getThemeService().getProperty("--statusbar-foreground-color");
+  const fillValue = getThemeService().getProperty(
+    "--statusbar-foreground-color"
+  );
 
   const frameInformation = [
     <Section key="1">

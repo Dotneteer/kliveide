@@ -1,11 +1,14 @@
 import * as React from "react";
+
+import {
+  getState,
+} from "@core/service-registry";
+
 import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../common-ui/ScrollablePanel";
-import { getEngineProxyService } from "@abstractions/service-helpers";
 import { scrollableContentType } from "./utils/content-utils";
-import { getState } from "@abstractions/service-helpers";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
-import { RunEventArgs } from "@abstractions/engine-proxy-service";
+import { getEngineProxyService, RunEventArgs } from "./engine-proxy";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;
@@ -165,4 +168,3 @@ export const sidebarPlaceholderStyle: CSSProperties = {
   fontFamily: "var(--console-font)",
   color: "#cccccc",
 };
-

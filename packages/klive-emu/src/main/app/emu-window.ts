@@ -3,12 +3,12 @@ import * as path from "path";
 import { app, dialog } from "electron";
 import { AppWindow } from "./app-window";
 import { __DARWIN__ } from "../utils/electron-utils";
-import { RequestMessage, StopVmRequest } from "@messaging/message-types";
+import { RequestMessage, StopVmRequest } from "@core/messaging/message-types";
 import {
   MachineContextProvider,
   MachineContextProviderBase,
-} from "../../extensibility/main/machine-context";
-import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
+} from "@core/main/machine-context";
+import { MachineCreationOptions } from "../../core/abstractions/vm-core-types";
 import {
   emuMachineContextAction,
   emuSetBaseFrequencyAction,
@@ -16,32 +16,29 @@ import {
   emuSetExtraFeaturesAction,
 } from "@state/emulator-panel-reducer";
 import { setEmuForwarder } from "./app-menu";
-import { AppState } from "@state/AppState";
 import {
   appSettings,
-  KliveProject,
-  KliveSettings,
   reloadSettings,
   saveKliveSettings,
   saveSettingsToFile,
 } from "../main-state/klive-configuration";
 import { emuFocusAction } from "@state/emu-focus-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
-import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { machineRegistry } from "@core/main/machine-registry";
 import {
   ZxSpectrum128ContextProvider,
   ZxSpectrum48ContextProvider,
-} from "../../extensibility/main/zx-spectrum-context";
-import { Cz88ContextProvider } from "../../extensibility/main/cz88-context";
+} from "@core/main/zx-spectrum-context";
+import { Cz88ContextProvider } from "@core/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { PROJECT_FILE } from "../project/project-utils";
-import { dispatch, getState } from "../main-state/main-store";
-
-import { Z80Assembler } from "../z80-compiler/assembler";
 import {
   registerMainToEmuMessenger,
   sendFromMainToEmu,
-} from "@messaging/message-sending";
+} from "@core/messaging/message-sending";
+import { dispatch, getState } from "@core/service-registry";
+import { registerEmuWindowForwarder } from "../main-state/main-store";
+import { KliveProject, KliveSettings } from "@abstractions/klive-configuration";
 
 /**
  * These are the context providers we usein the code
@@ -55,7 +52,7 @@ export const _: typeof MachineContextProviderBase[] = [
 /**
  * Represents the singleton emulator window
  */
-export class EmuWindow extends AppWindow {
+class EmuWindow extends AppWindow {
   private _machineContextProvider: MachineContextProvider;
 
   /**
@@ -115,7 +112,7 @@ export class EmuWindow extends AppWindow {
    * Saves the current application settings
    */
   saveAppSettings(): void {
-    const state = getState() as AppState;
+    const state = getState();
     const machineType = state.machineType.split("_")[0];
     const kliveSettings: KliveSettings = {
       machineType,
@@ -191,9 +188,7 @@ export class EmuWindow extends AppWindow {
     settings?: KliveSettings
   ): Promise<void> {
     // Preparation: Stop the current machine
-    sendFromMainToEmu(<StopVmRequest>{
-      type: "StopVm",
-    });
+    sendFromMainToEmu({ type: "StopVm" });
 
     // Use only the first segment of the ID
     id = id.split("_")[0];
@@ -289,4 +284,19 @@ export class EmuWindow extends AppWindow {
       type: "error",
     });
   }
+}
+
+/**
+ * The singleton instance of the Emulator window
+ */
+export let emuWindow: EmuWindow;
+
+/**
+ * Completes the setup of the emulator window
+ */
+export async function setupEmuWindow(): Promise<void> {
+  emuWindow = new EmuWindow();
+  emuWindow.load();
+  registerEmuWindowForwarder(emuWindow.window);
+  await emuWindow.ensureStarted();
 }

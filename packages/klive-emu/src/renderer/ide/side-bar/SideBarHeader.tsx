@@ -1,12 +1,14 @@
 import * as React from "react";
+
+import { getContextMenuService } from "@core/service-registry";
+
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import styles from "styled-components";
 import { CSSProperties, useEffect, useState } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { isCommandGroup, isKliveCommand, MenuItem } from "@shared/command/commands";
-import { getContextMenuService } from "@abstractions/service-helpers";
-import { Activity } from "@abstractions/activity";
+import { Activity } from "@core/abstractions/activity";
 import { commandStatusChanged } from "@abstractions/command-registry";
+import { isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-def";
 
 type Props = {
   activity: Activity;

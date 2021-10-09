@@ -1,9 +1,9 @@
-import { CustomLanguageInfo } from "@abstractions/document-service";
+import { MonacoAwareCustomLanguageInfo } from "./custom-language-info";
 
 /**
  * Language provider for the .asm.z80 extension
  */
-export const asmkZ80LanguageProvider: CustomLanguageInfo = {
+export const asmkZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "asm-kz80",
   options: {
     comments: {

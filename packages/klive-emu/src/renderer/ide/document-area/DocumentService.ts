@@ -6,11 +6,11 @@ import {
   IDocumentPanel,
   IDocumentService,
 } from "@abstractions/document-service";
-import { dispatch, getState } from "@abstractions/service-helpers";
 import { setDocumentFrameStateAction } from "@state/document-frame-reducer";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
-import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { getNodeExtension, getNodeFile } from "../../../core/abstractions/project-node";
 import { CodeEditorFactory } from "./CodeEditorFactory";
+import { dispatch, getState } from "@core/service-registry";
 
 /**
  * Represenst a service that handles document panels

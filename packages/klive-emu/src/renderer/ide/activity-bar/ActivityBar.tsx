@@ -1,10 +1,12 @@
 import * as React from "react";
+
+import { dispatch } from "@core/service-registry";
+
 import ActivityButton from "./ActivityButton";
 import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
 } from "../../common-ui/PanelStyles";
-import { dispatch } from "@abstractions/service-helpers";
 import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";
 import {

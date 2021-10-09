@@ -1,6 +1,15 @@
-import { ErrorCodes } from "./errors";
+import { ErrorCodes } from "@abstractions/z80-assembler-errors";
 import { AssemblyModule } from "./assembly-module";
-import { SymbolValueMap } from "./expressions";
+import {
+  IAssemblerErrorInfo,
+  IBinarySegment,
+  IFileLine,
+  IListFileItem,
+  ISourceFileItem,
+  SourceMap,
+  SpectrumModelType,
+  SymbolValueMap,
+} from "@abstractions/z80-compiler-service";
 
 /**
  * This class represents the output of the Z80 assembler
@@ -13,7 +22,7 @@ export class AssemblerOutput extends AssemblyModule {
     super(null, caseSensitive);
     this.sourceFileList = [sourceItem];
     this.sourceMap = {};
-    this.addressMap = new Map<FileLine, number[]>();
+    this.addressMap = new Map<IFileLine, number[]>();
     this.listFileItems = [];
     this.injectOptions = {};
     this.traceOutput = [];
@@ -22,12 +31,12 @@ export class AssemblerOutput extends AssemblyModule {
   /**
    * The segments of the compilation output
    */
-  readonly segments: BinarySegment[] = [];
+  readonly segments: IBinarySegment[] = [];
 
   /**
    * The errors found during the compilation
    */
-  readonly errors: AssemblerErrorInfo[] = [];
+  readonly errors: IAssemblerErrorInfo[] = [];
 
   /**
    * Number of errors
@@ -54,13 +63,13 @@ export class AssemblerOutput extends AssemblyModule {
   /**
    * Inject options
    */
-  injectOptions: { [key: string]: boolean } = {};
+  injectOptions: Record<string, boolean> = {};
 
   /**
    * The source files involved in this compilation, in
    * their file index order
    */
-  readonly sourceFileList: SourceFileItem[];
+  readonly sourceFileList: ISourceFileItem[];
 
   /**
    * Source map information that assigns source file info with
@@ -71,12 +80,12 @@ export class AssemblerOutput extends AssemblyModule {
   /**
    * Source map information that assigns source file info with the address
    */
-  readonly addressMap: Map<FileLine, number[]>;
+  readonly addressMap: Map<IFileLine, number[]>;
 
   /**
    * Items of the list file
    */
-  readonly listFileItems: ListFileItem[];
+  readonly listFileItems: IListFileItem[];
 
   /**
    * The type of the source that resulted in this compilation (for example, ZX BASIC)
@@ -95,7 +104,7 @@ export class AssemblerOutput extends AssemblyModule {
    * @param address Address
    */
   addToAddressMap(fileIndex: number, line: number, address: number): void {
-    const sourceInfo: FileLine = { fileIndex, line};
+    const sourceInfo: IFileLine = { fileIndex, line };
     const addressList = this.addressMap.get(sourceInfo);
     if (addressList) {
       addressList.push(address);
@@ -108,7 +117,7 @@ export class AssemblerOutput extends AssemblyModule {
 /**
  * A single segment of the code compilation
  */
-export class BinarySegment {
+export class BinarySegment implements IBinarySegment {
   /**
    * The bank of the segment
    */
@@ -194,7 +203,7 @@ export class BinarySegment {
 /**
  * Represents a compilation error
  */
-export class AssemblerErrorInfo {
+export class AssemblerErrorInfo implements IAssemblerErrorInfo {
   constructor(
     public readonly errorCode: ErrorCodes,
     public readonly fileName: string,
@@ -202,24 +211,14 @@ export class AssemblerErrorInfo {
     public readonly startPosition: number,
     public readonly endPosition: number | null,
     public readonly message: string,
-    public isWarning?: boolean
+    public readonly isWarning?: boolean
   ) {}
-}
-
-/**
- * The type of the Spectrum model
- */
-export enum SpectrumModelType {
-  Spectrum48,
-  Spectrum128,
-  SpectrumP3,
-  Next,
 }
 
 /**
  * Describes a source file item
  */
-export class SourceFileItem {
+export class SourceFileItem implements ISourceFileItem {
   constructor(public readonly filename: string) {}
 
   /**
@@ -264,31 +263,6 @@ export class SourceFileItem {
   containsInIncludeList(childItem: SourceFileItem): boolean {
     return this.includes.some((c) => c.filename === childItem.filename);
   }
-}
-
-export interface FileLine {
-  fileIndex: number;
-  line: number;
-}
-
-/**
- * This type represents a source map
- */
-export type SourceMap = {
-  [key: number]: FileLine;
-};
-
-/**
- * Represents an item in the output list
- */
-export interface ListFileItem {
-  fileIndex: number;
-  address: number;
-  segmentIndex: number;
-  codeStartIndex: number;
-  codeLength: number;
-  lineNumber: number;
-  sourceText: string;
 }
 
 /**

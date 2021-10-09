@@ -1,6 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "react";
-import { getThemeService } from "@abstractions/service-helpers";
+
+import { getThemeService } from "@core/service-registry";
 
 /**
  * CommonIcon properties

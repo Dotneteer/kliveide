@@ -1,25 +1,13 @@
-import { CompareBinPragma, IdentifierNode, Statement } from "./tree-nodes";
-import { BinarySegment } from "./assembler-in-out";
-
-/**
- * Objects implementing this interface have usage information
- */
-export interface HasUsageInfo {
-  /**
-   * Signs if the object has been used
-   */
-  isUsed: boolean;
-}
-
-/**
- * Defines a section of assembly lines
- */
-export class DefinitionSection {
-  constructor(
-    public readonly firstLine: number,
-    public readonly lastLine: number
-  ) {}
-}
+import {
+  CompareBinPragma,
+  Statement,
+} from "@abstractions/z80-assembler-tree-nodes";
+import {
+  DefinitionSection,
+  IBinarySegment,
+  IFieldDefinition,
+  IStructDefinition,
+} from "@abstractions/z80-compiler-service";
 
 /**
  * Represents the definition of an IF statement
@@ -50,7 +38,7 @@ export class IfSection {
     firstLine: number,
     lastLine: number
   ) {
-    this.section = new DefinitionSection(firstLine, lastLine);
+    this.section = { firstLine, lastLine };
   }
   /**
    * Section boundaries
@@ -61,14 +49,14 @@ export class IfSection {
 /**
  * Represents a struct
  */
-export class StructDefinition {
+export class StructDefinition implements IStructDefinition {
   constructor(
     public readonly structName: string,
     macroDefLine: number,
     macroEndLine: number,
     private caseSensitive: boolean
   ) {
-    this.section = new DefinitionSection(macroDefLine, macroEndLine);
+    this.section = { firstLine: macroDefLine, lastLine: macroEndLine };
   }
 
   /**
@@ -79,7 +67,7 @@ export class StructDefinition {
   /**
    * The fields of the structure
    */
-  readonly fields: { [key: string]: FieldDefinition } = {};
+  readonly fields: { [key: string]: IFieldDefinition } = {};
 
   /**
    * The size of the structure
@@ -91,7 +79,7 @@ export class StructDefinition {
    * @param fieldName Field name
    * @param definition Field definition
    */
-  addField(fieldName: string, definition: FieldDefinition): void {
+  addField(fieldName: string, definition: IFieldDefinition): void {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -115,7 +103,7 @@ export class StructDefinition {
    * @param name field name
    * @returns The field information, if found; otherwise, undefined.
    */
-  getField(fieldName: string): FieldDefinition | undefined {
+  getField(fieldName: string): IFieldDefinition | undefined {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -124,44 +112,12 @@ export class StructDefinition {
 }
 
 /**
- * Defines a fiels of a structure
- */
-export class FieldDefinition implements HasUsageInfo {
-  constructor(public readonly offset: number) {}
-
-  /**
-   * Signs if the object has been used
-   */
-  isUsed: boolean;
-}
-
-/**
- * Represents the definition of a macro
- */
-export class MacroDefinition {
-  constructor(
-    public readonly macroName: string,
-    macroDefLine: number,
-    macroEndLine: number,
-    public readonly argNames: IdentifierNode[],
-    public readonly endLabel: string | null
-  ) {
-    this.section = new DefinitionSection(macroDefLine, macroEndLine);
-  }
-
-  /**
-   * Struct definition section
-   */
-  readonly section: DefinitionSection;
-}
-
-/**
  * Information about binary comparison
  */
 export class BinaryComparisonInfo {
   constructor(
     public readonly comparePragma: CompareBinPragma,
-    public readonly segment: BinarySegment,
+    public readonly segment: IBinarySegment,
     public readonly segmentLength: number
   ) {}
 }

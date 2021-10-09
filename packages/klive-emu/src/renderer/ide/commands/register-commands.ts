@@ -1,4 +1,4 @@
-import { getCommandService } from "@abstractions/service-helpers";
+import { getCommandService } from "@core/service-registry";
 import { NewProjectCommand } from "./NewProjectCommand";
 
 /**

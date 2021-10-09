@@ -1,9 +1,9 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
-import { getToolAreaService } from "@abstractions/service-helpers";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import ToolTab from "./ToolTab";
+import { getToolAreaService } from "@core/service-registry";
 
 /**
  * Represents the statusbar of the emulator

@@ -3,21 +3,13 @@
 // ============================================================================
 
 import { BrowserWindow, app, ipcMain } from "electron";
-import { dispatch, forwardRendererState } from "./main-state/main-store";
+
+import { forwardRendererState } from "./main-state/main-store";
+import { ForwardActionRequest } from "@core/messaging/message-types";
 import {
-  EMU_TO_MAIN_REQUEST_CHANNEL,
-  EMU_TO_MAIN_RESPONSE_CHANNEL,
-  IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
-  IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
-  MAIN_STATE_REQUEST_CHANNEL,
-} from "@messaging/channels";
-import { ForwardActionRequest } from "@messaging/message-types";
-import {
-  emuWindow,
-  ideWindow,
   setupMenu,
-  setupWindows,
-  watchStateChanges,
+  startStateChangeProcessing,
+  stopStateChangeProcessing,
 } from "./app/app-menu";
 import {
   appConfiguration,
@@ -25,38 +17,35 @@ import {
 } from "./main-state/klive-configuration";
 import { __WIN32__ } from "./utils/electron-utils";
 import { setWindowsAction } from "@state/is-windows-reducer";
-import {
-  processEmulatorRequest,
-  processIdeRequest,
-} from "./communication/process-messages";
+import { processIdeRequest } from "./communication/process-ide-requests";
+import { processEmulatorRequest } from "./communication/process-emulator-requests";
 import { registerSite } from "@abstractions/process-site";
-import { sendFromMainToEmu } from "@messaging/message-sending";
+import { sendFromMainToEmu } from "@core/messaging/message-sending";
 import {
   executeKliveCommand,
   registerCommonCommands,
 } from "@shared/command/common-commands";
 import { Z80CompilerService } from "./z80-compiler/z80-compiler";
 import {
-  DIALOG_SERVICE,
+  dispatch,
   registerService,
   Z80_COMPILER_SERVICE,
-} from "@abstractions/service-registry";
+} from "@core/service-registry";
+import { emuWindow, setupEmuWindow } from "./app/emu-window";
+import { ideWindow, setupIdeWindow } from "./app/ide-window";
+
+// --- Register services used by the main process
+registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
 
 // --- Sign that this process is the main process
 registerSite("main");
 registerCommonCommands();
 
-// --- Register services used by the main process
-registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
-
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.
 // --- Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
-  // --- Is Klive running on Windows?
-  await setupWindows();
-  watchStateChanges();
-  setupMenu();
+  await doSetup();
   dispatch(setWindowsAction(__WIN32__));
 
   // --- Set up application state according to saved settings
@@ -95,6 +84,7 @@ app.on("ready", async () => {
 app.on("window-all-closed", () => {
   // --- On OS X it is common for applications and their menu bar
   // --- to stay active until the user quits explicitly with Cmd + Q
+  stopStateChangeProcessing();
   if (process.platform !== "darwin") {
     app.quit();
   }
@@ -103,9 +93,7 @@ app.on("window-all-closed", () => {
 // --- Set up windows before the first activation
 app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    await setupWindows();
-    setupMenu();
-    watchStateChanges();
+    await doSetup();
   }
 });
 
@@ -116,33 +104,34 @@ app.on("before-quit", () => {
 });
 
 // --- This channel forwards renderer state (Emu or IDE) to the other renderer (IDE or Emu)
-ipcMain.on(MAIN_STATE_REQUEST_CHANNEL, (_ev, msg: ForwardActionRequest) => {
+ipcMain.on("MainStateRequest", (_ev, msg: ForwardActionRequest) => {
   forwardRendererState(msg);
 });
 
 // --- This channel processes requests arriving from the Emu process
-ipcMain.on(
-  EMU_TO_MAIN_REQUEST_CHANNEL,
-  async (_ev, msg: ForwardActionRequest) => {
-    const response = await processEmulatorRequest(msg);
-    response.correlationId = msg.correlationId;
-    if (emuWindow?.window.isDestroyed() === false) {
-      emuWindow.window.webContents.send(EMU_TO_MAIN_RESPONSE_CHANNEL, response);
-    }
+ipcMain.on("EmuToMainRequest", async (_ev, msg: ForwardActionRequest) => {
+  const response = await processEmulatorRequest(msg);
+  response.correlationId = msg.correlationId;
+  if (emuWindow?.window.isDestroyed() === false) {
+    emuWindow.window.webContents.send("EmuToMainResponse", response);
   }
-);
+});
 
 // --- This channel processes requests arriving from the Emu process
-ipcMain.on(
-  IDE_TO_EMU_MAIN_REQUEST_CHANNEL,
-  async (_ev, msg: ForwardActionRequest) => {
-    const response = await processIdeRequest(msg);
-    response.correlationId = msg.correlationId;
-    if (ideWindow?.window.isDestroyed() === false) {
-      ideWindow.window.webContents.send(
-        IDE_TO_EMU_MAIN_RESPONSE_CHANNEL,
-        response
-      );
-    }
+ipcMain.on("IdeToEmuMainRequest", async (_ev, msg: ForwardActionRequest) => {
+  const response = await processIdeRequest(msg);
+  response.correlationId = msg.correlationId;
+  if (ideWindow?.window.isDestroyed() === false) {
+    ideWindow.window.webContents.send("IdeToEmuMainResponse", response);
   }
-);
+});
+
+/**
+ * Helper function to carry out the setup
+ */
+async function doSetup(): Promise<void> {
+  await setupEmuWindow();
+  await setupIdeWindow();
+  startStateChangeProcessing();
+  setupMenu();
+}

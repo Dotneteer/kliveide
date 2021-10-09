@@ -2,15 +2,13 @@ import { IpcRendererEvent } from "electron";
 import { KliveAction } from "@state/state-core";
 import { IpcRendereApi } from "../../exposed-apis";
 import {
-  MAIN_STATE_REQUEST_CHANNEL,
-  RENDERER_STATE_RESPONSE_CHANNEL,
-} from "@messaging/channels";
-import {
+  Channel,
   DefaultResponse,
+  MessageSource,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
-import { MessengerBase } from "@messaging/MessengerBase";
+} from "@core/messaging/message-types";
+import { MessengerBase } from "@core/messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window
@@ -25,13 +23,13 @@ export class RendererToMainStateForwarder extends MessengerBase {
   /**
    * Initializes the listener that processes responses
    */
-  constructor(public readonly sourceId: string) {
+  constructor(public readonly sourceId: MessageSource) {
     super();
-      ipcRenderer?.on(
-        this.responseChannel,
-        (_ev: IpcRendererEvent, response: ResponseMessage) =>
-          this.processResponse(response)
-      );
+    ipcRenderer?.on(
+      this.responseChannel,
+      (_ev: IpcRendererEvent, response: ResponseMessage) =>
+        this.processResponse(response)
+    );
   }
 
   /**
@@ -50,23 +48,23 @@ export class RendererToMainStateForwarder extends MessengerBase {
    * @param state
    */
   async forwardAction(action: KliveAction): Promise<DefaultResponse> {
-    return await this.sendMessage({
+    return (await this.sendMessage({
       type: "ForwardAction",
       action,
-    }) as DefaultResponse;
+    })) as DefaultResponse;
   }
 
   /**
    * The channel to send the request out
    */
-  get requestChannel(): string {
-    return MAIN_STATE_REQUEST_CHANNEL;
+  get requestChannel(): Channel {
+    return "MainStateRequest";
   }
 
   /**
    * The channel to listen for responses
    */
-  get responseChannel(): string {
-    return RENDERER_STATE_RESPONSE_CHANNEL;
+  get responseChannel(): Channel {
+    return "RendererStateResponse";
   }
 }

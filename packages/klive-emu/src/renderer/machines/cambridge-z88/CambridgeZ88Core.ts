@@ -1,7 +1,9 @@
+import { getModalDialogService } from "@core/service-registry";
+
 import { ProgramCounterInfo } from "@state/AppState";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { IAudioRenderer } from "../audio/IAudioRenderer";
-import { MachineCreationOptions, MachineState } from "../core/vm-core-types";
+import { MachineCreationOptions, MachineState } from "../../../core/abstractions/vm-core-types";
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
 import {
@@ -14,7 +16,6 @@ import {
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import { KeyMapping } from "../core/keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
-import { getVmEngineService } from "@abstractions/service-helpers";
 import {
   CZ88_BATTERY_LOW,
   CZ88_CARDS,
@@ -24,7 +25,6 @@ import {
   CZ88_SOFT_RESET,
 } from "@shared/machines/macine-commands";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
-import { getModalDialogService } from "@abstractions/service-helpers";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
@@ -36,9 +36,8 @@ import {
   MemorySection,
 } from "@shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
-import { Store } from "redux";
-import { getStore } from "@abstractions/service-helpers";
 import { CodeToInject } from "@abstractions/code-runner-service";
+import { getVmEngineService } from "../core/vm-engine-service";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 
@@ -479,7 +478,6 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
 
       case CZ88_CARDS:
         const result = await getModalDialogService().showModalDialog(
-          getStore() as Store,
           Z88_CARDS_DIALOG_ID,
           args
         );

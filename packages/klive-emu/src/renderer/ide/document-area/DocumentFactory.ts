@@ -1,6 +1,6 @@
 import { IDocumentPanel } from "@abstractions/document-service";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
-import { ProjectNode } from "../explorer-tools/ProjectNode";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ProjectNode } from "../../../core/abstractions/project-node";
 
 /**
  * A base class for document panel descriptors

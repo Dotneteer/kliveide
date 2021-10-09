@@ -4,7 +4,7 @@ import {
   IToolPanel,
   ToolsInfo,
 } from "@abstractions/tool-area-service";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 
 /**
  * A base class for document panel descriptors

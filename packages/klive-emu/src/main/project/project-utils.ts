@@ -1,23 +1,24 @@
 import * as path from "path";
 import * as syncFs from "fs";
 import { promises as fs } from "fs";
-
 import { dialog } from "electron";
+
+import { dispatch, getState } from "@core/service-registry";
+
 import { AppWindow } from "../app/app-window";
 import { getFolderContents, getHomeFolder } from "../utils/file-utils";
-import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { machineRegistry } from "@core/main/machine-registry";
 import {
   projectOpenedAction,
   projectLoadingAction,
 } from "@state/project-reducer";
-import { KliveProject } from "../main-state/klive-configuration";
-import { emuWindow, setupMenu } from "../app/app-menu";
-import { dispatch, getState } from "../main-state/main-store";
+import { KliveProject } from "@abstractions/klive-configuration";
 import {
   addBreakpointAction,
   clearBreakpointsAction,
 } from "@state/debugger-reducer";
 import { addBuildRootAction, clearBuildRootsAction } from "@state/builder-reducer";
+import { emuWindow } from "../app/emu-window";
 
 /**
  * Name of the project file within the project directory

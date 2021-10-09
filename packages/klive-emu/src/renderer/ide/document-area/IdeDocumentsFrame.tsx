@@ -1,15 +1,17 @@
 import * as React from "react";
+
+import { getDocumentService, getState } from "@core/service-registry";
+
 import DocumentTabBar from "./DocumentTabBar";
 import ReactResizeDetector from "react-resize-detector";
 
 import { useEffect, useState } from "react";
-import { getDocumentService, getState, getStore } from "@abstractions/service-helpers";
 import { CSSProperties } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
-import { IKliveCommand } from "../../../extensibility/abstractions/command-def";
+import { IKliveCommand } from "@core/abstractions/command-def";
 import { commandStatusChanged } from "@abstractions/command-registry";
 
 // --- Document Frame IDs
@@ -128,7 +130,9 @@ function DocumentCommandBar() {
   const refreshCommands = () => {
     const activeDoc = getDocumentService().getActiveDocument();
     if (activeDoc) {
-      const filename = activeDoc.projectNode.fullPath.substr(getState().project.path.length);
+      const filename = activeDoc.projectNode.fullPath.substr(
+        getState().project.path.length
+      );
       if (getState().builder.roots.includes(filename)) {
         setBuildRootCommands([
           { commandId: "klive.compileCode" },

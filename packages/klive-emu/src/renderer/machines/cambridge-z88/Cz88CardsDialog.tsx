@@ -12,11 +12,9 @@ import {
 } from "@shared/machines/cz88-specific";
 import { useState } from "react";
 import { Icon } from "../../common-ui/Icon";
-import { EmuOpenFileDialogResponse } from "@messaging/message-types";
-import { Store } from "redux";
-import { getStore } from "@abstractions/service-helpers";
-import { getModalDialogService } from "@abstractions/service-helpers";
+import { EmuOpenFileDialogResponse } from "@core/messaging/message-types";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
+import { getModalDialogService } from "@core/service-registry";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog
@@ -33,7 +31,7 @@ class Cz88CardsDialogDescriptor implements IModalDialogDescriptor {
 
   button3Text = "Ok";
   button3Clicked = () => {
-    getModalDialogService().hide(getStore() as Store, this._result);
+    getModalDialogService().hide(this._result);
   };
 
   primaryButtonIndex = 3;

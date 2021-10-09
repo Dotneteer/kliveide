@@ -14,10 +14,12 @@
     "downlevelIteration": true,
     "paths": {
       "*": ["node_modules/*"],
-      "@abstractions/*": ["src/abstractions/*"],
-      "@state/*": ["src/shared/state/*"],
+      "@abstractions/*": ["src/core/abstractions/*"],
+      "@core/*": ["src/core/*"],
+      "@assembler/*": ["src/main/z80-compiler/*"],
+      "@state/*": ["src/core/state/*"],
       "@shared/*": ["src/shared/*"],
-      "@messaging/*": ["src/extensibility/messaging/*"]
+      "@messaging/*": ["@core/messaging/*"]
     }
   },
   "include": ["src/**/*"],

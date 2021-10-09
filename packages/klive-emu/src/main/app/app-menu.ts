@@ -20,15 +20,6 @@ import {
 import { AppState } from "@state/AppState";
 import { __DARWIN__ } from "../utils/electron-utils";
 import {
-  dispatch,
-  getState,
-  getStore,
-  registerEmuWindowForwarder,
-  registerIdeWindowForwarder,
-} from "../main-state/main-store";
-import { EmuWindow } from "./emu-window";
-import { IdeWindow } from "./ide-window";
-import {
   appConfiguration,
   appSettings,
 } from "../main-state/klive-configuration";
@@ -37,25 +28,24 @@ import {
   ideToolFrameShowAction,
 } from "@state/tool-frame-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
-import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { machineRegistry } from "@core/main/machine-registry";
 import {
   createKliveProject,
-  getLoadedProjectFile,
   openProject,
   openProjectFolder,
 } from "../project/project-utils";
 import { closeProjectAction } from "@state/project-reducer";
-import { NewProjectResponse } from "@messaging/message-types";
+import { NewProjectResponse } from "@core/messaging/message-types";
 import { AppWindow } from "./app-window";
 import {
   sendFromMainToEmu,
   sendFromMainToIde,
-} from "@messaging/message-sending";
+} from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
-
-// --- Global reference to the mainwindow
-export let emuWindow: EmuWindow;
-export let ideWindow: IdeWindow;
+import { dispatch, getState, getStore } from "@core/service-registry";
+import { ideWindow } from "./ide-window";
+import { emuWindow } from "./emu-window";
+import { Unsubscribe } from "redux";
 
 /**
  * Messenger instance to the emulator window
@@ -81,20 +71,6 @@ let lastMuted: boolean | null = null;
  * The state of the menu items
  */
 let menuState: Record<string, boolean> = {};
-
-export async function setupWindows(): Promise<void> {
-  // --- Prepare the mulator window
-  emuWindow = new EmuWindow();
-  emuWindow.load();
-  registerEmuWindowForwarder(emuWindow.window);
-  await emuWindow.ensureStarted();
-
-  // --- Prepare the IDE window
-  ideWindow = new IdeWindow();
-  ideWindow.hide();
-  ideWindow.load();
-  registerIdeWindowForwarder(ideWindow.window);
-}
 
 /**
  * Sets the forwarder to the emulator window
@@ -295,7 +271,7 @@ export function setupMenu(): void {
         label: "Start",
         accelerator: "F5",
         enabled: true,
-        click: async () => await executeKliveCommand("startVm"),
+        click: async () => await sendFromMainToEmu({ type: "StartVm" }),
       },
       {
         id: PAUSE_VM,
@@ -585,10 +561,69 @@ export function restoreEnabledState(): void {
 }
 
 /**
- * Sets up state change cathing
+ * Sets the specified sound level
+ * @param level Sound level (between 0.0 and 1.0)
  */
-export function watchStateChanges(): void {
-  getStore().subscribe(() => processStateChange(getState()));
+export function setSoundLevel(level: number): void {
+  if (level === 0) {
+    dispatch(emuMuteSoundAction(true));
+  } else {
+    dispatch(emuMuteSoundAction(false));
+    dispatch(emuSetSoundLevelAction(level));
+  }
+}
+
+/**
+ * Sets the sound menu with the specified level
+ * @param level Sound level
+ */
+export function setSoundLevelMenu(muted: boolean, level: number): void {
+  for (const menuItem of SOUND_MENU_ITEMS) {
+    const item = Menu.getApplicationMenu().getMenuItemById(menuItem.id);
+    if (item) {
+      item.checked = false;
+    }
+  }
+  if (muted) {
+    const soundItem = Menu.getApplicationMenu().getMenuItemById(
+      SOUND_MENU_ITEMS[0].id
+    );
+    if (soundItem) {
+      soundItem.checked = true;
+    }
+  } else {
+    for (let i = 0; i < SOUND_MENU_ITEMS.length; i++) {
+      if (level < SOUND_MENU_ITEMS[i].level + 0.02) {
+        const soundItem = Menu.getApplicationMenu().getMenuItemById(
+          SOUND_MENU_ITEMS[i].id
+        );
+        if (soundItem) {
+          soundItem.checked = true;
+        }
+        break;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Handle state changes affecting the application menu
+
+const stateChangeHandler: () => void = () => processStateChange(getState());
+let unsubscribe: Unsubscribe;
+
+/**
+ * Sets up state change processing
+ */
+export function startStateChangeProcessing(): void {
+  unsubscribe = getStore().subscribe(stateChangeHandler);
+}
+
+/**
+ * Stop state change processing
+ */
+export function stopStateChangeProcessing(): void {
+  unsubscribe();
 }
 
 let lastShowIde = false;
@@ -752,51 +787,7 @@ export function processStateChange(fullState: AppState): void {
   // }
 }
 
-/**
- * Sets the specified sound level
- * @param level Sound level (between 0.0 and 1.0)
- */
-export function setSoundLevel(level: number): void {
-  if (level === 0) {
-    dispatch(emuMuteSoundAction(true));
-  } else {
-    dispatch(emuMuteSoundAction(false));
-    dispatch(emuSetSoundLevelAction(level));
-  }
-}
 
-/**
- * Sets the sound menu with the specified level
- * @param level Sound level
- */
-export function setSoundLevelMenu(muted: boolean, level: number): void {
-  for (const menuItem of SOUND_MENU_ITEMS) {
-    const item = Menu.getApplicationMenu().getMenuItemById(menuItem.id);
-    if (item) {
-      item.checked = false;
-    }
-  }
-  if (muted) {
-    const soundItem = Menu.getApplicationMenu().getMenuItemById(
-      SOUND_MENU_ITEMS[0].id
-    );
-    if (soundItem) {
-      soundItem.checked = true;
-    }
-  } else {
-    for (let i = 0; i < SOUND_MENU_ITEMS.length; i++) {
-      if (level < SOUND_MENU_ITEMS[i].level + 0.02) {
-        const soundItem = Menu.getApplicationMenu().getMenuItemById(
-          SOUND_MENU_ITEMS[i].id
-        );
-        if (soundItem) {
-          soundItem.checked = true;
-        }
-        break;
-      }
-    }
-  }
-}
 
 // ============================================================================
 // Helper types and methods

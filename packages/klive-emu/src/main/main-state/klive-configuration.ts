@@ -1,7 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { BreakpointDefinition } from "@abstractions/code-runner-service";
-import { BuilderState, DebuggerState } from "@state/AppState";
+import { KliveConfiguration, KliveSettings } from "@abstractions/klive-configuration";
 
 /**
  * The file that stores the Klive Emulator configuration
@@ -16,50 +15,6 @@ export const SETTINGS_FILE_PATH = "Klive/klive.settings";
 /**
  * Represents the Klive configuration that is read during startup
  */
-export interface KliveConfiguration {
-  port?: number;
-  machineType?: string;
-  diagnostics?: KliveDiagnostics;
-  showDevTools?: boolean;
-}
-
-/**
- * Diagnostics settings
- */
-export interface KliveDiagnostics {
-  soundBufferUnderflow?: boolean;
-  longFrameInfo?: boolean;
-}
-
-/**
- * View menu options
- */
-export interface ViewOptions {
-  showDevTools?: boolean;
-  showToolbar?: boolean;
-  showStatusbar?: boolean;
-  showFrameInfo?: boolean;
-  showKeyboard?: boolean;
-  keyboardHeight?: number;
-}
-
-/**
- * Represents the Klive settings to persist
- */
-export interface KliveSettings {
-  machineType?: string;
-  viewOptions?: ViewOptions;
-  machineSpecific?: Record<string, Record<string, any>>;
-};
-
-/**
- * Represents the Klive project type
- */
-export interface KliveProject extends KliveSettings {
-  debugger: DebuggerState;
-  builder: BuilderState;
-}
-
 /**
  * Gets the current home folder
  */

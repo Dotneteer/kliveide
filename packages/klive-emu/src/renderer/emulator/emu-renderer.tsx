@@ -11,15 +11,13 @@ import {
   registerService,
   STORE_SERVICE,
   THEME_SERVICE,
-  VM_ENGINE_SERVICE,
-} from "@abstractions/service-registry";
-import { dispatch, getState, getStore } from "@abstractions/service-helpers";
+} from "@core/service-registry";
+import { dispatch, getState, getStore } from "@core/service-registry";
 import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { getInitialAppState } from "@state/AppState";
 import { appReducers } from "@state/app-reducers";
-import { EMU_SOURCE, RENDERER_STATE_REQUEST_CHANNEL } from "@messaging/channels";
-import { ForwardActionRequest } from "@messaging/message-types";
+import { ForwardActionRequest } from "@core/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
 import { KliveAction } from "@state/state-core";
@@ -27,7 +25,6 @@ import { ThemeService } from "../common-ui/themes/theme-service";
 import { ModalDialogService } from "../common-ui/modal-service";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@shared/command/common-commands";
-import { VmEngineService } from "../machines/core/vm-engine-service";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "../common-ui/DialogService";
 
@@ -41,7 +38,7 @@ const ipcRenderer = globalThis.window
   : null;
 
 // --- This instance forwards renderer actions to the main process
-const forwarder = new RendererToMainStateForwarder(EMU_SOURCE);
+const forwarder = new RendererToMainStateForwarder("emu");
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;
@@ -79,7 +76,6 @@ registerService(
 // --- Register additional services
 registerService(THEME_SERVICE, new ThemeService());
 registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
-registerService(VM_ENGINE_SERVICE, new VmEngineService());
 registerService(DIALOG_SERVICE, new DialogService());
 
 // --- Prepare the themes used in this app
@@ -89,7 +85,7 @@ registerThemes(getState().isWindows ?? false);
 // --- from the main process
 
 ipcRenderer?.on(
-  RENDERER_STATE_REQUEST_CHANNEL,
+  "RendererStateRequest",
   (_ev, msg: ForwardActionRequest) => {
     isForwarding = true;
     try {

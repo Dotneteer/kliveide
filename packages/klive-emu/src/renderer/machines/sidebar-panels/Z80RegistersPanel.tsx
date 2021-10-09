@@ -1,16 +1,18 @@
 import * as React from "react";
 import { CSSProperties } from "react";
+
+import { getEngineProxyService } from "../../ide/engine-proxy";
+
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { Icon } from "../../common-ui/Icon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
-import { getEngineProxyService } from "@abstractions/service-helpers";
 import {
   labelStyle,
   valueItemStyle,
   valueStyle,
 } from "../../ide/utils/content-utils";
-import { MachineState } from "../core/vm-core-types";
+import { MachineState } from "../../../core/abstractions/vm-core-types";
 
 const TITLE = "Z80 CPU State";
 

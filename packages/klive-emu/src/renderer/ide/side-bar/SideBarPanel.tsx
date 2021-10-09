@@ -1,14 +1,18 @@
 import * as React from "react";
 import ReactResizeDetector from "react-resize-detector";
+
+import {
+  getContextMenuService,
+  getSideBarService,
+  getStore,
+} from "@core/service-registry";
+
 import { useEffect, useState } from "react";
 import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
-import { getSideBarService } from "@abstractions/service-helpers";
-import { MenuItem } from "@shared/command/commands";
-import { getContextMenuService } from "@abstractions/service-helpers";
 import { AppState } from "@state/AppState";
-import { getStore } from "@abstractions/service-helpers";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
+import { MenuItem } from "@abstractions/command-def";
 
 /**
  * Component properties
@@ -43,7 +47,7 @@ export default function SideBarPanel({
   const [refreshCount, setRefreshCount] = useState(0);
 
   const sideBarService = getSideBarService();
-  
+
   // --- Create menu items
   const menuItems: MenuItem[] = [
     {
@@ -68,7 +72,7 @@ export default function SideBarPanel({
   const onStateChange = async (state: AppState) => {
     await descriptor.onStateChange(state);
     if (await descriptor.shouldUpdatePanelHeader()) {
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 200));
       setExpanded(descriptor.expanded);
       setRefreshCount(refreshCount + 1);
     }
@@ -78,7 +82,7 @@ export default function SideBarPanel({
     getStore().stateChanged.on(onStateChange);
     return () => {
       getStore().stateChanged.off(onStateChange);
-    }
+    };
   });
 
   useEffect(() => {

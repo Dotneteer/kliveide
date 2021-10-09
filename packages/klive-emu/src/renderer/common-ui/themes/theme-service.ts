@@ -1,7 +1,6 @@
-import { IconInfo, ImageInfo, ITheme, IThemeService } from "@abstractions/theme-service";
+import { IconInfo, ImageInfo, ITheme, IThemeProperties, IThemeService } from "@abstractions/theme-service";
 import { IconDefs } from "./IconDefs";
 import { ImageIconDefs } from "./ImageDefs";
-import { IThemeProperties } from "./IThemeProperties";
 
 /**
  * Creates a store that handles the application's themes.

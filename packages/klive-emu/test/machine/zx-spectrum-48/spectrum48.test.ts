@@ -7,7 +7,7 @@ import { SpectrumMachineStateBase } from "../../../src/renderer/machines/zx-spec
 import {
   EmulationMode,
   ExecuteCycleOptions,
-} from "../../../src/renderer/machines/core/vm-core-types";
+} from "../../../src/core/abstractions/vm-core-types";
 
 let machine: ZxSpectrum48Core;
 

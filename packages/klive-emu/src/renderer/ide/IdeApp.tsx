@@ -9,7 +9,7 @@ import {
   getStore,
   getThemeService,
   getToolAreaService,
-} from "@abstractions/service-helpers";
+} from "@core/service-registry";
 import { useDispatch, useStore } from "react-redux";
 import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
@@ -69,8 +69,7 @@ import {
 } from "./explorer-tools/RenameFolderDialog";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
-import { Activity } from "@abstractions/activity";
-import { executeKliveCommand } from "@shared/command/common-commands";
+import { Activity } from "@core/abstractions/activity";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";

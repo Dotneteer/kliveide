@@ -8,7 +8,7 @@ import {
   RENDERING_TACT_TABLE,
   SPECTRUM_MACHINE_STATE_BUFFER,
 } from "../wa-interop/memory-map";
-import { MachineCreationOptions, MachineState } from "../core/vm-core-types";
+import { MachineCreationOptions, MachineState } from "../../../core/abstractions/vm-core-types";
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { TzxReader } from "@shared/tape/tzx-file";
 import { TapReader } from "@shared/tape/tap-file";

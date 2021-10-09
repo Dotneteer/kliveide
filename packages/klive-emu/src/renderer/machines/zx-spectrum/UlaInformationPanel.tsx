@@ -1,6 +1,6 @@
 import * as React from "react";
+
 import { SpectrumMachineStateBase } from "./ZxSpectrumCoreBase";
-import { getEngineProxyService } from "@abstractions/service-helpers";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import {
@@ -11,6 +11,7 @@ import {
 } from "../../ide/utils/content-utils";
 import { CSSProperties } from "react";
 import { Icon } from "../../common-ui/Icon";
+import { getEngineProxyService } from "../../ide/engine-proxy";
 
 const TITLE = "ULA Information";
 

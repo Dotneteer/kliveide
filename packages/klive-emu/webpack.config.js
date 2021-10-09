@@ -23,8 +23,10 @@ const commonConfig = {
   node: { __dirname: false, __filename: false },
   resolve: {
     alias: {
-      "@abstractions": srcPaths("src/abstractions"),
-      "@state": srcPaths("src/shared/state"),
+      "@abstractions": srcPaths("src/core/abstractions"),
+      "@core": srcPaths("src/core"),
+      "@assembler": srcPaths("src/main/z80-compiler"),
+      "@state": srcPaths("src/core/state"),
       "@shared": srcPaths("src/shared"),
       "@messaging": srcPaths("src/extensibility/messaging"),
       _: srcPaths("src"),

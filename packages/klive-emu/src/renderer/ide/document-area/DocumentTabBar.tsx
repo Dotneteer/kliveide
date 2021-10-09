@@ -1,15 +1,19 @@
 import * as React from "react";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import {
+  getDocumentService,
+  getProjectService,
+  getStore,
+} from "@core/service-registry";
+
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
-import { getEditorService } from "@abstractions/service-helpers";
-import { FileChange } from "../explorer-tools/ProjectService";
 import { ProjectState } from "@state/AppState";
 
-import { getDocumentService } from "@abstractions/service-helpers";
 import DocumentTab from "./DocumentTab";
-import { getProjectService, getStore } from "@abstractions/service-helpers";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
+import { getEditorService } from "../editor/editorService";
+import { FileChange } from "@abstractions/project-service";
 
 /**
  * Represents the statusbar of the emulator

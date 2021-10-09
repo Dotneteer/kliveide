@@ -1,9 +1,11 @@
 import * as React from "react";
 import { connect } from "react-redux";
+
+import { dispatch } from "@core/service-registry";
+
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
 import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
-import { getVmEngineService } from "@abstractions/service-helpers";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
 import {
@@ -13,8 +15,8 @@ import {
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
-import { dispatch } from "@abstractions/service-helpers";
 import { executeKliveCommand } from "@shared/command/common-commands";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 const Root = styles.div`
   display: flex;
@@ -77,7 +79,7 @@ export class Toolbar extends React.Component<Props, State> {
           (executionState === 0 || executionState === 3 || executionState === 5)
         }
         clicked={async () => {
-          await executeKliveCommand("startVm");
+          await engine.start();
         }}
       />,
       <ToolbarIconButton

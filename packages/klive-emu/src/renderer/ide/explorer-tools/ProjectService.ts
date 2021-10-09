@@ -1,12 +1,13 @@
-import { ITreeNode, ITreeView } from "../../common-ui/ITreeNode";
-import { ProjectNode } from "./ProjectNode";
+import { getStore } from "@core/service-registry";
+
+import { ITreeNode, ITreeView, ProjectNode } from "@abstractions/project-node";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
 import { DirectoryContent } from "@state/AppState";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
-import { FileOperationResponse } from "@messaging/message-types";
-import { getStore } from "@abstractions/service-helpers";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { FileOperationResponse } from "@core/messaging/message-types";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
+import { FileChange } from "@abstractions/project-service";
 
 /**
  * This class implements the project services
@@ -266,11 +267,3 @@ export class ProjectService {
     return this._folderDeleted;
   }
 }
-
-/**
- * Event parameters for file or folder name changes
- */
-export type FileChange = {
-  oldName: string;
-  newName: string;
-};

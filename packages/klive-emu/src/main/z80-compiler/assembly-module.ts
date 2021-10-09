@@ -1,6 +1,6 @@
-import { MacroDefinition, StructDefinition } from "./assembler-types";
-import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
-import { ExpressionValue, ValueInfo } from "./expressions";
+import { IAssemblySymbolInfo, IValueInfo, IMacroDefinition, IStructDefinition } from "@abstractions/z80-compiler-service";
+import { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
+import { ExpressionValue } from "./expressions";
 import { FixupEntry } from "./fixups";
 
 /**
@@ -23,7 +23,7 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * Child modules within this module
    */
-  readonly nestedModules: { [key: string]: AssemblyModule } = {};
+  readonly nestedModules: Record<string, AssemblyModule> = {};
 
   /**
    * The symbol table with properly defined symbols
@@ -33,12 +33,12 @@ export class AssemblyModule implements ISymbolScope {
   /**
    * The map of structures within the module
    */
-  readonly structs: { [key: string]: StructDefinition } = {};
+  readonly structs: Record<string, IStructDefinition> = {};
 
   /**
    * The map of macro definitions within the module
    */
-  readonly macros: { [key: string]: MacroDefinition } = {};
+  readonly macros: Record<string, IMacroDefinition> = {};
 
   /**
    *  The list of fixups to resolve in the last phase of the compilation
@@ -55,7 +55,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Symbol name
    * @param symbol Symbol data
    */
-  addSymbol(name: string, symbol: AssemblySymbolInfo): void {
+  addSymbol(name: string, symbol: IAssemblySymbolInfo): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -77,7 +77,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Symbol name
    * @returns The symbol information, if found; otherwise, undefined.
    */
-  getSymbol(name: string): AssemblySymbolInfo | undefined {
+  getSymbol(name: string): IAssemblySymbolInfo | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -89,7 +89,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Struct name
    * @param struct Struct data
    */
-  addStruct(name: string, struct: StructDefinition): void {
+  addStruct(name: string, struct: IStructDefinition): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -111,7 +111,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Struct name
    * @returns The struct information, if found; otherwise, undefined.
    */
-  getStruct(name: string): StructDefinition | undefined {
+  getStruct(name: string): IStructDefinition | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -123,7 +123,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Macro name
    * @param macro Macro data
    */
-  addMacro(name: string, macro: MacroDefinition): void {
+  addMacro(name: string, macro: IMacroDefinition): void {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -145,7 +145,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Macro name
    * @returns The macro information, if found; otherwise, undefined.
    */
-  getMacro(name: string): MacroDefinition | undefined {
+  getMacro(name: string): IMacroDefinition | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -192,7 +192,7 @@ export class AssemblyModule implements ISymbolScope {
    * @returns Null, if the symbol cannot be found; otherwise, the symbols value and usage
    * information
    */
-  resolveSimpleSymbol(symbol: string): ValueInfo | null {
+  resolveSimpleSymbol(symbol: string): IValueInfo | null {
     // --- Iterate through all modules from the innermost to the outermost
     let currentModule: AssemblyModule | null = this;
     while (currentModule) {
@@ -210,7 +210,7 @@ export class AssemblyModule implements ISymbolScope {
     function resolveInModule(
       module: AssemblyModule,
       symb: string
-    ): ValueInfo | null {
+    ): IValueInfo | null {
       // --- Check the local scope in stack order
       for (let i = module.localScopes.length - 1; i >= 0; i--) {
         const scope = module.localScopes[i];
@@ -237,7 +237,7 @@ export class AssemblyModule implements ISymbolScope {
   resolveCompoundSymbol(
     fullSymbol: string,
     startFromGlobal: boolean
-  ): ValueInfo | null {
+  ): IValueInfo | null {
     const symbolParts = fullSymbol.split(".");
     let symbol = symbolParts[0];
     const scopeSymbolNames = symbolParts.length > 0 ? symbolParts.slice(1) : [];
@@ -246,7 +246,7 @@ export class AssemblyModule implements ISymbolScope {
 
     // --- Determine the module to start from
     let module = startFromGlobal ? this.rootModule : this;
-    let structFound: StructDefinition | null = null;
+    let structFound: IStructDefinition | null = null;
 
     // --- Iterate through segments
     for (let i = 0; i < symbolSegments.length; i++) {

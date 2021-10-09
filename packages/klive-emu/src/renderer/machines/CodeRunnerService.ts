@@ -1,12 +1,13 @@
+import { getDialogService, getState } from "@core/service-registry";
+
 import {
   CodeInjectionType,
   CodeToInject,
   ICodeRunnerService,
 } from "@abstractions/code-runner-service";
-import { getDialogService, getState } from "@abstractions/service-helpers";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
-import { SpectrumModelType } from "../../main/z80-compiler/assembler-in-out";
+import { SpectrumModelType } from "@abstractions/z80-compiler-service";
 
 /**
  * Implements the behavior of the service that can run the code from the IDE

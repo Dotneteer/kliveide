@@ -4,15 +4,10 @@ import {
   ExecuteMachineCommandResponse,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
-import {
-  MAIN_TO_EMU_REQUEST_CHANNEL,
-  MAIN_TO_EMU_RESPONE_CHANNEL,
-} from "@messaging/channels";
 import { IpcRendererEvent } from "electron";
-import { getVmEngineService } from "@abstractions/service-helpers";
-import { DebugStepMode, EmulationMode } from "../machines/core/vm-core-types";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -103,10 +98,10 @@ async function processEmulatorMessages(
 
 // --- Set up message processing
 ipcRenderer.on(
-  MAIN_TO_EMU_REQUEST_CHANNEL,
+  "MainToEmuRequest",
   async (_ev: IpcRendererEvent, message: RequestMessage) => {
     const response = await processEmulatorMessages(message);
     response.correlationId = message.correlationId;
-    ipcRenderer.send(MAIN_TO_EMU_RESPONE_CHANNEL, response);
+    ipcRenderer.send("MainToEmuResponse", response);
   }
 );
