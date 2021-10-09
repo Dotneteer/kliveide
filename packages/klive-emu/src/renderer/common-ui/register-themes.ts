@@ -1,4 +1,4 @@
-import { getThemeService } from "@extensibility/service-registry";
+import { getThemeService } from "@core/service-registry";
 import { darkTheme } from "./themes/dark-theme";
 import { lightTheme } from "./themes/light-theme";
 

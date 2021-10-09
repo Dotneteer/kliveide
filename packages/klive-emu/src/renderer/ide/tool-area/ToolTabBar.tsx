@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import ToolTab from "./ToolTab";
-import { getToolAreaService } from "@extensibility/service-registry";
+import { getToolAreaService } from "@core/service-registry";
 
 /**
  * Represents the statusbar of the emulator

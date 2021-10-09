@@ -1,9 +1,9 @@
 import * as fs from "fs";
 import { dialog } from "electron";
 
-import { getZ80CompilerService } from "@extensibility/service-registry";
-import { getRegisteredMachines } from "../../extensibility/main/machine-registry";
-import * as Messages from "@messaging/message-types";
+import { getZ80CompilerService } from "@core/service-registry";
+import { getRegisteredMachines } from "../../core/main/machine-registry";
+import * as Messages from "@core/messaging/message-types";
 import { emuForwarder } from "../app/app-menu";
 import {
   createKliveProject,

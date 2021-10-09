@@ -3,7 +3,7 @@ import {
   getCodeRunnerService,
   getVmEngineService,
   getZ80CompilerService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 import {
   executeCommand,
   registerCommand,
@@ -11,11 +11,11 @@ import {
 import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
-} from "@messaging/message-sending";
+} from "@core/messaging/message-sending";
 import {
   CompileFileResponse,
   SupportsCodeInjectionResponse,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
@@ -26,7 +26,7 @@ import { ideShowAction } from "@state/show-ide-reducer";
 import {
   IKliveCommand,
   KliveCommandContext,
-} from "../../extensibility/abstractions/command-def";
+} from "../../core/abstractions/command-def";
 
 /**
  * Names of core Klive commands

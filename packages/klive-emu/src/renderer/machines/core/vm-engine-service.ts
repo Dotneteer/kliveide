@@ -1,4 +1,4 @@
-import { dispatch, getState } from "@extensibility/service-registry";
+import { dispatch, getState } from "@core/service-registry";
 
 import { setMachineTypeAction } from "@state/machine-type-reducer";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";

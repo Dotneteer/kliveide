@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { dispatch, getToolAreaService } from "@extensibility/service-registry";
+import { dispatch, getToolAreaService } from "@core/service-registry";
 
 import {
   ideToolFrameMaximizeAction,

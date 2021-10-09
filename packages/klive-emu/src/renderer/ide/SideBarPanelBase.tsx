@@ -3,7 +3,7 @@ import * as React from "react";
 import {
   getEngineProxyService,
   getState,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../common-ui/ScrollablePanel";

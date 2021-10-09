@@ -5,7 +5,7 @@
 import { BrowserWindow, app, ipcMain } from "electron";
 
 import { forwardRendererState } from "./main-state/main-store";
-import { ForwardActionRequest } from "@messaging/message-types";
+import { ForwardActionRequest } from "@core/messaging/message-types";
 import {
   setupMenu,
   startStateChangeProcessing,
@@ -20,7 +20,7 @@ import { setWindowsAction } from "@state/is-windows-reducer";
 import { processIdeRequest } from "./communication/process-ide-requests";
 import { processEmulatorRequest } from "./communication/process-emulator-requests";
 import { registerSite } from "@abstractions/process-site";
-import { sendFromMainToEmu } from "@messaging/message-sending";
+import { sendFromMainToEmu } from "@core/messaging/message-sending";
 import {
   executeKliveCommand,
   registerCommonCommands,
@@ -30,7 +30,7 @@ import {
   dispatch,
   registerService,
   Z80_COMPILER_SERVICE,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 import { emuWindow, setupEmuWindow } from "./app/emu-window";
 import { ideWindow, setupIdeWindow } from "./app/ide-window";
 

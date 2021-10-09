@@ -1,7 +1,7 @@
 import * as React from "react";
 import { connect } from "react-redux";
 
-import { dispatch, getVmEngineService } from "@extensibility/service-registry";
+import { dispatch, getVmEngineService } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";

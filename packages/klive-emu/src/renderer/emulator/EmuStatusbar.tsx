@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import {
   getThemeService,
   getVmEngineService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { getVersion } from "../../version";
 import { AppState } from "@state/AppState";

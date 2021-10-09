@@ -4,13 +4,13 @@
 // their IDs.
 // ============================================================================
 
-import { getState } from "@extensibility/service-registry";
+import { getState } from "@core/service-registry";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import {
   ExecutionState,
   IKliveCommand,
   KliveCommandContext,
-} from "../extensibility/abstractions/command-def";
+} from "../core/abstractions/command-def";
 import { getSite } from "./process-site";
 
 // ----------------------------------------------------------------------------

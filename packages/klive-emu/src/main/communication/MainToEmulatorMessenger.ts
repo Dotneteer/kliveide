@@ -1,10 +1,10 @@
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
-import { MessengerBase } from "@messaging/MessengerBase";
+import { MessengerBase } from "@core/messaging/MessengerBase";
 import {
   Channel,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 
 /**
  * This class sends messages from main to the emulator window

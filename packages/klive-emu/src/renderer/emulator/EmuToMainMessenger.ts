@@ -4,8 +4,8 @@ import {
   Channel,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
-import { MessengerBase } from "@messaging/MessengerBase";
+} from "@core/messaging/message-types";
+import { MessengerBase } from "@core/messaging/MessengerBase";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = globalThis.window

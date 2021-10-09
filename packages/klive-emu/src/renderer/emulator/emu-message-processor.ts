@@ -1,4 +1,4 @@
-import { getVmEngineService } from "@extensibility/service-registry";
+import { getVmEngineService } from "@core/service-registry";
 
 import {
   CreateMachineResponse,
@@ -6,7 +6,7 @@ import {
   ExecuteMachineCommandResponse,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { IpcRendererEvent } from "electron";
 

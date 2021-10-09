@@ -1,4 +1,4 @@
-import { IKliveCommand } from "../../extensibility/abstractions/command-def";
+import { IKliveCommand } from "../../core/abstractions/command-def";
 
 /**
  * Represents the execution context of a command

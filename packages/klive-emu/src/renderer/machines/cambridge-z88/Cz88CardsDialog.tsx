@@ -12,10 +12,10 @@ import {
 } from "@shared/machines/cz88-specific";
 import { useState } from "react";
 import { Icon } from "../../common-ui/Icon";
-import { EmuOpenFileDialogResponse } from "@messaging/message-types";
+import { EmuOpenFileDialogResponse } from "@core/messaging/message-types";
 import { Store } from "redux";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
-import { getModalDialogService, getStore } from "@extensibility/service-registry";
+import { getModalDialogService, getStore } from "@core/service-registry";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog

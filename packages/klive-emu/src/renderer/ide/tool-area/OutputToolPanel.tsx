@@ -4,7 +4,7 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import {
   getOutputPaneService,
   getToolAreaService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";

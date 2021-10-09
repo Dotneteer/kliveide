@@ -1,4 +1,4 @@
-import { getVmEngineService } from "@extensibility/service-registry";
+import { getVmEngineService } from "@core/service-registry";
 
 import { IAudioRenderer } from "./IAudioRenderer";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";

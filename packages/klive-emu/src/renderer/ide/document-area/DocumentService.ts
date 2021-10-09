@@ -10,7 +10,7 @@ import { setDocumentFrameStateAction } from "@state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
 import { CodeEditorFactory } from "./CodeEditorFactory";
-import { dispatch, getState } from "@extensibility/service-registry";
+import { dispatch, getState } from "@core/service-registry";
 
 /**
  * Represenst a service that handles document panels

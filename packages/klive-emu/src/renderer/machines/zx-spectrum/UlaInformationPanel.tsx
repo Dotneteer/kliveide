@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getEngineProxyService } from "@extensibility/service-registry";
+import { getEngineProxyService } from "@core/service-registry";
 import { SpectrumMachineStateBase } from "./ZxSpectrumCoreBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";

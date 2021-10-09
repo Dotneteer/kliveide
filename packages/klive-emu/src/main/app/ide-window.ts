@@ -1,9 +1,9 @@
 import { AppWindow } from "./app-window";
 import { ideFocusAction } from "@state/ide-focus-reducer";
 import { MainToIdeMessenger } from "../communication/MainToIdeMessenger";
-import { registerMainToIdeMessenger } from "@messaging/message-sending";
+import { registerMainToIdeMessenger } from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
-import { dispatch } from "@extensibility/service-registry";
+import { dispatch } from "@core/service-registry";
 import { registerIdeWindowForwarder } from "../main-state/main-store";
 
 /**

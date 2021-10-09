@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getThemeService } from "@extensibility/service-registry";
+import { getThemeService } from "@core/service-registry";
 
 import { Icon } from "../../common-ui/Icon";
 import styles from "styled-components";

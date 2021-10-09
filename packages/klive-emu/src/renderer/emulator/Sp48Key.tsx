@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getThemeService } from "@extensibility/service-registry";
+import { getThemeService } from "@core/service-registry";
 
 import { useState } from "react";
 import { Sp48ButtonClickArgs } from "./ui-core-types";

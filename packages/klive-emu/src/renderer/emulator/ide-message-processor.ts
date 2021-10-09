@@ -1,4 +1,4 @@
-import { getVmEngineService } from "@extensibility/service-registry";
+import { getVmEngineService } from "@core/service-registry";
 
 import {
   DefaultResponse,
@@ -8,7 +8,7 @@ import {
   RequestMessage,
   ResponseMessage,
   SupportsCodeInjectionResponse,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { IpcRendererEvent } from "electron";
 

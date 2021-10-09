@@ -5,7 +5,7 @@ import {
   getContextMenuService,
   getDocumentService,
   getThemeService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { Icon } from "../../common-ui/Icon";
 import CommandIconButton from "../context-menu/CommandIconButton";

@@ -3,7 +3,7 @@ import * as React from "react";
 import {
   getModalDialogService,
   getStore,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useRef, useState } from "react";
@@ -16,8 +16,8 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
-import { FileExistsResponse } from "@messaging/message-types";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { FileExistsResponse } from "@core/messaging/message-types";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { NewFileData } from "./NewFileData";
 
 export const RENAME_FOLDER_DIALOG_ID = "RenameFolderDialog";

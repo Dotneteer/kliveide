@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { dispatch, getState, getStore } from "@extensibility/service-registry";
+import { dispatch, getState, getStore } from "@core/service-registry";
 
 import { setSideBarStateAction } from "@state/side-bar-reducer";
 import { AppState, SideBarState } from "@state/AppState";

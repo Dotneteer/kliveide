@@ -5,7 +5,7 @@ import {
   getModalDialogService,
   getState,
   getStore,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useState } from "react";
@@ -15,7 +15,7 @@ import CommandIconButton from "../context-menu/CommandIconButton";
 import {
   GetFolderDialogResponse,
   NewProjectData,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { Store } from "redux";
 import {
   ErrorLabel,
@@ -24,7 +24,7 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 export const NEW_PROJECT_DIALOG_ID = "NewProjectDialog";
 

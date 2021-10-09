@@ -1,11 +1,11 @@
-import { getDialogService, getState } from "@extensibility/service-registry";
+import { getDialogService, getState } from "@core/service-registry";
 
 import {
   CodeInjectionType,
   CodeToInject,
   ICodeRunnerService,
 } from "@abstractions/code-runner-service";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
 import { SpectrumModelType } from "../../main/z80-compiler/assembler-in-out";
 

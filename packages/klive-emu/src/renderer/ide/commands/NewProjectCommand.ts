@@ -2,14 +2,14 @@ import { Token, TokenType } from "@shared/command-parser/token-stream";
 import {
   CreateKliveProjectResponse,
   GetRegisteredMachinesResponse,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import {
   InteractiveCommandBase,
   InteractiveCommandResult,
   TraceMessage,
   TraceMessageType,
 } from "@abstractions/interactive-command";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 /**
  * Creates a new Klive project

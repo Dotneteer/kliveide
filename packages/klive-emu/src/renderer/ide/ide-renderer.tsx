@@ -25,7 +25,7 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   TOOL_AREA_SERVICE,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { IpcRendereApi } from "../../exposed-apis";
@@ -33,7 +33,7 @@ import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateFo
 import { KliveAction } from "@state/state-core";
 import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
-import { ForwardActionRequest } from "@messaging/message-types";
+import { ForwardActionRequest } from "@core/messaging/message-types";
 import { SideBarService } from "./side-bar/SideBarService";
 import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
@@ -48,7 +48,7 @@ import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@shared/command/common-commands";
-import { registerIdeToEmuMessenger } from "@messaging/message-sending";
+import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "../common-ui/DialogService";

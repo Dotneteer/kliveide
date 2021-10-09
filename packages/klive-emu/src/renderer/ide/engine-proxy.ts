@@ -1,15 +1,15 @@
-import { getStore } from "@extensibility/service-registry";
+import { getStore } from "@core/service-registry";
 
 import { ICpuState } from "@shared/machines/AbstractCpu";
 import {
   GetCpuStateResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
 import { MachineState } from "../machines/core/vm-core-types";
 import { IEngineProxyService, RunEventArgs } from "@abstractions/engine-proxy-service";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 /**
  * Dealy time between two timed run events

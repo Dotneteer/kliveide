@@ -4,14 +4,14 @@
 
 import { combineReducers, createStore, applyMiddleware } from "redux";
 import { appReducers } from "@state/app-reducers";
-import { MessengerBase } from "@messaging/MessengerBase";
+import { MessengerBase } from "@core/messaging/MessengerBase";
 import {
   Channel,
   DefaultResponse,
   ForwardActionRequest,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { KliveAction } from "@state/state-core";
 import { BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 import { getInitialAppState } from "@state/AppState";
@@ -19,7 +19,7 @@ import { KliveStore } from "@state/KliveStore";
 import {
   registerService,
   STORE_SERVICE,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 // Indicates if we're in forwarding mode
 let isForwarding = false;

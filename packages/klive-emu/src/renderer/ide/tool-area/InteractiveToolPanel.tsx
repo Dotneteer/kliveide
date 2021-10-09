@@ -5,7 +5,7 @@ import {
   getCommandService,
   getInteractivePaneService,
   getToolAreaService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import VirtualizedList, {
   VirtualizedListApi,

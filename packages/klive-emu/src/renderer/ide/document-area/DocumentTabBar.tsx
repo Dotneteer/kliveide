@@ -6,7 +6,7 @@ import {
   getEditorService,
   getProjectService,
   getStore,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
 import { FileChange } from "../explorer-tools/ProjectService";

@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getContextMenuService } from "@extensibility/service-registry";
+import { getContextMenuService } from "@core/service-registry";
 
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import styles from "styled-components";

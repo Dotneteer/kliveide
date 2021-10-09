@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 
-import { getThemeService } from "@extensibility/service-registry";
+import { getThemeService } from "@core/service-registry";
 
 /**
  * CommonIcon properties

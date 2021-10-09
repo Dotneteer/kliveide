@@ -1,4 +1,4 @@
-import { getStore } from "@extensibility/service-registry";
+import { getStore } from "@core/service-registry";
 
 import { ITreeNode, ITreeView } from "../../common-ui/ITreeNode";
 import { ProjectNode } from "./ProjectNode";
@@ -6,8 +6,8 @@ import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
 import { DirectoryContent } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
-import { FileOperationResponse } from "@messaging/message-types";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { FileOperationResponse } from "@core/messaging/message-types";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 /**
  * This class implements the project services

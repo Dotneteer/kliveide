@@ -1,4 +1,4 @@
-import { getCommandService } from "@extensibility/service-registry";
+import { getCommandService } from "@core/service-registry";
 import { NewProjectCommand } from "./NewProjectCommand";
 
 /**

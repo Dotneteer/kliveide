@@ -36,11 +36,11 @@ import {
 import {
   executeMachineCommand,
   ExecuteMachineCommandResponse,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
-import { sendFromMainToEmu } from "@messaging/message-sending";
-import { dispatch, getState } from "@extensibility/service-registry";
+import { sendFromMainToEmu } from "@core/messaging/message-sending";
+import { dispatch, getState } from "@core/service-registry";
 import { emuWindow } from "../../main/app/emu-window";
 
 // --- Default ROM file

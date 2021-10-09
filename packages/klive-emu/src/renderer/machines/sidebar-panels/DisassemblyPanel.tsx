@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getEngineProxyService, getState } from "@extensibility/service-registry";
+import { getEngineProxyService, getState } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";

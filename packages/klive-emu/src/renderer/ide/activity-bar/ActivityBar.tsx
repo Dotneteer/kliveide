@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { dispatch } from "@extensibility/service-registry";
+import { dispatch } from "@core/service-registry";
 
 import ActivityButton from "./ActivityButton";
 import {

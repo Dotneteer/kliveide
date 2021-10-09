@@ -1,7 +1,7 @@
 import { registerMachineTypeAction } from "@state/machines-reducer";
 import { RegisteredMachine } from "@state/AppState";
 import { MachineContextProvider } from "./machine-context";
-import { dispatch } from "@extensibility/service-registry";
+import { dispatch } from "@core/service-registry";
 
 /**
  * Holds the registry of virtual machine context providers

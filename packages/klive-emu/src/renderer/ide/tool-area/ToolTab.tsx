@@ -4,7 +4,7 @@ import { CSSProperties, useState } from "react";
 import {
   getContextMenuService,
   getToolAreaService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { IToolPanel } from "@abstractions/tool-area-service";
 import { MenuItem } from "@shared/command/commands";

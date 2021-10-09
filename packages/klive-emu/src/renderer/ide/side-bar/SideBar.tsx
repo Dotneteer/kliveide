@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getSideBarService, getState } from "@extensibility/service-registry";
+import { getSideBarService, getState } from "@core/service-registry";
 
 import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
 import SideBarPanel from "./SideBarPanel";

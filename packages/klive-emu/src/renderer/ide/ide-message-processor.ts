@@ -1,13 +1,13 @@
 import { Store } from "redux";
 
-import { dispatch, getModalDialogService, getStore } from "@extensibility/service-registry";
+import { dispatch, getModalDialogService, getStore } from "@core/service-registry";
 
 import {
   DefaultResponse,
   NewProjectResponse,
   RequestMessage,
   ResponseMessage,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { IpcRendererEvent } from "electron";
 import { ideSyncAction } from "@state/show-ide-reducer";

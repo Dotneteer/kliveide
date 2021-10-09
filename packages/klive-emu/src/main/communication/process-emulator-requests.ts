@@ -1,6 +1,6 @@
 import { dialog } from "electron";
 
-import * as Messages from "@messaging/message-types";
+import * as Messages from "@core/messaging/message-types";
 import { emuWindow } from "../app/emu-window";
 
 /**

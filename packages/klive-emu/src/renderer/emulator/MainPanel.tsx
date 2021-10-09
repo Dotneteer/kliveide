@@ -5,7 +5,7 @@ import {
   SplitterComponent,
 } from "@syncfusion/ej2-react-layouts";
 
-import { dispatch, getVmEngineService } from "@extensibility/service-registry";
+import { dispatch, getVmEngineService } from "@core/service-registry";
 
 import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";

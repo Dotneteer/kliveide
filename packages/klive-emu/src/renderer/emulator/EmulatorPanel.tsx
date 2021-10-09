@@ -3,7 +3,7 @@ import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
 
-import { getVmEngineService } from "@extensibility/service-registry";
+import { getVmEngineService } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
 import { VirtualMachineCoreBase } from "../machines/core/VirtualMachineCoreBase";

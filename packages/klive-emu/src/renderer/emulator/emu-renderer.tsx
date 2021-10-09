@@ -12,13 +12,13 @@ import {
   STORE_SERVICE,
   THEME_SERVICE,
   VM_ENGINE_SERVICE,
-} from "@extensibility/service-registry";
-import { dispatch, getState, getStore } from "@extensibility/service-registry";
+} from "@core/service-registry";
+import { dispatch, getState, getStore } from "@core/service-registry";
 import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { getInitialAppState } from "@state/AppState";
 import { appReducers } from "@state/app-reducers";
-import { ForwardActionRequest } from "@messaging/message-types";
+import { ForwardActionRequest } from "@core/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
 import { KliveAction } from "@state/state-core";

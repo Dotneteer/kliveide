@@ -3,11 +3,11 @@ import * as path from "path";
 import { app, dialog } from "electron";
 import { AppWindow } from "./app-window";
 import { __DARWIN__ } from "../utils/electron-utils";
-import { RequestMessage, StopVmRequest } from "@messaging/message-types";
+import { RequestMessage, StopVmRequest } from "@core/messaging/message-types";
 import {
   MachineContextProvider,
   MachineContextProviderBase,
-} from "../../extensibility/main/machine-context";
+} from "../../core/main/machine-context";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import {
   emuMachineContextAction,
@@ -26,19 +26,19 @@ import {
 } from "../main-state/klive-configuration";
 import { emuFocusAction } from "@state/emu-focus-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
-import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { machineRegistry } from "../../core/main/machine-registry";
 import {
   ZxSpectrum128ContextProvider,
   ZxSpectrum48ContextProvider,
-} from "../../extensibility/main/zx-spectrum-context";
-import { Cz88ContextProvider } from "../../extensibility/main/cz88-context";
+} from "../../core/main/zx-spectrum-context";
+import { Cz88ContextProvider } from "../../core/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { PROJECT_FILE } from "../project/project-utils";
 import {
   registerMainToEmuMessenger,
   sendFromMainToEmu,
-} from "@messaging/message-sending";
-import { dispatch, getState } from "@extensibility/service-registry";
+} from "@core/messaging/message-sending";
+import { dispatch, getState } from "@core/service-registry";
 import { registerEmuWindowForwarder } from "../main-state/main-store";
 
 /**

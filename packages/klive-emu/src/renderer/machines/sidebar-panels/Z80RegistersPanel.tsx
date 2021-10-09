@@ -1,7 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 
-import { getEngineProxyService } from "@extensibility/service-registry";
+import { getEngineProxyService } from "@core/service-registry";
 
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { Icon } from "../../common-ui/Icon";

@@ -10,9 +10,9 @@ import {
   HintLabel,
   Label,
 } from "../../common-ui/FormElements";
-import { FileExistsResponse } from "@messaging/message-types";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
-import { getModalDialogService, getStore } from "@extensibility/service-registry";
+import { FileExistsResponse } from "@core/messaging/message-types";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
+import { getModalDialogService, getStore } from "@core/service-registry";
 import { NewFileData } from "./NewFileData";
 
 export const NEW_FILE_DIALOG_ID = "NewFileDialog";

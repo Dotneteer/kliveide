@@ -8,7 +8,7 @@ import {
   getProjectService,
   getState,
   getStore,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import VirtualizedList, {
   VirtualizedListApi,
@@ -26,13 +26,13 @@ import { Store } from "redux";
 import {
   ConfirmDialogResponse,
   GetFileContentsResponse,
-} from "@messaging/message-types";
+} from "@core/messaging/message-types";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
 import { IProjectService } from "@abstractions/project-service";
-import { sendFromIdeToEmu } from "@messaging/message-sending";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import {
   addBuildRootAction,
   removeBuildRootAction,

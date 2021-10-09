@@ -1,5 +1,4 @@
 import { AnyAction, Observable, Reducer, Store, Unsubscribe } from "redux";
-import { getService, STORE_SERVICE } from "@extensibility/service-registry";
 import { ILiteEvent, LiteEvent } from "../utils/LiteEvent";
 import {
   ActivityBarState,

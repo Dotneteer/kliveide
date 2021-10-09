@@ -1,10 +1,10 @@
 import * as React from "react";
 
-import { getThemeService } from "@extensibility/service-registry";
+import { getThemeService } from "@core/service-registry";
 
 import { executeCommand, getCommand } from "@abstractions/command-registry";
 import { useState } from "react";
-import { IKliveCommand } from "../../../extensibility/abstractions/command-def";
+import { IKliveCommand } from "../../../core/abstractions/command-def";
 import { Icon } from "../../common-ui/Icon";
 
 interface Props {

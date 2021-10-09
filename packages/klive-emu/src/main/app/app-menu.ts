@@ -28,21 +28,21 @@ import {
   ideToolFrameShowAction,
 } from "@state/tool-frame-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
-import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { machineRegistry } from "../../core/main/machine-registry";
 import {
   createKliveProject,
   openProject,
   openProjectFolder,
 } from "../project/project-utils";
 import { closeProjectAction } from "@state/project-reducer";
-import { NewProjectResponse } from "@messaging/message-types";
+import { NewProjectResponse } from "@core/messaging/message-types";
 import { AppWindow } from "./app-window";
 import {
   sendFromMainToEmu,
   sendFromMainToIde,
-} from "@messaging/message-sending";
+} from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
-import { dispatch, getState, getStore } from "@extensibility/service-registry";
+import { dispatch, getState, getStore } from "@core/service-registry";
 import { ideWindow } from "./ide-window";
 import { emuWindow } from "./emu-window";
 import { Unsubscribe } from "redux";

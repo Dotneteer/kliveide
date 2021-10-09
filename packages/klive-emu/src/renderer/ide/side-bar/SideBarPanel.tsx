@@ -5,7 +5,7 @@ import {
   getContextMenuService,
   getSideBarService,
   getStore,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { useEffect, useState } from "react";
 import { animationTick } from "../../common-ui/utils";

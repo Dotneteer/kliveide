@@ -15,10 +15,10 @@
     "paths": {
       "*": ["node_modules/*"],
       "@abstractions/*": ["src/abstractions/*"],
-      "@extensibility/*": ["src/extensibility/*"],
+      "@core/*": ["src/core/*"],
       "@state/*": ["src/shared/state/*"],
       "@shared/*": ["src/shared/*"],
-      "@messaging/*": ["src/extensibility/messaging/*"]
+      "@messaging/*": ["@core/messaging/*"]
     }
   },
   "include": ["src/**/*"],

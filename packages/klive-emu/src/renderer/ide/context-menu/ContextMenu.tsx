@@ -7,7 +7,7 @@ import {
   MenuItemModel,
 } from "@syncfusion/ej2-react-navigations";
 
-import { getContextMenuService } from "@extensibility/service-registry";
+import { getContextMenuService } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
 import { animationTick } from "../../common-ui/utils";

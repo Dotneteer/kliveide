@@ -4,7 +4,7 @@ import {
   getModalDialogService,
   getStore,
   getThemeService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
 import { useDispatch, useSelector, useStore } from "react-redux";

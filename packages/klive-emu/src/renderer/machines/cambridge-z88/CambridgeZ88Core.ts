@@ -2,7 +2,7 @@ import {
   getModalDialogService,
   getStore,
   getVmEngineService,
-} from "@extensibility/service-registry";
+} from "@core/service-registry";
 
 import { ProgramCounterInfo } from "@state/AppState";
 import { Z80CpuState } from "../../cpu/Z80Cpu";

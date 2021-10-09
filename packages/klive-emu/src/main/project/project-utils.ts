@@ -3,11 +3,11 @@ import * as syncFs from "fs";
 import { promises as fs } from "fs";
 import { dialog } from "electron";
 
-import { dispatch, getState } from "@extensibility/service-registry";
+import { dispatch, getState } from "@core/service-registry";
 
 import { AppWindow } from "../app/app-window";
 import { getFolderContents, getHomeFolder } from "../utils/file-utils";
-import { machineRegistry } from "../../extensibility/main/machine-registry";
+import { machineRegistry } from "../../core/main/machine-registry";
 import {
   projectOpenedAction,
   projectLoadingAction,

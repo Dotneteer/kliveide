@@ -3,8 +3,8 @@ import { getSite } from "@abstractions/process-site";
 import {
   sendFromEmuToMain,
   sendFromIdeToEmu,
-} from "@messaging/message-sending";
-import { ShowMessageBoxRequest } from "@messaging/message-types";
+} from "@core/messaging/message-sending";
+import { ShowMessageBoxRequest } from "@core/messaging/message-types";
 
 export class DialogService implements IDialogService {
   /**
