@@ -189,9 +189,7 @@ class EmuWindow extends AppWindow {
     settings?: KliveSettings
   ): Promise<void> {
     // Preparation: Stop the current machine
-    sendFromMainToEmu(<StopVmRequest>{
-      type: "StopVm",
-    });
+    sendFromMainToEmu({ type: "StopVm" });
 
     // Use only the first segment of the ID
     id = id.split("_")[0];

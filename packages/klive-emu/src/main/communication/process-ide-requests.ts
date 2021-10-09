@@ -43,22 +43,15 @@ export async function processIdeRequest(
 
     case "GetFolderDialog":
       const folder = await selectFolder(message.title, message.root);
-      return <Messages.GetFolderDialogResponse>{
-        type: "GetFolderDialogResponse",
-        filename: folder,
-      };
+      return Messages.getFolderDialogResponse(folder);
 
     case "FileExists":
-      return <Messages.FileExistsResponse>{
-        type: "FileExistsResponse",
-        exists: fs.existsSync(message.name),
-      };
+      return Messages.fileExistsResponse(fs.existsSync(message.name));
 
     case "GetFolderContents":
-      return <Messages.GetFolderContentsResponse>{
-        type: "GetFolderContentsResponse",
-        contents: await getFolderContents(message.name),
-      };
+      return Messages.getFolderContentsResponse(
+        await getFolderContents(message.name)
+      );
 
     case "CreateFolder": {
       let error: string | undefined;
@@ -74,10 +67,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error creating folder", error);
       }
-      return <Messages.FileOperationResponse>{
-        type: "FileOperationResponse",
-        error,
-      };
+      return Messages.fileOperationResponse(error);
     }
 
     case "CreateFile": {
@@ -94,10 +84,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error creating file", error);
       }
-      return <Messages.FileOperationResponse>{
-        type: "FileOperationResponse",
-        error: error,
-      };
+      return Messages.fileOperationResponse(error);
     }
 
     case "ConfirmDialog":
@@ -109,10 +96,7 @@ export async function processIdeRequest(
         defaultId: 0,
         noLink: false,
       });
-      return <Messages.ConfirmDialogResponse>{
-        type: "ConfirmDialogResponse",
-        confirmed: confirmResult.response === 1,
-      };
+      return Messages.confirmDialogResponse(confirmResult.response === 1);
 
     case "DeleteFile": {
       let error: string | undefined;
@@ -124,10 +108,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error deleting file", error);
       }
-      return <Messages.FileOperationResponse>{
-        type: "FileOperationResponse",
-        error: error,
-      };
+      return Messages.fileOperationResponse(error);
     }
 
     case "DeleteFolder": {
@@ -140,10 +121,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error deleting folder", error);
       }
-      return <Messages.FileOperationResponse>{
-        type: "FileOperationResponse",
-        error: error,
-      };
+      return Messages.fileOperationResponse(error);
     }
 
     case "RenameFile": {
@@ -156,10 +134,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error renaming file or folder", error);
       }
-      return <Messages.FileOperationResponse>{
-        type: "FileOperationResponse",
-        error: error,
-      };
+      return Messages.fileOperationResponse(error);
     }
 
     case "GetFileContents": {
@@ -176,10 +151,7 @@ export async function processIdeRequest(
       if (error) {
         dialog.showErrorBox("Error reading file", error);
       }
-      return <Messages.GetFileContentsResponse>{
-        type: "GetFileContentsResponse",
-        contents,
-      };
+      return Messages.getFileContentsResponse(contents);
     }
 
     case "SaveFileContents": {
@@ -191,20 +163,14 @@ export async function processIdeRequest(
       } catch (err) {
         error = `Cannot save file: ${err}`;
       }
-      return <Messages.FileOperationResponse>{
-        type: "FileOperationResponse",
-        error: error,
-      };
+      return Messages.fileOperationResponse(error);
     }
 
     case "CompileFile":
       const result = await getZ80CompilerService().compileFile(
         message.filename
       );
-      return <Messages.CompileFileResponse>{
-        type: "CompileFileResponse",
-        result,
-      };
+      return Messages.compileFileResponse(result);
 
     case "ShowMessageBox":
       const window = message.process === "emu" ? emuWindow : ideWindow;

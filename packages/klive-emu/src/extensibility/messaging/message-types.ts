@@ -638,3 +638,73 @@ export function createKliveProjectResponse(
 ): CreateKliveProjectResponse {
   return { type: "CreateKliveProjectResponse", error, targetFolder };
 }
+
+export function getFolderDialogResponse(
+  filename?: string
+): GetFolderDialogResponse {
+  return {
+    type: "GetFolderDialogResponse",
+    filename,
+  };
+}
+
+export function fileExistsResponse(exists: boolean): FileExistsResponse {
+  return {
+    type: "FileExistsResponse",
+    exists,
+  };
+}
+
+export function getFolderContentsResponse(
+  contents: DirectoryContent
+): GetFolderContentsResponse {
+  return {
+    type: "GetFolderContentsResponse",
+    contents,
+  };
+}
+
+export function fileOperationResponse(error?: string): FileOperationResponse {
+  return {
+    type: "FileOperationResponse",
+    error,
+  };
+}
+
+export function confirmDialogResponse(
+  confirmed?: boolean
+): ConfirmDialogResponse {
+  return {
+    type: "ConfirmDialogResponse",
+    confirmed,
+  };
+}
+
+export function getFileContentsResponse(
+  contents?: string | Buffer
+): GetFileContentsResponse {
+  return {
+    type: "GetFileContentsResponse",
+    contents,
+  };
+}
+
+export function compileFileResponse(
+  result: AssemblerOutput
+): CompileFileResponse {
+  return {
+    type: "CompileFileResponse",
+    result,
+  };
+}
+
+export function executeMachineCommand(
+  command: string,
+  args?: unknown
+): ExecuteMachineCommandRequest {
+  return {
+    type: "ExecuteMachineCommand",
+    command,
+    args,
+  };
+}

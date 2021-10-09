@@ -33,7 +33,10 @@ import {
   SlotContent,
   Z88CardsState,
 } from "@shared/machines/cz88-specific";
-import { ExecuteMachineCommandResponse } from "@messaging/message-types";
+import {
+  executeMachineCommand,
+  ExecuteMachineCommandResponse,
+} from "@messaging/message-types";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
 import { sendFromMainToEmu } from "@messaging/message-sending";
@@ -880,11 +883,9 @@ export class Cz88ContextProvider extends MachineContextProviderBase {
     command: string,
     args?: unknown
   ): Promise<unknown> {
-    const response = (await sendFromMainToEmu({
-      type: "ExecuteMachineCommand",
-      command,
-      args,
-    })) as ExecuteMachineCommandResponse;
+    const response = (await sendFromMainToEmu(
+      executeMachineCommand(command, args)
+    )) as ExecuteMachineCommandResponse;
     return response.result;
   }
 
