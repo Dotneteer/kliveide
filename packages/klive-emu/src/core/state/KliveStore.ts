@@ -9,7 +9,7 @@ import {
   ToolFrameState,
 } from "./AppState";
 import { KliveAction } from "./state-core";
-import { Activity } from "@abstractions/activity";
+import { Activity } from "@core/abstractions/activity";
 import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 
 /**

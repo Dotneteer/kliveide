@@ -1,4 +1,4 @@
-import { Token } from "../shared/command-parser/token-stream";
+import { Token } from "@shared/command-parser/token-stream";
 import { IOutputBuffer } from "./output-pane-service";
 
 /**

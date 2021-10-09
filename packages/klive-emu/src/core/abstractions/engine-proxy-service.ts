@@ -1,5 +1,5 @@
-import { MachineState } from "../renderer/machines/core/vm-core-types";
-import { ICpuState } from "../shared/machines/AbstractCpu";
+import { MachineState } from "../../renderer/machines/core/vm-core-types";
+import { ICpuState } from "@shared/machines/AbstractCpu";
 import { ILiteEvent } from "@core/LiteEvent";
 
 /**

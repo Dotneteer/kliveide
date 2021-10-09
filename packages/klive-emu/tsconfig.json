@@ -14,8 +14,9 @@
     "downlevelIteration": true,
     "paths": {
       "*": ["node_modules/*"],
-      "@abstractions/*": ["src/abstractions/*"],
+      "@abstractions/*": ["src/core/abstractions/*"],
       "@core/*": ["src/core/*"],
+      "@assembler/*": ["src/main/z80-compiler/*"],
       "@state/*": ["src/core/state/*"],
       "@shared/*": ["src/shared/*"],
       "@messaging/*": ["@core/messaging/*"]

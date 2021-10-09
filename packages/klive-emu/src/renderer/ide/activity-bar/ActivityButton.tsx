@@ -4,7 +4,7 @@ import { getThemeService } from "@core/service-registry";
 
 import { Icon } from "../../common-ui/Icon";
 import styles from "styled-components";
-import { Activity } from "@abstractions/activity";
+import { Activity } from "@core/abstractions/activity";
 
 /**
  * Component properties

@@ -69,7 +69,7 @@ import {
 } from "./explorer-tools/RenameFolderDialog";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
-import { Activity } from "@abstractions/activity";
+import { Activity } from "@core/abstractions/activity";
 import { executeKliveCommand } from "@shared/command/common-commands";
 
 // --- App component literal constants

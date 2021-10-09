@@ -1,7 +1,4 @@
-import {
-  AssemblerOptions,
-  AssemblerOutput,
-} from "../main/z80-compiler/assembler-in-out";
+import { AssemblerOptions, AssemblerOutput } from "@assembler/assembler-in-out";
 
 /**
  * Definition of base compiler messages including requests and responses

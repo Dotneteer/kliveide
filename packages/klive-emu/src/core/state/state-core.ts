@@ -1,4 +1,4 @@
-import { Activity } from "@abstractions/activity";
+import { Activity } from "@core/abstractions/activity";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 import {

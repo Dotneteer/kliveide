@@ -1,6 +1,4 @@
-import { CSSProperties } from "react";
-import { toStyleString } from "../renderer/ide/utils/css-utils";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
 
 /**
  * Available output colors

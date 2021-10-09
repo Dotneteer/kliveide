@@ -1,4 +1,4 @@
-import { MenuItem } from "../shared/command/commands";
+import { MenuItem } from "@shared/command/commands";
 import { ILiteEvent } from "@core/LiteEvent";
 
 /**

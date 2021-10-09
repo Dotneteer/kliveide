@@ -1,14 +1,14 @@
 import { ILiteEvent } from "@core/LiteEvent";
-import { VmStateChangedArgs } from "../renderer/machines/core/vm-engine-service";
-import { KliveConfiguration } from "../main/main-state/klive-configuration";
-import { VirtualMachineCoreBase } from "../renderer/machines/core/VirtualMachineCoreBase";
+import { VirtualMachineCoreBase } from "../../renderer/machines/core/VirtualMachineCoreBase";
 import {
   ExecuteCycleOptions,
   MachineCreationOptions,
   MachineState,
-} from "../renderer/machines/core/vm-core-types";
+} from "../../renderer/machines/core/vm-core-types";
 import { FrameDiagData } from "@state/AppState";
 import { CodeToInject } from "./code-runner-service";
+import { VmStateChangedArgs } from "../../renderer/machines/core/vm-engine-service";
+import { KliveConfiguration } from "../../main/main-state/klive-configuration";
 
 /**
  * This class represents the states of the virtual machine as

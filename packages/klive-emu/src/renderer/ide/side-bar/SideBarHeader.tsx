@@ -7,7 +7,7 @@ import styles from "styled-components";
 import { CSSProperties, useEffect, useState } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { isCommandGroup, isKliveCommand, MenuItem } from "@shared/command/commands";
-import { Activity } from "@abstractions/activity";
+import { Activity } from "@core/abstractions/activity";
 import { commandStatusChanged } from "@abstractions/command-registry";
 
 type Props = {

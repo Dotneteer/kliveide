@@ -1,5 +1,5 @@
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
-import { ProjectNode } from "../renderer/ide/explorer-tools/ProjectNode";
+import { ProjectNode } from "../../renderer/ide/explorer-tools/ProjectNode";
 import { ILiteEvent } from "@core/LiteEvent";
 
 /**

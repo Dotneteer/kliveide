@@ -1,4 +1,4 @@
-import { IThemeProperties } from "../renderer/common-ui/themes/IThemeProperties";
+import { IThemeProperties } from "../../renderer/common-ui/themes/IThemeProperties";
 
 /**
  * Describes a theme with its properties
