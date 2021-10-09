@@ -1,4 +1,3 @@
-import { Token, TokenType } from "@shared/command-parser/token-stream";
 import {
   CreateKliveProjectResponse,
   GetRegisteredMachinesResponse,
@@ -6,9 +5,11 @@ import {
 import {
   InteractiveCommandBase,
   InteractiveCommandResult,
+  Token,
+  TokenType,
   TraceMessage,
   TraceMessageType,
-} from "@abstractions/interactive-command";
+} from "@abstractions/interactive-command-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 /**

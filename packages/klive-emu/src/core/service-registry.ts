@@ -14,7 +14,7 @@
 import { AppState } from "@state/AppState";
 import { KliveStore } from "@state/KliveStore";
 import { KliveAction } from "@state/state-core";
-import { IInteractiveCommandService } from "@abstractions/interactive-command";
+import { IInteractiveCommandService } from "@abstractions/interactive-command-service";
 import { IContextMenuService } from "@abstractions/context-menu-service";
 import { IDocumentService } from "@abstractions/document-service";
 import { IInteractivePaneService } from "@abstractions/interactive-pane-service";

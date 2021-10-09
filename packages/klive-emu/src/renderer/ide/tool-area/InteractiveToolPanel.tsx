@@ -13,7 +13,7 @@ import VirtualizedList, {
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
-import { InteractiveCommandResult } from "@abstractions/interactive-command";
+import { InteractiveCommandResult } from "@abstractions/interactive-command-service";
 
 const TITLE = "Interactive";
 

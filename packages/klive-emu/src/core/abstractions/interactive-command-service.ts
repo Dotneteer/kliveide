@@ -1,5 +1,76 @@
-import { Token } from "@shared/command-parser/token-stream";
 import { IOutputBuffer } from "./output-pane-service";
+
+/**
+ * Represents a token
+ */
+ export interface Token {
+  /**
+   * The raw text of the token
+   */
+  readonly text: string;
+
+  /**
+   * The type of the token
+   */
+  readonly type: TokenType;
+
+  /**
+   * The location of the token
+   */
+  readonly location: TokenLocation;
+}
+
+/**
+ * Represents the location of a token
+ */
+ export interface TokenLocation {
+  /**
+   * Start position in the source stream
+   */
+  readonly startPos: number;
+
+  /**
+   * End position in the source stream
+   */
+  readonly endPos: number;
+
+  /**
+   * Source code line of the token
+   */
+  readonly line: number;
+
+  /**
+   * The token's start column within the line
+   */
+  readonly startColumn: number;
+
+  /**
+   * The tokens end column within the line
+   */
+  readonly endColumn: number;
+}
+
+/**
+ * This enumeration defines the token types
+ */
+ export enum TokenType {
+  Eof = -1,
+  Ws = -2,
+  InlineComment = -3,
+  EolComment = -4,
+  Unknown = 0,
+
+  NewLine,
+  Argument,
+  Variable,
+  Option,
+  Path,
+  Identifier,
+  String,
+  DecimalLiteral,
+  HexadecimalLiteral,
+  BinaryLiteral,
+}
 
 /**
  * This class represents information about commands

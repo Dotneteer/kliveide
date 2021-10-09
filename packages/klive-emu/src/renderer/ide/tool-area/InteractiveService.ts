@@ -2,7 +2,7 @@ import { IOutputBuffer } from "@abstractions/output-pane-service";
 import { IInteractivePaneService } from "@abstractions/interactive-pane-service";
 import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 import { OutputPaneBuffer } from "./OutputPaneService";
-import { InteractiveCommandResult } from "@abstractions/interactive-command";
+import { InteractiveCommandResult } from "@abstractions/interactive-command-service";
 
 const MAX_HISTORY = 1024;
 

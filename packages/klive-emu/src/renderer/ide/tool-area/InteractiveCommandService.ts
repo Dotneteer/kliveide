@@ -5,7 +5,7 @@ import {
   InteractiveCommandInfo,
   InteractiveCommandResult,
   IInteractiveCommandService,
-} from "@abstractions/interactive-command";
+} from "@abstractions/interactive-command-service";
 
 /**
  * This class is responsible to execute commands
