@@ -24,7 +24,6 @@ import { IProjectService } from "@abstractions/project-service";
 import { ISideBarService } from "@abstractions/side-bar-service";
 import { IThemeService } from "@abstractions/theme-service";
 import { IToolAreaService } from "@abstractions/tool-area-service";
-import { IVmEngineService } from "@abstractions/vm-controller-service";
 import { IZ80CompilerService } from "@abstractions/z80-compiler-service";
 import { IDialogService } from "@abstractions/dialog-service";
 import { ICodeRunnerService } from "@abstractions/code-runner-service";
@@ -43,7 +42,6 @@ export const INTERACTIVE_PANE_SERVICE = "interactive-pane-service";
 export const OUTPUT_PANE_SERVICE = "output-pane-service";
 export const TOOL_AREA_SERVICE = "tool-area-service";
 export const COMMAND_SERVICE = "command-service";
-export const VM_ENGINE_SERVICE = "vm-engine-service";
 export const Z80_COMPILER_SERVICE = "z80-compiler-service";
 export const DIALOG_SERVICE = "dialog-service";
 export const CODE_RUNNER_SERVICE = "code-runner-service";
@@ -179,13 +177,6 @@ export function getToolAreaService(): IToolAreaService {
  */
 export function getCommandService(): IInteractiveCommandService {
   return getService(COMMAND_SERVICE) as IInteractiveCommandService;
-}
-
-/**
- * Gets the virtual machine service instance
- */
-export function getVmEngineService(): IVmEngineService {
-  return getService(VM_ENGINE_SERVICE) as IVmEngineService;
 }
 
 /**

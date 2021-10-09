@@ -1,7 +1,6 @@
-import { getVmEngineService } from "@core/service-registry";
-
 import { IAudioRenderer } from "./IAudioRenderer";
 import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
+import { getVmEngineService } from "../core/vm-engine-service";
 
 /**
  * Right now, we cannot use AudioWorkletProcessor from TypeScript,

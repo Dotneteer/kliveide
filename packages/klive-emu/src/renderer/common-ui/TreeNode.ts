@@ -1,4 +1,4 @@
-import { ITreeNode, ITreeView } from "./ITreeNode";
+import { ITreeNode, ITreeView } from "@abstractions/project-node";
 import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 
 /**

@@ -8,12 +8,12 @@ import {
 } from "@core/service-registry";
 
 import ScrollablePanel from "../../common-ui/ScrollablePanel";
-import { FileChange } from "../explorer-tools/ProjectService";
 import { ProjectState } from "@state/AppState";
 
 import DocumentTab from "./DocumentTab";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
 import { getEditorService } from "../editor/editorService";
+import { FileChange } from "@abstractions/project-service";
 
 /**
  * Represents the statusbar of the emulator

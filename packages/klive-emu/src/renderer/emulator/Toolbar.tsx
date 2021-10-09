@@ -1,7 +1,7 @@
 import * as React from "react";
 import { connect } from "react-redux";
 
-import { dispatch, getVmEngineService } from "@core/service-registry";
+import { dispatch } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
@@ -16,6 +16,7 @@ import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
 import { executeKliveCommand } from "@shared/command/common-commands";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 const Root = styles.div`
   display: flex;

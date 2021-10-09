@@ -1,7 +1,4 @@
-import {
-  getModalDialogService,
-  getVmEngineService,
-} from "@core/service-registry";
+import { getModalDialogService } from "@core/service-registry";
 
 import { ProgramCounterInfo } from "@state/AppState";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
@@ -40,6 +37,7 @@ import {
 } from "@shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
 import { CodeToInject } from "@abstractions/code-runner-service";
+import { getVmEngineService } from "../core/vm-engine-service";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 

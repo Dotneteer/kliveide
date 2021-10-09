@@ -5,7 +5,7 @@ import {
   SplitterComponent,
 } from "@syncfusion/ej2-react-layouts";
 
-import { dispatch, getVmEngineService } from "@core/service-registry";
+import { dispatch } from "@core/service-registry";
 
 import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";
@@ -13,6 +13,7 @@ import EmulatorPanel from "./EmulatorPanel";
 import KeyboardPanel from "./KeyboardPanel";
 import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
 import styles from "styled-components";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 /**
  * Represents the main canvas of the emulator

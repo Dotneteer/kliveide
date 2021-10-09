@@ -1,4 +1,4 @@
-import { ITreeView, ITreeNode } from "./ITreeNode";
+import { ITreeNode, ITreeView } from "@abstractions/project-node";
 import { TreeNode } from "./TreeNode";
 
 /**

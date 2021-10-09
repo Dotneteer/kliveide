@@ -1,8 +1,14 @@
-import { FileChange } from "../../renderer/ide/explorer-tools/ProjectService";
-import { ITreeNode, ITreeView } from "../../renderer/common-ui/ITreeNode";
-import { ProjectNode } from "./project-node";
+import { ITreeNode, ITreeView, ProjectNode } from "./project-node";
 import { ILiteEvent } from "@core/LiteEvent";
 import { DirectoryContent } from "@core/state/AppState";
+
+/**
+ * Event parameters for file or folder name changes
+ */
+ export type FileChange = {
+  oldName: string;
+  newName: string;
+};
 
 /**
  * This interface defines the service handling projects

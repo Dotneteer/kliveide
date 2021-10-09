@@ -3,13 +3,13 @@ import { useSelector } from "react-redux";
 
 import {
   getThemeService,
-  getVmEngineService,
 } from "@core/service-registry";
 
 import { getVersion } from "../../version";
 import { AppState } from "@state/AppState";
 import { Icon } from "../common-ui/Icon";
 import { Root, Gap, Section, Label } from "../common-ui/StatusbarStyles";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 /**
  * Represents the statusbar of the emulator

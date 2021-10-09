@@ -1,7 +1,5 @@
 import * as React from "react";
 
-import { getVmEngineService } from "@core/service-registry";
-
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 import Key from "./Cz88Key";
@@ -13,6 +11,7 @@ import { dkZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-dk";
 import { seZ88KeyboardLayout } from "../machines/cambridge-z88/key-layout-se";
 import { Cz88KeyboardLayout } from "../machines/cambridge-z88/cz88-keys";
 import styles from "styled-components";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 const DEFAULT_WIDTH = 15 * 108 + 200 + 48;
 const DEFAULT_HEIGHT = 5 * (100 + 8) + 48;

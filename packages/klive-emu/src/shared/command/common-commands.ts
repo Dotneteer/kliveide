@@ -1,7 +1,6 @@
 import {
   dispatch,
   getCodeRunnerService,
-  getVmEngineService,
   getZ80CompilerService,
 } from "@core/service-registry";
 import {
@@ -27,6 +26,7 @@ import {
   IKliveCommand,
   KliveCommandContext,
 } from "@core/abstractions/command-def";
+import { getVmEngineService } from "../../renderer/machines/core/vm-engine-service";
 
 /**
  * Names of core Klive commands

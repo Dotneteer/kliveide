@@ -1,12 +1,11 @@
 import * as React from "react";
 
-import { getVmEngineService } from "@core/service-registry";
-
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 
 import Key from "./Sp48Key";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
 import styles from "styled-components";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 const DEFAULT_WIDTH = 10 * 104 + 130 + 48;
 const DEFAULT_HEIGHT = 4 * (128 + 16) + 48;
