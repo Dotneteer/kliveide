@@ -10,9 +10,9 @@ import {
 import { useEffect, useState } from "react";
 import { animationTick } from "../../common-ui/utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
-import { MenuItem } from "@shared/command/commands";
 import { AppState } from "@state/AppState";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
+import { MenuItem } from "@abstractions/command-def";
 
 /**
  * Component properties

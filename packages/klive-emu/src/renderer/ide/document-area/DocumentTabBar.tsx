@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 
 import {
   getDocumentService,
-  getEditorService,
   getProjectService,
   getStore,
 } from "@core/service-registry";
@@ -14,6 +13,7 @@ import { ProjectState } from "@state/AppState";
 
 import DocumentTab from "./DocumentTab";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
+import { getEditorService } from "../editor/editorService";
 
 /**
  * Represents the statusbar of the emulator

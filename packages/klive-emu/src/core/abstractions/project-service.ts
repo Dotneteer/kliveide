@@ -1,6 +1,6 @@
 import { FileChange } from "../../renderer/ide/explorer-tools/ProjectService";
 import { ITreeNode, ITreeView } from "../../renderer/common-ui/ITreeNode";
-import { ProjectNode } from "../../renderer/ide/explorer-tools/ProjectNode";
+import { ProjectNode } from "./project-node";
 import { ILiteEvent } from "@core/LiteEvent";
 import { DirectoryContent } from "@core/state/AppState";
 

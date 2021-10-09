@@ -1,4 +1,4 @@
-import { MenuItem } from "@shared/command/commands";
+import { MenuItem } from "./command-def";
 
 /**
  * Describes an activity in the Activity bar

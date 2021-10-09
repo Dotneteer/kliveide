@@ -7,7 +7,7 @@ import {
 } from "@core/service-registry";
 
 import { IToolPanel } from "@abstractions/tool-area-service";
-import { MenuItem } from "@shared/command/commands";
+import { MenuItem } from "@abstractions/command-def";
 
 interface Props {
   title: string;

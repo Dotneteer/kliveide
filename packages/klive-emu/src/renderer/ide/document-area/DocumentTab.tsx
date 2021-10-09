@@ -9,8 +9,8 @@ import {
 
 import { Icon } from "../../common-ui/Icon";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { MenuItem } from "@shared/command/commands";
 import { IDocumentPanel } from "@abstractions/document-service";
+import { MenuItem } from "@abstractions/command-def";
 
 interface Props {
   title: string;

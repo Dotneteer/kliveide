@@ -8,7 +8,7 @@ import {
 } from "@abstractions/document-service";
 import { setDocumentFrameStateAction } from "@state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
-import { getNodeExtension, getNodeFile } from "../explorer-tools/ProjectNode";
+import { getNodeExtension, getNodeFile } from "../../../core/abstractions/project-node";
 import { CodeEditorFactory } from "./CodeEditorFactory";
 import { dispatch, getState } from "@core/service-registry";
 

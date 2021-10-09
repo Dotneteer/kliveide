@@ -1,10 +1,6 @@
 import * as React from "react";
 
-import {
-  getDocumentService,
-  getEditorService,
-  getThemeService,
-} from "@core/service-registry";
+import { getDocumentService, getThemeService } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
 import MonacoEditor from "react-monaco-editor";
@@ -14,6 +10,7 @@ import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
 import { FileOperationResponse } from "@core/messaging/message-types";
 import { IDocumentPanel } from "@abstractions/document-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
+import { getEditorService } from "./editorService";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;

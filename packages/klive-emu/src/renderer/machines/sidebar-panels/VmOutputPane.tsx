@@ -1,11 +1,11 @@
 import {
-  getEngineProxyService,
   getOutputPaneService,
   getStore,
 } from "@core/service-registry";
 import { EmulatorPanelState } from "@state/AppState";
 import { OutputPaneDescriptorBase } from "../../ide/tool-area/OutputPaneService";
 import { IOutputBuffer, OutputColor } from "@abstractions/output-pane-service";
+import { getEngineProxyService } from "../../ide/engine-proxy";
 
 const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";

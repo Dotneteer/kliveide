@@ -17,8 +17,6 @@ import { KliveAction } from "@state/state-core";
 import { IInteractiveCommandService } from "@abstractions/interactive-command";
 import { IContextMenuService } from "@abstractions/context-menu-service";
 import { IDocumentService } from "@abstractions/document-service";
-import { IEditorService } from "@abstractions/editor-service";
-import { IEngineProxyService } from "@abstractions/engine-proxy-service";
 import { IInteractivePaneService } from "@abstractions/interactive-pane-service";
 import { IModalDialogService } from "@abstractions/modal-dialog-service";
 import { IOutputPaneService } from "@abstractions/output-pane-service";
@@ -38,11 +36,9 @@ export const STORE_SERVICE = "store-service";
 export const THEME_SERVICE = "theme-service";
 export const MODAL_DIALOG_SERVICE = "modal-dialog-service";
 export const SIDE_BAR_SERVICE = "side-bar-service";
-export const ENGINE_PROXY_SERVICE = "engine-proxy-service";
 export const PROJECT_SERVICE = "project-service";
 export const CONTEXT_MENU_SERVICE = "context-menu-service";
 export const DOCUMENT_SERVICE = "document-service";
-export const EDITOR_SERVICE = "editor-service";
 export const INTERACTIVE_PANE_SERVICE = "interactive-pane-service";
 export const OUTPUT_PANE_SERVICE = "output-pane-service";
 export const TOOL_AREA_SERVICE = "tool-area-service";
@@ -137,13 +133,6 @@ export function getSideBarService(): ISideBarService {
 }
 
 /**
- * Gets the engine proxy service instance
- */
-export function getEngineProxyService(): IEngineProxyService {
-  return getService(ENGINE_PROXY_SERVICE) as IEngineProxyService;
-}
-
-/**
  * Gets the project service instance
  */
 export function getProjectService(): IProjectService {
@@ -162,13 +151,6 @@ export function getContextMenuService(): IContextMenuService {
  */
 export function getDocumentService(): IDocumentService {
   return getService(DOCUMENT_SERVICE) as IDocumentService;
-}
-
-/**
- * Gets the editor service instance
- */
-export function getEditorService(): IEditorService {
-  return getService(EDITOR_SERVICE) as IEditorService;
 }
 
 /**

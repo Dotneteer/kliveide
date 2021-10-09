@@ -1,12 +1,11 @@
 import * as React from "react";
 
-import { getEngineProxyService } from "@core/service-registry";
-
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { CSSProperties } from "react";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
+import { getEngineProxyService } from "../../ide/engine-proxy";
 
 const TITLE = "Memory";
 const BYTES_IN_LINE = 8;

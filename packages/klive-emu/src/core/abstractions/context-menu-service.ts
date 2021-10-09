@@ -1,5 +1,5 @@
-import { MenuItem } from "@shared/command/commands";
 import { ILiteEvent } from "@core/LiteEvent";
+import { MenuItem } from "./command-def";
 
 /**
  * Declares the target of a context menu

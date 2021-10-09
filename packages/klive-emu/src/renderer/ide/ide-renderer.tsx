@@ -12,8 +12,6 @@ import {
   DIALOG_SERVICE,
   dispatch,
   DOCUMENT_SERVICE,
-  EDITOR_SERVICE,
-  ENGINE_PROXY_SERVICE,
   getState,
   getStore,
   INTERACTIVE_PANE_SERVICE,
@@ -35,13 +33,11 @@ import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
 import { ForwardActionRequest } from "@core/messaging/message-types";
 import { SideBarService } from "./side-bar/SideBarService";
-import { EngineProxyService } from "./engine-proxy";
 import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";
 import { ThemeService } from "../common-ui/themes/theme-service";
 import { ModalDialogService } from "../common-ui/modal-service";
 import { DocumentService } from "./document-area/DocumentService";
-import { EditorService } from "./editor/editorService";
 import { InteractivePaneService } from "./tool-area/InteractiveService";
 import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
@@ -109,11 +105,9 @@ registerService(
 registerService(THEME_SERVICE, new ThemeService());
 registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
 registerService(SIDE_BAR_SERVICE, new SideBarService());
-registerService(ENGINE_PROXY_SERVICE, new EngineProxyService());
 registerService(PROJECT_SERVICE, new ProjectService());
 registerService(CONTEXT_MENU_SERVICE, new ContextMenuService());
 registerService(DOCUMENT_SERVICE, new DocumentService());
-registerService(EDITOR_SERVICE, new EditorService());
 registerService(INTERACTIVE_PANE_SERVICE, new InteractivePaneService());
 registerService(OUTPUT_PANE_SERVICE, new OutputPaneService());
 registerService(TOOL_AREA_SERVICE, new ToolAreaService());

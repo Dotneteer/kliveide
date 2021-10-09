@@ -5,7 +5,7 @@ import { getVersion } from "../../version";
 import { Icon } from "../common-ui/Icon";
 import { Gap, Section, Label } from "../common-ui/StatusbarStyles";
 import styles from "styled-components";
-import { getNodeFile } from "./explorer-tools/ProjectNode";
+import { getNodeFile } from "../../core/abstractions/project-node";
 
 /**
  * Represents the statusbar of the emulator

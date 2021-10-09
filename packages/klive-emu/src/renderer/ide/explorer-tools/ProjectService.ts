@@ -1,7 +1,7 @@
 import { getStore } from "@core/service-registry";
 
 import { ITreeNode, ITreeView } from "../../common-ui/ITreeNode";
-import { ProjectNode } from "./ProjectNode";
+import { ProjectNode } from "../../../core/abstractions/project-node";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
 import { DirectoryContent } from "@state/AppState";

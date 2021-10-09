@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getEngineProxyService, getState } from "@core/service-registry";
+import { getState } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
@@ -15,6 +15,7 @@ import {
 import { Icon } from "../../common-ui/Icon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
+import { getEngineProxyService } from "../../ide/engine-proxy";
 
 const TITLE = "Z80 Disassembly";
 const DISASS_LENGTH = 2560;

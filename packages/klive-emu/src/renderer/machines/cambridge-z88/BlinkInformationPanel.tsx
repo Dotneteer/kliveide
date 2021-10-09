@@ -1,7 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "react";
-
-import { getEngineProxyService } from "@core/service-registry";
+import { getEngineProxyService } from "../../ide/engine-proxy";
 
 import { Icon } from "../../common-ui/Icon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";

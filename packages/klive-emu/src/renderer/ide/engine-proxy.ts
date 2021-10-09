@@ -8,7 +8,6 @@ import {
 } from "@core/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 import { MachineState } from "../machines/core/vm-core-types";
-import { IEngineProxyService, RunEventArgs } from "@abstractions/engine-proxy-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 /**
@@ -17,9 +16,14 @@ import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 const RUN_EVENT_DELAY = 800;
 
 /**
+ * Arguments of RunEvent
+ */
+export type RunEventArgs = { execState: number; isDebug: boolean };
+
+/**
  * This class allows to access the virtual machine engine from the IDE process
  */
-export class EngineProxyService implements IEngineProxyService {
+class EngineProxyService {
   private _lastExecutionState = 0;
   private _running = false;
   private _runEvent = new LiteEvent<RunEventArgs>();
@@ -59,7 +63,7 @@ export class EngineProxyService implements IEngineProxyService {
           this._running = false;
         }
       }
-    })
+    });
   }
 
   /**
@@ -90,11 +94,9 @@ export class EngineProxyService implements IEngineProxyService {
    * Gets the current machine state
    */
   async getMachineState(): Promise<MachineState> {
-    const result = await sendFromIdeToEmu<GetMachineStateResponse>(
-      {
-        type: "GetMachineState",
-      }
-    );
+    const result = await sendFromIdeToEmu<GetMachineStateResponse>({
+      type: "GetMachineState",
+    });
     return result?.state;
   }
 
@@ -109,10 +111,9 @@ export class EngineProxyService implements IEngineProxyService {
    * Gets the memory contents of the machine
    */
   async getMemoryContents(): Promise<Uint8Array> {
-    const result =
-      await sendFromIdeToEmu<GetMemoryContentsResponse>({
-        type: "GetMemoryContents",
-      });
+    const result = await sendFromIdeToEmu<GetMemoryContentsResponse>({
+      type: "GetMemoryContents",
+    });
     return result?.contents;
   }
 
@@ -133,4 +134,16 @@ export class EngineProxyService implements IEngineProxyService {
     this._cachedMachineState = null;
     this._cachedMemory = null;
   }
+}
+
+/**
+ * The singleton instance of the engine proxy service
+ */
+let engineProxyService: EngineProxyService;
+
+/**
+ * Gets the singleton instance of the engine proxy service
+ */
+export function getEngineProxyService() {
+  return engineProxyService ?? (engineProxyService = new EngineProxyService());
 }

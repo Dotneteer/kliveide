@@ -1,6 +1,5 @@
-import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
-import { ProjectNode } from "../../renderer/ide/explorer-tools/ProjectNode";
 import { ILiteEvent } from "@core/LiteEvent";
+import { ProjectNode } from "./project-node";
 
 /**
  * Represents a document panel
@@ -85,23 +84,18 @@ export type CodeEditorInfo = {
 };
 
 /**
- * Describes the body of an code editor related theme
- */
-type EditorThemeBody = {
-  rules: monacoEditor.editor.ITokenThemeRule[];
-  encodedTokensColors?: string[];
-  colors: monacoEditor.editor.IColors;
-};
-
-/**
  * Represents information about a custom language
+ * 
+ * HACK: we use "any" for the properties to avoid any dependencies from
+ * the Monaco Editor (as that cannot be loaded into the main process)
+ * 
  */
 export type CustomLanguageInfo = {
   id: string;
-  options?: monacoEditor.languages.LanguageConfiguration;
-  languageDef?: monacoEditor.languages.IMonarchLanguage;
-  lightTheme?: EditorThemeBody;
-  darkTheme?: EditorThemeBody;
+  options?: any;
+  languageDef?: any;
+  lightTheme?: any;
+  darkTheme?: any;
 };
 
 /**

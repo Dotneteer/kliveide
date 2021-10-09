@@ -16,11 +16,10 @@ import VirtualizedList, {
 import { ITreeNode } from "../../common-ui/ITreeNode";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
-import { ProjectNode } from "./ProjectNode";
+import { ProjectNode } from "../../../core/abstractions/project-node";
 import { CSSProperties } from "react";
 import { Icon } from "../../common-ui/Icon";
 import { AppState, ProjectState } from "@state/AppState";
-import { MenuItem } from "@shared/command/commands";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { Store } from "redux";
 import {
@@ -38,6 +37,7 @@ import {
   removeBuildRootAction,
 } from "@state/builder-reducer";
 import { NewFileData } from "./NewFileData";
+import { MenuItem } from "@abstractions/command-def";
 
 type State = {
   itemsCount: number;

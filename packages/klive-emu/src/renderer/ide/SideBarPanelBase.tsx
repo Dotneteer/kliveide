@@ -1,7 +1,6 @@
 import * as React from "react";
 
 import {
-  getEngineProxyService,
   getState,
 } from "@core/service-registry";
 
@@ -9,7 +8,7 @@ import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../common-ui/ScrollablePanel";
 import { scrollableContentType } from "./utils/content-utils";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
-import { RunEventArgs } from "@abstractions/engine-proxy-service";
+import { getEngineProxyService, RunEventArgs } from "./engine-proxy";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;
