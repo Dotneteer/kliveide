@@ -1,7 +1,7 @@
 import { MemoryHelper } from "../machines/wa-interop/memory-helpers";
 import { CPU_STATE_BUFFER, REG_AREA_INDEX } from "../machines/wa-interop/memory-map";
 import { CpuApi } from "../machines/wa-interop/wa-api";
-import { ICpu, ICpuState } from "@shared/machines/AbstractCpu";
+import { ICpu, ICpuState } from "@abstractions/abstract-cpu";
 
 /**
  * Implements the Z80 CPU state abstraction

@@ -8,7 +8,7 @@ import { VirtualMachineCoreBase } from "../machines/core/VirtualMachineCoreBase"
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import { useEffect, useRef, useState } from "react";
-import { ICpu } from "@shared/machines/AbstractCpu";
+import { ICpu } from "@abstractions/abstract-cpu";
 import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 /**

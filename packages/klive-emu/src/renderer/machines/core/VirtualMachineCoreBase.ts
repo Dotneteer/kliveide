@@ -10,10 +10,10 @@ import {
   MachineCoreState,
   MachineCreationOptions,
   MachineState,
-} from "./vm-core-types";
+} from "../../../core/abstractions/vm-core-types";
 import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "../wa-interop/wa-api";
-import { ICpu } from "@shared/machines/AbstractCpu";
+import { ICpu } from "@abstractions/abstract-cpu";
 import { CodeToInject } from "@abstractions/code-runner-service";
 import { IVmEngineService } from "./vm-engine-service";
 

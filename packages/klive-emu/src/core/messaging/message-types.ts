@@ -1,15 +1,19 @@
 import {
   MachineCreationOptions,
   MachineState,
-} from "../../renderer/machines/core/vm-core-types";
-import { KliveConfiguration } from "../../main/main-state/klive-configuration";
-import { ICpuState } from "../../shared/machines/AbstractCpu";
+} from "@abstractions/vm-core-types";
+import { ICpuState } from "@abstractions/abstract-cpu";
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
-import { KliveProcess } from "../abstractions/command-def";
+import { KliveProcess } from "@abstractions/command-def";
 import { CodeToInject } from "@abstractions/code-runner-service";
 import { KliveAction } from "@core/state/state-core";
-import { AppState, DirectoryContent, RegisteredMachine } from "@core/state/AppState";
+import {
+  AppState,
+  DirectoryContent,
+  RegisteredMachine,
+} from "@core/state/AppState";
+import { KliveConfiguration } from "@abstractions/klive-configuration";
 
 /**
  * Potential message sources

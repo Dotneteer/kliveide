@@ -79,7 +79,7 @@ export class Toolbar extends React.Component<Props, State> {
           (executionState === 0 || executionState === 3 || executionState === 5)
         }
         clicked={async () => {
-          await executeKliveCommand("startVm");
+          await engine.start();
         }}
       />,
       <ToolbarIconButton

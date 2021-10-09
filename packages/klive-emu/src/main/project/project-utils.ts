@@ -12,7 +12,7 @@ import {
   projectOpenedAction,
   projectLoadingAction,
 } from "@state/project-reducer";
-import { KliveProject } from "../main-state/klive-configuration";
+import { KliveProject } from "@abstractions/klive-configuration";
 import {
   addBreakpointAction,
   clearBreakpointsAction,

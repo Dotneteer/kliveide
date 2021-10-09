@@ -271,7 +271,7 @@ export function setupMenu(): void {
         label: "Start",
         accelerator: "F5",
         enabled: true,
-        click: async () => await executeKliveCommand("startVm"),
+        click: async () => await sendFromMainToEmu({ type: "StartVm" }),
       },
       {
         id: PAUSE_VM,

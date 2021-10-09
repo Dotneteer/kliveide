@@ -4,7 +4,7 @@ import * as path from "path";
 import { MenuItemConstructorOptions, shell } from "electron";
 import { AppState } from "@state/AppState";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
-import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
+import { MachineCreationOptions } from "../abstractions/vm-core-types";
 
 /**
  * Describes the responsibility of a menu provider for a particular machine

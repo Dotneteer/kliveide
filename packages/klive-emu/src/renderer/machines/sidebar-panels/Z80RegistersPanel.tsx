@@ -12,7 +12,7 @@ import {
   valueItemStyle,
   valueStyle,
 } from "../../ide/utils/content-utils";
-import { MachineState } from "../core/vm-core-types";
+import { MachineState } from "../../../core/abstractions/vm-core-types";
 
 const TITLE = "Z80 CPU State";
 

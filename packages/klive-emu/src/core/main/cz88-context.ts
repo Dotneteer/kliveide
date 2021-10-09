@@ -19,7 +19,7 @@ import {
 } from "../../main/app/app-menu";
 import { dialog } from "electron";
 import { AppState } from "@state/AppState";
-import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
+import { MachineCreationOptions } from "../abstractions/vm-core-types";
 import {
   CZ88_BATTERY_LOW,
   CZ88_CARDS,

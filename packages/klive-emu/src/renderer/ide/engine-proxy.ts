@@ -1,13 +1,13 @@
 import { getStore } from "@core/service-registry";
 
-import { ICpuState } from "@shared/machines/AbstractCpu";
+import { ICpuState } from "@abstractions/abstract-cpu";
 import {
   GetCpuStateResponse,
   GetMachineStateResponse,
   GetMemoryContentsResponse,
 } from "@core/messaging/message-types";
 import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
-import { MachineState } from "../machines/core/vm-core-types";
+import { MachineState } from "../../core/abstractions/vm-core-types";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 /**

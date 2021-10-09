@@ -13,7 +13,7 @@ import {
   ExecutionCompletionReason,
   MachineCreationOptions,
   MachineState,
-} from "./vm-core-types";
+} from "../../../core/abstractions/vm-core-types";
 import { EmulatedKeyStroke } from "./keyboard";
 import {
   emuSetDebugModeAction,
@@ -23,7 +23,7 @@ import {
 } from "@state/emulator-panel-reducer";
 import { FrameDiagData } from "@state/AppState";
 import { CambridgeZ88Core } from "../cambridge-z88/CambridgeZ88Core";
-import { KliveConfiguration } from "../../../main/main-state/klive-configuration";
+import { KliveConfiguration } from "@abstractions/klive-configuration";
 import { CodeToInject } from "@abstractions/code-runner-service";
 
 /**

@@ -5,7 +5,7 @@ import {
   CPU_STATE_BUFFER,
 } from "../wa-interop/memory-map";
 import { FlagsSetMask, Z80CpuState } from "../../cpu/Z80Cpu";
-import { RunMode } from "./vm-core-types";
+import { RunMode } from "../../../core/abstractions/vm-core-types";
 
 const TEST_INPUT_BUFFER = 0x01000de3;
 const IO_OPERATION_LOG = 0x01000ee3;

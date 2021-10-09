@@ -8,7 +8,7 @@ import {
   MachineContextProvider,
   MachineContextProviderBase,
 } from "@core/main/machine-context";
-import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
+import { MachineCreationOptions } from "../../core/abstractions/vm-core-types";
 import {
   emuMachineContextAction,
   emuSetBaseFrequencyAction,
@@ -18,8 +18,6 @@ import {
 import { setEmuForwarder } from "./app-menu";
 import {
   appSettings,
-  KliveProject,
-  KliveSettings,
   reloadSettings,
   saveKliveSettings,
   saveSettingsToFile,
@@ -40,6 +38,7 @@ import {
 } from "@core/messaging/message-sending";
 import { dispatch, getState } from "@core/service-registry";
 import { registerEmuWindowForwarder } from "../main-state/main-store";
+import { KliveProject, KliveSettings } from "@abstractions/klive-configuration";
 
 /**
  * These are the context providers we usein the code

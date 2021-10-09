@@ -3,7 +3,7 @@ import {
   EmulationMode,
   ExecuteCycleOptions,
   MachineCreationOptions,
-} from "../core/vm-core-types";
+} from "../../../core/abstractions/vm-core-types";
 import { ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
 import {
   ICustomDisassembler,

@@ -16,7 +16,7 @@ import {
   setSoundLevel,
   setSoundLevelMenu,
 } from "../../main/app/app-menu";
-import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
+import { MachineCreationOptions } from "../abstractions/vm-core-types";
 import { VirtualMachineType } from "./machine-registry";
 import { dispatch, getState } from "@core/service-registry";
 import { emuWindow } from "../../main/app/emu-window";
