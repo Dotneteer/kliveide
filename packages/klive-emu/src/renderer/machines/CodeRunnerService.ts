@@ -7,7 +7,7 @@ import {
 } from "@abstractions/code-runner-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@shared/command/common-commands";
-import { SpectrumModelType } from "../../main/z80-compiler/assembler-in-out";
+import { SpectrumModelType } from "@abstractions/z80-compiler-service";
 
 /**
  * Implements the behavior of the service that can run the code from the IDE

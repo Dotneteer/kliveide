@@ -1,16 +1,13 @@
-import { CompareBinPragma, IdentifierNode, Statement } from "./tree-nodes";
-import { BinarySegment } from "./assembler-in-out";
-import { IHasUsageInfo } from "@abstractions/z80-compiler-service";
-
-/**
- * Defines a section of assembly lines
- */
-export class DefinitionSection {
-  constructor(
-    public readonly firstLine: number,
-    public readonly lastLine: number
-  ) {}
-}
+import {
+  CompareBinPragma,
+  IdentifierNode,
+  Statement,
+} from "@abstractions/z80-assembler-tree-nodes";
+import {
+  DefinitionSection,
+  IBinarySegment,
+  IHasUsageInfo,
+} from "@abstractions/z80-compiler-service";
 
 /**
  * Represents the definition of an IF statement
@@ -41,7 +38,7 @@ export class IfSection {
     firstLine: number,
     lastLine: number
   ) {
-    this.section = new DefinitionSection(firstLine, lastLine);
+    this.section = { firstLine, lastLine };
   }
   /**
    * Section boundaries
@@ -59,7 +56,7 @@ export class StructDefinition {
     macroEndLine: number,
     private caseSensitive: boolean
   ) {
-    this.section = new DefinitionSection(macroDefLine, macroEndLine);
+    this.section = { firstLine: macroDefLine, lastLine: macroEndLine };
   }
 
   /**
@@ -137,7 +134,7 @@ export class MacroDefinition {
     public readonly argNames: IdentifierNode[],
     public readonly endLabel: string | null
   ) {
-    this.section = new DefinitionSection(macroDefLine, macroEndLine);
+    this.section = { firstLine: macroDefLine, lastLine: macroEndLine };
   }
 
   /**
@@ -152,7 +149,7 @@ export class MacroDefinition {
 export class BinaryComparisonInfo {
   constructor(
     public readonly comparePragma: CompareBinPragma,
-    public readonly segment: BinarySegment,
+    public readonly segment: IBinarySegment,
     public readonly segmentLength: number
   ) {}
 }

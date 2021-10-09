@@ -1,4 +1,4 @@
-import { ValueInfo } from "@abstractions/z80-compiler-service";
+import { IAssemblySymbolInfo, IValueInfo } from "@abstractions/z80-compiler-service";
 import { MacroDefinition, StructDefinition } from "./assembler-types";
 import { AssemblySymbolInfo, ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionValue } from "./expressions";
@@ -78,7 +78,7 @@ export class AssemblyModule implements ISymbolScope {
    * @param name Symbol name
    * @returns The symbol information, if found; otherwise, undefined.
    */
-  getSymbol(name: string): AssemblySymbolInfo | undefined {
+  getSymbol(name: string): IAssemblySymbolInfo | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -193,7 +193,7 @@ export class AssemblyModule implements ISymbolScope {
    * @returns Null, if the symbol cannot be found; otherwise, the symbols value and usage
    * information
    */
-  resolveSimpleSymbol(symbol: string): ValueInfo | null {
+  resolveSimpleSymbol(symbol: string): IValueInfo | null {
     // --- Iterate through all modules from the innermost to the outermost
     let currentModule: AssemblyModule | null = this;
     while (currentModule) {
@@ -211,7 +211,7 @@ export class AssemblyModule implements ISymbolScope {
     function resolveInModule(
       module: AssemblyModule,
       symb: string
-    ): ValueInfo | null {
+    ): IValueInfo | null {
       // --- Check the local scope in stack order
       for (let i = module.localScopes.length - 1; i >= 0; i--) {
         const scope = module.localScopes[i];
@@ -238,7 +238,7 @@ export class AssemblyModule implements ISymbolScope {
   resolveCompoundSymbol(
     fullSymbol: string,
     startFromGlobal: boolean
-  ): ValueInfo | null {
+  ): IValueInfo | null {
     const symbolParts = fullSymbol.split(".");
     let symbol = symbolParts[0];
     const scopeSymbolNames = symbolParts.length > 0 ? symbolParts.slice(1) : [];

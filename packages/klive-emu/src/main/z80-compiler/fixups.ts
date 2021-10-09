@@ -1,10 +1,12 @@
-import { ErrorCodes } from "./errors";
-import { Expression, NodePosition, Z80AssemblyLine } from "./tree-nodes";
+import { ErrorCodes } from "../../core/abstractions/z80-assembler-errors";
+import { Expression, NodePosition, Z80AssemblyLine } from "../../core/abstractions/z80-assembler-tree-nodes";
 import { AssemblyModule } from "./assembly-module";
-import { EvaluationContext, ExpressionEvaluator } from "./expressions";
+import { ExpressionEvaluator } from "./expressions";
 import {
+  FixupType,
+  IEvaluationContext,
   IExpressionValue,
-  ValueInfo,
+  IValueInfo,
 } from "@abstractions/z80-compiler-service";
 
 /**
@@ -13,7 +15,7 @@ import {
  */
 export class FixupEntry extends ExpressionEvaluator {
   constructor(
-    public readonly parentContext: EvaluationContext,
+    public readonly parentContext: IEvaluationContext,
     public readonly module: AssemblyModule,
     public readonly sourceLine: Z80AssemblyLine,
     public readonly type: FixupType,
@@ -58,8 +60,8 @@ export class FixupEntry extends ExpressionEvaluator {
    * @param symbol Symbol name
    * @param startFromGlobal Should resolution start from global scope?
    */
-  getSymbolValue(symbol: string, startFromGlobal?: boolean): ValueInfo | null {
-    let resolved: ValueInfo;
+  getSymbolValue(symbol: string, startFromGlobal?: boolean): IValueInfo | null {
+    let resolved: IValueInfo;
     if (startFromGlobal) {
       // --- Most be a compound symbol
       resolved = this.module.resolveCompoundSymbol(symbol, true);
@@ -98,18 +100,3 @@ export class FixupEntry extends ExpressionEvaluator {
   }
 }
 
-/**
- * Type of the fixup
- */
-export enum FixupType {
-  Jr,
-  Bit8,
-  Bit16,
-  Bit16Be,
-  Equ,
-  Ent,
-  Xent,
-  Struct,
-  FieldBit8,
-  FieldBit16,
-}

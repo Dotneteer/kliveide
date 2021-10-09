@@ -1,12 +1,15 @@
-import { ErrorCodes } from "./errors";
-import { ExpressionValue } from "./expressions";
+import { ErrorCodes } from "@abstractions/z80-assembler-errors";
+import {
+  IExpressionValue,
+  IAssemblySymbolInfo,
+  SymbolType,
+} from "@abstractions/z80-compiler-service";
 import { FixupEntry } from "./fixups";
-import { IHasUsageInfo, IExpressionValue } from "@abstractions/z80-compiler-service";
 
 /**
  * This class represents an assembly symbol
  */
-export class AssemblySymbolInfo implements IHasUsageInfo {
+export class AssemblySymbolInfo implements IAssemblySymbolInfo {
   constructor(
     public readonly name: string,
     public readonly type: SymbolType,
@@ -37,7 +40,10 @@ export class AssemblySymbolInfo implements IHasUsageInfo {
    * @param name Label name
    * @param value Label value
    */
-  static createLabel(name: string, value: IExpressionValue): AssemblySymbolInfo {
+  static createLabel(
+    name: string,
+    value: IExpressionValue
+  ): AssemblySymbolInfo {
     return new AssemblySymbolInfo(name, SymbolType.Label, value);
   }
 
@@ -49,15 +55,6 @@ export class AssemblySymbolInfo implements IHasUsageInfo {
   static createVar(name: string, value: IExpressionValue): AssemblySymbolInfo {
     return new AssemblySymbolInfo(name, SymbolType.Var, value);
   }
-}
-
-/**
- * This enum defines the types of assembly symbols
- */
-export enum SymbolType {
-  None,
-  Label,
-  Var,
 }
 
 /**
@@ -79,7 +76,7 @@ export interface ISymbolScope {
    * @param name Symbol name
    * @param symbol Symbol data
    */
-  addSymbol(name: string, symbol: AssemblySymbolInfo): void;
+  addSymbol(name: string, symbol: IAssemblySymbolInfo): void;
 
   /**
    * Tests if the specified symbol has been defined
@@ -91,7 +88,7 @@ export interface ISymbolScope {
    * @param name Symbol name
    * @returns The symbol information, if found; otherwise, undefined.
    */
-  getSymbol(name: string): AssemblySymbolInfo | undefined;
+  getSymbol(name: string): IAssemblySymbolInfo | undefined;
 }
 
 /**
@@ -205,7 +202,7 @@ export class SymbolScope implements ISymbolScope {
    * @param name Symbol name
    * @returns The symbol information, if found; otherwise, undefined.
    */
-  getSymbol(name: string): AssemblySymbolInfo | undefined {
+  getSymbol(name: string): IAssemblySymbolInfo | undefined {
     if (!this.caseSensitive) {
       name = name.toLowerCase();
     }
@@ -238,5 +235,4 @@ export class SymbolScope implements ISymbolScope {
 /**
  * Represents symbol information map
  */
-export type SymbolInfoMap = { [key: string]: AssemblySymbolInfo };
-
+export type SymbolInfoMap = Record<string, IAssemblySymbolInfo>;

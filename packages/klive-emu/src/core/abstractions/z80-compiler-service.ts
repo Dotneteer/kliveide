@@ -1,4 +1,11 @@
 import { AssemblerOptions, AssemblerOutput } from "@assembler/assembler-in-out";
+import { NoParamCallback } from "original-fs";
+import { ErrorCodes } from "./z80-assembler-errors";
+import {
+  Expression,
+  NodePosition,
+  Z80AssemblyLine,
+} from "./z80-assembler-tree-nodes";
 
 /**
  * Definition of base compiler messages including requests and responses
@@ -163,7 +170,7 @@ export interface IHasUsageInfo {
 /**
  * Information about a symbol's value
  */
- export interface ValueInfo {
+export interface IValueInfo {
   /**
    * The value of the symbol
    */
@@ -174,3 +181,265 @@ export interface IHasUsageInfo {
    */
   usageInfo: IHasUsageInfo;
 }
+
+/**
+ * Represents the context in which an expression is evaluated
+ */
+export interface IEvaluationContext {
+  /**
+   * Gets the source line the evaluation context is bound to
+   */
+  getSourceLine(): Z80AssemblyLine;
+
+  /**
+   * Sets the source line the evaluation context is bound to
+   * @param sourceLine Source line information
+   */
+  setSourceLine(sourceLine: Z80AssemblyLine): void;
+
+  /**
+   * Gets the current assembly address
+   */
+  getCurrentAddress(): number;
+
+  /**
+   * Gets the value of the specified symbol
+   * @param symbol Symbol name
+   * @param startFromGlobal Should resolution start from global scope?
+   */
+  getSymbolValue(symbol: string, startFromGlobal?: boolean): IValueInfo | null;
+
+  /**
+   * Gets the current loop counter value
+   */
+  getLoopCounterValue(): IExpressionValue;
+
+  /**
+   * Evaluates the value if the specified expression node
+   * @param expr Expression to evaluate
+   * @param context: Evaluation context
+   */
+  doEvalExpression(expr: Expression): IExpressionValue;
+
+  /**
+   * Reports an error during evaluation
+   * @param code Error code
+   * @param node Error position
+   * @param parameters Optional error parameters
+   */
+  reportEvaluationError(
+    code: ErrorCodes,
+    node: NodePosition,
+    ...parameters: any[]
+  ): void;
+}
+
+/**
+ * A single segment of the code compilation
+ */
+export interface IBinarySegment {
+  /**
+   * The bank of the segment
+   */
+  bank?: number;
+
+  /**
+   * Start offset used for banks
+   */
+  bankOffset: number;
+
+  /**
+   * Maximum code length of this segment
+   */
+  maxCodeLength: number;
+
+  /**
+   * Start address of the compiled block
+   */
+  startAddress: number;
+
+  /**
+   * Optional displacement of this segment
+   */
+  displacement?: number;
+
+  /**
+   * The current assembly address when the .disp pragma was used
+   */
+  dispPragmaOffset?: number;
+
+  /**
+   * Intel hex start address of this segment
+   */
+  xorgValue?: number;
+
+  /**
+   * Emitted Z80 binary code
+   */
+  emittedCode: number[];
+
+  /**
+   * Signs if segment overflow has been detected
+   */
+  overflowDetected: boolean;
+
+  /**
+   * Shows the offset of the instruction being compiled
+   */
+  currentInstructionOffset?: number;
+
+  /**
+   * The current code generation offset
+   */
+  readonly currentOffset: number;
+
+  /**
+   * Emits the specified byte to the segment
+   * @param data Byte to emit
+   * @returns Null, if byte emitted; otherwise, error message
+   */
+  emitByte(data: number): ErrorCodes | null;
+}
+
+/**
+ * The type of the Spectrum model
+ */
+export enum SpectrumModelType {
+  Spectrum48,
+  Spectrum128,
+  SpectrumP3,
+  Next,
+}
+
+/**
+ * Describes a source file item
+ */
+export interface ISourceFileItem {
+  /**
+   * The name of the source file
+   */
+  readonly filename: string;
+
+  /**
+   * Optional parent item
+   */
+  parent?: ISourceFileItem;
+
+  /**
+   * Included files
+   */
+  readonly includes: ISourceFileItem[];
+
+  /**
+   * Adds the specified item to the "includes" list
+   * @param childItem Included source file item
+   * @returns True, if including the child item is OK;
+   * False, if the inclusion would create a circular reference,
+   * or the child is already is in the list
+   */
+  include(childItem: ISourceFileItem): boolean;
+
+  /**
+   * Checks if this item already contains the specified child item in
+   * its "includes" list
+   * @param childItem Child item to check
+   * @returns True, if this item contains the child item; otherwise, false
+   */
+  containsInIncludeList(childItem: ISourceFileItem): boolean;
+}
+
+/**
+ * Represents a file line in the compiled assembler output
+ */
+export interface IFileLine {
+  fileIndex: number;
+  line: number;
+}
+
+/**
+ * This type represents a source map
+ */
+export type SourceMap = Record<number, IFileLine>;
+
+/**
+ * Represents a compilation error
+ */
+export interface IAssemblerErrorInfo {
+  readonly errorCode: ErrorCodes;
+  readonly fileName: string;
+  readonly line: number;
+  readonly startPosition: number;
+  readonly endPosition: number | null;
+  readonly message: string;
+  readonly isWarning?: boolean;
+}
+
+/**
+ * Represents an item in the output list
+ */
+export interface IListFileItem {
+  fileIndex: number;
+  address: number;
+  segmentIndex: number;
+  codeStartIndex: number;
+  codeLength: number;
+  lineNumber: number;
+  sourceText: string;
+}
+
+/**
+ * This enum defines the types of assembly symbols
+ */
+export enum SymbolType {
+  None,
+  Label,
+  Var,
+}
+
+/**
+ * This class represents an assembly symbol
+ */
+export interface IAssemblySymbolInfo extends IHasUsageInfo {
+  readonly name: string;
+  readonly type: SymbolType;
+  value: IExpressionValue;
+
+  /**
+   * Tests if this symbol is a local symbol within a module.
+   */
+  readonly isModuleLocal: boolean;
+
+  /**
+   * Tests if this symbol is a short-term symbol.
+   */
+  readonly isShortTerm: boolean;
+
+  /**
+   * Signs if the object has been used
+   */
+  isUsed: boolean;
+}
+
+/**
+ * Type of the fixup
+ */
+export enum FixupType {
+  Jr,
+  Bit8,
+  Bit16,
+  Bit16Be,
+  Equ,
+  Ent,
+  Xent,
+  Struct,
+  FieldBit8,
+  FieldBit16,
+}
+
+/**
+ * Defines a section of assembly lines
+ */
+export type DefinitionSection = {
+  readonly firstLine: number;
+  readonly lastLine: number;
+};
