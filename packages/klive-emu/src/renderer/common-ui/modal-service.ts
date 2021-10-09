@@ -1,7 +1,7 @@
 import { Store } from "redux";
 import { IModalDialogDescriptor, IModalDialogService } from "@abstractions/modal-dialog-service";
 import { displayModalAction } from "@state/modal-reducer";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 
 /**
  * Implements the logic that controls modal dialogs

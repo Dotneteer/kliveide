@@ -1,4 +1,4 @@
-import { ILiteEvent } from "@shared/utils/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
 import { VmStateChangedArgs } from "../renderer/machines/core/vm-engine-service";
 import { KliveConfiguration } from "../main/main-state/klive-configuration";
 import { VirtualMachineCoreBase } from "../renderer/machines/core/VirtualMachineCoreBase";

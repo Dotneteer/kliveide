@@ -1,8 +1,8 @@
 import { FileChange } from "../renderer/ide/explorer-tools/ProjectService";
 import { ITreeNode, ITreeView } from "../renderer/common-ui/ITreeNode";
 import { ProjectNode } from "../renderer/ide/explorer-tools/ProjectNode";
-import { DirectoryContent } from "../shared/state/AppState";
-import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
+import { DirectoryContent } from "@core/state/AppState";
 
 /**
  * This interface defines the service handling projects

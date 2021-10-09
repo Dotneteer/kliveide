@@ -4,7 +4,7 @@ import { dispatch, getState, getStore } from "@core/service-registry";
 
 import { setSideBarStateAction } from "@state/side-bar-reducer";
 import { AppState, SideBarState } from "@state/AppState";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 import { ISideBarPanel, ISideBarService } from "@abstractions/side-bar-service";
 
 /**

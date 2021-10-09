@@ -5,7 +5,7 @@ import { ProjectNode } from "./ProjectNode";
 import { TreeNode } from "../../common-ui/TreeNode";
 import { TreeView } from "../../common-ui/TreeView";
 import { DirectoryContent } from "@state/AppState";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 import { FileOperationResponse } from "@core/messaging/message-types";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 

@@ -1,4 +1,4 @@
-import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
 
 /**
  * Represents an output panel

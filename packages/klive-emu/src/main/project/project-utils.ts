@@ -7,7 +7,7 @@ import { dispatch, getState } from "@core/service-registry";
 
 import { AppWindow } from "../app/app-window";
 import { getFolderContents, getHomeFolder } from "../utils/file-utils";
-import { machineRegistry } from "../../core/main/machine-registry";
+import { machineRegistry } from "@core/main/machine-registry";
 import {
   projectOpenedAction,
   projectLoadingAction,

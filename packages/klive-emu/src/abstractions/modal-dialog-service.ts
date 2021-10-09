@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Store } from "redux";
-import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
 
 /**
  * Describes a modal dialog

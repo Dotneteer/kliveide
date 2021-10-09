@@ -16,7 +16,7 @@
       "*": ["node_modules/*"],
       "@abstractions/*": ["src/abstractions/*"],
       "@core/*": ["src/core/*"],
-      "@state/*": ["src/shared/state/*"],
+      "@state/*": ["src/core/state/*"],
       "@shared/*": ["src/shared/*"],
       "@messaging/*": ["@core/messaging/*"]
     }

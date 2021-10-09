@@ -1,4 +1,4 @@
-import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
 import { InteractiveCommandResult } from "./interactive-command";
 import { IOutputBuffer } from "./output-pane-service";
 

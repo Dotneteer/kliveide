@@ -1,6 +1,6 @@
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import { ProjectNode } from "../renderer/ide/explorer-tools/ProjectNode";
-import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
 
 /**
  * Represents a document panel

@@ -2,7 +2,7 @@ import * as fs from "fs";
 import { dialog } from "electron";
 
 import { getZ80CompilerService } from "@core/service-registry";
-import { getRegisteredMachines } from "../../core/main/machine-registry";
+import { getRegisteredMachines } from "@core/main/machine-registry";
 import * as Messages from "@core/messaging/message-types";
 import { emuForwarder } from "../app/app-menu";
 import {

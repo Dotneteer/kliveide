@@ -25,7 +25,7 @@ const commonConfig = {
     alias: {
       "@abstractions": srcPaths("src/abstractions"),
       "@core": srcPaths("src/core"),
-      "@state": srcPaths("src/shared/state"),
+      "@state": srcPaths("src/core/state"),
       "@shared": srcPaths("src/shared"),
       "@messaging": srcPaths("src/extensibility/messaging"),
       _: srcPaths("src"),

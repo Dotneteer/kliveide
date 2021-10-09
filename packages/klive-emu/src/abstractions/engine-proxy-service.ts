@@ -1,6 +1,6 @@
 import { MachineState } from "../renderer/machines/core/vm-core-types";
 import { ICpuState } from "../shared/machines/AbstractCpu";
-import { ILiteEvent } from "../shared/utils/LiteEvent";
+import { ILiteEvent } from "@core/LiteEvent";
 
 /**
  * Arguments of RunEvent

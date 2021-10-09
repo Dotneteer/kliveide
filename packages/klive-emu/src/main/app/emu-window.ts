@@ -7,7 +7,7 @@ import { RequestMessage, StopVmRequest } from "@core/messaging/message-types";
 import {
   MachineContextProvider,
   MachineContextProviderBase,
-} from "../../core/main/machine-context";
+} from "@core/main/machine-context";
 import { MachineCreationOptions } from "../../renderer/machines/core/vm-core-types";
 import {
   emuMachineContextAction,
@@ -26,12 +26,12 @@ import {
 } from "../main-state/klive-configuration";
 import { emuFocusAction } from "@state/emu-focus-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
-import { machineRegistry } from "../../core/main/machine-registry";
+import { machineRegistry } from "@core/main/machine-registry";
 import {
   ZxSpectrum128ContextProvider,
   ZxSpectrum48ContextProvider,
-} from "../../core/main/zx-spectrum-context";
-import { Cz88ContextProvider } from "../../core/main/cz88-context";
+} from "@core/main/zx-spectrum-context";
+import { Cz88ContextProvider } from "@core/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { PROJECT_FILE } from "../project/project-utils";
 import {

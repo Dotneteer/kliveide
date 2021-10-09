@@ -28,7 +28,7 @@ import {
   ideToolFrameShowAction,
 } from "@state/tool-frame-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
-import { machineRegistry } from "../../core/main/machine-registry";
+import { machineRegistry } from "@core/main/machine-registry";
 import {
   createKliveProject,
   openProject,

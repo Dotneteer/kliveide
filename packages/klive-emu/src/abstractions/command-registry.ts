@@ -5,12 +5,12 @@
 // ============================================================================
 
 import { getState } from "@core/service-registry";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 import {
   ExecutionState,
   IKliveCommand,
   KliveCommandContext,
-} from "../core/abstractions/command-def";
+} from "@core/abstractions/command-def";
 import { getSite } from "./process-site";
 
 // ----------------------------------------------------------------------------

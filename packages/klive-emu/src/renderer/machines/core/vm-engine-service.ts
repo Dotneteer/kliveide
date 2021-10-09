@@ -1,7 +1,7 @@
 import { dispatch, getState } from "@core/service-registry";
 
 import { setMachineTypeAction } from "@state/machine-type-reducer";
-import { ILiteEvent, LiteEvent } from "@shared/utils/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 import { delay } from "../../common-ui/utils";
 import { ZxSpectrum128Core } from "../zx-spectrum/ZxSpectrum128Core";
 import { ZxSpectrum48Core } from "../zx-spectrum/ZxSpectrum48Core";

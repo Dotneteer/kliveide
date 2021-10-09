@@ -1,5 +1,4 @@
 import { AnyAction, Observable, Reducer, Store, Unsubscribe } from "redux";
-import { ILiteEvent, LiteEvent } from "../utils/LiteEvent";
 import {
   ActivityBarState,
   AppState,
@@ -11,6 +10,7 @@ import {
 } from "./AppState";
 import { KliveAction } from "./state-core";
 import { Activity } from "@abstractions/activity";
+import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
 
 /**
  * Represents a store instance that handles Klive application state

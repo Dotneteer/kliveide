@@ -11,7 +11,7 @@ import CommandIconButton from "../context-menu/CommandIconButton";
 import { useRef } from "react";
 import { useLayoutEffect } from "react";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
-import { IKliveCommand } from "../../../core/abstractions/command-def";
+import { IKliveCommand } from "@core/abstractions/command-def";
 import { commandStatusChanged } from "@abstractions/command-registry";
 
 // --- Document Frame IDs
