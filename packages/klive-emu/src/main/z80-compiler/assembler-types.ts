@@ -1,12 +1,12 @@
 import {
   CompareBinPragma,
-  IdentifierNode,
   Statement,
 } from "@abstractions/z80-assembler-tree-nodes";
 import {
   DefinitionSection,
   IBinarySegment,
-  IHasUsageInfo,
+  IFieldDefinition,
+  IStructDefinition,
 } from "@abstractions/z80-compiler-service";
 
 /**
@@ -49,7 +49,7 @@ export class IfSection {
 /**
  * Represents a struct
  */
-export class StructDefinition {
+export class StructDefinition implements IStructDefinition {
   constructor(
     public readonly structName: string,
     macroDefLine: number,
@@ -67,7 +67,7 @@ export class StructDefinition {
   /**
    * The fields of the structure
    */
-  readonly fields: { [key: string]: FieldDefinition } = {};
+  readonly fields: { [key: string]: IFieldDefinition } = {};
 
   /**
    * The size of the structure
@@ -79,7 +79,7 @@ export class StructDefinition {
    * @param fieldName Field name
    * @param definition Field definition
    */
-  addField(fieldName: string, definition: FieldDefinition): void {
+  addField(fieldName: string, definition: IFieldDefinition): void {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
@@ -103,44 +103,12 @@ export class StructDefinition {
    * @param name field name
    * @returns The field information, if found; otherwise, undefined.
    */
-  getField(fieldName: string): FieldDefinition | undefined {
+  getField(fieldName: string): IFieldDefinition | undefined {
     if (!this.caseSensitive) {
       fieldName = fieldName.toLowerCase();
     }
     return this.fields[fieldName];
   }
-}
-
-/**
- * Defines a fiels of a structure
- */
-export class FieldDefinition implements IHasUsageInfo {
-  constructor(public readonly offset: number) {}
-
-  /**
-   * Signs if the object has been used
-   */
-  isUsed: boolean;
-}
-
-/**
- * Represents the definition of a macro
- */
-export class MacroDefinition {
-  constructor(
-    public readonly macroName: string,
-    macroDefLine: number,
-    macroEndLine: number,
-    public readonly argNames: IdentifierNode[],
-    public readonly endLabel: string | null
-  ) {
-    this.section = { firstLine: macroDefLine, lastLine: macroEndLine };
-  }
-
-  /**
-   * Struct definition section
-   */
-  readonly section: DefinitionSection;
 }
 
 /**

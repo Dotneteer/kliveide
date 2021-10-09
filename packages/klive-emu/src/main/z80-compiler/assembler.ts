@@ -106,10 +106,8 @@ import {
 } from "./assembler-in-out";
 import {
   BinaryComparisonInfo,
-  FieldDefinition,
   IfDefinition,
   IfSection,
-  MacroDefinition,
   StructDefinition,
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
@@ -134,6 +132,8 @@ import {
   SymbolType,
   SymbolValueMap,
   IValueInfo,
+  IMacroDefinition,
+  IStructDefinition
 } from "@abstractions/z80-compiler-service";
 
 /**
@@ -163,7 +163,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   private _currentSegment: BinarySegment | null = null;
 
   // --- The current structure invocation
-  private _currentStructInvocation: StructDefinition | null = null;
+  private _currentStructInvocation: IStructDefinition | null = null;
 
   // --- Offset of the current structure invocation
   private _currentStructOffset = 0;
@@ -2708,7 +2708,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private processStructInvocation(
     structStmt: MacroOrStructInvocation,
-    structDef: StructDefinition,
+    structDef: IStructDefinition,
     allLines: Z80AssemblyLine[]
   ): void {
     if (structStmt.operands.length > 0) {
@@ -2940,13 +2940,15 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- Create macro definition
-    const macroDef = new MacroDefinition(
-      label,
-      firstLine,
-      currentLineIndex.index,
-      macro.parameters,
-      searchResult.label
-    );
+    const macroDef: IMacroDefinition = {
+      macroName: label,
+      argNames: macro.parameters,
+      endLabel: searchResult.label,
+      section: {
+        firstLine,
+        lastLine: currentLineIndex.index,
+      },
+    };
 
     // --- Check each macro line for invalid macro parameter names
     // --- or nested macro
@@ -3073,7 +3075,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.reportAssemblyError("Z0810", structLine, null, fieldLabel);
           errorFound = true;
         } else {
-          structDef.addField(fieldLabel, new FieldDefinition(structOffset));
+          structDef.addField(fieldLabel, { offset: structOffset, isUsed: false});
         }
       }
 

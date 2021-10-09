@@ -3,6 +3,7 @@ import { NoParamCallback } from "original-fs";
 import { ErrorCodes } from "./z80-assembler-errors";
 import {
   Expression,
+  IdentifierNode,
   NodePosition,
   Z80AssemblyLine,
 } from "./z80-assembler-tree-nodes";
@@ -443,3 +444,64 @@ export type DefinitionSection = {
   readonly firstLine: number;
   readonly lastLine: number;
 };
+
+/**
+ * Represents the definition of a macro
+ */
+ export interface IMacroDefinition {
+  readonly macroName: string;
+  readonly argNames: IdentifierNode[];
+  readonly endLabel: string | null;
+  readonly section: DefinitionSection;
+}
+
+/**
+ * Defines a field of a structure
+ */
+ export interface IFieldDefinition extends IHasUsageInfo {
+  readonly offset: number;
+  isUsed: boolean;
+}
+
+/**
+ * Represents a struct
+ */
+export interface IStructDefinition {
+  readonly structName: string;
+
+  /**
+   * Struct definition section
+   */
+  readonly section: DefinitionSection;
+
+  /**
+   * The fields of the structure
+   */
+  readonly fields: Record<string, IFieldDefinition>;
+
+  /**
+   * The size of the structure
+   */
+  size: number;
+
+  /**
+   * Adds a new field to the structure
+   * @param fieldName Field name
+   * @param definition Field definition
+   */
+  addField(fieldName: string, definition: IFieldDefinition): void;
+
+  /**
+   * Tests if the structure contains a field
+   * @param fieldName Name of the field to check
+   * @returns True, if the struct contains the field; otherwise, false.
+   */
+  containsField(fieldName: string): boolean;
+
+  /**
+   * Gets the specified field definition
+   * @param name field name
+   * @returns The field information, if found; otherwise, undefined.
+   */
+  getField(fieldName: string): IFieldDefinition | undefined;
+}
