@@ -1,4 +1,4 @@
-import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
+import { CompilerOutput } from "@abstractions/z80-compiler-service";
 import { CompilationState } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
 
@@ -10,7 +10,7 @@ export const startCompileAction: ActionCreator = (filename: string) => ({
   payload: { filename },
 });
 export const endCompileAction: ActionCreator = (
-  compileResult: AssemblerOutput
+  compileResult: CompilerOutput
 ) => ({
   type: "END_COMPILE",
   payload: { compileResult },

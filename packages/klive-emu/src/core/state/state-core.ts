@@ -1,6 +1,5 @@
 import { Activity } from "@core/abstractions/activity";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
-import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
 import {
   AppState,
   DirectoryContent,
@@ -9,6 +8,7 @@ import {
   RegisteredMachine,
   SideBarState,
 } from "./AppState";
+import { CompilerOutput } from "@abstractions/z80-compiler-service";
 
 /**
  * Available action types
@@ -142,7 +142,7 @@ export interface Payload {
   modalDisplayed?: boolean;
   flag?: boolean;
   filename?: string;
-  compileResult?: AssemblerOutput;
+  compileResult?: CompilerOutput;
   breakpoint?: BreakpointDefinition;
 }
 

@@ -1,6 +1,6 @@
 import { Activity } from "@core/abstractions/activity";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
-import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
+import { CompilerOutput } from "@abstractions/z80-compiler-service";
 
 /**
  * Represents the application's entire state vector
@@ -159,7 +159,7 @@ export type DirectoryContent = {
 export type CompilationState = {
   inProgress?: boolean;
   filename?: string;
-  result?: AssemblerOutput;
+  result?: CompilerOutput;
 };
 
 // --- Represents a machine in the registry

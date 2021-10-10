@@ -1,9 +1,4 @@
-import {
-  IAssemblySymbolInfo,
-  IMacroDefinition,
-  IStructDefinition,
-  IValueInfo,
-} from "./assembler-types";
+import { IAssemblySymbolInfo, IMacroDefinition, IStructDefinition, IValueInfo } from "./assembler-types";
 import { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionValue } from "./expressions";
 import { FixupEntry } from "./fixups";
