@@ -1,4 +1,9 @@
-import { IAssemblySymbolInfo, IValueInfo, IMacroDefinition, IStructDefinition } from "@abstractions/z80-compiler-service";
+import {
+  IAssemblySymbolInfo,
+  IMacroDefinition,
+  IStructDefinition,
+  IValueInfo,
+} from "./assembler-types";
 import { ISymbolScope, SymbolInfoMap, SymbolScope } from "./assembly-symbols";
 import { ExpressionValue } from "./expressions";
 import { FixupEntry } from "./fixups";

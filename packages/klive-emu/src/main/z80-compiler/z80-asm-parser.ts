@@ -133,8 +133,8 @@ import {
   IdentifierNode,
   Expression,
   ExpressionNode,
-} from "../../core/abstractions/z80-assembler-tree-nodes";
-import { ParserErrorMessage, errorMessages, ErrorCodes } from "../../core/abstractions/z80-assembler-errors";
+} from "./assembler-tree-nodes";
+import { ParserErrorMessage, errorMessages, ErrorCodes } from "./assembler-errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
 import { convertSpectrumString } from "./utils";

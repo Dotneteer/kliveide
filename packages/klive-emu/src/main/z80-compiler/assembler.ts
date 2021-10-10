@@ -5,7 +5,7 @@ import {
   ErrorCodes,
   errorMessages,
   ParserErrorMessage,
-} from "@abstractions/z80-assembler-errors";
+} from "@assembler/assembler-errors";
 import { InputStream } from "./input-stream";
 import { TokenStream } from "./token-stream";
 
@@ -94,7 +94,7 @@ import {
   XorgPragma,
   XorInstruction,
   Z80AssemblyLine,
-} from "../../core/abstractions/z80-assembler-tree-nodes";
+} from "./assembler-tree-nodes";
 import { Z80AsmParser } from "./z80-asm-parser";
 import { convertSpectrumString, readTextFile } from "./utils";
 import {
@@ -106,9 +106,19 @@ import {
 } from "./assembler-in-out";
 import {
   BinaryComparisonInfo,
+  ExpressionValueType,
+  FixupType,
+  IExpressionValue,
   IfDefinition,
   IfSection,
+  IListFileItem,
+  IMacroDefinition,
+  IStructDefinition,
+  IValueInfo,
+  SpectrumModelType,
   StructDefinition,
+  SymbolType,
+  SymbolValueMap,
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
 import {
@@ -123,18 +133,6 @@ import {
   setRandomSeed,
 } from "./expressions";
 import { FixupEntry } from "./fixups";
-import {
-  ExpressionValueType,
-  FixupType,
-  IExpressionValue,
-  IListFileItem,
-  SpectrumModelType,
-  SymbolType,
-  SymbolValueMap,
-  IValueInfo,
-  IMacroDefinition,
-  IStructDefinition
-} from "@abstractions/z80-compiler-service";
 
 /**
  * The file name of a direct text compilation
@@ -3075,7 +3073,10 @@ export class Z80Assembler extends ExpressionEvaluator {
           this.reportAssemblyError("Z0810", structLine, null, fieldLabel);
           errorFound = true;
         } else {
-          structDef.addField(fieldLabel, { offset: structOffset, isUsed: false});
+          structDef.addField(fieldLabel, {
+            offset: structOffset,
+            isUsed: false,
+          });
         }
       }
 

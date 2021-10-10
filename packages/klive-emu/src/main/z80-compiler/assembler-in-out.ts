@@ -1,5 +1,4 @@
-import { ErrorCodes } from "@abstractions/z80-assembler-errors";
-import { AssemblyModule } from "./assembly-module";
+import { ErrorCodes } from "@assembler/assembler-errors";
 import {
   IAssemblerErrorInfo,
   IBinarySegment,
@@ -9,7 +8,8 @@ import {
   SourceMap,
   SpectrumModelType,
   SymbolValueMap,
-} from "@abstractions/z80-compiler-service";
+} from "./assembler-types";
+import { AssemblyModule } from "./assembly-module";
 
 /**
  * This class represents the output of the Z80 assembler

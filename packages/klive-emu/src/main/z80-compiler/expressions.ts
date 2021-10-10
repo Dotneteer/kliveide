@@ -1,4 +1,4 @@
-import { ErrorCodes } from "../../core/abstractions/z80-assembler-errors";
+import { ErrorCodes } from "./assembler-errors";
 import {
   BinaryExpression,
   MacroTimeFunctionInvocation,
@@ -11,13 +11,8 @@ import {
   Symbol,
   UnaryExpression,
   Z80AssemblyLine,
-} from "../../core/abstractions/z80-assembler-tree-nodes";
-import {
-  ExpressionValueType,
-  IExpressionValue,
-  IValueInfo,
-  IEvaluationContext,
-} from "@abstractions/z80-compiler-service";
+} from "./assembler-tree-nodes";
+import { ExpressionValueType, IEvaluationContext, IExpressionValue, IValueInfo } from "./assembler-types";
 
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";

@@ -1,9 +1,9 @@
-import { ErrorCodes } from "@abstractions/z80-assembler-errors";
+import { ErrorCodes } from "@assembler/assembler-errors";
 import {
-  IExpressionValue,
   IAssemblySymbolInfo,
+  IExpressionValue,
   SymbolType,
-} from "@abstractions/z80-compiler-service";
+} from "./assembler-types";
 import { FixupEntry } from "./fixups";
 
 /**
