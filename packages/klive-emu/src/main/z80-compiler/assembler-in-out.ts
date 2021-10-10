@@ -1,3 +1,4 @@
+import { SpectrumModelType } from "@abstractions/z80-compiler-service";
 import { ErrorCodes } from "@assembler/assembler-errors";
 import {
   IAssemblerErrorInfo,
@@ -6,7 +7,6 @@ import {
   IListFileItem,
   ISourceFileItem,
   SourceMap,
-  SpectrumModelType,
   SymbolValueMap,
 } from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";

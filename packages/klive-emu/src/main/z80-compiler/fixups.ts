@@ -1,6 +1,15 @@
 import { ErrorCodes } from "./assembler-errors";
-import { Expression, NodePosition, Z80AssemblyLine } from "./assembler-tree-nodes";
-import { FixupType, IEvaluationContext, IExpressionValue, IValueInfo } from "./assembler-types";
+import {
+  Expression,
+  NodePosition,
+  Z80AssemblyLine,
+} from "./assembler-tree-nodes";
+import {
+  FixupType,
+  IEvaluationContext,
+  IExpressionValue,
+  IValueInfo,
+} from "./assembler-types";
 import { AssemblyModule } from "./assembly-module";
 import { ExpressionEvaluator } from "./expressions";
 
@@ -94,4 +103,3 @@ export class FixupEntry extends ExpressionEvaluator {
     this.parentContext.reportEvaluationError(code, node, ...parameters);
   }
 }
-

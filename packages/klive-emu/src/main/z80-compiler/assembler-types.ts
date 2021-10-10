@@ -1,3 +1,4 @@
+import { ExpressionValueType } from "@abstractions/z80-compiler-service";
 import {
   CompareBinPragma,
   Expression,
@@ -7,18 +8,6 @@ import {
   Z80AssemblyLine,
 } from "@assembler/assembler-tree-nodes";
 import { ErrorCodes } from "./assembler-errors";
-
-/**
- * Represents the possible types of an expression value
- */
-export enum ExpressionValueType {
-  Error = 0,
-  Bool,
-  Integer,
-  Real,
-  String,
-  NonEvaluated,
-}
 
 /**
  * Represents the value of an evaluated expression
@@ -222,16 +211,6 @@ export interface IBinarySegment {
    * @returns Null, if byte emitted; otherwise, error message
    */
   emitByte(data: number): ErrorCodes | null;
-}
-
-/**
- * The type of the Spectrum model
- */
-export enum SpectrumModelType {
-  Spectrum48,
-  Spectrum128,
-  SpectrumP3,
-  Next,
 }
 
 /**

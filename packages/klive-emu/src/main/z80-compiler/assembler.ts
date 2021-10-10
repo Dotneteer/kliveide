@@ -106,7 +106,6 @@ import {
 } from "./assembler-in-out";
 import {
   BinaryComparisonInfo,
-  ExpressionValueType,
   FixupType,
   IExpressionValue,
   IfDefinition,
@@ -115,7 +114,6 @@ import {
   IMacroDefinition,
   IStructDefinition,
   IValueInfo,
-  SpectrumModelType,
   StructDefinition,
   SymbolType,
   SymbolValueMap,
@@ -133,6 +131,10 @@ import {
   setRandomSeed,
 } from "./expressions";
 import { FixupEntry } from "./fixups";
+import {
+  ExpressionValueType,
+  SpectrumModelType,
+} from "@abstractions/z80-compiler-service";
 
 /**
  * The file name of a direct text compilation

@@ -1,3 +1,4 @@
+import { ExpressionValueType } from "@abstractions/z80-compiler-service";
 import { ErrorCodes } from "./assembler-errors";
 import {
   BinaryExpression,
@@ -12,7 +13,11 @@ import {
   UnaryExpression,
   Z80AssemblyLine,
 } from "./assembler-tree-nodes";
-import { ExpressionValueType, IEvaluationContext, IExpressionValue, IValueInfo } from "./assembler-types";
+import {
+  IEvaluationContext,
+  IExpressionValue,
+  IValueInfo,
+} from "./assembler-types";
 
 // --- Evaluation error messages
 const STRING_CONVERSION_ERROR = "Cannot convert string to a number";
