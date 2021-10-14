@@ -118,7 +118,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
           numItems={this.state.buffer.length}
           renderItem={(index: number, style: CSSProperties) => {
             return (
-              <div key={index} style={{ ...style }}>
+              <div key={index} style={{ ...style, fontSize: "0.95em" }}>
                 <div
                   dangerouslySetInnerHTML={{
                     __html: this.state.buffer[index],
@@ -219,6 +219,7 @@ const inputStyle: CSSProperties = {
   flexShrink: 1,
   fontFamily: "var(--console-font)",
   fontWeight: 600,
+  fontSize: "0.9em",
   backgroundColor: "transparent",
   color: "var(--interactive-input-color)",
 };

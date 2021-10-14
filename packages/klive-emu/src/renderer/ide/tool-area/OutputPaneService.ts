@@ -99,7 +99,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
       this._buffer[0] = "";
     }
 
-    let innerMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    let innerMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
 
     if (this.isStyled()) {
       message = `<span style="${toStyleString(
