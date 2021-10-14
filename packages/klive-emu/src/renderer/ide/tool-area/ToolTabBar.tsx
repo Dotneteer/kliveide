@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
-import ScrollablePanel from "../../common-ui/ScrollablePanel";
+import ScrollablePanel from "../../../emu-ide/components/ScrollablePanel";
 import ToolTab from "./ToolTab";
 import { getToolAreaService } from "@core/service-registry";
 

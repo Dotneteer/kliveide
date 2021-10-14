@@ -1,6 +1,6 @@
 import * as expect from "expect";
-import { TokenStream } from "../../src/shared/command-parser/token-stream";
-import { InputStream } from "../../src/shared/command-parser/input-stream";
+import { TokenStream } from "../../src/renderer/ide/tool-area/token-stream";
+import { InputStream } from "../../src/renderer/ide/tool-area/input-stream";
 import { TokenType} from "../../src/core/abstractions/interactive-command-service"
 
 export function testToken(

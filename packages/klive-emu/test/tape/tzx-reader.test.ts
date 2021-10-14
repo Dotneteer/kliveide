@@ -3,8 +3,8 @@ import * as fs from "fs";
 import * as path from "path";
 import * as expect from "expect";
 
-import { BinaryReader } from "../../src/shared/utils/BinaryReader";
-import { TzxReader } from "../../src/shared/tape/tzx-file";
+import { BinaryReader } from "../../src/core/utils/BinaryReader";
+import { TzxReader } from "../../src/renderer/machines/zx-spectrum/tzx-file";
 
 describe("Tape - TZX Reader", () => {
   it("Can read TZX file", () => {

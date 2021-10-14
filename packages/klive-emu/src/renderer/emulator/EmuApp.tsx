@@ -17,7 +17,7 @@ import { ZxSpectrumStateManager } from "../machines/zx-spectrum/ZxSpectrumStateM
 import { CambridgeZ88StateManager } from "../machines/cambridge-z88/CambridgeZ88BaseStateManager";
 import { setEngineDependencies } from "../machines/core/vm-engine-dependencies";
 import { useRef, useState } from "react";
-import ModalDialog from "../common-ui/ModalDialog";
+import ModalDialog from "../../emu-ide/components/ModalDialog";
 import { toStyleString } from "../ide/utils/css-utils";
 import { Z88_CARDS_DIALOG_ID } from "../machines/cambridge-z88/CambridgeZ88Core";
 import { cz88CardsDialog } from "../machines/cambridge-z88/Cz88CardsDialog";

@@ -24,7 +24,7 @@ import { ideShowAction } from "@state/show-ide-reducer";
 import {
   IKliveCommand,
   KliveCommandContext,
-} from "@core/abstractions/command-def";
+} from "@abstractions/command-definitions";
 
 /**
  * Names of core Klive commands

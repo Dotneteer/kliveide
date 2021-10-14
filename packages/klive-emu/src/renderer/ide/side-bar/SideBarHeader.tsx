@@ -2,13 +2,13 @@ import * as React from "react";
 
 import { getContextMenuService } from "@core/service-registry";
 
-import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
+import { createSizedStyledPanel } from "../../../emu-ide/components/PanelStyles";
 import styles from "styled-components";
 import { CSSProperties, useEffect, useState } from "react";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { Activity } from "@core/abstractions/activity";
 import { commandStatusChanged } from "@abstractions/command-registry";
-import { isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-def";
+import { isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-definitions";
 
 type Props = {
   activity: Activity;

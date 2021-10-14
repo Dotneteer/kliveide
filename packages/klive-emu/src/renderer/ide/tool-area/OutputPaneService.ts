@@ -5,7 +5,7 @@ import {
   IOutputPaneService,
   OutputColor,
 } from "@abstractions/output-pane-service";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { toStyleString } from "../utils/css-utils";
 
 /**

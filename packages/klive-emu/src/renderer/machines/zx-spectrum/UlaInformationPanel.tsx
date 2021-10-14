@@ -10,7 +10,7 @@ import {
   valueStyle,
 } from "../../ide/utils/content-utils";
 import { CSSProperties } from "react";
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 
 const TITLE = "ULA Information";

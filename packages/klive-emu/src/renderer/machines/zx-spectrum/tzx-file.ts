@@ -1,10 +1,10 @@
-import { BinaryReader } from "../utils/BinaryReader";
-import { BinaryWriter } from "../utils/BinaryWriter";
+import { BinaryReader } from "@core/utils/BinaryReader";
+import { BinaryWriter } from "@core/utils/BinaryWriter";
 import {
   TapeFileReader,
   ITapeDataBlock,
   ITapeDataSerialization,
-} from "../../renderer/machines/zx-spectrum/tape-data";
+} from "./tape-data";
 
 /**
  * The signature of a TZX file

@@ -1,6 +1,6 @@
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { ContextMenuOpenTarget, IContextMenuService } from "@abstractions/context-menu-service";
-import { MenuItem } from "@abstractions/command-def";
+import { MenuItem } from "@abstractions/command-definitions";
 
 /**
  * Represents the context menu service

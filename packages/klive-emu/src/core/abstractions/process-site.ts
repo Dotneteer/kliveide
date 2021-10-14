@@ -12,7 +12,7 @@
 // that the code can use this information.
 // ============================================================================
 
-import { KliveProcess } from "@core/abstractions/command-def";
+import { KliveProcess } from "@abstractions/command-definitions";
 
 // ----------------------------------------------------------------------------
 // Site management methods

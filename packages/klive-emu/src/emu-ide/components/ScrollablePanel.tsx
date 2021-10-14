@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { useState } from "react";
 import { CSSProperties, ReactNode } from "react";
 import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
-import { handleScrollKeys } from "./utils";
+import { handleScrollKeys } from "./component-utils";
 
 type PanelProps = {
   showVerticalScrollbar?: boolean;

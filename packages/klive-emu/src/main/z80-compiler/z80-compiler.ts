@@ -1,6 +1,8 @@
 import * as path from "path";
 import { Worker } from "worker_threads";
 import {
+  CompilerOptions,
+  CompilerOutput,
   CompilerRequestMessage,
   CompilerResponseMessage,
   IZ80CompilerService,
@@ -89,8 +91,8 @@ export class Z80CompilerService implements IZ80CompilerService {
    */
   async compileFile(
     filename: string,
-    options?: AssemblerOptions
-  ): Promise<AssemblerOutput> {
+    options?: CompilerOptions
+  ): Promise<CompilerOutput> {
     dispatch(startCompileAction(filename));
     const response = await this.sendMessage<CompilerResponseMessage>({
       type: "CompileFile",
@@ -110,8 +112,8 @@ export class Z80CompilerService implements IZ80CompilerService {
    */
   async compile(
     sourceText: string,
-    options?: AssemblerOptions
-  ): Promise<AssemblerOutput> {
+    options?: CompilerOptions
+  ): Promise<CompilerOutput> {
     dispatch(startCompileAction(null));
     const response = await this.sendMessage<CompilerResponseMessage>({
       type: "Compile",

@@ -1,8 +1,8 @@
 import * as React from "react";
 
-import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
+import { createSizedStyledPanel } from "../../../emu-ide/components/PanelStyles";
 import styles from "styled-components";
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import { useState } from "react";
 import { CSSProperties } from "react";
 

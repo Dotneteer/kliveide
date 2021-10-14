@@ -9,7 +9,7 @@ import {
   ideToolFrameShowAction,
 } from "@state/tool-frame-reducer";
 import { AppState } from "@state/AppState";
-import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
+import { createSizedStyledPanel } from "../../../emu-ide/components/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";

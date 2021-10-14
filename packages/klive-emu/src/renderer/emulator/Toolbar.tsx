@@ -4,9 +4,9 @@ import { connect } from "react-redux";
 import { dispatch } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
-import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
-import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
-import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
+import { ToolbarIconButton } from "../../emu-ide/components/ToolbarIconButton";
+import { ToolbarSeparator } from "../../emu-ide/components/ToolbarSeparator";
+import { ExtraMachineFeatures } from "@abstractions/machine-specfic";
 import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
 import {
   spectrumBeamPositionAction,
@@ -15,7 +15,7 @@ import {
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
-import { executeKliveCommand } from "@shared/command/common-commands";
+import { executeKliveCommand } from "@abstractions/common-commands";
 import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 const Root = styles.div`

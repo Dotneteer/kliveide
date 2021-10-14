@@ -25,7 +25,7 @@ const commonConfig = {
     alias: {
       "@abstractions": srcPaths("src/core/abstractions"),
       "@core": srcPaths("src/core"),
-      "@assembler": srcPaths("src/main/z80-compiler"),
+      "@components": srcPaths("src/emu-ide/components"),
       "@state": srcPaths("src/core/state"),
       "@shared": srcPaths("src/shared"),
       "@messaging": srcPaths("src/extensibility/messaging"),

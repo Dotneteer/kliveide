@@ -12,7 +12,7 @@ import {
   DisassemblyOutput,
   MemorySection,
 } from "@shared/z80/disassembler/disassembly-helper";
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
 import { getEngineProxyService } from "../../ide/engine-proxy";

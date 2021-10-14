@@ -41,7 +41,7 @@ import {
   sendFromMainToEmu,
   sendFromMainToIde,
 } from "@core/messaging/message-sending";
-import { executeKliveCommand } from "@shared/command/common-commands";
+import { executeKliveCommand } from "@abstractions/common-commands";
 import { dispatch, getState, getStore } from "@core/service-registry";
 import { ideWindow } from "./ide-window";
 import { emuWindow } from "./emu-window";

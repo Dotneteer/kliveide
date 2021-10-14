@@ -24,7 +24,7 @@ import { sendFromMainToEmu } from "@core/messaging/message-sending";
 import {
   executeKliveCommand,
   registerCommonCommands,
-} from "@shared/command/common-commands";
+} from "@abstractions/common-commands";
 import { Z80CompilerService } from "./z80-compiler/z80-compiler";
 import {
   dispatch,

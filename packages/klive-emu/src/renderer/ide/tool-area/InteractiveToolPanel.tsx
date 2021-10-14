@@ -9,7 +9,7 @@ import {
 
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../../common-ui/VirtualizedList";
+} from "../../../emu-ide/components/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";

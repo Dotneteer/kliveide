@@ -1,5 +1,5 @@
 import { ITreeNode, ITreeView } from "@abstractions/project-node";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 
 /**
  * This class implements a tree node.

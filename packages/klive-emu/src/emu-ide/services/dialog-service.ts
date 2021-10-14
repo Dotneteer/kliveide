@@ -6,7 +6,11 @@ import {
 } from "@core/messaging/message-sending";
 import { ShowMessageBoxRequest } from "@core/messaging/message-types";
 
-export class DialogService implements IDialogService {
+/**
+ * This class implements the operations that show an Electron dialog
+ * invoked from any of the renderer processes
+ */
+ export class DialogService implements IDialogService {
   /**
    * Displays a dialog message
    * @param process Renderer process to display the dialog in

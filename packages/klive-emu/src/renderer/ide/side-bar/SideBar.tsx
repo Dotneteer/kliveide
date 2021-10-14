@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { getSideBarService, getState } from "@core/service-registry";
 
-import { createSizedStyledPanel } from "../../common-ui/PanelStyles";
+import { createSizedStyledPanel } from "../../../emu-ide/components/PanelStyles";
 import SideBarPanel from "./SideBarPanel";
 import { useRef, useState, useEffect } from "react";
 import SideBarHeader from "./SideBarHeader";

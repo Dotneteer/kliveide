@@ -18,7 +18,7 @@ import {
   FieldRow,
   HintLabel,
   Label,
-} from "../../common-ui/FormElements";
+} from "../../../emu-ide/components/FormElements";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 
 export const NEW_PROJECT_DIALOG_ID = "NewProjectDialog";

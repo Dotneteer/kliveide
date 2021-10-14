@@ -3,7 +3,7 @@ import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { CSSProperties } from "styled-components";
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../common-ui/VirtualizedList";
+} from "../../emu-ide/components/VirtualizedList";
 import {
   SideBarPanelBase,
   SideBarProps,

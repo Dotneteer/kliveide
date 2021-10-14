@@ -3,9 +3,7 @@ import {
   MachineState,
 } from "@abstractions/vm-core-types";
 import { ICpuState } from "@abstractions/abstract-cpu";
-import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
-import { AssemblerOutput } from "../../main/z80-compiler/assembler-in-out";
-import { KliveProcess } from "@abstractions/command-def";
+import { KliveProcess } from "@abstractions/command-definitions";
 import { CodeToInject } from "@abstractions/code-runner-service";
 import { KliveAction } from "@core/state/state-core";
 import {
@@ -14,6 +12,7 @@ import {
   RegisteredMachine,
 } from "@core/state/AppState";
 import { KliveConfiguration } from "@abstractions/klive-configuration";
+import { CompilerOptions, CompilerOutput } from "@abstractions/z80-compiler-service";
 
 /**
  * Potential message sources
@@ -338,7 +337,7 @@ export interface SaveFileContentsRequest extends MessageBase {
 export interface CompileFileRequest extends MessageBase {
   type: "CompileFile";
   filename: string;
-  options?: AssemblerOptions;
+  options?: CompilerOptions;
 }
 
 /**
@@ -566,7 +565,7 @@ export interface GetFileContentsResponse extends MessageBase {
  */
 export interface CompileFileResponse extends MessageBase {
   type: "CompileFileResponse";
-  result: AssemblerOutput;
+  result: CompilerOutput;
 }
 
 export type ResponseMessage =
@@ -690,7 +689,7 @@ export function getFileContentsResponse(
 }
 
 export function compileFileResponse(
-  result: AssemblerOutput
+  result: CompilerOutput
 ): CompileFileResponse {
   return {
     type: "CompileFileResponse",

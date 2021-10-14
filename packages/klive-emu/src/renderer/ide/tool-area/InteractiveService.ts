@@ -1,6 +1,6 @@
 import { IOutputBuffer } from "@abstractions/output-pane-service";
 import { IInteractivePaneService } from "@abstractions/interactive-pane-service";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { OutputPaneBuffer } from "./OutputPaneService";
 import { InteractiveCommandResult } from "@abstractions/interactive-command-service";
 

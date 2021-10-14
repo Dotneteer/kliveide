@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { getThemeService } from "@core/service-registry";
 
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import styles from "styled-components";
 import { Activity } from "@core/abstractions/activity";
 

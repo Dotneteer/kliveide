@@ -1,13 +1,17 @@
-import { ErrorCodes } from "../../core/abstractions/z80-assembler-errors";
-import { Expression, NodePosition, Z80AssemblyLine } from "../../core/abstractions/z80-assembler-tree-nodes";
-import { AssemblyModule } from "./assembly-module";
-import { ExpressionEvaluator } from "./expressions";
+import { ErrorCodes } from "./assembler-errors";
+import {
+  Expression,
+  NodePosition,
+  Z80AssemblyLine,
+} from "./assembler-tree-nodes";
 import {
   FixupType,
   IEvaluationContext,
   IExpressionValue,
   IValueInfo,
-} from "@abstractions/z80-compiler-service";
+} from "./assembler-types";
+import { AssemblyModule } from "./assembly-module";
+import { ExpressionEvaluator } from "./expressions";
 
 /**
  * This class represents a fixup that recalculates and replaces
@@ -99,4 +103,3 @@ export class FixupEntry extends ExpressionEvaluator {
     this.parentContext.reportEvaluationError(code, node, ...parameters);
   }
 }
-

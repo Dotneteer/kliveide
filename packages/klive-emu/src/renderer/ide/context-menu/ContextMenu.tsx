@@ -10,13 +10,13 @@ import {
 import { getContextMenuService } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
-import { animationTick } from "../../common-ui/utils";
+import { animationTick } from "../../../emu-ide/components/component-utils";
 
 import { useState } from "react";
 import { useEffect } from "react";
 import { ContextMenuOpenTarget } from "@abstractions/context-menu-service";
 import { executeCommand } from "@abstractions/command-registry";
-import { Command, CommandGroup, isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-def";
+import { Command, CommandGroup, isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-definitions";
 
 type Props = {
   target: string;

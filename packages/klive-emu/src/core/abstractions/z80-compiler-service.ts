@@ -1,12 +1,5 @@
-import { AssemblerOptions, AssemblerOutput } from "@assembler/assembler-in-out";
-import { NoParamCallback } from "original-fs";
-import { ErrorCodes } from "./z80-assembler-errors";
-import {
-  Expression,
-  IdentifierNode,
-  NodePosition,
-  Z80AssemblyLine,
-} from "./z80-assembler-tree-nodes";
+// ----------------------------------------------------------------------------
+// Messages for communication with the Z80 assembler worker
 
 /**
  * Definition of base compiler messages including requests and responses
@@ -22,7 +15,7 @@ export interface CompilerMessageBase {
 export interface CompileFileMessage extends CompilerMessageBase {
   type: "CompileFile";
   filename: string;
-  options?: AssemblerOptions;
+  options?: CompilerOptions;
 }
 
 /**
@@ -31,7 +24,7 @@ export interface CompileFileMessage extends CompilerMessageBase {
 export interface CompileSourceMessage extends CompilerMessageBase {
   type: "Compile";
   sourceText: string;
-  options?: AssemblerOptions;
+  options?: CompilerOptions;
 }
 
 /**
@@ -44,7 +37,7 @@ export type CompilerRequestMessage = CompileFileMessage | CompileSourceMessage;
  */
 export interface AssemblerOutputResponse extends CompilerMessageBase {
   type: "CompileResult";
-  result: AssemblerOutput;
+  result: CompilerOutput;
 }
 
 /**
@@ -57,6 +50,8 @@ export type CompilerResponseMessage = AssemblerOutputResponse;
  */
 export type CompilerMessage = CompilerRequestMessage | CompilerResponseMessage;
 
+// ----------------------------------------------------------------------------
+// The compiler service and related DTO types
 /**
  * This interface defines the operations of the Z80 Compiler service
  */
@@ -70,8 +65,8 @@ export interface IZ80CompilerService {
    */
   compileFile(
     filename: string,
-    options?: AssemblerOptions
-  ): Promise<AssemblerOutput>;
+    options?: CompilerOptions
+  ): Promise<CompilerOutput>;
 
   /**
    * Compiles the passed Z80 Assembly code into Z80 binary code.
@@ -82,8 +77,18 @@ export interface IZ80CompilerService {
    */
   compile(
     sourceText: string,
-    options?: AssemblerOptions
-  ): Promise<AssemblerOutput>;
+    options?: CompilerOptions
+  ): Promise<CompilerOutput>;
+}
+
+/**
+ * The type of the Spectrum model
+ */
+export enum SpectrumModelType {
+  Spectrum48,
+  Spectrum128,
+  SpectrumP3,
+  Next,
 }
 
 /**
@@ -101,7 +106,7 @@ export enum ExpressionValueType {
 /**
  * Represents the value of an evaluated expression
  */
-export interface IExpressionValue {
+export type ExpressionValue = {
   /**
    * Gets the type of the expression
    */
@@ -121,272 +126,47 @@ export interface IExpressionValue {
    * Gets the value of this instance
    */
   readonly value: number;
-
-  /**
-   * Returns the value as a long integer
-   */
-  asLong(): number;
-
-  /**
-   * Returns the value as a real number
-   */
-  asReal(): number;
-
-  /**
-   * Returns the value as a string
-   */
-  asString(): string;
-
-  /**
-   * Returns the value as a Boolean
-   */
-  asBool(): boolean;
-
-  /**
-   * Returns the value as a 16-bit unsigned integer
-   */
-  asWord(): number;
-
-  /**
-   * Returns the value as an 8-bit unsigned integer
-   */
-  asByte(): number;
-}
+};
 
 /**
- * Map of symbols
+ * Represents the input options of the Klive Z80 Compiler
  */
-export type SymbolValueMap = Record<string, IExpressionValue>;
-
-/**
- * Objects implementing this interface have usage information
- */
-export interface IHasUsageInfo {
+export type CompilerOptions = {
   /**
-   * Signs if the object has been used
+   * Predefined compilation symbols
    */
-  isUsed: boolean;
-}
-
-/**
- * Information about a symbol's value
- */
-export interface IValueInfo {
-  /**
-   * The value of the symbol
-   */
-  value: IExpressionValue;
+  predefinedSymbols: Record<string, ExpressionValue>;
 
   /**
-   * Symbol usage information
+   * The default start address of the compilation
    */
-  usageInfo: IHasUsageInfo;
-}
-
-/**
- * Represents the context in which an expression is evaluated
- */
-export interface IEvaluationContext {
-  /**
-   * Gets the source line the evaluation context is bound to
-   */
-  getSourceLine(): Z80AssemblyLine;
+  defaultStartAddress?: number;
 
   /**
-   * Sets the source line the evaluation context is bound to
-   * @param sourceLine Source line information
+   * The current ZX Spectrum model
    */
-  setSourceLine(sourceLine: Z80AssemblyLine): void;
+  currentModel: SpectrumModelType;
 
   /**
-   * Gets the current assembly address
+   * The maximum number of errors to report within a loop
    */
-  getCurrentAddress(): number;
+  maxLoopErrorsToReport: number;
 
   /**
-   * Gets the value of the specified symbol
-   * @param symbol Symbol name
-   * @param startFromGlobal Should resolution start from global scope?
+   * Signs that PROC labels and symbols are not locals by default
    */
-  getSymbolValue(symbol: string, startFromGlobal?: boolean): IValueInfo | null;
+  procExplicitLocalsOnly: boolean;
 
   /**
-   * Gets the current loop counter value
+   * Indicates that assembly symbols should be case sensitively.
    */
-  getLoopCounterValue(): IExpressionValue;
+  useCaseSensitiveSymbols: boolean;
 
   /**
-   * Evaluates the value if the specified expression node
-   * @param expr Expression to evaluate
-   * @param context: Evaluation context
+   * Allows flexible use of DEFx pragmas
    */
-  doEvalExpression(expr: Expression): IExpressionValue;
-
-  /**
-   * Reports an error during evaluation
-   * @param code Error code
-   * @param node Error position
-   * @param parameters Optional error parameters
-   */
-  reportEvaluationError(
-    code: ErrorCodes,
-    node: NodePosition,
-    ...parameters: any[]
-  ): void;
-}
-
-/**
- * A single segment of the code compilation
- */
-export interface IBinarySegment {
-  /**
-   * The bank of the segment
-   */
-  bank?: number;
-
-  /**
-   * Start offset used for banks
-   */
-  bankOffset: number;
-
-  /**
-   * Maximum code length of this segment
-   */
-  maxCodeLength: number;
-
-  /**
-   * Start address of the compiled block
-   */
-  startAddress: number;
-
-  /**
-   * Optional displacement of this segment
-   */
-  displacement?: number;
-
-  /**
-   * The current assembly address when the .disp pragma was used
-   */
-  dispPragmaOffset?: number;
-
-  /**
-   * Intel hex start address of this segment
-   */
-  xorgValue?: number;
-
-  /**
-   * Emitted Z80 binary code
-   */
-  emittedCode: number[];
-
-  /**
-   * Signs if segment overflow has been detected
-   */
-  overflowDetected: boolean;
-
-  /**
-   * Shows the offset of the instruction being compiled
-   */
-  currentInstructionOffset?: number;
-
-  /**
-   * The current code generation offset
-   */
-  readonly currentOffset: number;
-
-  /**
-   * Emits the specified byte to the segment
-   * @param data Byte to emit
-   * @returns Null, if byte emitted; otherwise, error message
-   */
-  emitByte(data: number): ErrorCodes | null;
-}
-
-/**
- * The type of the Spectrum model
- */
-export enum SpectrumModelType {
-  Spectrum48,
-  Spectrum128,
-  SpectrumP3,
-  Next,
-}
-
-/**
- * Describes a source file item
- */
-export interface ISourceFileItem {
-  /**
-   * The name of the source file
-   */
-  readonly filename: string;
-
-  /**
-   * Optional parent item
-   */
-  parent?: ISourceFileItem;
-
-  /**
-   * Included files
-   */
-  readonly includes: ISourceFileItem[];
-
-  /**
-   * Adds the specified item to the "includes" list
-   * @param childItem Included source file item
-   * @returns True, if including the child item is OK;
-   * False, if the inclusion would create a circular reference,
-   * or the child is already is in the list
-   */
-  include(childItem: ISourceFileItem): boolean;
-
-  /**
-   * Checks if this item already contains the specified child item in
-   * its "includes" list
-   * @param childItem Child item to check
-   * @returns True, if this item contains the child item; otherwise, false
-   */
-  containsInIncludeList(childItem: ISourceFileItem): boolean;
-}
-
-/**
- * Represents a file line in the compiled assembler output
- */
-export interface IFileLine {
-  fileIndex: number;
-  line: number;
-}
-
-/**
- * This type represents a source map
- */
-export type SourceMap = Record<number, IFileLine>;
-
-/**
- * Represents a compilation error
- */
-export interface IAssemblerErrorInfo {
-  readonly errorCode: ErrorCodes;
-  readonly fileName: string;
-  readonly line: number;
-  readonly startPosition: number;
-  readonly endPosition: number | null;
-  readonly message: string;
-  readonly isWarning?: boolean;
-}
-
-/**
- * Represents an item in the output list
- */
-export interface IListFileItem {
-  fileIndex: number;
-  address: number;
-  segmentIndex: number;
-  codeStartIndex: number;
-  codeLength: number;
-  lineNumber: number;
-  sourceText: string;
-}
+  flexibleDefPragmas: boolean;
+};
 
 /**
  * This enum defines the types of assembly symbols
@@ -397,13 +177,21 @@ export enum SymbolType {
   Var,
 }
 
-/**
- * This class represents an assembly symbol
- */
-export interface IAssemblySymbolInfo extends IHasUsageInfo {
+export type AssemblySymbolInfo = {
+  /**
+   * Symbol name
+   */
   readonly name: string;
+
+  /**
+   * Symbol type
+   */
   readonly type: SymbolType;
-  value: IExpressionValue;
+
+  /**
+   * Symbol value
+   */
+  readonly value: ExpressionValue;
 
   /**
    * Tests if this symbol is a local symbol within a module.
@@ -418,24 +206,8 @@ export interface IAssemblySymbolInfo extends IHasUsageInfo {
   /**
    * Signs if the object has been used
    */
-  isUsed: boolean;
-}
-
-/**
- * Type of the fixup
- */
-export enum FixupType {
-  Jr,
-  Bit8,
-  Bit16,
-  Bit16Be,
-  Equ,
-  Ent,
-  Xent,
-  Struct,
-  FieldBit8,
-  FieldBit16,
-}
+  readonly isUsed: boolean;
+};
 
 /**
  * Defines a section of assembly lines
@@ -446,27 +218,17 @@ export type DefinitionSection = {
 };
 
 /**
- * Represents the definition of a macro
- */
- export interface IMacroDefinition {
-  readonly macroName: string;
-  readonly argNames: IdentifierNode[];
-  readonly endLabel: string | null;
-  readonly section: DefinitionSection;
-}
-
-/**
  * Defines a field of a structure
  */
- export interface IFieldDefinition extends IHasUsageInfo {
+export type FieldDefinition = {
   readonly offset: number;
-  isUsed: boolean;
-}
+  readonly isUsed: boolean;
+};
 
 /**
  * Represents a struct
  */
-export interface IStructDefinition {
+export type StructDefinition = {
   readonly structName: string;
 
   /**
@@ -477,31 +239,396 @@ export interface IStructDefinition {
   /**
    * The fields of the structure
    */
-  readonly fields: Record<string, IFieldDefinition>;
+  readonly fields: Record<string, FieldDefinition>;
 
   /**
    * The size of the structure
    */
-  size: number;
+  readonly size: number;
+};
+
+/**
+ * Represents the definition of a macro
+ */
+export type MacroDefinition = {
+  /**
+   * Name of the macro
+   */
+  readonly macroName: string;
 
   /**
-   * Adds a new field to the structure
-   * @param fieldName Field name
-   * @param definition Field definition
+   * Macro identifier
    */
-  addField(fieldName: string, definition: IFieldDefinition): void;
+  readonly argNames: IdentifierNode[];
 
   /**
-   * Tests if the structure contains a field
-   * @param fieldName Name of the field to check
-   * @returns True, if the struct contains the field; otherwise, false.
+   * End label of the macro
    */
-  containsField(fieldName: string): boolean;
+  readonly endLabel: string | null;
 
   /**
-   * Gets the specified field definition
-   * @param name field name
-   * @returns The field information, if found; otherwise, undefined.
+   * The section of the macro
    */
-  getField(fieldName: string): IFieldDefinition | undefined;
+  readonly section: DefinitionSection;
+};
+
+export type IdentifierNode = {
+  /**
+   * Identifies the node type as an identifier
+   */
+  readonly type: "Identifier";
+
+  /**
+   * Identifier name
+   */
+  readonly name: string;
+
+  /**
+   * The expression source code (used for macro argument replacement)
+   */
+  readonly sourceText: string;
+
+  /**
+   * Start line number of the start token of the node
+   */
+  readonly line: number;
+
+  /**
+   * Start position (inclusive) of the node
+   */
+  readonly startPosition: number;
+
+  /**
+   * End position (exclusive)
+   */
+  readonly endPosition: number;
+
+  /**
+   * Start column number (inclusive) of the node
+   */
+  readonly startColumn: number;
+
+  /**
+   * End column number (exclusive) of the node
+   */
+  readonly endColumn: number;
+};
+
+export type SymbolScope = {
+  /**
+   * Owner of this scope
+   */
+  readonly ownerScope: SymbolScope | null;
+
+  /**
+   * Indicates that this scope is for a loop
+   */
+  readonly isLoopScope: boolean;
+
+  /**
+   * Indicates that this scope is for a proc
+   */
+  readonly isProcScope: boolean;
+
+  /**
+   * The current loop counter in the scope
+   */
+  readonly loopCounter: number;
+
+  /**
+   * Indicates if this is a temporary scope
+   */
+  readonly isTemporaryScope: boolean;
+
+  /**
+   * The symbol table with properly defined symbols
+   */
+  readonly symbols: Record<string, AssemblySymbolInfo>;
+
+  /**
+   * Local symbol bookings
+   */
+  readonly localSymbolBookings: Set<string>;
+
+  /**
+   * Indicates if a break statement has been reached in this scope
+   */
+  readonly breakReached: boolean;
+
+  /**
+   * Indicates if a continue statement has been reached in this scope
+   */
+  readonly continueReached: boolean;
+
+  /**
+   * Optional macro arguments
+   */
+  macroArguments: Record<string, ExpressionValue> | null;
+
+  /**
+   * Tests if this context is a macro context
+   */
+  readonly isMacroContext: boolean;
+};
+
+/**
+ * Represents the output of a compiled module
+ */
+export interface CompiledModule {
+  /**
+   * Parent of this module
+   */
+  readonly parentModule: CompiledModule | null;
+
+  /**
+   * Case sensitive module?
+   */
+  readonly caseSensitive: boolean;
+
+  /**
+   * Points to the root module
+   */
+  readonly rootModule: CompiledModule;
+
+  /**
+   * Child modules
+   */
+  readonly nestedModules: Record<string, CompiledModule>;
+
+  /**
+   * The symbol table with properly defined symbols
+   */
+  readonly symbols: Record<string, AssemblySymbolInfo>;
+
+  /**
+   * The map of structures within the module
+   */
+  readonly structs: Record<string, StructDefinition>;
+
+  /**
+   * The map of macro definitions within the module
+   */
+  readonly macros: Record<string, MacroDefinition>;
+
+  /**
+   * Local symbol scopes
+   */
+  readonly localScopes: SymbolScope[];
+}
+
+/**
+ * Describes a source file item
+ */
+export type SourceFileItem = {
+  /**
+   * The name of the source file
+   */
+  readonly filename: string;
+
+  /**
+   * Optional parent item
+   */
+  parent?: SourceFileItem;
+
+  /**
+   * Included files
+   */
+  readonly includes: SourceFileItem[];
+};
+
+/**
+ * A single segment of the code compilation
+ */
+export type BinarySegment = {
+  /**
+   * The bank of the segment
+   */
+  readonly bank?: number;
+
+  /**
+   * Start offset used for banks
+   */
+  readonly bankOffset: number;
+
+  /**
+   * Maximum code length of this segment
+   */
+  readonly maxCodeLength: number;
+
+  /**
+   * Start address of the compiled block
+   */
+  readonly startAddress: number;
+
+  /**
+   * Optional displacement of this segment
+   */
+  readonly displacement?: number;
+
+  /**
+   * The current assembly address when the .disp pragma was used
+   */
+  readonly dispPragmaOffset?: number;
+
+  /**
+   * Intel hex start address of this segment
+   */
+  readonly xorgValue?: number;
+
+  /**
+   * Emitted Z80 binary code
+   */
+  readonly emittedCode: number[];
+
+  /**
+   * Signs if segment overflow has been detected
+   */
+  readonly overflowDetected: boolean;
+
+  /**
+   * Shows the offset of the instruction being compiled
+   */
+  readonly currentInstructionOffset?: number;
+
+  /**
+   * The current code generation offset
+   */
+  readonly currentOffset: number;
+};
+
+/**
+ * Represents a compilation error
+ */
+export interface AssemblerErrorInfo {
+  /**
+   * Error code
+   */
+  readonly errorCode: string;
+  /**
+   * File in which the error is found
+   */
+  readonly fileName: string;
+
+  /**
+   * Error line number
+   */
+  readonly line: number;
+
+  /**
+   * Error start position
+   */
+  readonly startPosition: number;
+
+  /**
+   * Error end position
+   */
+  readonly endPosition: number | null;
+
+  /**
+   * Complete error message
+   */
+  readonly message: string;
+
+  /**
+   * Is it just warning?
+   */
+  readonly isWarning?: boolean;
+}
+
+/**
+ * Represents a file line in the compiled assembler output
+ */
+export type FileLine = {
+  fileIndex: number;
+  line: number;
+};
+
+/**
+ * Represents an item in the output list
+ */
+export type ListFileItem = {
+  fileIndex: number;
+  address: number;
+  segmentIndex: number;
+  codeStartIndex: number;
+  codeLength: number;
+  lineNumber: number;
+  sourceText: string;
+};
+
+/**
+ * Represents the entire compiler output
+ */
+export interface CompilerOutput extends CompiledModule {
+  /**
+   * Source file item of the compiled code
+   */
+  readonly sourceItem: SourceFileItem;
+
+  /**
+   * The segments of the compilation output
+   */
+  readonly segments: BinarySegment[];
+
+  /**
+   * The errors found during the compilation
+   */
+  readonly errors: AssemblerErrorInfo[];
+
+  /**
+   * Number of errors
+   */
+  get errorCount(): number;
+
+  /**
+   * The type of Spectrum model to use
+   */
+  modelType?: SpectrumModelType;
+
+  /**
+   * Entry address of the code
+   */
+  entryAddress?: number;
+
+  /**
+   * Entry address of the code to use when exporting it
+   */
+  exportEntryAddress?: number;
+
+  /**
+   * Inject options
+   */
+  injectOptions: Record<string, boolean>;
+
+  /**
+   * The source files involved in this compilation, in
+   * their file index order
+   */
+  readonly sourceFileList: SourceFileItem[];
+
+  /**
+   * Source map information that assigns source file info with
+   * the address
+   */
+  readonly sourceMap: Record<number, FileLine>;
+
+  /**
+   * Source map information that assigns source file info with the address
+   */
+  readonly addressMap: Map<FileLine, number[]>;
+
+  /**
+   * Items of the list file
+   */
+  readonly listFileItems: ListFileItem[];
+
+  /**
+   * The type of the source that resulted in this compilation (for example, ZX BASIC)
+   */
+  sourceType?: string;
+
+  /**
+   * Trace outputs
+   */
+  readonly traceOutput: string[];
 }

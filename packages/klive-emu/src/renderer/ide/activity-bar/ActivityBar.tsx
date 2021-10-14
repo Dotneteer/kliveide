@@ -6,7 +6,7 @@ import ActivityButton from "./ActivityButton";
 import {
   createSizedStyledPanel,
   createUnsizedStyledPanel,
-} from "../../common-ui/PanelStyles";
+} from "../../../emu-ide/components/PanelStyles";
 import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";
 import {
