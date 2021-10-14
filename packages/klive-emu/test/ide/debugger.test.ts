@@ -1,6 +1,6 @@
 import "mocha";
 import * as expect from "expect";
-import { addBreakpoint, removeBreakpoint} from "../../src/renderer/ide/debug-helpers";
+import { addBreakpoint, removeBreakpoint} from "../../src/core/abstractions/debug-helpers";
 import { BinaryBreakpoint, SourceCodeBreakpoint} from "../../src/core/abstractions/code-runner-service";
 
 describe("Debugger", () => {

@@ -4,7 +4,7 @@ import { getThemeService } from "@core/service-registry";
 
 import { executeCommand, getCommand } from "@abstractions/command-registry";
 import { useState } from "react";
-import { IKliveCommand } from "@core/abstractions/command-def";
+import { IKliveCommand } from "@abstractions/command-definitions";
 import { Icon } from "../../../emu-ide/components/Icon";
 
 interface Props {

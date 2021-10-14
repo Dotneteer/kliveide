@@ -16,7 +16,7 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { ContextMenuOpenTarget } from "@abstractions/context-menu-service";
 import { executeCommand } from "@abstractions/command-registry";
-import { Command, CommandGroup, isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-def";
+import { Command, CommandGroup, isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-definitions";
 
 type Props = {
   target: string;

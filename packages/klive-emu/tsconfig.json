@@ -16,7 +16,7 @@
       "*": ["node_modules/*"],
       "@abstractions/*": ["src/core/abstractions/*"],
       "@core/*": ["src/core/*"],
-      "@assembler/*": ["src/main/z80-compiler/*"],
+      "@components/*": ["src/emu-ide/components/*"],
       "@state/*": ["src/core/state/*"],
       "@shared/*": ["src/shared/*"],
       "@messaging/*": ["@core/messaging/*"]

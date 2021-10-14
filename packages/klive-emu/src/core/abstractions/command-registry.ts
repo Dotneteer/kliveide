@@ -10,7 +10,7 @@ import {
   ExecutionState,
   IKliveCommand,
   KliveCommandContext,
-} from "@core/abstractions/command-def";
+} from "@abstractions/command-definitions";
 import { getSite } from "./process-site";
 
 // ----------------------------------------------------------------------------

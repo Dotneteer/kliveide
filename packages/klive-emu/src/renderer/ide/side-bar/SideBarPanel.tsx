@@ -12,7 +12,7 @@ import { animationTick } from "../../../emu-ide/components/component-utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
 import { AppState } from "@state/AppState";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
-import { MenuItem } from "@abstractions/command-def";
+import { MenuItem } from "@abstractions/command-definitions";
 
 /**
  * Component properties

@@ -6,7 +6,7 @@ import {
   NodePosition,
   Statement,
   Z80AssemblyLine,
-} from "@assembler/assembler-tree-nodes";
+} from "./assembler-tree-nodes";
 import { ErrorCodes } from "./assembler-errors";
 
 /**

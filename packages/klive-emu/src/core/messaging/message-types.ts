@@ -3,7 +3,7 @@ import {
   MachineState,
 } from "@abstractions/vm-core-types";
 import { ICpuState } from "@abstractions/abstract-cpu";
-import { KliveProcess } from "@abstractions/command-def";
+import { KliveProcess } from "@abstractions/command-definitions";
 import { CodeToInject } from "@abstractions/code-runner-service";
 import { KliveAction } from "@core/state/state-core";
 import {

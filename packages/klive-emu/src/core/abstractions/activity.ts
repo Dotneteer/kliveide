@@ -1,4 +1,4 @@
-import { MenuItem } from "./command-def";
+import { MenuItem } from "./command-definitions";
 
 /**
  * Describes an activity in the Activity bar

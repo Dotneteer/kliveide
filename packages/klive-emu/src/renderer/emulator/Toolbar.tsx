@@ -15,7 +15,7 @@ import {
 import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
-import { executeKliveCommand } from "@shared/command/common-commands";
+import { executeKliveCommand } from "@abstractions/common-commands";
 import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 const Root = styles.div`

@@ -5,7 +5,7 @@ import {
   ErrorCodes,
   errorMessages,
   ParserErrorMessage,
-} from "@assembler/assembler-errors";
+} from "./assembler-errors";
 import { InputStream } from "./input-stream";
 import { TokenStream } from "./token-stream";
 

@@ -36,18 +36,18 @@ import { SideBarService } from "./side-bar/SideBarService";
 import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";
 import { ThemeService } from "../../emu-ide/themes/theme-service";
-import { ModalDialogService } from "../../emu-ide/components/modal-service";
+import { ModalDialogService } from "../../emu-ide/services/modal-service";
 import { DocumentService } from "./document-area/DocumentService";
 import { InteractivePaneService } from "./tool-area/InteractiveService";
 import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 import { registerSite } from "@abstractions/process-site";
-import { registerCommonCommands } from "@shared/command/common-commands";
+import { registerCommonCommands } from "@abstractions/common-commands";
 import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
-import { DialogService } from "../../emu-ide/components/DialogService";
+import { DialogService } from "../../emu-ide/services/dialog-service";
 import { CodeRunnerService } from "../machines/CodeRunnerService";
 
 // ------------------------------------------------------------------------------

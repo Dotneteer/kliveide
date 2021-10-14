@@ -6,7 +6,7 @@ import {
   ICodeRunnerService,
 } from "@abstractions/code-runner-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
-import { executeKliveCommand } from "@shared/command/common-commands";
+import { executeKliveCommand } from "@abstractions/common-commands";
 import { SpectrumModelType } from "@abstractions/z80-compiler-service";
 
 /**

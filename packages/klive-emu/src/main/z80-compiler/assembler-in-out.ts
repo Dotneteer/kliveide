@@ -1,5 +1,5 @@
 import { SpectrumModelType } from "@abstractions/z80-compiler-service";
-import { ErrorCodes } from "@assembler/assembler-errors";
+import { ErrorCodes } from "./assembler-errors";
 import {
   IAssemblerErrorInfo,
   IBinarySegment,

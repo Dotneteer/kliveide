@@ -22,11 +22,11 @@ import { IpcRendereApi } from "../../exposed-apis";
 import { RendererToMainStateForwarder } from "../../emu-ide/components/RendererToMainStateForwarder";
 import { KliveAction } from "@state/state-core";
 import { ThemeService } from "../../emu-ide/themes/theme-service";
-import { ModalDialogService } from "../../emu-ide/components/modal-service";
+import { ModalDialogService } from "../../emu-ide/services/modal-service";
 import { registerSite } from "@abstractions/process-site";
-import { registerCommonCommands } from "@shared/command/common-commands";
+import { registerCommonCommands } from "@abstractions/common-commands";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
-import { DialogService } from "../../emu-ide/components/DialogService";
+import { DialogService } from "../../emu-ide/services/dialog-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main

@@ -35,7 +35,7 @@ import {
   removeBuildRootAction,
 } from "@state/builder-reducer";
 import { NewFileData } from "./NewFileData";
-import { MenuItem } from "@abstractions/command-def";
+import { MenuItem } from "@abstractions/command-definitions";
 
 type State = {
   itemsCount: number;

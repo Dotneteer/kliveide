@@ -1,4 +1,4 @@
-import { ErrorCodes } from "@assembler/assembler-errors";
+import { ErrorCodes } from "./assembler-errors";
 import {
   IAssemblySymbolInfo,
   IExpressionValue,

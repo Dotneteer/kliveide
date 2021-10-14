@@ -4,9 +4,9 @@ import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { dispatch } from "@core/service-registry";
 
 /**
- * Implements the logic that controls modal dialogs
+ * Implements the logic that controls modal dialogs in the renderer processes
  */
-export class ModalDialogService implements IModalDialogService {
+ export class ModalDialogService implements IModalDialogService {
   private _descriptors = new Map<string, IModalDialogDescriptor>();
   private _modalDescriptor: IModalDialogDescriptor | null = null;
   private _modalChanged = new LiteEvent<IModalDialogDescriptor | null>();
@@ -67,6 +67,12 @@ export class ModalDialogService implements IModalDialogService {
     this._dialogResolver(result);
   }
 
+  /**
+   * Displays the specified modal dialog
+   * @param id Modal dialog identifier
+   * @param args Optional dialog arguments
+   * @returns The result of the modal dialog
+   */
   async showModalDialog(id: string, args?: unknown): Promise<unknown> {
     if (this._visible) {
       return;

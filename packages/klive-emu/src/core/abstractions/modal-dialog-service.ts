@@ -1,9 +1,63 @@
 import { ILiteEvent } from "@core/utils/lite-event";
 
 /**
+ * Defines the logic that controls modal dialogs in the renderer processes
+ */
+export interface IModalDialogService {
+  /**
+   * Gets the current modal descriptor
+   */
+  readonly modalDescriptor: IModalDialogDescriptor;
+
+  /**
+   * Gets the arguments of the modal dialog
+   */
+  readonly args: unknown;
+
+  /**
+   * Gets the results of the modal dialog
+   */
+  readonly result: unknown;
+
+  /**
+   * Registers a modal descriptor
+   * @param id Descriptor identifier
+   * @param descriptor Modial dialog descriptor
+   */
+  registerModalDescriptor(id: string, descriptor: IModalDialogDescriptor): void;
+
+  /**
+   * Disposes the modal dialog
+   */
+  disposeModalDialog(): void;
+
+  /**
+   * Displays the current modal dialog
+   */
+  hide(result?: unknown): void;
+
+  /**
+   * Shows the specified modal dialog
+   * @param id Modal dialog ID
+   * @param args Modal dialog arguments
+   */
+  showModalDialog(id: string, args?: unknown): Promise<unknown>;
+
+  /**
+   * This event signs that the modal dialog has changed
+   */
+  readonly modalChanged: ILiteEvent<IModalDialogDescriptor | null>;
+
+  /**
+   * This event signs that the visibility of the modal dialog has changed
+   */
+  readonly visibilityChanged: ILiteEvent<boolean>;
+}
+
+/**
  * Describes a modal dialog
  */
-export interface IModalDialogDescriptor {
+ export interface IModalDialogDescriptor {
   /**
    * Dialog title in the header
    */
@@ -58,58 +112,4 @@ export interface IModalDialogDescriptor {
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(args?: unknown): React.ReactNode;
-}
-
-/**
- * Implements the logic that controls modal dialogs
- */
-export interface IModalDialogService {
-  /**
-   * Gets the current modal descriptor
-   */
-  readonly modalDescriptor: IModalDialogDescriptor;
-
-  /**
-   * Gets the arguments of the modal dialog
-   */
-  readonly args: unknown;
-
-  /**
-   * Gets the results of the modal dialog
-   */
-  readonly result: unknown;
-
-  /**
-   * Registers a modal descriptor
-   * @param id Descriptor identifier
-   * @param descriptor Modial dialog descriptor
-   */
-  registerModalDescriptor(id: string, descriptor: IModalDialogDescriptor): void;
-
-  /**
-   * Disposes the modal dialog
-   */
-  disposeModalDialog(): void;
-
-  /**
-   * Displays the current modal dialog
-   */
-  hide(result?: unknown): void;
-
-  /**
-   * Shows the specified modal dialog
-   * @param id Modal dialog ID
-   * @param args Modal dialog arguments
-   */
-  showModalDialog(id: string, args?: unknown): Promise<unknown>;
-
-  /**
-   * This event signs that the modal dialog has changed
-   */
-  readonly modalChanged: ILiteEvent<IModalDialogDescriptor | null>;
-
-  /**
-   * This event signs that the visibility of the modal dialog has changed
-   */
-  readonly visibilityChanged: ILiteEvent<boolean>;
 }
