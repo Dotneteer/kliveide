@@ -4,7 +4,7 @@ import {
   TapeFileReader,
   ITapeDataBlock,
   ITapeDataSerialization,
-} from "../../renderer/machines/zx-spectrum/tape-data";
+} from "./tape-data";
 
 /**
  * The signature of a TZX file

@@ -4,7 +4,7 @@ import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { AppState } from "@state/AppState";
 import { BinaryReader } from "@core/utils/BinaryReader";
-import { checkTapeFile } from "@shared/tape/readers";
+import { checkTapeFile } from "../../renderer/machines/zx-spectrum/readers";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
