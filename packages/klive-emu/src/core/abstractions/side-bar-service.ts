@@ -1,4 +1,4 @@
-import { ILiteEvent } from "@core/LiteEvent";
+import { ILiteEvent } from "@core/utils/lite-event";
 import { AppState } from "@core/state/AppState";
 
 /**

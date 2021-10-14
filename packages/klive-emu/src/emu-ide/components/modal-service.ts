@@ -1,6 +1,6 @@
 import { IModalDialogDescriptor, IModalDialogService } from "@abstractions/modal-dialog-service";
 import { displayModalAction } from "@state/modal-reducer";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { dispatch } from "@core/service-registry";
 
 /**

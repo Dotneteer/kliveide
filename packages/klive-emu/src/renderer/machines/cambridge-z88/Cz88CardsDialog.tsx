@@ -3,7 +3,7 @@ import {
   DropDownListComponent,
   SelectEventArgs,
 } from "@syncfusion/ej2-react-dropdowns";
-import { Cell, CenteredRow, Grid } from "../../common-ui/grid-styles";
+import { Cell, CenteredRow, Grid } from "../../../emu-ide/components/grid-styles";
 import { emuToMainMessenger } from "../../emulator/EmuToMainMessenger";
 import {
   SlotContent,
@@ -11,7 +11,7 @@ import {
   Z88CardsState,
 } from "@shared/machines/cz88-specific";
 import { useState } from "react";
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import { EmuOpenFileDialogResponse } from "@core/messaging/message-types";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { getModalDialogService } from "@core/service-registry";

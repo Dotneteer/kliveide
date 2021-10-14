@@ -15,7 +15,7 @@ import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { toStyleString } from "../ide/utils/css-utils";
 import { EmuViewOptions, ToolFrameState } from "@state/AppState";
 import { useLayoutEffect } from "react";
-import Splitter from "../common-ui/Splitter";
+import Splitter from "../../emu-ide/components/Splitter";
 import { useEffect } from "react";
 import {
   changeActivityAction,
@@ -34,7 +34,7 @@ import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
 import { VmOutputPanelDescriptor } from "../machines/sidebar-panels/VmOutputPane";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
 import IdeContextMenu from "./context-menu/ContextMenu";
-import ModalDialog from "../common-ui/ModalDialog";
+import ModalDialog from "../../emu-ide/components/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";

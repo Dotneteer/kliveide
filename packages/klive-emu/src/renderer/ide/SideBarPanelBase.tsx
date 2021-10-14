@@ -5,7 +5,7 @@ import {
 } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
-import ScrollablePanel from "../common-ui/ScrollablePanel";
+import ScrollablePanel from "../../emu-ide/components/ScrollablePanel";
 import { scrollableContentType } from "./utils/content-utils";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { getEngineProxyService, RunEventArgs } from "./engine-proxy";

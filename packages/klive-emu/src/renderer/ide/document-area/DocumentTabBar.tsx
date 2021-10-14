@@ -7,7 +7,7 @@ import {
   getStore,
 } from "@core/service-registry";
 
-import ScrollablePanel from "../../common-ui/ScrollablePanel";
+import ScrollablePanel from "../../../emu-ide/components/ScrollablePanel";
 import { ProjectState } from "@state/AppState";
 
 import DocumentTab from "./DocumentTab";

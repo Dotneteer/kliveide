@@ -2,8 +2,8 @@ import { AppState } from "@state/AppState";
 import * as React from "react";
 import { useSelector } from "react-redux";
 import { getVersion } from "../../version";
-import { Icon } from "../common-ui/Icon";
-import { Gap, Section, Label } from "../common-ui/StatusbarStyles";
+import { Icon } from "../../emu-ide/components/Icon";
+import { Gap, Section, Label } from "../../emu-ide/components/StatusbarStyles";
 import styles from "styled-components";
 import { getNodeFile } from "../../core/abstractions/project-node";
 

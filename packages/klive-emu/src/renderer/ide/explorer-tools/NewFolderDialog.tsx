@@ -11,7 +11,7 @@ import {
   FieldRow,
   HintLabel,
   Label,
-} from "../../common-ui/FormElements";
+} from "../../../emu-ide/components/FormElements";
 import { FileExistsResponse } from "@core/messaging/message-types";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { NewFileData } from "./NewFileData";

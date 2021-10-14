@@ -3,7 +3,7 @@ import "_public/style.scss";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
-import { registerThemes } from "../common-ui/register-themes";
+import { registerThemes } from "../../emu-ide/components/register-themes";
 import IdeApp from "./IdeApp";
 import {
   CODE_RUNNER_SERVICE,
@@ -27,7 +27,7 @@ import {
 import { KliveStore } from "@state/KliveStore";
 import { applyMiddleware, combineReducers, createStore } from "redux";
 import { IpcRendereApi } from "../../exposed-apis";
-import { RendererToMainStateForwarder } from "../common-ui/RendererToMainStateForwarder";
+import { RendererToMainStateForwarder } from "../../emu-ide/components/RendererToMainStateForwarder";
 import { KliveAction } from "@state/state-core";
 import { appReducers } from "@state/app-reducers";
 import { AppState, getInitialAppState } from "@state/AppState";
@@ -35,8 +35,8 @@ import { ForwardActionRequest } from "@core/messaging/message-types";
 import { SideBarService } from "./side-bar/SideBarService";
 import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";
-import { ThemeService } from "../common-ui/themes/theme-service";
-import { ModalDialogService } from "../common-ui/modal-service";
+import { ThemeService } from "../../emu-ide/themes/theme-service";
+import { ModalDialogService } from "../../emu-ide/components/modal-service";
 import { DocumentService } from "./document-area/DocumentService";
 import { InteractivePaneService } from "./tool-area/InteractiveService";
 import { OutputPaneService } from "./tool-area/OutputPaneService";
@@ -47,7 +47,7 @@ import { registerCommonCommands } from "@shared/command/common-commands";
 import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
-import { DialogService } from "../common-ui/DialogService";
+import { DialogService } from "../../emu-ide/components/DialogService";
 import { CodeRunnerService } from "../machines/CodeRunnerService";
 
 // ------------------------------------------------------------------------------

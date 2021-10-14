@@ -1,6 +1,6 @@
 import { getThemeService } from "@core/service-registry";
-import { darkTheme } from "./themes/dark-theme";
-import { lightTheme } from "./themes/light-theme";
+import { darkTheme } from "../themes/dark-theme";
+import { lightTheme } from "../themes/light-theme";
 
 export function registerThemes(isWindows: boolean): void {
   const themeService = getThemeService();

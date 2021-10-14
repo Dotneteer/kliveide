@@ -6,7 +6,7 @@ import {
   GetMachineStateResponse,
   GetMemoryContentsResponse,
 } from "@core/messaging/message-types";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { MachineState } from "../../core/abstractions/vm-core-types";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 

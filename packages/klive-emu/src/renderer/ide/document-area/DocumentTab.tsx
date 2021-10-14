@@ -7,7 +7,7 @@ import {
   getThemeService,
 } from "@core/service-registry";
 
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { IDocumentPanel } from "@abstractions/document-service";
 import { MenuItem } from "@abstractions/command-def";

@@ -4,8 +4,8 @@ import { connect } from "react-redux";
 import { dispatch } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
-import { ToolbarIconButton } from "../common-ui/ToolbarIconButton";
-import { ToolbarSeparator } from "../common-ui/ToolbarSeparator";
+import { ToolbarIconButton } from "../../emu-ide/components/ToolbarIconButton";
+import { ToolbarSeparator } from "../../emu-ide/components/ToolbarSeparator";
 import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
 import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
 import {

@@ -1,5 +1,5 @@
 import { IDocumentPanel } from "@abstractions/document-service";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { ProjectNode } from "../../../core/abstractions/project-node";
 
 /**

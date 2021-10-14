@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties } from "react";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
 import { separatorLine, valueItemStyle } from "../../ide/utils/content-utils";

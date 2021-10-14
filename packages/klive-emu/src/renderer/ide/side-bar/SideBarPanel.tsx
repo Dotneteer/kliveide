@@ -8,7 +8,7 @@ import {
 } from "@core/service-registry";
 
 import { useEffect, useState } from "react";
-import { animationTick } from "../../common-ui/utils";
+import { animationTick } from "../../../emu-ide/components/component-utils";
 import SideBarPanelHeader from "./SideBarPanelHeader";
 import { AppState } from "@state/AppState";
 import { ISideBarPanel } from "@abstractions/side-bar-service";

@@ -10,7 +10,7 @@ import {
 import { getContextMenuService } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
-import { animationTick } from "../../common-ui/utils";
+import { animationTick } from "../../../emu-ide/components/component-utils";
 
 import { useState } from "react";
 import { useEffect } from "react";

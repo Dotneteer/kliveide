@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { getState } from "@core/service-registry";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import {
   ExecutionState,
   IKliveCommand,

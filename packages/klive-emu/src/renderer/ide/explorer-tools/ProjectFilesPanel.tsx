@@ -12,19 +12,19 @@ import {
 
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../../common-ui/VirtualizedList";
+} from "../../../emu-ide/components/VirtualizedList";
 import { SideBarPanelDescriptorBase } from "../side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../SideBarPanelBase";
 import { ITreeNode, ProjectNode } from "@abstractions/project-node";
 import { CSSProperties } from "react";
-import { Icon } from "../../common-ui/Icon";
+import { Icon } from "../../../emu-ide/components/Icon";
 import { AppState, ProjectState } from "@state/AppState";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import {
   ConfirmDialogResponse,
   GetFileContentsResponse,
 } from "@core/messaging/message-types";
-import { TreeNode } from "../../common-ui/TreeNode";
+import { TreeNode } from "../../../emu-ide/components/TreeNode";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";

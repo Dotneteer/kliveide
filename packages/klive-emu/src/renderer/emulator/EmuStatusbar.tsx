@@ -7,8 +7,8 @@ import {
 
 import { getVersion } from "../../version";
 import { AppState } from "@state/AppState";
-import { Icon } from "../common-ui/Icon";
-import { Root, Gap, Section, Label } from "../common-ui/StatusbarStyles";
+import { Icon } from "../../emu-ide/components/Icon";
+import { Root, Gap, Section, Label } from "../../emu-ide/components/StatusbarStyles";
 import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 /**

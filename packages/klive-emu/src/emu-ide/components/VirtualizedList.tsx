@@ -3,7 +3,7 @@ import { CSSProperties, useEffect } from "react";
 import { useRef } from "react";
 import { useState } from "react";
 import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
-import { handleScrollKeys } from "./utils";
+import { handleScrollKeys } from "./component-utils";
 import ReactResizeDetector from "react-resize-detector";
 import { useLayoutEffect } from "react";
 

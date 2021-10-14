@@ -1,5 +1,5 @@
 import { ITreeNode, ITreeView, ProjectNode } from "./project-node";
-import { ILiteEvent } from "@core/LiteEvent";
+import { ILiteEvent } from "@core/utils/lite-event";
 import { DirectoryContent } from "@core/state/AppState";
 
 /**

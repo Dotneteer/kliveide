@@ -1,8 +1,7 @@
 import { dispatch, getState } from "@core/service-registry";
 
 import { setMachineTypeAction } from "@state/machine-type-reducer";
-import { ILiteEvent, LiteEvent } from "@core/LiteEvent";
-import { delay } from "../../common-ui/utils";
+import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { ZxSpectrum128Core } from "../zx-spectrum/ZxSpectrum128Core";
 import { ZxSpectrum48Core } from "../zx-spectrum/ZxSpectrum48Core";
 import { VirtualMachineCoreBase } from "./VirtualMachineCoreBase";
@@ -25,6 +24,7 @@ import { FrameDiagData } from "@state/AppState";
 import { CambridgeZ88Core } from "../cambridge-z88/CambridgeZ88Core";
 import { KliveConfiguration } from "@abstractions/klive-configuration";
 import { CodeToInject } from "@abstractions/code-runner-service";
+import { delay } from "@core/utils/timing";
 
 /**
  * This class represents the states of the virtual machine as

@@ -11,7 +11,7 @@ import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import VirtualizedList, {
   VirtualizedListApi,
-} from "../../common-ui/VirtualizedList";
+} from "../../../emu-ide/components/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { IOutputPane } from "@abstractions/output-pane-service";
 
