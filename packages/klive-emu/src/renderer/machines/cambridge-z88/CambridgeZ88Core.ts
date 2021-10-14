@@ -23,7 +23,7 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "@shared/machines/macine-commands";
+} from "../../machines/cambridge-z88/macine-commands";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
 import {
   ICustomDisassembler,

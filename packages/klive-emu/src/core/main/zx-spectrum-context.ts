@@ -3,7 +3,7 @@ import * as fs from "fs";
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { AppState } from "@state/AppState";
-import { BinaryReader } from "@shared/utils/BinaryReader";
+import { BinaryReader } from "@core/utils/BinaryReader";
 import { checkTapeFile } from "@shared/tape/readers";
 import {
   spectrumBeamPositionAction,
@@ -11,7 +11,7 @@ import {
   spectrumTapeContentsAction,
 } from "@state/spectrum-specific-reducer";
 import { emuSetClockMultiplierAction, emuSetKeyboardLayoutAction } from "@state/emulator-panel-reducer";
-import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
+import { ExtraMachineFeatures } from "@abstractions/machine-specfic";
 import {
   setSoundLevel,
   setSoundLevelMenu,

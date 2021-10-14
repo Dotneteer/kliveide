@@ -1,5 +1,5 @@
-import { BinaryReader } from "../utils/BinaryReader";
-import { BinaryWriter } from "../utils/BinaryWriter";
+import { BinaryReader } from "@core/utils/BinaryReader";
+import { BinaryWriter } from "@core/utils/BinaryWriter";
 import { TapeFileReader, ITapeDataBlock } from "../../renderer/machines/zx-spectrum/tape-data";
 
 /**

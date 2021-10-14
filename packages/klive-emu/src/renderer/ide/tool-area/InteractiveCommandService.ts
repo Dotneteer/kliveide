@@ -1,11 +1,11 @@
 import { IOutputBuffer } from "@abstractions/output-pane-service";
-import { parseCommand } from "@shared/command-parser/token-stream";
 import {
   InteractiveCommandContext,
   InteractiveCommandInfo,
   InteractiveCommandResult,
   IInteractiveCommandService,
 } from "@abstractions/interactive-command-service";
+import { parseCommand } from "./token-stream";
 
 /**
  * This class is responsible to execute commands

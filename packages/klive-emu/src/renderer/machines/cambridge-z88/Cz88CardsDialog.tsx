@@ -9,7 +9,7 @@ import {
   SlotContent,
   SlotState,
   Z88CardsState,
-} from "@shared/machines/cz88-specific";
+} from "../../../extensions/cz88/common/cz88-specific";
 import { useState } from "react";
 import { Icon } from "../../../emu-ide/components/Icon";
 import { EmuOpenFileDialogResponse } from "@core/messaging/message-types";

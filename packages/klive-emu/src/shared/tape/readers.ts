@@ -1,4 +1,4 @@
-import { BinaryReader } from "../utils/BinaryReader";
+import { BinaryReader } from "@core/utils/BinaryReader";
 import { TzxReader } from "./tzx-file";
 import { TapReader } from "./tap-file";
 

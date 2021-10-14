@@ -1,4 +1,4 @@
-import { BinaryReader } from "@shared/utils/BinaryReader";
+import { BinaryReader } from "@core/utils/BinaryReader";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import {

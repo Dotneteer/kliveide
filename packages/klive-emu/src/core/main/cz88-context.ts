@@ -27,17 +27,17 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "@shared/machines/macine-commands";
+} from "../../renderer/machines/cambridge-z88/macine-commands";
 import {
   Cz88ContructionOptions,
   SlotContent,
   Z88CardsState,
-} from "@shared/machines/cz88-specific";
+} from "../../extensions/cz88/common/cz88-specific";
 import {
   executeMachineCommand,
   ExecuteMachineCommandResponse,
 } from "@core/messaging/message-types";
-import { ExtraMachineFeatures } from "@shared/machines/machine-specfic";
+import { ExtraMachineFeatures } from "@abstractions/machine-specfic";
 import { VirtualMachineType } from "./machine-registry";
 import { sendFromMainToEmu } from "@core/messaging/message-sending";
 import { dispatch, getState } from "@core/service-registry";
