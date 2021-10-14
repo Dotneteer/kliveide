@@ -67,3 +67,31 @@ export function removeBreakpoint(
   }
   return breakpoints.slice(0);
 }
+
+/**
+ * Comparison function for breakpoint definitions
+ * @param a First breakpoint
+ * @param b Second breakpoint
+ * @returns Comparison value
+ */
+export function compareBreakpoints(
+  a: BreakpointDefinition,
+  b: BreakpointDefinition
+): number {
+  if (a.type === "binary" && b.type === "source") {
+    return 1;
+  }
+  if (a.type === "binary" && b.type === "binary") {
+    return a.location - b.location;
+  }
+  if (a.type === "source" && b.type === "binary") {
+    return -1;
+  }
+  if (a.type === "source" && b.type === "source") {
+    return a.resource > b.resource
+      ? 1
+      : a.resource < b.resource
+      ? -1
+      : a.line - b.line;
+  }
+}

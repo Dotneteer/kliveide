@@ -1,3 +1,4 @@
+import { defaults } from "lodash";
 import { IOutputBuffer } from "./output-pane-service";
 
 /**
@@ -323,4 +324,23 @@ export interface IInteractiveCommandService {
     messages: TraceMessage[],
     context: InteractiveCommandContext
   ): void;
+}
+
+/**
+ * Gets the numeric value of the specified token
+ * @param token Token to parse
+ * @returns Numeric value, if token is numeric; otherwise, null
+ */
+export function getNumericTokenValue(token: Token) : number | null {
+  const plainText = token.text.replace(/['_]/g, "");
+  switch (token.type) {
+    case TokenType.DecimalLiteral:
+      return parseInt(plainText, 10);
+    case TokenType.BinaryLiteral:
+      return parseInt(plainText.substr(1), 2);
+    case TokenType.HexadecimalLiteral:
+      return parseInt(plainText.substr(1), 16);
+    default:
+      return null;
+  }
 }

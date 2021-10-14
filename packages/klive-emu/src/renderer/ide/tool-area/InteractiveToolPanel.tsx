@@ -151,7 +151,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
             spellCheck={false}
             onKeyDown={(e) => this.keyDown(e)}
             disabled={isExecuting}
-            placeholder={isExecuting ? "Executing command..." : ""}
+            placeholder={isExecuting ? "Executing command..." : "Type ? + Enter for help"}
           />
         </div>
       </>
