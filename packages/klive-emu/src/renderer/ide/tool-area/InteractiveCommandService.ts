@@ -4,6 +4,10 @@ import {
   InteractiveCommandInfo,
   InteractiveCommandResult,
   IInteractiveCommandService,
+  InteractiveCommandBase,
+  Token,
+  TraceMessage,
+  TraceMessageType,
 } from "@abstractions/interactive-command-service";
 import { parseCommand } from "./token-stream";
 
@@ -11,19 +15,33 @@ import { parseCommand } from "./token-stream";
  * This class is responsible to execute commands
  */
 export class InteractiveCommandService implements IInteractiveCommandService {
-  private readonly _commands = new Map<string, InteractiveCommandInfo>();
+  private readonly _commands: InteractiveCommandInfo[] = [];
+
+  /**
+   * Initializes the interactive command registry
+   */
+  constructor() {
+    this.registerCommand(new HelpCommand());
+  }
 
   /**
    * Registers a command
    * @param command Command to register
    */
   registerCommand(command: InteractiveCommandInfo): void {
-    if (this._commands.has(command.id)) {
+    if (this.getCommandInfo(command.id)) {
       throw new Error(
         `Command with ID ${command.id} has already been registered.`
       );
     }
-    this._commands.set(command.id, command);
+    this._commands.push(command);
+  }
+
+  /**
+   * Retrieves all registered commands
+   */
+  getRegisteredCommands(): InteractiveCommandInfo[] {
+    return this._commands.slice(0);
   }
 
   /**
@@ -32,7 +50,20 @@ export class InteractiveCommandService implements IInteractiveCommandService {
    * @returns Command information, if found; otherwise, undefined
    */
   getCommandInfo(id: string): InteractiveCommandInfo | undefined {
-    return this._commands.get(id);
+    return this._commands.find((c) => c.id === id);
+  }
+
+  /**
+   * Gets the information about the command with the specified ID or alias
+   * @param idOrAlias
+   * @returns Command information, if found; otherwise, undefined
+   */
+  getCommandByIdOrAlias(idOrAlias: string): InteractiveCommandInfo | undefined {
+    return this._commands.find(
+      (c) =>
+        c.id === idOrAlias ||
+        (c.aliases && c.aliases.some((a) => a === idOrAlias))
+    );
   }
 
   /**
@@ -54,7 +85,7 @@ export class InteractiveCommandService implements IInteractiveCommandService {
 
     // --- Test if command is registered
     const commandId = tokens[0].text;
-    const commandInfo = this._commands.get(tokens[0].text);
+    const commandInfo = this.getCommandByIdOrAlias(tokens[0].text);
     if (!commandInfo) {
       return {
         success: false,
@@ -66,7 +97,99 @@ export class InteractiveCommandService implements IInteractiveCommandService {
     const context: InteractiveCommandContext = {
       argTokens: tokens.slice(1),
       output: buffer,
+      service: this,
     };
     return await commandInfo.execute(context);
+  }
+
+  /**
+   * Displays the specified trace messages
+   * @param messages Trace messages to display
+   * @param context Context to display the messages in
+   */
+  displayTraceMessages(
+    messages: TraceMessage[],
+    context: InteractiveCommandContext
+  ): void {
+    for (var trace of messages) {
+      context.output.color(
+        trace.type === TraceMessageType.Error
+          ? "bright-red"
+          : trace.type === TraceMessageType.Warning
+          ? "yellow"
+          : "bright-blue"
+      );
+      context.output.writeLine(trace.message);
+    }
+  }
+}
+
+class HelpCommand extends InteractiveCommandBase {
+  private _arg: string | null = null;
+
+  readonly id = "help";
+  readonly description = "Displays help information about commands";
+  readonly usage = "help [<command>]";
+  readonly aliases = ["?", "-?", "-h"];
+
+  /**
+   * Validates the input arguments
+   * @param args Arguments to validate
+   * @returns A list of issues
+   */
+  async validateArgs(args: Token[]): Promise<TraceMessage | TraceMessage[]> {
+    // --- Check argument number
+    if (args.length > 1) {
+      return {
+        type: TraceMessageType.Error,
+        message: "Invalid number of arguments.",
+      };
+    }
+    this._arg = args.length ? args[0].text : null;
+    return [];
+  }
+
+  /**
+   * Executes the command within the specified context
+   */
+  async doExecute(
+    context: InteractiveCommandContext
+  ): Promise<InteractiveCommandResult> {
+    if (this._arg) {
+      // --- Single command help
+      const command = context.service.getCommandByIdOrAlias(this._arg);
+      if (command) {
+        context.service.displayTraceMessages(command.usageMessage(), context);
+        return {
+          success: true,
+        };
+      } else {
+        return {
+          success: false,
+          finalMessage: `Cannot find the ${this._arg} interactive command.`
+        };
+      }
+    } else {
+      context.output.color("bright-blue");
+      context.output.writeLine("Available interactive commands:");
+      let count = 0;
+      context.service
+        .getRegisteredCommands()
+        .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
+        .forEach((ci) => {
+          context.output.color("bright-magenta");
+          context.output.bold(true);
+          context.output.write(`  ${ci.id}`);
+          context.output.bold(false);
+          context.output.color("bright-blue");
+          context.output.write(`: `);
+          context.output.writeLine(ci.description);
+          count++;
+        });
+        context.output.writeLine(`${count} command${count > 1 ? "s": ""} displayed.`);
+      }
+    return {
+      success: true,
+    };
   }
 }

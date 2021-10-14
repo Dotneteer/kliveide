@@ -3,7 +3,7 @@ import { IOutputBuffer } from "./output-pane-service";
 /**
  * Represents a token
  */
- export interface Token {
+export interface Token {
   /**
    * The raw text of the token
    */
@@ -23,7 +23,7 @@ import { IOutputBuffer } from "./output-pane-service";
 /**
  * Represents the location of a token
  */
- export interface TokenLocation {
+export interface TokenLocation {
   /**
    * Start position in the source stream
    */
@@ -53,7 +53,7 @@ import { IOutputBuffer } from "./output-pane-service";
 /**
  * This enumeration defines the token types
  */
- export enum TokenType {
+export enum TokenType {
   Eof = -1,
   Ws = -2,
   InlineComment = -3,
@@ -79,12 +79,35 @@ export type InteractiveCommandInfo = {
   /**
    * The unique identifier of the command
    */
-  id: string;
+  readonly id: string;
+
+  /**
+   * Concise explanation of the command
+   */
+  readonly description: string;
+
+  /**
+   * Command aliases;
+   */
+  readonly aliases?: string[];
+
+  /**
+   * Represents the usage of a command
+   */
+  readonly usage: string | string[];
 
   /**
    * Executes the command within the specified context
    */
-  execute: (context: InteractiveCommandContext) => Promise<InteractiveCommandResult>;
+  execute: (
+    context: InteractiveCommandContext
+  ) => Promise<InteractiveCommandResult>;
+
+  /**
+   * Retrieves the usage message
+   * @returns
+   */
+  usageMessage: () => TraceMessage[];
 };
 
 /**
@@ -100,6 +123,11 @@ export type InteractiveCommandContext = {
    * The buffer to send output messages
    */
   output: IOutputBuffer;
+
+  /**
+   * The command service instance
+   */
+  service: IInteractiveCommandService;
 };
 
 /**
@@ -135,10 +163,10 @@ export type TraceMessage = {
 };
 
 /**
- * IInteractiveCommandService is responsible for keeping a registry of 
+ * IInteractiveCommandService is responsible for keeping a registry of
  * commands that can be executed in the Interactive window pane.
  */
-export abstract class InteractiveCommandBase {
+export abstract class InteractiveCommandBase implements InteractiveCommandInfo {
   /**
    * The unique identifier of the command
    */
@@ -150,9 +178,21 @@ export abstract class InteractiveCommandBase {
   abstract readonly usage: string | string[];
 
   /**
+   * Concise explanation of the command
+   */
+  abstract readonly description: string;
+
+  /**
+   * Command aliases;
+   */
+  readonly aliases?: string[] = [];
+
+  /**
    * Executes the command within the specified context
    */
-  async execute(context: InteractiveCommandContext): Promise<InteractiveCommandResult> {
+  async execute(
+    context: InteractiveCommandContext
+  ): Promise<InteractiveCommandResult> {
     // --- Validate the arguments and display potential issues
     const received = await this.validateArgs(context.argTokens);
     const validationMessages = Array.isArray(received) ? received : [received];
@@ -162,16 +202,7 @@ export abstract class InteractiveCommandBase {
     if (hasError) {
       validationMessages.push(...this.usageMessage());
     }
-    for (var trace of validationMessages) {
-      context.output.color(
-        trace.type === TraceMessageType.Error
-          ? "bright-red"
-          : trace.type === TraceMessageType.Warning
-          ? "yellow"
-          : "bright-blue"
-      );
-      context.output.writeLine(trace.message);
-    }
+    context.service.displayTraceMessages(validationMessages, context);
     if (hasError) {
       // --- Sign validation error
       return {
@@ -187,7 +218,9 @@ export abstract class InteractiveCommandBase {
    * Executes the command after argument validation
    * @param context Command execution context
    */
-  async doExecute(context: InteractiveCommandContext): Promise<InteractiveCommandResult> {
+  async doExecute(
+    _context: InteractiveCommandContext
+  ): Promise<InteractiveCommandResult> {
     return {
       success: true,
       finalMessage: "This command has been executed successfully.",
@@ -210,13 +243,36 @@ export abstract class InteractiveCommandBase {
   usageMessage(): TraceMessage[] {
     const usage = this.usage;
     const messages = typeof usage === "string" ? [usage] : usage;
-    return messages.map(
-      (message) =>
-        <TraceMessage>{
+    const renderedMessages: TraceMessage[] = [];
+    renderedMessages.push(<TraceMessage>{
+      type: TraceMessageType.Info,
+      message: this.description,
+    });
+    if (messages.length > 0) {
+      renderedMessages.push(<TraceMessage>{
+        type: TraceMessageType.Info,
+        message: `Usage: ${messages[0]}`,
+      });
+      messages.slice(1).forEach((m) =>
+        renderedMessages.push(<TraceMessage>{
           type: TraceMessageType.Info,
-          message,
-        }
-    );
+          message: m,
+        })
+      );
+    }
+    if (this.aliases && this.aliases.length > 0) {
+      renderedMessages.push(<TraceMessage>{
+        type: TraceMessageType.Info,
+        message: `${
+          this.aliases.length === 1 ? "Alias" : "Aliases"
+        }: ${this.aliases.map((a) => getAlias(a)).join(", ")}`,
+      });
+    }
+    return renderedMessages;
+
+    function getAlias(alias: string): string {
+      return alias;
+    }
   }
 }
 
@@ -231,11 +287,23 @@ export interface IInteractiveCommandService {
   registerCommand(command: InteractiveCommandInfo): void;
 
   /**
+   * Retrieves all registered commands
+   */
+  getRegisteredCommands(): InteractiveCommandInfo[];
+
+  /**
    * Gets the information about the command with the specified ID
    * @param id Command identifier
    * @returns Command information, if found; otherwise, undefined
    */
   getCommandInfo(id: string): InteractiveCommandInfo | undefined;
+
+  /**
+   * Gets the information about the command with the specified ID or alias
+   * @param idOrAlias
+   * @returns Command information, if found; otherwise, undefined
+   */
+  getCommandByIdOrAlias(idOrAlias: string): InteractiveCommandInfo | undefined;
 
   /**
    * Executes the specified command line
@@ -245,4 +313,14 @@ export interface IInteractiveCommandService {
     command: string,
     buffer: IOutputBuffer
   ): Promise<InteractiveCommandResult>;
+
+  /**
+   * Displays the specified trace messages
+   * @param messages Trace messages to display
+   * @param context Context to display the messages in
+   */
+  displayTraceMessages(
+    messages: TraceMessage[],
+    context: InteractiveCommandContext
+  ): void;
 }

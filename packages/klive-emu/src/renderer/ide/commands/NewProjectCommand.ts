@@ -17,8 +17,10 @@ import { sendFromIdeToEmu } from "@core/messaging/message-sending";
  */
 export class NewProjectCommand extends InteractiveCommandBase {
   readonly id = "new-project";
-  readonly usage =
-    "Usage: new-project <machine-id> [<root-folder>] <project-name>";
+  readonly description = "Creates a new Klive project folder";
+
+  readonly usage = "new-project <machine-id> [<root-folder>] <project-name>";
+  readonly aliases = ["new-p", "np", "n-p"];
 
   // --- Command argument placeholders
   private _machineTypeArg: string;
@@ -90,13 +92,12 @@ export class NewProjectCommand extends InteractiveCommandBase {
    * Executes the command within the specified context
    */
   async doExecute(): Promise<InteractiveCommandResult> {
-    const operation =
-      await sendFromIdeToEmu<CreateKliveProjectResponse>({
-        type: "CreateKliveProject",
-        machineType: this._machineTypeArg,
-        rootFolder: this._rootFolderArg,
-        projectFolder: this._projectFolderArg,
-      });
+    const operation = await sendFromIdeToEmu<CreateKliveProjectResponse>({
+      type: "CreateKliveProject",
+      machineType: this._machineTypeArg,
+      rootFolder: this._rootFolderArg,
+      projectFolder: this._projectFolderArg,
+    });
     return {
       success: !operation.error,
       finalMessage: operation.error
