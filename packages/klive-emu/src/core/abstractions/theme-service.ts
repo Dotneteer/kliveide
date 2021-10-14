@@ -109,6 +109,11 @@
 
   "--explorer-folder-color": string;
   "--explorer-file-color": string;
+
+  "--debug-bp-color": string;
+  "--debug-active-bp-color": string;
+  "--debug-active-bp-background-color": string;
+  "--debug-disabled-bp-color": string;
 }
 
 /**

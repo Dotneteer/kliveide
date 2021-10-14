@@ -115,6 +115,32 @@ export default class EditorDocument extends React.Component<Props, State> {
     if (this.props.descriptor.initialFocus) {
       window.requestAnimationFrame(() => this._editor.focus());
     }
+    let oldDecorations = editor.deltaDecorations(
+      [],
+      [
+        createBreakpointDecoration(2),
+        createCurrentBreakpointDecoration(4),
+        createDisabledBreakpointDecoration(6),
+      ]
+    );
+    console.log(oldDecorations);
+    editor.onMouseDown((e) => {
+      if (e.target.type === 2) {
+        const lineNo = e.target.position.lineNumber;
+        console.log(
+          `Margin: (${e.target.position.lineNumber}, ${e.target.position.column}`
+        );
+        oldDecorations = editor.deltaDecorations(oldDecorations, [
+          {
+            range: new monaco.Range(lineNo, 1, lineNo, 1),
+            options: {
+              isWholeLine: false,
+              glyphMarginClassName: "myGlyphMarginClass",
+            },
+          },
+        ]);
+      }
+    });
   }
 
   async onChange(
@@ -191,6 +217,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     };
     const options = {
       selectOnLineNumbers: true,
+      glyphMargin: true,
     };
 
     const tone = getThemeService().getActiveTheme().tone;
@@ -269,4 +296,55 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
       />
     );
   }
+}
+
+/**
+ * Creates a breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ */
+function createBreakpointDecoration(
+  lineNo: number
+): monacoEditor.editor.IModelDeltaDecoration {
+  return {
+    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    options: {
+      isWholeLine: false,
+      glyphMarginClassName: "breakpointMargin",
+    },
+  };
+}
+
+/**
+ * Creates a disabled breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ * @returns
+ */
+function createDisabledBreakpointDecoration(
+  lineNo: number
+): monacoEditor.editor.IModelDeltaDecoration {
+  return {
+    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    options: {
+      isWholeLine: false,
+      glyphMarginClassName: "disabledBreakpointMargin",
+    },
+  };
+}
+
+/**
+ * Creates a disabled breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ * @returns
+ */
+function createCurrentBreakpointDecoration(
+  lineNo: number
+): monacoEditor.editor.IModelDeltaDecoration {
+  return {
+    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    options: {
+      isWholeLine: true,
+      className: "activeBreakpointLine",
+      glyphMarginClassName: "activeBreakpointMargin",
+    },
+  };
 }
