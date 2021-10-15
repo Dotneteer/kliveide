@@ -69,6 +69,80 @@ export function removeBreakpoint(
 }
 
 /**
+ * Enables the specified breakpoint
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to enable
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+ export function enableBreakpoint(
+  breakpoints: BreakpointDefinition[],
+  bp: BreakpointDefinition
+): BreakpointDefinition[] {
+  const def = findBreakpoint(breakpoints, bp);
+  if (def) {
+    delete def.disabled;
+  }
+  return breakpoints.slice(0);
+}
+
+/**
+ * Enables all breakpoints
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to enable
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+ export function enableAllBreakpoints(
+  breakpoints: BreakpointDefinition[],
+): BreakpointDefinition[] {
+  breakpoints.forEach(bp => delete bp.disabled);
+  return breakpoints.slice(0);
+}
+
+/**
+ * Disables the specified breakpoint
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to disable
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+export function disableBreakpoint(
+  breakpoints: BreakpointDefinition[],
+  bp: BreakpointDefinition
+): BreakpointDefinition[] {
+  const def = findBreakpoint(breakpoints, bp);
+  if (def) {
+    def.disabled = true;
+  }
+  return breakpoints.slice(0);
+}
+
+/**
+ * Removes a breakpoint from the array of existing breakpoints
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to remove
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+ export function findBreakpoint(
+  breakpoints: BreakpointDefinition[],
+  bp: BreakpointDefinition
+): BreakpointDefinition | undefined {
+  let def: BreakpointDefinition | null = null;
+  if (bp.type === "source") {
+    def = breakpoints.find(
+      (p) =>
+        (p as SourceCodeBreakpoint).line === bp.line &&
+        (p as SourceCodeBreakpoint).resource === bp.resource
+    );
+  } else {
+    def = breakpoints.find(
+      (p) =>
+        (p as BinaryBreakpoint).location === bp.location &&
+        (p as BinaryBreakpoint).partition === bp.partition
+    );
+  }
+  return def;
+}
+
+/**
  * Comparison function for breakpoint definitions
  * @param a First breakpoint
  * @param b Second breakpoint

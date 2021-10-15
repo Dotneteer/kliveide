@@ -10,6 +10,7 @@ export const mpmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       lineComment: ";",
     },
   },
+  supportsBreakpoints: false,
   languageDef: {
     keywords: [
       "mpm", // Please remove this

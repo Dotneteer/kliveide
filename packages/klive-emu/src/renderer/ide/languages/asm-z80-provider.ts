@@ -10,6 +10,7 @@ export const asmkZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       lineComment: ";",
     },
   },
+  supportsBreakpoints: true,
   languageDef: {
     keywords: [
       "nop",

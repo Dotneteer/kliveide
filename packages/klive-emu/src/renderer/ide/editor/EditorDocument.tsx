@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getDocumentService, getThemeService } from "@core/service-registry";
+import { getDocumentService, getState, getStore, getThemeService } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
 import MonacoEditor from "react-monaco-editor";
@@ -41,6 +41,8 @@ export default class EditorDocument extends React.Component<Props, State> {
   private _editor: monacoEditor.editor.IStandaloneCodeEditor;
   private _unsavedChangeCounter = 0;
   private _descriptorChanged: () => void;
+  private _refreshBreakpoints: () => void;
+  private _subscribedToBreakpointEvents = false;
 
   constructor(props: Props) {
     super(props);
@@ -50,19 +52,27 @@ export default class EditorDocument extends React.Component<Props, State> {
       show: false,
     };
     this._descriptorChanged = () => this.descriptorChanged();
+    this._refreshBreakpoints = () => this.refreshBreakpoints();
   }
 
+  /**
+   * Set up the Monaco editor before instantiating it
+   * @param monaco
+   */
   editorWillMount(monaco: typeof monacoEditor): void {
+    // --- Does the editor uses a custom language (and not one supported
+    // --- out of the box)?
     if (
       !monaco.languages
         .getLanguages()
         .some(({ id }) => id === this.props.language)
     ) {
+      // --- Do we support that custom language?
       const languageInfo = getDocumentService().getCustomLanguage(
         this.props.language
       );
       if (languageInfo) {
-        // --- Register a new language
+        // --- Yes, register a new language
         monaco.languages.register({ id: languageInfo.id });
 
         // --- Register a tokens provider for the language
@@ -101,13 +111,20 @@ export default class EditorDocument extends React.Component<Props, State> {
     }
   }
 
+  /**
+   * Set up the editor after that has been instantiated
+   * @param editor
+   * @param monaco
+   */
   editorDidMount(
     editor: monacoEditor.editor.IStandaloneCodeEditor,
     monaco: typeof monacoEditor
   ) {
+    // --- Restore thr previously saved state, provided we have one
     monaco.languages.setMonarchTokensProvider;
     this._editor = editor;
-    const state = getEditorService().loadState(this.props.descriptor.id);
+    const documentResource = this.props.descriptor.id;
+    const state = getEditorService().loadState(documentResource);
     if (state) {
       this._editor.setValue(state.text);
       this._editor.restoreViewState(state.viewState);
@@ -115,36 +132,53 @@ export default class EditorDocument extends React.Component<Props, State> {
     if (this.props.descriptor.initialFocus) {
       window.requestAnimationFrame(() => this._editor.focus());
     }
-    let oldDecorations = editor.deltaDecorations(
-      [],
-      [
-        createBreakpointDecoration(2),
-        createCurrentBreakpointDecoration(4),
-        createDisabledBreakpointDecoration(6),
-      ]
+
+    // --- Dos the editor support breakpoints?
+    const languageInfo = getDocumentService().getCustomLanguage(
+      this.props.language
     );
-    console.log(oldDecorations);
-    editor.onMouseDown((e) => {
-      if (e.target.type === 2) {
-        const lineNo = e.target.position.lineNumber;
-        console.log(
-          `Margin: (${e.target.position.lineNumber}, ${e.target.position.column}`
-        );
-        oldDecorations = editor.deltaDecorations(oldDecorations, [
-          {
-            range: new monaco.Range(lineNo, 1, lineNo, 1),
-            options: {
-              isWholeLine: false,
-              glyphMarginClassName: "myGlyphMarginClass",
+    if (languageInfo?.supportsBreakpoints) {
+      const store = getStore();
+      store.breakpointsChanged.on(this._refreshBreakpoints);
+      store.compilationChanged.on(this._refreshBreakpoints);
+      this._subscribedToBreakpointEvents = true;
+      // --- Prepare the editor for breakpoint handling
+      let oldDecorations = editor.deltaDecorations(
+        [],
+        [
+          createBreakpointDecoration(2),
+          createCurrentBreakpointDecoration(4),
+          createDisabledBreakpointDecoration(6),
+        ]
+      );
+      console.log(oldDecorations);
+      editor.onMouseDown((e) => {
+        if (e.target.type === 2) {
+          const lineNo = e.target.position.lineNumber;
+          console.log(
+            `Margin: (${e.target.position.lineNumber}, ${e.target.position.column}`
+          );
+          oldDecorations = editor.deltaDecorations(oldDecorations, [
+            {
+              range: new monaco.Range(lineNo, 1, lineNo, 1),
+              options: {
+                isWholeLine: false,
+                glyphMarginClassName: "myGlyphMarginClass",
+              },
             },
-          },
-        ]);
-      }
-    });
+          ]);
+        }
+      });
+    }
   }
 
-  async onChange(
-    newValue: string,
+  /**
+   * Respond to editor contents changes
+   * @param _newValue New editor contents
+   * @param e Description of changes
+   */
+  async onEditorContentsChange(
+    _newValue: string,
     e: monacoEditor.editor.IModelContentChangedEvent
   ) {
     // --- Make the document permanent
@@ -170,16 +204,27 @@ export default class EditorDocument extends React.Component<Props, State> {
     this._unsavedChangeCounter--;
   }
 
+  /**
+   * Subscribes to events after the component has been mounted
+   */
   componentDidMount(): void {
     this.setState({ show: true });
     this.props.descriptor.documentDescriptorChanged.on(this._descriptorChanged);
   }
 
+  /**
+   * Unsubscribes from events before the component is unmounted
+   */
   async componentWillUnmount(): Promise<void> {
     // --- Dispose event handler
     this.props.descriptor.documentDescriptorChanged.off(
       this._descriptorChanged
     );
+    if (this._subscribedToBreakpointEvents) {
+      const store = getStore();
+      store.breakpointsChanged.off(this._refreshBreakpoints);
+      store.compilationChanged.off(this._refreshBreakpoints);
+    }
 
     // --- Check if this document is still registered
     const docId = this.props.descriptor.id;
@@ -240,7 +285,7 @@ export default class EditorDocument extends React.Component<Props, State> {
               theme={theme}
               value={this.props.sourceCode}
               options={options}
-              onChange={(value, e) => this.onChange(value, e)}
+              onChange={(value, e) => this.onEditorContentsChange(value, e)}
               editorWillMount={(editor) => this.editorWillMount(editor)}
               editorDidMount={(editor, monaco) =>
                 this.editorDidMount(editor, monaco)
@@ -268,6 +313,18 @@ export default class EditorDocument extends React.Component<Props, State> {
     if (result.error) {
       console.error(result.error);
     }
+  }
+
+  /**
+   * Takes care that the editor's breakpoint decorations are updated
+   * @param breakpoints Current breakpoints
+   * @param compilation Current compilations
+   */
+  refreshBreakpoints(): void {
+    const state = getState();
+    const breakpoints = state.debugger?.breakpoints ?? [];
+    const compilation = state.compilation;
+    console.log("Refreshing breakpoints.");
   }
 }
 

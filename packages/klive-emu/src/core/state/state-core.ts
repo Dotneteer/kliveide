@@ -89,6 +89,9 @@ export interface ActionTypes {
   CLEAR_BREAKPOINTS: null;
   ADD_BREAKPOINT: null;
   REMOVE_BREAKPOINT: null;
+  DISABLE_BREAKPOINT: null;
+  ENABLE_BREAKPOINT: null;
+  ENABLE_ALL_BREAKPOINTS: null;
 
   // --- Builders
   CLEAR_BUILD_ROOTS: null;

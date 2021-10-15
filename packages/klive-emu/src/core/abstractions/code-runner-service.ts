@@ -37,9 +37,17 @@ export class InjectedSegment {
 export type CodeInjectionType = "inject" | "run" | "debug";
 
 /**
+ * Defines an abstract breakpoint
+ */
+interface BreakpointBase {
+  type: BreakpointDefinition["type"];
+  disabled?: boolean;
+}
+
+/**
  * Defines a breakpoint in the source code
  */
-export interface SourceCodeBreakpoint {
+export interface SourceCodeBreakpoint extends BreakpointBase {
   type: "source",
 
   /**
@@ -56,7 +64,7 @@ export interface SourceCodeBreakpoint {
 /**
  * Defines a binary breakpoint
  */
-export interface BinaryBreakpoint {
+export interface BinaryBreakpoint extends BreakpointBase {
   type: "binary",
   
   /**
