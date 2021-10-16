@@ -17,11 +17,12 @@ import { FileOperationResponse } from "@core/messaging/message-types";
 import { IDocumentPanel } from "@abstractions/document-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { getEditorService } from "./editorService";
-import { findBreakpoint } from "@abstractions/debug-helpers";
+import { findBreakpoint, removeBreakpoint } from "@abstractions/debug-helpers";
 import { SourceCodeBreakpoint } from "@abstractions/code-runner-service";
 import {
   addBreakpointAction,
   removeBreakpointAction,
+  scrollDownBreakpointsAction,
 } from "@core/state/debugger-reducer";
 
 // --- Wait 1000 ms before saving the document being edited
@@ -60,6 +61,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   private _subscribedToBreakpointEvents = false;
   private _oldDecorations: string[] = [];
   private _oldHoverDecorations: string[] = [];
+  private _previousContent: string | null = null;
 
   constructor(props: Props) {
     super(props);
@@ -137,7 +139,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     editor: monacoEditor.editor.IStandaloneCodeEditor,
     monaco: typeof monacoEditor
   ) {
-    // --- Restore thr previously saved state, provided we have one
+    // --- Restore the previously saved state, provided we have one
     monaco.languages.setMonarchTokensProvider;
     this._editor = editor;
     const documentResource = this.props.descriptor.id;
@@ -167,6 +169,9 @@ export default class EditorDocument extends React.Component<Props, State> {
 
       this.refreshBreakpoints();
     }
+
+    // --- Save the last value of the editor
+    this._previousContent = editor.getValue();
   }
 
   /**
@@ -189,12 +194,43 @@ export default class EditorDocument extends React.Component<Props, State> {
       documentService.registerDocument(currentDoc, true);
     }
 
+    // --- Check for special cases
+    if (e.changes.length > 0 && !e.isRedoing && !e.isUndoing) {
+      const change = e.changes[0];
+      console.log(e);
+      console.log("deleted:");
+      console.log(monacoEditor.editor.createModel(this._previousContent).getValueInRange(change.range));
+      console.log("inserted:")
+      console.log(change.text);
+     
+      if (change.range.startColumn === 1 && change.text === e.eol) {
+        // --- Special case: inserting a new line at the beginning of a line
+        const newBp = this.createBreakpointForLine(
+          change.range.startLineNumber
+        );
+        dispatch(
+          scrollDownBreakpointsAction(
+            newBp,
+            this._editor.getModel().getLineCount()
+          )
+        );
+      } else if (change.range.startColumn === 1 && change.text === "") {
+        // --- Special case: deleting a line back
+      }
+      else {
+        this.refreshBreakpoints();
+      }
+    }
+
+    // --- Save the current value as the previous one
+    this._previousContent = this._editor.getValue();
+
     // --- Save document after the change
     this._unsavedChangeCounter++;
     await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
     if (
       this._unsavedChangeCounter === 1 &&
-      this._editor?.getModel()?.getValue()
+      this._previousContent
     ) {
       await this.saveDocument(this._editor.getModel().getValue());
     }
@@ -281,7 +317,6 @@ export default class EditorDocument extends React.Component<Props, State> {
     ) {
       theme = `${this.props.language}-${tone}`;
     }
-    console.log("render");
     return (
       <>
         <div ref={this.divHost} style={placeholderStyle}>
@@ -338,16 +373,44 @@ export default class EditorDocument extends React.Component<Props, State> {
     const resource = this.props.descriptor.id.substr(projPath.length);
     const editorBps = breakpoints.filter(
       (bp) => bp.type === "source" && bp.resource === resource
-    );
-    const decorations = editorBps.map((bp) =>
-      createBreakpointDecoration((bp as SourceCodeBreakpoint).line)
-    );
+    ) as SourceCodeBreakpoint[];
+
+    // --- Get the active compilation result
+    const compilationResult = state?.compilation?.result;
+
+    // --- Create the array of decorators
+    const decorations: Decoration[] = [];
+    const editorLines = this._editor.getModel().getLineCount();
+    editorBps.forEach((bp) => {
+      let disabled = false;
+      if (compilationResult?.errors?.length === 0) {
+        // --- In case of a successful compilation, test if the breakpoint is allowed
+        const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
+          fi.filename.endsWith(resource)
+        );
+        if (fileIndex >= 0) {
+          // --- We have address information for this source code file
+          const bpInfo = compilationResult.listFileItems.find(
+            (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
+          );
+          disabled = !bpInfo;
+        }
+        console.log(compilationResult);
+      }
+      if (bp.line <= editorLines) {
+        const decoration = disabled
+          ? createDisabledBreakpointDecoration(bp.line)
+          : createBreakpointDecoration(bp.line);
+        decorations.push(decoration);
+      } else {
+        console.log(bp.line, editorLines);
+        dispatch(removeBreakpointAction(bp));
+      }
+    });
     this._oldDecorations = this._editor.deltaDecorations(
       this._oldDecorations,
       decorations
     );
-    // const compilation = state.compilation;
-    console.log("Refreshing breakpoints.");
   }
 
   /**
@@ -358,14 +421,17 @@ export default class EditorDocument extends React.Component<Props, State> {
     if (e.target?.type === 2) {
       // --- Mouse is over the margin, display the breakpoint placeholder
       const lineNo = e.target.position.lineNumber;
+      const existBp = this.findBreakpoint(lineNo);
+      const message = `Click to ${
+        existBp ? "remove the existing" : "add a new"
+      } breakpoint`;
       this._oldHoverDecorations = this._editor.deltaDecorations(
         this._oldHoverDecorations,
-        [createDisabledBreakpointDecoration(lineNo)]
+        [createHoverBreakpointDecoration(lineNo, message)]
       );
     } else {
       // --- Mouse is out of margin, remove the breakpoint placeholder
       this._editor.deltaDecorations(this._oldHoverDecorations, []);
-      console.log("Out", this._oldHoverDecorations);
     }
   }
 
@@ -374,9 +440,7 @@ export default class EditorDocument extends React.Component<Props, State> {
    * @param e
    */
   handleEditorMouseLeave(e: monacoEditor.editor.IEditorMouseEvent): void {
-    console.log(this._oldHoverDecorations);
     this._editor.deltaDecorations(this._oldHoverDecorations, []);
-    console.log(this._oldHoverDecorations);
   }
 
   /**
@@ -394,6 +458,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       } else {
         dispatch(addBreakpointAction(newBp));
       }
+      this.handleEditorMouseLeave(e);
     }
   }
 
@@ -475,6 +540,25 @@ function createBreakpointDecoration(
     options: {
       isWholeLine: false,
       glyphMarginClassName: "breakpointMargin",
+      glyphMarginHoverMessage: hoverMessage,
+    },
+  };
+}
+
+/**
+ * Creates a breakpoint decoration
+ * @param lineNo Line to apply the decoration to
+ */
+function createHoverBreakpointDecoration(
+  lineNo: number,
+  message?: string
+): Decoration {
+  const hoverMessage: MarkdownString = message ? { value: message } : null;
+  return {
+    range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
+    options: {
+      isWholeLine: false,
+      glyphMarginClassName: "hoverBreakpointMargin",
       glyphMarginHoverMessage: hoverMessage,
     },
   };

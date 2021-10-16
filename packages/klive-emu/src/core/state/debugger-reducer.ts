@@ -5,6 +5,7 @@ import {
   enableAllBreakpoints,
   enableBreakpoint,
   removeBreakpoint,
+  scrollDownBreakpoints,
 } from "@abstractions/debug-helpers";
 import { DebuggerState } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
@@ -48,6 +49,14 @@ export const enableAllBreakpointsAction: ActionCreator = () => ({
   type: "ENABLE_ALL_BREAKPOINTS",
 });
 
+export const scrollDownBreakpointsAction: ActionCreator = (
+  breakpoint: BreakpointDefinition,
+  lineCount: number
+) => ({
+  type: "SCROLL_DOWN_BREAKPOINTS",
+  payload: { breakpoint, lineCount },
+});
+
 // ============================================================================
 // Reducer
 
@@ -89,6 +98,15 @@ export default function (
       return {
         ...state,
         breakpoints: enableAllBreakpoints(state.breakpoints),
+      };
+    case "SCROLL_DOWN_BREAKPOINTS":
+      return {
+        ...state,
+        breakpoints: scrollDownBreakpoints(
+          state.breakpoints,
+          payload.breakpoint,
+          payload.lineCount
+        ),
       };
     default:
       return state;

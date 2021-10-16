@@ -74,7 +74,7 @@ export function removeBreakpoint(
  * @param bp Breakpoint to enable
  * @returns A shallow clone of the breakpoints array after the operation
  */
- export function enableBreakpoint(
+export function enableBreakpoint(
   breakpoints: BreakpointDefinition[],
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
@@ -91,10 +91,10 @@ export function removeBreakpoint(
  * @param bp Breakpoint to enable
  * @returns A shallow clone of the breakpoints array after the operation
  */
- export function enableAllBreakpoints(
-  breakpoints: BreakpointDefinition[],
+export function enableAllBreakpoints(
+  breakpoints: BreakpointDefinition[]
 ): BreakpointDefinition[] {
-  breakpoints.forEach(bp => delete bp.disabled);
+  breakpoints.forEach((bp) => delete bp.disabled);
   return breakpoints.slice(0);
 }
 
@@ -121,7 +121,7 @@ export function disableBreakpoint(
  * @param bp Breakpoint to remove
  * @returns A shallow clone of the breakpoints array after the operation
  */
- export function findBreakpoint(
+export function findBreakpoint(
   breakpoints: BreakpointDefinition[],
   bp: BreakpointDefinition
 ): BreakpointDefinition | undefined {
@@ -140,6 +140,39 @@ export function disableBreakpoint(
     );
   }
   return def;
+}
+
+/**
+ * Scrolls down breakpoints
+ * @param breakpoints Array of breakpoints
+ * @param resource Breakpoint file
+ * @param lineNo Line number
+ */
+export function scrollDownBreakpoints(
+  breakpoints: BreakpointDefinition[],
+  def: BreakpointDefinition,
+  lineCount: number
+): BreakpointDefinition[] {
+  const result: BreakpointDefinition[] = [];
+  breakpoints.forEach((bp) => {
+    if (
+      bp.type === "source" &&
+      def.type === "source" &&
+      bp.resource === def.resource &&
+      bp.line >= def.line
+    ) {
+      if (bp.line <= lineCount) {
+        result.push({
+          type: "source",
+          resource: bp.resource,
+          line: bp.line + 1,
+        });
+      }
+    } else {
+      result.push(bp);
+    }
+  });
+  return result;
 }
 
 /**
