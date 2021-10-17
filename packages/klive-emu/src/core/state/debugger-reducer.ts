@@ -4,8 +4,9 @@ import {
   disableBreakpoint,
   enableAllBreakpoints,
   enableBreakpoint,
+  normalizeBreakpoints,
   removeBreakpoint,
-  scrollDownBreakpoints,
+  scrollBreakpoints,
 } from "@abstractions/debug-helpers";
 import { DebuggerState } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
@@ -49,12 +50,20 @@ export const enableAllBreakpointsAction: ActionCreator = () => ({
   type: "ENABLE_ALL_BREAKPOINTS",
 });
 
-export const scrollDownBreakpointsAction: ActionCreator = (
+export const scrollBreakpointsAction: ActionCreator = (
   breakpoint: BreakpointDefinition,
+  shift: number
+) => ({
+  type: "SCROLL_BREAKPOINTS",
+  payload: { breakpoint, shift },
+});
+
+export const normalizeBreakpointsAction: ActionCreator = (
+  resource: string,
   lineCount: number
 ) => ({
-  type: "SCROLL_DOWN_BREAKPOINTS",
-  payload: { breakpoint, lineCount },
+  type: "NORMALIZE_BREAKPOINTS",
+  payload: { resource, lineCount },
 });
 
 // ============================================================================
@@ -99,12 +108,21 @@ export default function (
         ...state,
         breakpoints: enableAllBreakpoints(state.breakpoints),
       };
-    case "SCROLL_DOWN_BREAKPOINTS":
+    case "SCROLL_BREAKPOINTS":
       return {
         ...state,
-        breakpoints: scrollDownBreakpoints(
+        breakpoints: scrollBreakpoints(
           state.breakpoints,
           payload.breakpoint,
+          payload.shift
+        ),
+      };
+    case "NORMALIZE_BREAKPOINTS":
+      return {
+        ...state,
+        breakpoints: normalizeBreakpoints(
+          state.breakpoints,
+          payload.resource,
           payload.lineCount
         ),
       };

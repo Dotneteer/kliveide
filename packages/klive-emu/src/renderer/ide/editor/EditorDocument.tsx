@@ -17,17 +17,19 @@ import { FileOperationResponse } from "@core/messaging/message-types";
 import { IDocumentPanel } from "@abstractions/document-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { getEditorService } from "./editorService";
-import { findBreakpoint, removeBreakpoint } from "@abstractions/debug-helpers";
+import { findBreakpoint } from "@abstractions/debug-helpers";
 import { SourceCodeBreakpoint } from "@abstractions/code-runner-service";
 import {
   addBreakpointAction,
+  normalizeBreakpointsAction,
   removeBreakpointAction,
-  scrollDownBreakpointsAction,
+  scrollBreakpointsAction,
 } from "@core/state/debugger-reducer";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
 
+// --- Shortcuts to Monaco editor types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type MarkdownString = monacoEditor.IMarkdownString;
 
@@ -50,7 +52,7 @@ interface State {
 }
 
 /**
- * A sample document
+ * This component implements a document editor based on Monaco editor
  */
 export default class EditorDocument extends React.Component<Props, State> {
   private divHost = React.createRef<HTMLDivElement>();
@@ -63,6 +65,10 @@ export default class EditorDocument extends React.Component<Props, State> {
   private _oldHoverDecorations: string[] = [];
   private _previousContent: string | null = null;
 
+  /**
+   * Initializes the editor
+   * @param props
+   */
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -70,8 +76,18 @@ export default class EditorDocument extends React.Component<Props, State> {
       height: "100%",
       show: false,
     };
+
+    // --- Bind these event handlers
     this._descriptorChanged = () => this.descriptorChanged();
     this._refreshBreakpoints = () => this.refreshBreakpoints();
+  }
+
+  /**
+   * Gets the resource name of this document
+   */
+  get resourceName(): string {
+    const projPath = getState().project.path;
+    return this.props.descriptor.id.substr(projPath.length);
   }
 
   /**
@@ -91,7 +107,7 @@ export default class EditorDocument extends React.Component<Props, State> {
         this.props.language
       );
       if (languageInfo) {
-        // --- Yes, register a new language
+        // --- Yes, register the new language
         monaco.languages.register({ id: languageInfo.id });
 
         // --- Register a tokens provider for the language
@@ -148,6 +164,8 @@ export default class EditorDocument extends React.Component<Props, State> {
       this._editor.setValue(state.text);
       this._editor.restoreViewState(state.viewState);
     }
+
+    // --- Take the focus, if the document want to have it
     if (this.props.descriptor.initialFocus) {
       window.requestAnimationFrame(() => this._editor.focus());
     }
@@ -156,85 +174,33 @@ export default class EditorDocument extends React.Component<Props, State> {
     const languageInfo = getDocumentService().getCustomLanguage(
       this.props.language
     );
-
     if (languageInfo?.supportsBreakpoints) {
+      // --- Yes, this document manages breakpoints
       const store = getStore();
+
+      // --- Take care to refresh the breakpoint decorations whenever
+      // --- breakpoints change
       store.breakpointsChanged.on(this._refreshBreakpoints);
+
+      // --- Also, after a compilation, we have information about disabled
+      // --- breakpoints, refresh the decorations
       store.compilationChanged.on(this._refreshBreakpoints);
+
+      // --- As we subscribed to breakpoint-related events, when disposing the
+      // --- component, we need to unsubscribe from them.
       this._subscribedToBreakpointEvents = true;
 
+      // --- Handle mouse events
       editor.onMouseDown((e) => this.handleEditorMouseDown(e));
       editor.onMouseMove((e) => this.handleEditorMouseMove(e));
       editor.onMouseLeave((e) => this.handleEditorMouseLeave(e));
 
+      // --- Display breakpoint information
       this.refreshBreakpoints();
     }
 
     // --- Save the last value of the editor
     this._previousContent = editor.getValue();
-  }
-
-  /**
-   * Respond to editor contents changes
-   * @param _newValue New editor contents
-   * @param e Description of changes
-   */
-  async onEditorContentsChange(
-    _newValue: string,
-    e: monacoEditor.editor.IModelContentChangedEvent
-  ) {
-    // --- Make the document permanent
-    const documentService = getDocumentService();
-    const currentDoc = documentService.getDocumentById(
-      this.props.descriptor.id
-    );
-    if (currentDoc?.temporary) {
-      // --- Make this document permanent
-      currentDoc.temporary = false;
-      documentService.registerDocument(currentDoc, true);
-    }
-
-    // --- Check for special cases
-    if (e.changes.length > 0 && !e.isRedoing && !e.isUndoing) {
-      const change = e.changes[0];
-      console.log(e);
-      console.log("deleted:");
-      console.log(monacoEditor.editor.createModel(this._previousContent).getValueInRange(change.range));
-      console.log("inserted:")
-      console.log(change.text);
-     
-      if (change.range.startColumn === 1 && change.text === e.eol) {
-        // --- Special case: inserting a new line at the beginning of a line
-        const newBp = this.createBreakpointForLine(
-          change.range.startLineNumber
-        );
-        dispatch(
-          scrollDownBreakpointsAction(
-            newBp,
-            this._editor.getModel().getLineCount()
-          )
-        );
-      } else if (change.range.startColumn === 1 && change.text === "") {
-        // --- Special case: deleting a line back
-      }
-      else {
-        this.refreshBreakpoints();
-      }
-    }
-
-    // --- Save the current value as the previous one
-    this._previousContent = this._editor.getValue();
-
-    // --- Save document after the change
-    this._unsavedChangeCounter++;
-    await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
-    if (
-      this._unsavedChangeCounter === 1 &&
-      this._previousContent
-    ) {
-      await this.saveDocument(this._editor.getModel().getValue());
-    }
-    this._unsavedChangeCounter--;
   }
 
   /**
@@ -263,11 +229,14 @@ export default class EditorDocument extends React.Component<Props, State> {
     const docId = this.props.descriptor.id;
     const doc = getDocumentService().getDocumentById(docId);
     if (doc) {
+      // --- If so, save its state
       const text = this._editor.getValue();
       getEditorService().saveState(this.props.descriptor.id, {
         text: this._editor.getValue(),
         viewState: this._editor.saveViewState(),
       });
+
+      // --- If there are pending changes not saved yet, save now
       if (this._unsavedChangeCounter > 0) {
         await this.saveDocument(text);
       }
@@ -275,14 +244,8 @@ export default class EditorDocument extends React.Component<Props, State> {
   }
 
   /**
-   * Make the editor focused when the descriptor changes to focused
+   * Render the component visuals
    */
-  descriptorChanged(): void {
-    if (this.props.descriptor.initialFocus) {
-      window.requestAnimationFrame(() => this._editor.focus());
-    }
-  }
-
   render() {
     const placeholderStyle: CSSProperties = {
       display: "flex",
@@ -345,6 +308,100 @@ export default class EditorDocument extends React.Component<Props, State> {
     );
   }
 
+  /**
+   * Make the editor focused when the descriptor changes to focused
+   */
+  descriptorChanged(): void {
+    if (this.props.descriptor.initialFocus) {
+      window.requestAnimationFrame(() => this._editor.focus());
+    }
+  }
+
+  /**
+   * Respond to editor contents changes
+   * @param _newValue New editor contents
+   * @param e Description of changes
+   */
+  async onEditorContentsChange(
+    _newValue: string,
+    e: monacoEditor.editor.IModelContentChangedEvent
+  ) {
+    // --- Make the document permanent in the document tab bar
+    const documentService = getDocumentService();
+    const currentDoc = documentService.getDocumentById(
+      this.props.descriptor.id
+    );
+    if (currentDoc?.temporary) {
+      // --- Make a temporary document permanent
+      currentDoc.temporary = false;
+      documentService.registerDocument(currentDoc, true);
+    }
+
+    // --- Does the editor support breakpoints?
+    const languageInfo = getDocumentService().getCustomLanguage(
+      this.props.language
+    );
+    if (languageInfo?.supportsBreakpoints) {
+      // --- Keep track of breakpoint changes
+      if (e.changes.length > 0) {
+        // --- Get the text that has been deleted
+        const change = e.changes[0];
+        const deletedText = monacoEditor.editor
+          .createModel(this._previousContent)
+          .getValueInRange(change.range);
+        const deletedLines = (deletedText.match(new RegExp(e.eol, "g")) || [])
+          .length;
+
+        // --- Have we deleted one or more EOLs?
+        if (deletedLines > 0) {
+          // --- Yes, scroll up breakpoints
+          const newBp = this.createBreakpointForLine(
+            change.range.startLineNumber + deletedLines
+          );
+          dispatch(scrollBreakpointsAction(newBp, -deletedLines));
+        }
+
+        // --- Have we inserted one or more EOLs?
+        const insertedLines = (change.text.match(new RegExp(e.eol, "g")) || [])
+          .length;
+        if (insertedLines > 0) {
+          // --- Yes, scroll down breakpoints.
+          console.log(change);
+          const newBp = this.createBreakpointForLine(
+            change.range.startLineNumber +
+              (change.range.startColumn === 1 ? 0 : 1)
+          );
+          dispatch(scrollBreakpointsAction(newBp, insertedLines));
+        }
+
+        // --- If changed, normalize breakpoints
+        if (deletedLines > 0 || insertedLines > 0) {
+          dispatch(
+            normalizeBreakpointsAction(
+              this.resourceName,
+              this._editor.getModel().getLineCount()
+            )
+          );
+        }
+      }
+    }
+
+    // --- Save the current value as the previous one
+    this._previousContent = this._editor.getValue();
+
+    // --- Save document after the change (with delay)
+    this._unsavedChangeCounter++;
+    await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
+    if (this._unsavedChangeCounter === 1 && this._previousContent) {
+      await this.saveDocument(this._editor.getModel().getValue());
+    }
+    this._unsavedChangeCounter--;
+  }
+
+  /**
+   * Saves the document to its file
+   * @param documentText Document text to save
+   */
   async saveDocument(documentText: string): Promise<void> {
     const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "SaveFileContents",
@@ -362,17 +419,11 @@ export default class EditorDocument extends React.Component<Props, State> {
    * @param compilation Current compilations
    */
   refreshBreakpoints(): void {
-    const state = getState();
-    const projPath = state?.project?.path;
-    if (!projPath) {
-      return;
-    }
-
     // --- Filter for source code breakpoint belonging to this resoure
+    const state = getState();
     const breakpoints = state.debugger?.breakpoints ?? [];
-    const resource = this.props.descriptor.id.substr(projPath.length);
     const editorBps = breakpoints.filter(
-      (bp) => bp.type === "source" && bp.resource === resource
+      (bp) => bp.type === "source" && bp.resource === this.resourceName
     ) as SourceCodeBreakpoint[];
 
     // --- Get the active compilation result
@@ -386,7 +437,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       if (compilationResult?.errors?.length === 0) {
         // --- In case of a successful compilation, test if the breakpoint is allowed
         const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
-          fi.filename.endsWith(resource)
+          fi.filename.endsWith(this.resourceName)
         );
         if (fileIndex >= 0) {
           // --- We have address information for this source code file
@@ -403,7 +454,6 @@ export default class EditorDocument extends React.Component<Props, State> {
           : createBreakpointDecoration(bp.line);
         decorations.push(decoration);
       } else {
-        console.log(bp.line, editorLines);
         dispatch(removeBreakpointAction(bp));
       }
     });
@@ -467,14 +517,9 @@ export default class EditorDocument extends React.Component<Props, State> {
    * @param line Line number to test
    */
   private createBreakpointForLine(line: number): SourceCodeBreakpoint | null {
-    const state = getState();
-    const projPath = state?.project?.path;
-    if (!projPath) {
-      return null;
-    }
     return {
       type: "source",
-      resource: this.props.descriptor.id.substr(projPath.length),
+      resource: this.resourceName,
       line,
     };
   }
@@ -484,17 +529,12 @@ export default class EditorDocument extends React.Component<Props, State> {
    * @param line Line number to test
    */
   private findBreakpoint(line: number): SourceCodeBreakpoint | null {
-    const state = getState();
-    const projPath = state?.project?.path;
-    if (!projPath) {
-      return null;
-    }
     const newBp: SourceCodeBreakpoint = {
       type: "source",
-      resource: this.props.descriptor.id.substr(projPath.length),
+      resource: this.resourceName,
       line,
     };
-    const breakpoints = state.debugger?.breakpoints ?? [];
+    const breakpoints = getState().debugger?.breakpoints ?? [];
     return findBreakpoint(breakpoints, newBp) as SourceCodeBreakpoint;
   }
 }

@@ -148,10 +148,10 @@ export function findBreakpoint(
  * @param resource Breakpoint file
  * @param lineNo Line number
  */
-export function scrollDownBreakpoints(
+export function scrollBreakpoints(
   breakpoints: BreakpointDefinition[],
   def: BreakpointDefinition,
-  lineCount: number
+  shift: number
 ): BreakpointDefinition[] {
   const result: BreakpointDefinition[] = [];
   breakpoints.forEach((bp) => {
@@ -161,15 +161,46 @@ export function scrollDownBreakpoints(
       bp.resource === def.resource &&
       bp.line >= def.line
     ) {
-      if (bp.line <= lineCount) {
-        result.push({
-          type: "source",
-          resource: bp.resource,
-          line: bp.line + 1,
-        });
-      }
+      result.push({
+        type: "source",
+        resource: bp.resource,
+        line: bp.line + shift,
+      });
     } else {
       result.push(bp);
+    }
+  });
+  return result;
+}
+
+/**
+ * Normalizes source code breakpoint. Removes the ones that overflow the
+ * file and also deletes duplicates.
+ * @param breakpoints
+ * @param lineCount
+ * @returns
+ */
+export function normalizeBreakpoints(
+  breakpoints: BreakpointDefinition[],
+  resource: string,
+  lineCount: number
+): BreakpointDefinition[] {
+  const mapped = new Map<string, boolean>();
+  const result: BreakpointDefinition[] = [];
+  breakpoints.forEach((bp) => {
+    if (bp.type === "binary") {
+      result.push(bp);
+    } else if (
+      bp.resource === resource &&
+      bp.line <= lineCount &&
+      !mapped.has(`${resource}|${bp.line}`)
+    ) {
+      result.push({
+        type: "source",
+        resource: bp.resource,
+        line: bp.line,
+      });
+      mapped.set(`${resource}|${bp.line}`, true);
     }
   });
   return result;
