@@ -2,8 +2,8 @@ import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import {
   addBreakpoint,
   disableBreakpoint,
-  enableAllBreakpoints,
-  enableBreakpoint,
+  makeReachableAllBreakpoints,
+  makeReachableBreakpoint,
   normalizeBreakpoints,
   removeBreakpoint,
   scrollBreakpoints,
@@ -32,22 +32,22 @@ export const removeBreakpointAction: ActionCreator = (
   payload: { breakpoint },
 });
 
-export const enableBreakpointAction: ActionCreator = (
+export const reachableBreakpointAction: ActionCreator = (
   breakpoint: BreakpointDefinition
 ) => ({
-  type: "ENABLE_BREAKPOINT",
+  type: "REACHABLE_BREAKPOINT",
   payload: { breakpoint },
 });
 
-export const disableBreakpointAction: ActionCreator = (
+export const unreachableBreakpointAction: ActionCreator = (
   breakpoint: BreakpointDefinition
 ) => ({
-  type: "DISABLE_BREAKPOINT",
+  type: "UNREACHABLE_BREAKPOINT",
   payload: { breakpoint },
 });
 
-export const enableAllBreakpointsAction: ActionCreator = () => ({
-  type: "ENABLE_ALL_BREAKPOINTS",
+export const makeReachableAllBreakpointsAction: ActionCreator = () => ({
+  type: "ALL_REACHABLE_BREAKPOINTS",
 });
 
 export const scrollBreakpointsAction: ActionCreator = (
@@ -93,20 +93,20 @@ export default function (
         ...state,
         breakpoints: removeBreakpoint(state.breakpoints, payload.breakpoint),
       };
-    case "ENABLE_BREAKPOINT":
+    case "REACHABLE_BREAKPOINT":
       return {
         ...state,
-        breakpoints: enableBreakpoint(state.breakpoints, payload.breakpoint),
+        breakpoints: makeReachableBreakpoint(state.breakpoints, payload.breakpoint),
       };
-    case "DISABLE_BREAKPOINT":
+    case "UNREACHABLE_BREAKPOINT":
       return {
         ...state,
         breakpoints: disableBreakpoint(state.breakpoints, payload.breakpoint),
       };
-    case "ENABLE_ALL_BREAKPOINTS":
+    case "ALL_REACHABLE_BREAKPOINTS":
       return {
         ...state,
-        breakpoints: enableAllBreakpoints(state.breakpoints),
+        breakpoints: makeReachableAllBreakpoints(state.breakpoints),
       };
     case "SCROLL_BREAKPOINTS":
       return {

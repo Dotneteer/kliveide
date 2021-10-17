@@ -11,6 +11,7 @@ import {
   registerService,
   STORE_SERVICE,
   THEME_SERVICE,
+  VM_CONTROLLER_SERVICE,
 } from "@core/service-registry";
 import { dispatch, getState, getStore } from "@core/service-registry";
 import { KliveStore } from "@state/KliveStore";
@@ -27,6 +28,7 @@ import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@abstractions/common-commands";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "../../emu-ide/services/dialog-service";
+import { getVmEngineService } from "../machines/core/vm-engine-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -77,6 +79,7 @@ registerService(
 registerService(THEME_SERVICE, new ThemeService());
 registerService(MODAL_DIALOG_SERVICE, new ModalDialogService());
 registerService(DIALOG_SERVICE, new DialogService());
+registerService(VM_CONTROLLER_SERVICE, getVmEngineService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);

@@ -41,7 +41,7 @@ export type CodeInjectionType = "inject" | "run" | "debug";
  */
 interface BreakpointBase {
   type: BreakpointDefinition["type"];
-  disabled?: boolean;
+  unreachable?: boolean;
 }
 
 /**

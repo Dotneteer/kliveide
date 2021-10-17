@@ -1,8 +1,6 @@
 import * as React from "react";
 
-import {
-  getState,
-} from "@core/service-registry";
+import { getState } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
 import ScrollablePanel from "../../emu-ide/components/ScrollablePanel";
@@ -12,6 +10,7 @@ import { getEngineProxyService, RunEventArgs } from "./engine-proxy";
 
 export type SideBarProps<P> = P & {
   descriptor: ISideBarPanel;
+  needsMachine?: boolean;
 };
 
 export type SideBarState<S> = S & {
@@ -80,7 +79,8 @@ export class SideBarPanelBase<
       }
     }
 
-    return this.state?.hasMachine ? (
+    const needsMachine = this.props.needsMachine ?? true;
+    return !needsMachine || (needsMachine && this.state?.hasMachine) ? (
       this.renderPanel()
     ) : (
       <div

@@ -94,8 +94,8 @@ main,
   opacity: 0.5;
 }
 
-.disabledBreakpointMargin {
-  background: var(--debug-disabled-bp-color);
+.unreachableBreakpointMargin {
+  background: var(--debug-unreachable-bp-color);
   clip-path: circle(25%);
   cursor: pointer;
 }

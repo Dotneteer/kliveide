@@ -233,3 +233,57 @@ export enum RunMode {
   // Run until the whole injected code is executed
   UntilEnd = 3,
 }
+
+/**
+ * Defines the services of a virtual machine controller.
+ * The virtual machines can access this controller.
+ */
+ export interface IVmControllerService {
+  /**
+   * Starts the virtual machine and keeps it running
+   * @param options Non-mandatory execution options
+   */
+  start(options?: ExecuteCycleOptions): Promise<void>;
+
+  /**
+   * Starts the virtual machine in debugging mode
+   */
+  startDebug(): Promise<void>;
+
+  /**
+   * Pauses the running machine.
+   */
+  pause(): Promise<void>;
+
+  /**
+   * Stops the virtual machine
+   */
+  stop(): Promise<void>;
+
+  /**
+   * Restarts the virtual machine
+   */
+  restart(): Promise<void>;
+
+  /**
+   * Starts the virtual machine in step-into mode
+   */
+  stepInto(): Promise<void>;
+
+  /**
+   * Starts the virtual machine in step-over mode
+   */
+  stepOver(): Promise<void>;
+
+  /**
+   * Starts the virtual machine in step-out mode
+   */
+  stepOut(): Promise<void>;
+
+  /**
+   * Cancels the execution cycle
+   */
+  cancelRun(): Promise<void>;
+}
+
+

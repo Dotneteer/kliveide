@@ -10,6 +10,7 @@ import {
   EmulationMode,
   ExecuteCycleOptions,
   ExecutionCompletionReason,
+  IVmControllerService,
   MachineCreationOptions,
   MachineState,
 } from "../../../core/abstractions/vm-core-types";
@@ -66,7 +67,7 @@ export enum VmState {
  * Defines the services of a virtual machine controller.
  * The virtual machines can access this controller.
  */
-export interface IVmEngineService {
+export interface IVmEngineService extends IVmControllerService {
   /**
    * Gets the current engine
    */
@@ -156,52 +157,6 @@ export interface IVmEngineService {
    * Resets the CPU of the machine
    */
   resetCpu(): void;
-
-  /**
-   * Starts the virtual machine and keeps it running
-   * @param options Non-mandatory execution options
-   */
-  start(options?: ExecuteCycleOptions): Promise<void>;
-
-  /**
-   * Starts the virtual machine in debugging mode
-   */
-  startDebug(): Promise<void>;
-
-  /**
-   * Pauses the running machine.
-   */
-  pause(): Promise<void>;
-
-  /**
-   * Stops the virtual machine
-   */
-  stop(): Promise<void>;
-
-  /**
-   * Restarts the virtual machine
-   */
-  restart(): Promise<void>;
-
-  /**
-   * Starts the virtual machine in step-into mode
-   */
-  stepInto(): Promise<void>;
-
-  /**
-   * Starts the virtual machine in step-over mode
-   */
-  stepOver(): Promise<void>;
-
-  /**
-   * Starts the virtual machine in step-out mode
-   */
-  stepOut(): Promise<void>;
-
-  /**
-   * Cancels the execution cycle
-   */
-  cancelRun(): Promise<void>;
 
   /**
    * Injects and runs the specified code
