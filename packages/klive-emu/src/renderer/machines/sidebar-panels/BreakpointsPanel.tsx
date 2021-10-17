@@ -14,7 +14,10 @@ import {
 import { compareBreakpoints } from "@abstractions/debug-helpers";
 import { Icon } from "@components/Icon";
 import { MenuItem } from "@abstractions/command-definitions";
-import { removeBreakpointAction } from "@core/state/debugger-reducer";
+import {
+  clearBreakpointsAction,
+  removeBreakpointAction,
+} from "@core/state/debugger-reducer";
 
 const TITLE = "Breakpoints";
 
@@ -67,7 +70,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
     const store = getStore();
     store.breakpointsChanged.on(this._refreshBreakpoints);
     store.compilationChanged.on(this._refreshBreakpoints);
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise((r) => setTimeout(r, 100));
     this.refreshBreakpoints();
   }
 
@@ -134,7 +137,9 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
           width={22}
           height={22}
           fill={
-            item.unreachable ? "--debug-unreachable-bp-color" : "--debug-bp-color"
+            item.unreachable
+              ? "--debug-unreachable-bp-color"
+              : "--debug-bp-color"
           }
           style={{ flexShrink: 0, flexGrow: 0, paddingRight: 4 }}
         />
@@ -146,6 +151,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
                 .toLocaleLowerCase()} (${item.location.toString(10)})`
             : `${item.resource}:${item.line}`}
         </div>
+        {item.unreachable && <div style={{ fontStyle: "italic" }}>&nbsp;(unreachable)</div>}
       </div>
     );
   }
@@ -204,6 +210,8 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
         text: "Remove breakpoint",
         execute: async () => {
           dispatch(removeBreakpointAction(item));
+          this.listApi.focus();
+          this.listApi.forceRefresh();
         },
       },
       "separator",
@@ -211,7 +219,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
         id: "removeAllBreakpoints",
         text: "Remove all",
         execute: async () => {
-          console.log("Remove all breakpoints");
+          dispatch(clearBreakpointsAction());
         },
       },
     ];
