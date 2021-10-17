@@ -3,6 +3,7 @@ import {
   ActivityBarState,
   AppState,
   CompilationState,
+  DebuggerState,
   EmulatorPanelState,
   EmuViewOptions,
   ProjectState,
@@ -11,6 +12,7 @@ import {
 import { KliveAction } from "./state-core";
 import { Activity } from "@core/abstractions/activity";
 import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
+import { BreakpointDefinition } from "@abstractions/code-runner-service";
 
 /**
  * Represents a store instance that handles Klive application state
@@ -33,6 +35,7 @@ export class KliveStore {
   private _machineTypeChanged = new LiteEvent<string>();
   private _projectChanged = new LiteEvent<ProjectState>();
   private _compilationChanged = new LiteEvent<CompilationState>();
+  private _breakpointsChanged = new LiteEvent<BreakpointDefinition[]>();
 
   /**
    * Initializes this instance with the specified redux store
@@ -182,6 +185,13 @@ export class KliveStore {
   }
 
   /**
+   * Fires when the `debugger.breakpoints` state property changes
+   */
+  get breakpointsChanged(): ILiteEvent<BreakpointDefinition[]> {
+    return this._breakpointsChanged;
+  }
+
+  /**
    * Process state changes
    */
   private processStateChanges() {
@@ -253,6 +263,14 @@ export class KliveStore {
     // --- compilation
     if (state.compilation !== oldState.compilation) {
       this._compilationChanged.fire(state.compilation);
+    }
+
+    // --- breakpoints
+    if (
+      state?.debugger?.breakpoints !== oldState?.debugger?.breakpoints &&
+      state?.debugger?.breakpoints
+    ) {
+      this._breakpointsChanged.fire(state.debugger.breakpoints);
     }
   }
 }

@@ -69,6 +69,144 @@ export function removeBreakpoint(
 }
 
 /**
+ * Enables the specified breakpoint
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to enable
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+export function enableBreakpoint(
+  breakpoints: BreakpointDefinition[],
+  bp: BreakpointDefinition
+): BreakpointDefinition[] {
+  const def = findBreakpoint(breakpoints, bp);
+  if (def) {
+    delete def.disabled;
+  }
+  return breakpoints.slice(0);
+}
+
+/**
+ * Enables all breakpoints
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to enable
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+export function enableAllBreakpoints(
+  breakpoints: BreakpointDefinition[]
+): BreakpointDefinition[] {
+  breakpoints.forEach((bp) => delete bp.disabled);
+  return breakpoints.slice(0);
+}
+
+/**
+ * Disables the specified breakpoint
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to disable
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+export function disableBreakpoint(
+  breakpoints: BreakpointDefinition[],
+  bp: BreakpointDefinition
+): BreakpointDefinition[] {
+  const def = findBreakpoint(breakpoints, bp);
+  if (def) {
+    def.disabled = true;
+  }
+  return breakpoints.slice(0);
+}
+
+/**
+ * Removes a breakpoint from the array of existing breakpoints
+ * @param breakpoints Breakpoints array
+ * @param bp Breakpoint to remove
+ * @returns A shallow clone of the breakpoints array after the operation
+ */
+export function findBreakpoint(
+  breakpoints: BreakpointDefinition[],
+  bp: BreakpointDefinition
+): BreakpointDefinition | undefined {
+  let def: BreakpointDefinition | null = null;
+  if (bp.type === "source") {
+    def = breakpoints.find(
+      (p) =>
+        (p as SourceCodeBreakpoint).line === bp.line &&
+        (p as SourceCodeBreakpoint).resource === bp.resource
+    );
+  } else {
+    def = breakpoints.find(
+      (p) =>
+        (p as BinaryBreakpoint).location === bp.location &&
+        (p as BinaryBreakpoint).partition === bp.partition
+    );
+  }
+  return def;
+}
+
+/**
+ * Scrolls down breakpoints
+ * @param breakpoints Array of breakpoints
+ * @param resource Breakpoint file
+ * @param lineNo Line number
+ */
+export function scrollBreakpoints(
+  breakpoints: BreakpointDefinition[],
+  def: BreakpointDefinition,
+  shift: number
+): BreakpointDefinition[] {
+  const result: BreakpointDefinition[] = [];
+  breakpoints.forEach((bp) => {
+    if (
+      bp.type === "source" &&
+      def.type === "source" &&
+      bp.resource === def.resource &&
+      bp.line >= def.line
+    ) {
+      result.push({
+        type: "source",
+        resource: bp.resource,
+        line: bp.line + shift,
+      });
+    } else {
+      result.push(bp);
+    }
+  });
+  return result;
+}
+
+/**
+ * Normalizes source code breakpoint. Removes the ones that overflow the
+ * file and also deletes duplicates.
+ * @param breakpoints
+ * @param lineCount
+ * @returns
+ */
+export function normalizeBreakpoints(
+  breakpoints: BreakpointDefinition[],
+  resource: string,
+  lineCount: number
+): BreakpointDefinition[] {
+  const mapped = new Map<string, boolean>();
+  const result: BreakpointDefinition[] = [];
+  breakpoints.forEach((bp) => {
+    if (bp.type === "binary") {
+      result.push(bp);
+    } else if (
+      bp.resource === resource &&
+      bp.line <= lineCount &&
+      !mapped.has(`${resource}|${bp.line}`)
+    ) {
+      result.push({
+        type: "source",
+        resource: bp.resource,
+        line: bp.line,
+      });
+      mapped.set(`${resource}|${bp.line}`, true);
+    }
+  });
+  return result;
+}
+
+/**
  * Comparison function for breakpoint definitions
  * @param a First breakpoint
  * @param b Second breakpoint

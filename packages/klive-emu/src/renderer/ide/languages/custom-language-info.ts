@@ -10,6 +10,7 @@ export type MonacoAwareCustomLanguageInfo = {
   languageDef?: monacoEditor.languages.IMonarchLanguage;
   lightTheme?: EditorThemeBody;
   darkTheme?: EditorThemeBody;
+  supportsBreakpoints?: boolean;
 };
 
 /**

@@ -96,6 +96,7 @@ export type CustomLanguageInfo = {
   languageDef?: any;
   lightTheme?: any;
   darkTheme?: any;
+  supportsBreakpoints?: boolean;
 };
 
 /**

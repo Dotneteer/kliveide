@@ -52,10 +52,12 @@ export class ListBreakpointsCommand extends InteractiveCommandBase {
           context.output.bold(true);
           if (bp.type === "binary") {
             context.output.writeLine(
-              `  $${bp.location.toString(16).padStart(4, "0").toUpperCase()} (${bp.location})`
+              `  $${bp.location.toString(16).padStart(4, "0").toUpperCase()} (${
+                bp.location
+              })`
             );
           } else {
-            context.output.writeLine(`  $${bp.resource}:${bp.line}`);
+            context.output.writeLine(`  ${bp.resource}:${bp.line}`);
           }
           count++;
         });
@@ -64,6 +66,7 @@ export class ListBreakpointsCommand extends InteractiveCommandBase {
       context.output.writeLine(
         `${count} breakpoint${count > 1 ? "s" : ""} displayed.`
       );
+      return { success: true };
     } else {
       return {
         success: true,

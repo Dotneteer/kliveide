@@ -19,7 +19,7 @@ export const darkTheme: ITheme = {
     "--information-color": "#cccccc",
     "--hilited-color": "#007acc",
     "--console-font": 'Consolas, "Courier New", monospace',
-    
+
     "--list-hover-background-color": "#2a2d2e",
     "--list-selected-background-color": "#2a2d2e",
 
@@ -49,7 +49,7 @@ export const darkTheme: ITheme = {
     "--icon-default-size": "14",
     "--icon-pointed-background": "#3d3d3d",
     "--icon-mousedown-background": "#5d5d5d",
-  
+
     "--emulator-background-color": "#808080",
     "--keyboard-background-color": "#202020",
 
@@ -111,5 +111,10 @@ export const darkTheme: ITheme = {
 
     "--explorer-folder-color": "#c09553",
     "--explorer-file-color": "#007acc",
+
+    "--debug-bp-color": "#e51400",
+    "--debug-active-bp-color": "yellow",
+    "--debug-active-bp-background-color": "maroon",
+    "--debug-disabled-bp-color": "#606060",
   },
 };

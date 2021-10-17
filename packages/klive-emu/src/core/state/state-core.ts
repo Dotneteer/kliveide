@@ -89,6 +89,11 @@ export interface ActionTypes {
   CLEAR_BREAKPOINTS: null;
   ADD_BREAKPOINT: null;
   REMOVE_BREAKPOINT: null;
+  DISABLE_BREAKPOINT: null;
+  ENABLE_BREAKPOINT: null;
+  ENABLE_ALL_BREAKPOINTS: null;
+  SCROLL_BREAKPOINTS: null;
+  NORMALIZE_BREAKPOINTS: null;
 
   // --- Builders
   CLEAR_BUILD_ROOTS: null;
@@ -144,6 +149,9 @@ export interface Payload {
   filename?: string;
   compileResult?: CompilerOutput;
   breakpoint?: BreakpointDefinition;
+  lineCount?: number;
+  shift?: number;
+  resource?: string;
 }
 
 /**

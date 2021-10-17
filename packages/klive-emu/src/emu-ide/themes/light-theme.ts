@@ -7,7 +7,8 @@ export const lightTheme: ITheme = {
   name: "light",
   tone: "light",
   properties: {
-    "--shell-font-family": "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",
+    "--shell-font-family":
+      "-apple-system, BlinkMacSystemFont, HelveticaNeue-Light, Ubuntu, Droid Sans, sans-serif",
     "--shell-windows-font-family": "Segoe WPC,Segoe UI, sans-serif",
 
     "--shell-canvas-background-color": "#EEEEEE",
@@ -17,8 +18,8 @@ export const lightTheme: ITheme = {
     "--selection-color": "#007acc",
     "--information-color": "#202020",
     "--hilited-color": "#007acc",
-    "--console-font": "Consolas, \"Courier New\", monospace",
-    
+    "--console-font": 'Consolas, "Courier New", monospace',
+
     "--list-hover-background-color": "#2a2d2e",
     "--list-selected-background-color": "#2a2d2e",
 
@@ -110,5 +111,10 @@ export const lightTheme: ITheme = {
 
     "--explorer-folder-color": "#c09553",
     "--explorer-file-color": "#007acc",
+
+    "--debug-bp-color": "#e51400",
+    "--debug-active-bp-color": "yellow",
+    "--debug-active-bp-background-color": "maroon",
+    "--debug-disabled-bp-color": "#606060",
   },
 };
