@@ -1,6 +1,7 @@
 import {
   dispatch,
   getCodeRunnerService,
+  getVmControllerService,
   getZ80CompilerService,
 } from "@core/service-registry";
 import {
@@ -8,7 +9,7 @@ import {
   registerCommand,
 } from "@abstractions/command-registry";
 import {
-  sendFromIdeToEmu,
+  sendFromIdeToEmu, sendFromMainToEmu,
 } from "@core/messaging/message-sending";
 import {
   CompileFileResponse,
@@ -40,6 +41,13 @@ type CoreKliveCommand =
   | "hideKeyboard"
   | "showIde"
   | "hideIde"
+  | "startVm"
+  | "pauseVm"
+  | "stopVm"
+  | "debugVm"
+  | "stepIntoVm"
+  | "stepOverVm"
+  | "stepOutVm"
   | "compileCode"
   | "injectCodeIntoVm"
   | "injectAndStartVm"
@@ -59,6 +67,14 @@ export function registerCommonCommands(): void {
   registerCommand(hideKeyboardCommand);
   registerCommand(showIdeCommand);
   registerCommand(hideIdeCommand);
+
+  registerCommand(startVmCommand);
+  registerCommand(pauseVmCommand);
+  registerCommand(stopVmCommand);
+  registerCommand(debugVmCommand);
+  registerCommand(stepIntoVmCommand);
+  registerCommand(stepOverVmCommand);
+  registerCommand(stepOutVmCommand);
 
   registerCommand(compileCodeCommand);
   registerCommand(injectCodeIntoVmCommand);
@@ -183,6 +199,183 @@ const hideIdeCommand: IKliveCommand = {
   commandId: "klive.hideIde",
   execute: async () => {
     dispatch(ideShowAction(false));
+  },
+};
+
+/**
+ * This command starts the virtual machine
+ */
+ const startVmCommand: IKliveCommand = {
+  commandId: "klive.startVm",
+  title: "Start",
+  icon: "play",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "StartVm" });
+        break;
+      case "emu":
+        await getVmControllerService().start();
+        break;
+      case "ide":
+        await sendFromIdeToEmu({ type: "StartVm" });
+        break;
+    }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState !== "running";
+  },
+};
+
+/**
+ * This command pauses the virtual machine
+ */
+const pauseVmCommand: IKliveCommand = {
+  commandId: "klive.pauseVm",
+  title: "Pause",
+  icon: "pause",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "PauseVm" });
+        break;
+      case "emu":
+        await getVmControllerService().pause();
+        break;
+      case "ide":
+        await sendFromIdeToEmu({ type: "PauseVm" });
+        break;
+    }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "running";
+  },
+};
+
+/**
+ * This command stops the virtual machine
+ */
+const stopVmCommand: IKliveCommand = {
+  commandId: "klive.stopVm",
+  title: "Stop",
+  icon: "stop",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "StopVm" });
+        break;
+      case "emu":
+        await getVmControllerService().stop();
+        break;
+      case "ide":
+        await sendFromIdeToEmu({ type: "StopVm" });
+        break;
+    }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled =
+      context.executionState === "running" ||
+      context.executionState === "paused";
+  },
+};
+
+/**
+ * This command stops the virtual machine
+ */
+const debugVmCommand: IKliveCommand = {
+  commandId: "klive.debugVm",
+  title: "Start with debugging",
+  icon: "debug",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "DebugVm" });
+        break;
+      case "emu":
+        await getVmControllerService().startDebug();
+        break;
+      case "ide":
+        await sendFromIdeToEmu({ type: "DebugVm" });
+        break;
+    }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState !== "running";
+  },
+};
+
+/**
+ * This command executes a step-into operation
+ */
+const stepIntoVmCommand: IKliveCommand = {
+  commandId: "klive.stepIntoVm",
+  title: "Step into code",
+  icon: "step-into",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "StepIntoVm" });
+        break;
+      case "emu":
+        await getVmControllerService().stepInto();
+        break;
+      case "ide":
+        await sendFromIdeToEmu({ type: "StepIntoVm" });
+        break;
+    }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "paused";
+  },
+};
+
+/**
+ * This command executes a step-over operation
+ */
+const stepOverVmCommand: IKliveCommand = {
+  commandId: "klive.stepOverVm",
+  title: "Step over code",
+  icon: "step-over",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "StepOverVm" });
+        break;
+      case "emu":
+        await getVmControllerService().stepOver();
+        break;
+      case "ide":
+        await sendFromIdeToEmu({ type: "StepOverVm" });
+        break;
+    }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "paused";
+  },
+};
+
+/**
+ * This command executes a step-out operation
+ */
+const stepOutVmCommand: IKliveCommand = {
+  commandId: "klive.stepOutVm",
+  title: "Step out code",
+  icon: "step-out",
+  execute: async (context) => {
+    switch (context.process) {
+      case "main":
+        await sendFromMainToEmu({ type: "StepOutVm" });
+        break;
+      case "emu":
+        await getVmControllerService().stepOut();
+        break;
+      case "ide":
+        await sendFromIdeToEmu({ type: "StepOutVm" });
+        break;
+    }
+  },
+  queryState: async (context) => {
+    context.commandInfo.enabled = context.executionState === "paused";
   },
 };
 

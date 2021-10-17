@@ -8,6 +8,7 @@ import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import { getState, getStore } from "@core/service-registry";
 import { compareBreakpoints } from "@abstractions/debug-helpers";
 import { Icon } from "@components/Icon";
+import { CompilationState } from "@core/state/AppState";
 
 const TITLE = "Breakpoints";
 
@@ -23,6 +24,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
   SideBarState<State>
 > {
   private _onBreakpointsChanged: (bps: BreakpointDefinition[]) => void;
+  private _onCompilationChanged: (cs: CompilationState) => void;
 
   width = "fit-content";
 
@@ -33,6 +35,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
   constructor(props: SideBarProps<{}>) {
     super(props);
     this._onBreakpointsChanged = (bps) => this.onBreakpointsChanged(bps);
+    this._onCompilationChanged = (cs) => this.onCompilationChanged(cs);
   }
 
   /**
@@ -53,16 +56,20 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
   componentDidMount(): void {
     super.componentDidMount();
     this.setState({
-      breakpoints: getState()?.debugger?.breakpoints ?? [],
+      breakpoints: (getState()?.debugger?.breakpoints ?? []).sort(
+        compareBreakpoints
+      ),
     });
     const store = getStore();
     store.breakpointsChanged.on(this._onBreakpointsChanged);
+    store.compilationChanged.on(this._onCompilationChanged);
   }
 
   // --- Stop listening to run events
   componentWillUnmount(): void {
     const store = getStore();
     store.breakpointsChanged.off(this._onBreakpointsChanged);
+    store.compilationChanged.off(this._onCompilationChanged);
     super.componentWillUnmount();
   }
 
@@ -100,6 +107,10 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
             ? "1px solid var(--selected-border-color)"
             : "1px solid transparent"
           : "1px solid transparent",
+      paddingLeft: 4,
+      paddingRight: 4,
+      textAlign: "center",
+      height: 24,
     };
     return (
       <div
@@ -120,8 +131,14 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
           }
           style={{ flexShrink: 0, flexGrow: 0 }}
         />
-
-        {item.type}
+        <div>
+          {item.type === "binary"
+            ? `$${item.location
+                .toString(16)
+                .padStart(4, "0")
+                .toLocaleLowerCase()} (${item.location.toString(10)})`
+            : `${item.resource}:${item.line}`}
+        </div>
       </div>
     );
   }
@@ -131,6 +148,44 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
    * @param breakpoints
    */
   onBreakpointsChanged(breakpoints: BreakpointDefinition[]): void {
+    this.setState({ breakpoints: breakpoints.sort(compareBreakpoints) });
+    this.listApi.forceRefresh();
+  }
+
+  /**
+   * Respond to compilation changes
+   * @param compilationState New compilation sttate
+   */
+  onCompilationChanged(compilationState: CompilationState): void {
+    // --- Get the active compilation result
+    const compilationResult = compilationState?.result;
+    if (compilationResult?.errors?.length !== 0) {
+      // --- No successful compilation, nothing to do
+      return;
+    }
+
+    // --- We have a successful compilation, so we can check for disabled
+    // --- breakpoints
+    const breakpoints = getState()?.debugger?.breakpoints ?? [];
+    breakpoints.forEach((bp) => {
+      // --- Nothing to do with binary breakpoints
+      if (bp.type !== "source") return;
+
+      // --- In case of a successful compilation, test if the breakpoint is allowed
+      const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
+        fi.filename.endsWith(bp.resource)
+      );
+      if (fileIndex >= 0) {
+        // --- We have address information for this source code file
+        const bpInfo = compilationResult.listFileItems.find(
+          (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
+        );
+        if (!bpInfo) {
+          bp.disabled = true;
+        }
+      }
+    });
+
     this.setState({ breakpoints: breakpoints.sort(compareBreakpoints) });
     this.listApi.forceRefresh();
   }

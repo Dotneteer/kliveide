@@ -1,9 +1,9 @@
 // ============================================================================
 // Services are singleton objects that provide communication between unrelated
-// components of the application. These components use service properties, 
+// components of the application. These components use service properties,
 // methods, and events for communication.
 //
-// Each service has a unique identifier string. When the application's 
+// Each service has a unique identifier string. When the application's
 // processes start, they must initialize their supported services before any
 // other activities.
 // ============================================================================
@@ -27,6 +27,7 @@ import { IToolAreaService } from "@abstractions/tool-area-service";
 import { IZ80CompilerService } from "@abstractions/z80-compiler-service";
 import { IDialogService } from "@abstractions/dialog-service";
 import { ICodeRunnerService } from "@abstractions/code-runner-service";
+import { IVmControllerService } from "@abstractions/vm-core-types";
 
 // ----------------------------------------------------------------------------
 // Predefined service IDs
@@ -45,6 +46,7 @@ export const COMMAND_SERVICE = "command-service";
 export const Z80_COMPILER_SERVICE = "z80-compiler-service";
 export const DIALOG_SERVICE = "dialog-service";
 export const CODE_RUNNER_SERVICE = "code-runner-service";
+export const VM_CONTROLLER_SERVICE = "vm-controller-service";
 
 // ----------------------------------------------------------------------------
 // Service registry methods
@@ -88,7 +90,7 @@ export function getService(id: string): any {
 /**
  * Gets the service instance that provides the application state store
  */
- export function getStore(): KliveStore {
+export function getStore(): KliveStore {
   return getService(STORE_SERVICE) as KliveStore;
 }
 
@@ -198,4 +200,11 @@ export function getDialogService(): IDialogService {
  */
 export function getCodeRunnerService(): ICodeRunnerService {
   return getService(CODE_RUNNER_SERVICE) as ICodeRunnerService;
+}
+
+/**
+ * Gets the VM controller service instance
+ */
+export function getVmControllerService(): IVmControllerService {
+  return getService(VM_CONTROLLER_SERVICE) as IVmControllerService;
 }
