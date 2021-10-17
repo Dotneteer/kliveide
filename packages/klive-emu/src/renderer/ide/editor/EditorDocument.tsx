@@ -366,7 +366,6 @@ export default class EditorDocument extends React.Component<Props, State> {
           .length;
         if (insertedLines > 0) {
           // --- Yes, scroll down breakpoints.
-          console.log(change);
           const newBp = this.createBreakpointForLine(
             change.range.startLineNumber +
               (change.range.startColumn === 1 ? 0 : 1)
@@ -446,7 +445,6 @@ export default class EditorDocument extends React.Component<Props, State> {
           );
           disabled = !bpInfo;
         }
-        console.log(compilationResult);
       }
       if (bp.line <= editorLines) {
         const decoration = disabled

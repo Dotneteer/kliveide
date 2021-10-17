@@ -70,6 +70,7 @@ import {
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
 import { Activity } from "@core/abstractions/activity";
+import { BreakpointsPanelDescriptor } from "../machines/sidebar-panels/BreakpointsPanel";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -285,6 +286,10 @@ export default function IdeApp() {
       sideBarService.registerSideBarPanel(
         "debug-view",
         new CallStackPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new BreakpointsPanelDescriptor()
       );
 
       // (Machine logs)

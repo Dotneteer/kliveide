@@ -6,6 +6,7 @@ import VirtualizedList, {
 } from "../../emu-ide/components/VirtualizedList";
 import {
   SideBarPanelBase,
+  sidebarPlaceholderStyle,
   SideBarProps,
   SideBarState,
 } from "./SideBarPanelBase";
@@ -28,6 +29,13 @@ export abstract class VirtualizedSideBarPanelBase<
   abstract getItemsCount(): number;
 
   /**
+   * Sets the default item height
+   */
+  get itemHeight(): number {
+    return 18;
+  }
+
+  /**
    * Renders an item in the list
    * @param index Item index
    * @param style Item style to apply
@@ -35,13 +43,33 @@ export abstract class VirtualizedSideBarPanelBase<
   abstract renderItem(index: number, style: CSSProperties): JSX.Element;
 
   /**
+   * Defines the message to show, if there are no items to render
+   */
+  get noItemsMessage(): string {
+    return "No items.";
+  }
+
+  /**
    * Renders the panel with a virtualized list
    */
   renderPanel() {
+    const itemsCount = this.getItemsCount();
+    if (itemsCount === 0 && this.noItemsMessage) {
+      return (
+        <div
+          style={{
+            ...sidebarPlaceholderStyle,
+            fontFamily: "var(--main-font-family)",
+          }}
+        >
+          <span style={{ textAlign: "center" }}>{this.noItemsMessage}</span>
+        </div>
+      );
+    }
     return (
       <VirtualizedList
-        itemHeight={18}
-        numItems={this.getItemsCount()}
+        itemHeight={this.itemHeight}
+        numItems={itemsCount}
         style={listStyle}
         renderItem={(index: number, style: CSSProperties) =>
           this.renderItem(index, style)
@@ -114,17 +142,17 @@ export abstract class VirtualizedSideBarPanelBase<
         newIndex = this.state.selectedIndex + 1;
         break;
       }
-      
+
       case "Home": {
         newIndex = 0;
         break;
       }
-      
+
       case "End": {
         newIndex = numItems - 1;
         break;
       }
-      
+
       default:
         return;
     }

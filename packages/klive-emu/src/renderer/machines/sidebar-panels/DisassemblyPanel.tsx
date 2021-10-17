@@ -179,9 +179,3 @@ export class Z80DisassemblyPanelDescriptor extends SideBarPanelDescriptorBase {
     return <Z80DisassemblyPanel descriptor={this} />;
   }
 }
-
-// --- The style of the list
-const listStyle: CSSProperties = {
-  fontFamily: "var(--console-font)",
-  fontSize: "0.8em",
-};
