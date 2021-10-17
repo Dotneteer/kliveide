@@ -74,13 +74,13 @@ export function removeBreakpoint(
  * @param bp Breakpoint to enable
  * @returns A shallow clone of the breakpoints array after the operation
  */
-export function enableBreakpoint(
+export function makeReachableBreakpoint(
   breakpoints: BreakpointDefinition[],
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
   const def = findBreakpoint(breakpoints, bp);
   if (def) {
-    delete def.disabled;
+    delete def.unreachable;
   }
   return breakpoints.slice(0);
 }
@@ -91,10 +91,10 @@ export function enableBreakpoint(
  * @param bp Breakpoint to enable
  * @returns A shallow clone of the breakpoints array after the operation
  */
-export function enableAllBreakpoints(
+export function makeReachableAllBreakpoints(
   breakpoints: BreakpointDefinition[]
 ): BreakpointDefinition[] {
-  breakpoints.forEach((bp) => delete bp.disabled);
+  breakpoints.forEach((bp) => delete bp.unreachable);
   return breakpoints.slice(0);
 }
 
@@ -110,7 +110,7 @@ export function disableBreakpoint(
 ): BreakpointDefinition[] {
   const def = findBreakpoint(breakpoints, bp);
   if (def) {
-    def.disabled = true;
+    def.unreachable = true;
   }
   return breakpoints.slice(0);
 }

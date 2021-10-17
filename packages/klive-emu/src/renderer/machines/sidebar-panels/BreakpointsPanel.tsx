@@ -131,10 +131,10 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
       >
         <Icon
           iconName="circle-filled"
-          width={18}
-          height={18}
+          width={22}
+          height={22}
           fill={
-            item.disabled ? "--debug-disabled-bp-color" : "--debug-bp-color"
+            item.unreachable ? "--debug-unreachable-bp-color" : "--debug-bp-color"
           }
           style={{ flexShrink: 0, flexGrow: 0, paddingRight: 4 }}
         />
@@ -176,7 +176,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
             (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
           );
           if (!bpInfo) {
-            bp.disabled = true;
+            bp.unreachable = true;
           }
         }
       });

@@ -113,7 +113,7 @@
   "--debug-bp-color": string;
   "--debug-active-bp-color": string;
   "--debug-active-bp-background-color": string;
-  "--debug-disabled-bp-color": string;
+  "--debug-unreachable-bp-color": string;
 }
 
 /**

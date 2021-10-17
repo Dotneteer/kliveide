@@ -182,7 +182,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       // --- breakpoints change
       store.breakpointsChanged.on(this._refreshBreakpoints);
 
-      // --- Also, after a compilation, we have information about disabled
+      // --- Also, after a compilation, we have information about unreachable
       // --- breakpoints, refresh the decorations
       store.compilationChanged.on(this._refreshBreakpoints);
 
@@ -432,7 +432,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     const decorations: Decoration[] = [];
     const editorLines = this._editor.getModel().getLineCount();
     editorBps.forEach((bp) => {
-      let disabled = false;
+      let unreachable = false;
       if (compilationResult?.errors?.length === 0) {
         // --- In case of a successful compilation, test if the breakpoint is allowed
         const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
@@ -443,12 +443,12 @@ export default class EditorDocument extends React.Component<Props, State> {
           const bpInfo = compilationResult.listFileItems.find(
             (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
           );
-          disabled = !bpInfo;
+          unreachable = !bpInfo;
         }
       }
       if (bp.line <= editorLines) {
-        const decoration = disabled
-          ? createDisabledBreakpointDecoration(bp.line)
+        const decoration = unreachable
+          ? createUnreachableBreakpointDecoration(bp.line)
           : createBreakpointDecoration(bp.line);
         decorations.push(decoration);
       } else {
@@ -603,22 +603,22 @@ function createHoverBreakpointDecoration(
 }
 
 /**
- * Creates a disabled breakpoint decoration
+ * Creates an unreachable breakpoint decoration
  * @param lineNo Line to apply the decoration to
  * @returns
  */
-function createDisabledBreakpointDecoration(lineNo: number): Decoration {
+function createUnreachableBreakpointDecoration(lineNo: number): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
       isWholeLine: false,
-      glyphMarginClassName: "disabledBreakpointMargin",
+      glyphMarginClassName: "unreachableBreakpointMargin",
     },
   };
 }
 
 /**
- * Creates a disabled breakpoint decoration
+ * Creates a current breakpoint decoration
  * @param lineNo Line to apply the decoration to
  * @returns
  */
