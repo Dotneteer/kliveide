@@ -5,10 +5,16 @@ import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
-import { getState, getStore } from "@core/service-registry";
+import {
+  dispatch,
+  getContextMenuService,
+  getState,
+  getStore,
+} from "@core/service-registry";
 import { compareBreakpoints } from "@abstractions/debug-helpers";
 import { Icon } from "@components/Icon";
-import { CompilationState } from "@core/state/AppState";
+import { MenuItem } from "@abstractions/command-definitions";
+import { removeBreakpointAction } from "@core/state/debugger-reducer";
 
 const TITLE = "Breakpoints";
 
@@ -23,8 +29,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
   SideBarProps<{}>,
   SideBarState<State>
 > {
-  private _onBreakpointsChanged: (bps: BreakpointDefinition[]) => void;
-  private _onCompilationChanged: (cs: CompilationState) => void;
+  private _refreshBreakpoints: () => void;
 
   width = "fit-content";
 
@@ -34,8 +39,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
    */
   constructor(props: SideBarProps<{}>) {
     super(props);
-    this._onBreakpointsChanged = (bps) => this.onBreakpointsChanged(bps);
-    this._onCompilationChanged = (cs) => this.onCompilationChanged(cs);
+    this._refreshBreakpoints = () => this.refreshBreakpoints();
   }
 
   /**
@@ -53,7 +57,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
   }
 
   // --- Listen to run events
-  componentDidMount(): void {
+  async componentDidMount(): Promise<void> {
     super.componentDidMount();
     this.setState({
       breakpoints: (getState()?.debugger?.breakpoints ?? []).sort(
@@ -61,15 +65,17 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
       ),
     });
     const store = getStore();
-    store.breakpointsChanged.on(this._onBreakpointsChanged);
-    store.compilationChanged.on(this._onCompilationChanged);
+    store.breakpointsChanged.on(this._refreshBreakpoints);
+    store.compilationChanged.on(this._refreshBreakpoints);
+    await new Promise(r => setTimeout(r, 100));
+    this.refreshBreakpoints();
   }
 
   // --- Stop listening to run events
   componentWillUnmount(): void {
     const store = getStore();
-    store.breakpointsChanged.off(this._onBreakpointsChanged);
-    store.compilationChanged.off(this._onCompilationChanged);
+    store.breakpointsChanged.off(this._refreshBreakpoints);
+    store.compilationChanged.off(this._refreshBreakpoints);
     super.componentWillUnmount();
   }
 
@@ -121,6 +127,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
           this.setState({ selectedIndex: index });
           this.listApi.forceRefresh();
         }}
+        onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
       >
         <Icon
           iconName="circle-filled"
@@ -129,7 +136,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
           fill={
             item.disabled ? "--debug-disabled-bp-color" : "--debug-bp-color"
           }
-          style={{ flexShrink: 0, flexGrow: 0 }}
+          style={{ flexShrink: 0, flexGrow: 0, paddingRight: 4 }}
         />
         <div>
           {item.type === "binary"
@@ -147,47 +154,75 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
    * Respond to breakpoint changes
    * @param breakpoints
    */
-  onBreakpointsChanged(breakpoints: BreakpointDefinition[]): void {
+  refreshBreakpoints(): void {
+    // --- Get the current breakpoints
+    const state = getState();
+    const breakpoints = state?.debugger?.breakpoints ?? [];
+
+    // --- Get the active compilation result
+    const compilationResult = state?.compilation?.result;
+    if (compilationResult?.errors?.length === 0) {
+      breakpoints.forEach((bp) => {
+        // --- Nothing to do with binary breakpoints
+        if (bp.type !== "source") return;
+
+        // --- In case of a successful compilation, test if the breakpoint is allowed
+        const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
+          fi.filename.endsWith(bp.resource)
+        );
+        if (fileIndex >= 0) {
+          // --- We have address information for this source code file
+          const bpInfo = compilationResult.listFileItems.find(
+            (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
+          );
+          if (!bpInfo) {
+            bp.disabled = true;
+          }
+        }
+      });
+    }
     this.setState({ breakpoints: breakpoints.sort(compareBreakpoints) });
     this.listApi.forceRefresh();
   }
 
   /**
-   * Respond to compilation changes
-   * @param compilationState New compilation sttate
+   * Handles the context menu click of the specified item
+   * @param ev Event information
+   * @param index Item index
+   * @param item Item data
    */
-  onCompilationChanged(compilationState: CompilationState): void {
-    // --- Get the active compilation result
-    const compilationResult = compilationState?.result;
-    if (compilationResult?.errors?.length !== 0) {
-      // --- No successful compilation, nothing to do
-      return;
-    }
-
-    // --- We have a successful compilation, so we can check for disabled
-    // --- breakpoints
-    const breakpoints = getState()?.debugger?.breakpoints ?? [];
-    breakpoints.forEach((bp) => {
-      // --- Nothing to do with binary breakpoints
-      if (bp.type !== "source") return;
-
-      // --- In case of a successful compilation, test if the breakpoint is allowed
-      const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
-        fi.filename.endsWith(bp.resource)
-      );
-      if (fileIndex >= 0) {
-        // --- We have address information for this source code file
-        const bpInfo = compilationResult.listFileItems.find(
-          (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
-        );
-        if (!bpInfo) {
-          bp.disabled = true;
-        }
-      }
-    });
-
-    this.setState({ breakpoints: breakpoints.sort(compareBreakpoints) });
+  async onContextMenu(
+    ev: React.MouseEvent,
+    index: number,
+    item: BreakpointDefinition
+  ): Promise<void> {
+    this.setState({ selectedIndex: index });
     this.listApi.forceRefresh();
+    const menuItems: MenuItem[] = [
+      {
+        id: "removeBreakpoint",
+        text: "Remove breakpoint",
+        execute: async () => {
+          dispatch(removeBreakpointAction(item));
+        },
+      },
+      "separator",
+      {
+        id: "removeAllBreakpoints",
+        text: "Remove all",
+        execute: async () => {
+          console.log("Remove all breakpoints");
+        },
+      },
+    ];
+
+    const rect = (ev.target as HTMLElement).getBoundingClientRect();
+    await getContextMenuService().openMenu(
+      menuItems,
+      rect.y + 22,
+      ev.clientX,
+      ev.target as HTMLElement
+    );
   }
 }
 
