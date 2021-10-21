@@ -188,7 +188,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
       });
     }
     this.setState({ breakpoints: breakpoints.sort(compareBreakpoints) });
-    this.listApi.forceRefresh();
+    this.listApi?.forceRefresh();
   }
 
   /**

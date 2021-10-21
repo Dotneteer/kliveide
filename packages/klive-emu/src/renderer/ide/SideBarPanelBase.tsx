@@ -29,6 +29,7 @@ export class SideBarPanelBase<
   private _isSizing = false;
   private _eventCount = 0;
   private _initialized = false;
+  private _executionState = 0;
 
   // --- Override this property to set with item width in the scrollable panel
   width: string | number = "fit-content";
@@ -40,6 +41,14 @@ export class SideBarPanelBase<
 
   constructor(props: SideBarProps<P>) {
     super(props);
+    this._executionState = getState().emulatorPanel?.executionState ?? 0;
+  }
+
+  /**
+   * The virtual machine's current execution state
+   */
+  protected get executionState(): number {
+    return this._executionState;
   }
 
   // --- Listen to run events
@@ -142,6 +151,7 @@ export class SideBarPanelBase<
 
   // --- Take care of run events
   private runEvent = async ({ execState, isDebug }: RunEventArgs) => {
+    this._executionState = execState;
     this.setState({ hasMachine: true as any });
     if (this.props.descriptor.expanded) {
       if (execState === 1) {
