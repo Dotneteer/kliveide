@@ -4,10 +4,9 @@ import {
 } from "@core/service-registry";
 import { EmulatorPanelState } from "@state/AppState";
 import { OutputPaneDescriptorBase } from "../../ide/tool-area/OutputPaneService";
-import { IOutputBuffer, OutputColor } from "@abstractions/output-pane-service";
+import { IOutputBuffer, OutputColor, VM_OUTPUT_PANE_ID } from "@abstractions/output-pane-service";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 
-const ID = "VmOutputPane";
 const TITLE = "Virtual Machine";
 
 let eventCount = 0;
@@ -20,13 +19,13 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
   private _lastEmuState: EmulatorPanelState | null = null;
 
   constructor() {
-    super(ID, TITLE);
+    super(VM_OUTPUT_PANE_ID, TITLE);
     const outputPaneService = getOutputPaneService();
     getStore().machineTypeChanged.on((type) => {
       // --- Change the execution state to "none" whenever the machine type changes
       this._isMachineTypeSet = true;
       this._lastEmuState = null;
-      const pane = outputPaneService.getPaneById(ID);
+      const pane = outputPaneService.getPaneById(VM_OUTPUT_PANE_ID);
       if (pane) {
         const buffer = pane.buffer;
         buffer.resetColor();
@@ -43,7 +42,7 @@ export class VmOutputPanelDescriptor extends OutputPaneDescriptorBase {
       if (!this._isMachineTypeSet) {
         return;
       }
-      const pane = outputPaneService.getPaneById(ID);
+      const pane = outputPaneService.getPaneById(VM_OUTPUT_PANE_ID);
       if (pane) {
         const buffer = pane.buffer;
 

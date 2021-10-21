@@ -210,6 +210,8 @@ export class AssemblerErrorInfo implements IAssemblerErrorInfo {
     public readonly line: number,
     public readonly startPosition: number,
     public readonly endPosition: number | null,
+    public readonly startColumn: number,
+    public readonly endColumn: number | null,
     public readonly message: string,
     public readonly isWarning?: boolean
   ) {}

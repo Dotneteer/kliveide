@@ -1,9 +1,18 @@
 import { ILiteEvent } from "@core/utils/lite-event";
 
+// --- IDs of predefined panels
+export const OUTPUT_TOOL_ID = "OutputToolPanel";
+export const INTERACTIVE_TOOL_ID = "InteractiveToolPanel";
+
 /**
  * Represents an output panel
  */
 export interface IToolPanel {
+  /**
+   * The identifier of the tool panel
+   */
+  id: string;
+
   /**
    * The index of the panel
    */
@@ -66,6 +75,12 @@ export interface IToolAreaService {
    * @param makeActive Make this tool the active one?
    */
   registerTool(tool: IToolPanel, makeActive: boolean, index?: number): void;
+
+  /**
+   * Gets the specified tool panel
+   * @param id 
+   */
+  getToolPanelById(id: string): IToolPanel;
 
   /**
    * Sets the specified document to be the active one

@@ -14,6 +14,7 @@ import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { InteractiveCommandResult } from "@abstractions/interactive-command-service";
+import { INTERACTIVE_TOOL_ID } from "@abstractions/tool-area-service";
 
 const TITLE = "Interactive";
 
@@ -229,7 +230,7 @@ const inputStyle: CSSProperties = {
  */
 export class InteractiveToolPanelDescriptor extends ToolPanelDescriptorBase {
   constructor() {
-    super(TITLE);
+    super(INTERACTIVE_TOOL_ID, TITLE);
   }
 
   createHeaderElement(): React.ReactNode {

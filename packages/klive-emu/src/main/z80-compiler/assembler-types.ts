@@ -272,6 +272,8 @@ export interface IAssemblerErrorInfo {
   readonly line: number;
   readonly startPosition: number;
   readonly endPosition: number | null;
+  readonly startColumn: number;
+  readonly endColumn: number | null;
   readonly message: string;
   readonly isWarning?: boolean;
 }

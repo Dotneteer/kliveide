@@ -1,6 +1,6 @@
+import { COMPILER_OUTPUT_PANE_ID } from "@abstractions/output-pane-service";
 import { OutputPaneDescriptorBase } from "./OutputPaneService";
 
-const ID = "CompilerOuputPane";
 const TITLE = "Z80 Assembler";
 
 /**
@@ -8,6 +8,6 @@ const TITLE = "Z80 Assembler";
  */
 export class CompilerOutputPanelDescriptor extends OutputPaneDescriptorBase {
   constructor() {
-    super(ID, TITLE);
+    super(COMPILER_OUTPUT_PANE_ID, TITLE);
   }
 }

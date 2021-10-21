@@ -525,6 +525,16 @@ export interface AssemblerErrorInfo {
   readonly endPosition: number | null;
 
   /**
+   * Error start column
+   */
+   readonly startColumn: number;
+
+   /**
+    * Error end column
+    */
+   readonly endColumn: number | null;
+ 
+   /**
    * Complete error message
    */
   readonly message: string;
