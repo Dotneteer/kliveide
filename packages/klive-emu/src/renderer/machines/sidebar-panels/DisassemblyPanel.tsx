@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { getState } from "@core/service-registry";
+import { dispatch, getState, getStore } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
@@ -16,9 +16,11 @@ import { Icon } from "../../../emu-ide/components/Icon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
 import { getEngineProxyService } from "../../ide/engine-proxy";
+import { BinaryBreakpoint } from "@abstractions/code-runner-service";
+import { addBreakpointAction, removeBreakpointAction } from "@core/state/debugger-reducer";
 
 const TITLE = "Z80 Disassembly";
-const DISASS_LENGTH = 2560;
+const DISASS_LENGTH = 1024;
 
 type State = {
   output?: DisassemblyOutput;
@@ -31,8 +33,35 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   SideBarProps<{}>,
   SideBarState<State>
 > {
+  private _breakpointMap = new Map<number, BinaryBreakpoint>();
+  private _refreshBreakpoints: () => void;
+
   width = "fit-content";
   noMacineLine2 = "to see the disassembly";
+  /**
+   * Initialize with the current breakpoints
+   * @param props
+   */
+  constructor(props: SideBarProps<{}>) {
+    super(props);
+    this._refreshBreakpoints = () => this.refreshBreakpoints();
+  }
+
+  // --- Listen to run events
+  async componentDidMount(): Promise<void> {
+    super.componentDidMount();
+    const store = getStore();
+    store.breakpointsChanged.on(this._refreshBreakpoints);
+    await new Promise((r) => setTimeout(r, 100));
+    this.refreshBreakpoints();
+  }
+
+  // --- Stop listening to run events
+  componentWillUnmount(): void {
+    const store = getStore();
+    store.breakpointsChanged.off(this._refreshBreakpoints);
+    super.componentWillUnmount();
+  }
 
   /**
    * Override to get the number of items
@@ -70,6 +99,11 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
             : "1px solid transparent"
           : "1px solid transparent",
     };
+    const hasBreakpoint = this._breakpointMap.has(item.address);
+    const addressLabel = (item?.address ?? null) ? `${item.address
+      .toString(16)
+      .padStart(4, "0")
+      .toUpperCase()}` : "";
     return (
       <div
         className="listlike"
@@ -92,7 +126,46 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
                 fontWeight: item?.hasLabel ? 600 : 100,
               }}
             >
-              {item.address.toString(16).padStart(4, "0").toUpperCase()}
+              {addressLabel}
+            </div>
+            <div
+              title={
+                this.executionState === 3
+                  ? hasBreakpoint
+                    ? `Click to remove breakpoint at $${addressLabel}`
+                    : `Click to add a new breakpoint at $${addressLabel}`
+                  : ""
+              }
+              style={{
+                width: 20,
+                height: 16,
+                display: "flex",
+                alignItems: "center",
+                cursor: this.executionState === 3 ? "pointer" : "default",
+              }}
+              onClick={() => {
+                if (this.executionState === 3) {
+                  const bp: BinaryBreakpoint = {
+                    type: "binary",
+                    location: item.address,
+                  };
+                  if (hasBreakpoint) {
+                    dispatch(removeBreakpointAction(bp));
+                  } else {
+                    dispatch(addBreakpointAction(bp));
+                  }
+                }
+              }}
+            >
+              {hasBreakpoint && (
+                <Icon
+                  iconName="circle-filled"
+                  width={16}
+                  height={16}
+                  fill="--debug-bp-color"
+                  style={{ marginLeft: 4 }}
+                />
+              )}
             </div>
             {index === 0 ? (
               <Icon iconName="chevron-right" fill="--console-ansi-green" />
@@ -157,7 +230,27 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
     this.setState({
       output: disassemblyOutput,
     });
-    this.listApi.forceRefresh(0);
+    this.listApi?.forceRefresh(0);
+  }
+
+  /**
+   * Respond to breakpoint changes
+   * @param breakpoints
+   */
+  refreshBreakpoints(): void {
+    // --- Get the current binary breakpoints
+    console.log("Breakpoints changed.");
+    const state = getState();
+    console.log(state.debugger?.breakpoints);
+    const breakpoints = (state?.debugger?.breakpoints ?? []).filter(
+      (bp) => bp.type === "binary"
+    ) as BinaryBreakpoint[];
+    this._breakpointMap.clear();
+
+    // --- Store them in a map
+    console.log(breakpoints);
+    breakpoints.forEach((bp) => this._breakpointMap.set(bp.location, bp));
+    this.listApi?.forceRefresh(0);
   }
 }
 
