@@ -82,6 +82,7 @@ export interface ActionTypes {
   PROJECT_CLOSED: null;
 
   // --- Compilation
+  RESET_COMPILE: null;
   START_COMPILE: null;
   END_COMPILE: null;
 

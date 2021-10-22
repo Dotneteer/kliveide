@@ -442,17 +442,17 @@ const compileCodeCommand: IKliveCommand = {
             buffer.color("bright-red");
             buffer.write(errItem.errorCode);
             buffer.resetColor();
-            buffer.write(`: ${errItem.message} [`);
+            buffer.write(`: ${errItem.message} `);
             buffer.color("cyan");
-            buffer.write(
-              `${errItem.line}:${errItem.startColumn}-${errItem.endColumn}`
+            buffer.writeLine(
+              `${errItem.fileName}:[${errItem.line}:${errItem.startColumn}-${errItem.endColumn}]`,
+              <IHighlightable>{
+                highlight: true,
+                title: "Click to locate the error",
+                errorItem: errItem,
+              }
             );
             buffer.resetColor();
-            buffer.writeLine("]", <IHighlightable>{
-              highlight: true,
-              title: "Click to locate the error",
-              errorItem: errItem,
-            });
           }
         }
         // --- Execution time

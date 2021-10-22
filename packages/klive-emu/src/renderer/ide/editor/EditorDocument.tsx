@@ -9,7 +9,7 @@ import {
 } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
-import MonacoEditor from "react-monaco-editor";
+import MonacoEditor, { monaco } from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
 import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
@@ -25,7 +25,7 @@ import {
   removeBreakpointAction,
   scrollBreakpointsAction,
 } from "@core/state/debugger-reducer";
-import { TouchBarSlider } from "electron";
+import { resetCompileAction } from "@core/state/compilation-reducer";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -33,7 +33,7 @@ const SAVE_DEBOUNCE = 1000;
 // --- Shortcuts to Monaco editor types
 type Decoration = monacoEditor.editor.IModelDeltaDecoration;
 type MarkdownString = monacoEditor.IMarkdownString;
-
+type MarkerData = monacoEditor.editor.IMarkerData;
 /**
  * Component properties
  */
@@ -52,6 +52,9 @@ interface State {
   show: boolean;
 }
 
+// --- Represents the editor markers held by the code editor
+const CODE_EDITOR_MARKERS = "CodeEditorMarkers";
+
 /**
  * This component implements a document editor based on Monaco editor
  */
@@ -61,6 +64,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   private _unsavedChangeCounter = 0;
   private _descriptorChanged: () => void;
   private _refreshBreakpoints: () => void;
+  private _refreshErrorMarkers: () => void;
   private _subscribedToBreakpointEvents = false;
   private _oldDecorations: string[] = [];
   private _oldHoverDecorations: string[] = [];
@@ -81,6 +85,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     // --- Bind these event handlers
     this._descriptorChanged = () => this.descriptorChanged();
     this._refreshBreakpoints = () => this.refreshBreakpoints();
+    this._refreshErrorMarkers = () => this.refreshErrorMarkers();
   }
 
   /**
@@ -196,8 +201,9 @@ export default class EditorDocument extends React.Component<Props, State> {
       editor.onMouseMove((e) => this.handleEditorMouseMove(e));
       editor.onMouseLeave((e) => this.handleEditorMouseLeave(e));
 
-      // --- Display breakpoint information
+      // --- Display breakpoint and marker information
       this.refreshBreakpoints();
+      this.refreshErrorMarkers();
     }
 
     // --- Save the last value of the editor
@@ -210,6 +216,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   componentDidMount(): void {
     this.setState({ show: true });
     this.props.descriptor.documentDescriptorChanged.on(this._descriptorChanged);
+    getStore().compilationChanged.on(this._refreshErrorMarkers);
   }
 
   /**
@@ -224,6 +231,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       const store = getStore();
       store.breakpointsChanged.off(this._refreshBreakpoints);
       store.compilationChanged.off(this._refreshBreakpoints);
+      store.compilationChanged.off(this._refreshErrorMarkers);
     }
 
     // --- Check if this document is still registered
@@ -327,6 +335,11 @@ export default class EditorDocument extends React.Component<Props, State> {
     _newValue: string,
     e: monacoEditor.editor.IModelContentChangedEvent
   ) {
+    // --- Remove the previous error markers
+    const model = this._editor.getModel();
+    monaco.editor.setModelMarkers(model, CODE_EDITOR_MARKERS, []);
+    dispatch(resetCompileAction());
+
     // --- Make the document permanent in the document tab bar
     const documentService = getDocumentService();
     const currentDoc = documentService.getDocumentById(
@@ -460,6 +473,34 @@ export default class EditorDocument extends React.Component<Props, State> {
       this._oldDecorations,
       decorations
     );
+  }
+
+  /**
+   * Refreshes the error markers
+   */
+  refreshErrorMarkers(): void {
+    // --- Check if we have any compilation errors
+    const compilationResult = getState().compilation?.result;
+    if (!compilationResult) {
+      return;
+    }
+
+    // --- Convert errors to markers
+    const model = this._editor.getModel();
+    const markers = compilationResult.errors
+      .filter((err) => err.fileName === this.props.descriptor.id)
+      .map(
+        (err) =>
+          ({
+            severity: monacoEditor.MarkerSeverity.Error,
+            message: "Error",
+            startLineNumber: err.line,
+            endLineNumber: err.line,
+            startColumn: err.startColumn,
+            endColumn: err.endColumn,
+          } as MarkerData)
+      );
+    monaco.editor.setModelMarkers(model, CODE_EDITOR_MARKERS, markers);
   }
 
   /**

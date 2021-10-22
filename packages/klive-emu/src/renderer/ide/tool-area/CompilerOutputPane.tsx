@@ -29,7 +29,6 @@ export class CompilerOutputPanelDescriptor extends OutputPaneDescriptorBase {
 
     const documentService = getDocumentService();
     const document = documentService.getDocumentById(errorItem.fileName);
-    console.log(errorItem.fileName);
     if (document) {
       document.temporary = false;
       documentService.setActiveDocument(document);
