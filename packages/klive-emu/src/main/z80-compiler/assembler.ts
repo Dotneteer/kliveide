@@ -290,10 +290,10 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Execute the compilation phases
     let success = false;
     const parseResult = this.executeParse(0, sourceItem, sourceText);
-    if (parseResult.success) {
-      this.preprocessedLines = parseResult.parsedLines;
+    this.preprocessedLines = parseResult.parsedLines;
+    success = this.emitCode(this.preprocessedLines);
+    if (parseResult.success && success) {
       success =
-        this.emitCode(this.preprocessedLines) &&
         this.fixupUnresolvedSymbols() &&
         this.compareBinaries();
     }
@@ -439,6 +439,9 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @returns True, if there were no errors during code emission.
    */
   private emitCode(lines: Z80AssemblyLine[]): boolean {
+    if (!lines) {
+      return false;
+    }
     this._output.segments.length = 0;
     this.ensureCodeSegment();
 
