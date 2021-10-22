@@ -8,7 +8,10 @@ import {
 } from "@core/service-registry";
 
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
-import { ChangeEventArgs, DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
+import {
+  ChangeEventArgs,
+  DropDownListComponent,
+} from "@syncfusion/ej2-react-dropdowns";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import VirtualizedList, {
   VirtualizedListApi,
@@ -56,7 +59,7 @@ export default class OutputToolPanel extends ToolPanelBase<
     const activePane = outputPaneService.getActivePane();
     if (activePane) {
       this.setState({
-        buffer: activePane.buffer.getContents(),
+        buffer: activePane.buffer.getContents().map((lc) => lc.text),
       });
     }
   }
@@ -70,7 +73,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   onOutputPaneChanged(pane: IOutputPane): void {
     this.setState({
       refreshCount: this.state.refreshCount + 1,
-      buffer: pane.buffer.getContents(),
+      buffer: pane.buffer.getContents().map(lc => lc.text),
       initPosition: -1,
     });
   }
@@ -78,7 +81,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   onContentsChanged(pane: IOutputPane): void {
     if (pane === getOutputPaneService().getActivePane()) {
       this.setState({
-        buffer: pane.buffer.getContents(),
+        buffer: pane.buffer.getContents().map(lc => lc.text),
         initPosition: -1,
       });
       this._listApi.scrollToEnd();
@@ -121,7 +124,7 @@ function OutputPanesPropertyBar() {
   const paneChanged = () => {
     const paneId = getOutputPaneService().getActivePane().id.toString();
     setValue(paneId);
-  }
+  };
 
   useEffect(() => {
     const outputPaneService = getOutputPaneService();
@@ -144,7 +147,9 @@ function OutputPanesPropertyBar() {
 
   const selectPane = (e: ChangeEventArgs) => {
     const outputPaneService = getOutputPaneService();
-    const selectedPanel = outputPaneService.getPaneById((e.itemData as PaneData).id);
+    const selectedPanel = outputPaneService.getPaneById(
+      (e.itemData as PaneData).id
+    );
     if (selectedPanel) {
       outputPaneService.setActivePane(selectedPanel);
     }
@@ -161,7 +166,7 @@ function OutputPanesPropertyBar() {
       <DropDownListComponent
         dataSource={panesData}
         fields={{ text: "title", value: "id" }}
-        change={e => selectPane(e)}
+        change={(e) => selectPane(e)}
         value={value}
         width={170}
       />

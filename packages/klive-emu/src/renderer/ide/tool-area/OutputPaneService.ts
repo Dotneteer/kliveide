@@ -4,6 +4,7 @@ import {
   IOutputPane,
   IOutputPaneService,
   OutputColor,
+  OutputContentLine,
 } from "@abstractions/output-pane-service";
 import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { toStyleString } from "../utils/css-utils";
@@ -12,7 +13,7 @@ import { toStyleString } from "../utils/css-utils";
  * Implements a simple buffer to write the contents of the output pane to
  */
 export class OutputPaneBuffer implements IOutputBuffer {
-  private _buffer: string[] = [];
+  private _buffer: OutputContentLine[] = [];
   private _currentLineIndex: number = -1;
   private _color: OutputColor | null = null;
   private _isBold: boolean = false;
@@ -38,7 +39,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
   /**
    * Gets the contents of the buffer
    */
-  getContents(): string[] {
+  getContents(): OutputContentLine[] {
     return this._buffer;
   }
 
@@ -96,10 +97,13 @@ export class OutputPaneBuffer implements IOutputBuffer {
   write(message: string): void {
     if (this._currentLineIndex < 0) {
       this._currentLineIndex = 0;
-      this._buffer[0] = "";
+      this._buffer[0] = { text: "" };
     }
 
-    let innerMessage = message.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
+    let innerMessage = message
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/ /g, "&nbsp;");
 
     if (this.isStyled()) {
       message = `<span style="${toStyleString(
@@ -107,9 +111,12 @@ export class OutputPaneBuffer implements IOutputBuffer {
       )}">${innerMessage}</span>`;
     }
 
-    this._buffer[this._currentLineIndex] = (
-      this._buffer[this._currentLineIndex] + message
-    ).substr(0, this.maxLineLenght);
+    this._buffer[this._currentLineIndex] = {
+      text: (this._buffer[this._currentLineIndex].text + message).substr(
+        0,
+        this.maxLineLenght
+      ),
+    };
 
     this._contentsChanged.fire();
   }
@@ -127,7 +134,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
     } else {
       this._currentLineIndex++;
     }
-    this._buffer[this._currentLineIndex] = "";
+    this._buffer[this._currentLineIndex] = { text: "" };
   }
   /**
    * This event fires when the contents of the buffer changes.

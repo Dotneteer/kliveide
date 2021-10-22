@@ -26,6 +26,14 @@ export type OutputColor =
   | "bright-white";
 
 /**
+ * Represents a single line of the output pane's content
+ */
+export type OutputContentLine = {
+  text: string;
+  data?: unknown;
+}
+
+/**
  * Represents a buffer for an output pane
  */
 export interface IOutputBuffer {
@@ -37,7 +45,7 @@ export interface IOutputBuffer {
   /**
    * Gets the contents of the buffer
    */
-  getContents(): string[];
+  getContents(): OutputContentLine[];
 
   /**
    * Sets the default color

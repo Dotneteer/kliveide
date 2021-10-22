@@ -588,7 +588,7 @@ export interface CompilerOutput extends CompiledModule {
   /**
    * Number of errors
    */
-  get errorCount(): number;
+  readonly errorCount: number;
 
   /**
    * The type of Spectrum model to use

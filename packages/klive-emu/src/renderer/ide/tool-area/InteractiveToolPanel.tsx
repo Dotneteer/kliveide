@@ -51,7 +51,10 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     this.state = {
       refreshCount: 0,
       initPosition: -1,
-      buffer: interactivePaneService.getOutputBuffer().getContents(),
+      buffer: interactivePaneService
+        .getOutputBuffer()
+        .getContents()
+        .map((lc) => lc.text),
       inputEnabled: !interactivePaneService.isCommandExecuting(),
     };
   }
@@ -80,7 +83,10 @@ export default class InteractiveToolPanel extends ToolPanelBase<
 
   onContentsChanged(): void {
     this.setState({
-      buffer: getInteractivePaneService().getOutputBuffer().getContents(),
+      buffer: getInteractivePaneService()
+        .getOutputBuffer()
+        .getContents()
+        .map((lc) => lc.text),
       initPosition: -1,
     });
     this._listApi.scrollToEnd();
@@ -152,7 +158,9 @@ export default class InteractiveToolPanel extends ToolPanelBase<
             spellCheck={false}
             onKeyDown={(e) => this.keyDown(e)}
             disabled={isExecuting}
-            placeholder={isExecuting ? "Executing command..." : "Type ? + Enter for help"}
+            placeholder={
+              isExecuting ? "Executing command..." : "Type ? + Enter for help"
+            }
           />
         </div>
       </>
