@@ -100,12 +100,16 @@ export interface ActionTypes {
   CLEAR_BUILD_ROOTS: null;
   ADD_BUILD_ROOT: null;
   REMOVE_BUILD_ROOT: null;
+
+  // --- Editor
+  EDITOR_STATUS_HIDE: null;
+  EDITOR_STATUS_SHOW: null
 }
 
 /**
  * Represents payload properties
  */
-export interface Payload {
+export type Payload = {
   theme?: string;
   machineType?: string;
   width?: number;
@@ -153,6 +157,8 @@ export interface Payload {
   lineCount?: number;
   shift?: number;
   resource?: string;
+  line?: number;
+  column?: number;
 }
 
 /**

@@ -26,6 +26,10 @@ import {
   scrollBreakpointsAction,
 } from "@core/state/debugger-reducer";
 import { resetCompileAction } from "@core/state/compilation-reducer";
+import {
+  hideEditorStatusAction,
+  showEditorStatusAction,
+} from "@core/state/editor-status-reducer";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -69,6 +73,7 @@ export default class EditorDocument extends React.Component<Props, State> {
   private _oldDecorations: string[] = [];
   private _oldHoverDecorations: string[] = [];
   private _previousContent: string | null = null;
+  private _editorPosUnsubscribe: monaco.IDisposable;
 
   /**
    * Initializes the editor
@@ -171,6 +176,10 @@ export default class EditorDocument extends React.Component<Props, State> {
       this._editor.restoreViewState(state.viewState);
     }
 
+    // --- Indicate the editor position in the status bar
+    const position = this._editor.getPosition();
+    dispatch(showEditorStatusAction(position.lineNumber, position.column));
+
     // --- Take the focus, if the document want to have it
     if (this.props.descriptor.initialFocus) {
       window.requestAnimationFrame(() => this._editor.focus());
@@ -208,6 +217,13 @@ export default class EditorDocument extends React.Component<Props, State> {
 
     // --- Save the last value of the editor
     this._previousContent = editor.getValue();
+
+    // --- Handle editor position changes
+    this._editorPosUnsubscribe = editor.onDidChangeCursorPosition((e) => {
+      dispatch(
+        showEditorStatusAction(e.position.lineNumber, e.position.column)
+      );
+    });
   }
 
   /**
@@ -249,6 +265,12 @@ export default class EditorDocument extends React.Component<Props, State> {
       if (this._unsavedChangeCounter > 0) {
         await this.saveDocument(text);
       }
+    }
+
+    // --- Sign that no status will come from this editor
+    dispatch(hideEditorStatusAction());
+    if (this._editorPosUnsubscribe) {
+      this._editorPosUnsubscribe.dispose();
     }
   }
 

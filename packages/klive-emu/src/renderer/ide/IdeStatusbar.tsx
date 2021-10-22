@@ -15,6 +15,7 @@ export default function Statusbar() {
     <Root>
       <CompilerStatus />
       <Gap />
+      <EditorStatus />
       <Section>
         <Label>Klive {getVersion()}</Label>
       </Section>
@@ -47,10 +48,30 @@ function CompilerStatus() {
       {filename && (
         <Label>
           ({getNodeFile(filename)}
-          {errorCount > 0 ? `, ${errorCount} ${errorCount === 1 ? "error": "errors"}` : ""})
+          {errorCount > 0
+            ? `, ${errorCount} ${errorCount === 1 ? "error" : "errors"}`
+            : ""}
+          )
         </Label>
       )}
     </Section>
+  );
+}
+
+function EditorStatus() {
+  const displayStatus = useSelector(
+    (state: AppState) => state?.editor?.displayed ?? false
+  );
+  const line = useSelector((state: AppState) => state?.editor?.line ?? -1);
+  const column = useSelector((state: AppState) => state?.editor?.column ?? -1);
+  return (
+    <>
+      {displayStatus && (
+        <Section key="2">
+          <Label>{`Ln ${line}, Col ${column}`}</Label>
+        </Section>
+      )}
+    </>
   );
 }
 

@@ -3,7 +3,7 @@ import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 /**
  * Represents the state of the editor
  */
-export type EditorState = {
+type EditorState = {
   text: string;
   viewState: monacoEditor.editor.ICodeEditorViewState;
 };
