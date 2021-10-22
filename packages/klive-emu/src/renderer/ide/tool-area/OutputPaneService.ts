@@ -123,11 +123,17 @@ export class OutputPaneBuffer implements IOutputBuffer {
 
   /**
    * Writes a message and adds a new output line
-   * @param message
+   * @param message Text message
+   * @param data Optional line data
    */
-  writeLine(message?: string): void {
+  writeLine(message?: string, data?: unknown): void {
     if (message) {
       this.write(message);
+    }
+    if (this._buffer[this._currentLineIndex]) {
+      this._buffer[this._currentLineIndex].data = data;
+    } else {
+      this._buffer[this._currentLineIndex] = { text: "", data };
     }
     if (this._currentLineIndex >= this.bufferedLines) {
       this._buffer.shift();
@@ -218,6 +224,14 @@ export abstract class OutputPaneDescriptorBase implements IOutputPane {
    */
   get buffer(): IOutputBuffer {
     return this._buffer;
+  }
+
+  /**
+   * Responds to an action of a highlighted item
+   * @param data
+   */
+  onContentLineAction(data: unknown): void {
+    // --- Override in derived descriptors
   }
 }
 

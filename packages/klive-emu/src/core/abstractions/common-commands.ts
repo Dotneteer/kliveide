@@ -30,7 +30,7 @@ import {
   KliveCommandContext,
 } from "@abstractions/command-definitions";
 import { OUTPUT_TOOL_ID } from "./tool-area-service";
-import { COMPILER_OUTPUT_PANE_ID } from "./output-pane-service";
+import { COMPILER_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
 import { result } from "lodash";
 
 /**
@@ -432,7 +432,9 @@ const compileCodeCommand: IKliveCommand = {
         } else {
           buffer.bold(true);
           buffer.color("bright-red");
-          buffer.writeLine(`Compiled with ${errorCount} error${errorCount > 1 ? "s": ""}.`);
+          buffer.writeLine(
+            `Compiled with ${errorCount} error${errorCount > 1 ? "s" : ""}.`
+          );
           buffer.bold(false);
           buffer.resetColor();
           for (const errItem of output.errors) {
@@ -441,9 +443,15 @@ const compileCodeCommand: IKliveCommand = {
             buffer.resetColor();
             buffer.write(`: ${errItem.message} [`);
             buffer.color("cyan");
-            buffer.write(`${errItem.line}:${errItem.startColumn}-${errItem.endColumn}`);
+            buffer.write(
+              `${errItem.line}:${errItem.startColumn}-${errItem.endColumn}`
+            );
             buffer.resetColor();
-            buffer.writeLine("]");
+            buffer.writeLine("]", <IHighlightable>{
+              highlight: true,
+              title: "Click to locate the error",
+              errorItem: errItem,
+            });
           }
         }
         // --- Execution time

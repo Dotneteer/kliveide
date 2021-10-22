@@ -3,7 +3,6 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 
 import {
   getOutputPaneService,
-  getState,
   getToolAreaService,
 } from "@core/service-registry";
 
@@ -17,7 +16,11 @@ import VirtualizedList, {
   VirtualizedListApi,
 } from "../../../emu-ide/components/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { IOutputPane } from "@abstractions/output-pane-service";
+import {
+  IHighlightable,
+  IOutputPane,
+  OutputContentLine,
+} from "@abstractions/output-pane-service";
 import { OUTPUT_TOOL_ID } from "@abstractions/tool-area-service";
 
 const TITLE = "Output";
@@ -25,7 +28,7 @@ const TITLE = "Output";
 type State = {
   refreshCount: number;
   initPosition?: number;
-  buffer: string[];
+  buffer: OutputContentLine[];
 };
 
 /**
@@ -59,7 +62,7 @@ export default class OutputToolPanel extends ToolPanelBase<
     const activePane = outputPaneService.getActivePane();
     if (activePane) {
       this.setState({
-        buffer: activePane.buffer.getContents().map((lc) => lc.text),
+        buffer: activePane.buffer.getContents(),
       });
     }
   }
@@ -73,7 +76,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   onOutputPaneChanged(pane: IOutputPane): void {
     this.setState({
       refreshCount: this.state.refreshCount + 1,
-      buffer: pane.buffer.getContents().map(lc => lc.text),
+      buffer: pane.buffer.getContents(),
       initPosition: -1,
     });
   }
@@ -81,7 +84,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   onContentsChanged(pane: IOutputPane): void {
     if (pane === getOutputPaneService().getActivePane()) {
       this.setState({
-        buffer: pane.buffer.getContents().map(lc => lc.text),
+        buffer: pane.buffer.getContents(),
         initPosition: -1,
       });
       this._listApi.scrollToEnd();
@@ -89,16 +92,37 @@ export default class OutputToolPanel extends ToolPanelBase<
   }
 
   renderContent() {
+    const pane = getOutputPaneService().getActivePane();
     return (
       <VirtualizedList
         key={this.state.refreshCount}
         itemHeight={18}
         numItems={this.state.buffer.length}
         renderItem={(index: number, style: CSSProperties) => {
+          const itemData = this.state.buffer[index].data;
+          const hasHilite = itemData && (itemData as IHighlightable).highlight;
           return (
-            <div key={index} style={{ ...style, fontSize: "0.95em" }}>
+            <div
+              key={index}
+              style={{
+                ...style,
+                fontSize: "0.95em",
+                backgroundColor: hasHilite
+                  ? "var(--list-selected-background-color)"
+                  : undefined,
+                cursor: hasHilite ? "pointer" : undefined,
+              }}
+              title={hasHilite ? (itemData as IHighlightable).title : undefined}
+              onClick={() => {
+                if (hasHilite && pane) {
+                  pane.onContentLineAction(itemData);
+                }
+              }}
+            >
               <div
-                dangerouslySetInnerHTML={{ __html: this.state.buffer[index] }}
+                dangerouslySetInnerHTML={{
+                  __html: this.state.buffer[index].text ?? "",
+                }}
               />
             </div>
           );

@@ -31,6 +31,14 @@ export type OutputColor =
 export type OutputContentLine = {
   text: string;
   data?: unknown;
+};
+
+/**
+ * Marks an output content line as highlightable
+ */
+export interface IHighlightable {
+  highlight?: boolean;
+  title?: string;
 }
 
 /**
@@ -90,9 +98,10 @@ export interface IOutputBuffer {
 
   /**
    * Writes a message and adds a new output line
-   * @param message
+   * @param message Text message
+   * @param data Optional line data
    */
-  writeLine(message?: string): void;
+  writeLine(message?: string, data?: unknown): void;
 
   /**
    * This event fires when the contents of the buffer changes.
@@ -129,7 +138,13 @@ export interface IOutputPane {
   /**
    * Gets the buffer of the pane
    */
-  get buffer(): IOutputBuffer;
+  readonly buffer: IOutputBuffer;
+
+  /**
+   * Responds to an action of a highlighted item
+   * @param data
+   */
+  onContentLineAction(data: unknown): void;
 }
 
 /**
