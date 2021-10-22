@@ -95,32 +95,32 @@ export interface IVmEngineService extends IVmControllerService {
   /**
    * Indicates if the engine has already been created
    */
-  get hasEngine(): boolean;
+  readonly hasEngine: boolean;
 
   /**
    * Gets the error message of the virtual machine engine
    */
-  get vmEngineError(): string | null;
+  readonly vmEngineError: string | null;
 
   /**
    * Indicates if the virtual machine engine has been changed
    */
-  get vmEngineChanged(): ILiteEvent<VirtualMachineCoreBase>;
+  readonly vmEngineChanged: ILiteEvent<VirtualMachineCoreBase>;
 
   /**
    * Indicates that the virtual machine screen has been refreshed
    */
-  get screenRefreshed(): ILiteEvent<void>;
+  readonly screenRefreshed: ILiteEvent<void>;
 
   /**
    * Indicates that the virtual machine has a new UI message
    */
-  get uiMessageChanged(): ILiteEvent<string | null>;
+  readonly uiMessageChanged: ILiteEvent<string | null>;
 
   /**
    * Indicates that the virtual machine execution state has changed
    */
-  get executionStateChanged(): ILiteEvent<VmStateChangedArgs>;
+  readonly executionStateChanged: ILiteEvent<VmStateChangedArgs>;
 
   /**
    * The current state of the virtual machine

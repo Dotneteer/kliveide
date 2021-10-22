@@ -525,6 +525,16 @@ export interface AssemblerErrorInfo {
   readonly endPosition: number | null;
 
   /**
+   * Error start column
+   */
+   readonly startColumn: number;
+
+   /**
+    * Error end column
+    */
+   readonly endColumn: number | null;
+ 
+   /**
    * Complete error message
    */
   readonly message: string;
@@ -578,7 +588,7 @@ export interface CompilerOutput extends CompiledModule {
   /**
    * Number of errors
    */
-  get errorCount(): number;
+  readonly errorCount: number;
 
   /**
    * The type of Spectrum model to use

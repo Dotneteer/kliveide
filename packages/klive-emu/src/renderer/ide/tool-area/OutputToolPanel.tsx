@@ -7,20 +7,28 @@ import {
 } from "@core/service-registry";
 
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
-import { DropDownListComponent } from "@syncfusion/ej2-react-dropdowns";
+import {
+  ChangeEventArgs,
+  DropDownListComponent,
+} from "@syncfusion/ej2-react-dropdowns";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import VirtualizedList, {
   VirtualizedListApi,
 } from "../../../emu-ide/components/VirtualizedList";
 import CommandIconButton from "../context-menu/CommandIconButton";
-import { IOutputPane } from "@abstractions/output-pane-service";
+import {
+  IHighlightable,
+  IOutputPane,
+  OutputContentLine,
+} from "@abstractions/output-pane-service";
+import { OUTPUT_TOOL_ID } from "@abstractions/tool-area-service";
 
 const TITLE = "Output";
 
 type State = {
   refreshCount: number;
   initPosition?: number;
-  buffer: string[];
+  buffer: OutputContentLine[];
 };
 
 /**
@@ -84,16 +92,37 @@ export default class OutputToolPanel extends ToolPanelBase<
   }
 
   renderContent() {
+    const pane = getOutputPaneService().getActivePane();
     return (
       <VirtualizedList
         key={this.state.refreshCount}
         itemHeight={18}
         numItems={this.state.buffer.length}
         renderItem={(index: number, style: CSSProperties) => {
+          const itemData = this.state.buffer[index].data;
+          const hasHilite = itemData && (itemData as IHighlightable).highlight;
           return (
-            <div key={index} style={{ ...style, fontSize: "0.95em" }}>
+            <div
+              key={index}
+              style={{
+                ...style,
+                fontSize: "0.95em",
+                backgroundColor: hasHilite
+                  ? "var(--list-selected-background-color)"
+                  : undefined,
+                cursor: hasHilite ? "pointer" : undefined,
+              }}
+              title={hasHilite ? (itemData as IHighlightable).title : undefined}
+              onClick={() => {
+                if (hasHilite && pane) {
+                  pane.onContentLineAction(itemData);
+                }
+              }}
+            >
               <div
-                dangerouslySetInnerHTML={{ __html: this.state.buffer[index] }}
+                dangerouslySetInnerHTML={{
+                  __html: this.state.buffer[index].text ?? "",
+                }}
               />
             </div>
           );
@@ -112,33 +141,40 @@ type PaneData = {
 };
 
 function OutputPanesPropertyBar() {
-  let paneListComponent: DropDownListComponent;
   const mounted = useRef(false);
   const [panesData, setPanesData] = useState<PaneData[]>();
+  const [value, setValue] = useState<string>();
+
+  const paneChanged = () => {
+    const paneId = getOutputPaneService().getActivePane().id.toString();
+    setValue(paneId);
+  };
 
   useEffect(() => {
     const outputPaneService = getOutputPaneService();
     if (!mounted.current) {
       // --- Mount
-      setPanesData(
-        outputPaneService
-          .getOutputPanes()
-          .map((p) => ({ id: p.id, title: p.title }))
-      );
+      const panes = outputPaneService
+        .getOutputPanes()
+        .map((p) => ({ id: p.id, title: p.title }));
+      setPanesData(panes);
+      setValue(value ?? panes[0].id.toString());
+      outputPaneService.activePaneChanged.on(paneChanged);
       mounted.current = true;
-    } else {
-      paneListComponent.value = outputPaneService.getActivePane()?.id;
     }
 
-    return () => {};
-  });
+    return () => {
+      outputPaneService.activePaneChanged.off(paneChanged);
+      mounted.current = false;
+    };
+  }, [value]);
 
-  const selectPane = () => {
+  const selectPane = (e: ChangeEventArgs) => {
     const outputPaneService = getOutputPaneService();
-    if (paneListComponent?.value) {
-      const selectedPanel = outputPaneService.getPaneById(
-        paneListComponent.value.toString()
-      );
+    const selectedPanel = outputPaneService.getPaneById(
+      (e.itemData as PaneData).id
+    );
+    if (selectedPanel) {
       outputPaneService.setActivePane(selectedPanel);
     }
   };
@@ -152,10 +188,10 @@ function OutputPanesPropertyBar() {
       }}
     >
       <DropDownListComponent
-        ref={(scope) => (paneListComponent = scope)}
         dataSource={panesData}
         fields={{ text: "title", value: "id" }}
-        change={selectPane}
+        change={(e) => selectPane(e)}
+        value={value}
         width={170}
       />
       <div style={{ width: 6 }} />
@@ -173,7 +209,7 @@ function OutputPanesPropertyBar() {
  */
 export class OutputToolPanelDescriptor extends ToolPanelDescriptorBase {
   constructor() {
-    super(TITLE);
+    super(OUTPUT_TOOL_ID, TITLE);
   }
 
   createHeaderElement(): React.ReactNode {

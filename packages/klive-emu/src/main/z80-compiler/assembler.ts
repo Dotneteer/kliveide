@@ -2625,6 +2625,8 @@ export class Z80Assembler extends ExpressionEvaluator {
           origLine.line,
           origLine.startPosition,
           origLine.endPosition,
+          origLine.startColumn,
+          origLine.endColumn,
           errorPrefix + error.text,
           true
         );
@@ -5855,6 +5857,8 @@ export class Z80Assembler extends ExpressionEvaluator {
       error.line,
       error.position,
       error.position + 1,
+      error.column,
+      error.column + 1,
       error.text
     );
     this._output.errors.push(errorInfo);
@@ -5875,6 +5879,8 @@ export class Z80Assembler extends ExpressionEvaluator {
         errorLine.line,
         errorLine.startPosition,
         errorLine.endPosition,
+        errorLine.startColumn,
+        errorLine.endColumn,
         `Error in macro invocation${i > 0 ? " (level" + i + ")" : ""}`
       );
       this._output.errors.push(errorInfo);
@@ -5926,6 +5932,8 @@ export class Z80Assembler extends ExpressionEvaluator {
       line.line - 1,
       nodePosition ? nodePosition.startPosition : line.startPosition,
       nodePosition ? nodePosition.endPosition : line.endPosition,
+      nodePosition ? nodePosition.startColumn : line.startColumn,
+      nodePosition ? nodePosition.endColumn : line.endColumn,
       errorText
     );
     this._output.errors.push(errorInfo);

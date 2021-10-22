@@ -1,0 +1,11 @@
+﻿ld a,b
+
+nop
+
+#include "./inc1.z80asm"
+
+nop
+
+#include "./inc2.z80asm"
+
+nop

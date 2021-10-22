@@ -16,7 +16,7 @@ export abstract class ToolPanelDescriptorBase implements IToolPanel {
    * Instantiates the panel with the specified title
    * @param title
    */
-  constructor(public readonly title: string) {}
+  constructor(public readonly id: string, public readonly title: string) {}
 
   /**
    * The index of the panel
@@ -109,6 +109,18 @@ export class ToolAreaService implements IToolAreaService {
       this.setActiveTool(tool);
     }
     this.fireChanges();
+  }
+
+  /**
+   * Gets the specified tool panel
+   * @param id
+   */
+  getToolPanelById(id: string): IToolPanel {
+    const toolPanel = this._tools.find(t => t.id === id);
+    if (!toolPanel) {
+      throw new Error(`Cannot find tool panel '${id}', it has not been registered.`)
+    }
+    return toolPanel;
   }
 
   /**

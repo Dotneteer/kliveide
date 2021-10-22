@@ -1,6 +1,8 @@
 import {
   dispatch,
   getCodeRunnerService,
+  getOutputPaneService,
+  getToolAreaService,
   getVmControllerService,
   getZ80CompilerService,
 } from "@core/service-registry";
@@ -9,7 +11,8 @@ import {
   registerCommand,
 } from "@abstractions/command-registry";
 import {
-  sendFromIdeToEmu, sendFromMainToEmu,
+  sendFromIdeToEmu,
+  sendFromMainToEmu,
 } from "@core/messaging/message-sending";
 import {
   CompileFileResponse,
@@ -26,6 +29,9 @@ import {
   IKliveCommand,
   KliveCommandContext,
 } from "@abstractions/command-definitions";
+import { OUTPUT_TOOL_ID } from "./tool-area-service";
+import { COMPILER_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
+import { result } from "lodash";
 
 /**
  * Names of core Klive commands
@@ -205,7 +211,7 @@ const hideIdeCommand: IKliveCommand = {
 /**
  * This command starts the virtual machine
  */
- const startVmCommand: IKliveCommand = {
+const startVmCommand: IKliveCommand = {
   commandId: "klive.startVm",
   title: "Start",
   icon: "play",
@@ -398,10 +404,67 @@ const compileCodeCommand: IKliveCommand = {
         signInvalidContext(context);
         break;
       case "ide":
-        await sendFromIdeToEmu<CompileFileResponse>({
-          type: "CompileFile",
-          filename: context.resource,
-        });
+        // --- Display compiler output in the Z80 Assembler output pane
+        const outputPaneService = getOutputPaneService();
+        const compilerPane = outputPaneService.getPaneById(
+          COMPILER_OUTPUT_PANE_ID
+        );
+        const buffer = compilerPane.buffer;
+        buffer.clear();
+        buffer.writeLine(`Compiling ${context.resource}`);
+        const start = new Date().valueOf();
+
+        // --- Invoke the compiler
+        const output = (
+          await sendFromIdeToEmu<CompileFileResponse>({
+            type: "CompileFile",
+            filename: context.resource,
+          })
+        ).result;
+
+        // --- Summary
+        const errorCount = output.errors.length;
+        if (errorCount === 0) {
+          buffer.bold(true);
+          buffer.color("bright-green");
+          buffer.writeLine("Compiled successfully.");
+          buffer.bold(false);
+          buffer.resetColor();
+        } else {
+          buffer.bold(true);
+          buffer.color("bright-red");
+          buffer.writeLine(
+            `Compiled with ${errorCount} error${errorCount > 1 ? "s" : ""}.`
+          );
+          buffer.bold(false);
+          buffer.resetColor();
+          for (const errItem of output.errors) {
+            buffer.color("bright-red");
+            buffer.write(errItem.errorCode);
+            buffer.resetColor();
+            buffer.write(`: ${errItem.message} [`);
+            buffer.color("cyan");
+            buffer.write(
+              `${errItem.line}:${errItem.startColumn}-${errItem.endColumn}`
+            );
+            buffer.resetColor();
+            buffer.writeLine("]", <IHighlightable>{
+              highlight: true,
+              title: "Click to locate the error",
+              errorItem: errItem,
+            });
+          }
+        }
+        // --- Execution time
+        buffer.writeLine(`Compile time: ${new Date().valueOf() - start}ms`);
+        const toolAreaService = getToolAreaService();
+        const outputTool = toolAreaService.getToolPanelById(OUTPUT_TOOL_ID);
+        if (outputTool) {
+          toolAreaService.setActiveTool(outputTool);
+          if (compilerPane) {
+            outputPaneService.setActivePane(compilerPane);
+          }
+        }
         break;
     }
   },

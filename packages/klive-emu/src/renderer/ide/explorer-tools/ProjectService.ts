@@ -7,12 +7,12 @@ import { DirectoryContent } from "@state/AppState";
 import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { FileOperationResponse } from "@core/messaging/message-types";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
-import { FileChange } from "@abstractions/project-service";
+import { FileChange, IProjectService } from "@abstractions/project-service";
 
 /**
  * This class implements the project services
  */
-export class ProjectService {
+export class ProjectService implements IProjectService {
   private _projectTree: ITreeView<ProjectNode> | null = null;
   private _folderCreated = new LiteEvent<string>();
   private _fileCreated = new LiteEvent<string>();
@@ -23,11 +23,11 @@ export class ProjectService {
 
   constructor() {
     // --- Close the project tree whenever the project is closed
-    getStore().projectChanged.on(ps => {
+    getStore().projectChanged.on((ps) => {
       if (!ps.path || !ps.hasVm) {
         this.closeProjectTree();
       }
-    })
+    });
   }
 
   /**
@@ -223,6 +223,30 @@ export class ProjectService {
     }
     this._folderRenamed.fire({ oldName, newName });
     return null;
+  }
+
+  /**
+   * Searches for the specified project node within the tree
+   * @param resource Resource node name
+   */
+  searchNode(resource: string): ITreeNode<ProjectNode> | null {
+    return searchNode(resource, this._projectTree.rootNode);
+
+    function searchNode(
+      id: string,
+      node: ITreeNode<ProjectNode>
+    ): ITreeNode<ProjectNode> | null {
+      if (node.nodeData.fullPath === id) {
+        return node;
+      }
+      for (const child of node.getChildren()) {
+        const childFound = searchNode(id, child);
+        if (childFound) {
+          return childFound;
+        }
+      }
+      return null;
+    }
   }
 
   /**

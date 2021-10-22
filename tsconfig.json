@@ -2,13 +2,23 @@
   "extends": "./tsconfig.build.json",
 
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "baseUrl": "./",
+    "allowSyntheticDefaultImports": true,
+    "module": "commonjs",
+    "target": "es2019",
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "strictNullChecks": false,
+    "sourceMap": true,
+    "outDir": "out",
+    "baseUrl": ".",
+    "downlevelIteration": true,
+    "resolveJsonModule": true,
     "paths": {
-      "@abstractions/*": ["./packages/klive-emu/src/abstractions/*"],
-      "@state/*": ["./packages/klive-emu/src/shared/state/*"],
-      "@shared/*": ["./packages/klive-emu/src/shared/*"],
-      "@messaging/*": ["./packages/klive-emu/src/extensibility/messaging/*"]
+      "@abstractions/*": ["./packages/klive-emu/src/core/abstractions/*"],
+      "@state/*": ["./packages/klive-emu/src/core/state/*"],
+      "@shared/*": ["./packages/klive-emu/src/shared/*", "./packages/kliveide-emu/src/shared/*"],
+      "@core/*": ["./packages/klive-emu/src/core/*"],
+      "@messaging/*": ["./packages/klive-emu/src/core/messaging/*"]
     }
   }
 }

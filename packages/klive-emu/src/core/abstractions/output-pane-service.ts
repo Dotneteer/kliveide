@@ -1,5 +1,9 @@
 import { ILiteEvent } from "@core/utils/lite-event";
 
+// --- Predefined output panes
+export const COMPILER_OUTPUT_PANE_ID = "CompilerOutputPane";
+export const VM_OUTPUT_PANE_ID = "VmOutputPane";
+
 /**
  * Available output colors
  */
@@ -22,6 +26,22 @@ export type OutputColor =
   | "bright-white";
 
 /**
+ * Represents a single line of the output pane's content
+ */
+export type OutputContentLine = {
+  text: string;
+  data?: unknown;
+};
+
+/**
+ * Marks an output content line as highlightable
+ */
+export interface IHighlightable {
+  highlight?: boolean;
+  title?: string;
+}
+
+/**
  * Represents a buffer for an output pane
  */
 export interface IOutputBuffer {
@@ -33,7 +53,7 @@ export interface IOutputBuffer {
   /**
    * Gets the contents of the buffer
    */
-  getContents(): string[];
+  getContents(): OutputContentLine[];
 
   /**
    * Sets the default color
@@ -78,9 +98,10 @@ export interface IOutputBuffer {
 
   /**
    * Writes a message and adds a new output line
-   * @param message
+   * @param message Text message
+   * @param data Optional line data
    */
-  writeLine(message?: string): void;
+  writeLine(message?: string, data?: unknown): void;
 
   /**
    * This event fires when the contents of the buffer changes.
@@ -117,7 +138,13 @@ export interface IOutputPane {
   /**
    * Gets the buffer of the pane
    */
-  get buffer(): IOutputBuffer;
+  readonly buffer: IOutputBuffer;
+
+  /**
+   * Responds to an action of a highlighted item
+   * @param data
+   */
+  onContentLineAction(data: unknown): Promise<void>;
 }
 
 /**
