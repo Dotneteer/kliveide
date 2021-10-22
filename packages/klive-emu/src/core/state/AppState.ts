@@ -27,6 +27,7 @@ export type AppState = {
   compilation?: CompilationState;
   debugger?: DebuggerState;
   builder?: BuilderState;
+  editor?: EditorState;
 };
 
 /**
@@ -178,6 +179,13 @@ export type BuilderState = {
   roots: string[];
 };
 
+// --- Represents the state of the active code editor
+export type EditorState = {
+  displayed: boolean;
+  line: number;
+  column: number;
+};
+
 /**
  * The initial application state
  */
@@ -251,6 +259,11 @@ export function getInitialAppState(): AppState {
     },
     builder: {
       roots: [],
+    },
+    editor: {
+      displayed: false,
+      line: -1,
+      column: -1,
     },
   };
 }
