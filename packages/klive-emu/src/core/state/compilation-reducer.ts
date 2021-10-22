@@ -5,6 +5,9 @@ import { ActionCreator, KliveAction } from "./state-core";
 // ============================================================================
 // Actions
 
+export const resetCompileAction: ActionCreator = () => ({
+  type: "RESET_COMPILE",
+});
 export const startCompileAction: ActionCreator = (filename: string) => ({
   type: "START_COMPILE",
   payload: { filename },
@@ -41,7 +44,13 @@ export default function (
       return {
         ...state,
         inProgress: false,
-        result: payload.compileResult
+        result: payload.compileResult,
+      };
+    case "RESET_COMPILE":
+      return {
+        inProgress: false,
+        filename: null,
+        result: null,
       };
     default:
       return state;

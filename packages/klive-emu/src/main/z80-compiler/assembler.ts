@@ -656,7 +656,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (sourceItem.filename !== NO_FILE_ITEM) {
       // --- The file name is taken into account as relative
       const dirname = path.dirname(sourceItem.filename) ?? "";
-      filename = path.join(dirname, filename);
+      filename = path.join(dirname, filename).replace(/\\/g, "/");
     }
 
     // --- Check for file existence
@@ -5853,7 +5853,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   ): void {
     const errorInfo = new AssemblerErrorInfo(
       error.code,
-      sourceItem.filename,
+      sourceItem.filename.replace(/\\/g, "/"),
       error.line,
       error.position,
       error.position + 1,
@@ -5929,11 +5929,11 @@ export class Z80Assembler extends ExpressionEvaluator {
     const errorInfo = new AssemblerErrorInfo(
       code,
       sourceItem.filename,
-      line.line - 1,
+      line.line,
       nodePosition ? nodePosition.startPosition : line.startPosition,
-      nodePosition ? nodePosition.endPosition : line.endPosition,
+      nodePosition ? nodePosition.endPosition : line.endPosition + 1,
       nodePosition ? nodePosition.startColumn : line.startColumn,
-      nodePosition ? nodePosition.endColumn : line.endColumn,
+      nodePosition ? nodePosition.endColumn : line.endColumn + 1,
       errorText
     );
     this._output.errors.push(errorInfo);
