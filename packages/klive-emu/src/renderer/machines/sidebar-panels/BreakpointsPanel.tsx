@@ -4,7 +4,7 @@ import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
-import { BreakpointDefinition } from "@abstractions/code-runner-service";
+import { BreakpointDefinition, SourceCodeBreakpoint } from "@abstractions/code-runner-service";
 import {
   dispatch,
   getContextMenuService,
@@ -18,6 +18,7 @@ import {
   clearBreakpointsAction,
   removeBreakpointAction,
 } from "@core/state/debugger-reducer";
+import { navigateToDocumentPosition } from "../../ide/document-area/document-utils";
 
 const TITLE = "Breakpoints";
 
@@ -131,6 +132,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
           this.listApi.forceRefresh();
         }}
         onContextMenu={(ev) => this.onContextMenu(ev, index, item)}
+        onDoubleClick={() => this.navigateToSource(item)}
       >
         <Icon
           iconName="circle-filled"
@@ -151,7 +153,9 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
                 .toLocaleLowerCase()} (${item.location.toString(10)})`
             : `${item.resource}:${item.line}`}
         </div>
-        {item.unreachable && <div style={{ fontStyle: "italic" }}>&nbsp;(unreachable)</div>}
+        {item.unreachable && (
+          <div style={{ fontStyle: "italic" }}>&nbsp;(unreachable)</div>
+        )}
       </div>
     );
   }
@@ -223,6 +227,18 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
         },
       },
     ];
+    if (item.type === "source") {
+      menuItems.unshift(
+        {
+          id: "navigateToBreakpoint",
+          text: "Navigate to code",
+          execute: async () => {
+            this.navigateToSource(item);
+          },
+        },
+        "separator"
+      );
+    }
 
     const rect = (ev.target as HTMLElement).getBoundingClientRect();
     await getContextMenuService().openMenu(
@@ -231,6 +247,19 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
       ev.clientX,
       ev.target as HTMLElement
     );
+  }
+
+  /**
+   * Navigates to the source code of the specified item
+   * @param item 
+   */
+  async navigateToSource(item: BreakpointDefinition): Promise<void> {
+    if (item.type === "binary") {
+      return;
+    }
+    const projectRoot = getState().project.path;
+    const resource = (projectRoot + item.resource).replace(/\\/g, "/");
+    navigateToDocumentPosition(resource, item.line, 0);
   }
 }
 

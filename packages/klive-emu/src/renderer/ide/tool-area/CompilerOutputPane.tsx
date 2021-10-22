@@ -1,8 +1,7 @@
 import { COMPILER_OUTPUT_PANE_ID } from "@abstractions/output-pane-service";
-import { getDocumentService } from "@core/service-registry";
 import { AssemblerErrorInfo } from "@abstractions/z80-compiler-service";
 import { OutputPaneDescriptorBase } from "./OutputPaneService";
-import { openNewDocument } from "../document-area/document-utils";
+import { navigateToDocumentPosition } from "../document-area/document-utils";
 
 const TITLE = "Z80 Assembler";
 
@@ -27,26 +26,10 @@ export class CompilerOutputPanelDescriptor extends OutputPaneDescriptorBase {
       return;
     }
 
-    const documentService = getDocumentService();
-    const document = documentService.getDocumentById(errorItem.fileName);
-    if (document) {
-      document.temporary = false;
-      documentService.setActiveDocument(document);
-      document.navigateToLocation({
-        line: errorItem.line,
-        column: errorItem.startColumn,
-      });
-    } else {
-      const newDocument = await openNewDocument(
-        errorItem.fileName,
-        undefined,
-        false,
-        true
-      );
-      newDocument.navigateToLocation({
-        line: errorItem.line,
-        column: errorItem.startColumn,
-      });
-    }
+   await navigateToDocumentPosition(
+      errorItem.fileName,
+      errorItem.line,
+      errorItem.startColumn
+    );
   }
 }

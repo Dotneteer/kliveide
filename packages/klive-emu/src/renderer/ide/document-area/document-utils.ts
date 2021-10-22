@@ -50,3 +50,26 @@ export async function openNewDocument(
     return documentService.registerDocument(panel, true, index);
   }
 }
+
+/**
+ * Navigates to a particular file and position
+ * @param filename Filename to navigate to
+ * @param line Line number
+ * @param column Column number
+ */
+export async function navigateToDocumentPosition(
+  filename: string,
+  line: number,
+  column: number
+): Promise<void> {
+  const documentService = getDocumentService();
+  const document = documentService.getDocumentById(filename);
+  if (document) {
+    document.temporary = false;
+    documentService.setActiveDocument(document);
+    document.navigateToLocation({ line, column });
+  } else {
+    const newDocument = await openNewDocument(filename, undefined, false, true);
+    newDocument.navigateToLocation({ line, column });
+  }
+}
