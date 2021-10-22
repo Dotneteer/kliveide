@@ -230,7 +230,7 @@ export abstract class OutputPaneDescriptorBase implements IOutputPane {
    * Responds to an action of a highlighted item
    * @param data
    */
-  onContentLineAction(data: unknown): void {
+  async onContentLineAction(data: unknown): Promise<void> {
     // --- Override in derived descriptors
   }
 }

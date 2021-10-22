@@ -98,6 +98,12 @@ export interface IProjectService {
   renameFolder(oldName: string, newName: string): Promise<string | null>;
 
   /**
+   * Searches for the specified project node within the tree
+   * @param resource Resource node name
+   */
+  searchNode(resource: string): ITreeNode<ProjectNode> | null;
+
+  /**
    * Fires when a project file is created
    */
   readonly fileCreated: ILiteEvent<string>;

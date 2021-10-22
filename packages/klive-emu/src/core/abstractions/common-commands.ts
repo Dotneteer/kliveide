@@ -410,6 +410,7 @@ const compileCodeCommand: IKliveCommand = {
           COMPILER_OUTPUT_PANE_ID
         );
         const buffer = compilerPane.buffer;
+        buffer.clear();
         buffer.writeLine(`Compiling ${context.resource}`);
         const start = new Date().valueOf();
 

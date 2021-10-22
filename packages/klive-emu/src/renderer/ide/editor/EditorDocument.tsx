@@ -14,7 +14,7 @@ import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
 import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
 import { FileOperationResponse } from "@core/messaging/message-types";
-import { IDocumentPanel } from "@abstractions/document-service";
+import { IDocumentPanel, NavigationInfo } from "@abstractions/document-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { getEditorService } from "./editorService";
 import { findBreakpoint } from "@abstractions/debug-helpers";
@@ -25,6 +25,7 @@ import {
   removeBreakpointAction,
   scrollBreakpointsAction,
 } from "@core/state/debugger-reducer";
+import { TouchBarSlider } from "electron";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -511,6 +512,17 @@ export default class EditorDocument extends React.Component<Props, State> {
   }
 
   /**
+   * Sets the specified position
+   * @param lineNumber Line number
+   * @param column Column number
+   */
+  setPosition(lineNumber: number, column: number): void {
+    this._editor.revealPosition({ lineNumber, column });
+    this._editor.setPosition({ lineNumber, column });
+    window.requestAnimationFrame(() => this._editor.focus());
+  }
+
+  /**
    * Tests if the breakpoint exists in the specified line
    * @param line Line number to test
    */
@@ -541,6 +553,7 @@ export default class EditorDocument extends React.Component<Props, State> {
  * Descriptor for the sample side bar panel
  */
 export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
+  private _host = React.createRef<EditorDocument>();
   constructor(
     id: string,
     title: string,
@@ -556,11 +569,22 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
   createContentElement(): React.ReactNode {
     return (
       <EditorDocument
+        ref={this._host}
         descriptor={this}
         sourceCode={this.contents}
         language={this.language}
       />
     );
+  }
+
+  /**
+   * Navigates to the specified document location
+   * @param location Document location
+   */
+  async navigateToLocation(location: NavigationInfo): Promise<void> {
+    if (this._host) {
+      this._host.current.setPosition(location.line, location.column);
+    }
   }
 }
 

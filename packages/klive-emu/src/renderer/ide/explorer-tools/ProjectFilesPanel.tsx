@@ -36,6 +36,7 @@ import {
 } from "@state/builder-reducer";
 import { NewFileData } from "./NewFileData";
 import { MenuItem } from "@abstractions/command-definitions";
+import { openNewDocument } from "../document-area/document-utils";
 
 type State = {
   itemsCount: number;
@@ -402,30 +403,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       }
 
       // --- Create a new document
-      const resource = item.nodeData.fullPath;
-      const factory = documentService.getResourceFactory(resource);
-      if (factory) {
-        const contentsResp = await sendFromIdeToEmu<GetFileContentsResponse>({
-          type: "GetFileContents",
-          name: resource,
-        });
-        const sourceText = contentsResp?.contents
-          ? (contentsResp.contents as string)
-          : "";
-        let panel = await factory.createDocumentPanel(resource, sourceText);
-        let index = documentService.getActiveDocument()?.index ?? null;
-        panel.projectNode = item.nodeData;
-        panel.temporary = isTemporary;
-        panel.initialFocus = !isTemporary;
-        if (isTemporary) {
-          const tempDocument = documentService.getTemporaryDocument();
-          if (tempDocument) {
-            index = tempDocument.index;
-            documentService.unregisterDocument(tempDocument);
-          }
-        }
-        documentService.registerDocument(panel, true, index);
-      }
+      openNewDocument(item.nodeData.fullPath, item, isTemporary, !isTemporary);
     }
   }
 

@@ -1,4 +1,4 @@
-import { IDocumentPanel } from "@abstractions/document-service";
+import { IDocumentPanel, NavigationInfo } from "@abstractions/document-service";
 import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { ProjectNode } from "../../../core/abstractions/project-node";
 
@@ -150,6 +150,14 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
    */
   signDescriptorChange(): void {
     this._documentDescriptorChanged.fire();
+  }
+
+  /**
+   * Navigates to the specified document location
+   * @param location Document location
+   */
+  async navigateToLocation(location: NavigationInfo): Promise<void> {
+    // --- Override in derived descriptors
   }
 
   /**

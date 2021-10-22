@@ -2,6 +2,14 @@ import { ILiteEvent } from "@core/utils/lite-event";
 import { ProjectNode } from "./project-node";
 
 /**
+ * Data to navigate within a document
+ */
+export interface NavigationInfo {
+  line?: number;
+  column?: number;
+}
+
+/**
  * Represents a document panel
  */
 export interface IDocumentPanel {
@@ -58,6 +66,12 @@ export interface IDocumentPanel {
   setPanelState(state: Record<string, any> | null): void;
 
   /**
+   * Navigates to the specified document location
+   * @param location Document location
+   */
+  navigateToLocation(location: NavigationInfo): Promise<void>;
+
+  /**
    * Sign that the document descriptor has changed
    */
   signDescriptorChange(): void;
@@ -85,10 +99,10 @@ export type CodeEditorInfo = {
 
 /**
  * Represents information about a custom language
- * 
+ *
  * HACK: we use "any" for the properties to avoid any dependencies from
  * the Monaco Editor (as that cannot be loaded into the main process)
- * 
+ *
  */
 export type CustomLanguageInfo = {
   id: string;

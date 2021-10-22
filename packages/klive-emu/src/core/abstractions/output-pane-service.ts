@@ -144,7 +144,7 @@ export interface IOutputPane {
    * Responds to an action of a highlighted item
    * @param data
    */
-  onContentLineAction(data: unknown): void;
+  onContentLineAction(data: unknown): Promise<void>;
 }
 
 /**
