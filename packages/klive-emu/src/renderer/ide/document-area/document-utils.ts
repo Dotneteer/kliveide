@@ -70,6 +70,7 @@ export async function navigateToDocumentPosition(
     document.navigateToLocation({ line, column });
   } else {
     const newDocument = await openNewDocument(filename, undefined, false, true);
+    await new Promise(r => setTimeout(r, 100));
     newDocument.navigateToLocation({ line, column });
   }
 }

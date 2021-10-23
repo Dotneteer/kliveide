@@ -17,7 +17,10 @@ import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBa
 import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 import { BinaryBreakpoint } from "@abstractions/code-runner-service";
-import { addBreakpointAction, removeBreakpointAction } from "@core/state/debugger-reducer";
+import {
+  addBreakpointAction,
+  removeBreakpointAction,
+} from "@core/state/debugger-reducer";
 
 const TITLE = "Z80 Disassembly";
 const DISASS_LENGTH = 1024;
@@ -52,6 +55,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
     super.componentDidMount();
     const store = getStore();
     store.breakpointsChanged.on(this._refreshBreakpoints);
+    store.resolvedBreakpointsChanged.on(this._refreshBreakpoints);
     await new Promise((r) => setTimeout(r, 100));
     this.refreshBreakpoints();
   }
@@ -60,6 +64,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   componentWillUnmount(): void {
     const store = getStore();
     store.breakpointsChanged.off(this._refreshBreakpoints);
+    store.resolvedBreakpointsChanged.off(this._refreshBreakpoints);
     super.componentWillUnmount();
   }
 
@@ -67,7 +72,6 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
    * Override to get the number of items
    */
   getItemsCount(): number {
-    const items = this.state.output?.outputItems ?? [];
     return this.state.output ? this.state.output.outputItems.length : 0;
   }
 
@@ -100,10 +104,10 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
           : "1px solid transparent",
     };
     const hasBreakpoint = this._breakpointMap.has(item.address);
-    const addressLabel = (item?.address ?? null) ? `${item.address
-      .toString(16)
-      .padStart(4, "0")
-      .toUpperCase()}` : "";
+    const addressLabel =
+      item?.address ?? null
+        ? `${item.address.toString(16).padStart(4, "0").toUpperCase()}`
+        : "";
     return (
       <div
         className="listlike"
@@ -168,9 +172,13 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
               )}
             </div>
             {index === 0 ? (
-              <Icon iconName="chevron-right" fill="--console-ansi-green" />
+              <Icon
+                iconName={hasBreakpoint ? "debug-current" : "chevron-right"}
+                fill={hasBreakpoint ? "--console-ansi-yellow" : "--console-ansi-green"}
+                style={{marginRight: 4}}
+              />
             ) : (
-              <div style={{ width: 14 }} />
+              <div style={{ width: 18 }} />
             )}
             <div style={{ width: 100 }}>{item.opCodes}</div>
             <div
@@ -239,16 +247,13 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
    */
   refreshBreakpoints(): void {
     // --- Get the current binary breakpoints
-    console.log("Breakpoints changed.");
     const state = getState();
-    console.log(state.debugger?.breakpoints);
     const breakpoints = (state?.debugger?.breakpoints ?? []).filter(
-      (bp) => bp.type === "binary"
+      (bp) => bp.location != undefined
     ) as BinaryBreakpoint[];
     this._breakpointMap.clear();
 
     // --- Store them in a map
-    console.log(breakpoints);
     breakpoints.forEach((bp) => this._breakpointMap.set(bp.location, bp));
     this.listApi?.forceRefresh(0);
   }

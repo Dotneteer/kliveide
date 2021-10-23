@@ -28,10 +28,10 @@ export const EXEC_OPTIONS_BUFFER = 0x01000df0;
 // Generic virtual machine engine memory map
 
 // --- Map of breakpoints, 1 byte for each 16-bit address
-export const BREAKPOINTS_MAP = 0x0106_0000;
+export const BREAKPOINTS_MAP = 0x0100_0dfc;
 
 // --- Breakpoint partitions map, 2 bytes for each 16-bit address
-export const BRP_PARTITION_MAP = 0x0107_0000;
+export const BRP_PARTITION_MAP = 0x0101_0dfc;
 
 // ============================================================================
 // ZX Spectrum memory map

@@ -114,7 +114,7 @@ export const darkTheme: ITheme = {
 
     "--debug-bp-color": "#e51400",
     "--debug-active-bp-color": "yellow",
-    "--debug-active-bp-background-color": "maroon",
+    "--debug-active-bp-background-color": "#ffff0032",
     "--debug-unreachable-bp-color": "#606060",
   },
 };

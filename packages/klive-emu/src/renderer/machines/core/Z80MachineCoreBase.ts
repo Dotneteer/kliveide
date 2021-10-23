@@ -1,6 +1,6 @@
 import { Z80Cpu } from "../../cpu/Z80Cpu";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
-import { BLOCK_LOOKUP_TABLE } from "../wa-interop/memory-map";
+import { BLOCK_LOOKUP_TABLE, BREAKPOINTS_MAP } from "../wa-interop/memory-map";
 import { VirtualMachineCoreBase } from "./VirtualMachineCoreBase";
 
 /**
@@ -90,5 +90,15 @@ export abstract class Z80MachineCoreBase extends VirtualMachineCoreBase<Z80Cpu> 
       }
     }
     return result;
+  }
+
+  /**
+   * Clear all breakpoints
+   */
+  async clearBreakpoints(): Promise<void> {
+    const mh = new MemoryHelper(this.api, BREAKPOINTS_MAP);
+    for (let i = 0; i < 0x1_0000; i++) {
+      mh.writeByte(i, 0);
+    }
   }
 }

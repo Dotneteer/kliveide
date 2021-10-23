@@ -2,6 +2,7 @@ import {
   dispatch,
   getCodeRunnerService,
   getOutputPaneService,
+  getState,
   getToolAreaService,
   getVmControllerService,
   getZ80CompilerService,
@@ -31,7 +32,8 @@ import {
 } from "@abstractions/command-definitions";
 import { OUTPUT_TOOL_ID } from "./tool-area-service";
 import { COMPILER_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
-import { result } from "lodash";
+import { changeActivityAction } from "@core/state/activity-bar-reducer";
+import { ACTIVITY_DEBUG_ID } from "./activity";
 
 /**
  * Names of core Klive commands
@@ -534,6 +536,12 @@ const injectAndDebugVmCommand: IKliveCommand = {
           context.resource,
           "debug"
         );
+        const debugIndex = (getState().activityBar?.activities ?? []).findIndex(
+          (a) => a.id === ACTIVITY_DEBUG_ID
+        );
+        if (debugIndex >= 0) {
+          dispatch(changeActivityAction(debugIndex));
+        }
     }
   },
   queryState: async (context) => await queryInjectionCommandState(context),

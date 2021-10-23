@@ -95,6 +95,7 @@ export interface ActionTypes {
   ALL_REACHABLE_BREAKPOINTS: null;
   SCROLL_BREAKPOINTS: null;
   NORMALIZE_BREAKPOINTS: null;
+  SET_RESOLVED_BREAKPOINTS: null;
 
   // --- Builders
   CLEAR_BUILD_ROOTS: null;
@@ -154,6 +155,7 @@ export type Payload = {
   filename?: string;
   compileResult?: CompilerOutput;
   breakpoint?: BreakpointDefinition;
+  breakpoints?: BreakpointDefinition[];
   lineCount?: number;
   shift?: number;
   resource?: string;

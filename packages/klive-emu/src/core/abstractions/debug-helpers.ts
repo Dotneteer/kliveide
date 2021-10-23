@@ -3,6 +3,8 @@ import {
   BreakpointDefinition,
   SourceCodeBreakpoint,
 } from "@abstractions/code-runner-service";
+import { dispatch, getState } from "@core/service-registry";
+import { setResolvedBreakpointsAction } from "@core/state/debugger-reducer";
 
 /**
  * Adds a new breakpoint to the array of existing breakpoints
@@ -79,7 +81,7 @@ export function makeReachableBreakpoint(
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
   const def = findBreakpoint(breakpoints, bp);
-  if (def) {
+  if (def && def.type === "source") {
     delete def.unreachable;
   }
   return breakpoints.slice(0);
@@ -94,7 +96,11 @@ export function makeReachableBreakpoint(
 export function makeReachableAllBreakpoints(
   breakpoints: BreakpointDefinition[]
 ): BreakpointDefinition[] {
-  breakpoints.forEach((bp) => delete bp.unreachable);
+  breakpoints.forEach((bp) => {
+    if (bp.type === "source") {
+      delete bp.unreachable;
+    }
+  });
   return breakpoints.slice(0);
 }
 
@@ -109,7 +115,7 @@ export function disableBreakpoint(
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
   const def = findBreakpoint(breakpoints, bp);
-  if (def) {
+  if (def && def.type === "source") {
     def.unreachable = true;
   }
   return breakpoints.slice(0);
@@ -204,6 +210,43 @@ export function normalizeBreakpoints(
     }
   });
   return result;
+}
+
+/**
+ * Resolves source code breakpoints
+ */
+export function resolveBreakpoints(): BreakpointDefinition[] {
+  const state = getState();
+  const breakpoints = state?.debugger?.breakpoints ?? [];
+  const resolved: BreakpointDefinition[] = [];
+
+  // --- Get the active compilation result
+  const compilationResult = state?.compilation?.result;
+  if (compilationResult?.errors?.length === 0) {
+    breakpoints.forEach((bp) => {
+      // --- Nothing to do with binary breakpoints
+      if (bp.type !== "source") return;
+
+      // --- In case of a successful compilation, test if the breakpoint is allowed
+      const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
+        fi.filename.endsWith(bp.resource)
+      );
+      if (fileIndex >= 0) {
+        // --- We have address information for this source code file
+        const bpInfo = compilationResult.listFileItems.find(
+          (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
+        );
+        if (bpInfo) {
+          bp.location = bpInfo.address;
+          resolved.push({ ...bp });
+        } else {
+          bp.unreachable = true;
+        }
+      }
+    });
+  }
+  dispatch(setResolvedBreakpointsAction(resolved));
+  return breakpoints.sort(compareBreakpoints);
 }
 
 /**

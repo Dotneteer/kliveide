@@ -14,7 +14,7 @@ import {
 import { getEngineDependencies } from "./vm-engine-dependencies";
 import { MachineApi } from "../wa-interop/wa-api";
 import { ICpu } from "@abstractions/abstract-cpu";
-import { CodeToInject } from "@abstractions/code-runner-service";
+import { BreakpointDefinition, CodeToInject } from "@abstractions/code-runner-service";
 import { IVmEngineService } from "./vm-engine-service";
 
 /**
@@ -405,6 +405,17 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
    * @param debug Start in debug mode?
    */
   abstract runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void>;
+
+  /**
+   * Clear all breakpoints
+   */
+  abstract clearBreakpoints(): Promise<void>;
+
+  /**
+   * Set the specified breakpoint definition
+   * @param def 
+   */
+  abstract setBreakpoint(def: BreakpointDefinition): Promise<void>
 
   // ==========================================================================
   // Lifecycle methods

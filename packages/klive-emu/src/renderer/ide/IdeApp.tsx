@@ -69,7 +69,7 @@ import {
 } from "./explorer-tools/RenameFolderDialog";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
-import { Activity } from "@core/abstractions/activity";
+import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_LOG_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@core/abstractions/activity";
 import { BreakpointsPanelDescriptor } from "../machines/sidebar-panels/BreakpointsPanel";
 
 // --- App component literal constants
@@ -199,12 +199,12 @@ export default function IdeApp() {
       // --- Set up activities
       const activities: Activity[] = [
         {
-          id: "file-view",
+          id: ACTIVITY_FILE_ID,
           title: "Explorer",
           iconName: "files",
         },
         {
-          id: "debug-view",
+          id: ACTIVITY_DEBUG_ID,
           title: "Debug",
           iconName: "debug-alt",
           commands: [
@@ -229,17 +229,17 @@ export default function IdeApp() {
           ],
         },
         {
-          id: "log-view",
+          id: ACTIVITY_LOG_ID,
           title: "Machine logs",
           iconName: "output",
         },
         {
-          id: "test-view",
+          id: ACTIVITY_TEST_ID,
           title: "Testing",
           iconName: "beaker",
         },
         {
-          id: "settings",
+          id: ACTIVITY_SETTINGS_ID,
           title: "Manage",
           iconName: "settings-gear",
           isSystemActivity: true,

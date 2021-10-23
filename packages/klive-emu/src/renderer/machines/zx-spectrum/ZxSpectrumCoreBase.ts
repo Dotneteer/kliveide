@@ -3,12 +3,16 @@ import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { MemoryHelper } from "../wa-interop/memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
+  BREAKPOINTS_MAP,
   COLORIZATION_BUFFER,
   PSG_SAMPLE_BUFFER,
   RENDERING_TACT_TABLE,
   SPECTRUM_MACHINE_STATE_BUFFER,
 } from "../wa-interop/memory-map";
-import { MachineCreationOptions, MachineState } from "../../../core/abstractions/vm-core-types";
+import {
+  MachineCreationOptions,
+  MachineState,
+} from "../../../core/abstractions/vm-core-types";
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { TzxReader } from "./tzx-file";
 import { TapReader } from "./tap-file";
@@ -18,7 +22,10 @@ import { KeyMapping } from "../core/keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
 import { ProgramCounterInfo } from "@state/AppState";
 import { getEngineDependencies } from "../core/vm-engine-dependencies";
-import { CodeToInject } from "@abstractions/code-runner-service";
+import {
+  BreakpointDefinition,
+  CodeToInject,
+} from "@abstractions/code-runner-service";
 
 /**
  * ZX Spectrum common core implementation
@@ -360,6 +367,18 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     } else {
       await controller.start();
     }
+  }
+
+  /**
+   * Set the specified breakpoint definition
+   * @param def
+   */
+  async setBreakpoint(def: BreakpointDefinition): Promise<void> {
+    if (def.location == undefined) {
+      return;
+    }
+    const mh = new MemoryHelper(this.api, BREAKPOINTS_MAP);
+    mh.writeByte(def.location, 0x01);
   }
 
   /**

@@ -492,6 +492,20 @@ class VmEngineService implements IVmEngineService {
       await this.cancelRun();
     }
 
+    // --- Prepare breakpoints
+    await this._vmEngine.clearBreakpoints();
+
+    // --- Set binary breakpoints
+    for (const bp of getState().debugger?.breakpoints ?? []) {
+      this._vmEngine.setBreakpoint(bp);
+    }
+
+    // --- Set resolved source code breakpoints
+    for (const bp of getState().debugger?.resolved ?? []) {
+      this._vmEngine.setBreakpoint(bp);
+    }
+
+    // --- Now, run the machine
     await this.internalRun(options);
     await this._vmEngine.afterStarted(isDebug);
   }
