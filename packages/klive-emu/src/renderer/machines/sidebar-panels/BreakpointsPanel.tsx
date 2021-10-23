@@ -4,14 +4,14 @@ import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
-import { BreakpointDefinition, SourceCodeBreakpoint } from "@abstractions/code-runner-service";
+import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import {
   dispatch,
   getContextMenuService,
   getState,
   getStore,
 } from "@core/service-registry";
-import { compareBreakpoints } from "@abstractions/debug-helpers";
+import { compareBreakpoints, resolveBreakpoints } from "@abstractions/debug-helpers";
 import { Icon } from "@components/Icon";
 import { MenuItem } from "@abstractions/command-definitions";
 import {
@@ -122,6 +122,13 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
       textAlign: "center",
       height: 24,
     };
+    const addressStr =
+      item.location == undefined
+        ? ""
+        : `$${item.location
+            .toString(16)
+            .padStart(4, "0")
+            .toLocaleLowerCase()} (${item.location.toString(10)})`;
     return (
       <div
         className="listlike"
@@ -139,7 +146,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
           width={22}
           height={22}
           fill={
-            item.unreachable
+            item.type == "source" && item.unreachable
               ? "--debug-unreachable-bp-color"
               : "--debug-bp-color"
           }
@@ -147,14 +154,14 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
         />
         <div>
           {item.type === "binary"
-            ? `$${item.location
-                .toString(16)
-                .padStart(4, "0")
-                .toLocaleLowerCase()} (${item.location.toString(10)})`
+            ? addressStr
             : `${item.resource}:${item.line}`}
         </div>
-        {item.unreachable && (
-          <div style={{ fontStyle: "italic" }}>&nbsp;(unreachable)</div>
+        {item.type === "source" && item.unreachable && (
+          <div style={{ fontStyle: "italic" }}>&nbsp;[unreachable]</div>
+        )}
+        {item.type === "source" && item.location != undefined && (
+          <div style={{ fontStyle: "italic" }}>&nbsp;[{addressStr}]</div>
         )}
       </div>
     );
@@ -165,33 +172,8 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
    * @param breakpoints
    */
   refreshBreakpoints(): void {
-    // --- Get the current breakpoints
-    const state = getState();
-    const breakpoints = state?.debugger?.breakpoints ?? [];
-
-    // --- Get the active compilation result
-    const compilationResult = state?.compilation?.result;
-    if (compilationResult?.errors?.length === 0) {
-      breakpoints.forEach((bp) => {
-        // --- Nothing to do with binary breakpoints
-        if (bp.type !== "source") return;
-
-        // --- In case of a successful compilation, test if the breakpoint is allowed
-        const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
-          fi.filename.endsWith(bp.resource)
-        );
-        if (fileIndex >= 0) {
-          // --- We have address information for this source code file
-          const bpInfo = compilationResult.listFileItems.find(
-            (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line
-          );
-          if (!bpInfo) {
-            bp.unreachable = true;
-          }
-        }
-      });
-    }
-    this.setState({ breakpoints: breakpoints.sort(compareBreakpoints) });
+    const breakpoints = resolveBreakpoints();
+    this.setState({ breakpoints });
     this.listApi?.forceRefresh();
   }
 
@@ -251,7 +233,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
 
   /**
    * Navigates to the source code of the specified item
-   * @param item 
+   * @param item
    */
   async navigateToSource(item: BreakpointDefinition): Promise<void> {
     if (item.type === "binary") {

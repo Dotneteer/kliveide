@@ -36,7 +36,7 @@ import {
   MemorySection,
 } from "@shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
-import { CodeToInject } from "@abstractions/code-runner-service";
+import { BreakpointDefinition, CodeToInject } from "@abstractions/code-runner-service";
 import { getVmEngineService } from "../core/vm-engine-service";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
@@ -351,6 +351,14 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    * @param debug Start in debug mode?
    */
   async runCode(codeToInject: CodeToInject, debug?: boolean): Promise<void> {
+    // TODO: Implement this method
+  }
+
+   /**
+    * Set the specified breakpoint definition
+    * @param def 
+    */
+  async setBreakpoint(def: BreakpointDefinition): Promise<void> {
     // TODO: Implement this method
   }
 

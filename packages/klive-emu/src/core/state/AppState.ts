@@ -172,6 +172,7 @@ export type RegisteredMachine = {
 // --- Represents the state of the debugger
 export type DebuggerState = {
   breakpoints: BreakpointDefinition[];
+  resolved?: BreakpointDefinition[];
 };
 
 // --- Represents the state of the builder

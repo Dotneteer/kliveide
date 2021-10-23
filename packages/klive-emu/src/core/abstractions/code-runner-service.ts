@@ -41,7 +41,6 @@ export type CodeInjectionType = "inject" | "run" | "debug";
  */
 interface BreakpointBase {
   type: BreakpointDefinition["type"];
-  unreachable?: boolean;
 }
 
 /**
@@ -49,6 +48,11 @@ interface BreakpointBase {
  */
 export interface SourceCodeBreakpoint extends BreakpointBase {
   type: "source",
+
+  /**
+   * Is this breakpoint unreachable?
+   */
+  unreachable?: boolean;
 
   /**
    * File that holds a source code breakpoint
@@ -59,7 +63,17 @@ export interface SourceCodeBreakpoint extends BreakpointBase {
    * Line number within a file
    */
   line?: number;
-};
+
+  /**
+   * Optional code partition/page index (after resolution)
+   */
+   partition?: number;
+
+   /**
+    * Location of the breakpoint within the partition (after resolution)
+    */
+   location?: number;
+ };
 
 /**
  * Defines a binary breakpoint

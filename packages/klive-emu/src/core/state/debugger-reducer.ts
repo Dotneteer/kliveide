@@ -1,7 +1,7 @@
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import {
   addBreakpoint,
-  disableBreakpoint,
+  disableBreakpoint as makeUnreachableBreakpoint,
   makeReachableAllBreakpoints,
   makeReachableBreakpoint,
   normalizeBreakpoints,
@@ -66,11 +66,19 @@ export const normalizeBreakpointsAction: ActionCreator = (
   payload: { resource, lineCount },
 });
 
+export const setResolvedBreakpointsAction: ActionCreator = (
+  breakpoints: BreakpointDefinition[]
+) => ({
+  type: "SET_RESOLVED_BREAKPOINTS",
+  payload: { breakpoints },
+});
+
 // ============================================================================
 // Reducer
 
 const initialState: DebuggerState = {
   breakpoints: [],
+  resolved: [],
 };
 
 export default function (
@@ -82,6 +90,7 @@ export default function (
       return {
         ...state,
         breakpoints: [],
+        resolved: [],
       };
     case "ADD_BREAKPOINT":
       return {
@@ -96,12 +105,18 @@ export default function (
     case "REACHABLE_BREAKPOINT":
       return {
         ...state,
-        breakpoints: makeReachableBreakpoint(state.breakpoints, payload.breakpoint),
+        breakpoints: makeReachableBreakpoint(
+          state.breakpoints,
+          payload.breakpoint
+        ),
       };
     case "UNREACHABLE_BREAKPOINT":
       return {
         ...state,
-        breakpoints: disableBreakpoint(state.breakpoints, payload.breakpoint),
+        breakpoints: makeUnreachableBreakpoint(
+          state.breakpoints,
+          payload.breakpoint
+        ),
       };
     case "ALL_REACHABLE_BREAKPOINTS":
       return {
@@ -125,6 +140,11 @@ export default function (
           payload.resource,
           payload.lineCount
         ),
+      };
+    case "SET_RESOLVED_BREAKPOINTS":
+      return {
+        ...state,
+        resolved: payload.breakpoints,
       };
     default:
       return state;
