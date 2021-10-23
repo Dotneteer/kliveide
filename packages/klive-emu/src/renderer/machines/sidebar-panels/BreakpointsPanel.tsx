@@ -173,6 +173,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
    */
   refreshBreakpoints(): void {
     const breakpoints = resolveBreakpoints();
+    console.log(breakpoints);
     this.setState({ breakpoints });
     this.listApi?.forceRefresh();
   }
