@@ -30,6 +30,8 @@ import {
   hideEditorStatusAction,
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
+import { getEngineProxyService } from "../engine-proxy";
+import { Z80CpuState } from "../../cpu/Z80Cpu";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -69,9 +71,11 @@ export default class EditorDocument extends React.Component<Props, State> {
   private _descriptorChanged: () => void;
   private _refreshBreakpoints: () => void;
   private _refreshErrorMarkers: () => void;
+  private _refreshCurrentBreakpoint: () => void;
   private _subscribedToBreakpointEvents = false;
   private _oldDecorations: string[] = [];
   private _oldHoverDecorations: string[] = [];
+  private _oldExecPointDecoration: string[] = [];
   private _previousContent: string | null = null;
   private _editorPosUnsubscribe: monaco.IDisposable;
 
@@ -91,6 +95,7 @@ export default class EditorDocument extends React.Component<Props, State> {
     this._descriptorChanged = () => this.descriptorChanged();
     this._refreshBreakpoints = () => this.refreshBreakpoints();
     this._refreshErrorMarkers = () => this.refreshErrorMarkers();
+    this._refreshCurrentBreakpoint = () => this.refreshCurrentBreakpoint();
   }
 
   /**
@@ -213,6 +218,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       // --- Display breakpoint and marker information
       this.refreshBreakpoints();
       this.refreshErrorMarkers();
+      this.refreshCurrentBreakpoint();
     }
 
     // --- Save the last value of the editor
@@ -232,7 +238,9 @@ export default class EditorDocument extends React.Component<Props, State> {
   componentDidMount(): void {
     this.setState({ show: true });
     this.props.descriptor.documentDescriptorChanged.on(this._descriptorChanged);
-    getStore().compilationChanged.on(this._refreshErrorMarkers);
+    const store = getStore();
+    store.compilationChanged.on(this._refreshErrorMarkers);
+    store.executionStateChanged.on(this._refreshCurrentBreakpoint);
   }
 
   /**
@@ -248,6 +256,7 @@ export default class EditorDocument extends React.Component<Props, State> {
       store.breakpointsChanged.off(this._refreshBreakpoints);
       store.compilationChanged.off(this._refreshBreakpoints);
       store.compilationChanged.off(this._refreshErrorMarkers);
+      store.executionStateChanged.off(this._refreshCurrentBreakpoint);
     }
 
     // --- Check if this document is still registered
@@ -526,6 +535,44 @@ export default class EditorDocument extends React.Component<Props, State> {
   }
 
   /**
+   * Refreshes the current breakpoint
+   * @returns
+   */
+  async refreshCurrentBreakpoint(): Promise<void> {
+    // --- Refresh the information only during paused state
+    const engineProxy = getEngineProxyService();
+    const state = getState();
+    const execState = state.emulatorPanel?.executionState ?? 0;
+    if (execState !== 3) {
+      this._oldExecPointDecoration = this._editor.deltaDecorations(
+        this._oldExecPointDecoration,
+        []
+      );
+      return;
+    }
+
+    // --- Does this file contains the default breakpoint
+    const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
+    const currentBreakpoint = (state.debugger?.resolved ?? []).find(
+      (bp) =>
+        bp.location === cpuState._pc &&
+        bp.type === "source" &&
+        bp.resource === this.resourceName
+    ) as SourceCodeBreakpoint;
+    if (currentBreakpoint) {
+      this._oldExecPointDecoration = this._editor.deltaDecorations(
+        this._oldExecPointDecoration,
+        [createCurrentBreakpointDecoration(currentBreakpoint.line)]
+      );
+    } else {
+      this._oldExecPointDecoration = this._editor.deltaDecorations(
+        this._oldExecPointDecoration,
+        []
+      );
+    }
+  }
+
+  /**
    * Handles the editor's mousemove event
    * @param e
    */
@@ -645,7 +692,7 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
    * @param location Document location
    */
   async navigateToLocation(location: NavigationInfo): Promise<void> {
-    if (this._host) {
+    if (this._host.current) {
       this._host.current.setPosition(location.line, location.column);
     }
   }

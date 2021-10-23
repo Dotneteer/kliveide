@@ -172,9 +172,13 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
               )}
             </div>
             {index === 0 ? (
-              <Icon iconName="chevron-right" fill="--console-ansi-green" />
+              <Icon
+                iconName={hasBreakpoint ? "debug-current" : "chevron-right"}
+                fill={hasBreakpoint ? "--console-ansi-yellow" : "--console-ansi-green"}
+                style={{marginRight: 4}}
+              />
             ) : (
-              <div style={{ width: 14 }} />
+              <div style={{ width: 18 }} />
             )}
             <div style={{ width: 100 }}>{item.opCodes}</div>
             <div

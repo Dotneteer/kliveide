@@ -11,7 +11,10 @@ import {
   getState,
   getStore,
 } from "@core/service-registry";
-import { compareBreakpoints, resolveBreakpoints } from "@abstractions/debug-helpers";
+import {
+  compareBreakpoints,
+  resolveBreakpoints,
+} from "@abstractions/debug-helpers";
 import { Icon } from "@components/Icon";
 import { MenuItem } from "@abstractions/command-definitions";
 import {
@@ -19,11 +22,14 @@ import {
   removeBreakpointAction,
 } from "@core/state/debugger-reducer";
 import { navigateToDocumentPosition } from "../../ide/document-area/document-utils";
+import { getEngineProxyService } from "../../ide/engine-proxy";
+import { Z80CpuState } from "../../cpu/Z80Cpu";
 
 const TITLE = "Breakpoints";
 
 type State = {
   breakpoints?: BreakpointDefinition[];
+  currentPc?: number;
 };
 
 /**
@@ -129,6 +135,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
             .toString(16)
             .padStart(4, "0")
             .toLocaleLowerCase()} (${item.location.toString(10)})`;
+    const isCurrent = this.state.currentPc === item.location;
     return (
       <div
         className="listlike"
@@ -142,13 +149,17 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
         onDoubleClick={() => this.navigateToSource(item)}
       >
         <Icon
-          iconName="circle-filled"
+          iconName={
+            isCurrent
+              ? "debug-current"
+              : "circle-filled"
+          }
           width={22}
           height={22}
           fill={
             item.type == "source" && item.unreachable
               ? "--debug-unreachable-bp-color"
-              : "--debug-bp-color"
+              : (isCurrent ? "--console-ansi-yellow": "--debug-bp-color")
           }
           style={{ flexShrink: 0, flexGrow: 0, paddingRight: 4 }}
         />
@@ -173,7 +184,6 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
    */
   refreshBreakpoints(): void {
     const breakpoints = resolveBreakpoints();
-    console.log(breakpoints);
     this.setState({ breakpoints });
     this.listApi?.forceRefresh();
   }
@@ -243,6 +253,17 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
     const projectRoot = getState().project.path;
     const resource = (projectRoot + item.resource).replace(/\\/g, "/");
     navigateToDocumentPosition(resource, item.line, 0);
+  }
+
+  /**
+   * Refresh the disassembly screen
+   */
+  protected async onRunEvent(): Promise<void> {
+    const engineProxy = getEngineProxyService();
+    const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
+    const execState = getState().emulatorPanel?.executionState ?? 0;
+    this.setState({ currentPc: execState === 3 ? cpuState._pc : undefined });
+    this.listApi?.forceRefresh();
   }
 }
 

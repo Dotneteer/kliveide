@@ -100,6 +100,5 @@ export abstract class Z80MachineCoreBase extends VirtualMachineCoreBase<Z80Cpu> 
     for (let i = 0; i < 0x1_0000; i++) {
       mh.writeByte(i, 0);
     }
-    console.log("Breakpoint cleared.");
   }
 }

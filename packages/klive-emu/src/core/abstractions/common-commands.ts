@@ -539,7 +539,6 @@ const injectAndDebugVmCommand: IKliveCommand = {
         const debugIndex = (getState().activityBar?.activities ?? []).findIndex(
           (a) => a.id === ACTIVITY_DEBUG_ID
         );
-        console.log(debugIndex);
         if (debugIndex >= 0) {
           dispatch(changeActivityAction(debugIndex));
         }

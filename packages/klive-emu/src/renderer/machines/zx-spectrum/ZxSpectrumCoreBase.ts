@@ -379,7 +379,6 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     }
     const mh = new MemoryHelper(this.api, BREAKPOINTS_MAP);
     mh.writeByte(def.location, 0x01);
-    console.log(`Breakpoint set at $${def.location}`);
   }
 
   /**
