@@ -1,10 +1,10 @@
 import { ProgramCounterInfo } from "@state/AppState";
 import { KeyMapping } from "./keyboard";
-import { MemoryHelper } from "../wa-interop/memory-helpers";
+import { MemoryHelper } from "@ext-core/memory-helpers";
 import {
   EXEC_ENGINE_STATE_BUFFER,
   EXEC_OPTIONS_BUFFER,
-} from "../wa-interop/memory-map";
+} from "@ext-core/wa-memory-map";
 import {
   ExecuteCycleOptions,
   MachineCoreState,
@@ -12,7 +12,7 @@ import {
   MachineState,
 } from "../../../core/abstractions/vm-core-types";
 import { getEngineDependencies } from "./vm-engine-dependencies";
-import { MachineApi } from "../wa-interop/wa-api";
+import { MachineApi } from "../../../extensions/core/wa-api";
 import { ICpu } from "@abstractions/abstract-cpu";
 import { BreakpointDefinition, CodeToInject } from "@abstractions/code-runner-service";
 import { IVmEngineService } from "./vm-engine-service";
