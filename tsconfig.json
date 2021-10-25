@@ -15,6 +15,9 @@
     "resolveJsonModule": true,
     "paths": {
       "@abstractions/*": ["./packages/klive-emu/src/core/abstractions/*"],
+      "@ext-core/*": ["./packages/klive-emu/src/extensions/core/*"],
+      "@ext-main/*": ["./packages/klive-emu/src/extensions/core-main/*"],
+      "@ext/*": ["./packages/klive-emu/src/extensions/*"],
       "@state/*": ["./packages/klive-emu/src/core/state/*"],
       "@shared/*": ["./packages/klive-emu/src/shared/*", "./packages/kliveide-emu/src/shared/*"],
       "@core/*": ["./packages/klive-emu/src/core/*"],

@@ -15,6 +15,9 @@
     "paths": {
       "*": ["node_modules/*"],
       "@abstractions/*": ["src/core/abstractions/*"],
+      "@ext-core/*": ["src/extensions/core/*"],
+      "@ext-main/*": ["src/extensions/core-main/*"],
+      "@ext/*": ["src/extensions/*"],
       "@core/*": ["src/core/*"],
       "@components/*": ["src/emu-ide/components/*"],
       "@state/*": ["src/core/state/*"],

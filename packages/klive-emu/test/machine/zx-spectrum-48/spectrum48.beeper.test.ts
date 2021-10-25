@@ -12,8 +12,8 @@ import {
   EmulationMode,
   ExecuteCycleOptions,
 } from "../../../src/core/abstractions/vm-core-types";
-import { MemoryHelper } from "../../../src/renderer/machines/wa-interop/memory-helpers";
-import { BEEPER_SAMPLE_BUFFER } from "../../../src/renderer/machines/wa-interop/memory-map";
+import { MemoryHelper } from "../../../src/extensions/core/memory-helpers";
+import { BEEPER_SAMPLE_BUFFER } from "../../../src/extensions/vm-zx-spectrum/wa-memory-map";
 
 let machine: ZxSpectrum48Core;
 

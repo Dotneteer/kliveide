@@ -7,13 +7,11 @@ import { MachineCreationOptions, MachineState } from "../../../core/abstractions
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
 import {
-  BLOCK_LOOKUP_TABLE,
-  VM_MEMORY,
   Z88_BEEPER_BUFFER,
   Z88_MACHINE_STATE_BUFFER,
   Z88_PIXEL_BUFFER,
-} from "../wa-interop/memory-map";
-import { MemoryHelper } from "../wa-interop/memory-helpers";
+} from "@ext/vm-z88/wa-memory-map";
+import { MemoryHelper } from "@ext-core/memory-helpers";
 import { KeyMapping } from "../core/keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
 import {
@@ -38,6 +36,8 @@ import {
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
 import { BreakpointDefinition, CodeToInject } from "@abstractions/code-runner-service";
 import { getVmEngineService } from "../core/vm-engine-service";
+import { BLOCK_LOOKUP_TABLE } from "@ext/cpu-z80/wa-memory-map";
+import { VM_MEMORY } from "@ext-core/wa-memory-map";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 

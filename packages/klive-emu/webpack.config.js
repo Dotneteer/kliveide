@@ -24,6 +24,9 @@ const commonConfig = {
   resolve: {
     alias: {
       "@abstractions": srcPaths("src/core/abstractions"),
+      "@ext-core": srcPaths("src/extensions/core"),
+      "@ext-main": srcPaths("src/extensions/main"),
+      "@ext": srcPaths("src/extensions"),
       "@core": srcPaths("src/core"),
       "@components": srcPaths("src/emu-ide/components"),
       "@state": srcPaths("src/core/state"),

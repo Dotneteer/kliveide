@@ -1,14 +1,12 @@
 import { BinaryReader } from "@core/utils/BinaryReader";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
-import { MemoryHelper } from "../wa-interop/memory-helpers";
+import { MemoryHelper } from "@ext-core/memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
-  BREAKPOINTS_MAP,
   COLORIZATION_BUFFER,
   PSG_SAMPLE_BUFFER,
   RENDERING_TACT_TABLE,
-  SPECTRUM_MACHINE_STATE_BUFFER,
-} from "../wa-interop/memory-map";
+} from "@ext/vm-zx-spectrum/wa-memory-map";
 import {
   MachineCreationOptions,
   MachineState,
@@ -26,6 +24,7 @@ import {
   BreakpointDefinition,
   CodeToInject,
 } from "@abstractions/code-runner-service";
+import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
 
 /**
  * ZX Spectrum common core implementation
@@ -131,7 +130,7 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
 
     // --- Obtain ZX Spectrum specific state
     this.api.getMachineState();
-    let mh = new MemoryHelper(this.api, SPECTRUM_MACHINE_STATE_BUFFER);
+    let mh = new MemoryHelper(this.api, VM_STATE_BUFFER);
 
     // --- Get port state
     s.portBit3LastValue = mh.readBool(0);
