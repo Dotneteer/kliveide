@@ -4,22 +4,23 @@
 
 // ============================================================================
 // Machine-independent parts
-export const VM_MEMORY = 0x00_0000
+export const VM_MEMORY = 0x0000_0000
 
 // --- CPU state transfer area
-export const CPU_STATE_BUFFER = 0x0100009c;
-
-// --- Machine state transfer buffer
-export const VM_STATE_BUFFER = 0x013db434;
-
-// --- Map of breakpoints, 1 byte for each 16-bit address
-export const BREAKPOINTS_MAP = 0x0100_0dfc;
-
-// --- Breakpoint partitions map, 2 bytes for each 16-bit address
-export const BRP_PARTITION_MAP = 0x0101_0dfc;
+export const CPU_STATE_BUFFER = 0x0100_0000;
 
 // --- Execution engine state transfer buffer
-export const EXEC_ENGINE_STATE_BUFFER = 0x01000de3;
+export const EXEC_ENGINE_STATE_BUFFER = 0x0100_1000;
 
 // --- Execution options state transfer buffer
-export const EXEC_OPTIONS_BUFFER = 0x01000df0;
+export const EXEC_OPTIONS_BUFFER = 0x0100_1400;
+
+// --- Machine state transfer buffer
+export const VM_STATE_BUFFER = 0x0100_1800;
+
+// --- Map of breakpoints, 1 byte for each 16-bit address
+export const BREAKPOINTS_MAP = 0x0100_2800;
+
+// --- Breakpoint partitions map, 2 bytes for each 16-bit address
+export const BRP_PARTITION_MAP = 0x0101_2800;
+

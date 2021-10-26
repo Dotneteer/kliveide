@@ -1,3 +1,21 @@
 // 16 MB memory reserved for virtual machines
 // memory address is ensured to be 0;
 u8[16 * 1024 * 1024] VIRTUAL_MEMORY_PLACEHOLDER;
+
+// CPU state buffer
+u8[0x1000] CPU_STATE_PLACEHOLDER;
+
+// Execution engine state buffer
+u8[0x400] EXECUTION_ENGINE_STATE_PLACEHOLDER;
+
+// Buffer for virtual machine execution options
+u8[0x0400] EXECUTION_OPTIONS_PLACEHOLDER;
+
+// Virtual machine state buffer
+u8[0x1000] VM_STATE_PLACEHOLDER;
+
+// Breakpoint map placeholder
+u8[0x1'0000] BP_MAP_PLACEHOLDER;
+
+// Breakpoint partition info placeholder
+u16[0x1'0000] BP_PARTITIONS_PLACEHOLDER;

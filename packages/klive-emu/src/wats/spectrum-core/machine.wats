@@ -97,7 +97,7 @@ type spMachineState = struct {
 };
 
 // Transfer buffer for machine state
-spMachineState spectrumMachineStateBuffer;
+spMachineState spectrumMachineStateBuffer { VM_STATE_PLACEHOLDER };
 
 // Accumulated memory contention value
 global u32 contentionAccumulated;

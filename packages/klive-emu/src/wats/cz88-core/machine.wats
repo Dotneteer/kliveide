@@ -73,7 +73,7 @@ type z88MachineState = struct {
 };
 
 // Transfer buffer for machine state
-z88MachineState z88MachineStateBuffer;
+z88MachineState z88MachineStateBuffer { VM_STATE_PLACEHOLDER };
 
 // ----------------------------------------------------------------------------
 // Public routines
