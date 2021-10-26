@@ -3,14 +3,13 @@ import { getModalDialogService } from "@core/service-registry";
 import { ProgramCounterInfo } from "@state/AppState";
 import { Z80CpuState } from "../../cpu/Z80Cpu";
 import { IAudioRenderer } from "../audio/IAudioRenderer";
-import { MachineCreationOptions, MachineState } from "../../../core/abstractions/vm-core-types";
+import {
+  MachineCreationOptions,
+  MachineState,
+} from "../../../core/abstractions/vm-core-types";
 import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
-import {
-  Z88_BEEPER_BUFFER,
-  Z88_MACHINE_STATE_BUFFER,
-  Z88_PIXEL_BUFFER,
-} from "@ext/vm-z88/wa-memory-map";
+import { Z88_BEEPER_BUFFER, Z88_PIXEL_BUFFER } from "@ext/vm-z88/wa-memory-map";
 import { MemoryHelper } from "@ext-core/memory-helpers";
 import { KeyMapping } from "../core/keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
@@ -34,10 +33,13 @@ import {
   MemorySection,
 } from "@shared/z80/disassembler/disassembly-helper";
 import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
-import { BreakpointDefinition, CodeToInject } from "@abstractions/code-runner-service";
+import {
+  BreakpointDefinition,
+  CodeToInject,
+} from "@abstractions/code-runner-service";
 import { getVmEngineService } from "../core/vm-engine-service";
 import { BLOCK_LOOKUP_TABLE } from "@ext/cpu-z80/wa-memory-map";
-import { VM_MEMORY } from "@ext-core/wa-memory-map";
+import { VM_MEMORY, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 
@@ -215,7 +217,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
     const s = { ...cpuState, ...engineState } as CambridgeZ88MachineState;
 
     this.api.getMachineState();
-    const mh = new MemoryHelper(this.api, Z88_MACHINE_STATE_BUFFER);
+    const mh = new MemoryHelper(this.api, VM_STATE_BUFFER);
 
     // --- Blink device data
     s.COM = mh.readByte(0);
@@ -354,10 +356,10 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
     // TODO: Implement this method
   }
 
-   /**
-    * Set the specified breakpoint definition
-    * @param def 
-    */
+  /**
+   * Set the specified breakpoint definition
+   * @param def
+   */
   async setBreakpoint(def: BreakpointDefinition): Promise<void> {
     // TODO: Implement this method
   }
