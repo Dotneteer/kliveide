@@ -7,6 +7,9 @@ import void saveModeLeft "imports" "saveModeLeft" (u32);
 // --- Sign that ZX Spectrum models have contended memory
 #define MEM_CONTENDED
 
+// --- Memory placeholders
+#include "../memory-base.wats"
+
 // --- Z80 implementation
 #include "../z80/z80.wats"
 // --- Generic Z80 execution engine

@@ -7,7 +7,10 @@
 
 // 16 MB memory reserved for virtual machines
 // memory address is ensured to be 0;
-u8[16 * 1024 * 1024] vmMemory;
+u8[16 * 1024 * 1024] vmMemory { VIRTUAL_MEMORY_PLACEHOLDER };
+
+// buffer for retrieving CPU state
+cpuStateStruct cpuStateBuffer { CPU_STATE_PLACEHOLDER };
 
 // Lookup structure for a 8K memory page
 type blockLookup = struct {
@@ -30,8 +33,10 @@ blockLookup[8] blockLookupTable;
 // ----------------------------------------------------------------------------
 // Z80 CPU state
 
+u8 REGISTER_AREA_PLACEHOLDER;
+
 // Primary registers
-u8 f;
+u8 f { REGISTER_AREA_PLACEHOLDER };
 u8 a;
 u16 af {f};
 u8 c;
@@ -66,9 +71,6 @@ u16 iy {yl};
 u8 wl;
 u8 wh;
 u16 wz {wl};
-
-// buffer for retriving CPU state
-cpuStateStruct cpuStateBuffer;
 
 // Number of tacts within one screen rendering frame. This value indicates the
 // number of clock cycles with normal CPU speed.

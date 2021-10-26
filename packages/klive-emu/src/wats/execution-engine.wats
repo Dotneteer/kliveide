@@ -91,7 +91,7 @@ type executionEngineStateStruct = struct {
 };
 
 // Current state of the execution engine
-executionEngineStateStruct executionEngineState;
+executionEngineStateStruct executionEngineState { EXECUTION_ENGINE_STATE_PLACEHOLDER };
 
 // Describes the structure of execution options
 type execOptions = struct {
@@ -106,7 +106,7 @@ type execOptions = struct {
 };
 
 // Stores the current execution options
-execOptions executionOptions;
+execOptions executionOptions { EXECUTION_OPTIONS_PLACEHOLDER };
 
 // ----------------------------------------------------------------------------
 // Memory area used for debugging
@@ -132,10 +132,10 @@ type ioBpDescriptor = struct {
 };
 
 // Breakpoints map (64K x 1 byte)
-u8[0x1'0000] breakpointsMap;
+u8[0x1'0000] breakpointsMap { BP_MAP_PLACEHOLDER };
 
 // Breakpoint partitions map (64K x 2 bytes)
-u16[0x1'0000] bpPartitionsMap;
+u16[0x1'0000] bpPartitionsMap { BP_PARTITIONS_PLACEHOLDER };
 
 // Memory read breakpoints conditions map (64K x 5 bytes)
 memCondition[0x1'0000] memReadConditions;
