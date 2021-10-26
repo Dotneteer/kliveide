@@ -1,7 +1,6 @@
 import { MemoryHelper } from "@ext-core/memory-helpers";
 import { CPU_STATE_BUFFER } from "@ext-core/wa-memory-map";
-import { CpuApi } from "../../extensions/core/wa-api";
-import { ICpu, ICpuState } from "@abstractions/abstract-cpu";
+import { ICpu, ICpuState, WasmCpuApi } from "@ext-core/abstract-cpu";
 import { REG_AREA_INDEX } from "@ext/cpu-z80/wa-memory-map";
 
 /**
@@ -12,7 +11,7 @@ export class Z80Cpu implements ICpu {
    * Initializes the CPU instance to work with the WA implementation of Z80
    * @param cpuApi Use this WA API
    */
-  constructor(public readonly cpuApi: CpuApi) {}
+  constructor(public readonly cpuApi: WasmCpuApi) {}
 
   /**
    * Retrieves the state of the Z80 CPI

@@ -13,7 +13,7 @@ import EmulatorPanel from "./EmulatorPanel";
 import KeyboardPanel from "./KeyboardPanel";
 import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
 import styles from "styled-components";
-import { getVmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 /**
  * Represents the main canvas of the emulator

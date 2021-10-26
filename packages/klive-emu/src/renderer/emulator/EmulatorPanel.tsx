@@ -4,12 +4,12 @@ import { useSelector } from "react-redux";
 import ReactResizeDetector from "react-resize-detector";
 
 import { AppState } from "@state/AppState";
-import { VirtualMachineCoreBase } from "../machines/core/VirtualMachineCoreBase";
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import { useEffect, useRef, useState } from "react";
-import { ICpu } from "@abstractions/abstract-cpu";
-import { getVmEngineService } from "../machines/core/vm-engine-service";
+import { ICpu } from "@ext-core/abstract-cpu";
+import { VirtualMachineCoreBase } from "@ext-core/abstract-vm";
+import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 /**
  * Represents the display panel of the emulator

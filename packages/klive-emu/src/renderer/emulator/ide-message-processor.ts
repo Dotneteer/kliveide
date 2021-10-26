@@ -9,7 +9,7 @@ import {
 } from "@core/messaging/message-types";
 import { IpcRendereApi } from "../../exposed-apis";
 import { IpcRendererEvent } from "electron";
-import { getVmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;

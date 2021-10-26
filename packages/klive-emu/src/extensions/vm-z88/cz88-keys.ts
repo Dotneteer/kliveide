@@ -1,4 +1,4 @@
-import { KeyMapping } from "../core/keyboard";
+import { KeyMapping } from "@ext-core/keyboard";
 
 /**
  * This enum assigns key codes to the keys of the Cambridge Z88 keyboard.

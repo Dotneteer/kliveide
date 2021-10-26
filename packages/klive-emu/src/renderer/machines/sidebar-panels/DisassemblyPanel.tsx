@@ -5,16 +5,16 @@ import { dispatch, getState, getStore } from "@core/service-registry";
 import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
-import { Z80CpuState } from "../../cpu/Z80Cpu";
-import { Z80Disassembler } from "@shared/z80/disassembler/z80-disassembler";
+import { Z80CpuState } from "../../../extensions/cpu-z80/z80-cpu";
+import { Z80Disassembler } from "@ext/cpu-z80/z80-disassembler";
 import {
   DisassemblyItem,
   DisassemblyOutput,
   MemorySection,
-} from "@shared/z80/disassembler/disassembly-helper";
+} from "@ext/cpu-z80/disassembly-helper";
 import { Icon } from "../../../emu-ide/components/Icon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
-import { virtualMachineToolsService } from "../core/VitualMachineToolBase";
+import { virtualMachineToolsService } from "../../../extensions/core/VitualMachineToolBase";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 import { BinaryBreakpoint } from "@abstractions/code-runner-service";
 import {

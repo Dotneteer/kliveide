@@ -4,7 +4,6 @@ import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { AppState } from "@state/AppState";
 import { BinaryReader } from "@core/utils/BinaryReader";
-import { checkTapeFile } from "../../renderer/machines/zx-spectrum/readers";
 import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
@@ -20,6 +19,7 @@ import { MachineCreationOptions } from "../abstractions/vm-core-types";
 import { VirtualMachineType } from "./machine-registry";
 import { dispatch, getState } from "@core/service-registry";
 import { emuWindow } from "../../main/app/emu-window";
+import { checkTapeFile } from "@ext/vm-zx-spectrum/readers";
 
 // --- Menu identifier contants
 const TOGGLE_BEAM = "sp_toggle_beam_position";

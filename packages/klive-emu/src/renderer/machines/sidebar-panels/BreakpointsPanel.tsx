@@ -23,7 +23,7 @@ import {
 } from "@core/state/debugger-reducer";
 import { navigateToDocumentPosition } from "../../ide/document-area/document-utils";
 import { getEngineProxyService } from "../../ide/engine-proxy";
-import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { Z80CpuState } from "../../../extensions/cpu-z80/z80-cpu";
 
 const TITLE = "Breakpoints";
 

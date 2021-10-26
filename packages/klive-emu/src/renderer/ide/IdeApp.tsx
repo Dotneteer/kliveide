@@ -24,8 +24,7 @@ import {
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "../machines/sidebar-panels/Z80RegistersPanel";
-import { UlaInformationPanelDescriptor } from "../machines/zx-spectrum/UlaInformationPanel";
-import { BlinkInformationPanelDescriptor } from "../machines/cambridge-z88/BlinkInformationPanel";
+import { BlinkInformationPanelDescriptor } from "../../extensions/vm-z88/BlinkInformationPanel";
 import { CallStackPanelDescriptor } from "../machines/sidebar-panels/CallStackPanel";
 import { IoLogsPanelDescription } from "../machines/sidebar-panels/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
@@ -44,9 +43,7 @@ import "./ide-message-processor";
 import { registerKliveCommands } from "./commands/register-commands";
 import { Z80DisassemblyPanelDescriptor } from "../machines/sidebar-panels/DisassemblyPanel";
 import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
-import { virtualMachineToolsService } from "../machines/core/VitualMachineToolBase";
-import { ZxSpectrum48Tools } from "../machines/zx-spectrum/ZxSpectrum48Core";
-import { CambridgeZ88Tools } from "../machines/cambridge-z88/CambridgeZ88Core";
+import { virtualMachineToolsService } from "../../extensions/core/VitualMachineToolBase";
 import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,
@@ -71,6 +68,9 @@ import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
 import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_LOG_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@core/abstractions/activity";
 import { BreakpointsPanelDescriptor } from "../machines/sidebar-panels/BreakpointsPanel";
+import { UlaInformationPanelDescriptor } from "@ext/vm-zx-spectrum/UlaInformationPanel";
+import { ZxSpectrum48Tools } from "@ext/vm-zx-spectrum/ZxSpectrum48Core";
+import { CambridgeZ88Tools } from "@ext/vm-z88/CambridgeZ88Core";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";

@@ -3,7 +3,7 @@ import * as React from "react";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarProps, SideBarState } from "../../ide/SideBarPanelBase";
 import { CSSProperties } from "react";
-import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { Z80CpuState } from "../../../extensions/cpu-z80/z80-cpu";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 

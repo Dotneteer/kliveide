@@ -1,4 +1,4 @@
-import { CpuApi } from "./wa-api";
+import { WasmCpuApi } from "./abstract-cpu";
 
 /**
  * This class provides operations to work with
@@ -11,7 +11,7 @@ export class MemoryHelper {
    * @param wasmApi WASM instance to use
    * @param ptr Memory pointer this helper works with
    */
-  constructor(public wasmApi: CpuApi, public ptr: number) {
+  constructor(public wasmApi: WasmCpuApi, public ptr: number) {
     this._memory = new Uint8Array(wasmApi.memory.buffer, 0);
   }
 

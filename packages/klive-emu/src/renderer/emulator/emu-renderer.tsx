@@ -28,7 +28,7 @@ import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@abstractions/common-commands";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "../../emu-ide/services/dialog-service";
-import { getVmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main

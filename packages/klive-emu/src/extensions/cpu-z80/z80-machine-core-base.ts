@@ -1,8 +1,8 @@
-import { Z80Cpu } from "../../cpu/Z80Cpu";
+import { Z80Cpu } from "./z80-cpu";
 import { MemoryHelper } from "@ext-core/memory-helpers";
 import { BREAKPOINTS_MAP } from "@ext-core/wa-memory-map";
-import { VirtualMachineCoreBase } from "./VirtualMachineCoreBase";
 import { BLOCK_LOOKUP_TABLE } from "@ext/cpu-z80/wa-memory-map";
+import { VirtualMachineCoreBase } from "@ext-core/abstract-vm";
 
 /**
  * ZX Spectrum common core implementation

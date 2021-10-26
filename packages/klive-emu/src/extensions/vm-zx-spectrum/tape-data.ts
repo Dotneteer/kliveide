@@ -1,8 +1,8 @@
 import { BinaryReader } from "@core/utils/BinaryReader";
 import { BinaryWriter } from "@core/utils/BinaryWriter";
+import { WasmMachineApi } from "@ext-core/abstract-vm";
 import { MemoryHelper } from "@ext-core/memory-helpers";
 import { TAPE_DATA_BUFFER } from "@ext/vm-zx-spectrum/wa-memory-map";
-import { MachineApi } from "../../../extensions/core/wa-api";
 
 /**
  * Defines the serialization operations of a TZX record
@@ -76,7 +76,7 @@ export abstract class TapeFileReader {
    * @param api API instance to communicate with the machine
    * @returns The number of data blocks sent
    */
-  sendTapeFileToEngine(api: MachineApi): number {
+  sendTapeFileToEngine(api: WasmMachineApi): number {
     const mh = new MemoryHelper(api, TAPE_DATA_BUFFER);
     let offset = 0;
     let count = 0;

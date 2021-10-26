@@ -3,7 +3,7 @@ import { CSSProperties } from "react";
 
 import { getEngineProxyService } from "../../ide/engine-proxy";
 
-import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { Z80CpuState } from "../../../extensions/cpu-z80/z80-cpu";
 import { Icon } from "../../../emu-ide/components/Icon";
 import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";

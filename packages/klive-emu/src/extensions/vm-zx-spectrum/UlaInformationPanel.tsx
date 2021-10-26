@@ -1,17 +1,12 @@
 import * as React from "react";
 
 import { SpectrumMachineStateBase } from "./ZxSpectrumCoreBase";
-import { SideBarPanelDescriptorBase } from "../../ide/side-bar/SideBarService";
-import { SideBarPanelBase, SideBarProps } from "../../ide/SideBarPanelBase";
-import {
-  labelStyle,
-  separatorLine,
-  valueItemStyle,
-  valueStyle,
-} from "../../ide/utils/content-utils";
 import { CSSProperties } from "react";
-import { Icon } from "../../../emu-ide/components/Icon";
-import { getEngineProxyService } from "../../ide/engine-proxy";
+import { labelStyle, separatorLine, valueItemStyle, valueStyle } from "../../renderer/ide/utils/content-utils";
+import { Icon } from "@components/Icon";
+import { SideBarPanelBase, SideBarProps } from "../../renderer/ide/SideBarPanelBase";
+import { getEngineProxyService } from "../../renderer/ide/engine-proxy";
+import { SideBarPanelDescriptorBase } from "../../renderer/ide/side-bar/SideBarService";
 
 const TITLE = "ULA Information";
 

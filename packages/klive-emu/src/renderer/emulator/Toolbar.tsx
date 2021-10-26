@@ -12,11 +12,11 @@ import {
   spectrumBeamPositionAction,
   spectrumFastLoadAction,
 } from "@state/spectrum-specific-reducer";
-import { ZxSpectrumCoreBase } from "../machines/zx-spectrum/ZxSpectrumCoreBase";
 import styles from "styled-components";
 import { emuToMainMessenger } from "./EmuToMainMessenger";
 import { executeKliveCommand } from "@abstractions/common-commands";
-import { getVmEngineService } from "../machines/core/vm-engine-service";
+import { getVmEngineService } from "@ext-core/vm-engine-service";
+import { ZxSpectrumCoreBase } from "@ext/vm-zx-spectrum/ZxSpectrumCoreBase";
 
 const Root = styles.div`
   display: flex;

@@ -1,17 +1,16 @@
 import { getModalDialogService } from "@core/service-registry";
 
 import { ProgramCounterInfo } from "@state/AppState";
-import { Z80CpuState } from "../../cpu/Z80Cpu";
-import { IAudioRenderer } from "../audio/IAudioRenderer";
+import { Z80CpuState } from "@ext/cpu-z80/z80-cpu";
 import {
   MachineCreationOptions,
   MachineState,
-} from "../../../core/abstractions/vm-core-types";
-import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
+} from "@abstractions/vm-core-types";
+import { Z80MachineCoreBase } from "@ext/cpu-z80/z80-machine-core-base";
 import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
 import { Z88_BEEPER_BUFFER, Z88_PIXEL_BUFFER } from "@ext/vm-z88/wa-memory-map";
 import { MemoryHelper } from "@ext-core/memory-helpers";
-import { KeyMapping } from "../core/keyboard";
+import { KeyMapping } from "@ext-core/keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
 import {
   CZ88_BATTERY_LOW,
@@ -20,19 +19,19 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "../../machines/cambridge-z88/macine-commands";
-import { getEngineDependencies } from "../core/vm-engine-dependencies";
+} from "@ext/vm-z88/macine-commands";
+import { getEngineDependencies } from "@ext-core/vm-engine-dependencies";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
-} from "@shared/z80/disassembler/custom-disassembly";
+} from "@ext/cpu-z80/custom-disassembly";
 import {
   DisassemblyItem,
   FetchResult,
   intToX2,
   MemorySection,
-} from "@shared/z80/disassembler/disassembly-helper";
-import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
+} from "@ext/cpu-z80/disassembly-helper";
+import { VirtualMachineToolBase } from "@ext-core/VitualMachineToolBase";
 import {
   BreakpointDefinition,
   CodeToInject,
@@ -40,6 +39,7 @@ import {
 import { getVmEngineService } from "../core/vm-engine-service";
 import { BLOCK_LOOKUP_TABLE } from "@ext/cpu-z80/wa-memory-map";
 import { VM_MEMORY, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
+import { IAudioRenderer } from "../../renderer/machines/audio/IAudioRenderer";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 

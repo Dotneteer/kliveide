@@ -244,12 +244,12 @@ export void setSP(u16 value) {
 }
 
 // Sets the CPU state to snoozed
-export void snoozeCpu() {
+void snoozeCpu() {
   cpuSnoozed = true;
 }
 
 // Awakes the CPU
-export void awakeCpu() {
+void awakeCpu() {
   cpuSnoozed = false;
 }
 

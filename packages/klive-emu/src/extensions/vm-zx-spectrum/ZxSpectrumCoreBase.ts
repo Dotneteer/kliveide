@@ -1,5 +1,5 @@
 import { BinaryReader } from "@core/utils/BinaryReader";
-import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { Z80CpuState } from "@ext/cpu-z80/z80-cpu";
 import { MemoryHelper } from "@ext-core/memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
@@ -10,21 +10,21 @@ import {
 import {
   MachineCreationOptions,
   MachineState,
-} from "../../../core/abstractions/vm-core-types";
-import { Z80MachineCoreBase } from "../core/Z80MachineCoreBase";
+} from "@abstractions/vm-core-types";
+import { Z80MachineCoreBase } from "@ext/cpu-z80/z80-machine-core-base";
 import { TzxReader } from "./tzx-file";
 import { TapReader } from "./tap-file";
-import { IAudioRenderer } from "../audio/IAudioRenderer";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
-import { KeyMapping } from "../core/keyboard";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
 import { ProgramCounterInfo } from "@state/AppState";
-import { getEngineDependencies } from "../core/vm-engine-dependencies";
 import {
   BreakpointDefinition,
   CodeToInject,
 } from "@abstractions/code-runner-service";
 import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
+import { IAudioRenderer } from "../../renderer/machines/audio/IAudioRenderer";
+import { getEngineDependencies } from "@ext-core/vm-engine-dependencies";
+import { KeyMapping } from "@ext-core/keyboard";
 
 /**
  * ZX Spectrum common core implementation

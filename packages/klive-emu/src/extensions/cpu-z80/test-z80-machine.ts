@@ -1,12 +1,12 @@
-import { TestCpuApi } from "../../../extensions/core/wa-api";
 import { MemoryHelper } from "@ext-core/memory-helpers";
 import { CPU_STATE_BUFFER } from "@ext-core/wa-memory-map";
-import { FlagsSetMask, Z80CpuState } from "../../cpu/Z80Cpu";
-import { RunMode } from "../../../core/abstractions/vm-core-types";
+import { FlagsSetMask, Z80CpuState } from "./z80-cpu";
+import { RunMode } from "../../core/abstractions/vm-core-types";
 import { REG_AREA_INDEX } from "@ext/cpu-z80/wa-memory-map";
+import { WasmCpuApi } from "@ext-core/abstract-cpu";
 
-const TEST_INPUT_BUFFER = 0x01000de3;
-const IO_OPERATION_LOG = 0x01000ee3;
+const TEST_INPUT_BUFFER = 0x0100_0de3;
+const IO_OPERATION_LOG = 0x0100_0ee3;
 
 /**
  * This class represents a test machine that can be used for testing the WA machine
@@ -488,6 +488,19 @@ export class TestZ80Machine {
       );
     }
   }
+}
+
+/**
+ * Represents the API for CPU tests
+ */
+export interface TestCpuApi extends WasmCpuApi {
+  prepareTest(mode: RunMode, codeEnds: number): void;
+  setTestInputLength(length: number): void;
+  getMemLogLength(): number;
+  getIoLogLength(): number;
+  getTbBlueLogLength(): number;
+  runTestCode(): void;
+  resetMachine(): void;
 }
 
 /**

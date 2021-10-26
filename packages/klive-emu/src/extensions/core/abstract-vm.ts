@@ -10,11 +10,13 @@ import {
   MachineCoreState,
   MachineCreationOptions,
   MachineState,
-} from "../../../core/abstractions/vm-core-types";
+} from "@abstractions/vm-core-types";
 import { getEngineDependencies } from "./vm-engine-dependencies";
-import { MachineApi } from "../../../extensions/core/wa-api";
-import { ICpu } from "@abstractions/abstract-cpu";
-import { BreakpointDefinition, CodeToInject } from "@abstractions/code-runner-service";
+import { ICpu, WasmCpuApi } from "@ext-core/abstract-cpu";
+import {
+  BreakpointDefinition,
+  CodeToInject,
+} from "@abstractions/code-runner-service";
 import { IVmEngineService } from "./vm-engine-service";
 
 /**
@@ -30,7 +32,7 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   /**
    * The WA machine API to use the machine core
    */
-  public api: MachineApi;
+  public api: WasmMachineApi;
 
   /**
    * Gets the CPU of the virtual machine
@@ -155,7 +157,7 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
         await deps.waModuleLoader(this.waModuleFile),
         waImportObject
       )
-    ).instance.exports as unknown as MachineApi;
+    ).instance.exports as unknown as WasmMachineApi;
     if (!this.api) {
       throw new Error("WebAssembly module initialization failed.");
     }
@@ -413,9 +415,9 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
 
   /**
    * Set the specified breakpoint definition
-   * @param def 
+   * @param def
    */
-  abstract setBreakpoint(def: BreakpointDefinition): Promise<void>
+  abstract setBreakpoint(def: BreakpointDefinition): Promise<void>;
 
   // ==========================================================================
   // Lifecycle methods
@@ -515,4 +517,54 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
     _resultState: MachineState,
     _toWait: number
   ): Promise<void> {}
+}
+
+/**
+ * Represents the Machine API
+ */
+export interface WasmMachineApi extends WasmCpuApi {
+  // --- Virtual machine methods
+  setupMachine(): void;
+  resetMachine(): void;
+  setUlaIssue(ula: number): void;
+  getMachineState(): void;
+  getExecutionEngineState(): void;
+  setExecutionOptions(): void;
+  executeMachineLoop(): void;
+  setInterruptTact(tact: number): void;
+  checkForInterrupt(tact: number): void;
+  setKeyStatus(key: number, isDown: boolean): void;
+  getKeyStatus(key: number): number;
+  setAudioSampleRate(rate: number): void;
+  colorize(): void;
+  getCursorMode(): number;
+  initTape(blocks: number): void;
+  setFastLoad(value: boolean): void;
+  resetStepOverStack(): void;
+  markStepOverStack(): void;
+  eraseMemoryWriteMap(): void;
+  setMemoryWritePoint(point: number): void;
+
+  // --- Z88 machine methods
+  testIncZ88Rtc(inc: number): void;
+  testSetRtcRegs(
+    tim0: number,
+    tim1: number,
+    tim2: number,
+    tim3: number,
+    tim4: number
+  ): void;
+  testSetZ88INT(value: number): void;
+  testSetZ88STA(value: number): void;
+  testSetZ88COM(value: number): void;
+  testSetZ88TMK(value: number): void;
+  testReadCz88Memory(addr: number): number;
+  testWriteCz88Memory(addr: number, value: number): number;
+  setZ88ChipMask(slot: number, value: number): void;
+  setZ88SlotMask(slot: number, isRom: boolean): void;
+  setZ88RndSeed(seed: number): void;
+  writePortCz88(addr: number, value: number): void;
+  clearMemory(): void;
+  setZ88ScreenSize(scw: number, sch: number): void;
+  raiseBatteryLow(): void;
 }

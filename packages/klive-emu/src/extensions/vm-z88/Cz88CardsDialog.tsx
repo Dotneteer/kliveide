@@ -3,18 +3,18 @@ import {
   DropDownListComponent,
   SelectEventArgs,
 } from "@syncfusion/ej2-react-dropdowns";
-import { Cell, CenteredRow, Grid } from "../../../emu-ide/components/grid-styles";
-import { emuToMainMessenger } from "../../emulator/EmuToMainMessenger";
+import { Cell, CenteredRow, Grid } from "../../emu-ide/components/grid-styles";
 import {
   SlotContent,
   SlotState,
   Z88CardsState,
-} from "../../../extensions/cz88/common/cz88-specific";
+} from "@ext/vm-z88/cz88-specific";
 import { useState } from "react";
-import { Icon } from "../../../emu-ide/components/Icon";
 import { EmuOpenFileDialogResponse } from "@core/messaging/message-types";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { getModalDialogService } from "@core/service-registry";
+import { emuToMainMessenger } from "../../renderer/emulator/EmuToMainMessenger";
+import { Icon } from "@components/Icon";
 
 /**
  * Descriptor for the Z88 Insert/remove cards dialog

@@ -3,12 +3,12 @@ import {
   EmulationMode,
   ExecuteCycleOptions,
   MachineCreationOptions,
-} from "../../../core/abstractions/vm-core-types";
+} from "@abstractions/vm-core-types";
 import { ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
 import {
   ICustomDisassembler,
   IDisassemblyApi,
-} from "@shared/z80/disassembler/custom-disassembly";
+} from "@ext/cpu-z80/custom-disassembly";
 import {
   MemorySection,
   FetchResult,
@@ -16,10 +16,10 @@ import {
   intToX2,
   toSbyte,
   intToX4,
-} from "@shared/z80/disassembler/disassembly-helper";
+} from "@ext/cpu-z80/disassembly-helper";
 import { FloatNumber } from "./FloatNumber";
 import { calcOps } from "./calc-ops";
-import { VirtualMachineToolBase } from "../core/VitualMachineToolBase";
+import { VirtualMachineToolBase } from "@ext-core/VitualMachineToolBase";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point

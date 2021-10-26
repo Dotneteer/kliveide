@@ -48,7 +48,7 @@ import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "../../emu-ide/services/dialog-service";
-import { CodeRunnerService } from "../machines/CodeRunnerService";
+import { CodeRunnerService } from "../../extensions/core/CodeRunnerService";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main

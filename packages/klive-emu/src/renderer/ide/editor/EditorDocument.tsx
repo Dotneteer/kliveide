@@ -31,7 +31,7 @@ import {
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
 import { getEngineProxyService } from "../engine-proxy";
-import { Z80CpuState } from "../../cpu/Z80Cpu";
+import { Z80CpuState } from "../../../extensions/cpu-z80/z80-cpu";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
