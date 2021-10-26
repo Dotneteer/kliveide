@@ -8,6 +8,9 @@ import void saveModeLeft "imports" "saveModeLeft" (u32);
 #define MEM_CONTENDED
 #define SUPPORTS_PSG
 
+// --- Memory placeholders
+#include "../memory-base.wats"
+
 // --- Z80 implementation
 #include "../z80/z80.wats"
 // --- Generic Z80 execution engine

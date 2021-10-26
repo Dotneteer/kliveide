@@ -7,7 +7,7 @@
 
 // 16 MB memory reserved for virtual machines
 // memory address is ensured to be 0;
-u8[16 * 1024 * 1024] vmMemory;
+u8[16 * 1024 * 1024] vmMemory { VIRTUAL_MEMORY_PLACEHOLDER };
 
 // Lookup structure for a 8K memory page
 type blockLookup = struct {

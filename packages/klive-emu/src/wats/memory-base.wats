@@ -1,0 +1,3 @@
+// 16 MB memory reserved for virtual machines
+// memory address is ensured to be 0;
+u8[16 * 1024 * 1024] VIRTUAL_MEMORY_PLACEHOLDER;
