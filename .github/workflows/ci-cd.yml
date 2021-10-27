@@ -15,11 +15,6 @@ jobs:
       with:
         node-version: 12.x
 
-    - name: Install npm dependencies
-      run: npm run bootstrap:ci
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.GT_WORKAROUND_PAT }}
-
     - name: Build the packages
       run: npm run build
 
