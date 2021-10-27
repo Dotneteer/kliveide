@@ -30,7 +30,8 @@
     "build:win": "npm run build && electron-builder build --win --x64",
     "build:mac": "npm run build && electron-builder build --mac --x64",
     "build:linux": "npm run build && electron-builder build --linux --x64",
-    "vmbuild": "npm run build:sp48 && npm run build:sp128 && npm run build:cz88 && npm run build:tz80"
+    "vmbuild": "npm run build:sp48 && npm run build:sp128 && npm run build:cz88 && npm run build:tz80",
+    "bootstrap:ci": "npm ci"
   },
   "build": {
     "appId": "dotneteer.klive",
