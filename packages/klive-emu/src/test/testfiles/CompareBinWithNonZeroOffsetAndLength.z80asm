@@ -1,3 +1,0 @@
-﻿ld a,c
-ld a,d
-.comparebin "./Memory.bin", 1, 2

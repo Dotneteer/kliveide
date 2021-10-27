@@ -1,7 +1,0 @@
-﻿; Tests a single include file
-.org #8000
-nop
-
-#include "./inc1.z80asm"
-
-nop
