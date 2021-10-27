@@ -5,9 +5,9 @@ import {
   loadWaModule,
   SilentAudioRenderer,
 } from "../helpers";
-import { setEngineDependencies } from "../../../src/renderer/machines/core/vm-engine-dependencies";
-import { ZxSpectrum48Core } from "../../../src/renderer/machines/zx-spectrum/ZxSpectrum48Core";
-import { SpectrumMachineStateBase } from "../../../src/renderer/machines/zx-spectrum/ZxSpectrumCoreBase";
+import { setEngineDependencies } from "../../../src/extensions/core/vm-engine-dependencies";
+import { ZxSpectrum48Core } from "../../../src/extensions/vm-zx-spectrum/ZxSpectrum48Core";
+import { SpectrumMachineStateBase } from "../../../src/extensions/vm-zx-spectrum/ZxSpectrumCoreBase";
 import {
   EmulationMode,
   ExecuteCycleOptions,

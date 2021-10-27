@@ -1,5 +1,5 @@
 import { Z80Tester } from "./z80-tester";
-import { ZxSpectrum48CustomDisassembler } from "../../src/renderer/machines/zx-spectrum/ZxSpectrum48Core";
+import { ZxSpectrum48CustomDisassembler } from "../../src/extensions/vm-zx-spectrum/ZxSpectrum48Core";
 
 describe("Disassembler - ZX Spectrum-specific", function () {
   this.timeout(10000);

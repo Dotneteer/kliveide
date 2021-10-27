@@ -5,13 +5,13 @@ import {
   IntFlags,
   TmkFlags,
   TstaFlags,
-} from "../../../src/renderer/machines/cambridge-z88/CambridgeZ88Core";
+} from "../../../src/extensions/vm-z88/CambridgeZ88Core";
 import {
   DefaultCambridgeZ88StateManager,
   loadWaModule,
   SilentAudioRenderer,
 } from "../helpers";
-import { setEngineDependencies } from "../../../src/renderer/machines/core/vm-engine-dependencies";
+import { setEngineDependencies } from "../../../src/extensions/core/vm-engine-dependencies";
 
 let machine: CambridgeZ88Core;
 

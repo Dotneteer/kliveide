@@ -2,11 +2,10 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { TestCpuApi } from "../../src/extensions/core/wa-api";
-import { TestZ80Machine } from "../../src/renderer/machines/core/TestZ80Machine";
+import { TestCpuApi, TestZ80Machine } from "../../src/extensions/cpu-z80/test-z80-machine";
+import { Z80SignalStateFlags } from "../../src/extensions/cpu-z80/z80-cpu";
 import { RunMode } from "../../src/core/abstractions/vm-core-types";
 import { importObject } from "./import-object";
-import { Z80SignalStateFlags } from "../../src/renderer/cpu/Z80Cpu";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../build/tz80.wasm"));
 let api: TestCpuApi;

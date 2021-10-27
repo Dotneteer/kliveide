@@ -1,8 +1,8 @@
 import "mocha";
 import * as expect from "expect";
 import { DefaultZxSpectrumStateManager, loadWaModule, SilentAudioRenderer } from "../helpers";
-import { setEngineDependencies } from "../../../src/renderer/machines/core/vm-engine-dependencies";
-import { ZxSpectrum48Core } from "../../../src/renderer/machines/zx-spectrum/ZxSpectrum48Core";
+import { setEngineDependencies } from "../../../src/extensions/core/vm-engine-dependencies";
+import { ZxSpectrum48Core } from "../../../src/extensions/vm-zx-spectrum/ZxSpectrum48Core";
 import {
   EmulationMode,
   ExecuteCycleOptions,

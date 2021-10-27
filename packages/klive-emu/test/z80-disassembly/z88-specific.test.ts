@@ -3,8 +3,8 @@ import {
   CambridgeZ88CustomDisassembler,
   z88FppApis,
   z88OzApis,
-} from "../../src/renderer/machines/cambridge-z88/CambridgeZ88Core";
-import { intToX2 } from "../../src/shared/z80/disassembler/disassembly-helper";
+} from "../../src/extensions/vm-z88/CambridgeZ88Core";
+import { intToX2 } from "../../src/extensions/cpu-z80/disassembly-helper";
 
 describe("Disassembler - Z88-specific", function () {
   this.timeout(10000);
