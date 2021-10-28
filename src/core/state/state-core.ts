@@ -161,6 +161,7 @@ export type Payload = {
   resource?: string;
   line?: number;
   column?: number;
+  programCounter?: number;
 }
 
 /**

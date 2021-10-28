@@ -382,13 +382,17 @@ class VmEngineService implements IVmEngineService {
     const oldState = this._vmState;
     this._vmState = newState;
 
+    // --- State the new execution state
+    const programCounter = newState === VmState.Paused || newState === VmState.Stopped
+      ? this._vmEngine.getProgramCounterInfo(this._vmEngine.getMachineState()).value
+      : null;
+    dispatch(emuSetExecutionStateAction(this._vmState, programCounter));
+
     // --- Notify the UI
     this._executionStateChanged.fire(
       new VmStateChangedArgs(oldState, newState, this._isDebugging)
     );
 
-    // --- State the new execution state
-    dispatch(emuSetExecutionStateAction(this._vmState));
   }
 
   /**

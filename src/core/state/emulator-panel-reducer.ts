@@ -10,8 +10,12 @@ export const emuSetSizeAction: ActionCreator = (
 ) => ({ type: "EMU_SET_SIZE", payload: { width, height } });
 
 export const emuSetExecutionStateAction: ActionCreator = (
-  executionState: number
-) => ({ type: "EMU_SET_EXEC_STATE", payload: { executionState } });
+  executionState: number,
+  programCounter?: number
+) => ({
+  type: "EMU_SET_EXEC_STATE",
+  payload: { executionState, programCounter },
+});
 
 export const emuSetFrameIdAction: ActionCreator = (
   startCount: number,
@@ -107,7 +111,11 @@ export default function (
     case "EMU_SET_SIZE":
       return { ...state, width: payload.width, height: payload.height };
     case "EMU_SET_EXEC_STATE":
-      return { ...state, executionState: payload.executionState };
+      return {
+        ...state,
+        executionState: payload.executionState,
+        programCounter: payload.programCounter,
+      };
     case "EMU_SET_FRAME_ID":
       return {
         ...state,

@@ -31,7 +31,6 @@ import {
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
 import { getEngineProxyService } from "../../emu-ide/services/engine-proxy";
-import { Z80CpuState } from "@ext/cpu-z80/z80-cpu";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -552,10 +551,10 @@ export default class EditorDocument extends React.Component<Props, State> {
     }
 
     // --- Does this file contains the default breakpoint
-    const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
+    const programCounter = state.emulatorPanel.programCounter;
     const currentBreakpoint = (state.debugger?.resolved ?? []).find(
       (bp) =>
-        bp.location === cpuState._pc &&
+        bp.location === programCounter &&
         bp.type === "source" &&
         bp.resource === this.resourceName
     ) as SourceCodeBreakpoint;

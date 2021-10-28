@@ -61,6 +61,7 @@ export type EmulatorPanelState = {
   firmware?: Uint8Array[];
   extraFeatures?: string[];
   frameDiagData?: FrameDiagData;
+  programCounter?: number;
 };
 
 /**
@@ -231,6 +232,7 @@ export function getInitialAppState(): AppState {
           value: 0,
         },
       },
+      programCounter: null
     },
     spectrumSpecific: {
       fastLoad: true,

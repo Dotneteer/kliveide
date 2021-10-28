@@ -71,8 +71,8 @@ import { UlaInformationPanelDescriptor } from "@ext/vm-zx-spectrum/UlaInformatio
 import { ZxSpectrum48CustomDisassembler } from "@ext/vm-zx-spectrum/ZxSpectrum48CustomDisassembler";
 import { CambridgeZ88CustomDisassembler } from "@ext/vm-z88/CambridgeZ88CustomDisassembler";
 import { Z80RegistersPanelDescriptor } from "@ext/cpu-z80/Z80RegistersPanel";
-import { Z80DisassemblyPanelDescriptor } from "./side-bar/DisassemblyPanel";
-import { MemoryPanelDescriptor } from "./side-bar/MemoryPanel";
+import { Z80DisassemblyPanelDescriptor } from "../extensions/cpu-z80/Z80DisassemblyPanel";
+import { MemoryPanelDescriptor } from "../extensions/cpu-z80/Z80MemoryPanel";
 import { CallStackPanelDescriptor } from "./side-bar/CallStackPanel";
 import { BreakpointsPanelDescriptor } from "./side-bar/BreakpointsPanel";
 import { IoLogsPanelDescription } from "./side-bar/IoLogsPanel";

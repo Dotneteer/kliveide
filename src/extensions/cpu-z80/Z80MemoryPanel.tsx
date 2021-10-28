@@ -13,7 +13,7 @@ const BYTES_IN_LINE = 8;
 /**
  * Memory panel
  */
-export default class MemoryPanel extends VirtualizedSideBarPanelBase<
+export default class Z80MemoryPanel extends VirtualizedSideBarPanelBase<
   SideBarProps<{}>,
   SideBarState<{}>
 > {
@@ -172,6 +172,6 @@ export class MemoryPanelDescriptor extends SideBarPanelDescriptorBase {
    * Creates a node that represents the contents of a side bar panel
    */
   createContentElement(): React.ReactNode {
-    return <MemoryPanel descriptor={this} />;
+    return <Z80MemoryPanel descriptor={this} />;
   }
 }
