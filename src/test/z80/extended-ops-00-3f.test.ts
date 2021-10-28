@@ -2,7 +2,7 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { TestCpuApi, TestZ80Machine } from "../../extensions/cpu-z80/test-z80-machine";
+import { TestCpuApi, TestZ80Machine } from "../../modules/cpu-z80/test-z80-machine";
 import { importObject } from "./import-object";
 
 const buffer = fs.readFileSync(path.join(__dirname, "../../../build/tz80.wasm"));

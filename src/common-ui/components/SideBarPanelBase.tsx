@@ -3,7 +3,7 @@ import * as React from "react";
 import { getState } from "@core/service-registry";
 
 import { CSSProperties } from "styled-components";
-import ScrollablePanel from "../../emu-ide/components/ScrollablePanel";
+import ScrollablePanel from "./ScrollablePanel";
 import { scrollableContentType } from "./content-utils";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { getEngineProxyService, RunEventArgs } from "../services/engine-proxy";

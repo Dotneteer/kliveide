@@ -40,7 +40,7 @@ import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "@services/dialog-service";
 import { CodeRunnerService } from "@ext-core/CodeRunnerService";
 import IdeApp from "./IdeApp";
-import { SideBarService } from "../emu-ide/services/SideBarService";
+import { SideBarService } from "../common-ui/services/SideBarService";
 import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";
 import { DocumentService } from "./document-area/DocumentService";

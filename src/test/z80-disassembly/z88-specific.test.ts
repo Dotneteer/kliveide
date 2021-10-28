@@ -1,5 +1,5 @@
 import { Z80Tester } from "./z80-tester";
-import { intToX2 } from "../../extensions/cpu-z80/disassembly-helper";
+import { intToX2 } from "../../modules/cpu-z80/disassembly-helper";
 import { CambridgeZ88CustomDisassembler, z88FppApis, z88OzApis } from "@ext/vm-z88/CambridgeZ88CustomDisassembler";
 
 describe("Disassembler - Z88-specific", function () {

@@ -1,7 +1,7 @@
 import * as expect from "expect";
-import { ICustomDisassembler } from "../../extensions/cpu-z80/custom-disassembly";
-import { intToX2, MemoryMap, MemorySection} from "../../extensions/cpu-z80/disassembly-helper"
-import { Z80Disassembler } from "../../extensions/cpu-z80/z80-disassembler";
+import { ICustomDisassembler } from "../../modules/cpu-z80/custom-disassembly";
+import { intToX2, MemoryMap, MemorySection} from "../../modules/cpu-z80/disassembly-helper"
+import { Z80Disassembler } from "../../modules/cpu-z80/z80-disassembler";
 
 /**
  * Helper class for Z80 Disassembler testing

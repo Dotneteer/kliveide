@@ -32,7 +32,7 @@ import {
   Cz88ContructionOptions,
   SlotContent,
   Z88CardsState,
-} from "../../extensions/vm-z88/cz88-specific";
+} from "../../modules/vm-z88/cz88-specific";
 import {
   executeMachineCommand,
   ExecuteMachineCommandResponse,

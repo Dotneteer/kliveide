@@ -4,7 +4,7 @@ import * as path from "path";
 import * as expect from "expect";
 
 import { BinaryReader } from "../../core/utils/BinaryReader";
-import { TapReader } from "../../extensions/vm-zx-spectrum/tap-file";
+import { TapReader } from "../../modules/vm-zx-spectrum/tap-file";
 
 describe("Tape - TAP Reader", () => {
   it("Can read TZX file", () => {

@@ -3,7 +3,7 @@ import { CSSProperties } from "react";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import {
   SideBarPanelDescriptorBase,
-} from "../../emu-ide/services/SideBarService";
+} from "../../common-ui/services/SideBarService";
 
 const TITLE = "Test Runner";
 

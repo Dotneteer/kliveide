@@ -4,7 +4,7 @@ import * as path from "path";
 import * as expect from "expect";
 
 import { BinaryReader } from "../../core/utils/BinaryReader";
-import { TzxReader } from "../../extensions/vm-zx-spectrum/tzx-file";
+import { TzxReader } from "../../modules/vm-zx-spectrum/tzx-file";
 
 describe("Tape - TZX Reader", () => {
   it("Can read TZX file", () => {

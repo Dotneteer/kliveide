@@ -21,8 +21,8 @@ import {
   removeBreakpointAction,
 } from "@core/state/debugger-reducer";
 import { navigateToDocumentPosition } from "../../ide/document-area/document-utils";
-import { getEngineProxyService } from "../../emu-ide/services/engine-proxy";
-import { Z80CpuState } from "../../extensions/cpu-z80/z80-cpu";
+import { getEngineProxyService } from "../../common-ui/services/engine-proxy";
+import { Z80CpuState } from "../../modules/cpu-z80/z80-cpu";
 import { VirtualizedSideBarPanelBase } from "@ide/VirtualizedSideBarPanelBase";
 
 const TITLE = "Breakpoints";

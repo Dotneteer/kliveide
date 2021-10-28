@@ -1,6 +1,6 @@
 import * as React from "react";
-import { SideBarPanelDescriptorBase } from "../../emu-ide/services/SideBarService";
-import { SideBarPanelBase } from "../../emu-ide/components/SideBarPanelBase";
+import { SideBarPanelDescriptorBase } from "../../common-ui/services/SideBarService";
+import { SideBarPanelBase } from "../../common-ui/components/SideBarPanelBase";
 
 const TITLE = "Open Editors";
 
