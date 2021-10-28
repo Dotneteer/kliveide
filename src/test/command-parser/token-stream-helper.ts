@@ -1,7 +1,7 @@
 import * as expect from "expect";
-import { TokenStream } from "../../renderer/ide/tool-area/token-stream";
-import { InputStream } from "../../renderer/ide/tool-area/input-stream";
-import { TokenType} from "../../core/abstractions/interactive-command-service"
+import { TokenStream } from "@ide/tool-area/token-stream";
+import { InputStream } from "@ide/tool-area/input-stream";
+import { TokenType} from "@abstractions/interactive-command-service"
 
 export function testToken(
   tokenStr: string,

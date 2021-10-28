@@ -1,11 +1,11 @@
+import { separatorLine, valueItemStyle } from "@components/content-utils";
+import { SideBarPanelBase, SideBarProps } from "@components/SideBarPanelBase";
+import { getEngineProxyService } from "@services/engine-proxy";
+import { SideBarPanelDescriptorBase } from "@services/SideBarService";
 import * as React from "react";
 import { CSSProperties } from "react";
-import { getEngineProxyService } from "../../renderer/ide/engine-proxy";
 
 import { Icon } from "../../emu-ide/components/Icon";
-import { SideBarPanelDescriptorBase } from "../../renderer/ide/side-bar/SideBarService";
-import { SideBarPanelBase, SideBarProps } from "../../renderer/ide/SideBarPanelBase";
-import { separatorLine, valueItemStyle } from "../../renderer/ide/utils/content-utils";
 import { CambridgeZ88MachineState } from "./CambridgeZ88Core";
 
 const TITLE = "BLINK Information";

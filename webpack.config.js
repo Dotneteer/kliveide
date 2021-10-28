@@ -29,9 +29,13 @@ const commonConfig = {
       "@ext": srcPaths("src/extensions"),
       "@core": srcPaths("src/core"),
       "@components": srcPaths("src/emu-ide/components"),
+      "@themes": srcPaths("src/emu-ide/themes"),
+      "@services": srcPaths("src/emu-ide/services"),
       "@state": srcPaths("src/core/state"),
       "@shared": srcPaths("src/shared"),
       "@messaging": srcPaths("src/extensibility/messaging"),
+      "@emu": srcPaths("src/emu"),
+      "@ide": srcPaths("src/ide"),
       _: srcPaths("src"),
       _main: srcPaths("src/main"),
       _models: srcPaths("src/models"),
@@ -140,7 +144,7 @@ mainConfig.plugins = [
 ];
 
 const emuRendererConfig = lodash.cloneDeep(commonConfig);
-emuRendererConfig.entry = "./src/renderer/emulator/emu-renderer.tsx";
+emuRendererConfig.entry = "./src/emu/emu-renderer.tsx";
 emuRendererConfig.target = "electron-renderer";
 emuRendererConfig.output.filename = "emu-renderer.bundle.js";
 emuRendererConfig.plugins = [
@@ -151,7 +155,7 @@ emuRendererConfig.plugins = [
 ];
 
 const ideRendererConfig = lodash.cloneDeep(commonConfig);
-ideRendererConfig.entry = "./src/renderer/ide/ide-renderer.tsx";
+ideRendererConfig.entry = "./src/ide/ide-renderer.tsx";
 ideRendererConfig.target = "electron-renderer";
 ideRendererConfig.output.filename = "ide-renderer.bundle.js";
 ideRendererConfig.plugins = [

@@ -3,7 +3,7 @@ import {
   DropDownListComponent,
   SelectEventArgs,
 } from "@syncfusion/ej2-react-dropdowns";
-import { Cell, CenteredRow, Grid } from "../../emu-ide/components/grid-styles";
+import { Cell, CenteredRow, Grid } from "@components/grid-styles";
 import {
   SlotContent,
   SlotState,
@@ -13,7 +13,7 @@ import { useState } from "react";
 import { EmuOpenFileDialogResponse } from "@core/messaging/message-types";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { getModalDialogService } from "@core/service-registry";
-import { emuToMainMessenger } from "../../renderer/emulator/EmuToMainMessenger";
+import { emuToMainMessenger } from "@services/EmuToMainMessenger";
 import { Icon } from "@components/Icon";
 
 /**

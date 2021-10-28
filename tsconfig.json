@@ -21,9 +21,13 @@
       "@ext/*": ["./src/extensions/*"],
       "@core/*": ["./src/core/*"],
       "@components/*": ["./src/emu-ide/components/*"],
+      "@themes/*": ["./src/emu-ide/themes/*"],
+      "@services/*": ["./src/emu-ide/services/*"],
       "@state/*": ["./src/core/state/*"],
       "@shared/*": ["./src/shared/*"],
-      "@messaging/*": ["./src/core/messaging/*"]
+      "@messaging/*": ["./src/core/messaging/*"],
+      "@emu/*": ["./src/emu/*"],
+      "@ide/*": ["./src/ide/*"]
     }
   },
   "include": ["src/**/*"],
