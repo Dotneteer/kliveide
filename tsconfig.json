@@ -25,7 +25,9 @@
       "@services/*": ["./src/emu-ide/services/*"],
       "@state/*": ["./src/core/state/*"],
       "@shared/*": ["./src/shared/*"],
-      "@messaging/*": ["./src/core/messaging/*"]
+      "@messaging/*": ["./src/core/messaging/*"],
+      "@emu/*": ["./src/emu/*"],
+      "@ide/*": ["./src/ide/*"]
     }
   },
   "include": ["src/**/*"],

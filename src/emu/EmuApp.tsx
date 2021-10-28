@@ -25,7 +25,7 @@ import { ZxSpectrumStateManager } from "@ext/vm-zx-spectrum/ZxSpectrumStateManag
 import { CambridgeZ88StateManager } from "@ext/vm-z88/CambridgeZ88BaseStateManager";
 import { Z88_CARDS_DIALOG_ID } from "@ext/vm-z88/CambridgeZ88Core";
 import { cz88CardsDialog } from "@ext/vm-z88/Cz88CardsDialog";
-import { toStyleString } from "../renderer/ide/utils/css-utils";
+import { toStyleString } from "@ide/utils/css-utils";
 
 // --- Set up the virual machine engine service with the
 setEngineDependencies({

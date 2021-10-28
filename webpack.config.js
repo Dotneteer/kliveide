@@ -34,6 +34,8 @@ const commonConfig = {
       "@state": srcPaths("src/core/state"),
       "@shared": srcPaths("src/shared"),
       "@messaging": srcPaths("src/extensibility/messaging"),
+      "@emu": srcPaths("src/emu"),
+      "@ide": srcPaths("src/ide"),
       _: srcPaths("src"),
       _main: srcPaths("src/main"),
       _models: srcPaths("src/models"),
@@ -153,7 +155,7 @@ emuRendererConfig.plugins = [
 ];
 
 const ideRendererConfig = lodash.cloneDeep(commonConfig);
-ideRendererConfig.entry = "./src/renderer/ide/ide-renderer.tsx";
+ideRendererConfig.entry = "./src/ide/ide-renderer.tsx";
 ideRendererConfig.target = "electron-renderer";
 ideRendererConfig.output.filename = "ide-renderer.bundle.js";
 ideRendererConfig.plugins = [

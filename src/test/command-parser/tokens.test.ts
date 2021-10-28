@@ -1,4 +1,4 @@
-import { TokenType } from "../../core/abstractions/interactive-command-service";
+import { TokenType } from "@abstractions/interactive-command-service";
 import { testToken } from "./token-stream-helper";
 
 describe("Command parser - tokens", () => {
