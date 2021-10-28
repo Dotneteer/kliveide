@@ -39,7 +39,7 @@ import {
 import { getVmEngineService } from "../core/vm-engine-service";
 import { BLOCK_LOOKUP_TABLE } from "@ext/cpu-z80/wa-memory-map";
 import { VM_MEMORY, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
-import { IAudioRenderer } from "../../renderer/machines/audio/IAudioRenderer";
+import { IAudioRenderer } from "@ext-core/audio/IAudioRenderer";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 

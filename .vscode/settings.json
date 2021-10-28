@@ -2,4 +2,5 @@
   "mochaExplorer.mochaPath": "node_modules/mocha",
   "mochaExplorer.files": "src/test/**/*.test.ts",
   "mochaExplorer.require": ["ts-node/register", "tsconfig-paths/register"],
+  "mochaExplorer.esmLoader": true
 }

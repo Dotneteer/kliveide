@@ -12,7 +12,7 @@ import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
 import EmuStatusbar from "./EmuStatusbar";
 import { emuLoadUiAction } from "@state/emu-loaded-reducer";
-import { AudioRenderer } from "../machines/audio/AudioRenderer";
+import { AudioRenderer } from "@ext-core/audio/AudioRenderer";
 import { setEngineDependencies } from "../../extensions/core/vm-engine-dependencies";
 import { useRef, useState } from "react";
 import ModalDialog from "../../emu-ide/components/ModalDialog";

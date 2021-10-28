@@ -22,7 +22,7 @@ import {
   CodeToInject,
 } from "@abstractions/code-runner-service";
 import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
-import { IAudioRenderer } from "../../renderer/machines/audio/IAudioRenderer";
+import { IAudioRenderer } from "@ext-core/audio/IAudioRenderer";
 import { getEngineDependencies } from "@ext-core/vm-engine-dependencies";
 import { KeyMapping } from "@ext-core/keyboard";
 
