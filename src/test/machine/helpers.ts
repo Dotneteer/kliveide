@@ -1,9 +1,8 @@
 import * as path from "path";
 import * as fs from "fs";
-
 import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
-import { ICambridgeZ88StateManager } from "@modules/vm-z88/ICambrideZ88StateMananger";
-import { IZxSpectrumStateManager } from "@modules/vm-zx-spectrum/IZxSpectrumStateManager";
+import { ICambridgeZ88StateManager } from "@modules/vm-z88/CambridgeZ88Core";
+import { IZxSpectrumStateManager } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
 
 /**
  * Provides a way to test a Z88 virtual machine in Node
@@ -22,19 +21,6 @@ export class SilentAudioRenderer implements IAudioRenderer {
 export class DefaultCambridgeZ88StateManager
   implements ICambridgeZ88StateManager {
   getState(): any {}
-}
-
-/**
- * A no-op implementation of IZxSpectrumStateManager
- */
-export class DefaultZxSpectrumStateManager implements IZxSpectrumStateManager {
-  getState(): any {}
-  setTapeContents(_contents: Uint8Array): void {}
-  setPanelMessage(_message: string): void {}
-  selectRom(_rom: number): void {}
-  selectBank(_bank: number): void {}
-  setLoadMode(_isLoad: boolean): void {}
-  initiateTapeLoading(): void {}
 }
 
 export async function loadWaModule(

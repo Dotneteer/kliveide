@@ -1,11 +1,9 @@
 import "mocha";
 import * as expect from "expect";
 import {
-  DefaultZxSpectrumStateManager,
   loadWaModule,
   SilentAudioRenderer,
 } from "../helpers";
-import { setEngineDependencies } from "@modules-core/vm-engine-dependencies";
 import { ZxSpectrum48Core } from "@modules/vm-zx-spectrum/ZxSpectrum48Core";
 import { SpectrumMachineStateBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
 import {
@@ -17,19 +15,14 @@ import {
   COLORIZATION_BUFFER,
   PIXEL_RENDERING_BUFFER,
 } from "@modules/vm-zx-spectrum/wa-memory-map";
+import { createTestDependencies } from "./test-dependencies";
 
 let machine: ZxSpectrum48Core;
 
-// --- Set up the virual machine engine service with the
-setEngineDependencies({
-  waModuleLoader: (n) => loadWaModule(n),
-  sampleRateGetter: () => 48000,
-  audioRendererFactory: () => new SilentAudioRenderer(),
-  spectrumStateManager: new DefaultZxSpectrumStateManager(),
-});
 
 describe("ZX Spectrum 48 - Screen", () => {
   before(async () => {
+    createTestDependencies();
     machine = new ZxSpectrum48Core({
       baseClockFrequency: 3_276_800,
       tactsInFrame: 16384,
@@ -109,8 +102,6 @@ describe("ZX Spectrum 48 - Screen", () => {
     fillPixelBuffer(0xff);
     machine.executeFrame(new ExecuteCycleOptions(EmulationMode.UntilHalt));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
-    console.log(s.executionCompletionReason);
-    console.log(s.tacts);
     expect(s._pc).toBe(0x800d);
     expect(s.tacts).toBe(3697);
     expect(s.frameCompleted).toBe(false);

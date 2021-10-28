@@ -1,26 +1,14 @@
 import "mocha";
 import * as expect from "expect";
 import { CambridgeZ88Core } from "@modules/vm-z88/CambridgeZ88Core";
-import {
-  DefaultCambridgeZ88StateManager,
-  loadWaModule,
-  SilentAudioRenderer,
-} from "../helpers";
-import { setEngineDependencies } from "@modules-core/vm-engine-dependencies";
+import { createTestDependencies } from "./test-dependencies";
 
 let machine: CambridgeZ88Core;
-
-// --- Set up the virual machine engine service with the
-setEngineDependencies({
-  waModuleLoader: (n) => loadWaModule(n),
-  sampleRateGetter: () => 48000,
-  audioRendererFactory: () => new SilentAudioRenderer(),
-  cz88StateManager: new DefaultCambridgeZ88StateManager(),
-});
 
 describe("Cambridge Z88 - Memory paging", function () {
   this.timeout(10_000);
   before(async () => {
+    createTestDependencies();
     machine = new CambridgeZ88Core({
       baseClockFrequency: 3_276_800,
       tactsInFrame: 16384,

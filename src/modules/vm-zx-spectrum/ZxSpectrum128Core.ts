@@ -16,7 +16,9 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
   /**
    * Gets the unique model identifier of the machine
    */
-  readonly modelId = "sp128";
+   getModelId(): string {
+    return "sp128";
+  }
 
   /**
    * The name of the module file with the WA machine engine
@@ -27,7 +29,7 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
    * Gets a unique identifier for the particular configuration of the model
    */
   get configurationId(): string {
-    return this.modelId;
+    return this.getModelId();
   }
 
   /**

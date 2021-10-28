@@ -29,7 +29,39 @@ import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@abstractions/common-commands";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "@services/dialog-service";
+import { AudioRendererFactory, AudioSampleRateGetter, AUDIO_RENDERER_FACTORY_ID, AUDIO_SAMPLE_RATE_GETTER_ID, IMachineComponentProvider, WaModuleLoader, WA_MODULE_LOADER_ID } from "@modules-core/abstract-vm";
+import { AudioRenderer } from "@modules-core/audio/AudioRenderer";
+import { getEngineDependencyRegistry } from "@modules-core/vm-engine-dependency-registry";
+import { ZxSpectrumStateManager } from "@modules/vm-zx-spectrum/ZxSpectrumStateManager";
+import { CambridgeZ88StateManager } from "@modules/vm-z88/CambridgeZ88BaseStateManager";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
+
+// ============================================================================
+// Classes to handle engine dependencies
+class WaLoader implements IMachineComponentProvider, WaModuleLoader {
+  readonly id = WA_MODULE_LOADER_ID;
+  loadWaContents = async (moduleFile: string) =>  {
+    const response = await fetch("./wasm/" + moduleFile);
+    return await response.arrayBuffer();
+  }
+}
+
+class SampleRateGetter
+  implements IMachineComponentProvider, AudioSampleRateGetter
+{
+  readonly id = AUDIO_SAMPLE_RATE_GETTER_ID;
+  getAudioSampleRate() {
+    return new AudioContext().sampleRate
+  }
+}
+
+class AudioFactory implements IMachineComponentProvider, AudioRendererFactory {
+  readonly id = AUDIO_RENDERER_FACTORY_ID;
+  createAudioRenderer(s: number) {
+    return new AudioRenderer(s)
+  }
+}
+
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -84,6 +116,24 @@ registerService(VM_CONTROLLER_SERVICE, getVmEngineService());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);
+
+// --- Set up the virual machine engine service with the
+const deps = getEngineDependencyRegistry();
+
+deps.registerComponentDependency("sp48", new ZxSpectrumStateManager());
+deps.registerComponentDependency("sp48", new WaLoader());
+deps.registerComponentDependency("sp48", new SampleRateGetter());
+deps.registerComponentDependency("sp48", new AudioFactory());
+
+deps.registerComponentDependency("sp128", new ZxSpectrumStateManager());
+deps.registerComponentDependency("sp128", new WaLoader());
+deps.registerComponentDependency("sp128", new SampleRateGetter());
+deps.registerComponentDependency("sp128", new AudioFactory());
+
+deps.registerComponentDependency("cz88", new CambridgeZ88StateManager);
+deps.registerComponentDependency("cz88", new WaLoader());
+deps.registerComponentDependency("cz88", new SampleRateGetter());
+deps.registerComponentDependency("cz88", new AudioFactory());
 
 // --- Start the listener that processes state changes coming
 // --- from the main process

@@ -108,6 +108,7 @@ export class Z80Disassembler {
       }
       switch (section.sectionType) {
         case MemorySectionType.Disassemble:
+          console.log("disassembling", toDisassemble);
           await this._disassembleSection(toDisassemble);
           break;
 
@@ -124,6 +125,7 @@ export class Z80Disassembler {
           break;
       }
     }
+    console.log(this._output.outputItems);
     return this._output;
   }
 

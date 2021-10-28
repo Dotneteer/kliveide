@@ -26,6 +26,7 @@ import { CodeToInject } from "@abstractions/code-runner-service";
 import { delay } from "@core/utils/timing";
 import { VirtualMachineCoreBase } from "./abstract-vm";
 import { EmulatedKeyStroke } from "./keyboard";
+import { IAudioRenderer } from "./audio/IAudioRenderer";
 
 /**
  * This class represents the states of the virtual machine as
@@ -383,16 +384,17 @@ class VmEngineService implements IVmEngineService {
     this._vmState = newState;
 
     // --- State the new execution state
-    const programCounter = newState === VmState.Paused || newState === VmState.Stopped
-      ? this._vmEngine.getProgramCounterInfo(this._vmEngine.getMachineState()).value
-      : null;
+    const programCounter =
+      newState === VmState.Paused || newState === VmState.Stopped
+        ? this._vmEngine.getProgramCounterInfo(this._vmEngine.getMachineState())
+            .value
+        : null;
     dispatch(emuSetExecutionStateAction(this._vmState, programCounter));
 
     // --- Notify the UI
     this._executionStateChanged.fire(
       new VmStateChangedArgs(oldState, newState, this._isDebugging)
     );
-
   }
 
   /**

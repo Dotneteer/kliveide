@@ -276,7 +276,6 @@ describe("Assembler - .break", () => {
       if (replacements[argName]) {
         newText = newText.replace(toReplace, replacements[argName]);
       }
-      console.log(newText);
     }
   });
 });

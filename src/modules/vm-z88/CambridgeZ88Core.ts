@@ -1,14 +1,16 @@
 import { getModalDialogService } from "@core/service-registry";
 
-import { ProgramCounterInfo } from "@state/AppState";
+import { AppState, ProgramCounterInfo } from "@state/AppState";
 import { Z80CpuState } from "@modules/cpu-z80/z80-cpu";
 import {
   MachineCreationOptions,
   MachineState,
 } from "@abstractions/vm-core-types";
 import { Z80MachineCoreBase } from "@modules/cpu-z80/z80-machine-core-base";
-import { ICambridgeZ88StateManager } from "./ICambrideZ88StateMananger";
-import { Z88_BEEPER_BUFFER, Z88_PIXEL_BUFFER } from "@modules/vm-z88/wa-memory-map";
+import {
+  Z88_BEEPER_BUFFER,
+  Z88_PIXEL_BUFFER,
+} from "@modules/vm-z88/wa-memory-map";
 import { MemoryHelper } from "@modules-core/memory-helpers";
 import { KeyMapping } from "@modules-core/keyboard";
 import { cz88KeyCodes, cz88KeyMappings } from "./cz88-keys";
@@ -20,17 +22,25 @@ import {
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
 } from "@modules/vm-z88/macine-commands";
-import { getEngineDependencies } from "@modules-core/vm-engine-dependencies";
 import {
   BreakpointDefinition,
   CodeToInject,
 } from "@abstractions/code-runner-service";
-import { getVmEngineService } from "../core/vm-engine-service";
 import { BLOCK_LOOKUP_TABLE } from "@modules/cpu-z80/wa-memory-map";
 import { VM_MEMORY, VM_STATE_BUFFER } from "@modules-core/wa-memory-map";
 import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
-import { WasmMachineApi } from "@modules-core/abstract-vm";
+import { AudioRendererFactory, AudioSampleRateGetter, AUDIO_RENDERER_FACTORY_ID, AUDIO_SAMPLE_RATE_GETTER_ID, WasmMachineApi } from "@modules-core/abstract-vm";
+import { getEngineDependencyRegistry } from "@modules-core/vm-engine-dependency-registry";
+import { getVmEngineService } from "@modules-core/vm-engine-service";
 
+/**
+ * ID of a ZX Spectrum state manager component
+ */
+export const Z88_STATE_MANAGER_ID = "ZxSpectrumStateManager";
+
+/**
+ * ID of the cards dialog
+ */
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
 
 /**
@@ -62,6 +72,17 @@ export interface WasmZ88Api extends WasmMachineApi {
 }
 
 /**
+ * Defines the responsibilities of a state manager for a Cambridge Z88
+ * derived virtual machine
+ */
+export interface ICambridgeZ88StateManager {
+  /**
+   * Gets the current state
+   */
+  getState(): AppState;
+}
+
+/**
  * ZX Spectrum common core implementation
  */
 export class CambridgeZ88Core extends Z80MachineCoreBase {
@@ -85,15 +106,27 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    */
   constructor(options: MachineCreationOptions) {
     super(options);
-    const deps = getEngineDependencies();
-    this._audioRendererFactory = deps.audioRendererFactory;
-    this._stateManager = deps.cz88StateManager;
+    const deps = getEngineDependencyRegistry();
+    const modelId = this.getModelId();
+    console.log(modelId);
+    this._audioRendererFactory = (
+      deps.getComponent(
+        modelId,
+        AUDIO_RENDERER_FACTORY_ID
+      ) as unknown as AudioRendererFactory
+    ).createAudioRenderer;
+    this._stateManager = deps.getComponent(
+      modelId,
+      Z88_STATE_MANAGER_ID
+    ) as unknown as ICambridgeZ88StateManager;
   }
 
   /**
    * Gets the unique model identifier of the machine
    */
-  readonly modelId = "cz88";
+  getModelId(): string {
+    return "cz88";
+  }
 
   /**
    * Get the type of the keyboard to display
@@ -114,7 +147,7 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    * Gets a unique identifier for the particular configuration of the model
    */
   get configurationId(): string {
-    return this.modelId;
+    return this.getModelId();
   }
 
   /**
@@ -148,8 +181,14 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
     this.configureSlot(2);
     this.configureSlot(3);
 
-    const deps = getEngineDependencies();
-    this.setAudioSampleRate(deps.sampleRateGetter());
+    const deps = getEngineDependencyRegistry();
+    const sampleRate = (
+      deps.getComponent(
+        this.getModelId(),
+        AUDIO_SAMPLE_RATE_GETTER_ID
+      ) as unknown as AudioSampleRateGetter
+    ).getAudioSampleRate();
+    this.setAudioSampleRate(sampleRate);
   }
 
   /**

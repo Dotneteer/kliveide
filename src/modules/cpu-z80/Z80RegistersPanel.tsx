@@ -207,7 +207,7 @@ export default class Z80RegistersPanel extends SideBarPanelBase<
 
         {regRow(
           "PC",
-          state?._af ?? 0,
+          state?._pc ?? 0,
           "\u{1d5e3}\u{1d5d6}:hi",
           "\u{1d5e3}\u{1d5d6}:lo"
         )}
