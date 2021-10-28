@@ -1,27 +1,35 @@
 {
-  "extends": "./tsconfig.build.json",
-
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "jsx": "react",
     "module": "commonjs",
     "target": "es2019",
     "noImplicitAny": true,
     "noImplicitThis": true,
     "strictNullChecks": false,
     "sourceMap": true,
-    "outDir": "out",
+    "outDir": "dist",
     "baseUrl": ".",
     "downlevelIteration": true,
     "resolveJsonModule": true,
     "paths": {
-      "@abstractions/*": ["./packages/klive-emu/src/core/abstractions/*"],
-      "@ext-core/*": ["./packages/klive-emu/src/extensions/core/*"],
-      "@ext-main/*": ["./packages/klive-emu/src/extensions/core-main/*"],
-      "@ext/*": ["./packages/klive-emu/src/extensions/*"],
-      "@state/*": ["./packages/klive-emu/src/core/state/*"],
-      "@shared/*": ["./packages/klive-emu/src/shared/*", "./packages/kliveide-emu/src/shared/*"],
-      "@core/*": ["./packages/klive-emu/src/core/*"],
-      "@messaging/*": ["./packages/klive-emu/src/core/messaging/*"]
+      "*": ["node_modules/*"],
+      "@abstractions/*": ["./src/core/abstractions/*"],
+      "@ext-core/*": ["./src/extensions/core/*"],
+      "@ext-main/*": ["./src/extensions/core-main/*"],
+      "@ext/*": ["./src/extensions/*"],
+      "@core/*": ["./src/core/*"],
+      "@components/*": ["./src/emu-ide/components/*"],
+      "@state/*": ["./src/core/state/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@messaging/*": ["./src/core/messaging/*"]
     }
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "**/build/*",
+    "**/*.d.ts"
+  ]
 }

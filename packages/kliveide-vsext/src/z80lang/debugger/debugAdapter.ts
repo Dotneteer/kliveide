@@ -1,1 +1,0 @@
-console.log("Klive Debug Adapter");

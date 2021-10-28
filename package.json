@@ -1,10 +1,14 @@
 {
-  "name": "kliveide",
-  "version": "0.2.0",
-  "description": "Full-fledged ZX Spectrum IDE with VS Code integration",
+  "name": "klive-emu",
+  "version": "0.9.0",
+  "description": "Sinclair Computer Emulator",
+  "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
   "license": "MIT",
-  "repository": "https://github.com/Dotneteer/kliveide",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dotneteer/kliveide.git"
+  },
   "keywords": [
     "ZX Spectrum",
     "Z80",
@@ -13,36 +17,104 @@
   "bugs": "https://github.com/Dotneteer/kliveide/issues",
   "homepage": "https://github.com/Dotneteer/kliveide",
   "scripts": {
-    "bootstrap": "npm install && lerna bootstrap",
-    "build": "lerna run build",
-    "copyfiles": "copyfiles -a -u 4 ./packages/kliveide-emu/src/shared/machines/*.* -F ./packages/kliveide-vsext/src/shared",
-    "build:emu": "cd packages/kliveide-emu && npm run build",
-    "test": "lerna run test",
-    "dev": "cd packages/kliveide-emu && npm run dev",
-    "vmbuild": "cd packages/kliveide-emu && npm run vmbuild",
-    "start": "cd packages/kliveide-emu && npm start",
-    "bump": "lerna version --no-push --no-git-tag-version",
-    "build:wa": "cd packages/kliveide-new && npm run build:wa",
-    "build:sp48": "cd packages/kliveide-emu && npm run build:sp48",
-    "build:sp128": "cd packages/kliveide-emu && npm run build:sp128",
-    "build:cz88": "cd packages/kliveide-emu && npm run build:cz88",
-    "build:tz80": "cd packages/kliveide-emu && npm run build:tz80",
-    "build:win": "cd packages/kliveide-emu && npm run build:win",
-    "build:mac": "cd packages/kliveide-emu && npm run build:mac",
-    "build:linux": "cd packages/kliveide-emu && npm run build:linux",
-    "bootstrap:ci": "npm ci && lerna bootstrap --ci"
+    "start": "electron ./dist/main.bundle.js",
+    "build": "npm run vmbuild && rimraf dist && cross-env NODE_ENV=development webpack --progress --color",
+    "dev": "npm run vmbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --color",
+    "prod": "rimraf dist && cross-env NODE_ENV=production webpack --progress --color",
+    "test": "mocha -r ts-node/register -r tsconfig-paths/register \"src/test/**/*.test.ts\"",
+    "test:p": "mocha -r ts-node/register -r tsconfig-paths/register \"src/test/ide/*.test.ts\"",
+    "build:sp48": "tpwatson ./src/wats/sp48-core/sp48.wats ./build/sp48.wat && wat2wasm ./build/sp48.wat -o ./build/sp48.wasm",
+    "build:sp128": "tpwatson ./src/wats/sp128-core/sp128.wats ./build/sp128.wat && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",
+    "build:cz88": "tpwatson ./src/wats/cz88-core/cz88.wats ./build/cz88.wat && wat2wasm ./build/cz88.wat -o ./build/cz88.wasm",
+    "build:tz80": "tpwatson ./src/wats/tz80-core/tz80.wats ./build/tz80.wat && wat2wasm ./build/tz80.wat -o ./build/tz80.wasm",
+    "build:win": "npm run build && electron-builder build --win --x64",
+    "build:mac": "npm run build && electron-builder build --mac --x64",
+    "build:linux": "npm run build && electron-builder build --linux --x64",
+    "vmbuild": "npm run build:sp48 && npm run build:sp128 && npm run build:cz88 && npm run build:tz80",
+    "bootstrap:ci": "npm ci"
   },
-  "devDependencies": {
-    "@types/mocha": "^8.0.2",
-    "@types/node-ipc": "^9.1.3",
-    "copyfiles": "^2.4.1",
-    "lerna": "^4.0.0",
-    "mocha": "^9.0.2",
-    "ts-mocha": "^8.0.0",
-    "typescript": "^3.9.7"
+  "build": {
+    "appId": "dotneteer.klive",
+    "productName": "Klive",
+    "artifactName": "${productName}Setup-${version}.${ext}",
+    "directories": {
+      "buildResources": "buildResources",
+      "app": "./dist/",
+      "output": "../../artifacts/"
+    },
+    "mac": {
+      "target": "pkg"
+    },
+    "win": {
+      "target": "nsis",
+      "asar": false
+    },
+    "fileAssociations": [
+      {
+        "ext": "klive",
+        "name": "Klive Startup File",
+        "role": "Editor"
+      }
+    ]
   },
   "dependencies": {
-    "body-parser": "^1.19.0",
-    "node-ipc": "^9.1.1"
+    "@syncfusion/ej2-react-buttons": "^19.2.55",
+    "@syncfusion/ej2-react-dropdowns": "^19.1.69",
+    "@syncfusion/ej2-react-layouts": "^19.1.63",
+    "@syncfusion/ej2-react-navigations": "^19.1.69",
+    "@syncfusion/ej2-react-popups": "^19.2.44",
+    "electron-localshortcut": "^3.2.1",
+    "electron-window-state": "^5.0.3",
+    "lodash.debounce": "^4.0.8",
+    "prop-types": "^15.7.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-icons": "^4.2.0",
+    "react-monaco-editor": "^0.43.0",
+    "react-redux": "^7.2.3",
+    "react-resize-detector": "^6.6.4",
+    "react-router": "^5.2.0",
+    "react-router-dom": "^5.2.0",
+    "react-window": "^1.8.6",
+    "redux": "^4.0.5",
+    "styled-components": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/electron-localshortcut": "^3.1.0",
+    "@types/lodash.debounce": "^4.0.6",
+    "@types/mocha": "^9.0.0",
+    "@types/react": "^17.0.3",
+    "@types/react-dom": "^17.0.3",
+    "@types/react-router": "^5.1.13",
+    "@types/react-router-dom": "^5.1.7",
+    "@types/react-window": "^1.8.4",
+    "@types/styled-components": "^5.1.9",
+    "@typescript-eslint/eslint-plugin": "^4.19.0",
+    "@typescript-eslint/parser": "^4.19.0",
+    "copy-webpack-plugin": "^8.1.0",
+    "cross-env": "^7.0.3",
+    "css-loader": "^5.2.0",
+    "electron": "^13.3.0",
+    "electron-builder": "^22.11.7",
+    "expect": "^26.6.2",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.3.1",
+    "lodash": "^4.17.21",
+    "mocha": "^9.1.3",
+    "monaco-editor-webpack-plugin": "^4.1.1",
+    "node-sass": "^6.0.1",
+    "rimraf": "^3.0.2",
+    "sass-loader": "^11.0.1",
+    "style-loader": "^2.0.0",
+    "tpwatson": "^0.1.3",
+    "ts-loader": "^8.0.18",
+    "ts-node": "^9.1.1",
+    "tsconfig-paths": "^3.9.0",
+    "typescript": "^4.2.3",
+    "wat2wasm": "^3.0.0",
+    "webpack": "^5.28.0",
+    "webpack-cli": "^4.5.0",
+    "worker-loader": "^3.0.8",
+    "worklet-loader": "^1.0.0"
   }
 }
