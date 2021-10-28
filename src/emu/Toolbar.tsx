@@ -13,9 +13,9 @@ import {
   spectrumFastLoadAction,
 } from "@state/spectrum-specific-reducer";
 import { executeKliveCommand } from "@abstractions/common-commands";
-import { getVmEngineService } from "@ext-core/vm-engine-service";
-import { ZxSpectrumCoreBase } from "@ext/vm-zx-spectrum/ZxSpectrumCoreBase";
-import { emuToMainMessenger } from "../emu-ide/services/EmuToMainMessenger";
+import { getVmEngineService } from "@modules-core/vm-engine-service";
+import { ZxSpectrumCoreBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
+import { emuToMainMessenger } from "../common-ui/services/EmuToMainMessenger";
 
 const Root = styles.div`
   display: flex;

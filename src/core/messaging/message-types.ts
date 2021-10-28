@@ -2,7 +2,7 @@ import {
   MachineCreationOptions,
   MachineState,
 } from "@abstractions/vm-core-types";
-import { ICpuState } from "@ext-core/abstract-cpu";
+import { ICpuState } from "@modules-core/abstract-cpu";
 import { KliveProcess } from "@abstractions/command-definitions";
 import { CodeToInject } from "@abstractions/code-runner-service";
 import { KliveAction } from "@core/state/state-core";

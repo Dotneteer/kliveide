@@ -27,8 +27,8 @@ import {
   removeBuildRootAction,
 } from "@state/builder-reducer";
 import { MenuItem } from "@abstractions/command-definitions";
-import { SideBarPanelDescriptorBase } from "../../emu-ide/services/SideBarService";
-import { SideBarPanelBase, SideBarProps } from "../../emu-ide/components/SideBarPanelBase";
+import { SideBarPanelDescriptorBase } from "../../common-ui/services/SideBarService";
+import { SideBarPanelBase, SideBarProps } from "../../common-ui/components/SideBarPanelBase";
 import { openNewDocument } from "../document-area/document-utils";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";

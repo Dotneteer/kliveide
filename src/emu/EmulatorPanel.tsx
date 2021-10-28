@@ -7,9 +7,9 @@ import { AppState } from "@state/AppState";
 import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import { useEffect, useRef, useState } from "react";
-import { ICpu } from "@ext-core/abstract-cpu";
-import { VirtualMachineCoreBase } from "@ext-core/abstract-vm";
-import { getVmEngineService } from "@ext-core/vm-engine-service";
+import { ICpu } from "@modules-core/abstract-cpu";
+import { VirtualMachineCoreBase } from "@modules-core/abstract-vm";
+import { getVmEngineService } from "@modules-core/vm-engine-service";
 
 /**
  * Represents the display panel of the emulator

@@ -1,5 +1,5 @@
 import { getStore } from "@core/service-registry";
-import { ICpuState } from "@ext-core/abstract-cpu";
+import { ICpuState } from "@modules-core/abstract-cpu";
 import {
   GetCpuStateResponse,
   GetMachineStateResponse,

@@ -8,7 +8,7 @@ import {
   SlotContent,
   SlotState,
   Z88CardsState,
-} from "@ext/vm-z88/cz88-specific";
+} from "@modules/vm-z88/cz88-specific";
 import { useState } from "react";
 import { EmuOpenFileDialogResponse } from "@core/messaging/message-types";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";

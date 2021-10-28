@@ -30,7 +30,7 @@ import {
   hideEditorStatusAction,
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
-import { getEngineProxyService } from "../../emu-ide/services/engine-proxy";
+import { getEngineProxyService } from "../../common-ui/services/engine-proxy";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;

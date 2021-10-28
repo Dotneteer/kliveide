@@ -27,12 +27,12 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "@ext/vm-z88/macine-commands";
+} from "@modules/vm-z88/macine-commands";
 import {
   Cz88ContructionOptions,
   SlotContent,
   Z88CardsState,
-} from "../../extensions/vm-z88/cz88-specific";
+} from "../../modules/vm-z88/cz88-specific";
 import {
   executeMachineCommand,
   ExecuteMachineCommandResponse,

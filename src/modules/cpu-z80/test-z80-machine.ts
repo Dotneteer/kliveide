@@ -1,9 +1,9 @@
-import { MemoryHelper } from "@ext-core/memory-helpers";
-import { CPU_STATE_BUFFER } from "@ext-core/wa-memory-map";
+import { MemoryHelper } from "@modules-core/memory-helpers";
+import { CPU_STATE_BUFFER } from "@modules-core/wa-memory-map";
 import { FlagsSetMask, Z80CpuState } from "./z80-cpu";
 import { RunMode } from "../../core/abstractions/vm-core-types";
-import { REG_AREA_INDEX } from "@ext/cpu-z80/wa-memory-map";
-import { WasmCpuApi } from "@ext-core/abstract-cpu";
+import { REG_AREA_INDEX } from "@modules/cpu-z80/wa-memory-map";
+import { WasmCpuApi } from "@modules-core/abstract-cpu";
 
 const TEST_INPUT_BUFFER = 0x0100_0de3;
 const IO_OPERATION_LOG = 0x0100_0ee3;

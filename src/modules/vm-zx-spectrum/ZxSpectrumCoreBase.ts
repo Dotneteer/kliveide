@@ -1,17 +1,17 @@
 import { BinaryReader } from "@core/utils/BinaryReader";
-import { Z80CpuState } from "@ext/cpu-z80/z80-cpu";
-import { MemoryHelper } from "@ext-core/memory-helpers";
+import { Z80CpuState } from "@modules/cpu-z80/z80-cpu";
+import { MemoryHelper } from "@modules-core/memory-helpers";
 import {
   BEEPER_SAMPLE_BUFFER,
   COLORIZATION_BUFFER,
   PSG_SAMPLE_BUFFER,
   RENDERING_TACT_TABLE,
-} from "@ext/vm-zx-spectrum/wa-memory-map";
+} from "@modules/vm-zx-spectrum/wa-memory-map";
 import {
   MachineCreationOptions,
   MachineState,
 } from "@abstractions/vm-core-types";
-import { Z80MachineCoreBase } from "@ext/cpu-z80/z80-machine-core-base";
+import { Z80MachineCoreBase } from "@modules/cpu-z80/z80-machine-core-base";
 import { TzxReader } from "./tzx-file";
 import { TapReader } from "./tap-file";
 import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
@@ -21,11 +21,11 @@ import {
   BreakpointDefinition,
   CodeToInject,
 } from "@abstractions/code-runner-service";
-import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
-import { IAudioRenderer } from "@ext-core/audio/IAudioRenderer";
-import { getEngineDependencies } from "@ext-core/vm-engine-dependencies";
-import { KeyMapping } from "@ext-core/keyboard";
-import { WasmMachineApi } from "@ext-core/abstract-vm";
+import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@modules-core/wa-memory-map";
+import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
+import { getEngineDependencies } from "@modules-core/vm-engine-dependencies";
+import { KeyMapping } from "@modules-core/keyboard";
+import { WasmMachineApi } from "@modules-core/abstract-vm";
 
 /**
  * Represents the WebAssembly API of the ZX Spectrum

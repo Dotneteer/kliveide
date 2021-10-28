@@ -2,8 +2,8 @@ import "mocha";
 import * as expect from "expect";
 import * as fs from "fs";
 import * as path from "path";
-import { TestCpuApi, TestZ80Machine } from "../../extensions/cpu-z80/test-z80-machine";
-import { FlagsSetMask } from "../../extensions/cpu-z80/z80-cpu";
+import { TestCpuApi, TestZ80Machine } from "../../modules/cpu-z80/test-z80-machine";
+import { FlagsSetMask } from "../../modules/cpu-z80/z80-cpu";
 import { RunMode } from "../../core/abstractions/vm-core-types";
 import { importObject } from "./import-object";
 

@@ -5,7 +5,7 @@ import { SideBarPanelDescriptorBase } from "@services/SideBarService";
 import * as React from "react";
 import { CSSProperties } from "react";
 
-import { Icon } from "../../emu-ide/components/Icon";
+import { Icon } from "../../common-ui/components/Icon";
 import { CambridgeZ88MachineState } from "./CambridgeZ88Core";
 
 const TITLE = "BLINK Information";

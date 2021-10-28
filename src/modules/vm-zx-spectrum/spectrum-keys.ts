@@ -1,4 +1,4 @@
-import { KeyMapping } from "@ext-core/keyboard";
+import { KeyMapping } from "@modules-core/keyboard";
 
 /**
  * Object that defines ZX Spectrum key codes
