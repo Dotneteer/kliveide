@@ -16,9 +16,9 @@
     "paths": {
       "*": ["node_modules/*"],
       "@abstractions/*": ["./src/core/abstractions/*"],
-      "@ext-core/*": ["./src/modules/core/*"],
-      "@ext-main/*": ["./src/modules/core-main/*"],
-      "@ext/*": ["./src/modules/*"],
+      "@modules-core/*": ["./src/modules/core/*"],
+      "@modules-main/*": ["./src/modules/core-main/*"],
+      "@modules/*": ["./src/modules/*"],
       "@core/*": ["./src/core/*"],
       "@components/*": ["./src/common-ui/components/*"],
       "@themes/*": ["./src/common-ui/themes/*"],

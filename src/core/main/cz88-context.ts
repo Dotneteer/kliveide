@@ -27,7 +27,7 @@ import {
   CZ88_PRESS_BOTH_SHIFTS,
   CZ88_REFRESH_OPTIONS,
   CZ88_SOFT_RESET,
-} from "@ext/vm-z88/macine-commands";
+} from "@modules/vm-z88/macine-commands";
 import {
   Cz88ContructionOptions,
   SlotContent,

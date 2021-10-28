@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties } from "react";
 
 import { getEngineProxyService } from "@services/engine-proxy";
-import { Z80CpuState } from "@ext/cpu-z80/z80-cpu";
+import { Z80CpuState } from "@modules/cpu-z80/z80-cpu";
 import { Icon } from "@components/Icon";
 import { SideBarPanelDescriptorBase } from "@services/SideBarService";
 import { SideBarPanelBase, SideBarProps } from "@components/SideBarPanelBase";

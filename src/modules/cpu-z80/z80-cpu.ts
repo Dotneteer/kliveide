@@ -1,7 +1,7 @@
-import { MemoryHelper } from "@ext-core/memory-helpers";
-import { CPU_STATE_BUFFER } from "@ext-core/wa-memory-map";
-import { ICpu, ICpuState, WasmCpuApi } from "@ext-core/abstract-cpu";
-import { REG_AREA_INDEX } from "@ext/cpu-z80/wa-memory-map";
+import { MemoryHelper } from "@modules-core/memory-helpers";
+import { CPU_STATE_BUFFER } from "@modules-core/wa-memory-map";
+import { ICpu, ICpuState, WasmCpuApi } from "@modules-core/abstract-cpu";
+import { REG_AREA_INDEX } from "@modules/cpu-z80/wa-memory-map";
 
 /**
  * Implements the Z80 CPU state abstraction

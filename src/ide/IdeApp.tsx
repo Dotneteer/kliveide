@@ -23,7 +23,7 @@ import {
 } from "@state/activity-bar-reducer";
 import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
-import { BlinkInformationPanelDescriptor } from "@ext/vm-z88/BlinkInformationPanel";
+import { BlinkInformationPanelDescriptor } from "@modules/vm-z88/BlinkInformationPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
@@ -67,16 +67,16 @@ import {
   ACTIVITY_SETTINGS_ID,
   ACTIVITY_TEST_ID,
 } from "@core/abstractions/activity";
-import { UlaInformationPanelDescriptor } from "@ext/vm-zx-spectrum/UlaInformationPanel";
-import { ZxSpectrum48CustomDisassembler } from "@ext/vm-zx-spectrum/ZxSpectrum48CustomDisassembler";
-import { CambridgeZ88CustomDisassembler } from "@ext/vm-z88/CambridgeZ88CustomDisassembler";
-import { Z80RegistersPanelDescriptor } from "@ext/cpu-z80/Z80RegistersPanel";
+import { UlaInformationPanelDescriptor } from "@modules/vm-zx-spectrum/UlaInformationPanel";
+import { ZxSpectrum48CustomDisassembler } from "@modules/vm-zx-spectrum/ZxSpectrum48CustomDisassembler";
+import { CambridgeZ88CustomDisassembler } from "@modules/vm-z88/CambridgeZ88CustomDisassembler";
+import { Z80RegistersPanelDescriptor } from "@modules/cpu-z80/Z80RegistersPanel";
 import { Z80DisassemblyPanelDescriptor } from "../modules/cpu-z80/Z80DisassemblyPanel";
 import { MemoryPanelDescriptor } from "../modules/cpu-z80/Z80MemoryPanel";
 import { CallStackPanelDescriptor } from "./side-bar/CallStackPanel";
 import { BreakpointsPanelDescriptor } from "./side-bar/BreakpointsPanel";
 import { IoLogsPanelDescription } from "./side-bar/IoLogsPanel";
-import { virtualMachineToolsService } from "@ext-core/virtual-machine-tool";
+import { virtualMachineToolsService } from "@modules-core/virtual-machine-tool";
 import { VmOutputPanelDescriptor } from "./side-bar/VmOutputPane";
 
 // --- App component literal constants

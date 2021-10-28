@@ -1,12 +1,12 @@
 import "mocha";
 import * as expect from "expect";
-import { CambridgeZ88Core } from "@ext/vm-z88/CambridgeZ88Core";
+import { CambridgeZ88Core } from "@modules/vm-z88/CambridgeZ88Core";
 import {
   DefaultCambridgeZ88StateManager,
   loadWaModule,
   SilentAudioRenderer,
 } from "../helpers";
-import { setEngineDependencies } from "@ext-core/vm-engine-dependencies";
+import { setEngineDependencies } from "@modules-core/vm-engine-dependencies";
 
 let machine: CambridgeZ88Core;
 

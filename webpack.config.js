@@ -24,9 +24,9 @@ const commonConfig = {
   resolve: {
     alias: {
       "@abstractions": srcPaths("src/core/abstractions"),
-      "@ext-core": srcPaths("src/modules/core"),
-      "@ext-main": srcPaths("src/modules/main"),
-      "@ext": srcPaths("src/modules"),
+      "@modules-core": srcPaths("src/modules/core"),
+      "@modules-main": srcPaths("src/modules/main"),
+      "@modules": srcPaths("src/modules"),
       "@core": srcPaths("src/core"),
       "@components": srcPaths("src/common-ui/components"),
       "@themes": srcPaths("src/common-ui/themes"),

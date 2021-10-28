@@ -12,8 +12,8 @@ import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
 import EmuStatusbar from "./EmuStatusbar";
 import { emuLoadUiAction } from "@state/emu-loaded-reducer";
-import { AudioRenderer } from "@ext-core/audio/AudioRenderer";
-import { setEngineDependencies } from "@ext-core/vm-engine-dependencies";
+import { AudioRenderer } from "@modules-core/audio/AudioRenderer";
+import { setEngineDependencies } from "@modules-core/vm-engine-dependencies";
 import { useRef, useState } from "react";
 import ModalDialog from "@components/ModalDialog";
 import { stopCommandStatusQuery } from "@abstractions/command-registry";
@@ -21,10 +21,10 @@ import { stopCommandStatusQuery } from "@abstractions/command-registry";
 // --- We need to import these files to setup the app
 import "./emu-message-processor";
 import "./ide-message-processor";
-import { ZxSpectrumStateManager } from "@ext/vm-zx-spectrum/ZxSpectrumStateManager";
-import { CambridgeZ88StateManager } from "@ext/vm-z88/CambridgeZ88BaseStateManager";
-import { Z88_CARDS_DIALOG_ID } from "@ext/vm-z88/CambridgeZ88Core";
-import { cz88CardsDialog } from "@ext/vm-z88/Cz88CardsDialog";
+import { ZxSpectrumStateManager } from "@modules/vm-zx-spectrum/ZxSpectrumStateManager";
+import { CambridgeZ88StateManager } from "@modules/vm-z88/CambridgeZ88BaseStateManager";
+import { Z88_CARDS_DIALOG_ID } from "@modules/vm-z88/CambridgeZ88Core";
+import { cz88CardsDialog } from "@modules/vm-z88/Cz88CardsDialog";
 import { toStyleString } from "@ide/utils/css-utils";
 
 // --- Set up the virual machine engine service with the

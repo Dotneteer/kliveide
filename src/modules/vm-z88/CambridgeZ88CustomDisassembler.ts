@@ -1,15 +1,15 @@
-import { ICustomVmTool } from "@ext-core/virtual-machine-tool";
+import { ICustomVmTool } from "@modules-core/virtual-machine-tool";
 import {
   CUSTOM_Z80_DISASSEMBLY_TOOL,
   ICustomDisassembler,
   IDisassemblyApi,
-} from "@ext/cpu-z80/custom-disassembly";
+} from "@modules/cpu-z80/custom-disassembly";
 import {
   DisassemblyItem,
   FetchResult,
   intToX2,
   MemorySection,
-} from "@ext/cpu-z80/disassembly-helper";
+} from "@modules/cpu-z80/disassembly-helper";
 
 /**
  * Custom disassembler for the Cambridge Z88 model

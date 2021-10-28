@@ -1,8 +1,8 @@
 import { BinaryReader } from "@core/utils/BinaryReader";
 import { BinaryWriter } from "@core/utils/BinaryWriter";
-import { WasmMachineApi } from "@ext-core/abstract-vm";
-import { MemoryHelper } from "@ext-core/memory-helpers";
-import { TAPE_DATA_BUFFER } from "@ext/vm-zx-spectrum/wa-memory-map";
+import { WasmMachineApi } from "@modules-core/abstract-vm";
+import { MemoryHelper } from "@modules-core/memory-helpers";
+import { TAPE_DATA_BUFFER } from "@modules/vm-zx-spectrum/wa-memory-map";
 
 /**
  * Defines the serialization operations of a TZX record

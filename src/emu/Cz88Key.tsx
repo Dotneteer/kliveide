@@ -2,7 +2,7 @@ import * as React from "react";
 import { useState } from "react";
 
 import { getThemeService } from "@core/service-registry";
-import { Cz88KeyView } from "@ext/vm-z88/cz88-keys";
+import { Cz88KeyView } from "@modules/vm-z88/cz88-keys";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 
 const NORMAL_WIDTH = 100;

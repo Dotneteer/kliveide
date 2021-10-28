@@ -9,7 +9,7 @@ import { getVersion } from "../version";
 import { AppState } from "@state/AppState";
 import { Icon } from "@components/Icon";
 import { Root, Gap, Section, Label } from "@components/StatusbarStyles";
-import { getVmEngineService } from "@ext-core/vm-engine-service";
+import { getVmEngineService } from "@modules-core/vm-engine-service";
 
 /**
  * Represents the statusbar of the emulator

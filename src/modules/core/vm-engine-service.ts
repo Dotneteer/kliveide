@@ -2,8 +2,8 @@ import { dispatch, getState } from "@core/service-registry";
 
 import { setMachineTypeAction } from "@state/machine-type-reducer";
 import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
-import { ZxSpectrum128Core } from "@ext/vm-zx-spectrum/ZxSpectrum128Core";
-import { ZxSpectrum48Core } from "@ext/vm-zx-spectrum/ZxSpectrum48Core";
+import { ZxSpectrum128Core } from "@modules/vm-zx-spectrum/ZxSpectrum128Core";
+import { ZxSpectrum48Core } from "@modules/vm-zx-spectrum/ZxSpectrum48Core";
 import {
   DebugStepMode,
   EmulationMode,
@@ -20,7 +20,7 @@ import {
   emuSetFrameIdAction,
 } from "@state/emulator-panel-reducer";
 import { FrameDiagData } from "@state/AppState";
-import { CambridgeZ88Core } from "@ext/vm-z88/CambridgeZ88Core";
+import { CambridgeZ88Core } from "@modules/vm-z88/CambridgeZ88Core";
 import { KliveConfiguration } from "@abstractions/klive-configuration";
 import { CodeToInject } from "@abstractions/code-runner-service";
 import { delay } from "@core/utils/timing";

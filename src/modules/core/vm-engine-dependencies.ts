@@ -1,6 +1,6 @@
-import { ICambridgeZ88StateManager } from "@ext/vm-z88/ICambrideZ88StateMananger";
-import { IAudioRenderer } from "@ext-core/audio/IAudioRenderer";
-import { IZxSpectrumStateManager } from "@ext/vm-zx-spectrum/IZxSpectrumStateManager";
+import { ICambridgeZ88StateManager } from "@modules/vm-z88/ICambrideZ88StateMananger";
+import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
+import { IZxSpectrumStateManager } from "@modules/vm-zx-spectrum/IZxSpectrumStateManager";
 
 // --- Key engine dependencies here
 let engineDependencies: EngineDependencies;

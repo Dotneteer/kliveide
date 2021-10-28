@@ -1,15 +1,15 @@
 import * as React from "react";
 import styles from "styled-components";
 
-import { Cz88KeyboardLayout } from "@ext/vm-z88/cz88-keys";
-import { esZ88KeyboardLayout } from "@ext/vm-z88/key-layout-es";
-import { frZ88KeyboardLayout } from "@ext/vm-z88/key-layout-fr";
-import { deZ88KeyboardLayout } from "@ext/vm-z88/key-layout-de";
-import { dkZ88KeyboardLayout } from "@ext/vm-z88/key-layout-dk";
-import { seZ88KeyboardLayout } from "@ext/vm-z88/key-layout-se";
-import { defaultZ88KeyboardLayout } from "@ext/vm-z88/key-layout-default";
-import { getVmEngineService } from "@ext-core/vm-engine-service";
-import { CambridgeZ88Core } from "@ext/vm-z88/CambridgeZ88Core";
+import { Cz88KeyboardLayout } from "@modules/vm-z88/cz88-keys";
+import { esZ88KeyboardLayout } from "@modules/vm-z88/key-layout-es";
+import { frZ88KeyboardLayout } from "@modules/vm-z88/key-layout-fr";
+import { deZ88KeyboardLayout } from "@modules/vm-z88/key-layout-de";
+import { dkZ88KeyboardLayout } from "@modules/vm-z88/key-layout-dk";
+import { seZ88KeyboardLayout } from "@modules/vm-z88/key-layout-se";
+import { defaultZ88KeyboardLayout } from "@modules/vm-z88/key-layout-default";
+import { getVmEngineService } from "@modules-core/vm-engine-service";
+import { CambridgeZ88Core } from "@modules/vm-z88/CambridgeZ88Core";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 import Key from "./Cz88Key";
 

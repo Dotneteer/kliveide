@@ -8,7 +8,7 @@ import {
   RequestMessage,
   ResponseMessage,
 } from "@core/messaging/message-types";
-import { getVmEngineService } from "@ext-core/vm-engine-service";
+import { getVmEngineService } from "@modules-core/vm-engine-service";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;

@@ -38,7 +38,7 @@ import { registerCommonCommands } from "@abstractions/common-commands";
 import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "@services/dialog-service";
-import { CodeRunnerService } from "@ext-core/CodeRunnerService";
+import { CodeRunnerService } from "@modules-core/CodeRunnerService";
 import IdeApp from "./IdeApp";
 import { SideBarService } from "../common-ui/services/SideBarService";
 import { ProjectService } from "./explorer-tools/ProjectService";

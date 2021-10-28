@@ -1,9 +1,9 @@
 import * as path from "path";
 import * as fs from "fs";
 
-import { IAudioRenderer } from "@ext-core/audio/IAudioRenderer";
-import { ICambridgeZ88StateManager } from "@ext/vm-z88/ICambrideZ88StateMananger";
-import { IZxSpectrumStateManager } from "@ext/vm-zx-spectrum/IZxSpectrumStateManager";
+import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
+import { ICambridgeZ88StateManager } from "@modules/vm-z88/ICambrideZ88StateMananger";
+import { IZxSpectrumStateManager } from "@modules/vm-zx-spectrum/IZxSpectrumStateManager";
 
 /**
  * Provides a way to test a Z88 virtual machine in Node

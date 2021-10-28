@@ -2,23 +2,23 @@ import * as React from "react";
 import { CSSProperties } from "react";
 
 import { dispatch, getState, getStore } from "@core/service-registry";
-import { Z80CpuState } from "@ext/cpu-z80/z80-cpu";
-import { Z80Disassembler } from "@ext/cpu-z80/z80-disassembler";
+import { Z80CpuState } from "@modules/cpu-z80/z80-cpu";
+import { Z80Disassembler } from "@modules/cpu-z80/z80-disassembler";
 import {
   DisassemblyItem,
   DisassemblyOutput,
   MemorySection,
-} from "@ext/cpu-z80/disassembly-helper";
+} from "@modules/cpu-z80/disassembly-helper";
 import { Icon } from "@components/Icon";
 import { VirtualizedSideBarPanelBase } from "@ide/VirtualizedSideBarPanelBase";
-import { virtualMachineToolsService } from "@ext-core/virtual-machine-tool";
+import { virtualMachineToolsService } from "@modules-core/virtual-machine-tool";
 import { getEngineProxyService } from "@services/engine-proxy";
 import { BinaryBreakpoint } from "@abstractions/code-runner-service";
 import {
   addBreakpointAction,
   removeBreakpointAction,
 } from "@core/state/debugger-reducer";
-import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler } from "@ext/cpu-z80/custom-disassembly";
+import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler } from "@modules/cpu-z80/custom-disassembly";
 import { SideBarProps, SideBarState } from "@components/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "@services/SideBarService";
 
