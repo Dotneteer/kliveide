@@ -1,6 +1,11 @@
 import { DisassemblyItem, FetchResult, MemorySection } from "./disassembly-helper";
 
 /**
+ * The ID of a custom Z80 disassembler for a virtual machine
+ */
+export const CUSTOM_Z80_DISASSEMBLY_TOOL = "CustomZ80Disassembly";
+
+/**
  * Describes the disassembly item of a custom disassembler
  */
 export type CustomDisassemblyItem = {

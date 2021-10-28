@@ -14,13 +14,14 @@ import {
 } from "@ext/cpu-z80/disassembly-helper";
 import { Icon } from "../../../emu-ide/components/Icon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
-import { virtualMachineToolsService } from "../../../extensions/core/VirtualMachineToolBase";
+import { virtualMachineToolsService } from "../../../extensions/core/virtual-machine-tool";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 import { BinaryBreakpoint } from "@abstractions/code-runner-service";
 import {
   addBreakpointAction,
   removeBreakpointAction,
 } from "@core/state/debugger-reducer";
+import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler } from "@ext/cpu-z80/custom-disassembly";
 
 const TITLE = "Z80 Disassembly";
 const DISASS_LENGTH = 1024;
@@ -217,14 +218,12 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
     );
 
     // --- Set up custom disassembler, if available
-    const machineTools = virtualMachineToolsService.getTools(
-      getState().machineType
-    );
-    if (machineTools) {
-      const customDisass = machineTools.provideCustomDisassembler();
-      if (customDisass) {
-        disassembler.setCustomDisassembler(customDisass);
-      }
+    const customZ80Disassembler = virtualMachineToolsService.getTool(
+      getState().machineType,
+      CUSTOM_Z80_DISASSEMBLY_TOOL
+    ) as unknown as ICustomDisassembler;
+    if (customZ80Disassembler) {
+        disassembler.setCustomDisassembler(customZ80Disassembler);
     }
 
     // --- Now, create the disassembly

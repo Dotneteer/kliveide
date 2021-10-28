@@ -43,7 +43,7 @@ import "./ide-message-processor";
 import { registerKliveCommands } from "./commands/register-commands";
 import { Z80DisassemblyPanelDescriptor } from "../machines/sidebar-panels/DisassemblyPanel";
 import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
-import { virtualMachineToolsService } from "../../extensions/core/VirtualMachineToolBase";
+import { virtualMachineToolsService } from "../../extensions/core/virtual-machine-tool";
 import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,
@@ -66,11 +66,18 @@ import {
 } from "./explorer-tools/RenameFolderDialog";
 import { asmkZ80LanguageProvider as asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
-import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_LOG_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@core/abstractions/activity";
+import {
+  Activity,
+  ACTIVITY_DEBUG_ID,
+  ACTIVITY_FILE_ID,
+  ACTIVITY_LOG_ID,
+  ACTIVITY_SETTINGS_ID,
+  ACTIVITY_TEST_ID,
+} from "@core/abstractions/activity";
 import { BreakpointsPanelDescriptor } from "../machines/sidebar-panels/BreakpointsPanel";
 import { UlaInformationPanelDescriptor } from "@ext/vm-zx-spectrum/UlaInformationPanel";
-import { ZxSpectrum48Tools } from "@ext/vm-zx-spectrum/ZxSpectrum48Core";
-import { CambridgeZ88Tools } from "@ext/vm-z88/CambridgeZ88Core";
+import { ZxSpectrum48CustomDisassembler } from "@ext/vm-zx-spectrum/ZxSpectrum48CustomDisassembler";
+import { CambridgeZ88CustomDisassembler } from "@ext/vm-z88/CambridgeZ88CustomDisassembler";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -330,8 +337,14 @@ export default function IdeApp() {
       });
 
       // --- Register virtual machine tools
-      virtualMachineToolsService.registerTools("sp48", new ZxSpectrum48Tools());
-      virtualMachineToolsService.registerTools("cz88", new CambridgeZ88Tools());
+      virtualMachineToolsService.registerTools(
+        "sp48",
+        new ZxSpectrum48CustomDisassembler()
+      );
+      virtualMachineToolsService.registerTools(
+        "cz88",
+        new CambridgeZ88CustomDisassembler()
+      );
 
       // --- Register modal dialogs
       const modalDialogService = getModalDialogService();
