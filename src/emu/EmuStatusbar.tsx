@@ -5,10 +5,10 @@ import {
   getThemeService,
 } from "@core/service-registry";
 
-import { getVersion } from "../../version";
+import { getVersion } from "../version";
 import { AppState } from "@state/AppState";
-import { Icon } from "../../emu-ide/components/Icon";
-import { Root, Gap, Section, Label } from "../../emu-ide/components/StatusbarStyles";
+import { Icon } from "@components/Icon";
+import { Root, Gap, Section, Label } from "@components/StatusbarStyles";
 import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 /**

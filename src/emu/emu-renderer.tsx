@@ -3,7 +3,9 @@ import "_public/style.scss";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Provider } from "react-redux";
-import { registerThemes } from "../../emu-ide/components/register-themes";
+import { IpcRendereApi } from "../exposed-apis";
+
+import { registerThemes } from "@components/register-themes";
 import EmuApp from "./EmuApp";
 import {
   DIALOG_SERVICE,
@@ -19,15 +21,14 @@ import { applyMiddleware, combineReducers, createStore } from "redux";
 import { getInitialAppState } from "@state/AppState";
 import { appReducers } from "@state/app-reducers";
 import { ForwardActionRequest } from "@core/messaging/message-types";
-import { IpcRendereApi } from "../../exposed-apis";
-import { RendererToMainStateForwarder } from "../../emu-ide/components/RendererToMainStateForwarder";
+import { RendererToMainStateForwarder } from "@components/RendererToMainStateForwarder";
 import { KliveAction } from "@state/state-core";
-import { ThemeService } from "../../emu-ide/themes/theme-service";
-import { ModalDialogService } from "../../emu-ide/services/modal-service";
+import { ThemeService } from "@themes/theme-service";
+import { ModalDialogService } from "@services/modal-service";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@abstractions/common-commands";
 import { startCommandStatusQuery } from "@abstractions/command-registry";
-import { DialogService } from "../../emu-ide/services/dialog-service";
+import { DialogService } from "@services/dialog-service";
 import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 // ------------------------------------------------------------------------------

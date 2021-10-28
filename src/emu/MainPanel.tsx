@@ -1,19 +1,18 @@
 import * as React from "react";
+import { useSelector } from "react-redux";
 import {
   PaneDirective,
   PanesDirective,
   SplitterComponent,
 } from "@syncfusion/ej2-react-layouts";
+import styles from "styled-components";
 
 import { dispatch } from "@core/service-registry";
-
-import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";
+import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
+import { getVmEngineService } from "@ext-core/vm-engine-service";
 import EmulatorPanel from "./EmulatorPanel";
 import KeyboardPanel from "./KeyboardPanel";
-import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
-import styles from "styled-components";
-import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 /**
  * Represents the main canvas of the emulator

@@ -1,8 +1,7 @@
 import * as React from "react";
+import { useState } from "react";
 
 import { getThemeService } from "@core/service-registry";
-
-import { useState } from "react";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
 
 const NORMAL_WIDTH = 100;

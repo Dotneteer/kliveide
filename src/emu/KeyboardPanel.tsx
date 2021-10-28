@@ -1,12 +1,13 @@
 import * as React from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { AppState } from "@state/AppState";
 import ReactResizeDetector from "react-resize-detector";
+import styles from "styled-components";
+
+import { AppState } from "@state/AppState";
+import { animationTick } from "@components/component-utils";
 import Sp48Keyboard from "./Sp48Keyboard";
 import Cz88Keyboard from "./Cz88Keyboard";
-import { animationTick } from "../../emu-ide/components/component-utils";
-import styles from "styled-components";
-import { useEffect, useState } from "react";
 
 const Root = styles.div`
   display: flex;

@@ -1,12 +1,15 @@
+import { IpcRendererEvent } from "electron";
+import { IpcRendereApi } from "../exposed-apis";
+
 import {
-  CreateMachineResponse,
   DefaultResponse,
-  ExecuteMachineCommandResponse,
+  GetCpuStateResponse,
+  GetMachineStateResponse,
+  GetMemoryContentsResponse,
   RequestMessage,
   ResponseMessage,
+  SupportsCodeInjectionResponse,
 } from "@core/messaging/message-types";
-import { IpcRendereApi } from "../../exposed-apis";
-import { IpcRendererEvent } from "electron";
 import { getVmEngineService } from "@ext-core/vm-engine-service";
 
 // --- Electron APIs exposed for the renderer process
@@ -16,79 +19,91 @@ const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
  * Processes the messages arriving from the main process
  * @param message
  */
-async function processEmulatorMessages(
+async function processIdeMessages(
   message: RequestMessage
 ): Promise<ResponseMessage> {
   const vmEngineService = getVmEngineService();
   switch (message.type) {
-    case "CreateMachine":
-      await vmEngineService.setEngine(message.machineId, message.options);
-      return <CreateMachineResponse>{
-        type: "CreateMachineResponse",
-        error: null,
-      };
-    case "ForwardAppConfig":
-      vmEngineService.setAppConfiguration(message.config);
-      return <DefaultResponse>{ type: "Ack" };
-
     case "StartVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.start();
+        vmEngineService.start();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "PauseVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.pause();
+        vmEngineService.pause();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StopVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.stop();
+        vmEngineService.stop();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "RestartVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.restart();
+        vmEngineService.restart();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "DebugVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.startDebug();
+        vmEngineService.startDebug();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StepIntoVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.stepInto();
+        vmEngineService.stepInto();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StepOverVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.stepOver();
+        vmEngineService.stepOver();
       }
       return <DefaultResponse>{ type: "Ack" };
 
     case "StepOutVm":
       if (vmEngineService.hasEngine) {
-        await vmEngineService.stepOut();
+        vmEngineService.stepOut();
       }
       return <DefaultResponse>{ type: "Ack" };
 
-    case "ExecuteMachineCommand":
+    case "RunCode":
       if (vmEngineService.hasEngine) {
-        const result = await vmEngineService
-          .getEngine()
-          .executeMachineCommand(message.command, message.args);
-        return <ExecuteMachineCommandResponse>{
-          type: "ExecuteMachineCommandResponse",
-          result,
-        };
+        await vmEngineService.runCode(message.codeToInject, message.debug);
       }
+      return <DefaultResponse>{ type: "Ack" };
+
+    case "GetCpuState":
+      return <GetCpuStateResponse>{
+        type: "GetCpuStateResponse",
+        state: vmEngineService.getEngine()?.cpu?.getCpuState(),
+      };
+
+    case "GetMachineState":
+      return <GetMachineStateResponse>{
+        type: "GetMachineStateResponse",
+        state: vmEngineService.getEngine()?.getMachineState(),
+      };
+
+    case "GetMemoryContents":
+      return <GetMemoryContentsResponse>{
+        type: "GetMemoryContentsResponse",
+        contents: vmEngineService.getEngine()?.getMemoryContents(),
+      };
+
+    case "SupportsCodeInjection":
+      return <SupportsCodeInjectionResponse>{
+        type: "SupportsCodeInjectionResponse",
+        supports: vmEngineService.getEngine()?.supportsCodeInjection() ?? false,
+      };
+
+    case "InjectCode":
+      vmEngineService.getEngine()?.injectCodeToRun(message.codeToInject);
       return <DefaultResponse>{ type: "Ack" };
 
     default:
@@ -98,10 +113,10 @@ async function processEmulatorMessages(
 
 // --- Set up message processing
 ipcRenderer.on(
-  "MainToEmuRequest",
+  "IdeToEmuEmuRequest",
   async (_ev: IpcRendererEvent, message: RequestMessage) => {
-    const response = await processEmulatorMessages(message);
+    const response = await processIdeMessages(message);
     response.correlationId = message.correlationId;
-    ipcRenderer.send("MainToEmuResponse", response);
+    ipcRenderer.send("IdeToEmuEmuResponse", response);
   }
 );
