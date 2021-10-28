@@ -14,7 +14,7 @@ import {
 } from "@ext/cpu-z80/disassembly-helper";
 import { Icon } from "../../../emu-ide/components/Icon";
 import { VirtualizedSideBarPanelBase } from "../../ide/VirtualizedSideBarPanelBase";
-import { virtualMachineToolsService } from "../../../extensions/core/VitualMachineToolBase";
+import { virtualMachineToolsService } from "../../../extensions/core/VirtualMachineToolBase";
 import { getEngineProxyService } from "../../ide/engine-proxy";
 import { BinaryBreakpoint } from "@abstractions/code-runner-service";
 import {

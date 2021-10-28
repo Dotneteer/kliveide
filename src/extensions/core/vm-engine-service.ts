@@ -480,16 +480,6 @@ class VmEngineService implements IVmEngineService {
     if (this._isFirstStart) {
       await this._vmEngine.setupMachine();
       await this._vmEngine.beforeFirstStart();
-
-      // --- Warm up to avoid sound delays
-      this._completionTask = this.executeCycle(
-        new ExecuteCycleOptions(
-          EmulationMode.UntilFrameEnds,
-          DebugStepMode.None
-        )
-      );
-      delay(200);
-      await this.cancelRun();
     }
 
     // --- Prepare breakpoints

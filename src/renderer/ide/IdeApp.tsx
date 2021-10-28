@@ -43,7 +43,7 @@ import "./ide-message-processor";
 import { registerKliveCommands } from "./commands/register-commands";
 import { Z80DisassemblyPanelDescriptor } from "../machines/sidebar-panels/DisassemblyPanel";
 import { MemoryPanelDescriptor } from "../machines/sidebar-panels/MemoryPanel";
-import { virtualMachineToolsService } from "../../extensions/core/VitualMachineToolBase";
+import { virtualMachineToolsService } from "../../extensions/core/VirtualMachineToolBase";
 import {
   newProjectDialog,
   NEW_PROJECT_DIALOG_ID,

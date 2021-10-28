@@ -25,6 +25,24 @@ import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
 import { IAudioRenderer } from "@ext-core/audio/IAudioRenderer";
 import { getEngineDependencies } from "@ext-core/vm-engine-dependencies";
 import { KeyMapping } from "@ext-core/keyboard";
+import { WasmMachineApi } from "@ext-core/abstract-vm";
+
+/**
+ * Represents the WebAssembly API of the ZX Spectrum
+ */
+export interface WasmZxSpectrumApi extends WasmMachineApi {
+  // --- Virtual machine methods
+  setUlaIssue(ula: number): void;
+  setAudioSampleRate(rate: number): void;
+  colorize(): void;
+  getCursorMode(): number;
+  initTape(blocks: number): void;
+  setFastLoad(value: boolean): void;
+  resetStepOverStack(): void;
+  markStepOverStack(): void;
+  eraseMemoryWriteMap(): void;
+  setMemoryWritePoint(point: number): void;
+}
 
 /**
  * ZX Spectrum common core implementation
@@ -44,6 +62,11 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
 
   // --- A state manager instance
   private _stateManager: IZxSpectrumStateManager;
+
+  /**
+   * The WA machine API to use the machine core
+   */
+  public api: WasmZxSpectrumApi;
 
   /**
    * Instantiates a core with the specified options

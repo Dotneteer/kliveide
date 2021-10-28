@@ -11,7 +11,7 @@ import { dkZ88KeyboardLayout } from "@ext/vm-z88/key-layout-dk";
 import { seZ88KeyboardLayout } from "@ext/vm-z88/key-layout-se";
 import { defaultZ88KeyboardLayout } from "@ext/vm-z88/key-layout-default";
 import { getVmEngineService } from "@ext-core/vm-engine-service";
-import { ZxSpectrumCoreBase } from "@ext/vm-zx-spectrum/ZxSpectrumCoreBase";
+import { CambridgeZ88Core } from "@ext/vm-z88/CambridgeZ88Core";
 
 const DEFAULT_WIDTH = 15 * 108 + 200 + 48;
 const DEFAULT_HEIGHT = 5 * (100 + 8) + 48;
@@ -238,7 +238,7 @@ export default function Cz88Keyboard(props: Props) {
       // --- No engine
       return;
     }
-    const engine = vmEngineService.getEngine() as ZxSpectrumCoreBase;
+    const engine = vmEngineService.getEngine() as CambridgeZ88Core
 
     // --- Set status of the primary key
     engine.setKeyStatus(e.code, e.down);

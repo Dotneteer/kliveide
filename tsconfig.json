@@ -28,8 +28,6 @@
   },
   "include": ["src/**/*"],
   "exclude": [
-    "**/*.test.ts",
-    "**/test.config.ts",
     "node_modules",
     "**/build/*",
     "**/*.d.ts"

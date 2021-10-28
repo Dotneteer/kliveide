@@ -19,7 +19,7 @@ import {
 } from "@ext/cpu-z80/disassembly-helper";
 import { FloatNumber } from "./FloatNumber";
 import { calcOps } from "./calc-ops";
-import { VirtualMachineToolBase } from "@ext-core/VitualMachineToolBase";
+import { VirtualMachineToolBase } from "@ext-core/VirtualMachineToolBase";
 
 /**
  * ZX Spectrum 48 main execution cycle entry point

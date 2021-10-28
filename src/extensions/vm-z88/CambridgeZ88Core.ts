@@ -31,7 +31,7 @@ import {
   intToX2,
   MemorySection,
 } from "@ext/cpu-z80/disassembly-helper";
-import { VirtualMachineToolBase } from "@ext-core/VitualMachineToolBase";
+import { VirtualMachineToolBase } from "@ext-core/VirtualMachineToolBase";
 import {
   BreakpointDefinition,
   CodeToInject,
@@ -40,8 +40,37 @@ import { getVmEngineService } from "../core/vm-engine-service";
 import { BLOCK_LOOKUP_TABLE } from "@ext/cpu-z80/wa-memory-map";
 import { VM_MEMORY, VM_STATE_BUFFER } from "@ext-core/wa-memory-map";
 import { IAudioRenderer } from "@ext-core/audio/IAudioRenderer";
+import { WasmMachineApi } from "@ext-core/abstract-vm";
 
 export const Z88_CARDS_DIALOG_ID = "Z88CardsDialog";
+
+/**
+ * Represents the WebAssembly API of Z88
+ */
+export interface WasmZ88Api extends WasmMachineApi {
+  testIncZ88Rtc(inc: number): void;
+  testSetRtcRegs(
+    tim0: number,
+    tim1: number,
+    tim2: number,
+    tim3: number,
+    tim4: number
+  ): void;
+  setAudioSampleRate(rate: number): void;
+  testSetZ88INT(value: number): void;
+  testSetZ88STA(value: number): void;
+  testSetZ88COM(value: number): void;
+  testSetZ88TMK(value: number): void;
+  testReadCz88Memory(addr: number): number;
+  testWriteCz88Memory(addr: number, value: number): number;
+  setZ88ChipMask(slot: number, value: number): void;
+  setZ88SlotMask(slot: number, isRom: boolean): void;
+  setZ88RndSeed(seed: number): void;
+  writePortCz88(addr: number, value: number): void;
+  clearMemory(): void;
+  setZ88ScreenSize(scw: number, sch: number): void;
+  raiseBatteryLow(): void;
+}
 
 /**
  * ZX Spectrum common core implementation
@@ -55,6 +84,11 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
 
   // --- A state manager instance
   private _stateManager: ICambridgeZ88StateManager;
+
+  /**
+   * The WA machine API to use the machine core
+   */
+  public api: WasmZ88Api;
 
   /**
    * Instantiates a core with the specified options

@@ -5,15 +5,15 @@ import {
   loadWaModule,
   SilentAudioRenderer,
 } from "../helpers";
-import { setEngineDependencies } from "../../../extensions/core/vm-engine-dependencies";
-import { ZxSpectrum48Core } from "../../../extensions/vm-zx-spectrum/ZxSpectrum48Core";
+import { setEngineDependencies } from "@ext-core/vm-engine-dependencies";
+import { ZxSpectrum48Core } from "@ext/vm-zx-spectrum/ZxSpectrum48Core";
 import {
   EmulationMode,
   ExecuteCycleOptions,
-} from "../../../core/abstractions/vm-core-types";
-import { MemoryHelper } from "../../../extensions/core/memory-helpers";
-import { BEEPER_SAMPLE_BUFFER } from "../../../extensions/vm-zx-spectrum/wa-memory-map";
-import { SpectrumMachineStateBase } from "../../../extensions/vm-zx-spectrum/ZxSpectrumCoreBase";
+} from "@abstractions/vm-core-types";
+import { MemoryHelper } from "@ext-core/memory-helpers";
+import { BEEPER_SAMPLE_BUFFER } from "@ext/vm-zx-spectrum/wa-memory-map";
+import { SpectrumMachineStateBase } from "@ext/vm-zx-spectrum/ZxSpectrumCoreBase";
 
 let machine: ZxSpectrum48Core;
 

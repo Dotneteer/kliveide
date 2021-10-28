@@ -526,24 +526,12 @@ export interface WasmMachineApi extends WasmCpuApi {
   // --- Virtual machine methods
   setupMachine(): void;
   resetMachine(): void;
-  setUlaIssue(ula: number): void;
   getMachineState(): void;
   getExecutionEngineState(): void;
   setExecutionOptions(): void;
   executeMachineLoop(): void;
-  setInterruptTact(tact: number): void;
-  checkForInterrupt(tact: number): void;
   setKeyStatus(key: number, isDown: boolean): void;
   getKeyStatus(key: number): number;
-  setAudioSampleRate(rate: number): void;
-  colorize(): void;
-  getCursorMode(): number;
-  initTape(blocks: number): void;
-  setFastLoad(value: boolean): void;
-  resetStepOverStack(): void;
-  markStepOverStack(): void;
-  eraseMemoryWriteMap(): void;
-  setMemoryWritePoint(point: number): void;
 
   // --- Z88 machine methods
   testIncZ88Rtc(inc: number): void;
