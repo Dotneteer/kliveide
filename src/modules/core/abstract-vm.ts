@@ -107,11 +107,6 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   abstract getModelId(): string;
 
   /**
-   * Gets a unique identifier for the particular configuration of the model
-   */
-  abstract get configurationId(): string;
-
-  /**
    * Friendly name to display
    */
   abstract readonly displayName: string;

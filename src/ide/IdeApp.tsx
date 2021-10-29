@@ -1,5 +1,7 @@
 import * as React from "react";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useState, useLayoutEffect, useEffect } from "react";
+import { useDispatch, useStore } from "react-redux";
+
 import {
   getDocumentService,
   getModalDialogService,
@@ -10,13 +12,9 @@ import {
   getThemeService,
   getToolAreaService,
 } from "@core/service-registry";
-import { useDispatch, useStore } from "react-redux";
 import { ideLoadUiAction } from "@state/ide-loaded-reducer";
-import { toStyleString } from "../ide/utils/css-utils";
 import { EmuViewOptions, ToolFrameState } from "@state/AppState";
-import { useLayoutEffect } from "react";
 import Splitter from "@components/Splitter";
-import { useEffect } from "react";
 import {
   changeActivityAction,
   setActivitiesAction,
@@ -28,6 +26,7 @@ import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
 import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
+import { toStyleString } from "../ide/utils/css-utils";
 import IdeContextMenu from "./context-menu/ContextMenu";
 import ModalDialog from "@components/ModalDialog";
 import ActivityBar from "./activity-bar/ActivityBar";
@@ -92,9 +91,10 @@ const HORIZONTAL_SPLITTER_ID = "ideHorizontalSplitter";
 const SPLITTER_SIZE = 4;
 
 // --- Panel sizes
-const MIN_SIDEBAR_WIDTH = 200;
-const MIN_DESK_WIDTH = 440;
+const MIN_SIDEBAR_WIDTH = 180;
+const MIN_DESK_WIDTH = 380;
 const MIN_DESK_HEIGHT = 100;
+const MIN_TOOL_HEIGHT = 100;
 
 // --- These variables keep the state of the IdeApp component outside
 // --- of it (for performance reasins). It can be done, as IdeApp is a
@@ -500,6 +500,9 @@ export default function IdeApp() {
     let newSideBarWidth = firstRender
       ? newDeskWidth * 0.25
       : sidebarDiv.offsetWidth;
+    if (newSideBarWidth < MIN_SIDEBAR_WIDTH) {
+      newSideBarWidth = MIN_SIDEBAR_WIDTH;
+    }
     if (newDeskWidth - newSideBarWidth < MIN_DESK_WIDTH) {
       newSideBarWidth = newDeskWidth - MIN_DESK_WIDTH;
     }

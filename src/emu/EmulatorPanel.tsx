@@ -184,6 +184,7 @@ export default function EmulatorPanel() {
     ) {
       return;
     }
+    console.log("Calculating new panel dimensions");
     hostRectangle.current = hostElement.current.getBoundingClientRect();
     screenRectangle.current = screenElement.current.getBoundingClientRect();
     const clientWidth = hostElement.current.offsetWidth;

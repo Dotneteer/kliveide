@@ -144,13 +144,6 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
   readonly displayName = "Cambridge Z88";
 
   /**
-   * Gets a unique identifier for the particular configuration of the model
-   */
-  get configurationId(): string {
-    return this.getModelId();
-  }
-
-  /**
    * Override this property to apply multiple engine loops before
    * Refreshing the UI
    */
