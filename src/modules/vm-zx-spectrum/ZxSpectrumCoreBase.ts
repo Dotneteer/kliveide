@@ -114,7 +114,6 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     super(options);
     const deps = getEngineDependencyRegistry();
     const modelId = this.getModelId();
-    console.log(modelId, deps);
     this._audioRendererFactory = (
       deps.getComponent(
         modelId,

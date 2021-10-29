@@ -18,7 +18,10 @@ import {
   addBreakpointAction,
   removeBreakpointAction,
 } from "@core/state/debugger-reducer";
-import { CUSTOM_Z80_DISASSEMBLY_TOOL, ICustomDisassembler } from "@modules/cpu-z80/custom-disassembly";
+import {
+  CUSTOM_Z80_DISASSEMBLY_TOOL,
+  ICustomDisassembler,
+} from "@modules/cpu-z80/custom-disassembly";
 import { SideBarProps, SideBarState } from "@components/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "@services/SideBarService";
 
@@ -27,6 +30,7 @@ const DISASS_LENGTH = 1024;
 
 type State = {
   output?: DisassemblyOutput;
+  isRunning: boolean;
 };
 
 /**
@@ -41,6 +45,14 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
 
   width = "fit-content";
   noMacineLine2 = "to see the disassembly";
+
+  /**
+   * Defines the message to show, if there are no items to render
+   */
+  get noItemsMessage(): string {
+    return "Pause the machine to see the disassembly.";
+  }
+
   /**
    * Initialize with the current breakpoints
    * @param props
@@ -48,6 +60,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   constructor(props: SideBarProps<{}>) {
     super(props);
     this._refreshBreakpoints = () => this.refreshBreakpoints();
+    this.setState({isRunning: false});
   }
 
   // --- Listen to run events
@@ -72,7 +85,9 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
    * Override to get the number of items
    */
   getItemsCount(): number {
-    return this.state.output ? this.state.output.outputItems.length : 0;
+    return this.state.output && !this.state.isRunning
+      ? this.state.output.outputItems.length
+      : 0;
   }
 
   /**
@@ -174,8 +189,12 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
             {index === 0 ? (
               <Icon
                 iconName={hasBreakpoint ? "debug-current" : "chevron-right"}
-                fill={hasBreakpoint ? "--console-ansi-yellow" : "--console-ansi-green"}
-                style={{marginRight: 4}}
+                fill={
+                  hasBreakpoint
+                    ? "--console-ansi-yellow"
+                    : "--console-ansi-green"
+                }
+                style={{ marginRight: 4 }}
               />
             ) : (
               <div style={{ width: 18 }} />
@@ -205,6 +224,12 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
    * Refresh the disassembly screen
    */
   protected async onRunEvent(): Promise<void> {
+    if (this.executionState === 3 || this.executionState === 5) {
+      this.setState({isRunning: false});
+    } else if (this.executionState === 1) {
+      await new Promise(r => setTimeout(r, 50));
+      this.setState({isRunning: this.executionState === 1});
+    }
     const engineProxy = getEngineProxyService();
     const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;
     const memory = await engineProxy.getCachedMemoryContents();
@@ -222,7 +247,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
       CUSTOM_Z80_DISASSEMBLY_TOOL
     ) as unknown as ICustomDisassembler;
     if (customZ80Disassembler) {
-        disassembler.setCustomDisassembler(customZ80Disassembler);
+      disassembler.setCustomDisassembler(customZ80Disassembler);
     }
 
     // --- Now, create the disassembly
