@@ -18,7 +18,7 @@ class VirtualMachineToolsService {
   /**
    * Registers a set of tools for the specified virtual machine
    * @param machineType Virtual machine identifier
-   * @param tools Tools object
+   * @param tool Tools object
    */
   registerTools(machineType: string, tool: ICustomVmTool): void {
     const tools = this._tools.get(machineType);

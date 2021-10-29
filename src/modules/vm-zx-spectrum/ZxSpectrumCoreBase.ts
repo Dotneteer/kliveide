@@ -14,18 +14,22 @@ import {
 import { Z80MachineCoreBase } from "@modules/cpu-z80/z80-machine-core-base";
 import { TzxReader } from "./tzx-file";
 import { TapReader } from "./tap-file";
-import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import { spectrumKeyCodes, spectrumKeyMappings } from "./spectrum-keys";
-import { ProgramCounterInfo } from "@state/AppState";
+import { AppState, ProgramCounterInfo } from "@state/AppState";
 import {
   BreakpointDefinition,
   CodeToInject,
 } from "@abstractions/code-runner-service";
 import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@modules-core/wa-memory-map";
 import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
-import { getEngineDependencies } from "@modules-core/vm-engine-dependencies";
 import { KeyMapping } from "@modules-core/keyboard";
-import { WasmMachineApi } from "@modules-core/abstract-vm";
+import { AudioRendererFactory, AudioSampleRateGetter, AUDIO_RENDERER_FACTORY_ID, AUDIO_SAMPLE_RATE_GETTER_ID, WasmMachineApi } from "@modules-core/abstract-vm";
+import { getEngineDependencyRegistry } from "@modules-core/vm-engine-dependency-registry";
+
+/**
+ * ID of a ZX Spectrum state manager component
+ */
+export const ZX_SPECTRUM_STATE_MANAGER_ID = "ZxSpectrumStateManager";
 
 /**
  * Represents the WebAssembly API of the ZX Spectrum
@@ -42,6 +46,40 @@ export interface WasmZxSpectrumApi extends WasmMachineApi {
   markStepOverStack(): void;
   eraseMemoryWriteMap(): void;
   setMemoryWritePoint(point: number): void;
+}
+
+/**
+ * Defines the responsibilities of a state manager for a ZxSpectrumBase
+ * derived virtual machine
+ */
+export interface IZxSpectrumStateManager {
+  /**
+   * Gets the current state
+   */
+  getState(): AppState;
+
+  /**
+   * Sets the tape contents
+   * @param contents Tape contents
+   */
+  setTapeContents(contents: Uint8Array): void;
+
+  /**
+   * Emulator panel message on the UI
+   * @param message Panel message
+   */
+  setPanelMessage(message: string): void;
+
+  /**
+   * Sets the current load mode
+   * @param isLoad Is in load mode?
+   */
+  setLoadMode(isLoad: boolean): void;
+
+  /**
+   * Initiates the loading of the tape
+   */
+  initiateTapeLoading(): void;
 }
 
 /**
@@ -74,9 +112,18 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   constructor(options: MachineCreationOptions) {
     super(options);
-    const deps = getEngineDependencies();
-    this._audioRendererFactory = deps.audioRendererFactory;
-    this._stateManager = deps.spectrumStateManager;
+    const deps = getEngineDependencyRegistry();
+    const modelId = this.getModelId();
+    this._audioRendererFactory = (
+      deps.getComponent(
+        modelId,
+        AUDIO_RENDERER_FACTORY_ID
+      ) as unknown as AudioRendererFactory
+    ).createAudioRenderer;
+    this._stateManager = deps.getComponent(
+      modelId,
+      ZX_SPECTRUM_STATE_MANAGER_ID
+    ) as unknown as IZxSpectrumStateManager;
   }
 
   /**
@@ -116,8 +163,14 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    */
   configureMachine(): void {
     super.configureMachine();
-    const deps = getEngineDependencies();
-    this.setAudioSampleRate(deps.sampleRateGetter());
+    const deps = getEngineDependencyRegistry();
+    const sampleRate = (
+      deps.getComponent(
+        this.getModelId(),
+        AUDIO_SAMPLE_RATE_GETTER_ID
+      ) as unknown as AudioSampleRateGetter
+    ).getAudioSampleRate();
+    this.setAudioSampleRate(sampleRate);
   }
 
   /**

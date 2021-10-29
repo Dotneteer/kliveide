@@ -117,7 +117,6 @@ export abstract class VirtualizedSideBarPanelBase<
     let newIndex = -1;
     const numItems = this.getItemsCount();
     const { startIndex, endIndex } = this.listApi.getViewPort();
-    console.log(startIndex, endIndex);
     const viewportItems = startIndex >= 0 ? endIndex - startIndex : 10;
     switch (e.code) {
       case "ArrowUp":

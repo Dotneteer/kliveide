@@ -34,6 +34,7 @@ import { OUTPUT_TOOL_ID } from "./tool-area-service";
 import { COMPILER_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
 import { changeActivityAction } from "@core/state/activity-bar-reducer";
 import { ACTIVITY_DEBUG_ID } from "./activity";
+import { resolveBreakpoints } from "./debug-helpers";
 
 /**
  * Names of core Klive commands
@@ -467,6 +468,9 @@ const compileCodeCommand: IKliveCommand = {
             outputPaneService.setActivePane(compilerPane);
           }
         }
+
+        // --- Take care to resolve source code breakpoints
+        resolveBreakpoints();
         break;
     }
   },

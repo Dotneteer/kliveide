@@ -1,13 +1,16 @@
 import { dispatch, getState } from "@core/service-registry";
-import { IZxSpectrumStateManager } from "./IZxSpectrumStateManager";
 import {
   spectrumLoadModeAction,
   spectrumTapeContentsAction,
   spectrumTapeLoadedAction,
 } from "@state/spectrum-specific-reducer";
 import { emuSetMessageAction } from "@state/emulator-panel-reducer";
+import { IZxSpectrumStateManager, ZX_SPECTRUM_STATE_MANAGER_ID } from "./ZxSpectrumCoreBase";
+import { IMachineComponentProvider } from "@modules-core/abstract-vm";
 
-export class ZxSpectrumStateManager implements IZxSpectrumStateManager {
+export class ZxSpectrumStateManager implements IMachineComponentProvider, IZxSpectrumStateManager {
+  readonly id = ZX_SPECTRUM_STATE_MANAGER_ID;
+  
   /**
    * Gets the current state
    */

@@ -11,13 +11,50 @@ import {
   MachineCreationOptions,
   MachineState,
 } from "@abstractions/vm-core-types";
-import { getEngineDependencies } from "./vm-engine-dependencies";
 import { ICpu, WasmCpuApi } from "@modules-core/abstract-cpu";
 import {
   BreakpointDefinition,
   CodeToInject,
 } from "@abstractions/code-runner-service";
+import { getEngineDependencyRegistry } from "./vm-engine-dependency-registry";
+import { IAudioRenderer } from "./audio/IAudioRenderer";
 import { IVmEngineService } from "./vm-engine-service";
+
+/**
+ * ID of a WebAssembly module loader
+ */
+ export const WA_MODULE_LOADER_ID = "WaModuleLoader";
+
+ /**
+  * ID of an audio sample rate getter
+  */
+ export const AUDIO_SAMPLE_RATE_GETTER_ID = "AudioSampleRateGetter";
+ 
+ /**
+  * ID of an audio renderer factory
+  */
+ export const AUDIO_RENDERER_FACTORY_ID = "AudioRendereFactory";
+ 
+ /**
+  * Represents a function that loads a module from the its file
+  */
+ export type WaModuleLoader = {
+   loadWaContents: (moduleFile: string) => Promise<ArrayBuffer>;
+ };
+ 
+ /**
+  * A function that queries the audio sample rate
+  */
+ export type AudioSampleRateGetter = { getAudioSampleRate: () => number };
+ 
+ /**
+  * A factory function that creates an audio renderer
+  */
+ export type AudioRendererFactory = {
+   createAudioRenderer: (s: number) => IAudioRenderer;
+ };
+
+ 
 
 /**
  * Represents the core abstraction of a virtual machine.
@@ -27,6 +64,10 @@ import { IVmEngineService } from "./vm-engine-service";
  */
 export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   private _coreState: MachineCoreState;
+
+  /**
+   * The controller instance this machine uses
+   */
   protected controller: IVmEngineService;
 
   /**
@@ -63,7 +104,7 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
   /**
    * Gets the unique model identifier of the machine
    */
-  abstract get modelId(): string;
+  abstract getModelId(): string;
 
   /**
    * Gets a unique identifier for the particular configuration of the model
@@ -151,10 +192,20 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
         ...this.waImportProps,
       },
     };
-    const deps = getEngineDependencies();
+
+    const modelId = this.getModelId();
+    const waLoader = getEngineDependencyRegistry().getComponent(
+      modelId,
+      WA_MODULE_LOADER_ID
+    ) as unknown as WaModuleLoader;
+    if (!waLoader) {
+      throw new Error(
+        `No WebAssembly loader registered for machine type ${modelId}`
+      );
+    }
     this.api = (
       await WebAssembly.instantiate(
-        await deps.waModuleLoader(this.waModuleFile),
+        await waLoader.loadWaContents(this.waModuleFile),
         waImportObject
       )
     ).instance.exports as unknown as WasmMachineApi;
@@ -517,6 +568,17 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
     _resultState: MachineState,
     _toWait: number
   ): Promise<void> {}
+}
+
+/**
+ * This interface defines an object that can contribute in a virtual machines
+ * lifecycle
+ */
+export interface IMachineComponentProvider {
+  /**
+   * ID of the provider object
+   */
+  readonly id: string;
 }
 
 /**

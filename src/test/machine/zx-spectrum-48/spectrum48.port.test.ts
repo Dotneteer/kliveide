@@ -1,25 +1,18 @@
 import "mocha";
 import * as expect from "expect";
-import { DefaultZxSpectrumStateManager, loadWaModule, SilentAudioRenderer } from "../helpers";
-import { setEngineDependencies } from "@modules-core/vm-engine-dependencies";
 import { ZxSpectrum48Core } from "@modules/vm-zx-spectrum/ZxSpectrum48Core";
 import {
   EmulationMode,
   ExecuteCycleOptions,
 } from "@abstractions/vm-core-types";
+import { createTestDependencies } from "./test-dependencies";
 
 let machine: ZxSpectrum48Core;
 
-// --- Set up the virual machine engine service with the 
-setEngineDependencies({
-  waModuleLoader: (n) => loadWaModule(n),
-  sampleRateGetter: () => 48000,
-  audioRendererFactory: () => new SilentAudioRenderer(),
-  spectrumStateManager: new DefaultZxSpectrumStateManager(),
-})
 
 describe("ZX Spectrum 48 - Ports", () => {
   before(async () => {
+    createTestDependencies();
     machine = new ZxSpectrum48Core({
       baseClockFrequency: 3_276_800,
       tactsInFrame: 16384,
