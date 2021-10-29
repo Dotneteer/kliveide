@@ -12,12 +12,6 @@ import {
 } from "./disassembly-helper";
 
 /**
- * Number of disassembler items to process in a batch before
- * allowing the event loop
- */
-const DISASSEMBLER_BATCH = 2000;
-
-/**
  * This class implements the Z80 disassembler
  */
 export class Z80Disassembler {
@@ -75,7 +69,6 @@ export class Z80Disassembler {
       getOffset: () => this._offset,
       fetch: () => this._apiFetch(),
       peek: (ahead?: number) => this._peek(ahead),
-      allowEventLoop: () => this.allowEventLoop(),
       addDisassemblyItem: (item: DisassemblyItem) => this._output.addItem(item),
       createLabel: (address: number) => this._output.createLabel(address),
     });
@@ -108,7 +101,6 @@ export class Z80Disassembler {
       }
       switch (section.sectionType) {
         case MemorySectionType.Disassemble:
-          console.log("disassembling", toDisassemble);
           await this._disassembleSection(toDisassemble);
           break;
 
@@ -125,17 +117,7 @@ export class Z80Disassembler {
           break;
       }
     }
-    console.log(this._output.outputItems);
     return this._output;
-  }
-
-  /**
-   * Allows the event loop to execute when a batch has ended
-   */
-  private async allowEventLoop(): Promise<void> {
-    if (this._lineCount++ % DISASSEMBLER_BATCH === 0) {
-      await processMessages();
-    }
   }
 
   /**
@@ -148,8 +130,6 @@ export class Z80Disassembler {
     this._overflow = false;
     const endOffset = section.endAddress;
     while (this._offset <= endOffset && !this._overflow) {
-      await this.allowEventLoop();
-
       // --- Disassemble the current item
       const customTakes =
         this._customDisassembler?.beforeInstruction(this._peek()) ?? false;
@@ -181,8 +161,6 @@ export class Z80Disassembler {
         );
       }
 
-      await this.allowEventLoop();
-
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({
         address: startAddress,
@@ -211,8 +189,6 @@ export class Z80Disassembler {
           (this.memoryContents[section.startAddress + i + j * 2 + 1] << 8);
         words.push(`$${intToX4(value & 0xffff)}`);
       }
-
-      await this.allowEventLoop();
 
       const startAddress = (section.startAddress + i) & 0xffff;
       this._output.addItem({

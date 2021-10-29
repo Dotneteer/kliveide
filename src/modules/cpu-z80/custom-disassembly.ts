@@ -47,12 +47,6 @@ export interface IDisassemblyApi {
   peek(ahead?: number): FetchResult;
 
   /**
-   * Allows the JavaScript event loop to process messages. Use this method when you're
-   * about to disassembly a long memory section
-   */
-  allowEventLoop(): Promise<void>;
-
-  /**
    * Add a new disassembly item to the output
    * @param item
    */
