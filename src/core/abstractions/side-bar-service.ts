@@ -60,6 +60,11 @@ export interface ISideBarPanel {
    * Should update the panel header?
    */
   shouldUpdatePanelHeader(): Promise<boolean>;
+
+  /**
+   * Signs that the expanded property changed
+   */
+  readonly expandedChanged: ILiteEvent<boolean>;
 }
 
 /**

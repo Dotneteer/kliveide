@@ -12,6 +12,8 @@ import { ISideBarPanel, ISideBarService } from "@abstractions/side-bar-service";
  */
 export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
   private _panelState: Record<string, any> = {};
+  private _expanded = false;
+  private _expandedChanged = new LiteEvent<boolean>();
 
   get title(): string {
     return "(Panel)";
@@ -21,7 +23,15 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
    * Signs if the specified panel is expanded
    * @param expanded
    */
-  expanded: boolean = false;
+  get expanded(): boolean {
+    return this._expanded;
+  }
+  set expanded(value: boolean) {
+    if (value !== this._expanded) {
+      this._expanded = value;
+      this._expandedChanged.fire();
+    }
+  }
 
   /**
    * Signs if the panel is focused
@@ -72,6 +82,13 @@ export abstract class SideBarPanelDescriptorBase implements ISideBarPanel {
    */
   async shouldUpdatePanelHeader(): Promise<boolean> {
     return false;
+  }
+
+  /**
+   * Signs that the expanded property changed
+   */
+  get expandedChanged(): ILiteEvent<boolean> {
+    return this._expandedChanged;
   }
 }
 

@@ -26,13 +26,6 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
   readonly waModuleFile: string = "sp128.wasm";
 
   /**
-   * Gets a unique identifier for the particular configuration of the model
-   */
-  get configurationId(): string {
-    return this.getModelId();
-  }
-
-  /**
    * Friendly name to display
    */
   readonly displayName = "ZX Spectrum 128K";

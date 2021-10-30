@@ -224,6 +224,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
    * Refresh the disassembly screen
    */
   protected async onRunEvent(): Promise<void> {
+    console.log("onRunEvent");
     if (this.executionState === 3 || this.executionState === 5) {
       this.setState({isRunning: false});
     } else if (this.executionState === 1) {
