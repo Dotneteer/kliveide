@@ -91,10 +91,10 @@ const HORIZONTAL_SPLITTER_ID = "ideHorizontalSplitter";
 const SPLITTER_SIZE = 4;
 
 // --- Panel sizes
-const MIN_SIDEBAR_WIDTH = 180;
+const MIN_SIDEBAR_WIDTH = 240;
 const MIN_DESK_WIDTH = 380;
-const MIN_DESK_HEIGHT = 100;
-const MIN_TOOL_HEIGHT = 100;
+const MIN_DESK_HEIGHT = 200;
+const MIN_TOOL_HEIGHT = 180;
 
 // --- These variables keep the state of the IdeApp component outside
 // --- of it (for performance reasins). It can be done, as IdeApp is a
@@ -112,7 +112,7 @@ let deskWidth = 0;
 let sidebarWidth = 0;
 let mainDeskLeft = 0;
 let mainDeskWidth = 0;
-let documentFrameHeight = 200;
+let documentFrameHeight = 400;
 let toolFrameHeight = 100;
 let verticalSplitterPos = 0;
 let horizontalSplitterPos = 0;
@@ -511,53 +511,43 @@ export default function IdeApp() {
     // --- Calculate document and tool panel sizes
     const docFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
     const docFrameHeight = docFrameDiv?.offsetHeight ?? 0;
+    const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
+    const toolHeight = toolFrameDiv?.offsetHeight ?? 0;
     if (restoreLayout) {
-      // --- We need to restore the state of both panels
-      documentFrameHeight =
-        (lastDocumentFrameHeight * workbenchHeight) /
+      toolFrameHeight =
+        (lastToolFrameHeight * workbenchHeight) /
         (lastDocumentFrameHeight + lastToolFrameHeight);
     } else {
-      // --- Calculate the height of the panel the normal way
-      documentFrameHeight = showDocumentFrame
-        ? showToolFrame
+      toolFrameHeight = showToolFrame
+        ? showDocumentFrame
           ? firstRender
-            ? workbenchHeight * 0.75
-            : docFrameHeight
+            ? docFrameHeight * 0.25
+            : toolHeight
           : workbenchHeight
         : 0;
     }
 
     // --- Calculate tool frame height
-    toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight);
-    toolFrameHeight = toolFrameHeight;
-
-    console.log(`Document 1: ${documentFrameHeight}`);
-    console.log(`Tool 1: ${toolFrameHeight}`);
-
-    if (showToolFrame && workbenchHeight - toolFrameHeight < MIN_TOOL_HEIGHT)
-    {
+    documentFrameHeight = Math.round(workbenchHeight - toolFrameHeight);
+    if (showToolFrame && workbenchHeight - documentFrameHeight < MIN_TOOL_HEIGHT) {
       toolFrameHeight = MIN_TOOL_HEIGHT;
-      documentFrameHeight = workbenchHeight - toolFrameHeight;
+      documentFrameHeight = showDocumentFrame ? workbenchHeight - toolFrameHeight : 0;
     }
     if (
-      showToolFrame &&
-      workbenchHeight - documentFrameHeight < MIN_DESK_HEIGHT
+      showDocumentFrame &&
+      workbenchHeight - toolFrameHeight < MIN_DESK_HEIGHT
     ) {
-      documentFrameHeight = workbenchHeight - MIN_DESK_HEIGHT;
+      documentFrameHeight = MIN_DESK_HEIGHT;
+      toolFrameHeight = showToolFrame ? workbenchHeight - documentFrameHeight : 0;
     }
 
-    console.log(`Document 2: ${documentFrameHeight}`);
-    console.log(`Tool 2: ${toolFrameHeight}`);
-
     // --- Set the Document Frame height
-    const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
-    if (documentFrameDiv) {
-      documentFrameDiv.style.height = `${documentFrameHeight}px`;
-      documentFrameDiv.style.width = `${mainDeskWidth}px`;
+    if (docFrameDiv) {
+      docFrameDiv.style.height = `${documentFrameHeight}px`;
+      docFrameDiv.style.width = `${mainDeskWidth}px`;
     }
 
     // --- Set the Tool Frame height
-    const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
     if (toolFrameDiv) {
       toolFrameDiv.style.height = `${toolFrameHeight}px`;
     }
