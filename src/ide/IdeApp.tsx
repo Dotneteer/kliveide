@@ -525,13 +525,29 @@ export default function IdeApp() {
             : docFrameHeight
           : workbenchHeight
         : 0;
-      if (
-        showToolFrame &&
-        workbenchHeight - documentFrameHeight < MIN_DESK_HEIGHT
-      ) {
-        documentFrameHeight = workbenchHeight - MIN_DESK_HEIGHT;
-      }
     }
+
+    // --- Calculate tool frame height
+    toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight);
+    toolFrameHeight = toolFrameHeight;
+
+    console.log(`Document 1: ${documentFrameHeight}`);
+    console.log(`Tool 1: ${toolFrameHeight}`);
+
+    if (showToolFrame && workbenchHeight - toolFrameHeight < MIN_TOOL_HEIGHT)
+    {
+      toolFrameHeight = MIN_TOOL_HEIGHT;
+      documentFrameHeight = workbenchHeight - toolFrameHeight;
+    }
+    if (
+      showToolFrame &&
+      workbenchHeight - documentFrameHeight < MIN_DESK_HEIGHT
+    ) {
+      documentFrameHeight = workbenchHeight - MIN_DESK_HEIGHT;
+    }
+
+    console.log(`Document 2: ${documentFrameHeight}`);
+    console.log(`Tool 2: ${toolFrameHeight}`);
 
     // --- Set the Document Frame height
     const documentFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
@@ -542,8 +558,6 @@ export default function IdeApp() {
 
     // --- Set the Tool Frame height
     const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
-    toolFrameHeight = Math.round(workbenchHeight - documentFrameHeight);
-    toolFrameHeight = toolFrameHeight;
     if (toolFrameDiv) {
       toolFrameDiv.style.height = `${toolFrameHeight}px`;
     }
