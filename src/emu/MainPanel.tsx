@@ -13,6 +13,7 @@ import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import EmulatorPanel from "./EmulatorPanel";
 import KeyboardPanel from "./KeyboardPanel";
+import { Fill } from "@components/Panels";
 
 /**
  * Represents the main canvas of the emulator
@@ -50,7 +51,7 @@ export default function MainPanel() {
   };
 
   return (
-    <Root>
+    <Fill flexible>
       <SplitterComponent
         orientation="Vertical"
         separatorSize={2}
@@ -72,7 +73,7 @@ export default function MainPanel() {
           )}
         </PanesDirective>
       </SplitterComponent>
-    </Root>
+    </Fill>
   );
 }
 
