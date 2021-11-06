@@ -1,5 +1,4 @@
 import * as React from "react";
-import styles from "styled-components";
 
 import { Cz88KeyboardLayout } from "@modules/vm-z88/cz88-keys";
 import { esZ88KeyboardLayout } from "@modules/vm-z88/key-layout-es";
@@ -12,6 +11,8 @@ import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { CambridgeZ88Core } from "@modules/vm-z88/CambridgeZ88Core";
 import { Z88ButtonClickArgs } from "./ui-core-types";
 import Key from "./Cz88Key";
+import { CSSProperties } from "react";
+import { Column, Row } from "@components/Panels";
 
 const DEFAULT_WIDTH = 15 * 108 + 200 + 48;
 const DEFAULT_HEIGHT = 5 * (100 + 8) + 48;
@@ -59,8 +60,8 @@ export default function Cz88Keyboard(props: Props) {
   const zoom = calculateZoom(props.width, props.height);
 
   return (
-    <Root>
-      <KeyRow>
+    <Column width="auto" style={rootStyle}>
+      <Row height="auto" style={rowStyle}>
         <Key zoom={zoom} code={61} layoutInfo={l.Escape} keyAction={click} />
         <Key zoom={zoom} code={45} layoutInfo={l.N1} keyAction={click} />
         <Key zoom={zoom} code={37} layoutInfo={l.N2} keyAction={click} />
@@ -76,10 +77,10 @@ export default function Cz88Keyboard(props: Props) {
         <Key zoom={zoom} code={23} layoutInfo={l.Equal} keyAction={click} />
         <Key zoom={zoom} code={15} layoutInfo={l.Backslash} keyAction={click} />
         <Key zoom={zoom} code={7} layoutInfo={l.Delete} keyAction={click} />
-      </KeyRow>
-      <KeyRow2To3>
+      </Row>
+      <Row height="auto" style={row23Style}>
         <div style={{ margin: 0 }}>
-          <KeyRow>
+          <Row height="auto" style={rowStyle}>
             <Key
               zoom={zoom}
               code={53}
@@ -109,8 +110,8 @@ export default function Cz88Keyboard(props: Props) {
               layoutInfo={l.SBracketR}
               keyAction={click}
             />
-          </KeyRow>
-          <KeyRow>
+          </Row>
+          <Row height="auto" style={rowStyle}>
             <Key
               zoom={zoom}
               code={52}
@@ -137,9 +138,9 @@ export default function Cz88Keyboard(props: Props) {
             />
             <Key zoom={zoom} code={48} layoutInfo={l.Quote} keyAction={click} />
             <Key zoom={zoom} code={56} layoutInfo={l.Pound} keyAction={click} />
-          </KeyRow>
+          </Row>
         </div>
-        <EnterContainer>
+        <div style={enterStyle}>
           <Key
             zoom={zoom}
             code={6}
@@ -148,9 +149,9 @@ export default function Cz88Keyboard(props: Props) {
             xwidth={122}
             xheight={200}
           />
-        </EnterContainer>
-      </KeyRow2To3>
-      <KeyRow>
+        </div>
+      </Row>
+      <Row height="auto" style={rowStyle}>
         <Key
           zoom={zoom}
           code={54}
@@ -183,8 +184,8 @@ export default function Cz88Keyboard(props: Props) {
           vshift={8}
           fontSize={60}
         />
-      </KeyRow>
-      <KeyRow>
+      </Row>
+      <Row height="auto" style={rowStyle}>
         <Key zoom={zoom} code={60} layoutInfo={l.Index} keyAction={click} />
         <Key zoom={zoom} code={51} layoutInfo={l.Menu} keyAction={click} />
         <Key zoom={zoom} code={55} layoutInfo={l.Help} keyAction={click} />
@@ -228,8 +229,8 @@ export default function Cz88Keyboard(props: Props) {
           vshift={8}
           fontSize={60}
         />
-      </KeyRow>
-    </Root>
+      </Row>
+    </Column>
   );
 
   function click(e: Z88ButtonClickArgs): void {
@@ -238,7 +239,7 @@ export default function Cz88Keyboard(props: Props) {
       // --- No engine
       return;
     }
-    const engine = vmEngineService.getEngine() as CambridgeZ88Core
+    const engine = vmEngineService.getEngine() as CambridgeZ88Core;
 
     // --- Set status of the primary key
     engine.setKeyStatus(e.code, e.down);
@@ -280,42 +281,28 @@ export default function Cz88Keyboard(props: Props) {
   }
 }
 
-// --- Helper component tags
-const Root = styles.div`
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  flex-grow: 0;
-  height: 100%;
-  background-color: transparent;
-  box-sizing: border-box;
-  align-content: start;
-  justify-items: start;
-  justify-content: center;
-  overflow: hidden;
-`;
+const rootStyle: CSSProperties = {
+  boxSizing: "border-box",
+  flexDirection: "column",
+  alignContent: "start",
+  justifyItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+};
 
-const KeyRow = styles.div`
-  padding: 0px 0px;
-  margin: 0;
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  font-weight: bold;
-`;
+const rowStyle: CSSProperties = {
+  padding: "0px 0px",
+  fontWeight: "bold",
+};
 
-const KeyRow2To3 = styles.div`
-  display: flex;
-  flex-direction: row;
-  flex-grow: 0;
-  flex-shrink: 0;
-  margin: 0;
-`;
+const row23Style: CSSProperties = {
+  flexDirection: "row",
+};
 
-const EnterContainer = styles.div`
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-  font-weight: bold;
-  margin: 0;
-`;
+const enterStyle: CSSProperties = {
+  display: "flex",
+  flexGrow: 0,
+  flexShrink: 0,
+  fontWeight: "bold",
+  margin: 0,
+};

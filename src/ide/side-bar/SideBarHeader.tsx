@@ -1,13 +1,16 @@
 import * as React from "react";
-import styles from "styled-components";
 
 import { getContextMenuService } from "@core/service-registry";
-import { createSizedStyledPanel } from "@components/PanelStyles";
 import { CSSProperties, useEffect, useState } from "react";
 import { Activity } from "@core/abstractions/activity";
 import { commandStatusChanged } from "@abstractions/command-registry";
-import { isCommandGroup, isKliveCommand, MenuItem } from "@abstractions/command-definitions";
+import {
+  isCommandGroup,
+  isKliveCommand,
+  MenuItem,
+} from "@abstractions/command-definitions";
 import CommandIconButton from "../context-menu/CommandIconButton";
+import { Fill, Row } from "@components/Panels";
 
 type Props = {
   activity: Activity;
@@ -15,41 +18,29 @@ type Props = {
 
 export default function SideBarPanelHeader({ activity }: Props) {
   return (
-    <Root>
-      <Caption>
-        <Text>{activity.title.toUpperCase()}</Text>
+    <Row height={35}>
+      <Fill
+        style={{ paddingLeft: 4, alignItems: "center", flexDirection: "row" }}
+      >
+        <span style={textStyle}>{activity.title.toUpperCase()}</span>
         <CommandBar commands={activity.commands} />
-      </Caption>
-    </Root>
+      </Fill>
+    </Row>
   );
 }
 
-const Caption = createSizedStyledPanel({
-  splitsVertical: false,
-  others: {
-    "align-items": "center",
-    "padding-left": "4px",
-  },
-});
-
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  height: 35,
-  fitToClient: false,
-  background: "transparent",
-});
-
-const Text = styles.span`
-  color: var(--sidebar-header-color);
-  font-size: 0.8em;
-  font-weight: 400;
-  padding-left: 20px;
-  width: 100%;
-  flex-grow: 1;
-  flex-shrink: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;`;
+const textStyle: CSSProperties = {
+  color: "var(--sidebar-header-color)",
+  fontSize: "0.8em",
+  fontWeight: 400,
+  paddingLeft: 20,
+  width: "100%",
+  flexGrow: 1,
+  flexShrink: 1,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
 
 type CommandBarProps = {
   commands?: MenuItem[];
@@ -61,14 +52,14 @@ function CommandBar({ commands }: CommandBarProps) {
   // --- Take care to update command status
   const onCommandStatusChanged = () => {
     setRefreshCount(refreshCount + 1);
-  }
+  };
 
   // --- Mount/unmount component
   useEffect(() => {
     commandStatusChanged.on(onCommandStatusChanged);
     return () => {
       commandStatusChanged.off(onCommandStatusChanged);
-    }
+    };
   });
 
   const style: CSSProperties = {

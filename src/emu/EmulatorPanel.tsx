@@ -76,7 +76,8 @@ export default function EmulatorPanel() {
       let overlay = "";
       switch (executionState) {
         case 0:
-          overlay = "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
+          overlay =
+            "Not yet started. Press F5 to start or Ctrl+F5 to debug machine.";
           break;
         case 1:
           overlay = runsInDebug ? "Debug mode" : "";
@@ -118,7 +119,7 @@ export default function EmulatorPanel() {
         }}
         onClick={() => setShowOverlay(true)}
       >
-        {executionState === 3 && showBeam && (
+        {executionState === 3 && showBeam && screenRectangle.current && (
           <BeamOverlay
             key={calcCount}
             panelRectangle={hostRectangle.current}
@@ -176,6 +177,7 @@ export default function EmulatorPanel() {
 
   // --- Calculate the dimensions so that the virtual machine display fits the screen
   function calculateDimensions(): void {
+    console.log("Calculate dimensions")
     const vmEngineService = getVmEngineService();
     if (
       !hostElement?.current ||
@@ -184,7 +186,6 @@ export default function EmulatorPanel() {
     ) {
       return;
     }
-    console.log("Calculating new panel dimensions");
     hostRectangle.current = hostElement.current.getBoundingClientRect();
     screenRectangle.current = screenElement.current.getBoundingClientRect();
     const clientWidth = hostElement.current.offsetWidth;

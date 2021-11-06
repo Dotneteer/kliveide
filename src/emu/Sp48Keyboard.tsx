@@ -1,10 +1,11 @@
 import * as React from "react";
-import styles from "styled-components";
 
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { ZxSpectrumCoreBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
 import Key from "./Sp48Key";
 import { Sp48ButtonClickArgs } from "./ui-core-types";
+import { CSSProperties } from "react";
+import { Column, Row } from "@components/Panels";
 
 const DEFAULT_WIDTH = 10 * 104 + 130 + 48;
 const DEFAULT_HEIGHT = 4 * (128 + 16) + 48;
@@ -22,8 +23,8 @@ export default function Sp48Keyboard(props: Props) {
     const row1Shift = 80 * zoom;
     const row2Shift = 110 * zoom;
     return (
-      <Root>
-        <KeyRow>
+      <Column width="auto" style={rootStyle}>
+        <Row height="auto" style={rowStyle}>
           <Key
             zoom={zoom}
             code={15}
@@ -141,8 +142,8 @@ export default function Sp48Keyboard(props: Props) {
             above="DELETE"
             below="FORMAT"
           />
-        </KeyRow>
-        <KeyRow style={{ marginLeft: row1Shift }}>
+        </Row>
+        <Row height="auto" style={{...rowStyle, marginLeft: row1Shift}}>
           <Key
             zoom={zoom}
             code={10}
@@ -243,8 +244,8 @@ export default function Sp48Keyboard(props: Props) {
             above="TAB"
             below="(C)"
           />
-        </KeyRow>
-        <KeyRow style={{ marginLeft: row2Shift }}>
+        </Row>
+        <Row height="auto" style={{...rowStyle, marginLeft: row2Shift}}>
           <Key
             zoom={zoom}
             code={5}
@@ -341,8 +342,8 @@ export default function Sp48Keyboard(props: Props) {
             keyAction={handleClick}
             center="ENTER"
           />
-        </KeyRow>
-        <KeyRow>
+        </Row>
+        <Row height="auto" style={rowStyle}>
           <Key
             zoom={zoom}
             code={0}
@@ -437,8 +438,8 @@ export default function Sp48Keyboard(props: Props) {
             top="BREAK"
             center="SPACE"
           />
-        </KeyRow>
-      </Root>
+        </Row>
+      </Column>
     );
 
   function handleClick(e: Sp48ButtonClickArgs): void {
@@ -547,26 +548,16 @@ export default function Sp48Keyboard(props: Props) {
   }
 }
 
-// --- Helper component tags
-const Root = styles.div`
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  flex-grow: 0;
-  height: 100%;
-  background-color: transparent;
-  box-sizing: border-box;
-  align-content: start;
-  justify-items: start;
-  justify-content: center;
-  overflow: hidden;
-`;
+const rootStyle: CSSProperties = {
+  boxSizing: "border-box",
+  flexDirection: "column",
+  alignContent: "start",
+  justifyItems: "center",
+  justifyContent: "center",
+  overflow: "hidden",
+};
 
-const KeyRow = styles.div`
-  padding: 0px 0px;
-  margin: 0;
-  display: flex;
-  flex-grow: 0;
-  flex-shrink: 0;
-`;
-
+const rowStyle: CSSProperties = {
+  padding: "0px 0px",
+  fontWeight: "bold",
+};

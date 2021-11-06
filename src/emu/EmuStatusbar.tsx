@@ -8,8 +8,9 @@ import {
 import { getVersion } from "../version";
 import { AppState } from "@state/AppState";
 import { Icon } from "@components/Icon";
-import { Root, Gap, Section, Label } from "@components/StatusbarStyles";
+import { StatusbarRoot, Section, Label } from "@components/StatusbarStyles";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
+import { Column } from "@components/Panels";
 
 /**
  * Represents the statusbar of the emulator
@@ -103,13 +104,13 @@ export default function Statusbar() {
     </Section>,
   ];
   return (
-    <Root>
+    <StatusbarRoot>
       {showFrames && frameInformation}
-      <Gap />
+      <Column />
       {vmEngineService.hasEngine && cpuInformation}
       <Section>
         <Label>Klive {getVersion()}</Label>
       </Section>
-    </Root>
+    </StatusbarRoot>
   );
 }

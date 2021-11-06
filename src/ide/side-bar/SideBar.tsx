@@ -2,10 +2,10 @@ import * as React from "react";
 import { useRef, useState, useEffect } from "react";
 
 import { getSideBarService, getState } from "@core/service-registry";
-import { createSizedStyledPanel } from "@components/PanelStyles";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import SideBarPanel from "./SideBarPanel";
 import SideBarHeader from "./SideBarHeader";
+import { CSSProperties } from "react";
 
 /**
  * The minimum height an expanded panel can have
@@ -84,10 +84,10 @@ export default function SideBar() {
   return (
     getActiveActivity() && (
       <>
-        <Root>
+        <div style={rootStyle}>
           <SideBarHeader activity={getActiveActivity()} />
           {sideBarPanels}
-        </Root>
+        </div>
       </>
     )
   );
@@ -176,9 +176,12 @@ export default function SideBar() {
   }
 }
 
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  others: {
-    "background-color": "var(--sidebar-background-color)",
-  },
-});
+const rootStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  flexGrow: 1,
+  flexShrink: 1,
+  width: "100%",
+  height: "100%",
+  backgroundColor: "var(--sidebar-background-color)"
+}

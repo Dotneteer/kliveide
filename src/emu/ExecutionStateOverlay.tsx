@@ -1,5 +1,5 @@
 import * as React from "react";
-import styles from "styled-components";
+import { CSSProperties } from "react";
 
 interface Props {
   text: string;
@@ -12,11 +12,11 @@ interface Props {
 export default function ExecutionStateOverlay(props: Props) {
   if (props.text) {
     return (
-      <Root onClick={handleClick}>
-        <Overlay title="Hide overlay (click to show again)">
+      <div style={rootStyle} onClick={handleClick}>
+        <div style={overlayStyle} title="Hide overlay (click to show again)">
           {props.text}
-        </Overlay>
-      </Root>
+        </div>
+      </div>
     );
   } else {
     return null;
@@ -28,22 +28,22 @@ export default function ExecutionStateOverlay(props: Props) {
   }
 }
 
-const Root = styles.div`
-  position: relative;
-  flex-shrink: 0;
-  flex-grow: 0;
-  height: 0;
-  left: 8px;
-  top: 8px;
-  margin-right: 16px;
-`;
+const rootStyle: CSSProperties = {
+  position: "relative",
+  flexShrink: 0,
+  flexGrow: 0,
+  height: 0,
+  left: 8,
+  top: 8,
+  marginRight: 16,
+};
 
-const Overlay = styles.span`
-  display: inline-block;
-  background-color: #404040;
-  color: lightgreen;
-  opacity: 0.9;
-  padding: 2px 10px 4px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-`;
+const overlayStyle: CSSProperties = {
+  display: "inline-block",
+  backgroundColor: "#404040",
+  color: "lightgreen",
+  opacity: 0.9,
+  padding: "2px 10px 4px 10px",
+  borderRadius: 4,
+  cursor: "pointer"
+}

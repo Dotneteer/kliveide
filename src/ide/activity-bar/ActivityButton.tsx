@@ -1,9 +1,9 @@
 import * as React from "react";
-import styles from "styled-components";
 
 import { getThemeService } from "@core/service-registry";
 import { Icon } from "@components/Icon";
 import { Activity } from "@core/abstractions/activity";
+import { CSSProperties } from "react";
 
 /**
  * Component properties
@@ -28,7 +28,7 @@ export default function ActivityButton({
   isSystem,
   clicked,
   point,
-  unpoint
+  unpoint,
 }: Props) {
   const style: Record<string, any> = {};
   if (active) {
@@ -38,8 +38,8 @@ export default function ActivityButton({
     style.alignSelf = "flex-end";
   }
   return (
-    <Root
-      style={style}
+    <div
+      style={{...rootStyle, ...style}}
       onClick={clicked}
       onMouseEnter={point}
       onMouseLeave={unpoint}
@@ -55,18 +55,19 @@ export default function ActivityButton({
             : "--activity-icon-color"
         )}
       />
-    </Root>
+    </div>
   );
 }
 
-// --- Helper component tags
-const Root = styles.div`
-  width: 100%;
-  height: 48px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  border: 2px solid transparent;
-  padding: 3px;
-`;
+const rootStyle: CSSProperties = {
+  width: "100%",
+  height: 48,
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  cursor: "pointer",
+  borderTop: "2px solid transparent",
+  borderRight: "2px solid transparent",
+  borderBottom: "2px solid transparent",
+  padding: 3,
+};

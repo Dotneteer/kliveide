@@ -1,5 +1,4 @@
 import * as React from "react";
-import styles from "styled-components";
 
 import { SpectrumMachineStateBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
@@ -42,6 +41,7 @@ export default function BeamOverlay(props: Props) {
   const rasterLines = state.rasterLines;
 
   // --- Entire viewport
+  console.log(props.screenRectangle);
   const zoom =
     (props.screenRectangle.right - props.screenRectangle.left) / screenWidth;
 
@@ -91,7 +91,7 @@ export default function BeamOverlay(props: Props) {
   const bcLineWidth = 2 * zoom;
 
   return (
-    <Root>
+    <div style={{position: "absolute", left: 0, right: 0}}>
       <svg width={props.width} height={props.height}>
         <rect
           x={dspLeft}
@@ -135,15 +135,6 @@ export default function BeamOverlay(props: Props) {
           }}
         />
       </svg>
-    </Root>
+    </div>
   );
 }
-
-/**
- * The root node of the component
- */
-const Root = styles.div`
- position: absolute;
- left: 0;
- top: 0;
-`;

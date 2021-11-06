@@ -2,16 +2,13 @@ import * as React from "react";
 import { useSelector } from "react-redux";
 
 import { dispatch } from "@core/service-registry";
-import {
-  createSizedStyledPanel,
-  createUnsizedStyledPanel,
-} from "@components/PanelStyles";
 import { AppState } from "@state/AppState";
 import {
   changeActivityAction,
   pointActivityAction,
 } from "@state/activity-bar-reducer";
 import ActivityButton from "./ActivityButton";
+import { Column, Row } from "@components/Panels";
 
 /**
  * Represents the statusbar of the emulator
@@ -40,23 +37,16 @@ export default function ActivityBar() {
     );
   });
   return (
-    <Root>
-      <Buttons>{appButtons}</Buttons>
-      <Gap />
-      <Buttons>{sysButtons}</Buttons>
-    </Root>
+    <Column
+      width={48}
+      style={{
+        backgroundColor: "var(--activity-bar-background-color)",
+        flexDirection: "column",
+      }}
+    >
+      <Row height="auto" style={{flexDirection: "column"}} >{appButtons}</Row>
+      <Row />
+      <Row height="auto" style={{flexDirection: "column"}} >{sysButtons}</Row>
+    </Column>
   );
 }
-
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  fitToClient: true,
-  width: 48,
-  others: {
-    "background-color": "var(--activity-bar-background-color)",
-  },
-});
-
-const Buttons = createUnsizedStyledPanel();
-
-const Gap = createSizedStyledPanel();

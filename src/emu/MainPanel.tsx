@@ -1,11 +1,5 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
-import {
-  PaneDirective,
-  PanesDirective,
-  SplitterComponent,
-} from "@syncfusion/ej2-react-layouts";
-import styles from "styled-components";
 
 import { dispatch } from "@core/service-registry";
 import { AppState } from "@state/AppState";
@@ -13,6 +7,8 @@ import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import EmulatorPanel from "./EmulatorPanel";
 import KeyboardPanel from "./KeyboardPanel";
+import { Fill, Row } from "@components/Panels";
+import { SplitPanel } from "@components/SplitPanel";
 
 /**
  * Represents the main canvas of the emulator
@@ -29,59 +25,29 @@ export default function MainPanel() {
   const keyboardHeight = useSelector((s: AppState) =>
     s.emulatorPanel.keyboardHeight
       ? `${s.emulatorPanel.keyboardHeight}px`
-      : undefined
+      : "33%"
   );
-
-  let lastShowKeyboard = false;
-  let delayIsOver = true;
-
-  if (lastShowKeyboard !== showKeyboard) {
-    lastShowKeyboard = showKeyboard;
-    if (lastShowKeyboard) {
-      delayIsOver = true;
-    }
-  }
-
-  const handleResizing = (children: number[]) => {
-    if (children.length > 0) {
-      const height = children[children.length - 1];
-      dispatch(emuKeyboardHeightAction(height));
-    }
-  };
 
   return (
-    <Root>
-      <SplitterComponent
-        orientation="Vertical"
-        separatorSize={2}
-        resizeStop={(arg) => handleResizing(arg.paneSize)}
-      >
-        <PanesDirective>
-          <PaneDirective
-            cssClass="splitter-panel"
-            content={() => <EmulatorPanel />}
-            min="80px"
-          />
-          {showKeyboard && (
-            <PaneDirective
-              cssClass="splitter-panel"
-              size={keyboardHeight ?? "50%"}
-              min="120px"
-              content={() => <KeyboardPanel type={type} />}
-            />
-          )}
-        </PanesDirective>
-      </SplitterComponent>
-    </Root>
+    <Fill>
+      <SplitPanel
+        splitterSize={4}
+        horizontal={false}
+        reverse={true}
+        showPanel1={showKeyboard}
+        panel1MinSize={120}
+        panel2MinSize={320}
+        initialSize={keyboardHeight ?? "33%"}
+        panel2={<EmulatorPanel />}
+        panel1={
+          <Row>
+            <KeyboardPanel type={type} />
+          </Row>
+        }
+        resized={(newPos) => {
+          dispatch(emuKeyboardHeightAction(newPos));
+        }}
+      />
+    </Fill>
   );
 }
-
-// --- Helper component tags
-const Root = styles.div`
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  flex-shrink: 1;
-  width: 100%;
-  background-color: var(--emulator-background-color);
-`;
