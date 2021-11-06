@@ -77,11 +77,11 @@ export default function IdeDocumentFrame() {
           </div>
         </>
       )}
-      <ReactResizeDetector
+      {/* <ReactResizeDetector
         handleWidth
         handleHeight
         onResize={() => onResize()}
-      />
+      /> */}
     </div>
   );
 
@@ -89,14 +89,14 @@ export default function IdeDocumentFrame() {
    * Resize the document placeholder
    */
   function onResize(): void {
-    const containerDiv = document.getElementById(DOC_CONTAINER_ID);
-    const headerDiv = document.getElementById(DOC_HEADER_ID);
-    const placeHolderDiv = document.getElementById(DOC_PLACEHOLDER_ID);
-    if (containerDiv && headerDiv && placeHolderDiv) {
-      const placeHolderHeight =
-        containerDiv.offsetHeight - headerDiv.offsetHeight;
-      placeHolderDiv.style.height = `${placeHolderHeight}px`;
-    }
+    // const containerDiv = document.getElementById(DOC_CONTAINER_ID);
+    // const headerDiv = document.getElementById(DOC_HEADER_ID);
+    // const placeHolderDiv = document.getElementById(DOC_PLACEHOLDER_ID);
+    // if (containerDiv && headerDiv && placeHolderDiv) {
+    //   const placeHolderHeight =
+    //     containerDiv.offsetHeight - headerDiv.offsetHeight;
+    //   placeHolderDiv.style.height = `${placeHolderHeight}px`;
+    // }
   }
 }
 
@@ -119,6 +119,7 @@ const placeholderStyle: CSSProperties = {
   width: "100%",
   height: "100%",
   backgroundColor: "var(--shell-canvas-background-color)",
+  overflow: "hidden"
 };
 
 /**

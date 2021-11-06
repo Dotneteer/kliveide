@@ -66,6 +66,7 @@ const rootStyle: CSSProperties = {
   justifyContent: "center",
   alignItems: "center",
   cursor: "pointer",
+  borderLeft: "2px solid transparent",
   borderTop: "2px solid transparent",
   borderRight: "2px solid transparent",
   borderBottom: "2px solid transparent",

@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import {
+  dispatch,
   getModalDialogService,
   getStore,
   getThemeService,
@@ -30,10 +31,9 @@ export default function EmuApp() {
   const mounted = useRef(false);
   const [themeStyle, setThemeStyle] = useState({});
   const [themeClass, setThemeClass] = useState("");
-  const store = useStore();
-  const dispatch = useDispatch();
 
-  const emuViewOptions = useSelector((s: AppState) => s.emuViewOptions);
+  const showToolbar = useSelector((s: AppState) => s.emuViewOptions.showToolbar);
+  const showStatusBar = useSelector((s: AppState) => s.emuViewOptions.showStatusBar);
 
   React.useEffect(() => {
     // --- State change event handlers
@@ -71,17 +71,18 @@ export default function EmuApp() {
       store.themeChanged.off(themeChanged);
       stopCommandStatusQuery();
     };
-  }, [store]);
+  });
 
   // --- Apply styles to body so that dialogs, context menus can use it, too.
   document.body.setAttribute("style", toStyleString(themeStyle));
   document.body.setAttribute("class", themeClass);
 
+  console.log(showToolbar);
   return (
     <div style={themeStyle} className={themeClass}>
-      {emuViewOptions.showToolbar && <Toolbar></Toolbar>}
+      {showToolbar && <Toolbar />}
       <MainPanel />
-      {emuViewOptions.showStatusBar && <EmuStatusbar></EmuStatusbar>}
+      {showStatusBar && <EmuStatusbar></EmuStatusbar>}
       <ModalDialog targetId="#app" />
     </div>
   );

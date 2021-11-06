@@ -177,7 +177,6 @@ export default function EmulatorPanel() {
 
   // --- Calculate the dimensions so that the virtual machine display fits the screen
   function calculateDimensions(): void {
-    console.log("Calculate dimensions")
     const vmEngineService = getVmEngineService();
     if (
       !hostElement?.current ||

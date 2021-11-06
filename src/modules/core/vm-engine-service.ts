@@ -494,13 +494,11 @@ class VmEngineService implements IVmEngineService {
     // --- Set binary breakpoints
     for (const bp of getState().debugger?.breakpoints ?? []) {
       this._vmEngine.setBreakpoint(bp);
-      console.log(bp);
     }
 
     // --- Set resolved source code breakpoints
     for (const bp of getState().debugger?.resolved ?? []) {
       this._vmEngine.setBreakpoint(bp);
-      console.log(bp);
     }
 
     // --- Now, run the machine

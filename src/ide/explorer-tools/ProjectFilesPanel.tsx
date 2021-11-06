@@ -291,7 +291,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             iconName="combine"
             width={16}
             height={16}
-            fill="green"
+            fill="var(--console-ansi-bright-green)"
             style={{ flexShrink: 0, flexGrow: 0 }}
           />
         )}
