@@ -6,6 +6,7 @@ import { CSSProperties, PropsWithChildren } from "react";
  * Generic panel properties
  */
 export type PanelProps<P = {}> = P & DOMAttributes<HTMLDivElement> & {
+  id?: string;
   useColumns?: boolean;
   flexible?: boolean;
   style?: CSSProperties;
@@ -49,6 +50,7 @@ export const Fill: React.FC<FillProps> = ({
           : "column",
         flexShrink: flexible ? 1 : 0,
         flexGrow: flexible ? 1 : 0,
+        overflow: "hidden",
         ...style,
       }}
       {...others}      
@@ -88,6 +90,7 @@ export const Column: React.FC<ColumnProps> = ({
         width: width ?? "100%",
         flexShrink: flexible ? 1 : 0,
         flexGrow: flexible ? 1 : 0,
+        overflow: "hidden",
         ...style,
       }}
       {...others}
@@ -126,6 +129,7 @@ export const Row: React.FC<RowProps> = ({
         height: height ?? "100%",
         flexShrink: flexible ? 1 : 0,
         flexGrow: flexible ? 1 : 0,
+        overflow: "hidden",
         ...style,
       }}
       {...others}

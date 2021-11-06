@@ -77,6 +77,8 @@ import { BreakpointsPanelDescriptor } from "./side-bar/BreakpointsPanel";
 import { IoLogsPanelDescription } from "./side-bar/IoLogsPanel";
 import { virtualMachineToolsService } from "@modules-core/virtual-machine-tool";
 import { VmOutputPanelDescriptor } from "./side-bar/VmOutputPane";
+import { Column, Fill, Row } from "@components/Panels";
+import { SplitPanel } from "@components/SplitPanel";
 
 // --- App component literal constants
 const WORKBENCH_ID = "ideWorkbench";
@@ -413,15 +415,31 @@ export default function IdeApp() {
   };
 
   return (
-    <div id="klive_ide_app" style={ideAppStyle}>
-      <div id={WORKBENCH_ID} style={workbenchStyle}>
-        <div id={ACTIVITY_BAR_ID} style={activityBarStyle}>
+    <Fill id="klive-ide-app">
+      <Row>
+        <Column width={48}>
           <ActivityBar />
-        </div>
-        <div id={SIDEBAR_ID} style={sidebarStyle}>
-          <SideBar />
-        </div>
-        <Splitter
+        </Column>
+        <SplitPanel
+          splitterSize={4}
+          horizontal={true}
+          panel1MinSize={200}
+          panel2MinSize={320}
+          initialSize={"20%"}
+          panel1={<SideBar />}
+          panel2={
+            <SplitPanel
+              splitterSize={4}
+              horizontal={false}
+              reverse={true}
+              panel1MinSize={200}
+              panel2MinSize={100}
+              panel2={<IdeDocumentFrame />}
+              panel1={<ToolFrame />}
+            />
+          }
+        />
+        {/* <Splitter
           id={VERTICAL_SPLITTER_ID}
           direction="vertical"
           size={SPLITTER_SIZE}
@@ -453,14 +471,14 @@ export default function IdeApp() {
               <ToolFrame />
             </div>
           )}
-        </div>
-      </div>
-      <div id={STATUS_BAR_ID} style={statusBarStyle}>
+        </div> */}
+      </Row>
+      <Row height={28}>
         <IdeStatusbar />
-      </div>
-      <IdeContextMenu target="#klive_ide_app" />
+      </Row>
+      {/* <IdeContextMenu target="#klive_ide_app" /> */}
       <ModalDialog targetId="#app" />
-    </div>
+    </Fill>
   );
 
   /**
@@ -481,95 +499,87 @@ export default function IdeApp() {
    * Recalculate the IdeApp layout
    */
   function onResize(): void {
-    // --- Calculate workbench dimensions
-    const statusBarDiv = document.getElementById(STATUS_BAR_ID);
-    workbenchWidth = window.innerWidth;
-    workbenchHeight = Math.floor(
-      window.innerHeight - (statusBarDiv?.offsetHeight ?? 0)
-    );
-    const workBenchDiv = document.getElementById(WORKBENCH_ID);
-    workBenchDiv.style.width = `${workbenchWidth}px`;
-    workBenchDiv.style.height = `${workbenchHeight}px`;
-
-    // --- Calculate sidebar and main desk dimensions
-    const activityBarDiv = document.getElementById(ACTIVITY_BAR_ID);
-    const sidebarDiv = document.getElementById(SIDEBAR_ID);
-    activityBarWidth = activityBarDiv.offsetWidth;
-    const newDeskWidth = window.innerWidth - activityBarDiv.offsetWidth;
-    deskWidth = newDeskWidth;
-    let newSideBarWidth = firstRender
-      ? newDeskWidth * 0.25
-      : sidebarDiv.offsetWidth;
-    if (newSideBarWidth < MIN_SIDEBAR_WIDTH) {
-      newSideBarWidth = MIN_SIDEBAR_WIDTH;
-    }
-    if (newDeskWidth - newSideBarWidth < MIN_DESK_WIDTH) {
-      newSideBarWidth = newDeskWidth - MIN_DESK_WIDTH;
-    }
-    setSidebarAndDesk(newSideBarWidth);
-
-    // --- Calculate document and tool panel sizes
-    const docFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
-    const docFrameHeight = docFrameDiv?.offsetHeight ?? 0;
-    const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
-    const toolHeight = toolFrameDiv?.offsetHeight ?? 0;
-    if (restoreLayout) {
-      toolFrameHeight =
-        (lastToolFrameHeight * workbenchHeight) /
-        (lastDocumentFrameHeight + lastToolFrameHeight);
-    } else {
-      toolFrameHeight = showToolFrame
-        ? showDocumentFrame
-          ? firstRender
-            ? docFrameHeight * 0.25
-            : toolHeight
-          : workbenchHeight
-        : 0;
-    }
-
-    // --- Calculate tool frame height
-    documentFrameHeight = Math.round(workbenchHeight - toolFrameHeight);
-    if (showToolFrame && workbenchHeight - documentFrameHeight < MIN_TOOL_HEIGHT) {
-      toolFrameHeight = MIN_TOOL_HEIGHT;
-      documentFrameHeight = showDocumentFrame ? workbenchHeight - toolFrameHeight : 0;
-    }
-    if (
-      showDocumentFrame &&
-      workbenchHeight - toolFrameHeight < MIN_DESK_HEIGHT
-    ) {
-      documentFrameHeight = MIN_DESK_HEIGHT;
-      toolFrameHeight = showToolFrame ? workbenchHeight - documentFrameHeight : 0;
-    }
-
-    // --- Set the Document Frame height
-    if (docFrameDiv) {
-      docFrameDiv.style.height = `${documentFrameHeight}px`;
-      docFrameDiv.style.width = `${mainDeskWidth}px`;
-    }
-
-    // --- Set the Tool Frame height
-    if (toolFrameDiv) {
-      toolFrameDiv.style.height = `${toolFrameHeight}px`;
-    }
-
-    // --- Put the horizontal splitter between the document frame and the tool frame
-    const horizontalSplitterDiv = document.getElementById(
-      HORIZONTAL_SPLITTER_ID
-    );
-    if (horizontalSplitterDiv) {
-      horizontalSplitterPos = documentFrameHeight - SPLITTER_SIZE / 2;
-      horizontalSplitterDiv.style.top = `${horizontalSplitterPos}px`;
-    }
-
-    // --- Save the layout temporarily
-    if (showDocumentFrame && showToolFrame) {
-      lastDocumentFrameHeight = documentFrameHeight;
-      lastToolFrameHeight = toolFrameHeight;
-    }
-
-    // --- Now, we're over the first render and the restore
-    firstRender = false;
-    restoreLayout = false;
+    // // --- Calculate workbench dimensions
+    // const statusBarDiv = document.getElementById(STATUS_BAR_ID);
+    // workbenchWidth = window.innerWidth;
+    // workbenchHeight = Math.floor(
+    //   window.innerHeight - (statusBarDiv?.offsetHeight ?? 0)
+    // );
+    // const workBenchDiv = document.getElementById(WORKBENCH_ID);
+    // workBenchDiv.style.width = `${workbenchWidth}px`;
+    // workBenchDiv.style.height = `${workbenchHeight}px`;
+    // // --- Calculate sidebar and main desk dimensions
+    // const activityBarDiv = document.getElementById(ACTIVITY_BAR_ID);
+    // const sidebarDiv = document.getElementById(SIDEBAR_ID);
+    // activityBarWidth = activityBarDiv.offsetWidth;
+    // const newDeskWidth = window.innerWidth - activityBarDiv.offsetWidth;
+    // deskWidth = newDeskWidth;
+    // let newSideBarWidth = firstRender
+    //   ? newDeskWidth * 0.25
+    //   : sidebarDiv.offsetWidth;
+    // if (newSideBarWidth < MIN_SIDEBAR_WIDTH) {
+    //   newSideBarWidth = MIN_SIDEBAR_WIDTH;
+    // }
+    // if (newDeskWidth - newSideBarWidth < MIN_DESK_WIDTH) {
+    //   newSideBarWidth = newDeskWidth - MIN_DESK_WIDTH;
+    // }
+    // setSidebarAndDesk(newSideBarWidth);
+    // // --- Calculate document and tool panel sizes
+    // const docFrameDiv = document.getElementById(DOCUMENT_FRAME_ID);
+    // const docFrameHeight = docFrameDiv?.offsetHeight ?? 0;
+    // const toolFrameDiv = document.getElementById(TOOL_FRAME_ID);
+    // const toolHeight = toolFrameDiv?.offsetHeight ?? 0;
+    // if (restoreLayout) {
+    //   toolFrameHeight =
+    //     (lastToolFrameHeight * workbenchHeight) /
+    //     (lastDocumentFrameHeight + lastToolFrameHeight);
+    // } else {
+    //   toolFrameHeight = showToolFrame
+    //     ? showDocumentFrame
+    //       ? firstRender
+    //         ? docFrameHeight * 0.25
+    //         : toolHeight
+    //       : workbenchHeight
+    //     : 0;
+    // }
+    // // --- Calculate tool frame height
+    // documentFrameHeight = Math.round(workbenchHeight - toolFrameHeight);
+    // if (showToolFrame && workbenchHeight - documentFrameHeight < MIN_TOOL_HEIGHT) {
+    //   toolFrameHeight = MIN_TOOL_HEIGHT;
+    //   documentFrameHeight = showDocumentFrame ? workbenchHeight - toolFrameHeight : 0;
+    // }
+    // if (
+    //   showDocumentFrame &&
+    //   workbenchHeight - toolFrameHeight < MIN_DESK_HEIGHT
+    // ) {
+    //   documentFrameHeight = MIN_DESK_HEIGHT;
+    //   toolFrameHeight = showToolFrame ? workbenchHeight - documentFrameHeight : 0;
+    // }
+    // // --- Set the Document Frame height
+    // if (docFrameDiv) {
+    //   docFrameDiv.style.height = `${documentFrameHeight}px`;
+    //   docFrameDiv.style.width = `${mainDeskWidth}px`;
+    // }
+    // // --- Set the Tool Frame height
+    // if (toolFrameDiv) {
+    //   toolFrameDiv.style.height = `${toolFrameHeight}px`;
+    // }
+    // // --- Put the horizontal splitter between the document frame and the tool frame
+    // const horizontalSplitterDiv = document.getElementById(
+    //   HORIZONTAL_SPLITTER_ID
+    // );
+    // if (horizontalSplitterDiv) {
+    //   horizontalSplitterPos = documentFrameHeight - SPLITTER_SIZE / 2;
+    //   horizontalSplitterDiv.style.top = `${horizontalSplitterPos}px`;
+    // }
+    // // --- Save the layout temporarily
+    // if (showDocumentFrame && showToolFrame) {
+    //   lastDocumentFrameHeight = documentFrameHeight;
+    //   lastToolFrameHeight = toolFrameHeight;
+    // }
+    // // --- Now, we're over the first render and the restore
+    // firstRender = false;
+    // restoreLayout = false;
   }
 
   /**
