@@ -26,7 +26,7 @@ export default function MainPanel() {
   const keyboardHeight = useSelector((s: AppState) =>
     s.emulatorPanel.keyboardHeight
       ? `${s.emulatorPanel.keyboardHeight}px`
-      : "50%"
+      : "33%"
   );
 
   return (
@@ -38,7 +38,7 @@ export default function MainPanel() {
         showPanel1={showKeyboard}
         panel1MinSize={120}
         panel2MinSize={320}
-        initialSize={keyboardHeight ?? "50%"}
+        initialSize={keyboardHeight ?? "33%"}
         panel2={<EmulatorPanel />}
         panel1={
           <Row>
@@ -46,7 +46,6 @@ export default function MainPanel() {
           </Row>
         }
         resized={(newPos) => {
-          console.log(`Save: ${newPos}`);
           dispatch(emuKeyboardHeightAction(newPos));
         }}
       />

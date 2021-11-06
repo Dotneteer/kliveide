@@ -51,11 +51,11 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   );
   const [pointed, setPointed] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const [splitterShift, setSplitterShift] = useState(0);
+  const [splitterTop, setSplitterTop] = useState(0);
+  const [splitterLeft, setSplitterLeft] = useState(0);
 
   // --- Other state information
   const primaryIsDisplayed = useRef(false);
-  const primaryInitialized = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
   const gripPosition = useRef(0);
@@ -64,29 +64,14 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   const maxSplitterValue = useRef(0);
 
   // --- Obtain the container and panel sizes
-  const rect = containerRef.current?.getBoundingClientRect();
-  const primarySize =
-    typeof primaryPanelSize === "string" ? 0 : primaryPanelSize;
   const crossSize = horizontal
     ? containerRef.current?.offsetHeight ?? 0
     : containerRef.current?.offsetWidth ?? 0;
   // --- Set up the style of the splitter <div>
   const splitterStyle: CSSProperties = {
     position: "absolute",
-    top: horizontal
-      ? splitterShift
-      : reverse
-      ? (containerRef.current?.offsetHeight ?? 0) -
-        primarySize +
-        (rect?.top ?? 0)
-      : primarySize + (rect?.top ?? 0),
-    left: horizontal
-      ? reverse
-        ? (containerRef.current?.offsetWidth ?? 0) -
-          primarySize +
-          (rect?.left ?? 0)
-        : primarySize + (rect?.left ?? 0)
-      : splitterShift,
+    top: splitterTop,
+    left: splitterLeft,
     height: horizontal ? crossSize : splitterSize,
     width: horizontal ? splitterSize : crossSize,
     backgroundColor:
@@ -189,8 +174,6 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
     // --- Keep track of the display state of the primary panel
     const wasDisplayed = primaryIsDisplayed.current;
     const isDisplayed = !!primaryPanelRef.current;
-    console.log(`Was displayed: ${wasDisplayed}`);
-    console.log(`Is displayed: ${wasDisplayed}`);
     primaryIsDisplayed.current = isDisplayed;
 
     // --- Determine the container size
@@ -199,18 +182,36 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
         ? containerRef.current?.offsetWidth
         : containerRef.current?.offsetHeight) ?? -1;
 
-    // --- Set the splitter's cross position
-    setSplitterShift(
+    // --- Calculate splitter positions
+    const rect = containerRef.current?.getBoundingClientRect();
+    const primarySize =
+      typeof primaryPanelSize === "string" ? 0 : primaryPanelSize;
+    const splitterShift =
       (horizontal
         ? containerRef.current?.offsetTop
-        : containerRef.current?.offsetLeft) ?? 0
-    );
+        : containerRef.current?.offsetLeft) ?? 0;
+    const splitterTop = horizontal
+      ? splitterShift
+      : reverse
+      ? (containerRef.current?.offsetHeight ?? 0) -
+        primarySize +
+        (rect?.top ?? 0)
+      : primarySize + (rect?.top ?? 0);
+    const splitterLeft = horizontal
+      ? reverse
+        ? (containerRef.current?.offsetWidth ?? 0) -
+          primarySize +
+          (rect?.left ?? 0)
+        : primarySize + (rect?.left ?? 0)
+      : splitterShift;
+
+    setSplitterTop(splitterTop);
+    setSplitterLeft(splitterLeft);
 
     let panel1Size = 0;
     if (isDisplayed) {
       if (wasDisplayed) {
         // --- Retrieve the panel size from the current DOM element
-        console.log("Intialize");
         panel1Size =
           (horizontal
             ? primaryPanelRef.current?.offsetWidth
@@ -228,7 +229,6 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
           panel1Size = primaryPanelSize;
         }
       }
-      console.log(`panel size: ${panel1Size}`);
     } else {
       // --- Primary panel is not displayed, nothing to resize
       return;
@@ -259,7 +259,6 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
     }
 
     // --- Set the resulting size and the new splitter range
-    console.log("Set panel size");
     setPrimaryPanelSize(panel1Size);
     minSplitterValue.current = minSize1;
     maxSplitterValue.current = containerSize - minSize2;
