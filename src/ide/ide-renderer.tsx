@@ -13,8 +13,13 @@ import {
   DIALOG_SERVICE,
   dispatch,
   DOCUMENT_SERVICE,
+  getDocumentService,
+  getModalDialogService,
+  getOutputPaneService,
+  getSideBarService,
   getState,
   getStore,
+  getToolAreaService,
   INTERACTIVE_PANE_SERVICE,
   MODAL_DIALOG_SERVICE,
   OUTPUT_PANE_SERVICE,
@@ -49,6 +54,34 @@ import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
+import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@abstractions/activity";
+import { changeActivityAction, setActivitiesAction } from "@core/state/activity-bar-reducer";
+import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
+import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
+import { Z80RegistersPanelDescriptor } from "@modules/cpu-z80/Z80RegistersPanel";
+import { UlaInformationPanelDescriptor } from "@modules/vm-zx-spectrum/UlaInformationPanel";
+import { BlinkInformationPanelDescriptor } from "@modules/vm-z88/BlinkInformationPanel";
+import { Z80DisassemblyPanelDescriptor } from "@modules/cpu-z80/Z80DisassemblyPanel";
+import { MemoryPanelDescriptor } from "@modules/cpu-z80/Z80MemoryPanel";
+import { CallStackPanelDescriptor } from "./side-bar/CallStackPanel";
+import { BreakpointsPanelDescriptor } from "./side-bar/BreakpointsPanel";
+import { IoLogsPanelDescription } from "./side-bar/IoLogsPanel";
+import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
+import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
+import { VmOutputPanelDescriptor } from "./side-bar/VmOutputPane";
+import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
+import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
+import { asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
+import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
+import { virtualMachineToolsService } from "@modules-core/virtual-machine-tool";
+import { ZxSpectrum48CustomDisassembler } from "@modules/vm-zx-spectrum/ZxSpectrum48CustomDisassembler";
+import { CambridgeZ88CustomDisassembler } from "@modules/vm-z88/CambridgeZ88CustomDisassembler";
+import { newProjectDialog, NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
+import { newFolderDialog, NEW_FOLDER_DIALOG_ID } from "./explorer-tools/NewFolderDialog";
+import { newFileDialog, NEW_FILE_DIALOG_ID } from "./explorer-tools/NewFileDialog";
+import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/RenameFileDialog";
+import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
+import { registerKliveCommands } from "./commands/register-commands";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -120,6 +153,179 @@ registerIdeToEmuMessenger(new IdeToEmuMessenger());
 
 // --- Prepare the themes used in this app
 registerThemes(getState().isWindows ?? false);
+
+      // --- Set up activities
+      const activities: Activity[] = [
+        {
+          id: ACTIVITY_FILE_ID,
+          title: "Explorer",
+          iconName: "files",
+        },
+        {
+          id: ACTIVITY_DEBUG_ID,
+          title: "Debug",
+          iconName: "debug-alt",
+          commands: [
+            {
+              commandId: "klive.debugVm",
+            },
+            {
+              commandId: "klive.pauseVm",
+            },
+            {
+              commandId: "klive.stopVm",
+            },
+            {
+              commandId: "klive.stepIntoVm",
+            },
+            {
+              commandId: "klive.stepOverVm",
+            },
+            {
+              commandId: "klive.stepOutVm",
+            },
+          ],
+        },
+        {
+          id: ACTIVITY_FILE_ID,
+          title: "Machine logs",
+          iconName: "output",
+        },
+        {
+          id: ACTIVITY_TEST_ID,
+          title: "Testing",
+          iconName: "beaker",
+        },
+        {
+          id: ACTIVITY_SETTINGS_ID,
+          title: "Manage",
+          iconName: "settings-gear",
+          isSystemActivity: true,
+        },
+      ];
+      dispatch(setActivitiesAction(activities));
+
+      // --- Register side bar panels
+      const sideBarService = getSideBarService();
+
+      // (Explorer)
+      sideBarService.registerSideBarPanel(
+        "file-view",
+        new OpenEditorsPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "file-view",
+        new ProjectFilesPanelDescriptor()
+      );
+
+      // (Run and Debug)
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new Z80RegistersPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new UlaInformationPanelDescriptor(),
+        ["sp48", "sp128"]
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new BlinkInformationPanelDescriptor(),
+        ["cz88"]
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new Z80DisassemblyPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new MemoryPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new CallStackPanelDescriptor()
+      );
+      sideBarService.registerSideBarPanel(
+        "debug-view",
+        new BreakpointsPanelDescriptor()
+      );
+
+      // (Machine logs)
+      sideBarService.registerSideBarPanel(
+        "log-view",
+        new IoLogsPanelDescription()
+      );
+
+      // (Testing)
+      sideBarService.registerSideBarPanel(
+        "test-view",
+        new TestRunnerPanelDescription()
+      );
+
+      // --- Register tool panels
+      const toolAreaService = getToolAreaService();
+      toolAreaService.registerTool(new OutputToolPanelDescriptor(), false);
+      const outputPaneService = getOutputPaneService();
+      outputPaneService.registerOutputPane(new VmOutputPanelDescriptor());
+      outputPaneService.registerOutputPane(new CompilerOutputPanelDescriptor());
+      toolAreaService.registerTool(new InteractiveToolPanelDescriptor(), true);
+
+      // --- Register custom languages
+      const documentService = getDocumentService();
+      documentService.registerCustomLanguage(asmkZ80LanguageProvider);
+      documentService.registerCustomLanguage(mpmZ80LanguageProvider);
+
+      // --- Register document panels and editors
+      documentService.registerCodeEditor(".project", {
+        language: "json",
+      });
+      documentService.registerCodeEditor(".asm.kz80", {
+        language: "asm-kz80",
+        allowBuildRoot: true,
+      });
+      documentService.registerCodeEditor(".mpm.z80", {
+        language: "mpm-z80",
+      });
+
+      // --- Register virtual machine tools
+      virtualMachineToolsService.registerTools(
+        "sp48",
+        new ZxSpectrum48CustomDisassembler()
+      );
+      virtualMachineToolsService.registerTools(
+        "cz88",
+        new CambridgeZ88CustomDisassembler()
+      );
+
+      // --- Register modal dialogs
+      const modalDialogService = getModalDialogService();
+      modalDialogService.registerModalDescriptor(
+        NEW_PROJECT_DIALOG_ID,
+        newProjectDialog
+      );
+      modalDialogService.registerModalDescriptor(
+        NEW_FOLDER_DIALOG_ID,
+        newFolderDialog
+      );
+      modalDialogService.registerModalDescriptor(
+        NEW_FILE_DIALOG_ID,
+        newFileDialog
+      );
+      modalDialogService.registerModalDescriptor(
+        RENAME_FILE_DIALOG_ID,
+        renameFileDialog
+      );
+      modalDialogService.registerModalDescriptor(
+        RENAME_FOLDER_DIALOG_ID,
+        renameFolderDialog
+      );
+
+      // --- Register available commands
+      registerKliveCommands();
+
+      // --- Select the file-view activity
+      dispatch(changeActivityAction(0));
+
 
 ipcRenderer.on("RendererStateRequest", (_ev, msg: ForwardActionRequest) => {
   isForwarding = true;

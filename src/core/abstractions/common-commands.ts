@@ -110,11 +110,6 @@ const showToolbarCommand: IKliveCommand = {
   execute: async () => {
     dispatch(emuShowToolbarAction(true));
   },
-  queryState: async (context) => {
-    context.commandInfo.enabled = !(
-      context.appState?.emuViewOptions?.showStatusBar ?? false
-    );
-  },
 };
 
 /**
@@ -124,10 +119,6 @@ const hideToolbarCommand: IKliveCommand = {
   commandId: "klive.hideToolbar",
   execute: async () => {
     dispatch(emuShowToolbarAction(false));
-  },
-  queryState: async (context) => {
-    context.commandInfo.enabled =
-      context.appState?.emuViewOptions?.showStatusBar ?? false;
   },
 };
 

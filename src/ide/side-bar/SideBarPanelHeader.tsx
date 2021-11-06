@@ -102,7 +102,6 @@ export default function SideBarPanelHeader({
       <Fill
         style={{ paddingLeft: 4, alignItems: "center", flexDirection: "row" }}
         onClick={(e) => {
-          console.log("Header clicked");
           if (e.button === 0) {
             clicked?.();
           }

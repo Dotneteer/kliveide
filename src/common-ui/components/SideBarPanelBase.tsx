@@ -31,7 +31,6 @@ export class SideBarPanelBase<
   private _initialized = false;
   private _executionState = 0;
   private _runEvent: (args: RunEventArgs) => void;
-  private _expandedChanged: (args: boolean) => void;
 
   // --- Override this property to set with item width in the scrollable panel
   width: string | number = "fit-content";
@@ -45,7 +44,6 @@ export class SideBarPanelBase<
     super(props);
     this._executionState = getState().emulatorPanel?.executionState ?? 0;
     this._runEvent = (args) => this.runEvent(args);
-    this._expandedChanged = (arg) => this.onExpandedChanged(arg);
   }
 
   /**
@@ -58,7 +56,6 @@ export class SideBarPanelBase<
   // --- Listen to run events
   componentDidMount(): void {
     getEngineProxyService().runEvent.on(this._runEvent);
-    this.props.descriptor.expandedChanged.on(this._expandedChanged);
     this.setState({
       hasMachine: !!getState()?.emulatorPanel?.executionState as any,
       selectedIndex: -1 as any,
@@ -68,7 +65,6 @@ export class SideBarPanelBase<
   // --- Stop listening to run events
   componentWillUnmount(): void {
     getEngineProxyService().runEvent.off(this._runEvent);
-    this.props.descriptor.expandedChanged.off(this._expandedChanged);
   }
 
   renderContent(): React.ReactNode {
@@ -168,10 +164,6 @@ export class SideBarPanelBase<
       }
     }
   };
-
-  private onExpandedChanged(expanded: boolean): void {
-    console.log("Expanded changed");
-  }
 }
 
 // --- Panel placeholder style
