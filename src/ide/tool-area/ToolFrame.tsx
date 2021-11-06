@@ -9,7 +9,6 @@ import {
 } from "@state/tool-frame-reducer";
 import { AppState } from "@state/AppState";
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
-import { createSizedStyledPanel } from "@components/PanelStyles";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
@@ -77,12 +76,12 @@ export default function ToolFrame() {
   });
 
   return (
-    <Root>
-      <HeaderBar ref={headerHost}>
+    <div style={rootStyle}>
+      <div style={headerBarStyle} ref={headerHost}>
         <ToolTabBar />
         <ToolPropertyBar tool={activeTool} />
         <ToolCommandBar />
-      </HeaderBar>
+      </div>
       <div
         style={{
           position: "relative",
@@ -94,33 +93,42 @@ export default function ToolFrame() {
           zIndex: 10,
         }}
       ></div>
-      <PlaceHolder key={activeTool?.index ?? -1}>
+      <div style={placeHolderStyle} key={activeTool?.index ?? -1}>
         {activeTool?.createContentElement()}
-      </PlaceHolder>
-    </Root>
+      </div>
+    </div>
   );
 }
 
-// --- Component helper tags
-const Root = createSizedStyledPanel({
-  background: "var(--shell-canvas-background-color)",
-  others: {
-    "border-top": "1px solid var(--panel-separator-border)",
-  },
-});
+const rootStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  flexShrink: 1,
+  flexGrow: 1,
+  width: "100%",
+  height: "100%",
+  backgroundColor: "var(--shell-canvas-background-color)",
+  borderTop: "1px solid var(--panel-separator-border)",
+};
 
-// --- Component helper tags
-const HeaderBar = createSizedStyledPanel({
+const headerBarStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "row",
+  flexShrink: 1,
+  flexGrow: 1,
+  width: "100%",
   height: 35,
-  splitsVertical: false,
-  fitToClient: true,
-});
+}
 
-const PlaceHolder = createSizedStyledPanel({
-  others: {
-    overflow: "hidden",
-  },
-});
+const placeHolderStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  flexShrink: 1,
+  flexGrow: 1,
+  width: "100%",
+  height: "100%",
+  overflow: "hidden"
+}
 
 /**
  * Represents the statusbar of the emulator

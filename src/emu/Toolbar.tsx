@@ -1,6 +1,5 @@
 import * as React from "react";
 import { connect } from "react-redux";
-import styles from "styled-components";
 
 import { dispatch } from "@core/service-registry";
 import { AppState } from "@state/AppState";
@@ -16,20 +15,7 @@ import { executeKliveCommand } from "@abstractions/common-commands";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { ZxSpectrumCoreBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
 import { emuToMainMessenger } from "../common-ui/services/EmuToMainMessenger";
-
-const Root = styles.div`
-  display: flex;
-  flex-shrink: 0;
-  flex-grow: 0;
-  height: 40px;
-  width: 100%;
-  padding: 0px 4px;
-  background-color: var(--toolbar-active-background-color);
-  box-sizing: border-box;
-  align-items: center;
-  justify-content: start;
-  font-size: 0.9em;
-`;
+import { CSSProperties } from "react";
 
 interface Props {
   executionState?: number;
@@ -230,13 +216,13 @@ export class Toolbar extends React.Component<Props, State> {
         ]
       : null;
     return (
-      <Root>
+      <div style={rootStyle}>
         {machineControlButtons}
         {soundButtons}
         {beamButtons}
         {tapeButtons}
         {z88Buttons}
-      </Root>
+      </div>
     );
   }
 
@@ -258,3 +244,18 @@ export default connect((state: AppState) => {
     loadMode: state.spectrumSpecific?.loadMode,
   };
 }, null)(Toolbar);
+
+const rootStyle: CSSProperties = {
+  display: "flex",
+  flexShrink: 0,
+  flexGrow: 0,
+  height: 40,
+  width: "100%",
+  padding: "0px 4px",
+  backgroundColor: "var(--toolbar-active-background-color)",
+  boxSizing: "border-box",
+  alignItems: "center",
+  justifyContent: "start",
+  fontSize: "0.9em",
+  zIndex: 10,
+};

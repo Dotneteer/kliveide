@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { CSSProperties } from "styled-components";
 import { SideBarProps, SideBarState } from "@components/SideBarPanelBase";
 import { SideBarPanelDescriptorBase } from "@services/SideBarService";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
@@ -24,6 +23,7 @@ import { navigateToDocumentPosition } from "../../ide/document-area/document-uti
 import { getEngineProxyService } from "../../common-ui/services/engine-proxy";
 import { Z80CpuState } from "../../modules/cpu-z80/z80-cpu";
 import { VirtualizedSideBarPanelBase } from "@ide/VirtualizedSideBarPanelBase";
+import { CSSProperties } from "react";
 
 const TITLE = "Breakpoints";
 

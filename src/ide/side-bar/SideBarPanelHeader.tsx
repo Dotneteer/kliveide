@@ -1,9 +1,8 @@
 import * as React from "react";
 import { useState, CSSProperties } from "react";
-import styles from "styled-components";
 
-import { createSizedStyledPanel } from "@components/PanelStyles";
 import { Icon } from "@components/Icon";
+import { Fill } from "@components/Panels";
 
 /**
  * Component properties
@@ -63,13 +62,14 @@ export default function SideBarPanelHeader({
 
   const gripElement: React.RefObject<HTMLDivElement> = React.createRef();
   return (
-    <Root
+    <div
       ref={hostElement}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       onKeyPress={handleKeyPress}
       tabIndex={0}
       style={{
+        ...rootStyle,
         borderLeft: borderStyle,
         borderRight: borderStyle,
         borderBottom: borderStyle,
@@ -99,8 +99,10 @@ export default function SideBarPanelHeader({
           }}
         />
       )}
-      <Caption
+      <Fill
+        style={{ paddingLeft: 4, alignItems: "center", flexDirection: "row" }}
         onClick={(e) => {
+          console.log("Header clicked");
           if (e.button === 0) {
             clicked?.();
           }
@@ -117,9 +119,9 @@ export default function SideBarPanelHeader({
           height={16}
           rotate={expanded ? 90 : 0}
         />
-        <Text>{title.toUpperCase()}</Text>
-      </Caption>
-    </Root>
+        <span style={textStyle}>{title.toUpperCase()}</span>
+      </Fill>
+    </div>
   );
 
   /**
@@ -168,36 +170,26 @@ export default function SideBarPanelHeader({
   }
 }
 
-// --- Component helper tags
-const Root = createSizedStyledPanel({
+const rootStyle: CSSProperties = {
   height: 24,
-  fitToClient: false,
-  others: {
-    "border-bottom": "1px solid var(--panel-separator-border)",
-    outline: "none",
-  },
-});
+  flexShrink: 0,
+  flexGrow: 0,
+  borderBottom: "1px solid var(--panel-separator-border)",
+  outline: "none",
+};
 
-const Caption = createSizedStyledPanel({
-  splitsVertical: false,
-  others: {
-    "align-items": "center",
-    "padding-left": "4px",
-  },
-});
-
-const Text = styles.span`
-  color: var(--sidebar-panel-header-color);
-  font-size: 0.8em;
-  font-weight: 600;
-  padding-left: 4px;
-  width: 100%;
-  flex-grow: 1;
-  flex-shrink: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-`;
+const textStyle: CSSProperties = {
+  color: "var(--sidebar-panel-header-color)",
+  fontSize: "0.8em",
+  fontWeight: 600,
+  paddingLeft: 4,
+  width: "100%",
+  flexGrow: 1,
+  flexShrink: 1,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
 
 // --- Context for the drag operation
 interface DragContext {

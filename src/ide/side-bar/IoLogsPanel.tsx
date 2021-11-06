@@ -1,8 +1,8 @@
 import * as React from "react";
-import { CSSProperties } from "styled-components";
 
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { SideBarPanelDescriptorBase } from "@services/SideBarService";
+import { CSSProperties } from "react";
 
 const TITLE = "I/O Operations";
 

@@ -1,10 +1,11 @@
 import * as React from "react";
+import { DOMAttributes } from "react";
 import { CSSProperties, PropsWithChildren } from "react";
 
 /**
  * Generic panel properties
  */
-export type PanelProps<P = {}> = P & {
+export type PanelProps<P = {}> = P & DOMAttributes<HTMLDivElement> & {
   useColumns?: boolean;
   flexible?: boolean;
   style?: CSSProperties;
@@ -26,10 +27,11 @@ export type FillProps = PanelProps<{
 export const Fill: React.FC<FillProps> = ({
   children,
   useColumns,
-  flexible,
+  flexible = true,
   style,
   hostRef,
   reverse,
+  ...others
 }: PropsWithChildren<FillProps>) => {
   return (
     <div
@@ -49,6 +51,7 @@ export const Fill: React.FC<FillProps> = ({
         flexGrow: flexible ? 1 : 0,
         ...style,
       }}
+      {...others}      
     >
       {children}
     </div>
@@ -72,7 +75,9 @@ export const Column: React.FC<ColumnProps> = ({
   flexible,
   style,
   hostRef,
+  ...others
 }: PropsWithChildren<ColumnProps>) => {
+  if (flexible == undefined && width == undefined) flexible = true;
   return (
     <div
       ref={hostRef}
@@ -85,6 +90,7 @@ export const Column: React.FC<ColumnProps> = ({
         flexGrow: flexible ? 1 : 0,
         ...style,
       }}
+      {...others}
     >
       {children}
     </div>
@@ -107,7 +113,9 @@ export const Row: React.FC<RowProps> = ({
   flexible,
   style,
   hostRef,
+  ...others
 }: PropsWithChildren<RowProps>) => {
+  if (flexible == undefined && height == undefined) flexible = true;
   return (
     <div
       ref={hostRef}
@@ -120,6 +128,7 @@ export const Row: React.FC<RowProps> = ({
         flexGrow: flexible ? 1 : 0,
         ...style,
       }}
+      {...others}
     >
       {children}
     </div>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ReactReduxContext } from 'react-redux'
+import { ReactReduxContext } from "react-redux";
 import {
   ButtonPropsModel,
   DialogComponent,
@@ -7,7 +7,6 @@ import {
 
 import { getModalDialogService } from "@core/service-registry";
 
-import styles from "styled-components";
 import { useContext, useState } from "react";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import { useEffect } from "react";
@@ -18,7 +17,7 @@ type Props = {
 
 export default function ModalDialog({ targetId }: Props) {
   const { store } = useContext(ReactReduxContext);
-    const [show, setShow] = useState(false);
+  const [show, setShow] = useState(false);
   const [modalDialog, setModalDialog] = useState<IModalDialogDescriptor | null>(
     null
   );
@@ -35,7 +34,7 @@ export default function ModalDialog({ targetId }: Props) {
   const handleModalChanged = (modal: IModalDialogDescriptor) => {
     setModalDialog(modal);
     if (!modal) {
-        return;
+      return;
     }
     setRefreshCount(refreshCount + 1);
 
@@ -115,14 +114,10 @@ export default function ModalDialog({ targetId }: Props) {
         buttons={buttons}
         animationSettings={{ effect: "None", delay: 0, duration: 0 }}
       >
-        <Placeholder>{modalDialog?.createContentElement(modalDialogService.args)}</Placeholder>
+        <div style={{ padding: "8px 15px", color: "white", fontSize: "1em" }}>
+          {modalDialog?.createContentElement(modalDialogService.args)}
+        </div>
       </DialogComponent>
     )
   );
 }
-
-const Placeholder = styles.div`
-  padding: 8px 15px;
-  color: white;
-  font-size: 1em;
-`;

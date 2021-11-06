@@ -8,7 +8,6 @@ import {
   getThemeService,
 } from "@core/service-registry";
 
-import { CSSProperties } from "styled-components";
 import MonacoEditor, { monaco } from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import ReactResizeDetector from "react-resize-detector";
@@ -31,6 +30,7 @@ import {
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
 import { getEngineProxyService } from "../../common-ui/services/engine-proxy";
+import { CSSProperties } from "react";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;

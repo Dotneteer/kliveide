@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
-import styles from "styled-components";
 
 import { dispatch } from "@core/service-registry";
 import { AppState } from "@state/AppState";
@@ -30,7 +29,7 @@ export default function MainPanel() {
   );
 
   return (
-    <Fill flexible>
+    <Fill>
       <SplitPanel
         splitterSize={4}
         horizontal={false}
@@ -52,13 +51,3 @@ export default function MainPanel() {
     </Fill>
   );
 }
-
-// --- Helper component tags
-const Root = styles.div`
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  flex-shrink: 1;
-  width: 100%;
-  background-color: var(--emulator-background-color);
-`;

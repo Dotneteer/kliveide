@@ -107,7 +107,6 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
       <Fill
         hostRef={containerRef}
         useColumns={!!horizontal}
-        flexible={true}
         reverse={reverse}
         style={style}
       >
@@ -118,7 +117,7 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
                 <Column hostRef={primaryPanelRef} width={primaryPanelSize}>
                   {first}
                 </Column>
-                <Column flexible>{second}</Column>
+                <Column>{second}</Column>
               </>
             )}
             {showPanel1 && !showPanel2 && (
@@ -126,7 +125,7 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
                 {first}
               </Column>
             )}
-            {!showPanel1 && showPanel2 && <Column flexible>{second}</Column>}
+            {!showPanel1 && showPanel2 && <Column>{second}</Column>}
           </>
         )}
         {!horizontal && (
@@ -136,15 +135,13 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
                 <Row hostRef={primaryPanelRef} height={primaryPanelSize}>
                   {first}
                 </Row>
-                <Row flexible>{second}</Row>
+                <Row>{second}</Row>
               </>
             )}
             {showPanel1 && !showPanel2 && (
-              <Row hostRef={primaryPanelRef} flexible>
-                {first}
-              </Row>
+              <Row hostRef={primaryPanelRef}>{first}</Row>
             )}
-            {!showPanel1 && showPanel2 && <Row flexible>{second}</Row>}
+            {!showPanel1 && showPanel2 && <Row>{second}</Row>}
           </>
         )}
       </Fill>
