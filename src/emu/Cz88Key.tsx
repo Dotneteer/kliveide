@@ -29,14 +29,27 @@ interface Props {
 /**
  * Represents a key of the Cambridge Z88 keyboard
  */
-export default function Cz88Key(props: Props) {
+export default function Cz88Key({
+  zoom,
+  code,
+  layoutInfo,
+  iconCount,
+  top,
+  bottom,
+  xwidth,
+  xheight,
+  vshift,
+  fontSize,
+  isEnter,
+  keyAction,
+}: Props) {
   // --- Component states
   const [mouseOverKey, setMouseOverKey] = useState(false);
   const [mouseOverSymbol, setMouseOverSymbol] = useState(false);
   const [mouseOverSecondSymbol, setMouseOverSecondSymbol] = useState(false);
 
   // --- Number of icons on the key
-  let iconCount = 0;
+  let currentIconCount = 0;
 
   // --- Invariant display properties
   const themeService = getThemeService();
@@ -53,19 +66,19 @@ export default function Cz88Key(props: Props) {
   let keyword = "";
   let symbol = "";
   let secondSymbol;
-  if (props.layoutInfo) {
-    keyword = props.layoutInfo.keyword;
-    main = props.layoutInfo.key;
-    symbol = props.layoutInfo.symbol;
-    secondSymbol = props.layoutInfo.secondSymbol;
+  if (layoutInfo) {
+    keyword = layoutInfo.keyword;
+    main = layoutInfo.key;
+    symbol = layoutInfo.symbol;
+    secondSymbol = layoutInfo.secondSymbol;
   }
-  iconCount = 0;
-  if (main) iconCount++;
-  if (symbol) iconCount++;
-  if (secondSymbol) iconCount++;
+  currentIconCount = 0;
+  if (main) currentIconCount++;
+  if (symbol) currentIconCount++;
+  if (secondSymbol) currentIconCount++;
 
-  const currentWidth = props.zoom * (props.xwidth || NORMAL_WIDTH);
-  const currentHeight = props.zoom * (props.xheight || NORMAL_HEIGHT);
+  const currentWidth = zoom * (xwidth || NORMAL_WIDTH);
+  const currentHeight = zoom * (xheight || NORMAL_HEIGHT);
   const mainFillColor = mouseOverKey ? highlightKeyColor : mainKeyColor;
   const mainStrokeColor = mouseOverKey ? highlightKeyColor : "transparent";
   const symbolFillColor = mouseOverSymbol ? highlightKeyColor : symbolKeyColor;
@@ -83,8 +96,8 @@ export default function Cz88Key(props: Props) {
     <svg
       width={currentWidth}
       height={currentHeight}
-      viewBox={`0 0 ${(props.xwidth || NORMAL_WIDTH) + 20} ${
-        (props.xheight || NORMAL_HEIGHT) + 20
+      viewBox={`0 0 ${(xwidth || NORMAL_WIDTH) + 20} ${
+        (xheight || NORMAL_HEIGHT) + 20
       }`}
       style={{ margin: 0 }}
       preserveAspectRatio="none"
@@ -95,8 +108,8 @@ export default function Cz88Key(props: Props) {
         y="2"
         rx="12"
         ry="12"
-        width={props.xwidth || NORMAL_WIDTH}
-        height={props.xheight || NORMAL_HEIGHT}
+        width={xwidth || NORMAL_WIDTH}
+        height={xheight || NORMAL_HEIGHT}
         fill={keyBackground}
         stroke={keyStrokeColor}
         strokeWidth="4"
@@ -189,9 +202,9 @@ export default function Cz88Key(props: Props) {
       )}
       {keyword && (
         <text
-          x={(props.xwidth || 100) / 2}
-          y={62 + (props.vshift || 0)}
-          fontSize={props.fontSize ?? 28}
+          x={(xwidth || 100) / 2}
+          y={62 + (vshift || 0)}
+          fontSize={fontSize ?? 28}
           textAnchor="middle"
           fill={mainFillColor}
           stroke={mainStrokeColor}
@@ -204,9 +217,9 @@ export default function Cz88Key(props: Props) {
           {keyword}
         </text>
       )}
-      {props.top && (
+      {top && (
         <text
-          x={(props.xwidth || 100) / 2}
+          x={(xwidth || 100) / 2}
           y={48}
           fontSize="28"
           textAnchor="middle"
@@ -218,12 +231,12 @@ export default function Cz88Key(props: Props) {
           onMouseDown={(e) => raiseKeyAction(e, "main", true)}
           onMouseUp={(e) => raiseKeyAction(e, "main", false)}
         >
-          {props.top}
+          {top}
         </text>
       )}
-      {props.bottom && (
+      {bottom && (
         <text
-          x={(props.xwidth || 100) / 2}
+          x={(xwidth || 100) / 2}
           y={76}
           fontSize="28"
           textAnchor="middle"
@@ -235,12 +248,12 @@ export default function Cz88Key(props: Props) {
           onMouseDown={(e) => raiseKeyAction(e, "main", true)}
           onMouseUp={(e) => raiseKeyAction(e, "main", false)}
         >
-          {props.bottom}
+          {bottom}
         </text>
       )}
-      {props.isEnter && (
+      {isEnter && (
         <text
-          x={(props.xwidth || 100) / 2 - 6}
+          x={(xwidth || 100) / 2 - 6}
           y={54}
           fontSize="28"
           textAnchor="left"
@@ -255,9 +268,9 @@ export default function Cz88Key(props: Props) {
           E
         </text>
       )}
-      {props.isEnter && (
+      {isEnter && (
         <text
-          x={(props.xwidth || 100) / 2 - 6}
+          x={(xwidth || 100) / 2 - 6}
           y={84}
           fontSize="28"
           textAnchor="left"
@@ -272,9 +285,9 @@ export default function Cz88Key(props: Props) {
           N
         </text>
       )}
-      {props.isEnter && (
+      {isEnter && (
         <text
-          x={(props.xwidth || 100) / 2 - 6}
+          x={(xwidth || 100) / 2 - 6}
           y={114}
           fontSize="28"
           textAnchor="left"
@@ -289,9 +302,9 @@ export default function Cz88Key(props: Props) {
           T
         </text>
       )}
-      {props.isEnter && (
+      {isEnter && (
         <text
-          x={(props.xwidth || 100) / 2 - 6}
+          x={(xwidth || 100) / 2 - 6}
           y={144}
           fontSize="28"
           textAnchor="left"
@@ -306,9 +319,9 @@ export default function Cz88Key(props: Props) {
           E
         </text>
       )}
-      {props.isEnter && (
+      {isEnter && (
         <text
-          x={(props.xwidth || 100) / 2 - 6}
+          x={(xwidth || 100) / 2 - 6}
           y={174}
           fontSize="28"
           textAnchor="left"
@@ -331,14 +344,14 @@ export default function Cz88Key(props: Props) {
     keyCategory: string,
     down: boolean
   ) {
-    props.keyAction?.(
+    keyAction?.(
       {
-        code: props.code,
+        code: code,
         keyCategory,
         down,
         isLeft: e.button === 0,
-        iconCount: iconCount,
-        special: props.layoutInfo ? props.layoutInfo.special : undefined,
+        iconCount: currentIconCount,
+        special: layoutInfo ? layoutInfo.special : undefined,
       },
       down
     );

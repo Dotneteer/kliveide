@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { ICpu } from "@modules-core/abstract-cpu";
 import { VirtualMachineCoreBase } from "@modules-core/abstract-vm";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
+import { useObserver } from "@components/useObserver";
 
 /**
  * Represents the display panel of the emulator
@@ -56,10 +57,17 @@ export default function EmulatorPanel() {
   // --- Prepare the virtual machine engine
   let engine: VirtualMachineCoreBase<ICpu> | null = null;
 
+  // --- Respond to resizing the main container
+  const _calculateDimensions = () => calculateDimensions();
+  useObserver({
+    callback: _calculateDimensions,
+    element: hostElement,
+  });
+
   useEffect(() => {
     // --- Take care that keys reach the engine
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", (e) => handleKey(e, true));
+    window.addEventListener("keyup", (e) => handleKey(e, false));
 
     // --- Respond to exngine changes
     const vmEngineService = getVmEngineService();
@@ -67,7 +75,7 @@ export default function EmulatorPanel() {
 
     // --- Set up the virtual machine's view according to its
     // --- execution state and current hw config
-    calculateDimensions();
+    _calculateDimensions();
     if (vmEngineService.hasEngine) {
       engine = vmEngineService.getEngine();
       vmEngineService.screenRefreshed.on(displayScreenData);
@@ -104,8 +112,8 @@ export default function EmulatorPanel() {
         vmEngineService.screenRefreshed.off(displayScreenData);
         vmEngineService.vmEngineChanged.off(vmChange);
       }
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", (e) => handleKey(e, true));
+      window.removeEventListener("keyup", (e) => handleKey(e, false));
     };
   });
 
@@ -145,11 +153,11 @@ export default function EmulatorPanel() {
           height={shadowCanvasHeight}
         />
       </div>
-      <ReactResizeDetector
+      {/* <ReactResizeDetector
         handleWidth
         handleHeight
         onResize={calculateDimensions}
-      />
+      /> */}
     </div>
   );
 
@@ -165,14 +173,6 @@ export default function EmulatorPanel() {
     calculateDimensions();
     configureScreen();
     hideDisplayData();
-  }
-
-  function handleKeyDown(e: KeyboardEvent): void {
-    handleKey(e, true);
-  }
-
-  function handleKeyUp(e: KeyboardEvent): void {
-    handleKey(e, false);
   }
 
   // --- Calculate the dimensions so that the virtual machine display fits the screen
