@@ -57,7 +57,6 @@ export default function EmulatorPanel() {
 
   // --- Respond to resizing the main container
   const _calculateDimensions = () => {
-    console.log("Resizing");
     calculateDimensions();
   };
   useObserver({
@@ -181,7 +180,6 @@ export default function EmulatorPanel() {
     ) {
       return;
     }
-    console.log("Resizing2");
     hostRectangle.current = hostElement.current.getBoundingClientRect();
     screenRectangle.current = screenElement.current.getBoundingClientRect();
     const clientWidth = hostElement.current.offsetWidth;
