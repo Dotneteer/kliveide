@@ -10,7 +10,6 @@ import {
 
 import MonacoEditor, { monaco } from "react-monaco-editor";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
-import ReactResizeDetector from "react-resize-detector";
 import { DocumentPanelDescriptorBase } from "../document-area/DocumentFactory";
 import { FileOperationResponse } from "@core/messaging/message-types";
 import { IDocumentPanel, NavigationInfo } from "@abstractions/document-service";
@@ -31,13 +30,13 @@ import {
 } from "@core/state/editor-status-reducer";
 import { getEngineProxyService } from "../../common-ui/services/engine-proxy";
 import {
-  createRef,
   CSSProperties,
   PropsWithChildren,
   useEffect,
   useRef,
   useState,
 } from "react";
+import { useResizeObserver } from "@components/useResizeObserver";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -176,6 +175,12 @@ function EditorDocument({
     theme = `${language}-${tone}`;
   }
 
+  // --- Respond to resizing the main container
+  useResizeObserver({
+    callback: () => editor.current.layout(),
+    element: divHost,
+  });
+
   return (
     <>
       <div ref={divHost} style={placeholderStyle}>
@@ -191,13 +196,6 @@ function EditorDocument({
           />
         )}
       </div>
-      <ReactResizeDetector
-        handleWidth
-        handleHeight
-        onResize={() => {
-          editor.current.layout();
-        }}
-      />
     </>
   );
 

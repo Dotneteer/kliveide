@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useRef, useState } from "react";
 
 import {
   getContextMenuService,
@@ -30,7 +30,7 @@ export default function ToolTab({
   clicked,
 }: Props) {
   const [pointed, setPointed] = useState(false);
-  const hostElement = React.createRef<HTMLDivElement>();
+  const hostElement = useRef<HTMLDivElement>();
 
   const style: CSSProperties = {
     display: "flex",

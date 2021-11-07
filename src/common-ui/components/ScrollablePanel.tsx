@@ -41,7 +41,7 @@ export default function ScrollablePanel({
 
   const [pointed, setPointed] = useState(false);
 
-  const divHost = React.createRef<HTMLDivElement>();
+  const divHost = useRef<HTMLDivElement>();
   let isSizing = false;
   let mouseLeft = false;
 

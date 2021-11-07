@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ICpu } from "@modules-core/abstract-cpu";
 import { VirtualMachineCoreBase } from "@modules-core/abstract-vm";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
-import { useObserver } from "@components/useObserver";
+import { useResizeObserver } from "@components/useResizeObserver";
 
 /**
  * Represents the display panel of the emulator
@@ -56,11 +56,8 @@ export default function EmulatorPanel() {
   let engine: VirtualMachineCoreBase<ICpu> | null = null;
 
   // --- Respond to resizing the main container
-  const _calculateDimensions = () => {
-    calculateDimensions();
-  };
-  useObserver({
-    callback: _calculateDimensions,
+  useResizeObserver({
+    callback: () => calculateDimensions(),
     element: hostElement,
   });
 

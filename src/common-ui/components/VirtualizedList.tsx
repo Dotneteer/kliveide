@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ScrollbarApi, FloatingScrollbar } from "./FloatingScrollbar";
 import { handleScrollKeys } from "./component-utils";
 import { useLayoutEffect } from "react";
-import { useObserver } from "./useObserver";
+import { useResizeObserver } from "./useResizeObserver";
 
 // --- Signs the end of the list
 const END_LIST_POSITION = 10_000_000;
@@ -99,7 +99,7 @@ export default function VirtualizedList({
   const [requestFocus, setRequestFocus] = useState(false);
 
   // --- Component host element
-  const divHost = React.createRef<HTMLDivElement>();
+  const divHost = useRef<HTMLDivElement>();
 
   // --- Handle integer height
   if (integralPosition) {
@@ -227,7 +227,7 @@ export default function VirtualizedList({
     forceRefresh();
   };
 
-  useObserver({
+  useResizeObserver({
     callback: _onResize,
     element: divHost,
   });

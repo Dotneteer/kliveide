@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { getThemeService } from "@core/service-registry";
 import { executeCommand, getCommand } from "@abstractions/command-registry";
@@ -32,7 +32,7 @@ export default function CommandIconButton({
   setContext,
   doNotPropagate = false,
 }: Props) {
-  const hostElement = React.createRef<HTMLDivElement>();
+  const hostElement = useRef<HTMLDivElement>();
   const [pointed, setPointed] = useState(false);
   const [mouseDown, setMouseDown] = useState(false);
 

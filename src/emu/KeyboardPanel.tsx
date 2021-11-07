@@ -6,7 +6,7 @@ import { AppState } from "@state/AppState";
 import { animationTick } from "@components/component-utils";
 import Sp48Keyboard from "./Sp48Keyboard";
 import Cz88Keyboard from "./Cz88Keyboard";
-import { useObserver } from "@components/useObserver";
+import { useResizeObserver } from "@components/useResizeObserver";
 
 interface Props {
   type: string;
@@ -36,7 +36,7 @@ export default function KeyboardPanel(props: Props) {
   // --- Handle resizing
   const _onResize = () => handleResize();
 
-  useObserver({
+  useResizeObserver({
     callback: _onResize,
     element: hostElement,
   });

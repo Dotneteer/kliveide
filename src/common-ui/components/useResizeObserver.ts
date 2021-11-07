@@ -12,7 +12,7 @@ type ResizeObserverHookParams = {
  * Hook that handles the size change of a particular DOM element/component
  * @param param0
  */
-export const useObserver = ({
+export const useResizeObserver = ({
   callback,
   element,
 }: ResizeObserverHookParams) => {
