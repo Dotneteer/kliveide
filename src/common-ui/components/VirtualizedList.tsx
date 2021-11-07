@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties, useEffect } from "react";
 import { useRef } from "react";
 import { useState } from "react";
-import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
+import { ScrollbarApi, FloatingScrollbar } from "./FloatingScrollbar";
 import { handleScrollKeys } from "./component-utils";
 import ReactResizeDetector from "react-resize-detector";
 import { useLayoutEffect } from "react";
@@ -207,6 +207,13 @@ export default function VirtualizedList({
           setRequestFocus(false);
         }
         break;
+      case ResizePhase.Rendered:
+        if (requestedPos >= 0) {
+          divHost.current.scrollTop = requestedPos;
+          scrolled?.(divHost.current.scrollTop);
+          setRequestedPos(-1);
+        }
+        break;
     }
   });
 
@@ -229,9 +236,11 @@ export default function VirtualizedList({
           scrolled?.(divHost.current.scrollTop);
         }}
         onWheel={(e) => {
-          divHost.current.scrollTop = normalizeScrollPosition(
+          const newPos = normalizeScrollPosition(
             divHost.current.scrollTop + e.deltaY / 4
           );
+          console.log(`newPos: ${newPos}`);
+          setRequestedPos(newPos);
         }}
         onKeyDown={(e) => {
           if (handleKeys) {
@@ -274,9 +283,7 @@ export default function VirtualizedList({
         forceShow={pointed}
         registerApi={(api) => (verticalApi.current = api)}
         moved={(delta) => {
-          if (divHost?.current) {
-            divHost.current.scrollTop = normalizeScrollPosition(delta);
-          }
+          setRequestedPos(normalizeScrollPosition(delta));
         }}
         sizing={(nowSizing) => {
           isSizing = nowSizing;
@@ -292,9 +299,7 @@ export default function VirtualizedList({
         forceShow={pointed}
         registerApi={(api) => (horizontalApi.current = api)}
         moved={(delta) => {
-          if (divHost?.current) {
-            divHost.current.scrollLeft = delta;
-          }
+          setRequestedPos(normalizeScrollPosition(delta));
         }}
         sizing={(nowSizing) => {
           isSizing = nowSizing;
