@@ -6,7 +6,6 @@ import {
   useState,
   CSSProperties,
 } from "react";
-import ReactResizeDetector from "react-resize-detector";
 
 import { getDocumentService, getState } from "@core/service-registry";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
@@ -77,11 +76,6 @@ export default function IdeDocumentFrame() {
           </div>
         </>
       )}
-      {/* <ReactResizeDetector
-        handleWidth
-        handleHeight
-        onResize={() => onResize()}
-      /> */}
     </div>
   );
 

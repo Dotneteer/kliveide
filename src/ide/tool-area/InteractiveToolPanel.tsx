@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CSSProperties } from "react";
+import { createRef, CSSProperties, useRef } from "react";
 
 import {
   getCommandService,
@@ -31,7 +31,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   ToolPanelProps<{}>,
   State
 > {
-  private _inputRef = React.createRef<HTMLInputElement>();
+  private _inputRef = createRef<HTMLInputElement>();
   private _listApi: VirtualizedListApi;
   private _onContentsChanged: () => void;
   private _onCommandSubmitted: (command: string) => void;

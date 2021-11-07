@@ -101,6 +101,7 @@ export default function IdeApp() {
               panel2MinSize={MIN_DESK_HEIGHT}
               showPanel2={showDocuments}
               panel2={<IdeDocumentFrame />}
+              initialSize="33%"
             />
           }
         />

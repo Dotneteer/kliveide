@@ -18,7 +18,7 @@ import ToolTabBar from "./ToolTabBar";
  * Represents the statusbar of the emulator
  */
 export default function ToolFrame() {
-  const headerHost = React.createRef<HTMLDivElement>();
+  const headerHost = useRef<HTMLDivElement>();
   const mounted = useRef(false);
   const toolAreaService = getToolAreaService();
 

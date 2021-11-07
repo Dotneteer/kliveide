@@ -1,7 +1,6 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
-import ReactResizeDetector from "react-resize-detector";
 
 import { AppState } from "@state/AppState";
 import BeamOverlay from "./BeamOverlay";
@@ -10,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ICpu } from "@modules-core/abstract-cpu";
 import { VirtualMachineCoreBase } from "@modules-core/abstract-vm";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
-import { useObserver } from "@components/useObserver";
+import { useResizeObserver } from "@components/useResizeObserver";
 
 /**
  * Represents the display panel of the emulator
@@ -43,10 +42,9 @@ export default function EmulatorPanel() {
   let calcCount = 0;
 
   // --- Element references
-  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
-  const screenElement: React.RefObject<HTMLCanvasElement> = React.createRef();
-  const shadowScreenElement: React.RefObject<HTMLCanvasElement> =
-    React.createRef();
+  const hostElement = React.useRef<HTMLDivElement>();
+  const screenElement = React.useRef<HTMLCanvasElement>();
+  const shadowScreenElement = React.useRef<HTMLCanvasElement>();
 
   let imageBuffer: ArrayBuffer;
   let imageBuffer8: Uint8Array;
@@ -58,9 +56,8 @@ export default function EmulatorPanel() {
   let engine: VirtualMachineCoreBase<ICpu> | null = null;
 
   // --- Respond to resizing the main container
-  const _calculateDimensions = () => calculateDimensions();
-  useObserver({
-    callback: _calculateDimensions,
+  useResizeObserver({
+    callback: () => calculateDimensions(),
     element: hostElement,
   });
 
@@ -75,7 +72,7 @@ export default function EmulatorPanel() {
 
     // --- Set up the virtual machine's view according to its
     // --- execution state and current hw config
-    _calculateDimensions();
+    calculateDimensions();
     if (vmEngineService.hasEngine) {
       engine = vmEngineService.getEngine();
       vmEngineService.screenRefreshed.on(displayScreenData);
@@ -153,11 +150,6 @@ export default function EmulatorPanel() {
           height={shadowCanvasHeight}
         />
       </div>
-      {/* <ReactResizeDetector
-        handleWidth
-        handleHeight
-        onResize={calculateDimensions}
-      /> */}
     </div>
   );
 

@@ -1,12 +1,12 @@
 import * as React from "react";
-import { CSSProperties, useEffect, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import ReactResizeDetector from "react-resize-detector";
 
 import { AppState } from "@state/AppState";
 import { animationTick } from "@components/component-utils";
 import Sp48Keyboard from "./Sp48Keyboard";
 import Cz88Keyboard from "./Cz88Keyboard";
+import { useResizeObserver } from "@components/useResizeObserver";
 
 interface Props {
   type: string;
@@ -24,13 +24,21 @@ export default function KeyboardPanel(props: Props) {
   const visible = useSelector((s: AppState) => s.emuViewOptions.showKeyboard);
   const layout = useSelector((s: AppState) => s.emulatorPanel.keyboardLayout);
 
-  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
+  const hostElement = useRef<HTMLDivElement>();
 
   useEffect(() => {
     if (hostElement?.current) {
       setWidth(hostElement.current.offsetWidth);
       setHeight(hostElement.current.offsetHeight);
     }
+  });
+
+  // --- Handle resizing
+  const _onResize = () => handleResize();
+
+  useResizeObserver({
+    callback: _onResize,
+    element: hostElement,
   });
 
   let keyboard = null;
@@ -45,7 +53,6 @@ export default function KeyboardPanel(props: Props) {
     return (
       <div style={rootStyle} ref={hostElement}>
         {keyboard}
-        <ReactResizeDetector handleWidth handleHeight onResize={handleResize} />
       </div>
     );
   }

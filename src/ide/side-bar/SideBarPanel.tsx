@@ -1,6 +1,5 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
-import ReactResizeDetector from "react-resize-detector";
+import { useEffect, useRef, useState } from "react";
 
 import {
   getContextMenuService,
@@ -12,6 +11,7 @@ import { AppState } from "@state/AppState";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { MenuItem } from "@abstractions/command-definitions";
 import SideBarPanelHeader from "./SideBarPanelHeader";
+import { useResizeObserver } from "@components/useResizeObserver";
 
 /**
  * Component properties
@@ -41,7 +41,7 @@ export default function SideBarPanel({
   startResize,
   resized,
 }: Props) {
-  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
+  const hostElement = useRef<HTMLDivElement>();
   const [expanded, setExpanded] = useState(descriptor.expanded);
   const [refreshCount, setRefreshCount] = useState(0);
 
@@ -92,6 +92,13 @@ export default function SideBarPanel({
         descriptor.height = hostElement.current.offsetHeight;
       }
     })();
+  });
+
+  useResizeObserver({
+    callback: (entries) => {
+      descriptor.height = entries[0].contentRect.height;
+      setRefreshCount(refreshCount + 1);    },
+    element: hostElement,
   });
 
   return (
@@ -146,14 +153,6 @@ export default function SideBarPanel({
         />
         {descriptor.createContentElement()}
       </div>
-      <ReactResizeDetector
-        handleWidth
-        handleHeight
-        onResize={(_width, height) => {
-          descriptor.height = height;
-          setRefreshCount(refreshCount + 1);
-        }}
-      />
     </div>
   );
 }

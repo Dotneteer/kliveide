@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { Column, Fill, Row } from "./Panels";
-import { useObserver } from "./useObserver";
+import { useResizeObserver } from "./useResizeObserver";
 
 /**
  * Properties of a SplitPanel
@@ -92,7 +92,7 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   const _onResized = () => onResized();
 
   // --- Respond to resizing the main container
-  useObserver({
+  useResizeObserver({
     callback: _onResized,
     element: containerRef,
   });

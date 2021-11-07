@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useState, CSSProperties } from "react";
+import { useState, CSSProperties, useRef } from "react";
 
 import { Icon } from "@components/Icon";
 import { Fill } from "@components/Panels";
@@ -36,7 +36,7 @@ export default function SideBarPanelHeader({
   const [pointed, setPointed] = useState(false);
   const [resizing, setResizing] = useState(false);
 
-  const hostElement: React.RefObject<HTMLDivElement> = React.createRef();
+  const hostElement = useRef<HTMLDivElement>();
   const gripStyle: CSSProperties = {
     position: "relative",
     height: "4px",
@@ -60,7 +60,8 @@ export default function SideBarPanelHeader({
     resized: (delta) => resized(delta),
   };
 
-  const gripElement: React.RefObject<HTMLDivElement> = React.createRef();
+  const gripElement = useRef<HTMLDivElement>();
+  
   return (
     <div
       ref={hostElement}
