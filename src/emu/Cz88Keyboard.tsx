@@ -34,10 +34,14 @@ interface Props {
 /**
  * Represents the keyboard of Czmbridge Z88
  */
-export default function Cz88Keyboard(props: Props) {
+export default function Cz88Keyboard({
+  width,
+  height,
+  layout
+}: Props) {
   // --- Prepare keyboard layout information
   let l: Cz88KeyboardLayout;
-  switch (props.layout) {
+  switch (layout) {
     case "es":
       l = esZ88KeyboardLayout;
       break;
@@ -57,7 +61,7 @@ export default function Cz88Keyboard(props: Props) {
       l = defaultZ88KeyboardLayout;
       break;
   }
-  const zoom = calculateZoom(props.width, props.height);
+  const zoom = calculateZoom(width, height);
 
   return (
     <Column width="auto" style={rootStyle}>

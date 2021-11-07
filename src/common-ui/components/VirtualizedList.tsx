@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties, useEffect } from "react";
 import { useRef } from "react";
 import { useState } from "react";
-import FloatingScrollbar, { ScrollbarApi } from "./FloatingScrollbar";
+import { ScrollbarApi, FloatingScrollbar } from "./FloatingScrollbar";
 import { handleScrollKeys } from "./component-utils";
 import ReactResizeDetector from "react-resize-detector";
 import { useLayoutEffect } from "react";
@@ -87,6 +87,7 @@ export default function VirtualizedList({
   // --- Store last viewport information
   const lastStartIndex = useRef(-1);
   const lastEndIndex = useRef(-1);
+  const scrollPosition = useRef(0);
 
   // --- Component state
   const [items, setItems] = useState<React.ReactNode[]>();
@@ -116,7 +117,6 @@ export default function VirtualizedList({
       return;
     }
 
-    const scrollPos = divHost.current.scrollTop;
     const { startIndex, endIndex } = getViewPort();
     lastStartIndex.current = startIndex;
     lastEndIndex.current = endIndex;
@@ -137,9 +137,6 @@ export default function VirtualizedList({
       tmpItems.push(item);
     }
     setItems(tmpItems);
-    if (divHost?.current) {
-      divHost.current.scrollTop = scrollPos;
-    }
   };
 
   // --- Initialize/update the virtualized list
@@ -178,24 +175,30 @@ export default function VirtualizedList({
         break;
       case ResizePhase.Resized:
         if (requestedPos >= 0) {
-          divHost.current.scrollTop = requestedPos;
-          scrolled?.(divHost.current.scrollTop);
+          divHost.current.scrollTop = normalizeScrollPosition(requestedPos);
+          scrollPosition.current = divHost.current.scrollTop;
+          scrolled?.(scrollPosition.current);
           setRequestedPos(-1);
         } else if (requestedIndex >= 0) {
-          const scrollPos = divHost.current.scrollTop;
-          const startIndex = Math.floor(scrollPos / itemHeight);
+          scrollPosition.current = divHost.current.scrollTop;
+          const startIndex = Math.floor(scrollPosition.current / itemHeight);
           const endIndex = Math.min(
             numItems - 1,
-            Math.floor((scrollPos + resizedHeight) / itemHeight)
+            Math.floor((scrollPosition.current + resizedHeight) / itemHeight)
           );
           if (requestedIndex <= startIndex) {
-            divHost.current.scrollTop = requestedIndex * itemHeight;
-            scrolled?.(divHost.current.scrollTop);
+            divHost.current.scrollTop = normalizeScrollPosition(
+              requestedIndex * itemHeight
+            );
+            scrollPosition.current = divHost.current.scrollTop;
+            scrolled?.(scrollPosition.current);
             setRequestedIndex(-1);
           } else if (requestedIndex >= endIndex) {
-            divHost.current.scrollTop =
-              (requestedIndex + 1) * itemHeight - resizedHeight + 1;
-            scrolled?.(divHost.current.scrollTop);
+            divHost.current.scrollTop = normalizeScrollPosition(
+              (requestedIndex + 2) * itemHeight - resizedHeight + 1
+            );
+            scrollPosition.current = divHost.current.scrollTop;
+            scrolled?.(scrollPosition.current);
             setRequestedIndex(-1);
           }
         }
@@ -205,6 +208,14 @@ export default function VirtualizedList({
         if (requestFocus) {
           divHost.current.focus();
           setRequestFocus(false);
+        }
+        break;
+      case ResizePhase.Rendered:
+        if (requestedPos >= 0) {
+          divHost.current.scrollTop = normalizeScrollPosition(requestedPos);
+          scrollPosition.current = divHost.current.scrollTop;
+          scrolled?.(scrollPosition.current);
+          setRequestedPos(-1);
         }
         break;
     }
@@ -226,13 +237,14 @@ export default function VirtualizedList({
         onScroll={(e) => {
           updateDimensions();
           renderItems();
+          scrollPosition.current = divHost.current.scrollTop;
           scrolled?.(divHost.current.scrollTop);
         }}
-        onWheel={(e) => {
-          divHost.current.scrollTop = normalizeScrollPosition(
-            divHost.current.scrollTop + e.deltaY / 4
-          );
-        }}
+        onWheel={(e) =>
+          setRequestedPos(
+            Math.max(0, scrollPosition.current + (e.deltaY / 4) * itemHeight)
+          )
+        }
         onKeyDown={(e) => {
           if (handleKeys) {
             handleKeys(e);
@@ -274,9 +286,7 @@ export default function VirtualizedList({
         forceShow={pointed}
         registerApi={(api) => (verticalApi.current = api)}
         moved={(delta) => {
-          if (divHost?.current) {
-            divHost.current.scrollTop = normalizeScrollPosition(delta);
-          }
+          setRequestedPos(delta);
         }}
         sizing={(nowSizing) => {
           isSizing = nowSizing;
@@ -292,9 +302,7 @@ export default function VirtualizedList({
         forceShow={pointed}
         registerApi={(api) => (horizontalApi.current = api)}
         moved={(delta) => {
-          if (divHost?.current) {
-            divHost.current.scrollLeft = delta;
-          }
+          setRequestedPos(delta);
         }}
         sizing={(nowSizing) => {
           isSizing = nowSizing;
@@ -336,8 +344,7 @@ export default function VirtualizedList({
    * @param index
    */
   function scrollToItemByIndex(index: number, withRefresh = false) {
-    const topPos = normalizeScrollPosition(index * itemHeight);
-    setRequestedPos(normalizeScrollPosition(topPos));
+    setRequestedPos(index * itemHeight);
     if (withRefresh) {
       setResizedHeight(null);
       setResizePhase(ResizePhase.None);
@@ -382,12 +389,11 @@ export default function VirtualizedList({
         endIndex: lastEndIndex.current,
       };
     }
-    const scrollPos = divHost.current.scrollTop;
     const result = {
-      startIndex: Math.floor(scrollPos / itemHeight),
+      startIndex: Math.floor(divHost.current.scrollTop / itemHeight),
       endIndex: Math.min(
         numItems - 1, // don't render past the end of the list
-        Math.floor((scrollPos + resizedHeight) / itemHeight)
+        Math.floor((divHost.current.scrollTop + resizedHeight) / itemHeight)
       ),
     };
     return result;
@@ -431,8 +437,11 @@ export default function VirtualizedList({
    * @param newPosition
    */
   function normalizeScrollPosition(newPosition: number): number {
-    return integralPosition
-      ? Math.floor(newPosition / itemHeight) * itemHeight
-      : newPosition;
+    return Math.max(
+      0,
+      integralPosition
+        ? Math.floor(newPosition / itemHeight) * itemHeight
+        : newPosition
+    );
   }
 }

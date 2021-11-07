@@ -1,5 +1,8 @@
 import * as React from "react";
 
+/**
+ * Represents the root container of a statusbar
+ */
 export const StatusbarRoot: React.FC = (props) => {
   return (
     <div
@@ -23,7 +26,14 @@ export const StatusbarRoot: React.FC = (props) => {
   );
 };
 
+/**
+ * Properties of a statusbar section
+ */
 export type SectionProps = { title?: string };
+
+/**
+ * Represents a statusbar section
+ */
 export const Section: React.FC<SectionProps> = (props) => {
   return (
     <div
@@ -43,6 +53,9 @@ export const Section: React.FC<SectionProps> = (props) => {
   );
 };
 
+/**
+ * Represents a statusbar label
+ */
 export const Label: React.FC = (props) => {
   return (
     <span

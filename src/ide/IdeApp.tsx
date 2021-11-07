@@ -34,7 +34,9 @@ export default function IdeApp() {
   // --- Component state (changes of them triggers re-rendering)
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
-  const ideViewOptions = useSelector((s: AppState) => s.emuViewOptions);
+  const showStatusBar = useSelector((s: AppState) => s.emuViewOptions.showStatusBar);
+  const showToolFrame = useSelector((s: AppState) => s.toolFrame.visible);
+  const showDocuments = useSelector((s: AppState) => !s.toolFrame.visible || !s.toolFrame.maximized);
   const mounted = useRef(false);
 
   useEffect(() => {
@@ -94,16 +96,18 @@ export default function IdeApp() {
               horizontal={false}
               reverse={true}
               panel1MinSize={MIN_TOOL_HEIGHT}
-              panel2MinSize={MIN_DESK_HEIGHT}
-              panel2={<IdeDocumentFrame />}
+              showPanel1={showToolFrame}
               panel1={<ToolFrame />}
+              panel2MinSize={MIN_DESK_HEIGHT}
+              showPanel2={showDocuments}
+              panel2={<IdeDocumentFrame />}
             />
           }
         />
       </Row>
       <Row
         height="fittoclient"
-        style={{ display: ideViewOptions.showStatusBar ? undefined : "none" }}
+        style={{ display: showStatusBar ? undefined : "none" }}
       >
         <IdeStatusbar />
       </Row>

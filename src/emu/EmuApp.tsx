@@ -8,8 +8,8 @@ import {
 } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
-import { useDispatch, useSelector, useStore } from "react-redux";
-import Toolbar from "./Toolbar";
+import { useSelector } from "react-redux";
+import { Toolbar } from "./Toolbar";
 import MainPanel from "./MainPanel";
 import EmuStatusbar from "./EmuStatusbar";
 import { emuLoadUiAction } from "@state/emu-loaded-reducer";
@@ -32,8 +32,12 @@ export default function EmuApp() {
   const [themeStyle, setThemeStyle] = useState({});
   const [themeClass, setThemeClass] = useState("");
 
-  const showToolbar = useSelector((s: AppState) => s.emuViewOptions.showToolbar);
-  const showStatusBar = useSelector((s: AppState) => s.emuViewOptions.showStatusBar);
+  const showToolbar = useSelector(
+    (s: AppState) => s.emuViewOptions.showToolbar
+  );
+  const showStatusBar = useSelector(
+    (s: AppState) => s.emuViewOptions.showStatusBar
+  );
 
   React.useEffect(() => {
     // --- State change event handlers
