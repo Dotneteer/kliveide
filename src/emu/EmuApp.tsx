@@ -8,7 +8,7 @@ import {
 } from "@core/service-registry";
 
 import { AppState } from "@state/AppState";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useSelector } from "react-redux";
 import Toolbar from "./Toolbar";
 import MainPanel from "./MainPanel";
 import EmuStatusbar from "./EmuStatusbar";
