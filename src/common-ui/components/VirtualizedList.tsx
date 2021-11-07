@@ -4,8 +4,8 @@ import { useRef } from "react";
 import { useState } from "react";
 import { ScrollbarApi, FloatingScrollbar } from "./FloatingScrollbar";
 import { handleScrollKeys } from "./component-utils";
-import ReactResizeDetector from "react-resize-detector";
 import { useLayoutEffect } from "react";
+import { useObserver } from "./useObserver";
 
 // --- Signs the end of the list
 const END_LIST_POSITION = 10_000_000;
@@ -221,6 +221,17 @@ export default function VirtualizedList({
     }
   });
 
+  // --- Handle resizing
+  const _onResize = () => {
+    if (resizePhase === ResizePhase.None) return;
+    forceRefresh();
+  };
+
+  useObserver({
+    callback: _onResize,
+    element: divHost,
+  });
+
   return (
     <>
       <div
@@ -310,14 +321,6 @@ export default function VirtualizedList({
             setPointed(false);
             signPointed?.(false);
           }
-        }}
-      />
-      <ReactResizeDetector
-        handleWidth
-        handleHeight
-        onResize={() => {
-          if (resizePhase === ResizePhase.None) return;
-          forceRefresh();
         }}
       />
     </>
