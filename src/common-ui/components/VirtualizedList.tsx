@@ -117,7 +117,6 @@ export default function VirtualizedList({
       return;
     }
 
-    // const scrollPos = divHost.current.scrollTop;
     const { startIndex, endIndex } = getViewPort();
     lastStartIndex.current = startIndex;
     lastEndIndex.current = endIndex;
@@ -138,9 +137,6 @@ export default function VirtualizedList({
       tmpItems.push(item);
     }
     setItems(tmpItems);
-    // if (divHost?.current) {
-    //   divHost.current.scrollTop = scrollPos;
-    // }
   };
 
   // --- Initialize/update the virtualized list

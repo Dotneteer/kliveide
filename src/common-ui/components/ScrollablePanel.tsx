@@ -5,6 +5,9 @@ import { CSSProperties, ReactNode } from "react";
 import { ScrollbarApi, FloatingScrollbar } from "./FloatingScrollbar";
 import { handleScrollKeys } from "./component-utils";
 
+/**
+ * Properties of a scrollable panel
+ */
 type PanelProps = {
   showVerticalScrollbar?: boolean;
   showHorizontalScrollbar?: boolean;

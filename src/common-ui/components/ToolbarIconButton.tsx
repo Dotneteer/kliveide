@@ -5,6 +5,9 @@ import { Icon } from "./Icon";
 const DEFAULT_SIZE = 22;
 const DEFAULT_HILITE_SIZE = 28;
 
+/**
+ * Properties of a toolbar icon button
+ */
 interface Props {
   iconName: string;
   size?: number;
@@ -27,9 +30,10 @@ export function ToolbarIconButton({
   fill,
   enable,
   selected,
-  clicked
+  clicked,
 }: Props) {
   const [currentSize, setCurrentSize] = useState(size ?? DEFAULT_SIZE);
+
   const style = {
     display: "flex",
     width: "36px",
@@ -48,47 +52,33 @@ export function ToolbarIconButton({
     <div
       style={style}
       title={title}
-      onMouseDown={(ev) => handleMouseDown(ev)}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
+      onMouseDown={(ev) => {
+        if ((enable ?? true) && ev.button === 0) {
+          updateSize(true);
+        }
+      }}
+      onMouseUp={() => {
+        updateSize(false);
+        clicked?.();
+      }}
+      onMouseLeave={() => {
+        if (enable ?? true) {
+          updateSize(false);
+        }
+      }}
     >
       <Icon
         iconName={iconName}
-        fill={
-          enable ?? true ? fill : "--toolbar-button-disabled-fill"
-        }
+        fill={enable ?? true ? fill : "--toolbar-button-disabled-fill"}
         width={currentSize}
         height={currentSize}
       />
     </div>
   );
 
-  function handleMouseDown(ev: React.MouseEvent): void {
-    if (!(enable ?? true)) {
-      return;
-    }
-    if ( ev.button === 0) {
-      updateSize(true);
-    }
-  }
-
-  function handleMouseUp(): void {
-    updateSize(false);
-    clicked?.();
-  }
-
-  function handleMouseLeave(): void {
-    if (!(enable ?? true)) {
-      return;
-    }
-    updateSize(false);
-  }
-
   function updateSize(pointed: boolean): void {
     setCurrentSize(
-      pointed
-        ? highlightSize ?? DEFAULT_HILITE_SIZE
-        : size ?? DEFAULT_SIZE
+      pointed ? highlightSize ?? DEFAULT_HILITE_SIZE : size ?? DEFAULT_SIZE
     );
   }
 }
