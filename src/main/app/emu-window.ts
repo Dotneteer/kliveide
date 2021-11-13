@@ -3,7 +3,7 @@ import * as path from "path";
 import { app, dialog } from "electron";
 import { AppWindow } from "./app-window";
 import { __DARWIN__ } from "../utils/electron-utils";
-import { RequestMessage, StopVmRequest } from "@core/messaging/message-types";
+import { RequestMessage } from "@core/messaging/message-types";
 import {
   MachineContextProvider,
   MachineContextProviderBase,

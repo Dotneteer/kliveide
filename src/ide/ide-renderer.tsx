@@ -167,6 +167,9 @@ registerThemes(getState().isWindows ?? false);
           iconName: "debug-alt",
           commands: [
             {
+              commandId: "klive.startVm",
+            },
+            {
               commandId: "klive.debugVm",
             },
             {

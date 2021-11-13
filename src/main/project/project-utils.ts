@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as syncFs from "fs";
+import * as fse from "fs-extra";
 import { promises as fs } from "fs";
 import { dialog } from "electron";
 
@@ -153,10 +154,10 @@ export async function createKliveProject(
     if (syncFs.existsSync(targetFolder)) {
       return { error: `Target directory '${targetFolder}' already exists` };
     }
-    await fs.mkdir(targetFolder);
 
-    // --- Create the code subfolder
-    await fs.mkdir(path.join(targetFolder, CODE_DIR_NAME));
+    // --- Copy the project template
+    const sourceDir = path.join(__dirname, "templates/project");
+    fse.copySync(sourceDir, targetFolder)
 
     // --- Create the project file
     const project: KliveProject = {
@@ -165,7 +166,7 @@ export async function createKliveProject(
         breakpoints: [],
       },
       builder: {
-        roots: []
+        roots: ["/code/code.asm.kz80"]
       }
     };
     await fs.writeFile(
@@ -175,7 +176,7 @@ export async function createKliveProject(
 
     // --- Done
     return { targetFolder };
-  } catch {
-    return { error: `Cannot create Klive project in '${targetFolder}'` };
+  } catch (err) {
+    return { error: `Cannot create Klive project in '${targetFolder}' (${err})` };
   }
 }

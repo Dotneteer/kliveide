@@ -46,6 +46,7 @@ import { dispatch, getState, getStore } from "@core/service-registry";
 import { ideWindow } from "./ide-window";
 import { emuWindow } from "./emu-window";
 import { Unsubscribe } from "redux";
+import { removeSourceBreakpointsAction } from "@core/state/debugger-reducer";
 
 /**
  * Messenger instance to the emulator window
@@ -178,6 +179,7 @@ export function setupMenu(): void {
         enabled: !!getState()?.project?.path,
         click: () => {
           dispatch(closeProjectAction());
+          dispatch(removeSourceBreakpointsAction());
         },
       },
       { type: "separator" },

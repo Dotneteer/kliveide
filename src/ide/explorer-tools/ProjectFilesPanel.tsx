@@ -71,6 +71,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       itemsCount: this.itemsCount,
     });
     getStore().projectChanged.on(this._onProjectChange);
+    this.onProjectChange(getState().project);
   }
 
   componentWillUnmount(): void {
