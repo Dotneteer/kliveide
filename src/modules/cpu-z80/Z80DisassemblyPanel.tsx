@@ -120,7 +120,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
     };
     const hasBreakpoint = this._breakpointMap.has(item.address);
     const addressLabel =
-      item?.address ?? null
+      item?.address != undefined
         ? `${item.address.toString(16).padStart(4, "0").toUpperCase()}`
         : "";
     return (

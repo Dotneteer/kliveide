@@ -81,6 +81,8 @@ global u32 executionCompletionReason;
 // The last rendered frame tact
 global u32 lastRenderedFrameTact;
 
+// The last reached startup breakpoint
+global i32 lastStartupBreakpoint = -1;
 
 // Describes the execution engine state
 type executionEngineStateStruct = struct {
@@ -179,6 +181,17 @@ export void executeMachineLoop() {
   // --- Initialize the execution cycle
   executionCompletionReason = EXCR_EXEC;
 
+  // --- Check the startup breakpoint
+  if (pc != lastStartupBreakpoint) {
+    // --- Check startup breakpoint
+    checkBreakpoints();
+    if (executionCompletionReason != EXCR_EXEC) {
+      lastStartupBreakpoint = pc;
+      return;
+    }
+  }
+  lastStartupBreakpoint = -1;
+
   // --- We go on while the loop is complete or broken
   do {
     if (frameCompleted) {
@@ -220,39 +233,11 @@ export void executeMachineLoop() {
       return;
     }
 
-    // --- Test debug mode
-    if (debugStepMode != DEB_NONE) {
-      // --- Check for debug step modes
-      if (debugStepMode == DEB_STOPBR) {
-        if (testInstructionBreakpoint()) {
-          // --- Breakpoint found
-          executionCompletionReason = EXCR_BREAK;
-          return;
-        }
-      } else if (debugStepMode == DEB_INTO) {
-        // --- We're in step-into mode
-        executionCompletionReason = EXCR_BREAK;
-        return;
-      } else if (debugStepMode == DEB_OVER) {
-        if (pc == stepOverBreakpoint) {
-          // --- We've just reached a step-over breakpoint
-          executionCompletionReason = EXCR_BREAK;
-          return;
-        }
-      } else {
-        // --- Step-out mode: Has a return statement executed?
-        if (retExecuted) {
-          if (stepOutStartDepth == stepOutStackDepth + 1) {
-            if (pc == stepOutAddress) {
-              executionCompletionReason = EXCR_BREAK;
-              return;
-            } else {
-              // Some invalid code is used, clear the step over stack
-              resetStepOverStack();
-            }
-          }
-        }
-      }
+    // --- If we reached a breakpoint
+    checkBreakpoints();
+    if (executionCompletionReason != EXCR_EXEC) {
+      lastStartupBreakpoint = pc;
+      return;
     }
     
     // --- Test HALT mode
@@ -280,6 +265,43 @@ export void executeMachineLoop() {
 
   // --- Done
   executionCompletionReason = EXCR_FRAME;
+}
+
+void checkBreakpoints() {
+  // --- Test debug mode
+  if (debugStepMode != DEB_NONE) {
+    // --- Check for debug step modes
+    if (debugStepMode == DEB_STOPBR) {
+      if (testInstructionBreakpoint()) {
+        // --- Breakpoint found
+        executionCompletionReason = EXCR_BREAK;
+        return;
+      }
+    } else if (debugStepMode == DEB_INTO) {
+      // --- We're in step-into mode
+      executionCompletionReason = EXCR_BREAK;
+      return;
+    } else if (debugStepMode == DEB_OVER) {
+      if (pc == stepOverBreakpoint) {
+        // --- We've just reached a step-over breakpoint
+        executionCompletionReason = EXCR_BREAK;
+        return;
+      }
+    } else {
+      // --- Step-out mode: Has a return statement executed?
+      if (retExecuted) {
+        if (stepOutStartDepth == stepOutStackDepth + 1) {
+          if (pc == stepOutAddress) {
+            executionCompletionReason = EXCR_BREAK;
+            return;
+          } else {
+            // Some invalid code is used, clear the step over stack
+            resetStepOverStack();
+          }
+        }
+      }
+    }
+  }
 }
 
 // Tests if the execution reached an instruction breakpoint
