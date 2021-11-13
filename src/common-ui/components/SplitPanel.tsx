@@ -218,7 +218,8 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
       // --- We're about to hide the secondary panel, save the primary size
       primaryPanelSizeSaved.current = primarySize;
     }
-    if (secondaryDisplayed && !secondaryWasDisplayed) {
+    
+    if (secondaryDisplayed && !secondaryWasDisplayed && wasDisplayed && displayed) {
       // --- We have just restored the secondary panel, restore the primary size
       panel1Size = primaryPanelSizeSaved.current
     } else if (displayed) {

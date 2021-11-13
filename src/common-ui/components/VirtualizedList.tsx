@@ -242,7 +242,7 @@ export default function VirtualizedList({
           ...style,
           overflow: "hidden",
           position: "relative",
-          height: resizedHeight ?? "100%",
+          height: resizedHeight ?? 100_000,
           outline: "none",
         }}
         onScroll={(e) => {

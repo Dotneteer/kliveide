@@ -14,6 +14,7 @@ import { INTERACTIVE_TOOL_ID } from "@abstractions/tool-area-service";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
+import { Row } from "@components/Panels";
 
 const TITLE = "Interactive";
 
@@ -31,6 +32,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
   ToolPanelProps<{}>,
   State
 > {
+  private _listHost = createRef<HTMLDivElement>();
   private _inputRef = createRef<HTMLInputElement>();
   private _listApi: VirtualizedListApi;
   private _onContentsChanged: () => void;
@@ -119,49 +121,57 @@ export default class InteractiveToolPanel extends ToolPanelBase<
     const isExecuting = getInteractivePaneService().isCommandExecuting();
     return (
       <>
-        <VirtualizedList
-          itemHeight={18}
-          numItems={this.state.buffer.length}
-          renderItem={(index: number, style: CSSProperties) => {
-            return (
-              <div key={index} style={{ ...style, fontSize: "0.95em" }}>
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: this.state.buffer[index],
-                  }}
-                />
-              </div>
-            );
-          }}
-          registerApi={(api) => (this._listApi = api)}
-          obtainInitPos={() => this.state.initPosition}
-          scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
-        />
-        <div style={separatorStyle}></div>
-        <div style={{ display: "flex" }}>
-          <span
-            style={{
-              fontWeight: 600,
-              color: isExecuting
-                ? "var(--information-color)"
-                : "var(--interactive-input-color)",
-              marginRight: 8,
-              marginTop: 2,
+        <Row
+          hostRef={this._listHost}
+          style={{ flexDirection: "column" }}
+          onResized={() => this._listApi.forceRefresh()}
+        >
+          <VirtualizedList
+            itemHeight={18}
+            numItems={this.state.buffer.length}
+            renderItem={(index: number, style: CSSProperties) => {
+              return (
+                <div key={index} style={{ ...style, fontSize: "0.95em" }}>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: this.state.buffer[index],
+                    }}
+                  />
+                </div>
+              );
             }}
-          >
-            $
-          </span>
-          <input
-            ref={this._inputRef}
-            style={inputStyle}
-            spellCheck={false}
-            onKeyDown={(e) => this.keyDown(e)}
-            disabled={isExecuting}
-            placeholder={
-              isExecuting ? "Executing command..." : "Type ? + Enter for help"
-            }
+            registerApi={(api) => (this._listApi = api)}
+            obtainInitPos={() => this.state.initPosition}
+            scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
           />
-        </div>
+        </Row>
+        <Row height="fittocontent" style={{ flexDirection: "column" }}>
+          <div style={separatorStyle}></div>
+          <div style={{ display: "flex" }}>
+            <span
+              style={{
+                fontWeight: 600,
+                color: isExecuting
+                  ? "var(--information-color)"
+                  : "var(--interactive-input-color)",
+                marginRight: 8,
+                marginTop: 2,
+              }}
+            >
+              $
+            </span>
+            <input
+              ref={this._inputRef}
+              style={inputStyle}
+              spellCheck={false}
+              onKeyDown={(e) => this.keyDown(e)}
+              disabled={isExecuting}
+              placeholder={
+                isExecuting ? "Executing command..." : "Type ? + Enter for help"
+              }
+            />
+          </div>
+        </Row>
       </>
     );
   }
@@ -212,6 +222,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
 const separatorStyle: CSSProperties = {
   marginTop: 8,
   height: 8,
+  width: "100%",
   borderTop: "1px solid var(--panel-separator-border)",
   flexShrink: 0,
   flexGrow: 0,

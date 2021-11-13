@@ -1,6 +1,7 @@
 import * as React from "react";
 import { DOMAttributes } from "react";
 import { CSSProperties, PropsWithChildren } from "react";
+import { useResizeObserver } from "./useResizeObserver";
 
 /**
  * Generic panel properties
@@ -11,6 +12,7 @@ export type PanelProps<P = {}> = P & DOMAttributes<HTMLDivElement> & {
   flexible?: boolean;
   style?: CSSProperties;
   hostRef?: React.RefObject<HTMLDivElement>;
+  onResized?: () => void;
 };
 
 /**
@@ -116,9 +118,15 @@ export const Row: React.FC<RowProps> = ({
   flexible,
   style,
   hostRef,
+  onResized,
   ...others
 }: PropsWithChildren<RowProps>) => {
   if (flexible == undefined && height == undefined) flexible = true;
+  // --- Respond to resizing the main container
+  useResizeObserver({
+    callback: () => onResized?.(),
+    element: hostRef,
+  });
   return (
     <div
       ref={hostRef}
