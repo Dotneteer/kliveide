@@ -293,9 +293,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     this.preprocessedLines = parseResult.parsedLines;
     success = this.emitCode(this.preprocessedLines);
     if (parseResult.success && success) {
-      success =
-        this.fixupUnresolvedSymbols() &&
-        this.compareBinaries();
+      success = this.fixupUnresolvedSymbols() && this.compareBinaries();
     }
     if (!success) {
       // --- If failed, clear output segments
@@ -1050,7 +1048,6 @@ export class Z80Assembler extends ExpressionEvaluator {
       asmLine.type === "CommentOnlyLine"
     ) {
       // --- This is a line with a label or comment only
-      emitListItem();
       if (!asmLine.label) {
         return;
       }
@@ -1201,7 +1198,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this._currentSegment.currentInstructionOffset =
           this._currentSegment.emittedCode.length;
         this.applyPragma(asmLine as Pragma, currentLabel);
-        emitListItem();
+        //emitListItem();
       } else if (asmLine.type.endsWith("Statement")) {
         this.processStatement(
           allLines,
@@ -1223,25 +1220,23 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.emitAssemblyOperationCode(asmLine);
 
         // --- Generate source map information
-        //const sourceInfo =
-        this._output.sourceMap[addr] = {
-          fileIndex: asmLine.fileIndex,
-          line: asmLine.line,
-        };
-        this._output.addToAddressMap(asmLine.fileIndex, asmLine.line, addr);
-        emitListItem();
+        if (
+          asmLine.type !== "LabelOnlyLine" &&
+          asmLine.type !== "CommentOnlyLine"
+        ) {
+          this._output.sourceMap[addr] = {
+            fileIndex: asmLine.fileIndex,
+            line: asmLine.line,
+          };
+          this._output.addToAddressMap(asmLine.fileIndex, asmLine.line, addr);
+          this._currentListFileItem.codeLength =
+            this._currentSegment.emittedCode.length -
+            this._currentListFileItem.codeStartIndex;
+          this._output.listFileItems.push(assembler._currentListFileItem);
+        }
       }
     }
 
-    /**
-     * Emits the current list item
-     */
-    function emitListItem(): void {
-      assembler._currentListFileItem.codeLength =
-        assembler._currentSegment.emittedCode.length -
-        assembler._currentListFileItem.codeStartIndex;
-      assembler._output.listFileItems.push(assembler._currentListFileItem);
-    }
     /**
      * Tests if the specified line is a label-setter
      * @param asmLine Line to test

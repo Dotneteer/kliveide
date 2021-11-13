@@ -121,6 +121,10 @@ mainConfig.plugins = [
         },
       },
       {
+        from: "./templates/**/*.*",
+        to: ".",
+      },
+      {
         from: "package.json",
         to: "package.json",
         transform: (content, _path) => {

@@ -508,10 +508,14 @@ function EditorDocument({
    */
   async function refreshCurrentBreakpoint(): Promise<void> {
     // --- Refresh the information only during paused state
-    const engineProxy = getEngineProxyService();
     const state = getState();
+    const compilationResult = state?.compilation?.result;
     const execState = state.emulatorPanel?.executionState ?? 0;
-    if (execState !== 3) {
+    if (
+      execState !== 3 ||
+      !compilationResult ||
+      compilationResult.errors.length > 0
+    ) {
       oldExecPointDecoration.current = editor.current.deltaDecorations(
         oldExecPointDecoration.current,
         []
@@ -519,25 +523,29 @@ function EditorDocument({
       return;
     }
 
-    // --- Does this file contains the default breakpoint
-    const programCounter = state.emulatorPanel.programCounter;
-    const currentBreakpoint = (state.debugger?.resolved ?? []).find(
-      (bp) =>
-        bp.location === programCounter &&
-        bp.type === "source" &&
-        bp.resource === getResourceName()
-    ) as SourceCodeBreakpoint;
-    if (currentBreakpoint) {
-      oldExecPointDecoration.current = editor.current.deltaDecorations(
-        oldExecPointDecoration.current,
-        [createCurrentBreakpointDecoration(currentBreakpoint.line)]
+    // --- Does this file contains the default breakpoint?
+    const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
+      fi.filename.endsWith(getResourceName())
+    );
+    if (fileIndex >= 0) {
+      // --- We have address information for this source code file
+      const lineInfo = compilationResult.listFileItems.find(
+        (li) =>
+          li.fileIndex === fileIndex &&
+          li.address === state.emulatorPanel.programCounter
       );
-    } else {
-      oldExecPointDecoration.current = editor.current.deltaDecorations(
-        oldExecPointDecoration.current,
-        []
-      );
+      if (lineInfo) {
+        oldExecPointDecoration.current = editor.current.deltaDecorations(
+          oldExecPointDecoration.current,
+          [createCurrentBreakpointDecoration(lineInfo.lineNumber)]
+        );
+      }
+      return;
     }
+    oldExecPointDecoration.current = editor.current.deltaDecorations(
+      oldExecPointDecoration.current,
+      []
+    );
   }
 
   /**

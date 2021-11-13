@@ -135,7 +135,7 @@ export default class BreakpointsPanel extends VirtualizedSideBarPanelBase<
             .toString(16)
             .padStart(4, "0")
             .toLocaleLowerCase()} (${item.location.toString(10)})`;
-    const isCurrent = this.state.currentPc === item.location;
+    const isCurrent = (this.state.currentPc ?? -1) === item.location;
     return (
       <div
         className="listlike"
