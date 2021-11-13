@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CSSProperties, useEffect, useRef, useState } from "react";
+import { createRef, CSSProperties, useEffect, useRef, useState } from "react";
 import {
   ChangeEventArgs,
   DropDownListComponent,
@@ -21,6 +21,7 @@ import { OUTPUT_TOOL_ID } from "@abstractions/tool-area-service";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
+import { Row } from "@components/Panels";
 
 const TITLE = "Output";
 
@@ -37,6 +38,7 @@ export default class OutputToolPanel extends ToolPanelBase<
   ToolPanelProps<{}>,
   State
 > {
+  private _listHost = createRef<HTMLDivElement>();
   private _listApi: VirtualizedListApi;
   private _onPaneChanged: (pane: IOutputPane) => void;
   private _onContentsChanged: (pane: IOutputPane) => void;
@@ -93,43 +95,52 @@ export default class OutputToolPanel extends ToolPanelBase<
   renderContent() {
     const pane = getOutputPaneService().getActivePane();
     return (
-      <VirtualizedList
-        key={this.state.refreshCount}
-        itemHeight={18}
-        numItems={this.state.buffer.length}
-        renderItem={(index: number, style: CSSProperties) => {
-          const itemData = this.state.buffer[index].data;
-          const hasHilite = itemData && (itemData as IHighlightable).highlight;
-          return (
-            <div
-              key={index}
-              style={{
-                ...style,
-                fontSize: "0.95em",
-                backgroundColor: hasHilite
-                  ? "var(--list-selected-background-color)"
-                  : undefined,
-                cursor: hasHilite ? "pointer" : undefined,
-              }}
-              title={hasHilite ? (itemData as IHighlightable).title : undefined}
-              onClick={() => {
-                if (hasHilite && pane) {
-                  pane.onContentLineAction(itemData);
-                }
-              }}
-            >
+      <Row
+        hostRef={this._listHost}
+        style={{ flexDirection: "column" }}
+        onResized={() => this._listApi.forceRefresh()}
+      >
+        <VirtualizedList
+          key={this.state.refreshCount}
+          itemHeight={18}
+          numItems={this.state.buffer.length}
+          renderItem={(index: number, style: CSSProperties) => {
+            const itemData = this.state.buffer[index].data;
+            const hasHilite =
+              itemData && (itemData as IHighlightable).highlight;
+            return (
               <div
-                dangerouslySetInnerHTML={{
-                  __html: this.state.buffer[index].text ?? "",
+                key={index}
+                style={{
+                  ...style,
+                  fontSize: "0.95em",
+                  backgroundColor: hasHilite
+                    ? "var(--list-selected-background-color)"
+                    : undefined,
+                  cursor: hasHilite ? "pointer" : undefined,
                 }}
-              />
-            </div>
-          );
-        }}
-        registerApi={(api) => (this._listApi = api)}
-        obtainInitPos={() => this.state.initPosition}
-        scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
-      />
+                title={
+                  hasHilite ? (itemData as IHighlightable).title : undefined
+                }
+                onClick={() => {
+                  if (hasHilite && pane) {
+                    pane.onContentLineAction(itemData);
+                  }
+                }}
+              >
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: this.state.buffer[index].text ?? "",
+                  }}
+                />
+              </div>
+            );
+          }}
+          registerApi={(api) => (this._listApi = api)}
+          obtainInitPos={() => this.state.initPosition}
+          scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
+        />
+      </Row>
     );
   }
 }
