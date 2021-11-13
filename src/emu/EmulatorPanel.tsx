@@ -3,7 +3,6 @@ import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
 
 import { AppState } from "@state/AppState";
-import BeamOverlay from "./BeamOverlay";
 import ExecutionStateOverlay from "./ExecutionStateOverlay";
 import { useEffect, useRef, useState } from "react";
 import { ICpu } from "@modules-core/abstract-cpu";
@@ -19,22 +18,16 @@ export default function EmulatorPanel() {
   const screenRectangle = useRef<DOMRect>();
 
   // --- State variables
-  const [windowWidth, setWindowWidth] = useState(0);
-  const [windowHeight, setWindowHeight] = useState(0);
   const [canvasWidth, setCanvasWidth] = useState(0);
   const [canvasHeight, setCanvasHeight] = useState(0);
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
-  const [tactToDisplay, setTactToDisplay] = useState(0);
 
   // --- App state selectors
   const executionState = useSelector(
     (s: AppState) => s.emulatorPanel.executionState
   );
   const runsInDebug = useSelector((s: AppState) => s.emulatorPanel.runsInDebug);
-  const showBeam = useSelector(
-    (s: AppState) => s?.spectrumSpecific?.showBeamPosition
-  );
 
   // --- Element dimensions
   let shadowCanvasWidth = 0;
@@ -90,7 +83,6 @@ export default function EmulatorPanel() {
         case 3:
           overlay = "Paused";
           const state = engine.getMachineState();
-          setTactToDisplay(state.lastRenderedFrameTact % state.tactsInFrame);
           displayScreenData();
           break;
         case 5:
@@ -124,16 +116,6 @@ export default function EmulatorPanel() {
         }}
         onClick={() => setShowOverlay(true)}
       >
-        {executionState === 3 && showBeam && screenRectangle.current && (
-          <BeamOverlay
-            key={calcCount}
-            panelRectangle={hostRectangle.current}
-            screenRectangle={screenRectangle.current}
-            width={windowWidth}
-            height={windowHeight}
-            tactToDisplay={tactToDisplay}
-          />
-        )}
         {showOverlay && (
           <ExecutionStateOverlay
             text={overlay}
@@ -192,8 +174,6 @@ export default function EmulatorPanel() {
     setCanvasHeight(height * ratio);
     shadowCanvasWidth = width;
     shadowCanvasHeight = height;
-    setWindowWidth(hostRectangle.current.width);
-    setWindowHeight(hostRectangle.current.height);
     calcCount = calcCount + 1;
     if (shadowScreenElement.current) {
       shadowScreenElement.current.width = width;

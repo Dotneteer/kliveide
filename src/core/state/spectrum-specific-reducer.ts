@@ -9,13 +9,6 @@ export const spectrumFastLoadAction: ActionCreator = (fastLoad: boolean) => ({
   payload: { fastLoad },
 });
 
-export const spectrumBeamPositionAction: ActionCreator = (
-  showBeamPosition: boolean
-) => ({
-  type: "SPECTRUM_BEAM_POSITION",
-  payload: { showBeamPosition },
-});
-
 export const spectrumTapeContentsAction: ActionCreator = (
   tapeContents: Uint8Array
 ) => ({
@@ -44,8 +37,6 @@ export default function (
   switch (type) {
     case "SPECTRUM_FAST_LOAD":
       return { ...state, fastLoad: payload.fastLoad };
-    case "SPECTRUM_BEAM_POSITION":
-      return { ...state, showBeamPosition: payload.showBeamPosition };
     case "SPECTRUM_TAPE_CONTENTS":
       return { ...state, tapeContents: payload.tapeContents, tapeLoaded: false };
     case "SPECTRUM_TAPE_LOADED":

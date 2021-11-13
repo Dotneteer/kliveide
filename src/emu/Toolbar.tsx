@@ -7,10 +7,7 @@ import { AppState } from "@state/AppState";
 import { ToolbarIconButton } from "@components/ToolbarIconButton";
 import { ToolbarSeparator } from "@components/ToolbarSeparator";
 import { emuMuteSoundAction } from "@state/emulator-panel-reducer";
-import {
-  spectrumBeamPositionAction,
-  spectrumFastLoadAction,
-} from "@state/spectrum-specific-reducer";
+import { spectrumFastLoadAction } from "@state/spectrum-specific-reducer";
 import { executeKliveCommand } from "@abstractions/common-commands";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { ZxSpectrumCoreBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
@@ -27,9 +24,6 @@ export const Toolbar: React.FC = () => {
   );
   const extraFeatures = useSelector(
     (s: AppState) => s.emulatorPanel.extraFeatures ?? []
-  );
-  const showBeam = useSelector(
-    (s: AppState) => s.spectrumSpecific?.showBeamPosition ?? false
   );
   const muted = useSelector((s: AppState) => s.emulatorPanel.muted);
   const fastLoad = useSelector(
@@ -148,19 +142,6 @@ export const Toolbar: React.FC = () => {
         <ToolbarSeparator key="sep3" />,
       ]
     : null;
-  const beamButtons = extraFeatures.includes("UlaDebug")
-    ? [
-        <ToolbarIconButton
-          key="beam-position"
-          iconName="beam-position"
-          fill="#ff80ff"
-          title="Show ULA position"
-          selected={showBeam}
-          clicked={() => dispatch(spectrumBeamPositionAction(!showBeam))}
-        />,
-        <ToolbarSeparator key="sep-4" />,
-      ]
-    : null;
   const tapeButtons = extraFeatures.includes("Tape")
     ? [
         <ToolbarIconButton
@@ -217,7 +198,6 @@ export const Toolbar: React.FC = () => {
     <div style={rootStyle}>
       {machineControlButtons}
       {soundButtons}
-      {beamButtons}
       {tapeButtons}
       {z88Buttons}
     </div>

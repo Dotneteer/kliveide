@@ -96,7 +96,6 @@ export type ProgramCounterInfo = {
  */
 export type ZxSpectrumSpecificState = {
   fastLoad?: boolean;
-  showBeamPosition?: boolean;
   tapeContents?: Uint8Array;
   tapeLoaded?: boolean;
   loadMode?: boolean;
@@ -236,7 +235,6 @@ export function getInitialAppState(): AppState {
     },
     spectrumSpecific: {
       fastLoad: true,
-      showBeamPosition: false,
       tapeContents: undefined,
     },
     sideBar: {},
