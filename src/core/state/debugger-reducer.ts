@@ -6,6 +6,7 @@ import {
   makeReachableBreakpoint,
   normalizeBreakpoints,
   removeBreakpoint,
+  removeSourceBreakpoints,
   scrollBreakpoints,
 } from "@abstractions/debug-helpers";
 import { DebuggerState } from "./AppState";
@@ -16,6 +17,10 @@ import { ActionCreator, KliveAction } from "./state-core";
 
 export const clearBreakpointsAction: ActionCreator = () => ({
   type: "CLEAR_BREAKPOINTS",
+});
+
+export const removeSourceBreakpointsAction: ActionCreator = () => ({
+  type: "REMOVE_SOURCE_BREAKPOINTS",
 });
 
 export const addBreakpointAction: ActionCreator = (
@@ -145,6 +150,11 @@ export default function (
       return {
         ...state,
         resolved: payload.breakpoints,
+      };
+    case "REMOVE_SOURCE_BREAKPOINTS":
+      return {
+        ...state,
+        breakpoints: removeSourceBreakpoints(state.breakpoints),
       };
     default:
       return state;

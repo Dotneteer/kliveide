@@ -88,6 +88,17 @@ export function makeReachableBreakpoint(
 }
 
 /**
+ * Removes all source-related breakpoints
+ * @param breakpoints Breakpoints array
+ * @returns A shallow clone of the remaining binary breakpoints
+ */
+export function removeSourceBreakpoints(
+  breakpoints: BreakpointDefinition[]
+): BreakpointDefinition[] {
+  return breakpoints.filter((bp) => bp.type === "binary");
+}
+
+/**
  * Enables all breakpoints
  * @param breakpoints Breakpoints array
  * @param bp Breakpoint to enable
