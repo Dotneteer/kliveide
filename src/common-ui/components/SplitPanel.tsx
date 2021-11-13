@@ -55,9 +55,12 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   const [splitterLeft, setSplitterLeft] = useState(0);
 
   // --- Other state information
-  const primaryIsDisplayed = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const primaryIsDisplayed = useRef(false);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
+  const secondaryIsDisplayed = useRef(false);
+  const secondaryPanelRef = useRef<HTMLDivElement>(null);
+  const primaryPanelSizeSaved = useRef(0);
   const gripPosition = useRef(0);
   const gripSize = useRef(0);
   const minSplitterValue = useRef(0);
@@ -117,7 +120,7 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
                 <Column hostRef={primaryPanelRef} width={primaryPanelSize}>
                   {first}
                 </Column>
-                <Column>{second}</Column>
+                <Column hostRef={secondaryPanelRef}>{second}</Column>
               </>
             )}
             {showPanel1 && !showPanel2 && (
@@ -125,7 +128,7 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
                 {first}
               </Column>
             )}
-            {!showPanel1 && showPanel2 && <Column>{second}</Column>}
+            {!showPanel1 && showPanel2 && <Column hostRef={secondaryPanelRef}>{second}</Column>}
           </>
         )}
         {!horizontal && (
@@ -135,13 +138,13 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
                 <Row hostRef={primaryPanelRef} height={primaryPanelSize}>
                   {first}
                 </Row>
-                <Row>{second}</Row>
+                <Row hostRef={secondaryPanelRef}>{second}</Row>
               </>
             )}
             {showPanel1 && !showPanel2 && (
               <Row hostRef={primaryPanelRef}>{first}</Row>
             )}
-            {!showPanel1 && showPanel2 && <Row>{second}</Row>}
+            {!showPanel1 && showPanel2 && <Row hostRef={secondaryPanelRef}>{second}</Row>}
           </>
         )}
       </Fill>
@@ -170,8 +173,11 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   function onResized(): void {
     // --- Keep track of the display state of the primary panel
     const wasDisplayed = primaryIsDisplayed.current;
-    const isDisplayed = !!primaryPanelRef.current;
-    primaryIsDisplayed.current = isDisplayed;
+    const displayed = !!primaryPanelRef.current;
+    primaryIsDisplayed.current = displayed;
+    const secondaryWasDisplayed = secondaryIsDisplayed.current;
+    const secondaryDisplayed = !!secondaryPanelRef.current;
+    secondaryIsDisplayed.current = secondaryDisplayed;
 
     // --- Determine the container size
     const containerSize =
@@ -206,7 +212,16 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
     setSplitterLeft(splitterLeft);
 
     let panel1Size = 0;
-    if (isDisplayed) {
+
+    // --- Calculate panel sizes
+    if (secondaryWasDisplayed && !secondaryDisplayed) {
+      // --- We're about to hide the secondary panel, save the primary size
+      primaryPanelSizeSaved.current = primarySize;
+    }
+    if (secondaryDisplayed && !secondaryWasDisplayed) {
+      // --- We have just restored the secondary panel, restore the primary size
+      panel1Size = primaryPanelSizeSaved.current
+    } else if (displayed) {
       if (wasDisplayed) {
         // --- Retrieve the panel size from the current DOM element
         panel1Size =
