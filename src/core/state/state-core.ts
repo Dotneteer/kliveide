@@ -51,7 +51,6 @@ export interface ActionTypes {
 
   // --- ZX Spectrum specific action
   SPECTRUM_FAST_LOAD: null;
-  SPECTRUM_BEAM_POSITION: null;
   SPECTRUM_TAPE_CONTENTS: null;
   SPECTRUM_TAPE_LOADED: null;
   SPECTRUM_LOAD_MODE: null;
@@ -126,7 +125,6 @@ export type Payload = {
   machineContext?: string;
   keyboardHeight?: number;
   fastLoad?: boolean;
-  showBeamPosition?: boolean;
   tapeContents?: Uint8Array;
   firmware?: Uint8Array[];
   tapeLoaded?: boolean;

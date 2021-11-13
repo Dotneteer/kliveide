@@ -5,7 +5,6 @@ import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
 import { AppState } from "@state/AppState";
 import { BinaryReader } from "@core/utils/BinaryReader";
 import {
-  spectrumBeamPositionAction,
   spectrumFastLoadAction,
   spectrumTapeContentsAction,
 } from "@state/spectrum-specific-reducer";
@@ -61,16 +60,6 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
   provideViewMenuItems(): MenuItemConstructorOptions[] | null {
     return [
       {
-        id: TOGGLE_BEAM,
-        label: "Show ULA beam position",
-        type: "checkbox",
-        checked: true,
-        click: (mi) => {
-          dispatch(spectrumBeamPositionAction(mi.checked));
-          emuWindow.saveKliveProject();
-        },
-      },
-      {
         id: TOGGLE_FAST_LOAD,
         label: "Fast load from tape",
         type: "checkbox",
@@ -104,11 +93,6 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    */
   updateMenuStatus(state: AppState): void {
     const menu = Menu.getApplicationMenu();
-    const toggleBeam = menu.getMenuItemById(TOGGLE_BEAM);
-    if (toggleBeam) {
-      toggleBeam.checked = !!state.spectrumSpecific?.showBeamPosition;
-      emuWindow.saveKliveProject();
-    }
     const toggleFastLoad = menu.getMenuItemById(TOGGLE_FAST_LOAD);
     if (toggleFastLoad) {
       toggleFastLoad.checked = !!state.spectrumSpecific?.fastLoad;
@@ -136,7 +120,6 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
     const spectrum = state.spectrumSpecific;
     return {
       fastLoad: !!spectrum?.fastLoad,
-      showBeam: !!spectrum?.showBeamPosition,
       lastTapeFile: this._lastTapeFile,
       clockMultiplier: state.emulatorPanel?.clockMultiplier ?? 1,
       soundLevel: state.emulatorPanel?.soundLevel ?? 1.0,
@@ -158,7 +141,6 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
       setSoundLevelMenu(settings.muted, settings.soundLevel);
     }
     dispatch(spectrumFastLoadAction(!!settings.fastLoad));
-    dispatch(spectrumBeamPositionAction(!!settings.showBeam));
     this._lastTapeFile = settings.lastTapeFile;
     if (settings.lastTapeFile) {
       try {
