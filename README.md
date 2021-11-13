@@ -6,11 +6,17 @@ Klive is now a standalone application that contains an emulator and an IDE.
 
 > Note: The previous versions of Klive were integrated with Visual Studio Code. Although initially, it seemed to be a good idea, this solution has issues coming from the integration and communication between VS Code and Klive.
 
+Keep tuned! The new Klive IDE will be released soon.
+
 ## The IDE Concept In a few Videos
 
-### Running ZX Spectrum 48K In the Emulator
+### Running ZX Spectrum 48K in the Emulator
 
 ![Klive intro](./intro/klive-intro.gif)
+
+### Debugging a Project in the IDE
+
+![IDE Debuging](./intro/ide-debugging.gif)
 
 ### Loading A ZX Spectrum Game
 
@@ -19,7 +25,6 @@ Klive is now a standalone application that contains an emulator and an IDE.
 ### Fast Tape Loading
 
 ![Fast load](./intro/fast-load.gif)
-
 
 ## Contact me
 

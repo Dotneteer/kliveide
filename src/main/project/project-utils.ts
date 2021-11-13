@@ -157,7 +157,6 @@ export async function createKliveProject(
 
     // --- Copy the project template
     const sourceDir = path.join(__dirname, "templates/project");
-    console.log(sourceDir);
     fse.copySync(sourceDir, targetFolder)
 
     // --- Create the project file
