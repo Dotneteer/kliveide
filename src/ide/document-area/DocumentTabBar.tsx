@@ -85,34 +85,38 @@ export default function DocumentTabBar() {
   // --- Close open documents whenever the project is closed
   const projectChanged = (projectState: ProjectState) => {
     if (!projectState.isLoading && !projectState.path) {
-      currentDocs
-        .slice(0)
-        .forEach((doc) => documentService.unregisterDocument(doc));
-      setCurrentDocs(documentService.getDocuments());
+      documentService.releaseAllDocuments();
     }
   };
+
+  const _refreshDocs = (info: DocumentsInfo) => refreshDocs(info);
+  const _folderDeleted = (name: string) => folderDeleted(name);
+  const _folderRenamed = (arg: FileChange) => folderRenamed(arg);
+  const _fileDeleted = (name: string) => fileDeleted(name);
+  const _fileRenamed = (arg: FileChange) => fileRenamed(arg);
+  const _projectChanged = (state: ProjectState) => projectChanged(state);
 
   useEffect(() => {
     // --- Mount
     setCurrentDocs(documentService.getDocuments());
     setActiveDoc(documentService.getActiveDocument());
-    documentService.documentsChanged.on(refreshDocs);
     const projectService = getProjectService();
-    projectService.folderDeleted.on(folderDeleted);
-    projectService.fileRenamed.on(fileRenamed);
-    projectService.folderRenamed.on(folderRenamed);
-    projectService.fileDeleted.on(fileDeleted);
-    getStore().projectChanged.on(projectChanged);
+    documentService.documentsChanged.on(_refreshDocs);
+    projectService.folderDeleted.on(_folderDeleted);
+    projectService.fileRenamed.on(_fileRenamed);
+    projectService.folderRenamed.on(_folderRenamed);
+    projectService.fileDeleted.on(_fileDeleted);
+    getStore().projectChanged.on(_projectChanged);
 
     return () => {
       // --- Unmount
       const projectService = getProjectService();
-      documentService.documentsChanged.off(refreshDocs);
-      projectService.fileRenamed.off(fileRenamed);
-      projectService.folderRenamed.off(folderRenamed);
-      projectService.fileDeleted.off(fileDeleted);
-      projectService.folderDeleted.off(folderDeleted);
-      getStore().projectChanged.off(projectChanged);
+      documentService.documentsChanged.off(_refreshDocs);
+      projectService.fileRenamed.off(_fileRenamed);
+      projectService.folderRenamed.off(_folderRenamed);
+      projectService.fileDeleted.off(_fileDeleted);
+      projectService.folderDeleted.off(_folderDeleted);
+      getStore().projectChanged.off(_projectChanged);
     };
   });
 
@@ -142,15 +146,19 @@ export default function DocumentTabBar() {
   });
 
   return (
-    <ScrollablePanel background="var(--commandbar-background-color)">
-      <div
-        style={{
-          display: "flex",
-          height: "100%",
-        }}
-      >
-        {documentTabs}
-      </div>
-    </ScrollablePanel>
+    <>
+      {currentDocs.length > 0 && (
+        <ScrollablePanel background="var(--commandbar-background-color)">
+          <div
+            style={{
+              display: "flex",
+              height: "100%",
+            }}
+          >
+            {documentTabs}
+          </div>
+        </ScrollablePanel>
+      )}
+    </>
   );
 }

@@ -213,6 +213,11 @@ export interface IDocumentService {
   unregisterDocument(doc: IDocumentPanel): void;
 
   /**
+   * Releases all documents in a single step
+   */
+  releaseAllDocuments(): void;
+
+  /**
    * Sets the specified document to be the active one
    * @param doc Document to activate
    */
