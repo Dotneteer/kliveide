@@ -1,447 +1,923 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import * as React from "react";
-import { CSSProperties, useEffect } from "react";
-import { useRef } from "react";
-import { useState } from "react";
-import { ScrollbarApi, FloatingScrollbar } from "./FloatingScrollbar";
-import { handleScrollKeys } from "./component-utils";
-import { useLayoutEffect } from "react";
+import {
+  CSSProperties,
+  PropsWithChildren,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { FloatingScrollbar, ScrollbarApi } from "./FloatingScrollbar";
+import { calculateScrollPositionByKey } from "./key-helpers";
 import { useResizeObserver } from "./useResizeObserver";
 
-// --- Signs the end of the list
-const END_LIST_POSITION = 10_000_000;
+const MAX_LIST_PIXELS = 10_000_000;
+const CALC_BATCH_SIZE = 1000;
 
 /**
  * The function that renders a virtual list item
  */
-type ItemRenderer = (
-  index: number,
-  style: CSSProperties,
-  startIndex: number,
-  endIndex: number
-) => JSX.Element;
+export type ItemRenderer = (index: number, style: CSSProperties) => JSX.Element;
 
 /**
- * The properties of the virtual list
+ * Desired position when displaying an item
  */
-export type VirtualizedListProps = {
-  numItems: number;
-  itemHeight: number;
-  focusable?: boolean;
-  integralPosition?: boolean;
-  style?: CSSProperties;
-  renderItem: ItemRenderer;
-  registerApi?: (api: VirtualizedListApi) => void;
-  obtainInitPos?: () => number | null;
-  scrolled?: (topPos: number) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
-  signPointed?: (use: boolean) => void;
-  handleKeys?: (e: React.KeyboardEvent) => void;
-};
+export type ItemTargetLocation = "top" | "bottom" | "center";
 
 /**
  * Represents the API the hosts of a virtual list can invoke
  */
 export type VirtualizedListApi = {
+  /**
+   * Forces refreshing the list
+   */
   forceRefresh: (position?: number) => void;
+
+  /**
+   * Scrolls to the item with the specified index
+   */
   scrollToItemByIndex: (index: number, withRefresh?: boolean) => void;
+
+  /**
+   * Scrolls to the top
+   */
   scrollToTop: (withRefresh?: boolean) => void;
-  scrollToEnd: (withRefresh?: boolean) => void;
-  getViewPort: () => { startIndex: number; endIndex: number };
-  ensureVisible: (index: number) => void;
+
+  /**
+   * Scrolls to the bottom
+   */
+  scrollToBottom: (withRefresh?: boolean) => void;
+
+  /**
+   * Retrieves the current viewport of the virtual list
+   */
+  getViewPort: () => Viewport;
+
+  /**
+   * Ensures that the item with the specified index gets visible
+   * in the current viewport
+   */
+  ensureVisible: (index: number, location: ItemTargetLocation) => void;
+
+  /**
+   * Ensures that the virtualized list gets the focus
+   */
   focus: () => void;
+
+  /**
+   * Initiates remeasuring the specified range of items
+   */
+  remeasure: (start: number, end: number) => void;
 };
 
-// --- Resizing phases
-enum ResizePhase {
-  None,
-  Resized,
-  Rendered,
-}
+/**
+ * The item height mode of the virtualized list
+ * "fix": Use the itemHeight property to set the initial size of items
+ * "first": All items should have the height of the first item
+ * "variable": Calculate the heights of all items
+ */
+export type ItemHeightMode = "fix" | "first" | "variable";
 
 /**
- * This function represents a virtual list
+ * The properties of the virtualized list
  */
-export default function VirtualizedList({
-  numItems,
+export type VirtualizedListProps = {
+  /**
+   * The number of items in the list
+   */
+  itemsCount: number;
+
+  /**
+   * Item height mode ("fixed" | "dynamic")
+   */
+  heightMode?: ItemHeightMode;
+
+  /**
+   * Item heights (used only in "fixed" mode)
+   */
+  itemHeight?: number;
+
+  /**
+   * Is the virtualized list focusable?
+   */
+  focusable?: boolean;
+
+  /**
+   * Extra style information to tadd to the list
+   */
+  style?: CSSProperties;
+
+  /**
+   * The number of calculation queue items processed within
+   * an animation frame
+   */
+  calcBatchSize?: number;
+
+  /**
+   * Indicatea that scrollbars should be displayed
+   */
+  showScrollbars?: boolean;
+
+  /**
+   * Defers position refreshing while all items are re-measured
+   */
+  deferPositionRefresh?: boolean;
+
+  /**
+   * Indicates that item size should be remeasured when the horizontal
+   * size of the list container changes
+   */
+  horizontalRemeasure?: boolean;
+
+  /**
+   * Number of milliseconds to wait while horizontal sizing settles
+   */
+  horizontalSettleTime?: number;
+
+  /**
+   * Keep the index position and set it back after re-measure
+   */
+  reposition?: boolean;
+
+  /**
+   * Scrolling speed when using the mouse wheel
+   */
+  wheelSpeed?: number;
+
+  /**
+   * The function that renders a particular item
+   */
+  renderItem: ItemRenderer;
+
+  /**
+   * Function to register the API of the virtualized list
+   */
+  registerApi?: (api: VirtualizedListApi) => void;
+
+  /**
+   * Function to defin the initial scroll position
+   */
+  obtainInitPos?: () => number | null;
+
+  /**
+   * Function called when the list's scroll position has been changed
+   */
+  onScrolled?: (topPos: number) => void;
+
+  /**
+   * Function called when the list receives the focus
+   */
+  onFocus?: () => void;
+
+  /**
+   * Function called when the list losts the focus
+   */
+  onBlur?: () => void;
+
+  /**
+   * Function called when the list's viewport changes
+   */
+  onViewPortChanged?: (startIndex: number, endIndex: number) => void;
+
+  /**
+   * Function called when the container's size changes
+   */
+  onResized?: (width: number, height: number) => void;
+
+  /**
+   * The host can take control of handling the keys
+   */
+  handleKeys?: (e: React.KeyboardEvent) => void;
+};
+
+/**
+ * Implements a vertically scrollable virtualized list
+ */
+export const VirtualizedList: React.FC<VirtualizedListProps> = ({
+  itemsCount,
+  heightMode,
   itemHeight = 20,
-  focusable = true,
-  integralPosition = true,
+  focusable,
   style,
+  calcBatchSize = CALC_BATCH_SIZE,
+  showScrollbars = false,
+  deferPositionRefresh = true,
+  horizontalRemeasure = false,
+  horizontalSettleTime = 100,
+  reposition = false,
+  wheelSpeed = 1.0,
   renderItem,
   registerApi,
   obtainInitPos,
-  scrolled,
-  onFocus: focus,
-  onBlur: blur,
-  signPointed,
+  onScrolled,
+  onFocus,
+  onBlur,
+  onViewPortChanged,
+  onResized,
   handleKeys,
-}: VirtualizedListProps) {
-  // --- Status flags for the initialization cycle
-  const mounted = useRef(false);
+}: PropsWithChildren<VirtualizedListProps>) => {
+  // --- Explicit state
+  const [totalHeight, setTotalHeight] = useState(0);
+  const [requestedPos, setRequestedPos] = useState(-1);
+  const [elementsToMeasure, setElementsToSize] =
+    useState<Map<number, JSX.Element>>();
+  const [visibleElements, setVisibleElements] = useState<VisibleItem[]>();
+  const [remeasureTrigger, setRemeasureTrigger] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // --- Store the API to control the vertical scrollbar
+  // --- Intrinsic state
+  const mounted = useRef(false);
+  const heights = useRef<HeightInfo[]>([]);
+  const firstElementIndex = useRef(-1);
+  const calculationQueue = useRef<number[]>([]);
+  const cancelCalculation = useRef(false);
+  const batchQueue = useRef<Viewport[]>();
+  const scrollPosition = useRef(0);
+  const lastViewport = useRef<Viewport>({
+    startIndex: -1,
+    endIndex: -1,
+  });
+  const measuring = useRef(false);
+  const lastContainerWidth = useRef(-1);
+  const settleCounter = useRef(0);
+  const positionToIndex = useRef(-1);
+  const forceRenderingVisible = useRef(false);
+
+  // --- Other references
+  const componentHost = useRef<HTMLDivElement>();
   const verticalApi = useRef<ScrollbarApi>();
   const horizontalApi = useRef<ScrollbarApi>();
+  const sizerHost = useRef<HTMLDivElement>();
 
-  // --- Store last viewport information
-  const lastStartIndex = useRef(-1);
-  const lastEndIndex = useRef(-1);
-  const scrollPosition = useRef(0);
+  // --------------------------------------------------------------------------
+  // Mount and unmount the component
 
-  // --- Component state
-  const [items, setItems] = useState<React.ReactNode[]>();
-  const [pointed, setPointed] = useState(false);
-  const [resizePhase, setResizePhase] = useState<ResizePhase>(ResizePhase.None);
-  const [resizedHeight, setResizedHeight] = useState<number>();
-  const [requestedPos, setRequestedPos] = useState(-1);
-  const [requestedIndex, setRequestedIndex] = useState(-1);
-  const [requestFocus, setRequestFocus] = useState(false);
-
-  // --- Component host element
-  const divHost = useRef<HTMLDivElement>();
-
-  // --- Handle integer height
-  if (integralPosition) {
-    itemHeight = Math.round(itemHeight);
-  }
-
-  // --- Init internal variables
-  let mouseLeft = false;
-  let isSizing = false;
-  const innerHeight = numItems * itemHeight;
-
-  // --- Render the items according to the top position
-  const renderItems = () => {
-    if (resizePhase === ResizePhase.None) {
-      return;
-    }
-
-    const { startIndex, endIndex } = getViewPort();
-    lastStartIndex.current = startIndex;
-    lastEndIndex.current = endIndex;
-    const tmpItems: React.ReactNode[] = [];
-    for (let i = startIndex; i <= endIndex; i++) {
-      const item = renderItem(
-        i,
-        {
-          position: "absolute",
-          top: `${i * itemHeight}px`,
-          width: "fit-content",
-          overflowX: "hidden",
-          whiteSpace: "nowrap",
-        },
-        startIndex,
-        endIndex
-      );
-      tmpItems.push(item);
-    }
-    setItems(tmpItems);
-  };
-
-  // --- Initialize/update the virtualized list
   useEffect(() => {
-    if (mounted.current) {
-      updateDimensions();
-    } else {
-      // --- Initialize the component
+    if (!mounted.current) {
+      // --- Mount the component
+      mounted.current = true;
+      cancelCalculation.current = false;
+
+      // --- Register the API with the host component
       registerApi?.({
         forceRefresh: (position?: number) => forceRefresh(position),
-        scrollToItemByIndex: (index, withRefresh) =>
-          scrollToItemByIndex(index, withRefresh),
-        scrollToTop: (withRefresh) => scrollToTop(withRefresh),
-        scrollToEnd: (withRefresh) => scrollToEnd(withRefresh),
+        scrollToItemByIndex: (index) => scrollToItemByIndex(index),
+        scrollToTop: () => scrollToTop(),
+        scrollToBottom: () => scrollToBottom(),
         getViewPort: () => getViewPort(),
-        ensureVisible: (index: number) => ensureVisible(index),
-        focus: () => setRequestFocus(true),
+        ensureVisible: (index, location) => ensureVisible(index, location),
+        focus: () => () => focus(),
+        remeasure: (start, end) => remeasure(start, end),
       });
-      updateDimensions();
-      const initPosition = obtainInitPos?.();
-      if (initPosition !== null && initPosition !== undefined) {
-        setRequestedPos(initPosition < 0 ? END_LIST_POSITION : initPosition);
-      }
-      mounted.current = true;
     }
+
+    return () => {
+      // --- Cancel any item length calculation in progress
+      cancelCalculation.current = true;
+
+      // --- Unmount completed
+      mounted.current = false;
+    };
   });
 
-  // --- Whenever it's time to resize, save the offset height of
-  // --- the scroll panel to eliminate a flex bug.
+  // --------------------------------------------------------------------------
+  // Whenever the number of items changes, initialize item heights
+
   useLayoutEffect(() => {
-    if (!mounted.current) return;
-    switch (resizePhase) {
-      case ResizePhase.None:
-        setResizedHeight(divHost.current.offsetHeight - 1);
-        setResizePhase(ResizePhase.Resized);
-        break;
-      case ResizePhase.Resized:
-        if (requestedPos >= 0) {
-          divHost.current.scrollTop = normalizeScrollPosition(requestedPos);
-          scrollPosition.current = divHost.current.scrollTop;
-          scrolled?.(scrollPosition.current);
-          setRequestedPos(-1);
-        } else if (requestedIndex >= 0) {
-          scrollPosition.current = divHost.current.scrollTop;
-          const startIndex = Math.floor(scrollPosition.current / itemHeight);
-          const endIndex = Math.min(
-            numItems - 1,
-            Math.floor((scrollPosition.current + resizedHeight) / itemHeight)
-          );
-          if (requestedIndex <= startIndex) {
-            divHost.current.scrollTop = normalizeScrollPosition(
-              requestedIndex * itemHeight
-            );
-            scrollPosition.current = divHost.current.scrollTop;
-            scrolled?.(scrollPosition.current);
-            setRequestedIndex(-1);
-          } else if (requestedIndex >= endIndex) {
-            divHost.current.scrollTop = normalizeScrollPosition(
-              (requestedIndex + 2) * itemHeight - resizedHeight + 1
-            );
-            scrollPosition.current = divHost.current.scrollTop;
-            scrolled?.(scrollPosition.current);
-            setRequestedIndex(-1);
-          }
-        }
-        updateDimensions();
-        renderItems();
-        setResizePhase(ResizePhase.Rendered);
-        if (requestFocus) {
-          divHost.current.focus();
-          setRequestFocus(false);
-        }
-        break;
-      case ResizePhase.Rendered:
-        if (requestedPos >= 0) {
-          divHost.current.scrollTop = normalizeScrollPosition(requestedPos);
-          scrollPosition.current = divHost.current.scrollTop;
-          scrolled?.(scrollPosition.current);
-          setRequestedPos(-1);
-        }
-        break;
+    // --- Sets up the initial heights
+    setInitialHeights();
+    measuring.current = heightMode === "variable" || heightMode === "first";
+
+    if (!measuring.current) {
+      // --- Notify the host about the viewport change
+      const vp = getViewPort();
+      onViewPortChanged?.(vp.startIndex, vp.endIndex);
     }
+
+    // --- Navigate to the specified initial position
+    const initPosition = obtainInitPos?.();
+    if (initPosition !== null && initPosition !== undefined) {
+      setRequestedPos(initPosition < 0 ? MAX_LIST_PIXELS : initPosition);
+    }
+
+    // --- Process the first batch of elements to measure their size
+    processHeightMeasureBatchAfterTick();
+  }, [itemsCount]);
+
+  // --------------------------------------------------------------------------
+  // Whenever elements are rendered for measure, process them
+  useLayoutEffect(() => {
+    applyMeasuredItemDimensions();
+
+    // --- Is there a next batch?
+    if (calculationQueue.current.length > 0) {
+      // --- Process the nex batch of elements
+      processHeightMeasureBatch();
+    } else {
+      // --- No more elements to measure
+      setElementsToSize(undefined);
+
+      // --- We're not measuring anymore
+      measuring.current = false;
+
+      // --- Let's reposition, if asked so
+      if (positionToIndex.current >= 0) {
+        scrollToItemByIndex(positionToIndex.current);
+      }
+    }
+  }, [elementsToMeasure]);
+
+  // --------------------------------------------------------------------------
+  // Whenever the set of visible elements changes, render them
+  useLayoutEffect(() => {
+    renderVisibleElements();
+  }, [visibleElements]);
+
+  // --------------------------------------------------------------------------
+  // Whenever there is a new batch to remeasure, initiate
+  useLayoutEffect(() => {
+    if (remeasureTrigger) {
+      processHeightMeasureBatch();
+    }
+  }, [remeasureTrigger]);
+
+  // --------------------------------------------------------------------------
+  // Change the requested position
+  useLayoutEffect(() => {
+    updateRequestedPosition();
+  }, [requestedPos]);
+
+  // --------------------------------------------------------------------------
+  // Update the UI
+  useLayoutEffect(() => {
+    updateScrollbarDimensions();
+    renderVisibleElements(forceRenderingVisible.current);
+    forceRenderingVisible.current = false;
   });
 
-  // --- Handle resizing
-  const _onResize = () => {
-    if (resizePhase === ResizePhase.None) return;
-    forceRefresh();
-  };
+  // --------------------------------------------------------------------------
+  // Respond to the resizing of the host component
+  useResizeObserver(componentHost, async () => {
+    const width = componentHost.current.offsetWidth;
 
-  useResizeObserver(divHost, _onResize);
+    // --- Check if we need to remeasure items
+    if (
+      lastContainerWidth.current >= 0 &&
+      lastContainerWidth.current !== width &&
+      horizontalRemeasure
+    ) {
+      // --- Let's wait while horizontal position settles down
+      settleCounter.current++;
+      await new Promise((r) => setTimeout(r, horizontalSettleTime));
+      if (settleCounter.current === 1) {
+        // --- Let's keep the top item's position, if required so
+        if (reposition) {
+          positionToIndex.current = getViewPort().startIndex;
+        }
+
+        // --- Let's remeasure the items because of changed horizontal size
+        setInitialHeights();
+        requestAnimationFrame(() => {
+          // --- Process the first batch of elements to measure their size
+          processHeightMeasureBatch();
+        });
+      }
+      settleCounter.current--;
+    }
+    lastContainerWidth.current = width;
+
+    // --- Update the UI according to changes
+    updateScrollbarDimensions();
+    updateRequestedPosition();
+    renderVisibleElements();
+    onResized?.(width, componentHost.current.offsetHeight);
+  });
 
   return (
     <>
+      {
+        // --- The container for the viewport of the virtualized list
+      }
       <div
         tabIndex={focusable ? 0 : -1}
-        ref={divHost}
-        className="scroll"
+        ref={componentHost}
         style={{
           ...style,
           overflow: "hidden",
           position: "relative",
-          height: resizedHeight ?? 100_000,
+          height: "100%",
           outline: "none",
-        }}
-        onScroll={(e) => {
-          updateDimensions();
-          renderItems();
-          scrollPosition.current = divHost.current.scrollTop;
-          scrolled?.(divHost.current.scrollTop);
         }}
         onWheel={(e) =>
           setRequestedPos(
-            Math.max(0, scrollPosition.current + (e.deltaY / 4) * itemHeight)
+            Math.max(
+              0,
+              scrollPosition.current +
+                ((wheelSpeed * e.deltaY) / 20) * itemHeight
+            )
           )
         }
         onKeyDown={(e) => {
           if (handleKeys) {
             handleKeys(e);
           } else {
-            handleScrollKeys(
-              divHost.current,
+            const newPos = calculateScrollPositionByKey(
+              componentHost.current,
               e.key,
-              e.ctrlKey,
+              e.shiftKey,
               itemHeight,
-              integralPosition
+              true
             );
+            setRequestedPos(newPos);
           }
         }}
-        onFocus={() => focus?.()}
-        onBlur={() => blur?.()}
+        onFocus={() => onFocus?.()}
+        onBlur={() => onBlur?.()}
       >
+        {
+          // --- The inner panel fully sized to the entire virtual list
+        }
         <div
           className="inner"
-          style={{
-            height: `${innerHeight}px`,
-          }}
-          onMouseEnter={() => {
-            setPointed(true);
-            signPointed?.(true);
-            mouseLeft = false;
-          }}
-          onMouseLeave={() => {
-            setPointed(isSizing);
-            signPointed?.(isSizing);
-            mouseLeft = true;
-          }}
+          style={{ height: `${totalHeight}px` }}
+          onMouseEnter={() => displayScrollbars(true)}
+          onMouseLeave={() => displayScrollbars(false)}
         >
-          {items}
+          {
+            // --- Whenever we have any, render the visible elements
+          }
+          {visibleElements &&
+            visibleElements.map((ve) => (
+              <React.Fragment key={ve.index}>{ve.item}</React.Fragment>
+            ))}
+
+          {
+            // --- This element is a container we push far to the bottom of the
+            // --- virtual list. We render the items within this container
+            // --- temporarily so that we can measure their heights.
+          }
+          <div
+            ref={sizerHost}
+            style={{
+              display: "block",
+              position: "absolute",
+              width: "100%",
+              top: MAX_LIST_PIXELS,
+            }}
+          >
+            {
+              // --- The container for the viewport of the virtualized list
+            }
+            {elementsToMeasure &&
+              Array.from(elementsToMeasure.entries()).map((item) => (
+                <React.Fragment key={item[0]}>{item[1]}</React.Fragment>
+              ))}
+          </div>
         </div>
       </div>
+      {
+        // --- Vertical scrollbar
+      }
       <FloatingScrollbar
         direction="vertical"
-        barSize={10}
-        forceShow={pointed}
+        barSize={16}
         registerApi={(api) => (verticalApi.current = api)}
-        moved={(delta) => {
-          setRequestedPos(delta);
-        }}
-        sizing={(nowSizing) => {
-          isSizing = nowSizing;
-          if (!nowSizing && mouseLeft) {
-            setPointed(false);
-            signPointed?.(false);
-          }
-        }}
+        moved={(delta) => setRequestedPos(delta)}
+        forceShow={showScrollbars}
       />
+      {
+        // --- Horizontal scrollbar
+      }
       <FloatingScrollbar
         direction="horizontal"
         barSize={10}
-        forceShow={pointed}
         registerApi={(api) => (horizontalApi.current = api)}
-        moved={(delta) => {
-          setRequestedPos(delta);
-        }}
-        sizing={(nowSizing) => {
-          isSizing = nowSizing;
-          if (!nowSizing && mouseLeft) {
-            setPointed(false);
-            signPointed?.(false);
-          }
-        }}
+        moved={(delta) => setRequestedPos(delta)}
+        forceShow={showScrollbars}
       />
     </>
   );
 
   // --------------------------------------------------------------------------
-  // Virtualized list API
+  // Helper functions
 
   /**
-   * Asks the component to update its viewport
+   * Sets the initial heights of items after mounting the component
    */
-  function forceRefresh(position?: number) {
-    const reqPos =
-      position < 0
-        ? END_LIST_POSITION
-        : position ?? (divHost.current ? divHost.current.scrollTop : -1);
-    setRequestedPos(reqPos);
-    setResizedHeight(null);
-    setResizePhase(ResizePhase.None);
+  function setInitialHeights(): void {
+    const initial: HeightInfo[] = [];
+    initial.length = itemsCount;
+
+    // --- We put dynamic items into a calculation queue so that later we can
+    // --- measure their dimensions
+    const calcQueue: number[] = [];
+
+    // --- Start from the top, and iterate through the items
+    let top = 0;
+    if (heightMode === "first") {
+      calcQueue[0] = 0;
+    }
+    for (let i = 0; i < itemsCount; i++) {
+      initial[i] = {
+        top,
+        height: itemHeight,
+      };
+      top += itemHeight;
+
+      // --- Put the dynamic item into the calculation queue
+      if (heightMode === "variable") {
+        calcQueue[i] = i;
+      }
+
+      // --- Do not allow arbitrarily long lists
+      if (top > MAX_LIST_PIXELS) {
+        throw new Error(
+          `The total height of the virtualized list cannot be greater than ${MAX_LIST_PIXELS}. ` +
+            `Now, the list has ${itemsCount} items and item #${i} violates the maximum total height.`
+        );
+      }
+    }
+
+    // --- Prepare calculations
+    calculationQueue.current = calcQueue;
+    batchQueue.current = [];
+
+    // --- Done.
+    heights.current = initial;
+    setTotalHeight(top);
+  }
+
+  /**
+   * Processes the calculation queue
+   */
+  function processHeightMeasureBatch(): void {
+    const queue = calculationQueue.current;
+    if (queue.length === 0) {
+      // --- Nothing to calculate. Are the prepared remeasure batches?
+      if (batchQueue.current.length > 0) {
+        // --- Yes, push the next batch to the queue
+        const nextBatch = batchQueue.current.shift();
+        for (let i = nextBatch.startIndex; i <= nextBatch.endIndex; i++) {
+          queue.push(i);
+        }
+      } else {
+        // --- No more items to measure
+        return;
+      }
+    }
+    const batchItems = Math.min(queue.length, calcBatchSize);
+
+    const newElementsToSize = new Map<number, JSX.Element>();
+    let firstIndex = -1;
+    for (let i = 0; i < batchItems; i++) {
+      if (cancelCalculation.current) {
+        // --- Abort calculation when requested so
+        cancelCalculation.current = false;
+        return;
+      }
+      const itemIndex = queue.shift();
+      if (firstIndex < 0) {
+        firstIndex = itemIndex;
+      }
+      var item = renderItem(itemIndex, explicitItemType);
+      newElementsToSize.set(itemIndex, item);
+    }
+    firstElementIndex.current = firstIndex;
+    setElementsToSize(newElementsToSize);
+  }
+
+  /**
+   * Process the calculation queue after the next tick
+   */
+  function processHeightMeasureBatchAfterTick(): void {
+    requestAnimationFrame(() => processHeightMeasureBatch());
+  }
+
+  /**
+   * Processes the dimensions of the measured items
+   */
+  function applyMeasuredItemDimensions(): void {
+    if (elementsToMeasure && elementsToMeasure.size > 0) {
+      // --- Iterate through the sizes of elements and store them
+      const heightInfo = heights.current;
+
+      if (heightMode === "first") {
+        // --- All items will have the same as as the first
+        const measuredHeight = (
+          sizerHost.current.childNodes[0] as HTMLDivElement
+        ).offsetHeight;
+        let top = 0;
+        for (let i = 0; i < itemsCount; i++) {
+          // --- Get the next element
+          heightInfo[i] = {
+            top: top,
+            height: measuredHeight,
+          };
+          top += measuredHeight;
+        }
+        // --- Set the new height
+        setTotalHeight(top);
+      } else {
+        // --- All items have their individual size
+        let lastHeightInfo: HeightInfo | null = null;
+        let lastIndex = sizerHost.current.childNodes.length;
+        const firstIndex = firstElementIndex.current;
+        let top = firstIndex
+          ? heightInfo[firstIndex - 1].top + heightInfo[firstIndex - 1].height
+          : 0;
+        for (let i = 0; i < lastIndex; i++) {
+          // --- Get the next element
+          const element = sizerHost.current.childNodes[i] as HTMLDivElement;
+          const itemIndex = i + firstElementIndex.current;
+          const measuredHeight = element.offsetHeight;
+
+          // --- Read the element size and calculate position
+          lastHeightInfo = heightInfo[itemIndex] = {
+            top: top,
+            height: measuredHeight,
+          };
+          top += measuredHeight;
+        }
+
+        // --- Now, shift the remaining items
+        if (lastHeightInfo) {
+          let nextTop = lastHeightInfo.top + lastHeightInfo.height;
+          for (
+            let i = lastIndex + firstElementIndex.current;
+            i < heightInfo.length;
+            i++
+          ) {
+            heightInfo[i].top = nextTop;
+            nextTop += heightInfo[i].height;
+          }
+
+          // --- Set the new height
+          setTotalHeight(nextTop);
+        }
+      }
+    }
+  }
+
+  /**
+   * Let the scrollbars know the new host component dimensions
+   */
+  function updateScrollbarDimensions(): void {
+    if (deferPositionRefresh && measuring.current) {
+      return;
+    }
+
+    const host = componentHost.current;
+    verticalApi.current?.signHostDimension({
+      hostLeft: host.offsetLeft,
+      hostTop: host.offsetTop,
+      hostSize: host.offsetHeight,
+      hostCrossSize: host.offsetWidth,
+      hostScrollPos: host.scrollTop,
+      hostScrollSize: host.scrollHeight,
+    });
+    horizontalApi.current?.signHostDimension({
+      hostLeft: host.offsetLeft,
+      hostTop: host.offsetTop,
+      hostSize: host.offsetWidth,
+      hostCrossSize: host.offsetHeight,
+      hostScrollPos: host.scrollLeft,
+      hostScrollSize: host.scrollWidth,
+    });
+  }
+
+  /**
+   * Update the scrollbar's position to the requested one
+   */
+  function updateRequestedPosition(): void {
+    if (requestedPos >= 0 && (!deferPositionRefresh || !measuring.current)) {
+      componentHost.current.scrollTop = requestedPos;
+      scrollPosition.current = componentHost.current.scrollTop;
+      onScrolled?.(scrollPosition.current);
+      setRequestedPos(-1);
+    }
+  }
+
+  /**
+   * Display the visible elements
+   * @returns
+   */
+  function renderVisibleElements(force = false): void {
+    if (deferPositionRefresh && measuring.current) {
+      return;
+    }
+
+    const view = getViewPort();
+    if (view.startIndex < 0 || view.endIndex < 0) {
+      // --- The viewport is empty
+      return;
+    }
+
+    // --- We have to avoid continuous React updates, so we
+    // --- carry out rendering only if forced, or the viewport
+    // --- changes
+    if (
+      !force &&
+      lastViewport.current.startIndex === view.startIndex &&
+      lastViewport.current.endIndex === view.endIndex
+    ) {
+      // --- The viewport has not changed
+      return;
+    }
+    lastViewport.current = view;
+
+    // --- Render the elements in the viewport
+    const visible: VisibleItem[] = [];
+    for (let i = view.startIndex; i <= view.endIndex; i++) {
+      visible.push({
+        index: i,
+        item: renderItem(i, {
+          ...explicitItemType,
+          top: heights.current[i].top,
+        }),
+      });
+    }
+    setVisibleElements(visible);
+
+    // --- Notify the host about the viewport change
+    onViewPortChanged?.(view.startIndex, view.endIndex);
+  }
+
+  /**
+   * Displays or hides the scrollbars
+   * @param show Indicates if scrollbars should be displayed
+   */
+  function displayScrollbars(show: boolean): void {
+    verticalApi.current?.display(show);
+    horizontalApi.current?.display(show);
+  }
+
+  // --------------------------------------------------------------------------
+  // Virtualized list API to be called by host components
+
+  /**
+   * Forces refreshing the list
+   */
+  function forceRefresh(scrollPosition?: number): void {
+    forceRenderingVisible.current = true;
+    if (scrollPosition !== undefined) {
+      setRequestedPos(scrollPosition);
+    } else {
+      setRefreshTrigger(refreshTrigger + 1);
+    }
   }
 
   /**
    * Scrolls to the item with the specified index
-   * @param index
    */
-  function scrollToItemByIndex(index: number, withRefresh = false) {
-    setRequestedPos(index * itemHeight);
-    if (withRefresh) {
-      setResizedHeight(null);
-      setResizePhase(ResizePhase.None);
+  function scrollToItemByIndex(index: number): void {
+    const heightItem = heights.current[index];
+    if (heightItem) {
+      setRequestedPos(heightItem.top);
     }
   }
 
   /**
-   * Scrolls to the top of the list
-   * @param index
+   * Scrolls to the top
    */
-  function scrollToTop(withRefresh = false) {
+  function scrollToTop(): void {
     setRequestedPos(0);
-    setResizePhase(ResizePhase.Resized);
-    if (withRefresh) {
-      setResizedHeight(null);
-      setResizePhase(ResizePhase.None);
-    }
   }
 
   /**
-   * Scrolls to the end of the list
-   * @param index
+   * Scrolls to the bottom
    */
-  function scrollToEnd(withRefresh = false) {
-    setRequestedPos(END_LIST_POSITION);
-    if (withRefresh) {
-      setResizedHeight(null);
-      setResizePhase(ResizePhase.None);
-    } else {
-      setResizePhase(ResizePhase.Resized);
-    }
+  function scrollToBottom(): void {
+    setRequestedPos(MAX_LIST_PIXELS);
   }
 
   /**
-   * Gets the top and bottom item index of the virtual list's viewport
-   * @returns
+   * Retrieves the current viewport of the virtual list
    */
-  function getViewPort(): { startIndex: number; endIndex: number } {
-    if (!divHost.current) {
-      return {
-        startIndex: lastStartIndex.current,
-        endIndex: lastEndIndex.current,
-      };
+  function getViewPort(): Viewport {
+    if (
+      !heights.current ||
+      heights.current.length === 0 ||
+      !componentHost.current
+    ) {
+      return { startIndex: -1, endIndex: -1 };
     }
-    const result = {
-      startIndex: Math.floor(divHost.current.scrollTop / itemHeight),
-      endIndex: Math.min(
-        numItems - 1, // don't render past the end of the list
-        Math.floor((divHost.current.scrollTop + resizedHeight) / itemHeight)
-      ),
-    };
+    var scrollTop = componentHost.current.scrollTop;
+    var height = componentHost.current.offsetHeight;
+    const startIndex = binarySearch(heights.current, scrollTop);
+    const endIndex = binarySearch(heights.current, scrollTop + height);
+    const result = { startIndex, endIndex };
     return result;
+
+    function binarySearch(items: HeightInfo[], value: number): number {
+      var startIndex = 0,
+        stopIndex = items.length - 1,
+        middle = Math.floor((stopIndex + startIndex) / 2);
+
+      while (
+        (value < items[middle].top ||
+          value >= items[middle].top + items[middle].height) &&
+        startIndex < stopIndex
+      ) {
+        // --- Adjust search area
+        if (value < items[middle].top) {
+          stopIndex = middle - 1;
+        } else if (value > items[middle].top) {
+          startIndex = middle + 1;
+        }
+
+        // --- Recalculate middle
+        middle = Math.max(0, Math.floor((stopIndex + startIndex) / 2));
+      }
+
+      // --- Done
+      return middle;
+    }
   }
 
   /**
-   * Ensures that the item with the specified index is visible
-   * @param index Index to show
+   * Ensures that the item with the specified index gets visible
+   * entirelly in the current viewport
    */
-  function ensureVisible(index: number): void {
-    setRequestedIndex(index);
-    setResizePhase(ResizePhase.Resized);
+  function ensureVisible(index: number, location: ItemTargetLocation): void {
+    const heightItem = heights.current[index];
+    if (!heightItem) {
+      // --- We cannot ensure the visibility of a non-existing item
+      return;
+    }
+    let top = heightItem.top;
+    switch (location) {
+      case "bottom":
+        top =
+          heightItem.top -
+          componentHost.current.offsetHeight +
+          heightItem.height;
+        break;
+      case "center":
+        top =
+          heightItem.top -
+          (componentHost.current.offsetHeight - heightItem.height) / 2;
+        break;
+    }
+    setRequestedPos(top);
   }
 
-  // --------------------------------------------------------------------------
-  // Helper functions
   /**
-   * Updates scrollbars according to the panel's dimension changes
+   * Ensures that the virtualized list gets the focus
    */
-  function updateDimensions(): void {
-    verticalApi.current?.signHostDimension({
-      hostLeft: divHost.current.offsetLeft,
-      hostTop: divHost.current.offsetTop,
-      hostSize: divHost.current.offsetHeight,
-      hostCrossSize: divHost.current.offsetWidth,
-      hostScrollPos: divHost.current.scrollTop,
-      hostScrollSize: divHost.current.scrollHeight,
+  function focus(): void {
+    requestAnimationFrame(() => componentHost.current?.focus());
+  }
+
+  /**
+   * Initiates remeasuring the specified range of items
+   */
+  function remeasure(start: number, end: number) {
+    // --- Prepare the next remeasure batch
+    batchQueue.current.push({
+      startIndex: Math.max(0, start),
+      endIndex: Math.min(itemsCount, end),
     });
-    horizontalApi.current?.signHostDimension({
-      hostLeft: divHost.current.offsetLeft,
-      hostTop: divHost.current.offsetTop,
-      hostSize: divHost.current.offsetWidth,
-      hostCrossSize: divHost.current.offsetHeight,
-      hostScrollPos: divHost.current.scrollLeft,
-      hostScrollSize: divHost.current.scrollWidth,
-    });
-  }
 
-  /**
-   * Calculates normalized scrollposition
-   * @param newPosition
-   */
-  function normalizeScrollPosition(newPosition: number): number {
-    return Math.max(
-      0,
-      integralPosition
-        ? Math.floor(newPosition / itemHeight) * itemHeight
-        : newPosition
-    );
+    // --- Let's keep the top item's position, if required so
+    if (reposition) {
+      positionToIndex.current = getViewPort().startIndex;
+    }
+
+    // --- Initiate remeasuring
+    setRemeasureTrigger(remeasureTrigger + 1);
   }
-}
+};
+
+// ----------------------------------------------------------------------------
+// Helper types and values
+
+/**
+ * Height information of a particular list item
+ */
+type HeightInfo = {
+  top: number;
+  height: number;
+};
+
+/**
+ * Information about a visible item
+ */
+type VisibleItem = {
+  index: number;
+  item: JSX.Element;
+};
+
+/**
+ * Viewport information
+ */
+type Viewport = { startIndex: number; endIndex: number };
+
+/**
+ * Each virtual item has this type for measuring and displaying the item
+ */
+const explicitItemType: CSSProperties = {
+  position: "absolute",
+  top: 0,
+  overflowX: "hidden",
+};

@@ -10,7 +10,7 @@ import {
 /**
  * The minimum size of the scrollbar's handle
  */
-const MIN_HANDLE_SIZE = 20;
+const MIN_HANDLE_SIZE = 10;
 
 /**
  * The orientation of the scrollbar element
@@ -35,28 +35,29 @@ export type ScrollBarData = {
  */
 export type ScrollbarApi = {
   signHostDimension: (dims: ScrollBarData) => void;
+  display: (forceShow: boolean) => void;
 };
 
 /**
  * Scrollbar properties
  */
-type Props = {
+type FloatingScrollbarProps = {
   direction: ElementOrientation;
   barSize: number;
-  forceShow: boolean;
+  forceShow?: boolean;
   registerApi?: (api: ScrollbarApi) => void;
   sizing?: (isSizing: boolean) => void;
   moved?: (newPosition: number) => void;
 };
 
-export const FloatingScrollbar: React.FC<Props> = ({
+export const FloatingScrollbar: React.FC<FloatingScrollbarProps> = ({
   direction,
   barSize,
-  forceShow,
+  forceShow = false,
   registerApi,
   sizing,
   moved,
-}: PropsWithChildren<Props>) => {
+}: PropsWithChildren<FloatingScrollbarProps>) => {
   const [barTop, setBarTop] = useState(0);
   const [barLeft, setBarLeft] = useState(0);
   const [barWidth, setBarWidth] = useState(0);
@@ -80,7 +81,7 @@ export const FloatingScrollbar: React.FC<Props> = ({
 
   useEffect(() => {
     if (!mounted.current) {
-      registerApi?.({ signHostDimension });
+      registerApi?.({ signHostDimension, display });
       mounted.current = true;
     }
   });
@@ -100,7 +101,7 @@ export const FloatingScrollbar: React.FC<Props> = ({
     left: handleLeft,
     width: handleWidth,
     height: handleHeight,
-    background: "var(--scrollbar-background-color)",
+    background: "#a0a0a0",
     opacity: dragging ? 1.0 : pointed || forceShow ? 0.8 : 0.0,
     transitionProperty: "opacity",
     transitionDuration: dragging ? "0s" : "0.5s",
@@ -121,11 +122,15 @@ export const FloatingScrollbar: React.FC<Props> = ({
             startResize(ev);
             setDragging(true);
           }
+          ev.stopPropagation();
         }}
-        onMouseUp={() => {
+        onMouseUp={(ev) => {
           endResize();
           setDragging(false);
           sizing?.(false);
+        }}
+        onClick={(ev) => {
+          ev.stopPropagation();
         }}
       ></div>
     </div>
@@ -179,6 +184,14 @@ export const FloatingScrollbar: React.FC<Props> = ({
   }
 
   /**
+   * The parent call this methods to show/hide the scrollbar
+   * @param show Indicates if the scrollbar should be displayed
+   */
+  function display(show: boolean): void {
+    setPointed(show);
+  }
+
+  /**
    * Starts resizing this panel
    */
   function startResize(e: React.MouseEvent): void {
@@ -211,7 +224,7 @@ export const FloatingScrollbar: React.FC<Props> = ({
     const delta =
       (direction === "horizontal" ? e.clientX : e.clientY) -
       gripPosition.current;
-      const maxPosition =
+    const maxPosition =
       dims.current.hostSize -
       (direction === "horizontal" ? handleWidth : handleHeight);
     var newPosition = Math.max(0, startPosition.current + delta);
@@ -219,6 +232,6 @@ export const FloatingScrollbar: React.FC<Props> = ({
     var newScrollPosition =
       (newPosition * (dims.current.hostScrollSize - dims.current.hostSize)) /
       maxPosition;
-      moved?.(newScrollPosition);
+    moved?.(newScrollPosition);
   }
 };

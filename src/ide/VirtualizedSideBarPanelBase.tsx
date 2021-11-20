@@ -2,9 +2,7 @@ import * as React from "react";
 import { CSSProperties } from "react";
 
 import { ISideBarPanel } from "@abstractions/side-bar-service";
-import VirtualizedList, {
-  VirtualizedListApi,
-} from "@components/VirtualizedList";
+import { VirtualizedList, VirtualizedListApi } from "@components/VirtualizedList";
 import {
   SideBarPanelBase,
   sidebarPlaceholderStyle,
@@ -70,7 +68,7 @@ export abstract class VirtualizedSideBarPanelBase<
     return (
       <VirtualizedList
         itemHeight={this.itemHeight}
-        numItems={itemsCount}
+        itemsCount={itemsCount}
         style={listStyle}
         renderItem={(index: number, style: CSSProperties) =>
           this.renderItem(index, style)
@@ -162,7 +160,7 @@ export abstract class VirtualizedSideBarPanelBase<
       newIndex = numItems - 1;
     }
     if (newIndex >= 0) {
-      this.listApi.ensureVisible(newIndex);
+      this.listApi.ensureVisible(newIndex, "top");
       this.setState({
         selectedIndex: newIndex as any,
       });
