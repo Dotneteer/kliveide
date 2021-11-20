@@ -1,23 +1,13 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Parameters of the hook
- */
-type ResizeObserverHookParams = {
-  callback: ResizeObserverCallback;
-  element: React.RefObject<Element>;
-};
-
-/**
  * Hook that handles the size change of a particular DOM element/component
- * @param param0
  */
-export const useResizeObserver = ({
-  callback,
-  element,
-}: ResizeObserverHookParams) => {
+export const useResizeObserver = (
+  element: React.MutableRefObject<Element | undefined>,
+  callback: ResizeObserverCallback
+) => {
   const current = element?.current;
-
   const observer = useRef<ResizeObserver>();
 
   useEffect(() => {

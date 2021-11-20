@@ -227,10 +227,7 @@ export default function VirtualizedList({
     forceRefresh();
   };
 
-  useResizeObserver({
-    callback: _onResize,
-    element: divHost,
-  });
+  useResizeObserver(divHost, _onResize);
 
   return (
     <>

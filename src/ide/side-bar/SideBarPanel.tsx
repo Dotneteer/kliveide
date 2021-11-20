@@ -94,11 +94,9 @@ export default function SideBarPanel({
     })();
   });
 
-  useResizeObserver({
-    callback: (entries) => {
-      descriptor.height = entries[0].contentRect.height;
-      setRefreshCount(refreshCount + 1);    },
-    element: hostElement,
+  useResizeObserver(hostElement, (entries) => {
+    descriptor.height = entries[0].contentRect.height;
+    setRefreshCount(refreshCount + 1);
   });
 
   return (

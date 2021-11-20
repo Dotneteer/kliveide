@@ -36,10 +36,7 @@ export default function KeyboardPanel(props: Props) {
   // --- Handle resizing
   const _onResize = () => handleResize();
 
-  useResizeObserver({
-    callback: _onResize,
-    element: hostElement,
-  });
+  useResizeObserver(hostElement, _onResize);
 
   let keyboard = null;
   switch (props.type) {
