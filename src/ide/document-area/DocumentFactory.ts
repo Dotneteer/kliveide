@@ -129,23 +129,6 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
   abstract createContentElement(): React.ReactNode;
 
   /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any> {
-    return this._panelState;
-  }
-
-  /**
-   * Sets the state of the side bar panel
-   * @param state Optional state to set
-   */
-  setPanelState(state: Record<string, any> | null): void {
-    if (state) {
-      this._panelState = { ...this._panelState, ...state };
-    }
-  }
-
-  /**
    * Sign that the document descriptor has changed
    */
   signDescriptorChange(): void {
@@ -160,6 +143,16 @@ export abstract class DocumentPanelDescriptorBase implements IDocumentPanel {
     // --- Override in derived descriptors
   }
 
+  /**
+   * Allows saving the panel state
+   */
+  abstract saveDocumentState(): void;
+
+   /**
+    * Allows the panel to restore its state
+    */
+  abstract restoreDocumentState(): void;
+    
   /**
    * Signs that the document descriptor has changed
    */

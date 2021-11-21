@@ -215,18 +215,17 @@ export class DocumentService implements IDocumentService {
       return;
     }
 
-    // --- Save the state of the active panel
-    if (this._activeDocument) {
-      const fullState = Object.assign({}, getState().documentFrame ?? {}, {
-        [this._activeDocument.id]: this._activeDocument.getPanelState(),
-      });
-      dispatch(setDocumentFrameStateAction(fullState));
+    // --- Save the state of the old document
+    const oldDocument = this._activeDocument;
+    if (oldDocument) {
+      oldDocument.saveDocumentState();
     }
 
     if (!doc) {
       // --- There is no active document
-      const oldDocument = this._activeDocument;
       this._activeDocument = null;
+
+      // --- Sign changes, if there was a previous active document
       if (!oldDocument) {
         this.fireChanges();
         return;
@@ -239,18 +238,12 @@ export class DocumentService implements IDocumentService {
       return;
     }
 
-    // --- Activate the document
+    // --- Activate the document with its state
+    doc.restoreDocumentState();
     this._activeDocument = doc;
     this._activationStack.push(doc);
     this._documents.forEach((d) => (d.active = false));
     doc.active = true;
-
-    // --- Load the state of the active document
-    const documentsState = getState().documentFrame ?? {};
-    const documentState = documentsState?.[this._activeDocument.id];
-    if (documentState) {
-      this._activeDocument.setPanelState(documentState);
-    }
 
     // --- Invoke custom action
     this.fireChanges();

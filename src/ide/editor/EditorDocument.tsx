@@ -28,7 +28,6 @@ import {
   hideEditorStatusAction,
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
-import { getEngineProxyService } from "../../common-ui/services/engine-proxy";
 import {
   CSSProperties,
   PropsWithChildren,
@@ -61,6 +60,7 @@ interface Props {
 const CODE_EDITOR_MARKERS = "CodeEditorMarkers";
 
 export type EditorDocumentAPi = {
+  getEditor: () => Editor;
   setPosition: (lineNumber: number, column: number) => void;
 };
 
@@ -99,7 +99,8 @@ function EditorDocument({
       const store = getStore();
       store.compilationChanged.on(_refreshErrorMarkers);
       store.executionStateChanged.on(_refreshCurrentBreakpoint);
-      registerApi?.({ setPosition });
+      // --- Immediately register the API to communicate with the editor component
+      registerApi?.({ setPosition, getEditor: () => editor.current });
     }
 
     const unmount = async () => {
@@ -118,14 +119,8 @@ function EditorDocument({
       const docId = descriptor.id;
       const doc = getDocumentService().getDocumentById(docId);
       if (doc) {
-        // --- If so, save its state
-        const text = editor.current.getValue();
-        getEditorService().saveState(descriptor.id, {
-          text: editor.current.getValue(),
-          viewState: editor.current.saveViewState(),
-        });
-
         // --- If there are pending changes not saved yet, save now
+        const text = editor.current.getValue();
         if (unsavedChangeCounter.current > 0) {
           await saveDocument(text);
         }
@@ -141,7 +136,7 @@ function EditorDocument({
     return () => {
       unmount();
     };
-  });
+  }, [editor.current]);
 
   const placeholderStyle: CSSProperties = {
     display: "flex",
@@ -672,6 +667,32 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
    */
   async navigateToLocation(location: NavigationInfo): Promise<void> {
     this._api?.setPosition(location.line, location.column);
+  }
+
+  /**
+   * Allows saving the panel state
+   */
+  saveDocumentState(): void {
+    if (!this._api) {
+      // --- No API, no restore
+      return;
+    }
+
+    // --- If so, save its state
+    const editor = this._api.getEditor();
+    const text = editor.getValue();
+    getEditorService().saveState(this.id, {
+      text: editor.getValue(),
+      viewState: editor.saveViewState(),
+    });
+  }
+
+  /**
+   * Allows the panel to restore its state
+   */
+  restoreDocumentState(): void {
+    // --- We restore the editor state after the editor component
+    // --- has been mounted.
   }
 }
 

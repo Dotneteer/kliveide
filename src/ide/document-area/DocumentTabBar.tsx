@@ -139,6 +139,7 @@ export default function DocumentTabBar() {
         }}
         closed={() => {
           getEditorService().clearState(d.id);
+          console.log(`Unregister ${d.id}`);
           documentService.unregisterDocument(d);
         }}
       />

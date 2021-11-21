@@ -54,18 +54,6 @@ export interface IDocumentPanel {
   createContentElement(): React.ReactNode;
 
   /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any>;
-
-  /**
-   * Sets the state of the side bar
-   * @param state Optional state to set
-   * @param fireImmediate Fire a panelStateLoaded event immediately?
-   */
-  setPanelState(state: Record<string, any> | null): void;
-
-  /**
    * Navigates to the specified document location
    * @param location Document location
    */
@@ -75,6 +63,16 @@ export interface IDocumentPanel {
    * Sign that the document descriptor has changed
    */
   signDescriptorChange(): void;
+
+  /**
+   * Allows saving the panel state
+   */
+  saveDocumentState(): void;
+
+  /**
+   * Allows the panel to restore its state
+   */
+  restoreDocumentState(): void;
 
   /**
    * Signs that the document descriptor has changed
