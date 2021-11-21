@@ -81,7 +81,6 @@ export default function EmuApp() {
   document.body.setAttribute("style", toStyleString(themeStyle));
   document.body.setAttribute("class", themeClass);
 
-  console.log(showToolbar);
   return (
     <div style={themeStyle} className={themeClass}>
       {showToolbar && <Toolbar />}

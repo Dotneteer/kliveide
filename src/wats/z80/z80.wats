@@ -344,8 +344,11 @@ void executeInt() {
     tacts += 2;
 
     // Let's assume, the device retrieves 0xff (the least significant bit is ignored)
-    // addr = i << 8 | 0xfe;
-    local u16 addr = (i << 8) | 0xfe;
+    // *** According to the official Zilog documentation the next line should be:
+    // *** local u16 addr = (i << 8) | 0xfe;
+    // *** However, this article shows that we need to do it differently:
+    // *** http://www.z80.info/interrup2.htm
+    local u16 addr = (i << 8) | 0xff;
     tacts += 5;
     wz = readMemory(addr) + (readMemory(addr + 1) << 8);
     tacts += 6;
