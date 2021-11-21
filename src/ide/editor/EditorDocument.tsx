@@ -176,10 +176,7 @@ function EditorDocument({
   }
 
   // --- Respond to resizing the main container
-  useResizeObserver({
-    callback: () => editor.current.layout(),
-    element: divHost,
-  });
+  useResizeObserver(divHost, () => editor.current.layout());
 
   return (
     <>

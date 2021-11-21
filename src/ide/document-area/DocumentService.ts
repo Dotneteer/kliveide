@@ -197,10 +197,24 @@ export class DocumentService implements IDocumentService {
   }
 
   /**
+   * Releases all documents in a single step
+   */
+  releaseAllDocuments(): void {
+    this._documents.length = 0;
+    this._activationStack.length = 0;
+    this._activeDocument = null;
+    this.fireChanges();
+  }
+
+  /**
    * Sets the specified document to be the active one
    * @param doc Document to activate
    */
   setActiveDocument(doc: IDocumentPanel | null): void {
+    if (this._activeDocument === doc) {
+      return;
+    }
+
     // --- Save the state of the active panel
     if (this._activeDocument) {
       const fullState = Object.assign({}, getState().documentFrame ?? {}, {

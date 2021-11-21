@@ -60,7 +60,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   constructor(props: SideBarProps<{}>) {
     super(props);
     this._refreshBreakpoints = () => this.refreshBreakpoints();
-    this.setState({isRunning: false});
+    this.setState({ isRunning: false });
   }
 
   // --- Listen to run events
@@ -102,6 +102,8 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
       ...style,
       display: "flex",
       flexDirection: "row",
+      flexShrink: 0,
+      flexGrow: 0,
       alignItems: "center",
       fontFamily: "var(--console-font)",
       width: "100%",
@@ -117,6 +119,7 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
             ? "1px solid var(--selected-border-color)"
             : "1px solid transparent"
           : "1px solid transparent",
+      whiteSpace: "nowrap",
     };
     const hasBreakpoint = this._breakpointMap.has(item.address);
     const addressLabel =
@@ -143,6 +146,8 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
                   ? "var(--console-ansi-bright-magenta)"
                   : "var(--console-ansi-bright-blue)",
                 fontWeight: item?.hasLabel ? 600 : 100,
+                flexShrink: 0,
+                flexGrow: 0,
               }}
             >
               {addressLabel}
@@ -159,6 +164,8 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
                 width: 20,
                 height: 16,
                 display: "flex",
+                flexShrink: 0,
+                flexGrow: 0,
                 alignItems: "center",
                 cursor: this.executionState === 3 ? "pointer" : "default",
               }}
@@ -194,15 +201,17 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
                     ? "--console-ansi-yellow"
                     : "--console-ansi-green"
                 }
-                style={{ marginRight: 4 }}
+                style={{ marginRight: 4, flexShrink: 0, flexGrow: 0 }}
               />
             ) : (
-              <div style={{ width: 18 }} />
+              <div style={{ width: 18, flexShrink: 0, flexGrow: 0 }} />
             )}
-            <div style={{ width: 100 }}>{item.opCodes}</div>
+            <div style={{ width: 100, flexShrink: 0, flexGrow: 0 }}>
+              {item.opCodes}
+            </div>
             <div
               style={{
-                width: 40,
+                width: "auto",
                 color: "var(--console-ansi-bright-cyan)",
                 fontWeight: 600,
               }}
@@ -226,10 +235,10 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   protected async onRunEvent(): Promise<void> {
     console.log("onRunEvent");
     if (this.executionState === 3 || this.executionState === 5) {
-      this.setState({isRunning: false});
+      this.setState({ isRunning: false });
     } else if (this.executionState === 1) {
-      await new Promise(r => setTimeout(r, 50));
-      this.setState({isRunning: this.executionState === 1});
+      await new Promise((r) => setTimeout(r, 50));
+      this.setState({ isRunning: this.executionState === 1 });
     }
     const engineProxy = getEngineProxyService();
     const cpuState = (await engineProxy.getCachedCpuState()) as Z80CpuState;

@@ -95,10 +95,7 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   const _onResized = () => onResized();
 
   // --- Respond to resizing the main container
-  useResizeObserver({
-    callback: _onResized,
-    element: containerRef,
-  });
+  useResizeObserver(containerRef, _onResized);
 
   // --- Set up initial comtainer and panel sizes
   useLayoutEffect(() => {
@@ -128,7 +125,9 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
                 {first}
               </Column>
             )}
-            {!showPanel1 && showPanel2 && <Column hostRef={secondaryPanelRef}>{second}</Column>}
+            {!showPanel1 && showPanel2 && (
+              <Column hostRef={secondaryPanelRef}>{second}</Column>
+            )}
           </>
         )}
         {!horizontal && (
@@ -144,7 +143,9 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
             {showPanel1 && !showPanel2 && (
               <Row hostRef={primaryPanelRef}>{first}</Row>
             )}
-            {!showPanel1 && showPanel2 && <Row hostRef={secondaryPanelRef}>{second}</Row>}
+            {!showPanel1 && showPanel2 && (
+              <Row hostRef={secondaryPanelRef}>{second}</Row>
+            )}
           </>
         )}
       </Fill>
@@ -218,10 +219,15 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
       // --- We're about to hide the secondary panel, save the primary size
       primaryPanelSizeSaved.current = primarySize;
     }
-    
-    if (secondaryDisplayed && !secondaryWasDisplayed && wasDisplayed && displayed) {
+
+    if (
+      secondaryDisplayed &&
+      !secondaryWasDisplayed &&
+      wasDisplayed &&
+      displayed
+    ) {
       // --- We have just restored the secondary panel, restore the primary size
-      panel1Size = primaryPanelSizeSaved.current
+      panel1Size = primaryPanelSizeSaved.current;
     } else if (displayed) {
       if (wasDisplayed) {
         // --- Retrieve the panel size from the current DOM element

@@ -10,15 +10,14 @@ import {
   getState,
   getStore,
 } from "@core/service-registry";
-import VirtualizedList, {
+import {
+  VirtualizedList,
   VirtualizedListApi,
 } from "@components/VirtualizedList";
 import { ITreeNode, ProjectNode } from "@abstractions/project-node";
 import { Icon } from "@components/Icon";
 import { AppState, ProjectState } from "@state/AppState";
-import {
-  ConfirmDialogResponse,
-} from "@core/messaging/message-types";
+import { ConfirmDialogResponse } from "@core/messaging/message-types";
 import { TreeNode } from "@components/TreeNode";
 import { IProjectService } from "@abstractions/project-service";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
@@ -28,7 +27,10 @@ import {
 } from "@state/builder-reducer";
 import { MenuItem } from "@abstractions/command-definitions";
 import { SideBarPanelDescriptorBase } from "../../common-ui/services/SideBarService";
-import { SideBarPanelBase, SideBarProps } from "../../common-ui/components/SideBarPanelBase";
+import {
+  SideBarPanelBase,
+  SideBarProps,
+} from "../../common-ui/components/SideBarPanelBase";
 import { openNewDocument } from "../document-area/document-utils";
 import { NEW_FILE_DIALOG_ID } from "./NewFileDialog";
 import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
@@ -131,18 +133,22 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       return (
         <VirtualizedList
           itemHeight={22}
-          numItems={this.state.itemsCount}
-          integralPosition={false}
-          renderItem={(
-            index: number,
-            style: CSSProperties,
-            startIndex: number,
-            endIndex: number
-          ) => {
-            if (index === startIndex) {
-              slice = this.getListItemRange(startIndex, endIndex);
+          itemsCount={this.state.itemsCount}
+          renderItem={(index: number, style: CSSProperties) => {
+            if (this._listApi) {
+              const vp = this._listApi?.getViewPort();
+              if (index === vp?.startIndex) {
+                slice = this.getListItemRange(vp.startIndex, vp.endIndex);
+              }
+              return this.renderItem(
+                index,
+                style,
+                slice[index - vp.startIndex]
+              );
+            } else {
+              slice = this.getListItemRange(index, index);
+              return this.renderItem(index, style, slice[0]);
             }
-            return this.renderItem(index, style, slice[index - startIndex]);
           }}
           registerApi={(api) => (this._listApi = api)}
           handleKeys={(e) => this.handleKeys(e)}
@@ -365,7 +371,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         return;
     }
     if (newIndex >= 0) {
-      this._listApi.ensureVisible(newIndex);
+      this._listApi.ensureVisible(newIndex, "top");
       this.setState({
         selectedIndex: newIndex,
         selected: tree.getViewNodeByIndex(newIndex),
@@ -580,7 +586,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       itemsCount: this.itemsCount,
     });
     this._listApi.focus();
-    this._listApi.ensureVisible(selectedIndex);
+    this._listApi.ensureVisible(selectedIndex, "top");
     this._listApi.forceRefresh();
   }
 
@@ -637,7 +643,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       itemsCount: this.itemsCount,
     });
     this._listApi.focus();
-    this._listApi.ensureVisible(selectedIndex);
+    this._listApi.ensureVisible(selectedIndex, "top");
     this._listApi.forceRefresh();
 
     // --- Emulate clicking the item

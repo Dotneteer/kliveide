@@ -9,7 +9,8 @@ import {
   getOutputPaneService,
   getToolAreaService,
 } from "@core/service-registry";
-import VirtualizedList, {
+import {
+  VirtualizedList,
   VirtualizedListApi,
 } from "@components/VirtualizedList";
 import {
@@ -88,7 +89,7 @@ export default class OutputToolPanel extends ToolPanelBase<
         buffer: pane.buffer.getContents(),
         initPosition: -1,
       });
-      this._listApi.scrollToEnd();
+      this._listApi.scrollToBottom();
     }
   }
 
@@ -103,7 +104,7 @@ export default class OutputToolPanel extends ToolPanelBase<
         <VirtualizedList
           key={this.state.refreshCount}
           itemHeight={18}
-          numItems={this.state.buffer.length}
+          itemsCount={this.state.buffer.length}
           renderItem={(index: number, style: CSSProperties) => {
             const itemData = this.state.buffer[index].data;
             const hasHilite =
@@ -138,7 +139,7 @@ export default class OutputToolPanel extends ToolPanelBase<
           }}
           registerApi={(api) => (this._listApi = api)}
           obtainInitPos={() => this.state.initPosition}
-          scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
+          onScrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
         />
       </Row>
     );

@@ -49,10 +49,7 @@ export default function EmulatorPanel() {
   let engine: VirtualMachineCoreBase<ICpu> | null = null;
 
   // --- Respond to resizing the main container
-  useResizeObserver({
-    callback: () => calculateDimensions(),
-    element: hostElement,
-  });
+  useResizeObserver(hostElement, () => calculateDimensions());
 
   useEffect(() => {
     // --- Take care that keys reach the engine

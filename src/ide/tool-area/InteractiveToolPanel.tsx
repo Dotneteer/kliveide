@@ -6,9 +6,7 @@ import {
   getInteractivePaneService,
   getToolAreaService,
 } from "@core/service-registry";
-import VirtualizedList, {
-  VirtualizedListApi,
-} from "@components/VirtualizedList";
+import { VirtualizedList, VirtualizedListApi } from "@components/VirtualizedList";
 import { InteractiveCommandResult } from "@abstractions/interactive-command-service";
 import { INTERACTIVE_TOOL_ID } from "@abstractions/tool-area-service";
 import CommandIconButton from "../context-menu/CommandIconButton";
@@ -90,7 +88,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
         .map((lc) => lc.text),
       initPosition: -1,
     });
-    this._listApi.scrollToEnd();
+    this._listApi.scrollToBottom();
   }
 
   async onCommandSubmitted(command: string): Promise<void> {
@@ -128,7 +126,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
         >
           <VirtualizedList
             itemHeight={18}
-            numItems={this.state.buffer.length}
+            itemsCount={this.state.buffer.length}
             renderItem={(index: number, style: CSSProperties) => {
               return (
                 <div key={index} style={{ ...style, fontSize: "0.95em" }}>
@@ -142,7 +140,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
             }}
             registerApi={(api) => (this._listApi = api)}
             obtainInitPos={() => this.state.initPosition}
-            scrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
+            onScrolled={(pos) => getToolAreaService().scrollActivePane(pos)}
           />
         </Row>
         <Row height="fittocontent" style={{ flexDirection: "column" }}>

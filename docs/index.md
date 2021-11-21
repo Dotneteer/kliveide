@@ -9,7 +9,7 @@ selector: home
       <div class="sixteen wide computer column sixteen wide tablet sixteen wide mobile column">
         <h2 class="feature">About the Project</h2>
         <p>
-          This project aims to build a retro computer IDE that you can run on Linux, Mac, and Windows. Though currently, Klive IDE supports only the Z80 CPU, a few ZX Spectrum models (48/128/2/2A), it intends to be an attractive development platform for other Z80-based microcomputers <a href="https://en.wikipedia.org/wiki/Cambridge_Z88">Cambridge Z88</a> and <a href="https://www.specnext.com/">ZX Spectrum Next</a>. In the future, provided the community supports, Klive IDE may involve other CPUs and retro computers.
+          This project aims to build a retro computer IDE that you can run on Linux, Mac, and Windows. Though currently, Klive IDE supports only the Z80 CPU, a few ZX Spectrum models (48/128/2/2A), it intends to be an attractive development platform for other Z80-based microcomputers <a target="_blank" href="https://en.wikipedia.org/wiki/Cambridge_Z88">Cambridge Z88</a> and <a target="_blank" href="https://www.specnext.com/">ZX Spectrum Next</a>. In the future, provided the community supports, Klive IDE may involve other CPUs and retro computers.
         </p>
         <p>
           <a href="#contribution">I'm looking for contributors!</a>
