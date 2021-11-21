@@ -37,7 +37,14 @@ WAT# allows you to use native WebAssembly concepts like linear memory, tables, g
 
 The build process takes these steps:
 
-1. Invokes the Watson compiler...
+1. Invokes the Watson compiler for all virtual machines.
+- First, the WAT# compiler creates WebAssembly text format (`.wat`) files.
+- Second, the `wat2wasm` tool generates WebAssembly binaries (`.wasm`)
+2. Runs Webpack to create the bundle files for Klive IDE. This step creates these bundles:
+- `preload.bundles.js`: This script file prepares the communication between the *main process* and *renderer processes* of Klive IDE. The main process is a Node.js process to access resources (files and others) on your computer. The renderer processes run in a browser and display the Emulator and IDE windows.
+- `main.bundle.js`: The script for the main process
+- `emu-renderer.bundle.js`: The renderer script for the emulator process
+- `ide-renderer.bundle.js`: The renderer script for the IDE process
 
 ## Continuous Build
 
@@ -45,4 +52,10 @@ While developing the code, you can use the `npm run dev` command to provide a co
 
 > *Note*: Klive does not support hot reloading.
 
+## Creating Setup Kits
+
+The project's `package.json` file contains three commands to build platform-specific setup kits:
+- `npm run build:linux`: Creates the installation package (`KliveSetup-{version}.AppImage`) for Linux
+- `npm run build:win`: Creates the installation executable (`KliveSetup-{version}.exe`) for Windows
+- `npm run build:linux`: Creates the installation package (`KliveSetup-{version}.pkg`) for Mac
 
