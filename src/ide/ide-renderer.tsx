@@ -56,7 +56,6 @@ import { InteractiveCommandService } from "./tool-area/InteractiveCommandService
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
 import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@abstractions/activity";
 import { changeActivityAction, setActivitiesAction } from "@core/state/activity-bar-reducer";
-import { OpenEditorsPanelDescriptor } from "./explorer-tools/OpenEditorsPanel";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "@modules/cpu-z80/Z80RegistersPanel";
 import { UlaInformationPanelDescriptor } from "@modules/vm-zx-spectrum/UlaInformationPanel";
@@ -212,10 +211,6 @@ registerThemes(getState().isWindows ?? false);
       const sideBarService = getSideBarService();
 
       // (Explorer)
-      sideBarService.registerSideBarPanel(
-        "file-view",
-        new OpenEditorsPanelDescriptor()
-      );
       sideBarService.registerSideBarPanel(
         "file-view",
         new ProjectFilesPanelDescriptor()
