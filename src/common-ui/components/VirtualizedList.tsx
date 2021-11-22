@@ -359,6 +359,11 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
   // --------------------------------------------------------------------------
   // Respond to the resizing of the host component
   useResizeObserver(componentHost, async () => {
+    if (!componentHost.current) {
+      // --- We may removed the component host element
+      return;
+    }
+
     const width = componentHost.current.offsetWidth;
 
     // --- Check if we need to remeasure items

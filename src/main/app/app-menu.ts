@@ -178,8 +178,8 @@ export function setupMenu(): void {
         label: "Close folder",
         enabled: !!getState()?.project?.path,
         click: () => {
-          dispatch(removeSourceBreakpointsAction());
           dispatch(closeProjectAction());
+          dispatch(removeSourceBreakpointsAction());
         },
       },
       { type: "separator" },

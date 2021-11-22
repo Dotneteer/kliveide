@@ -73,7 +73,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       itemsCount: this.itemsCount,
     });
     getStore().projectChanged.on(this._onProjectChange);
-    this.onProjectChange(getState().project);
   }
 
   componentWillUnmount(): void {
@@ -103,6 +102,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         return;
       }
     }
+    console.log("Changed");
 
     // --- The UI should update itself according to the state change
     if (state.isLoading) {
@@ -125,6 +125,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       }
     }
     this._lastProjectState = state;
+    this._listApi?.forceRefresh();
   }
 
   render() {
@@ -139,6 +140,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               const vp = this._listApi?.getViewPort();
               if (index === vp?.startIndex) {
                 slice = this.getListItemRange(vp.startIndex, vp.endIndex);
+              }
+              if (!slice) {
+                return null;
               }
               return this.renderItem(
                 index,
