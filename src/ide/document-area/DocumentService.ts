@@ -6,11 +6,9 @@ import {
   IDocumentPanel,
   IDocumentService,
 } from "@abstractions/document-service";
-import { setDocumentFrameStateAction } from "@state/document-frame-reducer";
 import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { getNodeExtension, getNodeFile } from "@abstractions/project-node";
 import { CodeEditorFactory } from "./CodeEditorFactory";
-import { dispatch, getState } from "@core/service-registry";
 
 /**
  * Represenst a service that handles document panels
@@ -129,11 +127,11 @@ export class DocumentService implements IDocumentService {
    * @param index Document index
    * @param makeActive Make this document the active one?
    */
-  registerDocument(
+  async registerDocument(
     doc: IDocumentPanel,
     makeActive: boolean = true,
     index?: number
-  ): IDocumentPanel {
+  ): Promise<IDocumentPanel> {
     // --- Do not register a document already registered
     let existingDoc = this.getDocumentById(doc.id);
     if (!existingDoc) {
@@ -155,13 +153,13 @@ export class DocumentService implements IDocumentService {
       doc.index = index;
 
       if (makeActive || !this._activeDocument) {
-        this.setActiveDocument(doc);
+        await this.setActiveDocument(doc);
       }
       this._activationStack.push(doc);
       this.fireChanges();
     } else {
       if (makeActive || !this._activeDocument) {
-        this.setActiveDocument(existingDoc);
+        await this.setActiveDocument(existingDoc);
       }
     }
     return existingDoc;
@@ -171,7 +169,7 @@ export class DocumentService implements IDocumentService {
    * Unregisters (and removes) the specified document
    * @param doc
    */
-  unregisterDocument(doc: IDocumentPanel): void {
+  async unregisterDocument(doc: IDocumentPanel): Promise<void> {
     // --- Unregister existing document only
     const position = this._documents.indexOf(doc);
     if (position < 0) {
@@ -185,24 +183,14 @@ export class DocumentService implements IDocumentService {
 
     // --- Activate a document
     if (this._activationStack.length > 0) {
-      this.setActiveDocument(this._activationStack.pop());
+      await this.setActiveDocument(this._activationStack.pop());
     } else if (this._documents.length === 0) {
-      this.setActiveDocument(null);
+      await this.setActiveDocument(null);
     } else if (position >= this._documents.length - 1) {
-      this.setActiveDocument(this._documents[this._documents.length - 1]);
+      await this.setActiveDocument(this._documents[this._documents.length - 1]);
     } else {
-      this.setActiveDocument(this._documents[position + 1]);
+      await this.setActiveDocument(this._documents[position + 1]);
     }
-    this.fireChanges();
-  }
-
-  /**
-   * Releases all documents in a single step
-   */
-  releaseAllDocuments(): void {
-    this._documents.length = 0;
-    this._activationStack.length = 0;
-    this._activeDocument = null;
     this.fireChanges();
   }
 
@@ -210,23 +198,22 @@ export class DocumentService implements IDocumentService {
    * Sets the specified document to be the active one
    * @param doc Document to activate
    */
-  setActiveDocument(doc: IDocumentPanel | null): void {
+  async setActiveDocument(doc: IDocumentPanel | null): Promise<void> {
     if (this._activeDocument === doc) {
       return;
     }
 
-    // --- Save the state of the active panel
-    if (this._activeDocument) {
-      const fullState = Object.assign({}, getState().documentFrame ?? {}, {
-        [this._activeDocument.id]: this._activeDocument.getPanelState(),
-      });
-      dispatch(setDocumentFrameStateAction(fullState));
+    // --- Save the state of the old document
+    const oldDocument = this._activeDocument;
+    if (oldDocument) {
+      oldDocument.saveDocumentState();
     }
 
     if (!doc) {
       // --- There is no active document
-      const oldDocument = this._activeDocument;
       this._activeDocument = null;
+
+      // --- Sign changes, if there was a previous active document
       if (!oldDocument) {
         this.fireChanges();
         return;
@@ -239,18 +226,12 @@ export class DocumentService implements IDocumentService {
       return;
     }
 
-    // --- Activate the document
+    // --- Activate the document with its state
+    doc.restoreDocumentState();
     this._activeDocument = doc;
     this._activationStack.push(doc);
     this._documents.forEach((d) => (d.active = false));
     doc.active = true;
-
-    // --- Load the state of the active document
-    const documentsState = getState().documentFrame ?? {};
-    const documentState = documentsState?.[this._activeDocument.id];
-    if (documentState) {
-      this._activeDocument.setPanelState(documentState);
-    }
 
     // --- Invoke custom action
     this.fireChanges();
@@ -311,29 +292,29 @@ export class DocumentService implements IDocumentService {
   /**
    * Closes all documents
    */
-  closeAll(): void {
+  async closeAll(): Promise<void> {
     const docs = this._documents.slice(0);
-    docs.forEach((d) => this.unregisterDocument(d));
+    docs.forEach(async (d) => await this.unregisterDocument(d));
   }
 
   /**
    * Closes all documents except the specified one
    * @param doc Document to keep open
    */
-  closeOthers(doc: IDocumentPanel): void {
+  async closeOthers(doc: IDocumentPanel): Promise<void> {
     const otherDocs = this._documents.filter((d) => d !== doc);
-    otherDocs.forEach((d) => this.unregisterDocument(d));
+    otherDocs.forEach(async (d) => await this.unregisterDocument(d));
   }
 
   /**
    * Closes all documents to the right of the specified one
    * @param doc Document to keep open
    */
-  closeToTheRight(doc: IDocumentPanel): void {
+  async closeToTheRight(doc: IDocumentPanel): Promise<void> {
     const index = this._documents.indexOf(doc);
     if (index >= 0 && index < this._documents.length - 1) {
       const rightDocs = this._documents.slice(index + 1);
-      rightDocs.forEach((d) => this.unregisterDocument(d));
+      rightDocs.forEach(async (d) => await this.unregisterDocument(d));
     }
   }
 

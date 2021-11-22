@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CSSProperties, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 
 import {
   getContextMenuService,
@@ -16,7 +16,7 @@ interface Props {
   active: boolean;
   index: number;
   isLast: boolean;
-  document: IDocumentPanel;
+  descriptor: IDocumentPanel;
   clicked?: () => void;
   closed?: () => void;
 }
@@ -29,11 +29,12 @@ export default function DocumentTab({
   active,
   index,
   isLast,
-  document,
+  descriptor,
   clicked,
   closed,
 }: Props) {
   const [pointed, setPointed] = useState(false);
+  const [temporary, setTemporary] = useState(true);
   const hostElement = useRef<HTMLDivElement>();
 
   const themeService = getThemeService();
@@ -67,30 +68,30 @@ export default function DocumentTab({
     {
       id: "close",
       text: "Close",
-      execute: () => {
-        documentService.unregisterDocument(document);
+      execute: async () => {
+        await documentService.unregisterDocument(descriptor);
       },
     },
     {
       id: "closeAll",
       text: "Close All",
-      execute: () => {
-        documentService.closeAll();
+      execute: async () => {
+        await documentService.closeAll();
       },
     },
     {
       id: "closeOthers",
       text: "Close Others",
-      execute: () => {
-        documentService.closeOthers(document);
+      execute: async () => {
+        await documentService.closeOthers(descriptor);
       },
     },
     {
       id: "closeToTheRight",
       text: "Close to the Right",
       enabled: !isLast,
-      execute: () => {
-        documentService.closeToTheRight(document);
+      execute: async () => {
+        await documentService.closeToTheRight(descriptor);
       },
     },
     "separator",
@@ -99,7 +100,7 @@ export default function DocumentTab({
       text: "Move Panel Left",
       enabled: index > 0,
       execute: () => {
-        documentService.moveLeft(document);
+        documentService.moveLeft(descriptor);
       },
     },
     {
@@ -107,16 +108,28 @@ export default function DocumentTab({
       text: "Move Panel Right",
       enabled: !isLast,
       execute: () => {
-        documentService.moveRight(document);
+        documentService.moveRight(descriptor);
       },
     },
   ];
+
+  const onDescriptorChanged = () => {
+    setTemporary(descriptor.temporary);
+  }
+
+  useEffect(() => {
+    descriptor.documentDescriptorChanged.on(onDescriptorChanged);
+
+    return () => {
+      descriptor.documentDescriptorChanged.off(onDescriptorChanged);
+    }
+  }, [descriptor])
 
   return (
     <div
       ref={hostElement}
       style={style}
-      title={document.id}
+      title={descriptor.id}
       onMouseDown={async (e: React.MouseEvent) => {
         if (e.button === 0) {
           clicked?.();
@@ -132,7 +145,7 @@ export default function DocumentTab({
       onMouseEnter={() => setPointed(true)}
       onMouseLeave={() => setPointed(false)}
       onDoubleClick={() => {
-        document.temporary = false;
+        descriptor.temporary = false;
         setPointed(false);
       }}
     >
@@ -141,7 +154,7 @@ export default function DocumentTab({
         style={{
           marginLeft: 6,
           marginRight: 6,
-          fontStyle: document.temporary ? "italic" : "normal",
+          fontStyle: temporary ? "italic" : "normal",
         }}
       >
         {title}

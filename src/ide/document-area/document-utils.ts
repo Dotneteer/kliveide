@@ -44,10 +44,10 @@ export async function openNewDocument(
       const tempDocument = documentService.getTemporaryDocument();
       if (tempDocument) {
         index = tempDocument.index;
-        documentService.unregisterDocument(tempDocument);
+        await documentService.unregisterDocument(tempDocument);
       }
     }
-    return documentService.registerDocument(panel, true, index);
+    return await documentService.registerDocument(panel, true, index);
   }
 }
 
@@ -66,7 +66,7 @@ export async function navigateToDocumentPosition(
   const document = documentService.getDocumentById(filename);
   if (document) {
     document.temporary = false;
-    documentService.setActiveDocument(document);
+    await documentService.setActiveDocument(document);
     document.navigateToLocation({ line, column });
   } else {
     const newDocument = await openNewDocument(filename, undefined, false, true);

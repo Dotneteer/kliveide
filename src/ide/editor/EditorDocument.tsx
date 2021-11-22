@@ -28,7 +28,6 @@ import {
   hideEditorStatusAction,
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
-import { getEngineProxyService } from "../../common-ui/services/engine-proxy";
 import {
   CSSProperties,
   PropsWithChildren,
@@ -61,6 +60,7 @@ interface Props {
 const CODE_EDITOR_MARKERS = "CodeEditorMarkers";
 
 export type EditorDocumentAPi = {
+  getEditor: () => Editor;
   setPosition: (lineNumber: number, column: number) => void;
 };
 
@@ -73,9 +73,7 @@ function EditorDocument({
   language,
   registerApi,
 }: PropsWithChildren<Props>) {
-  const [show, setShow] = useState(false);
-
-  const mounted = useRef(false);
+  // --- Implicit state
   const divHost = useRef<HTMLDivElement>();
   const editor = useRef<Editor>();
   const subscribedToBreakpointEvents = useRef(false);
@@ -86,63 +84,36 @@ function EditorDocument({
   const editorPosUnsubscribe = useRef<monaco.IDisposable>();
   const unsavedChangeCounter = useRef(0);
 
+  // --- Bind event handler function
   const _descriptorChanged = descriptorChanged;
   const _refreshBreakpoints = refreshBreakpoints;
   const _refreshErrorMarkers = refreshErrorMarkers;
   const _refreshCurrentBreakpoint = refreshCurrentBreakpoint;
 
   useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      setShow(true);
-      descriptor.documentDescriptorChanged.on(_descriptorChanged);
-      const store = getStore();
-      store.compilationChanged.on(_refreshErrorMarkers);
-      store.executionStateChanged.on(_refreshCurrentBreakpoint);
-      registerApi?.({ setPosition });
+    // --- Handle document descriptor and compilation changes
+    const store = getStore();
+    descriptor.documentDescriptorChanged.on(_descriptorChanged);
+    store.compilationChanged.on(_refreshErrorMarkers);
+
+    // --- When the editor is ready, set up its events
+    if (editor.current) {
+      connectEditorEvents(editor.current);
     }
 
-    const unmount = async () => {
-      mounted.current = false;
-      // --- Dispose event handler
-      descriptor.documentDescriptorChanged.off(_descriptorChanged);
-      if (subscribedToBreakpointEvents.current) {
-        const store = getStore();
-        store.breakpointsChanged.off(_refreshBreakpoints);
-        store.compilationChanged.off(_refreshBreakpoints);
-        store.compilationChanged.off(_refreshErrorMarkers);
-        store.executionStateChanged.off(_refreshCurrentBreakpoint);
-      }
-
-      // --- Check if this document is still registered
-      const docId = descriptor.id;
-      const doc = getDocumentService().getDocumentById(docId);
-      if (doc) {
-        // --- If so, save its state
-        const text = editor.current.getValue();
-        getEditorService().saveState(descriptor.id, {
-          text: editor.current.getValue(),
-          viewState: editor.current.saveViewState(),
-        });
-
-        // --- If there are pending changes not saved yet, save now
-        if (unsavedChangeCounter.current > 0) {
-          await saveDocument(text);
-        }
-
-        // --- Sign that no status will come from this editor
-        dispatch(hideEditorStatusAction());
-        if (editorPosUnsubscribe.current) {
-          editorPosUnsubscribe.current.dispose();
-        }
-      }
-    };
-
     return () => {
-      unmount();
+      // --- Unsubscribe from document descriptor and compilation events
+      descriptor.documentDescriptorChanged.off(_descriptorChanged);
+      store.compilationChanged.off(_refreshErrorMarkers);
+
+      // --- We do not need the editor events any more
+      if (editor.current) {
+        releaseEditorEvents(editor.current);
+      }
     };
   });
 
+  // --- The style of the <div> hosting the Monaco editor
   const placeholderStyle: CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -153,19 +124,15 @@ function EditorDocument({
     overflow: "hidden",
   };
 
-  // --- Does the editor support breakpoints?
+  // --- Set up the editor according to the language
   const languageInfo = getDocumentService().getCustomLanguage(language);
-
   const options: monacoEditor.editor.IEditorOptions = {
     selectOnLineNumbers: true,
     glyphMargin: languageInfo?.supportsBreakpoints,
-    hover: {
-      enabled: true,
-      delay: 5000,
-      sticky: true,
-    },
+    hover: { enabled: true },
   };
 
+  // --- Select the editor them according to the current application theme
   const tone = getThemeService().getActiveTheme().tone;
   let theme = tone === "light" ? "vs" : "vs-dark";
   if (
@@ -176,22 +143,20 @@ function EditorDocument({
   }
 
   // --- Respond to resizing the main container
-  useResizeObserver(divHost, () => editor.current.layout());
+  useResizeObserver(divHost, () => editor.current?.layout());
 
   return (
     <>
       <div ref={divHost} style={placeholderStyle}>
-        {show && (
-          <MonacoEditor
-            language={language}
-            theme={theme}
-            value={sourceCode}
-            options={options}
-            onChange={(value, e) => onEditorContentsChange(value, e)}
-            editorWillMount={(editor) => editorWillMount(editor)}
-            editorDidMount={(editor, monaco) => editorDidMount(editor, monaco)}
-          />
-        )}
+        <MonacoEditor
+          language={language}
+          theme={theme}
+          value={sourceCode}
+          options={options}
+          onChange={(value, e) => onEditorContentsChange(value, e)}
+          editorWillMount={(editor) => editorWillMount(editor)}
+          editorDidMount={(e, m) => editorDidMount(e, m)}
+        />
       </div>
     </>
   );
@@ -250,8 +215,14 @@ function EditorDocument({
    * Set up the editor after that has been instantiated
    */
   function editorDidMount(newEditor: Editor, monaco: typeof monacoEditor) {
+    // --- Immediately register the API to communicate with the editor component
+    registerApi?.({ setPosition, getEditor: () => newEditor });
+
     // --- Restore the previously saved state, provided we have one
     monaco.languages.setMonarchTokensProvider;
+    if (editor.current) {
+      editor.current.dispose();
+    }
     editor.current = newEditor;
     const documentResource = descriptor.id;
     const state = getEditorService().loadState(documentResource);
@@ -269,6 +240,15 @@ function EditorDocument({
       window.requestAnimationFrame(() => newEditor.focus());
     }
 
+    // --- Save the last value of the editor
+    previousContent.current = newEditor.getValue();
+  }
+
+  /**
+   * Set up editor events
+   * @param editor Editor to set up
+   */
+  function connectEditorEvents(editor: Editor): void {
     // --- Does the editor support breakpoints?
     const languageInfo = getDocumentService().getCustomLanguage(language);
     if (languageInfo?.supportsBreakpoints) {
@@ -278,6 +258,7 @@ function EditorDocument({
       // --- Take care to refresh the breakpoint decorations whenever
       // --- breakpoints change
       store.breakpointsChanged.on(_refreshBreakpoints);
+      store.executionStateChanged.on(_refreshCurrentBreakpoint);
 
       // --- Also, after a compilation, we have information about unreachable
       // --- breakpoints, refresh the decorations
@@ -288,25 +269,49 @@ function EditorDocument({
       subscribedToBreakpointEvents.current = true;
 
       // --- Handle mouse events
-      newEditor.onMouseDown((e) => handleEditorMouseDown(e));
-      newEditor.onMouseMove((e) => handleEditorMouseMove(e));
-      newEditor.onMouseLeave((e) => handleEditorMouseLeave(e));
+      editor.onMouseDown((e) => handleEditorMouseDown(e));
+      editor.onMouseMove((e) => handleEditorMouseMove(e));
+      editor.onMouseLeave((e) => handleEditorMouseLeave(e));
 
       // --- Display breakpoint and marker information
-      refreshBreakpoints();
-      refreshErrorMarkers();
-      refreshCurrentBreakpoint();
+      requestAnimationFrame(() => {
+        refreshBreakpoints();
+        refreshErrorMarkers();
+        refreshCurrentBreakpoint();
+      });
     }
 
-    // --- Save the last value of the editor
-    previousContent.current = newEditor.getValue();
-
     // --- Handle editor position changes
-    editorPosUnsubscribe.current = newEditor.onDidChangeCursorPosition((e) => {
+    editorPosUnsubscribe.current = editor.onDidChangeCursorPosition((e) => {
       dispatch(
         showEditorStatusAction(e.position.lineNumber, e.position.column)
       );
     });
+  }
+
+  /**
+   * Release editor events
+   * @param editor Editor to release
+   */
+  function releaseEditorEvents(editor: Editor): void {
+    if (subscribedToBreakpointEvents.current) {
+      const store = getStore();
+
+      // --- Take care to refresh the breakpoint decorations whenever
+      // --- breakpoints change
+      store.breakpointsChanged.off(_refreshBreakpoints);
+      store.executionStateChanged.off(_refreshCurrentBreakpoint);
+
+      // --- Also, after a compilation, we have information about unreachable
+      // --- breakpoints, refresh the decorations
+      store.compilationChanged.off(_refreshBreakpoints);
+    }
+
+    // --- Sign that no status will come from this editor
+    dispatch(hideEditorStatusAction());
+    if (editorPosUnsubscribe.current) {
+      editorPosUnsubscribe.current.dispose();
+    }
   }
 
   /**
@@ -322,7 +327,7 @@ function EditorDocument({
    */
   function descriptorChanged(): void {
     if (descriptor.initialFocus) {
-      window.requestAnimationFrame(() => editor.current.focus());
+      window.requestAnimationFrame(() => editor.current?.focus());
     }
   }
 
@@ -346,7 +351,7 @@ function EditorDocument({
     if (currentDoc?.temporary) {
       // --- Make a temporary document permanent
       currentDoc.temporary = false;
-      documentService.registerDocument(currentDoc, true);
+      await documentService.registerDocument(currentDoc, true);
     }
 
     // --- Does the editor support breakpoints?
@@ -672,6 +677,32 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
    */
   async navigateToLocation(location: NavigationInfo): Promise<void> {
     this._api?.setPosition(location.line, location.column);
+  }
+
+  /**
+   * Allows saving the panel state
+   */
+  saveDocumentState(): void {
+    if (!this._api) {
+      // --- No API, no restore
+      return;
+    }
+
+    // --- If so, save its state
+    const editor = this._api.getEditor();
+    const text = editor.getValue();
+    getEditorService().saveState(this.id, {
+      text,
+      viewState: editor.saveViewState(),
+    });
+  }
+
+  /**
+   * Allows the panel to restore its state
+   */
+  restoreDocumentState(): void {
+    // --- We restore the editor state after the editor component
+    // --- has been mounted.
   }
 }
 

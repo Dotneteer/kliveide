@@ -54,18 +54,6 @@ export interface IDocumentPanel {
   createContentElement(): React.ReactNode;
 
   /**
-   * Gets the state of the side bar to save
-   */
-  getPanelState(): Record<string, any>;
-
-  /**
-   * Sets the state of the side bar
-   * @param state Optional state to set
-   * @param fireImmediate Fire a panelStateLoaded event immediately?
-   */
-  setPanelState(state: Record<string, any> | null): void;
-
-  /**
    * Navigates to the specified document location
    * @param location Document location
    */
@@ -75,6 +63,16 @@ export interface IDocumentPanel {
    * Sign that the document descriptor has changed
    */
   signDescriptorChange(): void;
+
+  /**
+   * Allows saving the panel state
+   */
+  saveDocumentState(): void;
+
+  /**
+   * Allows the panel to restore its state
+   */
+  restoreDocumentState(): void;
 
   /**
    * Signs that the document descriptor has changed
@@ -204,24 +202,19 @@ export interface IDocumentService {
     doc: IDocumentPanel,
     makeActive: boolean,
     index?: number
-  ): IDocumentPanel;
+  ): Promise<IDocumentPanel>;
 
   /**
    * Unregisters (and removes) the specified document
    * @param doc
    */
-  unregisterDocument(doc: IDocumentPanel): void;
-
-  /**
-   * Releases all documents in a single step
-   */
-  releaseAllDocuments(): void;
+  unregisterDocument(doc: IDocumentPanel): Promise<void>;
 
   /**
    * Sets the specified document to be the active one
    * @param doc Document to activate
    */
-  setActiveDocument(doc: IDocumentPanel | null): void;
+  setActiveDocument(doc: IDocumentPanel | null): Promise<void>;
 
   /**
    * Gets the active document
@@ -254,19 +247,19 @@ export interface IDocumentService {
   /**
    * Closes all documents
    */
-  closeAll(): void;
+  closeAll(): Promise<void>;
 
   /**
    * Closes all documents except the specified one
    * @param doc Document to keep open
    */
-  closeOthers(doc: IDocumentPanel): void;
+  closeOthers(doc: IDocumentPanel): Promise<void>;
 
   /**
    * Closes all documents to the right of the specified one
    * @param doc Document to keep open
    */
-  closeToTheRight(doc: IDocumentPanel): void;
+  closeToTheRight(doc: IDocumentPanel): Promise<void>;
 
   /**
    * Fires when any documents changes occurres

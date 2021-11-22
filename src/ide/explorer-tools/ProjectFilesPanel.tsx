@@ -403,7 +403,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           document.temporary = false;
           document.initialFocus = true;
         }
-        documentService.setActiveDocument(document);
+        await documentService.setActiveDocument(document);
         return;
       }
 
