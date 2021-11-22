@@ -78,11 +78,6 @@ export interface IDocumentPanel {
    * Signs that the document descriptor has changed
    */
   readonly documentDescriptorChanged: ILiteEvent<void>;
-
-  /**
-   * Optional data object
-   */
-  data?: unknown;
 }
 
 /**

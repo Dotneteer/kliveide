@@ -73,9 +73,9 @@ function EditorDocument({
   language,
   registerApi,
 }: PropsWithChildren<Props>) {
-  const [show, setShow] = useState(false);
-
+  // --- Implicit state
   const divHost = useRef<HTMLDivElement>();
+  const editor = useRef<Editor>();
   const subscribedToBreakpointEvents = useRef(false);
   const oldDecorations = useRef<string[]>([]);
   const oldHoverDecorations = useRef<string[]>([]);
@@ -84,76 +84,36 @@ function EditorDocument({
   const editorPosUnsubscribe = useRef<monaco.IDisposable>();
   const unsavedChangeCounter = useRef(0);
 
+  // --- Bind event handler function
   const _descriptorChanged = descriptorChanged;
   const _refreshBreakpoints = refreshBreakpoints;
   const _refreshErrorMarkers = refreshErrorMarkers;
   const _refreshCurrentBreakpoint = refreshCurrentBreakpoint;
 
-  const getEditor: () => undefined | Editor = () => {
-    return descriptor?.data === undefined
-      ? undefined
-      : (descriptor.data as Editor);
-  };
-  const setEditor = (editor: Editor) => {
-    descriptor.data = editor;
-  };
-
   useEffect(() => {
-    console.log(`Mount: ${getEditor()?.getId()}`);
-    setShow(true);
-    descriptor.documentDescriptorChanged.on(_descriptorChanged);
+    // --- Handle document descriptor and compilation changes
     const store = getStore();
+    descriptor.documentDescriptorChanged.on(_descriptorChanged);
     store.compilationChanged.on(_refreshErrorMarkers);
-    if (getEditor()) {
-      harnessEditor(getEditor());
+
+    // --- When the editor is ready, set up its events
+    if (editor.current) {
+      connectEditorEvents(editor.current);
     }
 
     return () => {
-      console.log(`Unmount: ${getEditor()?.getId()}`);
+      // --- Unsubscribe from document descriptor and compilation events
       descriptor.documentDescriptorChanged.off(_descriptorChanged);
       store.compilationChanged.off(_refreshErrorMarkers);
-      if (getEditor()) {
-        releaseEditor(getEditor());
+
+      // --- We do not need the editor events any more
+      if (editor.current) {
+        releaseEditorEvents(editor.current);
       }
     };
   });
 
-  // useEffect(() => {
-  //   const unmount = async () => {
-  //     console.log("Unmount editor");
-  //     // --- Dispose event handler
-  //     if (subscribedToBreakpointEvents.current) {
-  //       console.log("Remove event handlers");
-  //       const store = getStore();
-  //       store.breakpointsChanged.off(_refreshBreakpoints);
-  //       store.compilationChanged.off(_refreshBreakpoints);
-  //       store.executionStateChanged.off(_refreshCurrentBreakpoint);
-  //     }
-
-  //     // --- Check if this document is still registered
-  //     const docId = descriptor.id;
-  //     const doc = getDocumentService().getDocumentById(docId);
-  //     if (doc) {
-  //       // --- If there are pending changes not saved yet, save now
-  //       const text = editor.current.getValue();
-  //       if (unsavedChangeCounter.current > 0) {
-  //         await saveDocument(text);
-  //       }
-
-  //       // --- Sign that no status will come from this editor
-  //       dispatch(hideEditorStatusAction());
-  //       if (editorPosUnsubscribe.current) {
-  //         editorPosUnsubscribe.current.dispose();
-  //       }
-  //     }
-  //     editor.current.dispose();
-  //   };
-
-  //   return () => {
-  //     unmount();
-  //   };
-  // }, [editor.current]);
-
+  // --- The style of the <div> hosting the Monaco editor
   const placeholderStyle: CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -164,19 +124,15 @@ function EditorDocument({
     overflow: "hidden",
   };
 
-  // --- Does the editor support breakpoints?
+  // --- Set up the editor according to the language
   const languageInfo = getDocumentService().getCustomLanguage(language);
-
   const options: monacoEditor.editor.IEditorOptions = {
     selectOnLineNumbers: true,
     glyphMargin: languageInfo?.supportsBreakpoints,
-    hover: {
-      enabled: true,
-      delay: 5000,
-      sticky: true,
-    },
+    hover: { enabled: true },
   };
 
+  // --- Select the editor them according to the current application theme
   const tone = getThemeService().getActiveTheme().tone;
   let theme = tone === "light" ? "vs" : "vs-dark";
   if (
@@ -187,22 +143,20 @@ function EditorDocument({
   }
 
   // --- Respond to resizing the main container
-  useResizeObserver(divHost, () => getEditor()?.layout());
+  useResizeObserver(divHost, () => editor.current?.layout());
 
   return (
     <>
       <div ref={divHost} style={placeholderStyle}>
-        {show && (
-          <MonacoEditor
-            language={language}
-            theme={theme}
-            value={sourceCode}
-            options={options}
-            onChange={(value, e) => onEditorContentsChange(value, e)}
-            editorWillMount={(editor) => editorWillMount(editor)}
-            editorDidMount={(e, m) => editorDidMount(e, m)}
-          />
-        )}
+        <MonacoEditor
+          language={language}
+          theme={theme}
+          value={sourceCode}
+          options={options}
+          onChange={(value, e) => onEditorContentsChange(value, e)}
+          editorWillMount={(editor) => editorWillMount(editor)}
+          editorDidMount={(e, m) => editorDidMount(e, m)}
+        />
       </div>
     </>
   );
@@ -261,16 +215,15 @@ function EditorDocument({
    * Set up the editor after that has been instantiated
    */
   function editorDidMount(newEditor: Editor, monaco: typeof monacoEditor) {
-    console.log(`Editor did mount: ${newEditor.getId()}`);
     // --- Immediately register the API to communicate with the editor component
     registerApi?.({ setPosition, getEditor: () => newEditor });
 
     // --- Restore the previously saved state, provided we have one
     monaco.languages.setMonarchTokensProvider;
-    if (getEditor()) {
-      getEditor().dispose();
+    if (editor.current) {
+      editor.current.dispose();
     }
-    setEditor(newEditor);
+    editor.current = newEditor;
     const documentResource = descriptor.id;
     const state = getEditorService().loadState(documentResource);
     if (state) {
@@ -286,13 +239,16 @@ function EditorDocument({
     if (descriptor.initialFocus) {
       window.requestAnimationFrame(() => newEditor.focus());
     }
-    //harnessEditor(newEditor);
 
     // --- Save the last value of the editor
     previousContent.current = newEditor.getValue();
   }
 
-  function harnessEditor(editor: Editor): void {
+  /**
+   * Set up editor events
+   * @param editor Editor to set up
+   */
+  function connectEditorEvents(editor: Editor): void {
     // --- Does the editor support breakpoints?
     const languageInfo = getDocumentService().getCustomLanguage(language);
     if (languageInfo?.supportsBreakpoints) {
@@ -302,7 +258,6 @@ function EditorDocument({
       // --- Take care to refresh the breakpoint decorations whenever
       // --- breakpoints change
       store.breakpointsChanged.on(_refreshBreakpoints);
-      console.log(`Handlers: ${store.bpHandlers}`);
       store.executionStateChanged.on(_refreshCurrentBreakpoint);
 
       // --- Also, after a compilation, we have information about unreachable
@@ -318,7 +273,7 @@ function EditorDocument({
       editor.onMouseMove((e) => handleEditorMouseMove(e));
       editor.onMouseLeave((e) => handleEditorMouseLeave(e));
 
-      // // --- Display breakpoint and marker information
+      // --- Display breakpoint and marker information
       requestAnimationFrame(() => {
         refreshBreakpoints();
         refreshErrorMarkers();
@@ -334,14 +289,17 @@ function EditorDocument({
     });
   }
 
-  function releaseEditor(editor: Editor): void {
+  /**
+   * Release editor events
+   * @param editor Editor to release
+   */
+  function releaseEditorEvents(editor: Editor): void {
     if (subscribedToBreakpointEvents.current) {
       const store = getStore();
 
       // --- Take care to refresh the breakpoint decorations whenever
       // --- breakpoints change
       store.breakpointsChanged.off(_refreshBreakpoints);
-      console.log(`Handlers: ${store.bpHandlers}`);
       store.executionStateChanged.off(_refreshCurrentBreakpoint);
 
       // --- Also, after a compilation, we have information about unreachable
@@ -369,7 +327,7 @@ function EditorDocument({
    */
   function descriptorChanged(): void {
     if (descriptor.initialFocus) {
-      window.requestAnimationFrame(() => getEditor()?.focus());
+      window.requestAnimationFrame(() => editor.current?.focus());
     }
   }
 
@@ -383,7 +341,7 @@ function EditorDocument({
     e: monacoEditor.editor.IModelContentChangedEvent
   ) {
     // --- Remove the previous error markers
-    const model = getEditor().getModel();
+    const model = editor.current.getModel();
     monaco.editor.setModelMarkers(model, CODE_EDITOR_MARKERS, []);
     dispatch(resetCompileAction());
 
@@ -435,7 +393,7 @@ function EditorDocument({
           dispatch(
             normalizeBreakpointsAction(
               getResourceName(),
-              getEditor().getModel().getLineCount()
+              editor.current.getModel().getLineCount()
             )
           );
         }
@@ -443,13 +401,13 @@ function EditorDocument({
     }
 
     // --- Save the current value as the previous one
-    previousContent.current = getEditor().getValue();
+    previousContent.current = editor.current.getValue();
 
     // --- Save document after the change (with delay)
     unsavedChangeCounter.current++;
     await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
     if (unsavedChangeCounter.current === 1 && previousContent.current) {
-      await saveDocument(getEditor().getModel().getValue());
+      await saveDocument(editor.current.getModel().getValue());
     }
     unsavedChangeCounter.current--;
   }
@@ -476,7 +434,6 @@ function EditorDocument({
    */
   function refreshBreakpoints(): void {
     // --- Filter for source code breakpoint belonging to this resoure
-    const editor = getEditor();
     const state = getState();
     const breakpoints = state.debugger?.breakpoints ?? [];
     const editorBps = breakpoints.filter(
@@ -488,8 +445,7 @@ function EditorDocument({
 
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
-    console.log(editor.getId());
-    const editorLines = editor.getModel().getLineCount();
+    const editorLines = editor.current.getModel().getLineCount();
     editorBps.forEach((bp) => {
       let unreachable = false;
       if (compilationResult?.errors?.length === 0) {
@@ -514,7 +470,7 @@ function EditorDocument({
         dispatch(removeBreakpointAction(bp));
       }
     });
-    oldDecorations.current = editor.deltaDecorations(
+    oldDecorations.current = editor.current.deltaDecorations(
       oldDecorations.current,
       decorations
     );
@@ -531,7 +487,7 @@ function EditorDocument({
     }
 
     // --- Convert errors to markers
-    const model = getEditor().getModel();
+    const model = editor.current.getModel();
     const markers = compilationResult.errors
       .filter((err) => err.fileName === descriptor.id)
       .map(
@@ -562,7 +518,7 @@ function EditorDocument({
       !compilationResult ||
       compilationResult.errors.length > 0
     ) {
-      oldExecPointDecoration.current = getEditor().deltaDecorations(
+      oldExecPointDecoration.current = editor.current.deltaDecorations(
         oldExecPointDecoration.current,
         []
       );
@@ -581,14 +537,14 @@ function EditorDocument({
           li.address === state.emulatorPanel.programCounter
       );
       if (lineInfo) {
-        oldExecPointDecoration.current = getEditor().deltaDecorations(
+        oldExecPointDecoration.current = editor.current.deltaDecorations(
           oldExecPointDecoration.current,
           [createCurrentBreakpointDecoration(lineInfo.lineNumber)]
         );
       }
       return;
     }
-    oldExecPointDecoration.current = getEditor().deltaDecorations(
+    oldExecPointDecoration.current = editor.current.deltaDecorations(
       oldExecPointDecoration.current,
       []
     );
@@ -601,7 +557,6 @@ function EditorDocument({
   function handleEditorMouseMove(
     e: monacoEditor.editor.IEditorMouseEvent
   ): void {
-    const editor = getEditor();
     if (e.target?.type === 2) {
       // --- Mouse is over the margin, display the breakpoint placeholder
       const lineNo = e.target.position.lineNumber;
@@ -609,13 +564,13 @@ function EditorDocument({
       const message = `Click to ${
         existBp ? "remove the existing" : "add a new"
       } breakpoint`;
-      oldHoverDecorations.current = editor.deltaDecorations(
+      oldHoverDecorations.current = editor.current.deltaDecorations(
         oldHoverDecorations.current,
         [createHoverBreakpointDecoration(lineNo, message)]
       );
     } else {
       // --- Mouse is out of margin, remove the breakpoint placeholder
-      editor.deltaDecorations(oldHoverDecorations.current, []);
+      editor.current.deltaDecorations(oldHoverDecorations.current, []);
     }
   }
 
@@ -626,7 +581,7 @@ function EditorDocument({
   function handleEditorMouseLeave(
     e: monacoEditor.editor.IEditorMouseEvent
   ): void {
-    getEditor().deltaDecorations(oldHoverDecorations.current, []);
+    editor.current.deltaDecorations(oldHoverDecorations.current, []);
   }
 
   /**
@@ -656,10 +611,9 @@ function EditorDocument({
    * @param column Column number
    */
   function setPosition(lineNumber: number, column: number): void {
-    const editor = getEditor();
-    editor.revealPosition({ lineNumber, column });
-    editor.setPosition({ lineNumber, column });
-    window.requestAnimationFrame(() => editor.focus());
+    editor.current.revealPosition({ lineNumber, column });
+    editor.current.setPosition({ lineNumber, column });
+    window.requestAnimationFrame(() => editor.current.focus());
   }
 
   /**
@@ -738,7 +692,7 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
     const editor = this._api.getEditor();
     const text = editor.getValue();
     getEditorService().saveState(this.id, {
-      text: editor.getValue(),
+      text,
       viewState: editor.saveViewState(),
     });
   }
