@@ -58,10 +58,10 @@ export default function DocumentTabBar() {
   };
 
   // --- Remove this tab if the document file has been deleted
-  const fileDeleted = (name: string) => {
+  const fileDeleted = async (name: string) => {
     for (const doc of currentDocs) {
       if (doc.id === name) {
-        documentService.unregisterDocument(doc);
+        await documentService.unregisterDocument(doc);
         setCurrentDocs(documentService.getDocuments());
         break;
       }
@@ -69,11 +69,11 @@ export default function DocumentTabBar() {
   };
 
   // --- Remove this tab if the document's folder has been deleted
-  const folderDeleted = (name: string) => {
+  const folderDeleted = async (name: string) => {
     let changed = false;
     for (const doc of currentDocs.slice(0)) {
       if (doc.id.startsWith(`${name}/`)) {
-        documentService.unregisterDocument(doc);
+        await documentService.unregisterDocument(doc);
         changed = true;
       }
     }
@@ -83,18 +83,18 @@ export default function DocumentTabBar() {
   };
 
   // --- Close open documents whenever the project is closed
-  const projectChanged = (projectState: ProjectState) => {
+  const projectChanged = async (projectState: ProjectState) => {
     if (!projectState.isLoading && !projectState.path) {
-      documentService.releaseAllDocuments();
+      await documentService.closeAll();
     }
   };
 
   const _refreshDocs = (info: DocumentsInfo) => refreshDocs(info);
-  const _folderDeleted = (name: string) => folderDeleted(name);
+  const _folderDeleted = async (name: string) => await folderDeleted(name);
   const _folderRenamed = (arg: FileChange) => folderRenamed(arg);
-  const _fileDeleted = (name: string) => fileDeleted(name);
+  const _fileDeleted = async (name: string) => await fileDeleted(name);
   const _fileRenamed = (arg: FileChange) => fileRenamed(arg);
-  const _projectChanged = (state: ProjectState) => projectChanged(state);
+  const _projectChanged = async (state: ProjectState) => await projectChanged(state);
 
   useEffect(() => {
     // --- Mount
@@ -129,18 +129,17 @@ export default function DocumentTabBar() {
         active={d === activeDoc}
         key={index}
         index={index}
-        document={d}
+        descriptor={d}
         isLast={index >= currentDocs.length - 1}
-        clicked={() => {
+        clicked={async () => {
           if (activeDoc !== d) {
-            documentService.setActiveDocument(d);
+            await documentService.setActiveDocument(d);
           }
           d.initialFocus = true;
         }}
-        closed={() => {
+        closed={async () => {
           getEditorService().clearState(d.id);
-          console.log(`Unregister ${d.id}`);
-          documentService.unregisterDocument(d);
+          await documentService.unregisterDocument(d);
         }}
       />
     );

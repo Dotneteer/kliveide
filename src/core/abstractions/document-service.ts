@@ -78,6 +78,11 @@ export interface IDocumentPanel {
    * Signs that the document descriptor has changed
    */
   readonly documentDescriptorChanged: ILiteEvent<void>;
+
+  /**
+   * Optional data object
+   */
+  data?: unknown;
 }
 
 /**
@@ -202,24 +207,19 @@ export interface IDocumentService {
     doc: IDocumentPanel,
     makeActive: boolean,
     index?: number
-  ): IDocumentPanel;
+  ): Promise<IDocumentPanel>;
 
   /**
    * Unregisters (and removes) the specified document
    * @param doc
    */
-  unregisterDocument(doc: IDocumentPanel): void;
-
-  /**
-   * Releases all documents in a single step
-   */
-  releaseAllDocuments(): void;
+  unregisterDocument(doc: IDocumentPanel): Promise<void>;
 
   /**
    * Sets the specified document to be the active one
    * @param doc Document to activate
    */
-  setActiveDocument(doc: IDocumentPanel | null): void;
+  setActiveDocument(doc: IDocumentPanel | null): Promise<void>;
 
   /**
    * Gets the active document
@@ -252,19 +252,19 @@ export interface IDocumentService {
   /**
    * Closes all documents
    */
-  closeAll(): void;
+  closeAll(): Promise<void>;
 
   /**
    * Closes all documents except the specified one
    * @param doc Document to keep open
    */
-  closeOthers(doc: IDocumentPanel): void;
+  closeOthers(doc: IDocumentPanel): Promise<void>;
 
   /**
    * Closes all documents to the right of the specified one
    * @param doc Document to keep open
    */
-  closeToTheRight(doc: IDocumentPanel): void;
+  closeToTheRight(doc: IDocumentPanel): Promise<void>;
 
   /**
    * Fires when any documents changes occurres

@@ -191,6 +191,10 @@ export class KliveStore {
     return this._breakpointsChanged;
   }
 
+  get bpHandlers(): number {
+    return this._breakpointsChanged.handlers;
+  }
+
   /**
    * Fires when the `debugger.resolved` state property changes
    */
