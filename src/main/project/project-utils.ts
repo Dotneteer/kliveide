@@ -20,6 +20,7 @@ import {
 } from "@state/debugger-reducer";
 import { addBuildRootAction, clearBuildRootsAction } from "@state/builder-reducer";
 import { emuWindow } from "../app/emu-window";
+import { setIdeConfigAction } from "@core/state/ide-config-reducer";
 
 /**
  * Name of the project file within the project directory
@@ -60,6 +61,11 @@ export async function openProject(projectPath: string): Promise<void> {
     if (roots) {
       dispatch(clearBuildRootsAction());
       roots.forEach(r => dispatch(addBuildRootAction(r)));
+    }
+
+    // --- Set the IDE configuration
+    if (project.ide) {
+      dispatch(setIdeConfigAction(project.ide));
     }
 
     // --- Last step: setup the loaded machine

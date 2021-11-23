@@ -37,7 +37,7 @@ export interface ISettingsService {
 /**
  * Storage value of settings
  */
-export type SettingsValue = boolean | number | string;
+export type SettingsValue = boolean | number | string | undefined;
 
 /**
  * Location of settings

@@ -28,6 +28,7 @@ import { IZ80CompilerService } from "@abstractions/z80-compiler-service";
 import { IDialogService } from "@abstractions/dialog-service";
 import { ICodeRunnerService } from "@abstractions/code-runner-service";
 import { IVmControllerService } from "@abstractions/vm-core-types";
+import { ISettingsService } from "@abstractions/settings-service";
 
 // ----------------------------------------------------------------------------
 // Predefined service IDs
@@ -47,6 +48,7 @@ export const Z80_COMPILER_SERVICE = "z80-compiler-service";
 export const DIALOG_SERVICE = "dialog-service";
 export const CODE_RUNNER_SERVICE = "code-runner-service";
 export const VM_CONTROLLER_SERVICE = "vm-controller-service";
+export const SETTIINGS_SERVICE = "settings-service";
 
 // ----------------------------------------------------------------------------
 // Service registry methods
@@ -207,4 +209,11 @@ export function getCodeRunnerService(): ICodeRunnerService {
  */
 export function getVmControllerService(): IVmControllerService {
   return getService(VM_CONTROLLER_SERVICE) as IVmControllerService;
+}
+
+/**
+ * Gets the settings service instance
+ */
+export function getSettingsService(): ISettingsService {
+  return getService(SETTIINGS_SERVICE) as ISettingsService;
 }

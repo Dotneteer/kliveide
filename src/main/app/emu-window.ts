@@ -159,6 +159,7 @@ class EmuWindow extends AppWindow {
       },
       debugger: state.debugger,
       builder: state.builder,
+      ide: state.ideConfig,
     };
     if (this._machineContextProvider) {
       kliveSettings.machineSpecific =

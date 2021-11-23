@@ -138,8 +138,8 @@ export default function DocumentTabBar() {
           d.initialFocus = true;
         }}
         closed={async () => {
-          getEditorService().clearState(d.id);
           await documentService.unregisterDocument(d);
+          getEditorService().clearState(d.id);
         }}
       />
     );

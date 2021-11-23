@@ -102,7 +102,6 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
         return;
       }
     }
-    console.log("Changed");
 
     // --- The UI should update itself according to the state change
     if (state.isLoading) {

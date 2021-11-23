@@ -407,6 +407,7 @@ function EditorDocument({
     unsavedChangeCounter.current++;
     await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
     if (unsavedChangeCounter.current === 1 && previousContent.current) {
+      console.log("Saving document");
       await saveDocument(editor.current.getModel().getValue());
     }
     unsavedChangeCounter.current--;
@@ -417,6 +418,7 @@ function EditorDocument({
    * @param documentText Document text to save
    */
   async function saveDocument(documentText: string): Promise<void> {
+    console.log(documentText);
     const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "SaveFileContents",
       name: descriptor.id,

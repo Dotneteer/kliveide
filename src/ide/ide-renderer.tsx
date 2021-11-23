@@ -25,6 +25,7 @@ import {
   OUTPUT_PANE_SERVICE,
   PROJECT_SERVICE,
   registerService,
+  SETTIINGS_SERVICE,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
   THEME_SERVICE,
@@ -81,6 +82,7 @@ import { newFileDialog, NEW_FILE_DIALOG_ID } from "./explorer-tools/NewFileDialo
 import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/RenameFileDialog";
 import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
 import { registerKliveCommands } from "./commands/register-commands";
+import { SettingsService } from "./settings-service/settings-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -146,6 +148,7 @@ registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
 registerService(DIALOG_SERVICE, new DialogService());
 registerService(CODE_RUNNER_SERVICE, new CodeRunnerService());
+registerService(SETTIINGS_SERVICE, new SettingsService());
 
 // --- Register meesenger objects
 registerIdeToEmuMessenger(new IdeToEmuMessenger());
