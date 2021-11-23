@@ -105,6 +105,9 @@ export interface ActionTypes {
   // --- Editor
   EDITOR_STATUS_HIDE: null;
   EDITOR_STATUS_SHOW: null
+
+  // --- IDE settings
+  SET_IDE_CONFIG: null;
 }
 
 /**
@@ -161,6 +164,7 @@ export type Payload = {
   line?: number;
   column?: number;
   programCounter?: number;
+  ideConfig?: Record<string, any>;
 }
 
 /**

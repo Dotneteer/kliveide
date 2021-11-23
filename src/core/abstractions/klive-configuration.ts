@@ -34,14 +34,15 @@ export interface KliveConfiguration {
     machineType?: string;
     viewOptions?: ViewOptions;
     machineSpecific?: Record<string, Record<string, any>>;
+    ide?: Record<string, any>;
   };
   
   /**
    * Represents the Klive project type
    */
   export interface KliveProject extends KliveSettings {
-    debugger: DebuggerState;
-    builder: BuilderState;
+    debugger?: DebuggerState;
+    builder?: BuilderState;
   }
   
   

@@ -105,7 +105,16 @@ export async function openProjectFolder(): Promise<void> {
 /**
  * Gets the configuration of Klive Emulator from the user folder
  */
-export function getProjectFile(projectFile: string): KliveProject | null {
+export function getProjectFile(projectFile?: string): KliveProject | null {
+  if (!projectFile) {
+    const projState = getState().project;
+    if (projState?.hasVm) {
+      projectFile = path.join(projState.path, PROJECT_FILE);
+    } else {
+      // --- No project file
+      return {}
+    }
+  }
   try {
     if (syncFs.existsSync(projectFile)) {
       const contents = syncFs.readFileSync(projectFile, "utf8");

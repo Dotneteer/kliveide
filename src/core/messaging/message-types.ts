@@ -11,8 +11,14 @@ import {
   DirectoryContent,
   RegisteredMachine,
 } from "@core/state/AppState";
-import { KliveConfiguration } from "@abstractions/klive-configuration";
-import { CompilerOptions, CompilerOutput } from "@abstractions/z80-compiler-service";
+import {
+  KliveConfiguration,
+  KliveSettings,
+} from "@abstractions/klive-configuration";
+import {
+  CompilerOptions,
+  CompilerOutput,
+} from "@abstractions/z80-compiler-service";
 
 /**
  * Potential message sources
@@ -332,12 +338,28 @@ export interface SaveFileContentsRequest extends MessageBase {
 }
 
 /**
- * The Ide ask the main for getting the contents of a file
+ * The Ide ask the main for compiling a Z80 assembly file
  */
 export interface CompileFileRequest extends MessageBase {
   type: "CompileFile";
   filename: string;
   options?: CompilerOptions;
+}
+
+/**
+ * The Ide asks the main process to send the application configuration
+ */
+export interface GetAppConfigRequest extends MessageBase {
+  type: "GetAppConfig";
+  fromUser?: boolean;
+}
+
+/**
+ * The Ide asks the main process to save the application settings
+ */
+ export interface SaveAppConfigRequest extends MessageBase {
+  type: "SaveAppConfig";
+  config: KliveSettings;
 }
 
 /**
@@ -417,7 +439,9 @@ type IdeToMainRequests =
   | GetFileContentsRequest
   | SaveFileContentsRequest
   | CompileFileRequest
-  | ShowMessageBoxRequest;
+  | ShowMessageBoxRequest
+  | GetAppConfigRequest
+  | SaveAppConfigRequest;
 
 /**
  * Requests send by the main process to Ide
@@ -568,6 +592,14 @@ export interface CompileFileResponse extends MessageBase {
   result: CompilerOutput;
 }
 
+/**
+ * The Ide asks the main process to send the application configuration
+ */
+export interface GetAppConfigResponse extends MessageBase {
+  type: "GetAppConfigResponse";
+  config: KliveSettings;
+}
+
 export type ResponseMessage =
   | DefaultResponse
   | CreateMachineResponse
@@ -586,7 +618,8 @@ export type ResponseMessage =
   | ConfirmDialogResponse
   | GetFileContentsResponse
   | CompileFileResponse
-  | SupportsCodeInjectionResponse;
+  | SupportsCodeInjectionResponse
+  | GetAppConfigResponse;
 
 /**
  * All messages
@@ -705,5 +738,14 @@ export function executeMachineCommand(
     type: "ExecuteMachineCommand",
     command,
     args,
+  };
+}
+
+export function getAppSettingsResponse(
+  config: KliveSettings
+): GetAppConfigResponse {
+  return {
+    type: "GetAppConfigResponse",
+    config
   };
 }

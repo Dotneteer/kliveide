@@ -7,12 +7,14 @@ import * as Messages from "@core/messaging/message-types";
 import { emuForwarder } from "../app/app-menu";
 import {
   createKliveProject,
+  getProjectFile,
   openProjectFolder,
   selectFolder,
 } from "../project/project-utils";
 import { getFolderContents } from "../utils/file-utils";
 import { emuWindow } from "../app/emu-window";
 import { ideWindow } from "../app/ide-window";
+import { appSettings } from "../main-state/klive-configuration";
 
 /**
  * Processes the requests arriving from the IDE process
@@ -179,6 +181,16 @@ export async function processIdeRequest(
         title: message.title ?? "Klive",
         type: message.asError ? "error" : "info",
       });
+      return Messages.defaultResponse();
+
+    case "GetAppConfig":
+      return Messages.getAppSettingsResponse(
+        message.fromUser ? appSettings : getProjectFile()
+      );
+
+    case "SaveAppConfig":
+      appSettings.ide = message.config.ide;
+      emuWindow.saveAppSettings();
       return Messages.defaultResponse();
 
     default:

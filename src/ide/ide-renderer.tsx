@@ -54,7 +54,7 @@ import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
-import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@abstractions/activity";
+import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_LOG_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@abstractions/activity";
 import { changeActivityAction, setActivitiesAction } from "@core/state/activity-bar-reducer";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "@modules/cpu-z80/Z80RegistersPanel";
@@ -189,7 +189,7 @@ registerThemes(getState().isWindows ?? false);
           ],
         },
         {
-          id: ACTIVITY_FILE_ID,
+          id: ACTIVITY_LOG_ID,
           title: "Machine logs",
           iconName: "output",
         },

@@ -28,6 +28,7 @@ export type AppState = {
   debugger?: DebuggerState;
   builder?: BuilderState;
   editor?: EditorState;
+  ideConfig?: Record<string, any>;
 };
 
 /**
@@ -266,5 +267,6 @@ export function getInitialAppState(): AppState {
       line: -1,
       column: -1,
     },
+    ideConfig: {}
   };
 }

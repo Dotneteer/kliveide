@@ -1,5 +1,5 @@
 /**
- * Ths interface defines the operations that show an Electron dialog
+ * This interface defines the operations that show an Electron dialog
  */
 export interface IDialogService {
   /**

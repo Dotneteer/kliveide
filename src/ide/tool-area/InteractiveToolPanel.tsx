@@ -129,7 +129,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
             itemsCount={this.state.buffer.length}
             renderItem={(index: number, style: CSSProperties) => {
               return (
-                <div key={index} style={{ ...style, fontSize: "0.95em" }}>
+                <div key={index} style={{ ...style, fontSize: "0.95em", whiteSpace: "nowrap" }}>
                   <div
                     dangerouslySetInnerHTML={{
                       __html: this.state.buffer[index],
