@@ -25,6 +25,7 @@ import {
   OUTPUT_PANE_SERVICE,
   PROJECT_SERVICE,
   registerService,
+  SETTIINGS_SERVICE,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
   THEME_SERVICE,
@@ -54,7 +55,7 @@ import { OutputPaneService } from "./tool-area/OutputPaneService";
 import { ToolAreaService } from "./tool-area/ToolAreaService";
 import { InteractiveCommandService } from "./tool-area/InteractiveCommandService";
 import { IdeToEmuMessenger } from "./IdeToEmuMessenger";
-import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@abstractions/activity";
+import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_LOG_ID, ACTIVITY_SETTINGS_ID, ACTIVITY_TEST_ID } from "@abstractions/activity";
 import { changeActivityAction, setActivitiesAction } from "@core/state/activity-bar-reducer";
 import { ProjectFilesPanelDescriptor } from "./explorer-tools/ProjectFilesPanel";
 import { Z80RegistersPanelDescriptor } from "@modules/cpu-z80/Z80RegistersPanel";
@@ -81,6 +82,7 @@ import { newFileDialog, NEW_FILE_DIALOG_ID } from "./explorer-tools/NewFileDialo
 import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/RenameFileDialog";
 import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
 import { registerKliveCommands } from "./commands/register-commands";
+import { SettingsService } from "./settings-service/settings-service";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -146,6 +148,7 @@ registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
 registerService(DIALOG_SERVICE, new DialogService());
 registerService(CODE_RUNNER_SERVICE, new CodeRunnerService());
+registerService(SETTIINGS_SERVICE, new SettingsService());
 
 // --- Register meesenger objects
 registerIdeToEmuMessenger(new IdeToEmuMessenger());
@@ -189,7 +192,7 @@ registerThemes(getState().isWindows ?? false);
           ],
         },
         {
-          id: ACTIVITY_FILE_ID,
+          id: ACTIVITY_LOG_ID,
           title: "Machine logs",
           iconName: "output",
         },

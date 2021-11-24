@@ -20,6 +20,7 @@ import compilationReducer from "./compilation-reducer";
 import debuggerReducer from "./debugger-reducer";
 import builderReducer from "./builder-reducer";
 import editorStatusReducer from "./editor-status-reducer";
+import ideConfigReducer from "./ide-config-reducer";
 
 /**
  * Represents the reducers
@@ -47,4 +48,5 @@ export const appReducers = {
   debugger: debuggerReducer,
   builder: builderReducer,
   editor: editorStatusReducer,
+  ideConfig: ideConfigReducer,
 };
