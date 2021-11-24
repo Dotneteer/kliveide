@@ -1,17 +1,22 @@
 import {
+  getNumericTokenValue,
   InteractiveCommandBase,
   InteractiveCommandResult,
   Token,
+  TokenType,
   TraceMessage,
   TraceMessageType,
 } from "@abstractions/interactive-command-service";
+import { SettingLocation } from "@abstractions/settings-service";
+import { getSettingsService } from "@core/service-registry";
 
 /**
  * Adds a new application setting to store
  */
 export class AddSettingCommand extends InteractiveCommandBase {
-  private _key: string | null = null;
-  private _value: string | null = null;
+  private _key: string;
+  private _value: Token;
+  private _location: SettingLocation;
   readonly id = "set";
   readonly description = "Adds a new Klive IDE setting";
   readonly usage = "set <setting name> [<setting-value>]";
@@ -24,14 +29,43 @@ export class AddSettingCommand extends InteractiveCommandBase {
    */
   async validateArgs(args: Token[]): Promise<TraceMessage | TraceMessage[]> {
     // --- Check argument number
-    if (args.length !== 1 && args.length !== 2) {
+    if (args.length < 1 || args.length > 3) {
       return {
         type: TraceMessageType.Error,
         message: "Invalid number of arguments.",
       };
     }
-    this._key = args[0].text;
-    this._value = args[1].text;
+    if (args.length === 3) {
+      if (
+        args[0].type !== TokenType.Option ||
+        (args[0].text !== "-u" &&
+          args[0].text !== "-p" &&
+          args[0].text !== "-c")
+      ) {
+        return {
+          type: TraceMessageType.Error,
+          message: "The first argument must be -u, -p, or -c",
+        };
+      }
+      switch (args[0].text) {
+        case "-u":
+          this._location = "user";
+          break;
+        case "-p":
+          this._location = "project";
+          break;
+        default:
+          this._location = "current";
+          break;
+      }
+      this._key = args[1].text;
+      this._value = args[2];
+    } else if (args.length == 2) {
+      this._key = args[0].text;
+      this._value = args[1];
+    } else {
+      this._key = args[0].text;
+    }
     return [];
   }
 
@@ -39,6 +73,22 @@ export class AddSettingCommand extends InteractiveCommandBase {
    * Executes the command within the specified context
    */
   async doExecute(): Promise<InteractiveCommandResult> {
+    let value = undefined;
+    if (this._value) {
+      value = getNumericTokenValue(this._value);
+      if (!value) {
+        if (this._value.type === TokenType.String) {
+          value = this._value.text.substr(1, this._value.text.length - 2);
+        } else if (this._value.text === "!true") {
+          value = true;
+        } else if (this._value.text === "!false") {
+          value = false;
+        } else {
+          value = this._value.text;
+        }
+      }
+    }
+    await getSettingsService().saveSetting(this._key, value, this._location);
     return {
       success: true,
       finalMessage: `Setting successfully set.`,

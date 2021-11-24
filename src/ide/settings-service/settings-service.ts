@@ -27,27 +27,8 @@ export class SettingsService implements ISettingsService {
     if (keySegments.some((s) => !this.testSettingKey(s))) {
       throw new Error(INVALID_KEY);
     }
-    let index = 0;
-    let configObj: any = await this.getConfiguration(location);
-    while (index < keySegments.length) {
-      if (configObj === undefined) {
-        return undefined;
-      }
-      if (index < keySegments.length - 1 && typeof configObj !== "object") {
-        return undefined;
-      }
-      configObj = configObj[keySegments[index++]];
-    }
-    if (
-      configObj === undefined ||
-      configObj === null ||
-      typeof configObj === "boolean" ||
-      typeof configObj === "number" ||
-      typeof configObj === "string"
-    ) {
-      return configObj;
-    }
-    return undefined;
+    let configObj = await this.getConfiguration(location);
+    return configObj.get(key) ?? null;
   }
 
   /**
@@ -56,12 +37,46 @@ export class SettingsService implements ISettingsService {
    * @param value Value to save
    * @param location Settings location
    */
-  saveSetting(
+  async saveSetting(
     key: string,
     value: SettingsValue,
-    localtion: SettingLocation
+    location: SettingLocation
   ): Promise<void> {
-    throw new Error("Method not implemented.");
+    const keySegments = key.split(".");
+    if (keySegments.some((s) => !this.testSettingKey(s))) {
+      throw new Error(INVALID_KEY);
+    }
+    let origObj = await this.getConfigurationObject(location);
+    let configObj: any = origObj;
+    let index = 0;
+    while (index < keySegments.length) {
+      const segment = keySegments[index];
+      if (configObj[segment] === undefined) {
+        configObj[segment] = {};
+      }
+      if (index === keySegments.length - 1) {
+        // --- We're processing the last segment
+        if (value === undefined) {
+          delete configObj[segment]
+        } else {
+          configObj[segment] = value;
+        }
+      }
+      
+      // --- Next segment
+      configObj = configObj[segment]
+      index++;
+    }
+
+    // --- Let's save the configuration object
+    const projState = getState().project;
+    let isProject = location === "user" ? false : projState?.hasVm ?? false;
+    console.log(origObj);
+    await sendFromIdeToEmu({
+      type: "SaveIdeConfig",
+      config: origObj,
+      toUser: !isProject,
+    });
   }
 
   /**
@@ -84,15 +99,55 @@ export class SettingsService implements ISettingsService {
    */
   async getConfiguration(
     location: SettingLocation
+  ): Promise<Map<string, SettingsValue>> {
+    const configObj = await this.getConfigurationObject(location);
+    const configMap = new Map<string, SettingsValue>();
+    addConfigProps(configObj);
+    return configMap;
+
+    function addConfigProps(obj: any, prefix: string = "") {
+      const type = typeof obj;
+      if (
+        type === "string" ||
+        type === "number" ||
+        type === "boolean" ||
+        type === "undefined"
+      ) {
+        configMap.set(prefix, obj);
+        return;
+      }
+      if (obj === null) {
+        configMap.set(prefix, obj);
+        return;
+      }
+      if (type !== "object") {
+        return;
+      }
+      for (const propKey in obj) {
+        const value = obj[propKey];
+        if (value) {
+          const newPrefix = prefix ? `${prefix}.${propKey}` : propKey;
+          addConfigProps(value, newPrefix);
+        }
+      }
+    }
+  }
+
+  /**
+   * Gets the entire configuration set from the specified location
+   * @param location Settings location
+   * @returns The configuration set
+   */
+  async getConfigurationObject(
+    location: SettingLocation
   ): Promise<Record<string, any>> {
     const projState = getState().project;
     let isProject = location === "user" ? false : projState?.hasVm ?? false;
-    console.log(`IsUser? ${!isProject}`);
     const response = await sendFromIdeToEmu<GetAppConfigResponse>({
       type: "GetAppConfig",
       fromUser: !isProject,
     });
-    return response.config?.ide ?? null;
+    return response.config.ide ?? {};
   }
 
   /**

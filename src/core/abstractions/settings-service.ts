@@ -31,7 +31,7 @@ export interface ISettingsService {
    * @param location Settings location
    * @returns The configuration set
    */
-  getConfiguration(location: SettingLocation): Promise<Record<string, any>>
+  getConfiguration(location: SettingLocation): Promise<Map<string, SettingsValue>>
 }
 
 /**

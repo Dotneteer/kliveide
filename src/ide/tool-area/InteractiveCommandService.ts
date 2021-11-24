@@ -155,6 +155,7 @@ class HelpCommand extends InteractiveCommandBase {
   async doExecute(
     context: InteractiveCommandContext
   ): Promise<InteractiveCommandResult> {
+    let count = 0;
     if (this._arg) {
       // --- Single command help
       const command = context.service.getCommandByIdOrAlias(this._arg);
@@ -166,13 +167,12 @@ class HelpCommand extends InteractiveCommandBase {
       } else {
         return {
           success: false,
-          finalMessage: `Cannot find the ${this._arg} interactive command.`
+          finalMessage: `Cannot find the ${this._arg} interactive command.`,
         };
       }
     } else {
       context.output.color("bright-blue");
       context.output.writeLine("Available interactive commands:");
-      let count = 0;
       context.service
         .getRegisteredCommands()
         .sort((a, b) => (a.id > b.id ? 1 : a.id < b.id ? -1 : 0))
@@ -186,10 +186,10 @@ class HelpCommand extends InteractiveCommandBase {
           context.output.writeLine(ci.description);
           count++;
         });
-        context.output.writeLine(`${count} command${count > 1 ? "s": ""} displayed.`);
-      }
+    }
     return {
       success: true,
+      finalMessage: `${count} command${count > 1 ? "s" : ""} displayed.`,
     };
   }
 }

@@ -357,9 +357,10 @@ export interface GetAppConfigRequest extends MessageBase {
 /**
  * The Ide asks the main process to save the application settings
  */
- export interface SaveAppConfigRequest extends MessageBase {
-  type: "SaveAppConfig";
-  config: KliveSettings;
+ export interface SaveIdeConfigRequest extends MessageBase {
+  type: "SaveIdeConfig";
+  config: Record<string, any>;
+  toUser?: boolean;
 }
 
 /**
@@ -441,7 +442,7 @@ type IdeToMainRequests =
   | CompileFileRequest
   | ShowMessageBoxRequest
   | GetAppConfigRequest
-  | SaveAppConfigRequest;
+  | SaveIdeConfigRequest;
 
 /**
  * Requests send by the main process to Ide

@@ -1,7 +1,11 @@
 import * as fs from "fs";
 import { dialog } from "electron";
 
-import { getZ80CompilerService } from "@core/service-registry";
+import {
+  dispatch,
+  getState,
+  getZ80CompilerService,
+} from "@core/service-registry";
 import { getRegisteredMachines } from "@core/main/machine-registry";
 import * as Messages from "@core/messaging/message-types";
 import { emuForwarder } from "../app/app-menu";
@@ -15,6 +19,8 @@ import { getFolderContents } from "../utils/file-utils";
 import { emuWindow } from "../app/emu-window";
 import { ideWindow } from "../app/ide-window";
 import { appSettings } from "../main-state/klive-configuration";
+import { toUpper } from "lodash";
+import { setIdeConfigAction } from "@core/state/ide-config-reducer";
 
 /**
  * Processes the requests arriving from the IDE process
@@ -188,9 +194,14 @@ export async function processIdeRequest(
         message.fromUser ? appSettings : getProjectFile()
       );
 
-    case "SaveAppConfig":
-      appSettings.ide = message.config.ide;
-      emuWindow.saveAppSettings();
+    case "SaveIdeConfig":
+      if (message.toUser ?? false) {
+        appSettings.ide = message.config;
+        emuWindow.saveAppSettings();
+      } else {
+        dispatch(setIdeConfigAction(message.config));
+        emuWindow.saveKliveProject();
+      }
       return Messages.defaultResponse();
 
     default:

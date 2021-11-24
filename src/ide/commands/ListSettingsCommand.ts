@@ -3,22 +3,22 @@ import {
   InteractiveCommandContext,
   InteractiveCommandResult,
   Token,
+  TokenType,
   TraceMessage,
   TraceMessageType,
 } from "@abstractions/interactive-command-service";
 import { SettingLocation } from "@abstractions/settings-service";
-import { sendFromIdeToEmu } from "@core/messaging/message-sending";
-import { GetAppConfigResponse } from "@core/messaging/message-types";
-import { getSettingsService } from "@core/service-registry";
+import { getSettingsService, getState } from "@core/service-registry";
 
 /**
  * Adds a new application setting to store
  */
 export class ListSettingsCommand extends InteractiveCommandBase {
   private _location: SettingLocation;
+  private _keyStart: string;
   readonly id = "list-set";
-  readonly description = "Lists Klive IDE setting";
-  readonly usage = "list-s [-u | -p | -c]";
+  readonly description = "Lists Klive IDE settings";
+  readonly usage = "list-s [-u | -p | -c] [<settings key>]";
   readonly aliases = ["list-s", "ls"];
 
   /**
@@ -28,28 +28,39 @@ export class ListSettingsCommand extends InteractiveCommandBase {
    */
   async validateArgs(args: Token[]): Promise<TraceMessage | TraceMessage[]> {
     // --- Check argument number
-    if (args.length !== 0 && args.length !== 1) {
+    if (args.length > 2) {
       return {
         type: TraceMessageType.Error,
         message: "Invalid number of arguments.",
       };
     }
-    if (args.length === 1) {
-      switch (args[0].text) {
-        case "-u":
-          this._location = "user";
-          break;
-        case "-p":
-          this._location = "project";
-          break;
-        case "-c":
-          this._location = "current";
-          break;
-        default:
+    if (args.length > 0) {
+      if (args[0].type === TokenType.Option) {
+        switch (args[0].text) {
+          case "-u":
+            this._location = "user";
+            break;
+          case "-p":
+            this._location = "project";
+            break;
+          case "-c":
+            this._location = "current";
+            break;
+          default:
+            return {
+              type: TraceMessageType.Error,
+              message: "The first argument should be -u, -p, or -c",
+            };
+        }
+      } else {
+        if (args.length === 2) {
           return {
             type: TraceMessageType.Error,
-            message: "The argument should be -u, -p, or -c",
+            message: "The first argument should be -u, -p, or -c",
           };
+        }
+        this._location = "current";
+        this._keyStart = args[0].text;
       }
     } else {
       this._location = "current";
@@ -63,19 +74,32 @@ export class ListSettingsCommand extends InteractiveCommandBase {
   async doExecute(
     context: InteractiveCommandContext
   ): Promise<InteractiveCommandResult> {
+    const projState = getState().project;
+    if (!projState.hasVm && this._location === "project") {
+      return {
+        success: false,
+        finalMessage: "No project is loaded to retrieve the settings from.",
+      };
+    }
     context.output.color("bright-blue");
     context.output.writeLine("Application settings:");
-    var contents = JSON.stringify(
-      await getSettingsService().getConfiguration(this._location),
-      null,
-      2
-    ).split("\n");
-    for (const line of contents) {
-      context.output.writeLine(line);
+    context.output.color("bright-magenta");
+    var contents = await getSettingsService().getConfiguration(this._location);
+    let count = 0;
+    for (const item of contents.entries()) {
+      if (!this._keyStart || item[0].startsWith(this._keyStart)) {
+        context.output.writeLine(`${item[0]}: ${item[1]}`);
+        count++;
+      }
     }
+    context.output.resetColor();
     return {
       success: true,
-      finalMessage: "OK.",
+      finalMessage:
+        (count === 0 ? "No" : count.toString()) +
+        " setting" +
+        (count > 1 ? "s" : "") +
+        " found.",
     };
   }
 }
