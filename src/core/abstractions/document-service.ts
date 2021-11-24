@@ -105,6 +105,7 @@ export type CodeEditorInfo = {
 export type CustomLanguageInfo = {
   id: string;
   options?: any;
+  depensOn?: string[];
   languageDef?: any;
   lightTheme?: any;
   darkTheme?: any;

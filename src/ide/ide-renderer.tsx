@@ -85,6 +85,7 @@ import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/Re
 import { registerKliveCommands } from "./commands/register-commands";
 import { SettingsService } from "./settings-service/settings-service";
 import { ResetZxbCommand } from "@modules/integration-zxb/ResetZxbCommand";
+import { zxbasLanguageProvider } from "./languages/zxbas-provider";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -276,14 +277,19 @@ registerThemes(getState().isWindows ?? false);
       // --- Register custom languages
       const documentService = getDocumentService();
       documentService.registerCustomLanguage(asmkZ80LanguageProvider);
+      documentService.registerCustomLanguage(zxbasLanguageProvider);
       documentService.registerCustomLanguage(mpmZ80LanguageProvider);
 
       // --- Register document panels and editors
       documentService.registerCodeEditor(".project", {
         language: "json",
       });
-      documentService.registerCodeEditor(".asm.kz80", {
-        language: "asm-kz80",
+      documentService.registerCodeEditor(".kz80.asm", {
+        language: "kz80-asm",
+        allowBuildRoot: true,
+      });
+      documentService.registerCodeEditor(".zxbas", {
+        language: "zxbas",
         allowBuildRoot: true,
       });
       documentService.registerCodeEditor(".mpm.z80", {

@@ -6,6 +6,7 @@ import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
  */
 export type MonacoAwareCustomLanguageInfo = {
   id: string;
+  depensOn?: string[];
   options?: monacoEditor.languages.LanguageConfiguration;
   languageDef?: monacoEditor.languages.IMonarchLanguage;
   lightTheme?: EditorThemeBody;

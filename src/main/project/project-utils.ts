@@ -181,7 +181,7 @@ export async function createKliveProject(
         breakpoints: [],
       },
       builder: {
-        roots: ["/code/code.asm.kz80"]
+        roots: ["/code/code.kz80.asm"]
       }
     };
     await fs.writeFile(

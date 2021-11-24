@@ -4,7 +4,7 @@ import { MonacoAwareCustomLanguageInfo } from "./custom-language-info";
  * Language provider for the .asm.z80 extension
  */
 export const asmkZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
-  id: "asm-kz80",
+  id: "kz80-asm",
   options: {
     comments: {
       lineComment: ";",
