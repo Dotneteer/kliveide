@@ -1,3 +1,4 @@
+import { getNumericTokenValue, Token, TokenType } from "@abstractions/interactive-command-service";
 import {
   ISettingsService,
   SettingLocation,
@@ -143,5 +144,29 @@ export class SettingsService implements ISettingsService {
    */
   testSettingKey(key: string): boolean {
     return /[a-zA-Z0-9_$-]+/g.test(key);
+  }
+}
+
+/**
+ * Retrieves the value of the specified token
+ * @param token Token to parse
+ * @returns Yoken value
+ */
+export function retrieveTokenValue(token: Token): SettingsValue {
+  switch (token.type) {
+    case TokenType.BinaryLiteral:
+    case TokenType.DecimalLiteral:
+    case TokenType.HexadecimalLiteral:
+      return getNumericTokenValue(token);
+    case TokenType.String:
+      return token.text.substr(1, token.text.length - 2);
+    default:
+      if (token.text === "!true") {
+        return true;
+      }
+      if (token.text === "!false") {
+        return false;
+      }
+      return token.text;
   }
 }

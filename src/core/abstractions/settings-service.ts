@@ -16,7 +16,7 @@ export interface ISettingsService {
    * @param value Value to save
    * @param location Settings location
    */
-  saveSetting(key: string, value: SettingsValue, localtion: SettingLocation): Promise<void>;
+  saveSetting(key: string, value: SettingsValue, location: SettingLocation): Promise<void>;
 
   /**
    * Gets the entire configuration set from the specified location

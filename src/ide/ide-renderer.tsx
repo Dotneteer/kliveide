@@ -13,6 +13,7 @@ import {
   DIALOG_SERVICE,
   dispatch,
   DOCUMENT_SERVICE,
+  getCommandService,
   getDocumentService,
   getModalDialogService,
   getOutputPaneService,
@@ -42,7 +43,7 @@ import { ModalDialogService } from "@services/modal-service";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@abstractions/common-commands";
 import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
-import { startCommandStatusQuery } from "@abstractions/command-registry";
+import { registerCommand, startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "@services/dialog-service";
 import { CodeRunnerService } from "@modules-core/CodeRunnerService";
 import IdeApp from "./IdeApp";
@@ -83,6 +84,7 @@ import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/Rename
 import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
 import { registerKliveCommands } from "./commands/register-commands";
 import { SettingsService } from "./settings-service/settings-service";
+import { ResetZxbCommand } from "@modules/integration-zxb/ResetZxbCommand";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -323,6 +325,9 @@ registerThemes(getState().isWindows ?? false);
 
       // --- Register available commands
       registerKliveCommands();
+
+      // --- Register integration commands
+      getCommandService().registerCommand(new ResetZxbCommand());
 
       // --- Select the file-view activity
       dispatch(changeActivityAction(0));
