@@ -19,14 +19,6 @@ export interface ISettingsService {
   saveSetting(key: string, value: SettingsValue, localtion: SettingLocation): Promise<void>;
 
   /**
-   * Removes the setting with the specified key
-   * @param key Setting key
-   * @param location Settings location
-   * @returns The previous value of the setting, provided it had any
-   */
-  removeSetting(key: string, location: SettingLocation): Promise<SettingsValue | null>;
-
-  /**
    * Gets the entire configuration set from the specified location
    * @param location Settings location
    * @returns The configuration set

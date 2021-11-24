@@ -14,9 +14,9 @@ import { getSettingsService } from "@core/service-registry";
  * Adds a new application setting to store
  */
 export class AddSettingCommand extends InteractiveCommandBase {
-  private _key: string;
-  private _value: Token;
-  private _location: SettingLocation;
+  private _key: string | null;
+  private _value: Token | null;
+  private _location: SettingLocation | null;
   readonly id = "set";
   readonly description = "Adds a new Klive IDE setting";
   readonly usage = "set <setting name> [<setting-value>]";
@@ -28,6 +28,11 @@ export class AddSettingCommand extends InteractiveCommandBase {
    * @returns A list of issues
    */
   async validateArgs(args: Token[]): Promise<TraceMessage | TraceMessage[]> {
+    // --- Reset arguments
+    this._key = null;
+    this._value = null;
+    this._location = null;
+    
     // --- Check argument number
     if (args.length < 1 || args.length > 3) {
       return {

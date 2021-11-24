@@ -32,7 +32,7 @@ export class SettingsService implements ISettingsService {
   }
 
   /**
-   * Saves the specified setting value
+   * Saves the specified setting value. If value is undefined, removes the setting value
    * @param key Setting key
    * @param value Value to save
    * @param location Settings location
@@ -42,6 +42,7 @@ export class SettingsService implements ISettingsService {
     value: SettingsValue,
     location: SettingLocation
   ): Promise<void> {
+    console.log("Setting value", value);
     const keySegments = key.split(".");
     if (keySegments.some((s) => !this.testSettingKey(s))) {
       throw new Error(INVALID_KEY);
@@ -57,39 +58,25 @@ export class SettingsService implements ISettingsService {
       if (index === keySegments.length - 1) {
         // --- We're processing the last segment
         if (value === undefined) {
-          delete configObj[segment]
+          delete configObj[segment];
         } else {
           configObj[segment] = value;
         }
       }
-      
+
       // --- Next segment
-      configObj = configObj[segment]
+      configObj = configObj[segment];
       index++;
     }
 
     // --- Let's save the configuration object
     const projState = getState().project;
     let isProject = location === "user" ? false : projState?.hasVm ?? false;
-    console.log(origObj);
     await sendFromIdeToEmu({
       type: "SaveIdeConfig",
       config: origObj,
       toUser: !isProject,
     });
-  }
-
-  /**
-   * Removes the setting with the specified key
-   * @param key Setting key
-   * @param location Settings location
-   * @returns The previous value of the setting, provided it had any
-   */
-  removeSetting(
-    key: string,
-    location: SettingLocation
-  ): Promise<SettingsValue | null> {
-    throw new Error("Method not implemented.");
   }
 
   /**
