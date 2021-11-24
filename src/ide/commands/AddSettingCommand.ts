@@ -9,6 +9,7 @@ import {
 } from "@abstractions/interactive-command-service";
 import { SettingLocation } from "@abstractions/settings-service";
 import { getSettingsService } from "@core/service-registry";
+import { retrieveTokenValue } from "@ide/settings-service/settings-service";
 
 /**
  * Adds a new application setting to store
@@ -78,21 +79,7 @@ export class AddSettingCommand extends InteractiveCommandBase {
    * Executes the command within the specified context
    */
   async doExecute(): Promise<InteractiveCommandResult> {
-    let value = undefined;
-    if (this._value) {
-      value = getNumericTokenValue(this._value);
-      if (!value) {
-        if (this._value.type === TokenType.String) {
-          value = this._value.text.substr(1, this._value.text.length - 2);
-        } else if (this._value.text === "!true") {
-          value = true;
-        } else if (this._value.text === "!false") {
-          value = false;
-        } else {
-          value = this._value.text;
-        }
-      }
-    }
+    const value = this._value ? retrieveTokenValue(this._value) : undefined;
     await getSettingsService().saveSetting(this._key, value, this._location);
     return {
       success: true,

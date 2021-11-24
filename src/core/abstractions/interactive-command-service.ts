@@ -331,7 +331,7 @@ export interface IInteractiveCommandService {
  * @param token Token to parse
  * @returns Numeric value, if token is numeric; otherwise, null
  */
-export function getNumericTokenValue(token: Token) : number | null {
+export function getNumericTokenValue(token: Token): number | null {
   const plainText = token.text.replace(/['_]/g, "");
   switch (token.type) {
     case TokenType.DecimalLiteral:

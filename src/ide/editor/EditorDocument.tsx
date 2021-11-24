@@ -166,8 +166,14 @@ function EditorDocument({
    * @param monaco
    */
   function editorWillMount(monaco: typeof monacoEditor): void {
-    // --- Does the editor uses a custom language (and not one supported
-    // --- out of the box)?
+    ensureLanguage(language);
+  }
+
+  /**
+   * Ensures the specified language and its dependencies are registered
+   * @param language 
+   */
+  function ensureLanguage(language: string): void {
     if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
       // --- Do we support that custom language?
       const languageInfo = getDocumentService().getCustomLanguage(language);
@@ -206,6 +212,12 @@ function EditorDocument({
             encodedTokensColors: languageInfo.darkTheme.encodedTokensColors,
             colors: languageInfo.darkTheme.colors,
           });
+        }
+      }
+
+      if (languageInfo.depensOn) {
+        for (const dependOn of languageInfo.depensOn) {
+          ensureLanguage(dependOn);
         }
       }
     }

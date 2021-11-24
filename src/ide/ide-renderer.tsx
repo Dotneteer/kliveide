@@ -13,6 +13,7 @@ import {
   DIALOG_SERVICE,
   dispatch,
   DOCUMENT_SERVICE,
+  getCommandService,
   getDocumentService,
   getModalDialogService,
   getOutputPaneService,
@@ -42,7 +43,7 @@ import { ModalDialogService } from "@services/modal-service";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@abstractions/common-commands";
 import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
-import { startCommandStatusQuery } from "@abstractions/command-registry";
+import { registerCommand, startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "@services/dialog-service";
 import { CodeRunnerService } from "@modules-core/CodeRunnerService";
 import IdeApp from "./IdeApp";
@@ -83,6 +84,8 @@ import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/Rename
 import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
 import { registerKliveCommands } from "./commands/register-commands";
 import { SettingsService } from "./settings-service/settings-service";
+import { ResetZxbCommand } from "@modules/integration-zxb/ResetZxbCommand";
+import { zxbasLanguageProvider } from "./languages/zxbas-provider";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -274,14 +277,19 @@ registerThemes(getState().isWindows ?? false);
       // --- Register custom languages
       const documentService = getDocumentService();
       documentService.registerCustomLanguage(asmkZ80LanguageProvider);
+      documentService.registerCustomLanguage(zxbasLanguageProvider);
       documentService.registerCustomLanguage(mpmZ80LanguageProvider);
 
       // --- Register document panels and editors
       documentService.registerCodeEditor(".project", {
         language: "json",
       });
-      documentService.registerCodeEditor(".asm.kz80", {
-        language: "asm-kz80",
+      documentService.registerCodeEditor(".kz80.asm", {
+        language: "kz80-asm",
+        allowBuildRoot: true,
+      });
+      documentService.registerCodeEditor(".zxbas", {
+        language: "zxbas",
         allowBuildRoot: true,
       });
       documentService.registerCodeEditor(".mpm.z80", {
@@ -323,6 +331,9 @@ registerThemes(getState().isWindows ?? false);
 
       // --- Register available commands
       registerKliveCommands();
+
+      // --- Register integration commands
+      getCommandService().registerCommand(new ResetZxbCommand());
 
       // --- Select the file-view activity
       dispatch(changeActivityAction(0));
