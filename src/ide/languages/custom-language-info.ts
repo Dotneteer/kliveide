@@ -1,12 +1,12 @@
+import { CustomLanguageInfo } from "@abstractions/document-service";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 
 /**
  * Represents information about a custom language that uses the 
  * Monaco Editor type system
  */
-export type MonacoAwareCustomLanguageInfo = {
+export interface MonacoAwareCustomLanguageInfo extends CustomLanguageInfo {
   id: string;
-  depensOn?: string[];
   options?: monacoEditor.languages.LanguageConfiguration;
   languageDef?: monacoEditor.languages.IMonarchLanguage;
   lightTheme?: EditorThemeBody;

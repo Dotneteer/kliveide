@@ -31,7 +31,7 @@ import {
   KliveCommandContext,
 } from "@abstractions/command-definitions";
 import { OUTPUT_TOOL_ID } from "./tool-area-service";
-import { COMPILER_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
+import { BUILD_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
 import { changeActivityAction } from "@core/state/activity-bar-reducer";
 import { ACTIVITY_DEBUG_ID } from "./activity";
 import { resolveBreakpoints } from "./debug-helpers";
@@ -401,7 +401,7 @@ const compileCodeCommand: IKliveCommand = {
         // --- Display compiler output in the Z80 Assembler output pane
         const outputPaneService = getOutputPaneService();
         const compilerPane = outputPaneService.getPaneById(
-          COMPILER_OUTPUT_PANE_ID
+          BUILD_OUTPUT_PANE_ID
         );
         const buffer = compilerPane.buffer;
         buffer.clear();

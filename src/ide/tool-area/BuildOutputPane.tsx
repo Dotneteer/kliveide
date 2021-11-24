@@ -1,16 +1,16 @@
-import { COMPILER_OUTPUT_PANE_ID } from "@abstractions/output-pane-service";
+import { BUILD_OUTPUT_PANE_ID } from "@abstractions/output-pane-service";
 import { AssemblerErrorInfo } from "@abstractions/z80-compiler-service";
 import { OutputPaneDescriptorBase } from "./OutputPaneService";
 import { navigateToDocumentPosition } from "../document-area/document-utils";
 
-const TITLE = "Z80 Assembler";
+const TITLE = "Build";
 
 /**
  * Descriptor for the sample side bar panel
  */
 export class CompilerOutputPanelDescriptor extends OutputPaneDescriptorBase {
   constructor() {
-    super(COMPILER_OUTPUT_PANE_ID, TITLE);
+    super(BUILD_OUTPUT_PANE_ID, TITLE);
   }
 
   /**

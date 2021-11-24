@@ -70,7 +70,7 @@ import { IoLogsPanelDescription } from "./side-bar/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
 import { VmOutputPanelDescriptor } from "./side-bar/VmOutputPane";
-import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
+import { CompilerOutputPanelDescriptor } from "./tool-area/BuildOutputPane";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";

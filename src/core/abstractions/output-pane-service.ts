@@ -1,7 +1,7 @@
 import { ILiteEvent } from "@core/utils/lite-event";
 
 // --- Predefined output panes
-export const COMPILER_OUTPUT_PANE_ID = "CompilerOutputPane";
+export const BUILD_OUTPUT_PANE_ID = "BuildOutputPane";
 export const VM_OUTPUT_PANE_ID = "VmOutputPane";
 
 /**
