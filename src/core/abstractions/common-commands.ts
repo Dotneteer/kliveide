@@ -392,8 +392,6 @@ const compileCodeCommand: IKliveCommand = {
     }
     switch (context.process) {
       case "main":
-        await getZ80CompilerService().compileFile(context.resource);
-        break;
       case "emu":
         signInvalidContext(context);
         break;

@@ -2,6 +2,8 @@ import {
   IKliveCompiler,
   KliveCompilerOutput,
 } from "@abstractions/compiler-registry";
+import { CompilerOptions } from "@abstractions/z80-compiler-service";
+import { getZ80CompilerService } from "@core/service-registry";
 
 /**
  * Wraps the built-in Klive Z80 Compiler
@@ -24,11 +26,14 @@ export class Z80Compiler implements IKliveCompiler {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  compileFile(
+  async compileFile(
     filename: string,
     options?: Record<string, any>
   ): Promise<KliveCompilerOutput> {
-    throw new Error("Method not implemented.");
+    return getZ80CompilerService().compileFile(
+      filename,
+      options as CompilerOptions
+    );
   }
 
   /**
@@ -38,10 +43,13 @@ export class Z80Compiler implements IKliveCompiler {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  compile(
+  async compile(
     sourceText: string,
     options?: Record<string, any>
   ): Promise<KliveCompilerOutput> {
-    throw new Error("Method not implemented.");
+    return getZ80CompilerService().compile(
+      sourceText,
+      options as CompilerOptions
+    );
   }
 }
