@@ -48,7 +48,7 @@ export const Z80_COMPILER_SERVICE = "z80-compiler-service";
 export const DIALOG_SERVICE = "dialog-service";
 export const CODE_RUNNER_SERVICE = "code-runner-service";
 export const VM_CONTROLLER_SERVICE = "vm-controller-service";
-export const SETTIINGS_SERVICE = "settings-service";
+export const SETTINGS_SERVICE = "settings-service";
 
 // ----------------------------------------------------------------------------
 // Service registry methods
@@ -215,5 +215,5 @@ export function getVmControllerService(): IVmControllerService {
  * Gets the settings service instance
  */
 export function getSettingsService(): ISettingsService {
-  return getService(SETTIINGS_SERVICE) as ISettingsService;
+  return getService(SETTINGS_SERVICE) as ISettingsService;
 }

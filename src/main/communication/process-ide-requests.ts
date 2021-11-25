@@ -1,11 +1,7 @@
 import * as fs from "fs";
 import { dialog } from "electron";
 
-import {
-  dispatch,
-  getState,
-  getZ80CompilerService,
-} from "@core/service-registry";
+import { dispatch } from "@core/service-registry";
 import { getRegisteredMachines } from "@core/main/machine-registry";
 import * as Messages from "@core/messaging/message-types";
 import { emuForwarder } from "../app/app-menu";
@@ -19,8 +15,10 @@ import { getFolderContents } from "../utils/file-utils";
 import { emuWindow } from "../app/emu-window";
 import { ideWindow } from "../app/ide-window";
 import { appSettings } from "../main-state/klive-configuration";
-import { toUpper } from "lodash";
 import { setIdeConfigAction } from "@core/state/ide-config-reducer";
+import { getNodeExtension } from "@abstractions/project-node";
+import { getCompilerForExtension } from "@abstractions/compiler-registry";
+import { CompilerOutput } from "@abstractions/z80-compiler-service";
 
 /**
  * Processes the requests arriving from the IDE process
@@ -174,11 +172,24 @@ export async function processIdeRequest(
       return Messages.fileOperationResponse(error);
     }
 
-    case "CompileFile":
-      const result = await getZ80CompilerService().compileFile(
-        message.filename
+    case "GetCompilerInfo": {
+      const extension = getNodeExtension(message.filename);
+      const compiler = getCompilerForExtension(extension);
+      return Messages.getCompilerInfoResponse(
+        compiler?.id,
+        !!compiler?.providesKliveOutput
       );
+    }
+
+    case "CompileFile": {
+      const extension = getNodeExtension(message.filename);
+      const compiler = getCompilerForExtension(extension);
+      const result = (await compiler.compileFile(
+        message.filename
+      )) as CompilerOutput;
+      console.log("Compiled!");
       return Messages.compileFileResponse(result);
+    }
 
     case "ShowMessageBox":
       const window = message.process === "emu" ? emuWindow : ideWindow;

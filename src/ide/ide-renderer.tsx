@@ -26,7 +26,7 @@ import {
   OUTPUT_PANE_SERVICE,
   PROJECT_SERVICE,
   registerService,
-  SETTIINGS_SERVICE,
+  SETTINGS_SERVICE,
   SIDE_BAR_SERVICE,
   STORE_SERVICE,
   THEME_SERVICE,
@@ -70,7 +70,7 @@ import { IoLogsPanelDescription } from "./side-bar/IoLogsPanel";
 import { TestRunnerPanelDescription } from "./test-tools/TestRunnerPanel";
 import { OutputToolPanelDescriptor } from "./tool-area/OutputToolPanel";
 import { VmOutputPanelDescriptor } from "./side-bar/VmOutputPane";
-import { CompilerOutputPanelDescriptor } from "./tool-area/CompilerOutputPane";
+import { CompilerOutputPanelDescriptor } from "./tool-area/BuildOutputPane";
 import { InteractiveToolPanelDescriptor } from "./tool-area/InteractiveToolPanel";
 import { asmkZ80LanguageProvider } from "./languages/asm-z80-provider";
 import { mpmZ80LanguageProvider } from "./languages/mpm-z80-provider";
@@ -151,7 +151,7 @@ registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
 registerService(DIALOG_SERVICE, new DialogService());
 registerService(CODE_RUNNER_SERVICE, new CodeRunnerService());
-registerService(SETTIINGS_SERVICE, new SettingsService());
+registerService(SETTINGS_SERVICE, new SettingsService());
 
 // --- Register meesenger objects
 registerIdeToEmuMessenger(new IdeToEmuMessenger());

@@ -110,6 +110,7 @@ export type CustomLanguageInfo = {
   lightTheme?: any;
   darkTheme?: any;
   supportsBreakpoints?: boolean;
+  compiler?: string;
 };
 
 /**

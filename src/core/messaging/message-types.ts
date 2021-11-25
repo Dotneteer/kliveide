@@ -347,6 +347,14 @@ export interface CompileFileRequest extends MessageBase {
 }
 
 /**
+ * The Ide ask the main for getting compiler information for a particular file
+ */
+export interface GetCompilerInfoRequest extends MessageBase {
+  type: "GetCompilerInfo";
+  filename: string;
+}
+
+/**
  * The Ide asks the main process to send the application configuration
  */
 export interface GetAppConfigRequest extends MessageBase {
@@ -357,7 +365,7 @@ export interface GetAppConfigRequest extends MessageBase {
 /**
  * The Ide asks the main process to save the application settings
  */
- export interface SaveIdeConfigRequest extends MessageBase {
+export interface SaveIdeConfigRequest extends MessageBase {
   type: "SaveIdeConfig";
   config: Record<string, any>;
   toUser?: boolean;
@@ -440,6 +448,7 @@ type IdeToMainRequests =
   | GetFileContentsRequest
   | SaveFileContentsRequest
   | CompileFileRequest
+  | GetCompilerInfoRequest
   | ShowMessageBoxRequest
   | GetAppConfigRequest
   | SaveIdeConfigRequest;
@@ -586,6 +595,15 @@ export interface GetFileContentsResponse extends MessageBase {
 }
 
 /**
+ * The Ide ask the main for getting compiler information for a particular file
+ */
+export interface GetCompilerInfoResponse extends MessageBase {
+  type: "GetCompilerInfoResponse";
+  compiler?: string;
+  supportsKlive?: boolean;
+}
+
+/**
  * The Ide ask the main for getting the contents of a file
  */
 export interface CompileFileResponse extends MessageBase {
@@ -619,6 +637,7 @@ export type ResponseMessage =
   | ConfirmDialogResponse
   | GetFileContentsResponse
   | CompileFileResponse
+  | GetCompilerInfoResponse
   | SupportsCodeInjectionResponse
   | GetAppConfigResponse;
 
@@ -722,6 +741,17 @@ export function getFileContentsResponse(
   };
 }
 
+export function getCompilerInfoResponse(
+  compiler?: string,
+  supportsKlive?: boolean
+): GetCompilerInfoResponse {
+  return {
+    type: "GetCompilerInfoResponse",
+    compiler,
+    supportsKlive,
+  };
+}
+
 export function compileFileResponse(
   result: CompilerOutput
 ): CompileFileResponse {
@@ -747,6 +777,6 @@ export function getAppSettingsResponse(
 ): GetAppConfigResponse {
   return {
     type: "GetAppConfigResponse",
-    config
+    config,
   };
 }

@@ -7,7 +7,6 @@ import {
   CompilerResponseMessage,
   IZ80CompilerService,
 } from "@abstractions/z80-compiler-service";
-import { AssemblerOptions, AssemblerOutput } from "./assembler-in-out";
 
 import "worker-loader!./assembler.kliveworker.ts";
 import { endCompileAction, startCompileAction } from "@state/compilation-reducer";

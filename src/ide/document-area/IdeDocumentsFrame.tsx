@@ -7,6 +7,10 @@ import { IKliveCommand } from "@abstractions/command-definitions";
 import { commandStatusChanged } from "@abstractions/command-registry";
 import CommandIconButton from "../context-menu/CommandIconButton";
 import DocumentTabBar from "./DocumentTabBar";
+import { getNodeExtension } from "@abstractions/project-node";
+import { getCompiler } from "@abstractions/compiler-registry";
+import { sendFromIdeToEmu } from "@core/messaging/message-sending";
+import { GetCompilerInfoResponse } from "@core/messaging/message-types";
 
 /**
  * Represents the statusbar of the emulator
@@ -88,20 +92,31 @@ function DocumentCommandBar() {
   const [buildRootCommands, setBuildRootCommands] = useState<IKliveCommand[]>(
     []
   );
-  const refreshCommands = () => {
+  const refreshCommands = async () => {
     const activeDoc = getDocumentService().getActiveDocument();
     if (activeDoc) {
       const filename = activeDoc.projectNode.fullPath.substr(
         getState().project.path.length
       );
+
+      // --- Let's check if we can allow code-runner commands in the document frame
       if (getState().builder.roots.includes(filename)) {
-        setBuildRootCommands([
-          { commandId: "klive.compileCode" },
-          { commandId: "klive.injectCodeIntoVm" },
-          { commandId: "klive.injectAndStartVm" },
-          { commandId: "klive.injectAndDebugVm" },
-        ]);
+        // --- What language does the current document support?
+        const response = await sendFromIdeToEmu<GetCompilerInfoResponse>({
+          type: "GetCompilerInfo",
+          filename,
+        });
+        if (response.supportsKlive) {
+          // --- Super, this compiler can work with Klive
+          setBuildRootCommands([
+            { commandId: "klive.compileCode" },
+            { commandId: "klive.injectCodeIntoVm" },
+            { commandId: "klive.injectAndStartVm" },
+            { commandId: "klive.injectAndDebugVm" },
+          ]);
+        }
       } else {
+        // --- No build commands are allowed
         setBuildRootCommands([]);
       }
     }
