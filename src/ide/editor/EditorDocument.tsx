@@ -171,7 +171,7 @@ function EditorDocument({
 
   /**
    * Ensures the specified language and its dependencies are registered
-   * @param language 
+   * @param language
    */
   function ensureLanguage(language: string): void {
     if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
@@ -213,11 +213,10 @@ function EditorDocument({
             colors: languageInfo.darkTheme.colors,
           });
         }
-      }
-
-      if (languageInfo.depensOn) {
-        for (const dependOn of languageInfo.depensOn) {
-          ensureLanguage(dependOn);
+        if (languageInfo.depensOn) {
+          for (const dependOn of languageInfo.depensOn) {
+            ensureLanguage(dependOn);
+          }
         }
       }
     }

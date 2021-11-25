@@ -29,6 +29,7 @@ import { Z80CompilerService } from "./z80-compiler/z80-compiler-service";
 import {
   dispatch,
   registerService,
+  SETTINGS_SERVICE,
   Z80_COMPILER_SERVICE,
 } from "@core/service-registry";
 import { emuWindow, setupEmuWindow } from "./app/emu-window";
@@ -38,9 +39,12 @@ import {
   registerCompilerExtension,
 } from "@abstractions/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
+import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
+import { MainSettingsService } from "./app/settings-service";
 
 // --- Register services used by the main process
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
+registerService(SETTINGS_SERVICE, new MainSettingsService());
 
 // --- Sign that this process is the main process
 registerSite("main");
@@ -50,6 +54,9 @@ registerCommonCommands();
 const z80Compiler = new Z80Compiler();
 registerCompiler(z80Compiler);
 registerCompilerExtension(z80Compiler.id, ".kz80.asm");
+const zxBasicCompiler = new ZxBasicCompiler();
+registerCompiler(zxBasicCompiler);
+registerCompilerExtension(zxBasicCompiler.id, ".zxbas");
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.

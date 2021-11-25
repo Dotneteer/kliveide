@@ -14,7 +14,7 @@ import {
   ZXBC_SINCLAIR,
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE,
-} from "./zxb-config";
+} from "../../modules/integration-zxb/zxb-config";
 import { getSettingsService } from "@core/service-registry";
 import { IOutputBuffer } from "@abstractions/output-pane-service";
 
@@ -69,10 +69,7 @@ export async function createZxbCommandLineArgs(
  * @param cmdArgs Commad-line arguments
  * @param outChannel Output channel
  */
-export async function execZxbc(
-  cmdArgs: string,
-  outChannel: IOutputBuffer
-): Promise<string | null> {
+export async function execZxbc(cmdArgs: string): Promise<string | null> {
   const configObject = await getSettingsService().getConfiguration("current");
   const execPath = configObject.get(ZXBC_EXECUTABLE_PATH) as string;
   if (execPath.trim() === "") {
@@ -84,10 +81,7 @@ export async function execZxbc(
   const workdir = path.dirname(execPath);
   const filename = path.basename(execPath);
   const cmd = `${filename} ${cmdArgs.split("\\").join("/")}`;
-  if (outChannel) {
-    outChannel.color("bright-blue");
-    outChannel.writeLine(`Executing ${cmd}`)
-  }
+  console.log(cmd);
   return new Promise<string | null>((resolve, reject) => {
     const process = exec(
       cmd,

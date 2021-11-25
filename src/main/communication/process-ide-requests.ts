@@ -187,7 +187,6 @@ export async function processIdeRequest(
       const result = (await compiler.compileFile(
         message.filename
       )) as CompilerOutput;
-      console.log("Compiled!");
       return Messages.compileFileResponse(result);
     }
 
