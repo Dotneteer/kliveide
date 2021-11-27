@@ -17,7 +17,7 @@ import { ideWindow } from "../app/ide-window";
 import { appSettings } from "../main-state/klive-configuration";
 import { setIdeConfigAction } from "@core/state/ide-config-reducer";
 import { getNodeExtension } from "@abstractions/project-node";
-import { getCompilerForExtension } from "@abstractions/compiler-registry";
+import { getCompilerForExtension, KliveCompilerOutput } from "@abstractions/compiler-registry";
 import { CompilerOutput } from "@abstractions/z80-compiler-service";
 
 /**
@@ -184,10 +184,14 @@ export async function processIdeRequest(
     case "CompileFile": {
       const extension = getNodeExtension(message.filename);
       const compiler = getCompilerForExtension(extension);
-      const result = (await compiler.compileFile(
-        message.filename
-      )) as CompilerOutput;
-      return Messages.compileFileResponse(result);
+      try {
+        const result = (await compiler.compileFile(
+          message.filename
+        )) as KliveCompilerOutput;
+        return Messages.compileFileResponse(result);
+      } catch (err) {
+        return Messages.compileFileResponse({ errors: []}, err.toString());
+      }
     }
 
     case "ShowMessageBox":

@@ -141,7 +141,7 @@ export function setupMenu(): void {
           await openIdeWindow();
           const project = (
             (await sendFromMainToIde({
-              type: "NewProjectRequest",
+              type: "NewProject",
             })) as NewProjectResponse
           ).project;
           if (project) {

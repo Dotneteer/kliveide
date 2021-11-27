@@ -1,7 +1,11 @@
 import { IpcRendererEvent } from "electron";
 import { IpcRendereApi } from "../exposed-apis";
 
-import { dispatch, getModalDialogService } from "@core/service-registry";
+import {
+  dispatch,
+  getModalDialogService,
+  getOutputPaneService,
+} from "@core/service-registry";
 import {
   DefaultResponse,
   NewProjectResponse,
@@ -10,6 +14,11 @@ import {
 } from "@core/messaging/message-types";
 import { ideSyncAction } from "@state/show-ide-reducer";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
+import {
+  BUILD_OUTPUT_PANE_ID,
+  IHighlightable,
+} from "@abstractions/output-pane-service";
+import { isAssemblerError } from "@abstractions/z80-compiler-service";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -26,7 +35,7 @@ async function processIdeMessages(
       dispatch(ideSyncAction(message.mainState));
       return <DefaultResponse>{ type: "Ack" };
 
-    case "NewProjectRequest":
+    case "NewProject":
       const result = await getModalDialogService().showModalDialog(
         NEW_PROJECT_DIALOG_ID,
         {
@@ -40,6 +49,32 @@ async function processIdeMessages(
         type: "NewProjectResponse",
         project: result,
       };
+
+    case "CompilerMessage":
+      const outputPaneService = getOutputPaneService();
+      const buildPane = outputPaneService.getPaneById(BUILD_OUTPUT_PANE_ID);
+      const buffer = buildPane.buffer;
+      const msgObj = message.message;
+      buffer.color(message.isError ? "bright-red" : "bright-yellow");
+      if (isAssemblerError(msgObj)) {
+        buffer.write(msgObj.errorCode);
+        buffer.resetColor();
+        buffer.write(`: ${msgObj.message} `);
+        buffer.color("cyan");
+        const location =
+          msgObj.startColumn === 0 && msgObj.endColumn === 0
+            ? `${msgObj.fileName}:[${msgObj.line}]`
+            : `${msgObj.fileName}:[${msgObj.line}:${msgObj.startColumn}-${msgObj.endColumn}]`;
+        buffer.writeLine(location, <IHighlightable>{
+          highlight: true,
+          title: "Click to locate the error",
+          errorItem: msgObj,
+        });
+        buffer.resetColor();
+      } else {
+        buffer.writeLine(msgObj.toString());
+      }
+      return <DefaultResponse>{ type: "Ack" };
 
     default:
       return <DefaultResponse>{ type: "Ack" };

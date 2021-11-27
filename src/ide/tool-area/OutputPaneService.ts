@@ -100,7 +100,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
       this._buffer[0] = { text: "" };
     }
 
-    let innerMessage = message
+    message = message
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/ /g, "&nbsp;");
@@ -108,7 +108,7 @@ export class OutputPaneBuffer implements IOutputBuffer {
     if (this.isStyled()) {
       message = `<span style="${toStyleString(
         this.getStyle()
-      )}">${innerMessage}</span>`;
+      )}">${message}</span>`;
     }
 
     this._buffer[this._currentLineIndex] = {

@@ -527,14 +527,14 @@ export interface AssemblerErrorInfo {
   /**
    * Error start column
    */
-   readonly startColumn: number;
+  readonly startColumn: number;
 
-   /**
-    * Error end column
-    */
-   readonly endColumn: number | null;
- 
-   /**
+  /**
+   * Error end column
+   */
+  readonly endColumn: number | null;
+
+  /**
    * Complete error message
    */
   readonly message: string;
@@ -641,4 +641,12 @@ export interface CompilerOutput extends CompiledModule {
    * Trace outputs
    */
   readonly traceOutput: string[];
+}
+
+/**
+ * Tests if the specified data is AssemblerErrorInfo
+ * @param data Data to test
+ */
+export function isAssemblerError(data: any): data is AssemblerErrorInfo {
+  return !!data.errorCode && !!data.fileName;
 }

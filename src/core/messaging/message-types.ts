@@ -19,6 +19,8 @@ import {
   CompilerOptions,
   CompilerOutput,
 } from "@abstractions/z80-compiler-service";
+import { AssemblerErrorInfo } from "@abstractions/z80-compiler-service";
+import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 
 /**
  * Potential message sources
@@ -163,7 +165,16 @@ export interface SyncMainStateRequest extends MessageBase {
  * The main process sends a new project request to the IDE window
  */
 export interface NewProjectRequest extends MessageBase {
-  type: "NewProjectRequest";
+  type: "NewProject";
+}
+
+/**
+ * The main process sends a compiler message to the IDE window
+ */
+export interface CompilerMessageRequest extends MessageBase {
+  type: "CompilerMessage";
+  message: AssemblerErrorInfo | string;
+  isError: boolean;
 }
 
 /**
@@ -456,7 +467,10 @@ type IdeToMainRequests =
 /**
  * Requests send by the main process to Ide
  */
-type MainToIdeRequests = SyncMainStateRequest | NewProjectRequest;
+type MainToIdeRequests =
+  | SyncMainStateRequest
+  | NewProjectRequest
+  | CompilerMessageRequest;
 
 /**
  * Default response for actions
@@ -608,7 +622,8 @@ export interface GetCompilerInfoResponse extends MessageBase {
  */
 export interface CompileFileResponse extends MessageBase {
   type: "CompileFileResponse";
-  result: CompilerOutput;
+  result: KliveCompilerOutput;
+  failed?: string;
 }
 
 /**
@@ -753,11 +768,13 @@ export function getCompilerInfoResponse(
 }
 
 export function compileFileResponse(
-  result: CompilerOutput
+  result: KliveCompilerOutput,
+  failed?: string
 ): CompileFileResponse {
   return {
     type: "CompileFileResponse",
     result,
+    failed,
   };
 }
 
