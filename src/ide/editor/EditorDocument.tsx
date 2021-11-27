@@ -622,7 +622,7 @@ function EditorDocument({
    * @param column Column number
    */
   function setPosition(lineNumber: number, column: number): void {
-    editor.current.revealPosition({ lineNumber, column });
+    editor.current.revealPositionInCenter({ lineNumber, column });
     editor.current.setPosition({ lineNumber, column });
     window.requestAnimationFrame(() => editor.current.focus());
   }
