@@ -1,4 +1,4 @@
-import { CompilerOutput } from "@abstractions/z80-compiler-service";
+import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 import { CompilationState } from "./AppState";
 import { ActionCreator, KliveAction } from "./state-core";
 
@@ -13,10 +13,11 @@ export const startCompileAction: ActionCreator = (filename: string) => ({
   payload: { filename },
 });
 export const endCompileAction: ActionCreator = (
-  compileResult: CompilerOutput
+  compileResult: KliveCompilerOutput,
+  failed?: string
 ) => ({
   type: "END_COMPILE",
-  payload: { compileResult },
+  payload: { compileResult, failed },
 });
 
 // ============================================================================
@@ -45,6 +46,7 @@ export default function (
         ...state,
         inProgress: false,
         result: payload.compileResult,
+        failed: payload.failed,
       };
     case "RESET_COMPILE":
       return {

@@ -19,6 +19,7 @@ import { setIdeConfigAction } from "@core/state/ide-config-reducer";
 import { getNodeExtension } from "@abstractions/project-node";
 import { getCompilerForExtension, KliveCompilerOutput } from "@abstractions/compiler-registry";
 import { CompilerOutput } from "@abstractions/z80-compiler-service";
+import { endCompileAction, startCompileAction } from "@core/state/compilation-reducer";
 
 /**
  * Processes the requests arriving from the IDE process
@@ -185,9 +186,11 @@ export async function processIdeRequest(
       const extension = getNodeExtension(message.filename);
       const compiler = getCompilerForExtension(extension);
       try {
+        dispatch(startCompileAction(message.filename));
         const result = (await compiler.compileFile(
           message.filename
         )) as KliveCompilerOutput;
+        dispatch(endCompileAction(result));
         return Messages.compileFileResponse(result);
       } catch (err) {
         return Messages.compileFileResponse({ errors: []}, err.toString());

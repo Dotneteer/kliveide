@@ -67,18 +67,6 @@ export interface IZ80CompilerService {
     filename: string,
     options?: CompilerOptions
   ): Promise<CompilerOutput>;
-
-  /**
-   * Compiles the passed Z80 Assembly code into Z80 binary code.
-   * binary code.
-   * @param sourceText Z80 assembly source code text
-   * @param options Compiler options. If not defined, the compiler uses the default options.
-   * @returns Output of the compilation
-   */
-  compile(
-    sourceText: string,
-    options?: CompilerOptions
-  ): Promise<CompilerOutput>;
 }
 
 /**

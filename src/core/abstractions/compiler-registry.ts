@@ -68,10 +68,10 @@ export interface IKliveCompiler {
  * @param output
  * @returns
  */
-export function isCompoundOutput(
+export function isCompoundCompilerOutput(
   output: KliveCompilerOutput
 ): output is CompilerOutput {
-  return (output as any).segments && (output as any).sourceItem;
+  return (output as any)?.segments && (output as any)?.sourceItem;
 }
 
 /**

@@ -36,6 +36,7 @@ import {
   useState,
 } from "react";
 import { useResizeObserver } from "@components/useResizeObserver";
+import { isCompoundCompilerOutput } from "@abstractions/compiler-registry";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -453,6 +454,9 @@ function EditorDocument({
 
     // --- Get the active compilation result
     const compilationResult = state?.compilation?.result;
+    if (!isCompoundCompilerOutput(compilationResult)) {
+      return;
+    }
 
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
@@ -533,6 +537,10 @@ function EditorDocument({
         oldExecPointDecoration.current,
         []
       );
+      return;
+    }
+
+    if (!isCompoundCompilerOutput(compilationResult)) {
       return;
     }
 

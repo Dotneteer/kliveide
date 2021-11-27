@@ -8,6 +8,7 @@ import {
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@abstractions/common-commands";
 import { SpectrumModelType } from "@abstractions/z80-compiler-service";
+import { isCompoundCompilerOutput } from "@abstractions/compiler-registry";
 
 /**
  * Implements the behavior of the service that can run the code from the IDE
@@ -33,6 +34,10 @@ export class CodeRunnerService implements ICodeRunnerService {
         return;
       }
       const result = compilation.result;
+      if (!isCompoundCompilerOutput(result)) {
+        return;
+      }
+
       if (result?.errors?.length ?? 0 > 0) {
         await getDialogService().showMessageBox(
           "Code compilation failed, no program to inject.",
