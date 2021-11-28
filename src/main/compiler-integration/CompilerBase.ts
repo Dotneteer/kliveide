@@ -87,16 +87,16 @@ export abstract class CompilerBase implements IKliveCompiler {
         shell: true,
         ...options,
       });
-      runner.stdout.on("data", (data) => this.onMessage(data));
-      runner.stderr.on("data", (data) => this.onErrorMessage(data));
+      runner.stdout.on("data", async (data) => await this.onMessage(data));
+      runner.stderr.on("data", async (data) => await this.onErrorMessage(data));
       runner.on("error", async (err) => {
         // --- Wait a little time to ensure that all error messages are delivered
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 200));
         reject(err);
       });
       runner.on("exit", async (code) => {
         // --- Wait a little time to ensure that all error messages are delivered
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 200));
 
         if (this.exitCodeIsError(code)) {
           reject(`Exit code: ${code}`);
