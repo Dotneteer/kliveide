@@ -141,11 +141,6 @@ export type CompilerOptions = {
   maxLoopErrorsToReport: number;
 
   /**
-   * Signs that PROC labels and symbols are not locals by default
-   */
-  procExplicitLocalsOnly: boolean;
-
-  /**
    * Indicates that assembly symbols should be case sensitively.
    */
   useCaseSensitiveSymbols: boolean;
@@ -584,11 +579,6 @@ export interface CompilerOutput extends CompiledModule {
    * Items of the list file
    */
   readonly listFileItems: ListFileItem[];
-
-  /**
-   * The type of the source that resulted in this compilation (for example, ZX BASIC)
-   */
-  sourceType?: string;
 
   /**
    * Trace outputs

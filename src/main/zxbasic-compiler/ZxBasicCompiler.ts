@@ -95,7 +95,6 @@ export class ZxBasicCompiler extends CompilerBase {
       return {
         errors: this._errors,
         injectOptions: {},
-        sourceType: "zxbasic",
         segments: [segment],
       };
     } catch (err) {

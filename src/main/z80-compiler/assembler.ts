@@ -54,7 +54,6 @@ import {
   JrInstruction,
   LabelOnlyLine,
   LdInstruction,
-  LocalStatement,
   LoopStatement,
   MacroOrStructInvocation,
   MacroStatement,
@@ -354,23 +353,6 @@ export class Z80Assembler extends ExpressionEvaluator {
       const line = visitedLines[currentLineIndex];
       this.setSourceLine(line);
       switch (line.type) {
-        case "ZxBasicPragma": {
-          if (anyProcessed) {
-            this.reportAssemblyError("Z0301", line);
-            break;
-          }
-
-          this._options.useCaseSensitiveSymbols = true;
-          this._options.procExplicitLocalsOnly = true;
-          this._options.flexibleDefPragmas = true;
-          this._currentModule = this._output = new AssemblerOutput(
-            sourceItem,
-            true
-          );
-          this._output.sourceType = "zxbasic";
-          anyProcessed = true;
-          break;
-        }
         case "ModelPragma":
           this.processModelPragma(line as unknown as ModelPragma);
           anyProcessed = true;
@@ -1321,10 +1303,6 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (scope?.localSymbolBookings.size > 0) {
         // --- We already booked local symbols
         if (!scope.localSymbolBookings.has(symbol)) {
-          lookup = this._currentModule.symbols;
-        }
-      } else {
-        if (this._options.procExplicitLocalsOnly) {
           lookup = this._currentModule.symbols;
         }
       }
@@ -2874,9 +2852,6 @@ export class Z80Assembler extends ExpressionEvaluator {
       case "StructEndStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".ends", ".struct");
         break;
-      case "LocalStatement":
-        this.processLocalStatement(stmt);
-        break;
       case "NextStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".next", ".for");
         break;
@@ -3977,25 +3952,6 @@ export class Z80Assembler extends ExpressionEvaluator {
     procScope.isProcScope = true;
     this._currentModule.localScopes.push(procScope);
 
-    // --- Collect and process LOCAL statements
-
-    for (let line = firstLine + 1; line < lastLine; line++) {
-      const localLine = scopeLines[line];
-      if (localLine.type !== "LocalStatement") {
-        continue;
-      }
-      for (const symbol of (localLine as unknown as LocalStatement)
-        .identifiers) {
-        if (symbol.name.startsWith("`")) {
-          this.reportAssemblyError("Z0504", localLine, null, symbol.name);
-        }
-        if (procScope.containsLocalBooking(symbol.name)) {
-          this.reportAssemblyError("Z0505", localLine, null, symbol.name);
-        }
-        procScope.addLocalBooking(symbol.name);
-      }
-    }
-
     // --- Emit loop instructions
     const procLineIndex = { index: firstLine + 1 };
     while (procLineIndex.index < lastLine) {
@@ -4030,30 +3986,6 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Clean up the loop's scope
     this._currentModule.localScopes.pop();
-  }
-
-  /**
-   * Processes LOCAL statement
-   * @param localStmt LOCAL statement
-   */
-  private processLocalStatement(localStmt: LocalStatement): void {
-    if (this.isInGlobalScope) {
-      this.reportAssemblyError("Z0710", localStmt);
-      return;
-    }
-
-    const localScopes = this._currentModule.localScopes;
-    let scope: SymbolScope | null = localScopes[localScopes.length - 1];
-    if (scope.isTemporaryScope) {
-      const tmpScope = localScopes.pop();
-      scope =
-        localScopes.length > 0 ? localScopes[localScopes.length - 1] : null;
-      localScopes.push(tmpScope);
-    }
-
-    if (!scope || !scope.isProcScope) {
-      this.reportAssemblyError("Z0710", localStmt);
-    }
   }
 
   /**

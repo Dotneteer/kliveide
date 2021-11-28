@@ -2,7 +2,7 @@ import "mocha";
 import * as expect from "expect";
 
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
-import { testCodeEmit, codeRaisesError } from "./test-helpers";
+import { testCodeEmit, codeRaisesError, testFlexibleCodeEmit } from "./test-helpers";
 
 describe("Assembler - pragmas", () => {
   it("org - existing segment", () => {
@@ -1030,11 +1030,10 @@ describe("Assembler - pragmas", () => {
 
   it("defb - flexible mode", () => {
     const source = `
-    .zxbasic
     .defb "\\x12\\i\\Iabc\\P"
     `;
 
-    testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60);
+    testFlexibleCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60);
   });
 
   it("defw - immediate evaluation", () => {
@@ -1084,11 +1083,10 @@ describe("Assembler - pragmas", () => {
 
   it("defm - flexible mode", () => {
     const source = `
-    .zxbasic
     .defm 123
     `;
 
-    testCodeEmit(source, 123);
+    testFlexibleCodeEmit(source, 123);
   });
 
   it("defn - immediate evaluation", () => {
@@ -1108,11 +1106,10 @@ describe("Assembler - pragmas", () => {
 
   it("defn - flexible mode", () => {
     const source = `
-    .zxbasic
     .defn 123
     `;
 
-    testCodeEmit(source, 123, 0);
+    testFlexibleCodeEmit(source, 123, 0);
   });
 
   it("defc - immediate evaluation", () => {
@@ -1132,11 +1129,10 @@ describe("Assembler - pragmas", () => {
 
   it("defc - flexible mode", () => {
     const source = `
-    .zxbasic
     .defc 0x22
     `;
 
-    testCodeEmit(source, 0xa2);
+    testFlexibleCodeEmit(source, 0xa2);
   });
 
   it("defh - immediate evaluation", () => {

@@ -121,7 +121,6 @@ export type Pragma =
   | ErrorPragma
   | IncBinPragma
   | CompareBinPragma
-  | ZxBasicPragma
   | InjectOptPragma;
 
 export type ByteEmittingPragma =
@@ -160,7 +159,6 @@ export type Statement =
   | ModuleEndStatement
   | StructStatement
   | StructEndStatement
-  | LocalStatement
   | NextStatement
   | ForStatement;
 
@@ -1236,10 +1234,6 @@ export interface CompareBinPragma extends PartialZ80AssemblyLine {
   length?: Expression;
 }
 
-export interface ZxBasicPragma extends PartialZ80AssemblyLine {
-  type: "ZxBasicPragma";
-}
-
 export interface InjectOptPragma extends PartialZ80AssemblyLine {
   type: "InjectOptPragma";
 
@@ -1417,14 +1411,6 @@ export interface StructStatement extends StatementBase {
  */
 export interface StructEndStatement extends StatementBase {
   type: "StructEndStatement";
-}
-
-/**
- * Represents a local statement
- */
-export interface LocalStatement extends StatementBase {
-  type: "LocalStatement";
-  identifiers: IdentifierNode[];
 }
 
 /**

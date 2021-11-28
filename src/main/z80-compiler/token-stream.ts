@@ -1268,7 +1268,6 @@ export enum TokenType {
   ErrorPragma,
   IncludeBinPragma,
   CompareBinPragma,
-  ZxBasicPragma,
   InjectOptPragma,
 
   Macro,
@@ -1297,7 +1296,6 @@ export enum TokenType {
   EndModule,
   Struct,
   Ends,
-  Local,
 
   TextOf,
   LTextOf,
@@ -2085,11 +2083,6 @@ const resolverHash: { [key: string]: TokenType } = {
   comparebin: TokenType.CompareBinPragma,
   COMPAREBIN: TokenType.CompareBinPragma,
 
-  ".zxbasic": TokenType.ZxBasicPragma,
-  ".ZXBASIC": TokenType.ZxBasicPragma,
-  zxbasic: TokenType.ZxBasicPragma,
-  ZXBASIC: TokenType.ZxBasicPragma,
-
   ".injectopt": TokenType.InjectOptPragma,
   ".INJECTOPT": TokenType.InjectOptPragma,
   injectopt: TokenType.InjectOptPragma,
@@ -2216,12 +2209,6 @@ const resolverHash: { [key: string]: TokenType } = {
 
   ".ends": TokenType.Ends,
   ".ENDS": TokenType.Ends,
-
-  ".local": TokenType.Local,
-  ".LOCAL": TokenType.Local,
-  local: TokenType.Local,
-  LOCAL: TokenType.Local,
-  Local: TokenType.Local,
 
   textof: TokenType.TextOf,
   TEXTOF: TokenType.TextOf,

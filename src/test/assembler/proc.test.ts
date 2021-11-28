@@ -371,42 +371,4 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - local labels with no explicit local", () => {
-    const options = new AssemblerOptions();
-    options.procExplicitLocalsOnly = false;
-    testCodeEmitWithOptions(
-      `
-    .proc
-    myLabel: nop;
-    .endp
-    .proc
-    myLabel: nop;
-    .endp
-    `,
-      options,
-      0x00,
-      0x00
-    );
-  });
-
-  it("emit - local labels with explicit local", () => {
-    const options = new AssemblerOptions();
-    options.procExplicitLocalsOnly = true;
-    testCodeEmitWithOptions(
-      `
-    .proc
-      local myLabel
-      myLabel: nop
-    .endp
-    .proc
-      local myLabel
-      myLabel: nop
-    .endp
-    `,
-      options,
-      0x00,
-      0x00
-    );
-  });
-
 });

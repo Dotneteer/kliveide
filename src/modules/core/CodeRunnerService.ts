@@ -75,7 +75,7 @@ export class CodeRunnerService implements ICodeRunnerService {
         model: modelTypeToMachineType(result.modelType),
         entryAddress: result.entryAddress,
         subroutine:
-          result.sourceType === "zxbasic" || result.injectOptions["subroutine"],
+          result.injectOptions["subroutine"],
         segments: result.segments.map((s) => ({
           startAddress: s.startAddress,
           bank: s.bank,

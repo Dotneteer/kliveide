@@ -454,16 +454,13 @@ function EditorDocument({
 
     // --- Get the active compilation result
     const compilationResult = state?.compilation?.result;
-    if (!isDebuggableCompilerOutput(compilationResult)) {
-      return;
-    }
 
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
     const editorLines = editor.current.getModel().getLineCount();
     editorBps.forEach((bp) => {
       let unreachable = false;
-      if (compilationResult?.errors?.length === 0) {
+      if (compilationResult?.errors?.length === 0 && isDebuggableCompilerOutput(compilationResult)) {
         // --- In case of a successful compilation, test if the breakpoint is allowed
         const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
           fi.filename.endsWith(getResourceName())
