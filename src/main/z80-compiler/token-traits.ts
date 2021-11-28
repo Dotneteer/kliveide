@@ -464,7 +464,6 @@ tokenTraits.set(TokenType.Ldws, {
 tokenTraits.set(TokenType.LeftShift, {});
 tokenTraits.set(TokenType.LessThan, {});
 tokenTraits.set(TokenType.LessThanOrEqual, {});
-tokenTraits.set(TokenType.Local, { statement: true });
 tokenTraits.set(TokenType.Loop, { statement: true });
 
 // ----------------------------------------------------------------------------
@@ -639,4 +638,3 @@ tokenTraits.set(TokenType.YL, { reg: true, reg8Idx: true });
 // ----------------------------------------------------------------------------
 // Z
 tokenTraits.set(TokenType.Z, { condition: true, relCondition: true });
-tokenTraits.set(TokenType.ZxBasicPragma, { pragma: true });

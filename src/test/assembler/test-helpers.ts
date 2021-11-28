@@ -9,6 +9,7 @@ import {
 } from "../../main/z80-compiler/assembler-in-out";
 import { SymbolValueMap } from "../../main/z80-compiler/assembler-types"
 import { ErrorCodes } from "../../main/z80-compiler/assembler-errors";
+import { SpectrumModelType } from "@abstractions/z80-compiler-service";
 
 export function testExpression(
   source: string,
@@ -87,6 +88,24 @@ export function testCodeEmit(source: string, ...bytes: number[]): void {
   const compiler = new Z80Assembler();
 
   const output = compiler.compile(source);
+  expect(output.errorCount).toBe(0);
+  expect(output.segments.length).toBe(1);
+  expect(output.segments[0].emittedCode.length).toBe(bytes.length);
+  for (let i = 0; i < bytes.length; i++) {
+    expect(output.segments[0].emittedCode[i]).toBe(bytes[i]);
+  }
+}
+
+export function testFlexibleCodeEmit(source: string, ...bytes: number[]): void {
+  const compiler = new Z80Assembler();
+
+  const output = compiler.compile(source, {
+    predefinedSymbols: {},
+    currentModel: SpectrumModelType.Spectrum48,
+    useCaseSensitiveSymbols: true,
+    maxLoopErrorsToReport: 100,
+    flexibleDefPragmas: true
+  });
   expect(output.errorCount).toBe(0);
   expect(output.segments.length).toBe(1);
   expect(output.segments[0].emittedCode.length).toBe(bytes.length);

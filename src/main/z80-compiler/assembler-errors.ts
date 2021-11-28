@@ -52,7 +52,6 @@ export type ErrorCodes =
   | "Z0208"
 
   // --- Pragma messages
-  | "Z0301"
   | "Z0302"
   | "Z0303"
   | "Z0304"
@@ -124,7 +123,6 @@ export type ErrorCodes =
   | "Z0707"
   | "Z0708"
   | "Z0709"
-  | "Z0710"
 
   // --- Structs
   | "Z0801"
@@ -202,8 +200,6 @@ export const errorMessages: ErrorText = {
   Z0208: "Unexpected #endif directive",
 
   // --- Pragma messages
-  Z0301:
-    "The .ZXBASIC pragma should be used before any other pragma or instruction.",
   Z0302: "A .model pragma can be used only once.",
   Z0303:
     "A .model pragma can have only these values: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
@@ -292,7 +288,6 @@ export const errorMessages: ErrorText = {
   Z0708: ".continue cannot be used outside of loop constructs.",
   Z0709:
     ".if/.ifused/.ifnused cannot have an {0} section after a detected .else section.",
-  Z0710: ".local can be used only within .proc",
 
   // --- Structs
   Z0801:

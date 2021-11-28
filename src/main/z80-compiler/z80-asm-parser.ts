@@ -27,7 +27,6 @@ import {
   IfDirective,
   IncludeDirective,
   LineDirective,
-  ZxBasicPragma,
   OrgPragma,
   XorgPragma,
   EntPragma,
@@ -122,7 +121,6 @@ import {
   ModuleEndStatement,
   StructStatement,
   StructEndStatement,
-  LocalStatement,
   ForStatement,
   NextStatement,
   FieldAssignment,
@@ -726,10 +724,6 @@ export class Z80AsmParser {
           filename: compBinExpr,
           offset: compBinOffsExpr,
           length: compBinLenExpr,
-        };
-      case TokenType.ZxBasicPragma:
-        return <ZxBasicPragma>{
-          type: "ZxBasicPragma",
         };
       case TokenType.InjectOptPragma:
         const optIds = this.getIdentifierNodeList(true);
@@ -1523,9 +1517,6 @@ export class Z80AsmParser {
         type: "StructEndStatement",
       };
     }
-    if (start.type === TokenType.Local) {
-      return this.parseLocalStatement();
-    }
 
     if (start.type === TokenType.For) {
       return this.parseForStatement();
@@ -1653,21 +1644,6 @@ export class Z80AsmParser {
       type: "ModuleStatement",
       isBlock: true,
       identifier,
-    };
-  }
-
-  /**
-   * localStatement
-   *   : ".local" Identifier ("," Identifier)*
-   */
-  private parseLocalStatement(): PartialZ80AssemblyLine | null {
-    const identifiers = this.getIdentifierNodeList();
-    if (identifiers.length === 0) {
-      this.reportError("Z0107");
-    }
-    return <LocalStatement>{
-      type: "LocalStatement",
-      identifiers,
     };
   }
 

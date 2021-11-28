@@ -586,11 +586,6 @@ export interface CompilerOutput extends CompiledModule {
   readonly listFileItems: ListFileItem[];
 
   /**
-   * The type of the source that resulted in this compilation (for example, ZX BASIC)
-   */
-  sourceType?: string;
-
-  /**
    * Trace outputs
    */
   readonly traceOutput: string[];

@@ -88,11 +88,6 @@ export class AssemblerOutput extends AssemblyModule {
   readonly listFileItems: IListFileItem[];
 
   /**
-   * The type of the source that resulted in this compilation (for example, ZX BASIC)
-   */
-  sourceType?: string;
-
-  /**
    * Trace outputs
    */
   readonly traceOutput: string[];
@@ -290,11 +285,6 @@ export class AssemblerOptions {
    * The maximum number of errors to report within a loop
    */
   maxLoopErrorsToReport = 16;
-
-  /**
-   * Signs that PROC labels and symbols are not locals by default
-   */
-  procExplicitLocalsOnly: boolean = false;
 
   /**
    * Indicates that assembly symbols should be case sensitively.
