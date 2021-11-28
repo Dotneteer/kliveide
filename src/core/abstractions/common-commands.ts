@@ -415,6 +415,7 @@ const compileCodeCommand: IKliveCommand = {
         // --- Start the compilation process
         const buffer = buildPane.buffer;
         buffer.clear();
+        buffer.resetColor();
         buffer.writeLine(`Compiling ${context.resource}`);
         const start = new Date().valueOf();
 

@@ -2,7 +2,10 @@ import {
   isAssemblerError,
   KliveCompilerOutput,
 } from "@abstractions/compiler-registry";
-import { AssemblerErrorInfo, BinarySegment } from "@abstractions/z80-compiler-service";
+import {
+  AssemblerErrorInfo,
+  BinarySegment,
+} from "@abstractions/z80-compiler-service";
 import { getSettingsService } from "@core/service-registry";
 import {
   ZXBC_DEBUG_ARRAY,
@@ -74,22 +77,26 @@ export class ZxBasicCompiler extends CompilerBase {
       await this.executeCommandLine(execPath, cmdLine);
 
       // --- Extract the output
+      const settingsService = getSettingsService();
+      const org = await settingsService.getSetting(
+        ZXBC_MACHINE_CODE_ORIGIN,
+        "current"
+      );
       const machineCode = new Uint8Array(readFileSync(outFilename));
       const segment: BinarySegment = {
         emittedCode: Array.from(machineCode),
-        // TODO: Get start address from configuration settings
-        startAddress: 0x8000,
-      }
+        startAddress: typeof org === "number" ? org & 0xffff : 0x8000,
+      };
 
       // --- Remove the output file
-      //unlinkSync(outFilename);
+      unlinkSync(outFilename);
 
       // --- Done.
       return {
         errors: this._errors,
         injectOptions: {},
         sourceType: "zxbasic",
-        segments: [segment]
+        segments: [segment],
       };
     } catch (err) {
       throw err;

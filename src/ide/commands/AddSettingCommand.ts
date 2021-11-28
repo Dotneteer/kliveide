@@ -1,5 +1,4 @@
 import {
-  getNumericTokenValue,
   InteractiveCommandBase,
   InteractiveCommandResult,
   Token,
