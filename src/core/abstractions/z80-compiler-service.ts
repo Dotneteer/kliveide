@@ -141,11 +141,6 @@ export type CompilerOptions = {
   maxLoopErrorsToReport: number;
 
   /**
-   * Signs that PROC labels and symbols are not locals by default
-   */
-  procExplicitLocalsOnly: boolean;
-
-  /**
    * Indicates that assembly symbols should be case sensitively.
    */
   useCaseSensitiveSymbols: boolean;
