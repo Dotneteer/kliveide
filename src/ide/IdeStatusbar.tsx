@@ -38,14 +38,16 @@ function CompilerStatus() {
   );
   const errorCount = result?.errors?.length ?? 0;
   const icon = inProgress
-    ? "circle-filled"
+    ? "settings-gear"
     : errorCount > 0
     ? "warning"
     : "check";
   return (
     <Section key="1">
       <Icon iconName="combine" style={{ marginRight: 8 }} />
-      {filename && <Icon iconName={icon} />}
+      {filename && (
+        <Icon iconName={icon} xclass={inProgress ? "rotating" : ""} />
+      )}
       {filename && (
         <Label>
           ({getNodeFile(filename)}
