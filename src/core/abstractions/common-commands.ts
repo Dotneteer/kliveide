@@ -35,6 +35,7 @@ import { BUILD_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
 import { changeActivityAction } from "@core/state/activity-bar-reducer";
 import { ACTIVITY_DEBUG_ID } from "./activity";
 import { resolveBreakpoints } from "./debug-helpers";
+import { isInjectableCompilerOutput } from "./compiler-registry";
 
 /**
  * Names of core Klive commands
@@ -414,6 +415,7 @@ const compileCodeCommand: IKliveCommand = {
         // --- Start the compilation process
         const buffer = buildPane.buffer;
         buffer.clear();
+        buffer.resetColor();
         buffer.writeLine(`Compiling ${context.resource}`);
         const start = new Date().valueOf();
 
@@ -423,10 +425,11 @@ const compileCodeCommand: IKliveCommand = {
           filename: context.resource,
         });
         if (response.failed && (response.result?.errors?.length ?? 0) === 0) {
-
           // --- The compilation process failed
           buffer.resetColor();
-          buffer.writeLine(`The compilation process failed: ${response.failed}`);
+          buffer.writeLine(
+            `The compilation process failed: ${response.failed}`
+          );
           break;
         }
 

@@ -1,7 +1,10 @@
-import { KliveCompilerOutput } from "@abstractions/compiler-registry";
+import {
+  isAssemblerError,
+  KliveCompilerOutput,
+} from "@abstractions/compiler-registry";
 import {
   AssemblerErrorInfo,
-  isAssemblerError,
+  BinarySegment,
 } from "@abstractions/z80-compiler-service";
 import { getSettingsService } from "@core/service-registry";
 import {
@@ -19,6 +22,7 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE,
 } from "@modules/integration-zxb/zxb-config";
+import { readFileSync, unlinkSync } from "original-fs";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
 
 /**
@@ -61,7 +65,7 @@ export class ZxBasicCompiler extends CompilerBase {
       }
 
       // --- Create the command line arguments
-      const outFilename = `${filename}.kz80.asm`;
+      const outFilename = `${filename}.bin`;
       const cmdLine = await createZxbCommandLineArgs(
         filename,
         outFilename,
@@ -71,13 +75,32 @@ export class ZxBasicCompiler extends CompilerBase {
       // --- Run the compiler
       this._errors = [];
       await this.executeCommandLine(execPath, cmdLine);
+
+      // --- Extract the output
+      const settingsService = getSettingsService();
+      const org = await settingsService.getSetting(
+        ZXBC_MACHINE_CODE_ORIGIN,
+        "current"
+      );
+      const machineCode = new Uint8Array(readFileSync(outFilename));
+      const segment: BinarySegment = {
+        emittedCode: Array.from(machineCode),
+        startAddress: typeof org === "number" ? org & 0xffff : 0x8000,
+      };
+
+      // --- Remove the output file
+      unlinkSync(outFilename);
+
+      // --- Done.
+      return {
+        errors: this._errors,
+        injectOptions: {},
+        sourceType: "zxbasic",
+        segments: [segment],
+      };
     } catch (err) {
       throw err;
     }
-
-    return {
-      errors: this._errors,
-    };
 
     /**
      * Generates the command-line arguments to run ZXBC.EXE
@@ -92,7 +115,7 @@ export class ZxBasicCompiler extends CompilerBase {
       const configObject = await getSettingsService().getConfiguration(
         "current"
       );
-      const argRoot = `${inputFile} --output ${outputFile} --asm `;
+      const argRoot = `${inputFile} --output ${outputFile} `;
       let additional = rawArgs ? rawArgs.trim() : "";
       if (!additional) {
         const arrayBaseOne = configObject.get(

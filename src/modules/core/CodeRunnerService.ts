@@ -8,7 +8,7 @@ import {
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { executeKliveCommand } from "@abstractions/common-commands";
 import { SpectrumModelType } from "@abstractions/z80-compiler-service";
-import { isCompoundCompilerOutput } from "@abstractions/compiler-registry";
+import { isInjectableCompilerOutput } from "@abstractions/compiler-registry";
 
 /**
  * Implements the behavior of the service that can run the code from the IDE
@@ -34,7 +34,7 @@ export class CodeRunnerService implements ICodeRunnerService {
         return;
       }
       const result = compilation.result;
-      if (!isCompoundCompilerOutput(result)) {
+      if (!isInjectableCompilerOutput(result)) {
         return;
       }
 
@@ -79,7 +79,7 @@ export class CodeRunnerService implements ICodeRunnerService {
         segments: result.segments.map((s) => ({
           startAddress: s.startAddress,
           bank: s.bank,
-          bankOffset: s.bankOffset,
+          bankOffset: s.bankOffset ?? 0,
           emittedCode: s.emittedCode,
         })),
         options: result.injectOptions,

@@ -1,4 +1,8 @@
-import { AssemblerErrorInfo, CompilerOutput } from "./z80-compiler-service";
+import {
+  AssemblerErrorInfo,
+  BinarySegment,
+  CompilerOutput,
+} from "./z80-compiler-service";
 
 /**
  * Stores the compilers
@@ -14,9 +18,21 @@ export type SimpleAssemblerOutput = {
 };
 
 /**
+ * Represents a compiler that can generate injectable code
+ */
+export type InjectableOutput = SimpleAssemblerOutput & {
+  readonly segments: BinarySegment[];
+  injectOptions: Record<string, boolean>;
+  sourceType?: string;
+};
+
+/**
  * Output of a Klive compiler
  */
-export type KliveCompilerOutput = SimpleAssemblerOutput | CompilerOutput;
+export type KliveCompilerOutput =
+  | SimpleAssemblerOutput
+  | InjectableOutput
+  | CompilerOutput;
 
 /**
  * Defines the responsibilities of a compiler that can vork directly with a build root
@@ -58,20 +74,39 @@ export interface IKliveCompiler {
 
   /**
    * Tests if the specified code is an error code
-   * @param exitCode 
+   * @param exitCode
    */
   exitCodeIsError(exitCode: number): boolean;
 }
 
 /**
- * Type guard that checks if the specified output is coming from the Z80 Assembler
+ * Tests if the specified data is AssemblerErrorInfo
+ * @param data Data to test
+ */
+export function isAssemblerError(data: any): data is AssemblerErrorInfo {
+  return !!data.errorCode && !!data.fileName;
+}
+
+/**
+ * Type guard that checks if the specified output can be used for code injection
  * @param output
  * @returns
  */
-export function isCompoundCompilerOutput(
+export function isInjectableCompilerOutput(
   output: KliveCompilerOutput
 ): output is CompilerOutput {
-  return (output as any)?.segments && (output as any)?.sourceItem;
+  return (output as any)?.segments;
+}
+
+/**
+ * Type guard that checks if the specified output can be used for code injection
+ * @param output
+ * @returns
+ */
+export function isDebuggableCompilerOutput(
+  output: KliveCompilerOutput
+): output is CompilerOutput {
+  return (output as any)?.segments && (output as any)?.sourceFileList;
 }
 
 /**

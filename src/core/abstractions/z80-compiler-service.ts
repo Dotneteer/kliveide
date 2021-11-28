@@ -436,12 +436,7 @@ export type BinarySegment = {
   /**
    * Start offset used for banks
    */
-  readonly bankOffset: number;
-
-  /**
-   * Maximum code length of this segment
-   */
-  readonly maxCodeLength: number;
+  readonly bankOffset?: number;
 
   /**
    * Start address of the compiled block
@@ -449,39 +444,9 @@ export type BinarySegment = {
   readonly startAddress: number;
 
   /**
-   * Optional displacement of this segment
-   */
-  readonly displacement?: number;
-
-  /**
-   * The current assembly address when the .disp pragma was used
-   */
-  readonly dispPragmaOffset?: number;
-
-  /**
-   * Intel hex start address of this segment
-   */
-  readonly xorgValue?: number;
-
-  /**
    * Emitted Z80 binary code
    */
   readonly emittedCode: number[];
-
-  /**
-   * Signs if segment overflow has been detected
-   */
-  readonly overflowDetected: boolean;
-
-  /**
-   * Shows the offset of the instruction being compiled
-   */
-  readonly currentInstructionOffset?: number;
-
-  /**
-   * The current code generation offset
-   */
-  readonly currentOffset: number;
 };
 
 /**
@@ -629,12 +594,4 @@ export interface CompilerOutput extends CompiledModule {
    * Trace outputs
    */
   readonly traceOutput: string[];
-}
-
-/**
- * Tests if the specified data is AssemblerErrorInfo
- * @param data Data to test
- */
-export function isAssemblerError(data: any): data is AssemblerErrorInfo {
-  return !!data.errorCode && !!data.fileName;
 }

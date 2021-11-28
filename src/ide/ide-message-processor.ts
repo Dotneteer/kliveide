@@ -18,7 +18,7 @@ import {
   BUILD_OUTPUT_PANE_ID,
   IHighlightable,
 } from "@abstractions/output-pane-service";
-import { isAssemblerError } from "@abstractions/z80-compiler-service";
+import { isAssemblerError } from "@abstractions/compiler-registry";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
