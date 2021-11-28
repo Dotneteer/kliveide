@@ -36,6 +36,7 @@ import {
   useState,
 } from "react";
 import { useResizeObserver } from "@components/useResizeObserver";
+import { isCompoundCompilerOutput } from "@abstractions/compiler-registry";
 
 // --- Wait 1000 ms before saving the document being edited
 const SAVE_DEBOUNCE = 1000;
@@ -171,7 +172,7 @@ function EditorDocument({
 
   /**
    * Ensures the specified language and its dependencies are registered
-   * @param language 
+   * @param language
    */
   function ensureLanguage(language: string): void {
     if (!monaco.languages.getLanguages().some(({ id }) => id === language)) {
@@ -213,11 +214,10 @@ function EditorDocument({
             colors: languageInfo.darkTheme.colors,
           });
         }
-      }
-
-      if (languageInfo.depensOn) {
-        for (const dependOn of languageInfo.depensOn) {
-          ensureLanguage(dependOn);
+        if (languageInfo.depensOn) {
+          for (const dependOn of languageInfo.depensOn) {
+            ensureLanguage(dependOn);
+          }
         }
       }
     }
@@ -419,7 +419,6 @@ function EditorDocument({
     unsavedChangeCounter.current++;
     await new Promise((r) => setTimeout(r, SAVE_DEBOUNCE));
     if (unsavedChangeCounter.current === 1 && previousContent.current) {
-      console.log("Saving document");
       await saveDocument(editor.current.getModel().getValue());
     }
     unsavedChangeCounter.current--;
@@ -430,7 +429,6 @@ function EditorDocument({
    * @param documentText Document text to save
    */
   async function saveDocument(documentText: string): Promise<void> {
-    console.log(documentText);
     const result = await sendFromIdeToEmu<FileOperationResponse>({
       type: "SaveFileContents",
       name: descriptor.id,
@@ -456,6 +454,9 @@ function EditorDocument({
 
     // --- Get the active compilation result
     const compilationResult = state?.compilation?.result;
+    if (!isCompoundCompilerOutput(compilationResult)) {
+      return;
+    }
 
     // --- Create the array of decorators
     const decorations: Decoration[] = [];
@@ -536,6 +537,10 @@ function EditorDocument({
         oldExecPointDecoration.current,
         []
       );
+      return;
+    }
+
+    if (!isCompoundCompilerOutput(compilationResult)) {
       return;
     }
 
@@ -625,7 +630,7 @@ function EditorDocument({
    * @param column Column number
    */
   function setPosition(lineNumber: number, column: number): void {
-    editor.current.revealPosition({ lineNumber, column });
+    editor.current.revealPositionInCenter({ lineNumber, column });
     editor.current.setPosition({ lineNumber, column });
     window.requestAnimationFrame(() => editor.current.focus());
   }

@@ -67,18 +67,6 @@ export interface IZ80CompilerService {
     filename: string,
     options?: CompilerOptions
   ): Promise<CompilerOutput>;
-
-  /**
-   * Compiles the passed Z80 Assembly code into Z80 binary code.
-   * binary code.
-   * @param sourceText Z80 assembly source code text
-   * @param options Compiler options. If not defined, the compiler uses the default options.
-   * @returns Output of the compilation
-   */
-  compile(
-    sourceText: string,
-    options?: CompilerOptions
-  ): Promise<CompilerOutput>;
 }
 
 /**
@@ -527,14 +515,14 @@ export interface AssemblerErrorInfo {
   /**
    * Error start column
    */
-   readonly startColumn: number;
+  readonly startColumn: number;
 
-   /**
-    * Error end column
-    */
-   readonly endColumn: number | null;
- 
-   /**
+  /**
+   * Error end column
+   */
+  readonly endColumn: number | null;
+
+  /**
    * Complete error message
    */
   readonly message: string;
@@ -641,4 +629,12 @@ export interface CompilerOutput extends CompiledModule {
    * Trace outputs
    */
   readonly traceOutput: string[];
+}
+
+/**
+ * Tests if the specified data is AssemblerErrorInfo
+ * @param data Data to test
+ */
+export function isAssemblerError(data: any): data is AssemblerErrorInfo {
+  return !!data.errorCode && !!data.fileName;
 }

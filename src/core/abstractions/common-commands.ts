@@ -396,23 +396,41 @@ const compileCodeCommand: IKliveCommand = {
         signInvalidContext(context);
         break;
       case "ide":
-        // --- Display compiler output in the Z80 Assembler output pane
+        // --- Display compiler output in the Build output pane
         const outputPaneService = getOutputPaneService();
-        const compilerPane = outputPaneService.getPaneById(
-          BUILD_OUTPUT_PANE_ID
-        );
-        const buffer = compilerPane.buffer;
+        const buildPane = outputPaneService.getPaneById(BUILD_OUTPUT_PANE_ID);
+
+        // --- Switch to the output pane
+        const toolAreaService = getToolAreaService();
+        const outputTool = toolAreaService.getToolPanelById(OUTPUT_TOOL_ID);
+        if (outputTool) {
+          toolAreaService.setActiveTool(outputTool);
+          if (buildPane) {
+            await new Promise((r) => setTimeout(r, 20));
+            outputPaneService.setActivePane(buildPane);
+          }
+        }
+
+        // --- Start the compilation process
+        const buffer = buildPane.buffer;
         buffer.clear();
         buffer.writeLine(`Compiling ${context.resource}`);
         const start = new Date().valueOf();
 
         // --- Invoke the compiler
-        const output = (
-          await sendFromIdeToEmu<CompileFileResponse>({
-            type: "CompileFile",
-            filename: context.resource,
-          })
-        ).result;
+        const response = await sendFromIdeToEmu<CompileFileResponse>({
+          type: "CompileFile",
+          filename: context.resource,
+        });
+        if (response.failed && (response.result?.errors?.length ?? 0) === 0) {
+
+          // --- The compilation process failed
+          buffer.resetColor();
+          buffer.writeLine(`The compilation process failed: ${response.failed}`);
+          break;
+        }
+
+        const output = response.result;
 
         // --- Summary
         const errorCount = output.errors.length;
@@ -430,33 +448,9 @@ const compileCodeCommand: IKliveCommand = {
           );
           buffer.bold(false);
           buffer.resetColor();
-          for (const errItem of output.errors) {
-            buffer.color("bright-red");
-            buffer.write(errItem.errorCode);
-            buffer.resetColor();
-            buffer.write(`: ${errItem.message} `);
-            buffer.color("cyan");
-            buffer.writeLine(
-              `${errItem.fileName}:[${errItem.line}:${errItem.startColumn}-${errItem.endColumn}]`,
-              <IHighlightable>{
-                highlight: true,
-                title: "Click to locate the error",
-                errorItem: errItem,
-              }
-            );
-            buffer.resetColor();
-          }
         }
         // --- Execution time
         buffer.writeLine(`Compile time: ${new Date().valueOf() - start}ms`);
-        const toolAreaService = getToolAreaService();
-        const outputTool = toolAreaService.getToolPanelById(OUTPUT_TOOL_ID);
-        if (outputTool) {
-          toolAreaService.setActiveTool(outputTool);
-          if (compilerPane) {
-            outputPaneService.setActivePane(compilerPane);
-          }
-        }
 
         // --- Take care to resolve source code breakpoints
         resolveBreakpoints();

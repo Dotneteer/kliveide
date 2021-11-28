@@ -540,3 +540,19 @@ input:focus {
   font-weight: 400;
   margin-left: 8px;
 }
+
+// ============================================================================
+// Rotation
+
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rotating {
+  animation: rotating 2s linear infinite;
+}

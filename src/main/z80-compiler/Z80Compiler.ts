@@ -1,14 +1,16 @@
+import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 import {
-  IKliveCompiler,
-  KliveCompilerOutput,
-} from "@abstractions/compiler-registry";
-import { CompilerOptions } from "@abstractions/z80-compiler-service";
+  AssemblerErrorInfo,
+  CompilerOptions,
+  isAssemblerError,
+} from "@abstractions/z80-compiler-service";
 import { getZ80CompilerService } from "@core/service-registry";
+import { CompilerBase } from "../compiler-integration/CompilerBase";
 
 /**
  * Wraps the built-in Klive Z80 Compiler
  */
-export class Z80Compiler implements IKliveCompiler {
+export class Z80Compiler extends CompilerBase {
   /**
    * The unique ID of the compiler
    */
@@ -30,26 +32,27 @@ export class Z80Compiler implements IKliveCompiler {
     filename: string,
     options?: Record<string, any>
   ): Promise<KliveCompilerOutput> {
-    return getZ80CompilerService().compileFile(
+    const output = await getZ80CompilerService().compileFile(
       filename,
       options as CompilerOptions
     );
+    if (output.errors.length) {
+      for (const error of output.errors) {
+        await this.onErrorMessage(error);
+      }
+    }
+    return output;
   }
 
   /**
-   * Compiles the passed Z80 Assembly code into Z80 binary code.
-   * binary code.
-   * @param sourceText Z80 assembly source code text
-   * @param options Compiler options. If not defined, the compiler uses the default options.
-   * @returns Output of the compilation
+   * Processes a compiler error and turns it into an assembly error information
+   * or plain string
+   * @param data Message data to process
    */
-  async compile(
-    sourceText: string,
-    options?: Record<string, any>
-  ): Promise<KliveCompilerOutput> {
-    return getZ80CompilerService().compile(
-      sourceText,
-      options as CompilerOptions
-    );
+  processErrorMessage(data: any): string | AssemblerErrorInfo {
+    if (isAssemblerError(data)) {
+      return data;
+    }
+    return data.toString();
   }
 }

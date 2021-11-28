@@ -83,7 +83,7 @@ import { newFileDialog, NEW_FILE_DIALOG_ID } from "./explorer-tools/NewFileDialo
 import { renameFileDialog, RENAME_FILE_DIALOG_ID } from "./explorer-tools/RenameFileDialog";
 import { renameFolderDialog, RENAME_FOLDER_DIALOG_ID } from "./explorer-tools/RenameFolderDialog";
 import { registerKliveCommands } from "./commands/register-commands";
-import { SettingsService } from "./settings-service/settings-service";
+import { IdeSettingsService } from "./settings-service/settings-service";
 import { ResetZxbCommand } from "@modules/integration-zxb/ResetZxbCommand";
 import { zxbasLanguageProvider } from "./languages/zxbas-provider";
 
@@ -151,7 +151,7 @@ registerService(TOOL_AREA_SERVICE, new ToolAreaService());
 registerService(COMMAND_SERVICE, new InteractiveCommandService());
 registerService(DIALOG_SERVICE, new DialogService());
 registerService(CODE_RUNNER_SERVICE, new CodeRunnerService());
-registerService(SETTINGS_SERVICE, new SettingsService());
+registerService(SETTINGS_SERVICE, new IdeSettingsService());
 
 // --- Register meesenger objects
 registerIdeToEmuMessenger(new IdeToEmuMessenger());

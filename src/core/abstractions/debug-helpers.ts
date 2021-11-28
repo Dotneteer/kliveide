@@ -5,6 +5,7 @@ import {
 } from "@abstractions/code-runner-service";
 import { dispatch, getState } from "@core/service-registry";
 import { setResolvedBreakpointsAction } from "@core/state/debugger-reducer";
+import { isCompoundCompilerOutput } from "./compiler-registry";
 
 /**
  * Adds a new breakpoint to the array of existing breakpoints
@@ -233,7 +234,12 @@ export function resolveBreakpoints(): BreakpointDefinition[] {
 
   // --- Get the active compilation result
   const compilationResult = state?.compilation?.result;
-  if (compilationResult?.errors?.length === 0) {
+
+  if (
+    compilationResult &&
+    compilationResult.errors.length === 0 &&
+    isCompoundCompilerOutput(compilationResult)
+  ) {
     breakpoints.forEach((bp) => {
       // --- Nothing to do with binary breakpoints
       if (bp.type !== "source") return;

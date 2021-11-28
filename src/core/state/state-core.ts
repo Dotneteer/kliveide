@@ -8,7 +8,7 @@ import {
   RegisteredMachine,
   SideBarState,
 } from "./AppState";
-import { CompilerOutput } from "@abstractions/z80-compiler-service";
+import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 
 /**
  * Available action types
@@ -155,7 +155,8 @@ export type Payload = {
   modalDisplayed?: boolean;
   flag?: boolean;
   filename?: string;
-  compileResult?: CompilerOutput;
+  compileResult?: KliveCompilerOutput;
+  failed?: string;
   breakpoint?: BreakpointDefinition;
   breakpoints?: BreakpointDefinition[];
   lineCount?: number;

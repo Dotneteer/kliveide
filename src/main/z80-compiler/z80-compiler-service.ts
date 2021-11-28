@@ -92,34 +92,11 @@ export class Z80CompilerService implements IZ80CompilerService {
     filename: string,
     options?: CompilerOptions
   ): Promise<CompilerOutput> {
-    dispatch(startCompileAction(filename));
     const response = await this.sendMessage<CompilerResponseMessage>({
       type: "CompileFile",
       filename,
       options,
     });
-    dispatch(endCompileAction(response.result));
-    return response.result;
-  }
-
-  /**
-   * Compiles he passed Z80 Assembly code into Z80 binary code.
-   * binary code.
-   * @param sourceText Z80 assembly source code text
-   * @param options Compiler options. If not defined, the compiler uses the default options.
-   * @returns Output of the compilation
-   */
-  async compile(
-    sourceText: string,
-    options?: CompilerOptions
-  ): Promise<CompilerOutput> {
-    dispatch(startCompileAction(null));
-    const response = await this.sendMessage<CompilerResponseMessage>({
-      type: "Compile",
-      sourceText,
-      options,
-    });
-    dispatch(endCompileAction(response.result));
     return response.result;
   }
 }

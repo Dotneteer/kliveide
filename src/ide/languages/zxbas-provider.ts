@@ -7,9 +7,6 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "zxbas",
   depensOn: ["kz80-asm"],
   options: {
-    comments: {
-      lineComment: ";",
-    },
   },
   supportsBreakpoints: true,
   languageDef: {
@@ -35,8 +32,9 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
       "FLASH",
       "FORMAT",
       "FOR",
-      "GO SUB",
-      "GO TO",
+      "GO",
+      "GOSUB",
+      "GOTO",
       "IF",
       "INK",
       "INPUT",
@@ -64,6 +62,7 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
       "RETURN",
       "RUN",
       "SAVE",
+      "SUB",
       "VERIFY",
       "AT",
       "LINE",
@@ -77,8 +76,6 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
       "ELSEIF",
       "EXIT",
       "FUNCTION",
-      "GOTO",
-      "GOSUB",
       "LOOP",
       "WEND",
       "WHILE",
@@ -278,12 +275,12 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
       whitespace: [
         [/[ \t\r\n]+/, "white"],
         [/\/'/, "comment", "@comment"],
-        [/[REM|\''].*$/, "comment"],
+        [/(REM|\/').*$/, "comment"],
       ],
 
       comment: [
         [/[^\/']+/, "comment"],
-        [/\/\*/, "comment", "@push"], // nested comment
+        [/\/\'/, "comment", "@push"], // nested comment
         ["\\'/", "comment", "@pop"],
         [/[\/']/, "comment"],
       ],

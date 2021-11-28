@@ -1,6 +1,7 @@
 import { Activity } from "@core/abstractions/activity";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
 import { CompilerOutput } from "@abstractions/z80-compiler-service";
+import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 
 /**
  * Represents the application's entire state vector
@@ -161,7 +162,8 @@ export type DirectoryContent = {
 export type CompilationState = {
   inProgress?: boolean;
   filename?: string;
-  result?: CompilerOutput;
+  result?: KliveCompilerOutput;
+  failed?: string;
 };
 
 // --- Represents a machine in the registry
