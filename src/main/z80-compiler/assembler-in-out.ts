@@ -131,7 +131,7 @@ export class BinarySegment implements IBinarySegment {
   /**
    * Maximum code length of this segment
    */
-  maxCodeLength: number;
+  maxCodeLength?: number;
 
   /**
    * Start address of the compiled block

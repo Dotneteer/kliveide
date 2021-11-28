@@ -3,12 +3,10 @@ import { spawn } from "child_process";
 
 import {
   IKliveCompiler,
+  isAssemblerError,
   KliveCompilerOutput,
 } from "@abstractions/compiler-registry";
-import {
-  AssemblerErrorInfo,
-  isAssemblerError,
-} from "@abstractions/z80-compiler-service";
+import { AssemblerErrorInfo } from "@abstractions/z80-compiler-service";
 import { sendFromMainToIde } from "@core/messaging/message-sending";
 
 /**

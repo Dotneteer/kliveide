@@ -158,12 +158,12 @@ export interface IBinarySegment {
   /**
    * Start offset used for banks
    */
-  bankOffset: number;
+  bankOffset?: number;
 
   /**
    * Maximum code length of this segment
    */
-  maxCodeLength: number;
+  maxCodeLength?: number;
 
   /**
    * Start address of the compiled block
@@ -193,7 +193,7 @@ export interface IBinarySegment {
   /**
    * Signs if segment overflow has been detected
    */
-  overflowDetected: boolean;
+  overflowDetected?: boolean;
 
   /**
    * Shows the offset of the instruction being compiled
@@ -210,7 +210,7 @@ export interface IBinarySegment {
    * @param data Byte to emit
    * @returns Null, if byte emitted; otherwise, error message
    */
-  emitByte(data: number): ErrorCodes | null;
+  //emitByte(data: number): ErrorCodes | null;
 }
 
 /**

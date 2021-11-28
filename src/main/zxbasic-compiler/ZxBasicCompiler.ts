@@ -1,8 +1,8 @@
-import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 import {
-  AssemblerErrorInfo,
   isAssemblerError,
-} from "@abstractions/z80-compiler-service";
+  KliveCompilerOutput,
+} from "@abstractions/compiler-registry";
+import { AssemblerErrorInfo, BinarySegment } from "@abstractions/z80-compiler-service";
 import { getSettingsService } from "@core/service-registry";
 import {
   ZXBC_DEBUG_ARRAY,
@@ -19,6 +19,7 @@ import {
   ZXBC_STRICT_BOOL,
   ZXBC_STRICT_MODE,
 } from "@modules/integration-zxb/zxb-config";
+import { readFileSync, unlinkSync } from "original-fs";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
 
 /**
@@ -61,7 +62,7 @@ export class ZxBasicCompiler extends CompilerBase {
       }
 
       // --- Create the command line arguments
-      const outFilename = `${filename}.kz80.asm`;
+      const outFilename = `${filename}.bin`;
       const cmdLine = await createZxbCommandLineArgs(
         filename,
         outFilename,
@@ -71,13 +72,28 @@ export class ZxBasicCompiler extends CompilerBase {
       // --- Run the compiler
       this._errors = [];
       await this.executeCommandLine(execPath, cmdLine);
+
+      // --- Extract the output
+      const machineCode = new Uint8Array(readFileSync(outFilename));
+      const segment: BinarySegment = {
+        emittedCode: Array.from(machineCode),
+        // TODO: Get start address from configuration settings
+        startAddress: 0x8000,
+      }
+
+      // --- Remove the output file
+      //unlinkSync(outFilename);
+
+      // --- Done.
+      return {
+        errors: this._errors,
+        injectOptions: {},
+        sourceType: "zxbasic",
+        segments: [segment]
+      };
     } catch (err) {
       throw err;
     }
-
-    return {
-      errors: this._errors,
-    };
 
     /**
      * Generates the command-line arguments to run ZXBC.EXE
@@ -92,7 +108,7 @@ export class ZxBasicCompiler extends CompilerBase {
       const configObject = await getSettingsService().getConfiguration(
         "current"
       );
-      const argRoot = `${inputFile} --output ${outputFile} --asm `;
+      const argRoot = `${inputFile} --output ${outputFile} `;
       let additional = rawArgs ? rawArgs.trim() : "";
       if (!additional) {
         const arrayBaseOne = configObject.get(

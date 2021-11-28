@@ -1,8 +1,10 @@
-import { KliveCompilerOutput } from "@abstractions/compiler-registry";
+import {
+  isAssemblerError,
+  KliveCompilerOutput,
+} from "@abstractions/compiler-registry";
 import {
   AssemblerErrorInfo,
   CompilerOptions,
-  isAssemblerError,
 } from "@abstractions/z80-compiler-service";
 import { getZ80CompilerService } from "@core/service-registry";
 import { CompilerBase } from "../compiler-integration/CompilerBase";

@@ -430,7 +430,7 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
 
     // --- Handle subroutine calls
     if (codeToInject.subroutine) {
-      const spValue = this.getMachineState().sp;
+      const spValue = this.getMachineState()._sp;
       this.writeMemory(spValue - 1, mainExec >> 8);
       this.writeMemory(spValue - 2, mainExec & 0xff);
       this.api.setSP(spValue - 2);
