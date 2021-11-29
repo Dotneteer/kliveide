@@ -509,8 +509,8 @@ function EditorDocument({
             message: "Error",
             startLineNumber: err.line,
             endLineNumber: err.line,
-            startColumn: err.startColumn,
-            endColumn: err.endColumn,
+            startColumn: err.startColumn + 1,
+            endColumn: err.endColumn + 1,
           } as MarkerData)
       );
     monaco.editor.setModelMarkers(model, CODE_EDITOR_MARKERS, markers);
@@ -692,7 +692,7 @@ export class EditorDocumentPanelDescriptor extends DocumentPanelDescriptorBase {
    * @param location Document location
    */
   async navigateToLocation(location: NavigationInfo): Promise<void> {
-    this._api?.setPosition(location.line, location.column);
+    this._api?.setPosition(location.line, location.column + 1);
   }
 
   /**

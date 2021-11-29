@@ -964,7 +964,7 @@ export class TokenStream {
       lexer._prefetchedPos = null;
       lexer._prefetchedColumn = null;
       lastEndPos = input.position;
-      lastEndColumn = input.position;
+      lastEndColumn = input.column;
     }
 
     /**

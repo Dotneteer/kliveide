@@ -106,6 +106,7 @@ import {
 import {
   BinaryComparisonInfo,
   FixupType,
+  IEvaluationContext,
   IExpressionValue,
   IfDefinition,
   IfSection,
@@ -287,14 +288,14 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- Execute the compilation phases
-    let success = false;
+    let emitSuccess = false;
     const parseResult = this.executeParse(0, sourceItem, sourceText);
     this.preprocessedLines = parseResult.parsedLines;
-    success = this.emitCode(this.preprocessedLines);
-    if (parseResult.success && success) {
-      success = this.fixupUnresolvedSymbols() && this.compareBinaries();
+    emitSuccess = this.emitCode(this.preprocessedLines);
+    if (emitSuccess) {
+      emitSuccess = this.fixupUnresolvedSymbols() && this.compareBinaries();
     }
-    if (!success) {
+    if (!emitSuccess) {
       // --- If failed, clear output segments
       this._output.segments.length = 0;
     }
@@ -895,7 +896,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (!this.readyToEvaluate(expr)) {
       return ExpressionValue.NonEvaluated;
     }
-    return this.doEvalExpression(expr);
+    return this.doEvalExpression(this, expr);
   }
 
   /**
@@ -903,7 +904,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param expr Expression to evaluate
    */
   evaluateExprImmediate(expr: Expression): IExpressionValue {
-    return this.doEvalExpression(expr);
+    return this.doEvalExpression(this, expr);
   }
 
   /**
@@ -947,13 +948,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param node Error position
    */
   reportEvaluationError(
+    context: IEvaluationContext,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
   ): void {
     this.reportAssemblyError(
       code,
-      this._currentSourceLine,
+      context.getSourceLine(),
       node,
       ...parameters
     );
@@ -4238,7 +4240,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       }
       const opCodes = simpleInstructionCodes[mnemonic];
       if (opCodes === undefined) {
-        this.reportEvaluationError("Z0401", opLine, null, mnemonic);
+        this.reportEvaluationError(this, "Z0401", opLine, null, mnemonic);
       }
 
       // --- Emit the opcode(s);
@@ -5599,7 +5601,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- Now, resolve the fixup
-    exprValue = fixup.doEvalExpression(fixup.expression);
+    exprValue = fixup.doEvalExpression(fixup, fixup.expression);
 
     if (!exprValue.isValid) {
       return { success: false, value: ExpressionValue.Error };
@@ -5835,7 +5837,13 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     this.reportMacroInvocationErrors();
 
-    const line = sourceLine as Z80AssemblyLine;
+    const line = { ...(sourceLine as Z80AssemblyLine) };
+
+    // --- Cut closing comment, if there is any
+    if (line.sourceText) {
+      const segments = line.sourceText.split(";");
+      line.endColumn = line.startColumn + segments[0].trim().length - 1;
+    }
     const sourceItem = this._output.sourceFileList[line.fileIndex];
     let errorText: string = errorMessages[code] ?? "Unkonwn error";
     if (parameters) {

@@ -131,7 +131,7 @@ export interface IEvaluationContext {
    * @param expr Expression to evaluate
    * @param context: Evaluation context
    */
-  doEvalExpression(expr: Expression): IExpressionValue;
+  doEvalExpression(context: IEvaluationContext, expr: Expression): IExpressionValue;
 
   /**
    * Reports an error during evaluation
@@ -140,6 +140,7 @@ export interface IEvaluationContext {
    * @param parameters Optional error parameters
    */
   reportEvaluationError(
+    context: IEvaluationContext,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]

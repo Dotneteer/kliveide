@@ -96,10 +96,11 @@ export class FixupEntry extends ExpressionEvaluator {
    * @param parameters Optional error parameters
    */
   reportEvaluationError(
+    context: IEvaluationContext,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
   ): void {
-    this.parentContext.reportEvaluationError(code, node, ...parameters);
+    this.parentContext.reportEvaluationError(context, code, node, ...parameters);
   }
 }

@@ -237,13 +237,13 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
    * @param context The context to evaluate the expression
    * @param expr Expression to evaluate
    */
-  doEvalExpression(expr: Expression): IExpressionValue {
+  doEvalExpression(context: IEvaluationContext, expr: Expression): IExpressionValue {
     try {
       switch (expr.type) {
         case "Identifier":
-          return evalIdentifierValue(this, expr);
+          return evalIdentifierValue(context, expr);
         case "Symbol":
-          return evalSymbolValue(this, expr);
+          return evalSymbolValue(context, expr);
         case "IntegerLiteral":
         case "RealLiteral":
         case "CharLiteral":
@@ -251,24 +251,24 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
         case "BooleanLiteral":
           return new ExpressionValue(expr.value);
         case "BinaryExpression":
-          return evalBinaryOperationValue(this, expr);
+          return evalBinaryOperationValue(context, expr);
         case "UnaryExpression":
-          return evalUnaryOperationValue(this, expr);
+          return evalUnaryOperationValue(context, expr);
         case "ConditionalExpression":
-          return evalConditionalOperationValue(this, expr);
+          return evalConditionalOperationValue(context, expr);
         case "CurrentAddressLiteral":
-          return new ExpressionValue(this.getCurrentAddress());
+          return new ExpressionValue(context.getCurrentAddress());
         case "CurrentCounterLiteral":
           return this.getLoopCounterValue();
         case "MacroTimeFunctionInvocation":
-          return evalMacroTimeFunctionInvocationValue(this, expr);
+          return evalMacroTimeFunctionInvocationValue(context, expr);
         case "FunctionInvocation":
-          return evalFunctionInvocationValue(this, expr);
+          return evalFunctionInvocationValue(context, expr);
         default:
           return ExpressionValue.Error;
       }
     } catch (err) {
-      this.reportEvaluationError("Z0606", expr, (err as Error).message);
+      this.reportEvaluationError(context, "Z0606", expr, (err as Error).message);
       return ExpressionValue.Error;
     }
 
@@ -288,7 +288,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
         }
         return valueInfo.value;
       }
-      context.reportEvaluationError("Z0605", expr, expr.name);
+      context.reportEvaluationError(context, "Z0605", expr, expr.name);
       return ExpressionValue.NonEvaluated;
     }
 
@@ -311,7 +311,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
         }
         return valueInfo.value;
       }
-      context.reportEvaluationError(
+      context.reportEvaluationError(context,
         "Z0605",
         expr.identifier,
         expr.identifier.name
@@ -329,8 +329,8 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
       context: IEvaluationContext,
       expr: BinaryExpression
     ): ExpressionValue {
-      const left = context.doEvalExpression(expr.left);
-      const right = context.doEvalExpression(expr.right);
+      const left = context.doEvalExpression(context, expr.left);
+      const right = context.doEvalExpression(context, expr.right);
       if (!left.isValid || !right.isValid) {
         return ExpressionValue.NonEvaluated;
       }
@@ -1009,7 +1009,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
       context: IEvaluationContext,
       expr: UnaryExpression
     ): IExpressionValue {
-      const operand = context.doEvalExpression(expr.operand);
+      const operand = context.doEvalExpression(context, expr.operand);
       if (!operand.isValid) {
         return ExpressionValue.NonEvaluated;
       }
@@ -1076,13 +1076,13 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
       context: IEvaluationContext,
       expr: ConditionalExpression
     ): IExpressionValue {
-      const cond = context.doEvalExpression(expr.condition);
+      const cond = context.doEvalExpression(context, expr.condition);
       if (!cond.isValid) {
         return ExpressionValue.NonEvaluated;
       }
       return cond.asBool()
-        ? context.doEvalExpression(expr.consequent)
-        : context.doEvalExpression(expr.alternate);
+        ? context.doEvalExpression(context, expr.consequent)
+        : context.doEvalExpression(context, expr.alternate);
     }
 
     function throwStringError(side: string, operator: string): void {
@@ -1103,6 +1103,7 @@ export abstract class ExpressionEvaluator implements IEvaluationContext {
    * @param parameters Optional error parameters
    */
   abstract reportEvaluationError(
+    context: IEvaluationContext,
     code: ErrorCodes,
     node: NodePosition,
     ...parameters: any[]
@@ -1619,7 +1620,7 @@ export function evalFunctionInvocationValue(
   let errCount = 0;
   for (const expr of funcExpr.args) {
     index++;
-    const argValue = context.doEvalExpression(expr);
+    const argValue = context.doEvalExpression(context, expr);
     if (argValue.isValid) {
       argValues.push(argValue);
     } else {
@@ -1635,7 +1636,7 @@ export function evalFunctionInvocationValue(
   // --- Function must be defined
   const evaluator = FUNCTION_EVALUATORS[funcExpr.functionName.name];
   if (!evaluator) {
-    throw new Error(`Unknown function $'{FunctionName}'`);
+    throw new Error(`Unknown function '${funcExpr.functionName.name}'`);
   }
 
   // --- Find the apropriate signature
@@ -1928,6 +1929,7 @@ export function evalMacroTimeFunctionInvocationValue(
     }
   }
   context.reportEvaluationError(
+    context,
     "Z0606",
     funcExpr,
     null,
