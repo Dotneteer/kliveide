@@ -78,7 +78,8 @@ export default function Sp48Key(props: Props) {
     mouseOverSymbol ||
     mouseOverAbove ||
     mouseOverBelow ||
-    mouseOverTopNum
+    mouseOverTopNum ||
+    mouseOverGlyph
       ? "pointer"
       : "default";
 

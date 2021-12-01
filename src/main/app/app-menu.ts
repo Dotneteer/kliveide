@@ -238,7 +238,7 @@ export function setupMenu(): void {
     },
     {
       id: TOGGLE_STATUSBAR,
-      label: "Show statusbar",
+      label: "Show status bar",
       type: "checkbox",
       checked: viewOptions.showStatusbar ?? true,
       click: (mi) => {
@@ -829,7 +829,7 @@ interface SoundMenuItem {
  */
 const SOUND_MENU_ITEMS: SoundMenuItem[] = [
   { id: "mute_sound", label: "Mute sound", level: 0.0 },
-  { id: "sound_level_low", label: "Sound: low", level: 0.13 },
+  { id: "sound_level_low", label: "Sound: Low", level: 0.13 },
   { id: "sound_level_medium", label: "Sound: Medium", level: 0.25 },
   { id: "sound_level_high", label: "Sound: High", level: 0.5 },
   { id: "sound_level_highest", label: "Sound: Highest", level: 1.0 },

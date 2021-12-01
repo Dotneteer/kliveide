@@ -21,7 +21,6 @@ import { emuWindow } from "../../main/app/emu-window";
 import { checkTapeFile } from "@modules/vm-zx-spectrum/readers";
 
 // --- Menu identifier contants
-const TOGGLE_BEAM = "sp_toggle_beam_position";
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
 
@@ -54,10 +53,28 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    */
   readonly acceptedFirmwareSizes: number[] | null = [0x4000];
 
+  // /**
+  //  * Items to add to the Show menu
+  //  */
+  // provideViewMenuItems(): MenuItemConstructorOptions[] | null {
+  //   return [
+  //     {
+  //       id: TOGGLE_FAST_LOAD,
+  //       label: "Fast load from tape",
+  //       type: "checkbox",
+  //       checked: true,
+  //       click: (mi) => {
+  //         dispatch(spectrumFastLoadAction(mi.checked));
+  //         emuWindow.saveKliveProject();
+  //       },
+  //     },
+  //   ];
+  // }
+
   /**
-   * Items to add to the Show menu
+   * Items to add to the machine menu
    */
-  provideViewMenuItems(): MenuItemConstructorOptions[] | null {
+  provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
     return [
       {
         id: TOGGLE_FAST_LOAD,
@@ -69,14 +86,6 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
           emuWindow.saveKliveProject();
         },
       },
-    ];
-  }
-
-  /**
-   * Items to add to the machine menu
-   */
-  provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
-    return [
       {
         id: SET_TAPE_FILE,
         label: "Set tape file...",
