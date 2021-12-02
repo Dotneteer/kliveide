@@ -9,69 +9,43 @@ selector: tutorial
 permalink: "getting-started/create-klive-project"
 ---
 
-To work with Klive, first, you need to create a Klive project. This project manages the integration between the Klive IDE and the Emulator. Also, it provides customized editors, icons, and tools so that you can work with your ZX Spectrum development projects.
+To work with Klive, first, you need to create a Klive project. A Klive project is a folder of coherent files that belong to developing a single application with Klive. Though Klive can open any folder as a potential development project, it considers a *Klive project* only a folder with a `klive.project` file with a particular structure.
+You have these options to create a new Klive project:
 
-## Install the vscode-icons Extension
+- Run the **File \| New project** command
+- Use the `new-project` command in the _interactive command window_
 
-The Klive IDE provides custom icon themes for Klive projects. To use them, first, you need to install the Icons for Visual Studio Code extension:
+## Creating the Project with from the Menu
 
-1. Go to the **Extensions** tab and type **vscode-icons** into the search box.
-2. Select the corresponding extension from the list and click Install.
-
-![New Klive project]({{ site.baseurl }}/assets/images/tutorials/install-vscode-icons.png)
-
-{:start="3"}
-3. Select the **VSCode Icons** theme:
-
-![New Klive project]({{ site.baseurl }}/assets/images/tutorials/select-icon-theme.png)
-
-From now on, your Klive projects will use the custom icons for the Klive project files.
-
-## Create a Klive IDE project
-
-1. Start VS Code, and open an empty folder to be used for experimenting with Klive. You can open a non-empty folder, too, but be aware that the next steps will add a few files and folders to that project.
-
-2. Press Ctrl+Shift+P, or F1, alternatively use the **View\|Command Palette...** menu. In the command box, start typing "Update Klive", and then select the **Update Klive Project** command from the list to run:
-
-![Update Klive project]({{ site.baseurl }}/assets/images/tutorials/update-klive-project.png)
-
-{:start="3"}
-3. Select the machine type from the list:
-
-![Klive machine types]({{ site.baseurl }}/assets/images/tutorials/klive-machine-types.png)
-
-> Note: The machine types marked with (*) are not implemented yet.
-
-4. This command creates new folders and files within the project folder:
-
-![Project structure]({{ site.baseurl }}/assets/images/tutorials/klive-project-structure.png)
-
-The most important folder is `.spectrum`, as it contains the files that are required by Klive. If any of them is missing, the IDE won't function as expected.
-- `spectrum.machine` stores the configuration of the current ZX Spectrum machine to use with the Emulator. As of now, Klive supports only the ZX Spectrum 48K and 128K models, but shortly it will allow using other types.
-- The files with `view` in their names provide unique views of the machine:
-    - `view.basic` (not implemented yet) displays the program's BASIC listing loaded into the machine.
-    - `view.disassembly` displays the Z80 disassembly of the entire 64 Kbyte of memory. Besides the raw disassembly, it provides annotations, including custom label names and comments.
-    - `view.memory` displays the contents of the memory.
-- The `code` folder is a suggested location for your Z80 Assembly and ZX BASIC files. However, you can put those files in any other place you prefer.
-    - `code.z80asm` is a Z80 Assembly sample code.
-    - `program.bor` is a Boriel's Basic sample program file.
-- The `tape` folder is to store tape files (`.tap` or `.tzx`) in your project folder. You can send those files to the Emulator to load.
-
-## Connecting to the Emulator
+When you run this menu command, a dialog appears in the IDE window:
  
-Most Klive-related functions in VS Code requires the Emulator. For example, when you select the `view.disassembly` file in a Klive project, it wants to communicate with the Emulator. Should that be disconnected, the IDE signs this state:
+![Z80 code]({{ site.baseurl }}/assets/images/tutorials/new-project.png)
 
-![Disconnected state]({{ site.baseurl }}/assets/images/tutorials/disconnected-state.png)
+To create a new project, you need to specify this information:
+- The type of machine you plan to work with (select it from the dropdown list). If you need, you can change it later when you work on the project.
+- The root folder of the project; Klive will create a subfolder within the specified one. By default, the system uses your home folder.
+- The name of the project. Klive uses this to name the project subfolder within the root.
+- You can create the project folder without opening it when you clear the **Open project** checkbox.
 
-The status bar also contains an area that displays the current status of the Klive Emulator:
+## Creating a New Project with an Interactive Command
 
-![Disconnected state]({{ site.baseurl }}/assets/images/tutorials/klive-disconnected.png)
+You can create a new project folder with the `new-project` interactive command. To try it, click the **Interactive** tab in the tool panel, and type the `new-project sp48 welcome` command line, then press Enter.
 
-Just click the Klive area in the status bar to start the Emulator. In a few seconds after it launches, the IDE restores the connection and displays the disassembly view:
+The following figure shows the command before you press Enter:
 
-![Connected again]({{ site.baseurl }}/assets/images/tutorials/klive-connected-again.png)
+![Z80 code]({{ site.baseurl }}/assets/images/tutorials/interactive-before.png)
 
-## Changing the Machine Type
+In the command, `sp48` identifies ZX Spectrum 48. The `welcome` parameter sets the name of the project. As you do not specify a root folder, the command creates the project in your home folder:
 
-You can run the **Update Klive Project** command at any time. If you want to move to a different machine type, select another one from the command's picklist.
+![Z80 code]({{ site.baseurl }}/assets/images/tutorials/interactive-after.png)
+
+You can run `new-project` with three arguments. In this case, the second argument is the root folder name. For example, you can create a ZX Spectrum 128 project under the `C:/Temp` folder with the `new-project sp128 C:/Temp my128proj` command line:
+
+![Z80 code]({{ site.baseurl }}/assets/images/tutorials/interactive-after2.png)
+
+Should you specify wrong arguments, or the operation fails, the interactive window displays the error. For example, when you want to create a new project in an existing folder, it won't happen:
+
+![Z80 code]({{ site.baseurl }}/assets/images/tutorials/interactive-after3.png)
+
+> *Note*: When you can create a new project with an interactive command, the IDE does not open that project automatically. You have to do it manually with the **File \| Open folder** menu function.
 

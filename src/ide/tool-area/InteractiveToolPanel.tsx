@@ -6,7 +6,10 @@ import {
   getInteractivePaneService,
   getToolAreaService,
 } from "@core/service-registry";
-import { VirtualizedList, VirtualizedListApi } from "@components/VirtualizedList";
+import {
+  VirtualizedList,
+  VirtualizedListApi,
+} from "@components/VirtualizedList";
 import { InteractiveCommandResult } from "@abstractions/interactive-command-service";
 import { INTERACTIVE_TOOL_ID } from "@abstractions/tool-area-service";
 import CommandIconButton from "../context-menu/CommandIconButton";
@@ -113,6 +116,9 @@ export default class InteractiveToolPanel extends ToolPanelBase<
 
   onFocusRequested(): void {
     this.setFocusToPrompt();
+    this.setState({
+      refreshCount: this.state.refreshCount + 1,
+    });
   }
 
   renderContent() {
@@ -129,7 +135,10 @@ export default class InteractiveToolPanel extends ToolPanelBase<
             itemsCount={this.state.buffer.length}
             renderItem={(index: number, style: CSSProperties) => {
               return (
-                <div key={index} style={{ ...style, fontSize: "0.95em", whiteSpace: "nowrap" }}>
+                <div
+                  key={index}
+                  style={{ ...style, fontSize: "0.95em", whiteSpace: "nowrap" }}
+                >
                   <div
                     dangerouslySetInnerHTML={{
                       __html: this.state.buffer[index],
