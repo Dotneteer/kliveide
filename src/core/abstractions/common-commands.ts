@@ -22,6 +22,7 @@ import {
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
+  emuShowSidebarAction,
   emuShowStatusbarAction as emuShowStatusBarAction,
   emuShowToolbarAction,
 } from "@state/emu-view-options-reducer";
@@ -43,6 +44,8 @@ import { isInjectableCompilerOutput } from "./compiler-registry";
 type CoreKliveCommand =
   | "showToolbar"
   | "hideToolbar"
+  | "showSidebar"
+  | "hideSidebar"
   | "showStatusBar"
   | "hideStatusBar"
   | "showFrameInfo"
@@ -69,6 +72,8 @@ type CoreKliveCommand =
 export function registerCommonCommands(): void {
   registerCommand(showToolbarCommand);
   registerCommand(hideToolbarCommand);
+  registerCommand(showSidebarCommand);
+  registerCommand(hideSidebarCommand);
   registerCommand(showStatusBarCommand);
   registerCommand(hideStatusBarCommand);
   registerCommand(showFrameInfoCommand);
@@ -114,12 +119,32 @@ const showToolbarCommand: IKliveCommand = {
 };
 
 /**
- * This command shows the Emulator toolbar
+ * This command hides the Emulator toolbar
  */
 const hideToolbarCommand: IKliveCommand = {
   commandId: "klive.hideToolbar",
   execute: async () => {
     dispatch(emuShowToolbarAction(false));
+  },
+};
+
+/**
+ * This command shows the IDE sidebar
+ */
+ const showSidebarCommand: IKliveCommand = {
+  commandId: "klive.showSidebar",
+  execute: async () => {
+    dispatch(emuShowSidebarAction(true));
+  },
+};
+
+/**
+ * This command hides the IDE sidebar
+ */
+const hideSidebarCommand: IKliveCommand = {
+  commandId: "klive.hideSidebar",
+  execute: async () => {
+    dispatch(emuShowSidebarAction(false));
   },
 };
 

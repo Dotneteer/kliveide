@@ -58,6 +58,7 @@ export interface ActionTypes {
   // --- IDE window actions
   IDE_SHOW: null;
   IDE_SYNC: null;
+  SHOW_SIDEBAR: null;
 
   // --- Activities
   SET_ACTIVITIES: null;
