@@ -444,7 +444,7 @@ export function setupMenu(): void {
       { type: "separator" },
       {
         id: SHOW_IDE_TOOLS,
-        label: "Show Tools",
+        label: "Show tools",
         type: "checkbox",
         checked: getState()?.toolFrame?.visible ?? false,
         enabled: true,

@@ -57,5 +57,5 @@ While developing the code, you can use the `npm run dev` command to provide a co
 The project's `package.json` file contains three commands to build platform-specific setup kits:
 - `npm run build:linux`: Creates the installation package (`KliveSetup-{version}.AppImage`) for Linux
 - `npm run build:win`: Creates the installation executable (`KliveSetup-{version}.exe`) for Windows
-- `npm run build:linux`: Creates the installation package (`KliveSetup-{version}.pkg`) for Mac
+- `npm run build:mac`: Creates the installation package (`KliveSetup-{version}.pkg`) for Mac
 
