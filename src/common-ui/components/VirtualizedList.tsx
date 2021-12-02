@@ -303,6 +303,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
 
     // --- Process the first batch of elements to measure their size
     processHeightMeasureBatchAfterTick();
+    setVisibleElements([]);
   }, [itemsCount]);
 
   // --------------------------------------------------------------------------
