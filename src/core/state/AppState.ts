@@ -40,6 +40,7 @@ export type EmuViewOptions = {
   showStatusBar?: boolean;
   showFrameInfo?: boolean;
   showKeyboard?: boolean;
+  showSidebar?: boolean;
 };
 
 /**
@@ -208,6 +209,7 @@ export function getInitialAppState(): AppState {
       showStatusBar: true,
       showFrameInfo: true,
       showKeyboard: false,
+      showSidebar: true,
     },
     machineType: undefined,
     emulatorPanel: {

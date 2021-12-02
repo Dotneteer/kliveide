@@ -35,6 +35,7 @@ export default function IdeApp() {
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
   const showStatusBar = useSelector((s: AppState) => s.emuViewOptions.showStatusBar);
+  const showSidebar = useSelector((s: AppState) => s.emuViewOptions.showSidebar);
   const showToolFrame = useSelector((s: AppState) => s.toolFrame.visible);
   const showDocuments = useSelector((s: AppState) => !s.toolFrame.visible || !s.toolFrame.maximized);
   const mounted = useRef(false);
@@ -90,6 +91,7 @@ export default function IdeApp() {
           panel2MinSize={MIN_DESK_WIDTH}
           initialSize={"20%"}
           panel1={<SideBar />}
+          showPanel1={showSidebar}
           panel2={
             <SplitPanel
               splitterSize={4}

@@ -24,6 +24,7 @@ export interface KliveConfiguration {
     showStatusbar?: boolean;
     showFrameInfo?: boolean;
     showKeyboard?: boolean;
+    showSidebar?: boolean;
     keyboardHeight?: number;
   }
   

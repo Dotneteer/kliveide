@@ -81,6 +81,9 @@ app.on("ready", async () => {
       executeKliveCommand(
         viewOptions.showKeyboard ? "showKeyboard" : "hideKeyboard"
       );
+      executeKliveCommand(
+        viewOptions.showSidebar ? "showSidebar" : "hideSidebar"
+      );
     }
   }
 
