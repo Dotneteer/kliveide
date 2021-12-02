@@ -118,6 +118,7 @@ class EmuWindow extends AppWindow {
       machineType,
       viewOptions: {
         showToolbar: state.emuViewOptions.showToolbar,
+        showSidebar: state.emuViewOptions.showSidebar,
         showFrameInfo: state.emuViewOptions.showFrameInfo,
         showKeyboard: state.emuViewOptions.showKeyboard,
         showStatusbar: state.emuViewOptions.showStatusBar,
@@ -153,6 +154,7 @@ class EmuWindow extends AppWindow {
       machineType,
       viewOptions: {
         showToolbar: state.emuViewOptions.showToolbar,
+        showSidebar: state.emuViewOptions.showSidebar,
         showFrameInfo: state.emuViewOptions.showFrameInfo,
         showKeyboard: state.emuViewOptions.showKeyboard,
         showStatusbar: state.emuViewOptions.showStatusBar,

@@ -20,6 +20,10 @@ export const emuShowFrameInfoAction: ActionCreator = (flag: boolean) => ({
   type: "EMU_SHOW_FRAME_INFO",
   payload: { flag },
 });
+export const emuShowSidebarAction: ActionCreator = (flag: boolean) => ({
+  type: "SHOW_SIDEBAR",
+  payload: { flag },
+});
 
 // ============================================================================
 // Reducer
@@ -39,6 +43,8 @@ export default function (
       return { ...state, showKeyboard: payload.flag };
     case "EMU_SHOW_FRAME_INFO":
       return { ...state, showFrameInfo: payload.flag };
+    case "SHOW_SIDEBAR":
+      return { ...state, showSidebar: payload.flag };
     default:
       return state;
   }

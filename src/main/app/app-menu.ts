@@ -87,6 +87,7 @@ const OPEN_FOLDER = "open_folder";
 const CLOSE_FOLDER = "close_folder";
 const TOGGLE_KEYBOARD = "toggle_keyboard";
 const TOGGLE_TOOLBAR = "toggle_toolbar";
+const TOGGLE_SIDEBAR = "toggle_sidebar";
 const TOGGLE_STATUSBAR = "toggle_statusbar";
 const TOGGLE_FRAMES = "toggle_frames";
 const TOGGLE_DEVTOOLS = "toggle_devtools";
@@ -110,6 +111,7 @@ export function setupMenu(): void {
     showToolbar: true,
     showStatusbar: true,
     showFrameInfo: true,
+    showSidebar: true
   };
 
   const template: (MenuItemConstructorOptions | MenuItem)[] = [];
@@ -233,6 +235,16 @@ export function setupMenu(): void {
       checked: viewOptions.showToolbar ?? true,
       click: (mi) => {
         executeKliveCommand(mi.checked ? "showToolbar" : "hideToolbar");
+        emuWindow.saveKliveProject();
+      },
+    },
+    {
+      id: TOGGLE_SIDEBAR,
+      label: "Show sidebar",
+      type: "checkbox",
+      checked: viewOptions.showSidebar ?? true,
+      click: (mi) => {
+        executeKliveCommand(mi.checked ? "showSidebar" : "hideSidebar");
         emuWindow.saveKliveProject();
       },
     },
@@ -686,6 +698,12 @@ export function processStateChange(fullState: AppState): void {
       toggleKeyboard.checked = !!viewOptions.showKeyboard;
     }
 
+    // --- Sidebar status
+    const toggleSidebar = menu.getMenuItemById(TOGGLE_SIDEBAR);
+    if (toggleSidebar) {
+      toggleSidebar.checked = !!viewOptions.showSidebar;
+    }
+
     // --- Clock multiplier status
     if (emuState) {
       const clockMultiplier = emuState.clockMultiplier ?? 1;
@@ -788,8 +806,6 @@ export function processStateChange(fullState: AppState): void {
   //   );
   // }
 }
-
-
 
 // ============================================================================
 // Helper types and methods

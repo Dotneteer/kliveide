@@ -43,8 +43,6 @@ The following figure shows the IDE in action:
 
 ![Z80 code]({{ site.baseurl }}/assets/images/tutorials/ide-in-action.png)
 
-> *Note*: Currently, Klive does not support hiding the sidebar. In a future release, this feature will be available.
-
 ## The Two Windows of Klive
 
 Klive has been developed with the Electron Shell, an excellent multi-platform framework from the Github team. This tool made it easy to have a single codebase that works on Linux, Mac, and Windows without worrying about creating too many code lines to handle platform-specific features.
