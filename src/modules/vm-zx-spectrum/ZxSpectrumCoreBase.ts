@@ -23,8 +23,15 @@ import {
 import { BREAKPOINTS_MAP, VM_STATE_BUFFER } from "@modules-core/wa-memory-map";
 import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
 import { KeyMapping } from "@modules-core/keyboard";
-import { AudioRendererFactory, AudioSampleRateGetter, AUDIO_RENDERER_FACTORY_ID, AUDIO_SAMPLE_RATE_GETTER_ID, WasmMachineApi } from "@modules-core/abstract-vm";
+import {
+  AudioRendererFactory,
+  AudioSampleRateGetter,
+  AUDIO_RENDERER_FACTORY_ID,
+  AUDIO_SAMPLE_RATE_GETTER_ID,
+  WasmMachineApi,
+} from "@modules-core/abstract-vm";
 import { getEngineDependencyRegistry } from "@modules-core/vm-engine-dependency-registry";
+import { add } from "lodash";
 
 /**
  * ID of a ZX Spectrum state manager component
@@ -380,6 +387,15 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    * @param codeToInject Code to inject into the machine
    */
   async injectCodeToRun(codeToInject: CodeToInject): Promise<void> {
+    // --- Clear the screen unless otherwise requested
+    if (!codeToInject.options.noCls) {
+      for (let addr = 0x4000; addr < 0x5800; addr++) {
+        this.writeMemory(addr, 0);
+      }
+      for (let addr = 0x5800; addr < 0x5b00; addr++) {
+        this.writeMemory(addr, 0x38);
+      }
+    }
     for (const segment of codeToInject.segments) {
       if (segment.bank !== undefined) {
         // TODO: Implement this

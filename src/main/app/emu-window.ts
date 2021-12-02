@@ -123,6 +123,7 @@ class EmuWindow extends AppWindow {
         showStatusbar: state.emuViewOptions.showStatusBar,
         keyboardHeight: state.emulatorPanel.keyboardHeight,
       },
+      ide: appSettings?.ide,
     };
     if (this._machineContextProvider) {
       kliveSettings.machineSpecific = appSettings?.machineSpecific;

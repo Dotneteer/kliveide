@@ -58,7 +58,7 @@ export class ZxBasicCompiler extends CompilerBase {
         "current"
       );
       const execPath = configObject.get(ZXBC_EXECUTABLE_PATH) as string;
-      if (execPath.trim() === "") {
+      if (!execPath || execPath.trim() === "") {
         throw new Error(
           "ZXBC executable path is not set, cannot start the compiler."
         );

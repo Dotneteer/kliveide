@@ -193,7 +193,6 @@ export async function processIdeRequest(
         dispatch(endCompileAction(result));
         return Messages.compileFileResponse(result);
       } catch (err) {
-        console.log((err as Error).stack)
         return Messages.compileFileResponse({ errors: []}, err.toString());
       }
     }
@@ -213,11 +212,11 @@ export async function processIdeRequest(
       );
 
     case "SaveIdeConfig":
+      dispatch(setIdeConfigAction(message.config));
       if (message.toUser ?? false) {
         appSettings.ide = message.config;
         emuWindow.saveAppSettings();
       } else {
-        dispatch(setIdeConfigAction(message.config));
         emuWindow.saveKliveProject();
       }
       return Messages.defaultResponse();

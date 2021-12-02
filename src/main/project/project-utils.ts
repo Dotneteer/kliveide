@@ -12,15 +12,21 @@ import { machineRegistry } from "@core/main/machine-registry";
 import {
   projectOpenedAction,
   projectLoadingAction,
+  closeProjectAction,
 } from "@state/project-reducer";
 import { KliveProject } from "@abstractions/klive-configuration";
 import {
   addBreakpointAction,
   clearBreakpointsAction,
+  removeSourceBreakpointsAction,
 } from "@state/debugger-reducer";
-import { addBuildRootAction, clearBuildRootsAction } from "@state/builder-reducer";
+import {
+  addBuildRootAction,
+  clearBuildRootsAction,
+} from "@state/builder-reducer";
 import { emuWindow } from "../app/emu-window";
 import { setIdeConfigAction } from "@core/state/ide-config-reducer";
+import { appSettings } from "../main-state/klive-configuration";
 
 /**
  * Name of the project file within the project directory
@@ -37,6 +43,8 @@ export const CODE_DIR_NAME = "code";
  */
 export async function openProject(projectPath: string): Promise<void> {
   // --- Close the current project, and wait for a little while
+  dispatch(closeProjectAction());
+  dispatch(removeSourceBreakpointsAction());
   dispatch(projectLoadingAction());
 
   // --- Now, open the project
@@ -60,7 +68,7 @@ export async function openProject(projectPath: string): Promise<void> {
     const roots = project?.builder?.roots;
     if (roots) {
       dispatch(clearBuildRootsAction());
-      roots.forEach(r => dispatch(addBuildRootAction(r)));
+      roots.forEach((r) => dispatch(addBuildRootAction(r)));
     }
 
     // --- Set the IDE configuration
@@ -118,7 +126,7 @@ export function getProjectFile(projectFile?: string): KliveProject | null {
       projectFile = path.join(projState.path, PROJECT_FILE);
     } else {
       // --- No project file
-      return {}
+      return {};
     }
   }
   try {
@@ -172,7 +180,7 @@ export async function createKliveProject(
 
     // --- Copy the project template
     const sourceDir = path.join(__dirname, "templates/project");
-    fse.copySync(sourceDir, targetFolder)
+    fse.copySync(sourceDir, targetFolder);
 
     // --- Create the project file
     const project: KliveProject = {
@@ -181,8 +189,9 @@ export async function createKliveProject(
         breakpoints: [],
       },
       builder: {
-        roots: ["/code/code.kz80.asm"]
-      }
+        roots: ["/code/code.kz80.asm", "/code/program.zxbas"],
+      },
+      ide: appSettings.ide,
     };
     await fs.writeFile(
       path.join(targetFolder, PROJECT_FILE),
@@ -192,6 +201,8 @@ export async function createKliveProject(
     // --- Done
     return { targetFolder };
   } catch (err) {
-    return { error: `Cannot create Klive project in '${targetFolder}' (${err})` };
+    return {
+      error: `Cannot create Klive project in '${targetFolder}' (${err})`,
+    };
   }
 }
