@@ -193,6 +193,7 @@ export async function processIdeRequest(
         dispatch(endCompileAction(result));
         return Messages.compileFileResponse(result);
       } catch (err) {
+        console.log((err as Error).stack)
         return Messages.compileFileResponse({ errors: []}, err.toString());
       }
     }

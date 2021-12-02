@@ -94,7 +94,7 @@ export class ZxBasicCompiler extends CompilerBase {
       // --- Done.
       return {
         errors: this._errors,
-        injectOptions: {},
+        injectOptions: { "subroutine": true },
         segments: [segment],
       };
     } catch (err) {

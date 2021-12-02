@@ -4,7 +4,7 @@ categories:
   - "First Steps"
 title:  "Working with Klive Projects"
 alias: create-klive-project
-seqno: 40
+seqno: 30
 selector: tutorial
 permalink: "getting-started/working-with-klive-projects"
 ---
@@ -29,7 +29,10 @@ None-Klive folders display this indication:
 
 ## Working with Files in the Code Editor
 
-When you click a file in the Explorer pane, Klive opens the contents of that file and displays it in the code editor. A single click on the file name opens the editor temporarily (the italicized file name in the code editor's tab bar indicates this state).
+When you click a file in the Explorer pane, Klive opens the contents of that file and displays it in the code editor. A single click on the file name opens the editor temporarily (the italicized file name in the code editor's tab bar indicates this state). If you click another file in the explorer, that file will take the tab of the previous file.
+
+However, if you double-click a file in the explorer or edit an open file, the file opens permanently in the code editor. The italic name changes to normal, indicating this state.
+
 
 > *Note*: Klive uses the *Monaco Editor* you may know from Visual Studio Code. You have the same code editing experience.
 
