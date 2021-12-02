@@ -798,7 +798,7 @@ export class ProjectFilesPanelDescriptor extends SideBarPanelDescriptorBase {
   get title(): string {
     const projectState = getState().project;
     return projectState?.projectName
-      ? `${projectState.projectName}${projectState?.hasVm ? "" : " (No VM)"}`
+      ? `${projectState.projectName}${projectState?.hasVm ? "" : " 🚫"}`
       : "No project opened";
   }
 

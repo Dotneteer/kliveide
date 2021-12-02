@@ -212,11 +212,11 @@ export async function processIdeRequest(
       );
 
     case "SaveIdeConfig":
+      dispatch(setIdeConfigAction(message.config));
       if (message.toUser ?? false) {
         appSettings.ide = message.config;
         emuWindow.saveAppSettings();
       } else {
-        dispatch(setIdeConfigAction(message.config));
         emuWindow.saveKliveProject();
       }
       return Messages.defaultResponse();

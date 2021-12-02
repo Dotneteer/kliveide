@@ -79,10 +79,11 @@ export class AddSettingCommand extends InteractiveCommandBase {
    */
   async doExecute(): Promise<InteractiveCommandResult> {
     const value = this._value ? retrieveTokenValue(this._value) : undefined;
+    const verb = value === undefined ? "removed" : "set";
     await getSettingsService().saveSetting(this._key, value, this._location);
     return {
       success: true,
-      finalMessage: `Setting successfully set.`,
+      finalMessage: `Setting successfully ${verb}.`,
     };
   }
 }

@@ -1,0 +1,2 @@
+print at 10,4; paper 4; "Welcome to Klive IDE"
+print at 11,4; paper 4; "  (Boriel's Basic)  "

@@ -64,12 +64,12 @@ export class ResetZxbCommand extends InteractiveCommandBase {
    */
   async doExecute(): Promise<InteractiveCommandResult> {
     const settingsService = getSettingsService();
-    settingsService.saveSetting(
+    await settingsService.saveSetting(
       ZXBC_EXECUTABLE_PATH,
       this._executablePath,
       "current"
     );
-    settingsService.saveSetting(
+    await settingsService.saveSetting(
       ZXBC_MACHINE_CODE_ORIGIN,
       this._orgValue,
       "current"
