@@ -3,7 +3,7 @@ layout: documents
 categories: 
   - "First Steps"
 title:  "Using the Emulator"
-alias: using-the-emulatoer
+alias: using-the-emulator
 seqno: 10
 selector: tutorial
 permalink: "getting-started/using-the-emulator"
