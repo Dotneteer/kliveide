@@ -67,7 +67,7 @@ async function processIdeMessages(
             : `${msgObj.fileName}:[${msgObj.line}:${msgObj.startColumn}-${msgObj.endColumn}]`;
         buffer.writeLine(location, <IHighlightable>{
           highlight: true,
-          title: "Click to locate the error",
+          title: `Click to locate the error\n${msgObj.message}`,
           errorItem: msgObj,
         });
         buffer.resetColor();

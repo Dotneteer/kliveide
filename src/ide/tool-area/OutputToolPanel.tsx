@@ -119,6 +119,7 @@ export default class OutputToolPanel extends ToolPanelBase<
                     ? "var(--list-selected-background-color)"
                     : undefined,
                   cursor: hasHilite ? "pointer" : undefined,
+                  whiteSpace: "nowrap",
                 }}
                 title={
                   hasHilite ? (itemData as IHighlightable).title : undefined
