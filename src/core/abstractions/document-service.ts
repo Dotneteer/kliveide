@@ -104,6 +104,7 @@ export type CodeEditorInfo = {
  */
 export type CustomLanguageInfo = {
   id: string;
+  extensions: string[],
   options?: any;
   depensOn?: string[];
   languageDef?: any;

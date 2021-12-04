@@ -1,10 +1,11 @@
-import { MonacoAwareCustomLanguageInfo } from "./custom-language-info";
+import { MonacoAwareCustomLanguageInfo } from "../../ide/languages/custom-language-info";
 
 /**
  * Language provider for the .asm.z80 extension
  */
 export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "zxbas",
+  extensions: [".zxbas"],
   depensOn: ["kz80-asm"],
   options: {
   },

@@ -5,6 +5,7 @@ import { MonacoAwareCustomLanguageInfo } from "./custom-language-info";
  */
 export const mpmZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "mpm-z80",
+  extensions: [".mpm.asm"],
   options: {
     comments: {
       lineComment: ";",
