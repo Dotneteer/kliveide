@@ -6,7 +6,18 @@ Klive is now a standalone application that contains an emulator and an IDE.
 
 > Note: The previous versions of Klive were integrated with Visual Studio Code. Although initially, it seemed to be a good idea, this solution has issues coming from the integration and communication between VS Code and Klive.
 
-Keep tuned! The new Klive IDE will be released soon.
+## The Latest Release
+
+Klive IDE v0.11.0 is available! Go to the [releases](https://github.com/Dotneteer/kliveide/releases), download, and try it.
+
+Though using the emulator and the IDE is intuitive, these articles can help you get started:
+
+- [Install Klive IDE](https://dotneteer.github.io/kliveide/getting-started/install-kliveide)
+- [Using the Emulator](https://dotneteer.github.io/kliveide/getting-started/using-the-emulator)
+- [Using the IDE](https://dotneteer.github.io/kliveide/getting-started/using-the-ide)
+- [Try: Run Z80 Code](https://dotneteer.github.io/kliveide/getting-started/try-run-z80-code)
+- [Try: Run ZX BASIC Code](https://dotneteer.github.io/kliveide/getting-started/try-run-zxb-code)
+
 
 ## The IDE Concept In a few Videos
 
