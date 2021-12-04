@@ -7,6 +7,8 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "zxbas",
   extensions: [".zxbas"],
   depensOn: ["kz80-asm"],
+  allowBuildRoot: true,
+  supportsKlive: true,
   options: {
   },
   supportsBreakpoints: true,

@@ -34,10 +34,7 @@ import {
 } from "@core/service-registry";
 import { emuWindow, setupEmuWindow } from "./app/emu-window";
 import { ideWindow, setupIdeWindow } from "./app/ide-window";
-import {
-  registerCompiler,
-  registerCompilerExtension,
-} from "@abstractions/compiler-registry";
+import { registerCompiler } from "@abstractions/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
 import { MainSettingsService } from "./app/settings-service";
@@ -51,12 +48,8 @@ registerSite("main");
 registerCommonCommands();
 
 // --- Register compilers and extensions
-const z80Compiler = new Z80Compiler();
-registerCompiler(z80Compiler);
-registerCompilerExtension(z80Compiler.id, ".kz80.asm");
-const zxBasicCompiler = new ZxBasicCompiler();
-registerCompiler(zxBasicCompiler);
-registerCompilerExtension(zxBasicCompiler.id, ".zxbas");
+registerCompiler(new Z80Compiler());
+registerCompiler(new ZxBasicCompiler());
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.

@@ -36,6 +36,12 @@ export class ZxBasicCompiler extends CompilerBase {
    */
   readonly id = "ZXBCompiler";
 
+    /**
+   * Compiled language
+   */
+  readonly language = "zxbas";
+
+
   /**
    * Indicates if the compiler supports Klive compiler output
    */

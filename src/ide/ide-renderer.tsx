@@ -306,17 +306,6 @@ documentService.registerCustomLanguage(mpmZ80LanguageProvider);
 documentService.registerCodeEditor(".project", {
   language: "json",
 });
-documentService.registerCodeEditor(".kz80.asm", {
-  language: "kz80-asm",
-  allowBuildRoot: true,
-});
-documentService.registerCodeEditor(".zxbas", {
-  language: "zxbas",
-  allowBuildRoot: true,
-});
-documentService.registerCodeEditor(".mpm.z80", {
-  language: "mpm-z80",
-});
 
 // --- Register virtual machine tools
 virtualMachineToolsService.registerTools(

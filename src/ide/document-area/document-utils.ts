@@ -26,7 +26,7 @@ export async function openNewDocument(
 
   // --- Create a new document
   const documentService = getDocumentService();
-  const factory = documentService.getResourceFactory(resource);
+  const factory = await documentService.getResourceFactory(resource);
   if (factory) {
     const contentsResp = await sendFromIdeToEmu<GetFileContentsResponse>({
       type: "GetFileContents",

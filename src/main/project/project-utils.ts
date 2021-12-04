@@ -191,9 +191,9 @@ export async function createKliveProject(
       builder: {
         roots: ["/code/code.kz80.asm", "/code/program.zxbas"],
       },
-      ide: appSettings.ide,
+      ide: appSettings?.ide ?? {},
     };
-    await fs.writeFile(
+    syncFs.writeFileSync(
       path.join(targetFolder, PROJECT_FILE),
       JSON.stringify(project, null, 2)
     );

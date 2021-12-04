@@ -491,10 +491,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           execute: async () => await this.deleteFile(item),
         },
       ];
-      const editor = getDocumentService().getCodeEditorInfo(
+      const editor = await getDocumentService().getCodeEditorLanguage(
         item.nodeData.fullPath
       );
-      if (editor?.allowBuildRoot) {
+      const languageInfo = getDocumentService().getCustomLanguage(editor);
+      if (languageInfo?.allowBuildRoot) {
         menuItems.push("separator");
         if (isBuildRoot) {
           menuItems.push({

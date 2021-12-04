@@ -8,7 +8,6 @@ import {
  * Stores the compilers
  */
 let compilerRegistry: Record<string, IKliveCompiler> = {};
-let compilerExtensions: Record<string, string> = {};
 
 /**
  * Any compiler should be able to retrieve simple error information
@@ -42,6 +41,11 @@ export interface IKliveCompiler {
    * The unique ID of the compiler
    */
   readonly id: string;
+
+  /**
+   * Compiled language
+   */
+  readonly language: string;
 
   /**
    * Indicates if the compiler supports Klive compiler output
@@ -114,7 +118,7 @@ export function isDebuggableCompilerOutput(
  * @param compiler Compiler to register
  */
 export function registerCompiler(compiler: IKliveCompiler): void {
-  compilerRegistry[compiler.id] = compiler;
+  compilerRegistry[compiler.language] = compiler;
 }
 
 /**
@@ -123,35 +127,4 @@ export function registerCompiler(compiler: IKliveCompiler): void {
  */
 export function getCompiler(id: string): IKliveCompiler | undefined {
   return compilerRegistry[id];
-}
-
-/**
- * Registers a file extension to work with a particular compiler
- * @param compilerId Compiler identifier
- * @param extension File extension to use with the compiler
- */
-export function registerCompilerExtension(
-  compilerId: string,
-  extension: string
-): void {
-  if (!getCompiler(compilerId)) {
-    // --- No compiler to register the extension with
-    return;
-  }
-
-  // --- Register the extension
-  compilerExtensions[extension] = compilerId;
-}
-
-/**
- * Gets the compiler for the specified file extension
- * @param extension File extension
- * @returns Compiler instance, if there is a registered compiler; otherwise, undefined.
- */
-export function getCompilerForExtension(
-  extension: string
-): IKliveCompiler | undefined {
-  return compilerExtensions[extension]
-    ? getCompiler(compilerExtensions[extension])
-    : undefined;
 }

@@ -1,6 +1,7 @@
 import {
   dispatch,
   getCodeRunnerService,
+  getDocumentService,
   getOutputPaneService,
   getState,
   getToolAreaService,
@@ -444,10 +445,14 @@ const compileCodeCommand: IKliveCommand = {
         buffer.writeLine(`Compiling ${context.resource}`);
         const start = new Date().valueOf();
 
+        // --- Get the language
+        const language = await getDocumentService().getCodeEditorLanguage(context.resource);
+
         // --- Invoke the compiler
         const response = await sendFromIdeToEmu<CompileFileResponse>({
           type: "CompileFile",
           filename: context.resource,
+          language
         });
         if (response.failed && (response.result?.errors?.length ?? 0) === 0) {
           // --- The compilation process failed

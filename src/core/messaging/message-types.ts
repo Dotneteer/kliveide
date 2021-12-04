@@ -354,15 +354,8 @@ export interface SaveFileContentsRequest extends MessageBase {
 export interface CompileFileRequest extends MessageBase {
   type: "CompileFile";
   filename: string;
+  language: string;
   options?: CompilerOptions;
-}
-
-/**
- * The Ide ask the main for getting compiler information for a particular file
- */
-export interface GetCompilerInfoRequest extends MessageBase {
-  type: "GetCompilerInfo";
-  filename: string;
 }
 
 /**
@@ -459,7 +452,6 @@ type IdeToMainRequests =
   | GetFileContentsRequest
   | SaveFileContentsRequest
   | CompileFileRequest
-  | GetCompilerInfoRequest
   | ShowMessageBoxRequest
   | GetAppConfigRequest
   | SaveIdeConfigRequest;

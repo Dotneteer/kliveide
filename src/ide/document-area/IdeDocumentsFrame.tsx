@@ -102,11 +102,9 @@ function DocumentCommandBar() {
       // --- Let's check if we can allow code-runner commands in the document frame
       if (getState().builder.roots.includes(filename)) {
         // --- What language does the current document support?
-        const response = await sendFromIdeToEmu<GetCompilerInfoResponse>({
-          type: "GetCompilerInfo",
-          filename,
-        });
-        if (response.supportsKlive) {
+        const language = await getDocumentService().getCodeEditorLanguage(activeDoc.id);
+        const languageInfo = getDocumentService().getCustomLanguage(language);
+        if (languageInfo.supportsKlive) {
           // --- Super, this compiler can work with Klive
           setBuildRootCommands([
             { commandId: "klive.compileCode" },

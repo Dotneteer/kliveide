@@ -88,11 +88,6 @@ export type CodeEditorInfo = {
    * Langauge to use with the editor
    */
   language: string;
-
-  /**
-   * Can be promoted to build root?
-   */
-  allowBuildRoot?: boolean;
 };
 
 /**
@@ -105,6 +100,8 @@ export type CodeEditorInfo = {
 export type CustomLanguageInfo = {
   id: string;
   extensions: string[],
+  allowBuildRoot: boolean,
+  supportsKlive: boolean,
   options?: any;
   depensOn?: string[];
   languageDef?: any;
@@ -181,7 +178,7 @@ export interface IDocumentService {
    * @param resource Resource namse
    * @returns Code editor, if found; otherwise, undefined
    */
-  getCodeEditorInfo(resource: string): CodeEditorInfo | undefined;
+  getCodeEditorLanguage(resource: string): Promise<string | undefined>;
 
   /**
    * Gets a custom language extension
@@ -193,7 +190,7 @@ export interface IDocumentService {
    * Gets a factory for the specified resource
    * @param resource Resouce name
    */
-  getResourceFactory(resource: string): IDocumentFactory | null;
+  getResourceFactory(resource: string): Promise<IDocumentFactory | null>;
 
   /**
    * Registers a document
