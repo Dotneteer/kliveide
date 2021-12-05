@@ -177,10 +177,25 @@ export async function createKliveProject(
     if (syncFs.existsSync(targetFolder)) {
       return { error: `Target directory '${targetFolder}' already exists` };
     }
+    try {
+      syncFs.mkdirSync(targetFolder, {
+        recursive: true,
+      });
+    } catch (err) {
+      return {
+        error: `Target directory '${targetFolder}' cannot be created: ${err}`,
+      };
+    }
 
     // --- Copy the project template
     const sourceDir = path.join(__dirname, "templates/project");
-    fse.copySync(sourceDir, targetFolder);
+    try {
+      fse.copySync(sourceDir, targetFolder);
+    } catch (err) {
+      return {
+        error: `Error while copying the template from '${sourceDir}': ${err}`,
+      };
+    }
 
     // --- Create the project file
     const project: KliveProject = {
@@ -191,12 +206,18 @@ export async function createKliveProject(
       builder: {
         roots: ["/code/code.kz80.asm", "/code/program.zxbas"],
       },
-      ide: appSettings.ide,
+      ide: appSettings?.ide ?? {},
     };
-    await fs.writeFile(
-      path.join(targetFolder, PROJECT_FILE),
-      JSON.stringify(project, null, 2)
-    );
+    try {
+      syncFs.writeFileSync(
+        path.join(targetFolder, PROJECT_FILE),
+        JSON.stringify(project, null, 2)
+      );
+    } catch (err) {
+      return {
+        error: `Error while creating '${PROJECT_FILE}': ${err}`,
+      };
+    }
 
     // --- Done
     return { targetFolder };
