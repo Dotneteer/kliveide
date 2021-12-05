@@ -38,6 +38,7 @@ import { registerCompiler } from "@abstractions/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
 import { MainSettingsService } from "./app/settings-service";
+import { ZxbasmCompiler } from "./zxbasm-compiler/ZxbasmCompiler";
 
 // --- Register services used by the main process
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
@@ -50,6 +51,8 @@ registerCommonCommands();
 // --- Register compilers and extensions
 registerCompiler(new Z80Compiler());
 registerCompiler(new ZxBasicCompiler());
+registerCompiler(new ZxbasmCompiler());
+
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.

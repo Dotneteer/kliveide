@@ -113,7 +113,8 @@ import {
 import { registerKliveCommands } from "./commands/register-commands";
 import { IdeSettingsService } from "./settings-service/settings-service";
 import { ResetZxbCommand } from "@modules/integration-zxb/ResetZxbCommand";
-import { zxbasLanguageProvider } from "../modules/integration-zxb/zxbas-provider";
+import { zxbasLanguageProvider as zxbLanguageProvider } from "../modules/integration-zxb/zxbas-provider";
+import { zxbasmLanguageProvider } from "@modules/integration-zxbasm/zxbasm-provider";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -299,7 +300,8 @@ toolAreaService.registerTool(new InteractiveToolPanelDescriptor(), true);
 // --- Register custom languages
 const documentService = getDocumentService();
 documentService.registerCustomLanguage(asmkZ80LanguageProvider);
-documentService.registerCustomLanguage(zxbasLanguageProvider);
+documentService.registerCustomLanguage(zxbLanguageProvider);
+documentService.registerCustomLanguage(zxbasmLanguageProvider);
 documentService.registerCustomLanguage(mpmZ80LanguageProvider);
 
 // --- Register document panels and editors

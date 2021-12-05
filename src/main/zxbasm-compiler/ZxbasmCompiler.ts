@@ -7,39 +7,25 @@ import {
   BinarySegment,
 } from "@abstractions/z80-compiler-service";
 import { getSettingsService } from "@core/service-registry";
-import {
-  ZXBC_DEBUG_ARRAY,
-  ZXBC_DEBUG_MEMORY,
-  ZXBC_ENABLE_BREAK,
-  ZXBC_EXECUTABLE_PATH,
-  ZXBC_EXPLICIT_VARIABLES,
-  ZXBC_HEAP_SIZE,
-  ZXBC_MACHINE_CODE_ORIGIN,
-  ZXBC_ONE_AS_ARRAY_BASE_INDEX,
-  ZXBC_ONE_AS_STRING_BASE_INDEX,
-  ZXBC_OPTIMIZATION_LEVEL,
-  ZXBC_SINCLAIR,
-  ZXBC_STRICT_BOOL,
-  ZXBC_STRICT_MODE,
-} from "@modules/integration-zxb/zxb-config";
+import { ZXBASM_EXECUTABLE_PATH } from "@modules/integration-zxbasm/zxbasm-config";
 import { readFileSync, unlinkSync } from "original-fs";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
 
 /**
- * Wraps the ZXBC (ZX BASIC) compiler
+ * Wraps the ZXBASM Compiler (Boriel's Basic Assembler)
  */
-export class ZxBasicCompiler extends CompilerBase {
+export class ZxbasmCompiler extends CompilerBase {
   private _errors: AssemblerErrorInfo[];
 
   /**
    * The unique ID of the compiler
    */
-  readonly id = "ZXBCompiler";
+  readonly id = "ZxbAsmCompiler";
 
     /**
    * Compiled language
    */
-  readonly language = "zxbas";
+  readonly language = "zxbasm";
 
 
   /**
@@ -63,16 +49,16 @@ export class ZxBasicCompiler extends CompilerBase {
       const configObject = await getSettingsService().getConfiguration(
         "current"
       );
-      const execPath = configObject.get(ZXBC_EXECUTABLE_PATH) as string;
+      const execPath = configObject.get(ZXBASM_EXECUTABLE_PATH) as string;
       if (!execPath || execPath.trim() === "") {
         throw new Error(
-          "ZXBC executable path is not set, cannot start the compiler."
+          "ZXBASM executable path is not set, cannot start the compiler."
         );
       }
 
       // --- Create the command line arguments
       const outFilename = `${filename}.bin`;
-      const cmdLine = await createZxbCommandLineArgs(
+      const cmdLine = await createZxbasmCommandLineArgs(
         filename,
         outFilename,
         null
@@ -82,27 +68,18 @@ export class ZxBasicCompiler extends CompilerBase {
       this._errors = [];
       await this.executeCommandLine(execPath, cmdLine);
 
-      // --- Extract the output
-      const settingsService = getSettingsService();
-      const org = await settingsService.getSetting(
-        ZXBC_MACHINE_CODE_ORIGIN,
-        "current"
-      );
-      const machineCode = new Uint8Array(readFileSync(outFilename));
-      const segment: BinarySegment = {
-        emittedCode: Array.from(machineCode),
-        startAddress: typeof org === "number" ? org & 0xffff : 0x8000,
-      };
+      // TODO: Extract the binary output
 
       // --- Remove the output file
       unlinkSync(outFilename);
 
       // --- Done.
-      return {
-        errors: this._errors,
-        injectOptions: { "subroutine": true },
-        segments: [segment],
-      };
+      throw new Error("Not implemented yet")
+      // return {
+      //   errors: this._errors,
+      //   injectOptions: { "subroutine": true },
+      //   segments: [segment],
+      // };
     } catch (err) {
       throw err;
     }
@@ -112,7 +89,7 @@ export class ZxBasicCompiler extends CompilerBase {
      * @param outputFile Output file to generate
      * @param rawArgs Raw arguments from the code
      */
-    async function createZxbCommandLineArgs(
+    async function createZxbasmCommandLineArgs(
       inputFile: string,
       outputFile: string,
       rawArgs: string | null
@@ -122,36 +99,6 @@ export class ZxBasicCompiler extends CompilerBase {
       );
       const argRoot = `${inputFile} --output ${outputFile} `;
       let additional = rawArgs ? rawArgs.trim() : "";
-      if (!additional) {
-        const arrayBaseOne = configObject.get(
-          ZXBC_ONE_AS_ARRAY_BASE_INDEX
-        ) as boolean;
-        additional = arrayBaseOne ? "--array-base=1 " : "";
-        const optimize = configObject.get(ZXBC_OPTIMIZATION_LEVEL) as number;
-        additional += `--optimize ${optimize ?? 2} `;
-        const orgValue = configObject.get(ZXBC_MACHINE_CODE_ORIGIN) as number;
-        additional += `--org ${orgValue ?? 0x8000} `;
-        const heapSize = configObject.get(ZXBC_HEAP_SIZE) as number;
-        additional += `--heap-size ${heapSize ?? 4096} `;
-        const sinclair = configObject.get(ZXBC_SINCLAIR) as boolean;
-        additional += sinclair ? "--sinclair " : "";
-        const stringBaseOne = configObject.get(
-          ZXBC_ONE_AS_STRING_BASE_INDEX
-        ) as boolean;
-        additional += stringBaseOne ? "--string-base=1 " : "";
-        const debugMemory = configObject.get(ZXBC_DEBUG_MEMORY) as boolean;
-        additional += debugMemory ? "--debug-memory " : "";
-        const debugArray = configObject.get(ZXBC_DEBUG_ARRAY) as boolean;
-        additional += debugArray ? "--debug-array " : "";
-        const strictBool = configObject.get(ZXBC_STRICT_BOOL) as boolean;
-        additional += strictBool ? "--strict-bool " : "";
-        const strictMode = configObject.get(ZXBC_STRICT_MODE) as boolean;
-        additional += strictMode ? "--strict " : "";
-        const enableBreak = configObject.get(ZXBC_ENABLE_BREAK) as boolean;
-        additional += enableBreak ? "--enable-break " : "";
-        const explicit = configObject.get(ZXBC_EXPLICIT_VARIABLES) as boolean;
-        additional += explicit ? "--explicit " : "";
-      }
       return (argRoot + additional).trim();
     }
   }
