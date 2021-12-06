@@ -15,6 +15,10 @@ export const removeBuildRootAction: ActionCreator = (filename: string) => ({
   type: "REMOVE_BUILD_ROOT",
   payload: { filename },
 });
+export const setBuildRootsAction: ActionCreator = (roots: string[]) => ({
+  type: "SET_BUILD_ROOTS",
+  payload: { roots },
+});
 
 // ============================================================================
 // Reducer
@@ -50,6 +54,11 @@ export default function (
       return {
         ...state,
         roots: remaining,
+      };
+    case "SET_BUILD_ROOTS":
+      return {
+        ...state,
+        roots: payload.roots,
       };
     default:
       return state;

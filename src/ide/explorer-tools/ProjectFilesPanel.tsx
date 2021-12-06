@@ -24,6 +24,7 @@ import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import {
   addBuildRootAction,
   removeBuildRootAction,
+  setBuildRootsAction,
 } from "@state/builder-reducer";
 import { MenuItem } from "@abstractions/command-definitions";
 import { SideBarPanelDescriptorBase } from "../../common-ui/services/SideBarService";
@@ -771,6 +772,24 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       newFullName,
       isFolder
     );
+
+    // --- Rename build roots
+    console.log(oldPath);
+    console.log(node.nodeData.fullPath);
+    console.log(newFullName);
+    const buildRoots = getState().builder.roots.slice(0);
+    const newRoots: string[] = [];
+    for (const root of buildRoots) {
+      console.log(root);
+      if (isFolder && root.startsWith(oldPath)) {
+        newRoots.push("");
+      } else if (!isFolder && root === node.nodeData.fullPath) {
+        newRoots.push(newFullName);
+      } else {
+        newRoots.push(root);
+      }
+    }
+    dispatch(setBuildRootsAction(newRoots));
 
     // --- Refresh the view
     node.nodeData.name = fileData.name;
