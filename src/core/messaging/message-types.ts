@@ -169,15 +169,6 @@ export interface NewProjectRequest extends MessageBase {
 }
 
 /**
- * The main process sends a compiler message to the IDE window
- */
-export interface CompilerMessageRequest extends MessageBase {
-  type: "CompilerMessage";
-  message: AssemblerErrorInfo | string;
-  isError: boolean;
-}
-
-/**
  * The Emu ask the main for a file open dialog
  */
 export interface EmuOpenFileDialogRequest extends MessageBase {
@@ -467,10 +458,7 @@ type IdeToMainRequests =
 /**
  * Requests send by the main process to Ide
  */
-type MainToIdeRequests =
-  | SyncMainStateRequest
-  | NewProjectRequest
-  | CompilerMessageRequest;
+type MainToIdeRequests = SyncMainStateRequest | NewProjectRequest;
 
 /**
  * Default response for actions
