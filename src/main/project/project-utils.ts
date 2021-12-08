@@ -1,7 +1,5 @@
 import * as path from "path";
-import * as syncFs from "fs";
-import * as fse from "fs-extra";
-import { promises as fs } from "fs";
+import * as fs from "fs";
 import { dialog } from "electron";
 
 import { dispatch, getState } from "@core/service-registry";
@@ -32,11 +30,6 @@ import { appSettings } from "../main-state/klive-configuration";
  * Name of the project file within the project directory
  */
 export const PROJECT_FILE = "klive.project";
-
-/**
- * Name of the project folder storing code
- */
-export const CODE_DIR_NAME = "code";
 
 /**
  * Opens the specified folder as a project
@@ -130,8 +123,8 @@ export function getProjectFile(projectFile?: string): KliveProject | null {
     }
   }
   try {
-    if (syncFs.existsSync(projectFile)) {
-      const contents = syncFs.readFileSync(projectFile, "utf8");
+    if (fs.existsSync(projectFile)) {
+      const contents = fs.readFileSync(projectFile, "utf8");
       const project = JSON.parse(contents) as KliveProject;
       return project.machineType && machineRegistry.has(project.machineType)
         ? project
@@ -174,13 +167,28 @@ export async function createKliveProject(
   const targetFolder = path.resolve(path.join(rootFolder, projectFolder));
   try {
     // --- Create the project folder
-    if (syncFs.existsSync(targetFolder)) {
+    if (fs.existsSync(targetFolder)) {
       return { error: `Target directory '${targetFolder}' already exists` };
+    }
+    try {
+      fs.mkdirSync(targetFolder, {
+        recursive: true,
+      });
+    } catch (err) {
+      return {
+        error: `Target directory '${targetFolder}' cannot be created: ${err}`,
+      };
     }
 
     // --- Copy the project template
-    const sourceDir = path.join(__dirname, "templates/project");
-    fse.copySync(sourceDir, targetFolder);
+    const sourceDir = path.join(__dirname, "templates/project/code");
+    try {
+      copyFolderSync(sourceDir, targetFolder);
+    } catch (err) {
+      return {
+        error: `Error while copying the template from '${sourceDir}': ${err}`,
+      };
+    }
 
     // --- Create the project file
     const project: KliveProject = {
@@ -193,10 +201,16 @@ export async function createKliveProject(
       },
       ide: appSettings?.ide ?? {},
     };
-    syncFs.writeFileSync(
-      path.join(targetFolder, PROJECT_FILE),
-      JSON.stringify(project, null, 2)
-    );
+    try {
+      fs.writeFileSync(
+        path.join(targetFolder, PROJECT_FILE),
+        JSON.stringify(project, null, 2)
+      );
+    } catch (err) {
+      return {
+        error: `Error while creating '${PROJECT_FILE}': ${err}`,
+      };
+    }
 
     // --- Done
     return { targetFolder };
@@ -204,5 +218,48 @@ export async function createKliveProject(
     return {
       error: `Cannot create Klive project in '${targetFolder}' (${err})`,
     };
+  }
+}
+
+/**
+ * Copies a file synchronously
+ * @param source Source file
+ * @param target Targer file
+ */
+export function copyFileSync(source: string, target: string) {
+  var targetFile = target;
+  if (fs.existsSync(target)) {
+    if (fs.lstatSync(target).isDirectory()) {
+      targetFile = path.join(target, path.basename(source));
+    }
+  }
+  fs.writeFileSync(targetFile, fs.readFileSync(source));
+}
+
+/**
+ * Copies the contents of a folder into another synchronously
+ * @param source Source folder
+ * @param target Target folder
+ */
+export function copyFolderSync(source: string, target: string) {
+  var files = [];
+
+  // --- Check if folder needs to be created or integrated
+  var targetFolder = path.join(target, path.basename(source));
+  if (!fs.existsSync(targetFolder)) {
+    fs.mkdirSync(targetFolder);
+  }
+
+  // --- Copy
+  if (fs.lstatSync(source).isDirectory()) {
+    files = fs.readdirSync(source);
+    files.forEach(function (file) {
+      var curSource = path.join(source, file);
+      if (fs.lstatSync(curSource).isDirectory()) {
+        copyFolderSync(curSource, targetFolder);
+      } else {
+        copyFileSync(curSource, targetFolder);
+      }
+    });
   }
 }

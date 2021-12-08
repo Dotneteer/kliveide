@@ -102,6 +102,7 @@ export interface ActionTypes {
   CLEAR_BUILD_ROOTS: null;
   ADD_BUILD_ROOT: null;
   REMOVE_BUILD_ROOT: null;
+  SET_BUILD_ROOTS: null;
 
   // --- Editor
   EDITOR_STATUS_HIDE: null;
@@ -167,6 +168,7 @@ export type Payload = {
   column?: number;
   programCounter?: number;
   ideConfig?: Record<string, any>;
+  roots?: string[];
 }
 
 /**

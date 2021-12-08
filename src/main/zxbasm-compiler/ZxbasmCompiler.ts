@@ -7,7 +7,10 @@ import {
   BinarySegment,
 } from "@abstractions/z80-compiler-service";
 import { getSettingsService } from "@core/service-registry";
-import { ZXBASM_EXECUTABLE_PATH } from "@modules/integration-zxbasm/zxbasm-config";
+import {
+  ZXBASM_EXECUTABLE_PATH,
+  ZXBASM_OPTIMIZATION_LEVEL,
+} from "@modules/integration-zxbasm/zxbasm-config";
 import { readFileSync, unlinkSync } from "original-fs";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
 
@@ -15,18 +18,15 @@ import { CompilerBase } from "../compiler-integration/CompilerBase";
  * Wraps the ZXBASM Compiler (Boriel's Basic Assembler)
  */
 export class ZxbasmCompiler extends CompilerBase {
-  private _errors: AssemblerErrorInfo[];
-
   /**
    * The unique ID of the compiler
    */
   readonly id = "ZxbAsmCompiler";
 
-    /**
+  /**
    * Compiled language
    */
   readonly language = "zxbasm";
-
 
   /**
    * Indicates if the compiler supports Klive compiler output
@@ -65,21 +65,31 @@ export class ZxbasmCompiler extends CompilerBase {
       );
 
       // --- Run the compiler
-      this._errors = [];
-      await this.executeCommandLine(execPath, cmdLine);
+      const compileOut = await this.executeCommandLine(execPath, cmdLine);
+      if (compileOut) {
+        return {
+          errors: compileOut.filter(
+            (i) => typeof i !== "string"
+          ) as AssemblerErrorInfo[],
+        };
+      }
 
-      // TODO: Extract the binary output
+      // --- Extract the output
+      const machineCode = new Uint8Array(readFileSync(outFilename));
+      const segment: BinarySegment = {
+        emittedCode: Array.from(machineCode),
+        startAddress: 0x8000,
+      };
 
       // --- Remove the output file
       unlinkSync(outFilename);
 
       // --- Done.
-      throw new Error("Not implemented yet")
-      // return {
-      //   errors: this._errors,
-      //   injectOptions: { "subroutine": true },
-      //   segments: [segment],
-      // };
+      return {
+        errors: [],
+        injectOptions: { subroutine: true },
+        segments: [segment],
+      };
     } catch (err) {
       throw err;
     }
@@ -99,6 +109,10 @@ export class ZxbasmCompiler extends CompilerBase {
       );
       const argRoot = `${inputFile} --output ${outputFile} `;
       let additional = rawArgs ? rawArgs.trim() : "";
+      if (!additional) {
+        const optimize = configObject.get(ZXBASM_OPTIMIZATION_LEVEL) as number;
+        additional += `--optimize ${optimize ?? 2} `;
+      }
       return (argRoot + additional).trim();
     }
   }
@@ -109,13 +123,6 @@ export class ZxbasmCompiler extends CompilerBase {
    * @param data Message data to process
    */
   processErrorMessage(data: any): string | AssemblerErrorInfo {
-    if (isAssemblerError(data)) {
-      if (!data.isWarning) {
-        this._errors.push(data);
-      }
-      return data;
-    }
-
     // --- Split segments and search for "error" or "warning"
     const dataStr = data.toString() as string;
     const segments = dataStr.split(":").map((s) => s.trim());
@@ -161,17 +168,6 @@ export class ZxbasmCompiler extends CompilerBase {
       errorCode,
       isWarning,
     };
-    if (!isWarning) {
-      this._errors.push(errorInfo);
-    }
     return errorInfo;
-  }
-
-  /**
-   * Tests if the specified code is an error code
-   * @param exitCode
-   */
-  exitCodeIsError(exitCode: number): boolean {
-    return exitCode === 1 && this._errors.length === 0;
   }
 }

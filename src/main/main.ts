@@ -36,9 +36,10 @@ import { emuWindow, setupEmuWindow } from "./app/emu-window";
 import { ideWindow, setupIdeWindow } from "./app/ide-window";
 import { registerCompiler } from "@abstractions/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
-import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
+// import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
 import { MainSettingsService } from "./app/settings-service";
 import { ZxbasmCompiler } from "./zxbasm-compiler/ZxbasmCompiler";
+import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
 
 // --- Register services used by the main process
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());

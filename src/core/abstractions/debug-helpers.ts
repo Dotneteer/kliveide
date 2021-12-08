@@ -17,6 +17,7 @@ export function addBreakpoint(
   breakpoints: BreakpointDefinition[],
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
+  breakpoints = breakpoints.slice(0);
   if (bp.type == "source") {
     if (
       breakpoints.findIndex(
@@ -38,7 +39,7 @@ export function addBreakpoint(
       breakpoints.push(bp);
     }
   }
-  return breakpoints.slice(0);
+  return breakpoints;
 }
 
 /**
@@ -51,6 +52,7 @@ export function removeBreakpoint(
   breakpoints: BreakpointDefinition[],
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
+  breakpoints = breakpoints.slice(0);
   let index = -1;
   if (bp.type === "source") {
     index = breakpoints.findIndex(
@@ -68,7 +70,7 @@ export function removeBreakpoint(
   if (index >= 0) {
     breakpoints.splice(index, 1);
   }
-  return breakpoints.slice(0);
+  return breakpoints;
 }
 
 /**
@@ -81,11 +83,12 @@ export function makeReachableBreakpoint(
   breakpoints: BreakpointDefinition[],
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
+  breakpoints = breakpoints.slice(0);
   const def = findBreakpoint(breakpoints, bp);
   if (def && def.type === "source") {
     delete def.unreachable;
   }
-  return breakpoints.slice(0);
+  return breakpoints;
 }
 
 /**
@@ -108,12 +111,13 @@ export function removeSourceBreakpoints(
 export function makeReachableAllBreakpoints(
   breakpoints: BreakpointDefinition[]
 ): BreakpointDefinition[] {
+  breakpoints = breakpoints.slice(0);
   breakpoints.forEach((bp) => {
     if (bp.type === "source") {
       delete bp.unreachable;
     }
   });
-  return breakpoints.slice(0);
+  return breakpoints;
 }
 
 /**
@@ -126,11 +130,12 @@ export function disableBreakpoint(
   breakpoints: BreakpointDefinition[],
   bp: BreakpointDefinition
 ): BreakpointDefinition[] {
+  breakpoints = breakpoints.slice(0);
   const def = findBreakpoint(breakpoints, bp);
   if (def && def.type === "source") {
     def.unreachable = true;
   }
-  return breakpoints.slice(0);
+  return breakpoints;
 }
 
 /**
@@ -206,9 +211,7 @@ export function normalizeBreakpoints(
   const mapped = new Map<string, boolean>();
   const result: BreakpointDefinition[] = [];
   breakpoints.forEach((bp) => {
-    if (bp.type === "binary") {
-      result.push(bp);
-    } else if (
+    if (bp.type == "source" &&
       bp.resource === resource &&
       bp.line <= lineCount &&
       !mapped.has(`${resource}|${bp.line}`)
@@ -219,6 +222,8 @@ export function normalizeBreakpoints(
         line: bp.line,
       });
       mapped.set(`${resource}|${bp.line}`, true);
+    } else {
+      result.push(bp);
     }
   });
   return result;

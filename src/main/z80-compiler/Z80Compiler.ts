@@ -43,11 +43,6 @@ export class Z80Compiler extends CompilerBase {
       filename,
       options as CompilerOptions
     );
-    if (output.errors.length) {
-      for (const error of output.errors) {
-        await this.onErrorMessage(error);
-      }
-    }
     return output;
   }
 

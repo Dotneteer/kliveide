@@ -63,24 +63,6 @@ export interface IKliveCompiler {
     filename: string,
     options?: Record<string, any>
   ): Promise<KliveCompilerOutput>;
-
-  /**
-   * The compiler receives a standard message
-   * @param data Message data
-   */
-  onMessage(data: any): Promise<void>;
-
-  /**
-   * The compiler receives an error message
-   * @param data Message data
-   */
-  onErrorMessage(data: any): Promise<void>;
-
-  /**
-   * Tests if the specified code is an error code
-   * @param exitCode
-   */
-  exitCodeIsError(exitCode: number): boolean;
 }
 
 /**

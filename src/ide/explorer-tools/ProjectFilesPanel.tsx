@@ -24,6 +24,7 @@ import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import {
   addBuildRootAction,
   removeBuildRootAction,
+  setBuildRootsAction,
 } from "@state/builder-reducer";
 import { MenuItem } from "@abstractions/command-definitions";
 import { SideBarPanelDescriptorBase } from "../../common-ui/services/SideBarService";
@@ -37,6 +38,10 @@ import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { NewFileData } from "./NewFileData";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
+import {
+  addBreakpointAction,
+  removeBreakpointAction,
+} from "@core/state/debugger-reducer";
 
 type State = {
   itemsCount: number;
@@ -671,10 +676,30 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     }
 
     // --- Delete the file
+    const projPathLen = getState().project.path.length;
+    const oldRelName = node.nodeData.fullPath.substr(projPathLen);
     const resp = await this._projectService.deleteFile(node.nodeData.fullPath);
     if (resp) {
       // --- Delete failed
       return;
+    }
+
+    // --- Delete build roots
+    const buildRoots = getState().builder.roots.slice(0);
+    const newRoots: string[] = [];
+    for (const root of buildRoots) {
+      if (root !== oldRelName) {
+        newRoots.push(root);
+      }
+    }
+    dispatch(setBuildRootsAction(newRoots));
+
+    // --- Delete breakpoints
+    const brps = getState().debugger?.breakpoints.slice(0) ?? [];
+    for (const brp of brps) {
+      if (brp.type === "source" && brp.resource === oldRelName) {
+        dispatch(removeBreakpointAction(brp));
+      }
     }
 
     // --- Refresh the view
@@ -702,13 +727,33 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       return;
     }
 
-    // --- Delete the file
+    // --- Delete the folder
+    const projPathLen = getState().project.path.length;
+    const oldRelName = node.nodeData.fullPath.substr(projPathLen);
     const resp = await this._projectService.deleteFolder(
       node.nodeData.fullPath
     );
     if (resp) {
       // --- Delete failed
       return;
+    }
+
+    // --- Delete build roots
+    const buildRoots = getState().builder.roots.slice(0);
+    const newRoots: string[] = [];
+    for (const root of buildRoots) {
+      if (!root.startsWith(oldRelName)) {
+        newRoots.push(root);
+      }
+    }
+    dispatch(setBuildRootsAction(newRoots));
+
+    // --- Delete breakpoints
+    const brps = getState().debugger?.breakpoints.slice(0) ?? [];
+    for (const brp of brps) {
+      if (brp.type === "source" && brp.resource.startsWith(oldRelName)) {
+        dispatch(removeBreakpointAction(brp));
+      }
     }
 
     // --- Refresh the view
@@ -730,11 +775,15 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     index: number,
     isFolder: boolean = false
   ): Promise<void> {
-    // --- Get the new name
+    // --- Process the old name
+    const projPathLen = getState().project.path.length;
     const oldPath = node.nodeData.fullPath.substr(
       0,
       node.nodeData.fullPath.length - node.nodeData.name.length - 1
     );
+    const oldRelName = node.nodeData.fullPath.substr(projPathLen);
+
+    // --- Get the new name
     const fileData = (await getModalDialogService().showModalDialog(
       isFolder ? RENAME_FOLDER_DIALOG_ID : RENAME_FILE_DIALOG_ID,
       {
@@ -772,6 +821,34 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       newFullName,
       isFolder
     );
+
+    // --- Rename build roots
+    const newRelName = node.nodeData.fullPath.substr(projPathLen);
+    const buildRoots = getState().builder.roots.slice(0);
+    const newRoots: string[] = [];
+    for (const root of buildRoots) {
+      if (isFolder && root.startsWith(oldRelName)) {
+        newRoots.push(newRelName + root.substr(oldRelName.length));
+      } else if (!isFolder && root === oldRelName) {
+        newRoots.push(newRelName);
+      } else {
+        newRoots.push(root);
+      }
+    }
+    dispatch(setBuildRootsAction(newRoots));
+
+    // --- Rename breakpoints
+    const brps = getState().debugger?.breakpoints.slice(0) ?? [];
+    for (const brp of brps) {
+      if (brp.type === "source") {
+        if (isFolder && brp.resource.startsWith(oldRelName)) {
+          dispatch(removeBreakpointAction(brp));
+          brp.resource = newRelName + brp.resource.substr(oldRelName.length);
+          dispatch(addBreakpointAction(brp));
+        } else if (!isFolder && brp.resource === oldRelName) {
+        }
+      }
+    }
 
     // --- Refresh the view
     node.nodeData.name = fileData.name;
