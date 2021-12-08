@@ -105,6 +105,7 @@ export default class OutputToolPanel extends ToolPanelBase<
           key={this.state.refreshCount}
           itemHeight={18}
           itemsCount={this.state.buffer.length}
+          style={{ userSelect: "text" }}
           renderItem={(index: number, style: CSSProperties) => {
             const itemData = this.state.buffer[index].data;
             const hasHilite =

@@ -131,7 +131,7 @@ const hideToolbarCommand: IKliveCommand = {
 /**
  * This command shows the IDE sidebar
  */
- const showSidebarCommand: IKliveCommand = {
+const showSidebarCommand: IKliveCommand = {
   commandId: "klive.showSidebar",
   execute: async () => {
     dispatch(emuShowSidebarAction(true));
@@ -445,44 +445,64 @@ const compileCodeCommand: IKliveCommand = {
         const start = new Date().valueOf();
 
         // --- Invoke the compiler
-        const response = await sendFromIdeToEmu<CompileFileResponse>({
-          type: "CompileFile",
-          filename: context.resource,
-        });
-        if (response.failed && (response.result?.errors?.length ?? 0) === 0) {
-          // --- The compilation process failed
-          buffer.resetColor();
-          buffer.writeLine(
-            `The compilation process failed: ${response.failed}`
-          );
+        try {
+          const response = await sendFromIdeToEmu<CompileFileResponse>({
+            type: "CompileFile",
+            filename: context.resource,
+          });
+          if (response.failed || (response.result?.errors?.length ?? 0) !== 0) {
+            for (const item of response.result.errors) {
+              buffer.color(item.isWarning ? "bright-yellow" : "bright-red");
+              buffer.write(item.errorCode);
+              buffer.resetColor();
+              buffer.write(`: ${item.message} `);
+              buffer.color("cyan");
+              const location =
+                item.startColumn === 0 && item.endColumn === 0
+                  ? `${item.fileName}:[${item.line}]`
+                  : `${item.fileName}:[${item.line}:${item.startColumn}-${item.endColumn}]`;
+              buffer.writeLine(location, <IHighlightable>{
+                highlight: true,
+                title: `Click to locate the error\n${item.message}`,
+                errorItem: item,
+              });
+              buffer.resetColor();
+            }
+          }
+
+          const output = response.result;
+
+          // --- Summary
+          const errorCount = output.errors.length;
+          if (!response.failed && errorCount === 0) {
+            buffer.bold(true);
+            buffer.color("bright-green");
+            buffer.writeLine("Compiled successfully.");
+            buffer.bold(false);
+            buffer.resetColor();
+          } else {
+            buffer.bold(true);
+            buffer.color("bright-red");
+            if (response.failed) {
+              buffer.writeLine(`Compilation failed: ${response.failed}}.`);
+            } else {
+              buffer.writeLine(
+                `Compiled with ${errorCount} error${errorCount > 1 ? "s" : ""}.`
+              );
+            }
+            buffer.bold(false);
+            buffer.resetColor();
+          }
+          // --- Execution time
+          buffer.writeLine(`Compile time: ${new Date().valueOf() - start}ms`);
+
+          // --- Take care to resolve source code breakpoints
+          resolveBreakpoints();
           break;
-        }
-
-        const output = response.result;
-
-        // --- Summary
-        const errorCount = output.errors.length;
-        if (errorCount === 0) {
-          buffer.bold(true);
-          buffer.color("bright-green");
-          buffer.writeLine("Compiled successfully.");
-          buffer.bold(false);
-          buffer.resetColor();
-        } else {
-          buffer.bold(true);
+        } catch (err) {
           buffer.color("bright-red");
-          buffer.writeLine(
-            `Compiled with ${errorCount} error${errorCount > 1 ? "s" : ""}.`
-          );
-          buffer.bold(false);
-          buffer.resetColor();
+          buffer.writeLine(`Unexpected error: ${err}`);
         }
-        // --- Execution time
-        buffer.writeLine(`Compile time: ${new Date().valueOf() - start}ms`);
-
-        // --- Take care to resolve source code breakpoints
-        resolveBreakpoints();
-        break;
     }
   },
 };

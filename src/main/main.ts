@@ -39,8 +39,9 @@ import {
   registerCompilerExtension,
 } from "@abstractions/compiler-registry";
 import { Z80Compiler } from "./z80-compiler/Z80Compiler";
-import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
+// import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
 import { MainSettingsService } from "./app/settings-service";
+import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
 
 // --- Register services used by the main process
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());

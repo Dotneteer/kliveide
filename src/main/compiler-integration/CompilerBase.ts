@@ -1,13 +1,11 @@
 import * as path from "path";
-import { spawn } from "child_process";
+import { exec } from "child_process";
 
 import {
   IKliveCompiler,
-  isAssemblerError,
   KliveCompilerOutput,
 } from "@abstractions/compiler-registry";
 import { AssemblerErrorInfo } from "@abstractions/z80-compiler-service";
-import { sendFromMainToIde } from "@core/messaging/message-sending";
 
 /**
  * Helper class to invoke compilers and communicate with the IDE
@@ -48,92 +46,51 @@ export abstract class CompilerBase implements IKliveCompiler {
    * or plain string
    * @param data Message data to process
    */
-  abstract processErrorMessage(data: any): AssemblerErrorInfo | string;
+  abstract processErrorMessage(data: string): AssemblerErrorInfo | string;
 
   /**
-   * The compiler receives a standard message
-   * @param data Message data
+   * Executes the ZXBC command
+   * @param cmdArgs Commad-line arguments
+   * @param outChannel Output channel
    */
-  onMessage(data: any): Promise<void> {
-    return this.handleMessage(data, false);
-  }
-
-  /**
-   * The compiler receives an error message
-   * @param data Message data
-   */
-  async onErrorMessage(data: any): Promise<void> {
-    return this.handleMessage(data, true);
-  }
-
-  /**
-   * Tests if the specified code is an error code
-   * @param exitCode
-   */
-  exitCodeIsError(exitCode: number): boolean {
-    return !!exitCode;
-  }
-
   async executeCommandLine(
     execPath: string,
     cmdArgs: string,
     options?: any
-  ): Promise<string | null> {
+  ): Promise<(AssemblerErrorInfo | string)[] | null> {
     const workdir = path.dirname(execPath);
     const filename = path.basename(execPath);
-    return new Promise<string | null>((resolve, reject) => {
-      const runner = spawn(filename, [cmdArgs], {
-        cwd: workdir,
-        shell: true,
-        ...options,
-      });
-      runner.stdout.on("data", async (data) => await this.onMessage(data));
-      runner.stderr.on("data", async (data) => await this.onErrorMessage(data));
-      runner.on("error", async (err) => {
-        // --- Wait a little time to ensure that all error messages are delivered
-        await new Promise((r) => setTimeout(r, 200));
-        reject(err);
-      });
-      runner.on("exit", async (code) => {
-        // --- Wait a little time to ensure that all error messages are delivered
-        await new Promise((r) => setTimeout(r, 200));
 
-        if (this.exitCodeIsError(code)) {
-          reject(`Exit code: ${code}`);
-        } else {
-          resolve(null);
+    const cmd = `${filename} ${cmdArgs.split("\\").join("/")}`;
+    return new Promise<(AssemblerErrorInfo | string)[] | null>(
+      (resolve, reject) => {
+        const process = exec(
+          cmd,
+          {
+            cwd: workdir,
+          },
+          (error, _stdout, stderr) => {
+            if (error) {
+              resolve(this.processErrorString(stderr));
+              return;
+            }
+            resolve(null);
+          }
+        );
+        if (!process?.pid) {
+          throw new Error(
+            `Cannot run the process with the specified path (${execPath})`
+          );
         }
-      });
-    });
+      }
+    );
   }
 
-  private async handleMessage(data: any, isError: boolean): Promise<void> {
-    if (!data) {
-      // --- Nothing to process
-      return;
-    }
-
-    if (isAssemblerError(data)) {
-      // --- Native warning or error
-      await sendFromMainToIde({
-        type: "CompilerMessage",
-        message: data,
-        isError: !data.isWarning,
-      });
-      return;
-    }
-
+  private processErrorString(data: string): (AssemblerErrorInfo | string)[] {
     // --- String for further processing
-    const segments = data.toString().split(/\r?\n/);
-    for (const segment of segments) {
-      const message = isError
-        ? this.processErrorMessage(segment)
-        : this.processMessage(segment);
-      await sendFromMainToIde({
-        type: "CompilerMessage",
-        message: message,
-        isError: isAssemblerError(message) ? !message.isWarning : isError,
-      });
-    }
+    return data
+      .toString()
+      .split(/\r?\n/)
+      .map((s) => this.processErrorMessage(s));
   }
 }

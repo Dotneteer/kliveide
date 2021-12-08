@@ -50,32 +50,6 @@ async function processIdeMessages(
         project: result,
       };
 
-    case "CompilerMessage":
-      const outputPaneService = getOutputPaneService();
-      const buildPane = outputPaneService.getPaneById(BUILD_OUTPUT_PANE_ID);
-      const buffer = buildPane.buffer;
-      const msgObj = message.message;
-      buffer.color(message.isError ? "bright-red" : "bright-yellow");
-      if (isAssemblerError(msgObj)) {
-        buffer.write(msgObj.errorCode);
-        buffer.resetColor();
-        buffer.write(`: ${msgObj.message} `);
-        buffer.color("cyan");
-        const location =
-          msgObj.startColumn === 0 && msgObj.endColumn === 0
-            ? `${msgObj.fileName}:[${msgObj.line}]`
-            : `${msgObj.fileName}:[${msgObj.line}:${msgObj.startColumn}-${msgObj.endColumn}]`;
-        buffer.writeLine(location, <IHighlightable>{
-          highlight: true,
-          title: `Click to locate the error\n${msgObj.message}`,
-          errorItem: msgObj,
-        });
-        buffer.resetColor();
-      } else {
-        buffer.writeLine(msgObj.toString());
-      }
-      return <DefaultResponse>{ type: "Ack" };
-
     default:
       return <DefaultResponse>{ type: "Ack" };
   }
