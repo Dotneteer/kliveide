@@ -14,6 +14,7 @@ let compilerRegistry: Record<string, IKliveCompiler> = {};
  */
 export type SimpleAssemblerOutput = {
   errors?: AssemblerErrorInfo[];
+  debugMessages?: string[];
 };
 
 /**

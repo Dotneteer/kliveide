@@ -75,8 +75,9 @@ export abstract class CompilerBase implements IKliveCompiler {
             cwd: workdir,
           },
           (error, _stdout, stderr) => {
-            if (error) {
-              resolve(this.processErrorString(stderr));
+            const processedMessages = this.processErrorString(stderr)
+            if (error || processedMessages.length > 0) {
+              resolve(processedMessages);
               return;
             }
             resolve(null);

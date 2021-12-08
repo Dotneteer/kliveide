@@ -115,6 +115,7 @@ import { IdeSettingsService } from "./settings-service/settings-service";
 import { ResetZxbCommand } from "@modules/integration-zxb/ResetZxbCommand";
 import { zxbasLanguageProvider as zxbLanguageProvider } from "../modules/integration-zxb/zxbas-provider";
 import { zxbasmLanguageProvider } from "@modules/integration-zxbasm/zxbasm-provider";
+import { ResetZxbasmCommand } from "@modules/integration-zxbasm/ResetZxbasmCommand";
 
 // ------------------------------------------------------------------------------
 // Initialize the forwarder that sends application state changes to the main
@@ -344,6 +345,7 @@ registerKliveCommands();
 
 // --- Register integration commands
 getCommandService().registerCommand(new ResetZxbCommand());
+getCommandService().registerCommand(new ResetZxbasmCommand());
 
 // --- Select the file-view activity
 dispatch(changeActivityAction(0));

@@ -34,11 +34,10 @@ export class ZxBasicCompiler extends CompilerBase {
    */
   readonly id = "ZXBCompiler";
 
-    /**
+  /**
    * Compiled language
    */
   readonly language = "zxbas";
-
 
   /**
    * Indicates if the compiler supports Klive compiler output
@@ -79,11 +78,17 @@ export class ZxBasicCompiler extends CompilerBase {
       // --- Run the compiler
       const compileOut = await this.executeCommandLine(execPath, cmdLine);
       if (compileOut) {
-        return {
-          errors: compileOut.filter(
-            (i) => typeof i !== "string"
-          ) as AssemblerErrorInfo[],
-        };
+        const errors = compileOut.filter(
+          (i) => typeof i !== "string"
+        ) as AssemblerErrorInfo[];
+        if (errors.length > 0) {
+          return {
+            errors,
+            debugMessages: compileOut.filter(
+              (i) => typeof i === "string"
+            ) as string[],
+          };
+        }
       }
 
       // --- Extract the output

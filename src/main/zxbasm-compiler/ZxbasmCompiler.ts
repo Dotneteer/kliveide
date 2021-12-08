@@ -1,6 +1,7 @@
 import {
   isAssemblerError,
   KliveCompilerOutput,
+  SimpleAssemblerOutput,
 } from "@abstractions/compiler-registry";
 import {
   AssemblerErrorInfo,
@@ -67,18 +68,44 @@ export class ZxbasmCompiler extends CompilerBase {
       // --- Run the compiler
       const compileOut = await this.executeCommandLine(execPath, cmdLine);
       if (compileOut) {
-        return {
-          errors: compileOut.filter(
-            (i) => typeof i !== "string"
-          ) as AssemblerErrorInfo[],
-        };
+        const errors = compileOut.filter(
+          (i) => typeof i !== "string"
+        ) as AssemblerErrorInfo[];
+        if (errors.length > 0) {
+          return {
+            errors,
+            debugMessages: compileOut.filter(
+              (i) => typeof i === "string"
+            ) as string[],
+          };
+        }
       }
+
+      // --- Extract the ORG of the compilation
+      let orgAddress: number | undefined;
+      if (compileOut) {
+        const debugOut = compileOut.filter(i => typeof i === "string") as string[];
+        for (const outEntry of debugOut) {
+          if (outEntry.startsWith("debug:")) {
+            const sqrPos = outEntry.indexOf("[") - 6;
+            if (sqrPos >= 0) {
+              const addr = parseInt(outEntry.substr(sqrPos, 4), 16);
+              if (!isNaN(addr)) {
+                orgAddress = addr;
+              }
+            }
+          }
+        }
+      }
+      const debugMessages: string[] | undefined = orgAddress === undefined
+        ? ["Cannot extract ORG address from code, $8000 is assumed."]
+        : undefined;
 
       // --- Extract the output
       const machineCode = new Uint8Array(readFileSync(outFilename));
       const segment: BinarySegment = {
         emittedCode: Array.from(machineCode),
-        startAddress: 0x8000,
+        startAddress: orgAddress ?? 0x8000,
       };
 
       // --- Remove the output file
@@ -87,6 +114,7 @@ export class ZxbasmCompiler extends CompilerBase {
       // --- Done.
       return {
         errors: [],
+        debugMessages,
         injectOptions: { subroutine: true },
         segments: [segment],
       };
@@ -113,6 +141,8 @@ export class ZxbasmCompiler extends CompilerBase {
         const optimize = configObject.get(ZXBASM_OPTIMIZATION_LEVEL) as number;
         additional += `--optimize ${optimize ?? 2} `;
       }
+      // --- Temporary
+      additional += `-d`;
       return (argRoot + additional).trim();
     }
   }
@@ -149,12 +179,6 @@ export class ZxbasmCompiler extends CompilerBase {
       .slice(keywordIdx + 1)
       .join(":")
       .trim();
-    const bracketPos = message.indexOf("]");
-    let errorCode = "ERR";
-    if (bracketPos >= 0) {
-      errorCode = message.slice(1, bracketPos);
-      message = message.slice(bracketPos + 1).trim();
-    }
 
     // --- Done.
     const errorInfo: AssemblerErrorInfo = {
@@ -165,7 +189,7 @@ export class ZxbasmCompiler extends CompilerBase {
       endColumn: 0,
       startPosition: 0,
       endPosition: 0,
-      errorCode,
+      errorCode: "ERROR",
       isWarning,
     };
     return errorInfo;

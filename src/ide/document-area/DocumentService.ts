@@ -162,6 +162,13 @@ export class DocumentService implements IDocumentService {
       return extensionFactory;
     }
 
+    // #3: Test if extension has an editor factory
+    const codeEditorInfo = this._editorExtensions.get(extension);
+    if (codeEditorInfo) {
+      return new CodeEditorFactory(codeEditorInfo.language ?? "");
+    }
+
+    // #4: Use registered custom language, or the default (text)
     return new CodeEditorFactory(await this.getCodeEditorLanguage(resource));
   }
 

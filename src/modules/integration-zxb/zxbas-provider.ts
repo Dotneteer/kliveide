@@ -6,7 +6,7 @@ import { MonacoAwareCustomLanguageInfo } from "../../ide/languages/custom-langua
 export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "zxbas",
   extensions: [".zxbas"],
-  depensOn: ["kz80-asm"],
+  depensOn: ["zxbasm"],
   allowBuildRoot: true,
   supportsKlive: true,
   options: {
@@ -222,7 +222,7 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
             token: "asmdel",
             bracket: "@open",
             next: "@asm_block",
-            nextEmbedded: "kz80-asm",
+            nextEmbedded: "zxbasm",
           },
         ],
 
