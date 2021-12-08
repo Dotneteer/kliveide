@@ -29,8 +29,6 @@ import { CompilerBase } from "../compiler-integration/CompilerBase";
  * Wraps the built-in Klive Z80 Compiler
  */
 export class ZxBasicCompiler extends CompilerBase {
-  private _errors: AssemblerErrorInfo[];
-
   /**
    * The unique ID of the compiler
    */
@@ -73,8 +71,14 @@ export class ZxBasicCompiler extends CompilerBase {
       );
 
       // --- Run the compiler
-      this._errors = [];
-      await this.executeCommandLine(execPath, cmdLine);
+      const compileOut = await this.executeCommandLine(execPath, cmdLine);
+      if (compileOut) {
+        return {
+          errors: compileOut.filter(
+            (i) => typeof i !== "string"
+          ) as AssemblerErrorInfo[],
+        };
+      }
 
       // --- Extract the output
       const settingsService = getSettingsService();
@@ -93,8 +97,8 @@ export class ZxBasicCompiler extends CompilerBase {
 
       // --- Done.
       return {
-        errors: this._errors,
-        injectOptions: { "subroutine": true },
+        errors: [],
+        injectOptions: { subroutine: true },
         segments: [segment],
       };
     } catch (err) {
@@ -155,17 +159,9 @@ export class ZxBasicCompiler extends CompilerBase {
    * or plain string
    * @param data Message data to process
    */
-  processErrorMessage(data: any): string | AssemblerErrorInfo {
-    if (isAssemblerError(data)) {
-      if (!data.isWarning) {
-        this._errors.push(data);
-      }
-      return data;
-    }
-
+  processErrorMessage(data: string): string | AssemblerErrorInfo {
     // --- Split segments and search for "error" or "warning"
-    const dataStr = data.toString() as string;
-    const segments = dataStr.split(":").map((s) => s.trim());
+    const segments = data.split(":").map((s) => s.trim());
     let isWarning = false;
     let keywordIdx = segments.indexOf("error");
     if (keywordIdx < 0) {
@@ -176,13 +172,13 @@ export class ZxBasicCompiler extends CompilerBase {
     // --- Ok, we found an error or a warning.
     // --- Try to parse the rest of the message
     if (keywordIdx < 2 || keywordIdx >= segments.length - 1) {
-      return dataStr;
+      return data;
     }
 
     // --- Extract other parts
     const line = parseInt(segments[keywordIdx - 1]);
     if (isNaN(line)) {
-      return dataStr;
+      return data;
     }
     const fileName = segments.slice(0, keywordIdx - 1).join(":");
     let message = segments
@@ -197,7 +193,7 @@ export class ZxBasicCompiler extends CompilerBase {
     }
 
     // --- Done.
-    const errorInfo: AssemblerErrorInfo = {
+    return {
       fileName,
       line,
       message,
@@ -208,17 +204,5 @@ export class ZxBasicCompiler extends CompilerBase {
       errorCode,
       isWarning,
     };
-    if (!isWarning) {
-      this._errors.push(errorInfo);
-    }
-    return errorInfo;
-  }
-
-  /**
-   * Tests if the specified code is an error code
-   * @param exitCode
-   */
-  exitCodeIsError(exitCode: number): boolean {
-    return exitCode === 1 && this._errors.length === 0;
   }
 }

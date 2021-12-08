@@ -133,11 +133,16 @@ export default class InteractiveToolPanel extends ToolPanelBase<
           <VirtualizedList
             itemHeight={18}
             itemsCount={this.state.buffer.length}
+            style={{userSelect: "text"}}
             renderItem={(index: number, style: CSSProperties) => {
               return (
                 <div
                   key={index}
-                  style={{ ...style, fontSize: "0.95em", whiteSpace: "nowrap" }}
+                  style={{
+                    ...style,
+                    fontSize: "0.95em",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   <div
                     dangerouslySetInnerHTML={{
