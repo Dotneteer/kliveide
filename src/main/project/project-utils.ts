@@ -197,7 +197,7 @@ export async function createKliveProject(
         breakpoints: [],
       },
       builder: {
-        roots: ["/code/code.kz80.asm", "/code/program.zxbas"],
+        roots: ["/code/code.kz80.asm", "/code/code.zxb.asm", "/code/program.zxbas"],
       },
       ide: appSettings?.ide ?? {},
     };

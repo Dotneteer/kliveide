@@ -92,6 +92,7 @@ export class ZxbasmCompiler extends CompilerBase {
               const addr = parseInt(outEntry.substr(sqrPos, 4), 16);
               if (!isNaN(addr)) {
                 orgAddress = addr;
+                break;
               }
             }
           }
@@ -152,10 +153,9 @@ export class ZxbasmCompiler extends CompilerBase {
    * or plain string
    * @param data Message data to process
    */
-  processErrorMessage(data: any): string | AssemblerErrorInfo {
+  processErrorMessage(data: string): string | AssemblerErrorInfo {
     // --- Split segments and search for "error" or "warning"
-    const dataStr = data.toString() as string;
-    const segments = dataStr.split(":").map((s) => s.trim());
+    const segments = data.split(":").map((s) => s.trim());
     let isWarning = false;
     let keywordIdx = segments.indexOf("error");
     if (keywordIdx < 0) {
@@ -166,13 +166,13 @@ export class ZxbasmCompiler extends CompilerBase {
     // --- Ok, we found an error or a warning.
     // --- Try to parse the rest of the message
     if (keywordIdx < 2 || keywordIdx >= segments.length - 1) {
-      return dataStr;
+      return data;
     }
 
     // --- Extract other parts
     const line = parseInt(segments[keywordIdx - 1]);
     if (isNaN(line)) {
-      return dataStr;
+      return data;
     }
     const fileName = segments.slice(0, keywordIdx - 1).join(":");
     let message = segments
