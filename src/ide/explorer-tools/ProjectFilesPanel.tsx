@@ -38,6 +38,7 @@ import { NEW_FOLDER_DIALOG_ID } from "./NewFolderDialog";
 import { NewFileData } from "./NewFileData";
 import { RENAME_FILE_DIALOG_ID } from "./RenameFileDialog";
 import { RENAME_FOLDER_DIALOG_ID } from "./RenameFolderDialog";
+import { addBreakpointAction, removeBreakpointAction } from "@core/state/debugger-reducer";
 
 type State = {
   itemsCount: number;
@@ -730,11 +731,15 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     index: number,
     isFolder: boolean = false
   ): Promise<void> {
-    // --- Get the new name
+    // --- Process the old name
+    const projPathLen = getState().project.path.length;
     const oldPath = node.nodeData.fullPath.substr(
       0,
       node.nodeData.fullPath.length - node.nodeData.name.length - 1
     );
+    const oldRelName = node.nodeData.fullPath.substr(projPathLen);
+
+    // --- Get the new name
     const fileData = (await getModalDialogService().showModalDialog(
       isFolder ? RENAME_FOLDER_DIALOG_ID : RENAME_FILE_DIALOG_ID,
       {
@@ -774,22 +779,32 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     );
 
     // --- Rename build roots
-    console.log(oldPath);
-    console.log(node.nodeData.fullPath);
-    console.log(newFullName);
+    const newRelName = node.nodeData.fullPath.substr(projPathLen);
     const buildRoots = getState().builder.roots.slice(0);
     const newRoots: string[] = [];
     for (const root of buildRoots) {
-      console.log(root);
-      if (isFolder && root.startsWith(oldPath)) {
-        newRoots.push("");
-      } else if (!isFolder && root === node.nodeData.fullPath) {
-        newRoots.push(newFullName);
+      if (isFolder && root.startsWith(oldRelName)) {
+        newRoots.push(newRelName + root.substr(oldRelName.length));
+      } else if (!isFolder && root === oldRelName) {
+        newRoots.push(newRelName);
       } else {
         newRoots.push(root);
       }
     }
     dispatch(setBuildRootsAction(newRoots));
+
+    // --- Rename breakpoints
+    const brps = getState().debugger?.breakpoints ?? [];
+    for (const brp of brps) {
+      if (brp.type === "source") {
+        if (isFolder && brp.resource.startsWith(oldRelName)) {
+          dispatch(removeBreakpointAction(brp));
+          brp.resource = newRelName + brp.resource.substr(oldRelName.length);
+          dispatch(addBreakpointAction(brp));
+        } else if (!isFolder && brp.resource === oldRelName) {
+        }
+      }
+    }
 
     // --- Refresh the view
     node.nodeData.name = fileData.name;
