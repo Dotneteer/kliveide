@@ -177,7 +177,7 @@ export void setExecutionOptions() {
 // The main machine execution cycle
 export void executeMachineLoop() {
   local u32 oldClockMultiplier;
- 
+  
   // --- Initialize the execution cycle
   executionCompletionReason = EXCR_EXEC;
 

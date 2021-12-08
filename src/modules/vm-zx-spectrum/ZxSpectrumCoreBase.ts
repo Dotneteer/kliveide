@@ -31,7 +31,21 @@ import {
   WasmMachineApi,
 } from "@modules-core/abstract-vm";
 import { getEngineDependencyRegistry } from "@modules-core/vm-engine-dependency-registry";
-import { add } from "lodash";
+
+/**
+ * ZX Spectrum 48 main execution cycle entry point
+ */
+export const SP48_MAIN_ENTRY = 0x12ac;
+
+/**
+ * Main Waiting Loop in Spectrum 128 ROM-0
+ */
+export const SP128_MAIN_WAITING_LOOP = 0x2653;
+
+/**
+ * Return to Editor entry point in Spectrum 128 ROM-0
+ */
+export const SP128_RETURN_TO_EDITOR = 0x2604;
 
 /**
  * ID of a ZX Spectrum state manager component

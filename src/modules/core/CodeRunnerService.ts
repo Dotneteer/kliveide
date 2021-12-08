@@ -102,6 +102,7 @@ export class CodeRunnerService implements ICodeRunnerService {
           await getDialogService().showMessageBox(message, "Injecting code");
           break;
         case "run":
+          console.log("Ready for run!");
           await sendFromIdeToEmu({
             type: "RunCode",
             codeToInject,
@@ -120,6 +121,8 @@ export class CodeRunnerService implements ICodeRunnerService {
 
     function modelTypeToMachineType(model: SpectrumModelType): string {
       switch (model) {
+        case SpectrumModelType.Spectrum48:
+          return "48";
         case SpectrumModelType.Spectrum128:
           return "128";
         case SpectrumModelType.SpectrumP3:
@@ -127,7 +130,7 @@ export class CodeRunnerService implements ICodeRunnerService {
         case SpectrumModelType.Next:
           return "next";
         default:
-          return "48";
+          return "";
       }
     }
   }

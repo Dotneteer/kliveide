@@ -1,5 +1,16 @@
-import { MachineCreationOptions } from "@abstractions/vm-core-types";
-import { ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
+import {
+  DebugStepMode,
+  EmulationMode,
+  ExecuteCycleOptions,
+  MachineCreationOptions,
+} from "@abstractions/vm-core-types";
+import { spectrumKeyCodes } from "./spectrum-keys";
+import {
+  SP128_MAIN_WAITING_LOOP,
+  SP128_RETURN_TO_EDITOR,
+  SP48_MAIN_ENTRY,
+  ZxSpectrumCoreBase,
+} from "./ZxSpectrumCoreBase";
 
 /**
  * ZX Spectrum 128 core implementation
@@ -16,7 +27,7 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
   /**
    * Gets the unique model identifier of the machine
    */
-   getModelId(): string {
+  getModelId(): string {
     return "sp128";
   }
 
@@ -35,5 +46,62 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
    */
   get supportsPsg(): boolean {
     return true;
+  }
+
+  /**
+   * Prepares the engine for code injection
+   * @param model Model to run in the virtual machine
+   */
+  async prepareForInjection(model: string): Promise<number> {
+    const controller = this.controller;
+    console.log(model);
+    switch (model) {
+      case "128":
+        await controller.start(
+          new ExecuteCycleOptions(
+            EmulationMode.UntilExecutionPoint,
+            DebugStepMode.None,
+            0,
+            SP128_MAIN_WAITING_LOOP
+          )
+        );
+        await controller.waitForCycleTermination();
+        await controller.start(
+          new ExecuteCycleOptions(
+            EmulationMode.UntilExecutionPoint,
+            DebugStepMode.None,
+            0,
+            SP128_RETURN_TO_EDITOR
+          )
+        );
+        await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+        await controller.delayKey(spectrumKeyCodes.Enter);
+        await controller.waitForCycleTermination();
+        return SP128_RETURN_TO_EDITOR;
+      default:
+        await controller.start(
+          new ExecuteCycleOptions(
+            EmulationMode.UntilExecutionPoint,
+            DebugStepMode.None,
+            0,
+            SP128_MAIN_WAITING_LOOP
+          )
+        );
+        await controller.waitForCycleTermination();
+        await controller.start(
+          new ExecuteCycleOptions(
+            EmulationMode.UntilExecutionPoint,
+            DebugStepMode.None,
+            1,
+            SP48_MAIN_ENTRY
+          )
+        );
+        await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+        await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+        await controller.delayKey(spectrumKeyCodes.N6, spectrumKeyCodes.CShift);
+        await controller.delayKey(spectrumKeyCodes.Enter);
+        await controller.waitForCycleTermination();
+        return SP48_MAIN_ENTRY;
+    }
   }
 }
