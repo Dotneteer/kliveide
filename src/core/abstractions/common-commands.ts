@@ -1,6 +1,7 @@
 import {
   dispatch,
   getCodeRunnerService,
+  getDocumentService,
   getOutputPaneService,
   getState,
   getToolAreaService,
@@ -36,7 +37,11 @@ import { BUILD_OUTPUT_PANE_ID, IHighlightable } from "./output-pane-service";
 import { changeActivityAction } from "@core/state/activity-bar-reducer";
 import { ACTIVITY_DEBUG_ID } from "./activity";
 import { resolveBreakpoints } from "./debug-helpers";
-import { isInjectableCompilerOutput } from "./compiler-registry";
+import {
+  isInjectableCompilerOutput,
+  SimpleAssemblerOutput,
+} from "./compiler-registry";
+import { result } from "lodash";
 
 /**
  * Names of core Klive commands
@@ -444,11 +449,17 @@ const compileCodeCommand: IKliveCommand = {
         buffer.writeLine(`Compiling ${context.resource}`);
         const start = new Date().valueOf();
 
+        // --- Get the language
+        const language = await getDocumentService().getCodeEditorLanguage(
+          context.resource
+        );
+
         // --- Invoke the compiler
         try {
           const response = await sendFromIdeToEmu<CompileFileResponse>({
             type: "CompileFile",
             filename: context.resource,
+            language,
           });
           if (response.failed || (response.result?.errors?.length ?? 0) !== 0) {
             for (const item of response.result.errors) {
@@ -475,6 +486,12 @@ const compileCodeCommand: IKliveCommand = {
           // --- Summary
           const errorCount = output.errors.length;
           if (!response.failed && errorCount === 0) {
+            const debugOut = (response.result as SimpleAssemblerOutput)
+              .debugMessages;
+            if (debugOut) {
+              buffer.color("bright-yellow");
+              debugOut.forEach((i) => buffer.writeLine(i));
+            }
             buffer.bold(true);
             buffer.color("bright-green");
             buffer.writeLine("Compiled successfully.");
@@ -484,7 +501,7 @@ const compileCodeCommand: IKliveCommand = {
             buffer.bold(true);
             buffer.color("bright-red");
             if (response.failed) {
-              buffer.writeLine(`Compilation failed: ${response.failed}}.`);
+              buffer.writeLine(`Compilation failed: ${response.failed}`);
             } else {
               buffer.writeLine(
                 `Compiled with ${errorCount} error${errorCount > 1 ? "s" : ""}.`

@@ -1,11 +1,14 @@
-import { MonacoAwareCustomLanguageInfo } from "./custom-language-info";
+import { MonacoAwareCustomLanguageInfo } from "../../ide/languages/custom-language-info";
 
 /**
  * Language provider for the .asm.z80 extension
  */
 export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "zxbas",
-  depensOn: ["kz80-asm"],
+  extensions: [".zxbas"],
+  depensOn: ["zxbasm"],
+  allowBuildRoot: true,
+  supportsKlive: true,
   options: {
   },
   supportsBreakpoints: true,
@@ -219,7 +222,7 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
             token: "asmdel",
             bracket: "@open",
             next: "@asm_block",
-            nextEmbedded: "kz80-asm",
+            nextEmbedded: "zxbasm",
           },
         ],
 

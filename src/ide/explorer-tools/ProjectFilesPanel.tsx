@@ -496,10 +496,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           execute: async () => await this.deleteFile(item),
         },
       ];
-      const editor = getDocumentService().getCodeEditorInfo(
+      const editor = await getDocumentService().getCodeEditorLanguage(
         item.nodeData.fullPath
       );
-      if (editor?.allowBuildRoot) {
+      const languageInfo = getDocumentService().getCustomLanguage(editor);
+      if (languageInfo?.allowBuildRoot) {
         menuItems.push("separator");
         if (isBuildRoot) {
           menuItems.push({
@@ -687,7 +688,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     const buildRoots = getState().builder.roots.slice(0);
     const newRoots: string[] = [];
     for (const root of buildRoots) {
-      if (root === oldRelName) {
+      if (root !== oldRelName) {
         newRoots.push(root);
       }
     }

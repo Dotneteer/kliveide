@@ -16,9 +16,7 @@ import { emuWindow } from "../app/emu-window";
 import { ideWindow } from "../app/ide-window";
 import { appSettings } from "../main-state/klive-configuration";
 import { setIdeConfigAction } from "@core/state/ide-config-reducer";
-import { getNodeExtension } from "@abstractions/project-node";
-import { getCompilerForExtension, KliveCompilerOutput } from "@abstractions/compiler-registry";
-import { CompilerOutput } from "@abstractions/z80-compiler-service";
+import { getCompiler, KliveCompilerOutput } from "@abstractions/compiler-registry";
 import { endCompileAction, startCompileAction } from "@core/state/compilation-reducer";
 
 /**
@@ -173,18 +171,8 @@ export async function processIdeRequest(
       return Messages.fileOperationResponse(error);
     }
 
-    case "GetCompilerInfo": {
-      const extension = getNodeExtension(message.filename);
-      const compiler = getCompilerForExtension(extension);
-      return Messages.getCompilerInfoResponse(
-        compiler?.id,
-        !!compiler?.providesKliveOutput
-      );
-    }
-
     case "CompileFile": {
-      const extension = getNodeExtension(message.filename);
-      const compiler = getCompilerForExtension(extension);
+      const compiler = getCompiler(message.language);
       try {
         dispatch(startCompileAction(message.filename));
         const result = (await compiler.compileFile(

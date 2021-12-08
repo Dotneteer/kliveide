@@ -9,6 +9,8 @@ import {
 import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { getNodeExtension, getNodeFile } from "@abstractions/project-node";
 import { CodeEditorFactory } from "./CodeEditorFactory";
+import { getSettingsService, getState } from "@core/service-registry";
+import { SettingLocation } from "@abstractions/settings-service";
 
 /**
  * Represenst a service that handles document panels
@@ -79,8 +81,53 @@ export class DocumentService implements IDocumentService {
    * @param resource Resource namse
    * @returns Code editor, if found; otherwise, undefined
    */
-  getCodeEditorInfo(resource: string): CodeEditorInfo | undefined {
-    return this._editorExtensions.get(getNodeExtension(resource));
+  async getCodeEditorLanguage(resource: string): Promise<string | undefined> {
+    // --- Get the file name from the full resource name
+    const filename = getNodeFile(resource);
+
+    // #3: Test if we have an extension for the specified language in the current settings
+    const langInProject = await getLanguage("current");
+    if (langInProject) {
+      return langInProject;
+    }
+
+    // #4: Test if we have an extension for the specified language in the user settings
+    const langInSettings = await getLanguage("user");
+    if (langInSettings) {
+      return langInSettings;
+    }
+
+    // #5: Test if extension has an editor factory
+    for (const entry of this._languageExtensions) {
+      if (
+        entry[1].extensions &&
+        entry[1].extensions.some((e) => filename.endsWith(e))
+      ) {
+        return entry[0];
+      }
+    }
+
+    // #6: Use code editor with the defaults (no language)
+    return "";
+
+    // --- Obtains langugae information from configuration
+    async function getLanguage(
+      location: SettingLocation
+    ): Promise<string | undefined> {
+      const settings = await getSettingsService().getConfigurationObject(
+        location
+      );
+      const langSettings = settings?.["languages"];
+      if (langSettings && typeof langSettings === "object") {
+        for (const key in langSettings) {
+          const exts = langSettings[key].toString().split("|") as string[];
+          if (exts && exts.some((e) => filename.endsWith(e))) {
+            return key;
+          }
+        }
+      }
+      return undefined;
+    }
   }
 
   /**
@@ -95,18 +142,18 @@ export class DocumentService implements IDocumentService {
    * Gets a factory for the specified resource
    * @param resource Resouce name
    */
-  getResourceFactory(resource: string): IDocumentFactory | null {
+  async getResourceFactory(resource: string): Promise<IDocumentFactory | null> {
     // --- Get the file name from the full resource name
     const filename = getNodeFile(resource);
     const extension = getNodeExtension(resource);
 
-    // --- Test if the file has a factory
+    // #1: Test if the file has a factory
     const fileNameFactory = this._fileBoundFactories.get(filename);
     if (fileNameFactory) {
       return fileNameFactory;
     }
 
-    // --- Test if the extension has a factory
+    // #2: Test if the extension has a factory
     if (!extension) {
       return null;
     }
@@ -115,10 +162,14 @@ export class DocumentService implements IDocumentService {
       return extensionFactory;
     }
 
-    // --- Test if extension has an editor factory
+    // #3: Test if extension has an editor factory
     const codeEditorInfo = this._editorExtensions.get(extension);
-    const language = codeEditorInfo?.language ?? "";
-    return new CodeEditorFactory(language);
+    if (codeEditorInfo) {
+      return new CodeEditorFactory(codeEditorInfo.language ?? "");
+    }
+
+    // #4: Use registered custom language, or the default (text)
+    return new CodeEditorFactory(await this.getCodeEditorLanguage(resource));
   }
 
   /**

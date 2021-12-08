@@ -19,6 +19,11 @@ export class Z80Compiler extends CompilerBase {
   readonly id = "Z80Compiler";
 
   /**
+   * Compiled language
+   */
+  readonly language = "kz80-asm";
+
+  /**
    * Indicates if the compiler supports Klive compiler output
    */
   readonly providesKliveOutput = true;

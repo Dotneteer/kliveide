@@ -17,6 +17,11 @@ export abstract class CompilerBase implements IKliveCompiler {
   abstract readonly id: string;
 
   /**
+   * Compiled language
+   */
+  abstract readonly language: string;
+
+  /**
    * Indicates if the compiler supports Klive compiler output
    */
   readonly providesKliveOutput = true;
@@ -70,8 +75,9 @@ export abstract class CompilerBase implements IKliveCompiler {
             cwd: workdir,
           },
           (error, _stdout, stderr) => {
-            if (error) {
-              resolve(this.processErrorString(stderr));
+            const processedMessages = this.processErrorString(stderr)
+            if (error || processedMessages.length > 0) {
+              resolve(processedMessages);
               return;
             }
             resolve(null);

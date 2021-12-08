@@ -8,7 +8,10 @@ export interface ISettingsService {
    * @param location Settings location
    * @returns The value of the setting, if defined; otherwise, null
    */
-  getSetting(key: string, location: SettingLocation): Promise<SettingsValue | null>;
+  getSetting(
+    key: string,
+    location: SettingLocation
+  ): Promise<SettingsValue | null>;
 
   /**
    * Saves the specified setting value
@@ -16,14 +19,29 @@ export interface ISettingsService {
    * @param value Value to save
    * @param location Settings location
    */
-  saveSetting(key: string, value: SettingsValue, location: SettingLocation): Promise<void>;
+  saveSetting(
+    key: string,
+    value: SettingsValue,
+    location: SettingLocation
+  ): Promise<void>;
 
   /**
    * Gets the entire configuration set from the specified location
    * @param location Settings location
    * @returns The configuration set
    */
-  getConfiguration(location: SettingLocation): Promise<Map<string, SettingsValue>>
+  getConfiguration(
+    location: SettingLocation
+  ): Promise<Map<string, SettingsValue>>;
+
+  /**
+   * Gets the entire configuration set from the specified location
+   * @param location Settings location
+   * @returns The configuration set
+   */
+  getConfigurationObject(
+    location: SettingLocation
+  ): Promise<Record<string, any>>;
 }
 
 /**
