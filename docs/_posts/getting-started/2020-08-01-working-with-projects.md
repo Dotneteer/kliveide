@@ -49,10 +49,7 @@ Environment settings (for example, the location of external compilers, such as Z
 Current project settings, such as breakpoints, build root settings, etc.
 > *Note*: In future releases of Klive, more and more settings go into the project file.
 
-When you click the `klive.project` file in the explorer pane, Klive displays its content in the code editor. Moreover, you can even edit it:
+When you click the `klive.project` file in the explorer pane, Klive displays its content in the code editor.
 
 ![Z80 code]({{ site.baseurl }}/assets/images/tutorials/project-file-in-editor.png)
-
-> *Note*: Editing the project file is not a good idea. First, as Klive saves it, you may corrupt it. Second, Klive often recreates and updates the project file in the background, ignoring the modifications you have made. In a future Klive release, you will not be allowed to alter the project file in the code editor.
-
 

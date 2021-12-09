@@ -93,6 +93,11 @@ export type CodeEditorInfo = {
    * Icon that represents the code editor
    */
   icon?: string;
+
+  /**
+   * Indocates that the code editor is read-only
+   */
+  isReadOnly?: boolean;
 };
 
 /**
