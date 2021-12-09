@@ -1,3 +1,4 @@
+import { CodeToInject } from "@abstractions/code-runner-service";
 import {
   DebugStepMode,
   EmulationMode,
@@ -56,7 +57,7 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
     const controller = this.controller;
     console.log(model);
     switch (model) {
-      case "128":
+      default:
         await controller.start(
           new ExecuteCycleOptions(
             EmulationMode.UntilExecutionPoint,
@@ -78,7 +79,7 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
         await controller.delayKey(spectrumKeyCodes.Enter);
         await controller.waitForCycleTermination();
         return SP128_RETURN_TO_EDITOR;
-      default:
+      case "48":
         await controller.start(
           new ExecuteCycleOptions(
             EmulationMode.UntilExecutionPoint,
@@ -103,5 +104,48 @@ export class ZxSpectrum128Core extends ZxSpectrumCoreBase {
         await controller.waitForCycleTermination();
         return SP48_MAIN_ENTRY;
     }
+  }
+
+  /**
+   * Injects the specified code into the ZX Spectrum machine
+   * @param codeToInject Code to inject into the machine
+   */
+  async injectCodeToRun(codeToInject: CodeToInject): Promise<number> {
+    // --- Inject the code as with ZX Spectrum 48
+    const startPoint = await super.injectCodeToRun(codeToInject);
+
+    // --- In ZX Spectrum 48 mode, we're done.
+    if (codeToInject.model === "48") {
+      return startPoint;
+    }
+
+    // --- Inject calling stub
+    const stubAddr = 0x5b68;
+    const stubCode: number[] = [
+      0xcd,
+      0x00,
+      0x5b, // call $5b00
+      0xcd,
+      startPoint & 0xff,
+      (startPoint >> 8) & 0xff, // call the program
+      0x21,
+      0x08,
+      0x5c, // ld hl,(LAST_K)
+      0x36,
+      0xff, // ld (hl),$ff
+      0xfb, // ei
+      0x7e, // wait: ld a,(hl)
+      0xfe,
+      0xff, // cp $ff
+      0x28,
+      0xfb, // jr z,wait
+      0xc3,
+      0x00,
+      0x5b, // jp $5b00
+    ];
+    for (let i = 0; i < stubCode.length; i++) {
+      this.writeMemory(stubAddr + i, stubCode[i]);
+    }
+    return stubAddr;
   }
 }

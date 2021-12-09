@@ -29,7 +29,13 @@ import {
 import { BLOCK_LOOKUP_TABLE } from "@modules/cpu-z80/wa-memory-map";
 import { VM_MEMORY, VM_STATE_BUFFER } from "@modules-core/wa-memory-map";
 import { IAudioRenderer } from "@modules-core/audio/IAudioRenderer";
-import { AudioRendererFactory, AudioSampleRateGetter, AUDIO_RENDERER_FACTORY_ID, AUDIO_SAMPLE_RATE_GETTER_ID, WasmMachineApi } from "@modules-core/abstract-vm";
+import {
+  AudioRendererFactory,
+  AudioSampleRateGetter,
+  AUDIO_RENDERER_FACTORY_ID,
+  AUDIO_SAMPLE_RATE_GETTER_ID,
+  WasmMachineApi,
+} from "@modules-core/abstract-vm";
 import { getEngineDependencyRegistry } from "@modules-core/vm-engine-dependency-registry";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 
@@ -392,7 +398,9 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
    */
-  async injectCodeToRun(codeToInject: CodeToInject): Promise<void> {}
+  async injectCodeToRun(codeToInject: CodeToInject): Promise<number> {
+    return 0;
+  }
 
   /**
    * Prepares the engine for code injection
