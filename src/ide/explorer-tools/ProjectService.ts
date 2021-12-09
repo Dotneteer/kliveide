@@ -1,5 +1,10 @@
-import { getStore } from "@core/service-registry";
-import { ITreeNode, ITreeView, ProjectNode } from "@abstractions/project-node";
+import { getDocumentService, getStore } from "@core/service-registry";
+import {
+  getNodeExtension,
+  ITreeNode,
+  ITreeView,
+  ProjectNode,
+} from "@abstractions/project-node";
 import { TreeNode } from "@components/TreeNode";
 import { TreeView } from "@components/TreeView";
 import { DirectoryContent } from "@state/AppState";
@@ -7,6 +12,7 @@ import { ILiteEvent, LiteEvent } from "@core/utils/lite-event";
 import { FileOperationResponse } from "@core/messaging/message-types";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
 import { FileChange, IProjectService } from "@abstractions/project-service";
+import { IDocumentService } from "@abstractions/document-service";
 
 /**
  * This class implements the project services
@@ -49,10 +55,46 @@ export class ProjectService implements IProjectService {
    * @param name
    */
   async setProjectContents(contents?: DirectoryContent): Promise<void> {
+    const documentService = getDocumentService();
     if (contents) {
       this._projectTree = new TreeView(this.createTreeFrom(contents));
+      console.log("Resolving icons");
+      await resolveIcon(this._projectTree.rootNode);
     } else {
       this._projectTree = null;
+    }
+
+    // --- Get the icon for the specified node
+    async function resolveIcon(node: ITreeNode<ProjectNode>): Promise<void> {
+      console.log(node.nodeData.fullPath);
+      if (!node.nodeData.isFolder) {
+        // #1: Do we know the language?
+        const language = await documentService.getCodeEditorLanguage(
+          node.nodeData.fullPath
+        );
+        if (language) {
+          const languageInfo = documentService.getCustomLanguage(language);
+          if (languageInfo?.icon) {
+            node.nodeData.icon = languageInfo.icon;
+            console.log(node.nodeData.icon);
+            return;
+          }
+        }
+
+        // #2: do we have a registered extension?
+        const extension = getNodeExtension(node.nodeData);
+        const codeEditorInfo = documentService.getEditorExtension(extension);
+        if (codeEditorInfo?.icon) {
+          node.nodeData.icon = codeEditorInfo.icon;
+          console.log(node.nodeData.icon);
+          return;
+        }
+      }
+
+      // --- Traverse child nodes
+      for (const child of node.getChildren()) {
+        await resolveIcon(child);
+      }
     }
   }
 

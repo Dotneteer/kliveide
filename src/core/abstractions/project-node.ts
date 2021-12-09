@@ -228,9 +228,9 @@ export type ProjectNode = {
   fullPath?: string;
 
   /**
-   * The type of the project node
+   * The optional icon for the project node
    */
-  type?: ProjectNodeType;
+  icon?: string;
 
   /**
    * Optional extender properties

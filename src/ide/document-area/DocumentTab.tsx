@@ -125,6 +125,8 @@ export default function DocumentTab({
     }
   }, [descriptor])
 
+  const icon = descriptor?.projectNode?.icon ?? "file-code";
+
   return (
     <div
       ref={hostElement}
@@ -149,7 +151,7 @@ export default function DocumentTab({
         setPointed(false);
       }}
     >
-      <Icon iconName="file-code" width={16} height={16} />
+      <Icon iconName={`@${icon}`} width={16} height={16} />
       <span
         style={{
           marginLeft: 6,

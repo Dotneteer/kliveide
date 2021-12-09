@@ -85,9 +85,14 @@ export interface IDocumentPanel {
  */
 export type CodeEditorInfo = {
   /**
-   * Langauge to use with the editor
+   * Language to use with the editor
    */
   language: string;
+
+  /**
+   * Icon that represents the code editor
+   */
+  icon?: string;
 };
 
 /**
@@ -99,9 +104,10 @@ export type CodeEditorInfo = {
  */
 export type CustomLanguageInfo = {
   id: string;
-  extensions: string[],
-  allowBuildRoot: boolean,
-  supportsKlive: boolean,
+  extensions: string[];
+  icon?: string;
+  allowBuildRoot: boolean;
+  supportsKlive: boolean;
   options?: any;
   depensOn?: string[];
   languageDef?: any;
@@ -168,6 +174,13 @@ export interface IDocumentService {
   registerCodeEditor(extension: string, editorInfo: CodeEditorInfo): void;
 
   /**
+   * Gets the editor information for the specified extension
+   * @param extension File extension
+   * @returns Editor info, if found; otherwise, undefined
+   */
+  getEditorExtension(extension: string): CodeEditorInfo | undefined;
+
+  /**
    * Registers a custom language
    * @param language Language definition
    */
@@ -188,9 +201,15 @@ export interface IDocumentService {
 
   /**
    * Gets a factory for the specified resource
-   * @param resource Resouce name
+   * @param resource Resource name
    */
   getResourceFactory(resource: string): Promise<IDocumentFactory | null>;
+
+  /**
+   * Gets the icon that should be used with the specified resouce
+   * @param resource Resource name
+   */
+  getResourceIcon(resource: string): Promise<string | null>;
 
   /**
    * Registers a document

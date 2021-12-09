@@ -121,7 +121,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
           itemsCount: 0,
         });
       } else {
-        this._projectService.setProjectContents(state.directoryContents);
+        await this._projectService.setProjectContents(state.directoryContents);
         this.setState({
           isLoading: false,
           itemsCount: this.itemsCount,
@@ -242,10 +242,11 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             : "1px solid transparent"
           : "1px solid transparent",
     };
-    const filename = item.nodeData.fullPath.substr(
+    const filename = item.nodeData.fullPath?.substr(
       getState().project.path.length
     );
     const isBuildRoot = getState().builder.roots.includes(filename);
+    const iconName = item.nodeData.icon ?? "file-code";
     return (
       <div
         key={index}
@@ -277,7 +278,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               ? item.isExpanded
                 ? "@folder-open"
                 : "@folder"
-              : "@file-code"
+              : `@${iconName}`
           }
           width={16}
           height={16}
