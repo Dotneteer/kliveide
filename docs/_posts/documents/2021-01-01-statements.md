@@ -9,7 +9,7 @@ selector: documents
 permalink: "documents/statements"
 ---
 
-Statements are __SpectNetIDE__ specific control flow constructs &mdash; thanks again for the inspiration by
+Statements are __Klive__ specific control flow constructs &mdash; thanks again for the inspiration by
 [Simon Brattel](http://www.desdes.com/index.htm) &mdash; that instruct the compiler about loop-like and
 conditional compilation.
 
@@ -708,7 +708,7 @@ col = 2
 
 ## The IFUSED/IFNUSED Statements
 
-__SpectNetIDE__ offers a similar construct to IF..ELIF..ELSE..ENDIF, using the IFUSED or IFNUSED statement instead of IF. These new statements are specialized forms of IF. You can use these statements to emit code depending on whether a symbol (label, `.EQU`, `.VAR`, structure, or structure field) exists and has already been used by the code preceding the IFUSED/IFNUSED statement.
+__Klive__ offers a similar construct to IF..ELIF..ELSE..ENDIF, using the IFUSED or IFNUSED statement instead of IF. These new statements are specialized forms of IF. You can use these statements to emit code depending on whether a symbol (label, `.EQU`, `.VAR`, structure, or structure field) exists and has already been used by the code preceding the IFUSED/IFNUSED statement.
 
 Here are a few examples:
 
@@ -770,7 +770,7 @@ MyModule.Main
 
 ### IFUSED/IFNUSED Semantics
 
-The __SpectNetIDE__ compiler accepts any `.ifused` and `.ifnused` statements until they are syntactically correct. When the assembler tests their condition, it works this way:
+The __Klive__ compiler accepts any `.ifused` and `.ifnused` statements until they are syntactically correct. When the assembler tests their condition, it works this way:
 - If the specified symbol does not exists, `.ifused` evaluates to false, while `.ifnused` evaluates to true.
 - If the particular symbol exists and it is used in the code section preceding the `.ifused` or `.ifnused` statement, `.ifused` evaluates to true, `.ifnused` to false.
 - If the particular symbol exists and it is _not_ used in the code section preceding the `.ifused` or `.ifnused` statement, `.ifused` evaluates to false, `.ifnused` to true.

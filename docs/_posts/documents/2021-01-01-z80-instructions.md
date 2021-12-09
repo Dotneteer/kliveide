@@ -9,7 +9,7 @@ selector: documents
 permalink: "documents/z80-instructions"
 ---
 
-__SpectNetIDE__ implements Every officially documented Z80 instruction as well as the 
+__Klive__ implements every officially documented Z80 instruction as well as the 
 non-official ones. During the implementation I used [ClrHome.org](http://clrhome.org/table/)
 as a reference.
 
@@ -65,7 +65,7 @@ jp (hl)
 jp (ix)
 jp (iy)
 ```
-The __SpectNetIDE__ compiler accepts both notation.
+The __Klive__ compiler accepts both notation.
 
 ## ALU operations syntax
 
@@ -89,7 +89,7 @@ or c
 cp b
 ```
 
-The __SpectNetIDE__ compiler accepts the second group of ALU operations with using the explicit 
+The __Klive__ compiler accepts the second group of ALU operations with using the explicit 
 `A` operand, too:
 
 ```

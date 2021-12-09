@@ -11,7 +11,7 @@ permalink: "documents/labels-and-symbols"
 
 In Z80 assembly, you can define labels and symbols. Both constructs are syntactically the same, but there is some difference in their semantics. While we define labels to mark addresses (code points) in the program so that we can jump to those addresses, read or write their contents, symbols are not as specific, they just store values we intend to use.
 From now on, I will mention "label" for both constructs and will do otherwise only when the context requires.
-When you write a __SpectNetIDE__ assembly instruction, you can start the line with a label:
+When you write a __Klive__ assembly instruction, you can start the line with a label:
 
 ```
 MyStart: ld hl,0
@@ -23,7 +23,7 @@ Here, in this sample, `MyStart` is a label. The assembler allows you to omit the
 MyStart ld hl,0
 ```
 
-Some developers like to put a label in a separate line from the instruction it belongs. You can use the same hanging label style within __SpectNetIDE__. In this case, the label should go _before_ its instruction. Take a look at this code snippet:
+Some developers like to put a label in a separate line from the instruction it belongs. You can use the same hanging label style within __Klive__. In this case, the label should go _before_ its instruction. Take a look at this code snippet:
 
 ```
 MyStart:
@@ -39,11 +39,11 @@ This code is entirely correct. Note, the `ld b,32` instruction belongs to the `M
 
 As you will learn later, you can define symbols with the `.EQU` or `.VAR` pragmas. While `.EQU` allows you to assign a constant value to a symbol &mdash; and so it cannot change its value after the declaration, `.VAR` let's you re-assign the initial value.
 
-__SpectNetIDE__ supports the idea of lexical scopes. When you create the program, it starts with a global (outermost) lexical scope. Particular language elements, such a _statements_ create their own nested lexical scope. Labels and symbols are always created within the current lexical scope. Nonetheless, when resolving them, the assembler starts with the innermost scope and goes through all outers scopes until it manages to find the label declaration.
+__Klive__ supports the idea of lexical scopes. When you create the program, it starts with a global (outermost) lexical scope. Particular language elements, such a _statements_ create their own nested lexical scope. Labels and symbols are always created within the current lexical scope. Nonetheless, when resolving them, the assembler starts with the innermost scope and goes through all outers scopes until it manages to find the label declaration.
 This mechanism means that you can declare labels within a nested scope so that those hide labels and symbols in outer scopes.
 You can learn more about this topic in the __Statements__ section.
 
-__SpectNetIDE__ also supports modules, which allow you to use namespace-like constructs (see the Modules section for details).
+__Klive__ also supports modules, which allow you to use namespace-like constructs (see the Modules section for details).
 
 ## Temporary Labels
 
