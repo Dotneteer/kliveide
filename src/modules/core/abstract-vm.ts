@@ -439,7 +439,7 @@ export abstract class VirtualMachineCoreBase<T extends ICpu = ICpu> {
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
    */
-  abstract injectCodeToRun(codeToInject: CodeToInject): Promise<void>;
+  abstract injectCodeToRun(codeToInject: CodeToInject): Promise<number>;
 
   /**
    * Prepares the engine for code injection

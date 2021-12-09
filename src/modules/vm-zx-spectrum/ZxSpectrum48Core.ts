@@ -4,12 +4,7 @@ import {
   ExecuteCycleOptions,
   MachineCreationOptions,
 } from "@abstractions/vm-core-types";
-import { ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
-
-/**
- * ZX Spectrum 48 main execution cycle entry point
- */
-const SP48_MAIN_ENTRY = 0x12ac;
+import { SP48_MAIN_ENTRY, ZxSpectrumCoreBase } from "./ZxSpectrumCoreBase";
 
 /**
  * ZX Spectrum 48 core implementation

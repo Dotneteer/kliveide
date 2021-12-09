@@ -31,7 +31,21 @@ import {
   WasmMachineApi,
 } from "@modules-core/abstract-vm";
 import { getEngineDependencyRegistry } from "@modules-core/vm-engine-dependency-registry";
-import { add } from "lodash";
+
+/**
+ * ZX Spectrum 48 main execution cycle entry point
+ */
+export const SP48_MAIN_ENTRY = 0x12ac;
+
+/**
+ * Main Waiting Loop in Spectrum 128 ROM-0
+ */
+export const SP128_MAIN_WAITING_LOOP = 0x2653;
+
+/**
+ * Return to Editor entry point in Spectrum 128 ROM-0
+ */
+export const SP128_RETURN_TO_EDITOR = 0x2604;
 
 /**
  * ID of a ZX Spectrum state manager component
@@ -386,7 +400,7 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
    */
-  async injectCodeToRun(codeToInject: CodeToInject): Promise<void> {
+  async injectCodeToRun(codeToInject: CodeToInject): Promise<number> {
     // --- Clear the screen unless otherwise requested
     if (!codeToInject.options.noCls) {
       for (let addr = 0x4000; addr < 0x5800; addr++) {
@@ -412,6 +426,9 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
       // --- Set the keyboard in "L" mode
       this.writeMemory(0x5c3b, this.readMemory(0x5c3b) | 0x08);
     }
+
+    // --- Use this start point
+    return codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
   }
 
   /**
@@ -437,11 +454,9 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     let mainExec = await this.prepareForInjection(codeToInject.model);
 
     // --- Inject to code
-    await this.injectCodeToRun(codeToInject);
+    const startPoint = await this.injectCodeToRun(codeToInject);
 
     // --- Set the continuation point
-    const startPoint =
-      codeToInject.entryAddress ?? codeToInject.segments[0].startAddress;
     this.api.setPC(startPoint);
 
     // --- Handle subroutine calls

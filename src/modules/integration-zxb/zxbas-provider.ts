@@ -278,7 +278,7 @@ export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
       whitespace: [
         [/[ \t\r\n]+/, "white"],
         [/\/'/, "comment", "@comment"],
-        [/(REM|\/').*$/, "comment"],
+        [/(REM|\').*$/, "comment"],
       ],
 
       comment: [

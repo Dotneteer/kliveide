@@ -27,9 +27,11 @@ void handleMemoryPagingPort(u8 v) {
   if (v & 0x10) {
     setMemoryBlockEntry(0, ROM_1_OFFSET, false, true);
     setMemoryBlockEntry(1, ROM_1_OFFSET + 0x2000, false, true);
+    memorySelectedRom = 1;
   } else {
     setMemoryBlockEntry(0, ROM_0_OFFSET, false, true);
     setMemoryBlockEntry(1, ROM_0_OFFSET + 0x2000, false, true);
+    memorySelectedRom = 0;
   }
 
   // --- Paging enabled flag
