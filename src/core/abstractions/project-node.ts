@@ -233,6 +233,11 @@ export type ProjectNode = {
   icon?: string;
 
   /**
+   * Is the project node read-only?
+   */
+  isReadOnly?: boolean;
+
+  /**
    * Optional extender properties
    */
   extenderProps?: Record<string, any>;

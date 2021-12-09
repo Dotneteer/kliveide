@@ -246,6 +246,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       getState().project.path.length
     );
     const isBuildRoot = getState().builder.roots.includes(filename);
+    const isReadonly = item.nodeData.isReadOnly ?? false;
     const iconName = item.nodeData.icon ?? "file-code";
     return (
       <div
@@ -298,18 +299,37 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             overflow: "hidden",
             whiteSpace: "nowrap",
             textOverflow: "ellipsis",
+            direction: "rtl",
+            textAlign: "end",
           }}
         >
           {item.nodeData.name}
         </div>
         {isBuildRoot && (
-          <Icon
-            iconName="combine"
-            width={16}
-            height={16}
-            fill="var(--console-ansi-bright-green)"
-            style={{ flexShrink: 0, flexGrow: 0 }}
-          />
+          <div
+            style={{ display: "flex", flexShrink: 0, flexGrow: 0 }}
+            title="This file is a build root"
+          >
+            <Icon
+              iconName="combine"
+              width={16}
+              height={16}
+              fill="--console-ansi-bright-green"
+            />
+          </div>
+        )}
+        {isReadonly && (
+          <div
+            style={{ display: "flex", flexShrink: 0, flexGrow: 0 }}
+            title="This file cannot be edited"
+          >
+            <Icon
+              iconName="shield"
+              width={16}
+              height={16}
+              fill="--console-ansi-bright-red"
+            />
+          </div>
         )}
       </div>
     );

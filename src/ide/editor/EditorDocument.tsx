@@ -130,6 +130,7 @@ function EditorDocument({
     selectOnLineNumbers: true,
     glyphMargin: languageInfo?.supportsBreakpoints,
     hover: { enabled: true },
+    readOnly: descriptor.projectNode?.isReadOnly ?? false
   };
 
   // --- Select the editor them according to the current application theme

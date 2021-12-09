@@ -115,15 +115,15 @@ export default function DocumentTab({
 
   const onDescriptorChanged = () => {
     setTemporary(descriptor.temporary);
-  }
+  };
 
   useEffect(() => {
     descriptor.documentDescriptorChanged.on(onDescriptorChanged);
 
     return () => {
       descriptor.documentDescriptorChanged.off(onDescriptorChanged);
-    }
-  }, [descriptor])
+    };
+  }, [descriptor]);
 
   const icon = descriptor?.projectNode?.icon ?? "file-code";
 
@@ -161,6 +161,16 @@ export default function DocumentTab({
       >
         {title}
       </span>
+      {(descriptor?.projectNode?.isReadOnly ?? false) && (
+        <div title="This file cannot be edited" style={{ display: "flex" }}>
+          <Icon
+            iconName="shield"
+            width={16}
+            height={16}
+            fill="--console-ansi-bright-red"
+          />
+        </div>
+      )}
       <CommandIconButton
         iconName="close"
         title="Close"
