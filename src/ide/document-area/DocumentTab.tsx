@@ -149,7 +149,7 @@ export default function DocumentTab({
         setPointed(false);
       }}
     >
-      <Icon iconName="file-code" width={16} height={16} />
+      <Icon iconName="@file-tap-tzx" width={16} height={16} />
       <span
         style={{
           marginLeft: 6,

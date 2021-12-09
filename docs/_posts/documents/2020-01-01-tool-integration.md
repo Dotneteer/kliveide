@@ -42,7 +42,7 @@ Let's assume that you set up ZX Basic in the `C:/Temp/zxbasic` folder. The follo
 
 Klive considers files ending with `.zxbas` as ZX BASIC compiler targets. When you open such a file in the code editor, the editor provides syntax highlighting for the BASIC code and the nested Z80 assembly code.
 
-![Z80 code]({{ site.baseurl }}/assets/images/IDE/zxbas-syntax.png)
+![Z80 code]({{ site.baseurl }}/assets/images/ide/zxbas-syntax.png)
 
 Klive invokes the ZXBC compiler using the execution path you set up with the `zxb-reset` command when you compile the code. It uses the default parameters. You can pass your compiler parameters through these settings:
 
