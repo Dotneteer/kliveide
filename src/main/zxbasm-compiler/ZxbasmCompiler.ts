@@ -1,11 +1,11 @@
+import * as fs from "fs";
 import {
-  isAssemblerError,
   KliveCompilerOutput,
-  SimpleAssemblerOutput,
 } from "@abstractions/compiler-registry";
 import {
   AssemblerErrorInfo,
   BinarySegment,
+  SpectrumModelType,
 } from "@abstractions/z80-compiler-service";
 import { getSettingsService } from "@core/service-registry";
 import {
@@ -112,12 +112,17 @@ export class ZxbasmCompiler extends CompilerBase {
       // --- Remove the output file
       unlinkSync(outFilename);
 
+      // --- Extract model type
+      const mainCode = fs.readFileSync(filename, "utf8");
+      const is48 = /[ \t]*;[ \t]*[mM][oO][dD][eE][ \t]*=[ \t]*48[ \t\r\n]/.test(mainCode);
+
       // --- Done.
       return {
         errors: [],
         debugMessages,
         injectOptions: { subroutine: true },
         segments: [segment],
+        modelType: is48 ? SpectrumModelType.Spectrum48 : undefined
       };
     } catch (err) {
       throw err;
