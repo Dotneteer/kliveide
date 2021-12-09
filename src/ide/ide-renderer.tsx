@@ -308,6 +308,7 @@ documentService.registerCustomLanguage(mpmZ80LanguageProvider);
 // --- Register document panels and editors
 documentService.registerCodeEditor(".project", {
   language: "json",
+  icon: "file-project"
 });
 
 // --- Register virtual machine tools

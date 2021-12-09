@@ -61,11 +61,20 @@ export class DocumentService implements IDocumentService {
 
   /**
    * Registers a code editor for the specified extension
-   * @param extension File extendion
+   * @param extension File extension
    * @param editorInfo Editor information
    */
   registerCodeEditor(extension: string, editorInfo: CodeEditorInfo): void {
     this._editorExtensions.set(extension, editorInfo);
+  }
+
+  /**
+   * Gets the editor information for the specified extension
+   * @param extension File extension
+   * @returns Editor info, if found; otherwise, undefined
+   */
+  getEditorExtension(extension: string): CodeEditorInfo | undefined {
+    return this._editorExtensions.get(extension);
   }
 
   /**
@@ -171,6 +180,32 @@ export class DocumentService implements IDocumentService {
     // #4: Use registered custom language, or the default (text)
     return new CodeEditorFactory(await this.getCodeEditorLanguage(resource));
   }
+
+    /**
+   * Gets the icon that should be used with the specified resouce
+   * @param resource Resource name
+   */
+  async getResourceIcon(resource: string): Promise<string | null> {
+    // #1: Do we know the language?
+    const language = await this.getCodeEditorLanguage(resource);
+    if (language) {
+      const languageInfo = this.getCustomLanguage(language);
+      if (languageInfo?.icon) {
+        return languageInfo.icon;
+      }
+    }
+
+    // #2: do we have a registered extension?
+    const extension = getNodeExtension(resource);
+    const codeEditorInfo = this._editorExtensions.get(extension);
+    if (codeEditorInfo?.icon) {
+      return codeEditorInfo.icon;
+    }
+
+    // No registered icon
+    return null;
+  }
+
 
   /**
    * Registers a document

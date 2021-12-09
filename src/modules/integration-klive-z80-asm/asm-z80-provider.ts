@@ -6,6 +6,7 @@ import { MonacoAwareCustomLanguageInfo } from "../../ide/languages/custom-langua
 export const asmkZ80LanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "kz80-asm",
   extensions: [".kz80.asm"],
+  icon: "file-kz80-asm",
   allowBuildRoot: true,
   supportsKlive: true,
   options: {

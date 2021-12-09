@@ -6,6 +6,7 @@ import { MonacoAwareCustomLanguageInfo } from "../../ide/languages/custom-langua
 export const zxbasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   id: "zxbas",
   extensions: [".zxbas"],
+  icon: "file-zxbas",
   depensOn: ["zxbasm"],
   allowBuildRoot: true,
   supportsKlive: true,
