@@ -9,11 +9,11 @@ selector: documents
 permalink: "documents/main-features"
 ---
 
-The original goal of the __SpectNetIde__ assembler was to have a simple tool that allows you to compile
+The original goal of the __Klive__ assembler was to have a simple tool that allows you to compile
 Z80 assembly code and inject it into the ZX Spectrum virtual machine. As the community has started
 using it, I've been receiving feature requests to add some useful capability to the Assembler.
 
-Here is a list of important features the __SpectNetIde__ suports:
+Here is a list of important features the __Klive__ suports:
 
 * __Full Z80 instruction set__, including the initially undocumented Z80 registers and instructions
 (such as the 8-bit halves of `ix` and `iy`, namely `ixl`, `ixh`, `iyl`, `iyh`).
@@ -23,7 +23,7 @@ you can use your preferred notation. For example, you can use `.loop`, `loop`, `
 declare a loop. All of the `.defb`, `DEFB`, `.db`, `DB` (and a few other) tokens can be used for defining
 byte data. The `.endw` and `WEND` tokens can close a WHILE-loop.
 * __Z80 Preprocessor__. With preprocessor directives, you can carry out conditional compilation and include
-other source files. You can inject symbols for debug time and run time compilations separately. *In __SpectNetIde__
+other source files. You can inject symbols for debug time and run time compilations separately. *In __Klive__
 you can use powerful macros, too, notheless, they are not preprocessor constructs (see below)*.
 * __Fast compilation__. Of course, it depends on the code, but the compiler can emit code for about 8.000 
 source code lines per second.

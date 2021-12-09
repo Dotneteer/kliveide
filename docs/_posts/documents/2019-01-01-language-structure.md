@@ -18,35 +18,6 @@ source code line can be one of these constructs:
 (e.g. `.loop`, `.repeat`..`.until`, `.if`..`.elif`..`.else`..`.endif`)
 * A *comment* that helps the understanding of the code.
 
-## The Two Set of Symbols
-
-The compiler works with two set of symbols. It uses the first set during the preprocessing phase in the
-only in the directives. For example, with the `#define` directive, you define a symbol, with `#undef`
-you remove it. Within the expressions you use in directives (such as `#if`), you can refer only to these symbols.
-
-The __SpectNetIde__ option pages provide two options to declare your predefined symbols. When you compile
-the code in the IDE, it will use these symbols as if you'd declare them with `#define`.
-
-![Predefined symbols]({{ site.baseurl }}/assets/images/z80-assembler/predefined-symbols.png)
-
-> You can declare multiple symbols and separate them with the `;` character.
-
-The other set of symbols are the one you declare as *labels*, or with the `.equ` or `.var` pragmas
-You can use this set everywhere except directives.
-
-This duality is related to the way the compiler works: in the first, preprocessing phase it only
-analyses directives. In the second, code emission phase, the compiler does not have any information
-about directives, and thus it does not accesses the symbols used in the preprocessor.
-
-## Assembly Language Flavors
-
-I've designed the assembler with supporting multiple syntax flavors in mind. You do not have 
-to explicitly declare the type of the syntax you intend to use, just use the flavor you prefer
-&mdash; or mix muliple flavors, as you wish.
-
-For example, you can use several mnemonics for defining a series of bytes, such as `.db`, `.defb`,
-`db`, `defb`, and both lowecase or uppercase versions are welcome.
-
 ## Syntax Basics
 
 The assembler language uses a special way of case-sensitivity. You can write the reserved

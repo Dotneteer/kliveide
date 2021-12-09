@@ -9,11 +9,11 @@ selector: documents
 permalink: "documents/expressions"
 ---
 
-The __SpectNetIde__ assembler has a rich syntax for evaluating expressions. You can use the very
+The __Klive__ assembler has a rich syntax for evaluating expressions. You can use the very
 same syntax with the `#if` directives, the Z80 instructions, and the compiler statements.
 
 You can use operands and operators just like in most programming languages. Nevertheless, 
-the __SpectNetIde__ implementation has its particular way of evaluating expressions:
+the __Klive__ implementation has its particular way of evaluating expressions:
 
 * Expressions can be one of these types: 
   * *Booleans* (`true` or `false`)
@@ -180,7 +180,7 @@ sin(pi()/2)
 sqrt(pear + 3.0)
 ```
 
-The __SpectNetIde__ support these function signatures:
+The __Klive__ support these function signatures:
 
 Signature | Value | Description 
 ----------|-------|------------

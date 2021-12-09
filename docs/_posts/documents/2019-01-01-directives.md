@@ -9,7 +9,7 @@ selector: documents
 permalink: "documents/directives"
 ---
 
-The directives of the __SpectNetIDE__ Z80 Assembler representation are used for preprocessing
+The directives of the __Klive__ Z80 Assembler representation are used for preprocessing
 &mdash; similarly as in the C and C++ programming languages &mdash; though their semantics are
 different.
 
