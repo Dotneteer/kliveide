@@ -47,6 +47,7 @@ import { ideWindow } from "./ide-window";
 import { emuWindow } from "./emu-window";
 import { Unsubscribe } from "redux";
 import { removeSourceBreakpointsAction } from "@core/state/debugger-reducer";
+import { changeActivityAction } from "@core/state/activity-bar-reducer";
 
 /**
  * Messenger instance to the emulator window
@@ -161,6 +162,7 @@ export function setupMenu(): void {
             } else {
               if (project.open && operation.targetFolder) {
                 await openProject(operation.targetFolder);
+                dispatch(changeActivityAction(0));
               }
             }
           }
@@ -173,6 +175,7 @@ export function setupMenu(): void {
         click: async () => {
           await openIdeWindow();
           await openProjectFolder();
+          dispatch(changeActivityAction(0));
         },
       },
       {
