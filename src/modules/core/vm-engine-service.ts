@@ -26,7 +26,7 @@ import { CodeToInject } from "@abstractions/code-runner-service";
 import { delay } from "@core/utils/timing";
 import { VirtualMachineCoreBase } from "./abstract-vm";
 import { EmulatedKeyStroke } from "./keyboard";
-import { IAudioRenderer } from "./audio/IAudioRenderer";
+import { ZxSpectrumP3eCore } from "@modules/vm-zx-spectrum/ZxSpectrumP3eCore";
 
 /**
  * This class represents the states of the virtual machine as
@@ -908,6 +908,7 @@ export class VmStateChangedArgs {
 const engineRegistry: Record<string, any> = {
   sp48: ZxSpectrum48Core,
   sp128: ZxSpectrum128Core,
+  spP3e: ZxSpectrumP3eCore,
   cz88: CambridgeZ88Core,
 };
 

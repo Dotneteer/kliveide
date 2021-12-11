@@ -289,3 +289,40 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
     return `Screen: 256x192, ROM: sp128.rom (32KB), RAM: 128KB`;
   }
 }
+
+/**
+ * Context provider for the ZX Spectrum 128 machine model
+ */
+ @VirtualMachineType({
+  id: "spP3e",
+  label: "ZX Spectrum +3E (in progress)",
+  active: true,
+})
+export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
+  /**
+   * Constructs the provider with the specified options
+   * @param options
+   */
+  constructor(options?: Record<string, any>) {
+    super(options);
+  }
+
+  /**
+   * Gets the names of firmware files
+   */
+  readonly firmwareFiles: string[] = ["spP3e-0.rom", "spP3e-1.rom", "spP3e-2.rom", "spP3e-3.rom"];
+
+  /**
+   * The normal CPU frequency of the machine
+   */
+  getNormalCpuFrequency(): number {
+    return 3_546_900;
+  }
+
+  /**
+   * Context description for ZX Spectrum 48
+   */
+  getMachineContextDescription(): string {
+    return `Screen: 256x192, ROM: spP3E.rom (64KB), RAM: 128KB`;
+  }
+}
