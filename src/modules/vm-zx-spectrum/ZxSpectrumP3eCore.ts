@@ -35,7 +35,7 @@ export class ZxSpectrumP3eCore extends ZxSpectrumCoreBase {
   /**
    * The name of the module file with the WA machine engine
    */
-  readonly waModuleFile: string = "sp128.wasm";
+  readonly waModuleFile: string = "spp3e.wasm";
 
   /**
    * Friendly name to display

@@ -1,0 +1,44 @@
+// ============================================================================
+// Port handler for ZX Spectrum +3E
+// ============================================================================
+
+// Indicates the printer port strobe value
+// Port 0x1FFD, Bit 4: Used in every paging mode
+global bool printerPortStrobe;
+
+// Handles port writes to the memory paging port
+void handleMemoryPagingPort(u8 v) {
+  if (!memoryPagingEnabled) {
+    // --- Paging is not enabled
+    return;
+  }
+
+  // --- Handle block #6 and #7
+  slot3Bank = v & 0x07;
+
+  // --- Handle shadow screen
+  if (v & 0x08) {
+    memoryUseShadowScreen = true;
+  } else {
+    memoryUseShadowScreen = false;
+  }
+
+  // --- Select ROM low index
+  selectRomLow = (v >> 4) & 0x01;
+  updateBanks();
+
+  // --- Paging enabled flag
+  memoryPagingEnabled = !(v & 0x20);
+}
+
+// Handles port writes to the memory paging port
+void handleSpecialMemoryPagingPort(u8 v) {
+  trace(111111);
+  trace(v);
+  pagingMode = v & 0x01;
+  selectRomHigh = (v >> 1) & 0x02;
+  specialConfig = (v >> 1) & 0x03;
+  diskMotorState = v & 0x08;
+  printerPortStrobe = v & 0x10;
+  updateBanks();
+}

@@ -27,6 +27,8 @@ import { delay } from "@core/utils/timing";
 import { VirtualMachineCoreBase } from "./abstract-vm";
 import { EmulatedKeyStroke } from "./keyboard";
 import { ZxSpectrumP3eCore } from "@modules/vm-zx-spectrum/ZxSpectrumP3eCore";
+import { MemoryHelper } from "./memory-helpers";
+import { BLOCK_LOOKUP_TABLE } from "@modules/cpu-z80/wa-memory-map";
 
 /**
  * This class represents the states of the virtual machine as
