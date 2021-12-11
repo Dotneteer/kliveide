@@ -104,7 +104,7 @@ Let's assume that you set up ZX Basic in the `C:/Temp/zxbasic` folder. The follo
 
 Klive considers files ending with `.zxb.asm` as ZXBASM compiler targets. When you open such a file in the code editor, the editor provides syntax highlighting for the BASIC code and the nested Z80 assembly code.
 
-![Z80 code]({{ site.baseurl }}/assets/images/IDE/zxbasm-syntax.png)
+![Z80 code]({{ site.baseurl }}/assets/images/ide/zxbasm-syntax.png)
 
 Klive runs the ZXBASM compiler with debug output to extract the first `ORG` location, as Klive needs this information for injecting and running the code. If for some reason this information is not there, Klive gives you a warning: *"Cannot extract ORG address from code, $8000 is assumed."*
 
