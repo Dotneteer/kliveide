@@ -27,7 +27,7 @@ import { toStyleString } from "@ide/utils/css-utils";
 /**
  * Represents the emulator app's root component
  */
-export default function EmuApp() {
+export const EmuApp: React.VFC = () => {
   const mounted = useRef(false);
   const [themeStyle, setThemeStyle] = useState({});
   const [themeClass, setThemeClass] = useState("");
@@ -99,4 +99,4 @@ export default function EmuApp() {
     setThemeStyle(themeService.getThemeStyle());
     setThemeClass(`app-container ${theme.name}-theme`);
   }
-}
+};

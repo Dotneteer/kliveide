@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import { AppState } from "@state/AppState";
 import { animationTick } from "@components/component-utils";
 import Sp48Keyboard from "./Sp48Keyboard";
-import Cz88Keyboard from "./Cz88Keyboard";
+import { Cz88Keyboard } from "./Cz88Keyboard";
 import { useResizeObserver } from "@components/useResizeObserver";
 
 interface Props {

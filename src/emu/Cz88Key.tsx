@@ -11,11 +11,10 @@ const NORMAL_HEIGHT = 100;
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   zoom: number;
   code: number;
   layoutInfo?: Cz88KeyView;
-  iconCount?: number;
   top?: string;
   bottom?: string;
   xwidth?: number;
@@ -29,11 +28,10 @@ interface Props {
 /**
  * Represents a key of the Cambridge Z88 keyboard
  */
-export default function Cz88Key({
+export const Cz88Key: React.VFC<Props> = ({
   zoom,
   code,
   layoutInfo,
-  iconCount,
   top,
   bottom,
   xwidth,
@@ -42,7 +40,7 @@ export default function Cz88Key({
   fontSize,
   isEnter,
   keyAction,
-}: Props) {
+})  => {
   // --- Component states
   const [mouseOverKey, setMouseOverKey] = useState(false);
   const [mouseOverSymbol, setMouseOverSymbol] = useState(false);

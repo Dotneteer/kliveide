@@ -10,7 +10,7 @@ import { defaultZ88KeyboardLayout } from "@modules/vm-z88/key-layout-default";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { CambridgeZ88Core } from "@modules/vm-z88/CambridgeZ88Core";
 import { Z88ButtonClickArgs } from "./ui-core-types";
-import Key from "./Cz88Key";
+import { Cz88Key as Key } from "./Cz88Key";
 import { CSSProperties } from "react";
 import { Column, Row } from "@components/Panels";
 
@@ -25,20 +25,16 @@ const DIAMOND_KEY = 52;
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   width: number;
   height: number;
   layout?: string;
-}
+};
 
 /**
  * Represents the keyboard of Czmbridge Z88
  */
-export default function Cz88Keyboard({
-  width,
-  height,
-  layout
-}: Props) {
+export const Cz88Keyboard: React.VFC<Props> = ({ width, height, layout }) => {
   // --- Prepare keyboard layout information
   let l: Cz88KeyboardLayout;
   switch (layout) {
@@ -283,7 +279,7 @@ export default function Cz88Keyboard({
     let heightRatio = (height - 32) / DEFAULT_HEIGHT;
     return Math.min(widthRatio, heightRatio);
   }
-}
+};
 
 const rootStyle: CSSProperties = {
   boxSizing: "border-box",
