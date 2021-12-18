@@ -9,7 +9,7 @@ import { toStyleString } from "../ide/utils/css-utils";
 import { ModalDialog } from "@components/ModalDialog";
 import { ActivityBar } from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
-import SideBar from "./side-bar/SideBar";
+import { SideBar } from "./side-bar/SideBar";
 import { IdeDocumentFrame } from "./document-area/IdeDocumentsFrame";
 import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";

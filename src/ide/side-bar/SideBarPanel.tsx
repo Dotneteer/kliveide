@@ -44,6 +44,7 @@ export const SideBarPanel: React.VFC<Props> = ({
   const hostElement = useRef<HTMLDivElement>();
   const [expanded, setExpanded] = useState(descriptor.expanded);
   const [refreshCount, setRefreshCount] = useState(0);
+  const mounted = useRef(false);
 
   const sideBarService = getSideBarService();
 
@@ -78,9 +79,13 @@ export const SideBarPanel: React.VFC<Props> = ({
   };
 
   useEffect(() => {
-    getStore().stateChanged.on(onStateChange);
+    if (!mounted.current) {
+      mounted.current = true;
+      getStore().stateChanged.on(onStateChange);
+    }
     return () => {
       getStore().stateChanged.off(onStateChange);
+      mounted.current = false;
     };
   });
 
@@ -92,8 +97,10 @@ export const SideBarPanel: React.VFC<Props> = ({
   });
 
   useResizeObserver(hostElement, (entries) => {
-    descriptor.height = entries[0].contentRect.height;
-    setRefreshCount(refreshCount + 1);
+    if (mounted.current) {
+      descriptor.height = entries[0].contentRect.height;
+      setRefreshCount(refreshCount + 1);
+    }
   });
 
   return (
