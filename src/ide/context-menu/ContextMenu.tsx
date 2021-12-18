@@ -25,7 +25,7 @@ type Props = {
   target: string;
 };
 
-export default function IdeContextMenu({ target }: Props) {
+export const IdeContextMenu: React.VFC<Props> = ({ target }) => {
   const [items, setItems] = useState<MenuItem[]>([]);
   const ideFocused = useSelector((s: AppState) => s.ideHasFocus);
   let thisComponent: ContextMenuComponent;
@@ -106,7 +106,7 @@ export default function IdeContextMenu({ target }: Props) {
       onClose={onClose}
     />
   );
-}
+};
 
 /**
  * Map menu items to the model used by the ContextMenuComponent

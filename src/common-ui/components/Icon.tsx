@@ -3,50 +3,20 @@ import { CSSProperties } from "react";
 
 import { getThemeService } from "@core/service-registry";
 
-/**
- * CommonIcon properties
- */
-interface Props {
-  /**
-   * Name of the stock icon obtained from `themeService`
-   */
+type Props = {
   iconName?: string;
-
-  /**
-   * Additional CSS class of the SVG icon
-   */
   xclass?: string;
-
-  /**
-   * Icon width
-   */
   width?: number;
-
-  /**
-   * Icon height
-   */
   height?: number;
-
-  /**
-   * Icon fill color
-   */
   fill?: string;
-
-  /**
-   * Rotation in degrees
-   */
   rotate?: number;
-
-  /**
-   * Additional style attributes
-   */
   style?: CSSProperties;
-}
+};
 
 /**
  * Represents an SVG icon from the stock
  */
-export function Icon({
+export const Icon: React.FC<Props> = ({
   iconName,
   xclass,
   width,
@@ -55,7 +25,7 @@ export function Icon({
   rotate,
   style,
   children,
-}: React.PropsWithChildren<Props>) {
+}) => {
   const themeService = getThemeService();
   const fillValue =
     fill === null || fill === undefined
@@ -107,4 +77,4 @@ export function Icon({
     );
   }
   return <div />;
-}
+};

@@ -6,17 +6,16 @@ import {
   getSideBarService,
   getStore,
 } from "@core/service-registry";
-import { animationTick } from "@components/component-utils";
 import { AppState } from "@state/AppState";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { MenuItem } from "@abstractions/command-definitions";
-import SideBarPanelHeader from "./SideBarPanelHeader";
+import { SideBarPanelHeader } from "./SideBarPanelHeader";
 import { useResizeObserver } from "@components/useResizeObserver";
 
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   descriptor: ISideBarPanel;
   index: number;
   isLast: boolean;
@@ -25,14 +24,14 @@ interface Props {
   visibilityChanged: (index: number) => void;
   startResize: (index: number) => void;
   resized: (delta: number) => void;
-}
+};
 
 /**
  * Represents a panel of the side bar
  * A side bar panel is composed from a header and a content panel. The header
  * allows expanding or collapsing the panel, and provides a resizing grip.
  */
-export default function SideBarPanel({
+export const SideBarPanel: React.VFC<Props> = ({
   descriptor,
   index,
   isLast,
@@ -40,10 +39,11 @@ export default function SideBarPanel({
   visibilityChanged,
   startResize,
   resized,
-}: Props) {
+}) => {
   const hostElement = useRef<HTMLDivElement>();
   const [expanded, setExpanded] = useState(descriptor.expanded);
   const [refreshCount, setRefreshCount] = useState(0);
+  const mounted = useRef(false);
 
   const sideBarService = getSideBarService();
 
@@ -78,25 +78,28 @@ export default function SideBarPanel({
   };
 
   useEffect(() => {
-    getStore().stateChanged.on(onStateChange);
+    if (!mounted.current) {
+      mounted.current = true;
+      getStore().stateChanged.on(onStateChange);
+    }
     return () => {
       getStore().stateChanged.off(onStateChange);
+      mounted.current = false;
     };
   });
 
   useEffect(() => {
     // --- Get the initial width
-    (async () => {
-      await animationTick();
-      if (hostElement.current) {
-        descriptor.height = hostElement.current.offsetHeight;
-      }
-    })();
+    if (hostElement.current) {
+      descriptor.height = hostElement.current.offsetHeight;
+    }
   });
 
   useResizeObserver(hostElement, (entries) => {
-    descriptor.height = entries[0].contentRect.height;
-    setRefreshCount(refreshCount + 1);
+    if (mounted.current) {
+      descriptor.height = entries[0].contentRect.height;
+      setRefreshCount(refreshCount + 1);
+    }
   });
 
   return (
@@ -153,4 +156,4 @@ export default function SideBarPanel({
       </div>
     </div>
   );
-}
+};

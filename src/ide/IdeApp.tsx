@@ -6,16 +6,16 @@ import { getStore, getThemeService } from "@core/service-registry";
 import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { AppState } from "@state/AppState";
 import { toStyleString } from "../ide/utils/css-utils";
-import ModalDialog from "@components/ModalDialog";
-import ActivityBar from "./activity-bar/ActivityBar";
-import IdeStatusbar from "./IdeStatusbar";
-import SideBar from "./side-bar/SideBar";
-import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
-import ToolFrame from "./tool-area/ToolFrame";
-import "./ide-message-processor";
+import { ModalDialog } from "@components/ModalDialog";
+import { ActivityBar } from "./activity-bar/ActivityBar";
+import { IdeStatusbar } from "./IdeStatusbar";
+import { SideBar } from "./side-bar/SideBar";
+import { IdeDocumentFrame } from "./document-area/IdeDocumentsFrame";
+import { ToolFrame } from "./tool-area/ToolFrame";
 import { Column, Fill, Row } from "@components/Panels";
 import { SplitPanel } from "@components/SplitPanel";
-import IdeContextMenu from "./context-menu/ContextMenu";
+import { IdeContextMenu } from "./context-menu/ContextMenu";
+import "./ide-message-processor";
 
 // --- Panel sizes
 const MIN_SIDEBAR_WIDTH = 240;
@@ -26,7 +26,7 @@ const MIN_TOOL_HEIGHT = 180;
 /**
  * Represents the emulator app's root component.
  */
-export default function IdeApp() {
+export const IdeApp: React.VFC = () => {
   // --- Let's use the store for dispatching actions
   const store = useStore();
   const dispatch = useDispatch();
@@ -34,10 +34,16 @@ export default function IdeApp() {
   // --- Component state (changes of them triggers re-rendering)
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
-  const showStatusBar = useSelector((s: AppState) => s.emuViewOptions.showStatusBar);
-  const showSidebar = useSelector((s: AppState) => s.emuViewOptions.showSidebar);
+  const showStatusBar = useSelector(
+    (s: AppState) => s.emuViewOptions.showStatusBar
+  );
+  const showSidebar = useSelector(
+    (s: AppState) => s.emuViewOptions.showSidebar
+  );
   const showToolFrame = useSelector((s: AppState) => s.toolFrame.visible);
-  const showDocuments = useSelector((s: AppState) => !s.toolFrame.visible || !s.toolFrame.maximized);
+  const showDocuments = useSelector(
+    (s: AppState) => !s.toolFrame.visible || !s.toolFrame.maximized
+  );
   const mounted = useRef(false);
 
   useEffect(() => {

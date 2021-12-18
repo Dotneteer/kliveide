@@ -6,17 +6,17 @@ import {
   getProjectService,
   getStore,
 } from "@core/service-registry";
-import ScrollablePanel from "@components/ScrollablePanel";
+import { ScrollablePanel } from "@components/ScrollablePanel";
 import { ProjectState } from "@state/AppState";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
 import { FileChange } from "@abstractions/project-service";
 import { getEditorService } from "../editor/editorService";
-import DocumentTab from "./DocumentTab";
+import { DocumentTab } from "./DocumentTab";
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function DocumentTabBar() {
+export const DocumentTabBar: React.VFC = () => {
   // --- Component state
   const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(null);
   const [currentDocs, setCurrentDocs] = useState<IDocumentPanel[]>([]);
@@ -94,7 +94,8 @@ export default function DocumentTabBar() {
   const _folderRenamed = (arg: FileChange) => folderRenamed(arg);
   const _fileDeleted = async (name: string) => await fileDeleted(name);
   const _fileRenamed = (arg: FileChange) => fileRenamed(arg);
-  const _projectChanged = async (state: ProjectState) => await projectChanged(state);
+  const _projectChanged = async (state: ProjectState) =>
+    await projectChanged(state);
 
   useEffect(() => {
     // --- Mount
@@ -161,4 +162,4 @@ export default function DocumentTabBar() {
       )}
     </>
   );
-}
+};

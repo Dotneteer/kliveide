@@ -9,7 +9,7 @@ import {
 import { IToolPanel } from "@abstractions/tool-area-service";
 import { MenuItem } from "@abstractions/command-definitions";
 
-interface Props {
+type Props = {
   title: string;
   active: boolean;
   index: number;
@@ -21,14 +21,14 @@ interface Props {
 /**
  * Represents the statusbar of the emulator
  */
-export default function ToolTab({
+export const ToolTab: React.VFC<Props> = ({
   title,
   active,
   index,
   isLast,
   tool,
   clicked,
-}: Props) {
+}) => {
   const [pointed, setPointed] = useState(false);
   const hostElement = useRef<HTMLDivElement>();
 

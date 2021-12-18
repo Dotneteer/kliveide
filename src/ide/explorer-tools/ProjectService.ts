@@ -57,7 +57,6 @@ export class ProjectService implements IProjectService {
     const documentService = getDocumentService();
     if (contents) {
       this._projectTree = new TreeView(this.createTreeFrom(contents));
-      console.log("Resolving icons");
       await resolveIconAndFlags(this._projectTree.rootNode);
     } else {
       this._projectTree = null;
@@ -67,7 +66,6 @@ export class ProjectService implements IProjectService {
     async function resolveIconAndFlags(
       node: ITreeNode<ProjectNode>
     ): Promise<void> {
-      console.log(node.nodeData.fullPath);
       if (!node.nodeData.isFolder) {
         // #1: Do we know the language?
         const language = await documentService.getCodeEditorLanguage(

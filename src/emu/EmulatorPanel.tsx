@@ -3,7 +3,7 @@ import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
 
 import { AppState } from "@state/AppState";
-import ExecutionStateOverlay from "./ExecutionStateOverlay";
+import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { useEffect, useRef, useState } from "react";
 import { ICpu } from "@modules-core/abstract-cpu";
 import { VirtualMachineCoreBase } from "@modules-core/abstract-vm";
@@ -13,7 +13,7 @@ import { useResizeObserver } from "@components/useResizeObserver";
 /**
  * Represents the display panel of the emulator
  */
-export default function EmulatorPanel() {
+export const EmulatorPanel: React.VFC = () => {
   const hostRectangle = useRef<DOMRect>();
   const screenRectangle = useRef<DOMRect>();
 
@@ -256,7 +256,7 @@ export default function EmulatorPanel() {
       engine.handlePhysicalKey(code, isDown);
     }
   }
-}
+};
 
 // --- Helper component tags
 const rootStyle: CSSProperties = {

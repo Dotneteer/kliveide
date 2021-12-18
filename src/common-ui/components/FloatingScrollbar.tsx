@@ -50,7 +50,7 @@ type FloatingScrollbarProps = {
   moved?: (newPosition: number) => void;
 };
 
-export const FloatingScrollbar: React.FC<FloatingScrollbarProps> = ({
+export const FloatingScrollbar: React.VFC<FloatingScrollbarProps> = ({
   direction,
   barSize,
   forceShow = false,

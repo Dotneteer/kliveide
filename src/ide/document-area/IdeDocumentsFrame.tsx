@@ -5,17 +5,13 @@ import { getDocumentService, getState } from "@core/service-registry";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
 import { IKliveCommand } from "@abstractions/command-definitions";
 import { commandStatusChanged } from "@abstractions/command-registry";
-import CommandIconButton from "../context-menu/CommandIconButton";
-import DocumentTabBar from "./DocumentTabBar";
-import { getNodeExtension } from "@abstractions/project-node";
-import { getCompiler } from "@abstractions/compiler-registry";
-import { sendFromIdeToEmu } from "@core/messaging/message-sending";
-import { GetCompilerInfoResponse } from "@core/messaging/message-types";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
+import { DocumentTabBar } from "./DocumentTabBar";
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function IdeDocumentFrame() {
+export const IdeDocumentFrame: React.VFC = () => {
   const mounted = useRef(false);
   const documentService = getDocumentService();
 
@@ -61,7 +57,7 @@ export default function IdeDocumentFrame() {
       )}
     </div>
   );
-}
+};
 
 const rootStyle: CSSProperties = {
   width: "100%",
@@ -102,7 +98,9 @@ function DocumentCommandBar() {
       // --- Let's check if we can allow code-runner commands in the document frame
       if (getState().builder.roots.includes(filename)) {
         // --- What language does the current document support?
-        const language = await getDocumentService().getCodeEditorLanguage(activeDoc.id);
+        const language = await getDocumentService().getCodeEditorLanguage(
+          activeDoc.id
+        );
         const languageInfo = getDocumentService().getCustomLanguage(language);
         if (languageInfo.supportsKlive) {
           // --- Super, this compiler can work with Klive

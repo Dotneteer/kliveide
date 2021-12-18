@@ -3,8 +3,8 @@ import { useRef, useState, useEffect } from "react";
 
 import { getSideBarService, getState } from "@core/service-registry";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
-import SideBarPanel from "./SideBarPanel";
-import SideBarHeader from "./SideBarHeader";
+import { SideBarPanel } from "./SideBarPanel";
+import { SideBarHeader } from "./SideBarHeader";
 import { CSSProperties } from "react";
 
 /**
@@ -15,7 +15,7 @@ const MIN_PANEL_HEIGHT = 100;
 /**
  * Represents the side bar of the IDE.
  */
-export default function SideBar() {
+export const SideBar: React.VFC = () => {
   // --- Store the state of panels while resizing
   const sizingIndex = useRef(-1);
   const sizedPanelHeight = useRef(-1);
@@ -174,7 +174,7 @@ export default function SideBar() {
       panelPercentage.current - abovePercentage;
     setPanels(panels.slice(0));
   }
-}
+};
 
 const rootStyle: CSSProperties = {
   display: "flex",
@@ -183,5 +183,5 @@ const rootStyle: CSSProperties = {
   flexShrink: 1,
   width: "100%",
   height: "100%",
-  backgroundColor: "var(--sidebar-background-color)"
-}
+  backgroundColor: "var(--sidebar-background-color)",
+};

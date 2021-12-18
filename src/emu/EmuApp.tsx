@@ -11,10 +11,10 @@ import { AppState } from "@state/AppState";
 import { useSelector } from "react-redux";
 import { Toolbar } from "./Toolbar";
 import MainPanel from "./MainPanel";
-import EmuStatusbar from "./EmuStatusbar";
+import { EmuStatusbar } from "./EmuStatusbar";
 import { emuLoadUiAction } from "@state/emu-loaded-reducer";
 import { useRef, useState } from "react";
-import ModalDialog from "@components/ModalDialog";
+import { ModalDialog } from "@components/ModalDialog";
 import { stopCommandStatusQuery } from "@abstractions/command-registry";
 
 // --- We need to import these files to setup the app
@@ -27,7 +27,7 @@ import { toStyleString } from "@ide/utils/css-utils";
 /**
  * Represents the emulator app's root component
  */
-export default function EmuApp() {
+export const EmuApp: React.VFC = () => {
   const mounted = useRef(false);
   const [themeStyle, setThemeStyle] = useState({});
   const [themeClass, setThemeClass] = useState("");
@@ -99,4 +99,4 @@ export default function EmuApp() {
     setThemeStyle(themeService.getThemeStyle());
     setThemeClass(`app-container ${theme.name}-theme`);
   }
-}
+};

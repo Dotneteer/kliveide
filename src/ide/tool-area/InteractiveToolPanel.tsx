@@ -12,7 +12,7 @@ import {
 } from "@components/VirtualizedList";
 import { InteractiveCommandResult } from "@abstractions/interactive-command-service";
 import { INTERACTIVE_TOOL_ID } from "@abstractions/tool-area-service";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { Row } from "@components/Panels";
@@ -128,12 +128,12 @@ export default class InteractiveToolPanel extends ToolPanelBase<
         <Row
           hostRef={this._listHost}
           style={{ flexDirection: "column" }}
-          onResized={() => this._listApi.forceRefresh()}
+          onResized={() => this._listApi?.forceRefresh()}
         >
           <VirtualizedList
             itemHeight={18}
             itemsCount={this.state.buffer.length}
-            style={{userSelect: "text"}}
+            style={{ userSelect: "text" }}
             renderItem={(index: number, style: CSSProperties) => {
               return (
                 <div

@@ -2,14 +2,14 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
-import ScrollablePanel from "@components/ScrollablePanel";
+import { ScrollablePanel } from "@components/ScrollablePanel";
 import { getToolAreaService } from "@core/service-registry";
-import ToolTab from "./ToolTab";
+import { ToolTab } from "./ToolTab";
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function ToolTabBar() {
+export const ToolTabBar: React.VFC = () => {
   // --- Component state
   const [activeTool, setActiveTool] = useState<IToolPanel | null>(null);
   const [currentTools, setCurrentTools] = useState<IToolPanel[]>([]);

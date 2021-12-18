@@ -52,7 +52,7 @@ type Props = {
   fileData: NewFileData;
 };
 
-const RenameFileDialog: React.FC<Props> = ({ fileData }: Props) => {
+const RenameFileDialog: React.VFC<Props> = ({ fileData }) => {
   const [filename, setFilename] = useState(fileData.name);
   const [nameError, setNameError] = useState(EXISTS_MSG);
   const containerStyle: CSSProperties = {

@@ -19,7 +19,7 @@ import {
   OutputContentLine,
 } from "@abstractions/output-pane-service";
 import { OUTPUT_TOOL_ID } from "@abstractions/tool-area-service";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { Row } from "@components/Panels";
@@ -99,7 +99,7 @@ export default class OutputToolPanel extends ToolPanelBase<
       <Row
         hostRef={this._listHost}
         style={{ flexDirection: "column" }}
-        onResized={() => this._listApi.forceRefresh()}
+        onResized={() => this._listApi?.forceRefresh()}
       >
         <VirtualizedList
           key={this.state.refreshCount}

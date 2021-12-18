@@ -15,7 +15,7 @@ type Props = {
   targetId: string;
 };
 
-export default function ModalDialog({ targetId }: Props) {
+export const ModalDialog: React.VFC<Props> = ({ targetId }) => {
   const { store } = useContext(ReactReduxContext);
   const [show, setShow] = useState(false);
   const [modalDialog, setModalDialog] = useState<IModalDialogDescriptor | null>(
@@ -26,7 +26,7 @@ export default function ModalDialog({ targetId }: Props) {
 
   const handleClick = (click?: () => void | boolean) => {
     if (click?.()) {
-      getModalDialogService().hide(store);
+      getModalDialogService().hide();
     }
   };
 
@@ -77,9 +77,9 @@ export default function ModalDialog({ targetId }: Props) {
 
   // --- Close the dialog if the users decides so
   const modalDialogService = getModalDialogService();
-  const onOverlayClick = () => modalDialogService.hide(store);
+  const onOverlayClick = () => modalDialogService.hide();
   const onDialogClose = () => {
-    modalDialogService.hide(store);
+    modalDialogService.hide();
     modalDialogService.disposeModalDialog();
   };
 
@@ -97,7 +97,8 @@ export default function ModalDialog({ targetId }: Props) {
 
   return (
     modalDialog &&
-    buttons.length > 0 && (
+    buttons.length > 0 &&
+    show && (
       <DialogComponent
         key={refreshCount}
         width={modalDialog.width}
@@ -108,7 +109,6 @@ export default function ModalDialog({ targetId }: Props) {
         header={modalDialog.title}
         closeOnEscape={false}
         allowDragging={true}
-        visible={show}
         overlayClick={onOverlayClick}
         close={onDialogClose}
         buttons={buttons}
@@ -120,4 +120,4 @@ export default function ModalDialog({ targetId }: Props) {
       </DialogComponent>
     )
   );
-}
+};

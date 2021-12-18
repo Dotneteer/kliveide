@@ -11,7 +11,7 @@ import { Column } from "@components/Panels";
 /**
  * Represents the statusbar of the emulator
  */
-export default function Statusbar() {
+export const IdeStatusbar: React.VFC = () => {
   return (
     <StatusbarRoot>
       <CompilerStatus />
@@ -22,7 +22,7 @@ export default function Statusbar() {
       </Section>
     </StatusbarRoot>
   );
-}
+};
 
 /**
  * Represents the status of the compiler

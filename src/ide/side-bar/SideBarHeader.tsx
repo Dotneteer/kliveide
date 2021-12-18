@@ -9,14 +9,14 @@ import {
   isKliveCommand,
   MenuItem,
 } from "@abstractions/command-definitions";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 import { Fill, Row } from "@components/Panels";
 
 type Props = {
   activity: Activity;
 };
 
-export default function SideBarPanelHeader({ activity }: Props) {
+export const SideBarHeader: React.VFC<Props> = ({ activity }) => {
   return (
     <Row height={35}>
       <Fill
@@ -27,7 +27,7 @@ export default function SideBarPanelHeader({ activity }: Props) {
       </Fill>
     </Row>
   );
-}
+};
 
 const textStyle: CSSProperties = {
   color: "var(--sidebar-header-color)",
@@ -46,7 +46,7 @@ type CommandBarProps = {
   commands?: MenuItem[];
 };
 
-function CommandBar({ commands }: CommandBarProps) {
+const CommandBar: React.VFC<CommandBarProps> = ({ commands }) => {
   const [refreshCount, setRefreshCount] = useState(0);
 
   // --- Take care to update command status
@@ -124,4 +124,4 @@ function CommandBar({ commands }: CommandBarProps) {
   }
 
   return <div style={style}>{buttons}</div>;
-}
+};

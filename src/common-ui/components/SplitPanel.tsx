@@ -3,6 +3,7 @@ import {
   CSSProperties,
   PropsWithChildren,
   ReactElement,
+  useEffect,
   useLayoutEffect,
   useRef,
   useState,
@@ -55,6 +56,7 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   const [splitterLeft, setSplitterLeft] = useState(0);
 
   // --- Other state information
+  const mounted = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const primaryIsDisplayed = useRef(false);
   const primaryPanelRef = useRef<HTMLDivElement>(null);
@@ -93,6 +95,16 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
   const _move = (e: MouseEvent) => move(e);
   const _endMove = () => endMove();
   const _onResized = () => onResized();
+
+  // --- Keep track if this component is mounted or not
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+    }
+    return () => {
+      mounted.current = false;
+    }
+  })
 
   // --- Respond to resizing the main container
   useResizeObserver(containerRef, _onResized);
@@ -172,6 +184,8 @@ export const SplitPanel: React.FC<SplitPanelProperties> = ({
    * (or set up initially)
    */
   function onResized(): void {
+    if (!mounted.current) return;
+    
     // --- Keep track of the display state of the primary panel
     const wasDisplayed = primaryIsDisplayed.current;
     const displayed = !!primaryPanelRef.current;
