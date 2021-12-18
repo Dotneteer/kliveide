@@ -8,7 +8,7 @@ import { CSSProperties } from "react";
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   activity: Activity;
   active: boolean;
   pointed: boolean;
@@ -16,12 +16,12 @@ interface Props {
   clicked: () => void;
   point: () => void;
   unpoint: () => void;
-}
+};
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function ActivityButton({
+export const ActivityButton: React.VFC<Props> = ({
   activity,
   active,
   pointed,
@@ -29,7 +29,7 @@ export default function ActivityButton({
   clicked,
   point,
   unpoint,
-}: Props) {
+}) => {
   const style: Record<string, any> = {};
   if (active) {
     style.borderLeft = "2px solid white";
@@ -39,7 +39,7 @@ export default function ActivityButton({
   }
   return (
     <div
-      style={{...rootStyle, ...style}}
+      style={{ ...rootStyle, ...style }}
       onClick={clicked}
       onMouseEnter={point}
       onMouseLeave={unpoint}
@@ -57,7 +57,7 @@ export default function ActivityButton({
       />
     </div>
   );
-}
+};
 
 const rootStyle: CSSProperties = {
   width: "100%",

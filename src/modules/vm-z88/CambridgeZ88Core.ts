@@ -114,7 +114,6 @@ export class CambridgeZ88Core extends Z80MachineCoreBase {
     super(options);
     const deps = getEngineDependencyRegistry();
     const modelId = this.getModelId();
-    console.log(modelId);
     this._audioRendererFactory = (
       deps.getComponent(
         modelId,

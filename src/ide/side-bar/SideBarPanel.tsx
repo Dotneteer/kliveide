@@ -16,7 +16,7 @@ import { useResizeObserver } from "@components/useResizeObserver";
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   descriptor: ISideBarPanel;
   index: number;
   isLast: boolean;
@@ -25,14 +25,14 @@ interface Props {
   visibilityChanged: (index: number) => void;
   startResize: (index: number) => void;
   resized: (delta: number) => void;
-}
+};
 
 /**
  * Represents a panel of the side bar
  * A side bar panel is composed from a header and a content panel. The header
  * allows expanding or collapsing the panel, and provides a resizing grip.
  */
-export default function SideBarPanel({
+export const SideBarPanel: React.VFC<Props> = ({
   descriptor,
   index,
   isLast,
@@ -40,7 +40,7 @@ export default function SideBarPanel({
   visibilityChanged,
   startResize,
   resized,
-}: Props) {
+}) => {
   const hostElement = useRef<HTMLDivElement>();
   const [expanded, setExpanded] = useState(descriptor.expanded);
   const [refreshCount, setRefreshCount] = useState(0);
@@ -86,12 +86,9 @@ export default function SideBarPanel({
 
   useEffect(() => {
     // --- Get the initial width
-    (async () => {
-      await animationTick();
-      if (hostElement.current) {
-        descriptor.height = hostElement.current.offsetHeight;
-      }
-    })();
+    if (hostElement.current) {
+      descriptor.height = hostElement.current.offsetHeight;
+    }
   });
 
   useResizeObserver(hostElement, (entries) => {
@@ -153,4 +150,4 @@ export default function SideBarPanel({
       </div>
     </div>
   );
-}
+};

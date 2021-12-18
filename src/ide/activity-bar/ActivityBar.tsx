@@ -7,21 +7,21 @@ import {
   changeActivityAction,
   pointActivityAction,
 } from "@state/activity-bar-reducer";
-import ActivityButton from "./ActivityButton";
+import { ActivityButton } from "./ActivityButton";
 import { Column, Row } from "@components/Panels";
 import { emuShowSidebarAction } from "@core/state/emu-view-options-reducer";
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function ActivityBar() {
+export const ActivityBar: React.VFC = () => {
   // --- Selectors
   const activities = useSelector((s: AppState) => s?.activityBar?.activities);
   const activeIndex = useSelector((s: AppState) => s?.activityBar?.activeIndex);
   const pointedIndex = useSelector(
     (s: AppState) => s?.activityBar?.pointedIndex
   );
-  
+
   // --- Buttons to display
   const appButtons: JSX.Element[] = [];
   const sysButtons: JSX.Element[] = [];
@@ -52,9 +52,13 @@ export default function ActivityBar() {
         flexDirection: "column",
       }}
     >
-      <Row height="auto" style={{flexDirection: "column"}} >{appButtons}</Row>
+      <Row height="auto" style={{ flexDirection: "column" }}>
+        {appButtons}
+      </Row>
       <Row />
-      <Row height="auto" style={{flexDirection: "column"}} >{sysButtons}</Row>
+      <Row height="auto" style={{ flexDirection: "column" }}>
+        {sysButtons}
+      </Row>
     </Column>
   );
 
@@ -67,11 +71,11 @@ export default function ActivityBar() {
     const currentIndex = state.activityBar?.activeIndex ?? -1;
     if (index >= 0) {
       if (index !== currentIndex) {
-        dispatch(changeActivityAction(index))
-        dispatch(emuShowSidebarAction(true))
+        dispatch(changeActivityAction(index));
+        dispatch(emuShowSidebarAction(true));
       } else {
-        dispatch(emuShowSidebarAction(!state.emuViewOptions.showSidebar))
+        dispatch(emuShowSidebarAction(!state.emuViewOptions.showSidebar));
       }
     }
   }
-}
+};

@@ -7,7 +7,7 @@ import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { AppState } from "@state/AppState";
 import { toStyleString } from "../ide/utils/css-utils";
 import { ModalDialog } from "@components/ModalDialog";
-import ActivityBar from "./activity-bar/ActivityBar";
+import { ActivityBar } from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";
 import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";

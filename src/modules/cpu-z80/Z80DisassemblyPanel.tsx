@@ -60,7 +60,10 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
   constructor(props: SideBarProps<{}>) {
     super(props);
     this._refreshBreakpoints = () => this.refreshBreakpoints();
-    this.setState({ isRunning: false });
+    this.state = {
+      isRunning: false,
+      selectedIndex: -1
+    };
   }
 
   // --- Listen to run events
@@ -233,7 +236,6 @@ export default class Z80DisassemblyPanel extends VirtualizedSideBarPanelBase<
    * Refresh the disassembly screen
    */
   protected async onRunEvent(): Promise<void> {
-    console.log("onRunEvent");
     if (this.executionState === 3 || this.executionState === 5) {
       this.setState({ isRunning: false });
     } else if (this.executionState === 1) {

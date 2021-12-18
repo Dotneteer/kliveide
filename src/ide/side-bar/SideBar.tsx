@@ -3,7 +3,7 @@ import { useRef, useState, useEffect } from "react";
 
 import { getSideBarService, getState } from "@core/service-registry";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
-import SideBarPanel from "./SideBarPanel";
+import { SideBarPanel } from "./SideBarPanel";
 import SideBarHeader from "./SideBarHeader";
 import { CSSProperties } from "react";
 
