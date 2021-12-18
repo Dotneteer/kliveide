@@ -128,7 +128,7 @@ export default class InteractiveToolPanel extends ToolPanelBase<
         <Row
           hostRef={this._listHost}
           style={{ flexDirection: "column" }}
-          onResized={() => this._listApi.forceRefresh()}
+          onResized={() => this._listApi?.forceRefresh()}
         >
           <VirtualizedList
             itemHeight={18}

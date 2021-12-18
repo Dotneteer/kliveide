@@ -6,7 +6,7 @@ import {
   getProjectService,
   getStore,
 } from "@core/service-registry";
-import ScrollablePanel from "@components/ScrollablePanel";
+import { ScrollablePanel } from "@components/ScrollablePanel";
 import { ProjectState } from "@state/AppState";
 import { DocumentsInfo, IDocumentPanel } from "@abstractions/document-service";
 import { FileChange } from "@abstractions/project-service";
