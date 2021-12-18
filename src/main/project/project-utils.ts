@@ -25,6 +25,7 @@ import {
 import { emuWindow } from "../app/emu-window";
 import { setIdeConfigAction } from "@core/state/ide-config-reducer";
 import { appSettings } from "../main-state/klive-configuration";
+import { mainProcLogger } from "../utils/MainProcLogger";
 
 /**
  * Name of the project file within the project directory
@@ -131,7 +132,7 @@ export function getProjectFile(projectFile?: string): KliveProject | null {
         : null;
     }
   } catch (err) {
-    console.log(`Cannot read and parse project file: ${err}`);
+    mainProcLogger.logError("Cannot read and parse project file", err);
   }
   return null;
 }

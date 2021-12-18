@@ -23,6 +23,7 @@ import {
 } from "@modules/integration-zxb/zxb-config";
 import { readFileSync, unlinkSync } from "original-fs";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
+import { mainProcLogger } from "../utils/MainProcLogger";
 
 /**
  * Wraps the ZXBC (ZX BASIC) compiler
@@ -107,9 +108,10 @@ export class ZxBasicCompiler extends CompilerBase {
 
       // --- Extract model type
       const mainCode = fs.readFileSync(filename, "utf8");
-      const is48 = /[ \t]*([rR][eE][mM]|'|\/')[ \t]*[mM][oO][dD][eE][ \t]*=[ \t]*48[' \t\r\n]/.test(
-        mainCode
-      );
+      const is48 =
+        /[ \t]*([rR][eE][mM]|'|\/')[ \t]*[mM][oO][dD][eE][ \t]*=[ \t]*48[' \t\r\n]/.test(
+          mainCode
+        );
 
       // --- Done.
       return {
@@ -119,6 +121,7 @@ export class ZxBasicCompiler extends CompilerBase {
         modelType: is48 ? SpectrumModelType.Spectrum48 : undefined,
       };
     } catch (err) {
+      mainProcLogger.logError("Error while invoking ZXBC compiler", err);
       throw err;
     }
 

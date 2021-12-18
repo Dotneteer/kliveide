@@ -2,6 +2,7 @@ import * as path from "path";
 import { promises as fs } from "fs";
 import { __WIN32__ } from "./electron-utils";
 import { DirectoryContent } from "@state/AppState";
+import { mainProcLogger } from "./MainProcLogger";
 
 /**
  * Gets the current home folder
@@ -54,8 +55,8 @@ export async function getFolderContents(
           result.files.push(entry.name);
         }
       }
-    } catch {
-      console.log(`Cannot read the contents of ${name}`);
+    } catch (err) {
+      mainProcLogger.logError(`Cannot read the contents of ${name}`, err)
     }
 
     // --- Now, recursively read folders

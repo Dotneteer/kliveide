@@ -90,12 +90,14 @@ export const EmuApp: React.VFC = () => {
 
   return (
     <>
-      <div style={themeStyle} className={themeClass}>
-        {showToolbar && <Toolbar />}
-        <MainPanel />
-        {showStatusBar && <EmuStatusbar></EmuStatusbar>}
-        <ModalDialog targetId="#app" />
-      </div>
+      {show && (
+        <div style={themeStyle} className={themeClass}>
+          {showToolbar && <Toolbar />}
+          <MainPanel />
+          {showStatusBar && <EmuStatusbar></EmuStatusbar>}
+          <ModalDialog targetId="#app" />
+        </div>
+      )}
       {!show && (
         <div
           style={{

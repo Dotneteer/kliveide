@@ -46,6 +46,17 @@ class MainProcLogger {
   }
 
   /**
+   * Logs the specified message to the log file
+   * @param message 
+   * @returns 
+   */
+   logError(message: string, err: any): void {
+    const stack = err?.stack ?? "(no stack)";
+    const fullMessage = `${message}: ${err}; ${stack}`;
+    this.log(fullMessage);
+  }
+
+  /**
    * Close the logger stream
    */
   close(): void {
