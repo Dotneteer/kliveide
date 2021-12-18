@@ -27,7 +27,7 @@ function getHomeFolder(): string {
 /**
  * Gets the configuration of Klive Emulator from the user folder
  */
-function getKliveConfiguration(): KliveConfiguration | null {
+export function getKliveConfiguration(): KliveConfiguration | null {
   const configFile = path.join(getHomeFolder(), CONFIG_FILE_PATH);
   if (fs.existsSync(configFile)) {
     try {

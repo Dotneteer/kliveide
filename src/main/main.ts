@@ -40,6 +40,7 @@ import { Z80Compiler } from "./z80-compiler/Z80Compiler";
 import { MainSettingsService } from "./app/settings-service";
 import { ZxbasmCompiler } from "./zxbasm-compiler/ZxbasmCompiler";
 import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
+import { mainProcLogger } from "./utils/MainProcLogger";
 
 // --- Register services used by the main process
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
@@ -118,6 +119,7 @@ app.on("activate", async () => {
 app.on("before-quit", () => {
   emuWindow.saveAppSettings();
   ideWindow.allowClose = true;
+  mainProcLogger.close();
 });
 
 // --- This channel forwards renderer state (Emu or IDE) to the other renderer (IDE or Emu)

@@ -29,6 +29,7 @@ import { toStyleString } from "@ide/utils/css-utils";
  */
 export const EmuApp: React.VFC = () => {
   const mounted = useRef(false);
+  const [show, setShow] = useState(false);
   const [themeStyle, setThemeStyle] = useState({});
   const [themeClass, setThemeClass] = useState("");
 
@@ -66,6 +67,12 @@ export const EmuApp: React.VFC = () => {
         Z88_CARDS_DIALOG_ID,
         cz88CardsDialog
       );
+
+      setTimeout(() => {
+        if (mounted.current) {
+          setShow(true);
+        }
+      }, 1200);
     }
 
     return () => {
@@ -82,12 +89,44 @@ export const EmuApp: React.VFC = () => {
   document.body.setAttribute("class", themeClass);
 
   return (
-    <div style={themeStyle} className={themeClass}>
-      {showToolbar && <Toolbar />}
-      <MainPanel />
-      {showStatusBar && <EmuStatusbar></EmuStatusbar>}
-      <ModalDialog targetId="#app" />
-    </div>
+    <>
+      <div style={themeStyle} className={themeClass}>
+        {showToolbar && <Toolbar />}
+        <MainPanel />
+        {showStatusBar && <EmuStatusbar></EmuStatusbar>}
+        <ModalDialog targetId="#app" />
+      </div>
+      {!show && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "var(--shell-canvas-background-color)",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flex: "1 1 column",
+              height: "100%",
+              width: "100%",
+              flexShrink: 1,
+              flexGrow: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: "2em",
+            }}
+          >
+            Klive is loading...
+          </div>
+        </div>
+      )}
+    </>
   );
 
   function updateThemeState(): void {
