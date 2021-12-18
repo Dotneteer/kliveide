@@ -15,7 +15,7 @@ type Props = {
   targetId: string;
 };
 
-export default function ModalDialog({ targetId }: Props) {
+export const ModalDialog: React.VFC<Props> = ({ targetId }) => {
   const { store } = useContext(ReactReduxContext);
   const [show, setShow] = useState(false);
   const [modalDialog, setModalDialog] = useState<IModalDialogDescriptor | null>(
@@ -120,4 +120,4 @@ export default function ModalDialog({ targetId }: Props) {
       </DialogComponent>
     )
   );
-}
+};

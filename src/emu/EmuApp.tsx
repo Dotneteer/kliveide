@@ -14,7 +14,7 @@ import MainPanel from "./MainPanel";
 import { EmuStatusbar } from "./EmuStatusbar";
 import { emuLoadUiAction } from "@state/emu-loaded-reducer";
 import { useRef, useState } from "react";
-import ModalDialog from "@components/ModalDialog";
+import { ModalDialog } from "@components/ModalDialog";
 import { stopCommandStatusQuery } from "@abstractions/command-registry";
 
 // --- We need to import these files to setup the app
