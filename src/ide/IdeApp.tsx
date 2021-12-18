@@ -10,12 +10,12 @@ import { ModalDialog } from "@components/ModalDialog";
 import { ActivityBar } from "./activity-bar/ActivityBar";
 import IdeStatusbar from "./IdeStatusbar";
 import SideBar from "./side-bar/SideBar";
-import IdeDocumentFrame from "./document-area/IdeDocumentsFrame";
+import { IdeDocumentFrame } from "./document-area/IdeDocumentsFrame";
 import ToolFrame from "./tool-area/ToolFrame";
 import "./ide-message-processor";
 import { Column, Fill, Row } from "@components/Panels";
 import { SplitPanel } from "@components/SplitPanel";
-import IdeContextMenu from "./context-menu/ContextMenu";
+import { IdeContextMenu } from "./context-menu/ContextMenu";
 
 // --- Panel sizes
 const MIN_SIDEBAR_WIDTH = 240;

@@ -1,9 +1,7 @@
 import * as React from "react";
 import { useRef, useState, CSSProperties } from "react";
 
-import {
-  getModalDialogService,
-} from "@core/service-registry";
+import { getModalDialogService } from "@core/service-registry";
 import { IModalDialogDescriptor } from "@abstractions/modal-dialog-service";
 import {
   ErrorLabel,
@@ -54,7 +52,7 @@ type Props = {
   folderData: NewFileData;
 };
 
-const RenameFolderDialog: React.FC<Props> = ({ folderData }: Props) => {
+const RenameFolderDialog: React.VFC<Props> = ({ folderData }) => {
   const [filename, setFilename] = useState(folderData.name);
   const [nameError, setNameError] = useState(EXISTS_MSG);
   const containerStyle: CSSProperties = {

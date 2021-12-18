@@ -9,9 +9,9 @@ import {
 import { Icon } from "@components/Icon";
 import { IDocumentPanel } from "@abstractions/document-service";
 import { MenuItem } from "@abstractions/command-definitions";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 
-interface Props {
+type Props = {
   title: string;
   active: boolean;
   index: number;
@@ -19,12 +19,12 @@ interface Props {
   descriptor: IDocumentPanel;
   clicked?: () => void;
   closed?: () => void;
-}
+};
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function DocumentTab({
+export const DocumentTab: React.VFC<Props> = ({
   title,
   active,
   index,
@@ -32,7 +32,7 @@ export default function DocumentTab({
   descriptor,
   clicked,
   closed,
-}: Props) {
+}) => {
   const [pointed, setPointed] = useState(false);
   const [temporary, setTemporary] = useState(true);
   const hostElement = useRef<HTMLDivElement>();
@@ -188,4 +188,4 @@ export default function DocumentTab({
       />
     </div>
   );
-}
+};

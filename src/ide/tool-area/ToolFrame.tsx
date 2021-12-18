@@ -9,7 +9,7 @@ import {
 } from "@state/tool-frame-reducer";
 import { AppState } from "@state/AppState";
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 import ToolPropertyBar from "./ToolPropertyBar";
 import ToolTab from "./ToolTab";
 import ToolTabBar from "./ToolTabBar";
@@ -118,7 +118,7 @@ const headerBarStyle: CSSProperties = {
   flexGrow: 1,
   width: "100%",
   height: 35,
-}
+};
 
 const placeHolderStyle: CSSProperties = {
   display: "flex",
@@ -127,8 +127,8 @@ const placeHolderStyle: CSSProperties = {
   flexGrow: 1,
   width: "100%",
   height: "100%",
-  overflow: "hidden"
-}
+  overflow: "hidden",
+};
 
 /**
  * Represents the statusbar of the emulator

@@ -52,7 +52,7 @@ type Props = {
   newFolderData: NewFileData;
 };
 
-const NewFileDialog: React.FC<Props> = ({ newFolderData: newFileData }: Props) => {
+const NewFileDialog: React.VFC<Props> = ({ newFolderData: newFileData }) => {
   const [filename, setFilename] = useState(newFileData.name);
   const [nameError, setNameError] = useState(SPECIFY_MSG);
   const containerStyle: CSSProperties = {

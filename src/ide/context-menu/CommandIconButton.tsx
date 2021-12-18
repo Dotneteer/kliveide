@@ -6,7 +6,7 @@ import { executeCommand, getCommand } from "@abstractions/command-registry";
 import { IKliveCommand } from "@abstractions/command-definitions";
 import { Icon } from "@components/Icon";
 
-interface Props {
+type Props = {
   commandId?: string;
   iconName?: string;
   size?: number;
@@ -16,12 +16,12 @@ interface Props {
   clicked?: (ev: React.MouseEvent) => void;
   setContext?: () => any;
   doNotPropagate?: boolean;
-}
+};
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function CommandIconButton({
+export const CommandIconButton: React.VFC<Props> = ({
   commandId,
   iconName,
   size = 16,
@@ -31,7 +31,7 @@ export default function CommandIconButton({
   clicked,
   setContext,
   doNotPropagate = false,
-}: Props) {
+}) => {
   const hostElement = useRef<HTMLDivElement>();
   const [pointed, setPointed] = useState(false);
   const [mouseDown, setMouseDown] = useState(false);
@@ -106,4 +106,4 @@ export default function CommandIconButton({
       />
     </div>
   );
-}
+};

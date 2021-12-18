@@ -17,7 +17,7 @@ import {
   Label,
 } from "@components/FormElements";
 import { sendFromIdeToEmu } from "@core/messaging/message-sending";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 
 export const NEW_PROJECT_DIALOG_ID = "NewProjectDialog";
 
@@ -54,7 +54,7 @@ type Props = {
   newProjectData: NewProjectData;
 };
 
-const NewProjectDialog: React.FC<Props> = ({ newProjectData }: Props) => {
+const NewProjectDialog: React.VFC<Props> = ({ newProjectData }) => {
   const [projectName, setProjectName] = useState(newProjectData.projectName);
   const [projectFolder, setProjectFolder] = useState(
     newProjectData.projectPath

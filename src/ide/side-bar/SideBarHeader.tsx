@@ -9,7 +9,7 @@ import {
   isKliveCommand,
   MenuItem,
 } from "@abstractions/command-definitions";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 import { Fill, Row } from "@components/Panels";
 
 type Props = {

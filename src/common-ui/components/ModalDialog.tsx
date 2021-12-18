@@ -26,7 +26,7 @@ export const ModalDialog: React.VFC<Props> = ({ targetId }) => {
 
   const handleClick = (click?: () => void | boolean) => {
     if (click?.()) {
-      getModalDialogService().hide(store);
+      getModalDialogService().hide();
     }
   };
 
@@ -77,9 +77,9 @@ export const ModalDialog: React.VFC<Props> = ({ targetId }) => {
 
   // --- Close the dialog if the users decides so
   const modalDialogService = getModalDialogService();
-  const onOverlayClick = () => modalDialogService.hide(store);
+  const onOverlayClick = () => modalDialogService.hide();
   const onDialogClose = () => {
-    modalDialogService.hide(store);
+    modalDialogService.hide();
     modalDialogService.disposeModalDialog();
   };
 
@@ -97,7 +97,8 @@ export const ModalDialog: React.VFC<Props> = ({ targetId }) => {
 
   return (
     modalDialog &&
-    buttons.length > 0 && (
+    buttons.length > 0 &&
+    show && (
       <DialogComponent
         key={refreshCount}
         width={modalDialog.width}
@@ -108,7 +109,6 @@ export const ModalDialog: React.VFC<Props> = ({ targetId }) => {
         header={modalDialog.title}
         closeOnEscape={false}
         allowDragging={true}
-        visible={show}
         overlayClick={onOverlayClick}
         close={onDialogClose}
         buttons={buttons}

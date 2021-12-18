@@ -19,7 +19,7 @@ import {
   OutputContentLine,
 } from "@abstractions/output-pane-service";
 import { OUTPUT_TOOL_ID } from "@abstractions/tool-area-service";
-import CommandIconButton from "../context-menu/CommandIconButton";
+import { CommandIconButton } from "../context-menu/CommandIconButton";
 import { ToolPanelBase, ToolPanelProps } from "../ToolPanelBase";
 import { ToolPanelDescriptorBase } from "./ToolAreaService";
 import { Row } from "@components/Panels";

@@ -28,12 +28,7 @@ import {
   hideEditorStatusAction,
   showEditorStatusAction,
 } from "@core/state/editor-status-reducer";
-import {
-  CSSProperties,
-  PropsWithChildren,
-  useEffect,
-  useRef,
-} from "react";
+import { CSSProperties, useEffect, useRef } from "react";
 import { useResizeObserver } from "@components/useResizeObserver";
 import { isDebuggableCompilerOutput } from "@abstractions/compiler-registry";
 
@@ -49,12 +44,12 @@ type MarkerData = monacoEditor.editor.IMarkerData;
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   descriptor: IDocumentPanel;
   sourceCode: string;
   language: string;
   registerApi?: (api: EditorDocumentAPi) => void;
-}
+};
 
 // --- Represents the editor markers held by the code editor
 const CODE_EDITOR_MARKERS = "CodeEditorMarkers";
@@ -67,12 +62,12 @@ export type EditorDocumentAPi = {
 /**
  * Represents a Monaco code editor document
  */
-function EditorDocument({
+const EditorDocument: React.VFC<Props> = ({
   descriptor,
   sourceCode,
   language,
   registerApi,
-}: PropsWithChildren<Props>) {
+}) => {
   // --- Implicit state
   const divHost = useRef<HTMLDivElement>();
   const editor = useRef<Editor>();
@@ -130,7 +125,7 @@ function EditorDocument({
     selectOnLineNumbers: true,
     glyphMargin: languageInfo?.supportsBreakpoints,
     hover: { enabled: true },
-    readOnly: descriptor.projectNode?.isReadOnly ?? false
+    readOnly: descriptor.projectNode?.isReadOnly ?? false,
   };
 
   // --- Select the editor them according to the current application theme
@@ -460,7 +455,10 @@ function EditorDocument({
     const editorLines = editor.current.getModel().getLineCount();
     editorBps.forEach((bp) => {
       let unreachable = false;
-      if (compilationResult?.errors?.length === 0 && isDebuggableCompilerOutput(compilationResult)) {
+      if (
+        compilationResult?.errors?.length === 0 &&
+        isDebuggableCompilerOutput(compilationResult)
+      ) {
         // --- In case of a successful compilation, test if the breakpoint is allowed
         const fileIndex = compilationResult.sourceFileList.findIndex((fi) =>
           fi.filename.endsWith(getResourceName())
@@ -657,7 +655,7 @@ function EditorDocument({
     const breakpoints = getState().debugger?.breakpoints ?? [];
     return findBreakpoint(breakpoints, newBp) as SourceCodeBreakpoint;
   }
-}
+};
 
 /**
  * Descriptor for the sample side bar panel
