@@ -13,7 +13,7 @@ import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { ZxSpectrumCoreBase } from "@modules/vm-zx-spectrum/ZxSpectrumCoreBase";
 import { emuToMainMessenger } from "../common-ui/services/EmuToMainMessenger";
 
-export const Toolbar: React.FC = () => {
+export const Toolbar: React.VFC = () => {
   // --- State
   const machineType = useSelector((s: AppState) => s.machineType);
   const executionState = useSelector(

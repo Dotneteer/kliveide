@@ -1,9 +1,7 @@
 import * as React from "react";
 import { useSelector } from "react-redux";
 
-import {
-  getThemeService,
-} from "@core/service-registry";
+import { getThemeService } from "@core/service-registry";
 
 import { getVersion } from "../version";
 import { AppState } from "@state/AppState";
@@ -15,7 +13,7 @@ import { Column } from "@components/Panels";
 /**
  * Represents the statusbar of the emulator
  */
-export default function Statusbar() {
+export const EmuStatusbar: React.VFC = () => {
   // --- State selectors
   const showFrames = useSelector(
     (s: AppState) => s.emuViewOptions.showFrameInfo
@@ -113,4 +111,4 @@ export default function Statusbar() {
       </Section>
     </StatusbarRoot>
   );
-}
+};

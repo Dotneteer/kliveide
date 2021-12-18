@@ -6,7 +6,7 @@ import { AppState } from "@state/AppState";
 import { emuKeyboardHeightAction } from "@state/emulator-panel-reducer";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { EmulatorPanel } from "./EmulatorPanel";
-import KeyboardPanel from "./KeyboardPanel";
+import { KeyboardPanel } from "./KeyboardPanel";
 import { Fill, Row } from "@components/Panels";
 import { SplitPanel } from "@components/SplitPanel";
 

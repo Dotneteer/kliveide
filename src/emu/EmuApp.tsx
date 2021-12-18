@@ -11,7 +11,7 @@ import { AppState } from "@state/AppState";
 import { useSelector } from "react-redux";
 import { Toolbar } from "./Toolbar";
 import MainPanel from "./MainPanel";
-import EmuStatusbar from "./EmuStatusbar";
+import { EmuStatusbar } from "./EmuStatusbar";
 import { emuLoadUiAction } from "@state/emu-loaded-reducer";
 import { useRef, useState } from "react";
 import ModalDialog from "@components/ModalDialog";

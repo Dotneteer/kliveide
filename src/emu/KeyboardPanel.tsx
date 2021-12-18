@@ -4,18 +4,18 @@ import { useSelector } from "react-redux";
 
 import { AppState } from "@state/AppState";
 import { animationTick } from "@components/component-utils";
-import Sp48Keyboard from "./Sp48Keyboard";
+import { Sp48Keyboard } from "./Sp48Keyboard";
 import { Cz88Keyboard } from "./Cz88Keyboard";
 import { useResizeObserver } from "@components/useResizeObserver";
 
-interface Props {
+type Props = {
   type: string;
-}
+};
 
 /**
  * Represents the keyboard panel of the emulator
  */
-export default function KeyboardPanel(props: Props) {
+export const KeyboardPanel: React.VFC<Props> = ({ type }) => {
   // --- Component state
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
@@ -39,7 +39,7 @@ export default function KeyboardPanel(props: Props) {
   useResizeObserver(hostElement, _onResize);
 
   let keyboard = null;
-  switch (props.type) {
+  switch (type) {
     case "sp48":
       keyboard = <Sp48Keyboard width={width} height={height} />;
       break;
@@ -62,7 +62,7 @@ export default function KeyboardPanel(props: Props) {
       setHeight(hostElement.current?.offsetHeight ?? 0);
     }
   }
-}
+};
 
 const rootStyle: CSSProperties = {
   display: "flex",

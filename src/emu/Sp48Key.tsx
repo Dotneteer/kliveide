@@ -9,7 +9,7 @@ const NORMAL_WIDTH = 100;
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   zoom: number;
   code: number;
   main?: string;
@@ -32,7 +32,7 @@ interface Props {
 /**
  * Represents a key of the ZX Spectrum 48 keyboard
  */
-export default function Sp48Key(props: Props) {
+export const Sp48Key: React.VFC<Props> = (props) => {
   // --- State bindings
   const [mouseOverKey, setMouseOverKey] = useState(false);
   const [mouseOverSymbol, setMouseOverSymbol] = useState(false);

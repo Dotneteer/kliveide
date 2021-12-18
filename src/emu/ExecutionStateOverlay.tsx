@@ -1,20 +1,20 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 
-interface Props {
+type Props = {
   text: string;
   clicked?: () => void;
-}
+};
 
 /**
  * Represents the overlay of the emulator's panel
  */
-export default function ExecutionStateOverlay(props: Props) {
-  if (props.text) {
+export const ExecutionStateOverlay: React.VFC<Props> = ({text, clicked}) => {
+  if (text) {
     return (
       <div style={rootStyle} onClick={handleClick}>
         <div style={overlayStyle} title="Hide overlay (click to show again)">
-          {props.text}
+          {text}
         </div>
       </div>
     );
@@ -24,9 +24,9 @@ export default function ExecutionStateOverlay(props: Props) {
 
   function handleClick(e: React.MouseEvent): void {
     e.stopPropagation();
-    props.clicked?.();
+    clicked?.();
   }
-}
+};
 
 const rootStyle: CSSProperties = {
   position: "relative",
@@ -45,5 +45,5 @@ const overlayStyle: CSSProperties = {
   opacity: 0.9,
   padding: "2px 10px 4px 10px",
   borderRadius: 4,
-  cursor: "pointer"
-}
+  cursor: "pointer",
+};

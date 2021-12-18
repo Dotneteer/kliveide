@@ -3,7 +3,7 @@ import { CSSProperties } from "react";
 import { useSelector } from "react-redux";
 
 import { AppState } from "@state/AppState";
-import ExecutionStateOverlay from "./ExecutionStateOverlay";
+import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { useEffect, useRef, useState } from "react";
 import { ICpu } from "@modules-core/abstract-cpu";
 import { VirtualMachineCoreBase } from "@modules-core/abstract-vm";
