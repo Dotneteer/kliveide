@@ -446,10 +446,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
         {
           // --- The inner panel fully sized to the entire virtual list
         }
-        <div
-          className="inner"
-          style={{ height: `${totalHeight}px` }}
-        >
+        <div className="inner" style={{ height: `${totalHeight}px` }}>
           {
             // --- Whenever we have any, render the visible elements
           }
@@ -769,6 +766,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
    * Forces refreshing the list
    */
   function forceRefresh(scrollPosition?: number): void {
+    if (!mounted.current) return;
     forceRenderingVisible.current = true;
     if (scrollPosition !== undefined) {
       setRequestedPos(scrollPosition);
@@ -781,6 +779,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
    * Scrolls to the item with the specified index
    */
   function scrollToItemByIndex(index: number): void {
+    if (!mounted.current) return;
     const heightItem = heights.current[index];
     if (heightItem) {
       setRequestedPos(heightItem.top);
@@ -791,6 +790,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
    * Scrolls to the top
    */
   function scrollToTop(): void {
+    if (!mounted.current) return;
     setRequestedPos(0);
   }
 
@@ -798,6 +798,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
    * Scrolls to the bottom
    */
   function scrollToBottom(): void {
+    if (!mounted.current) return;
     setRequestedPos(MAX_LIST_PIXELS);
   }
 
@@ -806,6 +807,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
    */
   function getViewPort(): Viewport {
     if (
+      !mounted.current ||
       !heights.current ||
       heights.current.length === 0 ||
       !componentHost.current
@@ -850,6 +852,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
    * entirelly in the current viewport
    */
   function ensureVisible(index: number, location: ItemTargetLocation): void {
+    if (!mounted.current) return;
     const heightItem = heights.current[index];
     if (!heightItem) {
       // --- We cannot ensure the visibility of a non-existing item
@@ -876,13 +879,15 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
    * Ensures that the virtualized list gets the focus
    */
   function focus(): void {
+    if (!mounted.current) return;
     requestAnimationFrame(() => componentHost.current?.focus());
   }
 
   /**
    * Initiates remeasuring the specified range of items
    */
-  function remeasure(start: number, end: number) {
+  function remeasure(start: number, end: number): void {
+    if (!mounted.current) return;
     // --- Prepare the next remeasure batch
     batchQueue.current.push({
       startIndex: Math.max(0, start),
@@ -970,4 +975,3 @@ const explicitItemType: CSSProperties = {
   top: 0,
   overflowX: "hidden",
 };
-

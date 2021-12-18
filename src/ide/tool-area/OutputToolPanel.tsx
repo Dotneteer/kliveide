@@ -99,7 +99,7 @@ export default class OutputToolPanel extends ToolPanelBase<
       <Row
         hostRef={this._listHost}
         style={{ flexDirection: "column" }}
-        onResized={() => this._listApi.forceRefresh()}
+        onResized={() => this._listApi?.forceRefresh()}
       >
         <VirtualizedList
           key={this.state.refreshCount}
