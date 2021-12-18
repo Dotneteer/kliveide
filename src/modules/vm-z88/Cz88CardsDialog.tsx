@@ -55,7 +55,7 @@ type Props = {
  * The dialog component to manage the carda state
  * @returns
  */
-function Cz88CardsDialog({ cardsState }: Props) {
+const Cz88CardsDialog: React.VFC<Props> = ({ cardsState }) => {
   return (
     <Grid rows={3} columns={3} rowGap={8} columnGap={16} style={{ height: 84 }}>
       <CardColumn
@@ -75,7 +75,7 @@ function Cz88CardsDialog({ cardsState }: Props) {
       />
     </Grid>
   );
-}
+};
 
 type CardColumnProps = {
   slot: number;

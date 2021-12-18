@@ -10,14 +10,14 @@ import {
 import { AppState } from "@state/AppState";
 import { IToolPanel, ToolsInfo } from "@abstractions/tool-area-service";
 import { CommandIconButton } from "../context-menu/CommandIconButton";
-import ToolPropertyBar from "./ToolPropertyBar";
-import ToolTab from "./ToolTab";
-import ToolTabBar from "./ToolTabBar";
+import { ToolPropertyBar } from "./ToolPropertyBar";
+import { ToolTab } from "./ToolTab";
+import { ToolTabBar } from "./ToolTabBar";
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function ToolFrame() {
+export const ToolFrame: React.VFC = () => {
   const headerHost = useRef<HTMLDivElement>();
   const mounted = useRef(false);
   const toolAreaService = getToolAreaService();
@@ -98,7 +98,7 @@ export default function ToolFrame() {
       </div>
     </div>
   );
-}
+};
 
 const rootStyle: CSSProperties = {
   display: "flex",
@@ -133,7 +133,7 @@ const placeHolderStyle: CSSProperties = {
 /**
  * Represents the statusbar of the emulator
  */
-function ToolCommandBar() {
+const ToolCommandBar: React.VFC = () => {
   const maximized = useSelector(
     (state: AppState) => state.toolFrame?.maximized ?? false
   );
@@ -165,4 +165,4 @@ function ToolCommandBar() {
       />
     </div>
   );
-}
+};

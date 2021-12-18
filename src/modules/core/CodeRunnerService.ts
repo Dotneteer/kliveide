@@ -102,7 +102,6 @@ export class CodeRunnerService implements ICodeRunnerService {
           await getDialogService().showMessageBox(message, "Injecting code");
           break;
         case "run":
-          console.log("Ready for run!");
           await sendFromIdeToEmu({
             type: "RunCode",
             codeToInject,

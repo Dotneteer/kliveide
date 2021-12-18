@@ -6,11 +6,10 @@ import {
   getSideBarService,
   getStore,
 } from "@core/service-registry";
-import { animationTick } from "@components/component-utils";
 import { AppState } from "@state/AppState";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
 import { MenuItem } from "@abstractions/command-definitions";
-import SideBarPanelHeader from "./SideBarPanelHeader";
+import { SideBarPanelHeader } from "./SideBarPanelHeader";
 import { useResizeObserver } from "@components/useResizeObserver";
 
 /**

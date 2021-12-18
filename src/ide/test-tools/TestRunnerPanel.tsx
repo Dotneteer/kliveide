@@ -1,9 +1,7 @@
 import * as React from "react";
 import { CSSProperties } from "react";
 import { ISideBarPanel } from "@abstractions/side-bar-service";
-import {
-  SideBarPanelDescriptorBase,
-} from "../../common-ui/services/SideBarService";
+import { SideBarPanelDescriptorBase } from "../../common-ui/services/SideBarService";
 
 const TITLE = "Test Runner";
 
@@ -17,7 +15,7 @@ type Props = {
 /**
  * Z80 registers panel
  */
-export default function TestRunnerPanel({ descriptor }: Props) {
+export const TestRunnerPanel: React.VFC<Props> = ({ descriptor }) => {
   const placeholderStyle: CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -32,7 +30,7 @@ export default function TestRunnerPanel({ descriptor }: Props) {
   };
 
   return <div style={placeholderStyle}>{TITLE}</div>;
-}
+};
 
 /**
  * Descriptor for the sample side bar panel

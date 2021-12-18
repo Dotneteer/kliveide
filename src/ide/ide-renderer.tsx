@@ -43,13 +43,10 @@ import { ModalDialogService } from "@services/modal-service";
 import { registerSite } from "@abstractions/process-site";
 import { registerCommonCommands } from "@abstractions/common-commands";
 import { registerIdeToEmuMessenger } from "@core/messaging/message-sending";
-import {
-  registerCommand,
-  startCommandStatusQuery,
-} from "@abstractions/command-registry";
+import { startCommandStatusQuery } from "@abstractions/command-registry";
 import { DialogService } from "@services/dialog-service";
 import { CodeRunnerService } from "@modules-core/CodeRunnerService";
-import IdeApp from "./IdeApp";
+import { IdeApp } from "./IdeApp";
 import { SideBarService } from "../common-ui/services/SideBarService";
 import { ProjectService } from "./explorer-tools/ProjectService";
 import { ContextMenuService } from "./context-menu/ContextMenuService";

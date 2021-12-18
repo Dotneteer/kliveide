@@ -7,7 +7,7 @@ import { Fill } from "@components/Panels";
 /**
  * Component properties
  */
-interface Props {
+type Props = {
   title: string;
   expanded: boolean;
   sizeable: boolean;
@@ -16,12 +16,12 @@ interface Props {
   rightClicked?: (e: React.MouseEvent) => void;
   startResize: (index: number) => void;
   resized: (delta: number) => void;
-}
+};
 
 /**
  * Represents the statusbar of the emulator
  */
-export default function SideBarPanelHeader({
+export const SideBarPanelHeader: React.VFC<Props> = ({
   title,
   expanded,
   sizeable,
@@ -30,7 +30,7 @@ export default function SideBarPanelHeader({
   rightClicked,
   startResize,
   resized,
-}: Props) {
+}) => {
   // --- Component state
   const [focused, setFocused] = useState(false);
   const [pointed, setPointed] = useState(false);
@@ -61,7 +61,7 @@ export default function SideBarPanelHeader({
   };
 
   const gripElement = useRef<HTMLDivElement>();
-  
+
   return (
     <div
       ref={hostElement}
@@ -168,7 +168,7 @@ export default function SideBarPanelHeader({
   function move(e: MouseEvent, context: DragContext): void {
     context.resized(e.clientY - context.gripPosition);
   }
-}
+};
 
 const rootStyle: CSSProperties = {
   height: 24,
@@ -192,7 +192,7 @@ const textStyle: CSSProperties = {
 };
 
 // --- Context for the drag operation
-interface DragContext {
+type DragContext = {
   gripPosition: number;
   move: (e: MouseEvent) => void;
   resized: (delta: number) => void;

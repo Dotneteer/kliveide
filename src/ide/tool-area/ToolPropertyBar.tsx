@@ -10,7 +10,7 @@ type Props = {
 /**
  * Represents the statusbar of the emulator
  */
-export default function ToolPropertyBar({ tool }: Props) {
+export const ToolPropertyBar: React.VFC<Props> = ({ tool }) => {
   const style: CSSProperties = {
     display: "flex",
     flexDirection: "row",
@@ -25,4 +25,4 @@ export default function ToolPropertyBar({ tool }: Props) {
   };
 
   return <div style={style}>{tool?.createHeaderElement()}</div>;
-}
+};
