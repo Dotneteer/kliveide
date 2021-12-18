@@ -185,14 +185,16 @@ void checkTapeHooks() {
   if (tapeMode == TM_PASSIVE) {
     // --- PASSIVE mode, check for load and save routines
     if (pc == tapeLoadBytesRoutine) {
-      // --- Turn on LOAD mode
-      tapeMode = TM_LOAD;
-      nextTapeBlock();
-      if (tapeFastLoad) {
-        fastLoad();
-        tapeMode = TM_PASSIVE;
+      if (memorySelectedRom == spectrumRomIndex) {
+        // --- Turn on LOAD mode
+        tapeMode = TM_LOAD;
+        nextTapeBlock();
+        if (tapeFastLoad) {
+          fastLoad();
+          tapeMode = TM_PASSIVE;
+        }
+        return;
       }
-      return;
     }
 
     if (pc == tapeSaveBytesRoutine) {
@@ -373,8 +375,6 @@ bool getTapeEarBit() {
 void fastLoad() {
   local bool isVerify;
 
-  // (local $tmp i32)
-
   // --- Stop playing if no more blocks
   if (tapeEof) {
     return;
@@ -399,6 +399,7 @@ void fastLoad() {
     return;
   }
   
+
   // --- It is time to load the block
   h = a;
 

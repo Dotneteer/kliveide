@@ -1,5 +1,5 @@
 // ============================================================================
-// ZX Spectrum 128K machine implementation
+// ZX Spectrum 3+E machine implementation
 // ============================================================================
 import void trace "imports" "trace" (u32);
 import void saveModeLeft "imports" "saveModeLeft" (u32);
@@ -17,7 +17,6 @@ import void saveModeLeft "imports" "saveModeLeft" (u32);
 #include "../execution-engine.wats"
 
 // --- ZX Spectrum core devices
-#include "../spectrum-core/memory-device.wats"
 #include "../spectrum-core/screen-device.wats"
 #include "../spectrum-core/tape-device.wats"
 #include "../spectrum-core/keyboard-device.wats"
@@ -27,7 +26,9 @@ import void saveModeLeft "imports" "saveModeLeft" (u32);
 #include "../spectrum-core/machine.wats"
 #include "../spectrum-core/execution-overloads.wats"
 
-// -- ZX Spectrum 128 specific routines
+// -- ZX Spectrum +3E specific routines
 #include "machine.wats"
+#include "memory-device.wats"
 #include "port-handler.wats"
+#include "floppy-handler.wats"
 #include "../spectrum-core/sound-device.wats"

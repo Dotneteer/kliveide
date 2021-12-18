@@ -1,0 +1,11 @@
+// ============================================================================
+// Floppy disk emulation for ZX Spectrum +3E
+// ============================================================================
+
+// Indicates the state of the disk motor
+// Port 0x1FFD, Bit 3:
+// Used in every paging mode
+// False: motor off
+// True: motor on
+global bool diskMotorState;
+

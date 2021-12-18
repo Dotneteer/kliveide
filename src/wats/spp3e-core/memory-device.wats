@@ -26,6 +26,38 @@ global u8 numberOfRoms;
 // Number of RAM banks
 global u8 ramBanks;
 
+// The bank used for slot 3
+global u8 slot3Bank;
+
+// Indicates the paging mode
+// Port 0x1FFD, Bit 0: 
+// False - normal mode, 
+// True - special mode
+global bool pagingMode;
+
+// Indicates the special configuration
+// Port 0x1FFD, Bit 1-2:
+// Used only is special paging mode.
+// 0: RAM banks 0, 1, 2, and 3 are active for pages 0...3
+// 1: RAM banks 4, 5, 6, and 7 are active for pages 0...3
+// 2: RAM banks 4, 5, 6, and 3 are active for pages 0...3
+// 3: RAM banks 4, 7, 6, and 3 are active for pages 0...3
+global byte specialConfig;
+
+// Indicates the low bit of ROM selection
+// Port 0x7FFD, Bit 4:
+// Used in normal paging mode
+// 0: Bit is 0
+// 1: Bit is 1
+global byte selectRomLow;
+
+// Indicates the high bit of ROM selection
+// Port 0x1FFD, Bit 2:
+// Used in normal paging mode
+// 0: Bit is 0
+// 2: Bit is 1
+global byte selectRomHigh;
+
 // ----------------------------------------------------------------------------
 // Public device routines
 
@@ -93,4 +125,48 @@ inline void writeMemoryNoContention(u16 addr, u8 value) {
     return;
   }
   vmMemory[(*pagePtr).writeIndex + (addr & 0b0001_1111_1111_1111)] = value;
+}
+
+// Updates ROM banks according to the selectRomLow and selectRomHigh bit
+void updateBanks() {
+  memorySelectedRom = selectRomHigh + selectRomLow;
+  if (pagingMode) {
+    if (specialConfig == 0) {
+      pageBankIn(0, 0);
+      pageBankIn(1, 1);
+      pageBankIn(2, 2);
+      pageBankIn(3, 3);
+    } else if (specialConfig == 1) {
+      pageBankIn(0, 4);
+      pageBankIn(1, 5);
+      pageBankIn(2, 6);
+      pageBankIn(3, 7);
+    } else if (specialConfig == 2) {
+      pageBankIn(0, 4);
+      pageBankIn(1, 5);
+      pageBankIn(2, 6);
+      pageBankIn(3, 3);
+    } else {
+      pageBankIn(0, 4);
+      pageBankIn(1, 7);
+      pageBankIn(2, 6);
+      pageBankIn(3, 3);
+    }
+  } else {
+    // --- Select the ROM page
+    local u32 romOffset = ROM_0_OFFSET + memorySelectedRom * 0x4000;
+    setMemoryBlockEntry(0, romOffset, false, true);
+    setMemoryBlockEntry(1, romOffset + 0x2000, false, true);
+    pageBankIn(1, 5);
+    pageBankIn(2, 2);
+    pageBankIn(3, slot3Bank);
+  }
+}
+
+// Pages in the specified bank
+void pageBankIn(u32 slot, u32 bank) {
+  local bool contended = bank & 0x04;
+  local u32 pageOffset = (bank << 14) + BANK_0_OFFSET;
+  setMemoryBlockEntry(slot << 1, pageOffset, contended, false);
+  setMemoryBlockEntry((slot << 1) + 1, pageOffset + 0x2000, contended, false);
 }

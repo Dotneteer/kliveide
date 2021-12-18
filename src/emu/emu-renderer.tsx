@@ -130,6 +130,11 @@ deps.registerComponentDependency("sp128", new WaLoader());
 deps.registerComponentDependency("sp128", new SampleRateGetter());
 deps.registerComponentDependency("sp128", new AudioFactory());
 
+deps.registerComponentDependency("spP3e", new ZxSpectrumStateManager());
+deps.registerComponentDependency("spP3e", new WaLoader());
+deps.registerComponentDependency("spP3e", new SampleRateGetter());
+deps.registerComponentDependency("spP3e", new AudioFactory());
+
 deps.registerComponentDependency("cz88", new CambridgeZ88StateManager);
 deps.registerComponentDependency("cz88", new WaLoader());
 deps.registerComponentDependency("cz88", new SampleRateGetter());
