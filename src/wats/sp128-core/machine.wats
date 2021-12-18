@@ -63,6 +63,10 @@ export void setupMachine () {
   setMemoryBlockEntry(6, 0x00'8000, false, false);  // BANK 0, lower
   setMemoryBlockEntry(7, 0x00'a000, false, false);  // BANK 0, upper
 
+  // --- Rom configuration
+  memorySelectedRom = 0;
+  spectrumRomIndex = 1;
+
   // --- Set the initial state of a ZX Spectrum machine
   resetMachine();
 

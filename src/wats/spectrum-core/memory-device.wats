@@ -5,6 +5,9 @@
 // The selected ROM page
 global u8 memorySelectedRom;
 
+// The index of the ZX Spectrum ROM
+global u8 spectrumRomIndex;
+
 // Is memory pagin enabled?
 global bool memoryPagingEnabled;
 

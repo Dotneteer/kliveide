@@ -5,6 +5,9 @@
 // The selected ROM page
 global u8 memorySelectedRom;
 
+// The index of the ZX Spectrum ROM
+global u8 spectrumRomIndex;
+
 // Is memory pagin enabled?
 global bool memoryPagingEnabled;
 
@@ -126,6 +129,7 @@ inline void writeMemoryNoContention(u16 addr, u8 value) {
 
 // Updates ROM banks according to the selectRomLow and selectRomHigh bit
 void updateBanks() {
+  memorySelectedRom = selectRomHigh + selectRomLow;
   if (pagingMode) {
     if (specialConfig == 0) {
       pageBankIn(0, 0);
@@ -150,9 +154,7 @@ void updateBanks() {
     }
   } else {
     // --- Select the ROM page
-    local u32 romOffset = ROM_0_OFFSET + (selectRomHigh * 0x8000) + (selectRomLow * 0x4000);
-    trace(222222);
-    trace(romOffset);
+    local u32 romOffset = ROM_0_OFFSET + memorySelectedRom * 0x4000;
     setMemoryBlockEntry(0, romOffset, false, true);
     setMemoryBlockEntry(1, romOffset + 0x2000, false, true);
     pageBankIn(1, 5);
