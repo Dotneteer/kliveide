@@ -8,7 +8,6 @@ import {
   GetMemoryContentsResponse,
   RequestMessage,
   ResponseMessage,
-  SupportsCodeInjectionResponse,
 } from "@core/messaging/message-types";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 
@@ -94,12 +93,6 @@ async function processIdeMessages(
       return <GetMemoryContentsResponse>{
         type: "GetMemoryContentsResponse",
         contents: vmEngineService.getEngine()?.getMemoryContents(),
-      };
-
-    case "SupportsCodeInjection":
-      return <SupportsCodeInjectionResponse>{
-        type: "SupportsCodeInjectionResponse",
-        supports: vmEngineService.getEngine()?.supportsCodeInjection() ?? false,
       };
 
     case "InjectCode":

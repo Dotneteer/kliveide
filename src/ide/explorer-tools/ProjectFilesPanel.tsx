@@ -222,6 +222,9 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     style: CSSProperties,
     item: ITreeNode<ProjectNode>
   ) {
+    if (!item) {
+      return null;
+    }
     const itemStyle: CSSProperties = {
       display: "flex",
       alignItems: "center",
@@ -243,7 +246,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
             : "1px solid transparent"
           : "1px solid transparent",
     };
-    const filename = item.nodeData.fullPath?.substr(
+    const filename = item.nodeData.fullPath?.substring(
       getState().project.path.length
     );
     const isBuildRoot = getState().builder.roots.includes(filename);

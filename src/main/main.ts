@@ -43,6 +43,7 @@ import { ZxBasicCompiler } from "./zxbasic-compiler/ZxBasicCompiler";
 import { mainProcLogger } from "./utils/MainProcLogger";
 
 // --- Register services used by the main process
+mainProcLogger.log("Start registering services");
 registerService(Z80_COMPILER_SERVICE, new Z80CompilerService());
 registerService(SETTINGS_SERVICE, new MainSettingsService());
 
@@ -54,12 +55,14 @@ registerCommonCommands();
 registerCompiler(new Z80Compiler());
 registerCompiler(new ZxBasicCompiler());
 registerCompiler(new ZxbasmCompiler());
+mainProcLogger.log("Services registered");
 
 
 // --- This method will be called when Electron has finished
 // --- initialization and is ready to create browser windows.
 // --- Some APIs can only be used after this event occurs.
 app.on("ready", async () => {
+  mainProcLogger.log("app.on-ready");
   await doSetup();
   dispatch(setWindowsAction(__WIN32__));
 
@@ -86,6 +89,7 @@ app.on("ready", async () => {
   }
 
   // --- Make sure that application configuration is sent to renderers
+  mainProcLogger.log("Sending configuration to renderers");
   sendFromMainToEmu({
     type: "ForwardAppConfig",
     config: appConfiguration,
@@ -95,6 +99,7 @@ app.on("ready", async () => {
   const initialMachineType =
     appSettings?.machineType ?? appConfiguration?.machineType ?? "sp48";
   const settings = appSettings?.machineSpecific?.[initialMachineType];
+  mainProcLogger.log(`Requesting initial machine type (${initialMachineType})`);
   await emuWindow.requestMachineType(initialMachineType, undefined, settings);
 });
 
@@ -102,6 +107,7 @@ app.on("ready", async () => {
 app.on("window-all-closed", () => {
   // --- On OS X it is common for applications and their menu bar
   // --- to stay active until the user quits explicitly with Cmd + Q
+  mainProcLogger.log("app.on-window-all-closed");
   stopStateChangeProcessing();
   if (process.platform !== "darwin") {
     app.quit();
@@ -110,6 +116,7 @@ app.on("window-all-closed", () => {
 
 // --- Set up windows before the first activation
 app.on("activate", async () => {
+  mainProcLogger.log("app.on-activate");
   if (BrowserWindow.getAllWindows().length === 0) {
     await doSetup();
   }
@@ -117,6 +124,7 @@ app.on("activate", async () => {
 
 // --- Make sure the application settings are saved
 app.on("before-quit", () => {
+  mainProcLogger.log("app.on-before-quit");
   emuWindow.saveAppSettings();
   ideWindow.allowClose = true;
   mainProcLogger.close();
@@ -129,18 +137,24 @@ ipcMain.on("MainStateRequest", (_ev, msg: ForwardActionRequest) => {
 
 // --- This channel processes requests arriving from the Emu process
 ipcMain.on("EmuToMainRequest", async (_ev, msg: ForwardActionRequest) => {
+  mainProcLogger.log(`Request from emulator: ${msg.type} (${msg.correlationId})`);
   const response = await processEmulatorRequest(msg);
+  mainProcLogger.log(`Processed: ${msg.type} (${msg.correlationId})`);
   response.correlationId = msg.correlationId;
   if (emuWindow?.window.isDestroyed() === false) {
+    mainProcLogger.log(`Sending response: ${response.type} (${response.correlationId})`);
     emuWindow.window.webContents.send("EmuToMainResponse", response);
   }
 });
 
 // --- This channel processes requests arriving from the Emu process
 ipcMain.on("IdeToEmuMainRequest", async (_ev, msg: ForwardActionRequest) => {
+  mainProcLogger.log(`Request from IDE: ${msg.type}`);
   const response = await processIdeRequest(msg);
+  mainProcLogger.log(`Processed: ${msg.type} (${msg.correlationId})`);
   response.correlationId = msg.correlationId;
   if (ideWindow?.window.isDestroyed() === false) {
+    mainProcLogger.log(`Sending response: ${response.type} (${response.correlationId})`);
     ideWindow.window.webContents.send("IdeToEmuMainResponse", response);
   }
 });
@@ -149,6 +163,7 @@ ipcMain.on("IdeToEmuMainRequest", async (_ev, msg: ForwardActionRequest) => {
  * Helper function to carry out the setup
  */
 async function doSetup(): Promise<void> {
+  mainProcLogger.log("Execute window setup");
   await setupEmuWindow();
   await setupIdeWindow();
   startStateChangeProcessing();

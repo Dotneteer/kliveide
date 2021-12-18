@@ -65,6 +65,7 @@ export type EmulatorPanelState = {
   extraFeatures?: string[];
   frameDiagData?: FrameDiagData;
   programCounter?: number;
+  supportsCodeInjection?: boolean;
 };
 
 /**
@@ -236,7 +237,7 @@ export function getInitialAppState(): AppState {
           value: 0,
         },
       },
-      programCounter: null
+      programCounter: null,
     },
     spectrumSpecific: {
       fastLoad: true,

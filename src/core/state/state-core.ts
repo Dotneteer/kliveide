@@ -48,6 +48,7 @@ export interface ActionTypes {
   EMU_SET_FIRMWARE: null;
   EMU_SET_EXTRA: null;
   EMU_SET_DIAG_DATA: null;
+  EMU_SUPPORST_CODE_INJECTION: null,
 
   // --- ZX Spectrum specific action
   SPECTRUM_FAST_LOAD: null;
@@ -169,6 +170,7 @@ export type Payload = {
   programCounter?: number;
   ideConfig?: Record<string, any>;
   roots?: string[];
+  supportsCodeInjection?: boolean;
 }
 
 /**
