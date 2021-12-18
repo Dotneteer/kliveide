@@ -206,14 +206,6 @@ export interface GetMemoryContentsRequest extends MessageBase {
 }
 
 /**
- * The Ide asks Emu for the code injection support flag
- */
-export interface SupportsCodeInjectionRequest extends MessageBase {
-  type: "SupportsCodeInjection";
-  mode?: string;
-}
-
-/**
  * The Ide asks Emu to inject the specified code
  */
 export interface InjectCodeRequest extends MessageBase {
@@ -421,7 +413,6 @@ type IdeToEmuRequests =
   | GetCpuStateRequest
   | GetMachineStateRequest
   | GetMemoryContentsRequest
-  | SupportsCodeInjectionRequest
   | InjectCodeRequest;
 
 /**
@@ -505,14 +496,6 @@ export interface GetMachineStateResponse extends MessageBase {
 export interface GetMemoryContentsResponse extends MessageBase {
   type: "GetMemoryContentsResponse";
   contents: Uint8Array;
-}
-
-/**
- * The Ide asks Emu for the code injection support flag
- */
-export interface SupportsCodeInjectionResponse extends MessageBase {
-  type: "SupportsCodeInjectionResponse";
-  supports: boolean;
 }
 
 /**
@@ -633,7 +616,6 @@ export type ResponseMessage =
   | GetFileContentsResponse
   | CompileFileResponse
   | GetCompilerInfoResponse
-  | SupportsCodeInjectionResponse
   | GetAppConfigResponse;
 
 /**

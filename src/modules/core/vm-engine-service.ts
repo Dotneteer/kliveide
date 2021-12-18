@@ -18,6 +18,7 @@ import {
   emuSetDiagDataAction,
   emuSetExecutionStateAction,
   emuSetFrameIdAction,
+  emuSupportsCodeInjectionAction,
 } from "@state/emulator-panel-reducer";
 import { FrameDiagData } from "@state/AppState";
 import { CambridgeZ88Core } from "@modules/vm-z88/CambridgeZ88Core";
@@ -311,6 +312,7 @@ class VmEngineService implements IVmEngineService {
     dispatch(
       emuSetDiagDataAction(this.getFrameDiagData(engine.getMachineState()))
     );
+    dispatch(emuSupportsCodeInjectionAction(engine.supportsCodeInjection()));
 
     // --- Allow a little delay for all processes to get synched
     await delay(20);

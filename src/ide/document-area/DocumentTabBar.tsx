@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   getDocumentService,
@@ -20,16 +20,19 @@ export const DocumentTabBar: React.VFC = () => {
   // --- Component state
   const [activeDoc, setActiveDoc] = useState<IDocumentPanel | null>(null);
   const [currentDocs, setCurrentDocs] = useState<IDocumentPanel[]>([]);
+  const mounted = useRef(false);
 
   // --- Refresh the documents when any changes occur
   const documentService = getDocumentService();
   const refreshDocs = (info: DocumentsInfo) => {
+    if (!mounted.current) return;
     setCurrentDocs(info.docs);
     setActiveDoc(info.active);
   };
 
   // --- Rename document tab is the document file has been renamed
   const fileRenamed = (args: FileChange) => {
+    if (!mounted.current) return;
     for (const doc of currentDocs) {
       if (doc.id === args.oldName) {
         doc.id = args.newName;
@@ -43,6 +46,7 @@ export const DocumentTabBar: React.VFC = () => {
 
   // --- Change the path of documents if their folder has been renamed
   const folderRenamed = (args: FileChange) => {
+    if (!mounted.current) return;
     let changed = false;
     for (const doc of currentDocs) {
       if (doc.id.startsWith(`${args.oldName}/`)) {
@@ -59,6 +63,7 @@ export const DocumentTabBar: React.VFC = () => {
 
   // --- Remove this tab if the document file has been deleted
   const fileDeleted = async (name: string) => {
+    if (!mounted.current) return;
     for (const doc of currentDocs) {
       if (doc.id === name) {
         await documentService.unregisterDocument(doc);
@@ -70,6 +75,7 @@ export const DocumentTabBar: React.VFC = () => {
 
   // --- Remove this tab if the document's folder has been deleted
   const folderDeleted = async (name: string) => {
+    if (!mounted.current) return;
     let changed = false;
     for (const doc of currentDocs.slice(0)) {
       if (doc.id.startsWith(`${name}/`)) {
@@ -84,6 +90,7 @@ export const DocumentTabBar: React.VFC = () => {
 
   // --- Close open documents whenever the project is closed
   const projectChanged = async (projectState: ProjectState) => {
+    if (!mounted.current) return;
     if (!projectState.isLoading && !projectState.path) {
       await documentService.closeAll();
     }
@@ -99,18 +106,22 @@ export const DocumentTabBar: React.VFC = () => {
 
   useEffect(() => {
     // --- Mount
-    setCurrentDocs(documentService.getDocuments());
-    setActiveDoc(documentService.getActiveDocument());
-    const projectService = getProjectService();
-    documentService.documentsChanged.on(_refreshDocs);
-    projectService.folderDeleted.on(_folderDeleted);
-    projectService.fileRenamed.on(_fileRenamed);
-    projectService.folderRenamed.on(_folderRenamed);
-    projectService.fileDeleted.on(_fileDeleted);
-    getStore().projectChanged.on(_projectChanged);
+    if (!mounted.current) {
+      mounted.current = true;
+      setCurrentDocs(documentService.getDocuments());
+      setActiveDoc(documentService.getActiveDocument());
+      const projectService = getProjectService();
+      documentService.documentsChanged.on(_refreshDocs);
+      projectService.folderDeleted.on(_folderDeleted);
+      projectService.fileRenamed.on(_fileRenamed);
+      projectService.folderRenamed.on(_folderRenamed);
+      projectService.fileDeleted.on(_fileDeleted);
+      getStore().projectChanged.on(_projectChanged);
+    }
 
     return () => {
       // --- Unmount
+      mounted.current = false;
       const projectService = getProjectService();
       documentService.documentsChanged.off(_refreshDocs);
       projectService.fileRenamed.off(_fileRenamed);

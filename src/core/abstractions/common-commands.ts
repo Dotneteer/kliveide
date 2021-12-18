@@ -18,7 +18,6 @@ import {
 } from "@core/messaging/message-sending";
 import {
   CompileFileResponse,
-  SupportsCodeInjectionResponse,
 } from "@core/messaging/message-types";
 import {
   emuShowFrameInfoAction,
@@ -616,12 +615,6 @@ function signInvalidContext(context: KliveCommandContext) {
 async function queryInjectionCommandState(
   context: KliveCommandContext
 ): Promise<void> {
-  let enabled = false;
-  if (context.process === "ide") {
-    const response = await sendFromIdeToEmu<SupportsCodeInjectionResponse>({
-      type: "SupportsCodeInjection",
-    });
-    enabled = response.supports;
-  }
-  context.commandInfo.enabled = enabled;
+  context.commandInfo.enabled =
+    getState().emulatorPanel.supportsCodeInjection ?? false;
 }

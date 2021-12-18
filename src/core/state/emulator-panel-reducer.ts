@@ -98,6 +98,13 @@ export const emuSetDiagDataAction: ActionCreator = (
   payload: { frameDiagData },
 });
 
+export const emuSupportsCodeInjectionAction: ActionCreator = (
+  supportsCodeInjection: boolean
+) => ({
+  type: "EMU_SUPPORST_CODE_INJECTION",
+  payload: { supportsCodeInjection },
+});
+
 // ============================================================================
 // Reducer
 
@@ -146,6 +153,8 @@ export default function (
       return { ...state, baseClockFrequency: payload.baseClockFrequency };
     case "EMU_SET_DIAG_DATA":
       return { ...state, frameDiagData: payload.frameDiagData };
+    case "EMU_SUPPORST_CODE_INJECTION":
+      return { ...state, supportsCodeInjection: payload.supportsCodeInjection };
     default:
       return state;
   }

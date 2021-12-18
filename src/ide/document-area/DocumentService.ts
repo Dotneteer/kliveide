@@ -24,6 +24,10 @@ export class DocumentService implements IDocumentService {
   private _extensionBoundFactories = new Map<string, IDocumentFactory>();
   private _editorExtensions = new Map<string, CodeEditorInfo>();
   private _languageExtensions = new Map<string, CustomLanguageInfo>();
+  private _userLanguagesLoaded = false;
+  private _userLanguages: string | undefined;
+  private _currentLanguagesLoaded = false;
+  private _currentLanguages: string | undefined;
 
   constructor() {
     this._documents = [];
@@ -95,13 +99,19 @@ export class DocumentService implements IDocumentService {
     const filename = getNodeFile(resource);
 
     // #3: Test if we have an extension for the specified language in the current settings
-    const langInProject = await getLanguage("current");
+    const langInProject = this._currentLanguagesLoaded
+      ? this._currentLanguages
+      : ((this._currentLanguagesLoaded = true),
+        (this._currentLanguages = await getLanguage("current")));
     if (langInProject) {
       return langInProject;
     }
 
     // #4: Test if we have an extension for the specified language in the user settings
-    const langInSettings = await getLanguage("user");
+    const langInSettings = this._userLanguagesLoaded
+      ? this._userLanguages
+      : ((this._userLanguagesLoaded = true),
+        (this._currentLanguages = await getLanguage("user")));
     if (langInSettings) {
       return langInSettings;
     }
@@ -181,7 +191,7 @@ export class DocumentService implements IDocumentService {
     return new CodeEditorFactory(await this.getCodeEditorLanguage(resource));
   }
 
-    /**
+  /**
    * Gets the icon that should be used with the specified resouce
    * @param resource Resource name
    */
@@ -205,7 +215,6 @@ export class DocumentService implements IDocumentService {
     // No registered icon
     return null;
   }
-
 
   /**
    * Registers a document

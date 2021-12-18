@@ -1,7 +1,5 @@
 import * as fs from "fs";
-import {
-  KliveCompilerOutput,
-} from "@abstractions/compiler-registry";
+import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 import {
   AssemblerErrorInfo,
   BinarySegment,
@@ -14,6 +12,7 @@ import {
 } from "@modules/integration-zxbasm/zxbasm-config";
 import { readFileSync, unlinkSync } from "original-fs";
 import { CompilerBase } from "../compiler-integration/CompilerBase";
+import { mainProcLogger } from "../utils/MainProcLogger";
 
 /**
  * Wraps the ZXBASM Compiler (Boriel's Basic Assembler)
@@ -84,7 +83,9 @@ export class ZxbasmCompiler extends CompilerBase {
       // --- Extract the ORG of the compilation
       let orgAddress: number | undefined;
       if (compileOut) {
-        const debugOut = compileOut.filter(i => typeof i === "string") as string[];
+        const debugOut = compileOut.filter(
+          (i) => typeof i === "string"
+        ) as string[];
         for (const outEntry of debugOut) {
           if (outEntry.startsWith("debug:")) {
             const sqrPos = outEntry.indexOf("[") - 6;
@@ -98,9 +99,10 @@ export class ZxbasmCompiler extends CompilerBase {
           }
         }
       }
-      const debugMessages: string[] | undefined = orgAddress === undefined
-        ? ["Cannot extract ORG address from code, $8000 is assumed."]
-        : undefined;
+      const debugMessages: string[] | undefined =
+        orgAddress === undefined
+          ? ["Cannot extract ORG address from code, $8000 is assumed."]
+          : undefined;
 
       // --- Extract the output
       const machineCode = new Uint8Array(readFileSync(outFilename));
@@ -114,7 +116,9 @@ export class ZxbasmCompiler extends CompilerBase {
 
       // --- Extract model type
       const mainCode = fs.readFileSync(filename, "utf8");
-      const is48 = /[ \t]*;[ \t]*[mM][oO][dD][eE][ \t]*=[ \t]*48[ \t\r\n]/.test(mainCode);
+      const is48 = /[ \t]*;[ \t]*[mM][oO][dD][eE][ \t]*=[ \t]*48[ \t\r\n]/.test(
+        mainCode
+      );
 
       // --- Done.
       return {
@@ -122,9 +126,10 @@ export class ZxbasmCompiler extends CompilerBase {
         debugMessages,
         injectOptions: { subroutine: true },
         segments: [segment],
-        modelType: is48 ? SpectrumModelType.Spectrum48 : undefined
+        modelType: is48 ? SpectrumModelType.Spectrum48 : undefined,
       };
     } catch (err) {
+      mainProcLogger.logError("Error while invoking ZXBASM compiler", err);
       throw err;
     }
 
