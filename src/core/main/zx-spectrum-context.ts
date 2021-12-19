@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
@@ -8,14 +9,13 @@ import {
   spectrumFastLoadAction,
   spectrumTapeContentsAction,
 } from "@state/spectrum-specific-reducer";
-import { emuSetClockMultiplierAction, emuSetKeyboardLayoutAction } from "@state/emulator-panel-reducer";
-import { ExtraMachineFeatures } from "@abstractions/machine-specfic";
 import {
-  setSoundLevel,
-  setSoundLevelMenu,
-} from "../../main/app/app-menu";
+  emuSetClockMultiplierAction,
+  emuSetKeyboardLayoutAction,
+} from "@state/emulator-panel-reducer";
+import { ExtraMachineFeatures } from "@abstractions/machine-specfic";
+import { setSoundLevel, setSoundLevelMenu } from "../../main/app/app-menu";
 import { MachineCreationOptions } from "../abstractions/vm-core-types";
-import { VirtualMachineType } from "./machine-registry";
 import { dispatch, getState } from "@core/service-registry";
 import { emuWindow } from "../../main/app/emu-window";
 import { checkTapeFile } from "@modules/vm-zx-spectrum/readers";
@@ -23,6 +23,15 @@ import { checkTapeFile } from "@modules/vm-zx-spectrum/readers";
 // --- Menu identifier contants
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
+const DISK_MENU = "sp_disk_menu";
+const CREATE_VIRTUAL_DISK = "sp_3e_create_virtual_disk";
+const INSERT_DISK_A = "sp_3e_insert_disk_A";
+const INSERT_DISK_B = "sp_3e_insert_disk_B";
+const EJECT_DISK_A = "sp_3e_eject_disk_A";
+const EJECT_DISK_B = "sp_3e_eject_disk_B";
+
+// --- Other constants
+const FLOPPY_FOLDER = "floppy";
 
 // --- ZX Spectrum-specific menu items
 const zxSpectrumLinks: LinkDescriptor[] = [
@@ -52,24 +61,6 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
    * Firmware sizes accected by the virtual machine
    */
   readonly acceptedFirmwareSizes: number[] | null = [0x4000];
-
-  // /**
-  //  * Items to add to the Show menu
-  //  */
-  // provideViewMenuItems(): MenuItemConstructorOptions[] | null {
-  //   return [
-  //     {
-  //       id: TOGGLE_FAST_LOAD,
-  //       label: "Fast load from tape",
-  //       type: "checkbox",
-  //       checked: true,
-  //       click: (mi) => {
-  //         dispatch(spectrumFastLoadAction(mi.checked));
-  //         emuWindow.saveKliveProject();
-  //       },
-  //     },
-  //   ];
-  // }
 
   /**
    * Items to add to the machine menu
@@ -219,11 +210,6 @@ export abstract class ZxSpectrumContextProviderBase extends MachineContextProvid
 /**
  * Context provider for the ZX Spectrum 48 machine model
  */
-@VirtualMachineType({
-  id: "sp48",
-  label: "ZX Spectrum 48",
-  active: true,
-})
 export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Constructs the provider with the specified options
@@ -256,11 +242,6 @@ export class ZxSpectrum48ContextProvider extends ZxSpectrumContextProviderBase {
 /**
  * Context provider for the ZX Spectrum 128 machine model
  */
-@VirtualMachineType({
-  id: "sp128",
-  label: "ZX Spectrum 128",
-  active: true,
-})
 export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Constructs the provider with the specified options
@@ -293,11 +274,6 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
 /**
  * Context provider for the ZX Spectrum 128 machine model
  */
- @VirtualMachineType({
-  id: "spP3e",
-  label: "ZX Spectrum +3E (in progress)",
-  active: true,
-})
 export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Constructs the provider with the specified options
@@ -310,7 +286,87 @@ export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
   /**
    * Gets the names of firmware files
    */
-  readonly firmwareFiles: string[] = ["spP3e-0.rom", "spP3e-1.rom", "spP3e-2.rom", "spP3e-3.rom"];
+  readonly firmwareFiles: string[] = [
+    "spP3e-0.rom",
+    "spP3e-1.rom",
+    "spP3e-2.rom",
+    "spP3e-3.rom",
+  ];
+
+  /**
+   * Items to add to the machine menu
+   */
+  provideMachineMenuItems(): MenuItemConstructorOptions[] | null {
+    return [
+      ...super.provideMachineMenuItems(),
+      { type: "separator" },
+      {
+        id: DISK_MENU,
+        label: "Floppy disks",
+        type: "submenu",
+        submenu: [
+          {
+            id: CREATE_VIRTUAL_DISK,
+            label: "Create virtual disk...",
+            click: async () => {},
+          },
+          { type: "separator" },
+          {
+            id: INSERT_DISK_A,
+            label: "Insert floppy into A:",
+            click: async () => {},
+          },
+          {
+            id: EJECT_DISK_A,
+            label: "Eject A:",
+            click: async () => {},
+          },
+          {
+            id: INSERT_DISK_B,
+            label: "Insert floppy into B:",
+            click: async () => {},
+          },
+          {
+            id: EJECT_DISK_B,
+            label: "Eject B:",
+            click: async () => {},
+          },
+        ],
+      },
+    ];
+  }
+
+  /**
+   * When the application state changes, you can update the menus
+   */
+  updateMenuStatus(state: AppState): void {
+    const menu = Menu.getApplicationMenu();
+    const insertAMenu = menu.getMenuItemById(INSERT_DISK_A);
+    if (insertAMenu) {
+      insertAMenu.visible =
+        !!state.spectrumSpecific?.diskAEnabled &&
+        !state.spectrumSpecific?.diskAInserted;
+    }
+    const ejectAMenu = menu.getMenuItemById(EJECT_DISK_A);
+    if (ejectAMenu) {
+      ejectAMenu.visible =
+        !!state.spectrumSpecific?.diskAEnabled &&
+        !!state.spectrumSpecific?.diskAInserted;
+    }
+    const insertBMenu = menu.getMenuItemById(INSERT_DISK_B);
+    if (insertBMenu) {
+      insertBMenu.visible =
+        !!state.spectrumSpecific?.diskBEnabled &&
+        !state.spectrumSpecific?.diskBInserted;
+    }
+    const ejectBMenu = menu.getMenuItemById(EJECT_DISK_B);
+    if (ejectBMenu) {
+      ejectBMenu.visible =
+        !!state.spectrumSpecific?.diskBEnabled &&
+        !!state.spectrumSpecific?.diskBInserted;
+    }
+    emuWindow.saveKliveProject();
+  }
 
   /**
    * The normal CPU frequency of the machine

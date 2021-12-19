@@ -353,7 +353,7 @@ export function setupMenu(): void {
       label: value.label,
       type: "radio",
       checked: value.id === machineType,
-      enabled: value.active ?? true,
+      enabled: true,
       click: async (mi) => {
         try {
           const machineType = mi.id.split("_")[1];

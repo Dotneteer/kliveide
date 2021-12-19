@@ -103,6 +103,10 @@ export type ZxSpectrumSpecificState = {
   tapeContents?: Uint8Array;
   tapeLoaded?: boolean;
   loadMode?: boolean;
+  diskAEnabled?: boolean;
+  diskBEnabled?: boolean;
+  diskAInserted?: boolean;
+  diskBInserted?: boolean;
 };
 
 /**
@@ -242,6 +246,10 @@ export function getInitialAppState(): AppState {
     spectrumSpecific: {
       fastLoad: true,
       tapeContents: undefined,
+      diskAEnabled: true,
+      diskAInserted: true,
+      diskBEnabled: true,
+      diskBInserted: false,
     },
     sideBar: {},
     documentFrame: {},

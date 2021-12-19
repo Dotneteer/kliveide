@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import { getKliveConfiguration } from "../main-state/klive-configuration";
-import { getHomeFolder } from "./file-utils";
+import { getHomeFolder } from "./electron-utils";
 
 /**
  * The file that stores the Klive Emulator configuration
@@ -30,8 +30,8 @@ class MainProcLogger {
 
   /**
    * Logs the specified message to the log file
-   * @param message 
-   * @returns 
+   * @param message
+   * @returns
    */
   log(message: string): void {
     if (!this._useLog) {
@@ -40,17 +40,18 @@ class MainProcLogger {
 
     try {
       this._stream.write(`${new Date().toISOString()}: ${message}\n`);
-    } catch {
+    } catch (err) {
+      console.log(err);
       // --- This error is intentionally ignored
     }
   }
 
   /**
    * Logs the specified message to the log file
-   * @param message 
-   * @returns 
+   * @param message
+   * @returns
    */
-   logError(message: string, err: any): void {
+  logError(message: string, err: any): void {
     const stack = err?.stack ?? "(no stack)";
     const fullMessage = `${message}: ${err}; ${stack}`;
     this.log(fullMessage);

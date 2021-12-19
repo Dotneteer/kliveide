@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import { KliveConfiguration, KliveSettings } from "@abstractions/klive-configuration";
+import { getHomeFolder } from "../utils/electron-utils";
 
 /**
  * The file that stores the Klive Emulator configuration
@@ -15,14 +16,6 @@ export const SETTINGS_FILE_PATH = "Klive/klive.settings";
 /**
  * Represents the Klive configuration that is read during startup
  */
-/**
- * Gets the current home folder
- */
-function getHomeFolder(): string {
-  return (
-    process.env[process.platform === "win32" ? "USERPROFILE" : "HOME"] ?? ""
-  );
-}
 
 /**
  * Gets the configuration of Klive Emulator from the user folder

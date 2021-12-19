@@ -1,12 +1,22 @@
-import { registerMachineTypeAction } from "@state/machines-reducer";
 import { RegisteredMachine } from "@state/AppState";
 import { MachineContextProvider } from "./machine-context";
+import {
+  ZxSpectrum128ContextProvider,
+  ZxSpectrum48ContextProvider,
+  ZxSpectrumP3ContextProvider,
+} from "./zx-spectrum-context";
+import { Cz88ContextProvider } from "./cz88-context";
 import { dispatch } from "@core/service-registry";
+import { registerMachineTypeAction } from "@core/state/machines-reducer";
+
+type ProviderConstructor = new (
+  options?: Record<string, any>
+) => MachineContextProvider;
 
 /**
  * Holds the registry of virtual machine context providers
  */
-export const machineRegistry = new Map<string, MachineRegistryInfo>();
+export const machineRegistry = new Map<string, MachineInfo>();
 
 /**
  * Get the identifiers of registered machines
@@ -15,52 +25,48 @@ export const machineRegistry = new Map<string, MachineRegistryInfo>();
 export function getRegisteredMachines(): RegisteredMachine[] {
   const result: RegisteredMachine[] = [];
   for (var entry of machineRegistry.values()) {
-    if (entry.active ?? true) {
-      result.push({
-        id: entry.id,
-        label: entry.label,
-      });
-    }
+    result.push({
+      id: entry.id,
+      label: entry.label,
+    });
   }
   return result;
+}
+
+function registerMachine(
+  id: string,
+  label: string,
+  provider: ProviderConstructor
+): void {
+  machineRegistry.set(id, {
+    id,
+    label,
+    implementor: provider,
+  });
+  dispatch(
+    registerMachineTypeAction({
+      id,
+      label,
+    })
+  );
 }
 
 /**
  * Machine information to use to register the virtual machine types
  */
-export type MachineInfo = {
+type MachineInfo = {
   id: string;
   label: string;
-  active?: boolean;
+  implementor: ProviderConstructor;
 };
 
-/**
- * Registry information about a virtual machine
- */
-export type MachineRegistryInfo = MachineInfo & {
-  implementor: MachineContextProvider;
-};
-
-/**
- * Decorator to annotate a virtual machine context provider
- * @param data Virtual machine information
- */
-export function VirtualMachineType(data: MachineInfo) {
-  return function <T extends { new (...args: any[]): Record<string, any> }>(
-    constructor: T
-  ) {
-    const info: MachineRegistryInfo = {
-      id: data.id,
-      label: data.label,
-      active: data.active,
-      implementor: constructor as unknown as MachineContextProvider,
-    };
-    machineRegistry.set(data.id, info);
-    dispatch(
-      registerMachineTypeAction({
-        id: info.id,
-        label: info.label,
-      })
-    );
-  };
-}
+// ============================================================================
+// Register supported machines
+registerMachine("sp48", "ZX Spectrum 48", ZxSpectrum48ContextProvider);
+registerMachine("sp128", "ZX Spectrum 128", ZxSpectrum128ContextProvider);
+registerMachine(
+  "spP3e",
+  "ZX Spectrum +3E (in progress)",
+  ZxSpectrumP3ContextProvider
+);
+registerMachine("cz88", "Cambridge Z88 (in progress)", Cz88ContextProvider);

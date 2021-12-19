@@ -38,7 +38,6 @@ import {
   ExecuteMachineCommandResponse,
 } from "@core/messaging/message-types";
 import { ExtraMachineFeatures } from "@abstractions/machine-specfic";
-import { VirtualMachineType } from "./machine-registry";
 import { sendFromMainToEmu } from "@core/messaging/message-sending";
 import { dispatch, getState } from "@core/service-registry";
 import { emuWindow } from "../../main/app/emu-window";
@@ -150,12 +149,10 @@ let slotsState: Z88CardsState = {
 /**
  * Context provider for the Cambridge Z88 machine type
  */
-@VirtualMachineType({
-  id: "cz88",
-  label: "Cambridge Z88 (in progress)",
-  active: true,
-})
 export class Cz88ContextProvider extends MachineContextProviderBase {
+  readonly id = "cz88";
+  readonly label = "Cambridge Z88 (in progress)";
+
   /**
    * Constructs the provider with the specified options
    * @param options

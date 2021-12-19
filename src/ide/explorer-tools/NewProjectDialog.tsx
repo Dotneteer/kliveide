@@ -55,6 +55,8 @@ type Props = {
 };
 
 const NewProjectDialog: React.VFC<Props> = ({ newProjectData }) => {
+  const machines = getState().machines;
+  const [machineType, setMachineType] = useState(machines[0].id);
   const [projectName, setProjectName] = useState(newProjectData.projectName);
   const [projectFolder, setProjectFolder] = useState(
     newProjectData.projectPath
@@ -64,8 +66,6 @@ const NewProjectDialog: React.VFC<Props> = ({ newProjectData }) => {
     flexDirection: "column",
   };
 
-  const machines = getState().machines;
-  newProjectData.machineType = machines[0].id;
   return (
     <div style={containerStyle}>
       <Label>Machine type</Label>
@@ -73,10 +73,11 @@ const NewProjectDialog: React.VFC<Props> = ({ newProjectData }) => {
         <DropDownListComponent
           dataSource={machines}
           fields={{ text: "label", value: "id" }}
-          value={newProjectData.machineType}
+          value={machineType}
           width={240}
           select={(arg) => {
             newProjectData.machineType = (arg.itemData as any).id;
+            setMachineType(newProjectData.machineType);
           }}
         ></DropDownListComponent>
       </Field>
@@ -107,7 +108,6 @@ const NewProjectDialog: React.VFC<Props> = ({ newProjectData }) => {
               if (folder) {
                 setProjectFolder(folder);
                 newProjectData.projectPath = folder;
-                console.log(newProjectData);
               }
             }}
           />

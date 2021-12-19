@@ -5,13 +5,6 @@ import { DirectoryContent } from "@state/AppState";
 import { mainProcLogger } from "./MainProcLogger";
 
 /**
- * Gets the current home folder
- */
-export function getHomeFolder(): string {
-  return process.env[__WIN32__ ? "USERPROFILE" : "HOME"];
-}
-
-/**
  * Gets the contents of the specified folder
  * @param folder Folder to query
  * @returns
