@@ -4,10 +4,7 @@ import { app, dialog } from "electron";
 import { AppWindow } from "./app-window";
 import { __DARWIN__ } from "../utils/electron-utils";
 import { RequestMessage } from "@core/messaging/message-types";
-import {
-  MachineContextProvider,
-  MachineContextProviderBase,
-} from "@core/main/machine-context";
+import { MachineContextProvider } from "@core/main/machine-context";
 import { MachineCreationOptions } from "../../core/abstractions/vm-core-types";
 import {
   emuMachineContextAction,
@@ -34,6 +31,7 @@ import {
 import { dispatch, getState } from "@core/service-registry";
 import { registerEmuWindowForwarder } from "../main-state/main-store";
 import { KliveProject, KliveSettings } from "@abstractions/klive-configuration";
+import { mainProcLogger } from "../utils/MainProcLogger";
 
 /**
  * Represents the singleton emulator window
@@ -69,6 +67,18 @@ class EmuWindow extends AppWindow {
    */
   get stateFile(): string {
     return "emu-window-state.json";
+  }
+
+  /**
+   * Loads the contenst of the main window
+   */
+  load(): void {
+    super.load();
+    if (mainProcLogger.initError) {
+      dialog.showMessageBox({
+        message: mainProcLogger.initError,
+      });
+    }
   }
 
   /**

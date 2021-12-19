@@ -2,7 +2,7 @@
 // The startup file of the main Electron process
 // ============================================================================
 
-import { BrowserWindow, app, ipcMain } from "electron";
+import { BrowserWindow, app, ipcMain, dialog } from "electron";
 
 import { forwardRendererState } from "./main-state/main-store";
 import { ForwardActionRequest } from "@core/messaging/message-types";

@@ -14,6 +14,8 @@ export const LOG_FILE_PATH = "Klive/log.txt";
 class MainProcLogger {
   private readonly _useLog: boolean;
   private readonly _stream: fs.WriteStream;
+  readonly initError: string | undefined;
+
   constructor() {
     try {
       const config = getKliveConfiguration();
@@ -22,7 +24,8 @@ class MainProcLogger {
       this._stream = fs.createWriteStream(logFile, { flags: "a" });
       this.log("Klive main process logging started.");
     } catch (err) {
-      console.log(`Warning: Cannot set up main process logging: ${err}`);
+      this.initError = `Warning: Cannot set up main process logging: ${err}`;
+      console.log(this.initError);
       this._stream = null;
       this._useLog = false;
     }
