@@ -37,3 +37,30 @@ Both the Emulator and IDE windows have their Developer Tools panel. When you go 
 
 When you suspect some issue with Klive, you can use the **Console** tab of DevTools to collect errors or other trace messages to attach them to your bug report. If you're not sure whether the issue is within the Emulator or the IDE, check the DevTools panels of both windows.
 
+## Turning on Main Process Logging
+
+Besides the Emulator and IDE windows, the third process, *main*, is responsible for accessing machine-related resources. You can turn on logging the events of the main process with these steps:
+
+1. Visit the `Klive` folder under your home folder. If you have never started Klive, this folder is empty; otherwise, it contains a `klive.settings` file that contains your IDE settings and states after your last Klive session.
+2. If there is no `klive.config` file in the folder, create a text file named `klive.config` in this directory.
+3. Add this simple JSON snippet into `klive.config` with your preferred editor:
+
+```
+{
+  "mainProcLogging": true
+}
+```
+
+If you already had a `klive.config` file in the folder, take care to follow the JSON syntax. For example, if you have already configured showing DevTools, `klive.config` should look like this after turning on the main process logging:
+
+```
+{
+  "showDevTools": true,
+  "mainProcLogging": true
+}
+```
+
+The logging starts immediately next time you start Klive. Should the logging setup fail, Klive will display you a message box with the error.
+You can find the log within the `Klive` folder in your home directory in the `log.txt` file.
+
+Every Klive session appends its log entries to the existing `log.txt` file. You can delete it; the next session starts a new file until you turn main process logging off.

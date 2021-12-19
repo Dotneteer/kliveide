@@ -1,10 +1,7 @@
 import * as path from "path";
 import * as electronLocalShortcut from "electron-localshortcut";
 
-import {
-  BrowserWindow,
-  BrowserWindowConstructorOptions,
-} from "electron";
+import { BrowserWindow, BrowserWindowConstructorOptions } from "electron";
 import { __DARWIN__, __LINUX__, __WIN32__ } from "../utils/electron-utils";
 import { registerMainStore } from "../main-state/main-store";
 
@@ -126,7 +123,10 @@ export abstract class AppWindow {
    * @param savedWindowState
    * @returns
    */
-  getWindowOptions(savedWindowState: any, showWindow: boolean): BrowserWindowConstructorOptions {
+  getWindowOptions(
+    savedWindowState: any,
+    showWindow: boolean
+  ): BrowserWindowConstructorOptions {
     const windowOptions: BrowserWindowConstructorOptions = {
       x: savedWindowState.x,
       y: savedWindowState.y,
@@ -245,4 +245,3 @@ export abstract class AppWindow {
     this._window = null;
   }
 }
-
