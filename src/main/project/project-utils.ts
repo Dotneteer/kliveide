@@ -5,7 +5,7 @@ import { dialog } from "electron";
 import { dispatch, getState } from "@core/service-registry";
 
 import { AppWindow } from "../app/app-window";
-import { getFolderContents, getHomeFolder } from "../utils/file-utils";
+import { getFolderContents } from "../utils/file-utils";
 import { machineRegistry } from "@core/main/machine-registry";
 import {
   projectOpenedAction,
@@ -26,6 +26,7 @@ import { emuWindow } from "../app/emu-window";
 import { setIdeConfigAction } from "@core/state/ide-config-reducer";
 import { appSettings } from "../main-state/klive-configuration";
 import { mainProcLogger } from "../utils/MainProcLogger";
+import { getHomeFolder } from "../utils/electron-utils";
 
 /**
  * Name of the project file within the project directory
@@ -191,6 +192,21 @@ export async function createKliveProject(
       };
     }
 
+    // --- Copy machine-specific templates
+    const machineSpecDir = path.join(
+      __dirname,
+      `templates/machines/${machineType.toLowerCase()}`
+    );
+    if (fs.existsSync(machineSpecDir)) {
+      try {
+        copyFolderSync(machineSpecDir, targetFolder, false);
+      } catch (err) {
+        return {
+          error: `Error while copying machine specific template from '${sourceDir}': ${err}`,
+        };
+      }
+    }
+
     // --- Create the project file
     const project: KliveProject = {
       machineType,
@@ -198,7 +214,11 @@ export async function createKliveProject(
         breakpoints: [],
       },
       builder: {
-        roots: ["/code/code.kz80.asm", "/code/code.zxb.asm", "/code/program.zxbas"],
+        roots: [
+          "/code/code.kz80.asm",
+          "/code/code.zxb.asm",
+          "/code/program.zxbas",
+        ],
       },
       ide: appSettings?.ide ?? {},
     };
@@ -242,13 +262,20 @@ export function copyFileSync(source: string, target: string) {
  * @param source Source folder
  * @param target Target folder
  */
-export function copyFolderSync(source: string, target: string) {
+export function copyFolderSync(
+  source: string,
+  target: string,
+  copyRoot = true
+) {
   var files = [];
 
   // --- Check if folder needs to be created or integrated
-  var targetFolder = path.join(target, path.basename(source));
-  if (!fs.existsSync(targetFolder)) {
-    fs.mkdirSync(targetFolder);
+  let targetFolder = target;
+  if (copyRoot) {
+    targetFolder = path.join(target, path.basename(source));
+    if (!fs.existsSync(targetFolder)) {
+      fs.mkdirSync(targetFolder);
+    }
   }
 
   // --- Copy

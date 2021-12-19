@@ -25,11 +25,6 @@ import {
 import { emuFocusAction } from "@state/emu-focus-reducer";
 import { MainToEmuForwarder } from "../communication/MainToEmuForwarder";
 import { machineRegistry } from "@core/main/machine-registry";
-import {
-  ZxSpectrum128ContextProvider,
-  ZxSpectrum48ContextProvider,
-} from "@core/main/zx-spectrum-context";
-import { Cz88ContextProvider } from "@core/main/cz88-context";
 import { MainToEmulatorMessenger } from "../communication/MainToEmulatorMessenger";
 import { PROJECT_FILE } from "../project/project-utils";
 import {
@@ -39,15 +34,6 @@ import {
 import { dispatch, getState } from "@core/service-registry";
 import { registerEmuWindowForwarder } from "../main-state/main-store";
 import { KliveProject, KliveSettings } from "@abstractions/klive-configuration";
-
-/**
- * These are the context providers we usein the code
- */
-export const _: typeof MachineContextProviderBase[] = [
-  ZxSpectrum48ContextProvider,
-  ZxSpectrum128ContextProvider,
-  Cz88ContextProvider,
-];
 
 /**
  * Represents the singleton emulator window

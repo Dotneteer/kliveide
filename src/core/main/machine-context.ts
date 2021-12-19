@@ -181,7 +181,7 @@ export abstract class MachineContextProviderBase
    * Override this method to set the machine-specific settings
    */
   async setMachineSpecificSettings(
-    settings: Record<string, any>
+    _settings: Record<string, any>
   ): Promise<MachineCreationOptions | null> {
     return null;
   }

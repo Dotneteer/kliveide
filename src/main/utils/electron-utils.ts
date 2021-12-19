@@ -31,5 +31,12 @@ export function machineIdFromMenuId(menuId: string): string {
  * @param machineId Machine ID
  */
 export function menuIdFromMachineId(machineId: string): string {
-    return `machine_${machineId}`;
+  return `machine_${machineId}`;
+}
+
+/**
+ * Gets the current home folder
+ */
+export function getHomeFolder(): string {
+  return process.env[__WIN32__ ? "USERPROFILE" : "HOME"];
 }
