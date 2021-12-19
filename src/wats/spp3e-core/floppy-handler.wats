@@ -2,6 +2,31 @@
 // Floppy disk emulation for ZX Spectrum +3E
 // ============================================================================
 
+// Floppy command constants
+
+const u32 FCMD_NONE = 0;
+const u32 FCMD_READ_DATA = 1;
+const u32 FCMD_WRITE_DATA = 2;
+const u32 FCMD_READ_ID = 3;
+const u32 FCMD_FORMAT_TRACK = 4;
+const u32 FCMD_RECALIBRATE = 5;
+const u32 FCMD_SPECIFY = 6;
+const u32 FCMD_SENSE_DRIVE_STATUS = 7;
+const u32 FCMD_SEEK = 8;
+
+// Structure of a virtual floppy file
+type virtualFloppy = struct {
+  u32 version,
+  u8 diskFormat,
+  bool isWriteProtected,
+  bool isDoubleSized,
+  u8 tracks,
+  u8 sectorsPerTrack,
+  u8 firstSectorIndex,
+  u8[10] formatSpec,
+  u8[1024*1024] bytes
+};
+
 // Indicates the state of the disk motor
 // Port 0x1FFD, Bit 3:
 // Used in every paging mode
@@ -9,3 +34,189 @@
 // True: motor on
 global bool diskMotorState;
 
+// Indicates if the machine has at least one floppy drive
+global bool floppyPresent;
+
+// Indicates if there is drive B: present
+global bool driveBPresent;
+
+// The last issues floppy command
+global u32 lastCommand;
+
+// Accepts commands in the current state?
+global bool acceptCommand;
+
+// Number of command bytes received so far
+global u32 commandBytesReceived;
+
+// Index of result bytes received
+global u32 resultBytesIndex;
+
+// Index of data result bytes received
+global u32 dataResultBytesIndex;
+
+// The ST0 status register
+global u8 floppySt0;
+
+// The ST1 status register
+global u8 floppySt1;
+
+// The ST2 status register
+global u8 floppySt2;
+
+// The ST3 status register
+global u8 floppySt3;
+
+// Floppy command parameters
+u8[16] commandParameters;
+
+// Floppy command results
+*u8 commandResult;
+
+// Data to write to the floppy
+u8[0x4000] dataToWrite;
+
+// Floppy data results
+*u8 dataResult;
+
+// Floppy exeution status
+global u8 floppyExecStatus;
+
+// Operation state variables
+global bool floppyAMounted;
+global bool floppyBMounted;
+global u8 mainStatusRegister;
+global u8 stepRateTime;
+global u8 headUnloadTime;
+global u8 headLoadTime;
+global bool nonDmaMode;
+global u32 selectedDrive;
+u8[4] floppyHeads;
+u8[4] currentTracks;
+u8[4] currentSectors;
+*virtualFloppy currentFloppy;
+
+// Data of drive A:
+virtualFloppy driveAFloppy;
+
+// Data of drive B:
+virtualFloppy driveBFloppy;
+
+// ============================================================================
+// Floppy emulator methods
+
+// Resets the floppy drive
+void resetFloppy() {
+  mainStatusRegister = 0b1000_0000;
+  acceptCommand = true;
+  lastCommand = FCMD_NONE;
+  commandBytesReceived = 0;
+  floppySt0 = 0x00;
+  floppySt1 = 0x00;
+  floppySt2 = 0x00;
+  floppySt3 = 0x00;
+  local u32 i = 0;
+  while (i < 4) {
+    currentTracks[i] = 0x00;
+    currentSectors[i] = 0x00;
+    i += 1;
+  }
+  floppyExecStatus = 0xc0;
+  selectedDrive = 0;
+}
+
+// Tests if the current drive is ready
+bool isDiskReady() {
+  if (selectedDrive == 0) {
+    return floppyAMounted;
+  }
+  return floppyBMounted;
+}
+
+// Sets the execution mode
+void setExecutionMode(bool exm) {
+  if (exm) {
+    mainStatusRegister |= 0b0010_0000;
+  } else {
+    mainStatusRegister &= 0b1101_1111;
+  }
+}
+
+// Signs if a command is accepted or not
+void setAcceptCommand(bool accept) {
+  acceptCommand = accept;
+  if (!accept) {
+    mainStatusRegister |= 0b0001_0000;
+  } else {
+    mainStatusRegister &= 0b1110_1111;
+  }
+}
+
+// Sets the value of the DIO flag
+void setDioFlag(bool dio) {
+  if (dio) {
+    mainStatusRegister |= 0b0100_0000;
+  } else {
+    mainStatusRegister &= 0b1011_1111;
+  }
+}
+
+// Gets the flag that indicates if direction is OUT
+bool getDirectionOut() {
+  return (mainStatusRegister & 0b0100_0000) != 0;
+}
+
+// Sends result back
+void sendResult(*u8 result, *u8 dataResult) {
+  setAcceptCommand(true);
+  resultBytesIndex = 0;
+  dataResultBytesIndex = 0;
+  setDioFlag(true);
+  commandResult = result;
+  dataResult = dataResult;
+  if (&dataResult != 0) {
+    setExecutionMode(true);
+  }
+}
+
+void sendDataResult() {
+  local bool writeProtected = false;
+            //var writeProtected = CurrentFloppyFile?.IsWriteProtected ?? false;
+  floppySt0 = floppyExecStatus 
+    | (floppyHeads[selectedDrive] == 0 ? 0x00 : 0x04) 
+    | (selectedDrive & 0x03);
+  floppySt1 = (currentSectors[selectedDrive] > 9 ? 0x80 : 0x00) 
+    | (writeProtected ? 0x02 : 0x00);
+  floppySt2 = 0x00;
+            // SendResult(new byte[]
+            // {
+            //     _st0, _st1, _st2,
+            //     CurrentTracks[SelectedDrive],
+            //     Heads[SelectedDrive],
+            //     CurrentSectors[SelectedDrive],
+            //     0x02
+            // }, _dataResult);
+}
+
+// ============================================================================
+// Interface with the emulator
+
+// Sets the floppy present flag
+export void setFloppyPresent(bool present) {
+  floppyPresent = present;
+}
+
+// Sets the drive B: present flag
+export void setDriveBPresent(bool present) {
+  driveBPresent = present;
+}
+
+// Sets the drive A: mounted flag
+export void setFloppyAMounted(bool mounted) {
+  floppyAMounted = mounted;
+}
+
+// Sets the drive B: mounted flag
+export void setFloppyBMounted(bool mounted) {
+  floppyBMounted = mounted;
+}

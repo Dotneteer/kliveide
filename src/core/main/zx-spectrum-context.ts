@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as path from "path";
 
 import { dialog, Menu, MenuItemConstructorOptions } from "electron";
 import { LinkDescriptor, MachineContextProviderBase } from "./machine-context";
@@ -19,12 +18,17 @@ import { MachineCreationOptions } from "../abstractions/vm-core-types";
 import { dispatch, getState } from "@core/service-registry";
 import { emuWindow } from "../../main/app/emu-window";
 import { checkTapeFile } from "@modules/vm-zx-spectrum/readers";
+import { VirtualFloppy } from "./VirtualFloppy";
 
 // --- Menu identifier contants
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
-const DISK_MENU = "sp_disk_menu";
+const DISK_MENU = "sp_3e_disk_menu";
 const CREATE_VIRTUAL_DISK = "sp_3e_create_virtual_disk";
+const FLOPPY_MENU = "sp_3e_floppies";
+const NO_FLOPPY = "sp_3e_no_floppy";
+const ONE_FLOPPY = "sp_3e_one_floppy";
+const TWO_FLOPPY = "sp_3e_two_floppy";
 const INSERT_DISK_A = "sp_3e_insert_disk_A";
 const INSERT_DISK_B = "sp_3e_insert_disk_B";
 const EJECT_DISK_A = "sp_3e_eject_disk_A";
@@ -306,6 +310,31 @@ export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
         type: "submenu",
         submenu: [
           {
+            id: FLOPPY_MENU,
+            label: "Floppy configuration",
+            type: "submenu",
+            submenu: [
+              {
+                id: NO_FLOPPY,
+                label: "No floppy drive",
+                type: "radio",
+                click: async () => {},
+              },
+              {
+                id: ONE_FLOPPY,
+                label: "One floppy drive",
+                type: "radio",
+                click: async () => {},
+              },
+              {
+                id: TWO_FLOPPY,
+                label: "Two floppy drives",
+                type: "radio",
+                click: async () => {},
+              },
+            ],
+          },
+          {
             id: CREATE_VIRTUAL_DISK,
             label: "Create virtual disk...",
             click: async () => {},
@@ -344,14 +373,14 @@ export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
     const insertAMenu = menu.getMenuItemById(INSERT_DISK_A);
     if (insertAMenu) {
       insertAMenu.visible =
-        !!state.spectrumSpecific?.diskAEnabled &&
-        !state.spectrumSpecific?.diskAInserted;
+        !!state.spectrumSpecific?.diskAFile &&
+        !state.spectrumSpecific?.diskBFile;
     }
     const ejectAMenu = menu.getMenuItemById(EJECT_DISK_A);
     if (ejectAMenu) {
       ejectAMenu.visible =
-        !!state.spectrumSpecific?.diskAEnabled &&
-        !!state.spectrumSpecific?.diskAInserted;
+        !!state.spectrumSpecific?.diskAFile &&
+        !!state.spectrumSpecific?.diskBFile;
     }
     const insertBMenu = menu.getMenuItemById(INSERT_DISK_B);
     if (insertBMenu) {
