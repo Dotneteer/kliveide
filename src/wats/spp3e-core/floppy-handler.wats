@@ -179,6 +179,7 @@ void sendResult(*u8 result, *u8 dataResult) {
   }
 }
 
+// Sends back data result
 void sendDataResult() {
   local bool writeProtected = false;
             //var writeProtected = CurrentFloppyFile?.IsWriteProtected ?? false;
