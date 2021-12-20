@@ -66,6 +66,8 @@ const NewProjectDialog: React.VFC<Props> = ({ newProjectData }) => {
     flexDirection: "column",
   };
 
+  newProjectData.machineType = machineType;
+
   return (
     <div style={containerStyle}>
       <Label>Machine type</Label>
