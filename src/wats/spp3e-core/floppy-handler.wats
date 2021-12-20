@@ -46,11 +46,14 @@ global u32 lastCommand;
 // Accepts commands in the current state?
 global bool acceptCommand;
 
+// Parameters of the floppy command
+u8[32] floppyCommandParameters;
+
 // Number of command bytes received so far
 global u32 commandBytesReceived;
 
 // Index of result bytes received
-global u32 resultBytesIndex;
+global u32 commandResultBytesIndex;
 
 // Index of data result bytes received
 global u32 dataResultBytesIndex;
@@ -73,11 +76,23 @@ u8[16] commandParameters;
 // Floppy command results
 *u8 commandResult;
 
-// Data to write to the floppy
-u8[0x4000] dataToWrite;
+// Length of command result
+global u32 commandResultLength;
 
 // Floppy data results
 *u8 dataResult;
+
+// Length of data result
+global u32 dataResultLength;
+
+// Working area for command results
+u8[0x4000] commandResultBuffer;
+
+// Working area for data result
+u8[0x4000] dataResultBuffer;
+
+// Data to write to the floppy
+u8[0x4000] dataToWrite;
 
 // Floppy exeution status
 global u8 floppyExecStatus;
@@ -85,7 +100,7 @@ global u8 floppyExecStatus;
 // Operation state variables
 global bool floppyAMounted;
 global bool floppyBMounted;
-global u8 mainStatusRegister;
+global u8 floppyMSR;
 global u8 stepRateTime;
 global u8 headUnloadTime;
 global u8 headLoadTime;
@@ -107,10 +122,12 @@ virtualFloppy driveBFloppy;
 
 // Resets the floppy drive
 void resetFloppy() {
-  mainStatusRegister = 0b1000_0000;
+  floppyMSR = 0b1000_0000;
   acceptCommand = true;
   lastCommand = FCMD_NONE;
   commandBytesReceived = 0;
+  commandResultLength = 0;
+  dataResultLength = 0;
   floppySt0 = 0x00;
   floppySt1 = 0x00;
   floppySt2 = 0x00;
@@ -123,6 +140,7 @@ void resetFloppy() {
   }
   floppyExecStatus = 0xc0;
   selectedDrive = 0;
+  currentFloppy = 0;
 }
 
 // Tests if the current drive is ready
@@ -136,9 +154,9 @@ bool isDiskReady() {
 // Sets the execution mode
 void setExecutionMode(bool exm) {
   if (exm) {
-    mainStatusRegister |= 0b0010_0000;
+    floppyMSR |= 0b0010_0000;
   } else {
-    mainStatusRegister &= 0b1101_1111;
+    floppyMSR &= 0b1101_1111;
   }
 }
 
@@ -146,35 +164,37 @@ void setExecutionMode(bool exm) {
 void setAcceptCommand(bool accept) {
   acceptCommand = accept;
   if (!accept) {
-    mainStatusRegister |= 0b0001_0000;
+    floppyMSR |= 0b0001_0000;
   } else {
-    mainStatusRegister &= 0b1110_1111;
+    floppyMSR &= 0b1110_1111;
   }
 }
 
 // Sets the value of the DIO flag
 void setDioFlag(bool dio) {
   if (dio) {
-    mainStatusRegister |= 0b0100_0000;
+    floppyMSR |= 0b0100_0000;
   } else {
-    mainStatusRegister &= 0b1011_1111;
+    floppyMSR &= 0b1011_1111;
   }
 }
 
 // Gets the flag that indicates if direction is OUT
 bool getDirectionOut() {
-  return (mainStatusRegister & 0b0100_0000) != 0;
+  return (floppyMSR & 0b0100_0000) != 0;
 }
 
 // Sends result back
-void sendResult(*u8 result, *u8 dataResult) {
+void sendResult(
+  u32 commandLength, 
+  u32 dataLength) {
   setAcceptCommand(true);
-  resultBytesIndex = 0;
+  commandResultBytesIndex = 0;
   dataResultBytesIndex = 0;
+  commandResultLength = commandLength;
+  dataResultLength = dataLength;
   setDioFlag(true);
-  commandResult = result;
-  dataResult = dataResult;
-  if (&dataResult != 0) {
+  if (dataLength != 0) {
     setExecutionMode(true);
   }
 }
@@ -182,21 +202,302 @@ void sendResult(*u8 result, *u8 dataResult) {
 // Sends back data result
 void sendDataResult() {
   local bool writeProtected = false;
-            //var writeProtected = CurrentFloppyFile?.IsWriteProtected ?? false;
+  if (&(*currentFloppy) != 0) {
+    writeProtected = (*currentFloppy).isWriteProtected;
+  }
   floppySt0 = floppyExecStatus 
     | (floppyHeads[selectedDrive] == 0 ? 0x00 : 0x04) 
     | (selectedDrive & 0x03);
   floppySt1 = (currentSectors[selectedDrive] > 9 ? 0x80 : 0x00) 
     | (writeProtected ? 0x02 : 0x00);
   floppySt2 = 0x00;
-            // SendResult(new byte[]
-            // {
-            //     _st0, _st1, _st2,
-            //     CurrentTracks[SelectedDrive],
-            //     Heads[SelectedDrive],
-            //     CurrentSectors[SelectedDrive],
-            //     0x02
-            // }, _dataResult);
+
+  // --- Assemble the result
+  commandResultBuffer[0] = floppySt0;
+  commandResultBuffer[1] = floppySt1;
+  commandResultBuffer[2] = floppySt2;
+  commandResultBuffer[3] = currentTracks[selectedDrive];
+  commandResultBuffer[4] = floppyHeads[selectedDrive];
+  commandResultBuffer[5] = currentSectors[selectedDrive];
+  commandResultBuffer[6] = 0x02;
+  sendResult(7, dataResultLength);
+}
+
+// Writes out the floppy command byte to the controller
+void writeFloppyCommandByte(u8 cmd) {
+  // --- Start processing a new command
+  if (acceptCommand) {
+    if (cmd == 0x03) {
+      lastCommand = FCMD_SPECIFY;
+      commandBytesReceived = 0;
+    } else if (cmd == 0x04) {
+      lastCommand = FCMD_SENSE_DRIVE_STATUS;
+      commandBytesReceived = 0;
+    } else if (cmd == 0x07) {
+      lastCommand = FCMD_RECALIBRATE;
+      commandBytesReceived = 0;
+    } else if (cmd == 0x08) {
+      // --- Sense interrupt status, no more command bytes
+      local u8 currentTrack = 0;
+      if (isDiskReady()) {
+        floppySt0 = floppyExecStatus 
+          | (floppyHeads[selectedDrive] == 0 ? 0x00 : 0x04) 
+          | (selectedDrive & 0x03);
+        currentTrack = currentTracks[selectedDrive];
+      } else {
+        // --- Disk is not ready
+        floppySt0 = 0x58 | (selectedDrive & 0x03);
+      }
+      commandResultBuffer[0] = floppySt0;
+      commandResultBuffer[1] = currentTrack;
+      sendResult(2, dataResultLength);
+      floppyExecStatus = 0x80;
+      return;
+    } else if (cmd == 0x0f) {
+      lastCommand = FCMD_SEEK;
+      commandBytesReceived = 0;
+    } else if ((cmd & 0xBF) == 0x0A) {
+      lastCommand = FCMD_READ_ID;
+      commandBytesReceived = 0;
+    } else if ((cmd & 0x1F) == 0x06) {
+      lastCommand = FCMD_READ_DATA;
+      commandBytesReceived = 0;
+    } else if ((cmd & 0xBD) == 0x0D) {
+      lastCommand = FCMD_FORMAT_TRACK;
+      commandBytesReceived = 0;
+    } else if ((cmd & 0x3F) == 0x05) {
+      lastCommand = FCMD_WRITE_DATA;
+      commandBytesReceived = 0;
+    } else {
+      lastCommand = FCMD_NONE;
+    }
+    setAcceptCommand(false);
+    commandBytesReceived = 0;
+    return;
+  }
+
+  // --- Act according to the last command
+  if (lastCommand == FCMD_SPECIFY) {
+    if (commandBytesReceived == 0) {
+      floppyCommandParameters[0] = cmd;
+      stepRateTime = cmd >> 4;
+      headUnloadTime = cmd & 0x0F;
+      commandBytesReceived += 1;
+    } else {
+      floppyCommandParameters[1] = cmd;
+      headLoadTime = cmd >> 1;
+      nonDmaMode = (cmd & 0x01) != 0;
+      setAcceptCommand(true);
+    }
+  } else if (lastCommand == FCMD_SENSE_DRIVE_STATUS) {
+    floppyCommandParameters[0] = cmd;
+    selectedDrive = cmd & 0x03;
+    floppyHeads[selectedDrive] = (cmd >> 2) & 0x01;
+    if (selectedDrive == 0) {
+      floppySt3 = 0b0011_1000 | (floppyHeads[0] == 0 ? 0x00 : 0x04);
+    } else if (selectedDrive == 1 & driveBPresent) {
+      floppySt3 = 0b0011_1000 | (floppyHeads[1] == 0 ? 0x00 : 0x04) | 0x01;
+    }
+    if (isDiskReady() & (*currentFloppy).isWriteProtected) {
+      floppySt3 |= 0x40;
+    } 
+    commandResultBuffer[0] = floppySt3;
+    sendResult(1, dataResultLength);
+  } else if (lastCommand == FCMD_RECALIBRATE) {
+    floppyCommandParameters[0] = cmd;
+    selectedDrive = cmd & 0x03;
+    currentTracks[selectedDrive] = 0x00;
+    floppyExecStatus = isDiskReady()
+      ? 0b0010_0000
+      : 0b1100_1000;
+    setAcceptCommand(true);
+  } else if (lastCommand == FCMD_SEEK) {
+    if (commandBytesReceived == 0) {
+      floppyCommandParameters[0] = cmd;
+      selectedDrive = cmd & 0x03;
+      floppyHeads[selectedDrive] = (cmd >> 2) & 0x01;
+      commandBytesReceived += 1;
+    } else {
+      floppyCommandParameters[1] = cmd;
+      currentTracks[selectedDrive] = cmd > 79 ? 79 : cmd;
+      currentSectors[selectedDrive] = 1;
+      floppyExecStatus = isDiskReady()
+        ? 0b0010_0000
+        : 0b1100_1000;
+      setAcceptCommand(true);
+    }
+  } else if (lastCommand == FCMD_READ_ID) {
+    floppyCommandParameters[0] = cmd;
+    selectedDrive = cmd & 0x03;
+    floppyHeads[selectedDrive] = (cmd >> 2) & 0x01;
+    commandBytesReceived += 1;
+    floppyExecStatus = isDiskReady()
+      ? 0x00
+      : 0xC8;
+    floppySt0 = floppyExecStatus 
+      | (floppyHeads[selectedDrive] == 0 ? 0x00 : 0x04) 
+      | (selectedDrive & 0x03);
+    floppySt1 = currentSectors[selectedDrive] > 9 ? 0x80 : 0x00;
+    floppySt2 = 0x00;
+    commandResultBuffer[0] = floppySt0;
+    commandResultBuffer[1] = floppySt1;
+    commandResultBuffer[2] = floppySt2;
+    commandResultBuffer[3] = currentTracks[selectedDrive];
+    commandResultBuffer[4] = floppyHeads[selectedDrive];
+    commandResultBuffer[5] = 0x01;
+    commandResultBuffer[6] = 0x02;
+    sendResult(7, dataResultLength);
+  } else if (lastCommand == FCMD_READ_DATA) {
+    if (commandBytesReceived < 8) {
+      floppyCommandParameters[commandBytesReceived] = cmd;
+      commandBytesReceived += 1;
+    }
+    if (commandBytesReceived == 8) {
+      selectedDrive = floppyCommandParameters[0] & 0x03;
+      floppyHeads[selectedDrive] = (floppyCommandParameters[0] >> 2) & 0x01;
+      currentSectors[selectedDrive] = floppyCommandParameters[3];
+
+      // --- Check if ID is the same as the current sector
+      if (floppyCommandParameters[1] != currentTracks[selectedDrive]
+        | floppyCommandParameters[2] != floppyHeads[selectedDrive]) {
+          dataResultLength = 0;
+          floppyExecStatus = 0x40; // --- Command completed abnormally
+          sendDataResult();
+      } else {
+        // --- Read bytes in
+        local u32 length = floppyCommandParameters[4] == 0 
+          ? floppyCommandParameters[7] 
+          : 512;
+        if (isDiskReady()) {
+          // TODO: Read data from floppy area
+                        //  _dataResult = CurrentFloppyFile.ReadData(
+                        //             Heads[SelectedDrive],
+                        //             CurrentTracks[SelectedDrive],
+                        //             CurrentSectors[SelectedDrive],
+                        //             length);
+          floppyExecStatus = 0x00;
+        } else {
+          dataResultLength = 0;
+          floppyExecStatus = 0xC8;
+        }
+        sendDataResult();
+      }
+    }
+  } else if (lastCommand == FCMD_FORMAT_TRACK) {
+    if (commandBytesReceived < 5) {
+      floppyCommandParameters[commandBytesReceived] = cmd;
+      commandBytesReceived += 1;
+    }
+    if (commandBytesReceived >= 5) {
+      // --- Receive format parameters
+      selectedDrive = floppyCommandParameters[0] & 0x03;
+      floppyHeads[selectedDrive] = (floppyCommandParameters[0] >> 2) & 0x01;
+      local u32 dataBytes = 1 << (floppyCommandParameters[1] + 7);
+      local u32 sectors = floppyCommandParameters[2];
+      local u8 filler = floppyCommandParameters[4];
+      local u32 index = 0;
+      while (index < dataBytes) {
+        dataToWrite[index] = filler;
+        index += 1;
+      }
+
+      // --- Format the selected track
+      floppyExecStatus = 0x00;
+      local u32 sector = 1;
+      while (sector <= sectors) {
+        sector += 1;
+        if (isDiskReady()) {
+          if (!((*currentFloppy).isWriteProtected)) {
+          // TODO: Write data
+                                        // CurrentFloppyFile.WriteData(Heads[SelectedDrive],
+                                        //     CurrentTracks[SelectedDrive],
+                                        //     sector,
+                                        //     data);
+          } else {
+            floppyExecStatus = 0xC0;
+            break;
+          }
+        } else {
+          floppyExecStatus = 0xC8;
+          break;
+        }
+      }
+      dataResultLength = 0;
+      sendDataResult();
+    }
+  } else if (lastCommand == FCMD_WRITE_DATA) {
+    if (commandBytesReceived < 8) {
+      floppyCommandParameters[commandBytesReceived] = cmd;
+      if (commandBytesReceived == 7) {
+        selectedDrive = floppyCommandParameters[0] & 0x03;
+        floppyHeads[selectedDrive] = (floppyCommandParameters[0] >> 2) & 0x01;
+        currentSectors[selectedDrive] = floppyCommandParameters[3];
+        local u32 dataLength = floppyCommandParameters[4] == 0 
+          ? floppyCommandParameters[7] 
+          : 1 << (floppyCommandParameters[4] + 7);
+
+        // --- Sign that write position has been reached
+        setExecutionMode(true);
+      }
+    } else if (commandBytesReceived < 8 + dataLength) {
+      dataToWrite[commandBytesReceived - 8] = cmd;
+      setExecutionMode(true);
+    } else if (commandBytesReceived >= 8 + dataLength) {
+      setExecutionMode(false);
+      if (isDiskReady()) {
+        if (!((*currentFloppy).isWriteProtected)) {
+        // TODO: Write data
+                                    // CurrentFloppyFile.WriteData(
+                                    //     Heads[SelectedDrive],
+                                    //     CurrentTracks[SelectedDrive],
+                                    //     CurrentSectors[SelectedDrive],
+                                    //     _dataToWrite);
+          floppyExecStatus = 0x00;
+        } else {
+          floppyExecStatus = 0xC0;
+        }
+      } else {
+        floppyExecStatus = 0xC8;
+      }
+      sendDataResult();
+    }
+    commandBytesReceived += 1;
+  }
+
+  // --- Prepare for receiving the next byte
+  if (acceptCommand) {
+    commandBytesReceived = 0;
+  }
+}
+
+// Reads the result byte of the floppy port
+// Returns: 8-bit MSB: Execution mode
+// 8-bit LSB byte tor return when reading the port
+u16 readFloppyResultByte() {
+  local bool executionMode = floppyMSR & 0x20;
+  if (!getDirectionOut()) {
+    return (executionMode << 8) | 0xFF;
+  }
+
+  if (dataResultBytesIndex < dataResultLength) {
+    if (dataResultBytesIndex == dataResultLength - 1) {
+      executionMode = false;
+    }
+    local u16 result = (executionMode << 8) | dataResultBuffer[dataResultBytesIndex];
+    dataResultBytesIndex += 1;
+    return result;
+  }
+  setExecutionMode(false);
+  if (commandResultBytesIndex < commandResultLength) {
+    result = (executionMode << 8) | commandResultBuffer[commandResultBytesIndex];
+    commandResultBytesIndex += 1;
+    if (commandResultBytesIndex >= commandResultLength) {
+      setDioFlag(false);
+      commandResultBytesIndex = 0;
+    }
+    return result;
+  }
+  return (executionMode << 8) | 0xFF;
 }
 
 // ============================================================================

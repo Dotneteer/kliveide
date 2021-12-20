@@ -107,6 +107,9 @@ export void setupMachine () {
   psgNextClockTact = 0;
   psgOrphanSamples =0;
   psgOrphanSum = 0;
+
+  // --- Handle the floppy controller
+  resetFloppy();
 }
 
 // ----------------------------------------------------------------------------
@@ -134,6 +137,18 @@ u8 readPort(u16 port) {
   // --- Handle the PSG register index port
   if ((port & 0xc002) == 0xc000) {
     return readPsgRegisterValue(&psg);
+  }
+
+  // --- Handle floppy command port
+  if ((port & 0xffff) == 0x3ffd) {
+    local u16 result = readFloppyResultByte();
+    setExecutionMode(result >> 8);
+    return result;
+  }
+
+  // --- Handle floppy Main status register port
+  if ((port & 0xffff) == 0x2ffd) {
+    return floppyMSR;
   }
 
   // --- Floating port handling
@@ -182,5 +197,11 @@ void writePort(u16 port, u8 value) {
   // --- Test for PSG register value port
   if ((port & 0xc002) == 0x8000) {
     writePsgRegisterValue(&psg, value);
+    return;
+  }
+
+  // --- Handle floppy command port
+  if ((port & 0xffff) == 0x3ffd) {
+    writeFloppyCommandByte(value);
   }
 }
