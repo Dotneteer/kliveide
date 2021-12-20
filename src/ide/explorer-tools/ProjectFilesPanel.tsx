@@ -398,7 +398,15 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       case "Space":
       case "Enter":
         if (!this.state.selected) return;
-        this.collapseExpand(this.state.selectedIndex, this.state.selected);
+        if (this.state.selected.nodeData.isFolder) {
+          this.collapseExpand(this.state.selectedIndex, this.state.selected);
+        } else {
+          this.openDocument(
+            this.state.selectedIndex,
+            this.state.selected,
+            e.code === "Space"
+          );
+        }
         break;
       default:
         return;
