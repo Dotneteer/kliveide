@@ -34,6 +34,7 @@ export const IdeApp: React.VFC = () => {
   // --- Component state (changes of them triggers re-rendering)
   const [themeStyle, setThemeStyle] = useState<CSSProperties>({});
   const [themeClass, setThemeClass] = useState("");
+  const ideLoaded = useSelector((s: AppState) => s.ideUiLoaded);
   const showStatusBar = useSelector(
     (s: AppState) => s.emuViewOptions.showStatusBar
   );
@@ -61,8 +62,6 @@ export const IdeApp: React.VFC = () => {
     if (!mounted.current) {
       // --- Mount logic, executed only once during the app's life cycle
       mounted.current = true;
-
-      dispatch(ideLoadUiAction());
       updateThemeState();
 
       getStore().themeChanged.on(themeChanged);
@@ -82,47 +81,49 @@ export const IdeApp: React.VFC = () => {
   document.body.setAttribute("style", toStyleString(themeStyle));
   document.body.setAttribute("class", themeClass);
 
-  // --- Display the status bar when it's visible
-
   return (
-    <Fill id="klive_ide_app">
-      <Row>
-        <Column width={48}>
-          <ActivityBar />
-        </Column>
-        <SplitPanel
-          splitterSize={4}
-          horizontal={true}
-          panel1MinSize={MIN_SIDEBAR_WIDTH}
-          panel2MinSize={MIN_DESK_WIDTH}
-          initialSize={"20%"}
-          panel1={<SideBar />}
-          showPanel1={showSidebar}
-          panel2={
+    <>
+      {ideLoaded && (
+        <Fill id="klive_ide_app">
+          <Row>
+            <Column width={48}>
+              <ActivityBar />
+            </Column>
             <SplitPanel
               splitterSize={4}
-              horizontal={false}
-              reverse={true}
-              panel1MinSize={MIN_TOOL_HEIGHT}
-              showPanel1={showToolFrame}
-              panel1={<ToolFrame />}
-              panel2MinSize={MIN_DESK_HEIGHT}
-              showPanel2={showDocuments}
-              panel2={<IdeDocumentFrame />}
-              initialSize="33%"
+              horizontal={true}
+              panel1MinSize={MIN_SIDEBAR_WIDTH}
+              panel2MinSize={MIN_DESK_WIDTH}
+              initialSize={"20%"}
+              panel1={<SideBar />}
+              showPanel1={showSidebar}
+              panel2={
+                <SplitPanel
+                  splitterSize={4}
+                  horizontal={false}
+                  reverse={true}
+                  panel1MinSize={MIN_TOOL_HEIGHT}
+                  showPanel1={showToolFrame}
+                  panel1={<ToolFrame />}
+                  panel2MinSize={MIN_DESK_HEIGHT}
+                  showPanel2={showDocuments}
+                  panel2={<IdeDocumentFrame />}
+                  initialSize="33%"
+                />
+              }
             />
-          }
-        />
-      </Row>
-      <Row
-        height="fittoclient"
-        style={{ display: showStatusBar ? undefined : "none" }}
-      >
-        <IdeStatusbar />
-      </Row>
-      <IdeContextMenu target="#klive_ide_app" />
-      <ModalDialog targetId="#app" />
-    </Fill>
+          </Row>
+          <Row
+            height="fittoclient"
+            style={{ display: showStatusBar ? undefined : "none" }}
+          >
+            <IdeStatusbar />
+          </Row>
+          <IdeContextMenu target="#klive_ide_app" />
+          <ModalDialog targetId="#app" />
+        </Fill>
+      )}
+    </>
   );
 
   /**
@@ -138,4 +139,4 @@ export const IdeApp: React.VFC = () => {
     setThemeStyle(themeService.getThemeStyle());
     setThemeClass(`app-container ${theme.name}-theme`);
   }
-}
+};

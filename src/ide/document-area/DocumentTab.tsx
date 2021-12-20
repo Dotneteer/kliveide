@@ -167,7 +167,7 @@ export const DocumentTab: React.VFC<Props> = ({
             iconName="shield"
             width={16}
             height={16}
-            fill="--console-ansi-bright-red"
+            fill="--console-ansi-bright-yellow"
           />
         </div>
       )}

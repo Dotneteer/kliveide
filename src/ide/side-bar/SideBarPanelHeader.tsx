@@ -9,6 +9,8 @@ import { Fill } from "@components/Panels";
  */
 type Props = {
   title: string;
+  tooltip?: string;
+  hasError?: boolean;
   expanded: boolean;
   sizeable: boolean;
   index: number;
@@ -23,6 +25,8 @@ type Props = {
  */
 export const SideBarPanelHeader: React.VFC<Props> = ({
   title,
+  tooltip,
+  hasError = false,
   expanded,
   sizeable,
   index,
@@ -60,11 +64,28 @@ export const SideBarPanelHeader: React.VFC<Props> = ({
     resized: (delta) => resized(delta),
   };
 
+  // --- Use this style for header text
+  const textStyle: CSSProperties = {
+    color: hasError
+      ? "var(--console-ansi-bright-red)"
+      : "var(--sidebar-panel-header-color)",
+    fontSize: "0.8em",
+    fontWeight: 600,
+    paddingLeft: 4,
+    width: "100%",
+    flexGrow: 1,
+    flexShrink: 1,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  };
+
   const gripElement = useRef<HTMLDivElement>();
 
   return (
     <div
       ref={hostElement}
+      title={tooltip}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       onKeyPress={handleKeyPress}
@@ -178,22 +199,9 @@ const rootStyle: CSSProperties = {
   outline: "none",
 };
 
-const textStyle: CSSProperties = {
-  color: "var(--sidebar-panel-header-color)",
-  fontSize: "0.8em",
-  fontWeight: 600,
-  paddingLeft: 4,
-  width: "100%",
-  flexGrow: 1,
-  flexShrink: 1,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
 // --- Context for the drag operation
 type DragContext = {
   gripPosition: number;
   move: (e: MouseEvent) => void;
   resized: (delta: number) => void;
-}
+};
