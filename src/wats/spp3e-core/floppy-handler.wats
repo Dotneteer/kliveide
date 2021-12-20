@@ -14,6 +14,9 @@ const u32 FCMD_SPECIFY = 6;
 const u32 FCMD_SENSE_DRIVE_STATUS = 7;
 const u32 FCMD_SEEK = 8;
 
+// We use 512 byte sectors
+const u32 FLOPPY_SECTOR_SIZE = 512;
+
 // Structure of a virtual floppy file
 type virtualFloppy = struct {
   u32 version,
@@ -139,7 +142,7 @@ void resetFloppy() {
     i += 1;
   }
   floppyExecStatus = 0xc0;
-  selectedDrive = 0;
+  setSelectedDrive(0);
   currentFloppy = 0;
 }
 
@@ -291,7 +294,7 @@ void writeFloppyCommandByte(u8 cmd) {
     }
   } else if (lastCommand == FCMD_SENSE_DRIVE_STATUS) {
     floppyCommandParameters[0] = cmd;
-    selectedDrive = cmd & 0x03;
+    setSelectedDrive(cmd & 0x03);
     floppyHeads[selectedDrive] = (cmd >> 2) & 0x01;
     if (selectedDrive == 0) {
       floppySt3 = 0b0011_1000 | (floppyHeads[0] == 0 ? 0x00 : 0x04);
@@ -305,7 +308,7 @@ void writeFloppyCommandByte(u8 cmd) {
     sendResult(1, dataResultLength);
   } else if (lastCommand == FCMD_RECALIBRATE) {
     floppyCommandParameters[0] = cmd;
-    selectedDrive = cmd & 0x03;
+    setSelectedDrive(cmd & 0x03);
     currentTracks[selectedDrive] = 0x00;
     floppyExecStatus = isDiskReady()
       ? 0b0010_0000
@@ -314,7 +317,7 @@ void writeFloppyCommandByte(u8 cmd) {
   } else if (lastCommand == FCMD_SEEK) {
     if (commandBytesReceived == 0) {
       floppyCommandParameters[0] = cmd;
-      selectedDrive = cmd & 0x03;
+      setSelectedDrive(cmd & 0x03);
       floppyHeads[selectedDrive] = (cmd >> 2) & 0x01;
       commandBytesReceived += 1;
     } else {
@@ -328,7 +331,7 @@ void writeFloppyCommandByte(u8 cmd) {
     }
   } else if (lastCommand == FCMD_READ_ID) {
     floppyCommandParameters[0] = cmd;
-    selectedDrive = cmd & 0x03;
+    setSelectedDrive(cmd & 0x03);
     floppyHeads[selectedDrive] = (cmd >> 2) & 0x01;
     commandBytesReceived += 1;
     floppyExecStatus = isDiskReady()
@@ -353,7 +356,7 @@ void writeFloppyCommandByte(u8 cmd) {
       commandBytesReceived += 1;
     }
     if (commandBytesReceived == 8) {
-      selectedDrive = floppyCommandParameters[0] & 0x03;
+      setSelectedDrive(floppyCommandParameters[0] & 0x03);
       floppyHeads[selectedDrive] = (floppyCommandParameters[0] >> 2) & 0x01;
       currentSectors[selectedDrive] = floppyCommandParameters[3];
 
@@ -369,12 +372,12 @@ void writeFloppyCommandByte(u8 cmd) {
           ? floppyCommandParameters[7] 
           : 512;
         if (isDiskReady()) {
-          // TODO: Read data from floppy area
-                        //  _dataResult = CurrentFloppyFile.ReadData(
-                        //             Heads[SelectedDrive],
-                        //             CurrentTracks[SelectedDrive],
-                        //             CurrentSectors[SelectedDrive],
-                        //             length);
+          readDataFromFloppy(
+            floppyHeads[selectedDrive],
+            currentTracks[selectedDrive],
+            currentSectors[selectedDrive],
+            length
+          );
           floppyExecStatus = 0x00;
         } else {
           dataResultLength = 0;
@@ -390,7 +393,7 @@ void writeFloppyCommandByte(u8 cmd) {
     }
     if (commandBytesReceived >= 5) {
       // --- Receive format parameters
-      selectedDrive = floppyCommandParameters[0] & 0x03;
+      setSelectedDrive(floppyCommandParameters[0] & 0x03);
       floppyHeads[selectedDrive] = (floppyCommandParameters[0] >> 2) & 0x01;
       local u32 dataBytes = 1 << (floppyCommandParameters[1] + 7);
       local u32 sectors = floppyCommandParameters[2];
@@ -408,11 +411,12 @@ void writeFloppyCommandByte(u8 cmd) {
         sector += 1;
         if (isDiskReady()) {
           if (!((*currentFloppy).isWriteProtected)) {
-          // TODO: Write data
-                                        // CurrentFloppyFile.WriteData(Heads[SelectedDrive],
-                                        //     CurrentTracks[SelectedDrive],
-                                        //     sector,
-                                        //     data);
+            writeDataToFloppy(
+              floppyHeads[selectedDrive],
+              currentTracks[selectedDrive],
+              sector,
+              dataBytes
+            );
           } else {
             floppyExecStatus = 0xC0;
             break;
@@ -429,7 +433,7 @@ void writeFloppyCommandByte(u8 cmd) {
     if (commandBytesReceived < 8) {
       floppyCommandParameters[commandBytesReceived] = cmd;
       if (commandBytesReceived == 7) {
-        selectedDrive = floppyCommandParameters[0] & 0x03;
+        setSelectedDrive(floppyCommandParameters[0] & 0x03);
         floppyHeads[selectedDrive] = (floppyCommandParameters[0] >> 2) & 0x01;
         currentSectors[selectedDrive] = floppyCommandParameters[3];
         local u32 dataLength = floppyCommandParameters[4] == 0 
@@ -446,12 +450,12 @@ void writeFloppyCommandByte(u8 cmd) {
       setExecutionMode(false);
       if (isDiskReady()) {
         if (!((*currentFloppy).isWriteProtected)) {
-        // TODO: Write data
-                                    // CurrentFloppyFile.WriteData(
-                                    //     Heads[SelectedDrive],
-                                    //     CurrentTracks[SelectedDrive],
-                                    //     CurrentSectors[SelectedDrive],
-                                    //     _dataToWrite);
+            writeDataToFloppy(
+              floppyHeads[selectedDrive],
+              currentTracks[selectedDrive],
+              currentSectors[selectedDrive],
+              dataLength
+            );
           floppyExecStatus = 0x00;
         } else {
           floppyExecStatus = 0xC0;
@@ -498,6 +502,67 @@ u16 readFloppyResultByte() {
     return result;
   }
   return (executionMode << 8) | 0xFF;
+}
+
+// Calculates the specified sector's data position
+u32 calculateSectorPosition(u32 head, u32 track, u32 sector) {
+  local u32 tracks = (*currentFloppy).tracks;
+  local u32 sectorsPerTrack = (*currentFloppy).sectorsPerTrack;
+  return
+    head * tracks * sectorsPerTrack * FLOPPY_SECTOR_SIZE // Side offset
+    + track * sectorsPerTrack * FLOPPY_SECTOR_SIZE       // Track offset
+    + (sector - 1) * FLOPPY_SECTOR_SIZE;                 // Sector offset
+}
+
+// Reads data from the current floppy disk
+void readDataFromFloppy(u32 head, u32 track, u32 sector, u32 length) {
+  if (sector > 9) {
+    sector = sector - (*currentFloppy).firstSectorIndex + 1;
+  }
+  if (length == 0) {
+    dataResultLength = 0;
+  }
+  if (length > FLOPPY_SECTOR_SIZE) {
+    length = FLOPPY_SECTOR_SIZE;
+  }
+  local u32 position = calculateSectorPosition(head, track, sector);
+  local i32 index = 0;
+  while (index < length) {
+    dataResultBuffer[index] = (*currentFloppy).bytes[position];
+    position += 1;
+    index += 1;
+  }
+}
+
+// Writes data to the current floppy disk
+void writeDataToFloppy(u32 head, u32 track, u32 sector, u32 length) {
+  if (sector > 9) {
+    sector = sector - (*currentFloppy).firstSectorIndex + 1;
+  }
+  if (length == 0) {
+    dataResultLength = 0;
+  }
+  if (length > FLOPPY_SECTOR_SIZE) {
+    length = FLOPPY_SECTOR_SIZE;
+  }
+  local u32 position = calculateSectorPosition(head, track, sector);
+  local i32 index = 0;
+  while (index < length) {
+    (*currentFloppy).bytes[position] = dataToWrite[index];
+    position += 1;
+    index += 1;
+  }
+  (*currentFloppy).version += 1;
+}
+
+// Selects the current drive
+void setSelectedDrive(u8 drive) { 
+  selectedDrive = drive;
+  if (drive == 0) {
+    currentFloppy = &driveAFloppy;
+  } else {
+    currentFloppy = &driveBFloppy;
+  }
 }
 
 // ============================================================================
