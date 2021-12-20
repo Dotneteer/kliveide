@@ -115,6 +115,8 @@ export const SideBarPanel: React.VFC<Props> = ({
     >
       <SideBarPanelHeader
         title={descriptor.title}
+        tooltip={descriptor.tooltip}
+        hasError={descriptor.hasError ?? false}
         expanded={expanded}
         sizeable={sizeable}
         index={index}

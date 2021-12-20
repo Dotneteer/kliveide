@@ -4,7 +4,6 @@ import { IpcRendereApi } from "../exposed-apis";
 import {
   dispatch,
   getModalDialogService,
-  getOutputPaneService,
 } from "@core/service-registry";
 import {
   DefaultResponse,
@@ -14,11 +13,7 @@ import {
 } from "@core/messaging/message-types";
 import { ideSyncAction } from "@state/show-ide-reducer";
 import { NEW_PROJECT_DIALOG_ID } from "./explorer-tools/NewProjectDialog";
-import {
-  BUILD_OUTPUT_PANE_ID,
-  IHighlightable,
-} from "@abstractions/output-pane-service";
-import { isAssemblerError } from "@abstractions/compiler-registry";
+import { ideLoadUiAction } from "@core/state/ide-loaded-reducer";
 
 // --- Electron APIs exposed for the renderer process
 const ipcRenderer = (window as any).ipcRenderer as IpcRendereApi;
@@ -33,6 +28,7 @@ async function processIdeMessages(
   switch (message.type) {
     case "SyncMainState":
       dispatch(ideSyncAction(message.mainState));
+      dispatch(ideLoadUiAction());
       return <DefaultResponse>{ type: "Ack" };
 
     case "NewProject":

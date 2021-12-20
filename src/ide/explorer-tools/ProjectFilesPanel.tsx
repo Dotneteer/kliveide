@@ -331,7 +331,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               iconName="shield"
               width={16}
               height={16}
-              fill="--console-ansi-bright-red"
+              fill="--console-ansi-bright-yellow"
             />
           </div>
         )}
@@ -903,6 +903,25 @@ export class ProjectFilesPanelDescriptor extends SideBarPanelDescriptorBase {
     return projectState?.projectName
       ? `${projectState.projectName}${projectState?.hasVm ? "" : " 🚫"}`
       : "No project opened";
+  }
+
+  /**
+   * Descriptor tooltip
+   */
+  get tooltip(): string | null {
+    const projectState = getState().project;
+    if (!projectState.projectName) return null;
+    return getState().project?.hasVm ?? false
+      ? null
+      : "This folder is not recognized as a Klive project";
+  }
+
+  /**
+   * Descriptor tooltip
+   */
+  get hasError(): boolean {
+    const projectState = getState().project;
+    return !projectState.projectName ? false : !(projectState?.hasVm ?? true);
   }
 
   /**

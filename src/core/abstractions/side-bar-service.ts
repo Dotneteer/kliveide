@@ -8,7 +8,12 @@ export interface ISideBarPanel {
   /**
    * The title of the side bar panel
    */
-  readonly title: string;
+  title: string;
+
+  /**
+   * Optional tooltip
+   */
+  tooltip?: string;
 
   /**
    * Signs if the specified panel is expanded
@@ -20,6 +25,11 @@ export interface ISideBarPanel {
    * Signs if the panel is focused
    */
   focused: boolean;
+
+  /**
+   * Signs that the panel has some error to show
+   */
+  hasError?: boolean;
 
   /**
    * The current height of the panel. Set when the rendering engine
