@@ -67,6 +67,12 @@ export interface WasmZxSpectrumApi extends WasmMachineApi {
   markStepOverStack(): void;
   eraseMemoryWriteMap(): void;
   setMemoryWritePoint(point: number): void;
+
+  // --- Floppy functions
+  setFloppyPresent(present: boolean): void;
+  setDriveBPresent(present: boolean): void;
+  setFloppyAMounted(mounted: boolean): void;
+  setFloppyBMounted(mounted: boolean): void;
 }
 
 /**
