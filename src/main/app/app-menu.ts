@@ -826,7 +826,6 @@ function menuIdFromMachineId(machineId: string): string {
  */
 async function openIdeWindow(): Promise<void> {
   executeKliveCommand("showIde");
-  await new Promise((r) => setTimeout(r, 200));
   await sendFromMainToIde({
     type: "SyncMainState",
     mainState: { ...getState() },

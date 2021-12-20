@@ -331,7 +331,7 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
               iconName="shield"
               width={16}
               height={16}
-              fill="--console-ansi-bright-red"
+              fill="--console-ansi-bright-yellow"
             />
           </div>
         )}
@@ -398,7 +398,15 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
       case "Space":
       case "Enter":
         if (!this.state.selected) return;
-        this.collapseExpand(this.state.selectedIndex, this.state.selected);
+        if (this.state.selected.nodeData.isFolder) {
+          this.collapseExpand(this.state.selectedIndex, this.state.selected);
+        } else {
+          this.openDocument(
+            this.state.selectedIndex,
+            this.state.selected,
+            e.code === "Space"
+          );
+        }
         break;
       default:
         return;
@@ -903,6 +911,25 @@ export class ProjectFilesPanelDescriptor extends SideBarPanelDescriptorBase {
     return projectState?.projectName
       ? `${projectState.projectName}${projectState?.hasVm ? "" : " 🚫"}`
       : "No project opened";
+  }
+
+  /**
+   * Descriptor tooltip
+   */
+  get tooltip(): string | null {
+    const projectState = getState().project;
+    if (!projectState.projectName) return null;
+    return getState().project?.hasVm ?? false
+      ? null
+      : "This folder is not recognized as a Klive project";
+  }
+
+  /**
+   * Descriptor tooltip
+   */
+  get hasError(): boolean {
+    const projectState = getState().project;
+    return !projectState.projectName ? false : !(projectState?.hasVm ?? true);
   }
 
   /**

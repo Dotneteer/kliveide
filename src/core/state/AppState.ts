@@ -1,6 +1,5 @@
 import { Activity } from "@core/abstractions/activity";
 import { BreakpointDefinition } from "@abstractions/code-runner-service";
-import { CompilerOutput } from "@abstractions/z80-compiler-service";
 import { KliveCompilerOutput } from "@abstractions/compiler-registry";
 
 /**
