@@ -58,6 +58,9 @@ global byte selectRomLow;
 // 2: Bit is 1
 global byte selectRomHigh;
 
+// The last contended value read from memory
+global byte lastContendedReadValue;
+
 // ----------------------------------------------------------------------------
 // Public device routines
 
@@ -86,12 +89,14 @@ inline void contendWrite(u16 addr) {
 inline u8 readMemory(u16 addr) {
   tacts += 3;
   local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
+  local u8 value = vmMemory[(*pagePtr).readIndex + (addr & 0b0001_1111_1111_1111)];
   if ((*pagePtr).contended) {
     local u32 delay = contentionTable[tacts/clockMultiplier];
     tacts += delay;
     contentionAccumulated += delay;
+    lastContendedReadValue = value;
   }
-  return vmMemory[(*pagePtr).readIndex + (addr & 0b0001_1111_1111_1111)];
+  return value;
 }
 
 // Reads the contents of the memory without applying contention

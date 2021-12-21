@@ -71,7 +71,7 @@ export void setupMachine () {
   resetMachine();
 
   // --- Screen frame configuration
-  setInterruptTact(14);
+  setInterruptTact(0);
   verticalSyncLines = 8;
   nonVisibleBorderTopLines = 7;
   borderTopLines = 48;

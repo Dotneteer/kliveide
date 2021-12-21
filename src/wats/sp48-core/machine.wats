@@ -52,7 +52,7 @@ export void setupMachine () {
   resetMachine();
 
   // --- Screen frame configuration
-  setInterruptTact(11);
+  setInterruptTact(0);
   verticalSyncLines = 8;
   nonVisibleBorderTopLines = 8;
   borderTopLines = 48;
