@@ -197,7 +197,7 @@ describe("ZX Spectrum 48 - Beeper", () => {
     machine.executeFrame(new ExecuteCycleOptions(EmulationMode.UntilFrameEnds));
     const s = machine.getMachineState() as SpectrumMachineStateBase;
     expect(s._pc).toBe(0x8020);
-    expect(s.tacts).toBe(5);
+    expect(s.tacts).toBe(6);
     expect(s.frameCount).toBe(1);
     expect(s.frameCompleted).toBe(true);
     expect(s.audioSampleLength).toBe(187);

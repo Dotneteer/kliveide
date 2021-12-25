@@ -101,10 +101,12 @@ u8 readPort(u16 port) {
   
   // --- Floating port handling
   // --- Get the rendering table entry of the current ULA tact
+  emulateFloatingPort();
   local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
+  local u8 phase = (*tactItem).phase;
 
   // --- Check phase
-  if (((*tactItem).phase & 0x03) == 0x02) {
+  if (phase == 3 | phase == 6 | phase == 9) {
     // --- Fetch the attribute value of the current tact
     return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
   }
@@ -122,4 +124,8 @@ void writePort(u16 port, u8 value) {
   }
 }
 
-
+// We need to render the latest chunk of pixels to emulate
+// the floating port
+void emulateFloatingPort() {
+  renderScreen(tacts / clockMultiplier);
+}

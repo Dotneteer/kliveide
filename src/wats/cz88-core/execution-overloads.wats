@@ -20,11 +20,6 @@ inline void onInitNewFrame(u32 oldClockMultiplier) {
   }
 }
 
-// The execution engine is about to execute a CPU cycle
-inline void beforeCpuCycle(u32 frameTact) {
-  // --- Nothing to do
-}
-
 // The execution engine has just executed a CPU cycle
 inline void afterCpuCycle(u32 frameTact) {
   // ---Awake the CPU whenever a key is pressed

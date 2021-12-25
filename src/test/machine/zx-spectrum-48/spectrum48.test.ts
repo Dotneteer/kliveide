@@ -47,7 +47,7 @@ describe("ZX Spectrum 48", () => {
 
     expect(s.numberOfRoms).toBe(1);
 
-    expect(s.interruptTact).toBe(11);
+    expect(s.interruptTact).toBe(0);
     expect(s.verticalSyncLines).toBe(8);
     expect(s.nonVisibleBorderTopLines).toBe(8);
     expect(s.borderTopLines).toBe(48);
@@ -71,7 +71,7 @@ describe("ZX Spectrum 48", () => {
     expect(s.screenLineTime).toBe(224);
     expect(s.rasterLines).toBe(312);
     expect(s.tactsInFrame).toBe(69888);
-    expect(s.firstDisplayPixelTact).toBe(14360);
+    expect(s.firstDisplayPixelTact).toBe(14336);
     expect(s.firstScreenPixelTact).toBe(3584);
   });
 

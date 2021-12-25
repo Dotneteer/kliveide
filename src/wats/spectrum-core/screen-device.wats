@@ -388,22 +388,14 @@ export void initRenderingTactTable() {
       local bool calculated = false;
       if (line == firstDisplayLine - 1) {
         if (tactInLine == borderPixelFetchTact) {
-          trace(333333);
           // --- Yes, prefetch pixel data
           phase = RT_BorderFetchPixel;
           pixelAddr = calcPixelAddress(line + 1, 0);
-          trace(tact);
-          trace(phase);
-          trace(pixelAddr);
           contentionDelay = 0;
           calculated = true;
         } else if (tactInLine == borderAttrFetchTact) {
-          trace(444444);
           phase = RT_BorderFetchAttr;
           attrAddr = calcAttrAddress(line + 1, 0);
-          trace(tact);
-          trace(phase);
-          trace(attrAddr);
           contentionDelay = 6;
           calculated = true;
         }
@@ -490,12 +482,6 @@ export void initRenderingTactTable() {
     }
 
     // --- Store the current rendering item
-    if (tact == 14334 | tact == 14335) {
-      trace(tact);
-      trace(phase);
-      trace(pixelAddr);
-      trace(attrAddr);
-    }
     (*tablePtr).phase = phase;
     (*tablePtr).pixelAddress = pixelAddr;
     (*tablePtr).attrAddress = attrAddr;

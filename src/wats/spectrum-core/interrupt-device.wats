@@ -3,7 +3,7 @@
 // ============================================================================
 
 // The length of the interrupt pulse
-const u32 INTERRUPT_PULSE_LENGTH = 73;
+const u32 INTERRUPT_PULSE_LENGTH = 32;
 
 // Stores the first interrupt tact
 global u32 interruptTact;

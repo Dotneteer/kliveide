@@ -28,11 +28,6 @@ inline void onInitNewFrame(u32 oldClockMultiplier) {
   audioSampleCount = 0;
 }
 
-// The execution engine is about to execute a CPU cycle
-void beforeCpuCycle(u32 frameTact) {
-  // --- Nothing to do
-}
-
 // The execution engine has just executed a CPU cycle
 void afterCpuCycle(u32 frameTact) {
   #if SUPPORTS_PSG
