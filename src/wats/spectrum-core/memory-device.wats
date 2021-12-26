@@ -52,13 +52,13 @@ inline void contendWrite(u16 addr) {
 
 // Reads the contents of the memory
 inline u8 readMemory(u16 addr) {
-  tacts += 3;
   local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
   if ((*pagePtr).contended) {
     local u32 delay = contentionTable[tacts/clockMultiplier];
     tacts += delay;
     contentionAccumulated += delay;
   }
+  tacts += 3;
   return vmMemory[(*pagePtr).readIndex + (addr & 0b0001_1111_1111_1111)];
 }
 

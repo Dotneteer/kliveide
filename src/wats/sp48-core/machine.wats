@@ -105,9 +105,17 @@ u8 readPort(u16 port) {
   local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
   local u8 phase = (*tactItem).phase;
 
-  // --- Check phase
-  if (phase == 3 | phase == 6 | phase == 9) {
-    // --- Fetch the attribute value of the current tact
+  if (phase == 2) {
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress];
+  } else if (phase == 3) {
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
+  } else if (phase == 5) {
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress];
+  } else if (phase == 6) {
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
+  } else if (phase == 8) {
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress];
+  } else if (phase == 9) {
     return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
   }
 
