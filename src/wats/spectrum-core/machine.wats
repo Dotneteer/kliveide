@@ -99,6 +99,8 @@ type spMachineState = struct {
 // Stores contention values for each screen rendering tact
 u8[0x1'4000] contentionTable;
 
+u8[8] contentionValues;
+
 // Transfer buffer for machine state
 spMachineState spectrumMachineStateBuffer { VM_STATE_PLACEHOLDER };
 
