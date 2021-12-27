@@ -884,6 +884,8 @@ void ExSPiIX() {
   #endif
   setXYL(tempL);
   setXYH(tempH);
+  wl = tempL;
+  wh = tempH;
 }
 
 // push ix (0xe5)

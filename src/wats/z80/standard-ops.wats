@@ -1309,6 +1309,7 @@ void ExSPiHL() {
   #endif
   l = tempL;
   h = tempH;
+  wz = hl;
 }
 
 // call po (0xe4)

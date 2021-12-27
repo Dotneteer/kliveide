@@ -127,3 +127,164 @@ void writePort(u16 port, u8 value) {
     writePortFE(port, value);
   }
 }
+
+// ----------------------------------------------------------------------------
+// Screen rendering table
+
+// Initializes the table used for screen rendering
+export void initRenderingTactTable() {
+
+  // Calculate the first and last visible lines
+  local u32 firstVisibleLine = verticalSyncLines + nonVisibleBorderTopLines;
+  local u32 lastVisibleLine = rasterLines - nonVisibleBorderBottomLines;
+  local u32 firstVisibleBorderTact = screenLineTime - borderLeftTime;
+
+  // Calculate the last visible line tact
+  local u32 lastVisibleLineTact = displayLineTime + borderRightTime;
+
+  // Calculate border pixel and attribute fetch tacts
+  local u32 borderPixelFetchTact = screenLineTime - pixelDataPrefetchTime;
+  local u32 borderAttrFetchTact = screenLineTime - attributeDataPrefetchTime;
+
+  // Init the loop over tacts
+  local *renderingTactEntry tablePtr = &renderingTactTable;
+  local *u8 contentionPtr = &contentionTable;
+  local u32 tact = 0;
+
+  while (tact < tactsInFrame) {
+    // --- Init the current tact
+    local u32 phase = RT_NONE;
+    local u32 contentionDelay = 0;
+    local u32 pixelAddr = 0;
+    local u32 attrAddr = 0;
+
+    // --- Calculate line and tact in line
+    local u32 line = tact/screenLineTime;
+    local u32 tactInLine = tact % screenLineTime;
+
+    // Test, if the current tact is visible
+    if (
+      (line >= firstVisibleLine) & 
+      (line < lastVisibleLine) & 
+      (tactInLine < lastVisibleLineTact | tactInLine >= firstVisibleBorderTact)
+    ) {
+      // --- Yes, the tact is visible.
+      // --- Is it the first pixel/attr prefetch?
+      local bool calculated = false;
+      if (line == firstDisplayLine - 1) {
+        if (tactInLine == borderPixelFetchTact) {
+          // --- Yes, prefetch pixel data
+          phase = RT_BorderFetchPixel;
+          pixelAddr = calcPixelAddress(line + 1, 0);
+          contentionDelay = 0;
+          calculated = true;
+        } else if (tactInLine == borderAttrFetchTact) {
+          phase = RT_BorderFetchAttr;
+          attrAddr = calcAttrAddress(line + 1, 0);
+          contentionDelay = 6;
+          calculated = true;
+        }
+      } 
+
+      // --- Test, if it is in the display area
+      if (!calculated) {
+        if (
+          (line >= firstDisplayLine) &
+          (line <= lastDisplayLine) &
+          (tactInLine < displayLineTime)
+        ) {
+          // --- Yes, it is the display area
+          // --- Carry out actions according to pixel tact
+          local u32 pixelTact = tactInLine & 0x07;
+          if (!pixelTact) {
+            phase = RT_DisplayB1FetchB2;
+            pixelAddr = calcPixelAddress(line, tactInLine + 4);
+            contentionDelay = 5;
+          } else if (pixelTact == 1) {
+            phase = RT_DisplayB1FetchA2;
+            attrAddr = calcAttrAddress(line, tactInLine + 3);
+            contentionDelay = 4;
+          } else if (pixelTact == 2) {
+            phase = RT_DisplayB1;
+            contentionDelay = 3;
+          } else if (pixelTact == 3) {
+            phase = RT_DisplayB1;
+            contentionDelay = 2;
+          } else if (pixelTact == 4) {
+            phase = RT_DisplayB2;
+            contentionDelay = 1;
+          } else if (pixelTact == 5) {
+            phase = RT_DisplayB2;
+            contentionDelay = 0;
+          } else if (pixelTact == 6) {
+            // --- Test, if there are more pixels to display in this line
+            if (tactInLine < (displayLineTime - pixelDataPrefetchTime)) {
+              // --- Yes, there are still more bytes
+              phase = RT_DisplayB2FetchB1;
+              pixelAddr = calcPixelAddress(line, tactInLine + pixelDataPrefetchTime);
+              contentionDelay = 0;
+            } else {
+              // --- Last byte in this line
+              phase = RT_DisplayB2;
+            }
+          } else {
+            // --- Pixel tact 7
+            // --- Test, if there are more pixels to display in this line
+            if (tactInLine < (displayLineTime - attributeDataPrefetchTime)) {
+              // --- Yes, there are still more bytes
+              phase = RT_DisplayB2FetchA1;
+              attrAddr = calcAttrAddress(line, tactInLine + attributeDataPrefetchTime);
+              contentionDelay = 6;
+            }
+            else {
+              // --- Last byte in this line
+              phase = RT_DisplayB2;
+            }
+          }
+        } else {
+          // --- No, it is the border area
+          phase = RT_Border;
+          
+          // --- Left or right border?
+          if (line >= firstDisplayLine) {
+            if (line <= lastDisplayLine) {
+              // -- Yes, it is left or right border
+              // --- Is it pixel data prefetch time?
+              if (tactInLine == borderPixelFetchTact) {
+                // --- Yes, prefetch pixel data
+                phase = RT_BorderFetchPixel;
+                pixelAddr = calcPixelAddress(line + 1, 0);
+                contentionDelay = 0;
+              } else if (tactInLine == borderAttrFetchTact) {
+                phase = RT_BorderFetchAttr;
+                attrAddr = calcAttrAddress(line + 1, 0);
+                contentionDelay = 6;
+              }
+            }
+          } 
+        }
+      }
+    }
+
+    // --- Store the current rendering item
+    (*tablePtr).phase = phase;
+    (*tablePtr).pixelAddress = pixelAddr;
+    (*tablePtr).attrAddress = attrAddr;
+    *contentionPtr = contentionDelay;
+
+    // --- Move to the next table item
+    tablePtr += 1;
+    contentionPtr += 1;
+    tact += 1;
+  }
+
+  // Add extra (non-rendering) tacts to protect frame overflow
+  line = 100;
+  while (line) {
+    (*tablePtr).phase = RT_NONE;
+    (*tablePtr).pixelAddress = 0;
+    (*tablePtr).attrAddress = 0;
+    tablePtr += 1;
+    line -= 1;
+  }
+}
