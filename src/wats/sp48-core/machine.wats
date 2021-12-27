@@ -135,7 +135,7 @@ void writePort(u16 port, u8 value) {
 export void initRenderingTactTable() {
 
   // Calculate the first and last visible lines
-  local u32 firstVisibleLine = verticalSyncLines + nonVisibleBorderTopLines;
+  local u32 firstVisibleLine = verticalSyncLines + nonVisibleBorderTopLines - 1;
   local u32 lastVisibleLine = rasterLines - nonVisibleBorderBottomLines;
   local u32 firstVisibleBorderTact = screenLineTime - borderLeftTime;
 
@@ -165,7 +165,7 @@ export void initRenderingTactTable() {
     // Test, if the current tact is visible
     if (
       (line >= firstVisibleLine) & 
-      (line < lastVisibleLine) & 
+      (line <= lastVisibleLine) & 
       (tactInLine < lastVisibleLineTact | tactInLine >= firstVisibleBorderTact)
     ) {
       // --- Yes, the tact is visible.
@@ -189,7 +189,7 @@ export void initRenderingTactTable() {
       // --- Test, if it is in the display area
       if (!calculated) {
         if (
-          (line >= firstDisplayLine) &
+          (line >= firstDisplayLine - 1) &
           (line <= lastDisplayLine) &
           (tactInLine < displayLineTime)
         ) {

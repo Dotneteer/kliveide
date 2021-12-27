@@ -380,6 +380,16 @@ void renderScreen(u32 toTact) {
   lastRenderedFrameTact = tact;
 }
 
+// Completes
+void completeScreenRendering() {
+  local u32 offset = nonVisibleBorderTopLines * screenLineTime - borderLeftPixels;
+  local u32 count = 0;
+  while (count < borderLeftPixels) {
+    pixelRenderingBuffer[count] = pixelRenderingBuffer[count+offset];
+    count += 1;
+  }
+}
+
 // Gets the color for the specified pixel
 // pixel: 0 - paper, other: ink
 // attr: attribute value
