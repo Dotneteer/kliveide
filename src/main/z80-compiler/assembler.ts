@@ -219,7 +219,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  compileFile(filename: string, options?: AssemblerOptions): AssemblerOutput {
+  async compileFile(filename: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
     const sourceText = readTextFile(filename);
     return this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
@@ -231,7 +231,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  compile(sourceText: string, options?: AssemblerOptions): AssemblerOutput {
+  async compile(sourceText: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
     return this.doCompile(
       new SourceFileItem(NO_FILE_ITEM),
       sourceText,

@@ -10,8 +10,8 @@ import { Z80Assembler } from "../../main/z80-compiler/assembler";
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 
 describe("Assembler - macro parameter emit", () => {
-  it("fails in global scope", () => {
-    codeRaisesError(
+  it("fails in global scope", async () => {
+    await codeRaisesError(
       `
       {{MyParam}}
       `,
@@ -19,8 +19,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("fails in local scope", () => {
-    codeRaisesError(
+  it("fails in local scope", async () => {
+    await codeRaisesError(
       `
       .loop 3
       {{MyParam}}
@@ -30,8 +30,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("single argument #1", () => {
-    testCodeEmit(
+  it("single argument #1", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(MyArg)
       ld a,{{MyArg}}
@@ -43,7 +43,7 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("single argument #2", () => {
+  it("single argument #2", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
     testCodeEmitWithOptions(
@@ -59,7 +59,7 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("single argument #3", () => {
+  it("single argument #3", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = false;
     testCodeEmitWithOptions(
@@ -75,7 +75,7 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("single argument #4", () => {
+  it("single argument #4", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
@@ -85,7 +85,7 @@ describe("Assembler - macro parameter emit", () => {
       .endm
       MyMacro(#A3)
     `;
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z1006").toBe(true);
@@ -102,19 +102,19 @@ describe("Assembler - macro parameter emit", () => {
     { expr: "a", expected: 0x7f },
   ];
   reg8Cases.forEach((tc) => {
-    it(`wotks with reg8: ${tc.expr}`, () => {
+    it(`wotks with reg8: ${tc.expr}`, async () => {
       const source = `
       MyMacro: .macro(MyArg)
       ld a,{{MyArg}}
       .endm
       MyMacro(${tc.expr})
       `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
-  it("with instruction #1", () => {
-    testCodeEmit(
+  it("with instruction #1", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(MyArg)
       {{MyArg}}
@@ -125,8 +125,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("with instruction #2", () => {
-    testCodeEmit(
+  it("with instruction #2", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(MyArg)
       {{MyArg}}
@@ -138,8 +138,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("with labeled instruction #1", () => {
-    testCodeEmit(
+  it("with labeled instruction #1", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(MyArg)
       {{MyArg}}
@@ -152,8 +152,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("with labeled instruction #2", () => {
-    testCodeEmit(
+  it("with labeled instruction #2", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(MyArg)
       {{MyArg}}
@@ -170,8 +170,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("fails with double labels", () => {
-    codeRaisesError(
+  it("fails with double labels", async () => {
+    await codeRaisesError(
       `
       MyMacro: .macro(MyArg)
       Label: {{MyArg}}
@@ -182,8 +182,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("with loop injection #1", () => {
-    testCodeEmit(
+  it("with loop injection #1", async () => {
+    await testCodeEmit(
       `
       MyMacro: .macro(MyArg)
       {{MyArg}}
@@ -196,8 +196,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("with loop injection #2", () => {
-    testCodeEmit(
+  it("with loop injection #2", async () => {
+    await testCodeEmit(
       `
       DoIt: .macro(count, body)
         .loop {{count}}
@@ -212,8 +212,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("lreg/hreg #1", () => {
-    testCodeEmit(
+  it("lreg/hreg #1", async () => {
+    await testCodeEmit(
       `
       LdHl: .macro(reg16)
         ld h,hreg({{reg16}})
@@ -232,8 +232,8 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("lreg/hreg #2", () => {
-    testCodeEmit(
+  it("lreg/hreg #2", async () => {
+    await testCodeEmit(
       `
       LdAB: .macro(reg16)
         ld a,hreg({{reg16}})

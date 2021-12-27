@@ -6,8 +6,8 @@ import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
 describe("Assembler - .loop", () => {
-  it("ent - fails in loop", () => {
-    codeRaisesError(
+  it("ent - fails in loop", async () => {
+    await codeRaisesError(
       `
       .loop 3
       .ent #8000;
@@ -17,8 +17,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("xent - fails in loop", () => {
-    codeRaisesError(
+  it("xent - fails in loop", async () => {
+    await codeRaisesError(
       `
       .loop 3
       .xent #8000;
@@ -28,19 +28,19 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it(".endl - fails without loop", () => {
-    codeRaisesError(".endl", "Z0704");
-    codeRaisesError(".ENDL", "Z0704");
-    codeRaisesError("endl", "Z0704");
-    codeRaisesError("ENDL", "Z0704");
-    codeRaisesError(".lend", "Z0704");
-    codeRaisesError(".LEND", "Z0704");
-    codeRaisesError("lend", "Z0704");
-    codeRaisesError("LEND", "Z0704");
+  it(".endl - fails without loop", async () => {
+    await codeRaisesError(".endl", "Z0704");
+    await codeRaisesError(".ENDL", "Z0704");
+    await codeRaisesError("endl", "Z0704");
+    await codeRaisesError("ENDL", "Z0704");
+    await codeRaisesError(".lend", "Z0704");
+    await codeRaisesError(".LEND", "Z0704");
+    await codeRaisesError("lend", "Z0704");
+    await codeRaisesError("LEND", "Z0704");
   });
 
-  it("loop - missing loop end", () => {
-    codeRaisesError(
+  it("loop - missing loop end", async () => {
+    await codeRaisesError(
       `
       .loop 3
       ld a,b
@@ -49,8 +49,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - fails with string", () => {
-    codeRaisesError(
+  it("loop - fails with string", async () => {
+    await codeRaisesError(
       `
       .loop "Hello"
       ld a,b
@@ -60,8 +60,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - empty body", () => {
-    testCodeEmit(
+  it("loop - empty body", async () => {
+    await testCodeEmit(
       `
       .loop 3
       .endl
@@ -69,8 +69,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - labeled, empty body", () => {
-    testCodeEmit(
+  it("loop - labeled, empty body", async () => {
+    await testCodeEmit(
       `
       MyLoop: .loop 3
       .endl
@@ -78,8 +78,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - hanging label, empty body", () => {
-    testCodeEmit(
+  it("loop - hanging label, empty body", async () => {
+    await testCodeEmit(
       `
       MyLoop:
         .loop 3
@@ -88,8 +88,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - duplicate start label", () => {
-    codeRaisesError(
+  it("loop - duplicate start label", async () => {
+    await codeRaisesError(
       `
     MyLoop: .loop 3
       .endl
@@ -100,8 +100,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - end label, empty body", () => {
-    testCodeEmit(
+  it("loop - end label, empty body", async () => {
+    await testCodeEmit(
       `
       .loop 3
     MyEnd: .endl
@@ -109,8 +109,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - hanging end label, empty body", () => {
-    testCodeEmit(
+  it("loop - hanging end label, empty body", async () => {
+    await testCodeEmit(
       `
       .loop 3
     MyEnd:
@@ -119,8 +119,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - invalid counter", () => {
-    codeRaisesError(
+  it("loop - invalid counter", async () => {
+    await codeRaisesError(
       `
       .loop 3+unknown
       .endl
@@ -129,8 +129,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - invalid fixup counter", () => {
-    codeRaisesError(
+  it("loop - invalid fixup counter", async () => {
+    await codeRaisesError(
       `
       .loop 3+later
       .endl
@@ -140,8 +140,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - valid counter, empty body", () => {
-    testCodeEmit(
+  it("loop - valid counter, empty body", async () => {
+    await testCodeEmit(
       `
     value: .equ 5
       .loop 3+value
@@ -150,8 +150,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("loop - too great value", () => {
-    codeRaisesError(
+  it("loop - too great value", async () => {
+    await codeRaisesError(
       `
       .loop #FFFF + 1
       .endl
@@ -160,8 +160,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - single line", () => {
-    testCodeEmit(
+  it("emit - single line", async () => {
+    await testCodeEmit(
       `
     .loop 2
       ld bc,#1234
@@ -176,8 +176,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - muliple lines", () => {
-    testCodeEmit(
+  it("emit - muliple lines", async () => {
+    await testCodeEmit(
       `
     .loop 2
       inc b
@@ -194,8 +194,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - internal label", () => {
-    testCodeEmit(
+  it("emit - internal label", async () => {
+    await testCodeEmit(
       `
     .loop 2
       ThisLabel: ld bc,ThisLabel
@@ -210,8 +210,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - internal label with fixup", () => {
-    testCodeEmit(
+  it("emit - internal label with fixup", async () => {
+    await testCodeEmit(
       `
     .loop 2
       ld bc,ThisLabel
@@ -229,8 +229,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - with start label", () => {
-    testCodeEmit(
+  it("emit - with start label", async () => {
+    await testCodeEmit(
       `
     StartLabel: .loop 2
       ld bc,StartLabel
@@ -248,8 +248,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - with end label", () => {
-    testCodeEmit(
+  it("emit - with end label", async () => {
+    await testCodeEmit(
       `
     .loop 2
       ld bc,EndLabel
@@ -267,8 +267,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - external fixup label", () => {
-    testCodeEmit(
+  it("emit - external fixup label", async () => {
+    await testCodeEmit(
       `
     .loop 2
       ld bc,OuterLabel
@@ -288,7 +288,7 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("too many errors", () => {
+  it("too many errors", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.maxLoopErrorsToReport = 3;
@@ -298,14 +298,14 @@ describe("Assembler - .loop", () => {
       .endl
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
     expect(output.errors[3].errorCode === "Z0703").toBe(true);
   });
 
-  it("emit - nested loop, no label", () => {
-    testCodeEmit(
+  it("emit - nested loop, no label", async () => {
+    await testCodeEmit(
       `
     .loop 2
       ld bc,#1234
@@ -329,8 +329,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - nested loop, end labels #1", () => {
-    testCodeEmit(
+  it("emit - nested loop, end labels #1", async () => {
+    await testCodeEmit(
       `
     .loop 1
       inc a
@@ -358,8 +358,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - nested loop, end labels #2", () => {
-    testCodeEmit(
+  it("emit - nested loop, end labels #2", async () => {
+    await testCodeEmit(
       `
     .loop 1
       inc a
@@ -391,8 +391,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - loop with .var", () => {
-    testCodeEmit(
+  it("emit - loop with .var", async () => {
+    await testCodeEmit(
       `
     index = 1;
     .loop 2
@@ -410,8 +410,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - loop with nested .var", () => {
-    testCodeEmit(
+  it("emit - loop with nested .var", async () => {
+    await testCodeEmit(
       `
     index = 1;
     .loop 2
@@ -435,8 +435,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - loop with counter", () => {
-    testCodeEmit(
+  it("emit - loop with counter", async () => {
+    await testCodeEmit(
       `
     .loop 3
       .db $cnt
@@ -448,8 +448,8 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("emit - nested loop with counters", () => {
-    testCodeEmit(
+  it("emit - nested loop with counters", async () => {
+    await testCodeEmit(
       `
     .loop 3
       .db $cnt

@@ -5,8 +5,8 @@ import { codeRaisesError, testCodeEmit } from "./test-helpers";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
 describe("Assembler - .if", () => {
-  it("if - simple", () => {
-    testCodeEmit(
+  it("if - simple", async () => {
+    await testCodeEmit(
       `
     .if true 
     .endif
@@ -14,22 +14,22 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("if - label", () => {
+  it("if - label", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Start: .if true 
     .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("Start")).toBe(true);
     expect(output.getSymbol("Start").value.value).toBe(0x8000);
   });
 
-  it("if - else", () => {
-    testCodeEmit(
+  it("if - else", async () => {
+    await testCodeEmit(
       `
     .if true 
     .else
@@ -38,8 +38,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("if - elif", () => {
-    testCodeEmit(
+  it("if - elif", async () => {
+    await testCodeEmit(
       `
     .if true 
     .elif true
@@ -48,8 +48,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("if - elif - else", () => {
-    testCodeEmit(
+  it("if - elif - else", async () => {
+    await testCodeEmit(
       `
     .if true 
     .elif true
@@ -59,8 +59,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("if - multiple elif", () => {
-    testCodeEmit(
+  it("if - multiple elif", async () => {
+    await testCodeEmit(
       `
     .if true 
     .elif true
@@ -70,8 +70,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("if - multiple elif - else", () => {
-    testCodeEmit(
+  it("if - multiple elif - else", async () => {
+    await testCodeEmit(
       `
     .if true 
     .elif true
@@ -82,8 +82,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("labeled elif fails", () => {
-    codeRaisesError(
+  it("labeled elif fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     Label: .elif true
@@ -93,8 +93,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("hanging labeled elif fails", () => {
-    codeRaisesError(
+  it("hanging labeled elif fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     Label: 
@@ -105,8 +105,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("labeled else fails", () => {
-    codeRaisesError(
+  it("labeled else fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     Label: .else
@@ -116,8 +116,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("hanging labeled else fails", () => {
-    codeRaisesError(
+  it("hanging labeled else fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     Label:
@@ -128,8 +128,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("labeled elif - else fails", () => {
-    codeRaisesError(
+  it("labeled elif - else fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     Label: .elif true
@@ -140,8 +140,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("hanging labeled elif - else fails", () => {
-    codeRaisesError(
+  it("hanging labeled elif - else fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     Label:
@@ -153,7 +153,7 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("multiple label issues detected", () => {
+  it("multiple label issues detected", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .if true 
@@ -165,7 +165,7 @@ describe("Assembler - .if", () => {
       .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
     expect(output.errors[0].errorCode === "Z0503").toBe(true);
@@ -173,8 +173,8 @@ describe("Assembler - .if", () => {
     expect(output.errors[2].errorCode === "Z0503").toBe(true);
   });
 
-  it("elif - after else fails", () => {
-    codeRaisesError(
+  it("elif - after else fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     .else
@@ -185,8 +185,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("else - after else fails", () => {
-    codeRaisesError(
+  it("else - after else fails", async () => {
+    await codeRaisesError(
       `
     .if true 
     .else
@@ -197,7 +197,7 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("multiple elif after else", () => {
+  it("multiple elif after else", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .if true 
@@ -207,14 +207,14 @@ describe("Assembler - .if", () => {
     .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z0709").toBe(true);
     expect(output.errors[1].errorCode === "Z0709").toBe(true);
   });
 
-  it("multiple elif and else after else", () => {
+  it("multiple elif and else after else", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .if true 
@@ -227,7 +227,7 @@ describe("Assembler - .if", () => {
     .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(4);
     expect(output.errors[0].errorCode === "Z0709").toBe(true);
@@ -236,8 +236,8 @@ describe("Assembler - .if", () => {
     expect(output.errors[3].errorCode === "Z0709").toBe(true);
   });
 
-  it("if with string condition fails", () => {
-    codeRaisesError(
+  it("if with string condition fails", async () => {
+    await codeRaisesError(
       `
     .if "cond"
     nop
@@ -247,8 +247,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("elif with string condition fails #1", () => {
-    codeRaisesError(
+  it("elif with string condition fails #1", async () => {
+    await codeRaisesError(
       `
     .if false
       nop
@@ -260,8 +260,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("elif with string condition fails #2", () => {
-    codeRaisesError(
+  it("elif with string condition fails #2", async () => {
+    await codeRaisesError(
       `
     .if false
       nop
@@ -275,8 +275,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("emits nothing with false condition", () => {
-    testCodeEmit(
+  it("emits nothing with false condition", async () => {
+    await testCodeEmit(
       `
     cond = false;
     .if cond
@@ -286,8 +286,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("emits with true condition", () => {
-    testCodeEmit(
+  it("emits with true condition", async () => {
+    await testCodeEmit(
       `
     cond = true;
     .if cond
@@ -298,8 +298,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("emits with true condition and else", () => {
-    testCodeEmit(
+  it("emits with true condition and else", async () => {
+    await testCodeEmit(
       `
     cond = true;
     .if cond
@@ -312,8 +312,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("emits with false condition and else", () => {
-    testCodeEmit(
+  it("emits with false condition and else", async () => {
+    await testCodeEmit(
       `
     cond = false;
     .if cond
@@ -326,8 +326,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("emits nothing with multiple false condition", () => {
-    testCodeEmit(
+  it("emits nothing with multiple false condition", async () => {
+    await testCodeEmit(
       `
     cond = false;
     .if cond
@@ -348,7 +348,7 @@ describe("Assembler - .if", () => {
     { expr: "123", expected: 0x14 },
   ];
   trueConditions.forEach((tc) => {
-    it(`true conditions: ${tc.expr}`, () => {
+    it(`true conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .if cond == 0
@@ -361,7 +361,7 @@ describe("Assembler - .if", () => {
           inc d
       .endif
   `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
@@ -372,7 +372,7 @@ describe("Assembler - .if", () => {
     { expr: "123", expected: 0x06 },
   ];
   equConditions.forEach((tc) => {
-    it(`equ conditions: ${tc.expr}`, () => {
+    it(`equ conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .if cond == 0
@@ -386,7 +386,7 @@ describe("Assembler - .if", () => {
       .endif
       .db value
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
@@ -397,7 +397,7 @@ describe("Assembler - .if", () => {
     { expr: "123", expected: 0x06 },
   ];
   varConditions.forEach((tc) => {
-    it(`var conditions: ${tc.expr}`, () => {
+    it(`var conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       value = 0
@@ -412,7 +412,7 @@ describe("Assembler - .if", () => {
       .endif
       .db value
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
@@ -423,7 +423,7 @@ describe("Assembler - .if", () => {
     { expr: "123", expected: 0x14 },
   ];
   labelConditions.forEach((tc) => {
-    it(`branch start label conditions: ${tc.expr}`, () => {
+    it(`branch start label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
     .if cond == 0
@@ -444,12 +444,12 @@ describe("Assembler - .if", () => {
       ld bc,Label
     .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch start hanging label conditions: ${tc.expr}`, () => {
+    it(`branch start hanging label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
     .if cond == 0
@@ -474,12 +474,12 @@ describe("Assembler - .if", () => {
       ld bc,Label
     .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch middle label conditions: ${tc.expr}`, () => {
+    it(`branch middle label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .if cond == 0
@@ -500,12 +500,12 @@ describe("Assembler - .if", () => {
         ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch middle hanging label conditions: ${tc.expr}`, () => {
+    it(`branch middle hanging label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .if cond == 0
@@ -530,12 +530,12 @@ describe("Assembler - .if", () => {
         ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch end label conditions: ${tc.expr}`, () => {
+    it(`branch end label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .if cond == 0
@@ -556,12 +556,12 @@ describe("Assembler - .if", () => {
       Label: ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch end hanging label conditions: ${tc.expr}`, () => {
+    it(`branch end hanging label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .if cond == 0
@@ -586,12 +586,12 @@ describe("Assembler - .if", () => {
         ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
     });
   });
 
-  it("if recognizes label", () => {
-    testCodeEmit(
+  it("if recognizes label", async () => {
+    await testCodeEmit(
       `
     .if true
       value = 100
@@ -605,8 +605,8 @@ describe("Assembler - .if", () => {
     );
   });
 
-  it("if recognizes missing label", () => {
-    codeRaisesError(
+  it("if recognizes missing label", async () => {
+    await codeRaisesError(
       `
     .if false
       value = 100
@@ -633,7 +633,7 @@ describe("Assembler - .if", () => {
     { row: 123, col: 123, expected: 0x0b },
   ];
   nestedConditions.forEach((tc) => {
-    it(`branch start label conditions: ${tc.row}/${tc.col}`, () => {
+    it(`branch start label conditions: ${tc.row}/${tc.col}`, async () => {
       const source = `
       row = ${tc.row}
       col = ${tc.col}
@@ -671,7 +671,7 @@ describe("Assembler - .if", () => {
         .endif
       .endif
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 

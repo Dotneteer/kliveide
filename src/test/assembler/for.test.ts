@@ -6,8 +6,8 @@ import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
 describe("Assembler - .for", () => {
-  it("ent - fails in for", () => {
-    codeRaisesError(
+  it("ent - fails in for", async () => {
+    await codeRaisesError(
       `
       .for _i = 1 .to 3
       .ent #8000;
@@ -17,8 +17,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("xent - fails in for", () => {
-    codeRaisesError(
+  it("xent - fails in for", async () => {
+    await codeRaisesError(
       `
       .for _i = 1 .to 3
       .xent #8000;
@@ -28,15 +28,15 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("next - fails without for", () => {
-    codeRaisesError(".next", "Z0704");
-    codeRaisesError(".NEXT", "Z0704");
-    codeRaisesError("next", "Z0704");
-    codeRaisesError("NEXT", "Z0704");
+  it("next - fails without for", async () => {
+    await codeRaisesError(".next", "Z0704");
+    await codeRaisesError(".NEXT", "Z0704");
+    await codeRaisesError("next", "Z0704");
+    await codeRaisesError("NEXT", "Z0704");
   });
 
-  it("for - missing loop end", () => {
-    codeRaisesError(
+  it("for - missing loop end", async () => {
+    await codeRaisesError(
       `
     .for _i = 1 to 3
     ld a,b
@@ -45,8 +45,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - variable resuse in global scope fails", () => {
-    codeRaisesError(
+  it("for - variable resuse in global scope fails", async () => {
+    await codeRaisesError(
       `
     _i = 0
     .for _i = 1 .to 3
@@ -56,8 +56,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - variable resuse in local scope fails", () => {
-    codeRaisesError(
+  it("for - variable resuse in local scope fails", async () => {
+    await codeRaisesError(
       `
     _i = 0
     .for _i = 1 .to 3
@@ -69,8 +69,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - fails with string start", () => {
-    codeRaisesError(
+  it("for - fails with string start", async () => {
+    await codeRaisesError(
       `
       .for _i = "hello" .to 3
       .next
@@ -79,8 +79,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - fails with string to", () => {
-    codeRaisesError(
+  it("for - fails with string to", async () => {
+    await codeRaisesError(
       `
       .for _i = 3 .to "hello"
       .next
@@ -89,8 +89,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - fails with string step", () => {
-    codeRaisesError(
+  it("for - fails with string step", async () => {
+    await codeRaisesError(
       `
       .for _i = 3 .to 10 .step "hello"
       .next
@@ -99,8 +99,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - empty body", () => {
-    testCodeEmit(
+  it("for - empty body", async () => {
+    await testCodeEmit(
       `
       .for _i = 1 .to 3
       .next
@@ -108,21 +108,21 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - labeled with empty body", () => {
+  it("for - labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyLoop: .for _i = 1 to 3
     .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyLoop")).toBe(true);
     expect(output.getSymbol("MyLoop").value.value).toBe(0x8000);
   });
 
-  it("for - hanging labeled with empty body", () => {
+  it("for - hanging labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyLoop:
@@ -130,27 +130,27 @@ describe("Assembler - .for", () => {
       .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyLoop")).toBe(true);
     expect(output.getSymbol("MyLoop").value.value).toBe(0x8000);
   });
 
-  it("for - end labeled with empty body", () => {
+  it("for - end labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .for _i = 1 .to 3
     MyEnd: .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);
   });
 
-  it("for - hanging end labeled with empty body", () => {
+  it("for - hanging end labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .for _i = 1 .to 3
@@ -158,14 +158,14 @@ describe("Assembler - .for", () => {
       .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);
   });
 
-  it("for - invalid start value", () => {
-    codeRaisesError(
+  it("for - invalid start value", async () => {
+    await codeRaisesError(
       `
     .for _i = 3+unknown to 5
     .next
@@ -174,8 +174,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - invalid to value", () => {
-    codeRaisesError(
+  it("for - invalid to value", async () => {
+    await codeRaisesError(
       `
     .for _i = 3 to 5+unknown
     .next
@@ -184,8 +184,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - invalid step value", () => {
-    codeRaisesError(
+  it("for - invalid step value", async () => {
+    await codeRaisesError(
       `
     .for _i = 3 to 5 step 1+unknown
     .next
@@ -194,8 +194,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - zero step", () => {
-    codeRaisesError(
+  it("for - zero step", async () => {
+    await codeRaisesError(
       `
     .for _i = 3 to 5 step 0
     .next
@@ -204,8 +204,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - zero step (float)", () => {
-    codeRaisesError(
+  it("for - zero step (float)", async () => {
+    await codeRaisesError(
       `
     .for _i = 3 to 5 step 0.0
     .next
@@ -214,8 +214,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - fixup start value", () => {
-    codeRaisesError(
+  it("for - fixup start value", async () => {
+    await codeRaisesError(
       `
     .for _i = 3+later to 4
     .next
@@ -225,8 +225,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - fixup to value", () => {
-    codeRaisesError(
+  it("for - fixup to value", async () => {
+    await codeRaisesError(
       `
     .for _i = 3 to 4+later
     .next
@@ -236,8 +236,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - fixup step value", () => {
-    codeRaisesError(
+  it("for - fixup step value", async () => {
+    await codeRaisesError(
       `
     .for _i = 3 to 4 step later
     .next
@@ -247,8 +247,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("while - valid counter in start", () => {
-    testCodeEmit(
+  it("while - valid counter in start", async () => {
+    await testCodeEmit(
       `
       value: .equ 5
       .for _i = 3+value .to 10
@@ -257,8 +257,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("while - valid counter in to", () => {
-    testCodeEmit(
+  it("while - valid counter in to", async () => {
+    await testCodeEmit(
       `
       value: .equ 5
       .for _i = 3 .to 10+value
@@ -267,8 +267,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("while - valid counter in step", () => {
-    testCodeEmit(
+  it("while - valid counter in step", async () => {
+    await testCodeEmit(
       `
       value: .equ 5
       .for _i = 3 .to 10 .step value
@@ -277,8 +277,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - too long loop", () => {
-    codeRaisesError(
+  it("for - too long loop", async () => {
+    await codeRaisesError(
       `
     .for _i = 0.0 to 100.0 step 0.00001
     .next
@@ -287,8 +287,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - single line", () => {
-    testCodeEmit(
+  it("emit - single line", async () => {
+    await testCodeEmit(
       `
     .for _i = 1 .to 2
       ld bc,#1234
@@ -303,8 +303,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - multiple lines", () => {
-    testCodeEmit(
+  it("emit - multiple lines", async () => {
+    await testCodeEmit(
       `
     .for _i = 1 .to 2
       inc b
@@ -321,8 +321,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - reverse loop", () => {
-    testCodeEmit(
+  it("emit - reverse loop", async () => {
+    await testCodeEmit(
       `
     .for _i = 2 .to 1 step -1
       inc b
@@ -339,8 +339,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - internal label", () => {
-    testCodeEmit(
+  it("emit - internal label", async () => {
+    await testCodeEmit(
       `
     .for _i = 1 .to 2
       ThisLabel: ld bc,ThisLabel
@@ -355,8 +355,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - internal label with fixup", () => {
-    testCodeEmit(
+  it("emit - internal label with fixup", async () => {
+    await testCodeEmit(
       `
     .for _i = 2 .to 1 step -1
       ld bc,ThisLabel
@@ -374,8 +374,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - with start label", () => {
-    testCodeEmit(
+  it("emit - with start label", async () => {
+    await testCodeEmit(
       `
     StartLabel: .for _i = 1 to 2
       ld bc,StartLabel
@@ -393,8 +393,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - with end label", () => {
-    testCodeEmit(
+  it("emit - with end label", async () => {
+    await testCodeEmit(
       `
     .for _i = 1 .to 2
       ld bc,EndLabel
@@ -412,8 +412,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - external fixup label", () => {
-    testCodeEmit(
+  it("emit - external fixup label", async () => {
+    await testCodeEmit(
       `
     .for _i = 2 to 1 step -1
       ld bc,OuterLabel
@@ -433,7 +433,7 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("too many errors", () => {
+  it("too many errors", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.maxLoopErrorsToReport = 3;
@@ -443,14 +443,14 @@ describe("Assembler - .for", () => {
     .next
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
     expect(output.errors[3].errorCode === "Z0703").toBe(true);
   });
 
-  it("emit - nested loop, no label", () => {
-    testCodeEmit(
+  it("emit - nested loop, no label", async () => {
+    await testCodeEmit(
       `
     .for _i = 1 to 2
       ld bc,#1234
@@ -474,8 +474,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - nested for, end labels #1", () => {
-    testCodeEmit(
+  it("emit - nested for, end labels #1", async () => {
+    await testCodeEmit(
       `
     .for _i = 1 to 1
       inc a
@@ -503,8 +503,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - nested for, end labels #2", () => {
-    testCodeEmit(
+  it("emit - nested for, end labels #2", async () => {
+    await testCodeEmit(
       `
     .for _i = 1 to 1
       inc a
@@ -537,8 +537,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - with var", () => {
-    testCodeEmit(
+  it("emit - with var", async () => {
+    await testCodeEmit(
       `
       index = 1;
       .for _i = 1 to 2
@@ -556,8 +556,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - with nested var", () => {
-    testCodeEmit(
+  it("emit - with nested var", async () => {
+    await testCodeEmit(
       `
     index = 1;
     .for _i = 1 to 2
@@ -581,8 +581,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - for with counter", () => {
-    testCodeEmit(
+  it("emit - for with counter", async () => {
+    await testCodeEmit(
       `
     .for _i = 6 to 8
       .db $cnt
@@ -594,8 +594,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - nested for with counters", () => {
-    testCodeEmit(
+  it("emit - nested for with counters", async () => {
+    await testCodeEmit(
       `
     .for _i = 6 to 8
       .db $cnt
@@ -616,8 +616,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - loop variable", () => {
-    testCodeEmit(
+  it("emit - loop variable", async () => {
+    await testCodeEmit(
       `
     .for _i = 6 to 8
       .db _i
@@ -629,8 +629,8 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("emit - nested loop variables", () => {
-    testCodeEmit(
+  it("emit - nested loop variables", async () => {
+    await testCodeEmit(
       `
     .for _i = 6 to 8
       .for _j = 1 to 2

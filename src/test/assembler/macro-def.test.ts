@@ -4,9 +4,9 @@ import * as expect from "expect";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
-describe("Assembler - macro definition", () => {
-  it("fails with no label", () => {
-    codeRaisesError(
+describe("Assembler - macro definition", async () => {
+  it("fails with no label", async () => {
+    await codeRaisesError(
       `
       .macro()
       .endm
@@ -15,8 +15,8 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("fails with local label", () => {
-    codeRaisesError(
+  it("fails with local label", async () => {
+    await codeRaisesError(
       `
       \`local .macro()
       .endm
@@ -25,14 +25,14 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("macro with label", () => {
+  it("macro with label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro: .macro()
         .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsMacro("MyMacro")).toBe(true);
@@ -43,7 +43,7 @@ describe("Assembler - macro definition", () => {
     expect(def.macroName).toBe("MyMacro");
   });
 
-  it("macro with hanging label", () => {
+  it("macro with hanging label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro
@@ -51,7 +51,7 @@ describe("Assembler - macro definition", () => {
         .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsMacro("MyMacro")).toBe(true);
@@ -62,8 +62,8 @@ describe("Assembler - macro definition", () => {
     expect(def.macroName).toBe("MyMacro");
   });
 
-  it("fails with existing label", () => {
-    codeRaisesError(
+  it("fails with existing label", async () => {
+    await codeRaisesError(
       `
       MyMacro: nop
       MyMacro: .macro()
@@ -73,14 +73,14 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("macro with arguments", () => {
+  it("macro with arguments", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro: .macro(first, second)
         .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsMacro("MyMacro")).toBe(true);
@@ -94,8 +94,8 @@ describe("Assembler - macro definition", () => {
     expect(def.argNames[1].name).toBe("second");
   });
 
-  it("fails with macro within macro", () => {
-    codeRaisesError(
+  it("fails with macro within macro", async () => {
+    await codeRaisesError(
       `
       MyMacro: .macro(first, second)
       Nested:  .macro()
@@ -106,7 +106,7 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("macro with valid parameters", () => {
+  it("macro with valid parameters", async () => {
     testCodeEmit(
       `
       MyMacro: .macro(first, second)
@@ -117,7 +117,7 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("fails with invalid parameter names", () => {
+  it("fails with invalid parameter names", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro: .macro(first, second)
@@ -128,7 +128,7 @@ describe("Assembler - macro definition", () => {
       .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
     expect(output.errors[0].errorCode === "Z1006").toBe(true);
@@ -136,8 +136,8 @@ describe("Assembler - macro definition", () => {
     expect(output.errors[2].errorCode === "Z1006").toBe(true);
   });
 
-  it("fails with no end", () => {
-    codeRaisesError(
+  it("fails with no end", async () => {
+    await codeRaisesError(
       `
       MyMacro: .macro(first, second)
         ld a,b
@@ -146,19 +146,19 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("fails with orphan ends", () => {
-    codeRaisesError(".endm", "Z0704");
-    codeRaisesError(".ENDM", "Z0704");
-    codeRaisesError("endm", "Z0704");
-    codeRaisesError("ENDM", "Z0704");
-    codeRaisesError(".mend", "Z0704");
-    codeRaisesError(".MEND", "Z0704");
-    codeRaisesError("mend", "Z0704");
-    codeRaisesError("MEND", "Z0704");
+  it("fails with orphan ends", async () => {
+    await codeRaisesError(".endm", "Z0704");
+    await codeRaisesError(".ENDM", "Z0704");
+    await codeRaisesError("endm", "Z0704");
+    await codeRaisesError("ENDM", "Z0704");
+    await codeRaisesError(".mend", "Z0704");
+    await codeRaisesError(".MEND", "Z0704");
+    await codeRaisesError("mend", "Z0704");
+    await codeRaisesError("MEND", "Z0704");
   });
 
-  it("fails with duplicated argument", () => {
-    codeRaisesError(
+  it("fails with duplicated argument", async () => {
+    await codeRaisesError(
       `
       MyMacro: .macro(first, second, first)
         .endm
@@ -167,8 +167,8 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("fails with invalid def argument", () => {
-    codeRaisesError(
+  it("fails with invalid def argument", async () => {
+    await codeRaisesError(
       `
       Simple: .macro(arg1, arg2)
         .if def(arg1) ; This is en error
@@ -217,8 +217,8 @@ describe("Assembler - macro definition", () => {
     "isregaf",
   ];
   failCases.forEach(fc => {
-    it(`${fc} fails out of macro`, () => {
-      codeRaisesError(
+    it(`${fc} fails out of macro`, async () => {
+      await codeRaisesError(
         `
         ld a,${fc}(a)
         `,

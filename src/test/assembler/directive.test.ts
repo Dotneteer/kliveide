@@ -6,8 +6,8 @@ import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { ExpressionValue } from "../../main/z80-compiler/expressions";
 import { SpectrumModelType } from "../../core/abstractions/z80-compiler-service";
 
-describe("Assembler - directives", () => {
-  it("No preproc does not change line", () => {
+describe("Assembler - directives", async () => {
+  it("No preproc does not change line", async () => {
     const compiler = new Z80Assembler();
     const source = `
       nop
@@ -15,13 +15,13 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(3);
   });
 
-  it("#define adds new conditional", () => {
+  it("#define adds new conditional", async () => {
     const compiler = new Z80Assembler();
     const source = `
       nop
@@ -29,14 +29,14 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
     expect(compiler.conditionSymbols["MySymbol"]).toBeDefined();
   });
 
-  it("#define keeps existing conditional", () => {
+  it("#define keeps existing conditional", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -46,14 +46,14 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
   });
 
-  it("#undef removes existing conditional", () => {
+  it("#undef removes existing conditional", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -63,14 +63,14 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
     expect(compiler.conditionSymbols["MySymbol"]).toBeUndefined();
   });
 
-  it("#undef keeps undefined conditional", () => {
+  it("#undef keeps undefined conditional", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -79,14 +79,14 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
     expect(compiler.conditionSymbols["MySymbol"]).toBeUndefined();
   });
 
-  it("#ifdef true works without else branch", () => {
+  it("#ifdef true works without else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -100,13 +100,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#ifdef false works without else branch", () => {
+  it("#ifdef false works without else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -119,13 +119,13 @@ describe("Assembler - directives", () => {
       nop ; 2
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
   });
 
-  it("#ifdef true works with else branch", () => {
+  it("#ifdef true works with else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -142,13 +142,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#ifdef false works with else branch", () => {
+  it("#ifdef false works with else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -164,13 +164,13 @@ describe("Assembler - directives", () => {
       nop ; 4
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(4);
   });
 
-  it("#ifndef true works without else branch", () => {
+  it("#ifndef true works without else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -183,13 +183,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#ifndef false works without else branch", () => {
+  it("#ifndef false works without else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -203,13 +203,13 @@ describe("Assembler - directives", () => {
       nop ; 2
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
   });
 
-  it("#ifndef true works with else branch", () => {
+  it("#ifndef true works with else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -225,13 +225,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#ifndef false works with else branch", () => {
+  it("#ifndef false works with else branch", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -248,13 +248,13 @@ describe("Assembler - directives", () => {
       nop ; 4
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(4);
   });
 
-  it("unexpected #else raises error", () => {
+  it("unexpected #else raises error", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -268,14 +268,14 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z0207").toBe(true);
     expect(output.errors[1].errorCode === "Z0207").toBe(true);
   });
 
-  it("unexpected #endif raises error", () => {
+  it("unexpected #endif raises error", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -289,14 +289,14 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z0208").toBe(true);
     expect(output.errors[1].errorCode === "Z0208").toBe(true);
   });
 
-  it("nested #ifdef true-true works", () => {
+  it("nested #ifdef true-true works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -317,13 +317,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(9);
   });
 
-  it("nested #ifdef true-false works", () => {
+  it("nested #ifdef true-false works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -343,13 +343,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(6);
   });
 
-  it("nested #ifdef false-true works", () => {
+  it("nested #ifdef false-true works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
@@ -369,13 +369,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(0);
   });
 
-  it("nested #ifdef false-false works", () => {
+  it("nested #ifdef false-false works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -394,13 +394,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(0);
   });
 
-  it("nested #ifdef true-true-else-else works", () => {
+  it("nested #ifdef true-true-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -429,13 +429,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(7);
   });
 
-  it("nested #ifdef true-true-else-no-else works", () => {
+  it("nested #ifdef true-true-else-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -458,13 +458,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(7);
   });
 
-  it("nested #ifdef true-true-no-else-else works", () => {
+  it("nested #ifdef true-true-no-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -487,13 +487,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(7);
   });
 
-  it("nested #ifdef true-false-else-else works", () => {
+  it("nested #ifdef true-false-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -521,13 +521,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(8);
   });
 
-  it("nested #ifdef true-false-else-no-else works", () => {
+  it("nested #ifdef true-false-else-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -551,13 +551,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("nested #ifdef true-false-no-else-else works", () => {
+  it("nested #ifdef true-false-no-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -579,13 +579,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(8);
   });
 
-  it("nested #ifdef false-true-else-else works", () => {
+  it("nested #ifdef false-true-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
@@ -613,13 +613,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("nested #ifdef false-true-no-else-else works", () => {
+  it("nested #ifdef false-true-no-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
@@ -641,13 +641,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(0);
   });
 
-  it("nested #ifdef false-true-else-no-else works", () => {
+  it("nested #ifdef false-true-else-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
@@ -671,13 +671,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("nested #ifdef false-false-else-else works", () => {
+  it("nested #ifdef false-false-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -704,13 +704,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("nested #ifdef false-false-no-else-else works", () => {
+  it("nested #ifdef false-false-no-else-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -731,13 +731,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(0);
   });
 
-  it("nested #ifdef false-false-else-no-else works", () => {
+  it("nested #ifdef false-false-else-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -760,13 +760,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("else-nested #ifdef true-true-else works", () => {
+  it("else-nested #ifdef true-true-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -792,13 +792,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("else-nested #ifdef true-true-no-else works", () => {
+  it("else-nested #ifdef true-true-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -820,13 +820,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("else-nested #ifdef true-false-else works", () => {
+  it("else-nested #ifdef true-false-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -852,13 +852,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("else-nested #ifdef true-false-no-else works", () => {
+  it("else-nested #ifdef true-false-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol"] = new ExpressionValue(true);
@@ -880,13 +880,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("else-nested #ifdef false-true-else works", () => {
+  it("else-nested #ifdef false-true-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
@@ -911,13 +911,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(4);
   });
 
-  it("else-nested #ifdef false-true-no-else works", () => {
+  it("else-nested #ifdef false-true-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.predefinedSymbols["MySymbol2"] = new ExpressionValue(true);
@@ -938,13 +938,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(4);
   });
 
-  it("else-nested #ifdef false-false-else works", () => {
+  it("else-nested #ifdef false-false-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -968,13 +968,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("else-nested #ifdef false-false-no-else works", () => {
+  it("else-nested #ifdef false-false-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -994,13 +994,13 @@ describe("Assembler - directives", () => {
       #endif
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
   });
 
-  it("#if true-no-else works", () => {
+  it("#if true-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -1013,13 +1013,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#if false-no-else works", () => {
+  it("#if false-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -1032,13 +1032,13 @@ describe("Assembler - directives", () => {
       nop ; 2
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
   });
 
-  it("#if true-else works", () => {
+  it("#if true-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -1054,13 +1054,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#if false-else works", () => {
+  it("#if false-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     const source = `
@@ -1076,13 +1076,13 @@ describe("Assembler - directives", () => {
       nop ; 4
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(4);
   });
 
-  it("#ifmod true-no-else works", () => {
+  it("#ifmod true-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.currentModel = SpectrumModelType.Spectrum48;
@@ -1096,13 +1096,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#ifmod false-no-else works", () => {
+  it("#ifmod false-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.currentModel = SpectrumModelType.Spectrum128;
@@ -1116,13 +1116,13 @@ describe("Assembler - directives", () => {
       nop ; 2
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
   });
 
-  it("#ifnmod false-no-else works", () => {
+  it("#ifnmod false-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.currentModel = SpectrumModelType.Spectrum48;
@@ -1136,13 +1136,13 @@ describe("Assembler - directives", () => {
       nop ; 2
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(2);
   });
 
-  it("#ifnmod true-no-else works", () => {
+  it("#ifnmod true-no-else works", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.currentModel = SpectrumModelType.Spectrum128;
@@ -1156,13 +1156,13 @@ describe("Assembler - directives", () => {
       nop ; 5
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(0);
     expect(compiler.preprocessedLines.length).toBe(5);
   });
 
-  it("#ifmod with invalid mode", () => {
+  it("#ifmod with invalid mode", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.currentModel = SpectrumModelType.Spectrum128;
@@ -1176,13 +1176,13 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0206").toBe(true);
   });
 
-  it("#ifnmod with invalid mode", () => {
+  it("#ifnmod with invalid mode", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.currentModel = SpectrumModelType.Spectrum128;
@@ -1196,7 +1196,7 @@ describe("Assembler - directives", () => {
       nop
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0206").toBe(true);
