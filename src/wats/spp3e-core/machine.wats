@@ -63,6 +63,7 @@ export void setupMachine () {
   // --- Rom configuration
   memorySelectedRom = 0;
   spectrumRomIndex = 3;
+  lastContendedReadValue = 0xff;
 
   // --- Set the initial state of a ZX Spectrum machine
   resetMachine();
@@ -152,17 +153,11 @@ u8 readPort(u16 port) {
   }
 
   // --- Floating port handling
-  // --- Get the rendering table entry of the current ULA tact
-  local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
-
-  // --- Check phase
-  if (((*tactItem).phase & 0x03) == 0x02) {
-    // --- Fetch the attribute value of the current tact
-    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
+  if ((port & 0xf003) == 0x0001) {
+    return readFloatingPort();
   }
 
   // --- Return the default port value
-  tacts += 4;
   return 0xff;
 }
 

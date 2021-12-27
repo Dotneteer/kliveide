@@ -52,7 +52,7 @@ export void setupMachine () {
   resetMachine();
 
   // --- Screen frame configuration
-  setInterruptTact(11);
+  setInterruptTact(0);
   verticalSyncLines = 8;
   nonVisibleBorderTopLines = 8;
   borderTopLines = 48;
@@ -67,6 +67,17 @@ export void setupMachine () {
   pixelDataPrefetchTime = 2;
   attributeDataPrefetchTime = 1;
 
+  // --- Contention values
+  contentionValues[0] = 6;
+  contentionValues[1] = 5;
+  contentionValues[2] = 4;
+  contentionValues[3] = 3;
+  contentionValues[4] = 2;
+  contentionValues[5] = 1;
+  contentionValues[6] = 0;
+  contentionValues[7] = 0;
+
+  // --- Prepare screen rendering
   calcScreenAttributes();
   initRenderingTactTable();
 
@@ -88,29 +99,35 @@ u8 readPort(u16 port) {
   // --- Handle the 0xfe port
   if (!(port & 0x0001)) {
     local u8 value = readPortFE(port);
-    tacts += 4;
     return value;
   }
 
   // --- Handle the Kempston port
   if (!(port & 0x00e0)) {
-    tacts += 4;
     // TODO: Implement Kempston port handling
     return 0xff;
   }
   
   // --- Floating port handling
   // --- Get the rendering table entry of the current ULA tact
-  local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
+  local *renderingTactEntry tactItem = &(renderingTactTable[(tacts-5)/clockMultiplier]);
+  local u8 phase = (*tactItem).phase;
 
-  // --- Check phase
-  if (((*tactItem).phase & 0x03) == 0x02) {
-    // --- Fetch the attribute value of the current tact
+  if (phase == 2) {
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress];
+  } else if (phase == 3) {
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
+  } else if (phase == 5) {
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress];
+  } else if (phase == 6) {
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
+  } else if (phase == 8) {
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress];
+  } else if (phase == 9) {
     return vmMemory[memoryScreenOffset + (*tactItem).attrAddress];
   }
 
   // --- Return the default port value
-  tacts += 4;
   return 0xff;
 }
 
@@ -121,5 +138,4 @@ void writePort(u16 port, u8 value) {
     writePortFE(port, value);
   }
 }
-
 

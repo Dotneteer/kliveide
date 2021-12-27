@@ -10,7 +10,7 @@ inline void onInitNewFrame(u32 oldClockMultiplier) {
   // --- Reset pointers used for screen rendering
   local u32 overflow = lastRenderedFrameTact;
   renderingTablePtr = &renderingTactTable;
-  pixelBufferPtr = &pixelRenderingBuffer;
+  pixelBufferPtr = &pixelRenderingBuffer + borderLeftPixels;
   frameCompleted = false;
 
   // --- Render the overflown part of the screen
@@ -26,11 +26,6 @@ inline void onInitNewFrame(u32 oldClockMultiplier) {
     setAudioSampleRate(audioSampleRate);
   }
   audioSampleCount = 0;
-}
-
-// The execution engine is about to execute a CPU cycle
-void beforeCpuCycle(u32 frameTact) {
-  // --- Nothing to do
 }
 
 // The execution engine has just executed a CPU cycle

@@ -220,7 +220,6 @@ export void executeMachineLoop() {
       } else {
         cpuSignalFlags &= ~SIG_INT;
       }
-      beforeCpuCycle(currentFrameTact);
       executeCpuCycle();
       afterCpuCycle(currentFrameTact);
     }
@@ -253,16 +252,15 @@ export void executeMachineLoop() {
     afterTerminationCheck();
 
     // Test frame completion
-    frameCompleted = currentFrameTact >= tactsInFrame;
+    frameCompleted = tacts >= tactsInFrame * clockMultiplier;
   } while (!frameCompleted);
 
   // --- The current frame has just been completed
   onFrameCompleted();
 
   // --- Adjust tacts
-  tacts %= tactsInFrame * clockMultiplier;
+  tacts -= tactsInFrame * clockMultiplier;
   frameCount += 1;
-
   // --- Done
   executionCompletionReason = EXCR_FRAME;
 }

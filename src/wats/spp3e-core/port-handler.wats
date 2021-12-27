@@ -1,6 +1,7 @@
 // ============================================================================
 // Port handler for ZX Spectrum +3E
 // ============================================================================
+// Floating bus article: http://sky.relative-path.com/zx/floating_bus.html
 
 // Indicates the printer port strobe value
 // Port 0x1FFD, Bit 4: Used in every paging mode
@@ -37,4 +38,31 @@ void handleSpecialMemoryPagingPort(u8 v) {
   diskMotorState = v & 0x08;
   printerPortStrobe = v & 0x10;
   updateBanks();
+}
+
+u8 readFloatingPort() {
+  // --- No floating port when memory paging is not enabled
+  if (!memoryPagingEnabled) {
+    return 0xff;
+  }
+
+  // --- Get the current rendering tact phase
+  local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
+  local u32 phase = (*tactItem).phase;
+
+  // --- Decide according to the current phase
+  if (phase == RT_BorderFetchPixel) {
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress] | 0x01;
+  } else if (phase == RT_DisplayB2FetchB1) { 
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress] | 0x01;
+  } else if (phase == RT_DisplayB1FetchB2) { 
+    return vmMemory[memoryScreenOffset + (*tactItem).pixelAddress] | 0x01;
+  } else if (phase == RT_BorderFetchAttr) { 
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress] | 0x01;
+  } else if (phase == RT_DisplayB2FetchA1) { 
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress] | 0x01;
+  } else if (phase == RT_DisplayB1FetchA2) { 
+    return vmMemory[memoryScreenOffset + (*tactItem).attrAddress] | 0x01;
+  }
+  return lastContendedReadValue;
 }

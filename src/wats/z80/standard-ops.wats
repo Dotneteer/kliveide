@@ -1309,6 +1309,7 @@ void ExSPiHL() {
   #endif
   l = tempL;
   h = tempH;
+  wz = hl;
 }
 
 // call po (0xe4)
@@ -1498,7 +1499,7 @@ void JpM() {
 void Ei() {
   iff1 = 1;
   iff2 = 1;
-  intBacklog = 3;
+  intBacklog = 2;
 }
 
 // call M (0xfc)

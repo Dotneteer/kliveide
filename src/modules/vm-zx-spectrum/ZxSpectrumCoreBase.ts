@@ -216,7 +216,10 @@ export abstract class ZxSpectrumCoreBase extends Z80MachineCoreBase {
     const buffer = this.api.memory.buffer as ArrayBuffer;
     const length = state.screenHeight * state.screenWidth;
     const screenData = new Uint32Array(
-      buffer.slice(COLORIZATION_BUFFER, COLORIZATION_BUFFER + 4 * length)
+      buffer.slice(
+        COLORIZATION_BUFFER + state.screenWidth * 4,
+        COLORIZATION_BUFFER + 4 * (length + state.screenWidth)
+      )
     );
     return screenData;
   }

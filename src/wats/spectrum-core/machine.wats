@@ -96,6 +96,11 @@ type spMachineState = struct {
   u32 lastExecutionContentionValue
 };
 
+// Stores contention values for each screen rendering tact
+u8[0x1'4000] contentionTable;
+
+u8[8] contentionValues;
+
 // Transfer buffer for machine state
 spMachineState spectrumMachineStateBuffer { VM_STATE_PLACEHOLDER };
 
@@ -107,9 +112,6 @@ global u32 lastExecutionContentionValue;
 
 // ULA issue used by the machine
 global u8 ulaIssue = 3;
-
-// Stores contention values for each screen rendering tact
-u8[0x1'4000] contentionTable;
 
 // ----------------------------------------------------------------------------
 // Public methods
