@@ -88,21 +88,18 @@ u8 readPort(u16 port) {
   // --- Handle the 0xfe port
   if (!(port & 0x0001)) {
     local u8 value = readPortFE(port);
-    tacts += 4;
     return value;
   }
 
   // --- Handle the Kempston port
   if (!(port & 0x00e0)) {
-    tacts += 4;
     // TODO: Implement Kempston port handling
     return 0xff;
   }
   
   // --- Floating port handling
   // --- Get the rendering table entry of the current ULA tact
-  emulateFloatingPort();
-  local *renderingTactEntry tactItem = &(renderingTactTable[tacts/clockMultiplier]);
+  local *renderingTactEntry tactItem = &(renderingTactTable[(tacts-5)/clockMultiplier]);
   local u8 phase = (*tactItem).phase;
 
   if (phase == 2) {
@@ -120,7 +117,6 @@ u8 readPort(u16 port) {
   }
 
   // --- Return the default port value
-  tacts += 4;
   return 0xff;
 }
 
@@ -130,10 +126,4 @@ void writePort(u16 port, u8 value) {
   if (!(port & 0x0001)) {
     writePortFE(port, value);
   }
-}
-
-// We need to render the latest chunk of pixels to emulate
-// the floating port
-void emulateFloatingPort() {
-  renderScreen(tacts / clockMultiplier);
 }
