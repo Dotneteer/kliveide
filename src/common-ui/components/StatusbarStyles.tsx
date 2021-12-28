@@ -53,15 +53,30 @@ export const Section: React.FC<SectionProps> = (props) => {
   );
 };
 
+type LabelProps = {
+  style?: React.CSSProperties;
+};
 /**
  * Represents a statusbar label
  */
-export const Label: React.FC = (props) => {
+export const Label: React.FC<LabelProps> = (props) => {
   return (
     <span
-      style={{ margin: "0 8px", color: "var(--statusbar-foreground-color)" }}
+      style={{
+        margin: "0 8px",
+        color: "var(--statusbar-foreground-color)",
+        ...props.style,
+      }}
     >
       {props.children}
     </span>
+  );
+};
+
+export const DataLabel: React.FC = (props) => {
+  return (
+    <Label style={{ fontFamily: "var(--console-font)" }}>
+      {props.children}
+    </Label>
   );
 };

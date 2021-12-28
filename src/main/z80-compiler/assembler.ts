@@ -147,6 +147,12 @@ const NO_FILE_ITEM = "#";
 const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT"];
 
 /**
+ * Size of an assembly batch. After this batch, the assembler lets the
+ * JavaScript event loop process messages
+ */
+const ASSEMBLY_BATCH_SIZE = 5;
+
+/**
  * This class provides the functionality of the Z80 Assembler
  */
 export class Z80Assembler extends ExpressionEvaluator {
@@ -192,6 +198,9 @@ export class Z80Assembler extends ExpressionEvaluator {
   // --- The stack of macro invocations
   private _macroInvocations: MacroOrStructInvocation[] = [];
 
+  // --- Counter for async batches
+  private _batchCounter = 1000;
+
   /**
    * The condition symbols
    */
@@ -232,7 +241,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @returns Output of the compilation
    */
   async compile(sourceText: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
-    return this.doCompile(
+    return await this.doCompile(
       new SourceFileItem(NO_FILE_ITEM),
       sourceText,
       options
@@ -245,6 +254,15 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   setTraceHandler(handler: (message: string) => void): void {
     this._traceHandler = handler;
+  }
+
+  /**
+   * Allows events to be processed from the JavaScript message queue
+   */
+  private async allowEvents(): Promise<void> {
+    if (this._batchCounter++ % ASSEMBLY_BATCH_SIZE === 0) {
+      await new Promise(r => setTimeout(r, 0));
+    }
   }
 
   /**
@@ -261,11 +279,11 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  private doCompile(
+  private async doCompile(
     sourceItem: SourceFileItem,
     sourceText: string,
     options?: AssemblerOptions
-  ): AssemblerOutput {
+  ): Promise<AssemblerOutput> {
     this._options = options ?? new AssemblerOptions();
 
     this._currentModule = this._output = new AssemblerOutput(
@@ -289,11 +307,11 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Execute the compilation phases
     let emitSuccess = false;
-    const parseResult = this.executeParse(0, sourceItem, sourceText);
+    const parseResult = await this.executeParse(0, sourceItem, sourceText);
     this.preprocessedLines = parseResult.parsedLines;
-    emitSuccess = this.emitCode(this.preprocessedLines);
+    emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
-      emitSuccess = this.fixupUnresolvedSymbols() && this.compareBinaries();
+      emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
     }
     if (!emitSuccess) {
       // --- If failed, clear output segments
@@ -315,14 +333,14 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @returns An object with `success` property to indicate compilation success, and
    * a `parsedLines` property with all lines parsed.
    */
-  private executeParse(
+  private async executeParse(
     fileIndex: number,
     sourceItem: SourceFileItem,
     sourceText: string
-  ): {
+  ): Promise<{
     success: boolean;
     parsedLines?: Z80AssemblyLine[];
-  } {
+  }> {
     // --- Initialize the parse result
     const parsedLines: Z80AssemblyLine[] = [];
 
@@ -330,7 +348,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const is = new InputStream(sourceText);
     const ts = new TokenStream(is);
     const parser = new Z80AsmParser(ts, fileIndex);
-    const parsed = parser.parseProgram();
+    const parsed = await parser.parseProgram();
 
     // --- Collect syntax errors
     for (const error of parser.errors) {
@@ -346,7 +364,6 @@ export class Z80Assembler extends ExpressionEvaluator {
     let currentLineIndex = 0;
     let ifdefStack: (boolean | null)[] = [];
     let processOps: ProcessOps = { ops: true };
-    var anyProcessed = false;
     const visitedLines = parsed.assemblyLines;
 
     // --- Traverse through parsed lines
@@ -356,18 +373,16 @@ export class Z80Assembler extends ExpressionEvaluator {
       switch (line.type) {
         case "ModelPragma":
           this.processModelPragma(line as unknown as ModelPragma);
-          anyProcessed = true;
           break;
         case "IncludeDirective": {
           // --- Parse the included file
-          const includedLines = this.applyIncludeDirective(
+          const includedLines = await this.applyIncludeDirective(
             line as unknown as IncludeDirective,
             sourceItem
           );
           if (includedLines.success && includedLines.parsedLines) {
             // --- Add the parse result of the include file to the result
             parsedLines.push(...includedLines.parsedLines);
-            anyProcessed = true;
           }
 
           break;
@@ -383,7 +398,6 @@ export class Z80Assembler extends ExpressionEvaluator {
               processOps
             )
           ) {
-            anyProcessed = true;
             break;
           }
           if (processOps.ops) {
@@ -393,7 +407,6 @@ export class Z80Assembler extends ExpressionEvaluator {
               line.endPosition - line.startPosition + 1
             );
             parsedLines.push(line);
-            anyProcessed = true;
           }
 
           break;
@@ -419,7 +432,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param lines Source code lines
    * @returns True, if there were no errors during code emission.
    */
-  private emitCode(lines: Z80AssemblyLine[]): boolean {
+  private async emitCode(lines: Z80AssemblyLine[]): Promise<boolean> {
     if (!lines) {
       return false;
     }
@@ -428,8 +441,9 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     const currentLineIndex = { index: 0 };
     while (currentLineIndex.index < lines.length) {
+      await this.allowEvents();
       var asmLine = lines[currentLineIndex.index];
-      this.emitSingleLine(lines, lines, asmLine, currentLineIndex);
+      await this.emitSingleLine(lines, lines, asmLine, currentLineIndex);
 
       // --- Next line
       currentLineIndex.index++;
@@ -472,17 +486,17 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Fixes the unresolved symbols after code emission
    */
-  private fixupUnresolvedSymbols(): boolean {
+  private async fixupUnresolvedSymbols(): Promise<boolean> {
     for (const scope of this._currentModule.localScopes) {
       if (scope.fixups.length === 0) {
         continue;
       }
-      if (this.fixupSymbols(scope, false)) {
+      if (await this.fixupSymbols(scope, false)) {
         // --- Local scope successfully resolved
         break;
       }
     }
-    return this.fixupSymbols(this._currentModule, true);
+    return await this.fixupSymbols(this._currentModule, true);
   }
 
   /**
@@ -627,10 +641,10 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param includeDir
    * @param sourceItem
    */
-  applyIncludeDirective(
+  async applyIncludeDirective(
     includeDir: IncludeDirective,
     sourceItem: SourceFileItem
-  ): { success: boolean; parsedLines?: Z80AssemblyLine[] } {
+  ): Promise<{ success: boolean; parsedLines?: Z80AssemblyLine[] }> {
     const parsedLines: Z80AssemblyLine[] = [];
 
     // --- Check the #include directive
@@ -681,7 +695,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- Parse the file
-    return this.executeParse(
+    return await this.executeParse(
       this._output.sourceFileList.length - 1,
       childItem,
       sourceText
@@ -1007,13 +1021,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param currentLineIndex The index of the line to emit
    * @param fromMacroEmit Is this method called during macro emit?
    */
-  private emitSingleLine(
+  private async emitSingleLine(
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     asmLine: Z80AssemblyLine,
     currentLineIndex: { index: number },
     fromMacroEmit: boolean = false
-  ): void {
+  ): Promise<void> {
     const assembler = this;
     this._currentSourceLine = asmLine;
     this._currentListFileItem = {
@@ -2399,10 +2413,10 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param macroOrStructStmt A macro or struct invocation statement
    * @param allLines All parsed lines
    */
-  private processMacroOrStructInvocation(
+  private async processMacroOrStructInvocation(
     macroOrStructStmt: MacroOrStructInvocation,
     allLines: Z80AssemblyLine[]
-  ): void {
+  ): Promise<void> {
     const structDef = this._currentModule.getStruct(
       macroOrStructStmt.identifier.name
     );
@@ -2582,7 +2596,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const inputStream = new InputStream(macroSource);
     const tokenStream = new TokenStream(inputStream);
     const macroParser = new Z80AsmParser(tokenStream, 0, true);
-    const macroProgram = macroParser.parseProgram();
+    const macroProgram = await macroParser.parseProgram();
 
     // --- Collect syntax errors
     if (macroParser.hasErrors) {
@@ -5621,10 +5635,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param symbols Symbols in the scope
    * @param signNotEvaluable Raise error if the symbol is not evaluable
    */
-  private fixupSymbols(
+  private async fixupSymbols(
     scope: ISymbolScope,
     signNotEvaluable: boolean
-  ): boolean {
+  ): Promise<boolean> {
+    await this.allowEvents();
+
     // --- #1: fix the .equ values
     let success = true;
     for (const equ of scope.fixups.filter(

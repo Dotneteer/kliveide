@@ -4,9 +4,9 @@ import * as expect from "expect";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
-describe("Assembler - macro definition", async () => {
-  it("fails with no label", async () => {
-    await codeRaisesError(
+describe("Assembler - macro definition", () => {
+  it("fails with no label", () => {
+    codeRaisesError(
       `
       .macro()
       .endm
@@ -15,8 +15,8 @@ describe("Assembler - macro definition", async () => {
     );
   });
 
-  it("fails with local label", async () => {
-    await codeRaisesError(
+  it("fails with local label", () => {
+    codeRaisesError(
       `
       \`local .macro()
       .endm
@@ -62,8 +62,8 @@ describe("Assembler - macro definition", async () => {
     expect(def.macroName).toBe("MyMacro");
   });
 
-  it("fails with existing label", async () => {
-    await codeRaisesError(
+  it("fails with existing label", () => {
+    codeRaisesError(
       `
       MyMacro: nop
       MyMacro: .macro()
@@ -94,8 +94,8 @@ describe("Assembler - macro definition", async () => {
     expect(def.argNames[1].name).toBe("second");
   });
 
-  it("fails with macro within macro", async () => {
-    await codeRaisesError(
+  it("fails with macro within macro", () => {
+    codeRaisesError(
       `
       MyMacro: .macro(first, second)
       Nested:  .macro()
@@ -106,7 +106,7 @@ describe("Assembler - macro definition", async () => {
     );
   });
 
-  it("macro with valid parameters", async () => {
+  it("macro with valid parameters", () => {
     testCodeEmit(
       `
       MyMacro: .macro(first, second)
@@ -136,8 +136,8 @@ describe("Assembler - macro definition", async () => {
     expect(output.errors[2].errorCode === "Z1006").toBe(true);
   });
 
-  it("fails with no end", async () => {
-    await codeRaisesError(
+  it("fails with no end", () => {
+    codeRaisesError(
       `
       MyMacro: .macro(first, second)
         ld a,b
@@ -146,19 +146,19 @@ describe("Assembler - macro definition", async () => {
     );
   });
 
-  it("fails with orphan ends", async () => {
-    await codeRaisesError(".endm", "Z0704");
-    await codeRaisesError(".ENDM", "Z0704");
-    await codeRaisesError("endm", "Z0704");
-    await codeRaisesError("ENDM", "Z0704");
-    await codeRaisesError(".mend", "Z0704");
-    await codeRaisesError(".MEND", "Z0704");
-    await codeRaisesError("mend", "Z0704");
-    await codeRaisesError("MEND", "Z0704");
+  it("fails with orphan ends", () => {
+    codeRaisesError(".endm", "Z0704");
+    codeRaisesError(".ENDM", "Z0704");
+    codeRaisesError("endm", "Z0704");
+    codeRaisesError("ENDM", "Z0704");
+    codeRaisesError(".mend", "Z0704");
+    codeRaisesError(".MEND", "Z0704");
+    codeRaisesError("mend", "Z0704");
+    codeRaisesError("MEND", "Z0704");
   });
 
-  it("fails with duplicated argument", async () => {
-    await codeRaisesError(
+  it("fails with duplicated argument", () => {
+    codeRaisesError(
       `
       MyMacro: .macro(first, second, first)
         .endm
@@ -167,8 +167,8 @@ describe("Assembler - macro definition", async () => {
     );
   });
 
-  it("fails with invalid def argument", async () => {
-    await codeRaisesError(
+  it("fails with invalid def argument", () => {
+    codeRaisesError(
       `
       Simple: .macro(arg1, arg2)
         .if def(arg1) ; This is en error
@@ -217,8 +217,8 @@ describe("Assembler - macro definition", async () => {
     "isregaf",
   ];
   failCases.forEach(fc => {
-    it(`${fc} fails out of macro`, async () => {
-      await codeRaisesError(
+    it(`${fc} fails out of macro`, () => {
+      codeRaisesError(
         `
         ld a,${fc}(a)
         `,

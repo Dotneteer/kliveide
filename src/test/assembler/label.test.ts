@@ -7,8 +7,8 @@ import {
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 
 describe("Assembler - labels", () => {
-  it("hanging label", async () => {
-    await testCodeEmit(
+  it("hanging label", () => {
+    testCodeEmit(
       `
     .org #6000
     LabelOnly:
@@ -22,7 +22,7 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("hanging label - case sensitive", async () => {
+  it("hanging label - case sensitive", () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
     testCodeEmitWithOptions(
@@ -40,7 +40,7 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("hanging label - case sensitive fails", async () => {
+  it("hanging label - case sensitive fails", () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
     codeRaisesErrorWithOptions(
@@ -55,8 +55,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("dotted name", async () => {
-    await testCodeEmit(
+  it("dotted name", () => {
+    testCodeEmit(
       `
     .org #6000
     Label.Only:
@@ -70,7 +70,7 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("dotted name - case sensitive", async () => {
+  it("dotted name - case sensitive", () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
     testCodeEmitWithOptions(
@@ -88,7 +88,7 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("dotted name - case sensitive fails", async () => {
+  it("dotted name - case sensitive fails", () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
     codeRaisesErrorWithOptions(
@@ -103,8 +103,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("hanging label - with comment", async () => {
-    await testCodeEmit(
+  it("hanging label - with comment", () => {
+    testCodeEmit(
       `
     .org #6000
     LabelOnly: ; This is a comment
@@ -118,8 +118,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("multilabel", async () => {
-    await testCodeEmit(
+  it("multilabel", () => {
+    testCodeEmit(
       `
       .org #6000
       LabelOnly1:
@@ -137,8 +137,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("hanging label - org", async () => {
-    await testCodeEmit(
+  it("hanging label - org", () => {
+    testCodeEmit(
       `
       LabelOnly:
         .org #6000
@@ -152,8 +152,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("hanging label - equ", async () => {
-    await testCodeEmit(
+  it("hanging label - equ", () => {
+    testCodeEmit(
       `
     LabelOnly:
       .org #6000
@@ -169,8 +169,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("hanging label - var", async () => {
-    await testCodeEmit(
+  it("hanging label - var", () => {
+    testCodeEmit(
       `
     LabelOnly:
       .org #6000
@@ -186,8 +186,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("hanging label - orphan", async () => {
-    await testCodeEmit(
+  it("hanging label - orphan", () => {
+    testCodeEmit(
       `
       .org #6000
       ld a,b
@@ -201,8 +201,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("temp label - back reference", async () => {
-    await testCodeEmit(
+  it("temp label - back reference", () => {
+    testCodeEmit(
       `
       Start:
       .org #6000
@@ -217,8 +217,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("temp label - forward reference", async () => {
-    await testCodeEmit(
+  it("temp label - forward reference", () => {
+    testCodeEmit(
       `
       Start:
       .org #6000
@@ -235,8 +235,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("Start and end label - forward reference", async () => {
-    await testCodeEmit(
+  it("Start and end label - forward reference", () => {
+    testCodeEmit(
       `
       Start:
       .org #6000
@@ -253,8 +253,8 @@ describe("Assembler - labels", () => {
     );
   });
 
-  it("temp label - different scopes", async () => {
-    await testCodeEmit(
+  it("temp label - different scopes", () => {
+    testCodeEmit(
       `
       Start:
       .org #6000

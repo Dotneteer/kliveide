@@ -1,7 +1,7 @@
 import "mocha";
 import { testCodeEmit } from "./test-helpers";
 
-describe("Assembler - macro-time functions", async () => {
+describe("Assembler - macro-time functions", () => {
   const reg8Cases = [
     { expr: "b", expected: 0x78 },
     { expr: "c", expected: 0x79 },
@@ -13,7 +13,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "bc", expected: 0x00 },
   ];
   reg8Cases.forEach((tc) => {
-    it(`reg8/reg8: ${tc.expr}`, async () => {
+    it(`reg8/reg8: ${tc.expr}`, () => {
       const source = `
         MyMacro:
           .macro(mpar)
@@ -25,7 +25,7 @@ describe("Assembler - macro-time functions", async () => {
           .endm
         MyMacro(${tc.expr})
         `;
-      await testCodeEmit(source, tc.expected);
+      testCodeEmit(source, tc.expected);
     });
   });
 
@@ -35,7 +35,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "bc", expected: 0x00 },
   ];
   reg8SpecCases.forEach((tc) => {
-    it(`reg8/reg8spec: ${tc.expr}`, async () => {
+    it(`reg8/reg8spec: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -47,12 +47,12 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, 0xed, tc.expected);
+      testCodeEmit(source, 0xed, tc.expected);
     });
   });
 
   reg8SpecCases.forEach((tc) => {
-    it(`reg8spec: ${tc.expr}`, async () => {
+    it(`reg8spec: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -64,7 +64,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, 0xed, tc.expected);
+      testCodeEmit(source, 0xed, tc.expected);
     });
   });
 
@@ -80,7 +80,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "bc", expected: 0x0000 },
   ];
   reg8IdxCases.forEach((tc) => {
-    it(`reg8/reg8Idx: ${tc.expr}`, async () => {
+    it(`reg8/reg8Idx: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -92,12 +92,12 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff);
+      testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff);
     });
   });
 
   reg8IdxCases.forEach((tc) => {
-    it(`reg8Idx: ${tc.expr}`, async () => {
+    it(`reg8Idx: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -109,7 +109,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff);
+      testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff);
     });
   });
 
@@ -121,7 +121,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "a", expected: 0x00 },
   ];
   reg16Cases.forEach((tc) => {
-    it(`reg16/reg16: ${tc.expr}`, async () => {
+    it(`reg16/reg16: ${tc.expr}`, () => {
       const source = `
         MyMacro:
           .macro(mpar)
@@ -133,7 +133,7 @@ describe("Assembler - macro-time functions", async () => {
           .endm
         MyMacro(${tc.expr})
         `;
-      await testCodeEmit(source, tc.expected, 0x34, 0x12);
+      testCodeEmit(source, tc.expected, 0x34, 0x12);
     });
   });
 
@@ -143,7 +143,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "a", expected: 0x0000 },
   ];
   reg16IdxCases.forEach((tc) => {
-    it(`reg16/reg16Idx: ${tc.expr}`, async () => {
+    it(`reg16/reg16Idx: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -155,7 +155,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff, 0x34, 0x12);
+      testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff, 0x34, 0x12);
     });
   });
 
@@ -166,7 +166,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "ix", expected: 0x00 },
   ];
   regIndirectCases.forEach((tc) => {
-    it(`regIndirect: ${tc.expr}`, async () => {
+    it(`regIndirect: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -178,7 +178,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, tc.expected);
+      testCodeEmit(source, tc.expected);
     });
   });
 
@@ -188,7 +188,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "ix", expected: 0x00 },
   ];
   cportCases.forEach((tc) => {
-    it(`regIndirect: ${tc.expr}`, async () => {
+    it(`regIndirect: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -200,7 +200,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, 0xed, tc.expected);
+      testCodeEmit(source, 0xed, tc.expected);
     });
   });
 
@@ -214,7 +214,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "a", expected: 0x0000, dist: 0x00 },
   ];
   indexedAddrCases.forEach((tc) => {
-    it(`indexedAddr: ${tc.expr}`, async () => {
+    it(`indexedAddr: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -226,7 +226,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff, tc.dist);
+      testCodeEmit(source, tc.expected >> 8, tc.expected & 0xff, tc.dist);
     });
   });
 
@@ -242,7 +242,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "ix", expected: 0x00 },
   ];
   conditionCases.forEach((tc) => {
-    it(`condition: ${tc.expr}`, async () => {
+    it(`condition: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -254,7 +254,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, tc.expected, 0x34, 0x12);
+      testCodeEmit(source, tc.expected, 0x34, 0x12);
     });
   });
 
@@ -265,7 +265,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "ix", expected: 0x00 },
   ];
   exprCases.forEach((tc) => {
-    it(`expression: ${tc.expr}`, async () => {
+    it(`expression: ${tc.expr}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -277,7 +277,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${tc.expr})
       `;
-      await testCodeEmit(source, 0x3e, tc.expected);
+      testCodeEmit(source, 0x3e, tc.expected);
     });
   });
 
@@ -298,7 +298,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregl", arg: "sp", expected: 0x00 },
   ];
   singleReg8Cases.forEach((rc) => {
-    it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
+    it(`single regs: ${rc.expr}/${rc.arg}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -310,7 +310,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${rc.arg})
       `;
-      await testCodeEmit(source, rc.expected);
+      testCodeEmit(source, rc.expected);
     });
   });
 
@@ -321,7 +321,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregr", arg: "sp", expected: 0x00 },
   ];
   singleReg8SpecCases.forEach((rc) => {
-    it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
+    it(`single regs: ${rc.expr}/${rc.arg}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -333,7 +333,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${rc.arg})
       `;
-      await testCodeEmit(source, 0xed, rc.expected);
+      testCodeEmit(source, 0xed, rc.expected);
     });
   });
 
@@ -348,7 +348,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregsp", arg: "a", expected: 0x00 },
   ];
   singleReg16Cases.forEach((rc) => {
-    it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
+    it(`single regs: ${rc.expr}/${rc.arg}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -360,7 +360,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${rc.arg})
       `;
-      await testCodeEmit(source, rc.expected);
+      testCodeEmit(source, rc.expected);
     });
   });
 
@@ -379,7 +379,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregyl", arg: "a", expected: 0x0000 },
   ];
   singleReg8IdxCases.forEach((rc) => {
-    it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
+    it(`single regs: ${rc.expr}/${rc.arg}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -391,7 +391,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${rc.arg})
       `;
-      await testCodeEmit(source, rc.expected >> 8, rc.expected & 0xff);
+      testCodeEmit(source, rc.expected >> 8, rc.expected & 0xff);
     });
   });
 
@@ -402,7 +402,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregiy", arg: "a", expected: 0x0000 },
   ];
   singleReg16IdxCases.forEach((rc) => {
-    it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
+    it(`single regs: ${rc.expr}/${rc.arg}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -414,7 +414,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${rc.arg})
       `;
-      await testCodeEmit(source, rc.expected >> 8, rc.expected & 0xff);
+      testCodeEmit(source, rc.expected >> 8, rc.expected & 0xff);
     });
   });
   const singleRegAfCases = [
@@ -422,7 +422,7 @@ describe("Assembler - macro-time functions", async () => {
     { expr: "isregaf", arg: "a", expected: 0x00 },
   ];
   singleRegAfCases.forEach((rc) => {
-    it(`single regs: ${rc.expr}/${rc.arg}`, async () => {
+    it(`single regs: ${rc.expr}/${rc.arg}`, () => {
       const source = `
       MyMacro:
       .macro(mpar)
@@ -434,7 +434,7 @@ describe("Assembler - macro-time functions", async () => {
       .endm
       MyMacro(${rc.arg})
       `;
-      await testCodeEmit(source, rc.expected);
+      testCodeEmit(source, rc.expected);
     });
   });
 

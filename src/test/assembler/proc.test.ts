@@ -8,8 +8,8 @@ import {
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
 describe("Assembler - .proc", () => {
-  it("ent - fails in proc", async () => {
-    await codeRaisesError(
+  it("ent - fails in proc", () => {
+    codeRaisesError(
       `
     .proc
     .ent #8000;
@@ -19,8 +19,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("xent - fails in proc", async () => {
-    await codeRaisesError(
+  it("xent - fails in proc", () => {
+    codeRaisesError(
       `
     .proc
     .xent #8000;
@@ -30,19 +30,19 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it(".endp - fails without proc", async () => {
-    await codeRaisesError(".endp", "Z0704");
-    await codeRaisesError(".ENDP", "Z0704");
-    await codeRaisesError("endp", "Z0704");
-    await codeRaisesError("ENDP", "Z0704");
-    await codeRaisesError(".pend", "Z0704");
-    await codeRaisesError(".PEND", "Z0704");
-    await codeRaisesError("pend", "Z0704");
-    await codeRaisesError("PEND", "Z0704");
+  it(".endp - fails without proc", () => {
+    codeRaisesError(".endp", "Z0704");
+    codeRaisesError(".ENDP", "Z0704");
+    codeRaisesError("endp", "Z0704");
+    codeRaisesError("ENDP", "Z0704");
+    codeRaisesError(".pend", "Z0704");
+    codeRaisesError(".PEND", "Z0704");
+    codeRaisesError("pend", "Z0704");
+    codeRaisesError("PEND", "Z0704");
   });
 
-  it("proc - missing proc end", async () => {
-    await codeRaisesError(
+  it("proc - missing proc end", () => {
+    codeRaisesError(
       `
       .proc
       ld a,b
@@ -51,8 +51,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("proc - empty body", async () => {
-    await testCodeEmit(
+  it("proc - empty body", () => {
+    testCodeEmit(
       `
       .proc
       .endp
@@ -116,8 +116,8 @@ describe("Assembler - .proc", () => {
     expect(output.containsSymbol("MyEnd")).toBe(false);
   });
 
-  it("emit - single line", async () => {
-    await testCodeEmit(
+  it("emit - single line", () => {
+    testCodeEmit(
       `
     .proc
       ld bc,#1234
@@ -129,8 +129,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - multiple lines", async () => {
-    await testCodeEmit(
+  it("emit - multiple lines", () => {
+    testCodeEmit(
       `
     .proc
       inc b
@@ -144,8 +144,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - internal label", async () => {
-    await testCodeEmit(
+  it("emit - internal label", () => {
+    testCodeEmit(
       `
     .proc
       ThisLabel: ld bc,ThisLabel
@@ -157,8 +157,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - fixup label", async () => {
-    await testCodeEmit(
+  it("emit - fixup label", () => {
+    testCodeEmit(
       `
     .proc
       ld bc,ThisLabel
@@ -172,8 +172,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - proc start label", async () => {
-    await testCodeEmit(
+  it("emit - proc start label", () => {
+    testCodeEmit(
       `
     StartLabel: .proc
       ld bc,StartLabel
@@ -187,8 +187,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - proc end label", async () => {
-    await testCodeEmit(
+  it("emit - proc end label", () => {
+    testCodeEmit(
       `
     .proc
       ld bc,EndLabel
@@ -202,8 +202,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - external fixup label", async () => {
-    await testCodeEmit(
+  it("emit - external fixup label", () => {
+    testCodeEmit(
       `
     .proc
       ld bc,OuterLabel
@@ -219,8 +219,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - nested proc", async () => {
-    await testCodeEmit(
+  it("emit - nested proc", () => {
+    testCodeEmit(
       `
     .proc
     ld bc,#1234
@@ -236,8 +236,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - nested proc with labels", async () => {
-    await testCodeEmit(
+  it("emit - nested proc with labels", () => {
+    testCodeEmit(
       `
     .proc
       inc a
@@ -259,8 +259,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - nested proc with labels #2", async () => {
-    await testCodeEmit(
+  it("emit - nested proc with labels #2", () => {
+    testCodeEmit(
       `
     .proc
       inc a
@@ -285,8 +285,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - proc with var", async () => {
-    await testCodeEmit(
+  it("emit - proc with var", () => {
+    testCodeEmit(
       `
     index = 1;
     .proc
@@ -304,8 +304,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - proc with nested var", async () => {
-    await testCodeEmit(
+  it("emit - proc with nested var", () => {
+    testCodeEmit(
       `
     index = 1;
     .proc
@@ -324,8 +324,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - nested proc with nested var #1", async () => {
-    await testCodeEmit(
+  it("emit - nested proc with nested var #1", () => {
+    testCodeEmit(
       `
     index = 1;
     .proc
@@ -345,8 +345,8 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("emit - nested proc with nested var #2", async () => {
-    await testCodeEmit(
+  it("emit - nested proc with nested var #2", () => {
+    testCodeEmit(
       `
     index .equ 1;
     .proc

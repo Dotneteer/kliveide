@@ -2,41 +2,41 @@ import "mocha";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - NEXT operations", () => {
-  it("mul d,e", async () => {
-    await testNextCodeEmit("mul d,e", 0xed, 0x30);
+  it("mul d,e", () => {
+    testNextCodeEmit("mul d,e", 0xed, 0x30);
   });
 
   it("test #NN", async () => {
-    await testNextCodeEmit("test #1234", 0xed, 0x27, 0x34);
+    testNextCodeEmit("test #1234", 0xed, 0x27, 0x34);
   });
 
   it("nextreg", async () => {
-    await testNextCodeEmit("nextreg #12, #34", 0xed, 0x91, 0x12, 0x34);
-    await testNextCodeEmit("nextreg #12, a", 0xed, 0x92, 0x12);
+    testNextCodeEmit("nextreg #12, #34", 0xed, 0x91, 0x12, 0x34);
+    testNextCodeEmit("nextreg #12, a", 0xed, 0x92, 0x12);
   });
 
   it("mirror a", async () => {
-    await testNextCodeEmit("mirror a", 0xed, 0x24);
+    testNextCodeEmit("mirror a", 0xed, 0x24);
   });
 
   it("bsla de,b", async () => {
-    await testNextCodeEmit("bsla de,b", 0xed, 0x28);
+    testNextCodeEmit("bsla de,b", 0xed, 0x28);
   });
 
   it("bsra de,b", async () => {
-    await testNextCodeEmit("bsra de,b", 0xed, 0x29);
+    testNextCodeEmit("bsra de,b", 0xed, 0x29);
   });
 
   it("bsrl de,b", async () => {
-    await testNextCodeEmit("bsrl de,b", 0xed, 0x2a);
+    testNextCodeEmit("bsrl de,b", 0xed, 0x2a);
   });
 
   it("bsrf de,b", async () => {
-    await testNextCodeEmit("bsrf de,b", 0xed, 0x2b);
+    testNextCodeEmit("bsrf de,b", 0xed, 0x2b);
   });
 
   it("brlc de,b", async () => {
-    await testNextCodeEmit("brlc de,b", 0xed, 0x2c);
+    testNextCodeEmit("brlc de,b", 0xed, 0x2c);
   });
 
   it("next ops in non-next mode", async () => {
