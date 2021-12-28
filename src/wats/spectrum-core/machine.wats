@@ -266,7 +266,7 @@ export void resetMachine() {
 }
 
 // ----------------------------------------------------------------------------
-// Helper methods
+// Memory contention
 
 // Applies memory contention delay according to the current frame tact
 inline void applyContentionDelay() {

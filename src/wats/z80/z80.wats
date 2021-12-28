@@ -60,8 +60,9 @@ u16 pc;
 u16 sp;
 
 // Additional registers
-u8 i;
 u8 r;
+u8 i;
+u16 ir {i};
 u8 xl;
 u8 xh;
 u16 ix {xl};
@@ -304,8 +305,8 @@ export void executeCpuCycle() {
 
   // --- Read the opCode from PC and refresh memory
   opCode = readMemory(pc);
-  pc += 1;
   refreshMemory();
+  pc += 1;
   tacts += 1;
 
   // --- Execute the operation

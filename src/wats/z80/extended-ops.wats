@@ -55,7 +55,24 @@ void OutCB() {
 
 // sbc hl,bc (0x42)
 void SbcHLBC() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   sbc16(bc);
 }
 
@@ -84,8 +101,8 @@ void Im0() {
 
 // ld i,a (0x47)
 void LdIA() {
-  #if MEM_CONTENDED
-    contendRead((i << 8 | r));
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
   #endif
   tacts += 1;
   i = a;
@@ -106,7 +123,24 @@ void OutCC() {
 
 // adc hl,bc (0x4a)
 void AdcHLBC() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   adc16(bc);
 }
 
@@ -124,8 +158,8 @@ void LdBCNNi() {
 
 // ld r,a (0x4f)
 void LdRA() {
-  #if MEM_CONTENDED
-    contendRead((i << 8 | r));
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
   #endif
   tacts += 1;
   r = a;
@@ -146,7 +180,24 @@ void OutCD() {
 
 // sbc hl,de (0x52)
 void SbcHLDE() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   sbc16(de);
 }
 
@@ -162,8 +213,8 @@ void Im1() {
 
 // ld a,i (0x57)
 void LdAI() {
-  #if MEM_CONTENDED
-    contendRead((i << 8 | r));
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
   #endif
   tacts += 1;
   a = i;
@@ -185,7 +236,24 @@ void OutCE() {
 
 // adc hl,de (0x5a)
 void AdcHLDE() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   adc16(de);
 }
 
@@ -208,8 +276,8 @@ void Im2() {
 
 // ld a,r 
 void LdAR() {
-  #if MEM_CONTENDED
-    contendRead((i << 8 | r));
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
   #endif
   tacts += 1;
   a = r;
@@ -231,7 +299,24 @@ void OutCH() {
 
 // sbc hl,hl (0x62)
 void SbcHLHL() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   sbc16(hl);
 }
 
@@ -274,7 +359,24 @@ void OutCL() {
 
 // adc hl,hl (0x6a)
 void AdcHLHL() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   adc16(hl);
 }
 
@@ -315,7 +417,24 @@ void OutC0() {
 
 // sbc hl,sp (0x72)
 void SbcHLSP() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   sbc16(sp);
 }
 
@@ -339,7 +458,24 @@ void OutCA() {
 
 // adc hl,sp (0x7a)
 void AdcHLSP() {
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   adc16(sp);
 }
 
@@ -409,6 +545,9 @@ void Cpi() {
 
 // ini (0xa2)
 void Ini() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readPort(bc);
 	writeMemory(hl, tmp);
@@ -425,6 +564,9 @@ void Ini() {
 
 // outi (0xa3)
 void Outi() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readMemory(hl);
 	b -= 1;
@@ -493,6 +635,9 @@ void Cpd() {
 
 // ind (0xaa)
 void Ind() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readPort(bc);
 	writeMemory(hl, tmp);
@@ -509,6 +654,9 @@ void Ind() {
 
 // outd (0xab)
 void Outd() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readMemory(hl);
 	b -= 1;
@@ -590,6 +738,9 @@ void Cpir() {
 
 // inir (0xb2)
 void Inir() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readPort(bc);
 	writeMemory(hl, tmp);
@@ -610,6 +761,9 @@ void Inir() {
 
 // otir (0xb3)
 void Otir() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readMemory(hl);
 	b -= 1;
@@ -707,6 +861,9 @@ void Cpdr() {
 
 // indr (0xba)
 void Indr() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readPort(bc);
 	writeMemory(hl, tmp);
@@ -727,6 +884,9 @@ void Indr() {
 
 // otdr (0xbb)
 void Otdr() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
 	tacts += 1;
 	local u8 tmp = readMemory(hl);
 	b -= 1;

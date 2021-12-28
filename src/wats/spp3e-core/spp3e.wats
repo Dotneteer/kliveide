@@ -6,6 +6,7 @@ import void saveModeLeft "imports" "saveModeLeft" (u32);
 
 // --- Sign that ZX Spectrum models have contended memory
 #define MEM_CONTENDED
+#define GATE_ARRAY
 #define SUPPORTS_PSG
 
 // --- Memory placeholders

@@ -61,7 +61,14 @@ void LdBCiA() {
 // inc bc (0x03)
 void IncBC() {
   bc += 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc b (0x04)
@@ -98,7 +105,24 @@ void ExAF() {
 // add hl,bc (0x09)
 void AddHLBC() {
   hl = add16(hl, bc);
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
 }
 
 // ld a,(bc) (0x0a)
@@ -110,7 +134,14 @@ void LdABCi() {
 // dec bc (0x0b)
 void DecBC() {
   bc -= 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc c (0x0c)
@@ -140,6 +171,9 @@ void Rrca() {
 
 // djnz e (0x10)
 void Djnz() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   local u32 e = readMemory(pc);
   pc += 1;
@@ -168,7 +202,14 @@ void LdDEiA() {
 // inc de (0x13)
 void IncDE() {
   de += 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc d (0x14)
@@ -206,7 +247,24 @@ void Jr() {
 // add hl,de (0x19)
 void AddHLDE() {
   hl = add16(hl, de);
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
 }
 
 // ld a,(de) (0x1a)
@@ -218,7 +276,14 @@ void LdADEi() {
 // dec de (0x1b)
 void DecDE() {
   de -= 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc e (0x1c)
@@ -272,7 +337,14 @@ void LdNNiHL() {
 // inc hl (0x23)
 void IncHL() {
   hl += 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc h (0x24)
@@ -326,7 +398,24 @@ void JrZ() {
 // add hl,hl (0x29)
 void AddHLHL() {
   hl = add16(hl, hl);
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
 }
 
 // ld hl,(nn) (0x2a)
@@ -344,7 +433,14 @@ void LdHLNNi() {
 // dec hl (0x2b)
 void DecHL() {
   hl -= 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc l (0x2c)
@@ -404,7 +500,14 @@ void LdNNiA() {
 // inc bc (0x33)
 void IncSP() {
   sp += 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc (hl) (0x34)
@@ -452,7 +555,24 @@ void JrC() {
 // add hl,sp (0x39)
 void AddHLSP() {
   hl = add16(hl, sp);
-  tacts += 7;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
 }
 
 // ld a,(nn)
@@ -468,7 +588,14 @@ void LdANNi() {
 // dec sp (0x3b)
 void DecSP() {
   sp -= 1;
-  tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
 }
 
 // inc a (0x3c)
@@ -997,6 +1124,9 @@ void CpA() {
 
 // ret nz (0xc0)
 void RetNz() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   if (f & FLAG_Z) {
     return;
@@ -1046,6 +1176,9 @@ void CallNz() {
 
 // push bc (0xc5)
 void PushBC() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   sp -= 1;
   writeMemory(sp, b);
@@ -1067,7 +1200,9 @@ void Rst00() {
 
 // ret z (0xc8)
 void RetZ() {
-  tacts += 1;
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   if (f & FLAG_Z) {
     retCore();
   }
@@ -1124,7 +1259,9 @@ void Rst08() {
 
 // ret nc (0xd0)
 void RetNc() {
-  tacts += 1;
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   if (f & FLAG_C) {
     return;
   }
@@ -1175,6 +1312,9 @@ void CallNc() {
 
 // push hl (0xd5)
 void PushDE() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   sp -= 1;
   writeMemory(sp, d);
@@ -1196,7 +1336,9 @@ void Rst10() {
 
 // ret c (0xd8)
 void RetC() {
-  tacts += 1;
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   if (f & FLAG_C) {
     retCore();
   }
@@ -1261,7 +1403,9 @@ void Rst18() {
 
 // ret po (0xe0)
 void RetPo() {
-  tacts += 1;
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   if (f & FLAG_PV) {
     return;
   }
@@ -1326,6 +1470,9 @@ void CallPo() {
 
 // push hl (0xe5)
 void PushHL() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   sp -= 1;
   writeMemory(sp, h);
@@ -1347,7 +1494,9 @@ void Rst20() {
 
 // ret pe (0xe8)
 void RetPe() {
-  tacts += 1;
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   if (f & FLAG_PV) {
     retCore();
   }
@@ -1450,6 +1599,9 @@ void CallP() {
 
 // push af (0xf5)
 void PushAF() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   sp -= 1;
   writeMemory(sp, a);
@@ -1471,7 +1623,9 @@ void Rst30() {
 
 // ret m (0xf8)
 void RetM() {
-  tacts += 1;
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   if (f & FLAG_S) {
     retCore();
   }
@@ -1479,7 +1633,14 @@ void RetM() {
 
 // ld sp,hl (0xf9)
 void LdSPHL() {
-  tacts += 2;
+  #if MEM_CONTENDED
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
   sp = hl;
 }
 
@@ -1631,6 +1792,9 @@ void callCore() {
 
 // Core of the RST instruction
 void RstCore(u16 addr) {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   sp -= 1;
   writeMemory(sp, pc >> 8);
