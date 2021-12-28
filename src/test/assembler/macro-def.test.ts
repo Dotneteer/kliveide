@@ -25,14 +25,14 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("macro with label", () => {
+  it("macro with label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro: .macro()
         .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsMacro("MyMacro")).toBe(true);
@@ -43,7 +43,7 @@ describe("Assembler - macro definition", () => {
     expect(def.macroName).toBe("MyMacro");
   });
 
-  it("macro with hanging label", () => {
+  it("macro with hanging label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro
@@ -51,7 +51,7 @@ describe("Assembler - macro definition", () => {
         .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsMacro("MyMacro")).toBe(true);
@@ -73,14 +73,14 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("macro with arguments", () => {
+  it("macro with arguments", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro: .macro(first, second)
         .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsMacro("MyMacro")).toBe(true);
@@ -117,7 +117,7 @@ describe("Assembler - macro definition", () => {
     );
   });
 
-  it("fails with invalid parameter names", () => {
+  it("fails with invalid parameter names", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyMacro: .macro(first, second)
@@ -128,7 +128,7 @@ describe("Assembler - macro definition", () => {
       .endm
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
     expect(output.errors[0].errorCode === "Z1006").toBe(true);

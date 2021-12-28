@@ -1699,7 +1699,7 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("field invocation does not redefine labels", () => {
+  it("field invocation does not redefine labels", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Object2D: .struct
@@ -1716,12 +1716,12 @@ describe("Assembler - struct invocation", () => {
       Y -> .defw 100
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
   });
 
-  it("struct allows multiple named fields", () => {
+  it("struct allows multiple named fields", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Object2D: .struct
@@ -1739,7 +1739,7 @@ describe("Assembler - struct invocation", () => {
       Y -> .defw 100
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
   });

@@ -10,8 +10,8 @@ import { Z80Assembler } from "../../main/z80-compiler/assembler";
 import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 
 describe("Assembler - struct definition", () => {
-  it("fails with no label", () => {
-    codeRaisesError(
+  it("fails with no label", async () => {
+    await codeRaisesError(
       `
       .struct
       .ends
@@ -20,8 +20,8 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with local label", () => {
-    codeRaisesError(
+  it("fails with local label", async () => {
+    await codeRaisesError(
       `
       \`local .struct
       .ends
@@ -30,8 +30,8 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with end label", () => {
-    codeRaisesError(
+  it("fails with end label", async () => {
+    await codeRaisesError(
       `
       MyStruct .struct
       MyEnd .ends
@@ -40,8 +40,8 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with hanging end label", () => {
-    codeRaisesError(
+  it("fails with hanging end label", async () => {
+    await codeRaisesError(
       `
       MyStruct .struct
       MyEnd
@@ -51,14 +51,14 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("struct with label", () => {
+  it("struct with label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyStruct: .struct
         .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -69,7 +69,7 @@ describe("Assembler - struct definition", () => {
     expect(def.structName).toBe("MyStruct");
   });
 
-  it("struct with hanging label", () => {
+  it("struct with hanging label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MyStruct:
@@ -77,7 +77,7 @@ describe("Assembler - struct definition", () => {
         .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -88,8 +88,8 @@ describe("Assembler - struct definition", () => {
     expect(def.structName).toBe("MyStruct");
   });
 
-  it("fails with existing label #1", () => {
-    codeRaisesError(
+  it("fails with existing label #1", async () => {
+    await codeRaisesError(
       `
       MyStruct: nop
       MyStruct .struct
@@ -99,10 +99,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with existing label #2", () => {
+  it("fails with existing label #2", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = false;
-    codeRaisesErrorWithOptions(
+    await codeRaisesErrorWithOptions(
       `
       myStruct: nop
       MyStruct .struct
@@ -113,10 +113,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("works with non-existing label #1", () => {
+  it("works with non-existing label #1", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       myStruct: nop
       MyStruct .struct
@@ -127,10 +127,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with existing label #3", () => {
+  it("fails with existing label #3", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    codeRaisesErrorWithOptions(
+    await codeRaisesErrorWithOptions(
       `
       MyStruct: nop
       MyStruct .struct
@@ -141,8 +141,8 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with no end", () => {
-    codeRaisesError(
+  it("fails with no end", async () => {
+    await codeRaisesError(
       `
       MyStruct .struct
         .defb 0x00
@@ -151,15 +151,15 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with orphan ends", () => {
-    codeRaisesError(".ends", "Z0704");
-    codeRaisesError(".ENDS", "Z0704");
-    codeRaisesError("ends", "Z0704");
-    codeRaisesError("ENDS", "Z0704");
+  it("fails with orphan ends", async () => {
+    await codeRaisesError(".ends", "Z0704");
+    await codeRaisesError(".ENDS", "Z0704");
+    await codeRaisesError("ends", "Z0704");
+    await codeRaisesError("ENDS", "Z0704");
   });
 
-  it("fails with invalid instruction", () => {
-    codeRaisesError(
+  it("fails with invalid instruction", async () => {
+    await codeRaisesError(
       `
       MyStruct .struct
         ld a,b
@@ -186,7 +186,7 @@ describe("Assembler - struct definition", () => {
     '.defg "....OOOO"',
   ];
   validCases.forEach((vc) => {
-    it(`struct: ${vc}`, () => {
+    it(`struct: ${vc}`, async () => {
       const compiler = new Z80Assembler();
       const source = `
         MyStruct .struct
@@ -195,12 +195,12 @@ describe("Assembler - struct definition", () => {
         .ends
       `;
 
-      const output = compiler.compile(source);
+      const output = await compiler.compile(source);
       expect(output.errorCount).toBe(0);
     });
   });
 
-  it("struct: defb", () => {
+  it("struct: defb", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -209,7 +209,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -218,7 +218,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(2);
   });
 
-  it("struct: defb, fixup", () => {
+  it("struct: defb, fixup", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -229,7 +229,7 @@ describe("Assembler - struct definition", () => {
     Symb2: .equ 2
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -238,7 +238,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(4);
   });
 
-  it("struct: defw", () => {
+  it("struct: defw", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -247,7 +247,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -256,7 +256,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(4);
   });
 
-  it("struct: defw, fixup", () => {
+  it("struct: defw, fixup", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -265,7 +265,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -274,7 +274,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(8);
   });
 
-  it("struct: defm", () => {
+  it("struct: defm", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -283,7 +283,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -292,7 +292,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(4);
   });
 
-  it("struct: defn", () => {
+  it("struct: defn", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -301,7 +301,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -310,7 +310,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(5);
   });
 
-  it("struct: defc", () => {
+  it("struct: defc", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -319,7 +319,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -328,7 +328,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(4);
   });
 
-  it("struct: defh", () => {
+  it("struct: defh", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -337,7 +337,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -346,7 +346,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(4);
   });
 
-  it("struct: defs", () => {
+  it("struct: defs", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -355,7 +355,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -364,7 +364,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(3);
   });
 
-  it("struct: fillb", () => {
+  it("struct: fillb", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -373,7 +373,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -382,7 +382,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(3);
   });
 
-  it("struct: fillw", () => {
+  it("struct: fillw", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -391,7 +391,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -400,7 +400,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(4);
   });
 
-  it("struct: defg", () => {
+  it("struct: defg", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct:
@@ -409,7 +409,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -418,7 +418,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(2);
   });
 
-  it("struct: defgx", () => {
+  it("struct: defgx", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct:
@@ -427,7 +427,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -436,7 +436,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(2);
   });
 
-  it("struct: multiple pragmas", () => {
+  it("struct: multiple pragmas", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -449,7 +449,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -458,7 +458,7 @@ describe("Assembler - struct definition", () => {
     expect(def.size).toBe(10);
   });
 
-  it("struct: fields #1", () => {
+  it("struct: fields #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -471,7 +471,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -483,7 +483,7 @@ describe("Assembler - struct definition", () => {
     expect(output.getSymbol("MyStruct").value.asWord()).toBe(10);
   });
 
-  it("struct: fields #2", () => {
+  it("struct: fields #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -496,7 +496,7 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsStruct("MyStruct")).toBe(true);
@@ -509,8 +509,8 @@ describe("Assembler - struct definition", () => {
     expect(output.getSymbol("MyStruct").value.asWord()).toBe(10);
   });
 
-  it("fails with duplicated field #1", () => {
-    codeRaisesError(
+  it("fails with duplicated field #1", async () => {
+    await codeRaisesError(
       `
       MyStruct: 
       .struct
@@ -525,10 +525,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with duplicated field #2", () => {
+  it("fails with duplicated field #2", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = false;
-    codeRaisesErrorWithOptions(
+    await codeRaisesErrorWithOptions(
       `
       MyStruct: 
       .struct
@@ -544,10 +544,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with duplicated field #3", () => {
+  it("fails with duplicated field #3", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    codeRaisesErrorWithOptions(
+    await codeRaisesErrorWithOptions(
       `
       MyStruct: 
       .struct
@@ -563,10 +563,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("ok with non-duplicated field", () => {
+  it("ok with non-duplicated field", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       MyStruct: 
       .struct
@@ -581,7 +581,7 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("fails with multiple duplicated fields", () => {
+  it("fails with multiple duplicated fields", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -594,13 +594,13 @@ describe("Assembler - struct definition", () => {
       .ends
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z0810").toBe(true);
     expect(output.errors[1].errorCode === "Z0810").toBe(true);
   });
 
-  it("struct labels show length", () => {
+  it("struct labels show length", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyStruct: 
@@ -614,15 +614,15 @@ describe("Assembler - struct definition", () => {
     .defs MyStruct*10
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
     expect(output.errorCount).toBe(0);
     expect(output.segments[0].emittedCode.length).toBe(100);
   });
 
-  it("struct fields can be resolved", () => {
+  it("struct fields can be resolved", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       MyStruct: 
         .struct
@@ -645,10 +645,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("struct fields can be resolved with global module", () => {
+  it("struct fields can be resolved with global module", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       MyStruct: 
         .struct
@@ -671,10 +671,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("struct fields can be resolved out of module", () => {
+  it("struct fields can be resolved out of module", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       MyModule: .module
       MyStruct: 
@@ -699,10 +699,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("struct fields can be resolved out of module from global", () => {
+  it("struct fields can be resolved out of module from global", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       MyModule: .module
       MyStruct: 
@@ -727,10 +727,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("struct fields can be resolved within module", () => {
+  it("struct fields can be resolved within module", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       MyModule: .module
       MyStruct: 
@@ -755,10 +755,10 @@ describe("Assembler - struct definition", () => {
     );
   });
 
-  it("struct can be resolved within module", () => {
+  it("struct can be resolved within module", async () => {
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
-    testCodeEmitWithOptions(
+    await testCodeEmitWithOptions(
       `
       MyModule: .module
       MyStruct: 

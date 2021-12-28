@@ -2,9 +2,9 @@ import "mocha";
 
 import { testCodeEmit } from "./test-helpers";
 
-describe("Assembler - parse-time function emit", () => {
-  it("textof - ld", () => {
-    testCodeEmit(
+describe("Assembler - parse-time function emit", async () => {
+  it("textof - ld", async () => {
+    await testCodeEmit(
       `
       .dm textof(ld)
     `,
@@ -12,8 +12,8 @@ describe("Assembler - parse-time function emit", () => {
     );
   });
 
-  it("ltextof - ld", () => {
-    testCodeEmit(
+  it("ltextof - ld", async () => {
+    await testCodeEmit(
       `
       .dm ltextof(ld)
     `,
@@ -21,8 +21,8 @@ describe("Assembler - parse-time function emit", () => {
     );
   });
 
-  it("textof - bc", () => {
-    testCodeEmit(
+  it("textof - bc", async () => {
+    await testCodeEmit(
       `
       .dm textof(bc)
     `,
@@ -30,8 +30,8 @@ describe("Assembler - parse-time function emit", () => {
     );
   });
 
-  it("ltextof - bc", () => {
-    testCodeEmit(
+  it("ltextof - bc", async () => {
+    await testCodeEmit(
       `
       .dm ltextof(bc)
     `,
@@ -39,8 +39,8 @@ describe("Assembler - parse-time function emit", () => {
     );
   });
 
-  it("textof - (bc)", () => {
-    testCodeEmit(
+  it("textof - (bc)", async () => {
+    await testCodeEmit(
       `
       .dm textof((bc))
     `,
@@ -48,8 +48,8 @@ describe("Assembler - parse-time function emit", () => {
     );
   });
 
-  it("ltextof - (bc)", () => {
-    testCodeEmit(
+  it("ltextof - (bc)", async () => {
+    await testCodeEmit(
       `
       .dm ltextof((bc))
     `,

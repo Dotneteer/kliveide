@@ -10,16 +10,16 @@ import {
 } from "./test-helpers";
 
 describe("Assembler - include directive", () => {
-  it("no include works", () => {
-    const output = compileFileWorks("NoInclude.z80asm");
+  it("no include works", async () => {
+    const output = await compileFileWorks("NoInclude.z80asm");
 
     const filename = path.basename(output.sourceItem.filename);
     expect(filename).toBe("NoInclude.z80asm");
     expect(output.sourceItem.includes.length).toBe(0);
   });
 
-  it("single include works", () => {
-    const output = compileFileWorks("SingleInclude.z80asm");
+  it("single include works", async () => {
+    const output = await compileFileWorks("SingleInclude.z80asm");
 
     const filename = path.basename(output.sourceItem.filename);
     expect(filename).toBe("SingleInclude.z80asm");
@@ -29,8 +29,8 @@ describe("Assembler - include directive", () => {
     );
   });
 
-  it("multiple include works", () => {
-    const output = compileFileWorks("MultipleInclude.z80asm");
+  it("multiple include works", async () => {
+    const output = await compileFileWorks("MultipleInclude.z80asm");
 
     const filename = path.basename(output.sourceItem.filename);
     expect(filename).toBe("MultipleInclude.z80asm");
@@ -43,16 +43,16 @@ describe("Assembler - include directive", () => {
     );
   });
 
-  it("fails with repetition", () => {
+  it("fails with repetition", async () => {
     compileFileFails("RepetitionInclude.z80asm", "Z0202");
   });
 
-  it("fails with single circularity", () => {
+  it("fails with single circularity", async () => {
     compileFileFails("SingleCircular.z80asm", "Z0203");
   });
 
-  it("nested include works", () => {
-    const output = compileFileWorks("NestedInclude.z80asm");
+  it("nested include works", async () => {
+    const output = await compileFileWorks("NestedInclude.z80asm");
 
     const filename = path.basename(output.sourceItem.filename);
     expect(filename).toBe("NestedInclude.z80asm");
@@ -72,27 +72,27 @@ describe("Assembler - include directive", () => {
     expect(path.basename(itemB.includes[1].filename)).toBe("inc2.z80asm");
   });
 
-  it("missing endif detected #1", () => {
+  it("missing endif detected #1", async () => {
     compileFileFails("MissingEndIf1.z80asm", "Z0205");
   });
 
-  it("missing endif detected #2", () => {
+  it("missing endif detected #2", async () => {
     compileFileFails("MissingEndIf2.z80asm", "Z0205");
   });
 
-  it("missing endif detected #3", () => {
+  it("missing endif detected #3", async () => {
     compileFileFails("MissingEndIf3.z80asm", "Z0205");
   });
 
-  it("missing endif detected #4", () => {
+  it("missing endif detected #4", async () => {
     compileFileFails("MissingEndIf4.z80asm", "Z0205");
   });
 
-  it("scenario works #1", () => {
+  it("scenario works #1", async () => {
     testCodeFileEmit("Scenario1.z80asm", 0x78, 0x01, 0xcd, 0xab, 0x41);
   });
 
-  it("scenario works #2", () => {
+  it("scenario works #2", async () => {
     testCodeFileEmit(
       "Scenario2.z80asm",
       0x78,

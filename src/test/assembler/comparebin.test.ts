@@ -3,47 +3,47 @@ import "mocha";
 import { compileFileFails, compileFileWorks } from "./test-helpers";
 
 describe("Assembler - .comparebin", () => {
-  it("works with existing binary file", () => {
-    compileFileWorks("CompareBinExists.z80asm");
+  it("works with existing binary file", async () => {
+    await compileFileWorks("CompareBinExists.z80asm");
   });
 
-  it("fails with non-existing file", () => {
-    compileFileFails("CompareBinNotExists.z80asm", "Z0329");
+  it("fails with non-existing file", async () => {
+    await compileFileFails("CompareBinNotExists.z80asm", "Z0329");
   });
 
-  it("works with zero offset", () => {
-    compileFileWorks("CompareBinWithZeroOffset.z80asm");
+  it("works with zero offset", async () => {
+    await compileFileWorks("CompareBinWithZeroOffset.z80asm");
   });
 
-  it("works with non-zero offset", () => {
-    compileFileWorks("CompareBinWithNonZeroOffset.z80asm");
+  it("works with non-zero offset", async () => {
+    await compileFileWorks("CompareBinWithNonZeroOffset.z80asm");
   });
 
-  it("works with zero offset and length", () => {
-    compileFileWorks("CompareBinWithZeroOffsetAndLength.z80asm");
+  it("works with zero offset and length", async () => {
+    await compileFileWorks("CompareBinWithZeroOffsetAndLength.z80asm");
   });
 
-  it("works with non-zero offset and length", () => {
-    compileFileWorks("CompareBinWithNonZeroOffsetAndLength.z80asm");
+  it("works with non-zero offset and length", async () => {
+    await compileFileWorks("CompareBinWithNonZeroOffsetAndLength.z80asm");
   });
 
-  it("fails with negative offset", () => {
-    compileFileFails("CompareBinWithNegativeOffset.z80asm", "Z0327");
+  it("fails with negative offset", async () => {
+    await compileFileFails("CompareBinWithNegativeOffset.z80asm", "Z0327");
   });
 
-  it("fails with too long offset", () => {
-    compileFileFails("CompareBinWithTooLongOffset.z80asm", "Z0327");
+  it("fails with too long offset", async () => {
+    await compileFileFails("CompareBinWithTooLongOffset.z80asm", "Z0327");
   });
 
-  it("works with tight offset", () => {
-    compileFileWorks("CompareBinWithTightOffset.z80asm");
+  it("works with tight offset", async () => {
+    await compileFileWorks("CompareBinWithTightOffset.z80asm");
   });
 
-  it("fails with negative length", () => {
-    compileFileFails("CompareBinWithNegativeLength.z80asm", "Z0328");
+  it("fails with negative length", async () => {
+    await compileFileFails("CompareBinWithNegativeLength.z80asm", "Z0328");
   });
 
-  it("fails with too long segment", () => {
-    compileFileFails("CompareBinWithTooLongSegment.z80asm", "Z0330");
+  it("fails with too long segment", async () => {
+    await compileFileFails("CompareBinWithTooLongSegment.z80asm", "Z0330");
   });
 });

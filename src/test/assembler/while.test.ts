@@ -74,7 +74,7 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("too many errors", () => {
+  it("too many errors", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.maxLoopErrorsToReport = 3;
@@ -86,7 +86,7 @@ describe("Assembler - .while", () => {
     .wend
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
     expect(output.errors[3].errorCode === "Z0703").toBe(true);
@@ -111,7 +111,7 @@ describe("Assembler - .while", () => {
     );
   });
 
-  it("while - labeled with empty body", () => {
+  it("while - labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     counter = 1;
@@ -120,14 +120,14 @@ describe("Assembler - .while", () => {
       .wend
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyLoop")).toBe(true);
     expect(output.getSymbol("MyLoop").value.value).toBe(0x8000);
   });
 
-  it("while - hanging label with empty body", () => {
+  it("while - hanging label with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     counter = 1;
@@ -137,14 +137,14 @@ describe("Assembler - .while", () => {
       .wend
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyLoop")).toBe(true);
     expect(output.getSymbol("MyLoop").value.value).toBe(0x8000);
   });
 
-  it("while - end labeled with empty body", () => {
+  it("while - end labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     counter = 1;
@@ -153,13 +153,13 @@ describe("Assembler - .while", () => {
     MyEnd: .wend
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);
   });
 
-  it("while - hanging end labeled with empty body", () => {
+  it("while - hanging end labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     counter = 1;
@@ -169,7 +169,7 @@ describe("Assembler - .while", () => {
       .wend
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);

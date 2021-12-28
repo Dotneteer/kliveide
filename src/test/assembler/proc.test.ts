@@ -4,9 +4,7 @@ import * as expect from "expect";
 import {
   codeRaisesError,
   testCodeEmit,
-  testCodeEmitWithOptions,
 } from "./test-helpers";
-import { AssemblerOptions } from "../../main/z80-compiler/assembler-in-out";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
 describe("Assembler - .proc", () => {
@@ -62,21 +60,21 @@ describe("Assembler - .proc", () => {
     );
   });
 
-  it("proc - start label", () => {
+  it("proc - start label", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Start: .proc
     .endp
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("Start")).toBe(true);
     expect(output.getSymbol("Start").value.value).toBe(0x8000);
   });
 
-  it("proc - hanging start label", () => {
+  it("proc - hanging start label", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Start:
@@ -84,27 +82,27 @@ describe("Assembler - .proc", () => {
     .endp
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("Start")).toBe(true);
     expect(output.getSymbol("Start").value.value).toBe(0x8000);
   });
 
-  it("proc - end label", () => {
+  it("proc - end label", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .proc
     MyEnd: .endp
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);
   });
 
-  it("proc - hanging end label", () => {
+  it("proc - hanging end label", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .proc
@@ -112,7 +110,7 @@ describe("Assembler - .proc", () => {
     .endp
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);

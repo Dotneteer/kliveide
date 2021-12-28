@@ -288,7 +288,7 @@ describe("Assembler - .loop", () => {
     );
   });
 
-  it("too many errors", () => {
+  it("too many errors", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.maxLoopErrorsToReport = 3;
@@ -298,7 +298,7 @@ describe("Assembler - .loop", () => {
       .endl
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
     expect(output.errors[3].errorCode === "Z0703").toBe(true);

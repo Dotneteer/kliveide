@@ -4,9 +4,9 @@ import * as expect from "expect";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 
-describe("Assembler - .ifnused", () => {
-  it("ifnused - simple", () => {
-    testCodeEmit(
+describe("Assembler - .ifnused", async () => {
+  it("ifnused - simple", async () => {
+    await testCodeEmit(
       `
     .ifnused MyId 
     .endif
@@ -14,8 +14,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("ifnused - compound", () => {
-    testCodeEmit(
+  it("ifnused - compound", async () => {
+    await testCodeEmit(
       `
     .ifnused MyComponent.MyId 
     .endif
@@ -23,8 +23,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("ifnused - compound with global start", () => {
-    testCodeEmit(
+  it("ifnused - compound with global start", async () => {
+    await testCodeEmit(
       `
     .ifnused ::MyComponent.MyId 
     .endif
@@ -32,22 +32,22 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("start label", () => {
+  it("start label", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Start: .ifnused MyId
     .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("Start")).toBe(true);
     expect(output.getSymbol("Start").value.value).toBe(0x8000);
   });
 
-  it("ifnused - else", () => {
-    testCodeEmit(
+  it("ifnused - else", async () => {
+    await testCodeEmit(
       `
     .ifnused MyId 
     .else
@@ -56,8 +56,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("ifnused - elif", () => {
-    testCodeEmit(
+  it("ifnused - elif", async () => {
+    await testCodeEmit(
       `
     .ifnused MyId 
     .elif true
@@ -66,8 +66,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("ifnused - elif - else", () => {
-    testCodeEmit(
+  it("ifnused - elif - else", async () => {
+    await testCodeEmit(
       `
     .ifnused MyId
     .elif true
@@ -77,8 +77,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("ifnused - multiple elif", () => {
-    testCodeEmit(
+  it("ifnused - multiple elif", async () => {
+    await testCodeEmit(
       `
     .ifnused MyId 
     .elif true
@@ -88,8 +88,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("ifnused - multiple elif - else", () => {
-    testCodeEmit(
+  it("ifnused - multiple elif - else", async () => {
+    await testCodeEmit(
       `
     .ifnused MyId 
     .elif true
@@ -100,8 +100,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("labeled elif fails", () => {
-    codeRaisesError(
+  it("labeled elif fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId 
     Label: .elif true
@@ -111,8 +111,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("hanging labeled elif fails", () => {
-    codeRaisesError(
+  it("hanging labeled elif fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId
     Label: 
@@ -123,8 +123,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("labeled else fails", () => {
-    codeRaisesError(
+  it("labeled else fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId 
     Label: .else
@@ -134,8 +134,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("hanging labeled else fails", () => {
-    codeRaisesError(
+  it("hanging labeled else fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId
     Label:
@@ -146,8 +146,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("labeled elif - else fails", () => {
-    codeRaisesError(
+  it("labeled elif - else fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId
     Label: .elif true
@@ -158,8 +158,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("hanging labeled elif - else fails", () => {
-    codeRaisesError(
+  it("hanging labeled elif - else fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId
     Label:
@@ -171,7 +171,7 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("multiple label issues detected", () => {
+  it("multiple label issues detected", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .ifnused MyId 
@@ -183,7 +183,7 @@ describe("Assembler - .ifnused", () => {
       .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
     expect(output.errors[0].errorCode === "Z0503").toBe(true);
@@ -191,8 +191,8 @@ describe("Assembler - .ifnused", () => {
     expect(output.errors[2].errorCode === "Z0503").toBe(true);
   });
 
-  it("elif - after else fails", () => {
-    codeRaisesError(
+  it("elif - after else fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId 
     .else
@@ -203,8 +203,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("else - after else fails", () => {
-    codeRaisesError(
+  it("else - after else fails", async () => {
+    await codeRaisesError(
       `
     .ifnused MyId
     .else
@@ -215,7 +215,7 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("multiple elif after else", () => {
+  it("multiple elif after else", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .ifnused MyId
@@ -225,14 +225,14 @@ describe("Assembler - .ifnused", () => {
     .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z0709").toBe(true);
     expect(output.errors[1].errorCode === "Z0709").toBe(true);
   });
 
-  it("multiple elif and else after else", () => {
+  it("multiple elif and else after else", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .ifnused MyId 
@@ -245,7 +245,7 @@ describe("Assembler - .ifnused", () => {
     .endif
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(4);
     expect(output.errors[0].errorCode === "Z0709").toBe(true);
@@ -254,8 +254,8 @@ describe("Assembler - .ifnused", () => {
     expect(output.errors[3].errorCode === "Z0709").toBe(true);
   });
 
-  it("emits nothing with false condition", () => {
-    testCodeEmit(
+  it("emits nothing with false condition", async () => {
+    await testCodeEmit(
       `
     cond = 3
     useCond = cond
@@ -266,8 +266,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("emits with true condition", () => {
-    testCodeEmit(
+  it("emits with true condition", async () => {
+    await testCodeEmit(
       `
     .ifnused cond
       nop
@@ -277,8 +277,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("emits with true condition and else", () => {
-    testCodeEmit(
+  it("emits with true condition and else", async () => {
+    await testCodeEmit(
       `
     .ifnused cond
       nop
@@ -290,8 +290,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("emits with false condition and else", () => {
-    testCodeEmit(
+  it("emits with false condition and else", async () => {
+    await testCodeEmit(
       `
     cond = 3
     usedCond = cond
@@ -305,8 +305,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("emits nothing with multiple false condition", () => {
-    testCodeEmit(
+  it("emits nothing with multiple false condition", async () => {
+    await testCodeEmit(
       `
     cond = false;
     useCond = cond
@@ -328,7 +328,7 @@ describe("Assembler - .ifnused", () => {
     { expr: "123\nuseCond = cond\n", expected: 0x06 },
   ];
   equConditions.forEach((tc) => {
-    it(`equ conditions: ${tc.expr}`, () => {
+    it(`equ conditions: ${tc.expr}`, async () => {
       const source = `
     cond = ${tc.expr}
     .ifnused cond
@@ -342,7 +342,7 @@ describe("Assembler - .ifnused", () => {
     .endif
     .db value
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
@@ -353,7 +353,7 @@ describe("Assembler - .ifnused", () => {
     { expr: "123\nuseCond = cond\n", expected: 0x06 },
   ];
   varConditions.forEach((tc) => {
-    it(`var conditions: ${tc.expr}`, () => {
+    it(`var conditions: ${tc.expr}`, async () => {
       const source = `
     cond = ${tc.expr}
     .ifnused cond
@@ -367,7 +367,7 @@ describe("Assembler - .ifnused", () => {
     .endif
     .db value
     `;
-      testCodeEmit(source, tc.expected);
+      await testCodeEmit(source, tc.expected);
     });
   });
 
@@ -378,7 +378,7 @@ describe("Assembler - .ifnused", () => {
     { expr: "123\nuseCond = cond\n", expected: 0x14 },
   ];
   labelConditions.forEach((tc) => {
-    it(`branch start label conditions: ${tc.expr}`, () => {
+    it(`branch start label conditions: ${tc.expr}`, async () => {
       const source = `
     cond = ${tc.expr}
     .ifnused cond
@@ -399,12 +399,12 @@ describe("Assembler - .ifnused", () => {
       ld bc,Label
     .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch start hanging label conditions: ${tc.expr}`, () => {
+    it(`branch start hanging label conditions: ${tc.expr}`, async () => {
       const source = `
     cond = ${tc.expr}
     .ifnused cond
@@ -429,12 +429,12 @@ describe("Assembler - .ifnused", () => {
       ld bc,Label
     .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x00, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch middle label conditions: ${tc.expr}`, () => {
+    it(`branch middle label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .ifnused cond
@@ -455,12 +455,12 @@ describe("Assembler - .ifnused", () => {
         ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch middle hanging label conditions: ${tc.expr}`, () => {
+    it(`branch middle hanging label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .ifnused cond
@@ -485,12 +485,12 @@ describe("Assembler - .ifnused", () => {
         ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x01, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch end label conditions: ${tc.expr}`, () => {
+    it(`branch end label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .ifnused cond
@@ -511,12 +511,12 @@ describe("Assembler - .ifnused", () => {
       Label: ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
     });
   });
 
   labelConditions.forEach((tc) => {
-    it(`branch end hanging label conditions: ${tc.expr}`, () => {
+    it(`branch end hanging label conditions: ${tc.expr}`, async () => {
       const source = `
       cond = ${tc.expr}
       .ifnused cond
@@ -541,12 +541,12 @@ describe("Assembler - .ifnused", () => {
         ld bc,Label
       .endif
     `;
-      testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
+      await testCodeEmit(source, 0x00, tc.expected, 0x01, 0x02, 0x80);
     });
   });
 
-  it("ifused recognizes label", () => {
-    testCodeEmit(
+  it("ifused recognizes label", async () => {
+    await testCodeEmit(
       `
     cond = 3
     .ifnused cond
@@ -561,8 +561,8 @@ describe("Assembler - .ifnused", () => {
     );
   });
 
-  it("ifused recognizes missing label", () => {
-    codeRaisesError(
+  it("ifused recognizes missing label", async () => {
+    await codeRaisesError(
       `
     cond = 3
     usedCond = cond

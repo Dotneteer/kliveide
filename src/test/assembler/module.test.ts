@@ -56,7 +56,7 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("module ID overrides local name", () => {
+  it("module ID overrides local name", async () => {
     const compiler = new Z80Assembler();
     const source = `
     myModule: .module moduleID
@@ -64,13 +64,13 @@ describe("Assembler - .module", () => {
     .endmodule
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsNestedModule("moduleID")).toBe(true);
   });
 
-  it("fails with duplicated name #1", () => {
+  it("fails with duplicated name #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .org #6000
@@ -83,14 +83,14 @@ describe("Assembler - .module", () => {
     .endmodule
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z0501").toBe(true);
     expect(output.errors[1].errorCode === "Z0903").toBe(true);
   });
 
-  it("fails with duplicated name #2", () => {
+  it("fails with duplicated name #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .org #6000
@@ -103,13 +103,13 @@ describe("Assembler - .module", () => {
     .endmodule
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0903").toBe(true);
   });
 
-  it("fails with duplicated name #3", () => {
+  it("fails with duplicated name #3", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .org #6000
@@ -122,13 +122,13 @@ describe("Assembler - .module", () => {
     .endmodule
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0903").toBe(true);
   });
 
-  it("fails with duplicated name #4", () => {
+  it("fails with duplicated name #4", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .org #6000
@@ -141,7 +141,7 @@ describe("Assembler - .module", () => {
     .endmodule
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0903").toBe(true);
@@ -1477,7 +1477,7 @@ describe("Assembler - .module", () => {
     );
   });
 
-  it("non-local module is visible", () => {
+  it("non-local module is visible", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .org #6000
@@ -1494,7 +1494,7 @@ describe("Assembler - .module", () => {
     ld hl,MyModule.Nested.Inner
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
     expect(output.errorCount).toBe(0);
   });
 

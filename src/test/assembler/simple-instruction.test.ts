@@ -40,11 +40,11 @@ describe("Assembler - simple instructions", () => {
     { source: "otdr", emit: 0xedbb },
   ];
   instructions.forEach((inst) => {
-    it(inst.source, () => {
+    it(inst.source, async () => {
       const high = inst.emit >> 8;
       const low = inst.emit & 0xff;
       const bytes = high ? [high, low] : [low];
-      testCodeEmit(inst.source, ...bytes);
+      await testCodeEmit(inst.source, ...bytes);
     });
   });
 
@@ -62,11 +62,11 @@ describe("Assembler - simple instructions", () => {
     { source: "setae", emit: 0xed95 },
   ];
   nextInstructions.forEach((inst) => {
-    it(inst.source, () => {
+    it(inst.source, async () => {
       const high = inst.emit >> 8;
       const low = inst.emit & 0xff;
       const bytes = high ? [high, low] : [low];
-      testCodeEmit(
+      await testCodeEmit(
         `
         .model next
         ${inst.source}

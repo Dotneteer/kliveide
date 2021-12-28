@@ -24,7 +24,5 @@ describe("Assembler - regression cases", () => {
     erd("(af)")
     `, "Z1012", "Z0111");
   });
-
-
 });
 

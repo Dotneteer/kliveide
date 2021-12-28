@@ -75,7 +75,7 @@ describe("Assembler - macro parameter emit", () => {
     );
   });
 
-  it("single argument #4", () => {
+  it("single argument #4", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.useCaseSensitiveSymbols = true;
@@ -85,7 +85,7 @@ describe("Assembler - macro parameter emit", () => {
       .endm
       MyMacro(#A3)
     `;
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z1006").toBe(true);

@@ -108,21 +108,21 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("for - labeled with empty body", () => {
+  it("for - labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyLoop: .for _i = 1 to 3
     .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyLoop")).toBe(true);
     expect(output.getSymbol("MyLoop").value.value).toBe(0x8000);
   });
 
-  it("for - hanging labeled with empty body", () => {
+  it("for - hanging labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     MyLoop:
@@ -130,27 +130,27 @@ describe("Assembler - .for", () => {
       .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyLoop")).toBe(true);
     expect(output.getSymbol("MyLoop").value.value).toBe(0x8000);
   });
 
-  it("for - end labeled with empty body", () => {
+  it("for - end labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .for _i = 1 .to 3
     MyEnd: .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);
   });
 
-  it("for - hanging end labeled with empty body", () => {
+  it("for - hanging end labeled with empty body", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .for _i = 1 .to 3
@@ -158,7 +158,7 @@ describe("Assembler - .for", () => {
       .next
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.containsSymbol("MyEnd")).toBe(false);
@@ -433,7 +433,7 @@ describe("Assembler - .for", () => {
     );
   });
 
-  it("too many errors", () => {
+  it("too many errors", async () => {
     const compiler = new Z80Assembler();
     const options = new AssemblerOptions();
     options.maxLoopErrorsToReport = 3;
@@ -443,7 +443,7 @@ describe("Assembler - .for", () => {
     .next
     `;
 
-    const output = compiler.compile(source, options);
+    const output = await compiler.compile(source, options);
 
     expect(output.errorCount).toBe(4);
     expect(output.errors[3].errorCode === "Z0703").toBe(true);

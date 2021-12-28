@@ -5,8 +5,8 @@ import {
 } from "./test-helpers";
 
 describe("Assembler - struct invocation", () => {
-  it("empty struct, no bytes", () => {
-    testCodeEmit(`
+  it("empty struct, no bytes", async () => {
+    await testCodeEmit(`
       MyStruct .struct
       .ends
       
@@ -31,8 +31,8 @@ describe("Assembler - struct invocation", () => {
     '.defg "....OOOO"',
   ];
   validCases.forEach((vc) => {
-    it(`no invocation, no bytes ${vc}`, () => {
-      testCodeEmit(`
+    it(`no invocation, no bytes ${vc}`, async () => {
+      await testCodeEmit(`
         MyStruct .struct
         ${vc}
         .defb 0x80
@@ -41,8 +41,8 @@ describe("Assembler - struct invocation", () => {
     });
   });
 
-  it("simple struct, defb #1", () => {
-    testCodeEmit(
+  it("simple struct, defb #1", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -54,8 +54,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defb #2", () => {
-    testCodeEmit(
+  it("simple struct, defb #2", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -71,8 +71,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defw #1", () => {
-    testCodeEmit(
+  it("simple struct, defw #1", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -85,8 +85,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defw #2", () => {
-    testCodeEmit(
+  it("simple struct, defw #2", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -101,8 +101,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defm", () => {
-    testCodeEmit(
+  it("simple struct, defm", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -117,8 +117,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defn", () => {
-    testCodeEmit(
+  it("simple struct, defn", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -134,8 +134,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defc", () => {
-    testCodeEmit(
+  it("simple struct, defc", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -150,8 +150,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defs", () => {
-    testCodeEmit(
+  it("simple struct, defs", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -165,8 +165,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, fillb", () => {
-    testCodeEmit(
+  it("simple struct, fillb", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -180,8 +180,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, fillw", () => {
-    testCodeEmit(
+  it("simple struct, fillw", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -196,8 +196,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defgx", () => {
-    testCodeEmit(
+  it("simple struct, defgx", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -210,8 +210,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defg", () => {
-    testCodeEmit(
+  it("simple struct, defg", async () => {
+    await testCodeEmit(
       `
       MyStruct
       .struct
@@ -224,8 +224,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defb, fixup #1", () => {
-    testCodeEmit(
+  it("simple struct, defb, fixup #1", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct
@@ -241,8 +241,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defb, fixup #2", () => {
-    testCodeEmit(
+  it("simple struct, defb, fixup #2", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct
@@ -259,8 +259,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defb, fixup #3", () => {
-    testCodeEmit(
+  it("simple struct, defb, fixup #3", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct
@@ -277,8 +277,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defw, fixup #1", () => {
-    testCodeEmit(
+  it("simple struct, defw, fixup #1", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct
@@ -295,8 +295,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defw, fixup #2", () => {
-    testCodeEmit(
+  it("simple struct, defw, fixup #2", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct
@@ -315,8 +315,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, defw, fixup #3", () => {
-    testCodeEmit(
+  it("simple struct, defw, fixup #3", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct
@@ -335,8 +335,8 @@ describe("Assembler - struct invocation", () => {
     );
   });
 
-  it("simple struct, multiple fixups", () => {
-    testCodeEmit(
+  it("simple struct, multiple fixups", async () => {
+    await testCodeEmit(
       `
       MyStruct
         .struct

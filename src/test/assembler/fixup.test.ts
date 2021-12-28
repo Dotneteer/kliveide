@@ -5,8 +5,8 @@ import { Z80Assembler } from "../../main/z80-compiler/assembler";
 import { testCodeEmit } from "./test-helpers";  
 import { ExpressionValueType } from "../../core/abstractions/z80-compiler-service";
 
-describe("Assembler - fixups", () => {
-  it("equ: fixup", () => {
+describe("Assembler - fixups", async () => {
+  it("equ: fixup", async () => {
     const compiler = new Z80Assembler();
     const source = `
       ld a,b
@@ -15,7 +15,7 @@ describe("Assembler - fixups", () => {
     Symbol2 .equ 122
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -23,7 +23,7 @@ describe("Assembler - fixups", () => {
     expect(output.getSymbol("Symbol2").value.value).toBe(122);
   });
 
-  it("equ: circular reference", () => {
+  it("equ: circular reference", async () => {
     const compiler = new Z80Assembler();
     const source = `
       ld a,b
@@ -32,14 +32,14 @@ describe("Assembler - fixups", () => {
     Symbol2 .equ Symbol1 + 1
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(2);
     expect(output.errors[0].errorCode === "Z0605").toBe(true);
     expect(output.errors[1].errorCode === "Z0605").toBe(true);
   });
 
-  it("equ: evaluation error", () => {
+  it("equ: evaluation error", async () => {
     const compiler = new Z80Assembler();
     const source = `
       ld a,b
@@ -48,13 +48,13 @@ describe("Assembler - fixups", () => {
     Symbol2 .equ 3/0
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0606").toBe(true);
   });
 
-  it("equ: Bit8 fixup ", () => {
+  it("equ: Bit8 fixup ", async () => {
     testCodeEmit(
       `
     Symbol1 .equ Symbol2 + 1
@@ -66,7 +66,7 @@ describe("Assembler - fixups", () => {
     );
   });
 
-  it("equ: Bit8 circular reference", () => {
+  it("equ: Bit8 circular reference", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Symbol1 .equ Symbol2 + 1
@@ -74,7 +74,7 @@ describe("Assembler - fixups", () => {
     Symbol2 .equ Symbol1 + 1
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
     expect(output.errors[0].errorCode === "Z0605").toBe(true);
@@ -82,7 +82,7 @@ describe("Assembler - fixups", () => {
     expect(output.errors[2].errorCode === "Z0605").toBe(true);
   });
 
-  it("equ: Bit16 fixup ", () => {
+  it("equ: Bit16 fixup ", async () => {
     testCodeEmit(
       `
       Symbol1 .equ Symbol2 + 1
@@ -95,7 +95,7 @@ describe("Assembler - fixups", () => {
     );
   });
 
-  it("equ: Bit16 circular reference", () => {
+  it("equ: Bit16 circular reference", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Symbol1 .equ Symbol2 + 1
@@ -103,7 +103,7 @@ describe("Assembler - fixups", () => {
     Symbol2 .equ Symbol1 + 1
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(3);
     expect(output.errors[0].errorCode === "Z0605").toBe(true);
@@ -111,7 +111,7 @@ describe("Assembler - fixups", () => {
     expect(output.errors[2].errorCode === "Z0605").toBe(true);
   });
 
-  it("equ: Bit16 fixup evaluation error", () => {
+  it("equ: Bit16 fixup evaluation error", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Symbol1 .equ Symbol2 + 1
@@ -119,13 +119,13 @@ describe("Assembler - fixups", () => {
     Symbol2 .equ #1300
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0606").toBe(true);
   });
 
-  it("jr: forward fixup", () => {
+  it("jr: forward fixup", async () => {
     testCodeEmit(
       `
       jr nz,ForwAddr
@@ -140,7 +140,7 @@ describe("Assembler - fixups", () => {
     );
   });
 
-  it("jr: backward", () => {
+  it("jr: backward", async () => {
     testCodeEmit(
       `
     BackAddr nop
@@ -157,7 +157,7 @@ describe("Assembler - fixups", () => {
     );
   });
 
-  it("jr: fails with far forward jump", () => {
+  it("jr: fails with far forward jump", async () => {
     const compiler = new Z80Assembler();
     const source = `
       jr nz,ForwAddr
@@ -166,13 +166,13 @@ describe("Assembler - fixups", () => {
     ForwAddr nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0403").toBe(true);
   });
 
-  it("jr: fails with far backward jump", () => {
+  it("jr: fails with far backward jump", async () => {
     const compiler = new Z80Assembler();
     const source = `
     BackAddr nop
@@ -182,20 +182,20 @@ describe("Assembler - fixups", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0403").toBe(true);
   });
 
-  it("equ: string fixup", () => {
+  it("equ: string fixup", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Symbol1 .equ Symbol2 + "you"
     Symbol2 .equ "hello"
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -205,20 +205,20 @@ describe("Assembler - fixups", () => {
     expect(output.getSymbol("Symbol2").value.type).toBe(ExpressionValueType.String);
   });
 
-  it("equ: Bit16 string", () => {
+  it("equ: Bit16 string", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Symbol1 .equ "hello"
       ld hl,Symbol1
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0603").toBe(true);
   });
 
-  it("equ: Bit16 fixup string", () => {
+  it("equ: Bit16 fixup string", async () => {
     const compiler = new Z80Assembler();
     const source = `
     Symbol1 .equ "hello" + Symbol2
@@ -226,7 +226,7 @@ describe("Assembler - fixups", () => {
     Symbol2 .equ "you"
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0603").toBe(true);

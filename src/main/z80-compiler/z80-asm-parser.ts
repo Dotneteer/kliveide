@@ -132,10 +132,20 @@ import {
   Expression,
   ExpressionNode,
 } from "./assembler-tree-nodes";
-import { ParserErrorMessage, errorMessages, ErrorCodes } from "./assembler-errors";
+import {
+  ParserErrorMessage,
+  errorMessages,
+  ErrorCodes,
+} from "./assembler-errors";
 import { ParserError } from "./parse-errors";
 import { getTokenTraits, TokenTraits } from "./token-traits";
 import { convertSpectrumString } from "./utils";
+
+/**
+ * Size of an assembly batch. After this batch, the assembler lets the
+ * JavaScript event loop process messages
+ */
+const PARSER_BATCH_SIZE = 1000;
 
 /**
  * This class implements the Z80 assembly parser
@@ -143,6 +153,9 @@ import { convertSpectrumString } from "./utils";
 export class Z80AsmParser {
   private readonly _parseErrors: ParserErrorMessage[] = [];
   private readonly _macroParamsCollected: MacroParameter[] = [];
+
+  // --- Counter for async batches
+  private _batchCounter = 0;
 
   /**
    * Initializes the parser with the specified token stream
@@ -183,11 +196,20 @@ export class Z80AsmParser {
   }
 
   /**
+   * Allows events to be processed from the JavaScript message queue
+   */
+  private async allowEvents(): Promise<void> {
+    if (this._batchCounter++ % PARSER_BATCH_SIZE === 0) {
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+
+  /**
    * program
    *   : (assemblyLine? NewLine*)* EOF
    *   ;
    */
-  parseProgram(): Program | null {
+  async parseProgram(): Promise<Program | null> {
     let token: Token;
     const assemblyLines: Z80AssemblyLine[] = [];
     this.tokens.resetComment();
@@ -221,6 +243,7 @@ export class Z80AsmParser {
 
       // --- Parse the subsequent line
       try {
+        await this.allowEvents();
         const parsedLine = this.parseAssemblyLine();
         if (parsedLine) {
           assemblyLines.push(parsedLine);

@@ -6,7 +6,7 @@ import { getThemeService } from "@core/service-registry";
 import { getVersion } from "../version";
 import { AppState } from "@state/AppState";
 import { Icon } from "@components/Icon";
-import { StatusbarRoot, Section, Label } from "@components/StatusbarStyles";
+import { StatusbarRoot, Section, Label, DataLabel } from "@components/StatusbarStyles";
 import { getVmEngineService } from "@modules-core/vm-engine-service";
 import { Column } from "@components/Panels";
 
@@ -33,26 +33,26 @@ export const EmuStatusbar: React.VFC = () => {
   );
   const lastFrameTime = useSelector((s: AppState) =>
     s.emulatorPanel.frameDiagData.lastFrameTime.toLocaleString(undefined, {
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     })
   );
   const lastEngineTime = useSelector((s: AppState) =>
     s.emulatorPanel.frameDiagData.lastEngineTime.toLocaleString(undefined, {
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     })
   );
   const avgEngineTime = useSelector((s: AppState) =>
     s.emulatorPanel.frameDiagData.avgEngineTime.toLocaleString(undefined, {
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     })
   );
   const avgFrameTime = useSelector((s: AppState) =>
     s.emulatorPanel.frameDiagData.avgFrameTime.toLocaleString(undefined, {
-      minimumFractionDigits: 4,
-      maximumFractionDigits: 4,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     })
   );
   const renderedFrames = useSelector(
@@ -69,25 +69,25 @@ export const EmuStatusbar: React.VFC = () => {
   const frameInformation = [
     <Section key="1">
       <Icon iconName="vm-running" width={16} height={16} fill={fillValue} />
-      <Label>
+      <DataLabel>
         {avgEngineTime} / {lastEngineTime}
-      </Label>
+      </DataLabel>
     </Section>,
     <Section key="2" title="Total time per frame (average/last)">
       <Icon iconName="vm" width={16} height={16} fill={fillValue} />
-      <Label>
+      <DataLabel>
         {avgFrameTime} / {lastFrameTime}
-      </Label>
+      </DataLabel>
     </Section>,
     <Section key="3" title="# of frames rendered since start">
       <Icon iconName="window" width={16} height={16} fill={fillValue} />
-      <Label>{renderedFrames}</Label>
+      <DataLabel>{renderedFrames}</DataLabel>
     </Section>,
     <Section key="4" title="The value of Program Counter">
-      <Label>
+      <DataLabel>
         {pcInfo?.label ?? ""}: $
         {(pcInfo?.value ?? 0).toString(16).toUpperCase().padStart(4, "0")}
-      </Label>
+      </DataLabel>
     </Section>,
   ];
   const cpuInformation = [

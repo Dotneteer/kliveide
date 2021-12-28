@@ -69,10 +69,6 @@ const commonConfig = {
         },
       },
       {
-        test: /\.kliveworker\.js$/,
-        use: { loader: "worker-loader" },
-      },
-      {
         test: /\.worklet\.js$/,
         use: { loader: "worklet-loader" },
       },

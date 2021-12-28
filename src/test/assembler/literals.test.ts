@@ -80,18 +80,18 @@ describe("Assembler - literals", () => {
   });
 });
 
-function testExpression(
+async function testExpression(
   source: string,
   value: number | boolean | string | null,
   symbols?: SymbolValueMap
-): void {
+): Promise<void> {
   const compiler = new Z80Assembler();
   const options = new AssemblerOptions();
   if (symbols) {
     options.predefinedSymbols = symbols;
   }
 
-  const output = compiler.compile(`MySymbol .equ ${source}`, options);
+  const output = await compiler.compile(`MySymbol .equ ${source}`, options);
 
   expect(output.errorCount).toBe(0);
   expect(output.segments.length).toBe(1);

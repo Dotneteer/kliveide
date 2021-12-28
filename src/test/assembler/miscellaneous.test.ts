@@ -21,7 +21,7 @@ describe("Assembler - miscellaneous operations", () => {
     testCodeEmit("ex af,af'", 0x08);
   });
 
-  it("ex: fails with invalid operand", () => {
+  it("ex: fails with invalid operand", async () => {
     codeRaisesError("ex hl, bc", "Z0604");
     codeRaisesError("ex af, bc", "Z0604");
     codeRaisesError("ex de, 123", "Z0604");
@@ -62,7 +62,7 @@ describe("Assembler - miscellaneous operations", () => {
     testCodeEmit("out (c),0", 0xed, 0x71);
   });
 
-  it("out: fails with invalid operand", () => {
+  it("out: fails with invalid operand", async () => {
     codeRaisesError("out (#fe),b", "Z0604");
     codeRaisesError("out (#fe),c", "Z0604");
     codeRaisesError("out (#fe),d", "Z0604");

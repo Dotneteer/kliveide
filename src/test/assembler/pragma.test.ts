@@ -4,15 +4,15 @@ import * as expect from "expect";
 import { Z80Assembler } from "../../main/z80-compiler/assembler";
 import { testCodeEmit, codeRaisesError, testFlexibleCodeEmit } from "./test-helpers";
 
-describe("Assembler - pragmas", () => {
-  it("org - existing segment", () => {
+describe("Assembler - pragmas", async () => {
+  it("org - existing segment", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -20,21 +20,21 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBeUndefined();
   });
 
-  it("org - sets label", () => {
+  it("org - sets label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MySymbol .org #6789
       ld a,b
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.getSymbol("MySymbol").value.value).toBe(0x6789);
   });
 
-  it("org - fails with duplicated labed", () => {
-    codeRaisesError(
+  it("org - fails with duplicated labed", async () => {
+    await codeRaisesError(
       `
       MySymbol .equ #100
       MySymbol .org #6789
@@ -44,28 +44,28 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("equ - immediate evaluation", () => {
+  it("equ - immediate evaluation", async () => {
     const compiler = new Z80Assembler();
     const source = `
       MySymbol .equ 200
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
     expect(output.getSymbol("MySymbol").value.value).toBe(200);
   });
 
-  it("equ - label with dot", () => {
+  it("equ - label with dot", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .__LABEL__.ZXBASIC_USER_DATA_LEN EQU 200
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -73,8 +73,8 @@ describe("Assembler - pragmas", () => {
   });
 
 
-  it("equ - fails with duplicated labed", () => {
-    codeRaisesError(
+  it("equ - fails with duplicated labed", async () => {
+    await codeRaisesError(
       `
       MySymbol .equ #100
       MySymbol .equ #6789
@@ -84,8 +84,8 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("var - fails with equ label", () => {
-    codeRaisesError(
+  it("var - fails with equ label", async () => {
+    await codeRaisesError(
       `
       MySymbol .equ #100
       MySymbol .var #6789
@@ -95,8 +95,8 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("var - fails with duplicated label", () => {
-    codeRaisesError(
+  it("var - fails with duplicated label", async () => {
+    await codeRaisesError(
       `
       MySymbol: nop
       MySymbol .var #6789
@@ -106,7 +106,7 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("bank - existing segment #1", () => {
+  it("bank - existing segment #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -115,7 +115,7 @@ describe("Assembler - pragmas", () => {
       .bank 1
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(2);
@@ -127,7 +127,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
-  it("bank - existing segment #2", () => {
+  it("bank - existing segment #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -138,7 +138,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(2);
@@ -150,7 +150,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
-  it("bank - new segment #1", () => {
+  it("bank - new segment #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -158,7 +158,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -167,7 +167,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBeUndefined();
   });
 
-  it("bank - new segment #2", () => {
+  it("bank - new segment #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -176,7 +176,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -185,7 +185,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBeUndefined();
   });
 
-  it("bank - multiple pragma", () => {
+  it("bank - multiple pragma", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -195,7 +195,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(2);
@@ -207,71 +207,71 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
-  it("bank - with invalid model #1", () => {
+  it("bank - with invalid model #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .bank 4
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
-  it("bank - with invalid model #2", () => {
+  it("bank - with invalid model #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum48
       .bank 4
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
-  it("bank - with label", () => {
+  it("bank - with label", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
       myLabel .bank 4
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0305").toBe(true);
   });
 
-  it("bank - invalid value #1", () => {
+  it("bank - invalid value #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
       .bank -1
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0306").toBe(true);
   });
 
-  it("bank - invalid value #2", () => {
+  it("bank - invalid value #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
       .bank 8
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0306").toBe(true);
   });
 
-  it("bank - reuse bank", () => {
+  it("bank - reuse bank", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -280,13 +280,13 @@ describe("Assembler - pragmas", () => {
       .bank 1
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0309").toBe(true);
   });
 
-  it("bank - maximum length works", () => {
+  it("bank - maximum length works", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -294,11 +294,11 @@ describe("Assembler - pragmas", () => {
       .defs 0x4000, 0x34
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
     expect(output.errorCount).toBe(0);
   });
 
-  it("bank - maximum length overflows", () => {
+  it("bank - maximum length overflows", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -308,12 +308,12 @@ describe("Assembler - pragmas", () => {
       .defb 0x00
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0411").toBe(true);
   });
 
-  it("bank - offseted bank with existing segment #1", () => {
+  it("bank - offseted bank with existing segment #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -322,7 +322,7 @@ describe("Assembler - pragmas", () => {
       .bank 1, #400
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(2);
@@ -334,7 +334,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
-  it("bank - offseted bank with existing segment #2", () => {
+  it("bank - offseted bank with existing segment #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -344,7 +344,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(2);
@@ -356,7 +356,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
-  it("bank - offseted bank with existing segment #3", () => {
+  it("bank - offseted bank with existing segment #3", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -367,7 +367,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(2);
@@ -379,14 +379,14 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
-  it("bank - offseted bank with new segment #1", () => {
+  it("bank - offseted bank with new segment #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
       .bank 3, #400
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -395,7 +395,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBeUndefined();
   });
 
-  it("bank - offseted bank with new segment #2", () => {
+  it("bank - offseted bank with new segment #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -403,7 +403,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -412,7 +412,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBeUndefined();
   });
 
-  it("bank - offseted bank with new segment #3", () => {
+  it("bank - offseted bank with new segment #3", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -421,7 +421,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -430,7 +430,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBeUndefined();
   });
 
-  it("bank - multiple offseted pragmas", () => {
+  it("bank - multiple offseted pragmas", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -440,7 +440,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(2);
@@ -452,71 +452,71 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[1].displacement).toBeUndefined();
   });
 
-  it("bank - offseted with invalid model #1", () => {
+  it("bank - offseted with invalid model #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .bank 4, #1000
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
-  it("bank - offseted with invalid model #2", () => {
+  it("bank - offseted with invalid model #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum48
       .bank 4, #1000
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0308").toBe(true);
   });
 
-  it("bank - offseted with invalid value #1", () => {
+  it("bank - offseted with invalid value #1", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
       .bank 4, #5678
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0307").toBe(true);
   });
 
-  it("bank - offseted with invalid value #2", () => {
+  it("bank - offseted with invalid value #2", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
       .bank 4, -#1000
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0307").toBe(true);
   });
 
-  it("bank - offseted with invalid value #3", () => {
+  it("bank - offseted with invalid value #3", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
       .bank 4, #4000
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0307").toBe(true);
   });
 
-  it("bank - maximum offseted bank length", () => {
+  it("bank - maximum offseted bank length", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -524,11 +524,11 @@ describe("Assembler - pragmas", () => {
       .defs 0x3000, 0x34
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
     expect(output.errorCount).toBe(0);
   });
 
-  it("bank - maximum offseted bank length overflows", () => {
+  it("bank - maximum offseted bank length overflows", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .model Spectrum128
@@ -538,13 +538,13 @@ describe("Assembler - pragmas", () => {
       .defb 0x00
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0411").toBe(true);
   });
 
-  it("xorg - negative value", () => {
+  it("xorg - negative value", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -552,7 +552,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -560,7 +560,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].xorgValue).toBe(0x10000 - 100);
   });
 
-  it("xorg - positive value", () => {
+  it("xorg - positive value", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -568,7 +568,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -576,7 +576,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].xorgValue).toBe(0x1000);
   });
 
-  it("xorg - zero value", () => {
+  it("xorg - zero value", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -584,7 +584,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -592,7 +592,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].xorgValue).toBe(0x0000);
   });
 
-  it("xorg - multiple in the same segment", () => {
+  it("xorg - multiple in the same segment", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -602,13 +602,13 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0314").toBe(true);
   });
 
-  it("xorg - multiple in separate segments", () => {
+  it("xorg - multiple in separate segments", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -619,12 +619,12 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
   });
 
-  it("ent - single pragma", () => {
+  it("ent - single pragma", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -632,7 +632,7 @@ describe("Assembler - pragmas", () => {
       .ent #6400
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -640,7 +640,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].startAddress).toBe(0x6400);
   });
 
-  it("ent - late binding", () => {
+  it("ent - late binding", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .org #6789
@@ -649,13 +649,13 @@ describe("Assembler - pragmas", () => {
     MyStart: ld a,b
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.entryAddress).toBe(0x678a);
   });
 
-  it("ent - multiple pragma", () => {
+  it("ent - multiple pragma", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -665,7 +665,7 @@ describe("Assembler - pragmas", () => {
       .ent #1234
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -673,7 +673,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].startAddress).toBe(0x6400);
   });
 
-  it("ent - works with current address", () => {
+  it("ent - works with current address", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -681,7 +681,7 @@ describe("Assembler - pragmas", () => {
       .ent $
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -689,7 +689,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].startAddress).toBe(0x6400);
   });
 
-  it("xent - single pragma", () => {
+  it("xent - single pragma", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -697,7 +697,7 @@ describe("Assembler - pragmas", () => {
       .xent #6400
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -705,7 +705,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].startAddress).toBe(0x6400);
   });
 
-  it("xent - late binding", () => {
+  it("xent - late binding", async () => {
     const compiler = new Z80Assembler();
     const source = `
     .org #6789
@@ -714,13 +714,13 @@ describe("Assembler - pragmas", () => {
     MyStart: ld a,b
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.exportEntryAddress).toBe(0x678a);
   });
 
-  it("xent - multiple pragma", () => {
+  it("xent - multiple pragma", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -730,7 +730,7 @@ describe("Assembler - pragmas", () => {
       .xent #1234
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -738,7 +738,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].startAddress).toBe(0x6400);
   });
 
-  it("xent - works with current address", () => {
+  it("xent - works with current address", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -746,7 +746,7 @@ describe("Assembler - pragmas", () => {
       .xent $
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -754,7 +754,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].startAddress).toBe(0x6400);
   });
 
-  it("disp - negative value", () => {
+  it("disp - negative value", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -762,7 +762,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -770,7 +770,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBe(0x10000 - 100);
   });
 
-  it("disp - positive value", () => {
+  it("disp - positive value", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -778,7 +778,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -786,7 +786,7 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBe(0x1000);
   });
 
-  it("disp - zero value", () => {
+  it("disp - zero value", async () => {
     const compiler = new Z80Assembler();
     const source = `
       .org #6400
@@ -794,7 +794,7 @@ describe("Assembler - pragmas", () => {
       nop
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -802,8 +802,8 @@ describe("Assembler - pragmas", () => {
     expect(output.segments[0].displacement).toBe(0x0000);
   });
 
-  it("disp - emits displaced code #1", () => {
-    testCodeEmit(
+  it("disp - emits displaced code #1", async () => {
+    await await testCodeEmit(
       `
       .org #8000
       .disp #20
@@ -821,8 +821,8 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("disp - emits displaced code #2", () => {
-    testCodeEmit(
+  it("disp - emits displaced code #2", async () => {
+    await await testCodeEmit(
       `
       .org #8000
       .disp -#20
@@ -840,8 +840,8 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("disp - handles address shift #1", () => {
-    testCodeEmit(
+  it("disp - handles address shift #1", async () => {
+    await await testCodeEmit(
       `
       .org #8000
       nop
@@ -863,8 +863,8 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("disp - handles address shift #2", () => {
-    testCodeEmit(
+  it("disp - handles address shift #2", async () => {
+    await await testCodeEmit(
       `
       .org #8000
       nop
@@ -886,8 +886,8 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("disp - handles address shift #3", () => {
-    testCodeEmit(
+  it("disp - handles address shift #3", async () => {
+    await await testCodeEmit(
       `
       .org #8000
       nop
@@ -904,8 +904,8 @@ describe("Assembler - pragmas", () => {
     );
   });
 
-  it("disp - handles address shift #4", () => {
-    codeRaisesError(
+  it("disp - handles address shift #4", async () => {
+    await codeRaisesError(
       `
       .org #8000
       nop
@@ -920,21 +920,21 @@ describe("Assembler - pragmas", () => {
 
   const varPragmas = [".var", "=", ":="];
   varPragmas.forEach((varPragma) => {
-    it(`var - initial definition (${varPragma})`, () => {
+    it(`var - initial definition (${varPragma})`, async () => {
       const compiler = new Z80Assembler();
       const source = `
         MySymbol ${varPragma} 100+100
         nop
       `;
 
-      const output = compiler.compile(source);
+      const output = await compiler.compile(source);
 
       expect(output.errorCount).toBe(0);
       expect(output.segments.length).toBe(1);
       expect(output.getSymbol("MySymbol").value.value).toBe(200);
     });
 
-    it(`var - re-assignment (${varPragma})`, () => {
+    it(`var - re-assignment (${varPragma})`, async () => {
       const compiler = new Z80Assembler();
       const source = `
         MySymbol ${varPragma} 100+100
@@ -942,93 +942,93 @@ describe("Assembler - pragmas", () => {
         MySymbol ${varPragma} MySymbol*3
       `;
 
-      const output = compiler.compile(source);
+      const output = await compiler.compile(source);
 
       expect(output.errorCount).toBe(0);
       expect(output.segments.length).toBe(1);
       expect(output.getSymbol("MySymbol").value.value).toBe(600);
     });
 
-    it(`var - no label (${varPragma})`, () => {
+    it(`var - no label (${varPragma})`, async () => {
       const compiler = new Z80Assembler();
       const source = `
         ${varPragma} 100+100
       `;
 
-      const output = compiler.compile(source);
+      const output = await compiler.compile(source);
 
       expect(output.errorCount).toBe(1);
       expect(output.errors[0].errorCode === "Z0311").toBe(true);
     });
 
-    it(`var - local label (${varPragma})`, () => {
+    it(`var - local label (${varPragma})`, async () => {
       const compiler = new Z80Assembler();
       const source = `
         \`local ${varPragma} 100+100
       `;
 
-      const output = compiler.compile(source);
+      const output = await compiler.compile(source);
 
       expect(output.errorCount).toBe(0);
     });
   });
 
-  it("skip - no fill value", () => {
+  it("skip - no fill value", async () => {
     const source = `.skip $+#05`;
-    testCodeEmit(source, 0xff, 0xff, 0xff, 0xff, 0xff);
+    await await testCodeEmit(source, 0xff, 0xff, 0xff, 0xff, 0xff);
   });
 
-  it("skip - with fill value", () => {
+  it("skip - with fill value", async () => {
     const source = `.skip $+#04, #3a`;
-    testCodeEmit(source, 0x3a, 0x3a, 0x3a, 0x3a);
+    await await testCodeEmit(source, 0x3a, 0x3a, 0x3a, 0x3a);
   });
 
-  it("skip - negative value", () => {
+  it("skip - negative value", async () => {
     const compiler = new Z80Assembler();
     const source = `.skip $-#04`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0313").toBe(true);
   });
 
-  it("skip - non-immediate value", () => {
+  it("skip - non-immediate value", async () => {
     const compiler = new Z80Assembler();
     const source = `.skip MySymbol+#04`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0605").toBe(true);
   });
 
-  it("skip - non-immediate value and fill", () => {
+  it("skip - non-immediate value and fill", async () => {
     const compiler = new Z80Assembler();
     const source = `.skip MySymbol+#04, #3a`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0605").toBe(true);
   });
 
-  it("defb - immediate evaluation", () => {
+  it("defb - immediate evaluation", async () => {
     const source = `.defb #01, #2345, #AE, 122`;
-    testCodeEmit(source, 0x01, 0x45, 0xae, 122);
+    await await testCodeEmit(source, 0x01, 0x45, 0xae, 122);
   });
 
-  it("defb - fails with string", () => {
+  it("defb - fails with string", async () => {
     const compiler = new Z80Assembler();
     const source = `.defb "Hello"`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0601").toBe(true);
   });
 
-  it("defb - flexible mode", () => {
+  it("defb - flexible mode", async () => {
     const source = `
     .defb "\\x12\\i\\Iabc\\P"
     `;
@@ -1036,52 +1036,52 @@ describe("Assembler - pragmas", () => {
     testFlexibleCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60);
   });
 
-  it("defw - immediate evaluation", () => {
+  it("defw - immediate evaluation", async () => {
     const source = `.defw #A001, #2345, #AE12, 122`;
-    testCodeEmit(source, 0x01, 0xa0, 0x45, 0x23, 0x12, 0xae, 122, 0);
+    await await testCodeEmit(source, 0x01, 0xa0, 0x45, 0x23, 0x12, 0xae, 122, 0);
   });
 
-  it("defw - fails with string", () => {
+  it("defw - fails with string", async () => {
     const compiler = new Z80Assembler();
     const source = `.defw "Hello"`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0601").toBe(true);
   });
 
-  it("defw - with function", () => {
+  it("defw - with function", async () => {
     const source = `.defw 1000*sin(1.5)`;
-    testCodeEmit(source, 0xe5, 0x03);
+    await await testCodeEmit(source, 0xe5, 0x03);
   });
 
-  it("defw - fails with function", () => {
+  it("defw - fails with function", async () => {
     const compiler = new Z80Assembler();
     const source = `.DEFW 1000/sinx(1.5)`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0606").toBe(true);
   });
 
-  it("defm - immediate evaluation", () => {
+  it("defm - immediate evaluation", async () => {
     const source = `.defm "\\x12\\i\\Iabc\\P"`;
-    testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60);
+    await await testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60);
   });
 
-  it("defm - fails with non-string", () => {
+  it("defm - fails with non-string", async () => {
     const compiler = new Z80Assembler();
     const source = `.defm 1234`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0315").toBe(true);
   });
 
-  it("defm - flexible mode", () => {
+  it("defm - flexible mode", async () => {
     const source = `
     .defm 123
     `;
@@ -1089,22 +1089,22 @@ describe("Assembler - pragmas", () => {
     testFlexibleCodeEmit(source, 123);
   });
 
-  it("defn - immediate evaluation", () => {
+  it("defn - immediate evaluation", async () => {
     const source = `.defn "\\x12\\i\\Iabc\\P"`;
-    testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60, 0x00);
+    await await testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0x60, 0x00);
   });
 
-  it("defn - fails with non-string", () => {
+  it("defn - fails with non-string", async () => {
     const compiler = new Z80Assembler();
     const source = `.defn 1234`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0315").toBe(true);
   });
 
-  it("defn - flexible mode", () => {
+  it("defn - flexible mode", async () => {
     const source = `
     .defn 123
     `;
@@ -1112,22 +1112,22 @@ describe("Assembler - pragmas", () => {
     testFlexibleCodeEmit(source, 123, 0);
   });
 
-  it("defc - immediate evaluation", () => {
+  it("defc - immediate evaluation", async () => {
     const source = `.defc "\\x12\\i\\Iabc\\P"`;
-    testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0xe0);
+    await await testCodeEmit(source, 0x12, 0x10, 0x14, 0x61, 0x62, 0x63, 0xe0);
   });
 
-  it("defc - fails with non-string", () => {
+  it("defc - fails with non-string", async () => {
     const compiler = new Z80Assembler();
     const source = `.defc 1234`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0315").toBe(true);
   });
 
-  it("defc - flexible mode", () => {
+  it("defc - flexible mode", async () => {
     const source = `
     .defc 0x22
     `;
@@ -1135,126 +1135,126 @@ describe("Assembler - pragmas", () => {
     testFlexibleCodeEmit(source, 0xa2);
   });
 
-  it("defh - immediate evaluation", () => {
+  it("defh - immediate evaluation", async () => {
     const source = `.defh "0105C1af27d3"`;
-    testCodeEmit(source, 0x01, 0x05, 0xc1, 0xaf, 0x27, 0xd3);
+    await await testCodeEmit(source, 0x01, 0x05, 0xc1, 0xaf, 0x27, 0xd3);
   });
 
-  it("defh - empty string", () => {
+  it("defh - empty string", async () => {
     const source = `.defh ""`;
-    testCodeEmit(source);
+    await await testCodeEmit(source);
   });
 
-  it("defh - fails with non-string", () => {
+  it("defh - fails with non-string", async () => {
     const compiler = new Z80Assembler();
     const source = `.defh 1234`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0316").toBe(true);
   });
 
-  it("defh - fails with odd length", () => {
+  it("defh - fails with odd length", async () => {
     const compiler = new Z80Assembler();
     const source = `.defh "010"`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0317").toBe(true);
   });
 
-  it("defh - fails with non-hexa char", () => {
+  it("defh - fails with non-hexa char", async () => {
     const compiler = new Z80Assembler();
     const source = `.defh "00Qa"`;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(1);
     expect(output.errors[0].errorCode === "Z0317").toBe(true);
   });
 
-  it("defs - immediate evaluation #1", () => {
+  it("defs - immediate evaluation #1", async () => {
     const source = `.defs 6`;
-    testCodeEmit(source, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    await await testCodeEmit(source, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
   });
 
-  it("defs - immediate evaluation #2", () => {
+  it("defs - immediate evaluation #2", async () => {
     const source = `.defs 6, #2a`;
-    testCodeEmit(source, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a);
+    await await testCodeEmit(source, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a);
   });
 
-  it("defs - indirect evaluation #1", () => {
+  it("defs - indirect evaluation #1", async () => {
     const source = `
     count .equ 3
     .defs count, #2a
     `;
-    testCodeEmit(source, 0x2a, 0x2a, 0x2a);
+    await await testCodeEmit(source, 0x2a, 0x2a, 0x2a);
   });
 
-  it("defs - indirect evaluation #2", () => {
+  it("defs - indirect evaluation #2", async () => {
     const source = `
     count .equ 3
     .defs count
     `;
-    testCodeEmit(source, 0x00, 0x00, 0x00);
+    await await testCodeEmit(source, 0x00, 0x00, 0x00);
   });
 
-  it("defs - indirect evaluation #3", () => {
+  it("defs - indirect evaluation #3", async () => {
     const source = `
     count .equ 3
     value .equ #2a
     .defs count, value
     `;
-    testCodeEmit(source, 0x2a, 0x2a, 0x2a);
+    await await testCodeEmit(source, 0x2a, 0x2a, 0x2a);
   });
 
-  it("fillb - immediate evaluation #1", () => {
+  it("fillb - immediate evaluation #1", async () => {
     const source = `.fillb 6, #2a`;
-    testCodeEmit(source, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a);
+    await await testCodeEmit(source, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a, 0x2a);
   });
 
-  it("fillb - indirect evaluation #1", () => {
+  it("fillb - indirect evaluation #1", async () => {
     const source = `
     count .equ 3
     .fillb count, #2a
     `;
-    testCodeEmit(source, 0x2a, 0x2a, 0x2a);
+    await await testCodeEmit(source, 0x2a, 0x2a, 0x2a);
   });
 
-  it("fillb - indirect evaluation #2", () => {
+  it("fillb - indirect evaluation #2", async () => {
     const source = `
     count .equ 3
     value .equ #2a
     .fillb count, value
     `;
-    testCodeEmit(source, 0x2a, 0x2a, 0x2a);
+    await await testCodeEmit(source, 0x2a, 0x2a, 0x2a);
   });
 
-  it("fillw - immediate evaluation #1", () => {
+  it("fillw - immediate evaluation #1", async () => {
     const source = `.fillw 3,#80A5`;
-    testCodeEmit(source, 0xa5, 0x80, 0xa5, 0x80, 0xa5, 0x80);
+    await await testCodeEmit(source, 0xa5, 0x80, 0xa5, 0x80, 0xa5, 0x80);
   });
 
-  it("fillw - indirect evaluation #1", () => {
+  it("fillw - indirect evaluation #1", async () => {
     const source = `
     count .equ 3
     .fillw count, #80a5
     `;
-    testCodeEmit(source, 0xa5, 0x80, 0xa5, 0x80, 0xa5, 0x80);
+    await await testCodeEmit(source, 0xa5, 0x80, 0xa5, 0x80, 0xa5, 0x80);
   });
 
-  it("fillw - indirect evaluation #2", () => {
+  it("fillw - indirect evaluation #2", async () => {
     const source = `
     count .equ 3
     value .equ #80a5
     .fillw count, value
     `;
-    testCodeEmit(source, 0xa5, 0x80, 0xa5, 0x80, 0xa5, 0x80);
+    await await testCodeEmit(source, 0xa5, 0x80, 0xa5, 0x80, 0xa5, 0x80);
   });
 
-  it("align - no expression", () => {
+  it("align - no expression", async () => {
     const compiler = new Z80Assembler();
     const source = `
       halt
@@ -1262,7 +1262,7 @@ describe("Assembler - pragmas", () => {
       halt
     `;
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.segments.length).toBe(1);
@@ -1283,14 +1283,14 @@ describe("Assembler - pragmas", () => {
     { entry: "halt", align: 0x10, exit: "", head: [0x76], tail: [] },
   ];
   alignCases.forEach((alc, index) => {
-    it(`align: #${index + 1}`, () => {
+    it(`align: #${index + 1}`, async () => {
       const compiler = new Z80Assembler();
       const source = `
         ${alc.entry}
         .align ${alc.align}
         ${alc.exit}
       `;
-      const output = compiler.compile(source);
+      const output = await compiler.compile(source);
 
       expect(output.errorCount).toBe(0);
       expect(output.segments.length).toBe(1);
@@ -1319,11 +1319,11 @@ describe("Assembler - pragmas", () => {
     { source: '.tracehex "Hello"', expected: "48656c6c6f" },
   ];
   traceCases.forEach((tc) => {
-    it(`trace: ${tc.source}`, () => {
+    it(`trace: ${tc.source}`, async () => {
       const compiler = new Z80Assembler();
       let messageReceived = "";
       compiler.setTraceHandler((msg: string) => (messageReceived += msg));
-      const output = compiler.compile(tc.source);
+      const output = await compiler.compile(tc.source);
 
       expect(output.errorCount).toBe(0);
       expect(output.segments.length).toBe(1);
@@ -1341,20 +1341,20 @@ describe("Assembler - pragmas", () => {
     { source: ".error 123.5+1", expected: "ERROR: 124.5" },
   ];
   errorCases.forEach((ec) => {
-    it(`error: ${ec.source}`, () => {
+    it(`error: ${ec.source}`, async () => {
       const compiler = new Z80Assembler();
-      const output = compiler.compile(ec.source);
+      const output = await compiler.compile(ec.source);
       expect(output.errorCount).toBe(1);
       expect(output.errors[0].errorCode === "Z2000").toBe(true);
       expect(output.errors[0].message).toBe(ec.expected);
     });
   });
 
-  it("injectopt #1", () => {
+  it("injectopt #1", async () => {
     const compiler = new Z80Assembler();
     const source = ".injectopt cursork";
 
-    const output = compiler.compile(source);
+    const output = await compiler.compile(source);
 
     expect(output.errorCount).toBe(0);
     expect(output.injectOptions["cursork"]).toBe(true);
@@ -1388,8 +1388,8 @@ describe("Assembler - pragmas", () => {
     },
   ];
   dgCases.forEach((dgc) =>
-    it(`.defg: ${dgc.source}`, () => {
-      testCodeEmit(dgc.source, ...dgc.expected);
+    it(`.defg: ${dgc.source}`, async () => {
+      await await testCodeEmit(dgc.source, ...dgc.expected);
     })
   );
 
@@ -1419,8 +1419,8 @@ describe("Assembler - pragmas", () => {
     { source: '.dgx ">....OO OO..OOOO"', expected: [0x03, 0xcf] },
   ];
   dgxCases.forEach((dgxc) =>
-    it(`.defg: ${dgxc.source}`, () => {
-      testCodeEmit(dgxc.source, ...dgxc.expected);
+    it(`.defg: ${dgxc.source}`, async () => {
+      await await testCodeEmit(dgxc.source, ...dgxc.expected);
     })
   );
 });
