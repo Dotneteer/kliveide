@@ -75,7 +75,7 @@ void RlcL() {
 // rlc (hl) (0x06)
 void RlcHLi() {
   local u8 tmp = rlc8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -120,7 +120,7 @@ void RrcL() {
 // rrc (hl) (0x0e)
 void RrcHLi() {
   local u8 tmp = rrc8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -165,7 +165,7 @@ void RlL() {
 // rl (hl) (0x16)
 void RlHLi() {
   local u8 tmp = rl8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -210,7 +210,7 @@ void RrL() {
 // rr (hl) (0x1e)
 void RrHLi() {
   local u8 tmp = rr8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -255,7 +255,7 @@ void SlaL() {
 // sla (hl) (0x26)
 void SlaHLi() {
   local u8 tmp = sla8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -300,7 +300,7 @@ void SraL() {
 // sra (hl) (0x2e)
 void SraHLi() {
   local u8 tmp = sra8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -345,7 +345,7 @@ void SllL() {
 // sll (hl) (0x36)
 void SllHLi() {
   local u8 tmp = sll8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -390,7 +390,7 @@ void SrlL() {
 // srl (hl) (0x3e)
 void SrlHLi() {
   local u8 tmp = srl8(readMemory(hl));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -797,7 +797,7 @@ void Res0L() {
 // res 0,(hl) (0x86)
 void Res0HLi() {
   local u8 tmp = readMemory(hl) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -843,7 +843,7 @@ void Res1L() {
 // res 1,(hl) (0x8e)
 void Res1HLi() {
   local u8 tmp = readMemory(hl) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -889,7 +889,7 @@ void Res2L() {
 // res 2,(hl) (0x96)
 void Res2HLi() {
   local u8 tmp = readMemory(hl) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -934,7 +934,7 @@ void Res3L() {
 // res 3,(hl) (0x9e)
 void Res3HLi() {
   local u8 tmp = readMemory(hl) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -980,7 +980,7 @@ void Res4L() {
 // res 4,(hl) (0xa6)
 void Res4HLi() {
   local u8 tmp = readMemory(hl) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1025,7 +1025,7 @@ void Res5L() {
 // res 5,(hl) (0xae)
 void Res5HLi() {
   local u8 tmp = readMemory(hl) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1070,7 +1070,7 @@ void Res6L() {
 // res 6,(hl) (0xb6)
 void Res6HLi() {
   local u8 tmp = readMemory(hl) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1115,7 +1115,7 @@ void Res7L() {
 // res 7,(hl) (0xbe)
 void Res7HLi() {
   local u8 tmp = readMemory(hl) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1160,7 +1160,7 @@ void Set0L() {
 // set 0,(hl) (0xc6)
 void Set0HLi() {
   local u8 tmp = readMemory(hl) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1205,7 +1205,7 @@ void Set1L() {
 // set 1,(hl) (0xce)
 void Set1HLi() {
   local u8 tmp = readMemory(hl) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1250,7 +1250,7 @@ void Set2L() {
 // set 2,(hl) (0xd6)
 void Set2HLi() {
   local u8 tmp = readMemory(hl) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1296,7 +1296,7 @@ void Set3L() {
 // set 3,(hl) (0xde)
 void Set3HLi() {
   local u8 tmp = readMemory(hl) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1341,7 +1341,7 @@ void Set4L() {
 // set 4,(hl) (0xe6)
 void Set4HLi() {
   local u8 tmp = readMemory(hl) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1386,7 +1386,7 @@ void Set5L() {
 // set 5,(hl) (0xee)
 void Set5HLi() {
   local u8 tmp = readMemory(hl) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1431,7 +1431,7 @@ void Set6L() {
 // set 6,(hl) (0xf6)
 void Set6HLi() {
   local u8 tmp = readMemory(hl) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1476,7 +1476,7 @@ void Set7L() {
 // set 7,(hl) (0xfe)
 void Set7HLi() {
   local u8 tmp = readMemory(hl) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;

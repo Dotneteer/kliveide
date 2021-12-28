@@ -139,7 +139,7 @@ void LdXLn() {
 // inc (ix+D) (0x34)
 void IncIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -156,7 +156,7 @@ void IncIXi() {
   pc += 1;
   wz = getXY() + dist;
   local u32 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -167,7 +167,7 @@ void IncIXi() {
 // dec (ix+D) (0x35)
 void DecIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -184,7 +184,7 @@ void DecIXi() {
   pc += 1;
   wz = getXY() + dist;
   local u32 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;

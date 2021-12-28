@@ -326,7 +326,7 @@ void SbcHLHL() {
 // rrd (0x67)
 void Rrd() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
     tacts += 1;
     contendRead(hl);
@@ -383,7 +383,7 @@ void AdcHLHL() {
 // rld (0x6f)
 void Rld() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
     tacts += 1;
     contendRead(hl);
@@ -496,7 +496,14 @@ void Ldi() {
   local u8 tmp = readMemory(hl);
 	bc -= 1;
 	writeMemory(de, tmp);
-	tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+  #else
+	  tacts += 2;
+  #endif
 	de += 1;
   hl += 1;
 	tmp += a;
@@ -514,7 +521,7 @@ void Cpi() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
     tacts += 1;
     contendRead(hl);
@@ -545,7 +552,7 @@ void Cpi() {
 
 // ini (0xa2)
 void Ini() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -564,7 +571,7 @@ void Ini() {
 
 // outi (0xa3)
 void Outi() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -586,7 +593,14 @@ void Ldd() {
   local u8 tmp = readMemory(hl);
 	bc -= 1;
 	writeMemory(de, tmp);
-	tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+  #else
+	  tacts += 2;
+  #endif
 	de -= 1;
   hl -= 1;
 	tmp += a;
@@ -604,7 +618,7 @@ void Cpd() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
     tacts += 1;
     contendRead(hl);
@@ -635,7 +649,7 @@ void Cpd() {
 
 // ind (0xaa)
 void Ind() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -654,7 +668,7 @@ void Ind() {
 
 // outd (0xab)
 void Outd() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -675,7 +689,14 @@ void Outd() {
 void Ldir() {
   local u8 tmp = readMemory(hl);
 	writeMemory(de, tmp);
-	tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+  #else
+	  tacts += 2;
+  #endif
   bc -= 1;
 	tmp += a;
 	f = 
@@ -684,7 +705,20 @@ void Ldir() {
 	  (tmp & FLAG_3) | 
     ((tmp & 0x02) ? FLAG_5 : 0);
 	if (bc) {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+  #else
 	  tacts += 5;
+  #endif
 	  pc -= 2;
 	  wz = pc + 1;
 	}
@@ -700,7 +734,7 @@ void Cpir() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
     tacts += 1;
     contendRead(hl);
@@ -726,7 +760,20 @@ void Cpir() {
   }
 	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
 	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
     tacts += 5;
+  #endif
 	  pc -= 2;
 	  wz = pc + 1;
 	} else {
@@ -738,7 +785,7 @@ void Cpir() {
 
 // inir (0xb2)
 void Inir() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -753,7 +800,20 @@ void Inir() {
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
 	if (b) {
+  #if MEM_CONTENDED & GATE_ARRAY
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
     tacts += 5;
+  #endif
 	  pc -= 2;
 	}
   hl += 1;
@@ -761,7 +821,7 @@ void Inir() {
 
 // otir (0xb3)
 void Otir() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -777,7 +837,7 @@ void Otir() {
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
 	if (b) {
-    #if MEM_CONTENDED
+    #if MEM_CONTENDED & !GATE_ARRAY
       contendRead(bc);
       tacts += 1;
       contendRead(bc);
@@ -799,7 +859,14 @@ void Otir() {
 void Lddr() {
   local u8 tmp = readMemory(hl);
 	writeMemory(de, tmp);
-	tacts += 2;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+  #else
+	  tacts += 2;
+  #endif
 	bc -= 1;
 	tmp += a;
 	f = 
@@ -808,7 +875,20 @@ void Lddr() {
 	  (tmp & FLAG_3) | 
     ((tmp & 0x02) ? FLAG_5 : 0);
 	if (bc) {
-    tacts += 5;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+    contendRead(de);
+    tacts += 1;
+  #else
+	  tacts += 5;
+  #endif
 	  pc -= 2;
 	  wz = pc + 1;
 	}
@@ -824,7 +904,7 @@ void Cpdr() {
     ((a & 0x08) >> 3 ) |
 	  ((value & 0x08 ) >> 2) |
 	  ((tmp & 0x08) >> 1 );
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
     tacts += 1;
     contendRead(hl);
@@ -850,7 +930,20 @@ void Cpdr() {
   }
 	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
 	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
     tacts += 5;
+  #endif
 	  pc -= 2;
 	  wz = pc + 1;
 	} else {
@@ -861,7 +954,7 @@ void Cpdr() {
 
 // indr (0xba)
 void Indr() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -876,7 +969,20 @@ void Indr() {
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
 	if (b) {
-	  tacts += 5;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+    contendRead(hl);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
 	  pc -= 2;
 	}
   hl -= 1;
@@ -884,7 +990,7 @@ void Indr() {
 
 // otdr (0xbb)
 void Otdr() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
 	tacts += 1;
@@ -900,7 +1006,7 @@ void Otdr() {
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
 	if (b) {
-    #if MEM_CONTENDED
+    #if MEM_CONTENDED & !GATE_ARRAY
       contendRead(bc);
       tacts += 1;
       contendRead(bc);

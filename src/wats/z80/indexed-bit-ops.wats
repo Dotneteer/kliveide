@@ -43,7 +43,7 @@ table void indexedBitOps() {
 // rlc (ix+D),b (0x00)
 void RlcIXB() {
   b = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -53,7 +53,7 @@ void RlcIXB() {
 // rlc (ix+D),c (0x01)
 void RlcIXC() {
   c = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -63,7 +63,7 @@ void RlcIXC() {
 // rlc (ix+D),d (0x02)
 void RlcIXD() {
   d = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -73,7 +73,7 @@ void RlcIXD() {
 // rlc (ix+D),e (0x03)
 void RlcIXE() {
   e = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -83,7 +83,7 @@ void RlcIXE() {
 // rlc (ix+D),h (0x04)
 void RlcIXH() {
   h = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -93,7 +93,7 @@ void RlcIXH() {
 // rlc (ix+D),l (0x05)
 void RlcIXL() {
   l = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -103,7 +103,7 @@ void RlcIXL() {
 // rlc (ix+D),l (0x06)
 void RlcIXi() {
   local u8 tmp = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -113,7 +113,7 @@ void RlcIXi() {
 // rlc (ix+D),a (0x07)
 void RlcIXA() {
   a = rlc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -123,7 +123,7 @@ void RlcIXA() {
 // rrc (ix+D),b (0x08)
 void RrcIXB() {
   b = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -133,7 +133,7 @@ void RrcIXB() {
 // rrc (ix+D),c (0x09)
 void RrcIXC() {
   c = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -143,7 +143,7 @@ void RrcIXC() {
 // rrc (ix+D),d (0x0a)
 void RrcIXD() {
   d = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -153,7 +153,7 @@ void RrcIXD() {
 // rrc (ix+D),e (0x0b)
 void RrcIXE() {
   e = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -163,7 +163,7 @@ void RrcIXE() {
 // rrc (ix+D),h (0x0c)
 void RrcIXH() {
   h = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -173,7 +173,7 @@ void RrcIXH() {
 // rrc (ix+D),l (0x0d)
 void RrcIXL() {
   l = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -183,7 +183,7 @@ void RrcIXL() {
 // rrc (ix+D) (0x0e)
 void RrcIXi() {
   local u8 tmp = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -193,7 +193,7 @@ void RrcIXi() {
 // rrc (ix+D),a (0x0f)
 void RrcIXA() {
   a = rrc8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -203,7 +203,7 @@ void RrcIXA() {
 // rl (ix+D),b (0x10)
 void RlIXB() {
   b = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -213,7 +213,7 @@ void RlIXB() {
 // rl (ix+D),c (0x11)
 void RlIXC() {
   c = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -223,7 +223,7 @@ void RlIXC() {
 // rl (ix+D),d (0x12)
 void RlIXD() {
   d = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -233,7 +233,7 @@ void RlIXD() {
 // rl (ix+D),e (0x13)
 void RlIXE() {
   e = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -243,7 +243,7 @@ void RlIXE() {
 // rl (ix+D),h (0x14)
 void RlIXH() {
   h = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -253,7 +253,7 @@ void RlIXH() {
 // rl (ix+D),l (0x15)
 void RlIXL() {
   l = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -263,7 +263,7 @@ void RlIXL() {
 // rl (ix+D) (0x16)
 void RlIXi() {
   local u8 tmp = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -273,7 +273,7 @@ void RlIXi() {
 // rl (ix+D),a (0x17)
 void RlIXA() {
   a = rl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -283,7 +283,7 @@ void RlIXA() {
 // rr (ix+D),b (0x18)
 void RrIXB() {
   b = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -293,7 +293,7 @@ void RrIXB() {
 // rr (ix+D),c (0x19)
 void RrIXC() {
   c = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -303,7 +303,7 @@ void RrIXC() {
 // rr (ix+D),d (0x1a)
 void RrIXD() {
   d = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -313,7 +313,7 @@ void RrIXD() {
 // rr (ix+D),e (0x1b)
 void RrIXE() {
   e = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -323,7 +323,7 @@ void RrIXE() {
 // rr (ix+D),h (0x1c)
 void RrIXH() {
   h = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -333,7 +333,7 @@ void RrIXH() {
 // rr (ix+D),l (0x1d)
 void RrIXL() {
   l = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -343,7 +343,7 @@ void RrIXL() {
 // rr (ix+D) (0x1e)
 void RrIXi() {
   local u8 tmp = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -353,7 +353,7 @@ void RrIXi() {
 // rr (ix+D),a (0x1f)
 void RrIXA() {
   a = rr8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -363,7 +363,7 @@ void RrIXA() {
 // sla (ix+D),b (0x20)
 void SlaIXB() {
   b = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -373,7 +373,7 @@ void SlaIXB() {
 // sla (ix+D),c (0x21)
 void SlaIXC() {
   c = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -383,7 +383,7 @@ void SlaIXC() {
 // sla (ix+D),d (0x22)
 void SlaIXD() {
   d = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -393,7 +393,7 @@ void SlaIXD() {
 // sla (ix+D),e (0x23)
 void SlaIXE() {
   e = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -403,7 +403,7 @@ void SlaIXE() {
 // sla (ix+D),h (0x24)
 void SlaIXH() {
   h = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -413,7 +413,7 @@ void SlaIXH() {
 // sla (ix+D),l (0x25)
 void SlaIXL() {
   l = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -423,7 +423,7 @@ void SlaIXL() {
 // sla (ix+D) (0x26)
 void SlaIXi() {
   local u8 tmp = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -433,7 +433,7 @@ void SlaIXi() {
 // sla (ix+D),a (0x27)
 void SlaIXA() {
   a = sla8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -443,7 +443,7 @@ void SlaIXA() {
 // sra (ix+D),b (0x28)
 void SraIXB() {
   b = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -453,7 +453,7 @@ void SraIXB() {
 // sra (ix+D),c (0x29)
 void SraIXC() {
   c = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -463,7 +463,7 @@ void SraIXC() {
 // sra (ix+D),d (0x2a)
 void SraIXD() {
   d = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -473,7 +473,7 @@ void SraIXD() {
 // sra (ix+D),e (0x2b)
 void SraIXE() {
   e = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -483,7 +483,7 @@ void SraIXE() {
 // sra (ix+D),h (0x2c)
 void SraIXH() {
   h = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -493,7 +493,7 @@ void SraIXH() {
 // sra (ix+D),l (0x2d)
 void SraIXL() {
   l = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -503,7 +503,7 @@ void SraIXL() {
 // sra (ix+D) (0x2e)
 void SraIXi() {
   local u8 tmp = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -513,7 +513,7 @@ void SraIXi() {
 // sra (ix+D),a (0x2f)
 void SraIXA() {
   a = sra8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -523,7 +523,7 @@ void SraIXA() {
 // sll (ix+D),b (0x30)
 void SllIXB() {
   b = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -533,7 +533,7 @@ void SllIXB() {
 // sll (ix+D),c (0x31)
 void SllIXC() {
   c = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -543,7 +543,7 @@ void SllIXC() {
 // sll (ix+D),d (0x32)
 void SllIXD() {
   d = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -553,7 +553,7 @@ void SllIXD() {
 // sll (ix+D),e (0x33)
 void SllIXE() {
   e = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -563,7 +563,7 @@ void SllIXE() {
 // sll (ix+D),h (0x34)
 void SllIXH() {
   h = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -573,7 +573,7 @@ void SllIXH() {
 // sll (ix+D),l (0x35)
 void SllIXL() {
   l = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -583,7 +583,7 @@ void SllIXL() {
 // sll (ix+D) (0x36)
 void SllIXi() {
   local u8 tmp = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -593,7 +593,7 @@ void SllIXi() {
 // sll (ix+D),a (0x37)
 void SllIXA() {
   a = sll8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -603,7 +603,7 @@ void SllIXA() {
 // srl (ix+D),b (0x38)
 void SrlIXB() {
   b = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -613,7 +613,7 @@ void SrlIXB() {
 // srl (ix+D),c (0x39)
 void SrlIXC() {
   c = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -623,7 +623,7 @@ void SrlIXC() {
 // srl (ix+D),d (0x3a)
 void SrlIXD() {
   d = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -633,7 +633,7 @@ void SrlIXD() {
 // srl (ix+D),e (0x3b)
 void SrlIXE() {
   e = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -643,7 +643,7 @@ void SrlIXE() {
 // srl (ix+D),h (0x3c)
 void SrlIXH() {
   h = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -653,7 +653,7 @@ void SrlIXH() {
 // srl (ix+D),l (0x3d)
 void SrlIXL() {
   l = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -663,7 +663,7 @@ void SrlIXL() {
 // srl (ix+D) (0x3e)
 void SrlIXi() {
   local u8 tmp = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -673,7 +673,7 @@ void SrlIXi() {
 // srl (ix+D),a (0x3f)
 void SrlIXA() {
   a = srl8(readMemory(wz));
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -763,7 +763,7 @@ void Bit7IXi() {
 // res 0,(ix+D),b (0x80)
 void Res0IXB() {
   b = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -773,7 +773,7 @@ void Res0IXB() {
 // res 0,(ix+D),c (0x81)
 void Res0IXC() {
   c = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -783,7 +783,7 @@ void Res0IXC() {
 // res 0,(ix+D),d (0x82)
 void Res0IXD() {
   d = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -793,7 +793,7 @@ void Res0IXD() {
 // res 0,(ix+D),e (0x83)
 void Res0IXE() {
   e = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -803,7 +803,7 @@ void Res0IXE() {
 // res 0,(ix+D),h (0x84)
 void Res0IXH() {
   h = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -813,7 +813,7 @@ void Res0IXH() {
 // res 0,(ix+D),l (0x85)
 void Res0IXL() {
   l = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -823,7 +823,7 @@ void Res0IXL() {
 // res 0,(ix+D) (0x86)
 void Res0IXi() {
   local u8 tmp = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -833,7 +833,7 @@ void Res0IXi() {
 // res 0,(ix+D),a (0x87)
 void Res0IXA() {
   a = readMemory(wz) & 0xfe;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -843,7 +843,7 @@ void Res0IXA() {
 // res 1,(ix+D),b (0x88)
 void Res1IXB() {
   b = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -853,7 +853,7 @@ void Res1IXB() {
 // res 1,(ix+D),c (0x89)
 void Res1IXC() {
   c = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -863,7 +863,7 @@ void Res1IXC() {
 // res 1,(ix+D),d (0x8a)
 void Res1IXD() {
   d = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -873,7 +873,7 @@ void Res1IXD() {
 // res 1,(ix+D),e (0x8b)
 void Res1IXE() {
   e = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -883,7 +883,7 @@ void Res1IXE() {
 // res 1,(ix+D),h (0x8c)
 void Res1IXH() {
   h = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -893,7 +893,7 @@ void Res1IXH() {
 // res 1,(ix+D),l (0x8d)
 void Res1IXL() {
   l = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -903,7 +903,7 @@ void Res1IXL() {
 // res 1,(ix+D) (0x8e)
 void Res1IXi() {
   local u8 tmp = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -913,7 +913,7 @@ void Res1IXi() {
 // res 1,(ix+D),a (0x8f)
 void Res1IXA() {
   a = readMemory(wz) & 0xfd;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -923,7 +923,7 @@ void Res1IXA() {
 // res 2,(ix+D),b (0x90)
 void Res2IXB() {
   b = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -933,7 +933,7 @@ void Res2IXB() {
 // res 2,(ix+D),c (0x91)
 void Res2IXC() {
   c = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -943,7 +943,7 @@ void Res2IXC() {
 // res 2,(ix+D),d (0x92)
 void Res2IXD() {
   d = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -953,7 +953,7 @@ void Res2IXD() {
 // res 2,(ix+D),e (0x93)
 void Res2IXE() {
   e = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -963,7 +963,7 @@ void Res2IXE() {
 // res 2,(ix+D),h (0x94)
 void Res2IXH() {
   h = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -973,7 +973,7 @@ void Res2IXH() {
 // res 2,(ix+D),l (0x95)
 void Res2IXL() {
   l = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -983,7 +983,7 @@ void Res2IXL() {
 // res 2,(ix+D) (0x96)
 void Res2IXi() {
   local u8 tmp = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -993,7 +993,7 @@ void Res2IXi() {
 // res 2,(ix+D),a (0x97)
 void Res2IXA() {
   a = readMemory(wz) & 0xfb;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1003,7 +1003,7 @@ void Res2IXA() {
 // res 3,(ix+D),b (0x98)
 void Res3IXB() {
   b = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1014,7 +1014,7 @@ void Res3IXB() {
 // res 3,(ix+D),c (0x99)
 void Res3IXC() {
   c = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1024,7 +1024,7 @@ void Res3IXC() {
 // res 3,(ix+D),d (0x9a)
 void Res3IXD() {
   d = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1034,7 +1034,7 @@ void Res3IXD() {
 // res 3,(ix+D),e (0x9b)
 void Res3IXE() {
   e = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1044,7 +1044,7 @@ void Res3IXE() {
 // res 3,(ix+D),h (0x9c)
 void Res3IXH() {
   h = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1055,7 +1055,7 @@ void Res3IXH() {
 // res 3,(ix+D),l (0x9d)
 void Res3IXL() {
   l = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1065,7 +1065,7 @@ void Res3IXL() {
 // res 3,(ix+D) (0x9e)
 void Res3IXi() {
   local u8 tmp = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1075,7 +1075,7 @@ void Res3IXi() {
 // res 3,(ix+D),a (0x9f)
 void Res3IXA() {
   a = readMemory(wz) & 0xf7;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1085,7 +1085,7 @@ void Res3IXA() {
 // res 4,(ix+D),b (0xa0)
 void Res4IXB() {
   b = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
 tacts += 1;
@@ -1095,7 +1095,7 @@ tacts += 1;
 // res 4,(ix+D),c (0xa1)
 void Res4IXC() {
   c = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1105,7 +1105,7 @@ void Res4IXC() {
 // res 4,(ix+D),d (0xa2)
 void Res4IXD() {
   d = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1115,7 +1115,7 @@ void Res4IXD() {
 // res 4,(ix+D),e (0xa3)
 void Res4IXE() {
   e = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1125,7 +1125,7 @@ void Res4IXE() {
 // res 4,(ix+D),h (0xa4)
 void Res4IXH() {
   h = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1135,7 +1135,7 @@ void Res4IXH() {
 // res 4,(ix+D),l (0xa5)
 void Res4IXL() {
   l = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1145,7 +1145,7 @@ void Res4IXL() {
 // res 4,(ix+D) (0xa6)
 void Res4IXi() {
   local u8 tmp = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1155,7 +1155,7 @@ void Res4IXi() {
 // res 4,(ix+D),a (0xa7)
 void Res4IXA() {
   a = readMemory(wz) & 0xef;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1165,7 +1165,7 @@ void Res4IXA() {
 // res 5,(ix+D),b (0xa8)
 void Res5IXB() {
   b = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1175,7 +1175,7 @@ void Res5IXB() {
 // res 5,(ix+D),c (0xa9)
 void Res5IXC() {
   c = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1185,7 +1185,7 @@ void Res5IXC() {
 // res 5,(ix+D),d (0xaa)
 void Res5IXD() {
   d = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1195,7 +1195,7 @@ void Res5IXD() {
 // res 5,(ix+D),e (0xab)
 void Res5IXE() {
   e = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1205,7 +1205,7 @@ void Res5IXE() {
 // res 5,(ix+D),h (0xac)
 void Res5IXH() {
   h = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1215,7 +1215,7 @@ void Res5IXH() {
 // res 5,(ix+D),l (0xad)
 void Res5IXL() {
   l = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1225,7 +1225,7 @@ void Res5IXL() {
 // res 5,(ix+D) (0xae)
 void Res5IXi() {
   local u8 tmp = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1235,7 +1235,7 @@ void Res5IXi() {
 // res 5,(ix+D),a (0xaf)
 void Res5IXA() {
   a = readMemory(wz) & 0xdf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1245,6 +1245,9 @@ void Res5IXA() {
 // res 6,(ix+D),b (0xb0)
 void Res6IXB() {
   b = readMemory(wz) & 0xbf;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(wz);
+  #endif
   tacts += 1;
   writeMemory(wz, b);
 }
@@ -1252,7 +1255,7 @@ void Res6IXB() {
 // res 6,(ix+D),c (0xb1)
 void Res6IXC() {
   c = readMemory(wz) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1262,7 +1265,7 @@ void Res6IXC() {
 // res 6,(ix+D),d (0xb2)
 void Res6IXD() {
   d = readMemory(wz) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1272,7 +1275,7 @@ void Res6IXD() {
 // res 6,(ix+D),e (0xb3)
 void Res6IXE() {
   e = readMemory(wz) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1282,7 +1285,7 @@ void Res6IXE() {
 // res 6,(ix+D),h (0xb4)
 void Res6IXH() {
   h = readMemory(wz) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1292,7 +1295,7 @@ void Res6IXH() {
 // res 6,(ix+D),l (0xb5)
 void Res6IXL() {
   l = readMemory(wz) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1302,7 +1305,7 @@ void Res6IXL() {
 // res 6,(ix+D) (0xb6)
 void Res6IXi() {
   local u8 tmp = readMemory(wz) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1312,7 +1315,7 @@ void Res6IXi() {
 // res 6,(ix+D),a (0xb7)
 void Res6IXA() {
   a = readMemory(wz) & 0xbf;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1322,7 +1325,7 @@ void Res6IXA() {
 // res 7,(ix+D),b (0xb8)
 void Res7IXB() {
   b = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1332,7 +1335,7 @@ void Res7IXB() {
 // res 7,(ix+D),c (0xb9)
 void Res7IXC() {
   c = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1342,7 +1345,7 @@ void Res7IXC() {
 // res 7,(ix+D),d (0xba)
 void Res7IXD() {
   d = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1352,7 +1355,7 @@ void Res7IXD() {
 // res 7,(ix+D),e (0xbb)
 void Res7IXE() {
   e = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1362,7 +1365,7 @@ void Res7IXE() {
 // res 7,(ix+D),h (0xbc)
 void Res7IXH() {
   h = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1372,7 +1375,7 @@ void Res7IXH() {
 // res 7,(ix+D),l (0xbd)
 void Res7IXL() {
   l = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1382,7 +1385,7 @@ void Res7IXL() {
 // res 7,(ix+D) (0xbe)
 void Res7IXi() {
   local u8 tmp = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1392,7 +1395,7 @@ void Res7IXi() {
 // res 7,(ix+D),a (0xbf)
 void Res7IXA() {
   a = readMemory(wz) & 0x7f;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1402,7 +1405,7 @@ void Res7IXA() {
 // set 0,(ix+D),b (0xc0)
 void Set0IXB() {
   b = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1412,7 +1415,7 @@ void Set0IXB() {
 // set 0,(ix+D),c (0xc1)
 void Set0IXC() {
   c = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1422,7 +1425,7 @@ void Set0IXC() {
 // set 0,(ix+D),d (0xc2)
 void Set0IXD() {
   d = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1432,7 +1435,7 @@ void Set0IXD() {
 // set 0,(ix+D),e (0xc3)
 void Set0IXE() {
   e = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1442,7 +1445,7 @@ void Set0IXE() {
 // set 0,(ix+D),h (0xc4)
 void Set0IXH() {
   h = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1452,7 +1455,7 @@ void Set0IXH() {
 // set 0,(ix+D),l (0xc5)
 void Set0IXL() {
   l = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1462,7 +1465,7 @@ void Set0IXL() {
 // set 0,(ix+D) (0xc6)
 void Set0IXi() {
   local u8 tmp = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1472,7 +1475,7 @@ void Set0IXi() {
 // set 0,(ix+D),a (0xc7)
 void Set0IXA() {
   a = readMemory(wz) | 0x01;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1482,7 +1485,7 @@ void Set0IXA() {
 // set 1,(ix+D),b (0xc8)
 void Set1IXB() {
   b = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1492,7 +1495,7 @@ void Set1IXB() {
 // set 1,(ix+D),c (0xc9)
 void Set1IXC() {
   c = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1502,7 +1505,7 @@ void Set1IXC() {
 // set 1,(ix+D),d (0xca)
 void Set1IXD() {
   d = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1512,7 +1515,7 @@ void Set1IXD() {
 // set 1,(ix+D),e (0xcb)
 void Set1IXE() {
   e = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1522,7 +1525,7 @@ void Set1IXE() {
 // set 1,(ix+D),h (0xcc)
 void Set1IXH() {
   h = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1532,7 +1535,7 @@ void Set1IXH() {
 // set 1,(ix+D),l (0xcd)
 void Set1IXL() {
   l = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1542,7 +1545,7 @@ void Set1IXL() {
 // set 1,(ix+D) (0xce)
 void Set1IXi() {
   local u8 tmp = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1552,7 +1555,7 @@ void Set1IXi() {
 // set 1,(ix+D),a (0xcf)
 void Set1IXA() {
   a = readMemory(wz) | 0x02;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1562,7 +1565,7 @@ void Set1IXA() {
 // set 2,(ix+D),b (0xd0)
 void Set2IXB() {
   b = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1572,7 +1575,7 @@ void Set2IXB() {
 // set 2,(ix+D),c (0xd1)
 void Set2IXC() {
   c = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1582,7 +1585,7 @@ void Set2IXC() {
 // set 2,(ix+D),d (0xd2)
 void Set2IXD() {
   d = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1592,7 +1595,7 @@ void Set2IXD() {
 // set 2,(ix+D),e (0xd3)
 void Set2IXE() {
   e = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1602,7 +1605,7 @@ void Set2IXE() {
 // set 2,(ix+D),h (0xd4)
 void Set2IXH() {
   h = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1612,7 +1615,7 @@ void Set2IXH() {
 // set 2,(ix+D),l (0xd5)
 void Set2IXL() {
   l = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1622,7 +1625,7 @@ void Set2IXL() {
 // set 2,(ix+D) (0xd6)
 void Set2IXi() {
   local u8 tmp = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1632,7 +1635,7 @@ void Set2IXi() {
 // set 2,(ix+D),a (0xd7)
 void Set2IXA() {
   a = readMemory(wz) | 0x04;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1642,7 +1645,7 @@ void Set2IXA() {
 // set 3,(ix+D),b (0xd8)
 void Set3IXB() {
   b = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1652,7 +1655,7 @@ void Set3IXB() {
 // set 3,(ix+D),c (0xd9)
 void Set3IXC() {
   c = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1662,7 +1665,7 @@ void Set3IXC() {
 // set 3,(ix+D),d (0xda)
 void Set3IXD() {
   d = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1672,7 +1675,7 @@ void Set3IXD() {
 // set 3,(ix+D),e (0xdb)
 void Set3IXE() {
   e = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1682,7 +1685,7 @@ void Set3IXE() {
 // set 3,(ix+D),h (0xdc)
 void Set3IXH() {
   h = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1692,7 +1695,7 @@ void Set3IXH() {
 // set 3,(ix+D),l (0xdd)
 void Set3IXL() {
   l = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1702,7 +1705,7 @@ void Set3IXL() {
 // set 3,(ix+D) (0xde)
 void Set3IXi() {
   local u8 tmp = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1712,7 +1715,7 @@ void Set3IXi() {
 // set 3,(ix+D),a (0xdf)
 void Set3IXA() {
   a = readMemory(wz) | 0x08;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1722,7 +1725,7 @@ void Set3IXA() {
 // set 4,(ix+D),b (0xe0)
 void Set4IXB() {
   b = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1732,7 +1735,7 @@ void Set4IXB() {
 // set 4,(ix+D),c (0xe1)
 void Set4IXC() {
   c = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1742,7 +1745,7 @@ void Set4IXC() {
 // set 4,(ix+D),d (0xe2)
 void Set4IXD() {
   d = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1752,7 +1755,7 @@ void Set4IXD() {
 // set 4,(ix+D),e (0xe3)
 void Set4IXE() {
   e = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1762,7 +1765,7 @@ void Set4IXE() {
 // set 4,(ix+D),h (0xe4)
 void Set4IXH() {
   h = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1772,7 +1775,7 @@ void Set4IXH() {
 // set 4,(ix+D),l (0xe5)
 void Set4IXL() {
   l = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1782,7 +1785,7 @@ void Set4IXL() {
 // set 4,(ix+D) (0xe6)
 void Set4IXi() {
   local u8 tmp = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1792,7 +1795,7 @@ void Set4IXi() {
 // set 4,(ix+D),a (0xe7)
 void Set4IXA() {
   a = readMemory(wz) | 0x10;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1802,7 +1805,7 @@ void Set4IXA() {
 // set 5,(ix+D),b (0xe8)
 void Set5IXB() {
   b = readMemory(wz) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1822,7 +1825,7 @@ void Set5IXC() {
 // set 5,(ix+D),d (0xea)
 void Set5IXD() {
   d = readMemory(wz) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1832,7 +1835,7 @@ void Set5IXD() {
 // set 5,(ix+D),e (0xeb)
 void Set5IXE() {
   e = readMemory(wz) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1842,7 +1845,7 @@ void Set5IXE() {
 // set 5,(ix+D),h (0xec)
 void Set5IXH() {
   h = readMemory(wz) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1852,7 +1855,7 @@ void Set5IXH() {
 // set 5,(ix+D),l (0xed)
 void Set5IXL() {
   l = readMemory(wz) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1862,7 +1865,7 @@ void Set5IXL() {
 // set 5,(ix+D) (0xee)
 void Set5IXi() {
   local u8 tmp = readMemory(wz) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1872,7 +1875,7 @@ void Set5IXi() {
 // set 5,(ix+D),a (0xef)
 void Set5IXA() {
   a = readMemory(wz) | 0x20;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1882,7 +1885,7 @@ void Set5IXA() {
 // set 6,(ix+D),b (0xf0)
 void Set6IXB() {
   b = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1892,7 +1895,7 @@ void Set6IXB() {
 // set 6,(ix+D),c (0xf1)
 void Set6IXC() {
   c = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1902,7 +1905,7 @@ void Set6IXC() {
 // set 6,(ix+D),d (0xf2)
 void Set6IXD() {
   d = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1912,7 +1915,7 @@ void Set6IXD() {
 // set 6,(ix+D),e (0xf3)
 void Set6IXE() {
   e = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1922,7 +1925,7 @@ void Set6IXE() {
 // set 6,(ix+D),h (0xf4)
 void Set6IXH() {
   h = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1932,7 +1935,7 @@ void Set6IXH() {
 // set 6,(ix+D),l (0xf5)
 void Set6IXL() {
   l = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1942,7 +1945,7 @@ void Set6IXL() {
 // set 6,(ix+D) (0xf6)
 void Set6IXi() {
   local u8 tmp = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1952,7 +1955,7 @@ void Set6IXi() {
 // set 6,(ix+D),a (0xf7)
 void Set6IXA() {
   a = readMemory(wz) | 0x40;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1962,7 +1965,7 @@ void Set6IXA() {
 // set 7,(ix+D),b (0xf8)
 void Set7IXB() {
   b = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1972,7 +1975,7 @@ void Set7IXB() {
 // set 7,(ix+D),c (0xf9)
 void Set7IXC() {
   c = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1982,7 +1985,7 @@ void Set7IXC() {
 // set 7,(ix+D),d (0xfa)
 void Set7IXD() {
   d = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -1992,7 +1995,7 @@ void Set7IXD() {
 // set 7,(ix+D),e (0xfb)
 void Set7IXE() {
   e = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -2002,7 +2005,7 @@ void Set7IXE() {
 // set 7,(ix+D),h (0xfc)
 void Set7IXH() {
   h = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -2012,7 +2015,7 @@ void Set7IXH() {
 // set 7,(ix+D),l (0xfd)
 void Set7IXL() {
   l = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -2022,7 +2025,7 @@ void Set7IXL() {
 // set 7,(ix+D) (0xfe)
 void Set7IXi() {
   local u8 tmp = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -2032,7 +2035,7 @@ void Set7IXi() {
 // set 7,(ix+D),a (0xff)
 void Set7IXA() {
   a = readMemory(wz) | 0x80;
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;

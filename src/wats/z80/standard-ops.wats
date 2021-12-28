@@ -171,7 +171,7 @@ void Rrca() {
 
 // djnz e (0x10)
 void Djnz() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -513,7 +513,7 @@ void IncSP() {
 // inc (hl) (0x34)
 void IncHLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -524,7 +524,7 @@ void IncHLi() {
 // dec (hl) (0x35)
 void DecHLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -1124,7 +1124,7 @@ void CpA() {
 
 // ret nz (0xc0)
 void RetNz() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1176,7 +1176,7 @@ void CallNz() {
 
 // push bc (0xc5)
 void PushBC() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1260,7 +1260,7 @@ void Rst08() {
 
 // ret nc (0xd0)
 void RetNc() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1314,7 +1314,7 @@ void CallNc() {
 
 // push hl (0xd5)
 void PushDE() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1338,7 +1338,7 @@ void Rst10() {
 
 // ret c (0xd8)
 void RetC() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1406,7 +1406,7 @@ void Rst18() {
 
 // ret po (0xe0)
 void RetPo() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1441,7 +1441,7 @@ void ExSPiHL() {
   local u16 sp1 = sp + 1;
   local u8 tempL = readMemory(sp);
   local u8 tempH = readMemory(sp1);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(sp1);
   #endif
   tacts += 1;
@@ -1474,7 +1474,7 @@ void CallPo() {
 
 // push hl (0xe5)
 void PushHL() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1498,7 +1498,7 @@ void Rst20() {
 
 // ret pe (0xe8)
 void RetPe() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1557,7 +1557,7 @@ void Rst28() {
 
 // ret p (0xf0)
 void RetP() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1607,7 +1607,7 @@ void CallP() {
 
 // push af (0xf5)
 void PushAF() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1631,7 +1631,7 @@ void Rst30() {
 
 // ret m (0xf8)
 void RetM() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
   tacts += 1;
@@ -1760,8 +1760,21 @@ void FDPref() {
 // Helpers
 
 // Executes a relative jump
-inline void relativeJump(u8 e) {
-  tacts += 5;
+void relativeJump(u8 e) {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   pc += i8(e);
   wz = pc;
 }
@@ -1790,6 +1803,9 @@ void retCore() {
 
 // Core of the CALL instruction
 void callCore() {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(pc);
+  #endif
   tacts += 1;
   pc += 1;
   sp -= 1;
