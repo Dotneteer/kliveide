@@ -683,7 +683,7 @@ void SrlIXA() {
 // bit 0,(ix+D) (0x40-0x47)
 void Bit0IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -693,7 +693,7 @@ void Bit0IXi() {
 // bit 1,(ix+D) (0x48-0x4f)
 void Bit1IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -703,7 +703,7 @@ void Bit1IXi() {
 // bit 2,(ix+D) (0x50-0x57)
 void Bit2IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -713,7 +713,7 @@ void Bit2IXi() {
 // bit 3,(ix+D) (0x58-0x5f)
 void Bit3IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -723,7 +723,7 @@ void Bit3IXi() {
 // bit 4,(ix+D) (0x60-0x67)
 void Bit4IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -733,7 +733,7 @@ void Bit4IXi() {
 // bit 5,(ix+D) (0x68-0x6f)
 void Bit5IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -743,7 +743,7 @@ void Bit5IXi() {
 // bit 6,(ix+D) (0x70-0x77)
 void Bit6IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -753,7 +753,7 @@ void Bit6IXi() {
 // bit 7,(ix+D) (0x78-0x7f)
 void Bit7IXi() {
   local u8 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;

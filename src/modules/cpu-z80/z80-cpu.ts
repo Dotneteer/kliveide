@@ -33,8 +33,8 @@ export class Z80Cpu implements ICpu {
     s._hl_ = mh.readUint16(14);
     s.pc = mh.readUint16(16);
     s.sp = mh.readUint16(18);
-    s.i = mh.readByte(20);
-    s.r = mh.readByte(21);
+    s.r = mh.readByte(20);
+    s.i = mh.readByte(21);
     s.ix = mh.readUint16(22);
     s.iy = mh.readUint16(24);
     s.wz = mh.readUint16(26);

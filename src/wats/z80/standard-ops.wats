@@ -1200,9 +1200,10 @@ void Rst00() {
 
 // ret z (0xc8)
 void RetZ() {
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
   #endif
+  tacts += 1;
   if (f & FLAG_Z) {
     retCore();
   }
@@ -1262,6 +1263,7 @@ void RetNc() {
   #if MEM_CONTENDED
     contendRead(ir);
   #endif
+  tacts += 1;
   if (f & FLAG_C) {
     return;
   }
@@ -1339,6 +1341,7 @@ void RetC() {
   #if MEM_CONTENDED
     contendRead(ir);
   #endif
+  tacts += 1;
   if (f & FLAG_C) {
     retCore();
   }
@@ -1406,6 +1409,7 @@ void RetPo() {
   #if MEM_CONTENDED
     contendRead(ir);
   #endif
+  tacts += 1;
   if (f & FLAG_PV) {
     return;
   }
@@ -1497,6 +1501,7 @@ void RetPe() {
   #if MEM_CONTENDED
     contendRead(ir);
   #endif
+  tacts += 1;
   if (f & FLAG_PV) {
     retCore();
   }
@@ -1552,6 +1557,9 @@ void Rst28() {
 
 // ret p (0xf0)
 void RetP() {
+  #if MEM_CONTENDED
+    contendRead(ir);
+  #endif
   tacts += 1;
   if (f & FLAG_S) {
     return;
@@ -1626,6 +1634,7 @@ void RetM() {
   #if MEM_CONTENDED
     contendRead(ir);
   #endif
+  tacts += 1;
   if (f & FLAG_S) {
     retCore();
   }

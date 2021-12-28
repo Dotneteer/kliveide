@@ -435,7 +435,7 @@ void Bit0L() {
 // bit 0,(hl) (0x46)
 void Bit0HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -480,7 +480,7 @@ void Bit1L() {
 // bit 1,(hl) (0x4e)
 void Bit1HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -525,7 +525,7 @@ void Bit2L() {
 // bit 2,(hl) (0x56)
 void Bit2HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -570,7 +570,7 @@ void Bit3L() {
 // bit 3,(hl) (0x5e)
 void Bit3HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -615,7 +615,7 @@ void Bit4L() {
 // bit 4,(hl) (0x66)
 void Bit4HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -660,7 +660,7 @@ void Bit5L() {
 // bit 5,(hl) (0x6e)
 void Bit5HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -706,7 +706,7 @@ void Bit6L() {
 // bit 6,(hl) (0x76)
 void Bit6HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
@@ -751,7 +751,7 @@ void Bit7L() {
 // bit 7,(hl) (0x7e)
 void Bit7HLi() {
   local u8 tmp = readMemory(hl);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
   #endif
   tacts += 1;
