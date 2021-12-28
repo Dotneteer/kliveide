@@ -84,6 +84,9 @@ void Im0() {
 
 // ld i,a (0x47)
 void LdIA() {
+  #if MEM_CONTENDED
+    contendRead((i << 8 | r));
+  #endif
   tacts += 1;
   i = a;
 }
@@ -121,6 +124,9 @@ void LdBCNNi() {
 
 // ld r,a (0x4f)
 void LdRA() {
+  #if MEM_CONTENDED
+    contendRead((i << 8 | r));
+  #endif
   tacts += 1;
   r = a;
 }
@@ -156,6 +162,9 @@ void Im1() {
 
 // ld a,i (0x57)
 void LdAI() {
+  #if MEM_CONTENDED
+    contendRead((i << 8 | r));
+  #endif
   tacts += 1;
   a = i;
   f = (f & FLAG_C) | sz53Table[a] | (iff2 ? FLAG_PV : 0);
@@ -199,6 +208,9 @@ void Im2() {
 
 // ld a,r 
 void LdAR() {
+  #if MEM_CONTENDED
+    contendRead((i << 8 | r));
+  #endif
   tacts += 1;
   a = r;
   f = (f & FLAG_C) | sz53Table[a] | (iff2 ? FLAG_PV : 0);
