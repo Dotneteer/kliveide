@@ -1,5 +1,6 @@
 import { BinaryReader } from "@core/utils/BinaryReader";
 import { BinaryWriter } from "@core/utils/BinaryWriter";
+import { MemoryHelper } from "@modules-core/memory-helpers";
 import {
   TapeFileReader,
   ITapeDataBlock,
@@ -357,8 +358,9 @@ abstract class Tzx3ByteDataBlockBase extends TzxDataBlockBase {
    */
   protected getLength(): number {
     return (
-      ((this.dataLength[0] + this.dataLength[1]) << (8 + this.dataLength[2])) <<
-      16
+      this.dataLength[0] +
+      (this.dataLength[1] << 8) +
+      (this.dataLength[2] << 16)
     );
   }
 }
@@ -409,6 +411,12 @@ class TzxTurboSpeedDataBlock extends Tzx3ByteDataBlockBase {
    */
   pauseAfter: number;
 
+  /**
+   * This contains the playable bytes of the block. If undefined, the
+   * block has no bytes to play
+   */
+  playableBytes: Uint8Array = new Uint8Array(0);
+
   constructor() {
     super();
     this.pilotPulseLength = 2168;
@@ -435,7 +443,9 @@ class TzxTurboSpeedDataBlock extends Tzx3ByteDataBlockBase {
     this.lastByteUsedBits = reader.readByte();
     this.pauseAfter = reader.readUint16();
     this.dataLength = new Uint8Array(reader.readBytes(3));
-    this.data = new Uint8Array(reader.readBytes(this.getLength()));
+    this.playableBytes = this.data = new Uint8Array(
+      reader.readBytes(this.getLength())
+    );
   }
 
   /**
@@ -453,6 +463,13 @@ class TzxTurboSpeedDataBlock extends Tzx3ByteDataBlockBase {
     writer.writeUint16(this.pauseAfter);
     writer.writeBytes(this.dataLength);
     writer.writeBytes(this.data);
+  }
+
+  /**
+   * Copy block information
+   */
+  collectBlockInfo(mh: MemoryHelper, offset: number): void {
+    // TODO:
   }
 }
 

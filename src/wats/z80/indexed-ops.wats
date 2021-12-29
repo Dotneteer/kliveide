@@ -838,12 +838,11 @@ void IXCB() {
   // --- Read the offset from PC
   wz = getXY() + i8(readMemory(pc));
   pc += 1;
-  refreshMemory();
 
   // --- Read the opcode
   opCode = readMemory(pc);
   pc += 1;
-  refreshMemory();
+  //refreshMemory();
   #if MEM_CONTENDED
     contendRead(pc);
     tacts += 1;

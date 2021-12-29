@@ -28,7 +28,17 @@ export interface ITapeDataBlock extends ITapeDataSerialization {
   /**
    * The ID of the block
    */
-  readonly blockId?: number;
+  blockId?: number;
+
+  /**
+   * Optional block information length
+   */
+  blockInfoLength?: number;
+
+  /**
+   * Copy block information
+   */
+  collectBlockInfo?: (mh: MemoryHelper, offset: number) => void;
 
   /**
    * Data of the block
@@ -40,6 +50,8 @@ export interface ITapeDataBlock extends ITapeDataSerialization {
    * block has no bytes to play
    */
   playableBytes?: Uint8Array;
+
+
 }
 
 /**
@@ -92,6 +104,13 @@ export abstract class TapeFileReader {
         offset += 2;
         mh.writeByte(offset, dataBlock.blockId ?? 0);
         offset += 1;
+        const blockInfoLenght = dataBlock.blockInfoLength ?? 0;
+        mh.writeByte(offset, blockInfoLenght);
+        offset += 1;
+        if (dataBlock.collectBlockInfo) {
+          dataBlock.collectBlockInfo(mh, offset);
+        }
+        offset += blockInfoLenght;
         for (let i = 0; i < playable.length; i++) {
           mh.writeByte(offset++, playable[i]);
         }

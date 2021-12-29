@@ -336,6 +336,7 @@ void executeInt() {
   writeMemory(sp, pc >> 8);
   sp -= 1;
   writeMemory(sp, pc);
+  refreshMemory();
 
   // --- Go on according to the interrupt mode
   if (interruptMode == 2) {
