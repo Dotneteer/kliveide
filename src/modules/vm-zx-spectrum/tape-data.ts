@@ -26,6 +26,11 @@ export interface ITapeDataSerialization {
  */
 export interface ITapeDataBlock extends ITapeDataSerialization {
   /**
+   * The ID of the block
+   */
+  readonly blockId?: number;
+
+  /**
    * Data of the block
    */
   data: Uint8Array;
@@ -85,6 +90,8 @@ export abstract class TapeFileReader {
       if (playable && playable.length > 0) {
         mh.writeUint16(offset, playable.length);
         offset += 2;
+        mh.writeByte(offset, dataBlock.blockId ?? 0);
+        offset += 1;
         for (let i = 0; i < playable.length; i++) {
           mh.writeByte(offset++, playable[i]);
         }
