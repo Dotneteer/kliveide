@@ -139,7 +139,7 @@ void LdXLn() {
 // inc (ix+D) (0x34)
 void IncIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -156,7 +156,7 @@ void IncIXi() {
   pc += 1;
   wz = getXY() + dist;
   local u32 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -167,7 +167,7 @@ void IncIXi() {
 // dec (ix+D) (0x35)
 void DecIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -184,7 +184,7 @@ void DecIXi() {
   pc += 1;
   wz = getXY() + dist;
   local u32 tmp = readMemory(wz);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(wz);
   #endif
   tacts += 1;
@@ -198,7 +198,7 @@ void LdIXin() {
   pc += 1;
   wz = getXY() + dist;
   local u8 value = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -225,7 +225,7 @@ void LdBXL() { b = getXYL(); }
 // ld b,(ix+D) (0x46)
 void LdBIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -253,7 +253,7 @@ void LdCXL() { c = getXYL(); }
 // ld c,(ix+D) (0x4e)
 void LdCIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -281,7 +281,7 @@ void LdDXL() { d = getXYL(); }
 // ld d,(ix+D) (0x56)
 void LdDIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -309,7 +309,7 @@ void LdEXL() { e = getXYL(); }
 // ld e,(ix+D) (0x5e)
 void LdEIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -346,7 +346,7 @@ void LdXHXL() { setXYH(getXYL()); }
 // ld h,(ix+D) (0x66)
 void LdHIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -386,7 +386,7 @@ void LdXLXH() { setXYL(getXYH()); }
 // ld l,(ix+D) (0x6e)
 void LdLIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -411,7 +411,7 @@ void LdXLA() { setXYL(a); }
 // ld (ix+D),b (0x70)
 void LdIXiB() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -433,7 +433,7 @@ void LdIXiB() {
 // ld (ix+D),c (0x71)
 void LdIXiC() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -455,7 +455,7 @@ void LdIXiC() {
 // ld (ix+D),d (0x72)
 void LdIXiD() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -477,7 +477,7 @@ void LdIXiD() {
 // ld (ix+D),e (0x73)
 void LdIXiE() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -499,7 +499,7 @@ void LdIXiE() {
 // ld (ix+D),h (0x74)
 void LdIXiH() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -521,7 +521,7 @@ void LdIXiH() {
 // ld (ix+D),l (0x75)
 void LdIXiL() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -543,7 +543,7 @@ void LdIXiL() {
 // ld (ix+D),a (0x77)
 void LdIXiA() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -571,7 +571,7 @@ void LdAXL() { a = getXYL(); }
 // ld a,(ix+D) (0x7e)
 void LdAIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -604,7 +604,20 @@ void AddXL() {
 void AddIXi() {
   local i8 dist = readMemory(pc);
   pc += 1;
-  tacts += 5;
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+    contendRead(pc);
+    tacts += 1;
+  #else
+    tacts += 5;
+  #endif
   wz = getXY() + dist;
   add8(readMemory(wz));
 }
@@ -622,7 +635,7 @@ void AdcXL() {
 // adc a,(ix+D) (0x8e)
 void AdcIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -654,7 +667,7 @@ void SubXL() {
 // sub a,(ix+D) (0x96)
 void SubIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -686,7 +699,7 @@ void SbcXL() {
 // sbc a,(ix+D) (0x9e)
 void SbcIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -718,7 +731,7 @@ void AndXL() {
 // and a,(ix+D) (0xa6)
 void AndIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -750,7 +763,7 @@ void XorXL() {
 // xor a,(ix+D) (0xae)
 void XorIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -782,7 +795,7 @@ void OrXL() {
 // or a,(ix+D) (0xb6)
 void OrIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -814,7 +827,7 @@ void CpXL() {
 // cp a,(ix+D) (0xbe)
 void CpIXi() {
   local i8 dist = readMemory(pc);
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);
@@ -842,8 +855,7 @@ void IXCB() {
   // --- Read the opcode
   opCode = readMemory(pc);
   pc += 1;
-  //refreshMemory();
-  #if MEM_CONTENDED
+  #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(pc);
     tacts += 1;
     contendRead(pc);

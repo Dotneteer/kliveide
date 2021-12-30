@@ -91,6 +91,17 @@ export void setupMachine () {
   pixelDataPrefetchTime = 2;
   attributeDataPrefetchTime = 1;
 
+  // --- Contention values
+  contentionValues[0] = 0;
+  contentionValues[1] = 7;
+  contentionValues[2] = 6;
+  contentionValues[3] = 5;
+  contentionValues[4] = 4;
+  contentionValues[5] = 3;
+  contentionValues[6] = 2;
+  contentionValues[7] = 1;
+
+  // --- Prepare screen rendering
   calcScreenAttributes();
   initRenderingTactTable();
 
