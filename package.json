@@ -1,6 +1,6 @@
 {
-  "name": "klive-emu",
-  "version": "0.11.1",
+  "name": "klive-emun",
+  "version": "0.11.4",
   "description": "Sinclair Computer Emulator",
   "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
@@ -22,6 +22,7 @@
     "dev": "npm run vmbuild && rimraf dist && cross-env NODE_ENV=development webpack --watch --progress --color",
     "prod": "rimraf dist && cross-env NODE_ENV=production webpack --progress --color",
     "test": "mocha -r ts-node/register -r tsconfig-paths/register \"src/test/**/*.test.ts\"",
+    "test:regr": "mocha -r ts-node/register -r tsconfig-paths/register \"src/test/assembler/regression.test.ts\"",
     "test:z88": "mocha -r ts-node/register -r tsconfig-paths/register \"src/test/machine/cambridge-z88/*.test.ts\"",
     "build:sp48": "tpwatson ./src/wats/sp48-core/sp48.wats ./build/sp48.wat && wat2wasm ./build/sp48.wat -o ./build/sp48.wasm",
     "build:sp128": "tpwatson ./src/wats/sp128-core/sp128.wats ./build/sp128.wat && wat2wasm ./build/sp128.wat -o ./build/sp128.wasm",

@@ -228,7 +228,10 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compileFile(filename: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
+  async compileFile(
+    filename: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput> {
     const sourceText = readTextFile(filename);
     return this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
@@ -240,7 +243,10 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param options Compiler options. If not defined, the compiler uses the default options.
    * @returns Output of the compilation
    */
-  async compile(sourceText: string, options?: AssemblerOptions): Promise<AssemblerOutput> {
+  async compile(
+    sourceText: string,
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput> {
     return await this.doCompile(
       new SourceFileItem(NO_FILE_ITEM),
       sourceText,
@@ -261,7 +267,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    */
   private async allowEvents(): Promise<void> {
     if (this._batchCounter++ % ASSEMBLY_BATCH_SIZE === 0) {
-      await new Promise(r => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 0));
     }
   }
 
@@ -311,7 +317,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     this.preprocessedLines = parseResult.parsedLines;
     emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
-      emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
+      emitSuccess =
+        (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
     }
     if (!emitSuccess) {
       // --- If failed, clear output segments
@@ -4864,6 +4871,14 @@ export class Z80Assembler extends ExpressionEvaluator {
   private processAlu1Inst(
     op: AddInstruction | AdcInstruction | SbcInstruction
   ): void {
+    if (!op.operand2) {
+      op.operand2 = op.operand1;
+      op.operand1 = {
+        type: "Operand",
+        operandType: OperandType.Reg8,
+        register: "a",
+      };
+    }
     const aluIdx = aluOpOrder[op.type];
     switch (op.operand1.operandType) {
       case OperandType.Reg8:

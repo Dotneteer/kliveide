@@ -856,16 +856,16 @@ export class Z80AsmParser {
         return twoOperands<ExInstruction>("ExInstruction");
 
       case TokenType.Add:
-        return twoOperands<AddInstruction>("AddInstruction");
+        return oneOrTwoOperands<AddInstruction>("AddInstruction");
 
       case TokenType.Adc:
-        return twoOperands<AdcInstruction>("AdcInstruction");
+        return oneOrTwoOperands<AdcInstruction>("AdcInstruction");
 
       case TokenType.Sub:
         return oneOrTwoOperands<SubInstruction>("SubInstruction");
 
       case TokenType.Sbc:
-        return twoOperands<SbcInstruction>("SbcInstruction");
+        return oneOrTwoOperands<SbcInstruction>("SbcInstruction");
 
       case TokenType.And:
         return oneOrTwoOperands<AndInstruction>("AndInstruction");
@@ -1386,20 +1386,12 @@ export class Z80AsmParser {
 
   /**
    * expr
-   *   : parExpr
-   *   | brackExpr
-   *   | conditionalExpr
+   *   : conditionalExpr
    *   ;
    */
   parseExpr(): Expression | null {
     const parsePoint = this.getParsePoint();
-    const { start, traits } = parsePoint;
-    if (start.type === TokenType.LPar) {
-      return this.parseParExpr();
-    }
-    if (start.type === TokenType.LSBrac) {
-      return this.parseBrackExpr();
-    }
+    const { traits } = parsePoint;
     if (traits.expressionStart) {
       return this.parseCondExpr();
     }
@@ -2199,6 +2191,10 @@ export class Z80AsmParser {
       return this.parseLiteral(parsePoint);
     }
     switch (start.type) {
+      case TokenType.LPar:
+        return this.parseParExpr();
+      case TokenType.LSBrac:
+          return this.parseBrackExpr();
       case TokenType.Identifier:
         const lpar = this.tokens.ahead(1);
         return lpar.type === TokenType.LPar
