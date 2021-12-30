@@ -436,7 +436,7 @@ export void initRenderingTactTable() {
               // --- Yes, there are still more bytes
               phase = RT_DisplayB2FetchA1;
               attrAddr = calcAttrAddress(line, tactInLine + attributeDataPrefetchTime);
-              contentionDelay = 6;
+              contentionDelay = contentionValues[0];
             }
             else {
               // --- Last byte in this line
@@ -456,11 +456,11 @@ export void initRenderingTactTable() {
                 // --- Yes, prefetch pixel data
                 phase = RT_BorderFetchPixel;
                 pixelAddr = calcPixelAddress(line + 1, 0);
-                contentionDelay = 0;
+                contentionDelay = contentionValues[7];
               } else if (tactInLine == borderAttrFetchTact) {
                 phase = RT_BorderFetchAttr;
                 attrAddr = calcAttrAddress(line + 1, 0);
-                contentionDelay = 6;
+                contentionDelay = contentionValues[0];
               }
             }
           } 

@@ -106,8 +106,8 @@ export class TestZ80Machine {
     s._hl_ = mh.readUint16(14);
     s.pc = mh.readUint16(16);
     s.sp = mh.readUint16(18);
-    s.i = mh.readByte(20);
-    s.r = mh.readByte(21);
+    s.r = mh.readByte(20);
+    s.i = mh.readByte(21);
     s.ix = mh.readUint16(22);
     s.iy = mh.readUint16(24);
     s.wz = mh.readUint16(26);
@@ -145,8 +145,8 @@ export class TestZ80Machine {
     mh.writeUint16(14, s._hl_);
     mh.writeUint16(16, s.pc);
     mh.writeUint16(18, s.sp);
-    mh.writeByte(20, s.i);
-    mh.writeByte(21, s.r);
+    mh.writeByte(20, s.r);
+    mh.writeByte(21, s.i);
     mh.writeUint16(22, s.ix);
     mh.writeUint16(24, s.iy);
     mh.writeUint16(26, s.wz);
