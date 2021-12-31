@@ -3,8 +3,8 @@ import "mocha";
 import { codeRaisesError, testCodeEmit } from "./test-helpers";
 
 describe("Assembler - .continue", () => {
-  it("fails in global scope", async () => {
-    await codeRaisesError(
+  it("fails in global scope", () => {
+    codeRaisesError(
       `
       ld a,b
       .continue
@@ -13,8 +13,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("fails in non-loop scope", async () => {
-    await codeRaisesError(
+  it("fails in non-loop scope", () => {
+    codeRaisesError(
       `
     ld a,b
     .if true
@@ -25,8 +25,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("in loop scope", async () => {
-    await testCodeEmit(
+  it("in loop scope", () => {
+    testCodeEmit(
       `
     ld a,b
     .loop 3
@@ -37,8 +37,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("in repeat scope", async () => {
-    await testCodeEmit(
+  it("in repeat scope", () => {
+    testCodeEmit(
       `
     ld a,b
     .repeat
@@ -49,8 +49,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("in while scope", async () => {
-    await testCodeEmit(
+  it("in while scope", () => {
+    testCodeEmit(
       `
     ld a,b
     exit = false
@@ -63,8 +63,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("in for scope", async () => {
-    await testCodeEmit(
+  it("in for scope", () => {
+    testCodeEmit(
       `
     ld a,b
     .for _i = 0 .to 3
@@ -74,8 +74,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with loop", async () => {
-    await testCodeEmit(
+  it("emit - with loop", () => {
+    testCodeEmit(
       `
     .loop 5
     .if $cnt == 4
@@ -91,8 +91,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with nested loop", async () => {
-    await testCodeEmit(
+  it("emit - with nested loop", () => {
+    testCodeEmit(
       `
     .loop 2
       ld bc,#1234
@@ -124,8 +124,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with repeat", async () => {
-    await testCodeEmit(
+  it("emit - with repeat", () => {
+    testCodeEmit(
       `
     .repeat
       .if $cnt == 4
@@ -141,8 +141,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with while", async () => {
-    await testCodeEmit(
+  it("emit - with while", () => {
+    testCodeEmit(
       `
     .while $cnt <= 5 
       .if $cnt == 4
@@ -158,8 +158,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with for", async () => {
-    await testCodeEmit(
+  it("emit - with for", () => {
+    testCodeEmit(
       `
     .for value = 1 to 5
       .if value == 4
@@ -175,8 +175,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with nested repeat", async () => {
-    await testCodeEmit(
+  it("emit - with nested repeat", () => {
+    testCodeEmit(
       `
     .loop 2
       ld bc,#1234
@@ -210,8 +210,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with nested while", async () => {
-    await testCodeEmit(
+  it("emit - with nested while", () => {
+    testCodeEmit(
       `
     .loop 2
       ld bc,#1234
@@ -245,8 +245,8 @@ describe("Assembler - .continue", () => {
     );
   });
 
-  it("emit - with nested for", async () => {
-    await testCodeEmit(
+  it("emit - with nested for", () => {
+    testCodeEmit(
       `
     .loop 2
       ld bc,#1234
