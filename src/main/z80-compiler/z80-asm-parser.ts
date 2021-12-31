@@ -308,7 +308,7 @@ export class Z80AsmParser {
       };
     } else {
       // --- Is the token the start of line body?
-      if (this.startsLineBody(mainToken)) {
+      if (this.startsLineBody(mainToken) || mainToken.type === TokenType.Identifier) {
         this._macroParamsCollected.length = 0;
         asmLine = this.parseLineBody(this.getParsePoint());
         if (asmLine) {
@@ -2714,8 +2714,7 @@ export class Z80AsmParser {
       traits.pragma ||
       traits.statement ||
       token.type === TokenType.GoesTo ||
-      token.type === TokenType.LDBrac ||
-      token.type === TokenType.Identifier
+      token.type === TokenType.LDBrac
     ) {
       return true;
     }

@@ -58,5 +58,69 @@ describe("Assembler - regression cases", () => {
     testCodeEmit("sbc b", 0x98);
     testCodeEmit("sbc 5", 0xde, 0x05);
   });
+
+  it("loop - without parentheses", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      MyCount equ 20
+      loop MyCount
+      endl
+    `;
+
+    const output = await compiler.compile(source);
+    expect(output.errorCount).toBe(0);
+  });
+
+  it("proc - without parentheses", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      proc
+        ld bc,ThisLabel
+        ThisLabel: nop
+      endp
+    `;
+
+    const output = await compiler.compile(source);
+    expect(output.errorCount).toBe(0);
+  });
+
+  it("proc - without parentheses", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      proc
+        ld bc,ThisLabel
+        ThisLabel: nop
+      endp
+    `;
+
+    const output = await compiler.compile(source);
+    expect(output.errorCount).toBe(0);
+  });
+
+  it("repeat - without parentheses", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+      counter = 0
+      repeat
+        ThisLabel: ld bc,ThisLabel
+        counter = counter + 1
+      until counter == 2
+    `;
+
+    const output = await compiler.compile(source);
+    expect(output.errorCount).toBe(0);
+  });
+
+  it("for - without parentheses", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    for _i = 3 to 5 step 1
+    next
+    `;
+
+    const output = await compiler.compile(source);
+    expect(output.errorCount).toBe(0);
+  });
+
 });
 
