@@ -449,7 +449,7 @@ export void initRenderingTactTable() {
           
           // --- Left or right border?
           if (line >= firstDisplayLine) {
-            if (line <= lastDisplayLine) {
+            if (line < lastDisplayLine) {
               // -- Yes, it is left or right border
               // --- Is it pixel data prefetch time?
               if (tactInLine == borderPixelFetchTact) {

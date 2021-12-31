@@ -110,9 +110,9 @@ void applyIOContentionDelay(u16 addr) {
   local bool lowbit = addr & 0x0001;
 
   // Check for contended range
-  if (addr & 0xc000 == 0x4000) {
+  if ((addr & 0xc000) == 0x4000) {
     if (lowbit) {
-      // Low bit set, C:1, C:1, C:1, C:1 
+      // Low bit set, C:1, C:1, C:1, C:1
       applyContentionDelay();
       tacts += 1;
       applyContentionDelay();
@@ -134,7 +134,6 @@ void applyIOContentionDelay(u16 addr) {
       tacts += 4;
     } else {
       // Low bit reset, C:1, C:3
-      applyContentionDelay();
       tacts += 1;
       applyContentionDelay();
       tacts += 3;

@@ -94,6 +94,12 @@ global bool tapeEof;
 // The address of the next block to play
 *u8 tapeNextBlockPtr;
 
+// The type of tape block being read
+global u8 blockType;
+
+// The length of optional block information
+global u8 blockInfoLength;
+
 // The playing phase of the current block
 global u32 tapePlayPhase;
 
@@ -254,8 +260,12 @@ void nextTapeBlock() {
 
   // --- OK, move to the next block, get the length of the next block
   local *u16 lengthPtr = tapeBufferPtr;
-  tapeNextBlockPtr = tapeBufferPtr + 2 + (*lengthPtr);
   tapeBufferPtr += 2;
+  blockType = *tapeBufferPtr;
+  tapeBufferPtr += 1;
+  blockInfoLength = *tapeBufferPtr;
+  tapeBufferPtr += blockInfoLength + 1;
+  tapeNextBlockPtr = tapeBufferPtr + (*lengthPtr);
 
   // --- Decrement the number of remaining blocks
   tapeBlocksToPlay -= 1;
