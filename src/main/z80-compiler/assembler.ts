@@ -150,7 +150,7 @@ const VALID_MODELS = ["SPECTRUM48", "SPECTRUM128", "SPECTRUMP3", "NEXT"];
  * Size of an assembly batch. After this batch, the assembler lets the
  * JavaScript event loop process messages
  */
-const ASSEMBLY_BATCH_SIZE = 5;
+const ASSEMBLY_BATCH_SIZE = 1000;
 
 /**
  * This class provides the functionality of the Z80 Assembler
@@ -199,7 +199,7 @@ export class Z80Assembler extends ExpressionEvaluator {
   private _macroInvocations: MacroOrStructInvocation[] = [];
 
   // --- Counter for async batches
-  private _batchCounter = 1000;
+  private _batchCounter = 0;
 
   /**
    * The condition symbols
@@ -458,7 +458,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
     // --- Handle the orphan hanging label
     if (this._overflowLabelLine !== null) {
-      this.createCurrentPointLabel(this._overflowLabelLine);
+      await this.createCurrentPointLabel(this._overflowLabelLine);
       this._overflowLabelLine = null;
     }
 
@@ -1012,8 +1012,8 @@ export class Z80Assembler extends ExpressionEvaluator {
    * Creates a label at the current point
    * @param asmLine Assembly line with a lable
    */
-  private createCurrentPointLabel(asmLine: LabelOnlyLine): void {
-    this.addSymbol(
+  private async createCurrentPointLabel(asmLine: LabelOnlyLine): Promise<void> {
+    await this.addSymbol(
       asmLine.label.name,
       asmLine as unknown as Z80AssemblyLine,
       new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -1059,7 +1059,7 @@ export class Z80Assembler extends ExpressionEvaluator {
 
       // --- This is a label-only line
       if (this._overflowLabelLine) {
-        this.createCurrentPointLabel(this._overflowLabelLine);
+        await this.createCurrentPointLabel(this._overflowLabelLine);
       }
       this._overflowLabelLine = asmLine as LabelOnlyLine;
     } else {
@@ -1080,7 +1080,7 @@ export class Z80Assembler extends ExpressionEvaluator {
               (isByteEmittingPragma(asmLine) && this._currentStructInvocation)
             )
           ) {
-            this.createCurrentPointLabel(this._overflowLabelLine);
+            await this.createCurrentPointLabel(this._overflowLabelLine);
           }
           currentLabel = asmLine.label?.name;
           this._overflowLabelLine = null;
@@ -1104,9 +1104,9 @@ export class Z80Assembler extends ExpressionEvaluator {
             this._currentModule.localScopes.length > 0
           ) {
             // --- Check if temporary scope should be fixed and disposed
-            this.fixupTemporaryScope();
+            await this.fixupTemporaryScope();
           }
-          this.addSymbol(
+          await this.addSymbol(
             currentLabel,
             asmLine,
             new ExpressionValue(this.getCurrentAddress())
@@ -1202,10 +1202,10 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.ensureCodeSegment();
         this._currentSegment.currentInstructionOffset =
           this._currentSegment.emittedCode.length;
-        this.applyPragma(asmLine as Pragma, currentLabel);
+        await this.applyPragma(asmLine as Pragma, currentLabel);
         //emitListItem();
       } else if (asmLine.type.endsWith("Statement")) {
-        this.processStatement(
+        await this.processStatement(
           allLines,
           scopeLines,
           asmLine as unknown as Statement,
@@ -1266,11 +1266,11 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param line Source code line
    * @param value Symbol value
    */
-  private addSymbol(
+  private async addSymbol(
     symbol: string,
     line: Z80AssemblyLine,
     value: IExpressionValue
-  ): void {
+  ): Promise<void> {
     const assembler = this;
 
     // --- Handle case-sensitivity
@@ -1279,7 +1279,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     if (symbol.startsWith(".")) {
-      symbol = symbol.substr(1);
+      symbol = symbol.substring(1);
       this._output.symbols[symbol] = AssemblySymbolInfo.createLabel(
         symbol,
         value
@@ -1298,7 +1298,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       if (!symbolIsTemporary) {
         // --- Remove the previous temporary scope
         const tempsScope = this.getTopLocalScope();
-        this.fixupSymbols(tempsScope, false);
+        await this.fixupSymbols(tempsScope, false);
         this._currentModule.localScopes.pop();
         lookup = getSymbols();
       }
@@ -1444,10 +1444,10 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragmaLine Assembly line with a pragma
    * @param label Pragma label
    */
-  private applyPragma(pragmaLine: Pragma, label: string | null): void {
+  private async applyPragma(pragmaLine: Pragma, label: string | null): Promise<void> {
     switch (pragmaLine.type) {
       case "OrgPragma":
-        this.processOrgPragma(pragmaLine, label);
+        await this.processOrgPragma(pragmaLine, label);
         break;
       case "BankPragma":
         this.processBankPragma(pragmaLine, label);
@@ -1465,10 +1465,10 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processDispPragma(pragmaLine);
         break;
       case "VarPragma":
-        this.processVarPragma(pragmaLine, label);
+        await this.processVarPragma(pragmaLine, label);
         break;
       case "EquPragma":
-        this.processEquPragma(pragmaLine, label);
+        await this.processEquPragma(pragmaLine, label);
         break;
       case "SkipPragma":
         this.processSkipPragma(pragmaLine);
@@ -1575,7 +1575,7 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  processOrgPragma(pragma: OrgPragma, label: string | null): void {
+  async processOrgPragma(pragma: OrgPragma, label: string | null): Promise<void> {
     const value = this.evaluateExprImmediate(pragma.address);
     if (!value.isValid) {
       return;
@@ -1598,8 +1598,8 @@ export class Z80Assembler extends ExpressionEvaluator {
     }
 
     // --- There is a labels, set its value
-    this.fixupTemporaryScope();
-    this.addSymbol(label, pragma as unknown as Z80AssemblyLine, value);
+    await this.fixupTemporaryScope();
+    await this.addSymbol(label, pragma as unknown as Z80AssemblyLine, value);
   }
 
   /**
@@ -1756,12 +1756,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  private processEquPragma(pragma: EquPragma, label: string | null): void {
+  private async processEquPragma(pragma: EquPragma, label: string | null): Promise<void> {
     if (!label) {
       this.reportAssemblyError("Z0304", pragma);
       return;
     }
-    this.fixupTemporaryScope();
+    await this.fixupTemporaryScope();
 
     // --- Do not allow duplicate labels
     if (this.symbolExists(label)) {
@@ -1775,7 +1775,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (value.isNonEvaluated) {
       this.recordFixup(asmLine, FixupType.Equ, pragma.value, label);
     } else {
-      this.addSymbol(label, asmLine, value);
+      await this.addSymbol(label, asmLine, value);
     }
   }
 
@@ -1784,12 +1784,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param pragma Pragma to process
    * @param label Label information
    */
-  processVarPragma(pragma: VarPragma, label: string | null): void {
+  async processVarPragma(pragma: VarPragma, label: string | null): Promise<void> {
     if (!label) {
       this.reportAssemblyError("Z0311", pragma);
       return;
     }
-    this.fixupTemporaryScope();
+    await this.fixupTemporaryScope();
 
     const value = this.evaluateExprImmediate(pragma.value);
     if (!value.isValid) {
@@ -2667,7 +2667,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     if (endLabel) {
       // --- Add the end label to the macro scope
       var endLine = allLines[lastLine];
-      this.addSymbol(
+      await this.addSymbol(
         endLabel,
         endLine,
         new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -2680,12 +2680,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Fixup the temporary scope over the iteration scope, if there is any
     const topScope = this.getTopLocalScope();
     if (topScope !== macroScope && topScope.isTemporaryScope) {
-      this.fixupSymbols(topScope, false);
+      await this.fixupSymbols(topScope, false);
       this._currentModule.localScopes.pop();
     }
 
     // --- Fixup the symbols locally
-    this.fixupSymbols(macroScope, false);
+    await this.fixupSymbols(macroScope, false);
 
     // --- Remove the macro's scope
     this._currentModule.localScopes.pop();
@@ -2755,13 +2755,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param label Label to process
    * @param currentLineIndex Current line index
    */
-  private processStatement(
+  private async processStatement(
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     stmt: Statement,
     label: string,
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     switch (stmt.type) {
       case "MacroStatement":
         this.collectMacroDefinition(stmt, label, allLines, currentLineIndex);
@@ -2776,13 +2776,13 @@ export class Z80Assembler extends ExpressionEvaluator {
         );
         break;
       case "LoopStatement":
-        this.processLoopStatement(stmt, allLines, scopeLines, currentLineIndex);
+        await this.processLoopStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "LoopEndStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".endl/.lend", ".loop");
         break;
       case "WhileStatement":
-        this.processWhileStatement(
+        await this.processWhileStatement(
           stmt,
           allLines,
           scopeLines,
@@ -2793,7 +2793,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z0704", stmt, null, ".endw/.wend", ".while");
         break;
       case "RepeatStatement":
-        this.processRepeatStatement(
+        await this.processRepeatStatement(
           stmt,
           allLines,
           scopeLines,
@@ -2804,19 +2804,19 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z0704", stmt, null, ".until", ".repeat");
         break;
       case "ProcStatement":
-        this.processProcStatement(stmt, allLines, scopeLines, currentLineIndex);
+        await this.processProcStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "ProcEndStatement":
         this.reportAssemblyError("Z0704", stmt, null, ".endp/.pend", ".proc");
         break;
       case "IfStatement":
-        this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
+        await this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "IfUsedStatement":
-        this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
+        await this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "IfNUsedStatement":
-        this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
+        await this.processIfStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
       case "ElseStatement":
         this.reportAssemblyError(
@@ -2852,7 +2852,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.processContinueStatement(stmt);
         break;
       case "ModuleStatement":
-        this.processModuleStatement(
+        await this.processModuleStatement(
           stmt,
           label,
           allLines,
@@ -2879,7 +2879,7 @@ export class Z80Assembler extends ExpressionEvaluator {
         this.reportAssemblyError("Z0704", stmt, null, ".next", ".for");
         break;
       case "ForStatement":
-        this.processForStatement(stmt, allLines, scopeLines, currentLineIndex);
+        await this.processForStatement(stmt, allLines, scopeLines, currentLineIndex);
         break;
     }
   }
@@ -3152,12 +3152,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private processWhileStatement(
+  private async processWhileStatement(
     whileStmt: WhileStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
     const searchResult = this.searchForEndStatement(
@@ -3213,7 +3213,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const endLabel = searchResult.label;
       if (endLabel) {
         // --- Add the end label to the loop scope
-        this.addSymbol(
+        await this.addSymbol(
           endLabel,
           scopeLines[currentLineIndex.index],
           new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -3226,12 +3226,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Fixup the temporary scope over the iteration scope, if there is any
       const topScope = this.getTopLocalScope();
       if (topScope !== iterationScope && topScope.isTemporaryScope) {
-        this.fixupSymbols(topScope, false);
+        await this.fixupSymbols(topScope, false);
         this._currentModule.localScopes.pop();
       }
 
       // --- Fixup the symbols locally
-      this.fixupSymbols(iterationScope, false);
+      await this.fixupSymbols(iterationScope, false);
 
       // --- Remove the local scope
       this._currentModule.localScopes.pop();
@@ -3269,12 +3269,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private processLoopStatement(
+  private async processLoopStatement(
     loop: LoopStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
     const searchResult = this.searchForEndStatement(
@@ -3331,7 +3331,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const endLabel = searchResult.label;
       if (endLabel) {
         // --- Add the end label to the loop scope
-        this.addSymbol(
+        await this.addSymbol(
           endLabel,
           scopeLines[currentLineIndex.index],
           new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -3344,12 +3344,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Fixup the temporary scope over the iteration scope, if there is any
       const topScope = this.getTopLocalScope();
       if (topScope !== iterationScope && topScope.isTemporaryScope) {
-        this.fixupSymbols(topScope, false);
+        await this.fixupSymbols(topScope, false);
         this._currentModule.localScopes.pop();
       }
 
       // --- Fixup the symbols locally
-      this.fixupSymbols(iterationScope, false);
+      await this.fixupSymbols(iterationScope, false);
 
       // --- Remove the local scope
       this._currentModule.localScopes.pop();
@@ -3380,12 +3380,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private processRepeatStatement(
+  private async processRepeatStatement(
     repeatStmt: RepeatStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
     const searchResult = this.searchForEndStatement(
@@ -3429,7 +3429,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const endLabel = searchResult.label;
       if (endLabel) {
         // --- Add the end label to the loop scope
-        this.addSymbol(
+        await this.addSymbol(
           endLabel,
           scopeLines[currentLineIndex.index],
           new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -3442,12 +3442,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Fixup the temporary scope over the iteration scope, if there is any
       const topScope = this.getTopLocalScope();
       if (topScope !== iterationScope && topScope.isTemporaryScope) {
-        this.fixupSymbols(topScope, false);
+        await this.fixupSymbols(topScope, false);
         this._currentModule.localScopes.pop();
       }
 
       // --- Fixup the symbols locally
-      this.fixupSymbols(iterationScope, false);
+      await this.fixupSymbols(iterationScope, false);
 
       // --- Check for the maximum number of error
       if (
@@ -3496,12 +3496,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private processForStatement(
+  private async processForStatement(
     forStmt: ForStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     // --- Search for the end of the loop
     const firstLine = currentLineIndex.index;
     const searchResult = this.searchForEndStatement(
@@ -3630,7 +3630,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const endLabel = searchResult.label;
       if (endLabel) {
         // --- Add the end label to the loop scope
-        this.addSymbol(
+        await this.addSymbol(
           endLabel,
           scopeLines[currentLineIndex.index],
           new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -3643,12 +3643,12 @@ export class Z80Assembler extends ExpressionEvaluator {
       // --- Fixup the temporary scope over the iteration scope, if there is any
       const topScope = this.getTopLocalScope();
       if (topScope !== iterationScope && topScope.isTemporaryScope) {
-        this.fixupSymbols(topScope, false);
+        await this.fixupSymbols(topScope, false);
         this._currentModule.localScopes.pop();
       }
 
       // --- Fixup the symbols locally
-      this.fixupSymbols(iterationScope, false);
+      await this.fixupSymbols(iterationScope, false);
 
       // --- Remove the local scope
       this._currentModule.localScopes.pop();
@@ -3716,12 +3716,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private processIfStatement(
+  private async processIfStatement(
     ifStmt: IfLikeStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     // --- Map the sections of IF
     const ifDef = this.getIfSections(ifStmt, scopeLines, currentLineIndex);
     if (!ifDef.definition) {
@@ -3796,7 +3796,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Add the end label to the local scope
     if (ifDef.label) {
       // --- Add the end label to the loop scope
-      this.addSymbol(
+      await this.addSymbol(
         ifDef.label,
         scopeLines[currentLineIndex.index],
         new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -3949,12 +3949,12 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private processProcStatement(
+  private async processProcStatement(
     proc: ProcStatement,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     // --- Search for the end of the proc
     const firstLine = currentLineIndex.index;
     const searchResult = this.searchForEndStatement(
@@ -3987,7 +3987,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const endLabel = searchResult.label;
     if (endLabel) {
       // --- Add the end label to the loop scope
-      this.addSymbol(
+      await this.addSymbol(
         endLabel,
         scopeLines[currentLineIndex.index],
         new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -4000,12 +4000,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Fixup the temporary scope over the iteration scope, if there is any
     const topScope = this.getTopLocalScope();
     if (topScope !== procScope && topScope.isTemporaryScope) {
-      this.fixupSymbols(topScope, false);
+      await this.fixupSymbols(topScope, false);
       this._currentModule.localScopes.pop();
     }
 
     // --- Fixup the symbols locally
-    this.fixupSymbols(procScope, false);
+    await this.fixupSymbols(procScope, false);
 
     // --- Clean up the loop's scope
     this._currentModule.localScopes.pop();
@@ -4019,13 +4019,13 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param scopeLines Lines to process in the current scope
    * @param currentLineIndex Current line index
    */
-  private processModuleStatement(
+  private async processModuleStatement(
     moduleStmt: ModuleStatement,
     label: string,
     allLines: Z80AssemblyLine[],
     scopeLines: Z80AssemblyLine[],
     currentLineIndex: { index: number }
-  ): void {
+  ): Promise<void> {
     // --- Search for the end of the proc
     const firstLine = currentLineIndex.index;
     const searchResult = this.searchForEndStatement(
@@ -4082,7 +4082,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const endLabel = searchResult.label;
     if (endLabel) {
       // --- Add the end label to the loop scope
-      this.addSymbol(
+      await this.addSymbol(
         endLabel,
         scopeLines[currentLineIndex.index],
         new ExpressionValue(this.getCurrentAssemblyAddress())
@@ -4095,12 +4095,12 @@ export class Z80Assembler extends ExpressionEvaluator {
     // --- Fixup the temporary scope over the iteration scope, if there is any
     const topScope = this.getTopLocalScope();
     if (topScope && topScope.isTemporaryScope) {
-      this.fixupSymbols(topScope, false);
+      await this.fixupSymbols(topScope, false);
       this._currentModule.localScopes.pop();
     }
 
     // --- Fixup the symbols locally
-    this.fixupSymbols(newModule, false);
+    await this.fixupSymbols(newModule, false);
 
     // --- Step back to the outer module
     this._currentModule = newModule.parentModule;
@@ -5791,13 +5791,13 @@ export class Z80Assembler extends ExpressionEvaluator {
   /**
    * Checks if there's a temporary scope, and dispoese it after a fixup.
    */
-  private fixupTemporaryScope(): void {
+  private async fixupTemporaryScope(): Promise<void> {
     if (this._currentModule.localScopes.length === 0) {
       return;
     }
     const topScope = this.getTopLocalScope();
     if (topScope.isTemporaryScope) {
-      this.fixupSymbols(topScope, false);
+      await this.fixupSymbols(topScope, false);
       this._currentModule.localScopes.pop();
     }
   }
