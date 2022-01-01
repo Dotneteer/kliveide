@@ -122,5 +122,15 @@ describe("Assembler - regression cases", () => {
     expect(output.errorCount).toBe(0);
   });
 
+  it("Generate parity", () => {
+    let line = ``;
+    for(let i=0; i< 0x100; i++) {
+      let j=i; let parity=0;
+      for(let k=0; k<8; k++) { parity ^= j & 1; j >>=1; }
+      const parValue = parity ? 0 : 0x04;
+      line += `0x${parValue.toString(16).padStart(2, "0")}, `;
+    };
+    console.log(line);
+  });
 });
 

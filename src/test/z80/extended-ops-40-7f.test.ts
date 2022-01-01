@@ -376,7 +376,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 
@@ -754,7 +754,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 
@@ -1496,7 +1496,7 @@ describe("Extended ops 40-7f", () => {
     expect(s.f & FlagsSetMask.S).toBeTruthy();
     expect(s.f & FlagsSetMask.Z).toBeFalsy();
     expect(s.f & FlagsSetMask.H).toBeFalsy();
-    expect(s.f & FlagsSetMask.PV).toBeFalsy();
+    expect(s.f & FlagsSetMask.PV).toBeTruthy();
     expect(s.f & FlagsSetMask.C).toBeFalsy();
     expect(s.f & FlagsSetMask.N).toBeFalsy();
 

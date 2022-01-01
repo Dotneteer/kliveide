@@ -45,6 +45,7 @@ void InBC() {
   wz = bc + 1;
   b = readPort(bc);
   f = (f & FLAG_C) | sz53Table[b];
+  f53Updated = true;
 }
 
 // out (c),b (0x41)
@@ -113,6 +114,7 @@ void InCC() {
   wz = bc + 1;
   c = readPort(bc);
   f = (f & FLAG_C) | sz53Table[c];
+  f53Updated = true;
 }
 
 // out (c),c (0x49)
@@ -170,6 +172,7 @@ void InDC() {
   wz = bc + 1;
   d = readPort(bc);
   f = (f & FLAG_C) | sz53Table[d];
+  f53Updated = true;
 }
 
 // out (c),d (0x51)
@@ -219,6 +222,7 @@ void LdAI() {
   tacts += 1;
   a = i;
   f = (f & FLAG_C) | sz53Table[a] | (iff2 ? FLAG_PV : 0);
+  f53Updated = true;
 }
 
 // in e,(c) (0x58)
@@ -226,6 +230,7 @@ void InEC() {
   wz = bc + 1;
   e = readPort(bc);
   f = (f & FLAG_C) | sz53Table[e];
+  f53Updated = true;
 }
 
 // out (c),e (0x59)
@@ -289,6 +294,7 @@ void InHC() {
   wz = bc + 1;
   h = readPort(bc);
   f = (f & FLAG_C) | sz53Table[h];
+  f53Updated = true;
 }
 
 // out (c),h (0x61)
@@ -349,6 +355,7 @@ void InLC() {
   wz = bc + 1;
   l = readPort(bc);
   f = (f & FLAG_C) | sz53Table[l];
+  f53Updated = true;
 }
 
 // out (c),l (0x69)
@@ -407,6 +414,7 @@ void InC() {
   wz = bc + 1;
   local u8 tmp = readPort(bc);
   f = (f & FLAG_C) | sz53Table[tmp];
+  f53Updated = true;
 }
 
 // out (c),0 (0x71)
@@ -448,6 +456,7 @@ void InAC() {
   wz = bc + 1;
   a = readPort(bc);
   f = (f & FLAG_C) | sz53Table[a];
+  f53Updated = true;
 }
 
 // out (c),a (0x79)
@@ -511,6 +520,7 @@ void Ldi() {
     (f & (FLAG_C | FLAG_Z | FLAG_S)) | 
     (bc ? FLAG_PV : 0) |
 	  (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 }
 
 // cpi (0xa1)
@@ -547,6 +557,7 @@ void Cpi() {
     tmp -= 1;
   }
 	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 	wz += 1;
 }
 
@@ -567,6 +578,7 @@ void Ini() {
     (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 }
 
 // outi (0xa3)
@@ -586,6 +598,7 @@ void Outi() {
     (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 }
 
 // ldd (0xa8)
@@ -608,6 +621,7 @@ void Ldd() {
     (f & (FLAG_C | FLAG_Z | FLAG_S)) |
     (bc ? FLAG_PV : 0) |
 	  (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 }
 
 // cpd (0xa9)
@@ -644,6 +658,7 @@ void Cpd() {
     tmp -= 1;
   };
 	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 	wz -= 1;
 }
 
@@ -664,6 +679,7 @@ void Ind() {
     (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 }
 
 // outd (0xab)
@@ -683,6 +699,7 @@ void Outd() {
     ((tmp2 < tmp) ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 }
 
 // ldir (0xb0)
@@ -704,6 +721,7 @@ void Ldir() {
     (bc ? FLAG_PV : 0) |
 	  (tmp & FLAG_3) | 
     ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 	if (bc) {
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(de);
@@ -759,6 +777,7 @@ void Cpir() {
     tmp -= 1;
   }
 	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
@@ -799,6 +818,7 @@ void Inir() {
     (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 	if (b) {
   #if MEM_CONTENDED & GATE_ARRAY
     contendRead(hl);
@@ -836,6 +856,7 @@ void Otir() {
     (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 	if (b) {
     #if MEM_CONTENDED & !GATE_ARRAY
       contendRead(bc);
@@ -874,6 +895,7 @@ void Lddr() {
     (bc ? FLAG_PV : 0) |
 	  (tmp & FLAG_3) | 
     ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 	if (bc) {
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(de);
@@ -929,6 +951,7 @@ void Cpdr() {
     tmp -= 1;
   }
 	f |= (tmp & FLAG_3) | ((tmp & 0x02) ? FLAG_5 : 0);
+  f53Updated = true;
 	if ((f & (FLAG_PV | FLAG_Z)) == FLAG_PV) {
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
@@ -968,6 +991,7 @@ void Indr() {
     (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 	if (b) {
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(hl);
@@ -1005,6 +1029,7 @@ void Otdr() {
     (tmp2 < tmp ? FLAG_H | FLAG_C : 0) |
     (parityTable[(tmp2 & 0x07) ^ b] ? FLAG_PV : 0) |
     sz53Table[b];
+  f53Updated = true;
 	if (b) {
     #if MEM_CONTENDED & !GATE_ARRAY
       contendRead(bc);

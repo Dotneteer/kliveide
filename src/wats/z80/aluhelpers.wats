@@ -212,10 +212,11 @@ inline u16 add16(u16 v1, u16 v2) {
     ((tmpVal & 0x0800) >> 9);
   wz = v1 + 1;
   f = 
-    (f & 0xc4) | 
+    (f & (FLAG_PV | FLAG_Z | FLAG_S)) | 
     (tmpVal & 0x10000 ? FLAG_C : 0x00) | 
-    ((tmpVal >> 8) & 0x28) | 
+    ((tmpVal >> 8) & (FLAG_3 | FLAG_5)) | 
     halfCarryAddFlags[lookup];
+  f53Updated = true;
   return tmpVal;
 }
 
@@ -223,9 +224,9 @@ inline u16 add16(u16 v1, u16 v2) {
 inline void adc16(u16 v2) {
   local u32 tmpVal = hl + v2 + (f & FLAG_C);
   local u32 lookup = 
-    ((hl & 0x0800) >> 11) | 
-    ((v2 & 0x0800) >> 10) | 
-    ((tmpVal & 0x0800) >> 9);
+    ((hl & 0x8800) >> 11) | 
+    ((v2 & 0x8800) >> 10) | 
+    ((tmpVal & 0x8800) >> 9);
   wz = hl + 1;
   hl = tmpVal;
   f = 
@@ -234,15 +235,16 @@ inline void adc16(u16 v2) {
     (h & (FLAG_53 | FLAG_S)) |
     halfCarryAddFlags[lookup & 0x07] |
     (hl ? 0 : FLAG_Z);
+  f53Updated = true;
 }
 
 // Subtracts two 16-bit value and sets F accordingly
 inline void sbc16(u16 v2) {
   local u32 tmpVal = hl - v2 - (f & FLAG_C);
   local u32 lookup = 
-    ((hl & 0x0800) >> 11) | 
-    ((v2 & 0x0800) >> 10) | 
-    ((tmpVal & 0x0800) >> 9);
+    ((hl & 0x8800) >> 11) | 
+    ((v2 & 0x8800) >> 10) | 
+    ((tmpVal & 0x8800) >> 9);
   wz = hl + 1;
   hl = tmpVal;
   f = 
@@ -252,6 +254,7 @@ inline void sbc16(u16 v2) {
     (h & (FLAG_53 | FLAG_S)) |
     halfCarrySubFlags[lookup & 0x07] |
     (hl ? 0 : FLAG_Z);
+  f53Updated = true;
 }
 
 // The core of the 8-bit ADD operation
@@ -263,10 +266,11 @@ inline void add8(u8 value) {
 		((tmp & 0x88) >> 1);
   a = tmp;
   f =
-    (tmp & 0x100 ? FLAG_C : 0) |
+    ((tmp & 0x100) ? FLAG_C : 0) |
     halfCarryAddFlags[lookup & 0x07] | 
     overflowAddFlags[lookup >> 4] |
     sz53Table[a];
+  f53Updated = true;
 }
 
 // The core of the 8-bit ADC operation
@@ -282,6 +286,7 @@ inline void adc8(u8 value) {
     halfCarryAddFlags[lookup & 0x07] | 
     overflowAddFlags[lookup >> 4] |
     sz53Table[a];
+  f53Updated = true;
 }
 
 // The core of the 8-bit SUB operation
@@ -297,6 +302,7 @@ inline void sub8(u8 value) {
     halfCarrySubFlags[lookup & 0x07] | 
     overflowSubFlags[lookup >> 4] | 
     sz53Table[a];
+  f53Updated = true;
 }
 
 // The core of the 8-bit SBC operation
@@ -312,24 +318,28 @@ inline void sbc8(u8 value) {
     halfCarrySubFlags[lookup & 0x07] | 
     overflowSubFlags[lookup >> 4] | 
     sz53Table[a];
+  f53Updated = true;
 }
 
 // The core of the 8-bit AND operation
 inline void and8(u8 value) {
   a &= value;
   f = FLAG_H | sz53pTable[a];
+  f53Updated = true;
 }
 
 // The core of the 8-bit XOR operation
 inline void xor8(u8 value) {
   a ^= value;
   f = sz53pTable[a];
+  f53Updated = true;
 }
 
 // The core of the 8-bit OR operation
 inline void or8(u8 value) {
   a |= value;
   f = sz53pTable[a];
+  f53Updated = true;
 }
 
 // The core of the 8-bit CP operation
@@ -347,12 +357,14 @@ inline void cp8(u8 value) {
     overflowSubFlags[lookup >> 4] | 
     (value & FLAG_53) |
     (tmp & FLAG_S);
+  f53Updated = true;
 }
 
 // The core of the 8-bit RLC operation
 inline u8 rlc8(u8 oper) {
   local u8 tmp = (oper << 1) | (oper >> 7);
   f = (tmp & FLAG_C) | sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -361,6 +373,7 @@ inline u8 rrc8(u8 oper) {
   f = oper & FLAG_C;
   local u8 tmp = (oper >>1) | (oper << 7);
   f |= sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -368,6 +381,7 @@ inline u8 rrc8(u8 oper) {
 inline u8 rl8(u8 oper) {
   local u8 tmp = (oper << 1) | (f & FLAG_C);
   f = (oper >> 7) | sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -375,6 +389,7 @@ inline u8 rl8(u8 oper) {
 inline u8 rr8(u8 oper) {
   local u8 tmp = (oper >> 1) | (f << 7);
   f = (oper & FLAG_C) | sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -383,6 +398,7 @@ inline u8 sla8(u8 oper) {
   f = oper >> 7;
   local u8 tmp = oper << 1;
   f |= sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -391,6 +407,7 @@ inline u8 sra8(u8 oper) {
   f = oper & FLAG_C;
   local u8 tmp = (oper & 0x80) | (oper >> 1);
   f |= sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -399,6 +416,7 @@ inline u8 sll8(u8 oper) {
   f = oper >> 7;
   local u8 tmp = (oper << 1) | 0x01;
   f |= sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -407,6 +425,7 @@ inline u8 srl8(u8 oper) {
   f = oper & FLAG_C;
   local u8 tmp = oper >> 1;
   f |= sz53pTable[tmp];
+  f53Updated = true;
   return tmp;
 }
 
@@ -418,11 +437,13 @@ inline void bit8(u8 bit, u8 oper) {
     f |= FLAG_PV | FLAG_Z;
   }
   f |= bitVal & 0x80;
+  f53Updated = true;
 }
 
 // The core of the 8-bit BIT operation with WZ
 inline void bit8W(u8 bit, u8 oper) {
   f = (f & FLAG_C) | FLAG_H | (wh & FLAG_53);
+  f53Updated = true;
   local u32 bitVal = oper & (0x01 << bit);
   if(!bitVal) {
     f |= FLAG_PV | FLAG_Z;

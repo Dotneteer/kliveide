@@ -93,6 +93,7 @@ void LdBn() {
 void Rlca() {
   a = (a << 1) | (a >> 7);
   f = (f & FLAG_SZP) | (a & FLAG_53C);
+  f53Updated = true;
 }
 
 // ex af,af' (0x08)
@@ -167,6 +168,7 @@ void Rrca() {
   f = (f & FLAG_SZP ) | (a & FLAG_C);
   a = (a >> 1) | (a << 7);
   f |= (a & FLAG_53);
+  f53Updated = true;
 }
 
 // djnz e (0x10)
@@ -235,6 +237,7 @@ void Rla() {
   local u32 tmp = a;
 	a = (a << 1) | (f & FLAG_C);
 	f = (f & FLAG_SZP) | (a & FLAG_53) | (tmp >> 7);
+  f53Updated = true;
 }
 
 // jr e (0x18)
@@ -309,6 +312,7 @@ void Rra() {
   local u8 tmp = a;
   a = (a >> 1) | (f << 7);
 	f = (f & FLAG_SZP) | (a & FLAG_53) | (tmp & FLAG_C) ;
+  f53Updated = true;
 }
 
 // jr nz,e (0x20)
@@ -367,6 +371,16 @@ void LdHn() {
 
 // daa (0x27)
 void Daa() {
+  if (daaCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(111111);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+  }
+
   local u32 add = 0;
   local u32 carry = f & FLAG_C;
   if ((f & FLAG_H) | ((a & 0x0f) > 9)) {
@@ -384,6 +398,19 @@ void Daa() {
     add8(add);
   }
   f = (f & ~(FLAG_C | FLAG_PV)) | carry | parityTable[a];
+  f53Updated = true;
+
+  if (daaCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(-111111);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+    daaCount += 1;
+  }
+
 }
 
 // jr z,e (0x28)
@@ -463,9 +490,31 @@ void LdLn() {
 
 // cpl (0x2f)
 void Cpl() {
+  if (cplCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(222222);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+  }
+
   a ^= 0xff;
   f = (f & (FLAG_C | FLAG_PV | FLAG_Z | FLAG_S)) |
 	  (a & FLAG_53) | (FLAG_N | FLAG_H);
+  f53Updated = true;
+
+  if (cplCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(-222222);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+    cplCount += 1;
+  }
 }
 
 // jr nc,e (0x30)
@@ -540,7 +589,29 @@ void LdHLin() {
 
 // scf (0x37)
 void Scf() {
-  f = (a & FLAG_53) | (f & FLAG_SZP) | FLAG_C;
+  if (scfCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(333333);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+  }
+
+  f = (f & FLAG_SZP) | FLAG_C;
+  setF5F3ForScfAndCcf();
+
+  if (scfCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(-333333);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+    scfCount += 1;
+  }
 }
 
 // jr c,e (0x38)
@@ -618,7 +689,29 @@ void LdAn() {
 
 // ccf (0x3f)
 void Ccf() {
-  f = (a & FLAG_53) | (f & FLAG_SZP) | (f & FLAG_C ? FLAG_H : FLAG_C);
+  if (ccfCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(444444);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+  }
+
+  f = (f & FLAG_SZP) | ((f & FLAG_C) ? FLAG_H : FLAG_C);
+  setF5F3ForScfAndCcf();
+
+  if (ccfCount < MAX_EVENTS & pc > 0x7fff) {
+    trace(-444444);
+    trace(prevf53Updated);
+    trace(f53Updated);
+    trace(a);
+    trace(f);
+    trace(r);
+    trace(wz);
+    ccfCount += 1;
+  }
 }
 
 // ld b,c (0x41)
@@ -1828,3 +1921,19 @@ void RstCore(u16 addr) {
   pc = addr;
   wz = addr;
 }
+
+// Sets F5 and F3 of F after SCF or CCF
+void setF5F3ForScfAndCcf() {
+  if (prevf53Updated) {
+    f = (f & ~(FLAG_53)) | (a & FLAG_53);
+  } else {
+    f |= a & FLAG_53;
+  }
+  f53Updated = true;
+}
+
+const u32 MAX_EVENTS = 1000;
+global u32 daaCount = 0;
+global u32 cplCount = 0;
+global u32 ccfCount = 0;
+global u32 scfCount = 0;
