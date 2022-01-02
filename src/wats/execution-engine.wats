@@ -181,6 +181,12 @@ export void executeMachineLoop() {
   // --- Initialize the execution cycle
   executionCompletionReason = EXCR_EXEC;
 
+  // --- Test frame completion 
+  if (!frameCompleted & (tacts >= tactsInFrame * clockMultiplier)) {
+    frameCompleted = true;
+    tacts %= tactsInFrame * clockMultiplier;
+  }
+
   // --- Check the startup breakpoint
   if (pc != lastStartupBreakpoint) {
     // --- Check startup breakpoint
@@ -205,6 +211,7 @@ export void executeMachineLoop() {
 
       // --- Allow a machine to handle frame initialization
       onInitNewFrame(oldClockMultiplier);
+      frameCompleted = false;
     }
 
     // --- Execute the next CPU cycle

@@ -11,7 +11,6 @@ inline void onInitNewFrame(u32 oldClockMultiplier) {
   local u32 overflow = lastRenderedFrameTact;
   renderingTablePtr = &renderingTactTable;
   pixelBufferPtr = &pixelRenderingBuffer + borderLeftPixels;
-  frameCompleted = false;
 
   // --- Render the overflown part of the screen
   renderScreen(overflow);

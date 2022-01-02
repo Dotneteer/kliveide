@@ -89,6 +89,47 @@ export void setupMachine () {
 }
 
 // ----------------------------------------------------------------------------
+// Core memory handling routines
+
+// Reads the contents of the memory
+inline u8 readMemory(u16 addr) {
+  if ((addr & 0xc000) == 0x4000) {
+    local u32 delay = contentionTable[tacts/clockMultiplier];
+    tacts += delay;
+    contentionAccumulated += delay;
+  }
+  tacts += 3;
+  return vmMemory[addr];
+}
+
+// Reads the contents of the memory without applying contention
+inline u8 readMemoryNoContention(u16 addr) {
+  return vmMemory[addr];
+}
+
+// Writes the contents of the memory
+void writeMemory(u16 addr, u8 value) {
+  if (addr & 0xc000) {
+    // OK, it's RAM
+    if ((addr & 0xc000) == 0x4000) {
+      // Contended
+      local u32 delay = contentionTable[tacts/clockMultiplier];
+      tacts += delay;
+      contentionAccumulated += delay;
+    }
+    vmMemory[addr] = value;
+  }
+  tacts += 3;
+}
+
+// Writes the contents of the memory without appluing contention
+void writeMemoryNoContention(u16 addr, u8 value) {
+  if (addr & 0xc000) {
+    vmMemory[addr] = value;
+  }
+}
+
+// ----------------------------------------------------------------------------
 // I/O port handling
 
 // Reads a byte from the specified I/O port
