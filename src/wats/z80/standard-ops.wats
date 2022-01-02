@@ -371,16 +371,6 @@ void LdHn() {
 
 // daa (0x27)
 void Daa() {
-  if (daaCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(111111);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-  }
-
   local u32 add = 0;
   local u32 carry = f & FLAG_C;
   if ((f & FLAG_H) | ((a & 0x0f) > 9)) {
@@ -399,18 +389,6 @@ void Daa() {
   }
   f = (f & ~(FLAG_C | FLAG_PV)) | carry | parityTable[a];
   f53Updated = true;
-
-  if (daaCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(-111111);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-    daaCount += 1;
-  }
-
 }
 
 // jr z,e (0x28)
@@ -490,31 +468,10 @@ void LdLn() {
 
 // cpl (0x2f)
 void Cpl() {
-  if (cplCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(222222);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-  }
-
   a ^= 0xff;
   f = (f & (FLAG_C | FLAG_PV | FLAG_Z | FLAG_S)) |
 	  (a & FLAG_53) | (FLAG_N | FLAG_H);
   f53Updated = true;
-
-  if (cplCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(-222222);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-    cplCount += 1;
-  }
 }
 
 // jr nc,e (0x30)
@@ -589,29 +546,8 @@ void LdHLin() {
 
 // scf (0x37)
 void Scf() {
-  if (scfCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(333333);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-  }
-
   f = (f & FLAG_SZP) | FLAG_C;
   setF5F3ForScfAndCcf();
-
-  if (scfCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(-333333);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-    scfCount += 1;
-  }
 }
 
 // jr c,e (0x38)
@@ -689,29 +625,8 @@ void LdAn() {
 
 // ccf (0x3f)
 void Ccf() {
-  if (ccfCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(444444);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-  }
-
   f = (f & FLAG_SZP) | ((f & FLAG_C) ? FLAG_H : FLAG_C);
   setF5F3ForScfAndCcf();
-
-  if (ccfCount < MAX_EVENTS & pc > 0x7fff) {
-    trace(-444444);
-    trace(prevf53Updated);
-    trace(f53Updated);
-    trace(a);
-    trace(f);
-    trace(r);
-    trace(wz);
-    ccfCount += 1;
-  }
 }
 
 // ld b,c (0x41)
@@ -1931,9 +1846,3 @@ void setF5F3ForScfAndCcf() {
   }
   f53Updated = true;
 }
-
-const u32 MAX_EVENTS = 1000;
-global u32 daaCount = 0;
-global u32 cplCount = 0;
-global u32 ccfCount = 0;
-global u32 scfCount = 0;
