@@ -93,6 +93,7 @@ void LdBn() {
 void Rlca() {
   a = (a << 1) | (a >> 7);
   f = (f & FLAG_SZP) | (a & FLAG_53C);
+  f53Updated = true;
 }
 
 // ex af,af' (0x08)
@@ -167,6 +168,7 @@ void Rrca() {
   f = (f & FLAG_SZP ) | (a & FLAG_C);
   a = (a >> 1) | (a << 7);
   f |= (a & FLAG_53);
+  f53Updated = true;
 }
 
 // djnz e (0x10)
@@ -235,6 +237,7 @@ void Rla() {
   local u32 tmp = a;
 	a = (a << 1) | (f & FLAG_C);
 	f = (f & FLAG_SZP) | (a & FLAG_53) | (tmp >> 7);
+  f53Updated = true;
 }
 
 // jr e (0x18)
@@ -309,6 +312,7 @@ void Rra() {
   local u8 tmp = a;
   a = (a >> 1) | (f << 7);
 	f = (f & FLAG_SZP) | (a & FLAG_53) | (tmp & FLAG_C) ;
+  f53Updated = true;
 }
 
 // jr nz,e (0x20)
@@ -384,6 +388,7 @@ void Daa() {
     add8(add);
   }
   f = (f & ~(FLAG_C | FLAG_PV)) | carry | parityTable[a];
+  f53Updated = true;
 }
 
 // jr z,e (0x28)
@@ -466,6 +471,7 @@ void Cpl() {
   a ^= 0xff;
   f = (f & (FLAG_C | FLAG_PV | FLAG_Z | FLAG_S)) |
 	  (a & FLAG_53) | (FLAG_N | FLAG_H);
+  f53Updated = true;
 }
 
 // jr nc,e (0x30)
@@ -540,7 +546,8 @@ void LdHLin() {
 
 // scf (0x37)
 void Scf() {
-  f = (a & FLAG_53) | (f & FLAG_SZP) | FLAG_C;
+  f = (f & FLAG_SZP) | FLAG_C;
+  setF5F3ForScfAndCcf();
 }
 
 // jr c,e (0x38)
@@ -618,7 +625,8 @@ void LdAn() {
 
 // ccf (0x3f)
 void Ccf() {
-  f = (a & FLAG_53) | (f & FLAG_SZP) | (f & FLAG_C ? FLAG_H : FLAG_C);
+  f = (f & FLAG_SZP) | ((f & FLAG_C) ? FLAG_H : FLAG_C);
+  setF5F3ForScfAndCcf();
 }
 
 // ld b,c (0x41)
@@ -1827,4 +1835,14 @@ void RstCore(u16 addr) {
   writeMemory(sp, pc);
   pc = addr;
   wz = addr;
+}
+
+// Sets F5 and F3 of F after SCF or CCF
+void setF5F3ForScfAndCcf() {
+  if (prevf53Updated) {
+    f = (f & ~(FLAG_53)) | (a & FLAG_53);
+  } else {
+    f |= a & FLAG_53;
+  }
+  f53Updated = true;
 }

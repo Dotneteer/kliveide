@@ -99,6 +99,11 @@ global u32 ddfdDepth;
 // Shows that IX is to be used when executing an indexed operation
 global bool useIx;
 
+// Keeps track of update status of Bit 5 and 3 of F
+global bool f53Updated;
+global bool prevf53Updated;
+
+
 // Various Z80 state flags
 global u32 cpuSignalFlags;
 const u32 SIG_NON = 0x00;
@@ -303,8 +308,14 @@ export void executeCpuCycle() {
     }
   }
 
-  // --- Read the opCode from PC and refresh memory
+  // Read the opCode from PC and refresh memory
   opCode = readMemory(pc);
+
+  // Handle F3 and F5 status of F
+  prevf53Updated = f53Updated;
+  f53Updated = false;
+
+  // Close M1 cycle
   refreshMemory();
   pc += 1;
   tacts += 1;
@@ -330,6 +341,7 @@ void executeInt() {
   // --- Reset the interrupt flags
   iff1 = false;
   iff2 = false;
+  prevf53Updated = false;
 
   // --- Push the return address to the stack
   tacts += 7;

@@ -121,6 +121,5 @@ describe("Assembler - regression cases", () => {
     const output = await compiler.compile(source);
     expect(output.errorCount).toBe(0);
   });
-
 });
 
