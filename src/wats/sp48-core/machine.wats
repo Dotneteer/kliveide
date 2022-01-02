@@ -89,6 +89,54 @@ export void setupMachine () {
 }
 
 // ----------------------------------------------------------------------------
+// Core memory handling routines
+
+// Reads the contents of the memory
+inline u8 readMemory(u16 addr) {
+  local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
+  if ((*pagePtr).contended) {
+    local u32 delay = contentionTable[tacts/clockMultiplier];
+    tacts += delay;
+    contentionAccumulated += delay;
+  }
+  tacts += 3;
+  return vmMemory[(*pagePtr).readIndex + (addr & 0b0001_1111_1111_1111)];
+}
+
+// Reads the contents of the memory without applying contention
+inline u8 readMemoryNoContention(u16 addr) {
+  return vmMemory[
+    blockLookupTable[addr >> 13].readIndex + 
+    (addr & 0b0001_1111_1111_1111)
+  ];
+}
+
+// Writes the contents of the memory
+inline void writeMemory(u16 addr, u8 value) {
+  local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
+  if ((*pagePtr).flags) {
+    tacts += 3;
+    return;
+  }
+  vmMemory[(*pagePtr).writeIndex + (addr & 0b0001_1111_1111_1111)] = value;
+  if ((*pagePtr).contended) {
+    local u32 delay = contentionTable[tacts/clockMultiplier];
+    tacts += delay;
+    contentionAccumulated += delay;
+  }
+  tacts += 3;
+}
+
+// Writes the contents of the memory without appluing contention
+inline void writeMemoryNoContention(u16 addr, u8 value) {
+  local *blockLookup pagePtr = &(blockLookupTable[addr >> 13]);
+  if ((*pagePtr).flags) {
+    return;
+  }
+  vmMemory[(*pagePtr).writeIndex + (addr & 0b0001_1111_1111_1111)] = value;
+}
+
+// ----------------------------------------------------------------------------
 // I/O port handling
 
 // Reads a byte from the specified I/O port
