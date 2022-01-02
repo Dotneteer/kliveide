@@ -526,10 +526,6 @@ class VmEngineService implements IVmEngineService {
 
     // --- Prepare the current machine for first run
     if (this._isFirstStart) {
-      // --- Prepare the breakpoints
-      // TODO: Implement this call
-      //this._vmEngine.setupBreakpoints(this._breakpoints);
-
       // --- Reset time information
       this._lastFrameTime = 0.0;
       this._avgFrameTime = 0.0;
@@ -538,19 +534,7 @@ class VmEngineService implements IVmEngineService {
       this._avgEngineTime = 0.0;
       this._sumFrameTime = 0.0;
       this._renderedFrames = 0;
-
-      // --- Clear debug information
-      // TODO: Implement this call
-      //this._vmEngine.api.resetStepOverStack();
-    } else {
-      // --- Update existing breakpoints
-      // TODO: Implement this call
-      //this._vmEngine.updateBreakpoints(this._breakpoints);
     }
-
-    // --- Initialize debug info before run
-    // TODO: Implement this call
-    // this.z80Machine.api.markStepOverStack();
 
     // --- Sign the current debug mode
     this._isDebugging = options.debugStepMode !== DebugStepMode.None;
@@ -717,12 +701,6 @@ class VmEngineService implements IVmEngineService {
 
       const resultState = engine.getMachineState();
 
-      // --- Save the internal state
-      // TODO: Check if we need this
-      // rendererProcessStore.dispatch(
-      //   emulatorSetInternalStateAction(resultState)()
-      // );
-
       // --- Check for user cancellation
       if (this._cancelled) {
         return;
@@ -730,11 +708,6 @@ class VmEngineService implements IVmEngineService {
 
       // --- Set data frequently queried
       dispatch(emuSetFrameIdAction(this._startCount, resultState.frameCount));
-
-      // TODO: Check if we need this
-      // rendererProcessStore.dispatch(
-      //   vmSetRegistersAction(this.getRegisterData(resultState))()
-      // );
 
       // --- Get data
       await engine.beforeEvalLoopCompletion(resultState);

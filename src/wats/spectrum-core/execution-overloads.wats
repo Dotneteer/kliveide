@@ -8,12 +8,11 @@ bool allowCpuClockChange () {
 // frame and resets the audio samples buffer.
 inline void onInitNewFrame(u32 oldClockMultiplier) {
   // --- Reset pointers used for screen rendering
-  local u32 overflow = lastRenderedFrameTact;
   renderingTablePtr = &renderingTactTable;
   pixelBufferPtr = &pixelRenderingBuffer + borderLeftPixels;
 
   // --- Render the overflown part of the screen
-  renderScreen(overflow);
+  renderScreen(tacts / clockMultiplier);
 
   // --- Calculate flash phase
   if (!(frameCount % flashFrames)) {
