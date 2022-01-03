@@ -105,7 +105,6 @@ void ExAF() {
 
 // add hl,bc (0x09)
 void AddHLBC() {
-  hl = add16(hl, bc);
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -124,6 +123,7 @@ void AddHLBC() {
   #else
     tacts += 7;
   #endif
+  hl = add16(hl, bc);
 }
 
 // ld a,(bc) (0x0a)
@@ -203,7 +203,6 @@ void LdDEiA() {
 
 // inc de (0x13)
 void IncDE() {
-  de += 1;
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -212,6 +211,7 @@ void IncDE() {
   #else
     tacts += 2;
   #endif
+  de += 1;
 }
 
 // inc d (0x14)
@@ -249,7 +249,6 @@ void Jr() {
 
 // add hl,de (0x19)
 void AddHLDE() {
-  hl = add16(hl, de);
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -268,6 +267,7 @@ void AddHLDE() {
   #else
     tacts += 7;
   #endif
+  hl = add16(hl, de);
 }
 
 // ld a,(de) (0x1a)
@@ -278,7 +278,6 @@ void LdADEi() {
 
 // dec de (0x1b)
 void DecDE() {
-  de -= 1;
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -287,6 +286,7 @@ void DecDE() {
   #else
     tacts += 2;
   #endif
+  de -= 1;
 }
 
 // inc e (0x1c)
@@ -340,7 +340,6 @@ void LdNNiHL() {
 
 // inc hl (0x23)
 void IncHL() {
-  hl += 1;
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -349,6 +348,7 @@ void IncHL() {
   #else
     tacts += 2;
   #endif
+  hl += 1;
 }
 
 // inc h (0x24)
@@ -402,7 +402,6 @@ void JrZ() {
 
 // add hl,hl (0x29)
 void AddHLHL() {
-  hl = add16(hl, hl);
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -421,6 +420,7 @@ void AddHLHL() {
   #else
     tacts += 7;
   #endif
+  hl = add16(hl, hl);
 }
 
 // ld hl,(nn) (0x2a)
@@ -437,7 +437,6 @@ void LdHLNNi() {
 
 // dec hl (0x2b)
 void DecHL() {
-  hl -= 1;
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -446,6 +445,7 @@ void DecHL() {
   #else
     tacts += 2;
   #endif
+  hl -= 1;
 }
 
 // inc l (0x2c)
@@ -505,7 +505,6 @@ void LdNNiA() {
 
 // inc bc (0x33)
 void IncSP() {
-  sp += 1;
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -514,6 +513,7 @@ void IncSP() {
   #else
     tacts += 2;
   #endif
+  sp += 1;
 }
 
 // inc (hl) (0x34)
@@ -561,7 +561,6 @@ void JrC() {
 
 // add hl,sp (0x39)
 void AddHLSP() {
-  hl = add16(hl, sp);
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -580,6 +579,7 @@ void AddHLSP() {
   #else
     tacts += 7;
   #endif
+  hl = add16(hl, sp);
 }
 
 // ld a,(nn)
@@ -594,7 +594,6 @@ void LdANNi() {
 
 // dec sp (0x3b)
 void DecSP() {
-  sp -= 1;
   #if MEM_CONTENDED & !GATE_ARRAY
     contendRead(ir);
     tacts += 1;
@@ -603,6 +602,7 @@ void DecSP() {
   #else
     tacts += 2;
   #endif
+  sp -= 1;
 }
 
 // inc a (0x3c)

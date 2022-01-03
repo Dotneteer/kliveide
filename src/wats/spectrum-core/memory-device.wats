@@ -35,6 +35,7 @@ inline void contendRead(u16 addr) {
     local u32 delay = contentionTable[tacts/clockMultiplier];
     tacts += delay;
     contentionAccumulated += delay;
+    renderScreen(tacts / clockMultiplier);
   }
 }
 
@@ -44,5 +45,6 @@ inline void contendWrite(u16 addr) {
     local u32 delay = contentionTable[tacts/clockMultiplier];
     tacts += delay;
     contentionAccumulated += delay;
+    renderScreen(tacts / clockMultiplier);
   }
 }

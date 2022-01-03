@@ -99,11 +99,13 @@ inline u8 readMemory(u16 addr) {
     contentionAccumulated += delay;
   }
   tacts += 3;
+  renderScreen(tacts / clockMultiplier);
   return vmMemory[addr];
 }
 
 // Reads the contents of the memory without applying contention
 inline u8 readMemoryNoContention(u16 addr) {
+  renderScreen(tacts / clockMultiplier);
   return vmMemory[addr];
 }
 
@@ -117,7 +119,10 @@ void writeMemory(u16 addr, u8 value) {
       tacts += delay;
       contentionAccumulated += delay;
     }
+    tacts += 3;
+    renderScreen(tacts / clockMultiplier);
     vmMemory[addr] = value;
+    return;
   }
   tacts += 3;
 }
@@ -125,6 +130,7 @@ void writeMemory(u16 addr, u8 value) {
 // Writes the contents of the memory without appluing contention
 void writeMemoryNoContention(u16 addr, u8 value) {
   if (addr & 0xc000) {
+    renderScreen(tacts / clockMultiplier);
     vmMemory[addr] = value;
   }
 }
@@ -179,4 +185,3 @@ void writePort(u16 port, u8 value) {
     writePortFE(port, value);
   }
 }
-

@@ -42,14 +42,48 @@ table void indexedOps() {
 
 // add ix,bc (0x09)
 void AddIXBC() {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   setXY(add16(getXY(), bc));
-  tacts += 7;
 }
 
 // add ix,de (0x19)
 void AddIXDE() {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   setXY(add16(getXY(), de));
-  tacts += 7;
 }
 
 // ld ix,nn (0x21)
@@ -67,8 +101,15 @@ void LdNNiIX() {
 
 // inc ix (0x23)
 void IncIX() {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
   setXY(getXY() + 1);
-  tacts += 2;
 }
 
 // inc xh (0x24)
@@ -93,9 +134,26 @@ void LdXHn() {
 
 // add ix,ix (0x29)
 void AddIXIX() {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   local u16 idxReg = getXY();
   setXY(add16(idxReg, idxReg));
-  tacts += 7;
 }
 
 // ld IX,(nn) (0x2a)
@@ -112,8 +170,15 @@ void LdIXNNi() {
 
 // dec IX (0x2b)
 void DecIX() {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 2;
+  #endif
   setXY(getXY() - 1);
-  tacts += 2;
 }
 
 // inc xl (0x2c)
@@ -212,8 +277,25 @@ void LdIXin() {
 
 // add ix,sp (0x39)
 void AddIXSP() {
+  #if MEM_CONTENDED & !GATE_ARRAY
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+    contendRead(ir);
+    tacts += 1;
+  #else
+    tacts += 7;
+  #endif
   setXY(add16(getXY(), sp));
-  tacts += 7;
 }
 
 // ld b,xh (0x44)
@@ -600,7 +682,7 @@ void AddXL() {
   add8(getXYL());
 }
 
-// add a,(ix+D) (0x7e)
+// add a,(ix+D) (0x86)
 void AddIXi() {
   local i8 dist = readMemory(pc);
   pc += 1;
