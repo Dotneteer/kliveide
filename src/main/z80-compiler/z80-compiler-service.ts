@@ -23,7 +23,7 @@ export class Z80CompilerService implements IZ80CompilerService {
     options?: CompilerOptions
   ): Promise<CompilerOutput> {
     const assembler = new Z80Assembler();
-    return assembler.compileFile(
+    return await assembler.compileFile(
       filename,
       options as AssemblerOptions
     ) as unknown as CompilerOutput

@@ -84,19 +84,6 @@ describe("Assembler - regression cases", () => {
     expect(output.errorCount).toBe(0);
   });
 
-  it("proc - without parentheses", async () => {
-    const compiler = new Z80Assembler();
-    const source = `
-      proc
-        ld bc,ThisLabel
-        ThisLabel: nop
-      endp
-    `;
-
-    const output = await compiler.compile(source);
-    expect(output.errorCount).toBe(0);
-  });
-
   it("repeat - without parentheses", async () => {
     const compiler = new Z80Assembler();
     const source = `
@@ -118,6 +105,20 @@ describe("Assembler - regression cases", () => {
     next
     `;
 
+    const output = await compiler.compile(source);
+    expect(output.errorCount).toBe(0);
+  });
+
+  it("nested loop", async () => {
+    const compiler = new Z80Assembler();
+    const source = `
+    loop 8
+      outerCount = $cnt
+      loop outerCount
+      endl
+    endl
+    `;
+  
     const output = await compiler.compile(source);
     expect(output.errorCount).toBe(0);
   });
