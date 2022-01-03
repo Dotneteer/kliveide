@@ -233,7 +233,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     options?: AssemblerOptions
   ): Promise<AssemblerOutput> {
     const sourceText = readTextFile(filename);
-    return this.doCompile(new SourceFileItem(filename), sourceText, options);
+    return await this.doCompile(new SourceFileItem(filename), sourceText, options);
   }
 
   /**
@@ -1213,7 +1213,7 @@ export class Z80Assembler extends ExpressionEvaluator {
           currentLineIndex
         );
       } else if (asmLine.type === "MacroOrStructInvocation") {
-        this.processMacroOrStructInvocation(
+        await this.processMacroOrStructInvocation(
           asmLine as unknown as MacroOrStructInvocation,
           allLines
         );
@@ -2429,7 +2429,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     );
     if (structDef) {
       // --- We have found a structure definition
-      this.processStructInvocation(macroOrStructStmt, structDef, allLines);
+      await this.processStructInvocation(macroOrStructStmt, structDef, allLines);
       return;
     }
 
@@ -2656,7 +2656,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     lineIndex.index = 0;
     while (lineIndex.index < visitedLines.length) {
       var macroLine = visitedLines[lineIndex.index];
-      this.emitSingleLine(allLines, visitedLines, macroLine, lineIndex, true);
+      await this.emitSingleLine(allLines, visitedLines, macroLine, lineIndex, true);
 
       // --- Next line
       lineIndex.index++;
@@ -2707,11 +2707,11 @@ export class Z80Assembler extends ExpressionEvaluator {
    * @param structDef Structure definition
    * @param allLines All parsed lines
    */
-  private processStructInvocation(
+  private async processStructInvocation(
     structStmt: MacroOrStructInvocation,
     structDef: IStructDefinition,
     allLines: Z80AssemblyLine[]
-  ): void {
+  ): Promise<void> {
     if (structStmt.operands.length > 0) {
       this.reportAssemblyError(
         "Z0809",
@@ -2734,7 +2734,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       ) {
         const structLineIndex = { index: lineIndex };
         const curLine = allLines[lineIndex];
-        this.emitSingleLine(allLines, allLines, curLine, structLineIndex);
+        await this.emitSingleLine(allLines, allLines, curLine, structLineIndex);
       }
     } finally {
       this._isInStructCloning = false;
@@ -3202,7 +3202,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const loopLineIndex = { index: firstLine + 1 };
       while (loopLineIndex.index < lastLine) {
         var curLine = scopeLines[loopLineIndex.index];
-        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        await this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
         if (iterationScope.breakReached || iterationScope.continueReached) {
           break;
         }
@@ -3320,7 +3320,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const loopLineIndex = { index: firstLine + 1 };
       while (loopLineIndex.index < lastLine) {
         const curLine = scopeLines[loopLineIndex.index];
-        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        await this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
         if (iterationScope.breakReached || iterationScope.continueReached) {
           break;
         }
@@ -3418,7 +3418,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const loopLineIndex = { index: firstLine + 1 };
       while (loopLineIndex.index < lastLine) {
         var curLine = scopeLines[loopLineIndex.index];
-        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        await this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
         if (iterationScope.breakReached || iterationScope.continueReached) {
           break;
         }
@@ -3619,7 +3619,7 @@ export class Z80Assembler extends ExpressionEvaluator {
       const loopLineIndex = { index: firstLine + 1 };
       while (loopLineIndex.index < lastLine) {
         var curLine = scopeLines[loopLineIndex.index];
-        this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+        await this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
         if (iterationScope.breakReached || iterationScope.continueReached) {
           break;
         }
@@ -3789,7 +3789,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     let loopLineIndex = { index: sectionToCompile.section.firstLine + 1 };
     while (loopLineIndex.index < sectionToCompile.section.lastLine) {
       var curLine = scopeLines[loopLineIndex.index];
-      this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
+      await this.emitSingleLine(allLines, scopeLines, curLine, loopLineIndex);
       loopLineIndex.index++;
     }
 
@@ -3979,7 +3979,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const procLineIndex = { index: firstLine + 1 };
     while (procLineIndex.index < lastLine) {
       const curLine = scopeLines[procLineIndex.index];
-      this.emitSingleLine(allLines, scopeLines, curLine, procLineIndex);
+      await this.emitSingleLine(allLines, scopeLines, curLine, procLineIndex);
       procLineIndex.index++;
     }
 
@@ -4074,7 +4074,7 @@ export class Z80Assembler extends ExpressionEvaluator {
     const moduleLineIndex = { index: firstLine + 1 };
     while (moduleLineIndex.index < lastLine) {
       const curLine = scopeLines[moduleLineIndex.index];
-      this.emitSingleLine(allLines, scopeLines, curLine, moduleLineIndex);
+      await this.emitSingleLine(allLines, scopeLines, curLine, moduleLineIndex);
       moduleLineIndex.index++;
     }
 
