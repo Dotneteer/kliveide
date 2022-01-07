@@ -43,6 +43,19 @@ export class ZxSpectrumP3eCore extends ZxSpectrumCoreBase {
   readonly displayName = "ZX Spectrum +3E";
 
   /**
+   * Creates the CPU instance
+   */
+  configureMachine(): void {
+    super.configureMachine();
+    if (this.options?.floppyPresent) {
+      this.api.setFloppyPresent(true);
+    }
+    if (this.options?.driveBPresent) {
+      this.api.setDriveBPresent(true);
+    }
+  }
+
+  /**
    * Indicates if this model supports the AY-3-8912 PSG chip
    */
   get supportsPsg(): boolean {

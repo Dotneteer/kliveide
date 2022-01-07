@@ -303,7 +303,7 @@ void writeFloppyCommandByte(u8 cmd) {
     }
     if (isDiskReady() & (*currentFloppy).isWriteProtected) {
       floppySt3 |= 0x40;
-    } 
+    }
     commandResultBuffer[0] = floppySt3;
     sendResult(1, dataResultLength);
   } else if (lastCommand == FCMD_RECALIBRATE) {
