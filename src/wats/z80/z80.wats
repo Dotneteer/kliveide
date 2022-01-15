@@ -364,7 +364,6 @@ void executeInt() {
   } else {
     // --- IM 0 or IM 1
     wz = 0x0038;
-    tacts += 5;
   }
   pc = wz;
   pushToStepOver(oldPc);
@@ -384,8 +383,10 @@ void executeNmi() {
   // --- Update the interrupt flip-flops
   iff2 = iff1;
   iff1 = false;
+  prevf53Updated = false;
 
   // --- Push the return address to the stack
+  tacts += 1;
   sp -= 1;
   writeMemory(sp, pc >> 8);
   sp -= 1;
