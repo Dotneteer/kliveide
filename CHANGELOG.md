@@ -1,5 +1,46 @@
 # Klive IDE Changelog
 
+## 0.12.0
+
+### Emulator
+
+#### Features
+
+- ZX Spectrum now passes these tests: FloatSpy, MemPtr, 48K_Timings, ZexAll
+- ZX Spectrum +2E/+3E implementation in progress
+
+#### Fixes
+
+- Refactor the Z80/ZX Spectrum core
+- Fix asynchronous React components
+
+### IDE
+
+#### Features
+
+- Diagnostics mode can be turned on and off (https://dotneteer.github.io/kliveide/documents/detecting-klive-issues)
+- The project file now opens in read-only mode
+- File types have new icons
+- Code injection support for ZX Spectrum 128K
+- ZXBASM integration (https://dotneteer.github.io/kliveide/getting-started/try-run-zxbasm-code)
+
+#### Fixes
+
+- Several code parsing bugs fixed in the Klive Z80 compiler
+- Eliminate worker thread when running the Klive Z80 compiler
+- Update build roots and breakpoints in the project file when renaming or deleting project files
+- First time start issue with the New Klive project
+- Various small issues fixed in the Project Explorer
+
+### Known Issues
+
+- ZXBC command line execution does not work properly on Mac
+- Create New Klive Project may raise permission issues on Mac and Linux
+
+## 0.11.0
+
+The brand newA new approach of Klive with its IDE -- no Visual Studio Code integration needed.
+
 ## 0.9.0-alpha.9
 
 ### Klive Emulator

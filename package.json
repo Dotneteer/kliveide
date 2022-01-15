@@ -1,6 +1,6 @@
 {
   "name": "klive-emun",
-  "version": "0.11.6",
+  "version": "0.12.0",
   "description": "Sinclair Computer Emulator",
   "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
