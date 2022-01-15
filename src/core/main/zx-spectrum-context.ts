@@ -18,21 +18,28 @@ import { MachineCreationOptions } from "../abstractions/vm-core-types";
 import { dispatch, getState } from "@core/service-registry";
 import { emuWindow } from "../../main/app/emu-window";
 import { checkTapeFile } from "@modules/vm-zx-spectrum/readers";
-import { VirtualFloppy } from "./VirtualFloppy";
+import { Sp3EConstructionOptions } from "@modules/vm-zx-spectrum/sp3e-specific";
+import {
+  machineIdFromMenuId,
+  menuIdFromMachineId,
+} from "../../main/utils/electron-utils";
 
 // --- Menu identifier contants
 const TOGGLE_FAST_LOAD = "sp_toggle_fast_load";
 const SET_TAPE_FILE = "sp_set_tape_file";
-const DISK_MENU = "sp_3e_disk_menu";
-const CREATE_VIRTUAL_DISK = "sp_3e_create_virtual_disk";
-const FLOPPY_MENU = "sp_3e_floppies";
-const NO_FLOPPY = "sp_3e_no_floppy";
-const ONE_FLOPPY = "sp_3e_one_floppy";
-const TWO_FLOPPY = "sp_3e_two_floppy";
-const INSERT_DISK_A = "sp_3e_insert_disk_A";
-const INSERT_DISK_B = "sp_3e_insert_disk_B";
-const EJECT_DISK_A = "sp_3e_eject_disk_A";
-const EJECT_DISK_B = "sp_3e_eject_disk_B";
+const DISK_MENU = "sp3e_disk_menu";
+const CREATE_VIRTUAL_DISK = "sp3e_create_virtual_disk";
+const FLOPPY_MENU = "sp3e_floppies";
+const NO_FLOPPY_LABEL = "floppy0";
+const ONE_FLOPPY_LABEL = "floppy1";
+const TWO_FLOPPIES_LABEL = "floppy2";
+const NO_FLOPPY = "spP3e_" + NO_FLOPPY_LABEL;
+const ONE_FLOPPY = "spP3e_" + ONE_FLOPPY_LABEL;
+const TWO_FLOPPY = "spP3e_" + TWO_FLOPPIES_LABEL;
+const INSERT_DISK_A = "spP3e_insert_disk_A";
+const INSERT_DISK_B = "spP3e_insert_disk_B";
+const EJECT_DISK_A = "spP3e_eject_disk_A";
+const EJECT_DISK_B = "spP3e_eject_disk_B";
 
 // --- Other constants
 const FLOPPY_FOLDER = "floppy";
@@ -50,7 +57,7 @@ const zxSpectrumLinks: LinkDescriptor[] = [
  */
 export abstract class ZxSpectrumContextProviderBase extends MachineContextProviderBase {
   // --- The last used tape file
-  private _lastTapeFile: string | null = null;
+  protected _lastTapeFile: string | null = null;
 
   /**
    * Constructs the provider with the specified options
@@ -275,6 +282,17 @@ export class ZxSpectrum128ContextProvider extends ZxSpectrumContextProviderBase 
   }
 }
 
+// ----------------------------------------------------------------------------
+// Configuration we use to instantiate the ZX Spectrum +3E machine
+
+let recentOptions: MachineCreationOptions & Sp3EConstructionOptions = {
+  baseClockFrequency: 0,
+  tactsInFrame: 0,
+  floppyPresent: false,
+  driveBPresent: false,
+};
+let recentFloppy = "floppy0";
+
 /**
  * Context provider for the ZX Spectrum 128 machine model
  */
@@ -318,19 +336,21 @@ export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
                 id: NO_FLOPPY,
                 label: "No floppy drive",
                 type: "radio",
-                click: async () => {},
+                click: async () =>
+                  await this.setFloppy(NO_FLOPPY, false, false),
               },
               {
                 id: ONE_FLOPPY,
                 label: "One floppy drive",
                 type: "radio",
-                click: async () => {},
+                click: async () =>
+                  await this.setFloppy(ONE_FLOPPY, true, false),
               },
               {
                 id: TWO_FLOPPY,
                 label: "Two floppy drives",
                 type: "radio",
-                click: async () => {},
+                click: async () => await this.setFloppy(TWO_FLOPPY, true, true),
               },
             ],
           },
@@ -394,7 +414,53 @@ export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
         !!state.spectrumSpecific?.diskBEnabled &&
         !!state.spectrumSpecific?.diskBInserted;
     }
+
+    // --- Select the current floppy type
+    const floppyType = menu.getMenuItemById(`spP3e_${recentFloppy}`);
+    if (floppyType) {
+      floppyType.checked = true;
+    }
+
     emuWindow.saveKliveProject();
+  }
+
+  /**
+   * Override this method to get the machine-specific settings
+   */
+  getMachineSpecificSettings(): Record<string, any> {
+    const state = getState();
+    const spectrum = state.spectrumSpecific;
+    return {
+      fastLoad: !!spectrum?.fastLoad,
+      lastTapeFile: this._lastTapeFile,
+      clockMultiplier: state.emulatorPanel?.clockMultiplier ?? 1,
+      soundLevel: state.emulatorPanel?.soundLevel ?? 1.0,
+      muted: state.emulatorPanel?.muted ?? false,
+      floppy: recentFloppy,
+    };
+  }
+
+  /**
+   * Override this method to set the machine-specific settings
+   */
+  async setMachineSpecificSettings(
+    settings: Record<string, any>
+  ): Promise<MachineCreationOptions | null> {
+    await super.setMachineSpecificSettings(settings);
+    if (settings.floppy) {
+      switch (settings.floppy) {
+        case NO_FLOPPY_LABEL:
+          await this.setFloppy(NO_FLOPPY, false, false);
+          break;
+        case ONE_FLOPPY_LABEL:
+          await this.setFloppy(ONE_FLOPPY, true, false);
+          break;
+        case TWO_FLOPPIES_LABEL:
+          await this.setFloppy(TWO_FLOPPY, true, true);
+          break;
+      }
+    }
+    return recentOptions;
   }
 
   /**
@@ -409,5 +475,32 @@ export class ZxSpectrumP3ContextProvider extends ZxSpectrumContextProviderBase {
    */
   getMachineContextDescription(): string {
     return `Screen: 256x192, ROM: spP3E.rom (64KB), RAM: 128KB`;
+  }
+
+  /**
+   * Sets the Z88 LCD mode
+   * @param menuId LCD menu id
+   * @param label LCD label
+   * @param scw LCD width
+   * @param sch LCD height
+   */
+  private async setFloppy(
+    menuId: string,
+    floppyPresent: boolean,
+    driveBPresent: boolean
+  ): Promise<void> {
+    recentFloppy = machineIdFromMenuId(menuId);
+    recentOptions = { ...recentOptions, floppyPresent, driveBPresent };
+    await this.requestMachine();
+    emuWindow.saveKliveProject();
+  }
+
+  /**
+   * Sets the Z88 with the specified LCD type
+   * @param typeId Machine type with LCD size specification
+   */
+  private async requestMachine(): Promise<void> {
+    const typeId = "spP3e";
+    await emuWindow.requestMachineType(typeId, recentOptions);
   }
 }
