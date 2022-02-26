@@ -16,9 +16,7 @@ import {
   sendFromIdeToEmu,
   sendFromMainToEmu,
 } from "@core/messaging/message-sending";
-import {
-  CompileFileResponse,
-} from "@core/messaging/message-types";
+import { CompileFileResponse } from "@core/messaging/message-types";
 import {
   emuShowFrameInfoAction,
   emuShowKeyboardAction,
@@ -460,7 +458,13 @@ const compileCodeCommand: IKliveCommand = {
             filename: context.resource,
             language,
           });
-          if (response.failed || (response.result?.errors?.length ?? 0) !== 0) {
+          if (response.failed) {
+            buffer.color("bright-red");
+            buffer.writeLine(`Compilation failed: ${response.failed}`);
+            buffer.resetColor();
+            break;
+          }
+          if ((response.result?.errors?.length ?? 0) !== 0) {
             for (const item of response.result.errors) {
               buffer.color(item.isWarning ? "bright-yellow" : "bright-red");
               buffer.write(item.errorCode);

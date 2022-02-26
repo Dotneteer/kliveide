@@ -16,7 +16,7 @@ import { emuWindow } from "../app/emu-window";
 import { ideWindow } from "../app/ide-window";
 import { appSettings } from "../main-state/klive-configuration";
 import { setIdeConfigAction } from "@core/state/ide-config-reducer";
-import { getCompiler, KliveCompilerOutput } from "@abstractions/compiler-registry";
+import { getCompiler, KliveCompilerOutput, SimpleAssemblerOutput } from "@abstractions/compiler-registry";
 import { endCompileAction, startCompileAction } from "@core/state/compilation-reducer";
 
 /**
@@ -179,7 +179,7 @@ export async function processIdeRequest(
           message.filename
         )) as KliveCompilerOutput;
         dispatch(endCompileAction(result));
-        return Messages.compileFileResponse(result);
+        return Messages.compileFileResponse(result, (result as SimpleAssemblerOutput).failed);
       } catch (err) {
         return Messages.compileFileResponse({ errors: []}, err.toString());
       }

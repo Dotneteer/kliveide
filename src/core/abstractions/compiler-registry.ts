@@ -13,6 +13,7 @@ let compilerRegistry: Record<string, IKliveCompiler> = {};
  * Any compiler should be able to retrieve simple error information
  */
 export type SimpleAssemblerOutput = {
+  failed?: string;
   errors?: AssemblerErrorInfo[];
   debugMessages?: string[];
 };

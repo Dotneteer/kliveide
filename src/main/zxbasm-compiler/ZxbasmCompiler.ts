@@ -66,7 +66,7 @@ export class ZxbasmCompiler extends CompilerBase {
 
       // --- Run the compiler
       const compileOut = await this.executeCommandLine(execPath, cmdLine);
-      if (compileOut) {
+      if (compileOut && typeof compileOut !== "string") {
         const errors = compileOut.filter(
           (i) => typeof i !== "string"
         ) as AssemblerErrorInfo[];
@@ -83,6 +83,11 @@ export class ZxbasmCompiler extends CompilerBase {
       // --- Extract the ORG of the compilation
       let orgAddress: number | undefined;
       if (compileOut) {
+        if (typeof compileOut === "string") {
+          return {
+            failed: compileOut,
+          };
+        }
         const debugOut = compileOut.filter(
           (i) => typeof i === "string"
         ) as string[];

@@ -78,6 +78,11 @@ export class ZxBasicCompiler extends CompilerBase {
       // --- Run the compiler
       const compileOut = await this.executeCommandLine(execPath, cmdLine);
       if (compileOut) {
+        if (typeof compileOut === "string") {
+          return {
+            failed: compileOut,
+          };
+        }
         const errors = compileOut.filter(
           (i) => typeof i !== "string"
         ) as AssemblerErrorInfo[];
