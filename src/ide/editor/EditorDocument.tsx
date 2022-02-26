@@ -498,7 +498,7 @@ const EditorDocument: React.VFC<Props> = ({
 
     // --- Convert errors to markers
     const model = editor.current.getModel();
-    const markers = compilationResult.errors
+    const markers = (compilationResult.errors ?? [])
       .filter((err) => err.fileName === descriptor.id)
       .map(
         (err) =>
@@ -511,7 +511,7 @@ const EditorDocument: React.VFC<Props> = ({
             endColumn: err.endColumn + 1,
           } as MarkerData)
       );
-    monaco.editor.setModelMarkers(model, CODE_EDITOR_MARKERS, markers);
+      monaco.editor.setModelMarkers(model, CODE_EDITOR_MARKERS, markers);
   }
 
   /**

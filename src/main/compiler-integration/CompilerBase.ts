@@ -6,6 +6,7 @@ import {
   KliveCompilerOutput,
 } from "@abstractions/compiler-registry";
 import { AssemblerErrorInfo } from "@abstractions/z80-compiler-service";
+import { __DARWIN__, __WIN32__ } from "../utils/electron-utils";
 
 /**
  * Helper class to invoke compilers and communicate with the IDE
@@ -61,13 +62,13 @@ export abstract class CompilerBase implements IKliveCompiler {
   async executeCommandLine(
     execPath: string,
     cmdArgs: string,
-    options?: any
-  ): Promise<(AssemblerErrorInfo | string)[] | null> {
+    _options?: any
+  ): Promise<(AssemblerErrorInfo | string)[] | string | null> {
     const workdir = path.dirname(execPath);
     const filename = path.basename(execPath);
-
-    const cmd = `${filename} ${cmdArgs.split("\\").join("/")}`;
-    return new Promise<(AssemblerErrorInfo | string)[] | null>(
+    const args = cmdArgs.split("\\").join("/")
+    const cmd = `${__DARWIN__ ? execPath : filename} ${args}`;
+    return new Promise<(AssemblerErrorInfo | string)[] | string | null>(
       (resolve, reject) => {
         const process = exec(
           cmd,
@@ -75,7 +76,11 @@ export abstract class CompilerBase implements IKliveCompiler {
             cwd: workdir,
           },
           (error, _stdout, stderr) => {
-            const processedMessages = this.processErrorString(stderr)
+            if (process.exitCode !== 0) {
+              const errorText = `The process exited with code ${process.exitCode}. ${error || stderr}`;
+              resolve(errorText);
+            }
+            const processedMessages = this.processErrorString(error ? error.toString() : stderr);
             if (error || processedMessages.length > 0) {
               resolve(processedMessages);
               return;
