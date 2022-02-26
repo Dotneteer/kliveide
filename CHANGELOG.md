@@ -1,5 +1,13 @@
 # Klive IDE Changelog
 
+## 0.12.1
+
+### IDE
+
+#### Fixes
+
+- ZXBC command line execution now works on Mac
+
 ## 0.12.0
 
 ### Emulator
