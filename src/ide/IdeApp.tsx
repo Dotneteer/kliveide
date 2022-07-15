@@ -3,7 +3,6 @@ import { CSSProperties, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 
 import { getStore, getThemeService } from "@core/service-registry";
-import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { AppState } from "@state/AppState";
 import { toStyleString } from "../ide/utils/css-utils";
 import { ModalDialog } from "@components/ModalDialog";
@@ -84,7 +83,7 @@ export const IdeApp: React.VFC = () => {
   return (
     <>
       {ideLoaded && (
-        <Fill id="klive_ide_app">
+        <Fill id="klive_ide_app" onKeyDown={(e) => console.log(`${e.key}, ${e.ctrlKey}`)}>
           <Row>
             <Column width={48}>
               <ActivityBar />

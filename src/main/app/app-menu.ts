@@ -192,6 +192,8 @@ export function setupMenu(): void {
     ],
   };
 
+  // --- Prepare the Edit menu
+
   // --- Preapre the view menu
   const viewSubMenu: MenuItemConstructorOptions[] = [
     { role: "resetZoom" },
@@ -273,8 +275,26 @@ export function setupMenu(): void {
     }
   );
 
-  // --- Add the file and view menu
-  template.push(fileMenu, {
+  // --- Add the File, Edit, and View menus
+  template.push(fileMenu)
+  if (__DARWIN__) {
+    template.push({
+      label: 'Edit',
+      submenu: [
+        {role: 'undo'},
+        {role: 'redo'},
+        {type: 'separator'},
+        {role: 'cut'},
+        {role: 'copy'},
+        {role: 'paste'},
+        {role: 'pasteAndMatchStyle'},
+        {role: 'delete'},
+        {role: 'selectAll'}
+      ]
+    })
+  }
+
+  template.push({
     label: "View",
     submenu: viewSubMenu,
   });
