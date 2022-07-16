@@ -83,7 +83,7 @@ export const IdeApp: React.VFC = () => {
   return (
     <>
       {ideLoaded && (
-        <Fill id="klive_ide_app" onKeyDown={(e) => console.log(`${e.key}, ${e.ctrlKey}`)}>
+        <Fill id="klive_ide_app">
           <Row>
             <Column width={48}>
               <ActivityBar />

@@ -41,37 +41,62 @@ export class AddSettingCommand extends InteractiveCommandBase {
       };
     }
     if (args.length === 3) {
-      if (
-        args[0].type !== TokenType.Option ||
-        (args[0].text !== "-u" &&
-          args[0].text !== "-p" &&
-          args[0].text !== "-c")
-      ) {
+      const location = getLocationFromToken(args[0]);
+      if (location == null || location == "error") {
         return {
           type: TraceMessageType.Error,
           message: "The first argument must be -u, -p, or -c",
         };
       }
-      switch (args[0].text) {
-        case "-u":
-          this._location = "user";
-          break;
-        case "-p":
-          this._location = "project";
-          break;
-        default:
-          this._location = "current";
-          break;
-      }
+      this._location = location;
       this._key = args[1].text;
       this._value = args[2];
     } else if (args.length == 2) {
-      this._key = args[0].text;
-      this._value = args[1];
+      const location = getLocationFromToken(args[0]);
+      if (location == "error") {
+        return {
+          type: TraceMessageType.Error,
+          message: "The first argument must be -u, -p, or -c",
+        };
+      }
+      if (location !== null) {
+        this._location = location;
+        this._key = args[1].text;
+      } else {
+        this._key = args[0].text;
+        this._value = args[1];
+      }
     } else {
+      if (args[0].type === TokenType.Option) {
+        return {
+          type: TraceMessageType.Error,
+          message: `Invalid key: ${args[0].text}`,
+        };
+      }
       this._key = args[0].text;
     }
     return [];
+
+    function getLocationFromToken(token: Token): SettingLocation | "error" | null {
+      if (token.type !== TokenType.Option) {
+        return null;
+      }
+      if (
+        token.text !== "-u" &&
+        token.text !== "-p" &&
+        token.text !== "-c")
+      {
+        return "error";
+      }
+      switch (args[0].text) {
+        case "-u":
+          return "user";
+        case "-p":
+          return "project";
+        default:
+          return "current";
+      }
+    }
   }
 
   /**
