@@ -43,7 +43,6 @@ export class IdeSettingsService implements ISettingsService {
     value: SettingsValue,
     location: SettingLocation
   ): Promise<void> {
-    console.log("Setting value", value);
     const keySegments = key.split(".");
     if (keySegments.some((s) => !this.testSettingKey(s))) {
       throw new Error(INVALID_KEY);

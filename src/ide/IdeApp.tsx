@@ -3,7 +3,6 @@ import { CSSProperties, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 
 import { getStore, getThemeService } from "@core/service-registry";
-import { ideLoadUiAction } from "@state/ide-loaded-reducer";
 import { AppState } from "@state/AppState";
 import { toStyleString } from "../ide/utils/css-utils";
 import { ModalDialog } from "@components/ModalDialog";

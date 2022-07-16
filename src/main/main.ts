@@ -2,7 +2,7 @@
 // The startup file of the main Electron process
 // ============================================================================
 
-import { BrowserWindow, app, ipcMain, dialog } from "electron";
+import { BrowserWindow, app, ipcMain, dialog, globalShortcut, KeyboardInputEvent } from "electron";
 
 import { forwardRendererState } from "./main-state/main-store";
 import { ForwardActionRequest } from "@core/messaging/message-types";
@@ -15,7 +15,7 @@ import {
   appConfiguration,
   appSettings,
 } from "./main-state/klive-configuration";
-import { __WIN32__ } from "./utils/electron-utils";
+import { __DARWIN__, __WIN32__ } from "./utils/electron-utils";
 import { setWindowsAction } from "@state/is-windows-reducer";
 import { processIdeRequest } from "./communication/process-ide-requests";
 import { processEmulatorRequest } from "./communication/process-emulator-requests";
