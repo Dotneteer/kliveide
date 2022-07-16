@@ -2,7 +2,7 @@ import * as React from "react";
 import { CSSProperties, useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 
-import { getStore, getThemeService } from "@core/service-registry";
+import { getState, getStore, getThemeService } from "@core/service-registry";
 import { AppState } from "@state/AppState";
 import { toStyleString } from "../ide/utils/css-utils";
 import { ModalDialog } from "@components/ModalDialog";
@@ -15,6 +15,10 @@ import { Column, Fill, Row } from "@components/Panels";
 import { SplitPanel } from "@components/SplitPanel";
 import { IdeContextMenu } from "./context-menu/ContextMenu";
 import "./ide-message-processor";
+import { isDebuggableCompilerOutput } from "@abstractions/compiler-registry";
+import { getEngineProxyService } from "@services/engine-proxy";
+import { SourceCodeBreakpoint } from "@abstractions/code-runner-service";
+import { navigateToDocumentPosition } from "./document-area/document-utils";
 
 // --- Panel sizes
 const MIN_SIDEBAR_WIDTH = 240;
@@ -50,13 +54,71 @@ export const IdeApp: React.VFC = () => {
     const themeService = getThemeService();
     // --- State change event handlers
     const isWindowsChanged = (isWindows: boolean) => {
+      // --- Store the flag indication Windows OS
       themeService.isWindows = isWindows;
       updateThemeState();
     };
     const themeChanged = (theme: string) => {
+      // --- Respond to theme changes
       themeService.setTheme(theme);
       updateThemeState();
     };
+    const execStateChanged = async () => {
+      // --- Respond to breaakpoint reached events
+      const state = getState();
+
+      // --- Do we have any breakpoints declared?
+      const breakpoints = state?.debugger?.breakpoints ?? [];
+      if (breakpoints.length == 0) {
+        // --- No breakpoints to stop at        
+        return;
+      }
+
+      // --- Obtain breakpoint information
+      const compilationResult = state?.compilation?.result;
+      const execState = state.emulatorPanel?.executionState ?? 0;
+      if (
+        execState !== 3 ||
+        !compilationResult ||
+        compilationResult.errors.length > 0
+      ) {
+        // --- Machine state changed without breakpoint information
+        return;
+      }
+  
+      if (!isDebuggableCompilerOutput(compilationResult)) {
+        // --- We have a valid compiled code but no debug information is support
+        return;
+      }
+
+      // --- Get the PC information
+      const cpuState = await getEngineProxyService().getMachineState()
+      const pc = (cpuState as any)._pc;
+
+      // --- Dis we stop at a breakpoint?
+      const brInfo = breakpoints.find(br => br.type === "source" && br.location == pc) as SourceCodeBreakpoint;
+      if (brInfo) {
+        // --- Yes, it is a breakpoint
+        const projectRoot = getState().project.path;
+        const resource = (projectRoot + brInfo.resource).replace(/\\/g, "/");
+        navigateToDocumentPosition(resource, brInfo.line, 0);
+        return;
+      }
+
+      // --- Do we have source code information?
+      const sourceInfo = compilationResult.sourceMap[pc];
+      if (!sourceInfo) {
+        // --- No source information for PC
+        return;
+      }
+
+      // --- Do we have file information?
+      const fileInfo = compilationResult.sourceFileList[sourceInfo.fileIndex];
+      if (fileInfo) {
+        // --- Yes, navigate there
+        navigateToDocumentPosition(fileInfo.filename, sourceInfo.line, 0);
+      }
+    }
 
     if (!mounted.current) {
       // --- Mount logic, executed only once during the app's life cycle
@@ -65,6 +127,7 @@ export const IdeApp: React.VFC = () => {
 
       getStore().themeChanged.on(themeChanged);
       getStore().isWindowsChanged.on(isWindowsChanged);
+      getStore().executionStateChanged.on(execStateChanged);
 
       // --- Set up activities
     }
@@ -72,6 +135,7 @@ export const IdeApp: React.VFC = () => {
       // --- Unsubscribe
       getStore().isWindowsChanged.off(isWindowsChanged);
       getStore().themeChanged.off(themeChanged);
+      getStore().executionStateChanged.off(execStateChanged);
       mounted.current = false;
     };
   }, [store]);
