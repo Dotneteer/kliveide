@@ -1,5 +1,15 @@
 # Klive IDE Changelog
 
+## 0.12.2
+
+### IDE
+
+#### Fixes
+
+- Copy/paste is available on Mac
+- You can add new builder roots (https://dotneteer.github.io/kliveide/getting-started/building-and-running-code#specify-additional-build-root-file-extensions)
+- Source code debugging now navigates to the current execution point/breakpoint
+
 ## 0.12.1
 
 ### IDE

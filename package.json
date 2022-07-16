@@ -1,6 +1,6 @@
 {
-  "name": "klive-emun",
-  "version": "0.12.1",
+  "name": "klive-emu",
+  "version": "0.12.2",
   "description": "Sinclair Computer Emulator",
   "main": "./dist/main.bundle.js",
   "author": "Istvan Novak",
@@ -85,7 +85,7 @@
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
     "electron": "^19.0.8",
-    "electron-builder": "^22.14.13",
+    "electron-builder": "^23.1.0",
     "expect": "^26.6.2",
     "file-loader": "^6.2.0",
     "fs-extra": "^10.0.0",
