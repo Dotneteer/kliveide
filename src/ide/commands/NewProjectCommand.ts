@@ -57,7 +57,6 @@ export class NewProjectCommand extends InteractiveCommandBase {
 
     // --- Check 2nd argument
     this._rootFolderArg = args[1].text;
-    console.log(args[1]);
     if (
       args[1].type !== TokenType.Identifier &&
       args[1].type !== TokenType.Path

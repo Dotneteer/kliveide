@@ -249,6 +249,8 @@ export default class ProjectFilesPanel extends SideBarPanelBase<
     const filename = item.nodeData.fullPath?.substring(
       getState().project.path.length
     );
+
+    // --- Check for build root
     const isBuildRoot = getState().builder.roots.includes(filename);
     const isReadonly = item.nodeData.isReadOnly ?? false;
     const iconName = item.nodeData.icon ?? "file-code";
