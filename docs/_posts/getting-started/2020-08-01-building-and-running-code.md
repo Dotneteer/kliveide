@@ -21,8 +21,7 @@ A project folder may contain multiple files of this type (besides other code fil
 
 ## Using Build Roots
 
-Klive allows you to mark the files to compile as *build roots*.
-The context menu displays the ** Make build root command when you ring-click a code file in the explorer. Clicking it signs the file as a build root file.
+Klive allows you to mark the files to compile as *build roots*. The context menu displays the ** Make build root command when you ring-click a code file in the explorer. Clicking it signs the file as a build root file.
 
 ![Z80 code]({{ site.baseurl }}/assets/images/tutorials/mark-build-root.png)
 
@@ -63,7 +62,7 @@ To inject code into the machine, first, you have to start the machine and pause 
 The **Inject Code** command first compiles the code. If that is successful, the IDE transfers the code into the RAM of the paused machine's virtual memory. It uses the `ORG` location of the code (and, with Klive Z80 Assembler, other pragmas) to infer the start location of the code.
 When the code is in the memory, you can use a BASIC statement to run that. For example, if your code starts at the address of $8000, you can start it with `RANDOMIZE USR 32768`.
 
-## Running the code
+## Running the Code
 
 > *Note*: As of now, the **Run program** feature works only for the ZX Spectrum 48 machine; nonetheless, soon, it will be available on ZX Spectrum 128, too.
 
@@ -72,4 +71,40 @@ The IDE compiles the source code. If the compilation is successful, the IDE star
 > *Note*: The Klive Z80 Assembler allows you to inject code to start either with the JP or CALL instruction semantics. In the first case, you have to close your code with a JP statement that jumps back to the main execution cycle. You can terminate your code with a RET statement to return to the main execution cycle in the second case.
 
 The IDE provides two separate commands, **Run program**, and **Debug program**. They work similarly; however, the first does not pause at breakpoints, while the second does.
+
+## Specify Additional Build Root File Extensions
+
+The IDE allows using several compilers to create the machine code. When you install Klive, you can use the build-in Z80 Assembler immediately. You can also install Boriel's Basic to write code with ZX BASIC or the Z80 Assembler of Boriel's Basic.
+
+Klive assigns an identifier to compilers and lists the file extensions for a particular compiler. When you create a build root, Klive associates the marked file with the corresponding compiler according to the file's extension.
+
+These are the compilers (with their IDs and default file extension) supported by Klive:
+`kz80-asm`: Klive's built-in Z80 Assembler (file extension: `.kz80.asm`)
+`zxbas`: The ZX BASIC compiler of Boriel's Basic (file extension: `.zxbas`)
+`zxbasm`: The Z80 Assembler compiler of Boriel's Basic (file extension: `.zxbasm`)
+
+> *Note*: Do not forget, you have to set up Boriel's Basic separately as it does not ship with Klive
+
+Suppose you want to use additional file extensions to build roots. In that case, you can use the Interactive tool window to execute the `set` command to create an association between a compiler and a file extension. The  syntax of the command is the following:
+
+```
+set [-u] languages.<compiler ID> <file extensions>
+```
+
+Here, `<compiler ID>` is one of the identifiers treated above (`kz80-asm`, `zxbas`, or `zxbasm`); `<file extensions>` is one or more file extensions separated by a vertical bar (\|). The optional `-u` option stores this binding in the Klive configuration file so that every new project will use the extra extensions by default. If you omit `-u`, only the currently open project will use the binding.
+
+Example:
+
+Let's assume you want to allow the `.myZ80` and `.otherZ80` file extensions with Klive's built-in assembler. This command makes this binding:
+
+```
+set languages.kz80-asm ".myZ80|.otherZ80"
+```
+
+You can remove the binding with a `set` command that omits the file extensions argument:
+
+```
+set languages.kz80-asm
+```
+
 
