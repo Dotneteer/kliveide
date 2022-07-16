@@ -48,7 +48,7 @@ jobs:
         node-version: 16.x
 
     - name: Install npm dependencies
-      run: npm run bootstrap:ci
+      run: npm run bootstrap:ci --force
 
     - name: Build the packages
       run: npm run build
@@ -80,7 +80,7 @@ jobs:
         node-version: 16.x
 
     - name: Install npm dependencies
-      run: npm run bootstrap:ci
+      run: npm run bootstrap:ci --force
 
     - name: Build the packages
       run: npm run build
