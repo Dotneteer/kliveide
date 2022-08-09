@@ -79,7 +79,7 @@ const commonConfig = {
       },
       {
         test: /\.ttf$/,
-        use: ["file-loader"],
+        type: 'asset/resource'
       },
     ],
   },
