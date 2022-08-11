@@ -1,5 +1,14 @@
 # Klive IDE Changelog
 
+## 0.12.3
+
+### IDE
+
+#### Fixes
+
+- Find/Replace dialog now shows icons on MacOS
+- (ZXBASIC) path resolution works correctly on Linux
+
 ## 0.12.2
 
 ### IDE
