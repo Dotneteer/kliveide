@@ -6,7 +6,7 @@ import {
   KliveCompilerOutput,
 } from "@abstractions/compiler-registry";
 import { AssemblerErrorInfo } from "@abstractions/z80-compiler-service";
-import { __DARWIN__, __WIN32__ } from "../utils/electron-utils";
+import { __DARWIN__, __LINUX__, __WIN32__ } from "../utils/electron-utils";
 
 /**
  * Helper class to invoke compilers and communicate with the IDE
@@ -67,7 +67,7 @@ export abstract class CompilerBase implements IKliveCompiler {
     const workdir = path.dirname(execPath);
     const filename = path.basename(execPath);
     const args = cmdArgs.split("\\").join("/")
-    const cmd = `${__DARWIN__ ? execPath : filename} ${args}`;
+    const cmd = `${__DARWIN__ || __LINUX__ ? execPath : filename} ${args}`;
     return new Promise<(AssemblerErrorInfo | string)[] | string | null>(
       (resolve, reject) => {
         const process = exec(
