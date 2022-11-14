@@ -1,45 +1,82 @@
-# Klive IDE
+# electron-vite-react
 
-This project aims to build a retro computer IDE that you can run on Linux, Mac, and Windows. Though currently, Klive IDE supports only the Z80 CPU, a few ZX Spectrum models (48/128/2/2A), it intends to be an attractive development platform for other Z80-based microcomputers [Cambridge Z88](https://en.wikipedia.org/wiki/Cambridge_Z88) and [ZX Spectrum Next](https://www.specnext.com/). In the future, provided the community supports, Klive IDE may involve other CPUs and retro computers.
+[![awesome-vite](https://awesome.re/mentioned-badge.svg)](https://github.com/vitejs/awesome-vite)
+![GitHub stars](https://img.shields.io/github/stars/caoxiemeihao/vite-react-electron?color=fa6470)
+![GitHub issues](https://img.shields.io/github/issues/caoxiemeihao/vite-react-electron?color=d8b22d)
+![GitHub license](https://img.shields.io/github/license/caoxiemeihao/vite-react-electron)
+[![Required Node.JS >= 14.18.0 || >=16.0.0](https://img.shields.io/static/v1?label=node&message=14.18.0%20||%20%3E=16.0.0&logo=node.js&color=3f893e)](https://nodejs.org/about/releases)
 
-Klive is now a standalone application that contains an emulator and an IDE.
+English | [简体中文](README.zh-CN.md)
 
-> Note: The previous versions of Klive were integrated with Visual Studio Code. Although initially, it seemed to be a good idea, this solution has issues coming from the integration and communication between VS Code and Klive.
+## 👀 Overview
 
-## The Latest Release
+📦 Ready out of the box  
+🎯 Based on the official [template-react-ts](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts), project structure will be familiar to you  
+🌱 Easily extendable and customizable  
+💪 Supports Node.js API in the renderer process  
+🔩 Supports C/C++ native addons  
+🐞 Debugger configuration included  
+🖥 Easy to implement multiple windows  
 
-Klive IDE v0.11.0 is available! Go to the [releases](https://github.com/Dotneteer/kliveide/releases), download, and try it.
+## 🛫 Quick start
 
-Though using the emulator and the IDE is intuitive, these articles can help you get started:
+```sh
+npm create electron-vite
+```
 
-- [Install Klive IDE](https://dotneteer.github.io/kliveide/getting-started/install-kliveide)
-- [Using the Emulator](https://dotneteer.github.io/kliveide/getting-started/using-the-emulator)
-- [Using the IDE](https://dotneteer.github.io/kliveide/getting-started/using-the-ide)
-- [Try: Run Z80 Code](https://dotneteer.github.io/kliveide/getting-started/try-run-z80-code)
-- [Try: Run ZX BASIC Code](https://dotneteer.github.io/kliveide/getting-started/try-run-zxb-code)
+![electron-vite-react.gif](https://github.com/electron-vite/electron-vite-react/blob/main/public/electron-vite-react.gif?raw=true)
 
+## 🐞 Debug
 
-## The IDE Concept In a few Videos
+![electron-vite-react-debug.gif](https://github.com/electron-vite/electron-vite-react/blob/main/public/electron-vite-react-debug.gif?raw=true)
 
-### Running ZX Spectrum 48K in the Emulator
+## 📂 Directory structure
 
-![Klive intro](./intro/klive-intro.gif)
+Familiar React application structure, just with `electron` folder on the top :wink:  
+*Files in this folder will be separated from your React application and built into `dist/electron`*  
 
-### Debugging a Project in the IDE
+```tree
+├── electron                  Electron-related code
+│   ├── main                  Main-process source code
+│   ├── preload               Preload-scripts source code
+│   └── resources             Resources for the production build
+│       ├── icon.icns             Icon for the application on macOS
+│       ├── icon.ico              Icon for the application
+│       ├── installerIcon.ico     Icon for the application installer
+│       ├── uninstallerIcon.ico   Icon for the application uninstaller
+|       └── iconset               
+|           └── 256x256.png       Icon for the application on Linux
+│
+├── release                   Generated after production build, contains executables
+│   └── {version}
+│       ├── {os}-unpacked     Contains unpacked application executable
+│       └── Setup.{ext}       Installer for the application
+│
+├── public                    Static assets
+└── src                       Renderer source code, your React application
+```
 
-![IDE Debuging](./intro/ide-debugging.gif)
+## 🚨 Be aware
 
-### Loading A ZX Spectrum Game
+This template integrates Node.js API to the renderer process by default. If you want to follow **Electron Security Concerns** you might want to disable this feature. You will have to expose needed API by yourself.  
 
-![Normal load](./intro/normal-load.gif)
+To get started, remove the option as shown below. This will [modify the Vite configuration and disable this feature](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#config-presets-opinionated).
 
-### Fast Tape Loading
+```diff
+# vite.config.ts
 
-![Fast load](./intro/fast-load.gif)
+export default {
+  plugins: [
+-   // Use Node.js API in the Renderer-process
+-   renderer({
+-     nodeIntegration: true,
+-   }),
+  ],
+}
+```
 
-## Contact me
+## ❔ FAQ
 
-You can directly contact me: dotneteer@hotmail.com
-For discussions, join the Telegram group at https://t.me/kliveide
-
-
+- [dependencies vs devDependencies](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#dependencies-vs-devdependencies)
+- [Using C/C++ native addons in renderer](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#load-nodejs-cc-native-modules)
+- [Node.js ESM packages](https://github.com/electron-vite/vite-plugin-electron/tree/main/packages/electron-renderer#nodejs-esm-packages) (e.g. `execa` `node-fetch`)
