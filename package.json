@@ -1,11 +1,19 @@
 {
-  "name": "electron-vite-react",
-  "productName": "Electron",
-  "private": true,
-  "version": "2.1.0",
-  "description": "Vite React Electron boilerplate.",
-  "author": "草鞋没号 <308487730@qq.com>",
-  "license": "MIT",
+  "name": "klive-emu",
+  "version": "3.0.0",
+  "description": "Sinclair Computer Emulator",
+  "author": "Istvan Novak",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dotneteer/kliveide.git"
+  },
+  "keywords": [
+    "ZX Spectrum",
+    "Z80",
+    "emulator"
+  ],
+  "bugs": "https://github.com/Dotneteer/kliveide/issues",
+  "homepage": "https://github.com/Dotneteer/kliveide",
   "main": "dist-electron/electron/main/index.js",
   "scripts": {
     "dev": "vite",
