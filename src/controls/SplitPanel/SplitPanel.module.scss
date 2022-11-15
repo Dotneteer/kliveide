@@ -1,0 +1,33 @@
+@import "styles/core.scss";
+
+.component {
+    @include fill-parent-flex;
+}
+
+.left {
+    @include container-for-columns;
+}
+
+.right {
+    @include container-for-columns-reverse;
+}
+
+.top {
+    @include container-for-rows;
+}
+
+.bottom {
+    @include container-for-rows-reverse;
+}
+
+.vertical {
+    @include fix-width-panel(20px);
+}
+
+.horizontal  {
+    @include fix-height-panel(20px);
+}
+
+.secondary {
+    @include fill-parent-flex;
+}
