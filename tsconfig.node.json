@@ -4,7 +4,13 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+			"@/*": ["./src/*"],
+      "styles/*": ["./src/assets/styles/*"],
+      "@messaging/*": ["./common/messaging/*"],
+      "@state/*": ["./common/state/*"]
+		},
   },
-  "include": ["package.json", "electron"]
+  "include": ["package.json", "electron", "common"]
 }

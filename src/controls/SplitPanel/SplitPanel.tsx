@@ -13,9 +13,9 @@ export type Props = {
 
 export const SplitPanel = ({
     primaryPanel,
-    primaryPosition = "bottom",
+    primaryPosition = "left",
     primaryVisible = true,
-    initialPrimarySize = 180,
+    initialPrimarySize = "50%",
     minPrimarySize = 20,
     secondaryPanel,
     secondaryVisible = true,

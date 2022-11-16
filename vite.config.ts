@@ -15,6 +15,8 @@ export default defineConfig({
     alias: {
       '@': path.join(__dirname, 'src'),
       'styles': path.join(__dirname, 'src/assets/styles'),
+      '@messaging': path.join(__dirname, 'common/messaging'),
+      '@state': path.join(__dirname, 'common/state'),
     },
   },
   plugins: [

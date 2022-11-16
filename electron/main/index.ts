@@ -15,6 +15,7 @@ process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_E
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
+import { setupMenu } from '../app-menu'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -46,6 +47,8 @@ async function createWindow() {
     },
   })
 
+  setupMenu();
+  
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
     win.loadURL(url)
     // Open devTool if the app is not packaged
@@ -86,7 +89,7 @@ app.on('activate', () => {
   if (allWindows.length) {
     allWindows[0].focus()
   } else {
-    createWindow()
+    createWindow();
   }
 })
 
@@ -104,6 +107,6 @@ ipcMain.handle('open-win', (event, arg) => {
     childWindow.loadFile(indexHtml, { hash: arg })
   } else {
     childWindow.loadURL(`${url}#${arg}`)
-    // childWindow.webContents.openDevTools({ mode: "undocked", activate: true })
+    childWindow.webContents.openDevTools({ mode: "undocked", activate: true })
   }
 })
