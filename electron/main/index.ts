@@ -1,21 +1,13 @@
-// The built directory structure
-//
-// ├─┬ dist-electron
-// │ ├─┬ main
-// │ │ └── index.js    > Electron-Main
-// │ └─┬ preload
-// │   └── index.js    > Preload-Scripts
-// ├─┬ dist
-// │ └── index.html    > Electron-Renderer
-//
 process.env.DIST_ELECTRON = join(__dirname, '../..')
 process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
 process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_ELECTRON, '../public')
 
+import { RequestMessage } from '@messaging/message-types'
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import { setupMenu } from '../app-menu'
+import { processEmuToMainMessages } from '../EmuToMainProcessor'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -33,9 +25,10 @@ let win: BrowserWindow | null = null
 const preload = join(__dirname, '../preload/index.js')
 const url = process.env.VITE_DEV_SERVER_URL
 const indexHtml = join(process.env.DIST, 'index.html')
+let emuWindow: BrowserWindow | undefined;
 
 async function createWindow() {
-  win = new BrowserWindow({
+  emuWindow = new BrowserWindow({
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.svg'),
     minWidth: 480,
@@ -93,20 +86,11 @@ app.on('activate', () => {
   }
 })
 
-// new window example arg: new windows url
-ipcMain.handle('open-win', (event, arg) => {
-  const childWindow = new BrowserWindow({
-    webPreferences: {
-      preload,
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-  })
-
-  if (app.isPackaged) {
-    childWindow.loadFile(indexHtml, { hash: arg })
-  } else {
-    childWindow.loadURL(`${url}#${arg}`)
-    childWindow.webContents.openDevTools({ mode: "undocked", activate: true })
+// --- This channel forwards renderer state (Emu or IDE) to the other renderer (IDE or Emu)
+ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
+  const response = await processEmuToMainMessages(msg);
+  response.correlationId = msg.correlationId;
+  if (emuWindow?.isDestroyed() === false) {
+    emuWindow.webContents.send("MainToEmu", response);
   }
-})
+});

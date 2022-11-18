@@ -1,4 +1,4 @@
-import { defaultResponse, RequestMessage, ResponseMessage } from "@messaging/message-types";
+import { defaultResponse, RequestMessage, ResponseMessage } from "../common/messaging/message-types";
 
 /**
  * Process the messages coming from the emulator to the main process

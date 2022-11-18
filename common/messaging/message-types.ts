@@ -1,4 +1,4 @@
-import { Action } from "@/common/state/Action";
+import { Action } from "@state/Action";
 
 /**
  * Potential message sources
