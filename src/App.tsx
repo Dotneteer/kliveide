@@ -13,9 +13,12 @@ import { uiLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { RequestMessage } from "@messaging/message-types";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
+import { useSelector } from "./emu/StoreProvider";
 
 const App = () => {
   const mounted = useRef(false);
+  const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
+  const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
 
   useEffect(() => {
       if (mounted.current) return;
@@ -30,7 +33,7 @@ const App = () => {
   });
   return (
     <div className={styles.app}>
-      <Toolbar />
+      {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
         <ActivityBar />
         <SiteBar />
@@ -52,7 +55,7 @@ const App = () => {
           }
         />
       </div>
-      <StatusBar />
+      {showStatusBar && <StatusBar />}
     </div>
   )
 }

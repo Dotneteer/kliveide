@@ -7,7 +7,7 @@ import {
 } from "electron";
 import { __DARWIN__ } from "./electron-utils";
 import { mainStore } from "./main-store";
-import { emuShowToolbarAction } from "../common/state/actions";
+import { emuShowStatusBarAction, emuShowToolbarAction } from "../common/state/actions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_ACTIVITY_BAR = "toggle_activity_bar";
@@ -22,6 +22,7 @@ const SET_IDE_VIEW = "set_ide_view";
  */
 export function setupMenu(): void {
     const template: (MenuItemConstructorOptions | MenuItem)[] = [];
+    const appState = mainStore.getState();
 
     /**
      * Application system menu on MacOS
@@ -83,7 +84,7 @@ export function setupMenu(): void {
             id: TOGGLE_TOOLBAR,
             label: "Show toolbar",
             type: "checkbox",
-            checked: false,
+            checked: appState.emuViewOptions.showToolbar,
             click: (mi) => {
                 mainStore.dispatch(emuShowToolbarAction(mi.checked));
             },
@@ -92,9 +93,9 @@ export function setupMenu(): void {
             id: TOGGLE_STATUS_BAR,
             label: "Show status bar",
             type: "checkbox",
-            checked: false,
+            checked: appState.emuViewOptions.showStatusBar,
             click: (mi) => {
-                // TODO
+                mainStore.dispatch(emuShowStatusBarAction(mi.checked));
             },
         },
         { type: "separator" },
