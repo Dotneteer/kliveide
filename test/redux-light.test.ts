@@ -1,7 +1,7 @@
 import "mocha";
 import { expect } from "expect";
 import createAppStore from "../common/state/store";
-import { emuShowToolbarAction, uiLoadedAction } from "../common/state/actions";
+import { showToolbarAction, uiLoadedAction } from "../common/state/actions";
 import { Action } from "../common/state/Action";
 
 describe("AppState management", () => {
@@ -40,7 +40,7 @@ describe("AppState management", () => {
     it("EmuViewOptions reducer works", ()=> {
         const store = createAppStore();
 
-        store.dispatch(emuShowToolbarAction(false));
+        store.dispatch(showToolbarAction(false));
 
         const state = store.getState();
         expect(state.emuViewOptions.showToolbar).toBe(false);
@@ -53,7 +53,7 @@ describe("AppState management", () => {
         const unsubscribe = store.subscribe(() => {
             counter++;
         })
-        store.dispatch(emuShowToolbarAction(false));
+        store.dispatch(showToolbarAction(false));
         unsubscribe();
 
         const state = store.getState();
@@ -65,7 +65,7 @@ describe("AppState management", () => {
         const store = createAppStore();
 
         store.dispatch(uiLoadedAction(true));
-        store.dispatch(emuShowToolbarAction(false));
+        store.dispatch(showToolbarAction(false));
 
         const state = store.getState();
         expect(state.uiLoaded).toBe(true);
@@ -80,7 +80,7 @@ describe("AppState management", () => {
             counter++;
         })
         store.dispatch(uiLoadedAction(true));
-        store.dispatch(emuShowToolbarAction(false));
+        store.dispatch(showToolbarAction(false));
         unsubscribe();
 
         const state = store.getState();
@@ -100,7 +100,7 @@ describe("AppState management", () => {
             counter++;
         })
         store.dispatch(uiLoadedAction(true));
-        store.dispatch(emuShowToolbarAction(false));
+        store.dispatch(showToolbarAction(false));
         unsubscribe();
 
         const state = store.getState();

@@ -10,22 +10,42 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
     payload: { flag },
 });
 
-export const emuShowToolbarAction: ActionCreator = (flag: boolean) => ({
-    type: "EMU_SHOW_TOOLBAR",
+export const showToolbarAction: ActionCreator = (flag: boolean) => ({
+    type: "SHOW_TOOLBAR",
     payload: { flag },
 });
 
-export const emuShowStatusBarAction: ActionCreator = (flag: boolean) => ({
-    type: "EMU_SHOW_STATUSBAR",
+export const showStatusBarAction: ActionCreator = (flag: boolean) => ({
+    type: "SHOW_STATUSBAR",
     payload: { flag },
 });
 
-export const emuShowKeyboardAction: ActionCreator = (flag: boolean) => ({
-    type: "EMU_SHOW_KEYBOARD",
+export const useEmuViewAction: ActionCreator = (flag: boolean) => ({
+    type: "USE_EMU_VIEW",
     payload: { flag },
 });
 
-export const emuShowFrameInfoAction: ActionCreator = (flag: boolean) => ({
-    type: "EMU_SHOW_FRAME_INFO",
+export const showSideBarAction: ActionCreator = (flag: boolean) => ({
+    type: "SHOW_SIDE_BAR",
+    payload: { flag },
+});
+
+export const primaryBarOnRightAction: ActionCreator = (flag: boolean) => ({
+    type: "PRIMAR_BAR_ON_RIGHT",
+    payload: { flag },
+});
+
+export const showToolPanelsAction: ActionCreator = (flag: boolean) => ({
+    type: "SHOW_TOOL_PANELS",
+    payload: { flag },
+});
+
+export const showKeyboardAction: ActionCreator = (flag: boolean) => ({
+    type: "SHOW_KEYBOARD",
+    payload: { flag },
+});
+
+export const showFrameInfoAction: ActionCreator = (flag: boolean) => ({
+    type: "SHOW_FRAME_INFO",
     payload: { flag },
 });

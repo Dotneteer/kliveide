@@ -27,10 +27,14 @@ export const SplitPanel = ({
         : styles.horizontal;
     const primaryDim = primaryPosition === "left" || primaryPosition === "right"
         ? "width" : "height";
-    return <div className={[styles.component, containerClass].join(" ")}>
-        <div className={primaryClass} style={{[primaryDim]: resolveSize(initialPrimarySize)}}>{primaryPanel}</div>
-        <div className={styles.secondary}>{secondaryPanel}</div>
-    </div>
+    const primarySize = secondaryVisible ? resolveSize(initialPrimarySize) : "100%";
+    return (
+        <div className={[styles.component, containerClass].join(" ")}>
+            {primaryVisible && <div className={primaryClass} style={{[primaryDim]: primarySize}}>
+                {primaryPanel}
+            </div>}
+            {secondaryVisible && <div className={styles.secondary}>{secondaryPanel}</div>}
+    </div>)
 
     function resolveSize(size: string | number) {
         return typeof size === "string" ? size : `${size}px`;

@@ -16,10 +16,20 @@ import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { useSelector } from "./emu/StoreProvider";
 
 const App = () => {
+  // --- Indicate the App has been loaded
   const mounted = useRef(false);
+
+  // --- Visual state
   const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
   const showStatusBar = useSelector(s => s.emuViewOptions.showStatusBar);
+  const useEmuView = useSelector(s => s.emuViewOptions.useEmuView);
+  const showSideBar = useSelector(s => s.emuViewOptions.showSidebar);
+  const showToolPanels = useSelector(s => s.emuViewOptions.showToolPanels);
 
+  const activityOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 3 : 0;
+  const sideBarOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 2 : 0;
+
+  // --- Signify that the UI has been loaded
   useEffect(() => {
       if (mounted.current) return;
 
@@ -31,28 +41,25 @@ const App = () => {
           mounted.current = false;
       }
   });
+
   return (
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
-        <ActivityBar />
-        <SiteBar />
-        <SplitPanel 
+        {!useEmuView && <ActivityBar order={activityOrder} />}
+        {!useEmuView && showSideBar && <SiteBar order={sideBarOrder} />}
+        <SplitPanel
           primaryPosition="bottom"
           primaryPanel={ 
             <SplitPanel 
             primaryPosition="top"
-            primaryPanel={ 
-              <EmulatorArea />
-            }
-            secondaryPanel={ 
-              <DocumentArea />
-            }
+            primaryPanel={<EmulatorArea />}
+            secondaryPanel={<DocumentArea />}
+            secondaryVisible={!useEmuView}
           />
           }
-          secondaryPanel={ 
-            <ToolArea />
-          }
+          secondaryPanel={<ToolArea />}
+          secondaryVisible={!useEmuView && showToolPanels}
         />
       </div>
       {showStatusBar && <StatusBar />}
