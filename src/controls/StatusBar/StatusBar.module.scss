@@ -1,5 +1,6 @@
+@import "styles/core.scss";
+
 .component {
-    height: 40px;
-    width: 100%;
+    @include fix-height-panel(40px);
     background: cyan;
 }

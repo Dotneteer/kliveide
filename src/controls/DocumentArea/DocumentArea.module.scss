@@ -1,0 +1,6 @@
+@import "styles/core.scss";
+
+.component {
+    @include fill-parent-flex;
+    background: #a0a0a0;
+}

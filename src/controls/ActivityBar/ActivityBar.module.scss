@@ -1,5 +1,6 @@
+@import "styles/core.scss";
+
 .component {
-    height: 100%;
-    width: 40px;
+    @include fix-width-panel(40px);
     background: green;
 }
