@@ -6,6 +6,8 @@ import {
     MenuItemConstructorOptions 
 } from "electron";
 import { __DARWIN__ } from "./electron-utils";
+import { mainStore } from "./main-store";
+import { emuShowToolbarAction } from "../common/state/actions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_ACTIVITY_BAR = "toggle_activity_bar";
@@ -81,7 +83,7 @@ export function setupMenu(): void {
             type: "checkbox",
             checked: false,
             click: (mi) => {
-                // TODO
+                mainStore.dispatch(emuShowToolbarAction(mi.checked));
             },
         },
         {

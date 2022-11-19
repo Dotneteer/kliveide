@@ -8,6 +8,7 @@ import { release } from 'os'
 import { join } from 'path'
 import { setupMenu } from '../app-menu'
 import { processEmuToMainMessages } from '../EmuToMainProcessor'
+import { registerMainToEmuMessenger } from '../MainToEmuMessenger'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -20,14 +21,14 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0)
 }
 
-let win: BrowserWindow | null = null
+let emuWindow: BrowserWindow | null = null
 // Here, you can also use other preload
 const preload = join(__dirname, '../preload/index.js')
 const url = process.env.VITE_DEV_SERVER_URL
 const indexHtml = join(process.env.DIST, 'index.html')
-let emuWindow: BrowserWindow | undefined;
 
 async function createWindow() {
+  // --- Create the emulator window
   emuWindow = new BrowserWindow({
     title: 'Main window',
     icon: join(process.env.PUBLIC, 'favicon.svg'),
@@ -40,23 +41,27 @@ async function createWindow() {
     },
   })
 
+  // --- Initialize messaging from the main process to the emulator window
+  registerMainToEmuMessenger(emuWindow);
+
+  // --- Prepare the main menu
   setupMenu();
   
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
-    win.loadURL(url)
+    emuWindow.loadURL(url)
     // Open devTool if the app is not packaged
-    win.webContents.openDevTools()
+    emuWindow.webContents.openDevTools()
   } else {
-    win.loadFile(indexHtml)
+    emuWindow.loadFile(indexHtml)
   }
 
   // Test actively push message to the Electron-Renderer
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', new Date().toLocaleString())
+  emuWindow.webContents.on('did-finish-load', () => {
+    emuWindow?.webContents.send('main-process-message', new Date().toLocaleString())
   })
 
   // Make all links open with the browser, not with the application
-  win.webContents.setWindowOpenHandler(({ url }) => {
+  emuWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https:')) shell.openExternal(url)
     return { action: 'deny' }
   })
@@ -65,15 +70,15 @@ async function createWindow() {
 app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
-  win = null
+  emuWindow = null
   if (process.platform !== 'darwin') app.quit()
 })
 
 app.on('second-instance', () => {
-  if (win) {
+  if (emuWindow) {
     // Focus on the main window if the user tried to open another
-    if (win.isMinimized()) win.restore()
-    win.focus()
+    if (emuWindow.isMinimized()) emuWindow.restore()
+    emuWindow.focus()
   }
 })
 
@@ -86,11 +91,11 @@ app.on('activate', () => {
   }
 })
 
-// --- This channel forwards renderer state (Emu or IDE) to the other renderer (IDE or Emu)
+// --- This channel processes emulator requests and sends the results back
 ipcMain.on("EmuToMain", async (_ev, msg: RequestMessage) => {
   const response = await processEmuToMainMessages(msg);
   response.correlationId = msg.correlationId;
   if (emuWindow?.isDestroyed() === false) {
-    emuWindow.webContents.send("MainToEmu", response);
+    emuWindow.webContents.send("EmuToMainResponse", response);
   }
 });

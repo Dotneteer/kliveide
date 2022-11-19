@@ -7,10 +7,10 @@ import { Action } from "@state/Action";
 
  export type Channel =
     | "MainToEmu"
-    | "MainToIde"
+    | "MainToEmuResponse"
     | "EmuToMain"
-    | "IdeToMain";
-
+    | "EmuToMainResponse"
+    
 /**
  * The common base for all message types
  */

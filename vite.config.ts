@@ -25,6 +25,7 @@ export default defineConfig({
       include: [
         'electron',
         'preload',
+        'common',
       ],
       transformOptions: {
         sourcemap: !!process.env.VSCODE_DEBUG,
