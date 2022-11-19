@@ -14,6 +14,8 @@ const TOGGLE_ACTIVITY_BAR = "toggle_activity_bar";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
 const TOGGLE_TOOLBAR = "toggle_toolbar";
 const TOGGLE_STATUS_BAR = "toggle_status_bar";
+const SET_EMULATOR_VIEW = "set_emulator_view";
+const SET_IDE_VIEW = "set_ide_view";
 
 /**
  * Creates and sets the main menu of the app
@@ -91,6 +93,21 @@ export function setupMenu(): void {
             label: "Show status bar",
             type: "checkbox",
             checked: false,
+            click: (mi) => {
+                // TODO
+            },
+        },
+        { type: "separator" },
+        {
+            id: SET_EMULATOR_VIEW,
+            label: "Set emulator view",
+            click: (mi) => {
+                // TODO
+            },
+        },
+        {
+            id: SET_IDE_VIEW,
+            label: "Set IDE view",
             click: (mi) => {
                 // TODO
             },

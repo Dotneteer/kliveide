@@ -35,10 +35,10 @@ const App = () => {
         <ActivityBar />
         <SiteBar />
         <SplitPanel 
-          primaryPosition="top"
+          primaryPosition="bottom"
           primaryPanel={ 
             <SplitPanel 
-            primaryPosition="left"
+            primaryPosition="top"
             primaryPanel={ 
               <EmulatorArea />
             }
