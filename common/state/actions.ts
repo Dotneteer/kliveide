@@ -31,12 +31,17 @@ export const showSideBarAction: ActionCreator = (flag: boolean) => ({
 });
 
 export const primaryBarOnRightAction: ActionCreator = (flag: boolean) => ({
-    type: "PRIMAR_BAR_ON_RIGHT",
+    type: "PRIMARY_BAR_ON_RIGHT",
     payload: { flag },
 });
 
 export const showToolPanelsAction: ActionCreator = (flag: boolean) => ({
     type: "SHOW_TOOL_PANELS",
+    payload: { flag },
+});
+
+export const toolPanelsOnTopAction: ActionCreator = (flag: boolean) => ({
+    type: "TOOLS_ON_TOP",
     payload: { flag },
 });
 

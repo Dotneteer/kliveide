@@ -28,6 +28,7 @@ const App = () => {
 
   const activityOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 3 : 0;
   const sideBarOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 2 : 0;
+  const primaryPanelPos = useSelector(s => s.emuViewOptions.toolPanelsOnTop) ? "bottom" : "top";
 
   // --- Signify that the UI has been loaded
   useEffect(() => {
@@ -49,10 +50,10 @@ const App = () => {
         {!useEmuView && <ActivityBar order={activityOrder} />}
         {!useEmuView && showSideBar && <SiteBar order={sideBarOrder} />}
         <SplitPanel
-          primaryPosition="bottom"
+          primaryPosition={primaryPanelPos}
           primaryPanel={ 
             <SplitPanel 
-            primaryPosition="top"
+            primaryPosition="left"
             primaryPanel={<EmulatorArea />}
             secondaryPanel={<DocumentArea />}
             secondaryVisible={!useEmuView}

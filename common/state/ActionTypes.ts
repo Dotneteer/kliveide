@@ -13,6 +13,6 @@
 
     USE_EMU_VIEW: null;
     SHOW_SIDE_BAR: null;
-    PRIMAR_BAR_ON_RIGHT: null;
+    PRIMARY_BAR_ON_RIGHT: null;
     TOOLS_ON_TOP: null;
 }

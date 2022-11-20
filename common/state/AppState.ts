@@ -16,6 +16,7 @@ export type EmuViewOptions = {
     useEmuView?: boolean;
     primaryBarOnRight?: boolean;
     showToolPanels?: boolean;
+    toolPanelsOnTop?: boolean;
     showFrameInfo?: boolean;
     showKeyboard?: boolean;
     showSidebar?: boolean;
@@ -33,6 +34,7 @@ export const initialAppState: AppState = {
         useEmuView: false,
         primaryBarOnRight: false,
         showToolPanels: true,
+        toolPanelsOnTop: false,
         showFrameInfo: true,
         showKeyboard: false,
         showSidebar: true

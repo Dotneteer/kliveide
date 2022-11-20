@@ -13,7 +13,8 @@ import {
     primaryBarOnRightAction, 
     showSideBarAction, 
     useEmuViewAction, 
-    showToolPanelsAction} from "../common/state/actions";
+    showToolPanelsAction,
+    toolPanelsOnTopAction} from "../common/state/actions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -23,6 +24,7 @@ const TOGGLE_STATUS_BAR = "toggle_status_bar";
 const SET_EMULATOR_VIEW = "set_emulator_view";
 const SET_IDE_VIEW = "set_ide_view";
 const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
+const TOGGLE_TOOLS_TOP = "tool_panels_top"
 
 /**
  * Creates and sets the main menu of the app
@@ -134,6 +136,7 @@ export function setupMenu(): void {
             label: "Show the Side Bar",
             type: "checkbox",
             checked: appState.emuViewOptions.showStatusBar,
+            enabled: !appState.emuViewOptions.useEmuView,
             click: (mi) => {
                 mainStore.dispatch(showSideBarAction(mi.checked));
             },
@@ -143,6 +146,7 @@ export function setupMenu(): void {
             label: "Move Primary Side Bar Right",
             type: "checkbox",
             checked: appState.emuViewOptions.primaryBarOnRight,
+            enabled: !appState.emuViewOptions.useEmuView,
             click: (mi) => {
                 mainStore.dispatch(primaryBarOnRightAction(mi.checked));
             },
@@ -152,8 +156,19 @@ export function setupMenu(): void {
             label: "Show Tool Panels",
             type: "checkbox",
             checked: appState.emuViewOptions.showToolPanels,
+            enabled: !appState.emuViewOptions.useEmuView,
             click: (mi) => {
                 mainStore.dispatch(showToolPanelsAction(mi.checked));
+            },
+        },
+        {
+            id: TOGGLE_TOOLS_TOP,
+            label: "Move Tool Panels Top",
+            type: "checkbox",
+            checked: appState.emuViewOptions.toolPanelsOnTop,
+            enabled: !appState.emuViewOptions.useEmuView,
+            click: (mi) => {
+                mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
             },
         },
     ];
@@ -165,4 +180,19 @@ export function setupMenu(): void {
 
     const menu = Menu.buildFromTemplate(template);
     Menu.setApplicationMenu(menu);
+}
+
+/**
+ * Update the state of menu items whenver the app state changes.
+ */
+export function updateMenuState(): void {
+    const appState = mainStore.getState();
+    const getMenuItem = (id: string) => Menu.getApplicationMenu().getMenuItemById(id);
+
+    // --- Disable IDE-related items in EMU mode
+    const enableIdeMenus = !appState.emuViewOptions.useEmuView;
+    getMenuItem(TOGGLE_PRIMARY_BAR_RIGHT).enabled = enableIdeMenus;
+    getMenuItem(TOGGLE_SIDE_BAR).enabled = enableIdeMenus;
+    getMenuItem(TOGGLE_TOOL_PANELS).enabled = enableIdeMenus;
+    getMenuItem(TOGGLE_TOOLS_TOP).enabled = enableIdeMenus;
 }

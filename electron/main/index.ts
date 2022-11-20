@@ -3,11 +3,13 @@ process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
 process.env.PUBLIC = app.isPackaged ? process.env.DIST : join(process.env.DIST_ELECTRON, '../public')
 
 import { RequestMessage } from '@messaging/message-types'
+import { Unsubscribe } from '@state/redux-light'
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
-import { setupMenu } from '../app-menu'
+import { setupMenu, updateMenuState } from '../app-menu'
 import { processEmuToMainMessages } from '../EmuToMainProcessor'
+import { mainStore } from '../main-store'
 import { registerMainToEmuMessenger } from '../MainToEmuMessenger'
 
 // Disable GPU Acceleration for Windows 7
@@ -21,7 +23,9 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0)
 }
 
-let emuWindow: BrowserWindow | null = null
+let emuWindow: BrowserWindow | null = null;
+let storeUnsubscribe: Unsubscribe | undefined;
+
 // Here, you can also use other preload
 const preload = join(__dirname, '../preload/index.js')
 const url = process.env.VITE_DEV_SERVER_URL
@@ -44,9 +48,12 @@ async function createWindow() {
   // --- Initialize messaging from the main process to the emulator window
   registerMainToEmuMessenger(emuWindow);
 
-  // --- Prepare the main menu
+  // --- Prepare the main menu. Update items on application state change
   setupMenu();
-  
+  storeUnsubscribe = mainStore.subscribe(() => {
+    updateMenuState();
+  });
+
   if (process.env.VITE_DEV_SERVER_URL) { // electron-vite-vue#298
     emuWindow.loadURL(url)
     // Open devTool if the app is not packaged
@@ -70,6 +77,7 @@ async function createWindow() {
 app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
+  storeUnsubscribe();
   emuWindow = null
   if (process.platform !== 'darwin') app.quit()
 })
