@@ -1,5 +1,5 @@
 import { useResizeObserver } from "../../hooks/useResizeObserver";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import styles from "./SplitPanel.module.scss";
 
 type Location = "left" | "right" | "top" | "bottom";
@@ -16,7 +16,7 @@ type SplitPanelProps = {
     secondaryPanel?: JSX.Element;
     secondaryVisible?: boolean;
     minSecondarySize?: number;
-    splitterSize?: number;
+    splitterThickness?: number;
 }
 
 /**
@@ -32,20 +32,24 @@ export const SplitPanel = ({
     secondaryPanel,
     secondaryVisible = true,
     minSecondarySize = 20,
-    splitterSize = 6
+    splitterThickness = 6
 }: SplitPanelProps) => {
     // --- Referencies we need to handling the splitter within the panel
     const mainContainer = useRef<HTMLDivElement>(null);
     const primaryContainer = useRef<HTMLDivElement>(null);
 
-    const [position, setPosition] = useState(0);
-    const [containerSize, setContainerSize] = useState(0);
+    const [primarySize, setPrimarySize] = useState<string | number>(
+        secondaryVisible ? resolveSize(initialPrimarySize) : "100%");
+    const [splitterPosition, setSplitterPosition] = useState(0);
+    const [anchorPosition, setAnchorPosition] = useState(0);
+    const [splitterSize, setSplitterSize] = useState(0);
+    const [splitterRange, setSplitterRange] = useState(0);
 
     // --- Calculate properties used for rendering the component
+    const horizontal = isHorizontal(primaryLocation);
     const containerClass = styles[primaryLocation];
-    const primaryClass = isHorizontal(primaryLocation) ? styles.vertical : styles.horizontal;
-    const primaryDim = isHorizontal(primaryLocation) ? "width" : "height";
-    const primarySize = secondaryVisible ? resolveSize(initialPrimarySize) : "100%";
+    const primaryClass = horizontal ? styles.vertical : styles.horizontal;
+    const primaryDim = horizontal ? "width" : "height";
     const splitterVisible = !!primaryPanel 
         && !!primaryVisible 
         && !!secondaryPanel 
@@ -54,16 +58,28 @@ export const SplitPanel = ({
     // --- Respond to container size changes
     useResizeObserver(mainContainer, () => {
         // --- Set the new container size, we will use it as the splitter's size
-        setContainerSize(isHorizontal(primaryLocation)
+        setSplitterSize(horizontal
             ? mainContainer.current?.clientHeight ?? 0
             : mainContainer.current?.clientWidth ?? 0);
 
+        setSplitterRange(horizontal
+            ? mainContainer.current?.clientWidth ?? 0
+            : mainContainer.current?.clientHeight ?? 0);
+
+        // --- Set the new anchor position of the splitter
+        setAnchorPosition({
+            left: mainContainer.current.offsetLeft ?? 0,
+            right: (mainContainer.current.offsetLeft ?? 0) + (mainContainer.current.offsetWidth ?? 0),
+            top: mainContainer.current.offsetTop ?? 0,
+            bottom: (mainContainer.current.offsetTop ?? 0) + (mainContainer.current.offsetHeight ?? 0)
+        }[primaryLocation])
+
         // --- Set the new splitter position
-        setPosition(isHorizontal(primaryLocation)
+        setSplitterPosition(horizontal
             ? (mainContainer.current.offsetLeft ?? 0) 
-                + (primaryContainer.current?.clientWidth ?? 0) - splitterSize/2
+                + (primaryContainer.current?.clientWidth ?? 0) - splitterThickness/2
             : (mainContainer.current.offsetTop ?? 0) 
-                + (primaryContainer.current?.clientHeight ?? 0) - splitterSize/2);
+                + (primaryContainer.current?.clientHeight ?? 0) - splitterThickness/2);
     });
 
     return (
@@ -82,49 +98,108 @@ export const SplitPanel = ({
             }
             {splitterVisible && 
                 <Splitter 
-                    size={splitterSize}
+                    thickness={splitterThickness}
                     location={primaryLocation}
-                    position={position}
-                    containerSize={containerSize}
-                    minSize={minPrimarySize}
-                    minRemaining={minSecondarySize} />}
+                    anchorPos={anchorPosition}
+                    position={splitterPosition}
+                    splitterSize={splitterSize}
+                    minRange={minPrimarySize}
+                    maxRange={splitterRange - minSecondarySize} 
+                    onSplitterMoved={(newPos) => setPrimarySize(newPos) } />}
         </div>
     );
 
 }
 
 type SplitterProps = {
-    size?: number,
+    thickness?: number,
     location: Location,
+    anchorPos: number,
     position: number,
-    containerSize: number,
-    minSize: number;
-    minRemaining: number; 
+    splitterSize: number,
+    minRange: number;
+    maxRange: number;
+    onSplitterMoved?: (newPos: number) =>void;
 }
 
 const Splitter = ({
-    size = 8,
+    thickness = 8,
     location,
     position,
-    containerSize,
-    minSize,
-    minRemaining
+    anchorPos,
+    splitterSize,
+    minRange,
+    maxRange,
+    onSplitterMoved
 }: SplitterProps) => {
-
-    const sizeDim = isHorizontal(location) ? "width" : "height";
-    const containerDim = isHorizontal(location) ? "height" : "width";
-
+    const horizontal = isHorizontal(location);
+    
+    // --- Functions used while moving
+    const gripPosition = useRef(0);
+    const _move = (e: MouseEvent) => move(e);
+    const _endMove = () => endMove();
+    
     return (
         <div 
-            className={[styles.splitter].join(" ")}
+            className={styles.splitter}
             style={{
-                [sizeDim]: `${size}px`, 
-                [containerDim]: `${containerSize}px`,
-                [location]: `${position}px`
-            }} />
+                [horizontal ? "width" : "height"]: `${thickness}px`, 
+                [horizontal ? "height" : "width"]: `${splitterSize}px`,
+                [location]: `${position}px`,
+                cursor: horizontal ? "ew-resize": "ns-resize"
+            }} 
+            onMouseDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (e.button === 0) {
+                  startMove(e);
+                }
+            }}
+            onMouseUp={() => endMove()} />
     );
+
+    // --- Sign the start of resizing
+    function startMove(e: React.MouseEvent): void {
+        // --- Store the current grip position
+        gripPosition.current = horizontal ? e.clientX : e.clientY;
+
+        // --- Capture mouse move via window events
+        window.addEventListener("mouseup", _endMove);
+        window.addEventListener("mousemove", _move);
+        document.body.style.cursor = horizontal ? "ew-resize" : "ns-resize";
+    }
+
+    // --- Move the splitter and notify the splitter panel about size changes
+    function move(e: MouseEvent): void {
+        const delta = (horizontal ? e.clientX : e.clientY) - gripPosition.current;
+        const moveDir = location === "left" || location === "top" ? 1 : -1;
+        let newPrimarySize = moveDir * (gripPosition.current + delta - anchorPos);
+        if (newPrimarySize < minRange) {
+            newPrimarySize = minRange;
+        }
+        if (newPrimarySize > maxRange) {
+            newPrimarySize = maxRange;
+        }
+        if (onSplitterMoved) {
+            onSplitterMoved(newPrimarySize);
+        }
+        console.log(newPrimarySize);
+    }
+
+    // --- End moving the splitter
+    function endMove(): void {
+        // --- Release the captured mouse
+        window.removeEventListener("mouseup", _endMove);
+        window.removeEventListener("mousemove", _move);
+        document.body.style.cursor = "default";
+    }
+
+
 }
 
+/**
+ * Determines if a particular position is horizontal
+ */
 function isHorizontal(pos: Location): boolean {
     return pos === "left" || pos === "right"
 }
