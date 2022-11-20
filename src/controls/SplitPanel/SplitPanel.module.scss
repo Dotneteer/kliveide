@@ -31,3 +31,22 @@
 .secondary {
     @include fill-parent-flex;
 }
+
+.splitter {
+    position: absolute;
+    z-index: 10;
+    background: green;
+    opacity: 0.5;
+
+    &:hover {
+        background: red;
+    }
+}
+
+.splitterHor {
+    height: 100%;
+}
+
+.splitterVert {
+    width: 100%;
+}

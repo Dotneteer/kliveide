@@ -28,7 +28,8 @@ const App = () => {
 
   const activityOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 3 : 0;
   const sideBarOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 2 : 0;
-  const primaryPanelPos = useSelector(s => s.emuViewOptions.toolPanelsOnTop) ? "bottom" : "top";
+  const primaryBarsPos = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? "right" : "left";
+  const docPanelsPos = useSelector(s => s.emuViewOptions.toolPanelsOnTop) ? "bottom" : "top";
 
   // --- Signify that the UI has been loaded
   useEffect(() => {
@@ -47,20 +48,31 @@ const App = () => {
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
-        {!useEmuView && <ActivityBar order={activityOrder} />}
-        {!useEmuView && showSideBar && <SiteBar order={sideBarOrder} />}
         <SplitPanel
-          primaryPosition={primaryPanelPos}
-          primaryPanel={ 
-            <SplitPanel 
-            primaryPosition="left"
-            primaryPanel={<EmulatorArea />}
-            secondaryPanel={<DocumentArea />}
-            secondaryVisible={!useEmuView}
-          />
+          primaryLocation={primaryBarsPos}
+          primaryPanel={
+            <>
+              <ActivityBar order={activityOrder} />
+              {showSideBar && <SiteBar order={sideBarOrder} />}
+            </>
           }
-          secondaryPanel={<ToolArea />}
-          secondaryVisible={!useEmuView && showToolPanels}
+          primaryVisible={!useEmuView}
+          initialPrimarySize="auto"
+          secondaryPanel={
+            <SplitPanel
+              primaryLocation={docPanelsPos}
+              primaryPanel={ 
+                <SplitPanel 
+                primaryLocation="left"
+                primaryPanel={<EmulatorArea />}
+                secondaryPanel={<DocumentArea />}
+                secondaryVisible={!useEmuView}
+              />
+              }
+              secondaryPanel={<ToolArea />}
+              secondaryVisible={!useEmuView && showToolPanels}
+            />
+          }
         />
       </div>
       {showStatusBar && <StatusBar />}

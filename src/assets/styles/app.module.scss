@@ -7,10 +7,5 @@
   .mainContent {
     @include fill-parent;
     @include container-for-columns;
-
-    .workbench {
-      @include fill-parent;
-      background: silver;
-    }
   }
 }
