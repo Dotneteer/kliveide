@@ -45,6 +45,11 @@ export const toolPanelsOnTopAction: ActionCreator = (flag: boolean) => ({
     payload: { flag },
 });
 
+export const maximizeToolsAction: ActionCreator = (flag: boolean) => ({
+    type: "MAXIMIZE_TOOLS",
+    payload: { flag },
+});
+
 export const showKeyboardAction: ActionCreator = (flag: boolean) => ({
     type: "SHOW_KEYBOARD",
     payload: { flag },

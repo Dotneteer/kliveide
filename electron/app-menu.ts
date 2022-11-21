@@ -14,7 +14,8 @@ import {
     showSideBarAction, 
     useEmuViewAction, 
     showToolPanelsAction,
-    toolPanelsOnTopAction} from "../common/state/actions";
+    toolPanelsOnTopAction,
+    maximizeToolsAction} from "../common/state/actions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -24,7 +25,8 @@ const TOGGLE_STATUS_BAR = "toggle_status_bar";
 const SET_EMULATOR_VIEW = "set_emulator_view";
 const SET_IDE_VIEW = "set_ide_view";
 const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
-const TOGGLE_TOOLS_TOP = "tool_panels_top"
+const TOGGLE_TOOLS_TOP = "tool_panels_top";
+const MAXIMIZE_TOOLS = "tools_maximize";
 
 /**
  * Creates and sets the main menu of the app
@@ -158,7 +160,11 @@ export function setupMenu(): void {
             checked: appState.emuViewOptions.showToolPanels,
             enabled: !appState.emuViewOptions.useEmuView,
             click: (mi) => {
-                mainStore.dispatch(showToolPanelsAction(mi.checked));
+                const checked = mi.checked;
+                mainStore.dispatch(showToolPanelsAction(checked));
+                if (checked) {
+                    mainStore.dispatch(maximizeToolsAction(false));
+                }
             },
         },
         {
@@ -169,6 +175,20 @@ export function setupMenu(): void {
             enabled: !appState.emuViewOptions.useEmuView,
             click: (mi) => {
                 mainStore.dispatch(toolPanelsOnTopAction(mi.checked));
+            },
+        },
+        {
+            id: MAXIMIZE_TOOLS,
+            label: "Maximize Tool Panels",
+            type: "checkbox",
+            checked: appState.emuViewOptions.maximizeTools,
+            enabled: !appState.emuViewOptions.useEmuView,
+            click: (mi) => {
+                const checked = mi.checked;
+                if (checked) {
+                    mainStore.dispatch(showToolPanelsAction(true));
+                }
+                mainStore.dispatch(maximizeToolsAction(checked));
             },
         },
     ];
@@ -192,7 +212,13 @@ export function updateMenuState(): void {
     // --- Disable IDE-related items in EMU mode
     const enableIdeMenus = !appState.emuViewOptions.useEmuView;
     getMenuItem(TOGGLE_PRIMARY_BAR_RIGHT).enabled = enableIdeMenus;
+    getMenuItem(TOGGLE_PRIMARY_BAR_RIGHT).checked = appState.emuViewOptions.primaryBarOnRight;
     getMenuItem(TOGGLE_SIDE_BAR).enabled = enableIdeMenus;
+    getMenuItem(TOGGLE_SIDE_BAR).checked = appState.emuViewOptions.showSidebar;
     getMenuItem(TOGGLE_TOOL_PANELS).enabled = enableIdeMenus;
+    getMenuItem(TOGGLE_TOOL_PANELS).checked = appState.emuViewOptions.showToolPanels;
     getMenuItem(TOGGLE_TOOLS_TOP).enabled = enableIdeMenus;
+    getMenuItem(TOGGLE_TOOLS_TOP).checked = appState.emuViewOptions.toolPanelsOnTop;
+    getMenuItem(MAXIMIZE_TOOLS).enabled = enableIdeMenus;
+    getMenuItem(MAXIMIZE_TOOLS).checked = appState.emuViewOptions.maximizeTools;
 }

@@ -15,4 +15,5 @@
     SHOW_SIDE_BAR: null;
     PRIMARY_BAR_ON_RIGHT: null;
     TOOLS_ON_TOP: null;
+    MAXIMIZE_TOOLS: null;
 }

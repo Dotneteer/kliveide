@@ -25,6 +25,7 @@ const App = () => {
   const useEmuView = useSelector(s => s.emuViewOptions.useEmuView);
   const showSideBar = useSelector(s => s.emuViewOptions.showSidebar);
   const showToolPanels = useSelector(s => s.emuViewOptions.showToolPanels);
+  const maximizeToolPanels = useSelector(s => s.emuViewOptions.maximizeTools);
 
   const activityOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 3 : 0;
   const sideBarOrder = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? 2 : 0;
@@ -48,19 +49,16 @@ const App = () => {
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
+        {!useEmuView && <ActivityBar order={activityOrder} />}
         <SplitPanel
           primaryLocation={primaryBarsPos}
-          primaryPanel={
-            <>
-              <ActivityBar order={activityOrder} />
-              {showSideBar && <SiteBar order={sideBarOrder} />}
-            </>
-          }
-          primaryVisible={!useEmuView}
+          primaryPanel={<SiteBar order={sideBarOrder} />}
+          primaryVisible={!useEmuView && showSideBar}
           initialPrimarySize="auto"
           secondaryPanel={
             <SplitPanel
               primaryLocation={docPanelsPos}
+              primaryVisible={!maximizeToolPanels}
               primaryPanel={ 
                 <SplitPanel 
                 primaryLocation="left"

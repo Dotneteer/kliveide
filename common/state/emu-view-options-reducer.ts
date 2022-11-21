@@ -20,6 +20,8 @@ import { EmuViewOptions } from "./AppState";
             return {...state, showToolPanels: payload?.flag}
         case "TOOLS_ON_TOP":
             return {...state, toolPanelsOnTop: payload?.flag}
+        case "MAXIMIZE_TOOLS":
+            return {...state, maximizeTools: payload?.flag}
         case "SHOW_KEYBOARD":
             return {...state, showKeyboard: payload?.flag}
         case "SHOW_FRAME_INFO":
