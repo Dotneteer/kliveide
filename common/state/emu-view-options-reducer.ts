@@ -6,14 +6,26 @@ import { EmuViewOptions } from "./AppState";
  */
  export function emuViewOptionsReducer(state: EmuViewOptions, {type, payload}: Action): EmuViewOptions {
     switch (type) {
-        case "EMU_SHOW_TOOLBAR":
+        case "SHOW_TOOLBAR":
             return {...state, showToolbar: payload?.flag}
-        case "EMU_SHOW_STATUSBAR":
+        case "SHOW_STATUSBAR":
             return {...state, showStatusBar: payload?.flag}
-        case "EMU_SHOW_KEYBOARD":
-                return {...state, showKeyboard: payload?.flag}
-        case "EMU_SHOW_FRAME_INFO":
-                return {...state, showFrameInfo: payload?.flag}
+        case "USE_EMU_VIEW":
+            return {...state, useEmuView: payload?.flag}
+        case "SHOW_SIDE_BAR":
+            return {...state, showSidebar: payload?.flag}
+        case "PRIMARY_BAR_ON_RIGHT":
+            return {...state, primaryBarOnRight: payload?.flag}
+        case "SHOW_TOOL_PANELS":
+            return {...state, showToolPanels: payload?.flag}
+        case "TOOLS_ON_TOP":
+            return {...state, toolPanelsOnTop: payload?.flag}
+        case "MAXIMIZE_TOOLS":
+            return {...state, maximizeTools: payload?.flag}
+        case "SHOW_KEYBOARD":
+            return {...state, showKeyboard: payload?.flag}
+        case "SHOW_FRAME_INFO":
+            return {...state, showFrameInfo: payload?.flag}
         default:
             return state;
     }

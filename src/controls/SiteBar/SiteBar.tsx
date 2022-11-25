@@ -1,7 +1,11 @@
 import styles from "./SiteBar.module.scss";
 
-export const SiteBar = () => {
-    return <div className={styles.component}>
+type Props = {
+    order?: number
+}
+
+export const SiteBar = ({order}: Props) => {
+    return <div className={styles.component} style={{order}}>
         Sitebar
     </div>
 }

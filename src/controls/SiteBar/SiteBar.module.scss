@@ -1,6 +1,6 @@
 @import "styles/core.scss";
 
 .component {
-    @include fix-width-panel(160px);
+    @include fill-parent-flex;
     background: blue;
 }
