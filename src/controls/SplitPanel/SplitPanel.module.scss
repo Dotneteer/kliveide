@@ -35,11 +35,11 @@
 .splitter {
     position: fixed;
     z-index: 10;
-    background: green;
-    opacity: 0.5;
+    background: transparent;
 
     &:hover {
-        background: red;
+        background: #007aee;
+        opacity: 1.0;
     }
 }
 

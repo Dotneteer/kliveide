@@ -120,21 +120,18 @@ export const SplitPanel = ({
         // --- Set the new splitter position
         const splitterPosValue = {
             left: (mainContainer.current?.offsetLeft ?? 0) 
-                + (primaryContainer.current?.clientWidth ?? 0) 
-                - splitterThickness/2,
+                + (primaryContainer.current?.clientWidth ?? 0),
             right: (primaryContainer.current?.clientWidth ?? 0) 
                 + window.innerWidth 
                 - (mainContainer.current?.offsetLeft ?? 0)
-                - (mainContainer.current?.clientWidth ?? 0)
-                - splitterThickness/2,    
+                - (mainContainer.current?.clientWidth ?? 0),
             top: (mainContainer.current?.offsetTop ?? 0) 
-                + (primaryContainer.current?.clientHeight ?? 0) - splitterThickness/2,
+                + (primaryContainer.current?.clientHeight ?? 0),
             bottom: (primaryContainer.current?.clientHeight ?? 0) 
                 + window.innerHeight
                 - (mainContainer.current?.offsetTop ?? 0)
                 - (mainContainer.current?.clientHeight ?? 0)
-                - splitterThickness/2
-        }[primaryLocation];
+        }[primaryLocation] - splitterThickness/2;
         setSplitterPosition(splitterPosValue);
    });
 
