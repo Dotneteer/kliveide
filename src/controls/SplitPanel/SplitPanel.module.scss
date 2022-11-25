@@ -33,7 +33,7 @@
 }
 
 .splitter {
-    position: absolute;
+    position: fixed;
     z-index: 10;
     background: green;
     opacity: 0.5;

@@ -5,7 +5,7 @@
   @include container-for-rows;
 
   .mainContent {
-    @include fill-parent;
+    @include fill-parent-flex;
     @include container-for-columns;
   }
 }

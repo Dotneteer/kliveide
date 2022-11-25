@@ -8,6 +8,7 @@ type Location = "left" | "right" | "top" | "bottom";
  * The properties of the SplitPanel
  */
 type SplitPanelProps = {
+    id?: string;
     primaryPanel?: JSX.Element;
     primaryLocation?: Location;
     primaryVisible?: boolean
@@ -23,6 +24,7 @@ type SplitPanelProps = {
  * @returns 
  */
 export const SplitPanel = ({
+    id,
     primaryPanel,
     primaryLocation = "left",
     primaryVisible = true,
@@ -92,11 +94,12 @@ export const SplitPanel = ({
 
         setSplitterRange(newSplitterRange);
 
+        let newPrimarySize = 0;
         if (primaryVisible && secondaryVisible) {
             const currentSize = horizontal
                 ? primaryContainer.current?.clientWidth ?? 0
                 : primaryContainer.current?.clientHeight ?? 0;
-            const newPrimarySize = resize(currentSize, minSize, newSplitterRange - minSize);
+            newPrimarySize = resize(currentSize, minSize, newSplitterRange - minSize);
             setPrimarySize(newPrimarySize);
         } else if (!primaryVisible) {
             setPrimarySize(0);
@@ -105,20 +108,35 @@ export const SplitPanel = ({
         }
 
         // --- Set the new anchor position of the splitter
-        setAnchorPosition({
+        const anchorValue = {
             left: mainContainer.current?.offsetLeft ?? 0,
-            right: (mainContainer.current?.offsetLeft ?? 0) + (mainContainer.current?.offsetWidth ?? 0),
+            right: (mainContainer.current?.clientWidth ?? 0) + (mainContainer.current?.offsetLeft ?? 0),
             top: mainContainer.current?.offsetTop ?? 0,
-            bottom: (mainContainer.current?.offsetTop ?? 0) + (mainContainer.current?.offsetHeight ?? 0)
-        }[primaryLocation])
+            bottom: (mainContainer.current?.clientHeight ?? 0) + (mainContainer.current?.offsetTop ?? 0)
+        }[primaryLocation];
+
+        setAnchorPosition(anchorValue);
 
         // --- Set the new splitter position
-        setSplitterPosition(horizontal
-            ? (mainContainer.current?.offsetLeft ?? 0) 
-                + (primaryContainer.current?.clientWidth ?? 0) - splitterThickness/2
-            : (mainContainer.current?.offsetTop ?? 0) 
-                + (primaryContainer.current?.clientHeight ?? 0) - splitterThickness/2);
-    });
+        const splitterPosValue = {
+            left: (mainContainer.current?.offsetLeft ?? 0) 
+                + (primaryContainer.current?.clientWidth ?? 0) 
+                - splitterThickness/2,
+            right: (primaryContainer.current?.clientWidth ?? 0) 
+                + window.innerWidth 
+                - (mainContainer.current?.offsetLeft ?? 0)
+                - (mainContainer.current?.clientWidth ?? 0)
+                - splitterThickness/2,    
+            top: (mainContainer.current?.offsetTop ?? 0) 
+                + (primaryContainer.current?.clientHeight ?? 0) - splitterThickness/2,
+            bottom: (primaryContainer.current?.clientHeight ?? 0) 
+                + window.innerHeight
+                - (mainContainer.current?.offsetTop ?? 0)
+                - (mainContainer.current?.clientHeight ?? 0)
+                - splitterThickness/2
+        }[primaryLocation];
+        setSplitterPosition(splitterPosValue);
+   });
 
     return (
         <div 
