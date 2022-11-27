@@ -1,6 +1,6 @@
 import "mocha";
 import { expect } from "expect";
-import { Z80Cpu } from "../../src/emu/z80/Z80Cpu";
+import { Z80Cpu } from "@/emu/z80/Z80Cpu";
 
 describe("Z80 tests", () => {
     it("Reg A assignment", ()=> {

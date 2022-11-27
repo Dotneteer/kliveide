@@ -212,6 +212,11 @@ export interface IZ80Cpu
     frames: number;
 
     /**
+     * The number of T-states within the current frame
+     */
+    frameTacts: number;
+    
+    /**
      * Get the current frame tact within the machine frame being executed.
      */
     currentFrameTact: number;
@@ -225,12 +230,6 @@ export interface IZ80Cpu
      * Get the number of T-states in a display line (use -1, if this info is not available)
      */
     tactsInDisplayLine: number;
-
-    /**
-     * Set the number of tacts in a machine frame.
-     * @param tacts Number of tacts in a machine frame
-     */
-    setTactsInFrame(tacts: number): void;
 
     /**
      * This flag indicates if bit 3 or 5 of Register F has been updated. We need to keep this value, as we utilize
@@ -402,8 +401,9 @@ export interface IZ80Cpu
 
     /**
      * This method increments the current CPU tacts by N.
+     * @param n Number of tact increments
      */
-     tactPlusN(): void;
+    tactPlusN(n: number): void;
 }
 
 /**
@@ -446,3 +446,67 @@ export enum OpCodePrefix
      */
     FDCB,
 }
+
+/**
+ * Represents integer constants that mask out particular flags of the Z80 CPU's F register.
+ */
+export enum FlagsSetMask {
+    /**
+     * Sign Flag
+     */
+    S = 0x80,
+
+    /**
+     * Zero Flag
+     */
+    Z = 0x40,
+
+    /**
+     * Undocumented flag at Bit 5
+     */
+    R5 = 0x20,
+
+    /**
+     * Half Carry Flag
+     */
+    H = 0x10,
+
+    /**
+     * Undocumented flag at Bit 3
+     */
+    R3 = 0x08,
+
+    /**
+     * Parity/Overflow Flag
+     */
+    PV = 0x04,
+
+    /**
+     * Add/Subtract Flag
+     */
+    N = 0x02,
+
+    /**
+     * Carry Flag
+     */
+    C = 0x01,
+
+    /**
+     * Combination of S, Z, and PV
+     */
+    SZPV = S | Z | PV,
+
+        /// <summary>
+        /// Combination of N, and H
+        /// </summary>
+    /**
+     * Combination of N, and H
+     */
+    NH = N | H,
+
+    /**
+     * Combination of R3, and R5
+     */
+    R3R5 = R3 | R5
+}
+
