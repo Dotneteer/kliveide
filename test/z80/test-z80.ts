@@ -76,7 +76,7 @@ export class Z80TestMachine
     /**
      * The Z80 CPU of the test machine
      */
-    readonly cpu: IZ80Cpu;
+    readonly cpu: Z80Cpu;
 
     /**
      * The operative memory of the test machine
@@ -431,54 +431,125 @@ export class Z80TestMachine
      * @param except Address ranges separated by comma
      */
     shouldKeepMemory(except?: string) {
-    const MAX_DEVS = 10;
+        const MAX_DEVS = 10;
 
-    const ranges: [number, number][] = [];
-    const deviations: number[] = [];
+        const ranges: [number, number][] = [];
+        const deviations: number[] = [];
 
-    // --- Parse ranges
-    const strRanges = except?.split(",") ?? [];
-    for (const range of strRanges) {
-        const blocks = range.split("-");
-        let lower = 0xffff;
-        let upper = 0xffff;
-        if (blocks.length >= 1) {
-            const startAddr = parseInt(blocks[0], 16);
-            if (!isNaN(startAddr)) {
-                lower = upper = startAddr;
+        // --- Parse ranges
+        const strRanges = except?.split(",") ?? [];
+        for (const range of strRanges) {
+            const blocks = range.split("-");
+            let lower = 0xffff;
+            let upper = 0xffff;
+            if (blocks.length >= 1) {
+                const startAddr = parseInt(blocks[0], 16);
+                if (!isNaN(startAddr)) {
+                    lower = upper = startAddr;
+                }
             }
-        }
-        if (blocks.length >= 2) {
-            const endAddr = parseInt(blocks[1], 16);
-            if (!isNaN(endAddr)) {
-                upper = endAddr;
+            if (blocks.length >= 2) {
+                const endAddr = parseInt(blocks[1], 16);
+                if (!isNaN(endAddr)) {
+                    upper = endAddr;
+                }
             }
+            ranges.push([lower, upper]);
         }
-        ranges.push([lower, upper]);
+
+        // --- Check each byte of memory, ignoring the stack
+        let upperMemoryBound = this.cpu.sp;
+        if (upperMemoryBound === 0) upperMemoryBound = 0x1_0000;
+        for (let idx = 0; idx < upperMemoryBound; idx++) {
+            if (this.memory[idx] === this.memoryBeforeRun[idx]) continue;
+
+            // --- Test allowed deviations
+            const found = ranges.some(range => idx >= range[0] && idx <= range[1]);
+            if (found) continue;
+
+            // --- Report deviation
+            deviations.push(idx);
+            if (deviations.length >= MAX_DEVS) break;
+        }
+
+        if (deviations.length > 0) {
+            throw new Error("The following memory locations are expected to remain intact, " +
+                "but their values have been changed: " +
+                deviations.map(d => d.toString(16)).join(", "));
+        }
     }
 
-    // --- Check each byte of memory, ignoring the stack
-    let upperMemoryBound = this.cpu.sp;
-    if (upperMemoryBound === 0) upperMemoryBound = 0x1_0000;
-    for (let idx = 0; idx < upperMemoryBound; idx++) {
-        if (this.memory[idx] === this.memoryBeforeRun[idx]) continue;
-
-        // --- Test allowed deviations
-        const found = ranges.some(range => idx >= range[0] && idx <= range[1]);
-        if (found) continue;
-
-        // --- Report deviation
-        deviations.push(idx);
-        if (deviations.length >= MAX_DEVS) break;
+    /**
+     * Tests if S flag keeps its value after running a test.
+     */
+    shouldKeepSFlag() {
+        var before = (this.registersBeforeRun.f & FlagsSetMask.S) !== 0;
+        var after = (this.cpu.f & FlagsSetMask.S) !== 0;
+        if (after === before) {
+            return;
+        }
+        throw new Error(`S flag expected to keep its value, but it changed from ${before} to ${after}`);
     }
 
-    if (deviations.length > 0) {
-        throw new Error("The following memory locations are expected to remain intact, " +
-            "but their values have been changed: " +
-            deviations.map(d => d.toString(16)).join(", "));
+    /**
+     * Tests if Z flag keeps its value after running a test.
+     */
+    shouldKeepZFlag() {
+        var before = (this.registersBeforeRun.f & FlagsSetMask.Z) !== 0;
+        var after = (this.cpu.f & FlagsSetMask.Z) !== 0;
+        if (after === before) {
+            return;
+        }
+        throw new Error(`Z flag expected to keep its value, but it changed from ${before} to ${after}`);
     }
-}
 
+    /**
+     * Tests if N flag keeps its value after running a test.
+     */
+    shouldKeepNFlag() {
+        var before = (this.registersBeforeRun.f & FlagsSetMask.N) !== 0;
+        var after = (this.cpu.f & FlagsSetMask.N) !== 0;
+        if (after === before) {
+            return;
+        }
+        throw new Error(`N flag expected to keep its value, but it changed from ${before} to ${after}`);
+    }
+
+    /**
+     * Tests if PV flag keeps its value after running a test.
+     */
+    shouldKeepPVFlag() {
+        var before = (this.registersBeforeRun.f & FlagsSetMask.PV) !== 0;
+        var after = (this.cpu.f & FlagsSetMask.PV) !== 0;
+        if (after === before) {
+            return;
+        }
+        throw new Error(`PV flag expected to keep its value, but it changed from ${before} to ${after}`);
+    }
+
+    /**
+     * Tests if H flag keeps its value after running a test.
+     */
+    shouldKeepHFlag() {
+        var before = (this.registersBeforeRun.f & FlagsSetMask.H) !== 0;
+        var after = (this.cpu.f & FlagsSetMask.H) !== 0;
+        if (after === before) {
+            return;
+        }
+        throw new Error(`H flag expected to keep its value, but it changed from ${before} to ${after}`);
+    }
+
+    /**
+     * Tests if C flag keeps its value after running a test.
+     */
+    shouldKeepCFlag() {
+        var before = (this.registersBeforeRun.f & FlagsSetMask.C) !== 0;
+        var after = (this.cpu.f & FlagsSetMask.C) !== 0;
+        if (after === before) {
+            return;
+        }
+        throw new Error(`C flag expected to keep its value, but it changed from ${before} to ${after}`);
+    }
 }
 
 /**
@@ -588,82 +659,3 @@ class Z80RegisterSnapshot {
         return this.wz & 0xff;
     }
 }
-
-/**
- * Tests if S flag keeps its value after running a test.
- * @param machine Z80 test machine
- */
-export function shouldKeepSFlag(machine: Z80TestMachine) {
-    var before = (machine.registersBeforeRun.f & FlagsSetMask.S) !== 0;
-    var after = (machine.cpu.f & FlagsSetMask.S) !== 0;
-    if (after === before) {
-        return;
-    }
-    throw new Error(`S flag expected to keep its value, but it changed from ${before} to ${after}`);
-}
-
-/**
- * Tests if Z flag keeps its value after running a test.
- * @param machine Z80 test machine
- */
-export function shouldKeepZFlag(machine: Z80TestMachine) {
-    var before = (machine.registersBeforeRun.f & FlagsSetMask.Z) !== 0;
-    var after = (machine.cpu.f & FlagsSetMask.Z) !== 0;
-    if (after === before) {
-        return;
-    }
-    throw new Error(`Z flag expected to keep its value, but it changed from ${before} to ${after}`);
-}
-
-/**
- * Tests if N flag keeps its value after running a test.
- * @param machine Z80 test machine
- */
-export function shouldKeepNFlag(machine: Z80TestMachine) {
-    var before = (machine.registersBeforeRun.f & FlagsSetMask.N) !== 0;
-    var after = (machine.cpu.f & FlagsSetMask.N) !== 0;
-    if (after === before) {
-        return;
-    }
-    throw new Error(`N flag expected to keep its value, but it changed from ${before} to ${after}`);
-}
-
-/**
- * Tests if PV flag keeps its value after running a test.
- * @param machine Z80 test machine
- */
-export function shouldKeepPVFlag(machine: Z80TestMachine) {
-    var before = (machine.registersBeforeRun.f & FlagsSetMask.PV) !== 0;
-    var after = (machine.cpu.f & FlagsSetMask.PV) !== 0;
-    if (after === before) {
-        return;
-    }
-    throw new Error(`PV flag expected to keep its value, but it changed from ${before} to ${after}`);
-}
-
-/**
- * Tests if H flag keeps its value after running a test.
- * @param machine Z80 test machine
- */
-export function shouldKeepHFlag(machine: Z80TestMachine) {
-    var before = (machine.registersBeforeRun.f & FlagsSetMask.H) !== 0;
-    var after = (machine.cpu.f & FlagsSetMask.H) !== 0;
-    if (after === before) {
-        return;
-    }
-    throw new Error(`H flag expected to keep its value, but it changed from ${before} to ${after}`);
-}
-
-/**
- * Tests if C flag keeps its value after running a test.
- * @param machine Z80 test machine
- */
-export function shouldKeepCFlag(machine: Z80TestMachine) {
-    var before = (machine.registersBeforeRun.f & FlagsSetMask.C) !== 0;
-    var after = (machine.cpu.f & FlagsSetMask.C) !== 0;
-    if (after === before) {
-        return;
-    }
-    throw new Error(`C flag expected to keep its value, but it changed from ${before} to ${after}`);
-}
-

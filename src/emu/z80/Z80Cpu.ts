@@ -1,4 +1,4 @@
-import { IZ80Cpu, OpCodePrefix } from "../abstractions/IZ80Cpu";
+import { FlagsSetMask, IZ80Cpu, OpCodePrefix } from "../abstractions/IZ80Cpu";
 
 /**
  * This class implements the emulation of the Z80 CPU
@@ -385,6 +385,32 @@ export class Z80Cpu implements IZ80Cpu {
         }
     }    
  
+    /**
+     * Gets the value of the Carry flag
+     */
+    get flagCValue(): number {
+        return this.f & FlagsSetMask.C;
+    }
+
+    /**
+     * Gets the bits that represent the value of SZPV flag group
+     */
+    get flagsSZPVValue(): number {
+        return this.f & FlagsSetMask.SZPV
+    }
+        
+    /**
+     * Set the R5 and R3 flags of F after SCF or CCF.
+     */
+    setR5R3ForScfAndCcf(): void {
+        if (this.prevF53Updated) {
+            this.f = (this.f & ~FlagsSetMask.R3R5) | (this.a & FlagsSetMask.R3R5);
+        } else {
+            this.a |= this.a & FlagsSetMask.R3R5;
+        }
+        this.f53Updated = true;
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Z80 signal and state variables
 
@@ -756,7 +782,7 @@ export class Z80Cpu implements IZ80Cpu {
             case OpCodePrefix.DDCB:
             case OpCodePrefix.FDCB:
                 // --- OpCode is the distance
-                this.wz = this.indexReg + (this.opCode > 128 ? this.opCode - 256 : this.opCode);
+                this.wz = this.indexReg + (this.opCode >= 128 ? this.opCode - 256 : this.opCode);
                 this.opCode = this.readMemory(this.pc);
                 this.tactPlus2WithAddress(this.pc);
                 this.pc++;
@@ -851,15 +877,103 @@ export class Z80Cpu implements IZ80Cpu {
         }
     }
 
-    /// <summary>
-    /// Push the current value of PC to the stack.
-    /// </summary>
+    /**
+     * Test the Sign flag
+     */
+    isSFlagSet(): boolean {
+        return (this.f & FlagsSetMask.S) !== 0;
+    }
+
+    /**
+     * Test the Zero flag
+     */
+    isZFlagSet(): boolean {
+        return (this.f & FlagsSetMask.Z) !== 0;
+    }
+
+    /**
+     * Test the R5 flag
+     */
+    isR5FlagSet(): boolean {
+        return (this.f & FlagsSetMask.R5) !== 0;
+    }
+
+    /**
+     * Test the Half Carry flag
+     */
+    isHFlagSet(): boolean {
+        return (this.f & FlagsSetMask.H) !== 0;
+    }
+
+    /**
+     * Test the R3 flag
+     */
+    isR3FlagSet(): boolean {
+        return (this.f & FlagsSetMask.R3) !== 0;
+    }
+
+    /**
+     * Test the Parity/overflow flag
+     */
+    isPvFlagSet(): boolean {
+        return (this.f & FlagsSetMask.PV) !== 0;
+    }
+
+    /**
+     * Test the Subtract flag
+     */
+     isNFlagSet(): boolean {
+        return (this.f & FlagsSetMask.N) !== 0;
+    }
+
+    /**
+     * Test the Carry flag
+     */
+    isCFlagSet(): boolean {
+        return (this.f & FlagsSetMask.C) !== 0;
+    }
+
+    /**
+     * Push the current value of PC to the stack.
+     */
     pushPC(): void {
         this.sp--;
         this.tactPlus1();
         this.writeMemory(this.sp, this.pc >> 8);
         this.sp--;
         this.writeMemory(this.sp, this.pc & 0xff);
+    }
+
+    /**
+     * Execute a relative jump with the specified distance.
+     * @param e 8-bit signed distance
+     */
+    relativeJump(e: number): void {
+        this.tactPlus5WithAddress(this.pc);
+        this.pc = this.wz = this.pc + (e >= 128 ? e - 256 : e);
+    }
+
+        /// <summary>
+    /// Adds the <paramref name="regHl"/> value and <paramref name="regOther"/> value
+    /// according to the rule of ADD HL,QQ operation
+    /// </summary>
+    /// <param name="regHl">HL (IX, IY) value</param>
+    /// <param name="regOther">Other value</param>
+    /// <returns>Result value</returns>
+    add16(regHl: number, regOther: number): number
+    {
+        const tmpVal = regHl + regOther;
+        const lookup =
+          ((regHl & 0x0800) >> 11) |
+          ((regOther & 0x0800) >> 10) |
+          ((tmpVal & 0x0800) >> 9);
+        this.wz = regHl + 1;
+        this.f =(this.flagsSZPVValue) |
+          ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0x00) |
+          ((tmpVal >> 8) & (FlagsSetMask.R3R5)) |
+          halfCarryAddFlags[lookup];
+        this.f53Updated = true;
+        return tmpVal & 0xffff;
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -871,7 +985,7 @@ export class Z80Cpu implements IZ80Cpu {
      * Seven bits of this 8-bit register are automatically incremented after each instruction fetch. The eighth bit
      * remains as programmed, resulting from an LD R, A instruction.
      */
-    private refreshMemory(): void {
+    refreshMemory(): void {
         this.r = (this.r + 1) & 0x7f | (this.r & 0x80);
     }
  
@@ -881,7 +995,7 @@ export class Z80Cpu implements IZ80Cpu {
       * @returns The byte the CPU has read from the memory
       * If the emulated hardware uses any delay when reading the memory, increment the CPU tacts accordingly.
       */
-    private readMemory(address: number): number {
+    readMemory(address: number): number {
         this.delayMemoryRead(address);
         return this.doReadMemory(address);
     }
@@ -1036,6 +1150,15 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     /**
+     * This method increments the current CPU tacts by one, using memory contention with the provided address.
+     * @param address 
+     */
+     tactPlus1WithAddress(address: number): void {
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+    }
+
+    /**
      * This method increments the current CPU tacts by two, using memory contention with the provided address.
      * @param address 
      */
@@ -1077,6 +1200,44 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     /**
+     * This method increments the current CPU tacts by five, using memory contention with the provided address.
+     * @param address 
+     */
+    tactPlus5WithAddress(address: number): void {
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+    }
+
+    /**
+     * This method increments the current CPU tacts by seven, using memory contention with the provided address.
+     * @param address 
+     */
+     tactPlus7WithAddress(address: number): void {
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+    }
+
+    /**
      * This method increments the current CPU tacts by N.
      * @param n Number of tact increments
      */
@@ -1096,14 +1257,14 @@ export class Z80Cpu implements IZ80Cpu {
     // Z80 operation tables
 
     readonly standardOps: Z80Operation[] = [
-        nop,      ldBcNN,   ldBciA,   incBc,    nop,      nop,      ldBN,     nop,     // 00-07 
-        nop,      nop,      nop,      decBc,    nop,      nop,      ldCN,     nop,     // 08-0f 
-        nop,      ldDeNN,   ldDeiA,   incDe,    nop,      nop,      ldDN,     nop,     // 10-07 
-        nop,      nop,      nop,      decDe,    nop,      nop,      ldEN,     nop,     // 18-1f 
-        nop,      ldHlNN,   nop,      incHl,    nop,      nop,      ldHN,     nop,     // 20-27 
-        nop,      nop,      nop,      decHl,    nop,      nop,      ldLN,     nop,     // 28-0f 
-        nop,      ldSpNN,   nop,      incSp,    nop,      nop,      nop,      nop,     // 30-37 
-        nop,      nop,      nop,      decSp,    nop,      nop,      ldAN,     nop,     // 38-3f 
+        nop,      ldBcNN,   ldBciA,   incBc,    incB,     decB,     ldBN,     nop,     // 00-07 
+        exAf,     addHlBc,  ldABci,   decBc,    incC,     decC,     ldCN,     nop,     // 08-0f 
+        djnz,     ldDeNN,   ldDeiA,   incDe,    incD,     decD,     ldDN,     nop,     // 10-07 
+        jr,       addHlDe,  ldADei,   decDe,    incE,     decE,     ldEN,     nop,     // 18-1f 
+        jrnz,     ldHlNN,   nop,      incHl,    incH,     decH,     ldHN,     nop,     // 20-27 
+        jrz,      addHlHl,  nop,      decHl,    incL,     decL,     ldLN,     nop,     // 28-0f 
+        jrnc,     ldSpNN,   nop,      incSp,    nop,      nop,      ldHliN,   scf,     // 30-37 
+        jrc,      addHlSp,  nop,      decSp,    incA,     decA,     ldAN,     ccf,     // 38-3f 
 
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47 
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f 
@@ -1134,15 +1295,60 @@ export class Z80Cpu implements IZ80Cpu {
     ]
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+// ALU helpers
+const incFlags: number[] = [];
+const decFlags: number[] = [];
+const halfCarryAddFlags: number[] = [0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10];
+
+// --- Initialize ALU tables
+(function initializeAluTables() {
+    // --- Initialize increment flags
+    for (var b = 0; b < 0x100; b++)
+    {
+        const oldVal = b;
+        const newVal = (oldVal + 1) & 0xff;
+        const flags =
+            // --- C is unaffected, we keep it 0 here in this table.
+            (newVal & FlagsSetMask.R3) |
+            (newVal & FlagsSetMask.R5) |
+            ((newVal & 0x80) !== 0 ? FlagsSetMask.S : 0) |
+            (newVal === 0 ? FlagsSetMask.Z : 0) |
+            ((oldVal & 0x0F) === 0x0F ? FlagsSetMask.H : 0) |
+            (oldVal === 0x7F ? FlagsSetMask.PV : 0);
+            // --- Observe, N is 0, as this is an increment operation
+        incFlags[b] = flags;
+    }
+
+    // --- Initialize decrement flags
+    for (var b = 0; b < 0x100; b++)
+    {
+        const oldVal = b;
+        const newVal = (oldVal - 1) & 0xff;
+        const flags =
+            // --- C is unaffected, we keep it 0 here in this table.
+            (newVal & FlagsSetMask.R3) |
+            (newVal & FlagsSetMask.R5) |
+            ((newVal & 0x80) !== 0 ? FlagsSetMask.S : 0) |
+            (newVal === 0 ? FlagsSetMask.Z : 0) |
+            ((oldVal & 0x0F) === 0x00 ? FlagsSetMask.H : 0) |
+            (oldVal === 0x80 ? FlagsSetMask.PV : 0) |
+            // --- Observe, N is 1, as this is a decrement operation
+            FlagsSetMask.N;
+        decFlags[b] = flags;
+    }
+
+})();
+
+// --------------------------------------------------------------------------------------------------------------------
+// Z80 operations
+
 /**
  * The function represents a Z80 operation
  */
-type Z80Operation = (cpu: Z80Cpu) => void;
+ type Z80Operation = (cpu: Z80Cpu) => void;
 
-// --------------------------------------------------------------------------------------------------------------------
-// Z80 standard operations
-
-// 0x00: NOP
+ // 0x00: NOP
 function nop(cpu: Z80Cpu) {
 }
 
@@ -1164,9 +1370,40 @@ function incBc(cpu: Z80Cpu) {
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
+// 0x04: INC B
+function incB(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.b++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x05: DEC B
+function decB(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.b--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
 // 0x06: LD B,n
 function ldBN(cpu: Z80Cpu) {
     cpu.b = cpu.fetchCodeByte();
+}
+
+// 0x08: EX AF,AF'
+function exAf(cpu: Z80Cpu) {
+    const tmp = cpu.af;
+    cpu.af = cpu.af_;
+    cpu.af_ = tmp;
+}
+
+// 0x09: ADD HL,BC
+function addHlBc(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.hl = cpu.add16(cpu.hl, cpu.bc);
+}
+
+// 0x0a: LD A,(BC)
+function ldABci(cpu: Z80Cpu) {
+    cpu.wz = cpu.bc + 1;
+    cpu.a = cpu.readMemory(cpu.bc);
 }
 
 // 0x0b: DEC BC
@@ -1175,9 +1412,31 @@ function decBc(cpu: Z80Cpu) {
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
-// 0x0E: LD C,n
+// 0x0c: INC C
+function incC(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.c++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x0d: DEC C
+function decC(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.c--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x0e: LD C,n
 function ldCN(cpu: Z80Cpu) {
     cpu.c = cpu.fetchCodeByte();
+}
+
+// 0x10: DJNZ d
+function djnz(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const e = cpu.fetchCodeByte();
+    if (--cpu.b !== 0)
+    {
+        cpu.relativeJump(e);
+    }
 }
 
 // 0x11: LD DE,nn
@@ -1198,9 +1457,38 @@ function incDe(cpu: Z80Cpu) {
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
+// 0x14: INC D
+function incD(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.d++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x15: DEC D
+function decD(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.d--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
 // 0x16: LD D,n
 function ldDN(cpu: Z80Cpu) {
     cpu.d = cpu.fetchCodeByte();
+}
+
+// 0x18: JR e
+function jr(cpu: Z80Cpu) {
+    cpu.relativeJump(cpu.fetchCodeByte());
+}
+
+// 0x19: ADD HL,DE
+function addHlDe(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.hl = cpu.add16(cpu.hl, cpu.de);
+}
+
+// 0x1a: LD A,(DE)
+function ldADei(cpu: Z80Cpu) {
+    cpu.wz = cpu.de + 1;
+    cpu.a = cpu.readMemory(cpu.de);
 }
 
 // 0x1b: DEC DE
@@ -1209,9 +1497,30 @@ function decDe(cpu: Z80Cpu) {
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
-// 0x1E: LD E,n
+// 0x1c: INC E
+function incE(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.e++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x1d: DEC E
+function decE(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.e--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x1e: LD E,n
 function ldEN(cpu: Z80Cpu) {
     cpu.e = cpu.fetchCodeByte();
+}
+
+// 0x20: JR NZ,e
+function jrnz(cpu: Z80Cpu) {
+    const e = cpu.fetchCodeByte();
+    if (!cpu.isZFlagSet())
+    {
+        cpu.relativeJump(e);
+    }
 }
 
 // 0x21: LD HL,nn
@@ -1226,9 +1535,36 @@ function incHl(cpu: Z80Cpu) {
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
+// 0x24: INC H
+function incH(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.h++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x25: DEC H
+function decH(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.h--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
 // 0x26: LD H,n
 function ldHN(cpu: Z80Cpu) {
     cpu.h = cpu.fetchCodeByte();
+}
+
+// 0x28: JR Z,e
+function jrz(cpu: Z80Cpu) {
+    const e = cpu.fetchCodeByte();
+    if (cpu.isZFlagSet())
+    {
+        cpu.relativeJump(e);
+    }
+}
+
+// 0x29: ADD HL,HL
+function addHlHl(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.hl = cpu.add16(cpu.hl, cpu.hl);
 }
 
 // 0x2b: DEC HL
@@ -1237,9 +1573,30 @@ function decHl(cpu: Z80Cpu) {
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
-// 0x2E: LD L,n
+// 0x2c: INC L
+function incL(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.l++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x2d: DEC L
+function decL(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.l--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x2e: LD L,n
 function ldLN(cpu: Z80Cpu) {
     cpu.l = cpu.fetchCodeByte();
+}
+
+// 0x30: JR NC,e
+function jrnc(cpu: Z80Cpu) {
+    const e = cpu.fetchCodeByte();
+    if (!cpu.isCFlagSet())
+    {
+        cpu.relativeJump(e);
+    }
 }
 
 // 0x31: LD SP,nn
@@ -1255,13 +1612,57 @@ function incSp(cpu: Z80Cpu) {
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
+// 0x36: LD (HL),n
+function ldHliN(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.fetchCodeByte());
+}
+
+// 0x37: SCF
+function scf(cpu: Z80Cpu) {
+    cpu.f = cpu.flagsSZPVValue | FlagsSetMask.C;
+    cpu.setR5R3ForScfAndCcf();
+}
+
+// 0x38: JR C,e
+function jrc(cpu: Z80Cpu) {
+    const e = cpu.fetchCodeByte();
+    if (cpu.isCFlagSet())
+    {
+        cpu.relativeJump(e);
+    }
+}
+
+// 0x39: ADD HL,SP
+function addHlSp(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.hl = cpu.add16(cpu.hl, cpu.sp);
+}
+
 // 0x3b: DEC SP
 function decSp(cpu: Z80Cpu) {
     cpu.sp--;
     cpu.tactPlus2WithAddress(cpu.ir);
 }
 
+// 0x3c: INC A
+function incA(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.a++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x3d: DEC A
+function decA(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.a--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
 // 0x3e: LD A,n
 function ldAN(cpu: Z80Cpu) {
     cpu.a = cpu.fetchCodeByte();
+}
+
+// 0x3f: CCF
+function ccf(cpu: Z80Cpu) {
+    cpu.f = cpu.flagsSZPVValue | (cpu.isCFlagSet() ? FlagsSetMask.H : FlagsSetMask.C);
+    cpu.setR5R3ForScfAndCcf();
 }
