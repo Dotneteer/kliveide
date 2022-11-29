@@ -1,6 +1,17 @@
 import "mocha";
 import { expect } from "expect";
 import { RunMode, Z80TestMachine } from "./test-z80";
+import { FlagsSetMask } from "@/emu/abstractions/IZ80Cpu";
+
+class DaaSample {
+    constructor(
+        public readonly a: number,
+        public readonly h: boolean,
+        public readonly n: boolean,
+        public readonly c: boolean,
+        public readonly af: number
+    ) {}
+}
 
 describe("Z80 standard ops 20-2f", () => {
     it("0x20: jrnz (no jump)", ()=> {
@@ -66,6 +77,36 @@ describe("Z80 standard ops 20-2f", () => {
         expect(cpu.hl).toBe(0xa926);
         expect(cpu.pc).toBe(0x0003);
         expect(cpu.tacts).toBe(10);
+    });
+
+    it("0x22: ld (NN),hl", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x21, 0x26, 0xA9, // LD HL,A926H
+            0x22, 0x00, 0x10  // LD (1000H),HL
+        ]);
+
+        // --- Act
+        const lBefore = m.memory[0x1000];
+        const hBefore = m.memory[0x1001];
+        m.run();
+        const lAfter = m.memory[0x1000];
+        const hAfter = m.memory[0x1001];
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("HL");
+        m.shouldKeepMemory("1000-1001");
+
+        expect(cpu.hl).toBe(0xA926);
+        expect(lBefore).toBe(0x00);
+        expect(hBefore).toBe(0x00);
+        expect(lAfter).toBe(0x26);
+        expect(hAfter).toBe(0xA9);
+        expect(cpu.pc).toBe(0x0006);
+        expect(cpu.tacts).toBe(26);
     });
 
     it("0x23: inc hl", ()=> {
@@ -311,6 +352,48 @@ describe("Z80 standard ops 20-2f", () => {
         expect(cpu.tacts).toBe(7);
     });
 
+    const daaSamples = [
+        new DaaSample(0x99, false, false, false, 0x998C),
+        new DaaSample(0x99, true, false, false, 0x9F8C),
+        new DaaSample(0x7A, false, false, false, 0x8090),
+        new DaaSample(0x7A, true, false, false, 0x8090),
+        new DaaSample(0xA9, false, false, false, 0x090D),
+        new DaaSample(0x87, false, false, true, 0xE7A5),
+        new DaaSample(0x87, true, false, true, 0xEDAD),
+        new DaaSample(0x1B, false, false, true, 0x8195),
+        new DaaSample(0x1B, true, false, true, 0x8195),
+        new DaaSample(0xAA, false, false, false, 0x1011),
+        new DaaSample(0xAA, true, false, false, 0x1011),
+        new DaaSample(0xC6, true, false, false, 0x2C29)
+    ];
+
+    daaSamples.forEach((sample, index) => 
+        it(`0x27: daa #${index}`, () => {
+            // --- Arrange
+            const m = new Z80TestMachine(RunMode.UntilEnd);
+            m.initCode(
+            [
+                0x27  // DAA
+            ]);
+            m.cpu.a = sample.a;
+            m.cpu.f = (sample.h ? FlagsSetMask.H : 0)
+                | (sample.n ? FlagsSetMask.N : 0)
+                | (sample.c ? FlagsSetMask.C : 0);
+
+            // --- Act
+            m.run();
+
+            // --- Assert
+            const cpu = m.cpu;
+            m.shouldKeepRegisters("AF");
+            m.shouldKeepMemory();
+
+            expect(cpu.af).toBe(sample.af);
+            expect(cpu.pc).toBe(0x0001);
+            expect(cpu.tacts).toBe(4);
+        })
+    );
+
     it("0x28: jrz (no jump)", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -382,6 +465,29 @@ describe("Z80 standard ops 20-2f", () => {
         expect(cpu.hl).toBe(0x2468);
         expect(cpu.pc).toBe(0x0004);
         expect(cpu.tacts).toBe(21);
+    });
+
+    it("0x2a: ld hl,(NN)", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x2A, 0x00, 0x10 // LD HL,(1000H)
+        ]);
+        m.memory[0x1000] = 0x34;
+        m.memory[0x1001] = 0x12;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("HL");
+        m.shouldKeepMemory();
+
+        expect(cpu.hl).toBe(0x1234);
+        expect(cpu.pc).toBe(0x0003);
+        expect(cpu.tacts).toBe(16);
     });
 
     it("0x2b: dec hl", ()=> {
@@ -625,5 +731,33 @@ describe("Z80 standard ops 20-2f", () => {
         expect(cpu.l).toBe(0x26);
         expect(cpu.pc).toBe(0x0002);
         expect(cpu.tacts).toBe(7);
+    });
+
+    it("0x2f: cpl", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x3E, 0x81, // LD A,81H
+            0x2F        // CPL
+        ]);
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory();
+        m.shouldKeepSFlag();
+        m.shouldKeepZFlag();
+        m.shouldKeepPVFlag();
+        m.shouldKeepCFlag();
+        expect(cpu.isHFlagSet()).toBe(true);
+        expect(cpu.isNFlagSet()).toBe(true);
+
+        expect(cpu.a).toBe(0x7e);
+        expect(cpu.pc).toBe(0x0003);
+        expect(cpu.tacts).toBe(11);
     });
 });

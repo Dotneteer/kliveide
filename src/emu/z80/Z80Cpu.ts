@@ -58,7 +58,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._a << 8) | this._f;
     }
     set af(value: number) {
-        this._a = (value & 0xff00) >> 8
+        this._a = (value & 0xff00) >>> 8
         this._f = value & 0xff;
     }
 
@@ -89,7 +89,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._b << 8) | this._c;
     }
     set bc(value: number) {
-        this._b = (value & 0xff00) >> 8
+        this._b = (value & 0xff00) >>> 8
         this._c = value & 0xff;
     }
 
@@ -120,7 +120,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._d << 8) | this._e;
     }
     set de(value: number) {
-        this._d = (value & 0xff00) >> 8
+        this._d = (value & 0xff00) >>> 8
         this._e = value & 0xff;
     }
 
@@ -151,7 +151,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._h << 8) | this._l;
     }
     set hl(value: number) {
-        this._h = (value & 0xff00) >> 8
+        this._h = (value & 0xff00) >>> 8
         this._l = value & 0xff;
     }
 
@@ -222,7 +222,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._xh << 8) | this._xl;
     }
     set ix(value: number) {
-        this._xh = (value & 0xff00) >> 8
+        this._xh = (value & 0xff00) >>> 8
         this._xl = value & 0xff;
     }
 
@@ -253,7 +253,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._yh << 8) | this._yl;
     }
     set iy(value: number) {
-        this._yh = (value & 0xff00) >> 8
+        this._yh = (value & 0xff00) >>> 8
         this._yl = value & 0xff;
     }
 
@@ -284,7 +284,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._i << 8) | this._r;
     }
     set ir(value: number) {
-        this._i = (value & 0xff00) >> 8
+        this._i = (value & 0xff00) >>> 8
         this._r = value & 0xff;
     }
 
@@ -335,7 +335,7 @@ export class Z80Cpu implements IZ80Cpu {
         return (this._wh << 8) | this._wl;
     }
     set wz(value: number) {
-        this._wh = (value & 0xff00) >> 8
+        this._wh = (value & 0xff00) >>> 8
         this._wl = value & 0xff;
     }
 
@@ -939,7 +939,7 @@ export class Z80Cpu implements IZ80Cpu {
     pushPC(): void {
         this.sp--;
         this.tactPlus1();
-        this.writeMemory(this.sp, this.pc >> 8);
+        this.writeMemory(this.sp, this.pc >>> 8);
         this.sp--;
         this.writeMemory(this.sp, this.pc & 0xff);
     }
@@ -964,19 +964,72 @@ export class Z80Cpu implements IZ80Cpu {
     {
         const tmpVal = regHl + regOther;
         const lookup =
-          ((regHl & 0x0800) >> 11) |
-          ((regOther & 0x0800) >> 10) |
-          ((tmpVal & 0x0800) >> 9);
+          ((regHl & 0x0800) >>> 11) |
+          ((regOther & 0x0800) >>> 10) |
+          ((tmpVal & 0x0800) >>> 9);
         this.wz = regHl + 1;
         this.f =(this.flagsSZPVValue) |
           ((tmpVal & 0x10000) !== 0 ? FlagsSetMask.C : 0x00) |
-          ((tmpVal >> 8) & (FlagsSetMask.R3R5)) |
+          ((tmpVal >>> 8) & (FlagsSetMask.R3R5)) |
           halfCarryAddFlags[lookup];
         this.f53Updated = true;
         return tmpVal & 0xffff;
     }
 
-    // ----------------------------------------------------------------------------------------------------------------
+    /**
+     * Store two 8-bit values to the address in the code 
+     * @param low LSB value to store
+     * @param high MSB value to store
+     */
+    store16(low: number, high: number): void {
+        let tmp = this.fetchCodeByte();
+        tmp += this.fetchCodeByte() << 8;
+        this.writeMemory(tmp, low);
+        tmp += 1;
+        this.wz = tmp;
+        this.writeMemory(tmp, high);
+    }
+
+    /**
+     * The core of the 8-bit SUB operation
+     * @param value Value to subtract from A
+     */
+    sub8(value: number): void {
+        const tmp = this.a - value;
+        const lookup =
+          ((this.a & 0x88) >>> 3) |
+          ((value & 0x88) >>> 2) |
+          ((tmp & 0x88) >>> 1);
+        this.a = tmp;
+        this.f =
+          ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
+          FlagsSetMask.N |
+          halfCarrySubFlags[lookup & 0x07] |
+          overflowSubFlags[lookup >>> 4] |
+          sz53Table[this.a];
+        this.f53Updated = true;
+    }
+
+    /**
+     * The core of the 8-bit ADD operation 
+     * @param value Value to add to A
+     */
+    add8(value: number): void {
+        const tmp = this.a + value;
+        var lookup =
+            ((this.a & 0x88) >>> 3) |
+            ((value & 0x88) >>> 2) |
+            ((tmp & 0x88) >>> 1);
+        this.a = tmp;
+        this.f = 
+          ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
+          halfCarryAddFlags[lookup & 0x07] |
+          overflowAddFlags[lookup >> 4] |
+          sz53Table[this.a];
+        this.f53Updated = true;
+    }
+
+    // --------------------------------------------------------------------------------------------------------------
     // Z80 memory and I/O management
 
     /**
@@ -1257,14 +1310,14 @@ export class Z80Cpu implements IZ80Cpu {
     // Z80 operation tables
 
     readonly standardOps: Z80Operation[] = [
-        nop,      ldBcNN,   ldBciA,   incBc,    incB,     decB,     ldBN,     nop,     // 00-07 
-        exAf,     addHlBc,  ldABci,   decBc,    incC,     decC,     ldCN,     nop,     // 08-0f 
-        djnz,     ldDeNN,   ldDeiA,   incDe,    incD,     decD,     ldDN,     nop,     // 10-07 
-        jr,       addHlDe,  ldADei,   decDe,    incE,     decE,     ldEN,     nop,     // 18-1f 
-        jrnz,     ldHlNN,   nop,      incHl,    incH,     decH,     ldHN,     nop,     // 20-27 
-        jrz,      addHlHl,  nop,      decHl,    incL,     decL,     ldLN,     nop,     // 28-0f 
-        jrnc,     ldSpNN,   nop,      incSp,    nop,      nop,      ldHliN,   scf,     // 30-37 
-        jrc,      addHlSp,  nop,      decSp,    incA,     decA,     ldAN,     ccf,     // 38-3f 
+        nop,      ldBcNN,   ldBciA,   incBc,    incB,     decB,     ldBN,     rlca,    // 00-07 
+        exAf,     addHlBc,  ldABci,   decBc,    incC,     decC,     ldCN,     rrca,    // 08-0f 
+        djnz,     ldDeNN,   ldDeiA,   incDe,    incD,     decD,     ldDN,     rla,     // 10-17 
+        jr,       addHlDe,  ldADei,   decDe,    incE,     decE,     ldEN,     rra,     // 18-1f 
+        jrnz,     ldHlNN,   ldNNiHl,  incHl,    incH,     decH,     ldHN,     daa,     // 20-27 
+        jrz,      addHlHl,  ldHlNNi,  decHl,    incL,     decL,     ldLN,     cpl,     // 28-2f 
+        jrnc,     ldSpNN,   ldNNiA,   incSp,    incHli,   decHli,   ldHliN,   scf,     // 30-37 
+        jrc,      addHlSp,  ldANNi,   decSp,    incA,     decA,     ldAN,     ccf,     // 38-3f 
 
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47 
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f 
@@ -1300,12 +1353,17 @@ export class Z80Cpu implements IZ80Cpu {
 const incFlags: number[] = [];
 const decFlags: number[] = [];
 const halfCarryAddFlags: number[] = [0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0x10];
+const halfCarrySubFlags: number[] = [0x00, 0x00, 0x10, 0x00, 0x10, 0x00, 0x10, 0x10];
+const overflowAddFlags: number[] = [0x00, 0x00, 0x00, 0x04, 0x04, 0x00, 0x00, 0x00];
+const overflowSubFlags: number[] = [0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00];
+const parityTable: number[] = [];
+const sz53Table: number[] = [];
+const sz53pvTable: number[] = [];
 
 // --- Initialize ALU tables
 (function initializeAluTables() {
     // --- Initialize increment flags
-    for (var b = 0; b < 0x100; b++)
-    {
+    for (var b = 0; b < 0x100; b++) {
         const oldVal = b;
         const newVal = (oldVal + 1) & 0xff;
         const flags =
@@ -1321,8 +1379,7 @@ const halfCarryAddFlags: number[] = [0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0
     }
 
     // --- Initialize decrement flags
-    for (var b = 0; b < 0x100; b++)
-    {
+    for (var b = 0; b < 0x100; b++) {
         const oldVal = b;
         const newVal = (oldVal - 1) & 0xff;
         const flags =
@@ -1337,6 +1394,25 @@ const halfCarryAddFlags: number[] = [0x00, 0x10, 0x10, 0x10, 0x00, 0x00, 0x00, 0
             FlagsSetMask.N;
         decFlags[b] = flags;
     }
+
+    // --- Initialize the parity table
+    for (let i = 0; i < 0x100; i++) {
+        let parity = 0;
+        let b = i;
+        for (let j = 0; j < 8; j++) {
+            parity ^= (b & 0x01);
+            b = b >>> 1;
+        }
+        parityTable[i] = parity == 0 ? FlagsSetMask.PV : 0;
+    }
+
+    // --- Initialize the SZ53 and SZ53PV tables
+    for (let i = 0; i < 0x100; i++) {
+        sz53Table[i] = i & (FlagsSetMask.S | FlagsSetMask.R5 | FlagsSetMask.R3);
+        sz53pvTable[i] = sz53Table[i] | parityTable[i];
+    }
+    sz53Table[0] |= FlagsSetMask.Z;
+    sz53pvTable[0] |= FlagsSetMask.Z;
 
 })();
 
@@ -1387,6 +1463,19 @@ function ldBN(cpu: Z80Cpu) {
     cpu.b = cpu.fetchCodeByte();
 }
 
+// 0x07: RLCA
+function rlca(cpu: Z80Cpu) {
+    let rlcaVal = cpu.a;
+    rlcaVal = rlcaVal << 1;
+    const cf = (rlcaVal & 0x100) !== 0 ? FlagsSetMask.C : 0;
+    if (cf !== 0) {
+        rlcaVal = (rlcaVal | 0x01) & 0xFF;
+    }
+    cpu.a = rlcaVal;
+    cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+    cpu.f53Updated = true;
+}
+
 // 0x08: EX AF,AF'
 function exAf(cpu: Z80Cpu) {
     const tmp = cpu.af;
@@ -1427,6 +1516,20 @@ function decC(cpu: Z80Cpu) {
 // 0x0e: LD C,n
 function ldCN(cpu: Z80Cpu) {
     cpu.c = cpu.fetchCodeByte();
+}
+
+// 0x0f: RRCA
+function rrca(cpu: Z80Cpu) {
+    let rrcaVal = cpu.a;
+    const cf = (rrcaVal & 0x01) !== 0 ? FlagsSetMask.C : 0;
+    if ((rrcaVal & 0x01) !== 0) {
+        rrcaVal = (rrcaVal >>> 1) | 0x80;
+    } else {
+        rrcaVal = rrcaVal >>> 1;
+    }
+    cpu.a = rrcaVal;
+    cpu.f = cf | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+    cpu.f53Updated = true;
 }
 
 // 0x10: DJNZ d
@@ -1474,6 +1577,19 @@ function ldDN(cpu: Z80Cpu) {
     cpu.d = cpu.fetchCodeByte();
 }
 
+// 0x17: RLA
+function rla(cpu: Z80Cpu) {
+    let rlaVal = cpu.a;
+    const newCF = (rlaVal & 0x80) !== 0 ? FlagsSetMask.C : 0;
+    rlaVal = rlaVal << 1;
+    if (cpu.isCFlagSet()) {
+        rlaVal |= 0x01;
+    }
+    cpu.a = rlaVal;
+    cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+    cpu.f53Updated = true;
+}
+
 // 0x18: JR e
 function jr(cpu: Z80Cpu) {
     cpu.relativeJump(cpu.fetchCodeByte());
@@ -1514,6 +1630,19 @@ function ldEN(cpu: Z80Cpu) {
     cpu.e = cpu.fetchCodeByte();
 }
 
+// 0x1f: RRA
+function rra(cpu: Z80Cpu) {
+    let rraVal = cpu.a;
+    const newCF = (rraVal & 0x01) !== 0 ? FlagsSetMask.C : 0;
+    rraVal = rraVal >>> 1;
+    if (cpu.isCFlagSet()) {
+        rraVal |= 0x80;
+    }
+    cpu.a = rraVal;
+    cpu.f = newCF | cpu.flagsSZPVValue | (cpu.a & FlagsSetMask.R3R5);
+    cpu.f53Updated = true;
+}
+
 // 0x20: JR NZ,e
 function jrnz(cpu: Z80Cpu) {
     const e = cpu.fetchCodeByte();
@@ -1527,6 +1656,11 @@ function jrnz(cpu: Z80Cpu) {
 function ldHlNN(cpu: Z80Cpu) {
     cpu.l = cpu.fetchCodeByte();
     cpu.h = cpu.fetchCodeByte();
+}
+
+// 0x22: LD (nn),HL
+function ldNNiHl(cpu: Z80Cpu) {
+    cpu.store16(cpu.l, cpu.h);
 }
 
 // 0x23: INC HL
@@ -1552,6 +1686,29 @@ function ldHN(cpu: Z80Cpu) {
     cpu.h = cpu.fetchCodeByte();
 }
 
+// 0x27: DAA
+function daa(cpu: Z80Cpu) {
+    let add = 0;
+    let carry = cpu.flagCValue;
+    if (cpu.isHFlagSet() || (cpu.a & 0x0f) > 9) {
+        add = 6;
+    }
+    if (carry !== 0 || (cpu.a > 0x99)) {
+        add |= 0x60;
+    }
+    if (cpu.a > 0x99) {
+        carry = FlagsSetMask.C;
+    }
+    if (cpu.isNFlagSet()) {
+        cpu.sub8(add);
+    } else {
+        cpu.add8(add);
+    }
+
+    cpu.f = (cpu.f & ~(FlagsSetMask.C | FlagsSetMask.PV)) | carry | parityTable[cpu.a];
+    cpu.f53Updated = true;
+}
+
 // 0x28: JR Z,e
 function jrz(cpu: Z80Cpu) {
     const e = cpu.fetchCodeByte();
@@ -1565,6 +1722,16 @@ function jrz(cpu: Z80Cpu) {
 function addHlHl(cpu: Z80Cpu) {
     cpu.tactPlus7WithAddress(cpu.ir);
     cpu.hl = cpu.add16(cpu.hl, cpu.hl);
+}
+
+// 0x2a: LD HL,(nn)
+function ldHlNNi(cpu: Z80Cpu) {
+    let adr = cpu.fetchCodeByte();
+    adr += cpu.fetchCodeByte() << 8;
+    cpu.wz = adr + 1;
+    let val = cpu.readMemory(adr);
+    val += cpu.readMemory(cpu.wz) << 8;
+    cpu.hl = val;
 }
 
 // 0x2b: DEC HL
@@ -1590,6 +1757,14 @@ function ldLN(cpu: Z80Cpu) {
     cpu.l = cpu.fetchCodeByte();
 }
 
+// 0x2f: CPL
+function cpl(cpu: Z80Cpu) {
+    cpu.a ^= 0xFF;
+    cpu.f = (cpu.f & (FlagsSetMask.C | FlagsSetMask.PV | FlagsSetMask.Z | FlagsSetMask.S)) |
+        (cpu.a & FlagsSetMask.R3R5) | FlagsSetMask.N | FlagsSetMask.H;
+    cpu.f53Updated = true;
+}
+
 // 0x30: JR NC,e
 function jrnc(cpu: Z80Cpu) {
     const e = cpu.fetchCodeByte();
@@ -1606,10 +1781,37 @@ function ldSpNN(cpu: Z80Cpu) {
     cpu.sp = (h << 8) | l;
 }
 
+// 0x32: LD (nn),A
+function ldNNiA(cpu: Z80Cpu) {
+    const l = cpu.fetchCodeByte();
+    const addr = (cpu.fetchCodeByte() << 8) | l;
+    cpu.wl = addr + 1;
+    cpu.wh = cpu.a;
+    cpu.writeMemory(addr, cpu.a);
+}
+
 // 0x33: INC SP
 function incSp(cpu: Z80Cpu) {
     cpu.sp++;
     cpu.tactPlus2WithAddress(cpu.ir);
+}
+
+// 0x34: INC (HL)
+function incHli(cpu: Z80Cpu) {
+    let memValue = cpu.readMemory(cpu.hl);
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.f = incFlags[memValue++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+    cpu.writeMemory(cpu.hl, memValue);
+}
+
+// 0x35: DEC (HL)
+function decHli(cpu: Z80Cpu) {
+    let memValue = cpu.readMemory(cpu.hl);
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.f = decFlags[memValue--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+    cpu.writeMemory(cpu.hl, memValue);
 }
 
 // 0x36: LD (HL),n
@@ -1636,6 +1838,14 @@ function jrc(cpu: Z80Cpu) {
 function addHlSp(cpu: Z80Cpu) {
     cpu.tactPlus7WithAddress(cpu.ir);
     cpu.hl = cpu.add16(cpu.hl, cpu.sp);
+}
+
+// 0x3a: LD A,(nn)
+function ldANNi(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    cpu.a = cpu.readMemory(cpu.wz);
+    cpu.wz++;
 }
 
 // 0x3b: DEC SP

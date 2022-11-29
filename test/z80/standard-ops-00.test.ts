@@ -316,6 +316,64 @@ describe("Z80 standard ops 00-0f", () => {
         expect(cpu.tacts).toBe(7);
     });
 
+    it("0x07: rlca #1", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x3E, 0x71, // LD A,71H
+            0x07        // RLCA
+        ]);
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory();
+        m.shouldKeepSFlag();
+        m.shouldKeepZFlag();
+        m.shouldKeepPVFlag();
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.a).toBe(0xe2);
+        expect(cpu.pc).toBe(0x0003);
+        expect(cpu.tacts).toBe(11);
+    });
+
+    it("0x07: rlca #2", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x3E, 0x80, // LD A,80H
+            0x07        // RLCA
+        ]);
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory();
+        m.shouldKeepSFlag();
+        m.shouldKeepZFlag();
+        m.shouldKeepPVFlag();
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+
+        expect(cpu.isCFlagSet()).toBe(true);
+
+        expect(cpu.a).toBe(0x01);
+        expect(cpu.pc).toBe(0x0003);
+        expect(cpu.tacts).toBe(11);
+    });
+
     it("0x08: ex af,af'", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -664,5 +722,63 @@ describe("Z80 standard ops 00-0f", () => {
         expect(cpu.c).toBe(0x26);
         expect(cpu.pc).toBe(0x0002);
         expect(cpu.tacts).toBe(7);
+    });
+
+    it("0x0f: rrca #1", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x3E, 0x70, // LD A,70H
+            0x0F        // RRCA
+        ]);
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory();
+        m.shouldKeepSFlag();
+        m.shouldKeepZFlag();
+        m.shouldKeepPVFlag();
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.a).toBe(0x38);
+        expect(cpu.pc).toBe(0x0003);
+        expect(cpu.tacts).toBe(11);
+    });
+
+    it("0x0f: rrca #2", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x3E, 0x41, // LD A,01H
+            0x0F        // RRCA
+        ]);
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory();
+        m.shouldKeepSFlag();
+        m.shouldKeepZFlag();
+        m.shouldKeepPVFlag();
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+
+        expect(cpu.isCFlagSet()).toBe(true);
+
+        expect(cpu.a).toBe(0xa0);
+        expect(cpu.pc).toBe(0x0003);
+        expect(cpu.tacts).toBe(11);
     });
 });

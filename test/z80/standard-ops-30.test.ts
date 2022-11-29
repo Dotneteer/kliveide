@@ -67,6 +67,32 @@ describe("Z80 standard ops 30-3f", () => {
         expect(cpu.tacts).toBe(10);
     });
 
+    it("0x32: ld (NN),a", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x3E, 0xA9,       // LD A,A9H
+            0x32, 0x00, 0x10  // LD (1000H),A
+        ]);
+
+        // --- Act
+        const before = m.memory[0x1000];
+        m.run();
+        const after = m.memory[0x1000];
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("A");
+        m.shouldKeepMemory("1000");
+
+        expect(before).toBe(0x00);
+        expect(after).toBe(0xA9);
+
+        expect(cpu.pc).toBe(0x0005);
+        expect(cpu.tacts).toBe(20);
+    });
+
     it("0x33: inc sp", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -87,6 +113,52 @@ describe("Z80 standard ops 30-3f", () => {
         expect(cpu.sp).toBe(0xA927);
         expect(cpu.pc).toBe(0x0004);
         expect(cpu.tacts).toBe(16);
+    });
+
+    it("0x34: inc (hl)", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x21, 0x00, 0x10, // LD HL,1000H
+            0x34              // INC (HL)
+        ]);
+        m.memory[0x1000] = 0x23;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("HL, F");
+        m.shouldKeepMemory("1000");
+
+        expect(m.memory[0x1000]).toBe(0x24);
+        expect(cpu.pc).toBe(0x0004);
+        expect(cpu.tacts).toBe(21);
+    });
+
+    it("0x35: dec (hl)", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x21, 0x00, 0x10, // LD HL,1000H
+            0x35              // DEC (HL)
+        ]);
+        m.memory[0x1000] = 0x23;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("HL, F");
+        m.shouldKeepMemory("1000");
+
+        expect(m.memory[0x1000]).toBe(0x22);
+        expect(cpu.pc).toBe(0x0004);
+        expect(cpu.tacts).toBe(21);
     });
 
     it("0x36: ld (hl),N", ()=> {
@@ -190,6 +262,28 @@ describe("Z80 standard ops 30-3f", () => {
         expect(cpu.hl).toBe(0x0336);
         expect(cpu.pc).toBe(0x0007);
         expect(cpu.tacts).toBe(31);
+    });
+
+    it("0x3a: ld a,(NN)", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x3A, 0x00, 0x10 // LD A,(1000H)
+        ]);
+        m.memory[0x1000] = 0x34;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("A");
+        m.shouldKeepMemory();
+
+        expect(cpu.a).toBe(0x34);
+        expect(cpu.pc).toBe(0x0003);
+        expect(cpu.tacts).toBe(13);
     });
 
     it("0x3b: dec sp", ()=> {
