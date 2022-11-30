@@ -1319,14 +1319,14 @@ export class Z80Cpu implements IZ80Cpu {
         jrnc,     ldSpNN,   ldNNiA,   incSp,    incHli,   decHli,   ldHliN,   scf,     // 30-37 
         jrc,      addHlSp,  ldANNi,   decSp,    incA,     decA,     ldAN,     ccf,     // 38-3f 
 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 50-57 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 58-5f 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 60-67 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 68-6f 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 70-77 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 78-7f 
+        nop,      ldBC,     ldBD,     ldBE,     ldBH,     ldBL,     ldBHli,   ldBA,    // 40-47 
+        ldCB,     nop,      ldCD,     ldCE,     ldCH,     ldCL,     ldCHli,   ldCA,    // 48-4f 
+        ldDB,     ldDC,     nop,      ldDE,     ldDH,     ldDL,     ldDHli,   ldDA,    // 50-57 
+        ldEB,     ldEC,     ldED,     nop,      ldEH,     ldEL,     ldEHli,   ldEA,    // 58-5f 
+        ldHB,     ldHC,     ldHD,     ldHE,     nop,      ldHL,     ldHHli,   ldHA,    // 60-67 
+        ldLB,     ldLC,     ldLD,     ldLE,     ldLH,     nop,      ldLHli,   ldLA,    // 68-6f 
+        ldHliB,   ldHliC,   ldHliD,   ldHliE,   ldHliH,   ldHliL,   halt,     ldHliA,  // 70-77 
+        ldAB,     ldAC,     ldAD,     ldAE,     ldAH,     ldAL,     ldAHli,   nop,     // 78-7f 
 
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87 
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f 
@@ -1875,4 +1875,290 @@ function ldAN(cpu: Z80Cpu) {
 function ccf(cpu: Z80Cpu) {
     cpu.f = cpu.flagsSZPVValue | (cpu.isCFlagSet() ? FlagsSetMask.H : FlagsSetMask.C);
     cpu.setR5R3ForScfAndCcf();
+}
+
+// 0x41: LD B,C
+function ldBC(cpu: Z80Cpu) {
+    cpu.b = cpu.c;
+}
+
+// 0x42: LD B,D
+function ldBD(cpu: Z80Cpu) {
+    cpu.b = cpu.d;
+}
+
+// 0x43: LD B,E
+function ldBE(cpu: Z80Cpu) {
+    cpu.b = cpu.e;
+}
+
+// 0x44: LD B,H
+function ldBH(cpu: Z80Cpu) {
+    cpu.b = cpu.h;
+}
+
+// 0x45: LD B,L
+function ldBL(cpu: Z80Cpu) {
+    cpu.b = cpu.l;
+}
+
+// 0x46: LD B,(HL)
+function ldBHli(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.hl);
+}
+
+// 0x47: LD B,A
+function ldBA(cpu: Z80Cpu) {
+    cpu.b = cpu.a;
+}
+
+// 0x48: LD C,B
+function ldCB(cpu: Z80Cpu) {
+    cpu.c = cpu.b;
+}
+
+// 0x4a: LD C,D
+function ldCD(cpu: Z80Cpu) {
+    cpu.c = cpu.d;
+}
+
+// 0x4b LD C,E
+function ldCE(cpu: Z80Cpu) {
+    cpu.c = cpu.e;
+}
+
+// 0x4c: LD C,H
+function ldCH(cpu: Z80Cpu) {
+    cpu.c = cpu.h;
+}
+
+// 0x4d: LD C,L
+function ldCL(cpu: Z80Cpu) {
+    cpu.c = cpu.l;
+}
+
+// 0x4e: LD C,(HL)
+function ldCHli(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.hl);
+}
+
+// 0x4f: LD C,A
+function ldCA(cpu: Z80Cpu) {
+    cpu.c = cpu.a;
+}
+
+// 0x50: LD D,B
+function ldDB(cpu: Z80Cpu) {
+    cpu.d = cpu.b;
+}
+
+// 0x51: LD D,C
+function ldDC(cpu: Z80Cpu) {
+    cpu.d = cpu.c;
+}
+
+// 0x53: LD D,E
+function ldDE(cpu: Z80Cpu) {
+    cpu.d = cpu.e;
+}
+
+// 0x54: LD D,H
+function ldDH(cpu: Z80Cpu) {
+    cpu.d = cpu.h;
+}
+
+// 0x55: LD D,L
+function ldDL(cpu: Z80Cpu) {
+    cpu.d = cpu.l;
+}
+
+// 0x56: LD D,(HL)
+function ldDHli(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.hl);
+}
+
+// 0x57: LD D,A
+function ldDA(cpu: Z80Cpu) {
+    cpu.d = cpu.a;
+}
+
+// 0x58: LD E,B
+function ldEB(cpu: Z80Cpu) {
+    cpu.e = cpu.b;
+}
+
+// 0x59: LD E,C
+function ldEC(cpu: Z80Cpu) {
+    cpu.e = cpu.c;
+}
+
+// 0x5a: LD E,D
+function ldED(cpu: Z80Cpu) {
+    cpu.e = cpu.d;
+}
+
+// 0x5c: LD E,H
+function ldEH(cpu: Z80Cpu) {
+    cpu.e = cpu.h;
+}
+
+// 0x5d: LD E,L
+function ldEL(cpu: Z80Cpu) {
+    cpu.e = cpu.l;
+}
+
+// 0x5e: LD E,(HL)
+function ldEHli(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.hl);
+}
+
+// 0x5f: LD E,A
+function ldEA(cpu: Z80Cpu) {
+    cpu.e = cpu.a;
+}
+
+// 0x60: LD H,B
+function ldHB(cpu: Z80Cpu) {
+    cpu.h = cpu.b;
+}
+
+// 0x61: LD H,C
+function ldHC(cpu: Z80Cpu) {
+    cpu.h = cpu.c;
+}
+
+// 0x62: LD H,D
+function ldHD(cpu: Z80Cpu) {
+    cpu.h = cpu.d;
+}
+
+// 0x63: LD H,E
+function ldHE(cpu: Z80Cpu) {
+    cpu.h = cpu.e;
+}
+
+// 0x65: LD H,L
+function ldHL(cpu: Z80Cpu) {
+    cpu.h = cpu.l;
+}
+
+// 0x66: LD H,(HL)
+function ldHHli(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.hl);
+}
+
+// 0x67: LD H,A
+function ldHA(cpu: Z80Cpu) {
+    cpu.h = cpu.a;
+}
+
+// 0x68: LD L,B
+function ldLB(cpu: Z80Cpu) {
+    cpu.l = cpu.b;
+}
+
+// 0x69: LD L,C
+function ldLC(cpu: Z80Cpu) {
+    cpu.l = cpu.c;
+}
+
+// 0x6a: LD L,D
+function ldLD(cpu: Z80Cpu) {
+    cpu.l = cpu.d;
+}
+
+// 0x6b: LD L,E
+function ldLE(cpu: Z80Cpu) {
+    cpu.l = cpu.e;
+}
+
+// 0x6c: LD L,H
+function ldLH(cpu: Z80Cpu) {
+    cpu.l = cpu.h;
+}
+
+// 0x6e: LD L,(HL)
+function ldLHli(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.hl);
+}
+
+// 0x6f: LD L,A
+function ldLA(cpu: Z80Cpu) {
+    cpu.l = cpu.a;
+}
+
+// 0x70: LD (HL),B
+function ldHliB(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.b);
+}
+
+// 0x71: LD (HL),C
+function ldHliC(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.c);
+}
+
+// 0x72: LD (HL),D
+function ldHliD(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.d);
+}
+
+// 0x73: LD (HL),E
+function ldHliE(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.e);
+}
+
+// 0x74: LD (HL),H
+function ldHliH(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.h);
+}
+
+// 0x75: LD (HL),L
+function ldHliL(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.l);
+}
+
+// 0x76: HALT
+function halt(cpu: Z80Cpu) {
+    cpu.halted = true;
+    cpu.pc--;
+}
+
+// 0x77: LD (HL),A
+function ldHliA(cpu: Z80Cpu) {
+    cpu.writeMemory(cpu.hl, cpu.a);
+}
+
+// 0x78: LD A,B
+function ldAB(cpu: Z80Cpu) {
+    cpu.a = cpu.b;
+}
+
+// 0x79: LD A,C
+function ldAC(cpu: Z80Cpu) {
+    cpu.a = cpu.c;
+}
+
+// 0x7A: LD A,D
+function ldAD(cpu: Z80Cpu) {
+    cpu.a = cpu.d;
+}
+
+// 0x7B: LD A,E
+function ldAE(cpu: Z80Cpu) {
+    cpu.a = cpu.e;
+}
+
+// 0x7C: LD A,H
+function ldAH(cpu: Z80Cpu) {
+    cpu.a = cpu.h;
+}
+
+// 0x7D: LD A,L
+function ldAL(cpu: Z80Cpu) {
+    cpu.a = cpu.l;
+}
+
+// 0x7E: LD A,(HL)
+function ldAHli(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.hl);
 }
