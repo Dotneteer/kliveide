@@ -953,13 +953,24 @@ export class Z80Cpu implements IZ80Cpu {
         this.pc = this.wz = this.pc + (e >= 128 ? e - 256 : e);
     }
 
-        /// <summary>
-    /// Adds the <paramref name="regHl"/> value and <paramref name="regOther"/> value
-    /// according to the rule of ADD HL,QQ operation
-    /// </summary>
-    /// <param name="regHl">HL (IX, IY) value</param>
-    /// <param name="regOther">Other value</param>
-    /// <returns>Result value</returns>
+    /**
+     * The core of the CALL instruction 
+     */
+    callCore(): void {
+        this.tactPlus1WithAddress(this.pc);
+        this.sp--;
+        this.writeMemory(this.sp, this.pc >>> 8);
+        this.sp--;
+        this.writeMemory(this.sp, this.pc);
+        this.pc = this.wz;
+    }
+
+    /**
+     * Adds the `regHl` value and `regOther` value according to the rule of ADD HL,QQ operation
+     * @param regHl HL (IX, IY) value
+     * @param regOther Other value
+     * @returns Result value
+     */
     add16(regHl: number, regOther: number): number
     {
         const tmpVal = regHl + regOther;
@@ -1011,6 +1022,26 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     /**
+     * The core of the 8-bit SBC operation
+     * @param value Value to subtract from A
+     */
+    sbc8(value: number): void {
+        const tmp = this.a - value - this.flagCValue;
+        const lookup =
+          ((this.a & 0x88) >>> 3) |
+          ((value & 0x88) >>> 2) |
+          ((tmp & 0x88) >>> 1);
+        this.a = tmp;
+        this.f =
+          ((tmp & 0x100) !== 0 ? FlagsSetMask.C : 0) |
+          FlagsSetMask.N |
+          halfCarrySubFlags[lookup & 0x07] |
+          overflowSubFlags[lookup >>> 4] |
+          sz53Table[this.a];
+        this.f53Updated = true;
+    }
+
+    /**
      * The core of the 8-bit ADD operation 
      * @param value Value to add to A
      */
@@ -1026,6 +1057,75 @@ export class Z80Cpu implements IZ80Cpu {
           halfCarryAddFlags[lookup & 0x07] |
           overflowAddFlags[lookup >> 4] |
           sz53Table[this.a];
+        this.f53Updated = true;
+    }
+
+    /**
+     * The core of the 8-bit ADD operation 
+     * @param value Value to add to A
+     */
+    adc8(value: number): void {
+        const tmp = this.a + value + this.flagCValue;
+        var lookup =
+            ((this.a & 0x88) >>> 3) |
+            ((value & 0x88) >>> 2) |
+            ((tmp & 0x88) >>> 1);
+        this.a = tmp;
+        this.f = 
+          ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
+          halfCarryAddFlags[lookup & 0x07] |
+          overflowAddFlags[lookup >>> 4] |
+          sz53Table[this.a];
+        this.f53Updated = true;
+    }
+
+    /**
+     * The core of the 8-bit AND operation 
+     * @param value Value to AND with A
+     */
+    and8(value: number): void {
+        this.a &= value;
+        this.f = FlagsSetMask.H | sz53pvTable[this.a];
+        this.f53Updated = true;
+    }
+
+    /**
+     * The core of the 8-bit XOR operation 
+     * @param value Value to XOR with A
+     */
+    xor8(value: number): void {
+        this.a ^= value;
+        this.f = sz53pvTable[this.a];
+        this.f53Updated = true;
+    }
+
+    /**
+     * The core of the 8-bit OR operation 
+     * @param value Value to OR with A
+     */
+     or8(value: number): void {
+        this.a |= value;
+        this.f = sz53pvTable[this.a];
+        this.f53Updated = true;
+    }
+
+    /**
+     * The core of the 8-bit CP operation 
+     * @param value Value to compare with A
+     */
+    cp8(value: number): void {
+        const tmp = this.a - value;
+        const lookup =
+          ((this.a & 0x88) >>> 3) |
+          ((value & 0x88) >>> 2) |
+          ((tmp & 0x88) >>> 1);
+        this.f = ((tmp & 0x100) != 0 ? FlagsSetMask.C : 0) |
+          (tmp != 0 ? 0 : FlagsSetMask.Z) |
+          FlagsSetMask.N |
+          halfCarrySubFlags[lookup & 0x07] |
+          overflowSubFlags[lookup >>> 4] |
+          (value & FlagsSetMask.R3R5) |
+          (tmp & FlagsSetMask.S);
         this.f53Updated = true;
     }
 
@@ -1328,23 +1428,23 @@ export class Z80Cpu implements IZ80Cpu {
         ldHliB,   ldHliC,   ldHliD,   ldHliE,   ldHliH,   ldHliL,   halt,     ldHliA,  // 70-77 
         ldAB,     ldAC,     ldAD,     ldAE,     ldAH,     ldAL,     ldAHli,   nop,     // 78-7f 
 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf 
+        addAB,    addAC,    addAD,    addAE,    addAH,    addAL,    addAHli,  addAA,   // 80-87 
+        adcAB,    adcAC,    adcAD,    adcAE,    adcAH,    adcAL,    adcAHli,  adcAA,   // 88-8f 
+        subAB,    subAC,    subAD,    subAE,    subAH,    subAL,    subAHli,  subAA,   // 90-97 
+        sbcAB,    sbcAC,    sbcAD,    sbcAE,    sbcAH,    sbcAL,    sbcAHli,  sbcAA,   // 98-9f 
+        andAB,    andAC,    andAD,    andAE,    andAH,    andAL,    andAHli,  andAA,   // a0-a7 
+        xorAB,    xorAC,    xorAD,    xorAE,    xorAH,    xorAL,    xorAHli,  xorAA,   // a8-af 
+        orAB,     orAC,     orAD,     orAE,     orAH,     orAL,     orAHli,   orAA,    // b0-b7 
+        cpB,      cpC,      cpD,      cpE,      cpH,      cpL,      cpHli,    cpA,     // b8-bf 
 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d0-d7 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d8-df 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e0-e7 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e8-ef 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f0-f7 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f8-ff 
+        retNz,    popBc,    jpNz,     jp,       callNz,   pushBc,   nop,      nop,     // c0-c7 
+        retZ,     ret,      jpZ,      nop,      callZ,    call,     nop,      nop,     // c8-cf 
+        retNc,    popDe,    jpNc,     nop,      callNc,   pushDe,   nop,      nop,     // d0-d7 
+        retC,     nop,      jpC,      nop,      callC,    nop,      nop,      nop,     // d8-df 
+        retPo,    popHl,    jpPo,     nop,      callPo,   pushHl,   nop,      nop,     // e0-e7 
+        retPe,    nop,      jpPe,     nop,      callPe,   nop,      nop,      nop,     // e8-ef 
+        retP,     popAf,    jpP,      nop,      callP,    pushAf,   nop,      nop,     // f0-f7 
+        retM,     nop,      jpM,      nop,      callM,    nop,      nop,      nop,     // f8-ff 
     ]
 }
 
@@ -2162,3 +2262,622 @@ function ldAL(cpu: Z80Cpu) {
 function ldAHli(cpu: Z80Cpu) {
     cpu.a = cpu.readMemory(cpu.hl);
 }
+
+// 0x80: ADD A,B
+function addAB(cpu: Z80Cpu) {
+    cpu.add8(cpu.b);
+}
+
+// 0x81: ADD A,C
+function addAC(cpu: Z80Cpu) {
+    cpu.add8(cpu.c);
+}
+
+// 0x82: ADD A,D
+function addAD(cpu: Z80Cpu) {
+    cpu.add8(cpu.d);
+}
+
+// 0x83: ADD A,E
+function addAE(cpu: Z80Cpu) {
+    cpu.add8(cpu.e);
+}
+
+// 0x84: ADD A,H
+function addAH(cpu: Z80Cpu) {
+    cpu.add8(cpu.h);
+}
+
+// 0x85: ADD A,L
+function addAL(cpu: Z80Cpu) {
+    cpu.add8(cpu.l);
+}
+
+// 0x86: ADD A,(HL)
+function addAHli(cpu: Z80Cpu) {
+    cpu.add8(cpu.readMemory(cpu.hl));
+}
+
+// 0x87: ADD A,A
+function addAA(cpu: Z80Cpu) {
+    cpu.add8(cpu.a);
+}
+
+// 0x88: ADC A,B
+function adcAB(cpu: Z80Cpu) {
+    cpu.adc8(cpu.b);
+}
+
+// 0x89: ADC A,C
+function adcAC(cpu: Z80Cpu) {
+    cpu.adc8(cpu.c);
+}
+
+// 0x8A: ADC A,D
+function adcAD(cpu: Z80Cpu) {
+    cpu.adc8(cpu.d);
+}
+
+// 0x8B: ADC A,E
+function adcAE(cpu: Z80Cpu) {
+    cpu.adc8(cpu.e);
+}
+
+// 0x8C: ADC A,H
+function adcAH(cpu: Z80Cpu) {
+    cpu.adc8(cpu.h);
+}
+
+// 0x8D: ADC A,L
+function adcAL(cpu: Z80Cpu) {
+    cpu.adc8(cpu.l);
+}
+
+// 0x8E: ADC A,(HL)
+function adcAHli(cpu: Z80Cpu) {
+    cpu.adc8(cpu.readMemory(cpu.hl));
+}
+
+// 0x8F: ADC A,A
+function adcAA(cpu: Z80Cpu) {
+    cpu.adc8(cpu.a);
+}
+
+// 0x90: SUB A,B
+function subAB(cpu: Z80Cpu) {
+    cpu.sub8(cpu.b);
+}
+
+// 0x91: SUB A,C
+function subAC(cpu: Z80Cpu) {
+    cpu.sub8(cpu.c);
+}
+
+// 0x92: SUB A,D
+function subAD(cpu: Z80Cpu) {
+    cpu.sub8(cpu.d);
+}
+
+// 0x93: SUB A,E
+function subAE(cpu: Z80Cpu) {
+    cpu.sub8(cpu.e);
+}
+
+// 0x94: SUB A,H
+function subAH(cpu: Z80Cpu) {
+    cpu.sub8(cpu.h);
+}
+
+// 0x95: SUB A,L
+function subAL(cpu: Z80Cpu) {
+    cpu.sub8(cpu.l);
+}
+
+// 0x96: SUB A,(HL)
+function subAHli(cpu: Z80Cpu) {
+    cpu.sub8(cpu.readMemory(cpu.hl));
+}
+
+// 0x97: SUB A,A
+function subAA(cpu: Z80Cpu) {
+    cpu.sub8(cpu.a);
+}
+
+// 0x98: SBC A,B
+function sbcAB(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.b);
+}
+
+// 0x99: SBC A,C
+function sbcAC(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.c);
+}
+
+// 0x9A: SBC A,D
+function sbcAD(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.d);
+}
+
+// 0x9B: SBC A,E
+function sbcAE(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.e);
+}
+
+// 0x9C: SBC A,H
+function sbcAH(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.h);
+}
+
+// 0x9D: SBC A,L
+function sbcAL(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.l);
+}
+
+// 0x9E: SBC A,(HL)
+function sbcAHli(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.readMemory(cpu.hl));
+}
+
+// 0x9f: SBC A,A
+function sbcAA(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.a);
+}
+
+// 0xa0: AND A,B
+function andAB(cpu: Z80Cpu) {
+    cpu.and8(cpu.b);
+}
+
+// 0xa1: AND A,C
+function andAC(cpu: Z80Cpu) {
+    cpu.and8(cpu.c);
+}
+
+// 0xa2: AND A,D
+function andAD(cpu: Z80Cpu) {
+    cpu.and8(cpu.d);
+}
+
+// 0xa3: AND A,E
+function andAE(cpu: Z80Cpu) {
+    cpu.and8(cpu.e);
+}
+
+// 0xa4: AND A,H
+function andAH(cpu: Z80Cpu) {
+    cpu.and8(cpu.h);
+}
+
+// 0xa5: AND A,L
+function andAL(cpu: Z80Cpu) {
+    cpu.and8(cpu.l);
+}
+
+// 0xa6: AND A,(HL)
+function andAHli(cpu: Z80Cpu) {
+    cpu.and8(cpu.readMemory(cpu.hl));
+}
+
+// 0xa7: AND A,A
+function andAA(cpu: Z80Cpu) {
+    cpu.and8(cpu.a);
+}
+
+// 0xa8: XOR A,B
+function xorAB(cpu: Z80Cpu) {
+    cpu.xor8(cpu.b);
+}
+
+// 0xa9: XOR A,C
+function xorAC(cpu: Z80Cpu) {
+    cpu.xor8(cpu.c);
+}
+// 0xaa: XOR A,D
+function xorAD(cpu: Z80Cpu) {
+    cpu.xor8(cpu.d);
+}
+
+// 0xab: XOR A,E
+function xorAE(cpu: Z80Cpu) {
+    cpu.xor8(cpu.e);
+}
+
+// 0xac: XOR A,H
+function xorAH(cpu: Z80Cpu) {
+    cpu.xor8(cpu.h);
+}
+
+// 0xad: XOR A,L
+function xorAL(cpu: Z80Cpu) {
+    cpu.xor8(cpu.l);
+}
+
+// 0xae: XOR A,(HL)
+function xorAHli(cpu: Z80Cpu) {
+    cpu.xor8(cpu.readMemory(cpu.hl));
+}
+
+// 0xaf: XOR A,A
+function xorAA(cpu: Z80Cpu) {
+    cpu.xor8(cpu.a);
+}
+
+// 0xb0: OR A,B
+function orAB(cpu: Z80Cpu) {
+    cpu.or8(cpu.b);
+}
+
+// 0xb1: OR A,C
+function orAC(cpu: Z80Cpu) {
+    cpu.or8(cpu.c);
+}
+
+// 0xb2: OR A,D
+function orAD(cpu: Z80Cpu) {
+    cpu.or8(cpu.d);
+}
+
+// 0xb3: OR A,E
+function orAE(cpu: Z80Cpu) {
+    cpu.or8(cpu.e);
+}
+
+// 0xb4: OR A,H
+function orAH(cpu: Z80Cpu) {
+    cpu.or8(cpu.h);
+}
+
+// 0xb5: OR A,L
+function orAL(cpu: Z80Cpu) {
+    cpu.or8(cpu.l);
+}
+
+// 0xb6: OR A,(HL)
+function orAHli(cpu: Z80Cpu) {
+    cpu.or8(cpu.readMemory(cpu.hl));
+}
+
+// 0xb7: OR A,A
+function orAA(cpu: Z80Cpu) {
+    cpu.or8(cpu.a);
+}
+
+// 0xb8: CP B
+function cpB(cpu: Z80Cpu) {
+    cpu.cp8(cpu.b);
+}
+
+// 0xb9: CP C
+function cpC(cpu: Z80Cpu) {
+    cpu.cp8(cpu.c);
+}
+
+// 0xba: CP D
+function cpD(cpu: Z80Cpu) {
+    cpu.cp8(cpu.d);
+}
+
+// 0xbb: CP E
+function cpE(cpu: Z80Cpu) {
+    cpu.cp8(cpu.e);
+}
+
+// 0xbc: CP H
+function cpH(cpu: Z80Cpu) {
+    cpu.cp8(cpu.h);
+}
+
+// 0xbd: CP L
+function cpL(cpu: Z80Cpu) {
+    cpu.cp8(cpu.l);
+}
+
+// 0xbe: CP (HL)
+function cpHli(cpu: Z80Cpu) {
+    cpu.cp8(cpu.readMemory(cpu.hl));
+}
+
+// 0xbf: CP A
+function cpA(cpu: Z80Cpu) {
+    cpu.cp8(cpu.a);
+}
+
+// 0xc0: RET NZ
+function retNz(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (!cpu.isZFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xc1: POP BC
+function popBc(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+    cpu.b = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+}
+
+// 0xc2: JP NZ,nn
+function jpNz(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isZFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xc3: JP nn
+function jp(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    cpu.pc = cpu.wz;
+}
+
+// 0xc4: CALL NZ,nn
+function callNz(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isZFlagSet()) {
+        cpu.callCore();
+    }
+}
+
+// 0xc5: PUSH BC
+function pushBc(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.b);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.c);
+}
+
+// 0xc8: RET Z
+function retZ(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (cpu.isZFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xc9: RET
+function ret(cpu: Z80Cpu) {
+    cpu.wl = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+    cpu.wh = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+    cpu.pc = cpu.wz;
+}
+
+// 0xca: JP Z,nn
+function jpZ(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isZFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xcc: CALL Z,nn
+function callZ(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isZFlagSet()) {
+        cpu.callCore();
+    }
+}
+
+// 0xcd: CALL nn
+function call(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    cpu.callCore();
+}
+
+// 0xd0: RET NC
+function retNc(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (!cpu.isCFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xd1: POP DE
+function popDe(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+    cpu.d = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+}
+
+// 0xd2: JP NC,nn
+function jpNc(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isCFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xd4: CALL NC,nn
+function callNc(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isCFlagSet()) {
+        cpu.callCore();
+    }
+}
+
+// 0xd5: PUSH DE
+function pushDe(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.d);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.e);
+}
+
+// 0xd8: RET C
+function retC(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (cpu.isCFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xda: JP C,nn
+function jpC(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isCFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xdc: CALL C,nn
+function callC(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isCFlagSet()) {
+        cpu.callCore();
+    }
+}
+
+// 0xe0: RET PO
+function retPo(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (!cpu.isPvFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xe1: POP HL
+function popHl(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+    cpu.h = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+}
+
+// 0xe2: JP PO,nn
+function jpPo(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isPvFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xe4: CALL PO,nn
+function callPo(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isPvFlagSet()) {
+        cpu.callCore();
+    }
+}
+
+// 0xe5: PUSH HL
+function pushHl(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.h);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.l);
+}
+
+// 0xe8: RET PE
+function retPe(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (cpu.isPvFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xea: JP PE,nn
+function jpPe(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isPvFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xec: CALL PE,nn
+function callPe(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isPvFlagSet()) {
+        cpu.callCore();
+    }
+}
+
+// 0xf0: RET P
+function retP(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (!cpu.isSFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xf1: POP AF
+function popAf(cpu: Z80Cpu) {
+    cpu.f = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+    cpu.a = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+}
+
+// 0xf2: JP P,nn
+function jpP(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isSFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xf4: CALL P,nn
+function callP(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (!cpu.isSFlagSet()) {
+        cpu.callCore();
+    }
+}
+
+// 0xf5: PUSH HL
+function pushAf(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.a);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.f);
+}
+
+// 0xf8: RET M
+function retM(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    if (cpu.isSFlagSet()) {
+        ret(cpu);
+    }
+}
+
+// 0xfa: JP M,nn
+function jpM(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isSFlagSet()) {
+        cpu.pc = cpu.wz;
+    }
+}
+
+// 0xfc: CALL M,nn
+function callM(cpu: Z80Cpu) {
+    cpu.wl = cpu.fetchCodeByte();
+    cpu.wh = cpu.fetchCodeByte();
+    if (cpu.isSFlagSet()) {
+        cpu.callCore();
+    }
+}
+

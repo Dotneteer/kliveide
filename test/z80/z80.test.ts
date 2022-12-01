@@ -2,7 +2,7 @@ import "mocha";
 import { expect } from "expect";
 import { Z80Cpu } from "@/emu/z80/Z80Cpu";
 
-describe("Z80 tests", () => {
+describe("Z80 register assignment", () => {
     it("Reg A assignment", ()=> {
         const cpu = new Z80Cpu();
         cpu.af = 0x1c3d;
