@@ -741,39 +741,29 @@ export class Z80Cpu implements IZ80Cpu {
 
             // --- Bit instructions
             case OpCodePrefix.CB:
-                // TODO:
-                // _bitInstrs![OpCode].Invoke();
+                this.bitOps[this.opCode](this);
                 this.prefix = OpCodePrefix.None;
                 break;
 
             // --- Extended instructions
             case OpCodePrefix.ED:
-                // TODO:
-                // _extendedInstrs![OpCode].Invoke();
+                this.extendedOps[this.opCode](this);
                 this.prefix = OpCodePrefix.None;
                 break;
 
             // --- IX- or IY-indexed instructions
             case OpCodePrefix.DD:
             case OpCodePrefix.FD:
-                if (this.opCode == 0xdd)
-                {
+                if (this.opCode == 0xdd) {
                     this.prefix = OpCodePrefix.DD;
-                }
-                else if (this.opCode == 0xfd)
-                {
+                } else if (this.opCode == 0xfd) {
                     this.prefix = OpCodePrefix.FD;
-                }
-                else if (this.opCode == 0xcb)
-                {
+                } else if (this.opCode == 0xcb) {
                     this.prefix = this.prefix == OpCodePrefix.DD
                         ? OpCodePrefix.DDCB
                         : OpCodePrefix.FDCB;
-                }
-                else
-                {
-                    // TODO:
-                    // _indexedInstrs![OpCode].Invoke();
+                } else {
+                    this.indexedOps[this.opCode](this);
                     this.prefix = OpCodePrefix.None;
                 }
                 break;
@@ -786,8 +776,7 @@ export class Z80Cpu implements IZ80Cpu {
                 this.opCode = this.readMemory(this.pc);
                 this.tactPlus2WithAddress(this.pc);
                 this.pc++;
-                // TODO:
-                // _indexedBitInstrs![OpCode].Invoke();
+                this.indexedBitOps[this.opCode](this);
                 this.prefix = OpCodePrefix.None;
                 break;
         }
@@ -1142,6 +1131,107 @@ export class Z80Cpu implements IZ80Cpu {
         this.f53Updated = true;
     }
 
+    /**
+     * The core of the 8-bit RLC operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    rlc8(oper: number): number {
+        const result = ((oper << 1) | (oper >>> 7)) & 0xff;
+        this.f = (result & FlagsSetMask.C) | sz53pvTable[result];
+        this.f53Updated = true;
+        return result;
+    }
+
+    /**
+     * The core of the 8-bit RRC operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    rrc8(oper: number): number {
+        this.f = oper & FlagsSetMask.C;
+        const result = ((oper >>> 1) | (oper << 7)) & 0xff;
+        this.f |= sz53pvTable[result];
+        this.f53Updated = true;
+        return result;
+    }
+ 
+    /**
+     * The core of the 8-bit RL operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    rl8(oper: number): number {
+        const result = ((oper << 1) | this.flagCValue) & 0xff;
+        this.f = ((oper >>> 7) | sz53pvTable[result]);
+        this.f53Updated = true;
+        return result;
+    }
+ 
+    /**
+     * The core of the 8-bit RR operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    rr8(oper: number): number {
+        const result = ((oper >>> 1) | (this.f << 7)) & 0xff;
+        this.f = (oper & FlagsSetMask.C) | sz53pvTable[result];
+        this.f53Updated = true;
+        return result;
+    }
+ 
+    /**
+     * The core of the 8-bit SLA operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    sla8(oper: number): number {
+        this.f = oper >>> 7;
+        const result = (oper << 1) & 0xff;
+        this.f |= sz53pvTable[result];
+        this.f53Updated = true;
+        return result;
+    }
+ 
+    /**
+     * The core of the 8-bit SRA operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    sra8(oper: number): number {
+        this.f = oper & FlagsSetMask.C;
+        const result = ((oper & 0x80) | (oper >> 1)) & 0xff;
+        this.f |= sz53pvTable[result];
+        this.f53Updated = true;
+        return result;
+    }
+ 
+    /**
+     * The core of the 8-bit SLL operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    sll8(oper: number): number {
+        this.f = oper >>> 7;
+        const result = ((oper << 1) | 0x01) & 0xff;
+        this.f |= sz53pvTable[result];
+        this.f53Updated = true;
+        return result;
+    }
+ 
+    /**
+     * The core of the 8-bit SRL operation.
+     * @param oper Operand
+     * @returns Operation result
+     */
+    srl8(oper: number): number {
+        this.f = oper & FlagsSetMask.C;
+        const result = oper >>> 1;
+        this.f |= sz53pvTable[result];
+        this.f53Updated = true;
+        return result;
+    }
+ 
     // --------------------------------------------------------------------------------------------------------------
     // Z80 memory and I/O management
 
@@ -1480,6 +1570,158 @@ export class Z80Cpu implements IZ80Cpu {
         retP,     popAf,    jpP,      di,       callP,    pushAf,   orAN,     rst30,   // f0-f7 
         retM,     nop,      jpM,      ei,       callM,    nop,      cpAN,     rst38,   // f8-ff 
     ]
+
+    readonly bitOps: Z80Operation[] = [
+        rlcB,     rlcC,     rlcD,     rlcE,     rlcH,     rlcL,     rlcHli,   rlcA,    // 00-07
+        rrcB,     rrcC,     rrcD,     rrcE,     rrcH,     rrcL,     rrcHli,   rrcA,    // 08-0f
+        rlB,      rlC,      rlD,      rlE,      rlH,      rlL,      rlHli,    rlA,     // 10-17
+        rrB,      rrC,      rrD,      rrE,      rrH,      rrL,      rrHli,    rrA,     // 18-1f
+        slaB,     slaC,     slaD,     slaE,     slaH,     slaL,     slaHli,   slaA,    // 20-27
+        sraB,     sraC,     sraD,     sraE,     sraH,     sraL,     sraHli,   sraA,    // 28-2f
+        sllB,     sllC,     sllD,     sllE,     sllH,     sllL,     sllHli,   sllA,    // 30-37
+        srlB,     srlC,     srlD,     srlE,     srlH,     srlL,     srlHli,   srlA,    // 38-3f
+
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 50-57
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 58-5f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 60-67
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 68-6f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 70-77
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 78-7f
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d0-d7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d8-df
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e0-e7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e8-ef
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f0-f7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f8-ff
+    ]
+
+    readonly indexedOps: Z80Operation[] = [
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 00-07
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 08-0f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 10-17
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 18-1f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 20-27
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 28-2f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 30-37
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 38-3f
+
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 50-57
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 58-5f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 60-67
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 68-6f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 70-77
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 78-7f
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d0-d7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d8-df
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e0-e7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e8-ef
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f0-f7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f8-ff
+    ]
+
+    readonly indexedBitOps: Z80Operation[] = [
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 00-07
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 08-0f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 10-17
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 18-1f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 20-27
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 28-2f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 30-37
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 38-3f
+
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 50-57
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 58-5f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 60-67
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 68-6f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 70-77
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 78-7f
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d0-d7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d8-df
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e0-e7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e8-ef
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f0-f7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f8-ff
+    ]
+
+    readonly extendedOps: Z80Operation[] = [
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 00-07
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 08-0f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 10-17
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 18-1f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 20-27
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 28-2f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 30-37
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 38-3f
+
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 50-57
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 58-5f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 60-67
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 68-6f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 70-77
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 78-7f
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
+        
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d0-d7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d8-df
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e0-e7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e8-ef
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f0-f7
+        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f8-ff
+    ]
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -1551,7 +1793,7 @@ const sz53pvTable: number[] = [];
 })();
 
 // --------------------------------------------------------------------------------------------------------------------
-// Z80 operations
+// Z80 standard operations
 
 /**
  * The function represents a Z80 operation
@@ -3061,3 +3303,341 @@ function rst38(cpu: Z80Cpu) {
     cpu.rstCore(0x0038);
 }
 
+// --------------------------------------------------------------------------------------------------------------------
+// Z80 bit operations
+
+// 0x00: RLC B
+function rlcB(cpu: Z80Cpu) {
+    cpu.b = cpu.rlc8(cpu.b);
+}
+
+// 0x01: RLC C
+function rlcC(cpu: Z80Cpu) {
+    cpu.c = cpu.rlc8(cpu.c);
+}
+
+// 0x02: RLC D
+function rlcD(cpu: Z80Cpu) {
+    cpu.d = cpu.rlc8(cpu.d);
+}
+
+// 0x03: RLC E
+function rlcE(cpu: Z80Cpu) {
+    cpu.e = cpu.rlc8(cpu.e);
+}
+
+// 0x04: RLC H
+function rlcH(cpu: Z80Cpu) {
+    cpu.h = cpu.rlc8(cpu.h);
+}
+
+// 0x05: RLC L
+function rlcL(cpu: Z80Cpu) {
+    cpu.l = cpu.rlc8(cpu.l);
+}
+
+// 0x06: RLC (HL)
+function rlcHli(cpu: Z80Cpu) {
+    const tmp = cpu.rlc8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x07: RLC A
+function rlcA(cpu: Z80Cpu) {
+    cpu.a = cpu.rlc8(cpu.a);
+}
+
+// 0x08: RRC B
+function rrcB(cpu: Z80Cpu) {
+    cpu.b = cpu.rrc8(cpu.b);
+}
+
+// 0x09: RRC C
+function rrcC(cpu: Z80Cpu) {
+    cpu.c = cpu.rrc8(cpu.c);
+}
+
+// 0x0a: RRC D
+function rrcD(cpu: Z80Cpu) {
+    cpu.d = cpu.rrc8(cpu.d);
+}
+
+// 0x0b: RRC E
+function rrcE(cpu: Z80Cpu) {
+    cpu.e = cpu.rrc8(cpu.e);
+}
+
+// 0x0c: RRC H
+function rrcH(cpu: Z80Cpu) {
+    cpu.h = cpu.rrc8(cpu.h);
+}
+
+// 0x0d: RRC L
+function rrcL(cpu: Z80Cpu) {
+    cpu.l = cpu.rrc8(cpu.l);
+}
+
+// 0x0e: RRC (HL)
+function rrcHli(cpu: Z80Cpu) {
+    const tmp = cpu.rrc8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x0f: RRC A
+function rrcA(cpu: Z80Cpu) {
+    cpu.a = cpu.rrc8(cpu.a);
+}
+
+// 0x10: RL B
+function rlB(cpu: Z80Cpu) {
+    cpu.b = cpu.rl8(cpu.b);
+}
+
+// 0x11: RL C
+function rlC(cpu: Z80Cpu) {
+    cpu.c = cpu.rl8(cpu.c);
+}
+
+// 0x12: RL D
+function rlD(cpu: Z80Cpu) {
+    cpu.d = cpu.rl8(cpu.d);
+}
+
+// 0x13: RL E
+function rlE(cpu: Z80Cpu) {
+    cpu.e = cpu.rl8(cpu.e);
+}
+
+// 0x14: RL H
+function rlH(cpu: Z80Cpu) {
+    cpu.h = cpu.rl8(cpu.h);
+}
+
+// 0x15: RL L
+function rlL(cpu: Z80Cpu) {
+    cpu.l = cpu.rl8(cpu.l);
+}
+
+// 0x16: RL (HL)
+function rlHli(cpu: Z80Cpu) {
+    const tmp = cpu.rl8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x17: RL A
+function rlA(cpu: Z80Cpu) {
+    cpu.a = cpu.rl8(cpu.a);
+}
+
+// 0x18: RR B
+function rrB(cpu: Z80Cpu) {
+    cpu.b = cpu.rr8(cpu.b);
+}
+
+// 0x19: RR C
+function rrC(cpu: Z80Cpu) {
+    cpu.c = cpu.rr8(cpu.c);
+}
+
+// 0x1a: RR D
+function rrD(cpu: Z80Cpu) {
+    cpu.d = cpu.rr8(cpu.d);
+}
+
+// 0x1b: RR E
+function rrE(cpu: Z80Cpu) {
+    cpu.e = cpu.rr8(cpu.e);
+}
+
+// 0x1c: RR H
+function rrH(cpu: Z80Cpu) {
+    cpu.h = cpu.rr8(cpu.h);
+}
+
+// 0x1d: RR L
+function rrL(cpu: Z80Cpu) {
+    cpu.l = cpu.rr8(cpu.l);
+}
+
+// 0x1e: RR (HL)
+function rrHli(cpu: Z80Cpu) {
+    const tmp = cpu.rr8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x1f: RR A
+function rrA(cpu: Z80Cpu) {
+    cpu.a = cpu.rr8(cpu.a);
+}
+
+// 0x20: SLA B
+function slaB(cpu: Z80Cpu) {
+    cpu.b = cpu.sla8(cpu.b);
+}
+
+// 0x21: SLA C
+function slaC(cpu: Z80Cpu) {
+    cpu.c = cpu.sla8(cpu.c);
+}
+
+// 0x22: SLA D
+function slaD(cpu: Z80Cpu) {
+    cpu.d = cpu.sla8(cpu.d);
+}
+
+// 0x23: SLA E
+function slaE(cpu: Z80Cpu) {
+    cpu.e = cpu.sla8(cpu.e);
+}
+
+// 0x24: SLA H
+function slaH(cpu: Z80Cpu) {
+    cpu.h = cpu.sla8(cpu.h);
+}
+
+// 0x25: SLA L
+function slaL(cpu: Z80Cpu) {
+    cpu.l = cpu.sla8(cpu.l);
+}
+
+// 0x26: SLA (HL)
+function slaHli(cpu: Z80Cpu) {
+    const tmp = cpu.sla8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x27: SLA A
+function slaA(cpu: Z80Cpu) {
+    cpu.a = cpu.sla8(cpu.a);
+}
+
+// 0x28: SRA B
+function sraB(cpu: Z80Cpu) {
+    cpu.b = cpu.sra8(cpu.b);
+}
+
+// 0x29: SRA C
+function sraC(cpu: Z80Cpu) {
+    cpu.c = cpu.sra8(cpu.c);
+}
+
+// 0x2A: SRA D
+function sraD(cpu: Z80Cpu) {
+    cpu.d = cpu.sra8(cpu.d);
+}
+
+// 0x2B: SRA E
+function sraE(cpu: Z80Cpu) {
+    cpu.e = cpu.sra8(cpu.e);
+}
+
+// 0x2C: SRA H
+function sraH(cpu: Z80Cpu) {
+    cpu.h = cpu.sra8(cpu.h);
+}
+
+// 0x2D: SRA L
+function sraL(cpu: Z80Cpu) {
+    cpu.l = cpu.sra8(cpu.l);
+}
+
+// 0x2E: SLA (HL)
+function sraHli(cpu: Z80Cpu) {
+    const tmp = cpu.sra8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x2F: SRA A
+function sraA(cpu: Z80Cpu) {
+    cpu.a = cpu.sra8(cpu.a);
+}
+
+// 0x30: SLL B
+function sllB(cpu: Z80Cpu) {
+    cpu.b = cpu.sll8(cpu.b);
+}
+
+// 0x31: SLL C
+function sllC(cpu: Z80Cpu) {
+    cpu.c = cpu.sll8(cpu.c);
+}
+
+// 0x32: SLL D
+function sllD(cpu: Z80Cpu) {
+    cpu.d = cpu.sll8(cpu.d);
+}
+
+// 0x33: SLL E
+function sllE(cpu: Z80Cpu) {
+    cpu.e = cpu.sll8(cpu.e);
+}
+
+// 0x34: SLL H
+function sllH(cpu: Z80Cpu) {
+    cpu.h = cpu.sll8(cpu.h);
+}
+
+// 0x35: SLL L
+function sllL(cpu: Z80Cpu) {
+    cpu.l = cpu.sll8(cpu.l);
+}
+
+// 0x36: SLL (HL)
+function sllHli(cpu: Z80Cpu) {
+    const tmp = cpu.sll8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x37: SLL A
+function sllA(cpu: Z80Cpu) {
+    cpu.a = cpu.sll8(cpu.a);
+}
+
+// 0x38: SRL B
+function srlB(cpu: Z80Cpu) {
+    cpu.b = cpu.srl8(cpu.b);
+}
+
+// 0x39: SRL C
+function srlC(cpu: Z80Cpu) {
+    cpu.c = cpu.srl8(cpu.c);
+}
+
+// 0x3A: SRL D
+function srlD(cpu: Z80Cpu) {
+    cpu.d = cpu.srl8(cpu.d);
+}
+
+// 0x3B: SRL E
+function srlE(cpu: Z80Cpu) {
+    cpu.e = cpu.srl8(cpu.e);
+}
+
+// 0x3C: SRL H
+function srlH(cpu: Z80Cpu) {
+    cpu.h = cpu.srl8(cpu.h);
+}
+
+// 0x3D: SRL L
+function srlL(cpu: Z80Cpu) {
+    cpu.l = cpu.srl8(cpu.l);
+}
+
+// 0x3E: SRL (HL)
+function srlHli(cpu: Z80Cpu) {
+    const tmp = cpu.srl8(cpu.readMemory(cpu.hl));
+    cpu.tactPlus1WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, tmp);
+}
+
+// 0x3F: SRL A
+function srlA(cpu: Z80Cpu) {
+    cpu.a = cpu.srl8(cpu.a);
+}
