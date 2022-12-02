@@ -966,6 +966,19 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     /**
+     * The core of the RST instruction 
+     * @param addr Restart address to call
+     */
+    rstCore(addr: number): void {
+        this.tactPlus1WithAddress(this.pc);
+        this.sp--;
+        this.writeMemory(this.sp, this.pc >>> 8);
+        this.sp--;
+        this.writeMemory(this.sp, this.pc);
+        this.pc = this.wz = addr;
+    }
+
+    /**
      * Adds the `regHl` value and `regOther` value according to the rule of ADD HL,QQ operation
      * @param regHl HL (IX, IY) value
      * @param regOther Other value
@@ -1223,6 +1236,27 @@ export class Z80Cpu implements IZ80Cpu {
         return this.doReadMemory(this.pc++);
     }
 
+    /**
+      * Reads the specified I/O port.
+      * @param address I/O port address to read
+      * @returns The byte the CPU has read from the port
+      * If the emulated hardware uses any delay when reading the port, increment the CPU tacts accordingly.
+      */
+    readPort(address: number): number {
+        this.delayPortRead(address);
+        return this.doReadPort(address);
+    }
+
+    /**
+     * Writes a byte to the specfied I/O port.
+     * @param address I/O port address
+     * @param data Data byte to write
+     * If the emulated hardware uses any delay when writing the port, increment the CPU tacts accordingly.
+     */
+    writePort(address: number, data: number): void {
+        this.delayPortWrite(address);
+        this.doWritePort(address, data);
+    }
 
     /**
      * This function reads a byte (8-bit) from an I/O port using the provided 16-bit address.
@@ -1437,14 +1471,14 @@ export class Z80Cpu implements IZ80Cpu {
         orAB,     orAC,     orAD,     orAE,     orAH,     orAL,     orAHli,   orAA,    // b0-b7 
         cpB,      cpC,      cpD,      cpE,      cpH,      cpL,      cpHli,    cpA,     // b8-bf 
 
-        retNz,    popBc,    jpNz,     jp,       callNz,   pushBc,   nop,      nop,     // c0-c7 
-        retZ,     ret,      jpZ,      nop,      callZ,    call,     nop,      nop,     // c8-cf 
-        retNc,    popDe,    jpNc,     nop,      callNc,   pushDe,   nop,      nop,     // d0-d7 
-        retC,     nop,      jpC,      nop,      callC,    nop,      nop,      nop,     // d8-df 
-        retPo,    popHl,    jpPo,     nop,      callPo,   pushHl,   nop,      nop,     // e0-e7 
-        retPe,    nop,      jpPe,     nop,      callPe,   nop,      nop,      nop,     // e8-ef 
-        retP,     popAf,    jpP,      nop,      callP,    pushAf,   nop,      nop,     // f0-f7 
-        retM,     nop,      jpM,      nop,      callM,    nop,      nop,      nop,     // f8-ff 
+        retNz,    popBc,    jpNz,     jp,       callNz,   pushBc,   addAN,    rst00,   // c0-c7 
+        retZ,     ret,      jpZ,      nop,      callZ,    call,     adcAN,    rst08,   // c8-cf 
+        retNc,    popDe,    jpNc,     outNA,    callNc,   pushDe,   subAN,    rst10,   // d0-d7 
+        retC,     exx,      jpC,      inAN,     callC,    nop,      sbcAN,    rst18,   // d8-df 
+        retPo,    popHl,    jpPo,     exSpiHl,  callPo,   pushHl,   andAN,    rst20,   // e0-e7 
+        retPe,    jpHl,     jpPe,     exDeHl,   callPe,   nop,      xorAN,    rst28,   // e8-ef 
+        retP,     popAf,    jpP,      di,       callP,    pushAf,   orAN,     rst30,   // f0-f7 
+        retM,     nop,      jpM,      ei,       callM,    nop,      cpAN,     rst38,   // f8-ff 
     ]
 }
 
@@ -2632,6 +2666,16 @@ function pushBc(cpu: Z80Cpu) {
     cpu.writeMemory(cpu.sp, cpu.c);
 }
 
+// 0xc6: ADD A,N
+function addAN(cpu: Z80Cpu) {
+    cpu.add8(cpu.fetchCodeByte());
+}
+
+// 0xc7: RST 00
+function rst00(cpu: Z80Cpu) {
+    cpu.rstCore(0x0000);
+}
+
 // 0xc8: RET Z
 function retZ(cpu: Z80Cpu) {
     cpu.tactPlus1WithAddress(cpu.ir);
@@ -2674,6 +2718,16 @@ function call(cpu: Z80Cpu) {
     cpu.callCore();
 }
 
+// 0xce: ADC A,N
+function adcAN(cpu: Z80Cpu) {
+    cpu.adc8(cpu.fetchCodeByte());
+}
+
+// 0xcf: RST 08
+function rst08(cpu: Z80Cpu) {
+    cpu.rstCore(0x0008);
+}
+
 // 0xd0: RET NC
 function retNc(cpu: Z80Cpu) {
     cpu.tactPlus1WithAddress(cpu.ir);
@@ -2699,6 +2753,15 @@ function jpNc(cpu: Z80Cpu) {
     }
 }
 
+// 0xd3: OUT (n),A
+function outNA(cpu: Z80Cpu) {
+    const nn = cpu.fetchCodeByte();
+    const port = nn | (cpu.a << 8);
+    cpu.wh = cpu.a;
+    cpu.wl = nn + 1;
+    cpu.writePort(port, cpu.a);
+}
+
 // 0xd4: CALL NC,nn
 function callNc(cpu: Z80Cpu) {
     cpu.wl = cpu.fetchCodeByte();
@@ -2717,12 +2780,35 @@ function pushDe(cpu: Z80Cpu) {
     cpu.writeMemory(cpu.sp, cpu.e);
 }
 
+// 0xd6: SUB A,N
+function subAN(cpu: Z80Cpu) {
+    cpu.sub8(cpu.fetchCodeByte());
+}
+
+// 0xd7: RST 10
+function rst10(cpu: Z80Cpu) {
+    cpu.rstCore(0x0010);
+}
+
 // 0xd8: RET C
 function retC(cpu: Z80Cpu) {
     cpu.tactPlus1WithAddress(cpu.ir);
     if (cpu.isCFlagSet()) {
         ret(cpu);
     }
+}
+
+// 0xd9: EXX
+function exx(cpu: Z80Cpu) {
+    let tmp = cpu.bc;
+    cpu.bc = cpu.bc_;
+    cpu.bc_ = tmp;
+    tmp = cpu.de;
+    cpu.de = cpu.de_;
+    cpu.de_ = tmp;
+    tmp = cpu.hl;
+    cpu.hl = cpu.hl_;
+    cpu.hl_ = tmp;
 }
 
 // 0xda: JP C,nn
@@ -2734,6 +2820,13 @@ function jpC(cpu: Z80Cpu) {
     }
 }
 
+// 0xdb: IN A,(n)
+function inAN(cpu: Z80Cpu) {
+    const inTemp = cpu.fetchCodeByte() | (cpu.a << 8);
+    cpu.a = cpu.readPort(inTemp);
+    cpu.wz = inTemp + 1;
+}
+
 // 0xdc: CALL C,nn
 function callC(cpu: Z80Cpu) {
     cpu.wl = cpu.fetchCodeByte();
@@ -2741,6 +2834,16 @@ function callC(cpu: Z80Cpu) {
     if (cpu.isCFlagSet()) {
         cpu.callCore();
     }
+}
+
+// 0xde: SBC A,N
+function sbcAN(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.fetchCodeByte());
+}
+
+// 0xdf: RST 18
+function rst18(cpu: Z80Cpu) {
+    cpu.rstCore(0x0018);
 }
 
 // 0xe0: RET PO
@@ -2768,6 +2871,20 @@ function jpPo(cpu: Z80Cpu) {
     }
 }
 
+// 0xe3: EX (SP),HL
+function exSpiHl(cpu: Z80Cpu) {
+    const sp1 = cpu.sp + 1;
+    const tempL = cpu.readMemory(cpu.sp);
+    const tempH = cpu.readMemory(sp1);
+    cpu.tactPlus1WithAddress(cpu.sp);
+    cpu.writeMemory(sp1, cpu.h);
+    cpu.writeMemory(cpu.sp, cpu.l);
+    cpu.tactPlus2WithAddress(cpu.sp);
+    cpu.wl = tempL;
+    cpu.wh = tempH;
+    cpu.hl = cpu.wz;
+}
+
 // 0xe4: CALL PO,nn
 function callPo(cpu: Z80Cpu) {
     cpu.wl = cpu.fetchCodeByte();
@@ -2786,12 +2903,27 @@ function pushHl(cpu: Z80Cpu) {
     cpu.writeMemory(cpu.sp, cpu.l);
 }
 
+// 0xe6: AND A,N
+function andAN(cpu: Z80Cpu) {
+    cpu.and8(cpu.fetchCodeByte());
+}
+
+// 0xe7: RST 20
+function rst20(cpu: Z80Cpu) {
+    cpu.rstCore(0x0020);
+}
+
 // 0xe8: RET PE
 function retPe(cpu: Z80Cpu) {
     cpu.tactPlus1WithAddress(cpu.ir);
     if (cpu.isPvFlagSet()) {
         ret(cpu);
     }
+}
+
+// 0xe9: JP (HL)
+function jpHl(cpu: Z80Cpu) {
+    cpu.pc = cpu.hl;
 }
 
 // 0xea: JP PE,nn
@@ -2803,6 +2935,13 @@ function jpPe(cpu: Z80Cpu) {
     }
 }
 
+// 0xeb: EX DE,HL
+function exDeHl(cpu: Z80Cpu) {
+    const tmp = cpu.de;
+    cpu.de = cpu.hl;
+    cpu.hl = tmp;
+}
+
 // 0xec: CALL PE,nn
 function callPe(cpu: Z80Cpu) {
     cpu.wl = cpu.fetchCodeByte();
@@ -2810,6 +2949,16 @@ function callPe(cpu: Z80Cpu) {
     if (cpu.isPvFlagSet()) {
         cpu.callCore();
     }
+}
+
+// 0xee: XOR A,N
+function xorAN(cpu: Z80Cpu) {
+    cpu.xor8(cpu.fetchCodeByte());
+}
+
+// 0xef: RST 28
+function rst28(cpu: Z80Cpu) {
+    cpu.rstCore(0x0028);
 }
 
 // 0xf0: RET P
@@ -2837,6 +2986,11 @@ function jpP(cpu: Z80Cpu) {
     }
 }
 
+// 0xf3: DI
+function di(cpu: Z80Cpu) {
+    cpu.iff2 = cpu.iff1 = false;
+}
+
 // 0xf4: CALL P,nn
 function callP(cpu: Z80Cpu) {
     cpu.wl = cpu.fetchCodeByte();
@@ -2853,6 +3007,16 @@ function pushAf(cpu: Z80Cpu) {
     cpu.writeMemory(cpu.sp, cpu.a);
     cpu.sp--;
     cpu.writeMemory(cpu.sp, cpu.f);
+}
+
+// 0xf6: OR A,N
+function orAN(cpu: Z80Cpu) {
+    cpu.or8(cpu.fetchCodeByte());
+}
+
+// 0xf7: RST 30
+function rst30(cpu: Z80Cpu) {
+    cpu.rstCore(0x0030);
 }
 
 // 0xf8: RET M
@@ -2872,6 +3036,12 @@ function jpM(cpu: Z80Cpu) {
     }
 }
 
+// 0xfb: EI
+function ei(cpu: Z80Cpu) {
+    cpu.iff2 = cpu.iff1 = true;
+    cpu.eiBacklog = 2;
+}
+
 // 0xfc: CALL M,nn
 function callM(cpu: Z80Cpu) {
     cpu.wl = cpu.fetchCodeByte();
@@ -2879,5 +3049,15 @@ function callM(cpu: Z80Cpu) {
     if (cpu.isSFlagSet()) {
         cpu.callCore();
     }
+}
+
+// 0xfe: CP A,N
+function cpAN(cpu: Z80Cpu) {
+    cpu.cp8(cpu.fetchCodeByte());
+}
+
+// 0xff: RST 38
+function rst38(cpu: Z80Cpu) {
+    cpu.rstCore(0x0038);
 }
 

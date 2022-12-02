@@ -164,6 +164,7 @@ export class Z80TestMachine
         this.memoryAccessLog = [];
         this.ioAccessLog = [];
         this.ioInputSequence = [];
+        this.ioReadCount = 0;
         this.cpu = new Z80TestCpu(this);
         this.cpu.allowExtendedInstructions = allowExtendedInstructions;
     }
