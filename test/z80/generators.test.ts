@@ -28,7 +28,7 @@ describe("Z80 generators", () => {
         for (let bit = 0; bit < 8; bit++) {
             let line = "        ";
             for (let reg = 0; reg < 8; reg++) {
-                line += `bit${bit}${regNames[reg]},`.padEnd(10, " ");
+                line += `xbit${bit},`.padEnd(10, " ");
             }
             line += `// ${(0x40+8*bit).toString(16)}-${(0x47+8*bit).toString(16)}`
             console.log(line);
@@ -105,5 +105,78 @@ describe("Z80 generators", () => {
         }
     });
 
+    it("XRES ops generator", ()=> {
+        const regNames = ["B", "C", "D", "E", "H", "L", "(HL)", "A"]
+        // --- Arrange
+        for (let bit = 0; bit < 8; bit++) {
+            for (let reg = 0; reg < 8; reg++) {
+                const code = 0x80 + 8 * bit + reg;
+                let text = `// 0x${code.toString(16).toUpperCase()}: RES ${bit},(IX+d)${reg === 6 ? '' : ',' + regNames[reg]}\n`;
+                text += `function xres${bit}${(reg === 6 ? '' : regNames[reg])}(cpu: Z80Cpu) {\n`;
+                const mask = ~(1 << bit) & 0xff;
+                if (reg === 6) {
+                    text += `    const tmp = cpu.readMemory(cpu.wz) & 0x${mask.toString(16)};\n`;
+                    text += `    cpu.tactPlus1WithAddress(cpu.wz);\n`;
+                    text += `    cpu.writeMemory(cpu.wz, tmp);\n`
+                } else {
+                    text += `    cpu.${regNames[reg].toLowerCase()} = cpu.readMemory(cpu.wz) & 0x${mask.toString(16)};\n`;
+                    text += `    cpu.tactPlus1WithAddress(cpu.wz);\n`;
+                    text += `    cpu.writeMemory(cpu.wz, cpu.${regNames[reg].toLowerCase()});\n`
+                }
+                text += "}\n"
+                console.log(text);
+            }
+        }
+    });
+
+    it("Generate XRES jump table", () => {
+        const regNames = ["B", "C", "D", "E", "H", "L", "Hli", "A"]
+        // --- Arrange
+        for (let bit = 0; bit < 8; bit++) {
+            let line = "        ";
+            for (let reg = 0; reg < 8; reg++) {
+                line += `xres${bit}${reg === 6 ? "" : regNames[reg]},`.padEnd(10, " ");
+            }
+            line += `// ${(0x80+8*bit).toString(16)}-${(0x87+8*bit).toString(16)}`
+            console.log(line);
+        }
+    });
+
+    it("XSET ops generator", ()=> {
+        const regNames = ["B", "C", "D", "E", "H", "L", "(HL)", "A"]
+        // --- Arrange
+        for (let bit = 0; bit < 8; bit++) {
+            for (let reg = 0; reg < 8; reg++) {
+                const code = 0xC0 + 8 * bit + reg;
+                let text = `// 0x${code.toString(16).toUpperCase()}: RES ${bit},(IX+d)${reg === 6 ? '' : ',' + regNames[reg]}\n`;
+                text += `function xset${bit}${(reg === 6 ? '' : regNames[reg])}(cpu: Z80Cpu) {\n`;
+                const mask = 1 << bit;
+                if (reg === 6) {
+                    text += `    const tmp = cpu.readMemory(cpu.wz) | 0x${mask.toString(16)};\n`;
+                    text += `    cpu.tactPlus1WithAddress(cpu.wz);\n`;
+                    text += `    cpu.writeMemory(cpu.wz, tmp);\n`
+                } else {
+                    text += `    cpu.${regNames[reg].toLowerCase()} = cpu.readMemory(cpu.wz) | 0x${mask.toString(16)};\n`;
+                    text += `    cpu.tactPlus1WithAddress(cpu.wz);\n`;
+                    text += `    cpu.writeMemory(cpu.wz, cpu.${regNames[reg].toLowerCase()});\n`
+                }
+                text += "}\n"
+                console.log(text);
+            }
+        }
+    });
+
+    it("Generate XSET jump table", () => {
+        const regNames = ["B", "C", "D", "E", "H", "L", "Hli", "A"]
+        // --- Arrange
+        for (let bit = 0; bit < 8; bit++) {
+            let line = "        ";
+            for (let reg = 0; reg < 8; reg++) {
+                line += `xset${bit}${reg === 6 ? "" : regNames[reg]},`.padEnd(10, " ");
+            }
+            line += `// ${(0x80+8*bit).toString(16)}-${(0x87+8*bit).toString(16)}`
+            console.log(line);
+        }
+    });
 
 });

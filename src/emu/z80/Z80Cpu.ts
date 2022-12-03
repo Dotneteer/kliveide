@@ -1678,41 +1678,41 @@ export class Z80Cpu implements IZ80Cpu {
     ]
 
     readonly indexedBitOps: Z80Operation[] = [
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 00-07
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 08-0f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 10-17
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 18-1f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 20-27
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 28-2f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 30-37
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 38-3f
+        xrlcB,    xrlcC,    xrlcD,    xrlcE,    xrlcH,    xrlcL,    xrlc,     xrlcA,   // 00-07
+        xrrcB,    xrrcC,    xrrcD,    xrrcE,    xrrcH,    xrrcL,    xrrc,     xrrcA,   // 08-0f
+        xrlB,     xrlC,     xrlD,     xrlE,     xrlH,     xrlL,     xrl,      xrlA,    // 10-17
+        xrrB,     xrrC,     xrrD,     xrrE,     xrrH,     xrrL,     xrr,      xrrA,    // 18-1f
+        xslaB,    xslaC,    xslaD,    xslaE,    xslaH,    xslaL,    xsla,     xslaA,   // 20-27
+        xsraB,    xsraC,    xsraD,    xsraE,    xsraH,    xsraL,    xsra,     xsraA,   // 28-2f
+        xsllB,    xsllC,    xsllD,    xsllE,    xsllH,    xsllL,    xsll,     xsllA,   // 30-37
+        xsrlB,    xsrlC,    xsrlD,    xsrlE,    xsrlH,    xsrlL,    xsrl,     xsrlA,   // 38-3f
 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 50-57
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 58-5f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 60-67
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 68-6f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 70-77
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 78-7f
+        xbit0,    xbit0,    xbit0,    xbit0,    xbit0,    xbit0,    xbit0,    xbit0,   // 40-47
+        xbit1,    xbit1,    xbit1,    xbit1,    xbit1,    xbit1,    xbit1,    xbit1,   // 48-4f
+        xbit2,    xbit2,    xbit2,    xbit2,    xbit2,    xbit2,    xbit2,    xbit2,   // 50-57
+        xbit3,    xbit3,    xbit3,    xbit3,    xbit3,    xbit3,    xbit3,    xbit3,   // 58-5f
+        xbit4,    xbit4,    xbit4,    xbit4,    xbit4,    xbit4,    xbit4,    xbit4,   // 60-67
+        xbit5,    xbit5,    xbit5,    xbit5,    xbit5,    xbit5,    xbit5,    xbit5,   // 68-6f
+        xbit6,    xbit6,    xbit6,    xbit6,    xbit6,    xbit6,    xbit6,    xbit6,   // 70-77
+        xbit7,    xbit7,    xbit7,    xbit7,    xbit7,    xbit7,    xbit7,    xbit7,   // 78-7f
         
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
+        xres0B,   xres0C,   xres0D,   xres0E,   xres0H,   xres0L,   xres0,    xres0A,  // 80-87
+        xres1B,   xres1C,   xres1D,   xres1E,   xres1H,   xres1L,   xres1,    xres1A,  // 88-8f
+        xres2B,   xres2C,   xres2D,   xres2E,   xres2H,   xres2L,   xres2,    xres2A,  // 90-97
+        xres3B,   xres3C,   xres3D,   xres3E,   xres3H,   xres3L,   xres3,    xres3A,  // 98-9f
+        xres4B,   xres4C,   xres4D,   xres4E,   xres4H,   xres4L,   xres4,    xres4A,  // a0-a7
+        xres5B,   xres5C,   xres5D,   xres5E,   xres5H,   xres5L,   xres5,    xres5A,  // a8-af
+        xres6B,   xres6C,   xres6D,   xres6E,   xres6H,   xres6L,   xres6,    xres6A,  // b0-b7
+        xres7B,   xres7C,   xres7D,   xres7E,   xres7H,   xres7L,   xres7,    xres7A,  // b8-bf
         
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d0-d7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d8-df
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e0-e7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e8-ef
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f0-f7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f8-ff
+        xset0B,   xset0C,   xset0D,   xset0E,   xset0H,   xset0L,   xset0,    xset0A,  // 80-87
+        xset1B,   xset1C,   xset1D,   xset1E,   xset1H,   xset1L,   xset1,    xset1A,  // 88-8f
+        xset2B,   xset2C,   xset2D,   xset2E,   xset2H,   xset2L,   xset2,    xset2A,  // 90-97
+        xset3B,   xset3C,   xset3D,   xset3E,   xset3H,   xset3L,   xset3,    xset3A,  // 98-9f
+        xset4B,   xset4C,   xset4D,   xset4E,   xset4H,   xset4L,   xset4,    xset4A,  // a0-a7
+        xset5B,   xset5C,   xset5D,   xset5E,   xset5H,   xset5L,   xset5,    xset5A,  // a8-af
+        xset6B,   xset6C,   xset6D,   xset6E,   xset6H,   xset6L,   xset6,    xset6A,  // b0-b7
+        xset7B,   xset7C,   xset7D,   xset7E,   xset7H,   xset7L,   xset7,    xset7A,  // b8-bf
     ]
 
     readonly extendedOps: Z80Operation[] = [
@@ -4678,4 +4678,1424 @@ function set7Hli(cpu: Z80Cpu) {
 // 0xFF: SET 7,A
 function set7A(cpu: Z80Cpu) {
     cpu.a |= 0x80;
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+// Z80 indexed bit operations
+
+// 0x00: RLC (IX+d),B
+function xrlcB(cpu: Z80Cpu) {
+    cpu.b = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x01: RLC (IX+d),C
+function xrlcC(cpu: Z80Cpu) {
+    cpu.c = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x02: RLC (IX+d),D
+function xrlcD(cpu: Z80Cpu) {
+    cpu.d = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x03: RLC (IX+d),E
+function xrlcE(cpu: Z80Cpu) {
+    cpu.e = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x04: RLC (IX+d),H
+function xrlcH(cpu: Z80Cpu) {
+    cpu.h = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x05: RLC (IX+d),L
+function xrlcL(cpu: Z80Cpu) {
+    cpu.l = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x06: RLC (IX+d)
+function xrlc(cpu: Z80Cpu) {
+    const tmp = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x07: RLC (IX+d),A
+function xrlcA(cpu: Z80Cpu) {
+    cpu.a = cpu.rlc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x08: RRC (IX+d),B
+function xrrcB(cpu: Z80Cpu) {
+    cpu.b = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x09: RRC (IX+d),C
+function xrrcC(cpu: Z80Cpu) {
+    cpu.c = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x0A: RRC (IX+d),D
+function xrrcD(cpu: Z80Cpu) {
+    cpu.d = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x0B: RRC (IX+d),E
+function xrrcE(cpu: Z80Cpu) {
+    cpu.e = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x0C: RRC (IX+d),H
+function xrrcH(cpu: Z80Cpu) {
+    cpu.h = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x0D: RRC (IX+d),L
+function xrrcL(cpu: Z80Cpu) {
+    cpu.l = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x0E: RRC (IX+d)
+function xrrc(cpu: Z80Cpu) {
+    const tmp = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x0F: RRC (IX+d),A
+function xrrcA(cpu: Z80Cpu) {
+    cpu.a = cpu.rrc8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x10: RL (IX+d),B
+function xrlB(cpu: Z80Cpu) {
+    cpu.b = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x11: RL (IX+d),C
+function xrlC(cpu: Z80Cpu) {
+    cpu.c = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x12: RL (IX+d),D
+function xrlD(cpu: Z80Cpu) {
+    cpu.d = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x13: RL (IX+d),E
+function xrlE(cpu: Z80Cpu) {
+    cpu.e = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x14: RL (IX+d),H
+function xrlH(cpu: Z80Cpu) {
+    cpu.h = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x15: RL (IX+d),L
+function xrlL(cpu: Z80Cpu) {
+    cpu.l = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x16: RL (IX+d)
+function xrl(cpu: Z80Cpu) {
+    const tmp = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x17: RL (IX+d),A
+function xrlA(cpu: Z80Cpu) {
+    cpu.a = cpu.rl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x18: RR (IX+d),B
+function xrrB(cpu: Z80Cpu) {
+    cpu.b = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x19: RR (IX+d),C
+function xrrC(cpu: Z80Cpu) {
+    cpu.c = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x1A: RR (IX+d),D
+function xrrD(cpu: Z80Cpu) {
+    cpu.d = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x1B: RR (IX+d),E
+function xrrE(cpu: Z80Cpu) {
+    cpu.e = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x1C: RR (IX+d),H
+function xrrH(cpu: Z80Cpu) {
+    cpu.h = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x1D: RR (IX+d),L
+function xrrL(cpu: Z80Cpu) {
+    cpu.l = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x1E: RR (IX+d)
+function xrr(cpu: Z80Cpu) {
+    const tmp = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x1F: RR (IX+d),A
+function xrrA(cpu: Z80Cpu) {
+    cpu.a = cpu.rr8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x20: SLA (IX+d),B
+function xslaB(cpu: Z80Cpu) {
+    cpu.b = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x21: SLA (IX+d),C
+function xslaC(cpu: Z80Cpu) {
+    cpu.c = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x22: SLA (IX+d),D
+function xslaD(cpu: Z80Cpu) {
+    cpu.d = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x23: SLA (IX+d),E
+function xslaE(cpu: Z80Cpu) {
+    cpu.e = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x24: SLA (IX+d),H
+function xslaH(cpu: Z80Cpu) {
+    cpu.h = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x25: SLA (IX+d),L
+function xslaL(cpu: Z80Cpu) {
+    cpu.l = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x26: SLA (IX+d)
+function xsla(cpu: Z80Cpu) {
+    const tmp = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x27: SLA (IX+d),A
+function xslaA(cpu: Z80Cpu) {
+    cpu.a = cpu.sla8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x28: SRA (IX+d),B
+function xsraB(cpu: Z80Cpu) {
+    cpu.b = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x29: SRA (IX+d),C
+function xsraC(cpu: Z80Cpu) {
+    cpu.c = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x2A: SRA (IX+d),D
+function xsraD(cpu: Z80Cpu) {
+    cpu.d = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x2B: SRA (IX+d),E
+function xsraE(cpu: Z80Cpu) {
+    cpu.e = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x2C: SRA (IX+d),H
+function xsraH(cpu: Z80Cpu) {
+    cpu.h = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x2D: SRA (IX+d),L
+function xsraL(cpu: Z80Cpu) {
+    cpu.l = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x2E: SRA (IX+d)
+function xsra(cpu: Z80Cpu) {
+    const tmp = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x2F: SRA (IX+d),A
+function xsraA(cpu: Z80Cpu) {
+    cpu.a = cpu.sra8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x30: SLL (IX+d),B
+function xsllB(cpu: Z80Cpu) {
+    cpu.b = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x31: SLL (IX+d),C
+function xsllC(cpu: Z80Cpu) {
+    cpu.c = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x32: SLL (IX+d),D
+function xsllD(cpu: Z80Cpu) {
+    cpu.d = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x33: SLL (IX+d),E
+function xsllE(cpu: Z80Cpu) {
+    cpu.e = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x34: SLL (IX+d),H
+function xsllH(cpu: Z80Cpu) {
+    cpu.h = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x35: SLL (IX+d),L
+function xsllL(cpu: Z80Cpu) {
+    cpu.l = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x36: SLL (IX+d)
+function xsll(cpu: Z80Cpu) {
+    const tmp = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x37: SLL (IX+d),A
+function xsllA(cpu: Z80Cpu) {
+    cpu.a = cpu.sll8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x38: SRL (IX+d),B
+function xsrlB(cpu: Z80Cpu) {
+    cpu.b = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x39: SRL (IX+d),C
+function xsrlC(cpu: Z80Cpu) {
+    cpu.c = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x3A: SRL (IX+d),D
+function xsrlD(cpu: Z80Cpu) {
+    cpu.d = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x3B: SRL (IX+d),E
+function xsrlE(cpu: Z80Cpu) {
+    cpu.e = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x3C: SRL (IX+d),H
+function xsrlH(cpu: Z80Cpu) {
+    cpu.h = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x3D: SRL (IX+d),L
+function xsrlL(cpu: Z80Cpu) {
+    cpu.l = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x3E: SRL (IX+d)
+function xsrl(cpu: Z80Cpu) {
+    const tmp = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x3F: SRL (IX+d),A
+function xsrlA(cpu: Z80Cpu) {
+    cpu.a = cpu.srl8(cpu.readMemory(cpu.wz));
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x40-47: BIT 0,(IX+d)
+function xbit0(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(0, tmp);
+}
+
+// 0x48-4f: BIT 1,(IX+d)
+function xbit1(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(1, tmp);
+}
+
+// 0x50-57: BIT 2,(IX+d)
+function xbit2(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(2, tmp);
+}
+
+// 0x58-5F: BIT 3,(IX+d)
+function xbit3(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(3, tmp);
+}
+
+// 0x60-67: BIT 4,(IX+d)
+function xbit4(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(4, tmp);
+}
+
+// 0x68-6F: BIT 5,(IX+d)
+function xbit5(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(5, tmp);
+}
+
+// 0x70-77: BIT 6,(IX+d)
+function xbit6(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(6, tmp);
+}
+
+// 0x78-7f: BIT 7,(IX+d)
+function xbit7(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.bit8W(7, tmp);
+}
+
+// 0x80: RES 0,(IX+d),B
+function xres0B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+
+// 0x81: RES 0,(IX+d),C
+function xres0C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x82: RES 0,(IX+d),D
+function xres0D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x83: RES 0,(IX+d),E
+function xres0E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x84: RES 0,(IX+d),H
+function xres0H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x85: RES 0,(IX+d),L
+function xres0L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x86: RES 0,(IX+d)
+function xres0(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x87: RES 0,(IX+d),A
+function xres0A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0xfe;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x88: RES 1,(IX+d),B
+function xres1B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x89: RES 1,(IX+d),C
+function xres1C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x8A: RES 1,(IX+d),D
+function xres1D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+
+// 0x8B: RES 1,(IX+d),E
+function xres1E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x8C: RES 1,(IX+d),H
+function xres1H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+
+// 0x8D: RES 1,(IX+d),L
+function xres1L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+
+// 0x8E: RES 1,(IX+d)
+function xres1(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x8F: RES 1,(IX+d),A
+function xres1A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0xfd;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+
+// 0x90: RES 2,(IX+d),B
+function xres2B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x91: RES 2,(IX+d),C
+function xres2C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x92: RES 2,(IX+d),D
+function xres2D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x93: RES 2,(IX+d),E
+function xres2E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x94: RES 2,(IX+d),H
+function xres2H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x95: RES 2,(IX+d),L
+function xres2L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+
+// 0x96: RES 2,(IX+d)
+function xres2(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x97: RES 2,(IX+d),A
+function xres2A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0xfb;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x98: RES 3,(IX+d),B
+function xres3B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x99: RES 3,(IX+d),C
+function xres3C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x9A: RES 3,(IX+d),D
+function xres3D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x9B: RES 3,(IX+d),E
+function xres3E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+
+// 0x9C: RES 3,(IX+d),H
+function xres3H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x9D: RES 3,(IX+d),L
+function xres3L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x9E: RES 3,(IX+d)
+function xres3(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x9F: RES 3,(IX+d),A
+function xres3A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0xf7;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xA0: RES 4,(IX+d),B
+function xres4B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xA1: RES 4,(IX+d),C
+function xres4C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xA2: RES 4,(IX+d),D
+function xres4D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xA3: RES 4,(IX+d),E
+function xres4E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xA4: RES 4,(IX+d),H
+function xres4H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xA5: RES 4,(IX+d),L
+function xres4L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xA6: RES 4,(IX+d)
+function xres4(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xA7: RES 4,(IX+d),A
+function xres4A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0xef;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xA8: RES 5,(IX+d),B
+function xres5B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xA9: RES 5,(IX+d),C
+function xres5C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xAA: RES 5,(IX+d),D
+function xres5D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xAB: RES 5,(IX+d),E
+function xres5E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xAC: RES 5,(IX+d),H
+function xres5H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xAD: RES 5,(IX+d),L
+function xres5L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xAE: RES 5,(IX+d)
+function xres5(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xAF: RES 5,(IX+d),A
+function xres5A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0xdf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xB0: RES 6,(IX+d),B
+function xres6B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xB1: RES 6,(IX+d),C
+function xres6C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xB2: RES 6,(IX+d),D
+function xres6D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xB3: RES 6,(IX+d),E
+function xres6E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xB4: RES 6,(IX+d),H
+function xres6H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xB5: RES 6,(IX+d),L
+function xres6L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xB6: RES 6,(IX+d)
+function xres6(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xB7: RES 6,(IX+d),A
+function xres6A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0xbf;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xB8: RES 7,(IX+d),B
+function xres7B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xB9: RES 7,(IX+d),C
+function xres7C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xBA: RES 7,(IX+d),D
+function xres7D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xBB: RES 7,(IX+d),E
+function xres7E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+
+// 0xBC: RES 7,(IX+d),H
+function xres7H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xBD: RES 7,(IX+d),L
+function xres7L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xBE: RES 7,(IX+d)
+function xres7(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xBF: RES 7,(IX+d),A
+function xres7A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) & 0x7f;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xC0: RES 0,(IX+d),B
+function xset0B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+
+// 0xC1: RES 0,(IX+d),C
+function xset0C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xC2: RES 0,(IX+d),D
+function xset0D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xC3: RES 0,(IX+d),E
+function xset0E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xC4: RES 0,(IX+d),H
+function xset0H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xC5: RES 0,(IX+d),L
+function xset0L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xC6: RES 0,(IX+d)
+function xset0(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xC7: RES 0,(IX+d),A
+function xset0A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x1;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xC8: RES 1,(IX+d),B
+function xset1B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xC9: RES 1,(IX+d),C
+function xset1C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xCA: RES 1,(IX+d),D
+function xset1D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+
+// 0xCB: RES 1,(IX+d),E
+function xset1E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xCC: RES 1,(IX+d),H
+function xset1H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xCD: RES 1,(IX+d),L
+function xset1L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+
+// 0xCE: RES 1,(IX+d)
+function xset1(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xCF: RES 1,(IX+d),A
+function xset1A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x2;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xD0: RES 2,(IX+d),B
+function xset2B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xD1: RES 2,(IX+d),C
+function xset2C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xD2: RES 2,(IX+d),D
+function xset2D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+
+// 0xD3: RES 2,(IX+d),E
+function xset2E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xD4: RES 2,(IX+d),H
+function xset2H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xD5: RES 2,(IX+d),L
+function xset2L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+
+// 0xD6: RES 2,(IX+d)
+function xset2(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+
+// 0xD7: RES 2,(IX+d),A
+function xset2A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x4;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xD8: RES 3,(IX+d),B
+function xset3B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xD9: RES 3,(IX+d),C
+function xset3C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xDA: RES 3,(IX+d),D
+function xset3D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xDB: RES 3,(IX+d),E
+function xset3E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+
+// 0xDC: RES 3,(IX+d),H
+function xset3H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xDD: RES 3,(IX+d),L
+function xset3L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xDE: RES 3,(IX+d)
+function xset3(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xDF: RES 3,(IX+d),A
+function xset3A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x8;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xE0: RES 4,(IX+d),B
+function xset4B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xE1: RES 4,(IX+d),C
+function xset4C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xE2: RES 4,(IX+d),D
+function xset4D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xE3: RES 4,(IX+d),E
+function xset4E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xE4: RES 4,(IX+d),H
+function xset4H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xE5: RES 4,(IX+d),L
+function xset4L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xE6: RES 4,(IX+d)
+function xset4(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xE7: RES 4,(IX+d),A
+function xset4A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x10;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+
+// 0xE8: RES 5,(IX+d),B
+function xset5B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xE9: RES 5,(IX+d),C
+function xset5C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xEA: RES 5,(IX+d),D
+function xset5D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xEB: RES 5,(IX+d),E
+function xset5E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xEC: RES 5,(IX+d),H
+function xset5H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xED: RES 5,(IX+d),L
+function xset5L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xEE: RES 5,(IX+d)
+function xset5(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xEF: RES 5,(IX+d),A
+function xset5A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x20;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xF0: RES 6,(IX+d),B
+function xset6B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xF1: RES 6,(IX+d),C
+function xset6C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xF2: RES 6,(IX+d),D
+function xset6D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xF3: RES 6,(IX+d),E
+function xset6E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xF4: RES 6,(IX+d),H
+function xset6H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xF5: RES 6,(IX+d),L
+function xset6L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0xF6: RES 6,(IX+d)
+function xset6(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xF7: RES 6,(IX+d),A
+function xset6A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x40;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0xF8: RES 7,(IX+d),B
+function xset7B(cpu: Z80Cpu) {
+    cpu.b = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0xF9: RES 7,(IX+d),C
+function xset7C(cpu: Z80Cpu) {
+    cpu.c = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0xFA: RES 7,(IX+d),D
+function xset7D(cpu: Z80Cpu) {
+    cpu.d = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0xFB: RES 7,(IX+d),E
+function xset7E(cpu: Z80Cpu) {
+    cpu.e = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0xFC: RES 7,(IX+d),H
+function xset7H(cpu: Z80Cpu) {
+    cpu.h = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0xFD: RES 7,(IX+d),L
+function xset7L(cpu: Z80Cpu) {
+    cpu.l = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+
+// 0xFE: RES 7,(IX+d)
+function xset7(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0xFF: RES 7,(IX+d),A
+function xset7A(cpu: Z80Cpu) {
+    cpu.a = cpu.readMemory(cpu.wz) | 0x80;
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.writeMemory(cpu.wz, cpu.a);
 }
