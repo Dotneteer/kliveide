@@ -295,6 +295,29 @@ describe("Z80 standard ops f0-ff", () => {
         expect(cpu.tacts).toBe(18);
     });
 
+    it("0xF9: LD SP,HL", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x21, 0x00, 0x10, // LD HL,1000H
+            0xF9              // LD SP,HL
+        ]);
+        m.cpu.sp = 0;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("SP, HL");
+        m.shouldKeepMemory();
+        expect(cpu.sp).toBe(0x1000);
+
+        expect(cpu.pc).toBe(0x004);
+        expect(cpu.tacts).toBe(16);
+    });
+
     it("0xF8: RET M #1", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilHalt);

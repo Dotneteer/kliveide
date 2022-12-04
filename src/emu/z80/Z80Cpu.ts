@@ -1598,7 +1598,7 @@ export class Z80Cpu implements IZ80Cpu {
         retPo,    popHl,    jpPo,     exSpiHl,  callPo,   pushHl,   andAN,    rst20,   // e0-e7 
         retPe,    jpHl,     jpPe,     exDeHl,   callPe,   nop,      xorAN,    rst28,   // e8-ef 
         retP,     popAf,    jpP,      di,       callP,    pushAf,   orAN,     rst30,   // f0-f7 
-        retM,     nop,      jpM,      ei,       callM,    nop,      cpAN,     rst38,   // f8-ff 
+        retM,     ldSpHl,   jpM,      ei,       callM,    nop,      cpAN,     rst38,   // f8-ff 
     ]
 
     readonly bitOps: Z80Operation[] = [
@@ -1671,10 +1671,10 @@ export class Z80Cpu implements IZ80Cpu {
         retZ,     ret,      jpZ,      nop,      callZ,    call,     adcAN,    rst08,   // c8-cf 
         retNc,    popDe,    jpNc,     outNA,    callNc,   pushDe,   subAN,    rst10,   // d0-d7 
         retC,     exx,      jpC,      inAN,     callC,    nop,      sbcAN,    rst18,   // d8-df 
-        retPo,    popHl,    jpPo,     exSpiHl,  callPo,   pushHl,   andAN,    rst20,   // e0-e7 
-        retPe,    jpHl,     jpPe,     exDeHl,   callPe,   nop,      xorAN,    rst28,   // e8-ef 
+        retPo,    popX,     jpPo,     exSpiX,   callPo,   pushX,    andAN,    rst20,   // e0-e7 
+        retPe,    jpX,      jpPe,     exDeHl,   callPe,   nop,      xorAN,    rst28,   // e8-ef 
         retP,     popAf,    jpP,      di,       callP,    pushAf,   orAN,     rst30,   // f0-f7 
-        retM,     nop,      jpM,      ei,       callM,    nop,      cpAN,     rst38,   // f8-ff 
+        retM,     ldSpX,    jpM,      ei,       callM,    nop,      cpAN,     rst38,   // f8-ff 
     ]
 
     readonly indexedBitOps: Z80Operation[] = [
@@ -3304,6 +3304,12 @@ function retM(cpu: Z80Cpu) {
     if (cpu.isSFlagSet()) {
         ret(cpu);
     }
+}
+
+// 0xf9: LD SP,HL
+function ldSpHl(cpu: Z80Cpu) {
+    cpu.tactPlus2WithAddress(cpu.ir);
+    cpu.sp = cpu.hl;
 }
 
 // 0xfa: JP M,nn
@@ -6620,3 +6626,46 @@ function cpAXi(cpu: Z80Cpu) {
     cpu.wz = cpu.indexReg + sbyte(dist);
     cpu.cp8(cpu.readMemory(cpu.wz));
 }
+
+// 0xE1: POP IX
+function popX(cpu: Z80Cpu) {
+    cpu.indexL = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+    cpu.indexH = cpu.readMemory(cpu.sp);
+    cpu.sp++;
+}
+
+// 0xe3: EX (SP),IX
+function exSpiX(cpu: Z80Cpu) {
+    const sp1 = cpu.sp + 1;
+    const tempL = cpu.readMemory(cpu.sp);
+    const tempH = cpu.readMemory(sp1);
+    cpu.tactPlus1WithAddress(cpu.sp);
+    cpu.writeMemory(sp1, cpu.indexH);
+    cpu.writeMemory(cpu.sp, cpu.indexL);
+    cpu.tactPlus2WithAddress(cpu.sp);
+    cpu.wl = tempL;
+    cpu.wh = tempH;
+    cpu.indexReg = cpu.wz;
+}
+
+// 0xe5: PUSH IX
+function pushX(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.indexH);
+    cpu.sp--;
+    cpu.writeMemory(cpu.sp, cpu.indexL);
+}
+
+// 0xe9: JP (IX)
+function jpX(cpu: Z80Cpu) {
+    cpu.pc = cpu.indexReg;
+}
+
+// 0xf9: LD SP,IX
+function ldSpX(cpu: Z80Cpu) {
+    cpu.tactPlus2WithAddress(cpu.ir);
+    cpu.sp = cpu.indexReg;
+}
+
