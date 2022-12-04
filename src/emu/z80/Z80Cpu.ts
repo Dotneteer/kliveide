@@ -345,7 +345,7 @@ export class Z80Cpu implements IZ80Cpu {
     get indexReg(): number {
         return this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB ? this.ix : this.iy;
     }
-    set (value: number) {
+    set indexReg(value: number) {
         if (this.prefix == OpCodePrefix.DD || this.prefix == OpCodePrefix.DDCB) {
             this.ix = value;
         } else {
@@ -772,7 +772,7 @@ export class Z80Cpu implements IZ80Cpu {
             case OpCodePrefix.DDCB:
             case OpCodePrefix.FDCB:
                 // --- OpCode is the distance
-                this.wz = this.indexReg + (this.opCode >= 128 ? this.opCode - 256 : this.opCode);
+                this.wz = this.indexReg + sbyte(this.opCode);
                 this.opCode = this.readMemory(this.pc);
                 this.tactPlus2WithAddress(this.pc);
                 this.pc++;
@@ -939,7 +939,7 @@ export class Z80Cpu implements IZ80Cpu {
      */
     relativeJump(e: number): void {
         this.tactPlus5WithAddress(this.pc);
-        this.pc = this.wz = this.pc + (e >= 128 ? e - 256 : e);
+        this.pc = this.wz = this.pc + sbyte(e);
     }
 
     /**
@@ -1640,41 +1640,41 @@ export class Z80Cpu implements IZ80Cpu {
     ]
 
     readonly indexedOps: Z80Operation[] = [
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 00-07
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 08-0f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 10-17
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 18-1f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 20-27
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 28-2f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 30-37
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 38-3f
+        nop,      ldBcNN,   ldBciA,   incBc,    incB,     decB,     ldBN,     rlca,    // 00-07 
+        exAf,     addXBc,   ldABci,   decBc,    incC,     decC,     ldCN,     rrca,    // 08-0f 
+        djnz,     ldDeNN,   ldDeiA,   incDe,    incD,     decD,     ldDN,     rla,     // 10-17 
+        jr,       addXDe,   ldADei,   decDe,    incE,     decE,     ldEN,     rra,     // 18-1f 
+        jrnz,     ldXNN,    ldNNiX,   incX,     incXh,    decXh,    ldXhN,    daa,     // 20-27 
+        jrz,      addXX,    ldXNNi,   decX,     incXl,    decXl,    ldXlN,    cpl,     // 28-2f 
+        jrnc,     ldSpNN,   ldNNiA,   incSp,    incXi,    decXi,    ldXiN,    scf,     // 30-37 
+        jrc,      addXSp,   ldANNi,   decSp,    incA,     decA,     ldAN,     ccf,     // 38-3f 
 
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 40-47
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 48-4f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 50-57
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 58-5f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 60-67
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 68-6f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 70-77
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 78-7f
-        
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 80-87
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
-        
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d0-d7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // d8-df
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e0-e7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // e8-ef
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f0-f7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // f8-ff
+        nop,      ldBC,     ldBD,     ldBE,     ldBXh,    ldBXl,    ldBXi,    ldBA,    // 40-47 
+        ldCB,     nop,      ldCD,     ldCE,     ldCXh,    ldCXl,    ldCXi,    ldCA,    // 48-4f 
+        ldDB,     ldDC,     nop,      ldDE,     ldDXh,    ldDXl,    ldDXi,    ldDA,    // 50-57 
+        ldEB,     ldEC,     ldED,     nop,      ldEXh,    ldEXl,    ldEXi,    ldEA,    // 58-5f 
+        ldXhB,    ldXhC,    ldXhD,    ldXhE,    nop,      ldXhXl,   ldHXi,    ldXhA,   // 60-67 
+        ldXlB,    ldXlC,    ldXlD,    ldXlE,    ldXlXh,   nop,      ldLXi,    ldXlA,   // 68-6f 
+        ldXiB,    ldXiC,    ldXiD,    ldXiE,    ldXiH,    ldXiL,    halt,     ldXiA,   // 70-77 
+        ldAB,     ldAC,     ldAD,     ldAE,     ldAXh,    ldAXl,    ldAXi,    nop,     // 78-7f 
+
+        addAB,    addAC,    addAD,    addAE,    addAXh,   addAXl,   addAXi,   addAA,   // 80-87 
+        adcAB,    adcAC,    adcAD,    adcAE,    adcAXh,   adcAXl,   adcAXi,   adcAA,   // 88-8f 
+        subAB,    subAC,    subAD,    subAE,    subAH,    subAL,    subAHli,  subAA,   // 90-97 
+        sbcAB,    sbcAC,    sbcAD,    sbcAE,    sbcAH,    sbcAL,    sbcAHli,  sbcAA,   // 98-9f 
+        andAB,    andAC,    andAD,    andAE,    andAH,    andAL,    andAHli,  andAA,   // a0-a7 
+        xorAB,    xorAC,    xorAD,    xorAE,    xorAH,    xorAL,    xorAHli,  xorAA,   // a8-af 
+        orAB,     orAC,     orAD,     orAE,     orAH,     orAL,     orAHli,   orAA,    // b0-b7 
+        cpB,      cpC,      cpD,      cpE,      cpH,      cpL,      cpHli,    cpA,     // b8-bf 
+
+        retNz,    popBc,    jpNz,     jp,       callNz,   pushBc,   addAN,    rst00,   // c0-c7 
+        retZ,     ret,      jpZ,      nop,      callZ,    call,     adcAN,    rst08,   // c8-cf 
+        retNc,    popDe,    jpNc,     outNA,    callNc,   pushDe,   subAN,    rst10,   // d0-d7 
+        retC,     exx,      jpC,      inAN,     callC,    nop,      sbcAN,    rst18,   // d8-df 
+        retPo,    popHl,    jpPo,     exSpiHl,  callPo,   pushHl,   andAN,    rst20,   // e0-e7 
+        retPe,    jpHl,     jpPe,     exDeHl,   callPe,   nop,      xorAN,    rst28,   // e8-ef 
+        retP,     popAf,    jpP,      di,       callP,    pushAf,   orAN,     rst30,   // f0-f7 
+        retM,     nop,      jpM,      ei,       callM,    nop,      cpAN,     rst38,   // f8-ff 
     ]
 
     readonly indexedBitOps: Z80Operation[] = [
@@ -1765,6 +1765,13 @@ const overflowSubFlags: number[] = [0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x04, 0x
 const parityTable: number[] = [];
 const sz53Table: number[] = [];
 const sz53pvTable: number[] = [];
+
+/**
+ * Converts an unsigned byte value to a signed byte value
+ */
+function sbyte(dist: number): number {
+    return dist >= 128 ? dist - 256 : dist;
+}
 
 // --- Initialize ALU tables
 (function initializeAluTables() {
@@ -6098,4 +6105,404 @@ function xset7A(cpu: Z80Cpu) {
     cpu.a = cpu.readMemory(cpu.wz) | 0x80;
     cpu.tactPlus1WithAddress(cpu.wz);
     cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+// Z80 indexed operations
+
+// 0x09: ADD IX,BC
+function addXBc(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.indexReg = cpu.add16(cpu.indexReg, cpu.bc);
+}
+
+// 0x19: ADD IX,BC
+function addXDe(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.indexReg = cpu.add16(cpu.indexReg, cpu.de);
+}
+
+// 0x21: LD IX,nn
+function ldXNN(cpu: Z80Cpu) {
+    cpu.indexL = cpu.fetchCodeByte();
+    cpu.indexH = cpu.fetchCodeByte();
+}
+
+// 0x22: LD (nn),IX
+function ldNNiX(cpu: Z80Cpu) {
+    cpu.store16(cpu.indexL, cpu.indexH);
+}
+
+// 0x33: INC IX
+function incX(cpu: Z80Cpu) {
+    cpu.indexReg++;
+    cpu.tactPlus2WithAddress(cpu.ir);
+}
+
+// 0x24: INC XH
+function incXh(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.indexH++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x25: DEC XH
+function decXh(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.indexH--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x26: LD XH,n
+function ldXhN(cpu: Z80Cpu) {
+    cpu.indexH = cpu.fetchCodeByte();
+}
+
+// 0x29: ADD IX,IX
+function addXX(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.indexReg = cpu.add16(cpu.indexReg, cpu.indexReg);
+}
+
+// 0x2A: LD IX,(nn)
+function ldXNNi(cpu: Z80Cpu) {
+    let addr = (cpu.fetchCodeByte() + (cpu.fetchCodeByte() << 8)) & 0xffff;
+    cpu.indexL = cpu.readMemory(addr);
+    cpu.wz = addr = (addr + 1) & 0xffff;
+    cpu.indexH = cpu.readMemory(addr);
+}
+
+// 0x2B: DEC IX
+function decX(cpu: Z80Cpu) {
+    cpu.indexReg--;
+    cpu.tactPlus2WithAddress(cpu.ir);
+}
+
+// 0x2C: INC XL
+function incXl(cpu: Z80Cpu) {
+    cpu.f = incFlags[cpu.indexL++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x2d: DEC XL
+function decXl(cpu: Z80Cpu) {
+    cpu.f = decFlags[cpu.indexL--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+}
+
+// 0x2e: LD XL,n
+function ldXlN(cpu: Z80Cpu) {
+    cpu.indexL = cpu.fetchCodeByte();
+}
+
+// 0x34: INC (IX+d)
+function incXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    let tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.f = incFlags[tmp++] | cpu.flagCValue;
+    cpu.f53Updated = true;
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x35: DEC (IX+d)
+function decXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    let tmp = cpu.readMemory(cpu.wz);
+    cpu.tactPlus1WithAddress(cpu.wz);
+    cpu.f = decFlags[tmp--] | cpu.flagCValue;
+    cpu.f53Updated = true;
+    cpu.writeMemory(cpu.wz, tmp);
+}
+
+// 0x36: LD (IX+d),n
+function ldXiN(cpu: Z80Cpu) {
+    const dist = cpu.fetchCodeByte();
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    const value = cpu.fetchCodeByte();
+    cpu.tactPlus2WithAddress(cpu.pc);
+    cpu.writeMemory(cpu.wz, value);
+}
+
+// 0x39: ADD IX,SP
+function addXSp(cpu: Z80Cpu) {
+    cpu.tactPlus7WithAddress(cpu.ir);
+    cpu.indexReg = cpu.add16(cpu.indexReg, cpu.sp);
+}
+
+// 0x44: LD B,XH
+function ldBXh(cpu: Z80Cpu) {
+    cpu.b = cpu.indexH;
+}
+
+// 0x45: LD B,XL
+function ldBXl(cpu: Z80Cpu) {
+    cpu.b = cpu.indexL;
+}
+
+// 0x46: LD B,(IX+d)
+function ldBXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.b = cpu.readMemory(cpu.wz);
+}
+
+// 0x4C: LD C,XH
+function ldCXh(cpu: Z80Cpu) {
+    cpu.c = cpu.indexH;
+}
+
+// 0x4D: LD C,XL
+function ldCXl(cpu: Z80Cpu) {
+    cpu.c = cpu.indexL;
+}
+
+// 0x4E: LD C,(IX+d)
+function ldCXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.c = cpu.readMemory(cpu.wz);
+}
+// 0x54: LD D,XH
+function ldDXh(cpu: Z80Cpu) {
+    cpu.d = cpu.indexH;
+}
+
+// 0x55: LD D,XL
+function ldDXl(cpu: Z80Cpu) {
+    cpu.d = cpu.indexL;
+}
+
+// 0x56: LD D,(IX+d)
+function ldDXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.d = cpu.readMemory(cpu.wz);
+}
+
+// 0x5C: LD E,XH
+function ldEXh(cpu: Z80Cpu) {
+    cpu.e = cpu.indexH;
+}
+
+// 0x5D: LD E,XL
+function ldEXl(cpu: Z80Cpu) {
+    cpu.e = cpu.indexL;
+}
+
+// 0x5E: LD E,(IX+d)
+function ldEXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.e = cpu.readMemory(cpu.wz);
+}
+
+// 0x60: LD XH,B
+function ldXhB(cpu: Z80Cpu) {
+    cpu.indexH = cpu.b;
+}
+
+// 0x61: LD XH,C
+function ldXhC(cpu: Z80Cpu) {
+    cpu.indexH = cpu.c;
+}
+
+// 0x62: LD XH,D
+function ldXhD(cpu: Z80Cpu) {
+    cpu.indexH = cpu.d;
+}
+
+// 0x63: LD XH,E
+function ldXhE(cpu: Z80Cpu) {
+    cpu.indexH = cpu.e;
+}
+
+// 0x65: LD XH,XL
+function ldXhXl(cpu: Z80Cpu) {
+    cpu.indexH = cpu.indexL;
+}
+
+// 0x66: LD H,(IX+d)
+function ldHXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.h = cpu.readMemory(cpu.wz);
+}
+
+// 0x67: LD XH,A
+function ldXhA(cpu: Z80Cpu) {
+    cpu.indexH = cpu.a;
+}
+
+// 0x68: LD XL,B
+function ldXlB(cpu: Z80Cpu) {
+    cpu.indexL = cpu.b;
+}
+
+// 0x69: LD XL,C
+function ldXlC(cpu: Z80Cpu) {
+    cpu.indexL = cpu.c;
+}
+
+// 0x6A: LD XL,D
+function ldXlD(cpu: Z80Cpu) {
+    cpu.indexL = cpu.d;
+}
+
+// 0x6B: LD XL,E
+function ldXlE(cpu: Z80Cpu) {
+    cpu.indexL = cpu.e;
+}
+
+// 0x6C: LD XL,XH
+function ldXlXh(cpu: Z80Cpu) {
+    cpu.indexL = cpu.indexH;
+}
+
+// 0x6E: LD L,(IX+d)
+function ldLXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.l = cpu.readMemory(cpu.wz);
+}
+
+// 0x6F: LD XL,A
+function ldXlA(cpu: Z80Cpu) {
+    cpu.indexL = cpu.a;
+}
+
+// 0x70: LD (IX+d),B
+function ldXiB(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist)
+    cpu.writeMemory(cpu.wz, cpu.b);
+}
+
+// 0x71: LD (IX+d),C
+function ldXiC(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist)
+    cpu.writeMemory(cpu.wz, cpu.c);
+}
+
+// 0x72: LD (IX+d),D
+function ldXiD(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist)
+    cpu.writeMemory(cpu.wz, cpu.d);
+}
+
+// 0x73: LD (IX+d),E
+function ldXiE(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist)
+    cpu.writeMemory(cpu.wz, cpu.e);
+}
+
+// 0x74: LD (IX+d),H
+function ldXiH(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist)
+    cpu.writeMemory(cpu.wz, cpu.h);
+}
+
+// 0x75: LD (IX+d),L
+function ldXiL(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist)
+    cpu.writeMemory(cpu.wz, cpu.l);
+}
+
+// 0x77: LD (IX+d),A
+function ldXiA(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist)
+    cpu.writeMemory(cpu.wz, cpu.a);
+}
+
+// 0x7C: LD A,XH
+function ldAXh(cpu: Z80Cpu) {
+    cpu.a = cpu.indexH;
+}
+
+// 0x7D: LD A,XL
+function ldAXl(cpu: Z80Cpu) {
+    cpu.a = cpu.indexL;
+}
+
+// 0x7E: LD A,(IX+d)
+function ldAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.a = cpu.readMemory(cpu.wz);
+}
+
+// 0x84: ADD A,XH
+function addAXh(cpu: Z80Cpu) {
+    cpu.add8(cpu.indexH);
+}
+
+// 0x85: ADD A,XL
+function addAXl(cpu: Z80Cpu) {
+    cpu.add8(cpu.indexL);
+}
+
+// 0x86: ADD A,(IX+d)
+function addAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.add8(cpu.readMemory(cpu.wz));
+}
+
+// 0x8C: ADC A,XH
+function adcAXh(cpu: Z80Cpu) {
+    cpu.adc8(cpu.indexH);
+}
+
+// 0x8D: ADC A,XL
+function adcAXl(cpu: Z80Cpu) {
+    cpu.adc8(cpu.indexL);
+}
+
+// 0x8E: ADC A,(IX+d)
+function adcAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.adc8(cpu.readMemory(cpu.wz));
 }

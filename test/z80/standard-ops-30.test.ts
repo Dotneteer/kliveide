@@ -204,6 +204,49 @@ describe("Z80 standard ops 30-3f", () => {
         expect(cpu.tacts).toBe(4);
     });
 
+    it("0x38: jrnc (no jump)", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x37,       // SCF
+            0x3F,       // CCF 
+            0x38, 0x02  // JR C,02H
+        ]);
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("F");
+        m.shouldKeepMemory();
+
+        expect(cpu.pc).toBe(0x0004);
+        expect(cpu.tacts).toBe(15);
+    });
+
+    it("0x38: jrc (jump)", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.UntilEnd);
+        m.initCode(
+        [
+            0x37,       // SCF 
+            0x38, 0x02  // JR C,02H
+        ]);
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("F");
+        m.shouldKeepMemory();
+
+        expect(cpu.pc).toBe(0x0005);
+        expect(cpu.tacts).toBe(16);
+    });
+
     it("0x39: add hl,sp #1", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);

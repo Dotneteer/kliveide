@@ -807,5 +807,4 @@ describe("Z80 standard ops 10-1f", () => {
         expect(cpu.pc).toBe(0x0004);
         expect(cpu.tacts).toBe(15);
     });
-
 });
