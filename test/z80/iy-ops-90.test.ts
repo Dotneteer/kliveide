@@ -11,7 +11,7 @@ describe("Z80 standard ops 90-9f", () => {
         [
             0x3E, 0x36, // LD A,36H
             0x06, 0x24, // LD B,24H
-            0xDD, 0x90  // SUB B
+            0xFD, 0x90  // SUB B
         ]);
 
         // --- Act
@@ -41,7 +41,7 @@ describe("Z80 standard ops 90-9f", () => {
         [
             0x3E, 0x36, // LD A,36H
             0x0E, 0x24, // LD C,24H
-            0xDD, 0x91  // SUB C
+            0xFD, 0x91  // SUB C
         ]);
 
         // --- Act
@@ -71,7 +71,7 @@ describe("Z80 standard ops 90-9f", () => {
         [
             0x3E, 0x36, // LD A,36H
             0x16, 0x24, // LD D,24H
-            0xDD, 0x92  // SUB D
+            0xFD, 0x92  // SUB D
         ]);
 
         // --- Act
@@ -101,7 +101,7 @@ describe("Z80 standard ops 90-9f", () => {
         [
             0x3E, 0x36, // LD A,36H
             0x1E, 0x24, // LD E,24H
-            0xDD, 0x93  // SUB E
+            0xFD, 0x93  // SUB E
         ]);
 
         // --- Act
@@ -124,14 +124,14 @@ describe("Z80 standard ops 90-9f", () => {
         expect(cpu.tacts).toBe(22);
     });
 
-    it("0x94: SUB A,XH", ()=> {
+    it("0x94: SUB A,YH", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);
         m.initCode(
         [
             0x3E, 0x36,             // LD A,36H
-            0xDD, 0x21, 0x3D, 0x24, // LD IX,243DH
-            0xDD, 0x94              // SUB XH
+            0xFD, 0x21, 0x3D, 0x24, // LD IY,243DH
+            0xFD, 0x94              // SUB YH
         ]);
 
         // --- Act
@@ -139,7 +139,7 @@ describe("Z80 standard ops 90-9f", () => {
 
         // --- Assert
         const cpu = m.cpu;
-        m.shouldKeepRegisters("AF, IX");
+        m.shouldKeepRegisters("AF, IY");
         m.shouldKeepMemory();
         expect(cpu.a).toBe(0x12);
         expect(cpu.isSFlagSet()).toBe(false);
@@ -154,14 +154,14 @@ describe("Z80 standard ops 90-9f", () => {
         expect(cpu.tacts).toBe(29);
     });
 
-    it("0x95: SUB A,XL", ()=> {
+    it("0x95: SUB A,YL", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);
         m.initCode(
         [
             0x3E, 0x36,             // LD A,36H
-            0xDD, 0x21, 0x24, 0x3D, // LD IX,3D24H
-            0xDD, 0x95              // SUB XL
+            0xFD, 0x21, 0x24, 0x3D, // LD IY,3D24H
+            0xFD, 0x95              // SUB YL
         ]);
 
         // --- Act
@@ -169,7 +169,7 @@ describe("Z80 standard ops 90-9f", () => {
 
         // --- Assert
         const cpu = m.cpu;
-        m.shouldKeepRegisters("AF, IX");
+        m.shouldKeepRegisters("AF, IY");
         m.shouldKeepMemory();
         expect(cpu.a).toBe(0x12);
         expect(cpu.isSFlagSet()).toBe(false);
@@ -184,7 +184,7 @@ describe("Z80 standard ops 90-9f", () => {
         expect(cpu.tacts).toBe(29);
     });
 
-    it("0x96: SUB A,(IX+d)", ()=> {
+    it("0x96: SUB A,(IY+d)", ()=> {
         // --- Arrange
         const OFFS = 0x54;
         const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -192,17 +192,17 @@ describe("Z80 standard ops 90-9f", () => {
         [
             0x3E, 0x36,       // LD A,36H
             0x37,             // SCF
-            0xDD, 0x96, 0x54  // SUB (IX+54H)
+            0xFD, 0x96, 0x54  // SUB (IY+54H)
         ]);
-        m.cpu.ix = 0x1000;
-        m.memory[m.cpu.ix + OFFS] = 0x24;
+        m.cpu.iy = 0x1000;
+        m.memory[m.cpu.iy + OFFS] = 0x24;
 
         // --- Act
         m.run();
 
         // --- Assert
         const cpu = m.cpu;
-        m.shouldKeepRegisters("AF, IX");
+        m.shouldKeepRegisters("AF, IY");
         m.shouldKeepMemory();
         expect(cpu.a).toBe(0x12);
         expect(cpu.isSFlagSet()).toBe(false);
@@ -223,7 +223,7 @@ describe("Z80 standard ops 90-9f", () => {
         m.initCode(
         [
             0x3E, 0x36, // LD A,36H
-            0xDD, 0x97  // SUB A
+            0xFD, 0x97  // SUB A
         ]);
 
         // --- Act
@@ -254,7 +254,7 @@ describe("Z80 standard ops 90-9f", () => {
             0x3E, 0x36, // LD A,36H
             0x06, 0x24, // LD B,24H
             0x37,       // SCF
-            0xDD, 0x98  // SBC B
+            0xFD, 0x98  // SBC B
         ]);
 
         // --- Act
@@ -285,7 +285,7 @@ describe("Z80 standard ops 90-9f", () => {
             0x3E, 0x36, // LD A,36H
             0x0E, 0x24, // LD C,24H
             0x37,       // SCF
-            0xDD, 0x99  // SBC C
+            0xFD, 0x99  // SBC C
         ]);
 
         // --- Act
@@ -316,7 +316,7 @@ describe("Z80 standard ops 90-9f", () => {
             0x3E, 0x36, // LD A,36H
             0x16, 0x24, // LD D,24H
             0x37,       // SCF
-            0xDD, 0x9A  // SBC D
+            0xFD, 0x9A  // SBC D
         ]);
 
         // --- Act
@@ -347,7 +347,7 @@ describe("Z80 standard ops 90-9f", () => {
             0x3E, 0x36, // LD A,36H
             0x1E, 0x24, // LD E,24H
             0x37,       // SCF
-            0xDD, 0x9B  // SBC E
+            0xFD, 0x9B  // SBC E
         ]);
 
         // --- Act
@@ -370,14 +370,14 @@ describe("Z80 standard ops 90-9f", () => {
         expect(cpu.tacts).toBe(26);
     });
 
-    it("0x9C: SBC A,XH", ()=> {
+    it("0x9C: SBC A,YH", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);
         m.initCode(
         [
             0x3E, 0x36,             // LD A,36H
-            0xDD, 0x21, 0x3D, 0x24, // LD IX,243DH
-            0xDD, 0x9C              // SBC XH
+            0xFD, 0x21, 0x3D, 0x24, // LD IY,243DH
+            0xFD, 0x9C              // SBC YH
         ]);
         m.cpu.f |= FlagsSetMask.C;
 
@@ -386,7 +386,7 @@ describe("Z80 standard ops 90-9f", () => {
 
         // --- Assert
         const cpu = m.cpu;
-        m.shouldKeepRegisters("AF, IX");
+        m.shouldKeepRegisters("AF, IY");
         m.shouldKeepMemory();
         expect(cpu.a).toBe(0x11);
         expect(cpu.isSFlagSet()).toBe(false);
@@ -401,14 +401,14 @@ describe("Z80 standard ops 90-9f", () => {
         expect(cpu.tacts).toBe(29);
     });
 
-    it("0x9D: SBC A,XL", ()=> {
+    it("0x9D: SBC A,YL", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.UntilEnd);
         m.initCode(
         [
             0x3E, 0x36,             // LD A,36H
-            0xDD, 0x21, 0x24, 0x3D, // LD IX,3D24H
-            0xDD, 0x9D              // SBC XL
+            0xFD, 0x21, 0x24, 0x3D, // LD IY,3D24H
+            0xFD, 0x9D              // SBC YL
         ]);
         m.cpu.f |= FlagsSetMask.C;
 
@@ -417,7 +417,7 @@ describe("Z80 standard ops 90-9f", () => {
 
         // --- Assert
         const cpu = m.cpu;
-        m.shouldKeepRegisters("AF, IX");
+        m.shouldKeepRegisters("AF, IY");
         m.shouldKeepMemory();
         expect(cpu.a).toBe(0x11);
         expect(cpu.isSFlagSet()).toBe(false);
@@ -432,7 +432,7 @@ describe("Z80 standard ops 90-9f", () => {
         expect(cpu.tacts).toBe(29);
     });
 
-    it("0x9E: SBC A,(IX+d)", ()=> {
+    it("0x9E: SBC A,(IY+d)", ()=> {
         // --- Arrange
         const OFFS = 0x54;
         const m = new Z80TestMachine(RunMode.UntilEnd);
@@ -440,18 +440,18 @@ describe("Z80 standard ops 90-9f", () => {
         [
             0x3E, 0x36,       // LD A,36H
             0x37,             // SCF
-            0xDD, 0x9E, 0x54  // SBC (IX+54H)
+            0xFD, 0x9E, 0x54  // SBC (IY+54H)
         ]);
-        m.cpu.ix = 0x1000;
+        m.cpu.iy = 0x1000;
         m.cpu.f |= FlagsSetMask.C;
-        m.memory[m.cpu.ix + OFFS] = 0x24;
+        m.memory[m.cpu.iy + OFFS] = 0x24;
 
         // --- Act
         m.run();
 
         // --- Assert
         const cpu = m.cpu;
-        m.shouldKeepRegisters("AF, IX");
+        m.shouldKeepRegisters("AF, IY");
         m.shouldKeepMemory();
         expect(cpu.a).toBe(0x11);
         expect(cpu.isSFlagSet()).toBe(false);
@@ -473,7 +473,7 @@ describe("Z80 standard ops 90-9f", () => {
         [
             0x3E, 0x36, // LD A,36H
             0x37,       // SCF
-            0xDD, 0x9F  // SBC A
+            0xFD, 0x9F  // SBC A
         ]);
 
         // --- Act
@@ -495,5 +495,4 @@ describe("Z80 standard ops 90-9f", () => {
         expect(cpu.pc).toBe(0x0005);
         expect(cpu.tacts).toBe(19);
     });
-
 });

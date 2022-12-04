@@ -1660,12 +1660,12 @@ export class Z80Cpu implements IZ80Cpu {
 
         addAB,    addAC,    addAD,    addAE,    addAXh,   addAXl,   addAXi,   addAA,   // 80-87 
         adcAB,    adcAC,    adcAD,    adcAE,    adcAXh,   adcAXl,   adcAXi,   adcAA,   // 88-8f 
-        subAB,    subAC,    subAD,    subAE,    subAH,    subAL,    subAHli,  subAA,   // 90-97 
-        sbcAB,    sbcAC,    sbcAD,    sbcAE,    sbcAH,    sbcAL,    sbcAHli,  sbcAA,   // 98-9f 
-        andAB,    andAC,    andAD,    andAE,    andAH,    andAL,    andAHli,  andAA,   // a0-a7 
-        xorAB,    xorAC,    xorAD,    xorAE,    xorAH,    xorAL,    xorAHli,  xorAA,   // a8-af 
-        orAB,     orAC,     orAD,     orAE,     orAH,     orAL,     orAHli,   orAA,    // b0-b7 
-        cpB,      cpC,      cpD,      cpE,      cpH,      cpL,      cpHli,    cpA,     // b8-bf 
+        subAB,    subAC,    subAD,    subAE,    subAXh,   subAXl,   subAXi,   subAA,   // 90-97 
+        sbcAB,    sbcAC,    sbcAD,    sbcAE,    sbcAXh,   sbcAXl,   sbcAXi,   sbcAA,   // 98-9f 
+        andAB,    andAC,    andAD,    andAE,    andAXh,   andAXl,   andAXi,   andAA,   // a0-a7 
+        xorAB,    xorAC,    xorAD,    xorAE,    xorAXh,   xorAXl,   xorAXi,   xorAA,   // a8-af 
+        orAB,     orAC,     orAD,     orAE,     orAXh,    orAXl,    orAXi,    orAA,    // b0-b7 
+        cpB,      cpC,      cpD,      cpE,      cpAXh,    cpAXl,    cpAXi,    cpA,     // b8-bf 
 
         retNz,    popBc,    jpNz,     jp,       callNz,   pushBc,   addAN,    rst00,   // c0-c7 
         retZ,     ret,      jpZ,      nop,      callZ,    call,     adcAN,    rst08,   // c8-cf 
@@ -6505,4 +6505,118 @@ function adcAXi(cpu: Z80Cpu) {
     cpu.pc++;
     cpu.wz = cpu.indexReg + sbyte(dist);
     cpu.adc8(cpu.readMemory(cpu.wz));
+}
+
+// 0x94: SUB A,XH
+function subAXh(cpu: Z80Cpu) {
+    cpu.sub8(cpu.indexH);
+}
+
+// 0x95: ADC A,XL
+function subAXl(cpu: Z80Cpu) {
+    cpu.sub8(cpu.indexL);
+}
+
+// 0x96: SUB A,(IX+d)
+function subAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.sub8(cpu.readMemory(cpu.wz));
+}
+
+// 0x9C: SBC A,XH
+function sbcAXh(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.indexH);
+}
+
+// 0x9D: SBC A,XL
+function sbcAXl(cpu: Z80Cpu) {
+    cpu.sbc8(cpu.indexL);
+}
+
+// 0x9E: SBC A,(IX+d)
+function sbcAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.sbc8(cpu.readMemory(cpu.wz));
+}
+
+// 0xA4: AND A,XH
+function andAXh(cpu: Z80Cpu) {
+    cpu.and8(cpu.indexH);
+}
+
+// 0xA5: AND A,XL
+function andAXl(cpu: Z80Cpu) {
+    cpu.and8(cpu.indexL);
+}
+
+// 0xA6: SBC A,(IX+d)
+function andAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.and8(cpu.readMemory(cpu.wz));
+}
+
+// 0xAC: XOR A,XH
+function xorAXh(cpu: Z80Cpu) {
+    cpu.xor8(cpu.indexH);
+}
+
+// 0xAD: XOR A,XL
+function xorAXl(cpu: Z80Cpu) {
+    cpu.xor8(cpu.indexL);
+}
+
+// 0xAE: XOR A,(IX+d)
+function xorAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.xor8(cpu.readMemory(cpu.wz));
+}
+
+// 0xB4: OR A,XH
+function orAXh(cpu: Z80Cpu) {
+    cpu.or8(cpu.indexH);
+}
+
+// 0xB5: OR A,XL
+function orAXl(cpu: Z80Cpu) {
+    cpu.or8(cpu.indexL);
+}
+
+// 0xB6: OR A,(IX+d)
+function orAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.or8(cpu.readMemory(cpu.wz));
+}
+
+// 0xBC: CP XH
+function cpAXh(cpu: Z80Cpu) {
+    cpu.cp8(cpu.indexH);
+}
+
+// 0xBD: CP XL
+function cpAXl(cpu: Z80Cpu) {
+    cpu.cp8(cpu.indexL);
+}
+
+// 0xBE: CP (IX+d)
+function cpAXi(cpu: Z80Cpu) {
+    const dist = cpu.readMemory(cpu.pc);
+    cpu.tactPlus5WithAddress(cpu.pc);
+    cpu.pc++;
+    cpu.wz = cpu.indexReg + sbyte(dist);
+    cpu.cp8(cpu.readMemory(cpu.wz));
 }
