@@ -268,6 +268,28 @@ describe("Z80 extended ops 40-4f", () => {
         expect(cpu.tacts).toBe(8);
     });
 
+    it("0x47: LD I,A", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x47 // LD I,A
+        ]);
+        m.cpu.a = 0xa5;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters();
+        m.shouldKeepMemory();
+
+        expect(m.cpu.i).toBe(0xa5);
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(9);
+    });
+
     it("0x48: IN C,(C)", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.OneInstruction);
@@ -542,4 +564,27 @@ describe("Z80 extended ops 40-4f", () => {
         expect(cpu.pc).toBe(0x0002);
         expect(cpu.tacts).toBe(8);
     });
+
+    it("0x4F: LD R,A", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x4F // LD R,A
+        ]);
+        m.cpu.a = 0xa5;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters();
+        m.shouldKeepMemory();
+
+        expect(m.cpu.r).toBe(0xa5);
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(9);
+    });
+
 });

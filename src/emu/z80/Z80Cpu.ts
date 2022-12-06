@@ -1550,6 +1550,21 @@ export class Z80Cpu implements IZ80Cpu {
     }
 
     /**
+     * This method increments the current CPU tacts by four, using memory contention with the provided address.
+     * @param address 
+     */
+    tactPlus4WithAddress(address: number): void {
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+        if (this.delayedAddressBus) this.delayAddressBusAccess(address);
+        this.tactPlus1();
+    }
+    
+    /**
      * This method increments the current CPU tacts by five, using memory contention with the provided address.
      * @param address 
      */
@@ -1768,12 +1783,12 @@ export class Z80Cpu implements IZ80Cpu {
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 30-37
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 38-3f
 
-        inBC,     outCB,    sbcHlBc,  ldNniBc,  neg,      retn,     im0,      nop,     // 40-47
-        inCC,     outCC,    adcHlBc,  ldBcNni,  neg,      retn,     im0,      nop,     // 48-4f
-        inDC,     outCD,    sbcHlDe,  ldNniDe,  neg,      retn,     im1,      nop,     // 50-57
-        inEC,     outCE,    adcHlDe,  ldDeNni,  neg,      retn,     im2,      nop,     // 58-5f
-        inHC,     outCH,    sbcHlHl,  ldNniHl,  neg,      retn,     im0,      nop,     // 60-67
-        inLC,     outCL,    adcHlHl,  ldHlNni,  neg,      retn,     im0,      nop,     // 68-6f
+        inBC,     outCB,    sbcHlBc,  ldNniBc,  neg,      retn,     im0,      ldIA,    // 40-47
+        inCC,     outCC,    adcHlBc,  ldBcNni,  neg,      retn,     im0,      ldRA,    // 48-4f
+        inDC,     outCD,    sbcHlDe,  ldNniDe,  neg,      retn,     im1,      ldAI,    // 50-57
+        inEC,     outCE,    adcHlDe,  ldDeNni,  neg,      retn,     im2,      ldAR,    // 58-5f
+        inHC,     outCH,    sbcHlHl,  ldNniHl,  neg,      retn,     im0,      rrd,     // 60-67
+        inLC,     outCL,    adcHlHl,  ldHlNni,  neg,      retn,     im0,      rld,     // 68-6f
         in0C,     outC0,    sbcHlSp,  ldNniSp,  neg,      retn,     im1,      nop,     // 70-77
         inAC,     outCA,    adcHlSp,  ldSpNni,  neg,      retn,     im2,      nop,     // 78-7f
         
@@ -1781,7 +1796,7 @@ export class Z80Cpu implements IZ80Cpu {
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 88-8f
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a0-a7
+        ldi,      cpi,      ini,      outi,     nop,      nop,      nop,      nop,     // a0-a7
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
@@ -6758,6 +6773,12 @@ function im0(cpu: Z80Cpu) {
     cpu.interruptMode = 0;
 }
 
+// 0x47: LD I,A
+function ldIA(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.i = cpu.a;
+}
+
 // 0x48: IN C,(C)
 function inCC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
@@ -6788,6 +6809,12 @@ function ldBcNni(cpu: Z80Cpu) {
     cpu.b = cpu.readMemory(tmp);
 }
 
+// 0x4F: LD R,A
+function ldRA(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.r = cpu.a;
+}
+
 // 0x50: IN D,(C)
 function inDC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
@@ -6816,6 +6843,14 @@ function ldNniDe(cpu: Z80Cpu) {
 // 0x56: IM 1
 function im1(cpu: Z80Cpu) {
     cpu.interruptMode = 1;
+}
+
+// 0x57: LD A,I
+function ldAI(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.a = cpu.i;
+    cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
+    cpu.f53Updated = true;
 }
 
 // 0x58: IN E,(C)
@@ -6853,6 +6888,14 @@ function im2(cpu: Z80Cpu) {
     cpu.interruptMode = 2;
 }
 
+// 0x5F: LD A,R
+function ldAR(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    cpu.a = cpu.r;
+    cpu.f = cpu.flagCValue | sz53Table[cpu.a] | (cpu.iff2 ? FlagsSetMask.PV : 0);
+    cpu.f53Updated = true;
+}
+
 // 0x60: IN H,(C)
 function inHC(cpu: Z80Cpu) {
     cpu.wz = cpu.bc + 1;
@@ -6876,6 +6919,16 @@ function sbcHlHl(cpu: Z80Cpu) {
 // 0x63: LD (nn),HL
 function ldNniHl(cpu: Z80Cpu) {
     cpu.store16(cpu.l, cpu.h);
+}
+
+// 0x67: RRD
+function rrd(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.tactPlus4WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, (cpu.a << 4) | (tmp >>> 4));
+    cpu.a = (cpu.a & 0xf0) | (tmp & 0x0f);
+    cpu.f = cpu.flagCValue | sz53pvTable[cpu.a];
+    cpu.wz = cpu.hl + 1;
 }
 
 // 0x68: IN L,(C)
@@ -6906,6 +6959,16 @@ function ldHlNni(cpu: Z80Cpu) {
     tmp += 1;
     cpu.wz = tmp;
     cpu.h = cpu.readMemory(tmp);
+}
+
+// 0x6F: RLD
+function rld(cpu: Z80Cpu) {
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.tactPlus4WithAddress(cpu.hl);
+    cpu.writeMemory(cpu.hl, (tmp << 4) | (cpu.a & 0x0f));
+    cpu.a = (cpu.a & 0xf0) | (tmp >>> 4);
+    cpu.f = cpu.flagCValue | sz53pvTable[cpu.a];
+    cpu.wz = cpu.hl + 1;
 }
 
 // 0x70: IN (C)
@@ -6963,3 +7026,78 @@ function ldSpNni(cpu: Z80Cpu) {
     cpu.sp = val + (cpu.readMemory(tmp) << 8);
 }
 
+// 0xA0: LDI
+function ldi(cpu: Z80Cpu) {
+    let tmp = cpu.readMemory(cpu.hl);
+    cpu.bc--;
+    cpu.writeMemory(cpu.de, tmp);
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.de++;
+    cpu.hl++;
+    tmp += cpu.a;
+    cpu.f = 
+        (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+        (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
+        (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+
+}
+
+// 0xA1: CPI
+function cpi(cpu: Z80Cpu) {
+    const value = cpu.readMemory(cpu.hl);
+    let tmp = (cpu.a - value) & 0xff;
+    const lookup =
+        ((cpu.a & 0x08) >>> 3) |
+        ((value & 0x08) >>> 2) |
+        ((tmp & 0x08) >>> 1);
+    cpu.tactPlus5WithAddress(cpu.hl);
+    cpu.hl++;
+    cpu.bc--;
+    cpu.f =
+        cpu.flagCValue |
+        (cpu.bc !== 0 ? (FlagsSetMask.PV | FlagsSetMask.N) : FlagsSetMask.N) |
+        halfCarrySubFlags[lookup] |
+        (tmp !== 0 ? 0 : FlagsSetMask.Z) |
+        (tmp & FlagsSetMask.S);
+    if (cpu.isHFlagSet()) {
+        tmp -= 1;
+    }
+    cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+    cpu.wz++;
+}
+
+// 0xA2: INI
+function ini(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readPort(cpu.bc);
+    cpu.writeMemory(cpu.hl, tmp);
+    cpu.wz = cpu.bc + 1;
+    cpu.b--;
+    cpu.hl++;
+    const tmp2 = (tmp + cpu.c + 1) & 0xff;
+    cpu.f =
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+}
+
+// 0xA3: OUTI
+function outi(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.b--;
+    cpu.wz = cpu.bc + 1;
+    cpu.writePort(cpu.bc, tmp);
+    cpu.hl++;
+    const tmp2 = (tmp + cpu.l) & 0xff; 
+    cpu.f =
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+}

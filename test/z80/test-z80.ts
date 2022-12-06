@@ -248,7 +248,7 @@ export class Z80TestMachine
      * @param value Byte value to write
      */
     writeMemory(addr: number, value: number): void {
-        this.memory[addr] = value;
+        this.memory[addr] = value & 0xff;
         this.memoryAccessLog.push(new MemoryOp(addr, value, true));
     }
 

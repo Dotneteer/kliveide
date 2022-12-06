@@ -183,6 +183,138 @@ describe("Z80 extended ops 60-6f", () => {
         expect(cpu.tacts).toBe(8);
     });
 
+    it("0x67: RRD #1", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x67 // RRD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x56;
+        m.cpu.a = 0x34;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0x36);
+        expect(m.memory[0x1000]).toBe(0x45);
+        expect(cpu.isSFlagSet()).toBe(false);
+        expect(cpu.isZFlagSet()).toBe(false);
+        expect(cpu.isPvFlagSet()).toBe(true);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
+    });
+
+    it("0x67: RRD #2", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x67 // RRD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x56;
+        m.cpu.a = 0xA4;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0xA6);
+        expect(m.memory[0x1000]).toBe(0x45);
+        expect(cpu.isSFlagSet()).toBe(true);
+        expect(cpu.isZFlagSet()).toBe(false);
+        expect(cpu.isPvFlagSet()).toBe(true);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
+    });
+
+    it("0x67: RRD #3", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x67 // RRD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x50;
+        m.cpu.a = 0x04;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0x00);
+        expect(m.memory[0x1000]).toBe(0x45);
+        expect(cpu.isSFlagSet()).toBe(false);
+        expect(cpu.isZFlagSet()).toBe(true);
+        expect(cpu.isPvFlagSet()).toBe(true);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
+    });
+
+    it("0x67: RRD #4", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x67 // RRD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x50;
+        m.cpu.a = 0x14;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0x10);
+        expect(m.memory[0x1000]).toBe(0x45);
+        expect(cpu.isSFlagSet()).toBe(false);
+        expect(cpu.isZFlagSet()).toBe(false);
+        expect(cpu.isPvFlagSet()).toBe(false);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
+    });
+
     it("0x68: IN L,(C)", ()=> {
         // --- Arrange
         const m = new Z80TestMachine(RunMode.OneInstruction);
@@ -363,5 +495,137 @@ describe("Z80 extended ops 60-6f", () => {
 
         expect(cpu.pc).toBe(0x0002);
         expect(cpu.tacts).toBe(8);
+    });
+
+    it("0x6F: RLD #1", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x6F // RLD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x56;
+        m.cpu.a = 0x34;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0x35);
+        expect(m.memory[0x1000]).toBe(0x64);
+        expect(cpu.isSFlagSet()).toBe(false);
+        expect(cpu.isZFlagSet()).toBe(false);
+        expect(cpu.isPvFlagSet()).toBe(true);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
+    });
+
+    it("0x6F: RLD #2", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x6F // RLD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x56;
+        m.cpu.a = 0xA4;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0xA5);
+        expect(m.memory[0x1000]).toBe(0x64);
+        expect(cpu.isSFlagSet()).toBe(true);
+        expect(cpu.isZFlagSet()).toBe(false);
+        expect(cpu.isPvFlagSet()).toBe(true);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
+    });
+
+    it("0x6F: RLD #3", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x6F // RLD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x06;
+        m.cpu.a = 0x04;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0x00);
+        expect(m.memory[0x1000]).toBe(0x64);
+        expect(cpu.isSFlagSet()).toBe(false);
+        expect(cpu.isZFlagSet()).toBe(true);
+        expect(cpu.isPvFlagSet()).toBe(true);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
+    });
+
+    it("0x6F: RLD #4", ()=> {
+        // --- Arrange
+        const m = new Z80TestMachine(RunMode.OneInstruction);
+        m.initCode(
+        [
+            0xED, 0x6F // RLD
+        ]);
+        m.cpu.f &= 0xfe;
+        m.cpu.hl = 0x1000;
+        m.memory[0x1000] = 0x06;
+        m.cpu.a = 0x14;
+
+        // --- Act
+        m.run();
+
+        // --- Assert
+        const cpu = m.cpu;
+        m.shouldKeepRegisters("AF");
+        m.shouldKeepMemory("1000");
+
+        expect(cpu.a).toBe(0x10);
+        expect(m.memory[0x1000]).toBe(0x64);
+        expect(cpu.isSFlagSet()).toBe(false);
+        expect(cpu.isZFlagSet()).toBe(false);
+        expect(cpu.isPvFlagSet()).toBe(false);
+        expect(cpu.isHFlagSet()).toBe(false);
+        expect(cpu.isNFlagSet()).toBe(false);
+        expect(cpu.isCFlagSet()).toBe(false);
+
+        expect(cpu.pc).toBe(0x0002);
+        expect(cpu.tacts).toBe(18);
     });
 });
