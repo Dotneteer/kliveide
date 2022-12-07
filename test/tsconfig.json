@@ -14,10 +14,11 @@
       "downlevelIteration": true,
       "resolveJsonModule": true,
       "paths": {
-        "@/*": ["src/*"],
-          "styles/*": ["src/assets/styles/*"],
-          "@messaging/*": ["common/messaging/*"],
-          "@state/*": ["common/state/*"]
+        "@/*": ["../src/*"],
+        "styles/*": ["../src/assets/styles/*"],
+        "@messaging/*": ["../common/messaging/*"],
+        "@state/*": ["../common/state/*"],
+        "@z80/*": ["../src/emu/z80/*"],
       },
     },
     "include": ["../**/*"],
