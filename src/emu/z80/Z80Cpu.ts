@@ -1797,9 +1797,9 @@ export class Z80Cpu implements IZ80Cpu {
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 90-97
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // 98-9f
         ldi,      cpi,      ini,      outi,     nop,      nop,      nop,      nop,     // a0-a7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // a8-af
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b0-b7
-        nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // b8-bf
+        ldd,      cpd,      ind,      outd,     nop,      nop,      nop,      nop,     // a8-af
+        ldir,     cpir,     inir,     otir,     nop,      nop,      nop,      nop,     // b0-b7
+        lddr,     cpdr,     indr,     otdr,     nop,      nop,      nop,      nop,     // b8-bf
         
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c0-c7
         nop,      nop,      nop,      nop,      nop,      nop,      nop,      nop,     // c8-cf
@@ -7100,4 +7100,266 @@ function outi(cpu: Z80Cpu) {
         (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
         sz53Table[cpu.b];
     cpu.f53Updated = true;
+}
+
+// 0xA8: LDD
+function ldd(cpu: Z80Cpu) {
+    let tmp = cpu.readMemory(cpu.hl);
+    cpu.bc--;
+    cpu.writeMemory(cpu.de, tmp);
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.de--;
+    cpu.hl--;
+    tmp += cpu.a;
+    cpu.f = 
+        (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+        (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
+        (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+}
+
+// 0xA9: CPD
+function cpd(cpu: Z80Cpu) {
+    const value = cpu.readMemory(cpu.hl);
+    let tmp = (cpu.a - value) & 0xff;
+    const lookup =
+        ((cpu.a & 0x08) >>> 3) |
+        ((value & 0x08) >>> 2) |
+        ((tmp & 0x08) >>> 1);
+    cpu.tactPlus5WithAddress(cpu.hl);
+    cpu.hl--;
+    cpu.bc--;
+    cpu.f = 
+        cpu.flagCValue |
+        (cpu.bc !== 0 ? FlagsSetMask.PV | FlagsSetMask.N : FlagsSetMask.N) |
+        halfCarrySubFlags[lookup] |
+        (tmp !== 0 ? 0 : FlagsSetMask.Z) |
+        (tmp & FlagsSetMask.S);
+    if (cpu.isHFlagSet()) {
+        tmp -= 1;
+    }
+    cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+    cpu.wz--;
+}
+
+// 0xAA: IND
+function ind(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readPort(cpu.bc);
+    cpu.writeMemory(cpu.hl, tmp);
+    cpu.wz = cpu.bc - 1;
+    cpu.b--;
+    cpu.hl--;
+    const tmp2 = (tmp + cpu.c - 1) & 0xff;
+    cpu.f = 
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable![(tmp2 & 0x07) ^ cpu.b] != 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+}
+
+// 0xAB: OUTD
+function outd(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.b--;
+    cpu.wz = cpu.bc - 1;
+    cpu.writePort(cpu.bc, tmp);
+    cpu.hl--;
+    const tmp2 = (tmp + cpu.l) & 0xff;
+    cpu.f = 
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+}
+
+// 0xB0: LDIR
+function ldir(cpu: Z80Cpu) {
+    let tmp = cpu.readMemory(cpu.hl);
+    cpu.writeMemory(cpu.de, tmp);
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.bc--;
+    tmp += cpu.a;
+    cpu.f = 
+        (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+        (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
+        (tmp & FlagsSetMask.R3) | ((tmp & 0x02) != 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+    if (cpu.bc !== 0) {
+        cpu.tactPlus5WithAddress(cpu.de);
+        cpu.pc -= 2;
+        cpu.wz = cpu.pc + 1;
+    }
+    cpu.hl++;
+    cpu.de++;
+}
+
+// 0xB1: CPIR
+function cpir(cpu: Z80Cpu) {
+    const value = cpu.readMemory(cpu.hl);
+    let tmp = (cpu.a - value) & 0xff;
+    var lookup =
+        ((cpu.a & 0x08) >>> 3) |
+        ((value & 0x08) >>> 2) |
+        ((tmp & 0x08) >>> 1);
+    cpu.tactPlus5WithAddress(cpu.hl);
+    cpu.bc--;
+    cpu.f = 
+        cpu.flagCValue |
+        (cpu.bc != 0 ? FlagsSetMask.PV | FlagsSetMask.N : FlagsSetMask.N) |
+        halfCarrySubFlags[lookup] |
+        (tmp !== 0 ? 0 : FlagsSetMask.Z) |
+        (tmp & FlagsSetMask.S);
+    if (cpu.isHFlagSet()) {
+        tmp -= 1;
+    }
+    cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+    if ((cpu.f & (FlagsSetMask.PV | FlagsSetMask.Z)) === FlagsSetMask.PV) {
+        cpu.tactPlus5WithAddress(cpu.hl);
+        cpu.pc -= 2;
+        cpu.wz = cpu.pc + 1;
+    } else {
+        cpu.wz++;
+    }
+    cpu.hl++;
+}
+
+// 0xB2: INIR
+function inir(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readPort(cpu.bc);
+    cpu.writeMemory(cpu.hl, tmp);
+    cpu.wz = cpu.bc + 1;
+    cpu.b--;
+    const tmp2 = (tmp + cpu.c + 1) & 0xff;
+    cpu.f = 
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+    if (cpu.b !== 0) {
+        cpu.tactPlus5WithAddress(cpu.hl);
+        cpu.pc -= 2;
+    }
+    cpu.hl++;
+}
+
+// 0xB3: OTIR
+function otir(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.b--;
+    cpu.wz = cpu.bc + 1;
+    cpu.writePort(cpu.bc, tmp);
+    cpu.hl++;
+    const tmp2 = (tmp + cpu.l) & 0xff;
+    cpu.f = 
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+    if (cpu.b === 0) return;
+    cpu.tactPlus5WithAddress(cpu.hl);
+    cpu.pc -= 2;
+}
+
+// 0xB8: LDDR
+function lddr(cpu: Z80Cpu) {
+    let tmp = cpu.readMemory(cpu.hl);
+    cpu.writeMemory(cpu.de, tmp);
+    cpu.tactPlus2WithAddress(cpu.de);
+    cpu.bc--;
+    tmp += cpu.a;
+    cpu.f = 
+        (cpu.f & (FlagsSetMask.C | FlagsSetMask.Z | FlagsSetMask.S)) |
+        (cpu.bc !== 0 ? FlagsSetMask.PV : 0) |
+        (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+    if (cpu.bc !== 0) {
+        cpu.tactPlus5WithAddress(cpu.de);
+        cpu.pc -= 2;
+        cpu.wz = cpu.pc + 1;
+    }
+    cpu.hl--;
+    cpu.de--;
+}
+
+// 0xB9: CPDR
+function cpdr(cpu: Z80Cpu) {
+    const value = cpu.readMemory(cpu.hl);
+    let tmp = (cpu.a - value) & 0xff;
+    var lookup =
+        ((cpu.a & 0x08) >>> 3) |
+        ((value & 0x08) >>> 2) |
+        ((tmp & 0x08) >>> 1);
+    cpu.tactPlus5WithAddress(cpu.hl);
+    cpu.bc--;
+    cpu.f = 
+        cpu.flagCValue |
+        (cpu.bc !== 0 ? FlagsSetMask.PV | FlagsSetMask.N : FlagsSetMask.N) |
+        halfCarrySubFlags[lookup] |
+        (tmp != 0 ? 0 : FlagsSetMask.Z) |
+        (tmp & FlagsSetMask.S);
+    if (cpu.isHFlagSet()) {
+        tmp -= 1;
+    }
+    cpu.f |= (tmp & FlagsSetMask.R3) | ((tmp & 0x02) !== 0 ? FlagsSetMask.R5 : 0);
+    cpu.f53Updated = true;
+    if ((cpu.f & (FlagsSetMask.PV | FlagsSetMask.Z)) === FlagsSetMask.PV) {
+        cpu.tactPlus5WithAddress(cpu.hl);
+        cpu.pc -= 2;
+        cpu.wz = cpu.pc + 1;
+    } else {
+        cpu.wz--;
+    }
+    cpu.hl--;
+}
+
+// 0xBA: INDR
+function indr(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readPort(cpu.bc);
+    cpu.writeMemory(cpu.hl, tmp);
+    cpu.wz = cpu.bc - 1;
+    cpu.b--;
+    const tmp2 = (tmp + cpu.c - 1) & 0xff;
+    cpu.f =
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+
+    if (cpu.b !== 0) {
+        cpu.tactPlus5WithAddress(cpu.hl);
+        cpu.pc -= 2;
+    }
+    cpu.hl--;
+}
+
+// 0xBB: OTDR
+function otdr(cpu: Z80Cpu) {
+    cpu.tactPlus1WithAddress(cpu.ir);
+    const tmp = cpu.readMemory(cpu.hl);
+    cpu.b--;
+    cpu.wz = cpu.bc - 1;
+    cpu.writePort(cpu.bc, tmp);
+    cpu.hl--;
+    const tmp2 = (tmp + cpu.l) & 0xff;
+    cpu.f = 
+        ((tmp & 0x80) !== 0 ? FlagsSetMask.N : 0) |
+        (tmp2 < tmp ? FlagsSetMask.H | FlagsSetMask.C : 0) |
+        (parityTable[(tmp2 & 0x07) ^ cpu.b] !== 0 ? FlagsSetMask.PV : 0) |
+        sz53Table[cpu.b];
+    cpu.f53Updated = true;
+    if (cpu.b === 0) return;
+    cpu.tactPlus5WithAddress(cpu.hl);
+    cpu.pc -= 2;
 }
