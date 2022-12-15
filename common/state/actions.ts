@@ -10,6 +10,11 @@ export const isWindowsAction: ActionCreator = (flag: boolean) => ({
     payload: { flag },
 });
 
+export const setThemeAction: ActionCreator = (id: string) => ({
+    type: "SET_THEME",
+    payload: { id },
+});
+
 export const showToolbarAction: ActionCreator = (flag: boolean) => ({
     type: "SHOW_TOOLBAR",
     payload: { flag },

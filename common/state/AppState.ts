@@ -4,6 +4,7 @@
  export type AppState = {
     uiLoaded?: boolean;
     isWindows?: boolean;
+    theme?: string;
     emuViewOptions?: EmuViewOptions;
 }
 
@@ -29,6 +30,7 @@ export type EmuViewOptions = {
 export const initialAppState: AppState = {
     uiLoaded: false,
     isWindows: false,
+    theme: "light",
     emuViewOptions:  {
         showToolbar: true,
         showStatusBar: true,

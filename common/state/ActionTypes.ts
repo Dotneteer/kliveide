@@ -4,6 +4,7 @@
  export interface ActionTypes {
     UI_LOADED: null,
     IS_WINDOWS: null,
+    SET_THEME: null,
 
     SHOW_TOOLBAR: null;
     SHOW_STATUSBAR: null;

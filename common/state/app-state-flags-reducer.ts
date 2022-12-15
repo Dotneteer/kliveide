@@ -8,6 +8,8 @@ export function appStateFlagsReducer(state: AppState, {type, payload}: Action): 
     switch (type) {
         case "UI_LOADED":
             return {...state, uiLoaded: payload?.flag}
+        case "SET_THEME":
+            return {...state, theme: payload?.id}
         default:
             return state;
     }

@@ -33,11 +33,6 @@ export type ThemeManager = {
   readonly theme: ThemeInfo;
 
   /**
-   * Specifies a function that sets the new theme.
-   */
-  readonly setTheme: (newTheme?: string) => void;
-
-  /**
    * The HTML element that works as the root of the theme's scope.
    */
   readonly root: HTMLElement;

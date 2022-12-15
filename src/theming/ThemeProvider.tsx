@@ -1,3 +1,4 @@
+import { useSelector } from "@/emu/StoreProvider";
 import { EMPTY_OBJECT } from "@/utils/stablerefs";
 import React, { useCallback, useContext, useMemo, useState } from "react";
 import classnames from "../utils/classnames";
@@ -64,38 +65,28 @@ function ThemeProvider({
   const [root, setRoot] = useState(
     () => document.getElementById("root") || document.body
   );
-  const [activeTheme, setActiveTheme] = useState<string>(themeId);
+  const selectedTheme = useSelector(s => s.theme);
+
   const [styleProps, setStyleProps] = useState<Record<string, any>>(EMPTY_OBJECT);
 
   const rootRef = useCallback((rootElement: HTMLDivElement) => {
     setRoot(rootElement);
   }, []);
 
-  const setter = useCallback(
-    (newTheme?: string) => {
-      setActiveTheme(newTheme);
-      const style = availableThemes[newTheme]
-      setStyleProps({...style});
-    },
-    [themeId]
-  );
-
   const themeValue = useMemo(() => {
-    const activeThemeInfo = availableThemes[activeTheme];
+    const activeThemeInfo = availableThemes[selectedTheme];
     setStyleProps({...activeThemeInfo.properties});
-    console.log({...activeThemeInfo.properties});
     return {
       theme: activeThemeInfo,
-      setTheme: setter,
       root,
     };
-  }, [activeTheme, root, setter]);
+  }, [selectedTheme, root]);
 
   return (
     <ThemeContext.Provider value={themeValue}>
       <div
         ref={rootRef}
-        className={classnames("baseRootComponent", `klive-${activeTheme}`)}
+        className={classnames("baseRootComponent", `klive-${selectedTheme}`)}
         style={styleProps}
       >
         {children}
