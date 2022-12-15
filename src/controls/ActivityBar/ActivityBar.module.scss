@@ -1,6 +1,6 @@
-@import "styles/core.scss";
+@import "@styles/core.scss";
 
 .component {
     @include fix-width-panel(40px);
-    background: green;
+    background: var(--color-bg-activitybar);
 }

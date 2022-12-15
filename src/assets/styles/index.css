@@ -16,3 +16,10 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.baseRootComponent {
+  display: inline-block;
+  width: 100%;
+  position: relative;
+  height: inherit;
+}
