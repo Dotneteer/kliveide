@@ -15,6 +15,11 @@ export const setThemeAction: ActionCreator = (id: string) => ({
     payload: { id },
 });
 
+export const selectActivityAction: ActionCreator = (id: string) => ({
+    type: "SET_ACTIVITY",
+    payload: { id },
+});
+
 export const showToolbarAction: ActionCreator = (flag: boolean) => ({
     type: "SHOW_TOOLBAR",
     payload: { flag },

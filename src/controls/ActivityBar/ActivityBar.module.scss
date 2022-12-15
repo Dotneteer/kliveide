@@ -1,6 +1,8 @@
 @import "@styles/core.scss";
 
 .component {
-    @include fix-width-panel(40px);
+    @include fix-width-panel(44px);
+    display: flex;
+    flex-direction: column;
     background: var(--color-bg-activitybar);
 }

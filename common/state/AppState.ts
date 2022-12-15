@@ -6,6 +6,7 @@
     isWindows?: boolean;
     theme?: string;
     emuViewOptions?: EmuViewOptions;
+    ideView?: IdeView;
 }
 
 /**
@@ -24,13 +25,17 @@ export type EmuViewOptions = {
     showSidebar?: boolean;
 }
 
+export type IdeView = {
+    activity?: string
+}
+
 /**
  * The initial application state
  */
 export const initialAppState: AppState = {
     uiLoaded: false,
     isWindows: false,
-    theme: "light",
+    theme: "dark",
     emuViewOptions:  {
         showToolbar: true,
         showStatusBar: true,
@@ -42,5 +47,7 @@ export const initialAppState: AppState = {
         showFrameInfo: true,
         showKeyboard: false,
         showSidebar: true
+    },
+    ideView: {
     }
 }

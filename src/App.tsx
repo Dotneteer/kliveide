@@ -14,6 +14,31 @@ import { ipcRenderer } from "electron";
 import { RequestMessage } from "@messaging/message-types";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { useSelector } from "./emu/StoreProvider";
+import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_LOG_ID, ACTIVITY_TEST_ID } from "./core/abstractions";
+
+// --- Set up activities
+const activities: Activity[] = [
+  {
+    id: ACTIVITY_FILE_ID,
+    title: "Explorer",
+    iconName: "files",
+  },
+  {
+    id: ACTIVITY_DEBUG_ID,
+    title: "Debug",
+    iconName: "debug-alt",
+  },
+  {
+    id: ACTIVITY_LOG_ID,
+    title: "Machine logs",
+    iconName: "output",
+  },
+  {
+    id: ACTIVITY_TEST_ID,
+    title: "Testing",
+    iconName: "beaker",
+  },
+];
 
 const App = () => {
   // --- Indicate the App has been loaded
@@ -48,7 +73,7 @@ const App = () => {
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
-        {!useEmuView && <ActivityBar order={activityOrder} />}
+        {!useEmuView && <ActivityBar activities={activities} order={activityOrder} />}
         <SplitPanel
           id="main"
           primaryLocation={primaryBarsPos}

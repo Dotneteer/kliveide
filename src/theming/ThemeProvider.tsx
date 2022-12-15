@@ -3,8 +3,9 @@ import { EMPTY_OBJECT } from "@/utils/stablerefs";
 import React, { useCallback, useContext, useMemo, useState } from "react";
 import classnames from "../utils/classnames";
 import { darkTheme } from "./dark-theme";
+import { iconLibrary } from "./icon-defs";
 import { lightTheme } from "./light-theme";
-import { ThemeInfo, ThemeManager } from "./theme";
+import { ThemeInfo, ThemeManager, ThemeProperties } from "./theme";
 
 // =====================================================================================================================
 // Collect the supported themes
@@ -21,7 +22,7 @@ const availableThemes: Record<string, ThemeInfo> = {
 }
 
 // --- The default theme
-const DEFAULT_THEME = "light";
+const DEFAULT_THEME = "dark";
 
 // =====================================================================================================================
 /**
@@ -79,6 +80,10 @@ function ThemeProvider({
     return {
       theme: activeThemeInfo,
       root,
+      getThemeProperty: (key: string) => activeThemeInfo.properties[key],
+      getIcon: (key: string) => 
+        iconLibrary.find(ic => ic.name === key) 
+          ?? iconLibrary.find(ic => ic.name === "unknown")
     };
   }, [selectedTheme, root]);
 

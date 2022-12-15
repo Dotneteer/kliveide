@@ -17,4 +17,6 @@
     PRIMARY_BAR_ON_RIGHT: null;
     TOOLS_ON_TOP: null;
     MAXIMIZE_TOOLS: null;
+
+    SET_ACTIVITY: null;
 }

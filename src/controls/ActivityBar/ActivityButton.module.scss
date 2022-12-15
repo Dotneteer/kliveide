@@ -1,0 +1,36 @@
+@import "@styles/core.scss";
+
+.component {
+    @include fix-height-panel(40px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    :hover {
+        background: var(--color-bg-activitybar-pointed);
+    }
+};
+
+.iconWrapper {
+    @include fill-parent-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.icon {
+    fill: var(--color-fg-activitybar);
+}
+
+.iconPointed {
+    fill: var(--color-fg-activitybar-pointed);
+}
+
+.active {
+    background: var(--color-bg-activitybar-active);
+
+    :hover {
+        background: var(--color-bg-activitybar-activepointed);
+    }
+}
+
