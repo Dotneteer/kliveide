@@ -20,6 +20,7 @@ export type Action = {
  */
 export type Payload = {
     flag: boolean,
+    id: string,
 }
 
 /**

@@ -1,4 +1,4 @@
-import styles from "styles/app.module.scss";
+import styles from "@styles/app.module.scss";
 import { ActivityBar } from "./controls/ActivityBar/ActivityBar";
 import { DocumentArea } from "./controls/DocumentArea/DocumentArea";
 import { EmulatorArea } from "./controls/EmulatorArea/EmulatorArea";

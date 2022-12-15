@@ -1,4 +1,4 @@
-@import "styles/core.scss";
+@import "@styles/core.scss";
 
 .component {
     @include fix-height-panel(40px);

@@ -7,10 +7,15 @@
     "allowSyntheticDefaultImports": true,
     "paths": {
 			"@/*": ["./src/*"],
-      "styles/*": ["./src/assets/styles/*"],
+      "@styles/*": ["./src/assets/styles/*"],
       "@messaging/*": ["./common/messaging/*"],
       "@state/*": ["./common/state/*"]
 		},
   },
-  "include": ["package.json", "electron", "common", "src/emu/abstractions", "src/emu/z80"]
+  "include": [
+    "package.json", 
+    "electron", 
+    "src/emu/abstractions", 
+    "src/emu/z80"
+  ]
 }

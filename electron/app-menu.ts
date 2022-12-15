@@ -15,7 +15,8 @@ import {
     useEmuViewAction, 
     showToolPanelsAction,
     toolPanelsOnTopAction,
-    maximizeToolsAction} from "../common/state/actions";
+    maximizeToolsAction,
+    setThemeAction} from "../common/state/actions";
 
 const TOGGLE_DEVTOOLS = "toggle_devtools";
 const TOGGLE_SIDE_BAR = "toggle_side_bar";
@@ -27,6 +28,9 @@ const SET_IDE_VIEW = "set_ide_view";
 const TOGGLE_TOOL_PANELS = "toggle_tool_panels";
 const TOGGLE_TOOLS_TOP = "tool_panels_top";
 const MAXIMIZE_TOOLS = "tools_maximize";
+const THEMES = "themes";
+const LIGHT_THEME = "light_theme";
+const DARK_THEME = "dark_theme";
 
 /**
  * Creates and sets the main menu of the app
@@ -89,6 +93,31 @@ export function setupMenu(): void {
             click: () => {
                 BrowserWindow.getFocusedWindow().webContents.toggleDevTools();
             },
+        },
+        { type: "separator" },
+        {
+            id: THEMES,
+            label: "Themes",
+            submenu: [
+                {
+                    id: LIGHT_THEME,
+                    label: "Light",
+                    type: "checkbox",
+                    checked: appState.theme === "light",
+                    click: () => {
+                        mainStore.dispatch(setThemeAction("light"));
+                    },
+                },
+                {
+                    id: DARK_THEME,
+                    label: "Dark",
+                    type: "checkbox",
+                    checked: appState.theme === "dark",
+                    click: () => {
+                        mainStore.dispatch(setThemeAction("dark"));
+                    },
+                },
+            ]
         },
         { type: "separator" },
         {
@@ -221,4 +250,6 @@ export function updateMenuState(): void {
     getMenuItem(TOGGLE_TOOLS_TOP).checked = appState.emuViewOptions.toolPanelsOnTop;
     getMenuItem(MAXIMIZE_TOOLS).enabled = enableIdeMenus;
     getMenuItem(MAXIMIZE_TOOLS).checked = appState.emuViewOptions.maximizeTools;
+    getMenuItem(LIGHT_THEME).checked = appState.theme === "light";
+    getMenuItem(DARK_THEME).checked = appState.theme === "dark";
 }
