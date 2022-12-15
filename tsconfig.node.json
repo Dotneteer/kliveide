@@ -12,5 +12,10 @@
       "@state/*": ["./common/state/*"]
 		},
   },
-  "include": ["package.json", "electron", "src/emu/abstractions", "src/emu/z80"]
+  "include": [
+    "package.json", 
+    "electron", 
+    "src/emu/abstractions", 
+    "src/emu/z80"
+  ]
 }
