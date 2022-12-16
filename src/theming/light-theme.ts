@@ -20,6 +20,14 @@ export const lightTheme: ThemeProperties = {
 
     // --- Toolbar
     "--color-bg-toolbar": "#e0e0e0",
+    "--color-bg-keydown-toolbarbutton": "#d0d0d0",
+    "--color-bg-toolbarbutton-disabled": "#a0a0a0",
+    "--color-fg-toolbarbutton": "#000000",
+    "--color-fg-toolbarbutton-green": "darkgreen",
+    "--color-fg-toolbarbutton-blue": "#007acc",
+    "--color-fg-toolbarbutton-red": "darkred",
+    "--color-toolbar-separator": "#b0b0b0",
+    "--color-toolbarbutton-selected": "#61a4d0",
 
     // --- Statusbar
     "--color-bg-statusbar": "#61a4d0",

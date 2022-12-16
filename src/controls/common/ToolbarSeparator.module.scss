@@ -1,0 +1,13 @@
+@import "@styles/core.scss";
+
+.component {
+    display: flex;
+    width: 2px;
+    height: 34px;
+    padding: 4px 2px
+}
+
+.separator {
+    @include fill-parent-flex;
+    border-left: 2px solid var(--color-toolbar-separator);
+}

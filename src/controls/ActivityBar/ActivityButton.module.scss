@@ -1,13 +1,13 @@
 @import "@styles/core.scss";
 
 .component {
-    @include fix-height-panel(40px);
+    @include fix-height-panel(48px);
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
 
-    :hover {
+    &:hover {
         background: var(--color-bg-activitybar-pointed);
     }
 };
@@ -29,7 +29,7 @@
 .active {
     background: var(--color-bg-activitybar-active);
 
-    :hover {
+    &:hover {
         background: var(--color-bg-activitybar-activepointed);
     }
 }

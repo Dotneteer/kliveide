@@ -21,6 +21,14 @@ export type ThemeProperties = {
 
   // --- Toolbar
   "--color-bg-toolbar"?: string;
+  "--color-bg-keydown-toolbarbutton"?: string;
+  "--color-bg-toolbarbutton-disabled"?: string;
+  "--color-fg-toolbarbutton"?: string;
+  "--color-fg-toolbarbutton-green"?: string;
+  "--color-fg-toolbarbutton-blue"?: string;
+  "--color-fg-toolbarbutton-red"?: string;
+  "--color-toolbar-separator"?: string;
+  "--color-toolbarbutton-selected"?: string;
 
   // --- Statusbar
   "--color-bg-statusbar"?: string;

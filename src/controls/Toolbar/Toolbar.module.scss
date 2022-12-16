@@ -1,6 +1,7 @@
 @import "@styles/core.scss";
 
 .component {
-    @include fix-height-panel(40px);
+    @include fix-height-panel(42px);
+    padding: 0 4px;
     background: var(--color-bg-toolbar);
 }

@@ -20,6 +20,14 @@ export const darkTheme: ThemeProperties = {
 
     // --- Toolbar
     "--color-bg-toolbar": "#202020",
+    "--color-bg-keydown-toolbarbutton": "#303030",
+    "--color-bg-toolbarbutton-disabled": "#606060",
+    "--color-fg-toolbarbutton": "white",
+    "--color-fg-toolbarbutton-green": "lightgreen",
+    "--color-fg-toolbarbutton-blue": "cyan",
+    "--color-fg-toolbarbutton-red": "red",
+    "--color-toolbar-separator": "#686868",
+    "--color-toolbarbutton-selected": "#007acc",
 
     // --- Statusbar
     "--color-bg-statusbar": "#007acc",

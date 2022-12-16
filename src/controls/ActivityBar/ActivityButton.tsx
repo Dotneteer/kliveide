@@ -4,7 +4,7 @@ import classnames from "@/utils/classnames";
 import { noop } from "@/utils/stablerefs";
 import { useRef, useState } from "react";
 import { Icon } from "../common/Icon";
-import { Tooltip, TooltipFactory } from "../common/Tooltip";
+import { TooltipFactory } from "../common/Tooltip";
 import styles from "./ActivityButton.module.scss";
 
 /**
@@ -42,15 +42,15 @@ type Props = {
           refElement={ref.current}
           placement="right"
           offsetX={-8}
-          offsetY={16}>
+          offsetY={24}>
             {activity.title}            
         </TooltipFactory>
         
         <div className={classnames(styles.iconWrapper)}>
         <Icon
           iconName={activity.iconName}
-          width={20}
-          height={20}
+          width={24}
+          height={24}
           fill={iconFill}
         />
         </div>
