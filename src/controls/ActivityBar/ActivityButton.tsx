@@ -2,8 +2,9 @@ import { Activity } from "@/core/abstractions";
 import { useTheme } from "@/theming/ThemeProvider";
 import classnames from "@/utils/classnames";
 import { noop } from "@/utils/stablerefs";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Icon } from "../common/Icon";
+import { Tooltip, TooltipFactory } from "../common/Tooltip";
 import styles from "./ActivityButton.module.scss";
 
 /**
@@ -20,6 +21,8 @@ type Props = {
     active = false,
     clicked = noop,
   }: Props) => {
+    const ref = useRef<HTMLDivElement>(null);
+
     const [pointed, setPointed] = useState(false);
     const theme = useTheme();
     const iconFill = theme.getThemeProperty(pointed || active
@@ -27,14 +30,22 @@ type Props = {
         : "--color-fg-activitybar");
     return (
       <div
+        ref={ref}
         className={classnames(styles.component, active 
             ? styles.active 
             : "")}
         onMouseEnter={() => setPointed(true)}
         onMouseLeave={() => setPointed(false)}
         onClick={clicked}
-        title={activity.title}
       >
+        <TooltipFactory 
+          refElement={ref.current}
+          placement="right"
+          offsetX={-8}
+          offsetY={16}>
+            {activity.title}            
+        </TooltipFactory>
+        
         <div className={classnames(styles.iconWrapper)}>
         <Icon
           iconName={activity.iconName}

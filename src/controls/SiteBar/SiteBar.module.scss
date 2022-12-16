@@ -2,5 +2,5 @@
 
 .component {
     @include fill-parent-flex;
-    background: blue;
+    background: var(--color-bg-sitebar);
 }

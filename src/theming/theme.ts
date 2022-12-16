@@ -2,13 +2,40 @@
  * Defines the properties of the themes that can be used with Klive.
  */
 export type ThemeProperties = {
+  // --- Activity bar
   "--color-bg-activitybar"?: string;
   "--color-fg-activitybar"?: string;
   "--color-bg-activitybar-active"?: string;
   "--color-bg-activitybar-pointed"?: string;
   "--color-bg-activitybar-activepointed"?: string;
   "--color-fg-activitybar-active"?: string;
-  "--color-borderl-activitybar-active"?: string;
+
+  // --- Tooltip
+  "--border-tooltip"?: string;
+  "--font-size-tooltip"?: string;
+  "--color-bg-tooltip"?: string;
+  "--color-fg-tooltip"?: string;
+  "--radius-bg-tooltip"?: string;
+  "--padding-tooltip"?: string;
+  "--shadow-tooltip"?: string;
+
+  // --- Toolbar
+  "--color-bg-toolbar"?: string;
+
+  // --- Statusbar
+  "--color-bg-statusbar"?: string;
+
+  // --- Sitebar
+  "--color-bg-sitebar"?: string;
+
+  // --- Emulator area
+  "--color-bg-emuarea"?: string;
+
+  // --- Document area
+  "--color-bg-docarea"?: string;
+
+  // --- Tool area
+  "--color-bg-toolarea"?: string;
 }
 
 /**

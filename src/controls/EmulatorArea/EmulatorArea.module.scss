@@ -2,5 +2,5 @@
 
 .component {
     @include fill-parent-flex;
-    background: #606060;
+    background: var(--color-bg-emuarea);
 }
