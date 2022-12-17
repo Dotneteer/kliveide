@@ -69,3 +69,13 @@ export const showFrameInfoAction: ActionCreator = (flag: boolean) => ({
     type: "SHOW_FRAME_INFO",
     payload: { flag },
 });
+
+export const setSideBarPanelExpandedAction: ActionCreator = (id: string, flag: boolean) => ({
+    type: "SET_SIDEBAR_PANEL_EXPANDED",
+    payload: { id, flag },
+});
+
+export const setSideBarPanelSizeAction: ActionCreator = (id: string, size: number | string) => ({
+    type: "SET_SIDEBAR_PANEL_SIZE",
+    payload: { id, size },
+});

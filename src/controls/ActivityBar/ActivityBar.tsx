@@ -1,5 +1,4 @@
 import { Activity } from "@/core/abstractions";
-import { emuStore } from "@/emu/emu-store";
 import { useDispatch, useSelector } from "@/emu/StoreProvider";
 import { selectActivityAction } from "@state/actions";
 import styles from "./ActivityBar.module.scss";
@@ -12,18 +11,18 @@ type Props = {
 
 export const ActivityBar = ({
     order,
-    activities
+    activities,
 }: Props) => {
-    const activeActitity = useSelector(s => s.ideView?.activity)
     const dispatch = useDispatch();
+    const activeActitity = useSelector(s => s.ideView?.activity)
     return <div className={styles.component} style={{order}}>
         {
-            [...(activities.map(act => 
+            [...activities.map(act => 
                 <ActivityButton 
                     key={act.id} 
                     activity={act} 
                     active={activeActitity === act.id}
-                    clicked={() => dispatch(selectActivityAction(act.id))} />))]
+                    clicked={() => dispatch(selectActivityAction(act.id))} />)]
         }
     </div>
 }

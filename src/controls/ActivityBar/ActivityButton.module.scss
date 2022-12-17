@@ -8,7 +8,7 @@
     cursor: pointer;
 
     &:hover {
-        background: var(--color-bg-activitybar-pointed);
+        background: var(--bgcolor-activitybar-pointed);
     }
 };
 
@@ -19,18 +19,18 @@
 }
 
 .icon {
-    fill: var(--color-fg-activitybar);
+    fill: var(--color-activitybar);
 }
 
 .iconPointed {
-    fill: var(--color-fg-activitybar-pointed);
+    fill: var(--color-activitybar-pointed);
 }
 
 .active {
-    background: var(--color-bg-activitybar-active);
+    background: var(--bgcolor-activitybar-active);
 
     &:hover {
-        background: var(--color-bg-activitybar-activepointed);
+        background: var(--bgcolor-activitybar-activepointed);
     }
 }
 

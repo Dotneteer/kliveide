@@ -32,7 +32,7 @@ export const SplitPanel = ({
     minSize = 20,
     secondaryPanel,
     secondaryVisible = true,
-    splitterThickness = 6
+    splitterThickness = 4
 }: SplitPanelProps) => {
     // --- Referencies we need to handling the splitter within the panel
     const mainContainer = useRef<HTMLDivElement>(null);
@@ -241,8 +241,6 @@ const Splitter = ({
         window.removeEventListener("mousemove", _move);
         document.body.style.cursor = "default";
     }
-
-
 }
 
 /**

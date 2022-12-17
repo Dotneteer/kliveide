@@ -2,47 +2,23 @@ import styles from "@styles/app.module.scss";
 import { ActivityBar } from "./controls/ActivityBar/ActivityBar";
 import { DocumentArea } from "./controls/DocumentArea/DocumentArea";
 import { EmulatorArea } from "./controls/EmulatorArea/EmulatorArea";
-import { SiteBar } from "./controls/SiteBar/SiteBar";
+import { SiteBar } from "./controls/SideBar/SideBar";
 import { SplitPanel } from "./controls/SplitPanel/SplitPanel";
 import { StatusBar } from "./controls/StatusBar/StatusBar";
 import { ToolArea } from "./controls/ToolArea/ToolArea";
 import { Toolbar } from "./controls/Toolbar/Toolbar";
-import { emuStore } from "./emu/emu-store";
-import { useEffect, useRef } from "react";
-import { uiLoadedAction } from "@state/actions";
+import { useEffect, useRef, useState } from "react";
+import { selectActivityAction, uiLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { RequestMessage } from "@messaging/message-types";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
-import { useSelector } from "./emu/StoreProvider";
-import { Activity, ACTIVITY_DEBUG_ID, ACTIVITY_FILE_ID, ACTIVITY_LOG_ID, ACTIVITY_TEST_ID } from "./core/abstractions";
-
-// --- Set up activities
-const activities: Activity[] = [
-  {
-    id: ACTIVITY_FILE_ID,
-    title: "Explorer",
-    iconName: "files",
-  },
-  {
-    id: ACTIVITY_DEBUG_ID,
-    title: "Debug",
-    iconName: "debug-alt",
-  },
-  {
-    id: ACTIVITY_LOG_ID,
-    title: "Machine logs",
-    iconName: "output",
-  },
-  {
-    id: ACTIVITY_TEST_ID,
-    title: "Testing",
-    iconName: "beaker",
-  },
-];
+import { useDispatch, useSelector } from "./emu/StoreProvider";
+import { activityRegistry } from "./registry";
 
 const App = () => {
   // --- Indicate the App has been loaded
   const mounted = useRef(false);
+  const dispatch = useDispatch();
 
   // --- Visual state
   const showToolbar = useSelector(s => s.emuViewOptions.showToolbar);
@@ -61,8 +37,8 @@ const App = () => {
       if (mounted.current) return;
 
       mounted.current = true;
-      const store = emuStore;
-      store.dispatch(uiLoadedAction());
+      dispatch(uiLoadedAction());
+      dispatch(selectActivityAction(activityRegistry[0].id));
 
       return () => {
           mounted.current = false;
@@ -73,7 +49,9 @@ const App = () => {
     <div className={styles.app}>
       {showToolbar && <Toolbar />}
       <div className={styles.mainContent}>
-        {!useEmuView && <ActivityBar activities={activities} order={activityOrder} />}
+        {!useEmuView && <ActivityBar 
+          activities={activityRegistry} 
+          order={activityOrder} />}
         <SplitPanel
           id="main"
           primaryLocation={primaryBarsPos}

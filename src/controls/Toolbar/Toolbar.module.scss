@@ -3,5 +3,5 @@
 .component {
     @include fix-height-panel(42px);
     padding: 0 4px;
-    background: var(--color-bg-toolbar);
+    background: var(--bgcolor-toolbar);
 }

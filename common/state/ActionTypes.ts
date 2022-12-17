@@ -19,4 +19,6 @@
     MAXIMIZE_TOOLS: null;
 
     SET_ACTIVITY: null;
+    SET_SIDEBAR_PANEL_EXPANDED: null;
+    SET_SIDEBAR_PANEL_SIZE: null;
 }

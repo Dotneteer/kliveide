@@ -2,7 +2,7 @@ import { useTheme } from "@/theming/ThemeProvider";
 import { CSSProperties } from "react";
 
 type Props = {
-    iconName?: string;
+    iconName: string;
     xclass?: string;
     width?: number;
     height?: number;

@@ -26,8 +26,8 @@ type Props = {
     const [pointed, setPointed] = useState(false);
     const theme = useTheme();
     const iconFill = theme.getThemeProperty(pointed || active
-        ? "--color-fg-activitybar-active" 
-        : "--color-fg-activitybar");
+        ? "--color-activitybar-active" 
+        : "--color-activitybar");
     return (
       <div
         ref={ref}

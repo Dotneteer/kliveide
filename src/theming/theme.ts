@@ -2,48 +2,55 @@
  * Defines the properties of the themes that can be used with Klive.
  */
 export type ThemeProperties = {
+  // --- Global theme attributes
+  "--bgcolor-splitter"?: string;
+  
   // --- Activity bar
-  "--color-bg-activitybar"?: string;
-  "--color-fg-activitybar"?: string;
-  "--color-bg-activitybar-active"?: string;
-  "--color-bg-activitybar-pointed"?: string;
-  "--color-bg-activitybar-activepointed"?: string;
-  "--color-fg-activitybar-active"?: string;
+  "--bgcolor-activitybar"?: string;
+  "--color-activitybar"?: string;
+  "--bgcolor-activitybar-active"?: string;
+  "--bgcolor-activitybar-pointed"?: string;
+  "--bgcolor-activitybar-activepointed"?: string;
+  "--color-activitybar-active"?: string;
 
   // --- Tooltip
   "--border-tooltip"?: string;
   "--font-size-tooltip"?: string;
-  "--color-bg-tooltip"?: string;
-  "--color-fg-tooltip"?: string;
-  "--radius-bg-tooltip"?: string;
+  "--bgcolor-tooltip"?: string;
+  "--color-tooltip"?: string;
+  "--radius-tooltip"?: string;
   "--padding-tooltip"?: string;
   "--shadow-tooltip"?: string;
 
   // --- Toolbar
-  "--color-bg-toolbar"?: string;
-  "--color-bg-keydown-toolbarbutton"?: string;
-  "--color-bg-toolbarbutton-disabled"?: string;
-  "--color-fg-toolbarbutton"?: string;
-  "--color-fg-toolbarbutton-green"?: string;
-  "--color-fg-toolbarbutton-blue"?: string;
-  "--color-fg-toolbarbutton-red"?: string;
+  "--bgcolor-toolbar"?: string;
+  "--bgcolor-keydown-toolbarbutton"?: string;
+  "--bgcolor-toolbarbutton-disabled"?: string;
+  "--color-toolbarbutton"?: string;
+  "--color-toolbarbutton-green"?: string;
+  "--color-toolbarbutton-blue"?: string;
+  "--color-toolbarbutton-red"?: string;
   "--color-toolbar-separator"?: string;
   "--color-toolbarbutton-selected"?: string;
 
   // --- Statusbar
-  "--color-bg-statusbar"?: string;
+  "--bgcolor-statusbar"?: string;
 
   // --- Sitebar
-  "--color-bg-sitebar"?: string;
+  "--bgcolor-sitebar"?: string;
+  "--color-chevron"?: string;
+  "--color-panel-header"?: string;
+  "--color-panel-border"?: string;
+  "--color-panel-focused"?: string;
 
   // --- Emulator area
-  "--color-bg-emuarea"?: string;
+  "--bgcolor-emuarea"?: string;
 
   // --- Document area
-  "--color-bg-docarea"?: string;
+  "--bgcolor-docarea"?: string;
 
   // --- Tool area
-  "--color-bg-toolarea"?: string;
+  "--bgcolor-toolarea"?: string;
 }
 
 /**

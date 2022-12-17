@@ -26,7 +26,16 @@ export type EmuViewOptions = {
 }
 
 export type IdeView = {
-    activity?: string
+    activity?: string;
+    sideBarPanels?: Record<string, SideBarPanelState>;
+}
+
+/**
+ * The state of a particular site bar panel
+ */
+export type SideBarPanelState = {
+    expanded: boolean;
+    size: number | string;
 }
 
 /**
@@ -49,5 +58,6 @@ export const initialAppState: AppState = {
         showSidebar: true
     },
     ideView: {
+        sideBarPanels: {}
     }
 }

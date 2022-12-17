@@ -19,8 +19,9 @@ export type Action = {
  * Payload properties
  */
 export type Payload = {
-    flag: boolean,
-    id: string,
+    flag: boolean;
+    id: string;
+    size: number | string;
 }
 
 /**

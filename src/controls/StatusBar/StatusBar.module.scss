@@ -2,5 +2,5 @@
 
 .component {
     @include fix-height-panel(40px);
-    background: var(--color-bg-statusbar);
+    background: var(--bgcolor-statusbar);
 }

@@ -57,7 +57,7 @@ export function IconButton({
             </TooltipFactory>
             <Icon
               iconName={iconName}
-              fill={enable ?? true ? fill : "--color-bg-toolbarbutton-disabled"}
+              fill={enable ?? true ? fill : "--bgcolor-toolbarbutton-disabled"}
               width={size}
               height={size}
             />

@@ -8,6 +8,20 @@ import { IdeView } from "./AppState";
     switch (type) {
         case "SET_ACTIVITY":
             return {...state, activity: payload?.id}
+        case "SET_SIDEBAR_PANEL_EXPANDED":
+            return {...state, 
+                sideBarPanels: {
+                    ...state.sideBarPanels, 
+                    [payload.id]: {...state.sideBarPanels[payload.id], expanded: payload.flag} 
+                }
+            }
+        case "SET_SIDEBAR_PANEL_SIZE":
+            return {...state, 
+                sideBarPanels: {
+                    ...state.sideBarPanels, 
+                    [payload.id]: {...state.sideBarPanels[payload.id], size: payload.size} 
+                }
+            }
         default:
             return state;
     }
