@@ -1,3 +1,4 @@
+import { DocumentState } from "@/ide/abstractions";
 import { ActionCreator } from "./Action";
 import { SideBarPanelState } from "./AppState";
 
@@ -89,3 +90,21 @@ export const setSideBarPanelSizeAction: ActionCreator = (
     type: "SET_SIDEBAR_PANEL_SIZE",
     payload: { id, size, nextId, nextSize },
 });
+
+export const createDocumentAction: ActionCreator = (document: DocumentState, index: number) => ({
+    type: "CREATE_DOC",
+    payload: { document, index },
+});
+
+export const activateDocumentAction: ActionCreator = (id: string) => ({
+    type: "ACTIVATE_DOC",
+    payload: { id },
+});
+
+export const closeDocumentAction: ActionCreator = (id: string) => ({
+    type: "CLOSE_DOC",
+    payload: { id },
+});
+
+export const closeAllDocumentsAction: ActionCreator = () => ({type: "CLOSE_ALL_DOCS"});
+

@@ -46,7 +46,8 @@ export const darkTheme: ThemeProperties = {
     "--bgcolor-emuarea": "#606060",
 
     // --- Document area
-    "--bgcolor-docarea": "#303030",
+    "--bgcolor-docsheader": "#282828",
+    "--color-doc-icon": "#ffffff",
 
     // --- Tool area
     "--bgcolor-toolarea": "#303030",

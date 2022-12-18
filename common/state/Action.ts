@@ -1,3 +1,4 @@
+import { DocumentInfo, DocumentState } from "@/ide/abstractions";
 import { ActionTypes } from "./ActionTypes"
 import { SideBarPanelState } from "./AppState";
 
@@ -25,7 +26,9 @@ export type Payload = {
     size: number;
     nextId: string;
     nextSize: number;
-    panelsState: Record<string, SideBarPanelState>
+    panelsState: Record<string, SideBarPanelState>;
+    document: DocumentState;
+    index: number;
 }
 
 /**

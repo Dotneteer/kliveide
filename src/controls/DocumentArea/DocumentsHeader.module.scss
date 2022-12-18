@@ -1,0 +1,13 @@
+@import "@styles/core.scss";
+
+.component {
+    @include fix-height-panel(40px);
+    flex-direction: row;
+    background: var(--bgcolor-docsheader);
+}
+
+.closingTab {
+    @include fix-height-panel(38px);
+    width: 4px;
+    border-left: 1px solid grey;
+}

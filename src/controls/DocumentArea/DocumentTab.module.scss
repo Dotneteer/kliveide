@@ -1,0 +1,19 @@
+@import "@styles/core.scss";
+
+.component {
+    @include fix-height-panel(36px);
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid grey;
+    border-right: none;
+    background: green;
+    cursor: pointer;
+}
+
+.active {
+    background: lightgreen;
+    border-bottom: 1px solid transparent;
+}

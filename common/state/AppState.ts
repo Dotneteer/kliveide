@@ -1,3 +1,5 @@
+import { DocumentState } from "@/ide/abstractions";
+
 /**
  * Represents the state of the entire application
  */
@@ -28,6 +30,8 @@ export type EmuViewOptions = {
 export type IdeView = {
     activity?: string;
     sideBarPanels?: Record<string, SideBarPanelState>;
+    openDocuments?: DocumentState[];
+    activeDocumentIndex?: number;
 }
 
 /**
@@ -58,6 +62,8 @@ export const initialAppState: AppState = {
         showSidebar: true
     },
     ideView: {
-        sideBarPanels: {}
+        sideBarPanels: {},
+        openDocuments: [],
+        activeDocumentIndex: -1,
     }
 }

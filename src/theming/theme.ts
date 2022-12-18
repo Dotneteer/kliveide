@@ -47,7 +47,8 @@ export type ThemeProperties = {
   "--bgcolor-emuarea"?: string;
 
   // --- Document area
-  "--bgcolor-docarea"?: string;
+  "--bgcolor-docsheader"?: string;
+  "--color-doc-icon"?: string;
 
   // --- Tool area
   "--bgcolor-toolarea"?: string;

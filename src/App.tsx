@@ -8,12 +8,13 @@ import { StatusBar } from "./controls/StatusBar/StatusBar";
 import { ToolArea } from "./controls/ToolArea/ToolArea";
 import { Toolbar } from "./controls/Toolbar/Toolbar";
 import { useEffect, useRef, useState } from "react";
-import { selectActivityAction, uiLoadedAction } from "@state/actions";
+import { closeAllDocumentsAction, selectActivityAction, uiLoadedAction } from "@state/actions";
 import { ipcRenderer } from "electron";
 import { RequestMessage } from "@messaging/message-types";
 import { processMainToEmuMessages } from "./MainToEmuProcessor";
 import { useDispatch, useSelector } from "./emu/StoreProvider";
 import { activityRegistry } from "./registry";
+import { useIdeServices } from "./ide/IdeServicesProvider";
 
 const App = () => {
   // --- Indicate the App has been loaded
@@ -32,6 +33,8 @@ const App = () => {
   const primaryBarsPos = useSelector(s => s.emuViewOptions.primaryBarOnRight) ? "right" : "left";
   const docPanelsPos = useSelector(s => s.emuViewOptions.toolPanelsOnTop) ? "bottom" : "top";
 
+  const ideService = useIdeServices();
+
   // --- Signify that the UI has been loaded
   useEffect(() => {
       if (mounted.current) return;
@@ -39,6 +42,16 @@ const App = () => {
       mounted.current = true;
       dispatch(uiLoadedAction());
       dispatch(selectActivityAction(activityRegistry[0].id));
+
+      // --- Temporary: open a few document panels
+      dispatch(closeAllDocumentsAction());
+      for (let i = 0; i < 4; i++) {
+        ideService.documentService.openDocument({
+          id: `doc-${i}`,
+          name: `Document #${i}`,
+          type: "CodeEditor"
+        })
+      }
 
       return () => {
           mounted.current = false;

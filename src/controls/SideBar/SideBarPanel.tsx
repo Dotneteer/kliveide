@@ -65,6 +65,11 @@ export const SideBarPanel = ({
                 focused ? styles.focused : "")} 
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
+            onKeyDown={(e) => {
+                if (e.code === "Space" || e.code === "Enter") {
+                    dispatch(setSideBarPanelExpandedAction(sideBar.id, !expanded))
+                }
+            }}
             onClick={() => {
                 dispatch(setSideBarPanelExpandedAction(sideBar.id, !expanded));
                 }}>

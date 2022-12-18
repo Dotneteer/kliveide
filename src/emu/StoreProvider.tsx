@@ -13,7 +13,7 @@ const StoreContext = createContext<Store>(emuStore);
 /**
  * This React hook makes the current state store information available within any component logic using the hook.
  */
-export function useStore(): Store {
+export function useStore(): Store<AppState> {
     return useContext(StoreContext);
 }
 

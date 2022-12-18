@@ -22,4 +22,9 @@
     SET_SIDEBAR_PANEL_EXPANDED: null;
     SET_SIDEBAR_PANELS_STATE: null;
     SET_SIDEBAR_PANEL_SIZE: null;
+
+    ACTIVATE_DOC: null;
+    CREATE_DOC: null;
+    CLOSE_DOC: null;
+    CLOSE_ALL_DOCS: null;
 }

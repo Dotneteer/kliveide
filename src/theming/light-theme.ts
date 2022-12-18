@@ -45,7 +45,8 @@ export const lightTheme: ThemeProperties = {
     "--bgcolor-emuarea": "#909090",
 
     // --- Document area
-    "--bgcolor-docarea": "#d0d0d0",
+    "--bgcolor-docsheader": "#d8d8d8",
+    "--color-doc-icon": "#000000",
 
     // --- Tool area
     "--bgcolor-toolarea": "#d0d0d0",

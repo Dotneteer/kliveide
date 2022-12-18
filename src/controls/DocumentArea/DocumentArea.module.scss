@@ -2,5 +2,11 @@
 
 .component {
     @include fill-parent-flex;
-    background: var(--bgcolor-docarea);
+    flex-direction: column;
+    background: var(--bgcolor-docsheader);
+}
+
+.documentContainer {
+    @include fill-parent-flex;
+    background: #202020;
 }
